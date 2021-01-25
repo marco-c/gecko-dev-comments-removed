@@ -108,7 +108,8 @@ static void RemoveAllRegistryEntries() {
 
   
   if (!keyStillInUse) {
-    RegDeleteKeyW(HKEY_CURRENT_USER, AGENT_REGKEY_NAME);
+    
+    RegDeleteTreeW(HKEY_CURRENT_USER, AGENT_REGKEY_NAME);
   }
 }
 

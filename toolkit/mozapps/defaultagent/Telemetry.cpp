@@ -39,14 +39,6 @@
 
 #define MINIMUM_PING_PERIOD_SEC ((23 * 60 * 60) + (45 * 60))
 
-
-
-#define MAX_NOTIFICATION_DATA_CACHE_SIZE 2
-#define NOTIFICATION_TYPE_CACHE_PREFIX L"PingCacheNotificationType"
-#define NOTIFICATION_SHOWN_CACHE_PREFIX L"PingCacheNotificationShown"
-#define NOTIFICATION_ACTION_CACHE_PREFIX L"PingCacheNotificationAction"
-#define PREV_NOTIFICATION_ACTION_CACHE_PREFIX L"PingCachePrevNotificationAction"
-
 #define PREV_NOTIFICATION_ACTION_REG_NAME L"PrevNotificationAction"
 
 #if !defined(RRF_SUBKEY_WOW6464KEY)
@@ -363,7 +355,7 @@ static TelemetryFieldResult GetAndUpdatePreviousDefaultBrowser(
 
 
 
-HRESULT MaybeCache(const std::string& notificationType,
+HRESULT MaybeCache(Cache& cache, const std::string& notificationType,
                    const std::string& notificationShown,
                    const std::string& notificationAction,
                    const std::string& prevNotificationAction) {
@@ -373,71 +365,15 @@ HRESULT MaybeCache(const std::string& notificationType,
     return S_OK;
   }
 
-  
-  
-  unsigned int cacheIndex = 0;
-  while (true) {
-    std::wstring valueName = NOTIFICATION_TYPE_CACHE_PREFIX;
-    valueName += std::to_wstring(cacheIndex);
-    LSTATUS ls =
-        RegGetValueW(HKEY_CURRENT_USER, AGENT_REGKEY_NAME, valueName.c_str(),
-                     RRF_RT_REG_SZ, nullptr, nullptr, nullptr);
-    if (ls == ERROR_FILE_NOT_FOUND) {
-      break;
-    }
-    if (ls != ERROR_SUCCESS) {
-      LOG_ERROR_MESSAGE(L"Error probing cache: %#X", ls);
-      return HRESULT_FROM_WIN32(ls);
-    }
-
-    ++cacheIndex;
-    if (cacheIndex >= MAX_NOTIFICATION_DATA_CACHE_SIZE) {
-      LOG_ERROR_MESSAGE(L"Cache full. Cannot store another value.");
-      return E_FAIL;
-    }
-  }
-
-  
-  std::wstring typeValueName = NOTIFICATION_TYPE_CACHE_PREFIX;
-  typeValueName += std::to_wstring(cacheIndex);
-  std::wstring shownValueName = NOTIFICATION_SHOWN_CACHE_PREFIX;
-  shownValueName += std::to_wstring(cacheIndex);
-  std::wstring actionValueName = NOTIFICATION_ACTION_CACHE_PREFIX;
-  actionValueName += std::to_wstring(cacheIndex);
-  std::wstring prevActionValueName = PREV_NOTIFICATION_ACTION_CACHE_PREFIX;
-  prevActionValueName += std::to_wstring(cacheIndex);
-
-  
-  mozilla::WindowsErrorResult<mozilla::Ok> result = RegistrySetValueString(
-      IsPrefixed::Unprefixed, typeValueName.c_str(), notificationType.c_str());
+  Cache::Entry entry{
+      .notificationType = notificationType,
+      .notificationShown = notificationShown,
+      .notificationAction = notificationAction,
+      .prevNotificationAction = prevNotificationAction,
+  };
+  VoidResult result = cache.Enqueue(entry);
   if (result.isErr()) {
-    HRESULT hr = result.unwrapErr().AsHResult();
-    LOG_ERROR_MESSAGE(L"Failed to write to cache: %#X", hr);
-    return hr;
-  }
-  result =
-      RegistrySetValueString(IsPrefixed::Unprefixed, shownValueName.c_str(),
-                             notificationShown.c_str());
-  if (result.isErr()) {
-    HRESULT hr = result.unwrapErr().AsHResult();
-    LOG_ERROR_MESSAGE(L"Failed to write to cache: %#X", hr);
-    return hr;
-  }
-  result =
-      RegistrySetValueString(IsPrefixed::Unprefixed, actionValueName.c_str(),
-                             notificationAction.c_str());
-  if (result.isErr()) {
-    HRESULT hr = result.unwrapErr().AsHResult();
-    LOG_ERROR_MESSAGE(L"Failed to write to cache: %#X", hr);
-    return hr;
-  }
-  result = RegistrySetValueString(IsPrefixed::Unprefixed,
-                                  prevActionValueName.c_str(),
-                                  prevNotificationAction.c_str());
-  if (result.isErr()) {
-    HRESULT hr = result.unwrapErr().AsHResult();
-    LOG_ERROR_MESSAGE(L"Failed to write to cache: %#X", hr);
-    return hr;
+    return result.unwrapErr().AsHResult();
   }
   return S_OK;
 }
@@ -447,211 +383,32 @@ HRESULT MaybeCache(const std::string& notificationType,
 
 
 
-
-HRESULT PopCache(bool& cacheEmpty, std::string& notificationType,
-                 std::string& notificationShown,
-                 std::string& notificationAction,
-                 std::string& prevNotificationAction) {
-  
-  
-  
-  
-  for (unsigned int i = 0; i < MAX_NOTIFICATION_DATA_CACHE_SIZE; ++i) {
-    
-    unsigned int readIndex = 0;
-
-    
-    std::wstring typeValueName = NOTIFICATION_TYPE_CACHE_PREFIX;
-    typeValueName += std::to_wstring(readIndex);
-    std::wstring shownValueName = NOTIFICATION_SHOWN_CACHE_PREFIX;
-    shownValueName += std::to_wstring(readIndex);
-    std::wstring actionValueName = NOTIFICATION_ACTION_CACHE_PREFIX;
-    actionValueName += std::to_wstring(readIndex);
-    std::wstring prevActionValueName = PREV_NOTIFICATION_ACTION_CACHE_PREFIX;
-    prevActionValueName += std::to_wstring(readIndex);
-
-    
-    MaybeStringResult typeResult =
-        RegistryGetValueString(IsPrefixed::Unprefixed, typeValueName.c_str());
-    MaybeStringResult shownResult =
-        RegistryGetValueString(IsPrefixed::Unprefixed, shownValueName.c_str());
-    MaybeStringResult actionResult =
-        RegistryGetValueString(IsPrefixed::Unprefixed, actionValueName.c_str());
-    MaybeStringResult prevActionResult = RegistryGetValueString(
-        IsPrefixed::Unprefixed, prevActionValueName.c_str());
-
-    bool cacheReadSuccess = false;
-    if (typeResult.isOk() && shownResult.isOk() && actionResult.isOk() &&
-        prevActionResult.isOk()) {
-      mozilla::Maybe<std::string> maybeType = typeResult.unwrap();
-      mozilla::Maybe<std::string> maybeShown = shownResult.unwrap();
-      mozilla::Maybe<std::string> maybeAction = actionResult.unwrap();
-      mozilla::Maybe<std::string> maybePrevAction = prevActionResult.unwrap();
-      if (maybeType.isNothing() && maybeShown.isNothing() &&
-          maybeAction.isNothing() && maybePrevAction.isNothing()) {
-        
-        cacheEmpty = true;
-        return S_OK;
-      }
-      
-      
-      cacheReadSuccess =
-          maybeType.isSome() && maybeShown.isSome() && maybeAction.isSome();
-      if (cacheReadSuccess) {
-        notificationType = maybeType.value();
-        notificationShown = maybeShown.value();
-        notificationAction = maybeAction.value();
-        if (maybePrevAction.isSome()) {
-          prevNotificationAction = maybePrevAction.value();
-        } else {
-          prevNotificationAction =
-              GetStringForNotificationAction(NotificationAction::NoAction);
-        }
-      } else {
-        LOG_ERROR_MESSAGE(
-            L"Some notification data cache data is missing. "
-            L"Cache entry dropped");
-      }
-    } else {
-      LOG_ERROR_MESSAGE(
-          L"Error reading cache data. Entry dropped: %#X, %#X, %#X, %#X",
-          typeResult.isErr() ? typeResult.unwrapErr().AsHResult() : 0,
-          shownResult.isErr() ? shownResult.unwrapErr().AsHResult() : 0,
-          actionResult.isErr() ? actionResult.unwrapErr().AsHResult() : 0,
-          prevActionResult.isErr() ? prevActionResult.unwrapErr().AsHResult()
-                                   : 0);
-    }
-
-    
-    for (unsigned int shiftTo = 0;
-         shiftTo + 1 < MAX_NOTIFICATION_DATA_CACHE_SIZE; ++shiftTo) {
-      const unsigned int shiftFrom = shiftTo + 1;
-
-      
-      std::wstring shiftToTypeName = NOTIFICATION_TYPE_CACHE_PREFIX;
-      shiftToTypeName += std::to_wstring(shiftTo);
-      std::wstring shiftToShownName = NOTIFICATION_SHOWN_CACHE_PREFIX;
-      shiftToShownName += std::to_wstring(shiftTo);
-      std::wstring shiftToActionName = NOTIFICATION_ACTION_CACHE_PREFIX;
-      shiftToActionName += std::to_wstring(shiftTo);
-      std::wstring shiftToPrevActionName =
-          PREV_NOTIFICATION_ACTION_CACHE_PREFIX;
-      shiftToPrevActionName += std::to_wstring(shiftTo);
-
-      std::wstring shiftFromTypeName = NOTIFICATION_TYPE_CACHE_PREFIX;
-      shiftFromTypeName += std::to_wstring(shiftFrom);
-      std::wstring shiftFromShownName = NOTIFICATION_SHOWN_CACHE_PREFIX;
-      shiftFromShownName += std::to_wstring(shiftFrom);
-      std::wstring shiftFromActionName = NOTIFICATION_ACTION_CACHE_PREFIX;
-      shiftFromActionName += std::to_wstring(shiftFrom);
-      std::wstring shiftFromPrevActionName =
-          PREV_NOTIFICATION_ACTION_CACHE_PREFIX;
-      shiftFromPrevActionName += std::to_wstring(shiftFrom);
-
-      
-      
-      
-      MaybeStringResult result = RegistryGetValueString(
-          IsPrefixed::Unprefixed, shiftFromTypeName.c_str());
-      if (result.isOk()) {
-        mozilla::Maybe<std::string> maybeValue = result.unwrap();
-        if (maybeValue.isSome()) {
-          std::string value = maybeValue.value();
-          mozilla::Unused << RegistrySetValueString(
-              IsPrefixed::Unprefixed, shiftToTypeName.c_str(), value.c_str());
-        } else {
-          mozilla::Unused << RegistryDeleteValue(IsPrefixed::Unprefixed,
-                                                 shiftToTypeName.c_str());
-        }
-      }
-      result = RegistryGetValueString(IsPrefixed::Unprefixed,
-                                      shiftFromShownName.c_str());
-      if (result.isOk()) {
-        mozilla::Maybe<std::string> maybeValue = result.unwrap();
-        if (maybeValue.isSome()) {
-          std::string value = maybeValue.value();
-          mozilla::Unused << RegistrySetValueString(
-              IsPrefixed::Unprefixed, shiftToShownName.c_str(), value.c_str());
-        } else {
-          mozilla::Unused << RegistryDeleteValue(IsPrefixed::Unprefixed,
-                                                 shiftToShownName.c_str());
-        }
-      }
-      result = RegistryGetValueString(IsPrefixed::Unprefixed,
-                                      shiftFromActionName.c_str());
-      if (result.isOk()) {
-        mozilla::Maybe<std::string> maybeValue = result.unwrap();
-        if (maybeValue.isSome()) {
-          std::string value = maybeValue.value();
-          mozilla::Unused << RegistrySetValueString(
-              IsPrefixed::Unprefixed, shiftToActionName.c_str(), value.c_str());
-        } else {
-          mozilla::Unused << RegistryDeleteValue(IsPrefixed::Unprefixed,
-                                                 shiftToActionName.c_str());
-        }
-      }
-      result = RegistryGetValueString(IsPrefixed::Unprefixed,
-                                      shiftFromPrevActionName.c_str());
-      if (result.isOk()) {
-        mozilla::Maybe<std::string> maybeValue = result.unwrap();
-        if (maybeValue.isSome()) {
-          std::string value = maybeValue.value();
-          mozilla::Unused << RegistrySetValueString(
-              IsPrefixed::Unprefixed, shiftToPrevActionName.c_str(),
-              value.c_str());
-        } else {
-          mozilla::Unused << RegistryDeleteValue(IsPrefixed::Unprefixed,
-                                                 shiftToPrevActionName.c_str());
-        }
-      }
-
-      
-      mozilla::Unused << RegistryDeleteValue(IsPrefixed::Unprefixed,
-                                             shiftFromTypeName.c_str());
-      mozilla::Unused << RegistryDeleteValue(IsPrefixed::Unprefixed,
-                                             shiftFromShownName.c_str());
-      mozilla::Unused << RegistryDeleteValue(IsPrefixed::Unprefixed,
-                                             shiftFromActionName.c_str());
-      mozilla::Unused << RegistryDeleteValue(IsPrefixed::Unprefixed,
-                                             shiftFromPrevActionName.c_str());
-    }
-
-    
-    
-    if (cacheReadSuccess) {
-      cacheEmpty = false;
-      return S_OK;
-    }
-  }
-  return E_FAIL;
-}
-
-
-
-
-
-
-HRESULT MaybeSwapForCached(std::string& notificationType,
+HRESULT MaybeSwapForCached(Cache& cache, std::string& notificationType,
                            std::string& notificationShown,
                            std::string& notificationAction,
                            std::string& prevNotificationAction) {
-  bool cacheEmpty;
-  std::string cachedType, cachedShown, cachedAction, cachedPrevAction;
-  HRESULT hr = PopCache(cacheEmpty, cachedType, cachedShown, cachedAction,
-                        cachedPrevAction);
-  if (FAILED(hr)) {
+  Cache::MaybeEntryResult result = cache.Dequeue();
+  if (result.isErr()) {
+    HRESULT hr = result.unwrapErr().AsHResult();
     LOG_ERROR_MESSAGE(L"Failed to read cache: %#X", hr);
     return hr;
   }
-  if (cacheEmpty) {
+  Cache::MaybeEntry maybeEntry = result.unwrap();
+  if (maybeEntry.isNothing()) {
     return S_OK;
   }
-  MaybeCache(notificationType, notificationShown, notificationAction,
+
+  MaybeCache(cache, notificationType, notificationShown, notificationAction,
              prevNotificationAction);
-  notificationType = cachedType;
-  notificationShown = cachedShown;
-  notificationAction = cachedAction;
-  prevNotificationAction = cachedPrevAction;
+  notificationType = maybeEntry.value().notificationType;
+  notificationShown = maybeEntry.value().notificationShown;
+  notificationAction = maybeEntry.value().notificationAction;
+  if (maybeEntry.value().prevNotificationAction.isSome()) {
+    prevNotificationAction = maybeEntry.value().prevNotificationAction.value();
+  } else {
+    prevNotificationAction =
+        GetStringForNotificationAction(NotificationAction::NoAction);
+  }
   return S_OK;
 }
 
@@ -731,12 +488,14 @@ HRESULT SendDefaultBrowserPing(
   
   MaybeWritePreviousNotificationAction(activitiesPerformed);
 
+  Cache cache;
+
   
   
   
   if (!IsOfficialTelemetry() || IsTelemetryDisabled()) {
-    return MaybeCache(notificationType, notificationShown, notificationAction,
-                      prevNotificationAction);
+    return MaybeCache(cache, notificationType, notificationShown,
+                      notificationAction, prevNotificationAction);
   }
 
   
@@ -755,11 +514,11 @@ HRESULT SendDefaultBrowserPing(
   }
   bool pingAlreadySent = pingAlreadySentResult.unwrap();
   if (pingAlreadySent) {
-    return MaybeCache(notificationType, notificationShown, notificationAction,
-                      prevNotificationAction);
+    return MaybeCache(cache, notificationType, notificationShown,
+                      notificationAction, prevNotificationAction);
   }
 
-  hr = MaybeSwapForCached(notificationType, notificationShown,
+  hr = MaybeSwapForCached(cache, notificationType, notificationShown,
                           notificationAction, prevNotificationAction);
   if (FAILED(hr)) {
     return hr;
