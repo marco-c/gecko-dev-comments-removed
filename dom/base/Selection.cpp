@@ -23,6 +23,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/HTMLEditor.h"
+#include "mozilla/Logging.h"
 #include "mozilla/layers/ScrollInputMethods.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RangeBoundary.h"
@@ -79,6 +80,8 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 using mozilla::layers::ScrollInputMethod;
+
+static LazyLogModule sSelectionLog("Selection");
 
 
 
@@ -3101,6 +3104,9 @@ nsresult Selection::NotifySelectionListeners() {
   if (!mFrameSelection) {
     return NS_OK;  
   }
+
+  MOZ_LOG(sSelectionLog, LogLevel::Debug,
+          ("%s: selection=%p", __FUNCTION__, this));
 
   
   
