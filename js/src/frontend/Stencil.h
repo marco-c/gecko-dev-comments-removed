@@ -171,23 +171,36 @@ class ScopeStencil {
 
   
   
-  mozilla::Maybe<ScopeIndex> enclosing_;
-
-  
-  ScopeKind kind_{UINT8_MAX};
+  ScopeIndex enclosing_;
 
   
   uint32_t firstFrameSlot_ = UINT32_MAX;
 
   
   
-  mozilla::Maybe<uint32_t> numEnvironmentSlots_;
+  uint32_t numEnvironmentSlots_;
 
   
-  mozilla::Maybe<ScriptIndex> functionIndex_;
+  
+  ScriptIndex functionIndex_;
 
   
-  bool isArrow_ = false;
+  ScopeKind kind_{UINT8_MAX};
+
+  
+  static constexpr uint8_t HasEnclosing = 1 << 0;
+
+  
+  
+  static constexpr uint8_t HasEnvironmentShape = 1 << 1;
+
+  
+  static constexpr uint8_t IsArrow = 1 << 2;
+
+  uint8_t flags_ = 0;
+
+  
+  uint16_t padding_ = 0;
 
  public:
   
@@ -198,12 +211,18 @@ class ScopeStencil {
                mozilla::Maybe<uint32_t> numEnvironmentSlots,
                mozilla::Maybe<ScriptIndex> functionIndex = mozilla::Nothing(),
                bool isArrow = false)
-      : enclosing_(enclosing),
-        kind_(kind),
+      : enclosing_(enclosing.valueOr(ScopeIndex(0))),
         firstFrameSlot_(firstFrameSlot),
-        numEnvironmentSlots_(numEnvironmentSlots),
-        functionIndex_(functionIndex),
-        isArrow_(isArrow) {}
+        numEnvironmentSlots_(numEnvironmentSlots.valueOr(0)),
+        functionIndex_(functionIndex.valueOr(ScriptIndex(0))),
+        kind_(kind),
+        flags_((enclosing.isSome() ? HasEnclosing : 0) |
+               (numEnvironmentSlots.isSome() ? HasEnvironmentShape : 0) |
+               (isArrow ? IsArrow : 0)) {
+    MOZ_ASSERT((kind == ScopeKind::Function) == functionIndex.isSome());
+    
+    mozilla::Unused << padding_;
+  }
 
  private:
   
@@ -265,16 +284,37 @@ class ScopeStencil {
   js::Scope* enclosingExistingScope(const CompilationInput& input,
                                     const CompilationGCOutput& gcOutput) const;
 
+ private:
+  bool hasEnclosing() const { return flags_ & HasEnclosing; }
+
+  ScopeIndex enclosing() const {
+    MOZ_ASSERT(hasEnclosing());
+    return enclosing_;
+  }
+
+  uint32_t firstFrameSlot() const { return firstFrameSlot_; }
+
+  bool hasEnvironmentShape() const { return flags_ & HasEnvironmentShape; }
+
+  uint32_t numEnvironmentSlots() const {
+    MOZ_ASSERT(hasEnvironmentShape());
+    return numEnvironmentSlots_;
+  }
+
+  bool isFunction() const { return kind_ == ScopeKind::Function; }
+
+  ScriptIndex functionIndex() const { return functionIndex_; }
+
+ public:
   ScopeKind kind() const { return kind_; }
 
   bool hasEnvironment() const {
     
     
-    bool hasEnvironmentShape = numEnvironmentSlots_.isSome();
-    return Scope::hasEnvironment(kind(), hasEnvironmentShape);
+    return Scope::hasEnvironment(kind(), hasEnvironmentShape());
   }
 
-  bool isArrow() const { return isArrow_; }
+  bool isArrow() const { return flags_ & IsArrow; }
 
   Scope* createScope(JSContext* cx, CompilationInput& input,
                      CompilationGCOutput& gcOutput,
