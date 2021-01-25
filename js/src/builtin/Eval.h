@@ -27,12 +27,6 @@ extern MOZ_MUST_USE bool DirectEval(JSContext* cx, HandleValue v,
                                     MutableHandleValue vp);
 
 
-extern MOZ_MUST_USE bool DirectEvalStringFromIon(
-    JSContext* cx, HandleObject scopeObj, HandleScript callerScript,
-    HandleValue newTargetValue, HandleString str, jsbytecode* pc,
-    MutableHandleValue vp);
-
-
 extern bool IsAnyBuiltinEval(JSFunction* fun);
 
 }  
