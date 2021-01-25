@@ -752,6 +752,12 @@ void nsTextControlFrame::SetFocus(bool aOn, bool aRepaint) {
   if (!docSel->IsCollapsed()) {
     docSel->RemoveAllRanges(IgnoreErrors());
   }
+
+  
+  
+  if (RefPtr<nsFrameSelection> frameSelection = presShell->FrameSelection()) {
+    frameSelection->SetDragState(false);
+  }
 }
 
 nsresult nsTextControlFrame::SetFormProperty(nsAtom* aName,
