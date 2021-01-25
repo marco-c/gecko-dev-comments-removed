@@ -118,6 +118,19 @@ function bigIntRshBail(i) {
   if (i >= 99) bailout();
 }
 
+function bigIntAsUintBail(i) {
+  var x = [0, maxBitLength + 1][0 + (i >= 99)];
+
+  var a = BigInt.asUintN(x, -1n);
+
+  
+  
+  
+  resumeHere();
+
+  if (i >= 99) bailout();
+}
+
 
 eval(`(${resumeHere})`);
 
@@ -191,6 +204,15 @@ try {
 try {
   for (let i = 0; i < 100; i++) {
     bigIntRshBail(i);
+  }
+  throw new Error("missing exception");
+} catch (e) {
+  assertEq(e instanceof RangeError || e === "out of memory", true, String(e));
+}
+
+try {
+  for (let i = 0; i < 100; i++) {
+    bigIntAsUintBail(i);
   }
   throw new Error("missing exception");
 } catch (e) {
