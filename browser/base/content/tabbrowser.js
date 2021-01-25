@@ -1874,6 +1874,12 @@
       
       
       
+      
+      aBrowser.docShellIsActive = this.shouldActivateDocShell(aBrowser);
+
+      
+      
+      
       listener = new TabProgressListener(tab, aBrowser, true, false);
       this._tabListeners.set(tab, listener);
       filter.addProgressListener(listener, Ci.nsIWebProgress.NOTIFY_ALL);
