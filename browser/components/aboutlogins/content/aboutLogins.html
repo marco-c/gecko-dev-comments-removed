@@ -1,6 +1,6 @@
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <!DOCTYPE html>
 <html>
@@ -14,6 +14,7 @@
     <link rel="localization" href="browser/aboutLogins.ftl">
     <script type="module" src="chrome://browser/content/aboutlogins/components/confirmation-dialog.js"></script>
     <script type="module" src="chrome://browser/content/aboutlogins/components/remove-logins-dialog.js"></script>
+    <script type="module" src="chrome://browser/content/aboutlogins/components/import-summary-dialog.js"></script>
     <script type="module" src="chrome://browser/content/aboutlogins/components/fxaccounts-button.js"></script>
     <script type="module" src="chrome://browser/content/aboutlogins/components/login-filter.js"></script>
     <script type="module" src="chrome://browser/content/aboutlogins/components/login-intro.js"></script>
@@ -39,6 +40,7 @@
     <login-intro></login-intro>
     <confirmation-dialog hidden></confirmation-dialog>
     <remove-logins-dialog hidden></remove-logins-dialog>
+    <import-summary-dialog hidden></import-summary-dialog>
     <div id="master-password-required-overlay"></div>
 
     <template id="confirmation-dialog-template">
@@ -59,6 +61,38 @@
             <button class="confirm-button danger-button"></button>
             <button class="cancel-button" data-l10n-id="confirmation-dialog-cancel-button"></button>
           </div>
+        </div>
+      </div>
+    </template>
+
+    <template id="import-summary-dialog-template">
+      <link rel="stylesheet" href="chrome://global/skin/in-content/common.css">
+      <link rel="stylesheet" href="chrome://browser/content/aboutlogins/common.css">
+      <link rel="stylesheet" href="chrome://browser/content/aboutlogins/components/import-summary-dialog.css">
+      <div class="overlay">
+        <div class="container" role="dialog" aria-labelledby="title">
+          <img class="import-icon" src="chrome://browser/skin/import.svg"/>
+          <h1 class="title" id="title" data-l10n-id="about-logins-import-dialog-title"></h1>
+          <div class="content">
+            <div class="import-summary">
+              <div class="import-items-added import-items-row" data-l10n-id="about-logins-import-dialog-items-added" data-l10n-args='{"count": 0}'>
+                <span data-l10n-name="count" class="result-count"></span>
+              </div>
+              <div class="import-items-modified import-items-row" data-l10n-id="about-logins-import-dialog-items-modified" data-l10n-args='{"count": 0}'>
+                <span data-l10n-name="count" class="result-count"></span>
+              </div>
+              <div class="import-items-no-change import-items-row" data-l10n-id="about-logins-import-dialog-items-no-change" data-l10n-name="no-change" data-l10n-args='{"count": 0}'>
+                <span data-l10n-name="count" class="result-count"></span>
+                <span data-l10n-name="meta" class="result-meta"></span>
+              </div>
+              <div class="import-items-errors import-items-row" data-l10n-id="about-logins-import-dialog-items-error" data-l10n-args='{"count": 0}'>
+                <span data-l10n-name="count" class="result-count"></span>
+                <span data-l10n-name="meta" class="result-meta"></span>
+              </div>
+            </div>
+          </div>
+          <div class="import-separator"></div>
+          <button class="import-done-button primary" data-l10n-id="about-logins-import-dialog-done"></button>
         </div>
       </div>
     </template>
@@ -121,7 +155,7 @@
         </label>
         <span class="count" data-l10n-id="login-list-count" data-l10n-args='{"count": 0}'></span>
       </div>
-      
+      <!-- This container is to work around bug 1569292 -->
       <div class="container">
         <ol role="listbox" tabindex="0" data-l10n-id="login-list"></ol>
         <div class="intro">
@@ -219,8 +253,8 @@
             <div class="detail-row">
               <label class="detail-cell">
                 <span class="origin-label field-label" data-l10n-id="login-item-origin-label"></span>
-                
-
+                <!-- Default text inputs to readonly to reduce jumping of the field
+                    size on page load since it always starts readonly. -->
                 <input type="url"
                        name="origin"
                        required
