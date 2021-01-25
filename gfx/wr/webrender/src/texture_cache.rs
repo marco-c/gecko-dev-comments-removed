@@ -322,94 +322,126 @@ struct SharedTextures {
     alpha16_linear: AllocatorList<SlabAllocator, TextureParameters>,
     color8_linear: AllocatorList<ShelfAllocator, TextureParameters>,
     color8_glyphs: AllocatorList<ShelfAllocator, TextureParameters>,
+    bytes_per_texture_of_type: [i32 ; BudgetType::COUNT],
 }
 
 impl SharedTextures {
     
     fn new(color_formats: TextureFormatPair<ImageFormat>, config: &TextureCacheConfig) -> Self {
+        let mut bytes_per_texture_of_type = [0 ; BudgetType::COUNT];
+
+        
+        
+        
+        
+        
+        
+        
+        
+        let alpha8_linear = AllocatorList::new(
+            config.alpha8_texture_size,
+            ShelfAllocatorOptions {
+                num_columns: 1,
+                alignment: size2(8, 8),
+                .. ShelfAllocatorOptions::default()
+            },
+            TextureParameters {
+                formats: TextureFormatPair::from(ImageFormat::R8),
+                filter: TextureFilter::Linear,
+            },
+        );
+        bytes_per_texture_of_type[BudgetType::SharedAlpha8 as usize] =
+            config.alpha8_texture_size * config.alpha8_texture_size;
+
+        
+        let alpha8_glyphs = AllocatorList::new(
+            config.alpha8_glyph_texture_size,
+            ShelfAllocatorOptions {
+                num_columns: if config.alpha8_glyph_texture_size >= 1024 { 2 } else { 1 },
+                alignment: size2(4, 8),
+                .. ShelfAllocatorOptions::default()
+            },
+            TextureParameters {
+                formats: TextureFormatPair::from(ImageFormat::R8),
+                filter: TextureFilter::Linear,
+            },
+        );
+        bytes_per_texture_of_type[BudgetType::SharedAlpha8Glyphs as usize] =
+            config.alpha8_glyph_texture_size * config.alpha8_glyph_texture_size;
+
+        
+        
+        let alpha16_linear = AllocatorList::new(
+            config.alpha16_texture_size,
+            SlabAllocatorParameters {
+                region_size: TEXTURE_REGION_DIMENSIONS,
+            },
+            TextureParameters {
+                formats: TextureFormatPair::from(ImageFormat::R16),
+                filter: TextureFilter::Linear,
+            },
+        );
+        bytes_per_texture_of_type[BudgetType::SharedAlpha16 as usize] =
+            ImageFormat::R16.bytes_per_pixel() *
+            config.alpha16_texture_size * config.alpha16_texture_size;
+
+        
+        let color8_linear = AllocatorList::new(
+            config.color8_linear_texture_size,
+            ShelfAllocatorOptions {
+                num_columns: if config.color8_linear_texture_size >= 1024 { 2 } else { 1 },
+                alignment: size2(16, 16),
+                .. ShelfAllocatorOptions::default()
+            },
+            TextureParameters {
+                formats: color_formats.clone(),
+                filter: TextureFilter::Linear,
+            },
+        );
+        bytes_per_texture_of_type[BudgetType::SharedColor8Linear as usize] =
+            color_formats.internal.bytes_per_pixel() *
+            config.color8_linear_texture_size * config.color8_linear_texture_size;
+
+        
+        let color8_glyphs = AllocatorList::new(
+            config.color8_glyph_texture_size,
+            ShelfAllocatorOptions {
+                num_columns: if config.color8_glyph_texture_size >= 1024 { 2 } else { 1 },
+                alignment: size2(4, 8),
+                .. ShelfAllocatorOptions::default()
+            },
+            TextureParameters {
+                formats: color_formats.clone(),
+                filter: TextureFilter::Linear,
+            },
+        );
+        bytes_per_texture_of_type[BudgetType::SharedColor8Glyphs as usize] =
+            color_formats.internal.bytes_per_pixel() *
+            config.color8_glyph_texture_size * config.color8_glyph_texture_size;
+
+        
+        
+        
+        let color8_nearest = AllocatorList::new(
+            config.color8_nearest_texture_size,
+            ShelfAllocatorOptions::default(),
+            TextureParameters {
+                formats: color_formats.clone(),
+                filter: TextureFilter::Nearest,
+            }
+        );
+        bytes_per_texture_of_type[BudgetType::SharedColor8Nearest as usize] =
+            color_formats.internal.bytes_per_pixel() *
+            config.color8_nearest_texture_size * config.color8_nearest_texture_size;
+
         Self {
-            
-            
-            
-            
-            
-            
-            
-            
-            alpha8_linear: AllocatorList::new(
-                config.alpha8_texture_size,
-                ShelfAllocatorOptions {
-                    num_columns: 1,
-                    alignment: size2(8, 8),
-                    .. ShelfAllocatorOptions::default()
-                },
-                TextureParameters {
-                    formats: TextureFormatPair::from(ImageFormat::R8),
-                    filter: TextureFilter::Linear,
-                },
-            ),
-            
-            alpha8_glyphs: AllocatorList::new(
-                config.alpha8_glyph_texture_size,
-                ShelfAllocatorOptions {
-                    num_columns: if config.alpha8_glyph_texture_size >= 1024 { 2 } else { 1 },
-                    alignment: size2(4, 8),
-                    .. ShelfAllocatorOptions::default()
-                },
-                TextureParameters {
-                    formats: TextureFormatPair::from(ImageFormat::R8),
-                    filter: TextureFilter::Linear,
-                },
-            ),
-            
-            
-            alpha16_linear: AllocatorList::new(
-                config.alpha16_texture_size,
-                SlabAllocatorParameters {
-                    region_size: TEXTURE_REGION_DIMENSIONS,
-                },
-                TextureParameters {
-                    formats: TextureFormatPair::from(ImageFormat::R16),
-                    filter: TextureFilter::Linear,
-                },
-            ),
-            
-            color8_linear: AllocatorList::new(
-                config.color8_linear_texture_size,
-                ShelfAllocatorOptions {
-                    num_columns: if config.color8_linear_texture_size >= 1024 { 2 } else { 1 },
-                    alignment: size2(16, 16),
-                    .. ShelfAllocatorOptions::default()
-                },
-                TextureParameters {
-                    formats: color_formats.clone(),
-                    filter: TextureFilter::Linear,
-                },
-            ),
-            
-            color8_glyphs: AllocatorList::new(
-                config.color8_glyph_texture_size,
-                ShelfAllocatorOptions {
-                    num_columns: if config.color8_glyph_texture_size >= 1024 { 2 } else { 1 },
-                    alignment: size2(4, 8),
-                    .. ShelfAllocatorOptions::default()
-                },
-                TextureParameters {
-                    formats: color_formats.clone(),
-                    filter: TextureFilter::Linear,
-                },
-            ),
-            
-            
-            
-            color8_nearest: AllocatorList::new(
-                config.color8_nearest_texture_size,
-                ShelfAllocatorOptions::default(),
-                TextureParameters {
-                    formats: color_formats,
-                    filter: TextureFilter::Nearest,
-                }
-            ),
+            alpha8_linear,
+            alpha8_glyphs,
+            alpha16_linear,
+            color8_linear,
+            color8_glyphs,
+            color8_nearest,
+            bytes_per_texture_of_type,
         }
     }
 
@@ -462,6 +494,12 @@ impl SharedTextures {
             }
             _ => panic!("Unexpected format {:?}", external_format),
         }
+    }
+
+    
+    
+    fn bytes_per_shared_texture(&self, budget_type: BudgetType) -> usize {
+        self.bytes_per_texture_of_type[budget_type as usize] as usize
     }
 }
 
@@ -1215,16 +1253,54 @@ impl TextureCache {
     }
 
     
-    fn get_eviction_threshold(budget_type: BudgetType) -> usize {
-        match budget_type {
-            BudgetType::SharedColor8Linear => 16 * 1024 * 1024,
-            BudgetType::SharedColor8Nearest => 1 * 1024 * 1024,
-            BudgetType::SharedColor8Glyphs => 8 * 1024 * 1024,
-            BudgetType::SharedAlpha8 => 4 * 1024 * 1024,
-            BudgetType::SharedAlpha8Glyphs => 4 * 1024 * 1024,
-            BudgetType::SharedAlpha16 => 1 * 1024 * 1024,
-            BudgetType::Standalone => 16 * 1024 * 1024,
+    fn get_eviction_threshold(&self, budget_type: BudgetType) -> usize {
+        if budget_type == BudgetType::Standalone {
+            
+            
+            
+            
+            return 16 * 1024 * 1024;
         }
+
+        
+        
+        
+        
+        
+        
+        let expected_texture_count = match budget_type {
+            BudgetType::SharedColor8Nearest | BudgetType::SharedAlpha16 => {
+                
+                
+                1
+            },
+
+            _ => {
+                
+                2
+            },
+        };
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let average_used_bytes_per_texture_when_full =
+            self.shared_textures.bytes_per_shared_texture(budget_type) / 2;
+
+        
+        
+        
+        
+        
+        
+        
+        expected_texture_count * average_used_bytes_per_texture_when_full
     }
 
     
@@ -1234,7 +1310,7 @@ impl TextureCache {
         let mut eviction_count = 0;
 
         for budget in BudgetType::iter() {
-            let threshold = TextureCache::get_eviction_threshold(budget);
+            let threshold = self.get_eviction_threshold(budget);
             while self.should_continue_evicting(
                 self.bytes_allocated[budget as usize],
                 threshold,
