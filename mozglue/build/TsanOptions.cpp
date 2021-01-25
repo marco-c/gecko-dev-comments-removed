@@ -278,6 +278,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:nssToken_Destroy\n"
          "race:nssSlot_GetToken\n"
 
+         
+         "race:AudioCallbackDriver::MixerCallback\n"
+         "race:AudioCallbackDriver::Init\n"
+
       
       ;  
 }
