@@ -708,7 +708,7 @@ bool frontend::ScriptCompiler<Unit>::compileScriptToStencil(
     ReportOutOfMemory(cx);
     return false;
   }
-  if (!compilationState_.scriptExtent.emplaceBack()) {
+  if (!compilationState_.scriptExtra.emplaceBack()) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -771,7 +771,7 @@ bool frontend::ModuleCompiler<Unit>::compile(JSContext* cx,
     ReportOutOfMemory(cx);
     return false;
   }
-  if (!compilationState_.scriptExtent.emplaceBack()) {
+  if (!compilationState_.scriptExtra.emplaceBack()) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -872,7 +872,7 @@ bool frontend::StandaloneFunctionCompiler<Unit>::compile(
     
     
     
-    compilationState_.scriptExtent[CompilationInfo::TopLevelIndex] =
+    compilationState_.scriptExtra[CompilationInfo::TopLevelIndex].extent =
         SourceExtent{ 0,
                      sourceBuffer_.length(),
                      funbox->extent().toStringStart,

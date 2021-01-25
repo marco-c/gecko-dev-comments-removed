@@ -776,6 +776,21 @@ class ScriptStencil {
 #endif
 };
 
+
+class ScriptStencilExtra {
+ public:
+  
+  SourceExtent extent;
+
+  ScriptStencilExtra() = default;
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+  void dump();
+  void dump(JSONPrinter& json);
+  void dumpFields(JSONPrinter& json);
+#endif
+};
+
 #if defined(DEBUG) || defined(JS_JITSPEW)
 void DumpTaggedParserAtomIndex(js::JSONPrinter& json,
                                TaggedParserAtomIndex taggedIndex,
