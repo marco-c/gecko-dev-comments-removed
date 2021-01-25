@@ -98,8 +98,7 @@ add_task(async function testPersistsNecessaryValuesOnChange() {
     "SpringsCSSSpan",
     "SearchbarCSSSpan",
     "Theme",
-    "MenubarShown",
-    "RTLEnabled",
+    "Flags",
   ];
 
   
