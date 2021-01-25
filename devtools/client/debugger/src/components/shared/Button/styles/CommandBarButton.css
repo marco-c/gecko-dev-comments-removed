@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 .command-bar-button {
   appearance: none;
@@ -20,12 +20,12 @@
 }
 
 .command-bar-button:not(.disabled):hover,
-.devtools-button.debugger-settings-menu-button:empty:not(:disabled, [aria-expanded="true"]):hover {
+.devtools-button.debugger-settings-menu-button:empty:enabled:not([aria-expanded="true"]):hover {
   background: var(--theme-toolbar-background-hover);
 }
 
 .theme-dark .command-bar-button:not(.disabled):hover,
-.devtools-button.debugger-settings-menu-button:empty:not(:disabled, [aria-expanded="true"]):hover {
+.devtools-button.debugger-settings-menu-button:empty:enabled:not([aria-expanded="true"]):hover {
   background: var(--theme-toolbar-hover);
 }
 
@@ -40,9 +40,9 @@
   vertical-align: middle;
 }
 
-
-
-
+/**
+ * Settings icon and menu
+ */
 .devtools-button.debugger-settings-menu-button {
   border-radius: 0;
   margin: 0;

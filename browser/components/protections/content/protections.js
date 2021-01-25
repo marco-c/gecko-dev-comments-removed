@@ -338,7 +338,7 @@ document.addEventListener("DOMContentLoaded", e => {
           "none";
       }
 
-      let firstRadio = document.querySelector("input:not(:disabled)");
+      let firstRadio = document.querySelector("input:enabled");
       
       firstRadio.checked = true;
       document.body.setAttribute("focuseddatatype", firstRadio.dataset.type);

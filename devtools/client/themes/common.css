@@ -1,15 +1,15 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import url("chrome://devtools/skin/splitters.css");
 @namespace html url("http://www.w3.org/1999/xhtml");
 
 :root {
-  
-
-
-
+  /* Bug 1458224: the initial `font-size` is different on Mac/Windows
+   * (appears fixed to 11px) and Linux (bigger, depends on user settings).
+   * Workaround: specify font-size on root, on form inputs, and whenever
+   * we're using the `font` shorthand. */
   font: message-box;
   font-size: var(--theme-body-font-size);
 
@@ -43,18 +43,18 @@
   --monospace-font-family: monospace;
 }
 
-
-
-
+/**
+ * Customize the dark theme's scrollbar colors to avoid excessive contrast.
+ */
 :root.theme-dark {
   scrollbar-color: var(--grey-50) var(--theme-splitter-color);
 }
 
-
-
-
-
-
+/**
+ * Customize scrollbar colors on Linux + light theme, to avoid visual conflicts
+ * between the light theme and the selected GTK theme (see bug 1471163).
+ * This removes GTK scrollbars and uses a fallback design (see bug 1464723).
+ */
 :root[platform="linux"].theme-light {
   scrollbar-color: var(--grey-40) var(--grey-20);
 }
@@ -69,51 +69,51 @@
   font-size: var(--theme-code-font-size);
 }
 
-
-
-
+/**
+ * For text that needs to be cut with an ellipsis …
+ */
 .devtools-ellipsis-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-
-
-
+/**
+ * Override global.css input styles
+ */
 html|input {
   margin: revert;
 }
 
-
-
-
-
+/**
+ * Override wrong system font from forms.css
+ * Bug 1458224: buttons use a wrong default font-size on Linux
+ */
 html|button, html|select, html|input {
   font: message-box;
   font-size: var(--theme-body-font-size);
 }
 
-
+/* Devtools rely on the old Gecko/HTML4 button hit testing */
 html|button > * {
   pointer-events: none;
 }
 
-
+/* Prevent buttons from having a text selection highlight. Bug 1546366 */
 button::selection {
   all: unset;
 }
 
-
+/* Autocomplete Popup */
 .devtools-autocomplete-popup {
   overflow: hidden;
 
-  
-
+  /* Devtools autocompletes display technical english keywords and should be displayed
+     using LTR direction. */
   direction: ltr !important;
 }
 
-
+/* Reset list styles. */
 .devtools-autocomplete-popup ul {
   list-style: none;
 }
@@ -169,7 +169,7 @@ button::selection {
   width: 1em;
   height: 1em;
   vertical-align: middle;
-  
+  /* align the swatch with its value */
   margin-top: -1px;
   margin-inline-end: 5px;
   display: inline-block;
@@ -192,7 +192,7 @@ button::selection {
   z-index: -1;
 }
 
-
+/* Rest of the dark and light theme */
 .devtools-autocomplete-popup,
 .tooltip-panel.devtools-autocomplete-popup,
 .CodeMirror-hints,
@@ -216,10 +216,10 @@ button::selection {
   font-weight: bold;
 }
 
-
+/* Autocomplete list clone used for accessibility. */
 
 .devtools-autocomplete-list-aria-clone {
-  
+  /* Cannot use display:none or visibility:hidden : screen readers ignore the element. */
   position: fixed;
   overflow: hidden;
   margin: 0;
@@ -228,11 +228,11 @@ button::selection {
 }
 
 .devtools-autocomplete-list-aria-clone li {
-  
+  /* Prevent screen readers from prefacing every item with 'bullet'. */
   list-style-type: none;
 }
 
-
+/* links to source code, like displaying `myfile.js:45` */
 
 .devtools-source-link {
   font-family: var(--monospace-font-family);
@@ -242,7 +242,7 @@ button::selection {
   display: flex;
   text-decoration: none;
   font-size: 11px;
-  width: 12em; 
+  width: 12em; /* probably should be changed for each tool */
 }
 
 .devtools-source-link:hover {
@@ -263,7 +263,7 @@ button::selection {
   cursor: pointer;
 }
 
-
+/* Keyboard focus highlight styles */
 
 :-moz-focusring {
   outline: var(--theme-focus-outline);
@@ -281,7 +281,7 @@ textbox :-moz-focusring {
   outline: none;
 }
 
-
+/* Form fields should already have box-shadow hightlight */
 select:-moz-focusring,
 input[type="radio"]:-moz-focusring,
 input[type="checkbox"]:-moz-focusring,
@@ -289,14 +289,14 @@ checkbox:-moz-focusring {
   outline: none;
 }
 
-
+/* Tab and button of toolbox does not need to display outline */
 
 .devtools-button:-moz-focusring,
 .devtools-tab:-moz-focusring {
   outline:none;
 }
 
-
+/* Toolbar buttons */
 .devtools-togglebutton,
 .devtools-button {
   appearance: none;
@@ -310,7 +310,7 @@ checkbox:-moz-focusring {
   padding: 2px;
   margin: 1px;
 
-  
+  /* Button text should not wrap on multiple lines */
   white-space: nowrap;
 }
 
@@ -318,18 +318,18 @@ checkbox:-moz-focusring {
   padding: 1px 6px;
 }
 
-
+/* Remove system form border from devtools-button. */
 .devtools-button::-moz-focus-inner {
   border: 0;
 }
 
-
+/* Button with text */
 .devtools-button:not(:empty) {
   padding-inline: 5px;
   background: var(--toolbarbutton-background);
 }
 
-
+/* Button icon */
 .devtools-button::before {
   content: none;
   display: inline-block;
@@ -346,7 +346,7 @@ checkbox:-moz-focusring {
   background-repeat: no-repeat;
 }
 
-
+/* Reveal the icon */
 .devtools-button:empty::before {
   content: "";
 }
@@ -355,13 +355,13 @@ checkbox:-moz-focusring {
   color: var(--theme-icon-checked-color);
 }
 
-
-.devtools-button:hover:not(:disabled)::before,
+/* Icon-only buttons */
+.devtools-button:hover:enabled::before,
 .devtools-button.checked::before {
   opacity: 1;
 }
 
-
+/* Button states */
 .devtools-button:disabled {
   opacity: 0.5 !important;
 }
@@ -370,11 +370,11 @@ checkbox:-moz-focusring {
   background-color: var(--theme-toolbar-hover);
 }
 
-.devtools-button:empty:not(:disabled, [aria-expanded="true"]):hover {
+.devtools-button:empty:enabled:not([aria-expanded="true"]):hover {
   background: var(--toolbarbutton-hover-background);
 }
 
-
+/* Standalone buttons */
 .devtools-button[data-standalone] {
   min-height: 28px;
   padding: 4px 6px;
@@ -386,19 +386,19 @@ checkbox:-moz-focusring {
   border-color: rgba(138,161,180,0.2);
 }
 
+/* Selectable button which is unchecked. */
 
-
-.devtools-button:not(:empty, :disabled, .checked):hover,
-.devtools-button:empty:not(:disabled):is(:hover:active,.checked),
+.devtools-button:enabled:not(:empty, .checked):hover,
+.devtools-button:empty:enabled:is(:hover:active,.checked),
 .devtools-button[aria-haspopup="menu"][aria-expanded="true"] {
   background-color: var(--toolbarbutton-hover-background);
 }
 
-.devtools-button:not(:empty, .checked, :disabled):hover:active {
+.devtools-button:enabled:not(:empty, .checked):hover:active {
   background-color: var(--theme-selection-background-hover);
 }
 
-.devtools-button:not(:empty, .checked, :disabled):focus {
+.devtools-button:enabled:not(:empty, .checked):focus {
   background-color: var(--toolbarbutton-focus-background);
   color: var(--toolbarbutton-focus-color);
 }
@@ -412,7 +412,7 @@ checkbox:-moz-focusring {
   background-color: var(--theme-toolbarbutton-hover-background);
 }
 
-
+/* Selectable button which is checked. */
 
 .devtools-button:not(:empty).checked {
   background: var(--toolbarbutton-checked-background);
@@ -442,7 +442,7 @@ checkbox:-moz-focusring {
   border-color: transparent;
 }
 
-
+/* Icons */
 
 .devtools-button.devtools-clear-icon::before {
   background-image: url("chrome://devtools/skin/images/clear.svg");
@@ -462,7 +462,7 @@ checkbox:-moz-focusring {
   right: 0;
 }
 
-
+/* Text input */
 
 .devtools-textinput,
 .devtools-searchinput,
@@ -507,7 +507,7 @@ checkbox:-moz-focusring {
   font-style: normal;
 }
 
-
+/* Searchbox with extra button(s) (MDN help or clear button) */
 .devtools-searchbox {
   display: inline-flex;
   flex-grow: 1;
@@ -519,7 +519,7 @@ checkbox:-moz-focusring {
 
 .devtools-searchbox > .devtools-searchinput,
 .devtools-searchbox > .devtools-filterinput {
-  
+  /* Let .devtools-searchbox handle the background and border */
   background-color: transparent;
   border: none;
   flex-grow: 1;
@@ -540,7 +540,7 @@ checkbox:-moz-focusring {
   border-color: var(--searchbox-no-match-stroke-color);
 }
 
-
+/* Clear icon within the searchbox */
 .devtools-searchinput-clear {
   flex: 0 0 auto;
   align-self: center;
@@ -564,7 +564,7 @@ checkbox:-moz-focusring {
   fill-opacity: 1;
 }
 
-
+/* MDN link within the searchbox */
 .devtools-searchbox .learn-more-link::before {
   opacity: 0.6;
 }
@@ -581,19 +581,19 @@ checkbox:-moz-focusring {
   align-self: center;
 }
 
-
+/* Autocomplete popup within the searchbox */
 .devtools-searchbox .devtools-autocomplete-popup {
   position: absolute;
   left: 0;
   top: 100%;
   width: 100%;
   line-height: initial !important;
-  
-
+  /* See bug - 1414609. z-index is greater than 1000 so that searchbox's z-index
+  is more than z-index of requests-list-headers-wrapper in netmonitor */
   z-index: 1001;
 }
 
-
+/* Twisty and checkbox controls */
 
 .theme-twisty {
   width: 14px;
@@ -608,7 +608,7 @@ checkbox:-moz-focusring {
   transform: rotate(-90deg);
 }
 
-
+/* Mirror the twisty for rtl direction */
 .theme-twisty:dir(rtl),
 .theme-twisty:-moz-locale-dir(rtl) {
   transform: rotate(90deg);
@@ -631,7 +631,7 @@ checkbox:-moz-focusring {
   visibility: hidden;
 }
 
-
+/* Throbbers */
 .devtools-throbber::before {
   content: "";
   display: inline-block;
@@ -654,7 +654,7 @@ checkbox:-moz-focusring {
   }
 }
 
-
+/* Common tabs styles */
 
 .all-tabs-menu {
   position: absolute;
@@ -722,7 +722,7 @@ checkbox:-moz-focusring {
   transform: scaleX(1);
 }
 
-
+/* No result message styles */
 
 .devtools-sidepanel-no-result {
   font-style: italic;
@@ -732,22 +732,22 @@ checkbox:-moz-focusring {
   line-height: calc(16 / 12);
 }
 
-
+/* Checkbox Toggle */
 
 .devtools-checkbox-toggle {
   --x-pos: .15em;
-  
+  /* Reset native checkbox styling. */
   appearance: none;
   background-color: var(--toggle-track-color);
   cursor: pointer;
-  
+  /* Change font-size to scale. */
   font-size: 16px;
   width: 2em;
   height: 1em;
   border-radius: 1em;
   border: 1px solid transparent;
   box-sizing: content-box;
-  
+  /* Animate the thumb position between states of the checkbox. */
   transition: background-color .1s ease-out;
 }
 
@@ -755,7 +755,7 @@ checkbox:-moz-focusring {
   opacity: 0.5;
 }
 
-
+/* For right-to-left layout, the toggle thumb goes in the opposite direction. */
 html[dir="rtl"] .devtools-checkbox-toggle {
   --x-pos: -.15em;
 }

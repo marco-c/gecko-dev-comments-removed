@@ -1,9 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+/* these styles com from Photon. Keep in mind that the "default" style is not used
+   in panels, and we should use the "micro" instead for default, stand-alone buttons. */
 
 :root.theme-light {
   --button-text-color: var(--grey-90);
@@ -47,12 +47,12 @@
   padding: 0;
 }
 
-.ui-button:not(:disabled):hover {
+.ui-button:enabled:hover {
   background: var(--button-background-hover-color);
   color: var(--button-text-hover-color);
 }
 
-.ui-button:not(:disabled):active {
+.ui-button:enabled:active {
   background: var(--button-background-pressed-color);
   color: var(--button-text-pressed-color);
 }
@@ -67,8 +67,8 @@
   opacity: 0.4;
 }
 
-
-
+/* Note: this "micro" variant here is not the same as the "micro" variant
+         in Photon docs (since we are using that one for our default size) */
 .ui-button--micro {
   height: auto;
   padding: calc(var(--base-unit) * 0.5) var(--base-unit);

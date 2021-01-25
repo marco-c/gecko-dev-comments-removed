@@ -1,11 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* stylelint-disable property-no-vendor-prefix */
+/* stylelint-disable property-no-vendor-prefix */
 
-
-
-
-
-
-
+/* Global */
 html,
 body {
   background: transparent;
@@ -31,8 +31,8 @@ body * {
   text-align: left;
 }
 
-
-
+/* stylelint-disable property-no-vendor-prefix */
+/* Buttons */
 button.browser-style,
 select.browser-style {
   background-color: #fbfbfb;
@@ -63,7 +63,7 @@ button.browser-style::-moz-focus-inner {
   outline: 0;
 }
 
-
+/* Dropdowns */
 select.browser-style {
   background-color: #fbfbfb;
   border: 1px solid #b1b1b1;
@@ -147,7 +147,7 @@ button.browser-style.default.focused {
   opacity: .5;
 }
 
-
+/* Radio Buttons */
 .browser-style > input[type="radio"] {
   appearance: none;
   background-color: #fff;
@@ -201,7 +201,7 @@ button.browser-style.default.focused {
   border-color: #fff;
 }
 
-
+/* Checkboxes */
 .browser-style > input[type="checkbox"] {
   appearance: none;
   background-color: #fff;
@@ -254,7 +254,7 @@ button.browser-style.default.focused {
   border-color: #fff;
 }
 
-
+/* Expander Button */
 button.browser-style.expander {
   background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDE2IDE2Ij4KICA8cGF0aCBkPSJNOCwxMkwzLDcsNCw2bDQsNCw0LTQsMSwxWiIgZmlsbD0iIzZBNkE2QSIgLz4KPC9zdmc+Cg==);
   background-position: center;
@@ -264,35 +264,35 @@ button.browser-style.expander {
   width: 24px;
 }
 
-
-button.browser-style:hover:not(.pressed, :disabled, .focused),
-select.browser-style:hover:not(.pressed, :disabled, .focused) {
+/* Interactive States */
+button.browser-style:enabled:hover:not(.pressed, .focused),
+select.browser-style:enabled:hover:not(.pressed, .focused) {
   background-color: #ebebeb;
   border: 1px solid #b1b1b1;
 }
 
-button.browser-style:hover:active:not(.hover, :disabled, .focused),
-select.browser-style:hover:active:not(.hover, :disabled, .focused) {
+button.browser-style:enabled:hover:active:not(.hover,  .focused),
+select.browser-style:enabled:hover:active:not(.hover,  .focused) {
   background-color: #d4d4d4;
   border: 1px solid #858585;
 }
 
-button.browser-style.default:hover:not(.pressed, :disabled, .focused) {
+button.browser-style.default:enabled:hover:not(.pressed, .focused) {
   background-color: #0670cc;
   border-color: #005bab;
 }
 
-button.browser-style.default:hover:active:not(.hover, :disabled, .focused) {
+button.browser-style.default:enabled:hover:active:not(.hover, .focused) {
   background-color: #005bab;
   border-color: #004480;
 }
 
-button.browser-style:focus:not(:disabled) {
+button.browser-style:focus:enabled {
   border-color: #fff !important;
   box-shadow: 0 0 0 2px rgba(97, 181, 255, 0.75);
 }
 
-
+/* Fields */
 .browser-style > input[type="text"],
 textarea.browser-style {
   background-color: #fff;
@@ -325,9 +325,9 @@ textarea.browser-style.focused {
   box-shadow: 0 0 0 2px rgba(97, 181, 255, 0.75);
 }
 
-
-.browser-style > input[type="text"]:not(:disabled):hover,
-textarea.browser-style:not(:disabled):hover {
+/* Interactive States */
+.browser-style > input[type="text"]:enabled:hover,
+textarea.browser-style:enabled:hover {
   border: 1px solid #858585;
 }
 
@@ -346,7 +346,7 @@ textarea.browser-style:invalid:not(:focus) {
     0 0 0 4px rgba(251, 0, 34, 0.3);
 }
 
-
+/* stylelint-disable property-no-vendor-prefix */
 .panel-section {
   display: flex;
   flex-direction: row;
@@ -357,7 +357,7 @@ textarea.browser-style:invalid:not(:focus) {
   min-height: 1px;
 }
 
-
+/* Panel Section - Header */
 .panel-section-header {
   border-bottom: 1px solid rgba(0, 0, 0, 0.15);
   padding: 16px;
@@ -378,7 +378,7 @@ textarea.browser-style:invalid:not(:focus) {
   font-weight: lighter;
 }
 
-
+/* Panel Section - List */
 .panel-section-list {
   flex-direction: column;
   padding: 4px 0;
@@ -425,7 +425,7 @@ textarea.browser-style:invalid:not(:focus) {
   margin: 4px 0;
 }
 
-
+/* Panel Section - Form Elements */
 .panel-section-formElements {
   display: flex;
   flex-direction: column;
@@ -454,7 +454,7 @@ textarea.browser-style:invalid:not(:focus) {
   flex-grow: 1;
 }
 
-
+/* Panel Section - Footer */
 .panel-section-footer {
   background-color: rgba(0, 0, 0, 0.06);
   border-top: 1px solid rgba(0, 0, 0, 0.15);
@@ -510,7 +510,7 @@ textarea.browser-style:invalid:not(:focus) {
   z-index: 99;
 }
 
-
+/* Panel Section - Tabs */
 .panel-section-tabs {
   color: #1a1a1a;
   display: flex;
