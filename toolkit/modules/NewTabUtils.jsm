@@ -596,13 +596,6 @@ var PlacesProvider = {
   
 
 
-
-
-  _batchCalledFrecencyChanged: false,
-
-  
-
-
   maxNumLinks: HISTORY_RESULTS_LIMIT,
 
   
@@ -720,10 +713,6 @@ var PlacesProvider = {
 
   onEndUpdateBatch() {
     this._batchProcessingDepth -= 1;
-    if (this._batchProcessingDepth == 0 && this._batchCalledFrecencyChanged) {
-      this.onManyFrecenciesChanged();
-      this._batchCalledFrecencyChanged = false;
-    }
   },
 
   handlePlacesEvents(aEvents) {
@@ -764,35 +753,6 @@ var PlacesProvider = {
 
   onClearHistory() {
     this._callObservers("onClearHistory");
-  },
-
-  
-
-
-  onFrecencyChanged: function PlacesProvider_onFrecencyChanged(
-    aURI,
-    aNewFrecency,
-    aGUID,
-    aHidden,
-    aLastVisitDate
-  ) {
-    
-    
-    
-    if (this._batchProcessingDepth > 0) {
-      this._batchCalledFrecencyChanged = true;
-      return;
-    }
-    
-    
-    if (!aHidden && aLastVisitDate) {
-      this._callObservers("onLinkChanged", {
-        url: aURI.spec,
-        frecency: aNewFrecency,
-        lastVisitDate: aLastVisitDate,
-        type: "history",
-      });
-    }
   },
 
   
