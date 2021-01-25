@@ -231,22 +231,6 @@ class IOUtils final {
 
 
 
-
-  static Result<uint32_t, IOError> WriteUTF8Sync(
-      nsIFile* aFile, const nsCString& aString,
-      const InternalWriteOpts& aOptions);
-
-  
-
-
-
-
-
-
-
-
-
-
   static Result<Ok, IOError> MoveSync(nsIFile* aSourceFile, nsIFile* aDestFile,
                                       bool aNoOverwrite);
 
