@@ -230,7 +230,6 @@ class Manifest(object):
 
         
         
-        pool = None
         if parallel and len(to_update) > 25 and cpu_count() > 1:
             
             
@@ -262,11 +261,6 @@ class Manifest(object):
             rel_path_parts, new_type, manifest_items, file_hash = result
             data[new_type][rel_path_parts] = manifest_items
             data[new_type].hashes[rel_path_parts] = file_hash
-
-        
-        
-        if pool is not None:
-            pool.terminate()
 
         if remaining_manifest_paths:
             changed = True

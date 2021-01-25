@@ -98,9 +98,7 @@ class DirectoryHandler(object):
                    {"link": link, "name": ".."})
         items = []
         prev_item = None
-        
-        
-        for item in sorted(os.listdir(path), key=lambda x: (x[:-len(".headers")], x) if x.endswith(".headers") else (x, x)):
+        for item in sorted(os.listdir(path)):
             if prev_item and prev_item + ".headers" == item:
                 items[-1][1] = item
                 prev_item = None

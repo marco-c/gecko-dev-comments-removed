@@ -104,13 +104,14 @@ function CreateFormDataFromPayload(payload) {
 
 
 
+
 function runTests(testCases, suffix = '', buildUrl = self.buildUrl, sendData = self.sendData) {
     for (const testCase of testCases) {
         const id = token();
-        promise_test((test) => {
+        async_test((test) => {
             const url = buildUrl(id);
             assert_true(sendData(url, testCase.data), 'sendBeacon should succeed');
-            return waitForResult(id);
+            waitForResult(id).then(() => test.done(), test.step_func((e) => {throw e;}));
         }, `Verify 'navigator.sendbeacon()' successfully sends for variant: ${testCase.name}${suffix}`);
     };
 }
