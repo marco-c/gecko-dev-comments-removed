@@ -86,13 +86,12 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
   
   if (mOldRanges.Length() == aSel->RangeCount() &&
       !aSel->IsBlockingSelectionChangeEvents()) {
-    bool changed = mOldDirection != aSel->GetDirection();
-    if (!changed) {
-      for (size_t i = 0; i < mOldRanges.Length(); i++) {
-        if (!mOldRanges[i].Equals(aSel->GetRangeAt(i))) {
-          changed = true;
-          break;
-        }
+    bool changed = false;
+
+    for (size_t i = 0; i < mOldRanges.Length(); i++) {
+      if (!mOldRanges[i].Equals(aSel->GetRangeAt(i))) {
+        changed = true;
+        break;
       }
     }
 
@@ -106,7 +105,6 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
   for (size_t i = 0; i < aSel->RangeCount(); i++) {
     mOldRanges.AppendElement(RawRangeData(aSel->GetRangeAt(i)));
   }
-  mOldDirection = aSel->GetDirection();
 
   if (doc) {
     nsPIDOMWindowInner* inner = doc->GetInnerWindow();
@@ -122,35 +120,53 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
     return;
   }
 
-  nsCOMPtr<nsINode> textControl;
-  if (const nsFrameSelection* fs = aSel->GetFrameSelection()) {
-    if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
-      textControl = root->GetClosestNativeAnonymousSubtreeRoot();
+  
+  
+  
+  
+  if (StaticPrefs::dom_select_events_textcontrols_enabled()) {
+    nsCOMPtr<nsINode> target;
+
+    
+    
+    
+    
+    
+    if (const nsFrameSelection* fs = aSel->GetFrameSelection()) {
+      if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
+        while (root && root->IsInNativeAnonymousSubtree()) {
+          root = root->GetParent();
+        }
+
+        target = std::move(root);
+      }
     }
-  }
 
-  if (textControl && !(aReason & (nsISelectionListener::MOUSEUP_REASON |
-                                  nsISelectionListener::KEYPRESS_REASON |
-                                  nsISelectionListener::DRAG_REASON))) {
-    RefPtr<AsyncEventDispatcher> asyncDispatcher =
-        new AsyncEventDispatcher(textControl, eFormSelect, CanBubble::eYes);
-    asyncDispatcher->PostDOMEvent();
-  }
+    
+    
+    if (!target) {
+      target = aDoc;
+    }
 
-  
-  
-  
-  
-  if (textControl && !StaticPrefs::dom_select_events_textcontrols_enabled()) {
-    return;
-  }
+    if (target) {
+      RefPtr<AsyncEventDispatcher> asyncDispatcher =
+          new AsyncEventDispatcher(target, eSelectionChange, CanBubble::eNo);
+      asyncDispatcher->PostDOMEvent();
+    }
+  } else {
+    if (const nsFrameSelection* fs = aSel->GetFrameSelection()) {
+      if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
+        if (root->IsInNativeAnonymousSubtree()) {
+          return;
+        }
+      }
+    }
 
-  nsCOMPtr<nsINode> target = textControl ? textControl : aDoc;
-
-  if (target) {
-    RefPtr<AsyncEventDispatcher> asyncDispatcher =
-        new AsyncEventDispatcher(target, eSelectionChange, CanBubble::eNo);
-    asyncDispatcher->PostDOMEvent();
+    if (aDoc) {
+      RefPtr<AsyncEventDispatcher> asyncDispatcher =
+          new AsyncEventDispatcher(aDoc, eSelectionChange, CanBubble::eNo);
+      asyncDispatcher->PostDOMEvent();
+    }
   }
 }
 
