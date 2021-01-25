@@ -7250,8 +7250,6 @@ void Document::SetScriptGlobalObject(
   
   
   
-  dom::VisibilityState oldState = mVisibilityState;
-  mVisibilityState = ComputeVisibilityState();
   
   
   
@@ -7264,9 +7262,8 @@ void Document::SetScriptGlobalObject(
   
   
   
-  if (oldState != mVisibilityState) {
-    EnumerateActivityObservers(NotifyActivityChanged);
-  }
+  
+  UpdateVisibilityState(DispatchVisibilityChange::No);
 
   
   if (mTemplateContentsOwner && mTemplateContentsOwner != this) {
@@ -14879,13 +14876,15 @@ void Document::UnlockPointer(Document* aDoc) {
   asyncDispatcher->RunDOMEventWhenSafe();
 }
 
-void Document::UpdateVisibilityState() {
+void Document::UpdateVisibilityState(DispatchVisibilityChange aDispatchEvent) {
   dom::VisibilityState oldState = mVisibilityState;
   mVisibilityState = ComputeVisibilityState();
   if (oldState != mVisibilityState) {
-    nsContentUtils::DispatchTrustedEvent(this, ToSupports(this),
-                                         u"visibilitychange"_ns,
-                                         CanBubble::eYes, Cancelable::eNo);
+    if (aDispatchEvent == DispatchVisibilityChange::Yes) {
+      nsContentUtils::DispatchTrustedEvent(this, ToSupports(this),
+                                           u"visibilitychange"_ns,
+                                           CanBubble::eYes, Cancelable::eNo);
+    }
     EnumerateActivityObservers(NotifyActivityChanged);
   }
 
@@ -14911,9 +14910,9 @@ VisibilityState Document::ComputeVisibilityState() const {
 }
 
 void Document::PostVisibilityUpdateEvent() {
-  nsCOMPtr<nsIRunnable> event =
-      NewRunnableMethod("Document::UpdateVisibilityState", this,
-                        &Document::UpdateVisibilityState);
+  nsCOMPtr<nsIRunnable> event = NewRunnableMethod<DispatchVisibilityChange>(
+      "Document::UpdateVisibilityState", this, &Document::UpdateVisibilityState,
+      DispatchVisibilityChange::Yes);
   Dispatch(TaskCategory::Other, event.forget());
 }
 
