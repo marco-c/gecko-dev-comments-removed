@@ -7627,9 +7627,11 @@ void nsGlobalWindowOuter::MaybeResetWindowName(Document* aNewDocument) {
   
   
   
-  if (mDoc && mDoc->NodePrincipal()->Equals(aNewDocument->NodePrincipal()) &&
-      (NS_IsAboutBlank(mDoc->GetDocumentURI()) ==
-       NS_IsAboutBlank(aNewDocument->GetDocumentURI()))) {
+  
+  
+  
+  if (mDoc && mDoc->NodePrincipal()->EqualsConsideringDomain(
+                  aNewDocument->NodePrincipal())) {
     return;
   }
 
