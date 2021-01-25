@@ -45,4 +45,9 @@ std::string GetStringForNotificationType(NotificationType type);
 std::string GetStringForNotificationShown(NotificationShown shown);
 std::string GetStringForNotificationAction(NotificationAction action);
 
+
+
+
+void EnsureValidNotificationAction(std::string& actionString);
+
 #endif  
