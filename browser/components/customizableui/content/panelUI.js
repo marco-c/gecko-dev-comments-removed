@@ -799,7 +799,7 @@ const PanelUI = {
 
     let helpMenu = document.getElementById("menu_HelpPopup");
     let items = this.getElementsByTagName("vbox")[0];
-    let attrs = ["command", "oncommand", "onclick", "label", "key", "disabled"];
+    let attrs = ["command", "oncommand", "onclick", "key", "disabled"];
 
     
     while (items.firstChild) {
@@ -823,6 +823,12 @@ const PanelUI = {
         }
         button.setAttribute(attrName, node.getAttribute(attrName));
       }
+
+      
+      
+      let l10nId = node.getAttribute("appmenu-data-l10n-id");
+      button.setAttribute("data-l10n-id", l10nId);
+
       if (node.id) {
         button.id = "appMenu_" + node.id;
       }
