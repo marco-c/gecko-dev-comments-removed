@@ -21,7 +21,7 @@ registerCleanupFunction(function() {
 
 
 
-add_task(async function() {
+add_task(async function test_old_modal_ui() {
   await SpecialPowers.pushPrefEnv({
     set: [["prompts.contentPromptSubDialog", false]],
   });
@@ -123,6 +123,48 @@ add_task(async function() {
   
   
   await TestUtils.waitForTick();
+
+  BrowserTestUtils.removeTab(openedTab);
+});
+
+add_task(async function test_new_modal_ui() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["prompts.contentPromptSubDialog", true]],
+  });
+  
+  PermissionTestUtils.remove(pageWithAlert, "focus-tab-by-prompt");
+
+  let firstTab = gBrowser.selectedTab;
+  
+  let openedTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    pageWithAlert,
+    true
+  );
+  let openedTabGotAttentionPromise = BrowserTestUtils.waitForAttribute(
+    "attention",
+    openedTab,
+    "true"
+  );
+  
+  await BrowserTestUtils.switchTab(gBrowser, firstTab);
+  
+  await openedTabGotAttentionPromise;
+  
+  is(
+    openedTab.getAttribute("attention"),
+    "true",
+    "Tab with alert should have 'attention' attribute."
+  );
+  ok(!openedTab.selected, "Tab with alert should not be selected");
+
+  
+  await BrowserTestUtils.switchTab(gBrowser, openedTab);
+  
+  let promptElements = openedTab.linkedBrowser.parentNode.querySelectorAll(
+    ".content-prompt-dialog"
+  );
+  is(promptElements.length, 1, "There should be 1 prompt");
 
   BrowserTestUtils.removeTab(openedTab);
 });
