@@ -1541,7 +1541,7 @@ void CodeGenerator::visitValueToString(LValueToString* lir) {
   const JSAtomState& names = gen->runtime->names();
 
   
-  if (lir->mir()->input()->mightBeType(MIRType::String)) {
+  {
     Label notString;
     masm.branchTestString(Assembler::NotEqual, tag, &notString);
     masm.unboxString(input, output);
@@ -1550,7 +1550,7 @@ void CodeGenerator::visitValueToString(LValueToString* lir) {
   }
 
   
-  if (lir->mir()->input()->mightBeType(MIRType::Int32)) {
+  {
     Label notInteger;
     masm.branchTestInt32(Assembler::NotEqual, tag, &notInteger);
     Register unboxed = ToTempUnboxRegister(lir->tempToUnbox());
@@ -1561,14 +1561,14 @@ void CodeGenerator::visitValueToString(LValueToString* lir) {
   }
 
   
-  if (lir->mir()->input()->mightBeType(MIRType::Double)) {
+  {
     
     
     masm.branchTestDouble(Assembler::Equal, tag, ool->entry());
   }
 
   
-  if (lir->mir()->input()->mightBeType(MIRType::Undefined)) {
+  {
     Label notUndefined;
     masm.branchTestUndefined(Assembler::NotEqual, tag, &notUndefined);
     masm.movePtr(ImmGCPtr(names.undefined), output);
@@ -1577,7 +1577,7 @@ void CodeGenerator::visitValueToString(LValueToString* lir) {
   }
 
   
-  if (lir->mir()->input()->mightBeType(MIRType::Null)) {
+  {
     Label notNull;
     masm.branchTestNull(Assembler::NotEqual, tag, &notNull);
     masm.movePtr(ImmGCPtr(names.null), output);
@@ -1586,7 +1586,7 @@ void CodeGenerator::visitValueToString(LValueToString* lir) {
   }
 
   
-  if (lir->mir()->input()->mightBeType(MIRType::Boolean)) {
+  {
     Label notBoolean, true_;
     masm.branchTestBoolean(Assembler::NotEqual, tag, &notBoolean);
     masm.branchTestBooleanTruthy(true, input, &true_);
@@ -1599,39 +1599,32 @@ void CodeGenerator::visitValueToString(LValueToString* lir) {
   }
 
   
-  
-  
-  
   if (lir->mir()->mightHaveSideEffects()) {
     
-    if (lir->mir()->input()->mightBeType(MIRType::Object)) {
-      if (lir->mir()->supportSideEffects()) {
-        masm.branchTestObject(Assembler::Equal, tag, ool->entry());
-      } else {
-        
-        MOZ_ASSERT(lir->mir()->needsSnapshot());
-        Label bail;
-        masm.branchTestObject(Assembler::Equal, tag, &bail);
-        bailoutFrom(&bail, lir->snapshot());
-      }
+    if (lir->mir()->supportSideEffects()) {
+      masm.branchTestObject(Assembler::Equal, tag, ool->entry());
+    } else {
+      
+      MOZ_ASSERT(lir->mir()->needsSnapshot());
+      Label bail;
+      masm.branchTestObject(Assembler::Equal, tag, &bail);
+      bailoutFrom(&bail, lir->snapshot());
     }
 
     
-    if (lir->mir()->input()->mightBeType(MIRType::Symbol)) {
-      if (lir->mir()->supportSideEffects()) {
-        masm.branchTestSymbol(Assembler::Equal, tag, ool->entry());
-      } else {
-        
-        MOZ_ASSERT(lir->mir()->needsSnapshot());
-        Label bail;
-        masm.branchTestSymbol(Assembler::Equal, tag, &bail);
-        bailoutFrom(&bail, lir->snapshot());
-      }
+    if (lir->mir()->supportSideEffects()) {
+      masm.branchTestSymbol(Assembler::Equal, tag, ool->entry());
+    } else {
+      
+      MOZ_ASSERT(lir->mir()->needsSnapshot());
+      Label bail;
+      masm.branchTestSymbol(Assembler::Equal, tag, &bail);
+      bailoutFrom(&bail, lir->snapshot());
     }
   }
 
   
-  if (lir->mir()->input()->mightBeType(MIRType::BigInt)) {
+  {
     
     masm.branchTestBigInt(Assembler::Equal, tag, ool->entry());
   }
