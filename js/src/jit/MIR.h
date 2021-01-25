@@ -734,8 +734,6 @@ class MDefinition : public MNode {
   
   bool definitelyType(std::initializer_list<MIRType> types) const;
 
-  bool maybeEmulatesUndefined();
-
   
   
   virtual bool isFloat32Commutative() const { return false; }
