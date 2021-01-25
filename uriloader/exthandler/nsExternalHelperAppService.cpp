@@ -606,15 +606,18 @@ static const char* forcedExtensionMimetypes[] = {
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 
+    
+    
+    
+    
+
     APPLICATION_PDF,
 
     APPLICATION_OGG,
 
-    APPLICATION_ZIP,
+    APPLICATION_WASM,
 
-    APPLICATION_JSON, APPLICATION_WASM,
-
-    TEXT_CALENDAR, TEXT_CSS, TEXT_VCARD, TEXT_XML};
+    TEXT_CALENDAR, TEXT_CSS, TEXT_VCARD};
 
 
 
@@ -1342,7 +1345,8 @@ bool nsExternalAppHandler::ShouldForceExtension(const nsString& aFileExt) {
                   StringBeginsWith(MIMEType, "audio/"_ns) ||
                   StringBeginsWith(MIMEType, "video/"_ns);
 
-  if (!canForce) {
+  if (!canForce &&
+      StaticPrefs::browser_download_sanitize_non_media_extensions()) {
     for (const char* mime : forcedExtensionMimetypes) {
       if (MIMEType.Equals(mime)) {
         canForce = true;
