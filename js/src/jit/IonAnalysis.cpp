@@ -3395,19 +3395,6 @@ static bool TryEliminateBoundsCheck(BoundsCheckMap& checks, size_t blockIndex,
   return true;
 }
 
-static bool TryOptimizeLoadObjectOrNull(MDefinition* def,
-                                        MDefinitionVector* peliminateList) {
-  if (def->type() != MIRType::Value) {
-    return true;
-  }
-
-  
-  return true;
-}
-
-
-
-
 
 
 
@@ -3453,23 +3440,14 @@ bool jit::EliminateRedundantChecks(MIRGraph& graph) {
     for (MDefinitionIterator iter(block); iter;) {
       MDefinition* def = *iter++;
 
-      bool eliminated = false;
+      if (!def->isBoundsCheck()) {
+        continue;
+      }
 
-      switch (def->op()) {
-        case MDefinition::Opcode::BoundsCheck:
-          if (!TryEliminateBoundsCheck(checks, index, def->toBoundsCheck(),
-                                       &eliminated)) {
-            return false;
-          }
-          break;
-        case MDefinition::Opcode::LoadFixedSlot:
-        case MDefinition::Opcode::LoadDynamicSlot:
-          if (!TryOptimizeLoadObjectOrNull(def, &eliminateList)) {
-            return false;
-          }
-          break;
-        default:
-          break;
+      bool eliminated = false;
+      if (!TryEliminateBoundsCheck(checks, index, def->toBoundsCheck(),
+                                   &eliminated)) {
+        return false;
       }
 
       if (eliminated) {
