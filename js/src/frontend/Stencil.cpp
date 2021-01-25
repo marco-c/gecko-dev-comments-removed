@@ -890,7 +890,7 @@ bool CompilationStencil::serializeStencils(JSContext* cx,
   }
 
   
-  res = encoder.linearize(buf);
+  res = encoder.linearize(buf, input.source());
   if (res.isErr()) {
     MOZ_ASSERT(cx->isThrowingOutOfMemory());
     buf.clear();
