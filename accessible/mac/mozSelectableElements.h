@@ -87,10 +87,10 @@
 - (NSString*)moxLabel;
 
 
-- (NSArray*)moxChildren;
-
-
 - (NSArray*)moxVisibleChildren;
+
+
+- (BOOL)moxIgnoreWithParent:(mozAccessible*)parent;
 
 
 - (id)moxTitleUIElement;
@@ -101,12 +101,17 @@
 
 - (void)expire;
 
+- (BOOL)isOpened;
+
 @end
 
 @interface mozMenuItemAccessible : mozSelectableChildAccessible
 
 
 - (NSString*)moxLabel;
+
+
+- (BOOL)moxIgnoreWithParent:(mozAccessible*)parent;
 
 
 - (NSString*)moxMenuItemMarkChar;
