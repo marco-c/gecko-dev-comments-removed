@@ -1821,7 +1821,8 @@ var Policies = {
                     search_provider: {
                       name: newEngine.Name,
                       
-                      encoding: "windows-1252",
+                      
+                      encoding: newEngine.Encoding,
                       search_url: encodeURI(newEngine.URLTemplate),
                       keyword: newEngine.Alias,
                       search_url_post_params:
