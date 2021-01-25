@@ -3332,7 +3332,8 @@ void SamplerThread::Run() {
       TimeStamp expiredMarkersCleaned = TimeStamp::NowUnfuzzed();
 
       if (!ActivePS::IsSamplingPaused(lock)) {
-        TimeDuration delta = sampleStart - CorePS::ProcessStartTime();
+        double sampleStartDeltaMs =
+            (sampleStart - CorePS::ProcessStartTime()).ToMilliseconds();
         ProfileBuffer& buffer = ActivePS::Buffer(lock);
 
         
@@ -3340,7 +3341,7 @@ void SamplerThread::Run() {
         for (auto& counter : counters) {
           
           buffer.AddEntry(ProfileBufferEntry::CounterId(counter));
-          buffer.AddEntry(ProfileBufferEntry::Time(delta.ToMilliseconds()));
+          buffer.AddEntry(ProfileBufferEntry::Time(sampleStartDeltaMs));
           
           
           
@@ -3374,6 +3375,10 @@ void SamplerThread::Run() {
                   GetThreadRunningTimesDiff(lock, *registeredThread);
             }
 
+            TimeStamp now = TimeStamp::NowUnfuzzed();
+            double threadSampleDeltaMs =
+                (now - CorePS::ProcessStartTime()).ToMilliseconds();
+
             
             
             
@@ -3382,7 +3387,7 @@ void SamplerThread::Run() {
             if (registeredThread->RacyRegisteredThread()
                     .CanDuplicateLastSampleDueToSleep()) {
               const bool dup_ok = ActivePS::Buffer(lock).DuplicateLastSample(
-                  info->ThreadId(), CorePS::ProcessStartTime(),
+                  info->ThreadId(), threadSampleDeltaMs,
                   profiledThreadData->LastSample(), runningTimesDiff);
               if (dup_ok) {
                 continue;
@@ -3390,8 +3395,6 @@ void SamplerThread::Run() {
             }
 
             AUTO_PROFILER_STATS(gecko_SamplerThread_Run_DoPeriodicSample);
-
-            TimeStamp now = TimeStamp::NowUnfuzzed();
 
             
             
@@ -3402,9 +3405,8 @@ void SamplerThread::Run() {
 
             
             
-            TimeDuration delta = now - CorePS::ProcessStartTime();
             buffer.AddEntry(ProfileBufferEntry::TimeBeforeCompactStack(
-                delta.ToMilliseconds()));
+                threadSampleDeltaMs));
 
             Maybe<double> unresponsiveDuration_ms;
 
@@ -3679,7 +3681,8 @@ void SamplerThread::Run() {
           ActivePS::FulfillChunkRequests(lock);
         }
 
-        buffer.CollectOverheadStats(delta, lockAcquired - sampleStart,
+        buffer.CollectOverheadStats(sampleStartDeltaMs,
+                                    lockAcquired - sampleStart,
                                     expiredMarkersCleaned - lockAcquired,
                                     countersSampled - expiredMarkersCleaned,
                                     threadsSampled - countersSampled);
