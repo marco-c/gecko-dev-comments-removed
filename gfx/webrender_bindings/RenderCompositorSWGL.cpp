@@ -68,7 +68,8 @@ bool RenderCompositorSWGL::AllocateMappedBuffer() {
   gfx::IntSize size;
   int32_t stride = 0;
   gfx::SurfaceFormat format = gfx::SurfaceFormat::UNKNOWN;
-  if (!mSurface && mDT->LockBits(&data, &size, &stride, &format) &&
+  if (bufferMode != layers::BufferMode::BUFFERED && !mSurface &&
+      mDT->LockBits(&data, &size, &stride, &format) &&
       (format != gfx::SurfaceFormat::B8G8R8A8 &&
        format != gfx::SurfaceFormat::B8G8R8X8)) {
     
