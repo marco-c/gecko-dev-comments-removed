@@ -514,6 +514,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
      void attachTo(final @NonNull GeckoRuntime runtime) {
         mRuntime = runtime;
         commit();
+
+        if (mTelemetryProxy != null) {
+            mTelemetryProxy.attach();
+        }
     }
 
     @Override 

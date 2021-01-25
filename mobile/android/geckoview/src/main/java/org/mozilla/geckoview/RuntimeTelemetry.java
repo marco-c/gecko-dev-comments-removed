@@ -120,8 +120,6 @@ public final class RuntimeTelemetry {
 
         public Proxy(final @NonNull Delegate delegate) {
             mDelegate = delegate;
-            
-            attach();
         }
 
         
