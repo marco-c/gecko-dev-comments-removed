@@ -126,11 +126,7 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
   
   if (iSize.ConvertsToLength()) {
     hasSpecifiedISize = true;
-    
-    
-    
-    
-    nscoord c = aFrame->ComputeISizeValue(aRenderingContext, 0, 0, 0, iSize);
+    nscoord c = iSize.ToLength();
     
     
     
