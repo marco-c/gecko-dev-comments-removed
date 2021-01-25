@@ -73,6 +73,9 @@ class AboutLoginsChild extends JSWindowActorChild {
           getLoginOrigin(uriString) {
             return LoginHelper.getLoginOrigin(uriString);
           },
+          setFocus(element) {
+            Services.focus.setFocus(element, Services.focus.FLAG_BYKEY);
+          },
           
 
 
