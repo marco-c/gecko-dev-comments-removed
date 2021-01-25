@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+"use strict";
+
+add_settings_tasks("browser.urlbar.extension.timeout", "number", () => {
+  browser.test.onMessage.addListener(async (method, arg) => {
+    let result = await browser.experiments.urlbar.extensionTimeout[method](arg);
+    browser.test.sendMessage("done", result);
+  });
+});

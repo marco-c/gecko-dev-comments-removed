@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+"use strict";
+
+add_settings_tasks("browser.partnerlink.attributionURL", "string", () => {
+  browser.test.onMessage.addListener(async (method, arg) => {
+    let result = await browser.experiments.urlbar.attributionURL[method](arg);
+    browser.test.sendMessage("done", result);
+  });
+});
