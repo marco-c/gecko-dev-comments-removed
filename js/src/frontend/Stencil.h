@@ -82,6 +82,10 @@ using RegExpIndex = TypedIndex<RegExpStencil>;
 using BigIntIndex = TypedIndex<BigIntStencil>;
 using ObjLiteralIndex = TypedIndex<ObjLiteralStencil>;
 
+
+class CompilationGCThingType {};
+using CompilationGCThingIndex = TypedIndex<CompilationGCThingType>;
+
 FunctionFlags InitialFunctionFlags(FunctionSyntaxKind kind,
                                    GeneratorKind generatorKind,
                                    FunctionAsyncKind asyncKind,
@@ -567,10 +571,12 @@ class ScriptStencil {
   
   ImmutableScriptFlags immutableFlags;
 
-  
-  
   mozilla::Maybe<MemberInitializers> memberInitializers;
-  mozilla::Span<TaggedScriptThingIndex> gcThings;
+
+  
+  
+  CompilationGCThingIndex gcThingsOffset;
+  uint32_t gcThingsLength = 0;
 
   
   SourceExtent extent = {};
@@ -631,6 +637,11 @@ class ScriptStencil {
     MOZ_ASSERT_IF(result, !isFunction());
     return result;
   }
+
+  bool hasGCThings() const { return gcThingsLength; }
+
+  mozilla::Span<TaggedScriptThingIndex> gcthings(
+      CompilationStencil& stencil) const;
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
