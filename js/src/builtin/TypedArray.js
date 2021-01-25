@@ -646,6 +646,8 @@ function TypedArrayIndexOf(searchElement, fromIndex = 0) {
 }
 
 
+
+
 function TypedArrayJoin(separator) {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
@@ -668,26 +670,35 @@ function TypedArrayJoin(separator) {
         return "";
 
     
+    
+    if (TypedArrayLength(O) === 0) {
+        assert(IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
+               "TypedArrays with detached buffers have a length of zero");
+
+        return callFunction(String_repeat, ",", len - 1);
+    }
+
+    assert(!IsDetachedBuffer(ViewedArrayBufferIfReified(O)),
+           "TypedArrays with detached buffers have a length of zero");
+
     var element0 = O[0];
 
     
+    assert(element0 !== undefined, "unexpected undefined element");
+
     
     var R = ToString(element0);
 
     
     for (var k = 1; k < len; k++) {
         
-        var S = R + sep;
-
-        
         var element = O[k];
 
         
-        
-        var next = ToString(element);
+        assert(element !== undefined, "unexpected undefined element");
 
         
-        R = S + next;
+        R += sep + ToString(element);
     }
 
     
