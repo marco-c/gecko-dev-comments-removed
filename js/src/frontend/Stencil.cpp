@@ -668,7 +668,7 @@ bool CompilationInfo::instantiateStencilsAfterPreparation(
   return true;
 }
 
-bool CompilationInfoVector::buildDelazificationIndices(JSContext* cx) {
+bool CompilationStencilSet::buildDelazificationIndices(JSContext* cx) {
   
   MOZ_ASSERT(!initial.stencil.scriptData[0].isFunction());
 
@@ -708,7 +708,7 @@ bool CompilationInfoVector::buildDelazificationIndices(JSContext* cx) {
   return true;
 }
 
-bool CompilationInfoVector::instantiateStencils(
+bool CompilationStencilSet::instantiateStencils(
     JSContext* cx, CompilationGCOutput& gcOutput,
     CompilationGCOutput& gcOutputForDelazification) {
   if (!prepareForInstantiate(cx, gcOutput, gcOutputForDelazification)) {
@@ -719,7 +719,7 @@ bool CompilationInfoVector::instantiateStencils(
                                              gcOutputForDelazification);
 }
 
-bool CompilationInfoVector::instantiateStencilsAfterPreparation(
+bool CompilationStencilSet::instantiateStencilsAfterPreparation(
     JSContext* cx, CompilationGCOutput& gcOutput,
     CompilationGCOutput& gcOutputForDelazification) {
   if (!CompilationInfo::instantiateStencilsAfterPreparation(
@@ -805,7 +805,7 @@ bool CompilationInfo::prepareForInstantiate(JSContext* cx,
   return true;
 }
 
-bool CompilationInfoVector::prepareForInstantiate(
+bool CompilationStencilSet::prepareForInstantiate(
     JSContext* cx, CompilationGCOutput& gcOutput,
     CompilationGCOutput& gcOutputForDelazification) {
   if (!CompilationInfo::prepareForInstantiate(cx, initial, gcOutput)) {
@@ -879,7 +879,7 @@ bool CompilationInfo::serializeStencils(JSContext* cx, JS::TranscodeBuffer& buf,
   return true;
 }
 
-bool CompilationInfoVector::deserializeStencils(JSContext* cx,
+bool CompilationStencilSet::deserializeStencils(JSContext* cx,
                                                 const JS::TranscodeRange& range,
                                                 bool* succeededOut) {
   if (succeededOut) {

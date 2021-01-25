@@ -2841,10 +2841,10 @@ static bool VerifyGlobalNames(JSContext* cx, Handle<GlobalObject*> shg) {
   return true;
 }
 
-bool JSRuntime::initSelfHostingFromXDR(JSContext* cx,
-                                       const CompileOptions& options,
-                                       frontend::CompilationInfoVector& ciVec,
-                                       MutableHandle<JSScript*> scriptOut) {
+bool JSRuntime::initSelfHostingFromXDR(
+    JSContext* cx, const CompileOptions& options,
+    frontend::CompilationStencilSet& stencilSet,
+    MutableHandle<JSScript*> scriptOut) {
   MOZ_ASSERT(selfHostingGlobal_);
   MOZ_ASSERT(selfHostedXDR.length() > 0);
   scriptOut.set(nullptr);
@@ -2852,7 +2852,7 @@ bool JSRuntime::initSelfHostingFromXDR(JSContext* cx,
   
   JS::TranscodeRange xdrRange(selfHostedXDR);
   bool decodeOk = false;
-  if (!ciVec.deserializeStencils(cx, xdrRange, &decodeOk)) {
+  if (!stencilSet.deserializeStencils(cx, xdrRange, &decodeOk)) {
     return false;
   }
   
@@ -2863,7 +2863,7 @@ bool JSRuntime::initSelfHostingFromXDR(JSContext* cx,
 
   
   Rooted<frontend::CompilationGCOutput> output(cx);
-  if (!frontend::CompilationInfo::instantiateStencils(cx, ciVec.initial,
+  if (!frontend::CompilationInfo::instantiateStencils(cx, stencilSet.initial,
                                                       output.get())) {
     return false;
   }
@@ -2906,13 +2906,13 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
   
   if (selfHostedXDR.length() > 0) {
     
-    Rooted<frontend::CompilationInfoVector> ciVec(
-        cx, frontend::CompilationInfoVector(cx, options));
-    if (!ciVec.get().initial.input.initForSelfHostingGlobal(cx)) {
+    Rooted<frontend::CompilationStencilSet> stencilSet(
+        cx, frontend::CompilationStencilSet(cx, options));
+    if (!stencilSet.get().initial.input.initForSelfHostingGlobal(cx)) {
       return false;
     }
 
-    if (!initSelfHostingFromXDR(cx, options, ciVec.get(), &script)) {
+    if (!initSelfHostingFromXDR(cx, options, stencilSet.get(), &script)) {
       return false;
     }
   }

@@ -76,7 +76,7 @@ extern bool PrepareForInstantiate(JSContext* cx,
                                   CompilationInfo& compilationInfo,
                                   CompilationGCOutput& gcOutput);
 extern bool PrepareForInstantiate(
-    JSContext* cx, CompilationInfoVector& compilationInfos,
+    JSContext* cx, CompilationStencilSet& stencilSet,
     CompilationGCOutput& gcOutput,
     CompilationGCOutput& gcOutputForDelazification);
 
@@ -84,7 +84,7 @@ extern bool InstantiateStencils(JSContext* cx, CompilationInfo& compilationInfo,
                                 CompilationGCOutput& gcOutput);
 
 extern bool InstantiateStencils(JSContext* cx,
-                                CompilationInfoVector& compilationInfos,
+                                CompilationStencilSet& stencilSet,
                                 CompilationGCOutput& gcOutput,
                                 CompilationGCOutput& gcOutputForDelazification);
 

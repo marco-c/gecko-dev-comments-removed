@@ -5065,16 +5065,16 @@ static bool EvalStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
   options.setFileAndLine(filename, lineno);
   options.setForceFullParse();
 
-  Rooted<frontend::CompilationInfoVector> compilationInfos(
-      cx, frontend::CompilationInfoVector(cx, options));
-  if (!compilationInfos.get().initial.input.initForGlobal(cx)) {
+  Rooted<frontend::CompilationStencilSet> stencilSet(
+      cx, frontend::CompilationStencilSet(cx, options));
+  if (!stencilSet.get().initial.input.initForGlobal(cx)) {
     return false;
   }
 
   
   JS::TranscodeRange xdrRange(src->dataPointer(), src->byteLength().get());
   bool succeeded = false;
-  if (!compilationInfos.get().deserializeStencils(cx, xdrRange, &succeeded)) {
+  if (!stencilSet.get().deserializeStencils(cx, xdrRange, &succeeded)) {
     return false;
   }
   if (!succeeded) {
@@ -5085,8 +5085,8 @@ static bool EvalStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
   
   Rooted<frontend::CompilationGCOutput> output(cx);
   Rooted<frontend::CompilationGCOutput> outputForDelazification(cx);
-  if (!compilationInfos.get().instantiateStencils(
-          cx, output.get(), outputForDelazification.get())) {
+  if (!stencilSet.get().instantiateStencils(cx, output.get(),
+                                            outputForDelazification.get())) {
     return false;
   }
 

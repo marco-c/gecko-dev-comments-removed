@@ -644,7 +644,7 @@ struct JSRuntime {
 
   
   bool initSelfHostingFromXDR(JSContext* cx, const JS::CompileOptions& options,
-                              js::frontend::CompilationInfoVector& ciVec,
+                              js::frontend::CompilationStencilSet& stencilSet,
                               js::MutableHandle<JSScript*> scriptOut);
 
  public:
