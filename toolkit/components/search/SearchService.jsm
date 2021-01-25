@@ -651,11 +651,16 @@ SearchService.prototype = {
       return;
     }
 
+    
+    
+    
+    let settings = await this._settings.get();
+
     logConsole.debug("Running maybeReloadEngines");
     this._reloadingEngines = true;
 
     try {
-      await this._reloadEngines();
+      await this._reloadEngines(settings);
     } catch (ex) {
       logConsole.error("maybeReloadEngines failed", ex);
     }
@@ -663,7 +668,7 @@ SearchService.prototype = {
     logConsole.debug("maybeReloadEngines complete");
   },
 
-  async _reloadEngines() {
+  async _reloadEngines(settings) {
     
     const prevCurrentEngine = this._currentEngine;
     const prevPrivateEngine = this._currentPrivateEngine;
@@ -774,7 +779,6 @@ SearchService.prototype = {
         );
       }
     }
-    let settings = await this._settings.get();
     this._loadEnginesMetadataFromSettings(settings.engines);
 
     
