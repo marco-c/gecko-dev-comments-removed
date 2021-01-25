@@ -2,6 +2,7 @@
 
 
 
+use glean_core::Glean;
 use inherent::inherent;
 use std::sync::Arc;
 
@@ -27,6 +28,11 @@ impl StringMetric {
     
     pub fn new(meta: glean_core::CommonMetricData) -> Self {
         Self(Arc::new(glean_core::metrics::StringMetric::new(meta)))
+    }
+
+    
+    pub(crate) fn set_sync<S: Into<std::string::String>>(&self, glean: &Glean, value: S) {
+        self.0.set(glean, value);
     }
 }
 

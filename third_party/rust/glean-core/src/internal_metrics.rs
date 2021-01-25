@@ -10,6 +10,13 @@ pub struct CoreMetrics {
     pub first_run_date: DatetimeMetric,
     pub first_run_hour: DatetimeMetric,
     pub os: StringMetric,
+
+    
+    
+    
+    
+    
+    pub io_errors: CounterMetric,
 }
 
 impl CoreMetrics {
@@ -53,6 +60,15 @@ impl CoreMetrics {
                 category: "".into(),
                 send_in_pings: vec!["glean_client_info".into()],
                 lifetime: Lifetime::Application,
+                disabled: false,
+                dynamic_label: None,
+            }),
+
+            io_errors: CounterMetric::new(CommonMetricData {
+                name: "io".into(),
+                category: "glean.error".into(),
+                send_in_pings: vec!["metrics".into()],
+                lifetime: Lifetime::Ping,
                 disabled: false,
                 dynamic_label: None,
             }),
