@@ -66,7 +66,7 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
   
   
   if (loadInfo->GetExternalContentPolicyType() !=
-      ExtContentPolicy::TYPE_DOCUMENT) {
+      nsIContentPolicy::TYPE_DOCUMENT) {
     return;
   }
 
@@ -133,7 +133,7 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
 
   
   if (aLoadInfo->GetExternalContentPolicyType() !=
-      ExtContentPolicy::TYPE_DOCUMENT) {
+      nsIContentPolicy::TYPE_DOCUMENT) {
     if (!aLoadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
         TestIfPrincipalIsExempt(aLoadInfo->TriggeringPrincipal())) {
       return false;
@@ -270,8 +270,8 @@ void nsHTTPSOnlyUtils::TestSitePermissionAndPotentiallyAddExemption(
   }
 
   
-  ExtContentPolicyType type = loadInfo->GetExternalContentPolicyType();
-  if (type != ExtContentPolicy::TYPE_DOCUMENT) {
+  nsContentPolicyType type = loadInfo->GetExternalContentPolicyType();
+  if (type != nsIContentPolicy::TYPE_DOCUMENT) {
     return;
   }
 

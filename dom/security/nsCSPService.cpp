@@ -36,16 +36,16 @@ NS_IMPL_ISUPPORTS(CSPService, nsIContentPolicy, nsIChannelEventSink)
 
 
 bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
-  ExtContentPolicyType contentType =
+  nsContentPolicyType contentType =
       nsContentUtils::InternalContentPolicyTypeToExternal(aContentType);
 
   
   
   
   
-  if (contentType == ExtContentPolicy::TYPE_CSP_REPORT ||
-      contentType == ExtContentPolicy::TYPE_REFRESH ||
-      contentType == ExtContentPolicy::TYPE_DOCUMENT) {
+  if (contentType == nsIContentPolicy::TYPE_CSP_REPORT ||
+      contentType == nsIContentPolicy::TYPE_REFRESH ||
+      contentType == nsIContentPolicy::TYPE_DOCUMENT) {
     return false;
   }
 
@@ -74,9 +74,9 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   
   
   
-  bool isImgOrStyleOrDTD = contentType == ExtContentPolicy::TYPE_IMAGE ||
-                           contentType == ExtContentPolicy::TYPE_STYLESHEET ||
-                           contentType == ExtContentPolicy::TYPE_DTD;
+  bool isImgOrStyleOrDTD = contentType == nsIContentPolicy::TYPE_IMAGE ||
+                           contentType == nsIContentPolicy::TYPE_STYLESHEET ||
+                           contentType == nsIContentPolicy::TYPE_DTD;
   if (aURI->SchemeIs("resource")) {
     nsAutoCString uriSpec;
     aURI->GetSpec(uriSpec);
@@ -217,10 +217,10 @@ CSPService::ShouldProcess(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
   
   
   
-  ExtContentPolicyType policyType =
+  uint32_t policyType =
       nsContentUtils::InternalContentPolicyTypeToExternal(contentType);
 
-  if (policyType != ExtContentPolicy::TYPE_OBJECT) {
+  if (policyType != nsIContentPolicy::TYPE_OBJECT) {
     *aDecision = nsIContentPolicy::ACCEPT;
     return NS_OK;
   }

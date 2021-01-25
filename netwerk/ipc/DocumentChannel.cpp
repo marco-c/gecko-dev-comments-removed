@@ -286,7 +286,7 @@ NS_IMETHODIMP DocumentChannel::SetLoadFlags(nsLoadFlags aLoadFlags) {
   
   
   auto contentPolicy = mLoadInfo->GetExternalContentPolicyType();
-  if (contentPolicy == ExtContentPolicy::TYPE_OBJECT) {
+  if (contentPolicy == nsIContentPolicy::TYPE_OBJECT) {
     if (mWasOpened) {
       MOZ_DIAGNOSTIC_ASSERT(
           aLoadFlags == (mLoadFlags | nsIChannel::LOAD_DOCUMENT_URI),
