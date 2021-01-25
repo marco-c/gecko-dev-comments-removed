@@ -267,7 +267,7 @@ bool AntiTrackingUtils::CheckStoragePermission(nsIPrincipal* aPrincipal,
   
   
   
-  if (policyType == nsIContentPolicy::TYPE_DOCUMENT) {
+  if (policyType == ExtContentPolicy::TYPE_DOCUMENT) {
     return false;
   }
 
@@ -534,7 +534,7 @@ void AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel) {
   
   
   auto policyType = loadInfo->GetExternalContentPolicyType();
-  if (policyType == nsIContentPolicy::TYPE_DOCUMENT) {
+  if (policyType == ExtContentPolicy::TYPE_DOCUMENT) {
     loadInfo->SetIsThirdPartyContextToTopWindow(false);
     return;
   }
@@ -702,7 +702,7 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
   
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (!httpChannel || loadInfo->GetExternalContentPolicyType() !=
-                          nsIContentPolicy::TYPE_DOCUMENT) {
+                          ExtContentPolicy::TYPE_DOCUMENT) {
     return;
   }
 

@@ -16,10 +16,7 @@ NS_IMPL_ISUPPORTS(ImageBlocker, nsIContentPolicy)
 NS_IMETHODIMP
 ImageBlocker::ShouldLoad(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
                          const nsACString& aMimeGuess, int16_t* aShouldLoad) {
-  nsContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
-  MOZ_ASSERT(contentType == nsContentUtils::InternalContentPolicyTypeToExternal(
-                                contentType),
-             "We should only see external content policy types here.");
+  ExtContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
 
   *aShouldLoad = nsIContentPolicy::ACCEPT;
 
@@ -34,8 +31,8 @@ ImageBlocker::ShouldLoad(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
   }
 
   
-  if ((contentType == nsIContentPolicy::TYPE_IMAGE ||
-       contentType == nsIContentPolicy::TYPE_IMAGESET) &&
+  if ((contentType == ExtContentPolicy::TYPE_IMAGE ||
+       contentType == ExtContentPolicy::TYPE_IMAGESET) &&
       StaticPrefs::permissions_default_image() ==
           nsIPermissionManager::DENY_ACTION) {
     NS_SetRequestBlockingReason(
@@ -50,13 +47,6 @@ NS_IMETHODIMP
 ImageBlocker::ShouldProcess(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
                             const nsACString& aMimeGuess,
                             int16_t* aShouldProcess) {
-#ifdef DEBUG
-  nsContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
-  MOZ_ASSERT(contentType == nsContentUtils::InternalContentPolicyTypeToExternal(
-                                contentType),
-             "We should only see external content policy types here.");
-#endif
-
   
   *aShouldProcess = nsIContentPolicy::ACCEPT;
   return NS_OK;

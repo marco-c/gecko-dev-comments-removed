@@ -23,10 +23,7 @@ nsWebBrowserContentPolicy::ShouldLoad(nsIURI* aContentLocation,
                                       int16_t* aShouldLoad) {
   MOZ_ASSERT(aShouldLoad, "Null out param");
 
-  nsContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
-  MOZ_ASSERT(contentType == nsContentUtils::InternalContentPolicyTypeToExternal(
-                                contentType),
-             "We should only see external content policy types here.");
+  ExtContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
 
   *aShouldLoad = nsIContentPolicy::ACCEPT;
 
@@ -41,7 +38,7 @@ nsWebBrowserContentPolicy::ShouldLoad(nsIURI* aContentLocation,
   bool allowed = true;
 
   switch (contentType) {
-    case nsIContentPolicy::TYPE_SUBDOCUMENT:
+    case ExtContentPolicy::TYPE_SUBDOCUMENT:
       rv = shell->GetAllowSubframes(&allowed);
       break;
 #if 0
@@ -50,8 +47,8 @@ nsWebBrowserContentPolicy::ShouldLoad(nsIURI* aContentLocation,
       rv = shell->GetAllowMetaRedirects(&allowed); 
       break;
 #endif
-    case nsIContentPolicy::TYPE_IMAGE:
-    case nsIContentPolicy::TYPE_IMAGESET:
+    case ExtContentPolicy::TYPE_IMAGE:
+    case ExtContentPolicy::TYPE_IMAGESET:
       rv = shell->GetAllowImages(&allowed);
       break;
     default:
@@ -73,17 +70,14 @@ nsWebBrowserContentPolicy::ShouldProcess(nsIURI* aContentLocation,
                                          int16_t* aShouldProcess) {
   MOZ_ASSERT(aShouldProcess, "Null out param");
 
-  nsContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
-  MOZ_ASSERT(contentType == nsContentUtils::InternalContentPolicyTypeToExternal(
-                                contentType),
-             "We should only see external content policy types here.");
+  ExtContentPolicyType contentType = aLoadInfo->GetExternalContentPolicyType();
 
   *aShouldProcess = nsIContentPolicy::ACCEPT;
 
   
   
   
-  if (contentType != nsIContentPolicy::TYPE_OBJECT) {
+  if (contentType != ExtContentPolicy::TYPE_OBJECT) {
     return NS_OK;
   }
 
