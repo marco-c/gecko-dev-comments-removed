@@ -49,7 +49,7 @@ class Selection;
 class AccessibleCaretManager {
  public:
   explicit AccessibleCaretManager(PresShell* aPresShell);
-  virtual ~AccessibleCaretManager();
+  virtual ~AccessibleCaretManager() = default;
 
   
   void Terminate();
@@ -329,6 +329,8 @@ class AccessibleCaretManager {
 
   class LayoutFlusher final {
    public:
+    ~LayoutFlusher();
+
     
     
     
@@ -339,12 +341,13 @@ class AccessibleCaretManager {
     MaybeFlush(const AccessibleCaretManager& aAccessibleCaretManager);
 
     
-    bool mFlushing = false;
-
-    
     
     
     bool mAllowFlushing = true;
+
+  private:
+    
+    bool mFlushing = false;
   };
 
   LayoutFlusher mLayoutFlusher;
