@@ -1088,11 +1088,13 @@ async function scroll() {
 
 
 
-function checkTree(doc, storage, host) {
+
+function checkTree(doc, storage, host, isExpected = true) {
   const treeId = JSON.stringify([storage, host]);
+  const element = doc.querySelector(`[data-id='${treeId}']`);
   ok(
-    doc.querySelector(`[data-id='${treeId}']`),
-    `${storage} > ${host} is in the tree`
+    isExpected ? element : !element,
+    `${storage} > ${host} is ${isExpected ? "" : "not "}in the tree`
   );
 }
 

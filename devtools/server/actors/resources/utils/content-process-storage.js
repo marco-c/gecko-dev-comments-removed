@@ -22,7 +22,17 @@ class ContentProcessStorage {
         return targetActor.conn;
       },
       get windows() {
-        return targetActor.windows;
+        
+        
+        
+        
+        
+        const windows = targetActor.windows.filter(win => {
+          const isTopPage = win.parent === win;
+          return isTopPage || win.location.href !== "about:blank";
+        });
+
+        return windows;
       },
       get window() {
         return targetActor.window;
