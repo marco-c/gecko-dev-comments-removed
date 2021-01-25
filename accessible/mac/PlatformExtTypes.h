@@ -3,8 +3,8 @@
 
 
 
-#ifndef mozilla_a11y_RangeTypes_h__
-#define mozilla_a11y_RangeTypes_h__
+#ifndef mozilla_a11y_PlatformExtTypes_h__
+#define mozilla_a11y_PlatformExtTypes_h__
 
 namespace mozilla {
 namespace a11y {
@@ -19,7 +19,9 @@ enum class EWhichRange {
   eStyle
 };
 
+enum class EWhichPostFilter { eContainsText };
+
 }  
 }  
 
-#endif
+#endif 
