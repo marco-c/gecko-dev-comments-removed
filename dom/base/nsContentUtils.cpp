@@ -8904,10 +8904,6 @@ static inline bool ShouldEscape(nsIContent* aParent) {
   static const nsAtom* nonEscapingElements[] = {
       nsGkAtoms::style, nsGkAtoms::script, nsGkAtoms::xmp, nsGkAtoms::iframe,
       nsGkAtoms::noembed, nsGkAtoms::noframes, nsGkAtoms::plaintext,
-      
-      
-      
-      
       nsGkAtoms::noscript};
   static mozilla::BloomFilter<12, nsAtom> sFilter;
   static bool sInitialized = false;
@@ -8922,6 +8918,10 @@ static inline bool ShouldEscape(nsIContent* aParent) {
   if (sFilter.mightContain(tag)) {
     for (auto& nonEscapingElement : nonEscapingElements) {
       if (tag == nonEscapingElement) {
+        if (MOZ_UNLIKELY(tag == nsGkAtoms::noscript) &&
+            MOZ_UNLIKELY(!aParent->OwnerDoc()->IsScriptEnabled())) {
+          return true;
+        }
         return false;
       }
     }
