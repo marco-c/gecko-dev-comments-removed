@@ -274,16 +274,6 @@ class LocalCertGetTask final : public LocalCertTask {
 
   nsresult Validate() {
     
-    bool selfSigned;
-    nsresult rv = mCert->GetIsSelfSigned(&selfSigned);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    if (!selfSigned) {
-      return NS_ERROR_FAILURE;
-    }
-
-    
     nsAutoString subjectName;
     nsAutoString issuerName;
     mCert->GetSubjectName(subjectName);

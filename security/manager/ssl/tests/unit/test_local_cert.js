@@ -64,7 +64,6 @@ add_task(async function() {
   ok(certA.equals(certB));
 
   
-  ok(certA.isSelfSigned);
   equal(certA.certType, Ci.nsIX509Cert.USER_CERT);
 
   
