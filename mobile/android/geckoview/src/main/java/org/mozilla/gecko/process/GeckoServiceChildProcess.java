@@ -29,7 +29,7 @@ public class GeckoServiceChildProcess extends Service {
 
     private static IProcessManager sProcessManager;
 
-    private long lastLowMemoryNotificationTime = 0;
+    private long mLastLowMemoryNotificationTime = 0;
 
     @WrapForJNI(calledFrom = "gecko")
     private static void getEditableParent(final IGeckoEditableChild child,
@@ -161,10 +161,10 @@ public class GeckoServiceChildProcess extends Service {
 
         final long currentNotificationTime = System.currentTimeMillis();
         if (level >= ComponentCallbacks2.TRIM_MEMORY_COMPLETE ||
-            (currentNotificationTime - lastLowMemoryNotificationTime) >= LOW_MEMORY_ONGOING_RESET_TIME_MS) {
+            (currentNotificationTime - mLastLowMemoryNotificationTime) >= LOW_MEMORY_ONGOING_RESET_TIME_MS) {
             
             observerArg = "low-memory";
-            lastLowMemoryNotificationTime = currentNotificationTime;
+            mLastLowMemoryNotificationTime = currentNotificationTime;
         } else {
             
             
