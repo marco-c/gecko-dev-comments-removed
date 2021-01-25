@@ -88,6 +88,9 @@ modules["URL_CLASSIFIER"] = Mod(42)
 modules["ERRORRESULT"] = Mod(43)
 
 
+modules["WIN32"] = Mod(44)
+
+
 
 
 
