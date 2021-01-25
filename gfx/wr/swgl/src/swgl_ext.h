@@ -408,7 +408,7 @@ static void blendTextureNearestRGBA8(S sampler, const ivec2_scalar& i, int span,
   }
   
   
-  int n = min(maxX + 1 - curX, span);
+  int n = clamp(maxX + 1 - curX, 0, span);
   span -= n;
   
   if (blend_key) {
