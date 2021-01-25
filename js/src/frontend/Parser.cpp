@@ -266,9 +266,12 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
     js::ReportOutOfMemory(cx_);
     return nullptr;
   }
-  if (!compilationState_.scriptExtent.emplaceBack()) {
-    js::ReportOutOfMemory(cx_);
-    return nullptr;
+
+  if (!handler_.canSkipLazyInnerFunctions()) {
+    if (!compilationState_.scriptExtent.emplaceBack()) {
+      js::ReportOutOfMemory(cx_);
+      return nullptr;
+    }
   }
 
   
@@ -1927,7 +1930,6 @@ bool PerHandlerParser<FullParseHandler>::finishFunction(
 
   FunctionBox* funbox = pc_->functionBox();
   ScriptStencil& script = funbox->functionStencil();
-  SourceExtent& extent = funbox->functionStencilExtent();
 
   if (funbox->isInterpreted()) {
     
@@ -1970,7 +1972,10 @@ bool PerHandlerParser<FullParseHandler>::finishFunction(
   funbox->finishScriptFlags();
   funbox->copyFunctionFields(script);
   funbox->copyScriptFields(script);
-  funbox->copyScriptExtent(extent);
+  if (!handler_.canSkipLazyInnerFunctions()) {
+    SourceExtent& extent = funbox->functionStencilExtent();
+    funbox->copyScriptExtent(extent);
+  }
 
   return true;
 }
@@ -2788,11 +2793,9 @@ bool Parser<FullParseHandler, Unit>::skipLazyInnerFunction(
   }
 
   ScriptStencil& script = funbox->functionStencil();
-  SourceExtent& extent = funbox->functionStencilExtent();
   funbox->initFromLazyFunction(fun);
   funbox->copyFunctionFields(script);
   funbox->copyScriptFields(script);
-  funbox->copyScriptExtent(extent);
 
   MOZ_ASSERT_IF(pc_->isFunctionBox(),
                 pc_->functionBox()->index() < funbox->index());
@@ -3311,10 +3314,6 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneLazyFunction(
                                        syntaxKind)) {
     MOZ_ASSERT(directives == newDirectives);
     return null();
-  }
-
-  if (fun->isClassConstructor()) {
-    funbox->setCtorToStringEnd(fun->baseScript()->extent().toStringEnd);
   }
 
   if (!CheckParseTree(cx_, alloc_, funNode)) {
