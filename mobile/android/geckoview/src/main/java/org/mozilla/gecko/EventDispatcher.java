@@ -15,6 +15,7 @@ import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.BuildConfig;
+import org.mozilla.geckoview.GeckoResult;
 
 import android.os.Handler;
 import androidx.annotation.AnyThread;
@@ -221,6 +222,129 @@ public final class EventDispatcher extends JNIObject {
         dispatch(type, message,  null);
     }
 
+    private abstract class CallbackResult<T> extends GeckoResult<T>
+            implements EventCallback {
+        @Override
+        public void sendError(final Object response) {
+            completeExceptionally(new QueryException(response));
+        }
+    }
+
+    public class QueryException extends Exception {
+        public final Object data;
+
+        public QueryException(final Object data) {
+            this.data = data;
+        }
+    }
+
+    
+
+
+
+
+
+
+    public GeckoResult<Void> queryVoid(final String type) {
+        return queryVoid(type, null);
+    }
+
+    
+
+
+
+
+
+
+
+    public GeckoResult<Void> queryVoid(final String type, final GeckoBundle message) {
+        return query(type, message);
+    }
+
+    
+
+
+
+
+
+
+    public GeckoResult<Boolean> queryBoolean(final String type) {
+        return queryBoolean(type, null);
+    }
+
+    
+
+
+
+
+
+
+
+    public GeckoResult<Boolean> queryBoolean(final String type, final GeckoBundle message) {
+        return query(type, message);
+    }
+
+    
+
+
+
+
+
+
+    public GeckoResult<String> queryString(final String type) {
+        return queryString(type, null);
+    }
+
+    
+
+
+
+
+
+
+
+    public GeckoResult<String> queryString(final String type, final GeckoBundle message) {
+        return query(type, message);
+    }
+
+    
+
+
+
+
+
+
+
+    public GeckoResult<GeckoBundle> queryBundle(final String type) {
+        return queryBundle(type, null);
+    }
+
+    
+
+
+
+
+
+
+
+
+    public GeckoResult<GeckoBundle> queryBundle(final String type, final GeckoBundle message) {
+        return query(type, message);
+    }
+
+    private <T> GeckoResult<T> query(final String type, final GeckoBundle message) {
+        final CallbackResult<T> result = new CallbackResult<T>() {
+            @Override
+            @SuppressWarnings("unchecked") 
+            public void sendSuccess(final Object response) {
+                complete((T) response);
+            }
+        };
+
+        dispatch(type, message, result);
+        return result;
+    }
+
     
 
 
@@ -259,8 +383,8 @@ public final class EventDispatcher extends JNIObject {
 
 
     @AnyThread
-    public void dispatch(final String type, final GeckoBundle message,
-                         final EventCallback callback) {
+    private void dispatch(final String type, final GeckoBundle message,
+                          final EventCallback callback) {
         final boolean isGeckoReady;
         synchronized (this) {
             isGeckoReady = isReadyForDispatchingToGecko();

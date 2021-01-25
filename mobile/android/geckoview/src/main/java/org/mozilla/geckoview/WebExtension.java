@@ -1216,6 +1216,13 @@ public class WebExtension {
         }
     }
 
+     static WebExtension fromBundle(final GeckoBundle bundle) {
+        if (bundle == null) {
+            return null;
+        }
+        return new WebExtension(bundle.getBundle("extension"));
+    }
+
     
 
 
@@ -1602,6 +1609,33 @@ public class WebExtension {
 
             
             protected ErrorCodes() {}
+        }
+
+        
+        private static class StateCodes {
+            public static final int STATE_POSTPONED = 7;
+            public static final int STATE_CANCELED = 12;
+        }
+
+         static Throwable fromQueryException(final Throwable exception) {
+            final EventDispatcher.QueryException queryException =
+                    (EventDispatcher.QueryException) exception;
+            final Object response = queryException.data;
+            if (response instanceof GeckoBundle
+                    && ((GeckoBundle) response).containsKey("installError")) {
+                final GeckoBundle bundle = (GeckoBundle) response;
+                int errorCode = bundle.getInt("installError");
+                final int installState = bundle.getInt("state");
+                if (errorCode == 0 && installState ==
+                        StateCodes.STATE_CANCELED) {
+                    errorCode = ErrorCodes.ERROR_USER_CANCELED;
+                } else if (errorCode == 0 && installState == StateCodes.STATE_POSTPONED) {
+                    errorCode = ErrorCodes.ERROR_POSTPONED;
+                }
+                return new WebExtension.InstallException(errorCode);
+            } else {
+                return new Exception(response.toString());
+            }
         }
 
         @Retention(RetentionPolicy.SOURCE)
