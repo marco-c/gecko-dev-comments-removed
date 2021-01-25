@@ -298,6 +298,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:EventSourceImpl::OnStopRequest\n"
          "race:UpdateDontKeepAlive\n"
 
+         
+         "race:image::ImageSurfaceCache::SuggestedSizeInternal\n"
+         "race:image::RasterImage::SetMetadata\n"
+
       
       ;  
 }
