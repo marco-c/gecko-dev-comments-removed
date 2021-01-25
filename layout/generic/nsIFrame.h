@@ -54,6 +54,7 @@
 #include "LayoutConstants.h"
 #include "mozilla/layout/FrameChildList.h"
 #include "mozilla/AspectRatio.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RelativeTo.h"
@@ -2164,9 +2165,9 @@ class nsIFrame : public nsQueryFrame {
 
   
 
-  NS_IMETHOD HandlePress(nsPresContext* aPresContext,
-                         mozilla::WidgetGUIEvent* aEvent,
-                         nsEventStatus* aEventStatus);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD
+  HandlePress(nsPresContext* aPresContext, mozilla::WidgetGUIEvent* aEvent,
+              nsEventStatus* aEventStatus);
 
   NS_IMETHOD HandleMultiplePress(nsPresContext* aPresContext,
                                  mozilla::WidgetGUIEvent* aEvent,
@@ -2178,9 +2179,9 @@ class nsIFrame : public nsQueryFrame {
                         mozilla::WidgetGUIEvent* aEvent,
                         nsEventStatus* aEventStatus);
 
-  NS_IMETHOD HandleRelease(nsPresContext* aPresContext,
-                           mozilla::WidgetGUIEvent* aEvent,
-                           nsEventStatus* aEventStatus);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD
+  HandleRelease(nsPresContext* aPresContext, mozilla::WidgetGUIEvent* aEvent,
+                nsEventStatus* aEventStatus);
 
   
   

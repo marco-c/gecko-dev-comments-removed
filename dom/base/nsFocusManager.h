@@ -231,7 +231,8 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
-  void WindowLowered(mozIDOMWindowProxy* aWindow, uint64_t aActionId);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void WindowLowered(mozIDOMWindowProxy* aWindow,
+                                                 uint64_t aActionId);
 
   
 

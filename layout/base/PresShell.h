@@ -1881,7 +1881,7 @@ class PresShell final : public nsStubDocumentObserver,
   
   void RestoreRootScrollPosition();
 
-  void MaybeReleaseCapturingContent();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void MaybeReleaseCapturingContent();
 
   class DelayedEvent {
    public:
