@@ -5806,8 +5806,12 @@ bool BytecodeEmitter::emitFor(ForNode* forNode,
 }
 
 MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
-    FunctionNode* funNode, bool needsProto ) {
+    FunctionNode* funNode, bool needsProto ,
+    ListNode* classContentsIfConstructor ) {
   FunctionBox* funbox = funNode->funbox();
+
+  MOZ_ASSERT((classContentsIfConstructor != nullptr) ==
+             funbox->isClassConstructor());
 
   
 
@@ -5829,6 +5833,21 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
   }
 
   if (funbox->isInterpreted()) {
+    
+    
+    
+    
+    if (classContentsIfConstructor) {
+      mozilla::Maybe<MemberInitializers> memberInitializers =
+          setupMemberInitializers(classContentsIfConstructor,
+                                  FieldPlacement::Instance);
+      if (!memberInitializers) {
+        ReportAllocationOverflow(cx);
+        return false;
+      }
+      funbox->setMemberInitializers(*memberInitializers);
+    }
+
     if (!funbox->emitBytecode) {
       return fe.emitLazy();
       
@@ -10364,7 +10383,7 @@ bool BytecodeEmitter::emitClass(
         return false;
       }
     }
-    if (!emitFunction(ctor, isDerived)) {
+    if (!emitFunction(ctor, isDerived, classMembers)) {
       
       return false;
     }

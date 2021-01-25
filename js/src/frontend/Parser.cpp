@@ -2806,6 +2806,8 @@ bool Parser<FullParseHandler, Unit>::skipLazyInnerFunction(
   
   
   MOZ_ASSERT(fun->baseScript()->hasEnclosingScript());
+  MOZ_ASSERT_IF(fun->isClassConstructor(),
+                !fun->baseScript()->getMemberInitializers().valid);
 
   PropagateTransitiveParseFlags(funbox, pc_->sc());
 
@@ -7497,9 +7499,11 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
   
   
   
-  size_t numMemberInitializers = classInitializedMembers.privateMethods +
-                                 classInitializedMembers.instanceFields;
-  if (classStmt.constructorBox == nullptr && numMemberInitializers) {
+  size_t numPrivateMethods = classInitializedMembers.privateMethods;
+  size_t numFields = classInitializedMembers.instanceFields;
+
+  if (classStmt.constructorBox == nullptr &&
+      numFields + numPrivateMethods > 0) {
     MOZ_ASSERT(!options().selfHostingMode);
     
     
@@ -7551,11 +7555,7 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
     
     ctorbox->setCtorToStringEnd(classEndOffset);
 
-    
-    MemberInitializers initializers(numMemberInitializers);
-    ctorbox->setMemberInitializers(initializers);
-
-    if (numMemberInitializers) {
+    if (numFields + numPrivateMethods > 0) {
       
       ctorbox->setCtorFunctionHasThisBinding();
     }
