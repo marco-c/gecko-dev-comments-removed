@@ -761,6 +761,12 @@ class nsFlexContainerFrame::FlexItem final {
   
   
   
+  nscoord ClampMainSizeViaCrossAxisConstraints(
+      nscoord aMainSize, const FlexboxAxisTracker& aAxisTracker) const;
+
+  
+  
+  
   
   
   
@@ -1462,29 +1468,6 @@ static nscoord MainSizeFromAspectRatio(nscoord aCrossSize,
 
 
 
-static nscoord ClampMainSizeViaCrossAxisConstraints(
-    nscoord aMainSize, const FlexItem& aFlexItem,
-    const FlexboxAxisTracker& aAxisTracker) {
-  MOZ_ASSERT(aFlexItem.HasAspectRatio(),
-             "Caller should've checked the ratio is valid!");
-
-  const auto& aspectRatio = aFlexItem.GetAspectRatio();
-  const nscoord mainMinSizeFromRatio = MainSizeFromAspectRatio(
-      aFlexItem.CrossMinSize(), aspectRatio, aAxisTracker);
-  nscoord clampedMainSize = std::max(aMainSize, mainMinSizeFromRatio);
-
-  if (aFlexItem.CrossMaxSize() != NS_UNCONSTRAINEDSIZE) {
-    const nscoord mainMaxSizeFromRatio = MainSizeFromAspectRatio(
-        aFlexItem.CrossMaxSize(), aspectRatio, aAxisTracker);
-    clampedMainSize = std::min(clampedMainSize, mainMaxSizeFromRatio);
-  }
-
-  return clampedMainSize;
-}
-
-
-
-
 
 
 
@@ -1563,8 +1546,8 @@ static nscoord PartiallyResolveAutoMinSize(
 
     
     
-    transferredSizeSuggestion = ClampMainSizeViaCrossAxisConstraints(
-        transferredSizeSuggestion, aFlexItem, aAxisTracker);
+    transferredSizeSuggestion = aFlexItem.ClampMainSizeViaCrossAxisConstraints(
+        transferredSizeSuggestion, aAxisTracker);
 
     FLEX_LOGV(" Transferred size suggestion: %d", transferredSizeSuggestion);
     return transferredSizeSuggestion;
@@ -1674,8 +1657,8 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
       
       
       if (aFlexItem.HasAspectRatio()) {
-        contentSizeSuggestion = ClampMainSizeViaCrossAxisConstraints(
-            contentSizeSuggestion, aFlexItem, aAxisTracker);
+        contentSizeSuggestion = aFlexItem.ClampMainSizeViaCrossAxisConstraints(
+            contentSizeSuggestion, aAxisTracker);
       }
 
       FLEX_LOGV(" Content size suggestion: %d", contentSizeSuggestion);
@@ -2332,6 +2315,24 @@ bool FlexItem::CanMainSizeInfluenceCrossSize() const {
   
   
   return true;
+}
+
+nscoord FlexItem::ClampMainSizeViaCrossAxisConstraints(
+    nscoord aMainSize, const FlexboxAxisTracker& aAxisTracker) const {
+  MOZ_ASSERT(HasAspectRatio(), "Caller should've checked the ratio is valid!");
+
+  const auto& aspectRatio = GetAspectRatio();
+  const nscoord mainMinSizeFromRatio =
+      MainSizeFromAspectRatio(CrossMinSize(), aspectRatio, aAxisTracker);
+  nscoord clampedMainSize = std::max(aMainSize, mainMinSizeFromRatio);
+
+  if (CrossMaxSize() != NS_UNCONSTRAINEDSIZE) {
+    const nscoord mainMaxSizeFromRatio =
+        MainSizeFromAspectRatio(CrossMaxSize(), aspectRatio, aAxisTracker);
+    clampedMainSize = std::min(clampedMainSize, mainMaxSizeFromRatio);
+  }
+
+  return clampedMainSize;
 }
 
 
