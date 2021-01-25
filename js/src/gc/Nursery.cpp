@@ -696,11 +696,9 @@ void js::Nursery::freeBuffer(void* buffer, size_t nbytes) {
 }
 
 void Nursery::setIndirectForwardingPointer(void* oldData, void* newData) {
-  MOZ_ASSERT(isInside(oldData));
-
   
   
-  
+  MOZ_ASSERT(isInside(oldData) || (uintptr_t(oldData) & ChunkMask) == 0);
   MOZ_ASSERT(!isInside(newData) || (uintptr_t(newData) & ChunkMask) == 0);
 
   AutoEnterOOMUnsafeRegion oomUnsafe;

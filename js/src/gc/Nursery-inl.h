@@ -81,13 +81,10 @@ inline void js::Nursery::setForwardingPointer(void* oldData, void* newData,
 
 inline void js::Nursery::setDirectForwardingPointer(void* oldData,
                                                     void* newData) {
-  MOZ_ASSERT(isInside(oldData));
-
   
   
-  
-  MOZ_ASSERT(!isInside(newData) ||
-             (uintptr_t(newData) & js::gc::ChunkMask) == 0);
+  MOZ_ASSERT(isInside(oldData) || (uintptr_t(oldData) & gc::ChunkMask) == 0);
+  MOZ_ASSERT(!isInside(newData) || (uintptr_t(newData) & gc::ChunkMask) == 0);
 
   new (oldData) BufferRelocationOverlay{newData};
 }
