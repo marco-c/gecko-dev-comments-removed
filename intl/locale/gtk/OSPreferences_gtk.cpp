@@ -6,11 +6,11 @@
 
 #include <locale.h>
 #include "OSPreferences.h"
-#include "dlfcn.h"
-#include "glib.h"
-#include "gio/gio.h"
 
 #include "unicode/uloc.h"
+
+#include "nsServiceManagerUtils.h"
+#include "nsIGSettingsService.h"
 
 using namespace mozilla::intl;
 
@@ -52,19 +52,13 @@ bool OSPreferences::ReadRegionalPrefsLocales(nsTArray<nsCString>& aLocaleList) {
 
 
 
-typedef GVariant* (*get_value_fn_t)(GSettings*, const gchar*);
-
-static get_value_fn_t FindGetValueFunction() {
-  get_value_fn_t fn = reinterpret_cast<get_value_fn_t>(
-      dlsym(RTLD_DEFAULT, "g_settings_get_user_value"));
-  return fn ? fn : &g_settings_get_value;
-}
-
 static int HourCycle() {
   int rval = 0;
 
-  const char* schema;
-  const char* key;
+  
+  
+  nsAutoCString schema;
+  nsAutoCString key;
   const char* env = getenv("XDG_CURRENT_DESKTOP");
   if (env && strcmp(env, "Unity") == 0) {
     schema = "com.canonical.indicator.datetime";
@@ -74,41 +68,23 @@ static int HourCycle() {
     key = "clock-format";
   }
 
-  
-  
-  
-  
-  const char* const* schemas = g_settings_list_schemas();
-  GSettings* settings = nullptr;
+  nsCOMPtr<nsIGSettingsService> gsettings =
+      do_GetService(NS_GSETTINGSSERVICE_CONTRACTID);
+  nsCOMPtr<nsIGSettingsCollection> desktop_settings;
 
-  for (uint32_t i = 0; schemas[i] != nullptr; i++) {
-    if (strcmp(schemas[i], schema) == 0) {
-      settings = g_settings_new(schema);
-      break;
-    }
-  }
-
-  if (settings) {
-    
-    
-    
-    
-    
-    static get_value_fn_t sGetValueFunction = FindGetValueFunction();
-    GVariant* value = sGetValueFunction(settings, key);
-    if (value) {
-      if (g_variant_is_of_type(value, G_VARIANT_TYPE_STRING)) {
-        const char* strVal = g_variant_get_string(value, nullptr);
-        if (strncmp("12", strVal, 2) == 0) {
-          rval = 12;
-        } else if (strncmp("24", strVal, 2) == 0) {
-          rval = 24;
-        }
+  if (gsettings) {
+    gsettings->GetCollectionForSchema(schema, getter_AddRefs(desktop_settings));
+    if (desktop_settings) {
+      nsAutoCString result;
+      desktop_settings->GetString(key, result);
+      if (result == "12h") {
+        rval = 12;
+      } else if (result == "24h") {
+        rval = 24;
       }
-      g_variant_unref(value);
     }
-    g_object_unref(settings);
   }
+
   return rval;
 }
 
