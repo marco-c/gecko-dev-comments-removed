@@ -470,6 +470,15 @@ class WasmTableObject : public NativeObject {
                                  mozilla::Maybe<uint32_t> maximumLength,
                                  wasm::RefType tableType, HandleObject proto);
   wasm::Table& table() const;
+
+  
+  
+  
+  bool fillRange(JSContext* cx, uint32_t index, uint32_t length,
+                 HandleValue value) const;
+#ifdef DEBUG
+  void assertRangeNull(uint32_t index, uint32_t length) const;
+#endif
 };
 
 
