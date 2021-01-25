@@ -331,11 +331,6 @@ struct BaseCompilationStencil {
   mozilla::Maybe<StencilModuleMetadata> moduleMetadata;
 
   
-  HashMap<ScriptIndex, RefPtr<const JS::WasmModule>,
-          mozilla::DefaultHasher<ScriptIndex>, js::SystemAllocPolicy>
-      asmJS;
-
-  
   
   
   ParserAtomSpan parserAtomData;
@@ -375,9 +370,13 @@ struct BaseCompilationStencil {
 
   bool isInitialStencil() const { return !scriptExtra.empty(); }
 
+  bool isCompilationStencil() const { return isInitialStencil(); }
+  inline CompilationStencil& asCompilationStencil();
+
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
   void dump(js::JSONPrinter& json);
+  void dumpFields(js::JSONPrinter& json);
 #endif
 };
 
@@ -519,6 +518,11 @@ struct CompilationStencil : public BaseCompilationStencil {
   CompilationInput input;
 
   
+  HashMap<ScriptIndex, RefPtr<const JS::WasmModule>,
+          mozilla::DefaultHasher<ScriptIndex>, js::SystemAllocPolicy>
+      asmJS;
+
+  
   
   bool preparationIsPerformed = false;
 
@@ -579,7 +583,18 @@ struct CompilationStencil : public BaseCompilationStencil {
   }
 
   void trace(JSTracer* trc);
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+  void dump();
+  void dump(js::JSONPrinter& json);
+  void dumpFields(js::JSONPrinter& json);
+#endif
 };
+
+inline CompilationStencil& BaseCompilationStencil::asCompilationStencil() {
+  MOZ_ASSERT(isCompilationStencil());
+  return *static_cast<CompilationStencil*>(this);
+}
 
 
 
