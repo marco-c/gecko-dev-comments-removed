@@ -96,13 +96,7 @@ class InactivePropertyHelper {
       },
       
       {
-        invalidProperties: [
-          "flex",
-          "flex-basis",
-          "flex-grow",
-          "flex-shrink",
-          "order",
-        ],
+        invalidProperties: ["flex", "flex-basis", "flex-grow", "flex-shrink"],
         when: () => !this.flexItem,
         fixId: "inactive-css-not-flex-item-fix-2",
         msgId: "inactive-css-not-flex-item",
@@ -141,7 +135,7 @@ class InactivePropertyHelper {
       },
       
       {
-        invalidProperties: ["align-self", "place-self"],
+        invalidProperties: ["align-self", "place-self", "order"],
         when: () =>
           !this.gridItem && !this.flexItem && !this.isAbsPosGridElement(),
         fixId: "inactive-css-not-grid-or-flex-item-fix-2",
