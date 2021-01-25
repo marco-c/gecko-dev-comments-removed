@@ -321,6 +321,7 @@ class BasePopup {
     if (this.extension.remote) {
       browser.setAttribute("remote", "true");
       browser.setAttribute("remoteType", this.extension.remoteType);
+      browser.setAttribute("maychangeremoteness", "true");
     }
 
     
@@ -354,8 +355,6 @@ class BasePopup {
       browser.contentWindow; 
     }
 
-    ExtensionParent.apiManager.emit("extension-browser-inserted", browser);
-
     let setupBrowser = browser => {
       let mm = browser.messageManager;
       mm.addMessageListener("Extension:BrowserBackgroundChanged", this);
@@ -366,20 +365,11 @@ class BasePopup {
       browser.addEventListener("DoZoomEnlargeBy10", this, true); 
       browser.addEventListener("DoZoomReduceBy10", this, true); 
 
+      ExtensionParent.apiManager.emit("extension-browser-inserted", browser);
       return browser;
     };
 
-    if (!popupURL) {
-      
-      
-      
-      if (this.extension.remote) {
-        return readyPromise.then(() => setupBrowser(browser));
-      }
-      return setupBrowser(browser);
-    }
-
-    return readyPromise.then(() => {
+    const initBrowser = () => {
       setupBrowser(browser);
       let mm = browser.messageManager;
 
@@ -397,7 +387,22 @@ class BasePopup {
         maxHeight: 600,
         stylesheets: this.STYLESHEETS,
       });
+    };
 
+    browser.addEventListener("DidChangeBrowserRemoteness", initBrowser); 
+
+    if (!popupURL) {
+      
+      
+      
+      if (this.extension.remote) {
+        return readyPromise.then(() => setupBrowser(browser));
+      }
+      return setupBrowser(browser);
+    }
+
+    return readyPromise.then(() => {
+      initBrowser();
       browser.loadURI(popupURL, {
         triggeringPrincipal: this.extension.principal,
       });
