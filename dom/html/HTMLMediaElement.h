@@ -1843,11 +1843,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   TimeDurationAccumulator mVideoDecodeSuspendTime;
 
   
-  
-  
-  TimeDurationAccumulator mCurrentLoadPlayTime;
-
-  
   bool mInitialized = false;
 
   
