@@ -130,13 +130,6 @@ void MIRGraph::removeBlock(MBasicBlock* block) {
   }
 }
 
-void MIRGraph::removeBlockIncludingPhis(MBasicBlock* block) {
-  
-  
-  removeBlock(block);
-  block->discardAllPhis();
-}
-
 void MIRGraph::unmarkBlocks() {
   for (MBasicBlockIterator i(blocks_.begin()); i != blocks_.end(); i++) {
     i->unmark();
@@ -702,7 +695,7 @@ void MBasicBlock::discardAllInstructionsStartingAt(MInstructionIterator iter) {
   }
 }
 
-void MBasicBlock::discardAllPhiOperands() {
+void MBasicBlock::discardAllPhis() {
   for (MPhiIterator iter = phisBegin(); iter != phisEnd(); iter++) {
     iter->removeAllOperands();
   }
@@ -711,10 +704,7 @@ void MBasicBlock::discardAllPhiOperands() {
        pred++) {
     (*pred)->clearSuccessorWithPhis();
   }
-}
 
-void MBasicBlock::discardAllPhis() {
-  discardAllPhiOperands();
   phis_.clear();
 }
 
@@ -742,12 +732,7 @@ void MBasicBlock::discardAllResumePoints(bool discardEntry) {
 void MBasicBlock::clear() {
   discardAllInstructions();
   discardAllResumePoints();
-
-  
-  
-  
-  
-  discardAllPhiOperands();
+  discardAllPhis();
 }
 
 void MBasicBlock::insertBefore(MInstruction* at, MInstruction* ins) {
