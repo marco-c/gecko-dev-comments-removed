@@ -281,6 +281,22 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
+  _getTargetActorInParentProcess() {
+    return this.browserElement
+      ? 
+        
+        TargetActorRegistry.getTargetActor(this.browserId)
+      : TargetActorRegistry.getParentProcessTargetActor();
+  },
+
+  
+
+
+
+
+
+
+
   async watchResources(resourceTypes) {
     
     
@@ -300,6 +316,9 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
     
     for (const targetType in TARGET_HELPERS) {
+      
+      
+      
       
       
       if (
@@ -340,16 +359,12 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-
-
     const frameResourceTypes = Resources.getResourceTypesForTargetType(
       resourceTypes,
       Targets.TYPES.FRAME
     );
     if (frameResourceTypes.length > 0) {
-      const targetActor = this.browserElement
-        ? TargetActorRegistry.getTargetActor(this.browserId)
-        : TargetActorRegistry.getParentProcessTargetActor();
+      const targetActor = this._getTargetActorInParentProcess();
       if (targetActor) {
         await targetActor.addWatcherDataEntry("resources", frameResourceTypes);
       }
@@ -419,9 +434,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       Targets.TYPES.FRAME
     );
     if (frameResourceTypes.length > 0) {
-      const targetActor = this.browserElement
-        ? TargetActorRegistry.getTargetActor(this.browserId)
-        : TargetActorRegistry.getParentProcessTargetActor();
+      const targetActor = this._getTargetActorInParentProcess();
       if (targetActor) {
         targetActor.removeWatcherDataEntry("resources", frameResourceTypes);
       }
@@ -478,6 +491,12 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
           });
         })
     );
+
+    
+    const targetActor = this._getTargetActorInParentProcess();
+    if (targetActor) {
+      await targetActor.addWatcherDataEntry(type, entries);
+    }
   },
 
   
@@ -503,5 +522,11 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
           entries,
         });
       });
+
+    
+    const targetActor = this._getTargetActorInParentProcess();
+    if (targetActor) {
+      targetActor.removeWatcherDataEntry(type, entries);
+    }
   },
 });
