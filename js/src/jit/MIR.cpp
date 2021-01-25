@@ -2236,7 +2236,6 @@ static inline bool NeedNegativeZeroCheck(MDefinition* def) {
         
         break;
       case MDefinition::Opcode::StoreElementHole:
-      case MDefinition::Opcode::FallibleStoreElement:
       case MDefinition::Opcode::StoreTypedArrayElementHole:
       case MDefinition::Opcode::PostWriteElementBarrier:
         
