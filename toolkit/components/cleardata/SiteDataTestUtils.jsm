@@ -122,7 +122,7 @@ var SiteDataTestUtils = {
       principal,
       ""
     );
-    storage.setItem("key", "value");
+    storage.setItem(key, value);
   },
 
   
@@ -132,7 +132,9 @@ var SiteDataTestUtils = {
 
 
 
-  hasLocalStorage(origin) {
+
+
+  hasLocalStorage(origin, testEntries) {
     let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
       origin
     );
@@ -142,7 +144,16 @@ var SiteDataTestUtils = {
       principal,
       ""
     );
-    return !!storage.length;
+    if (!storage.length) {
+      return false;
+    }
+    if (!testEntries) {
+      return true;
+    }
+    return (
+      storage.length >= testEntries.length &&
+      testEntries.every(({ key, value }) => storage.getItem(key) == value)
+    );
   },
 
   
@@ -180,22 +191,37 @@ var SiteDataTestUtils = {
     });
   },
 
-  hasCookies(origin) {
+  hasCookies(origin, testEntries) {
     let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
       origin
     );
-    for (let cookie of Services.cookies.cookies) {
-      if (
+
+    let filterFn = cookie => {
+      return (
         ChromeUtils.isOriginAttributesEqual(
           principal.originAttributes,
           cookie.originAttributes
-        ) &&
-        cookie.host.includes(principal.host)
-      ) {
-        return true;
-      }
+        ) && cookie.host.includes(principal.host)
+      );
+    };
+
+    
+    if (!testEntries) {
+      return Services.cookies.cookies.some(filterFn);
     }
-    return false;
+
+    
+    let cookies = Services.cookies.cookies.filter(filterFn);
+
+    if (cookies.length < testEntries.length) {
+      return false;
+    }
+
+    
+    
+    return testEntries.every(({ key, value }) =>
+      cookies.some(cookie => cookie.name == key && cookie.value == value)
+    );
   },
 
   hasIndexedDB(origin) {
