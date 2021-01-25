@@ -74,7 +74,10 @@ void LoaderObserver::OnEndDllLoad(void* aContext, NTSTATUS aNtStatus,
             loadContext->mDynamicStringStorage.get()));
   }
 
-  if (!NT_SUCCESS(aNtStatus) || !aModuleLoadInfo.WasMapped()) {
+  
+  
+  if ((!NT_SUCCESS(aNtStatus) && !aModuleLoadInfo.WasDenied()) ||
+      !aModuleLoadInfo.WasMapped()) {
     return;
   }
 
