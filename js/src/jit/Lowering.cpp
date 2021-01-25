@@ -4059,13 +4059,6 @@ void LIRGenerator::visitGuardObjectGroup(MGuardObjectGroup* ins) {
   }
 }
 
-void LIRGenerator::visitGuardObject(MGuardObject* ins) {
-  
-  
-  MOZ_ASSERT(ins->input()->type() == MIRType::Object);
-  redefine(ins, ins->input());
-}
-
 void LIRGenerator::visitGuardString(MGuardString* ins) {
   
   
