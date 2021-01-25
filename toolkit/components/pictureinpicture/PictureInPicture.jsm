@@ -20,6 +20,10 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const { Rect, Point } = ChromeUtils.import(
+  "resource://gre/modules/Geometry.jsm"
+);
+
 const PLAYER_URI = "chrome://global/content/pictureinpicture/player.xhtml";
 var PLAYER_FEATURES =
   "chrome,titlebar=yes,alwaysontop,lockaspectratio,resizable";
@@ -411,8 +415,15 @@ var PictureInPicture = {
       actorReference
     );
 
+    let [resolvedLeft, resolvedTop] = this.resolveOverlapConflicts(
+      left,
+      top,
+      width,
+      height
+    );
+
     let features =
-      `${PLAYER_FEATURES},top=${top},left=${left},` +
+      `${PLAYER_FEATURES},top=${resolvedTop},left=${resolvedLeft},` +
       `outerWidth=${width},outerHeight=${height}`;
 
     let pipWindow = Services.ww.openWindow(
@@ -638,6 +649,141 @@ var PictureInPicture = {
     top = screenTop + screenHeight - height;
 
     return { top, left, width, height };
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  resolveOverlapConflicts(left, top, width, height) {
+    if (!this.isMultiPipEnabled) {
+      
+      return [left, top];
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    let playerRects = [];
+
+    for (let playerWin of Services.wm.getEnumerator(WINDOW_TYPE)) {
+      playerRects.push(
+        new Rect(
+          playerWin.screenX,
+          playerWin.screenY,
+          playerWin.outerWidth,
+          playerWin.outerHeight
+        )
+      );
+    }
+
+    const newPlayerRect = new Rect(left, top, width, height);
+    let conflictingPipRect = playerRects.find(rect =>
+      rect.intersects(newPlayerRect)
+    );
+
+    if (!conflictingPipRect) {
+      
+      return [left, top];
+    }
+
+    const conflictLoc = conflictingPipRect.center();
+
+    
+    
+    const conflictScreen = this.getWorkingScreen(conflictLoc.x, conflictLoc.y);
+
+    const [
+      screenTop,
+      screenLeft,
+      screenWidth,
+      screenHeight,
+    ] = this.getAvailScreenSize(conflictScreen);
+
+    const screenRect = new Rect(
+      screenTop,
+      screenLeft,
+      screenWidth,
+      screenHeight
+    );
+
+    const getEdgeCandidates = rect => {
+      return [
+        
+        new Point(rect.left - newPlayerRect.width, rect.top),
+        
+        new Point(rect.left, rect.top - newPlayerRect.height),
+        
+        new Point(rect.right + newPlayerRect.width, rect.top),
+        
+        new Point(rect.left, rect.bottom),
+      ];
+    };
+
+    let candidateLocations = [];
+    for (const playerRect of playerRects) {
+      for (let candidateLoc of getEdgeCandidates(playerRect)) {
+        const candidateRect = new Rect(
+          candidateLoc.x,
+          candidateLoc.y,
+          width,
+          height
+        );
+
+        if (!screenRect.contains(candidateRect)) {
+          continue;
+        }
+
+        
+        if (playerRects.some(rect => rect.intersects(candidateRect))) {
+          continue;
+        }
+
+        const candidateCenter = candidateRect.center();
+        const candidateDistanceToConflict =
+          Math.abs(conflictLoc.x - candidateCenter.x) +
+          Math.abs(conflictLoc.y - candidateCenter.y);
+
+        candidateLocations.push({
+          distanceToConflict: candidateDistanceToConflict,
+          location: candidateLoc,
+        });
+      }
+    }
+
+    if (!candidateLocations.length) {
+      
+      return [left, top];
+    }
+
+    
+    const closestCandidate = candidateLocations.sort(
+      (firstCand, secondCand) =>
+        firstCand.distanceToConflict - secondCand.distanceToConflict
+    )[0];
+
+    if (!closestCandidate) {
+      
+      return [left, top];
+    }
+
+    const resolvedX = closestCandidate.location.x;
+    const resolvedY = closestCandidate.location.y;
+
+    return [resolvedX, resolvedY];
   },
 
   resizePictureInPictureWindow(videoData, actorRef) {
