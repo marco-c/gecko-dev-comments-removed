@@ -2,8 +2,6 @@
 %brandDTD;
 <!ENTITY % browserDTD SYSTEM "chrome:
 %browserDTD;
-<!ENTITY % baseMenuDTD SYSTEM "chrome:
-%baseMenuDTD;
 <!ENTITY % charsetDTD SYSTEM "chrome:
 %charsetDTD;
 <!ENTITY % textcontextDTD SYSTEM "chrome:
