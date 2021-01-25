@@ -8,6 +8,7 @@
 #include <stddef.h>
 
 #include "HTMLEditUtils.h"
+#include "mozilla/EditAction.h"
 #include "mozilla/EditorBase.h"
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/mozalloc.h"
@@ -156,7 +157,8 @@ void TypeInState::PostHandleSelectionChangeCommand(
   ClearProp(nsGkAtoms::a, nullptr);
 }
 
-void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
+void TypeInState::OnSelectionChange(const HTMLEditor& aHTMLEditor,
+                                    int16_t aReason) {
   
   
   
@@ -195,9 +197,10 @@ void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
 
   bool unlink = false;
   bool resetAllStyles = true;
-  if (aSelection.IsCollapsed() && aSelection.RangeCount()) {
+  if (aHTMLEditor.SelectionRefPtr()->IsCollapsed() &&
+      aHTMLEditor.SelectionRefPtr()->RangeCount()) {
     EditorRawDOMPoint selectionStartPoint(
-        EditorBase::GetStartPoint(aSelection));
+        EditorBase::GetStartPoint(*aHTMLEditor.SelectionRefPtr()));
     if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
       return;
     }
@@ -281,6 +284,23 @@ void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
         
         
         unlink = true;
+      } else {
+        switch (aHTMLEditor.GetEditAction()) {
+          case EditAction::eDeleteBackward:
+          case EditAction::eDeleteForward:
+          case EditAction::eDeleteSelection:
+          case EditAction::eDeleteToBeginningOfSoftLine:
+          case EditAction::eDeleteToEndOfSoftLine:
+          case EditAction::eDeleteWordBackward:
+          case EditAction::eDeleteWordForward:
+            
+            
+            
+            unlink = true;
+            break;
+          default:
+            break;
+        }
       }
     } else if (mLastSelectionPoint == selectionStartPoint) {
       return;
@@ -291,10 +311,11 @@ void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
     
     AutoEditorDOMPointChildInvalidator saveOnlyOffset(mLastSelectionPoint);
   } else {
-    if (aSelection.RangeCount()) {
+    if (aHTMLEditor.SelectionRefPtr()->RangeCount()) {
       
       
-      EditorRawDOMRange firstRange(*aSelection.GetRangeAt(0));
+      EditorRawDOMRange firstRange(
+          *aHTMLEditor.SelectionRefPtr()->GetRangeAt(0));
       if (firstRange.StartRef().IsInContentNode() &&
           HTMLEditUtils::IsContentInclusiveDescendantOfLink(
               *firstRange.StartRef().ContainerAsContent())) {
