@@ -357,13 +357,6 @@ void gc::GCRuntime::endVerifyPreBarriers() {
     zone->setNeedsIncrementalBarrier(false);
   }
 
-  
-
-
-
-  MOZ_ASSERT(trc->number == number);
-  number++;
-
   verifyPreData = nullptr;
   MOZ_ASSERT(incrementalState == State::Mark);
   incrementalState = State::NotActive;
