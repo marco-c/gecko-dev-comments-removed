@@ -117,6 +117,10 @@ static const CSSCoord kRangeHeight = 6.0f;
 static const CSSCoord kProgressbarHeight = 6.0f;
 static const CSSCoord kMeterHeight = 12.0f;
 
+
+
+static const CSSCoord kCheckboxRadioBorderWidth = 2.0f;
+
 }  
 }  
 
