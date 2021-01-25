@@ -113,8 +113,6 @@ namespace google_breakpad {
 
 class DwarfLineToModule: public dwarf2reader::LineInfoHandler {
  public:
-  typedef std::map<uint32, Module::File *> FileTable;
-
   
   
   
@@ -123,17 +121,16 @@ class DwarfLineToModule: public dwarf2reader::LineInfoHandler {
   
   
   DwarfLineToModule(Module *module, const string& compilation_dir,
-                    vector<Module::Line> *lines, FileTable *files)
+                    vector<Module::Line> *lines)
       : module_(module),
         compilation_dir_(compilation_dir),
         lines_(lines),
         highest_file_number_(-1),
         omitted_line_end_(0),
         warned_bad_file_number_(false),
-        warned_bad_directory_number_(false),
-        out_files_(files) { }
+        warned_bad_directory_number_(false) { }
   
-  ~DwarfLineToModule();
+  ~DwarfLineToModule() { }
 
   void DefineDir(const string &name, uint32 dir_num);
   void DefineFile(const string &name, int32 file_num,
@@ -145,6 +142,8 @@ class DwarfLineToModule: public dwarf2reader::LineInfoHandler {
  private:
 
   typedef std::map<uint32, string> DirectoryTable;
+  typedef std::map<uint32, Module::File *> FileTable;
+
   
   
   Module *module_;
@@ -182,8 +181,6 @@ class DwarfLineToModule: public dwarf2reader::LineInfoHandler {
   
   bool warned_bad_file_number_; 
   bool warned_bad_directory_number_; 
-
-  FileTable* out_files_;
 };
 
 } 

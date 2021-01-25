@@ -125,20 +125,6 @@ struct DwarfCUToModule::FilePrivate {
   SpecificationByOffset specifications;
 
   AbstractOriginByOffset origins;
-
-  struct InlinedSubroutineRange {
-    InlinedSubroutineRange(Module::Range range, uint64 call_file,
-                           uint64 call_line)
-      : range_(range), call_file_(call_file), call_line_(call_line) {}
-
-    Module::Range range_;
-    uint64 call_file_, call_line_;
-  };
-
-  
-  
-  
-  vector<InlinedSubroutineRange> inlined_ranges;
 };
 
 DwarfCUToModule::FileContext::FileContext(const string &filename,
@@ -477,136 +463,6 @@ string DwarfCUToModule::GenericDIEHandler::ComputeQualifiedName() {
 }
 
 
-class DwarfCUToModule::InlinedSubroutineHandler: public GenericDIEHandler {
- public:
-  InlinedSubroutineHandler(CUContext *cu_context, DIEContext *parent_context,
-                           uint64 offset)
-    : GenericDIEHandler(cu_context, parent_context, offset),
-      low_pc_(0), high_pc_(0), high_pc_form_(dwarf2reader::DW_FORM_addr),
-      ranges_(0), call_file_(0), call_file_set_(false), call_line_(0),
-      call_line_set_(false) {}
-
-  void ProcessAttributeUnsigned(enum DwarfAttribute attr,
-                                enum DwarfForm form,
-                                uint64 data);
-
-  bool EndAttributes();
-
- private:
-  uint64 low_pc_, high_pc_; 
-  DwarfForm high_pc_form_; 
-  uint64 ranges_; 
-  uint64 call_file_; 
-  bool call_file_set_;
-  uint64 call_line_; 
-  bool call_line_set_;
-};
-
-void DwarfCUToModule::InlinedSubroutineHandler::ProcessAttributeUnsigned(
-    enum DwarfAttribute attr,
-    enum DwarfForm form,
-    uint64 data) {
-  switch (attr) {
-    case dwarf2reader::DW_AT_low_pc:      low_pc_  = data; break;
-    case dwarf2reader::DW_AT_high_pc:
-      high_pc_form_ = form;
-      high_pc_ = data;
-      break;
-    case dwarf2reader::DW_AT_ranges:
-      ranges_ = data;
-      break;
-    case dwarf2reader::DW_AT_call_file:
-      call_file_ = data;
-      call_file_set_ = true;
-      break;
-    case dwarf2reader::DW_AT_call_line:
-      call_line_ = data;
-      call_line_set_ = true;
-      break;
-
-    default:
-      GenericDIEHandler::ProcessAttributeUnsigned(attr, form, data);
-      break;
-  }
-}
-
-bool DwarfCUToModule::InlinedSubroutineHandler::EndAttributes() {
-  
-  
-  
-  const bool ignore_children = false;
-
-  
-  
-  if (!call_file_set_ || !call_line_set_) {
-    return ignore_children;
-  }
-
-  vector<Module::Range> ranges;
-
-  if (!ranges_) {
-    
-    if (high_pc_form_ != dwarf2reader::DW_FORM_addr &&
-        high_pc_form_ != dwarf2reader::DW_FORM_GNU_addr_index) {
-      high_pc_ += low_pc_;
-    }
-
-    Module::Range range(low_pc_, high_pc_ - low_pc_);
-    ranges.push_back(range);
-  } else {
-    RangesHandler *ranges_handler = cu_context_->ranges_handler;
-
-    if (ranges_handler) {
-      if (!ranges_handler->ReadRanges(ranges_, cu_context_->low_pc, &ranges)) {
-        ranges.clear();
-        cu_context_->reporter->MalformedRangeList(ranges_);
-      }
-    } else {
-      cu_context_->reporter->MissingRanges();
-    }
-  }
-
-  for (const auto& range : ranges) {
-    if (range.size > 0) {
-      FilePrivate::InlinedSubroutineRange inline_range(range, call_file_, call_line_);
-      cu_context_->file_context->file_private_->inlined_ranges.push_back(inline_range);
-    }
-  }
-
-  return ignore_children;
-}
-
-
-class DwarfCUToModule::LexicalBlockHandler: public GenericDIEHandler {
- public:
-  LexicalBlockHandler(CUContext *cu_context, DIEContext *parent_context,
-                      uint64 offset)
-      : GenericDIEHandler(cu_context, parent_context, offset) {}
-
-  bool EndAttributes();
-
-  DIEHandler* FindChildHandler(uint64 offset, enum DwarfTag tag);
-};
-
-
-bool DwarfCUToModule::LexicalBlockHandler::EndAttributes() {
-  
-  return true;
-}
-
-dwarf2reader::DIEHandler* DwarfCUToModule::LexicalBlockHandler::FindChildHandler(
-    uint64 offset,
-    enum DwarfTag tag) {
-  switch (tag) {
-    case dwarf2reader::DW_TAG_inlined_subroutine:
-      return new InlinedSubroutineHandler(cu_context_, parent_context_, offset);
-
-    default:
-      return NULL;
-  }
-}
-
-
 class DwarfCUToModule::FuncHandler: public GenericDIEHandler {
  public:
   FuncHandler(CUContext *cu_context, DIEContext *parent_context,
@@ -626,8 +482,6 @@ class DwarfCUToModule::FuncHandler: public GenericDIEHandler {
 
   bool EndAttributes();
   void Finish();
-
-  DIEHandler *FindChildHandler(uint64 offset, enum DwarfTag tag);
 
  private:
   
@@ -801,26 +655,6 @@ void DwarfCUToModule::FuncHandler::Finish() {
   } else if (inline_) {
     AbstractOrigin origin(name_);
     cu_context_->file_context->file_private_->origins[offset_] = origin;
-  }
-}
-
-dwarf2reader::DIEHandler *DwarfCUToModule::FuncHandler::FindChildHandler(
-    uint64 offset,
-    enum DwarfTag tag) {
-  switch (tag) {
-    case dwarf2reader::DW_TAG_inlined_subroutine:
-      return new InlinedSubroutineHandler(cu_context_, parent_context_, offset);
-
-      
-      
-      
-      
-      
-    case dwarf2reader::DW_TAG_lexical_block:
-      return new LexicalBlockHandler(cu_context_, parent_context_, offset);
-
-    default:
-      return NULL;
   }
 }
 
@@ -1091,8 +925,7 @@ void DwarfCUToModule::SetLanguage(DwarfLanguage language) {
   }
 }
 
-void DwarfCUToModule::ReadSourceLines(uint64 offset,
-                                      LineToModuleHandler::FileMap *files) {
+void DwarfCUToModule::ReadSourceLines(uint64 offset) {
   const dwarf2reader::SectionMap &section_map
       = cu_context_->file_context->section_map();
   dwarf2reader::SectionMap::const_iterator map_entry
@@ -1112,7 +945,7 @@ void DwarfCUToModule::ReadSourceLines(uint64 offset,
     return;
   }
   line_reader_->ReadProgram(section_start + offset, section_length - offset,
-                            cu_context_->file_context->module_, &lines_, files);
+                            cu_context_->file_context->module_, &lines_);
 }
 
 namespace {
@@ -1167,154 +1000,9 @@ inline bool within(const T &item, Module::Address address) {
   
   return address - item.address < item.size;
 }
-
-
-
-
-
-
-
-
-
-
-
-vector<Module::Line> MergeLines(const vector<Module::Line>& inlines,
-                                const vector<Module::Line>& lines) {
-  vector<Module::Line> merged_lines;
-  vector<Module::Line>::const_iterator orig_lines = lines.begin();
-  vector<Module::Line>::const_iterator inline_lines = inlines.begin();
-  vector<Module::Line>::const_iterator orig_end = lines.end();
-  vector<Module::Line>::const_iterator inline_end = inlines.end();
-
-  while (true) {
-    if (orig_lines == orig_end) {
-      break;
-    }
-
-    if (inline_lines == inline_end) {
-      merged_lines.push_back(*orig_lines);
-      ++orig_lines;
-      continue;
-    }
-
-    
-    
-    
-    
-
-    
-    if (orig_lines->address < inline_lines->address) {
-      merged_lines.push_back(*orig_lines);
-      ++orig_lines;
-      continue;
-    }
-
-    
-    
-    if (orig_lines->address == inline_lines->address) {
-      auto start = orig_lines + 1;
-      while ((start->address - inline_lines->address) < inline_lines->size
-             && start != orig_end) {
-        ++start;
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      merged_lines.push_back(*inline_lines);
-      auto overlapped = start - 1;
-      if (within(*overlapped, inline_lines->address + inline_lines->size)) {
-        
-        Module::Line rest;
-        rest.address = inline_lines->address + inline_lines->size;
-        rest.size = overlapped->address + overlapped->size - rest.address;
-        rest.file = overlapped->file;
-        rest.number = overlapped->number;
-        merged_lines.push_back(rest);
-      }
-
-      ++inline_lines;
-      orig_lines = start;
-      continue;
-    }
-
-    
-    
-    if (orig_lines->address > inline_lines->address) {
-      ++inline_lines;
-      continue;
-    }
-  }
-
-  return merged_lines;
 }
 
-
-
-
-
-void CollapseAdjacentLines(vector<Module::Line>& lines) {
-  if (lines.empty()) {
-    return;
-  }
-
-  auto merging_into = lines.begin();
-  auto next = merging_into + 1;
-  const auto end = lines.end();
-
-  while (next != end) {
-    
-    if ((merging_into->address + merging_into->size) == next->address &&
-        merging_into->file == next->file &&
-        merging_into->number == next->number) {
-      merging_into->size = next->address + next->size - merging_into->address;
-      ++next;
-      continue;
-    }
-
-    
-    ++merging_into;
-
-    
-    
-    
-    
-    if (next != end) {
-      if (next != merging_into) {
-        *merging_into = std::move(*next);
-      }
-      ++next;
-    }
-  }
-
-  lines.erase(merging_into + 1, end);
-}
-}
-
-void DwarfCUToModule::AssignLinesToFunctions(const LineToModuleHandler::FileMap &files) {
+void DwarfCUToModule::AssignLinesToFunctions() {
   vector<Module::Function *> *functions = &cu_context_->functions;
   WarningReporter *reporter = cu_context_->reporter;
 
@@ -1333,33 +1021,6 @@ void DwarfCUToModule::AssignLinesToFunctions(const LineToModuleHandler::FileMap 
   std::sort(functions->begin(), functions->end(),
             Module::Function::CompareByAddress);
   std::sort(lines_.begin(), lines_.end(), Module::Line::CompareByAddress);
-
-  
-  vector<Module::Line> inlines;
-
-  for (const auto& range : cu_context_->file_context->file_private_->inlined_ranges) {
-    auto f = files.find(range.call_file_);
-    if (f == files.end()) {
-      
-      continue;
-    }
-
-    Module::Line line;
-    line.address = range.range_.address;
-    line.size = range.range_.size;
-    line.number = range.call_line_;
-    line.file = f->second;
-    inlines.push_back(line);
-  }
-  std::sort(inlines.begin(), inlines.end(), Module::Line::CompareByAddress);
-
-  if (!inlines.empty()) {
-    vector<Module::Line> merged_lines = MergeLines(inlines, lines_);
-
-    CollapseAdjacentLines(merged_lines);
-
-    lines_ = std::move(merged_lines);
-  }
 
   
   
@@ -1545,14 +1206,13 @@ void DwarfCUToModule::Finish() {
     return;
 
   
-  LineToModuleHandler::FileMap files;
   if (has_source_line_info_)
-    ReadSourceLines(source_line_offset_, &files);
+    ReadSourceLines(source_line_offset_);
 
   vector<Module::Function *> *functions = &cu_context_->functions;
 
   
-  AssignLinesToFunctions(files);
+  AssignLinesToFunctions();
 
   
   

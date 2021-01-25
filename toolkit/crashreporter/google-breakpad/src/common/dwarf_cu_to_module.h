@@ -145,8 +145,6 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
   
   class LineToModuleHandler {
    public:
-    typedef std::map<uint32, Module::File*> FileMap;
-
     LineToModuleHandler() { }
     virtual ~LineToModuleHandler() { }
 
@@ -160,10 +158,8 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
     
     
     
-    
     virtual void ReadProgram(const uint8_t *program, uint64 length,
-                             Module *module, vector<Module::Line> *lines,
-                             FileMap *files) = 0;
+                             Module *module, vector<Module::Line> *lines) = 0;
   };
 
   
@@ -296,9 +292,7 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
   struct Specification;
   class GenericDIEHandler;
   class FuncHandler;
-  class InlinedSubroutineHandler;
   class NamedScopeHandler;
-  class LexicalBlockHandler;
 
   
   typedef map<uint64, Specification> SpecificationByOffset;
@@ -310,13 +304,13 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
   
   
   
-  void ReadSourceLines(uint64 offset, LineToModuleHandler::FileMap *files);
+  void ReadSourceLines(uint64 offset);
 
   
   
   
   
-  void AssignLinesToFunctions(const LineToModuleHandler::FileMap &files);
+  void AssignLinesToFunctions();
 
   
   
