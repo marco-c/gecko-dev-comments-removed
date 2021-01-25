@@ -610,6 +610,32 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     And(dest64, dest64, Operand(0xffffffff));
   }
 
+  void convertDoubleToPtr(FloatRegister src, Register dest, Label* fail,
+                          bool negativeZeroCheck = true) {
+    ARMFPRegister fsrc64(src, 64);
+    ARMRegister dest64(dest, 64);
+
+    vixl::UseScratchRegisterScope temps(this);
+    const ARMFPRegister scratch64 = temps.AcquireD();
+    MOZ_ASSERT(!scratch64.Is(fsrc64));
+
+    
+    
+
+    Fcvtzs(dest64, fsrc64);    
+    Scvtf(scratch64, dest64);  
+    Fcmp(scratch64, fsrc64);
+    B(fail, Assembler::NotEqual);
+
+    if (negativeZeroCheck) {
+      Label nonzero;
+      Cbnz(dest64, &nonzero);
+      Fmov(dest64, fsrc64);
+      Cbnz(dest64, fail);
+      bind(&nonzero);
+    }
+  }
+
   void floor(FloatRegister input, Register output, Label* bail) {
     Label handleZero;
     

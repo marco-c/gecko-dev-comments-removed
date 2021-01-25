@@ -1067,6 +1067,12 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
     loadPtr(Address(StackPointer, 0x0), dest);
   }
 
+  
+  
+  
+  void convertDoubleToPtr(FloatRegister src, Register dest, Label* fail,
+                          bool negativeZeroCheck = true);
+
   void convertUInt32ToDouble(Register src, FloatRegister dest) {
     
     zeroDouble(dest);
