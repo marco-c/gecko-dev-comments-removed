@@ -454,8 +454,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   }
 
   bool shouldMarkInZone() const {
-    
-    
     return needsIncrementalBarrier() || isGCMarking();
   }
 

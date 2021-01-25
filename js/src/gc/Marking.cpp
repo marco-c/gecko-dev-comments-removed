@@ -878,20 +878,59 @@ template void GCMarker::markImplicitEdges(BaseScript*);
 }  
 
 template <typename T>
-static inline bool ShouldMark(GCMarker* gcmarker, T* thing) {
+static inline bool ShouldMark(GCMarker* gcmarker, T thing) {
   
   if (IsOwnedByOtherRuntime(gcmarker->runtime(), thing)) {
     return false;
   }
 
   
+  return thing->zone()->shouldMarkInZone();
+}
+
+template <>
+bool ShouldMark<JSObject*>(GCMarker* gcmarker, JSObject* obj) {
   
-  if (!thing->isTenured()) {
+  if (IsOwnedByOtherRuntime(gcmarker->runtime(), obj)) {
     return false;
   }
 
   
-  return thing->asTenured().zone()->shouldMarkInZone();
+  
+  
+  
+  if (IsInsideNursery(obj)) {
+    return false;
+  }
+
+  
+  
+  
+  return obj->asTenured().zone()->shouldMarkInZone();
+}
+
+
+template <>
+bool ShouldMark<JSString*>(GCMarker* gcmarker, JSString* str) {
+  if (IsOwnedByOtherRuntime(gcmarker->runtime(), str)) {
+    return false;
+  }
+  if (IsInsideNursery(str)) {
+    return false;
+  }
+  return str->asTenured().zone()->shouldMarkInZone();
+}
+
+
+template <>
+bool ShouldMark<JS::BigInt*>(GCMarker* gcmarker, JS::BigInt* bi) {
+  if (IsOwnedByOtherRuntime(gcmarker->runtime(), bi)) {
+    return false;
+  }
+  if (IsInsideNursery(bi)) {
+    return false;
+  }
+  return bi->asTenured().zone()->shouldMarkInZone();
 }
 
 template <typename T>
@@ -3734,16 +3773,22 @@ static inline bool ShouldCheckMarkState(JSRuntime* rt, T** thingp) {
 }
 
 template <typename T>
+struct MightBeNurseryAllocated {
+  static const bool value = std::is_base_of_v<JSObject, T> ||
+                            std::is_base_of_v<JSString, T> ||
+                            std::is_base_of_v<JS::BigInt, T>;
+};
+
+template <typename T>
 bool js::gc::IsMarkedInternal(JSRuntime* rt, T** thingp) {
   
   MOZ_ASSERT(!CurrentThreadIsGCFinalizing());
 
-  T* thing = *thingp;
-  if (IsOwnedByOtherRuntime(rt, thing)) {
+  if (IsOwnedByOtherRuntime(rt, *thingp)) {
     return true;
   }
 
-  if (!thing->isTenured()) {
+  if (MightBeNurseryAllocated<T>::value && IsInsideNursery(*thingp)) {
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
     auto** cellp = reinterpret_cast<Cell**>(thingp);
     return Nursery::getForwardedPointer(cellp);
@@ -3771,7 +3816,7 @@ bool js::gc::IsAboutToBeFinalizedInternal(T** thingp) {
     return false;
   }
 
-  if (!thing->isTenured()) {
+  if (IsInsideNursery(thing)) {
     return JS::RuntimeHeapIsMinorCollecting() &&
            !Nursery::getForwardedPointer(reinterpret_cast<Cell**>(thingp));
   }
