@@ -64,7 +64,7 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
 
         if (!isDir) {
           const DebugOnly<nsresult> result =
-              RemoveNsIFile(QuotaInfo{}, bodyDir,  false);
+              RemoveNsIFile(QuotaInfo{}, *bodyDir,  false);
           
           
           MOZ_ASSERT(NS_SUCCEEDED(result));
@@ -73,9 +73,8 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
 
         UsageInfo usageInfo;
         const auto getUsage =
-            [&usageInfo](nsIFile* bodyFile,
+            [&usageInfo](nsIFile& bodyFile,
                          const nsACString& leafName) -> Result<bool, nsresult> {
-          MOZ_DIAGNOSTIC_ASSERT(bodyFile);
           Unused << leafName;
 
           CACHE_TRY_INSPECT(const int64_t& fileSize,
@@ -99,7 +98,7 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
 
           return false;
         };
-        CACHE_TRY(BodyTraverseFiles(QuotaInfo{}, bodyDir, getUsage,
+        CACHE_TRY(BodyTraverseFiles(QuotaInfo{}, *bodyDir, getUsage,
                                     
                                     aInitializing,
                                      false));
@@ -269,7 +268,7 @@ nsresult CacheQuotaClient::UpgradeStorageFrom2_0To2_1(nsIFile* aDirectory) {
 
   MutexAutoLock lock(mDirPaddingFileMutex);
 
-  nsresult rv = LockedDirectoryPaddingInit(aDirectory);
+  nsresult rv = LockedDirectoryPaddingInit(*aDirectory);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -300,39 +299,52 @@ nsresult CacheQuotaClient::WipePaddingFileInternal(const QuotaInfo& aQuotaInfo,
 
   MutexAutoLock lock(mDirPaddingFileMutex);
 
-  MOZ_ASSERT(DirectoryPaddingFileExists(aBaseDir, DirPaddingFile::FILE));
+  MOZ_ASSERT(DirectoryPaddingFileExists(*aBaseDir, DirPaddingFile::FILE));
 
-  int64_t paddingSize = 0;
-  bool temporaryPaddingFileExist =
-      DirectoryPaddingFileExists(aBaseDir, DirPaddingFile::TMP_FILE);
+  CACHE_TRY_INSPECT(
+      const int64_t& paddingSize, ([&aBaseDir]() -> Result<int64_t, nsresult> {
+        const bool temporaryPaddingFileExist =
+            DirectoryPaddingFileExists(*aBaseDir, DirPaddingFile::TMP_FILE);
 
-  if (temporaryPaddingFileExist ||
-      NS_WARN_IF(
-          NS_FAILED(LockedDirectoryPaddingGet(aBaseDir, &paddingSize)))) {
-    
-    
-    
-    NS_WARNING("Cannnot read padding size from file!");
-    paddingSize = 0;
-  }
+        Maybe<int64_t> directoryPaddingGetResult;
+        if (!temporaryPaddingFileExist) {
+          CACHE_TRY_UNWRAP(
+              directoryPaddingGetResult,
+              ([&aBaseDir]() -> Result<Maybe<int64_t>, nsresult> {
+                CACHE_TRY_RETURN(
+                    LockedDirectoryPaddingGet(*aBaseDir).map(Some<int64_t>),
+                    Maybe<int64_t>{});
+              }()));
+        }
+
+        if (temporaryPaddingFileExist || !directoryPaddingGetResult) {
+          
+          
+          
+          NS_WARNING("Cannnot read padding size from file!");
+          return 0;
+        }
+
+        return *directoryPaddingGetResult;
+      }()));
 
   if (paddingSize > 0) {
     DecreaseUsageForQuotaInfo(aQuotaInfo, paddingSize);
   }
 
   nsresult rv =
-      LockedDirectoryPaddingDeleteFile(aBaseDir, DirPaddingFile::FILE);
+      LockedDirectoryPaddingDeleteFile(*aBaseDir, DirPaddingFile::FILE);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
   
-  rv = LockedDirectoryPaddingDeleteFile(aBaseDir, DirPaddingFile::TMP_FILE);
+  rv = LockedDirectoryPaddingDeleteFile(*aBaseDir, DirPaddingFile::TMP_FILE);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  rv = LockedDirectoryPaddingInit(aBaseDir);
+  rv = LockedDirectoryPaddingInit(*aBaseDir);
   Unused << NS_WARN_IF(NS_FAILED(rv));
 
   return rv;
@@ -368,7 +380,7 @@ Result<UsageInfo, nsresult> CacheQuotaClient::GetUsageForOriginInternal(
         
         MutexAutoLock lock(mDirPaddingFileMutex);
 
-        if (!DirectoryPaddingFileExists(dir, DirPaddingFile::TMP_FILE)) {
+        if (!DirectoryPaddingFileExists(*dir, DirPaddingFile::TMP_FILE)) {
           const auto& maybePaddingSize = [&dir]() -> Maybe<int64_t> {
             CACHE_TRY_RETURN(LockedDirectoryPaddingGet(*dir).map(Some<int64_t>),
                              Nothing{});

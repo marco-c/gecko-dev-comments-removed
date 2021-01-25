@@ -26,38 +26,36 @@ namespace cache {
 
 enum DirPaddingFile { FILE, TMP_FILE };
 
-nsresult BodyCreateDir(nsIFile* aBaseDir);
+nsresult BodyCreateDir(nsIFile& aBaseDir);
 
 
 
 
-nsresult BodyDeleteDir(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir);
+nsresult BodyDeleteDir(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir);
 
-nsresult BodyGetCacheDir(nsIFile* aBaseDir, const nsID& aId,
-                         nsIFile** aCacheDirOut);
 
-nsresult BodyStartWriteStream(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
-                              nsIInputStream* aSource, void* aClosure,
-                              nsAsyncCopyCallbackFun aCallback, nsID* aIdOut,
-                              nsISupports** aCopyContextOut);
 
-void BodyCancelWrite(nsIFile* aBaseDir, nsISupports* aCopyContext);
+Result<std::pair<nsID, nsCOMPtr<nsISupports>>, nsresult> BodyStartWriteStream(
+    const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir, nsIInputStream& aSource,
+    void* aClosure, nsAsyncCopyCallbackFun aCallback);
 
-nsresult BodyFinalizeWrite(nsIFile* aBaseDir, const nsID& aId);
+void BodyCancelWrite(nsISupports& aCopyContext);
 
-nsresult BodyOpen(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
-                  const nsID& aId, nsIInputStream** aStreamOut);
+nsresult BodyFinalizeWrite(nsIFile& aBaseDir, const nsID& aId);
+
+Result<NotNull<nsCOMPtr<nsIInputStream>>, nsresult> BodyOpen(
+    const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir, const nsID& aId);
 
 nsresult BodyMaybeUpdatePaddingSize(const QuotaInfo& aQuotaInfo,
-                                    nsIFile* aBaseDir, const nsID& aId,
-                                    const uint32_t aPaddingInfo,
-                                    int64_t* aPaddingSizeOut);
+                                    nsIFile& aBaseDir, const nsID& aId,
+                                    uint32_t aPaddingInfo,
+                                    int64_t* aPaddingSizeInOut);
 
-nsresult BodyDeleteFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
+nsresult BodyDeleteFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir,
                          const nsTArray<nsID>& aIdList);
 
-nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
-                                 nsTArray<nsID>& aKnownBodyIdList);
+nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir,
+                                 const nsTArray<nsID>& aKnownBodyIdList);
 
 
 
@@ -65,10 +63,9 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir,
 
 
 template <typename Func>
-nsresult BodyTraverseFiles(const QuotaInfo& aQuotaInfo, nsIFile* aBodyDir,
-                           const Func& aHandleFileFunc,
-                           const bool aCanRemoveFiles,
-                           const bool aTrackQuota = true);
+nsresult BodyTraverseFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBodyDir,
+                           const Func& aHandleFileFunc, bool aCanRemoveFiles,
+                           bool aTrackQuota = true);
 
 nsresult CreateMarkerFile(const QuotaInfo& aQuotaInfo);
 
@@ -76,20 +73,19 @@ nsresult DeleteMarkerFile(const QuotaInfo& aQuotaInfo);
 
 bool MarkerFileExists(const QuotaInfo& aQuotaInfo);
 
-nsresult RemoveNsIFileRecursively(const QuotaInfo& aQuotaInfo, nsIFile* aFile,
-                                  const bool aTrackQuota = true);
+nsresult RemoveNsIFileRecursively(const QuotaInfo& aQuotaInfo, nsIFile& aFile,
+                                  bool aTrackQuota = true);
 
-nsresult RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile* aFile,
-                       const bool aTrackQuota = true);
+nsresult RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile& aFile,
+                       bool aTrackQuota = true);
 
 void DecreaseUsageForQuotaInfo(const QuotaInfo& aQuotaInfo,
-                               const int64_t& aUpdatingSize);
+                               int64_t aUpdatingSize);
 
 
 
 
-
-bool DirectoryPaddingFileExists(nsIFile* aBaseDir,
+bool DirectoryPaddingFileExists(nsIFile& aBaseDir,
                                 DirPaddingFile aPaddingFileType);
 
 
@@ -105,27 +101,21 @@ bool DirectoryPaddingFileExists(nsIFile* aBaseDir,
 
 Result<int64_t, nsresult> LockedDirectoryPaddingGet(nsIFile& aBaseDir);
 
+nsresult LockedDirectoryPaddingInit(nsIFile& aBaseDir);
 
-nsresult LockedDirectoryPaddingGet(nsIFile* aBaseDir, int64_t* aPaddingSizeOut);
+nsresult LockedUpdateDirectoryPaddingFile(nsIFile& aBaseDir,
+                                          mozIStorageConnection& aConn,
+                                          int64_t aIncreaseSize,
+                                          int64_t aDecreaseSize,
+                                          bool aTemporaryFileExist);
 
-nsresult LockedDirectoryPaddingInit(nsIFile* aBaseDir);
-
-nsresult LockedUpdateDirectoryPaddingFile(nsIFile* aBaseDir,
-                                          mozIStorageConnection* aConn,
-                                          const int64_t aIncreaseSize,
-                                          const int64_t aDecreaseSize,
-                                          const bool aTemporaryFileExist);
-
-nsresult LockedDirectoryPaddingTemporaryWrite(nsIFile* aBaseDir,
-                                              int64_t aPaddingSize);
-
-nsresult LockedDirectoryPaddingFinalizeWrite(nsIFile* aBaseDir);
+nsresult LockedDirectoryPaddingFinalizeWrite(nsIFile& aBaseDir);
 
 
 Result<int64_t, nsresult> LockedDirectoryPaddingRestore(
     nsIFile& aBaseDir, mozIStorageConnection& aConn, bool aMustRestore);
 
-nsresult LockedDirectoryPaddingDeleteFile(nsIFile* aBaseDir,
+nsresult LockedDirectoryPaddingDeleteFile(nsIFile& aBaseDir,
                                           DirPaddingFile aPaddingFileType);
 }  
 }  

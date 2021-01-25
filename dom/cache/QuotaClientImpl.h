@@ -77,7 +77,7 @@ class CacheQuotaClient final : public quota::Client {
     
     bool temporaryPaddingFileExist =
         mozilla::dom::cache::DirectoryPaddingFileExists(
-            aBaseDir, DirPaddingFile::TMP_FILE);
+            *aBaseDir, DirPaddingFile::TMP_FILE);
 
     if (aIncreaseSize == aDecreaseSize && !temporaryPaddingFileExist) {
       
@@ -89,7 +89,7 @@ class CacheQuotaClient final : public quota::Client {
     {
       MutexAutoLock lock(mDirPaddingFileMutex);
       rv = mozilla::dom::cache::LockedUpdateDirectoryPaddingFile(
-          aBaseDir, aConn, aIncreaseSize, aDecreaseSize,
+          *aBaseDir, *aConn, aIncreaseSize, aDecreaseSize,
           temporaryPaddingFileExist);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         
@@ -104,15 +104,15 @@ class CacheQuotaClient final : public quota::Client {
         return rv;
       }
 
-      rv = mozilla::dom::cache::LockedDirectoryPaddingFinalizeWrite(aBaseDir);
+      rv = mozilla::dom::cache::LockedDirectoryPaddingFinalizeWrite(*aBaseDir);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         
         Unused << mozilla::dom::cache::LockedDirectoryPaddingDeleteFile(
-            aBaseDir, DirPaddingFile::FILE);
+            *aBaseDir, DirPaddingFile::FILE);
 
         
         MOZ_ASSERT(mozilla::dom::cache::DirectoryPaddingFileExists(
-            aBaseDir, DirPaddingFile::TMP_FILE));
+            *aBaseDir, DirPaddingFile::TMP_FILE));
 
         
         
