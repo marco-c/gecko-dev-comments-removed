@@ -813,7 +813,7 @@ void DrawSkeletonUI(HWND hWnd, CSSPixelSpan urlbarCSSSpan,
   int urlbarBorderRadius = CSSToDevPixels(2, sCSSToDevPixelScaling);
   
   int urlbarBorderWidth = CSSToDevPixelsFloor(1, sCSSToDevPixelScaling);
-  int urlbarBorderColor = 0xbebebe;
+  int urlbarBorderColor = currentTheme.urlbarBorderColor;
 
   
   ColorRect tabBar = {};
@@ -1335,6 +1335,8 @@ ThemeColors GetTheme(ThemeMode themeId) {
       theme.tabLineColor = 0x0a84ff;
       
       theme.urlbarColor = 0x474749;
+      
+      theme.urlbarBorderColor = 0x5a5a5c;
       theme.animationColor = theme.urlbarColor;
       return theme;
     case ThemeMode::Light:
@@ -1346,11 +1348,13 @@ ThemeColors GetTheme(ThemeMode themeId) {
       
       theme.tabBarColor = 0xe3e4e6;
       
-      theme.chromeContentDividerColor = 0x9e9fa1;
+      theme.chromeContentDividerColor = 0xcccccc;
       
       theme.tabLineColor = 0x0a84ff;
       
       theme.urlbarColor = 0xffffff;
+      
+      theme.urlbarBorderColor = 0xcccccc;
       theme.animationColor = theme.backgroundColor;
       return theme;
     case ThemeMode::Default:
@@ -1370,6 +1374,8 @@ ThemeColors GetTheme(ThemeMode themeId) {
       theme.tabLineColor = 0x0a84ff;
       
       theme.urlbarColor = 0xffffff;
+      
+      theme.urlbarBorderColor = 0xbebebe;
       theme.animationColor = theme.backgroundColor;
       return theme;
   }
