@@ -4,8 +4,7 @@
 
 
 
-#include "mozilla/ArrayUtils.h"  
-#include "mozilla/Utf8.h"        
+#include "mozilla/Utf8.h"  
 
 #include "jsfriendapi.h"
 
@@ -15,6 +14,7 @@
 #include "js/SourceText.h"                
 #include "js/Transcoding.h"
 #include "jsapi-tests/tests.h"
+#include "util/Text.h"
 #include "vm/JSScript.h"
 
 #include "vm/JSScript-inl.h"
@@ -67,8 +67,7 @@ BEGIN_TEST(testXDR_bug506491) {
   options.setFileAndLine(__FILE__, __LINE__);
 
   JS::SourceText<mozilla::Utf8Unit> srcBuf;
-  CHECK(srcBuf.init(cx, s, mozilla::ArrayLength(s) - 1,
-                    JS::SourceOwnership::Borrowed));
+  CHECK(srcBuf.init(cx, s, js_strlen(s), JS::SourceOwnership::Borrowed));
 
   JS::RootedScript script(cx, JS::Compile(cx, options, srcBuf));
   CHECK(script);

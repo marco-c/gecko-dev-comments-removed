@@ -2,8 +2,7 @@
 
 
 
-#include "mozilla/ArrayUtils.h"  
-#include "mozilla/Maybe.h"       
+#include "mozilla/Maybe.h"  
 #include "mozilla/Utf8.h"  
 
 #include <inttypes.h>  
@@ -16,7 +15,6 @@
 #include "vm/JSAtom.h"          
 #include "vm/StringType.h"      
 
-using mozilla::ArrayLength;
 using mozilla::DecodeOneUtf8CodePoint;
 using mozilla::IsAscii;
 using mozilla::IsTrailingUnit;

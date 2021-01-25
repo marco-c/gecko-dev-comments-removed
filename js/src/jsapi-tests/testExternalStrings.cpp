@@ -2,15 +2,11 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
-
 #include "jsapi-tests/tests.h"
-
-using mozilla::ArrayEqual;
-using mozilla::ArrayLength;
+#include "util/Text.h"
 
 static const char16_t arr[] = u"hi, don't delete me";
-static const size_t arrlen = ArrayLength(arr) - 1;
+static const size_t arrlen = js_strlen(arr);
 
 static int finalized1 = 0;
 static int finalized2 = 0;

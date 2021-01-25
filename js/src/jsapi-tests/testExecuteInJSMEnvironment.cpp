@@ -2,14 +2,14 @@
 
 
 
-#include "mozilla/ArrayUtils.h"  
-#include "mozilla/Utf8.h"        
+#include "mozilla/Utf8.h"  
 
 #include "js/CompilationAndEvaluation.h"  
 #include "js/friend/JSMEnvironment.h"  
 #include "js/PropertySpec.h"
 #include "js/SourceText.h"  
 #include "jsapi-tests/tests.h"
+#include "util/Text.h"
 #include "vm/EnvironmentObject.h"
 #include "vm/EnvironmentObject-inl.h"
 
@@ -32,8 +32,7 @@ BEGIN_TEST(testExecuteInJSMEnvironment_Basic) {
   options.setNonSyntacticScope(true);
 
   JS::SourceText<mozilla::Utf8Unit> srcBuf;
-  CHECK(srcBuf.init(cx, src, mozilla::ArrayLength(src) - 1,
-                    JS::SourceOwnership::Borrowed));
+  CHECK(srcBuf.init(cx, src, js_strlen(src), JS::SourceOwnership::Borrowed));
 
   JS::RootedScript script(cx, JS::Compile(cx, options, srcBuf));
   CHECK(script);
@@ -90,8 +89,7 @@ BEGIN_TEST(testExecuteInJSMEnvironment_Callback) {
   options.setNonSyntacticScope(true);
 
   JS::SourceText<mozilla::Utf8Unit> srcBuf;
-  CHECK(srcBuf.init(cx, src, mozilla::ArrayLength(src) - 1,
-                    JS::SourceOwnership::Borrowed));
+  CHECK(srcBuf.init(cx, src, js_strlen(src), JS::SourceOwnership::Borrowed));
 
   JS::RootedScript script(cx, JS::Compile(cx, options, srcBuf));
   CHECK(script);

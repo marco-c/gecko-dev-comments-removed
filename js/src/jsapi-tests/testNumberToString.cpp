@@ -5,7 +5,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"     
 #include "mozilla/FloatingPoint.h"  
 
 #include <stddef.h>  
@@ -13,9 +12,9 @@
 
 #include "js/Conversions.h"  
 #include "jsapi-tests/tests.h"  
+#include "util/Text.h"          
 
-
-#define REST(x) x, (mozilla::ArrayLength(x) - 1), __LINE__
+#define REST(x) x, (js_strlen(x)), __LINE__
 
 static const struct NumberToStringTest {
   double number;

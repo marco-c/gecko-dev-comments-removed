@@ -5,14 +5,14 @@
 
 
 
-#include "mozilla/ArrayUtils.h"  
-#include "mozilla/Utf8.h"        
+#include "mozilla/Utf8.h"  
 
 #include "jsapi.h"
 
 #include "js/CompilationAndEvaluation.h"  
 #include "js/SourceText.h"                
 #include "jsapi-tests/tests.h"
+#include "util/Text.h"
 
 static const char code[] =
     "xx = 1;       \n\
@@ -35,8 +35,7 @@ BEGIN_TEST(testScriptInfo) {
   options.setFileAndLine(__FILE__, startLine);
 
   JS::SourceText<mozilla::Utf8Unit> srcBuf;
-  CHECK(srcBuf.init(cx, code, mozilla::ArrayLength(code) - 1,
-                    JS::SourceOwnership::Borrowed));
+  CHECK(srcBuf.init(cx, code, js_strlen(code), JS::SourceOwnership::Borrowed));
 
   JS::RootedScript script(cx, JS::Compile(cx, options, srcBuf));
   CHECK(script);

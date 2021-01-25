@@ -5,12 +5,12 @@
 
 
 
-#include "mozilla/ArrayUtils.h"  
-#include "mozilla/Utf8.h"        
+#include "mozilla/Utf8.h"  
 
 #include "js/CompilationAndEvaluation.h"  
 #include "js/SourceText.h"                
 #include "jsapi-tests/tests.h"
+#include "util/Text.h"
 
 static bool GlobalResolve(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
                           bool* resolvedp) {
@@ -53,8 +53,7 @@ BEGIN_TEST(testRedefineGlobalEval) {
   JS::CompileOptions opts(cx);
 
   JS::SourceText<mozilla::Utf8Unit> srcBuf;
-  CHECK(srcBuf.init(cx, data, mozilla::ArrayLength(data) - 1,
-                    JS::SourceOwnership::Borrowed));
+  CHECK(srcBuf.init(cx, data, js_strlen(data), JS::SourceOwnership::Borrowed));
 
   CHECK(JS::Evaluate(cx, opts.setFileAndLine(__FILE__, __LINE__), srcBuf, &v));
 

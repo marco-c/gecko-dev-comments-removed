@@ -2,7 +2,6 @@
 
 
 
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Utf8.h"
 
@@ -16,9 +15,9 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/SourceText.h"
 #include "jsapi-tests/tests.h"
+#include "util/Text.h"
 #include "vm/ErrorReporting.h"
 
-using mozilla::ArrayLength;
 using mozilla::IsAsciiHexDigit;
 using mozilla::Utf8Unit;
 
@@ -131,9 +130,9 @@ bool testOmittedWindow(const CharT (&chars)[N], unsigned expectedErrorNumber,
     const char* noteMessage = (*iter)->message().c_str();
 
     
-    static const char expectedPrefix[] =
+    static constexpr char expectedPrefix[] =
         "the code units comprising this invalid code point were: ";
-    constexpr size_t expectedPrefixLen = ArrayLength(expectedPrefix) - 1;
+    constexpr size_t expectedPrefixLen = js_strlen(expectedPrefix);
 
     CHECK(startsWith(noteMessage, expectedPrefix));
 

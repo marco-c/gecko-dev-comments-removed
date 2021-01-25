@@ -41,6 +41,7 @@
 #include "js/RegExpFlags.h"           
 #include "js/UniquePtr.h"
 #include "util/StringBuffer.h"
+#include "util/Text.h"
 #include "util/Unicode.h"
 #include "vm/FrameIter.h"  
 #include "vm/HelperThreads.h"
@@ -2099,9 +2100,8 @@ bool TokenStreamSpecific<Unit, AnyCharsAccess>::getDisplayURL(
   
   
 
-  static const char sourceURLDirective[] = " sourceURL=";
-  constexpr uint8_t sourceURLDirectiveLength =
-      ArrayLength(sourceURLDirective) - 1;
+  static constexpr char sourceURLDirective[] = " sourceURL=";
+  constexpr uint8_t sourceURLDirectiveLength = js_strlen(sourceURLDirective);
   return getDirective(isMultiline, shouldWarnDeprecated, sourceURLDirective,
                       sourceURLDirectiveLength, "sourceURL",
                       &anyCharsAccess().displayURL_);
@@ -2113,9 +2113,9 @@ bool TokenStreamSpecific<Unit, AnyCharsAccess>::getSourceMappingURL(
   
   
 
-  static const char sourceMappingURLDirective[] = " sourceMappingURL=";
+  static constexpr char sourceMappingURLDirective[] = " sourceMappingURL=";
   constexpr uint8_t sourceMappingURLDirectiveLength =
-      ArrayLength(sourceMappingURLDirective) - 1;
+      js_strlen(sourceMappingURLDirective);
   return getDirective(isMultiline, shouldWarnDeprecated,
                       sourceMappingURLDirective,
                       sourceMappingURLDirectiveLength, "sourceMappingURL",

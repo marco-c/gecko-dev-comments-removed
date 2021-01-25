@@ -640,8 +640,7 @@ static icu::UnicodeString ReadTimeZoneLink(const char* tz) {
   
   
   static constexpr char ZoneInfoPath[] = "/zoneinfo/";
-  constexpr size_t ZoneInfoPathLength =
-      mozilla::ArrayLength(ZoneInfoPath) - 1;  
+  constexpr size_t ZoneInfoPathLength = js_strlen(ZoneInfoPath);
 
   
   
