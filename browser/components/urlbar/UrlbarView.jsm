@@ -1465,6 +1465,25 @@ class UrlbarView {
     }
 
     
+    
+    
+    for (let [payloadName, highlights] of Object.entries(
+      result.payloadHighlights
+    )) {
+      if (!highlights.length) {
+        continue;
+      }
+      
+      
+      let nodeToHighlight = item.querySelector(`#${item.id}-${payloadName}`);
+      this._addTextContentWithHighlights(
+        nodeToHighlight,
+        result.payload[payloadName],
+        highlights
+      );
+    }
+
+    
     let provider = UrlbarProvidersManager.getProvider(result.providerName);
     let viewUpdate = await provider.getViewUpdate(result, idsByName);
 
