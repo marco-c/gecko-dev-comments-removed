@@ -191,6 +191,12 @@ add_task(async () => {
         'data:text/html,<a id="exampleLink" href="https://example.com">link</a>',
     },
     async browser => {
+      if (!Services.search.isInitialized) {
+        let aStatus = await Services.search.init();
+        Assert.ok(Components.isSuccessCode(aStatus));
+        Assert.ok(Services.search.isInitialized);
+      }
+
       
       let menu = document.getElementById("contentAreaContextMenu");
       await BrowserTestUtils.synthesizeMouse(
@@ -206,13 +212,13 @@ add_task(async () => {
       
       is(
         menuChildren.length,
-        14,
-        "Context menu on link contains fourteen items"
+        15,
+        "Context menu on link contains fifteen items"
       );
 
       for (let i = 0; i < menuChildren.length; i++) {
         
-        if (i == 4 || i == 9 || i == 11) {
+        if (i == 4 || i == 10 || i == 12) {
           is(
             menuChildren[i].getAttributeValue("AXRole"),
             "AXSplitter",
@@ -235,7 +241,7 @@ add_task(async () => {
         "Submenu 1 has no chldren when hidden"
       );
       is(
-        menuChildren[10].getAttributeValue("AXChildren").length,
+        menuChildren[11].getAttributeValue("AXChildren").length,
         0,
         "Submenu 2 has no chldren when hidden"
       );
