@@ -1,13 +1,13 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 @namespace html "http://www.w3.org/1999/xhtml";
 
 #aboutDialog {
   width: 620px;
-  
-
-
+  /* Set an explicit line-height to avoid discrepancies in 'auto' spacing
+     across screens with different device DPI, which may cause font metrics
+     to round differently. */
   line-height: 1.5;
 }
 
@@ -15,7 +15,7 @@
   background-image: url("chrome://branding/content/about-wordmark.svg");
   background-repeat: no-repeat;
   background-size: 288px auto;
-  
+  /* padding-top creates room for the wordmark */
   padding-top: 38px;
   margin-top: 20px;
 }
@@ -42,6 +42,11 @@
   user-select: text;
   -moz-user-focus: normal;
   cursor: text;
+}
+
+#version.update {
+  font-weight: normal;
+  margin-top: 0;
 }
 
 #releasenotes {
@@ -102,4 +107,29 @@ description > .text-link:focus {
   margin: 0;
   padding: 0;
   font-weight: bold;
+}
+
+#updateBox {
+  line-height: normal;
+}
+
+#icons > .icon {
+  -moz-context-properties: fill;
+  margin: 8px 5px;
+  width: 16px;
+  height: 16px;
+}
+
+#icons:not(.checkingForUpdates, .downloading, .applying, .restarting) > .update-throbber,
+#icons:not(.noUpdatesFound) > .noUpdatesFound,
+#icons:not(.apply) > .apply {
+  display: none;
+}
+
+#icons > .noUpdatesFound {
+  fill: --green-50;
+}
+
+#icons > .apply {
+  fill: white;
 }

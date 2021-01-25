@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 
@@ -23,9 +23,9 @@ body {
   flex-direction: row;
 }
 
-
-
-
+/* Sizing and positioning properties for all icons
+   Color is determined by enabled/disabled classes below
+ */
 .icon_container {
   width: 44px;
   height: 44px;
@@ -65,7 +65,7 @@ body {
   background-image: url("assets/icon-forward.svg");
 }
 .icon_refresh {
-  background-image: url("assets/icon-refresh.svg");
+  background-image: url("chrome://global/skin/icons/icon-refresh.svg");
 }
 .icon_stop {
   background-image: url("assets/icon-stop-reload.svg");
@@ -128,9 +128,9 @@ body {
   height: 100%;
 }
 
-
-
-
+/* Hide the navbar when in fullscreen so that <browser> can
+ * fill the entire viewport
+ */
 :root[inFullScreen] .navbar_container {
   display:none;
 }
