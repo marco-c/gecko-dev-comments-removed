@@ -45,6 +45,11 @@ let gCloseReasons = new WeakMap();
 
 
 
+let gCurrentPlayerCount = 0;
+
+
+
+
 
 let gNextWindowID = 0;
 
@@ -73,7 +78,6 @@ class PictureInPictureToggleParent extends JSWindowActorParent {
     }
   }
 }
-
 
 
 
@@ -315,6 +319,21 @@ var PictureInPicture = {
       
       
       await this.closeAllPipWindows({ reason: "new-pip" });
+
+      Services.telemetry.scalarSetMaximum(
+        "pictureinpicture.most_concurrent_players",
+        1
+      );
+    } else {
+      
+      
+
+      gCurrentPlayerCount += 1;
+
+      Services.telemetry.scalarSetMaximum(
+        "pictureinpicture.most_concurrent_players",
+        gCurrentPlayerCount
+      );
     }
 
     let browser = wgp.browsingContext.top.embedderElement;
@@ -359,6 +378,7 @@ var PictureInPicture = {
       reason,
       1
     );
+    gCurrentPlayerCount -= 1;
     
     this.savePosition(window);
     this.clearPipTabIcon(window);
