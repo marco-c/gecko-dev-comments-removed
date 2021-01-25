@@ -74,29 +74,6 @@ function setIsMutedState(isMuted) {
 
 
 
-
-
-
-
-
-
-
-function resizeToVideo(left, top, width, height) {
-  Player.resizeToVideo(left, top, width, height);
-}
-
-
-
-
-
-function getDeferredResize() {
-  return Player.deferredResize;
-}
-
-
-
-
-
 let Player = {
   WINDOW_EVENTS: [
     "click",
@@ -123,12 +100,6 @@ let Player = {
   lastScreenX: -1,
   lastScreenY: -1,
   id: -1,
-
-  
-
-
-
-  deferredResize: null,
 
   
 
@@ -300,14 +271,6 @@ let Player = {
             Services.obs.notifyObservers(window, "fullscreen-painted");
           }
         });
-        
-        
-        
-        if (this.deferredResize && event.type == "MozDOMFullscreen:Exited") {
-          let { left, top, width, height } = this.deferredResize;
-          this.resizeToVideo(left, top, width, height);
-          this.deferredResize = null;
-        }
         break;
       }
 
@@ -343,40 +306,9 @@ let Player = {
       if (document.fullscreenElement == document.body) {
         document.exitFullscreen();
       } else {
-        
-        
-        this.deferredResize = {
-          left: window.screenX,
-          top: window.screenY,
-          width: window.innerWidth,
-          height: window.innerHeight,
-        };
         document.body.requestFullscreen();
       }
       event.preventDefault();
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  resizeToVideo(left, top, width, height) {
-    if (document.fullscreenElement == document.body) {
-      
-      this.deferredResize = { left, top, width, height };
-    } else {
-      window.resizeTo(width, height);
-      window.moveTo(left, top);
     }
   },
 

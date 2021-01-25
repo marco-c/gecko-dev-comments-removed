@@ -487,25 +487,12 @@ var PictureInPicture = {
     
     let isPlayerWindow =
       windowOrPlayer == this.getWeakPipPlayer(actorReference);
-    if (
-      isPlayerWindow &&
-      windowOrPlayer.windowState != windowOrPlayer.STATE_FULLSCREEN
-    ) {
+    if (isPlayerWindow) {
       this.savePosition(windowOrPlayer);
     }
 
-    let sizeLocation;
-
     
-    
-    
-    if (windowOrPlayer.windowState == windowOrPlayer.STATE_FULLSCREEN) {
-      sizeLocation = windowOrPlayer.getDeferredResize();
-    } else {
-      sizeLocation = this.loadPosition();
-    }
-
-    let { top, left, width, height } = sizeLocation;
+    let { top, left, width, height } = this.loadPosition();
 
     
     if (!isNaN(top) && !isNaN(left) && !isNaN(width) && !isNaN(height)) {
@@ -665,8 +652,8 @@ var PictureInPicture = {
       videoData,
       actorRef
     );
-
-    win.resizeToVideo(left, top, width, height);
+    win.resizeTo(width, height);
+    win.moveTo(left, top);
   },
 
   openToggleContextMenu(window, data) {
