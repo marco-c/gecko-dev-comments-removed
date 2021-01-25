@@ -12,7 +12,6 @@ enum {
   kCharsetFromTopLevelDomain,
   kCharsetFromFileURLGuess,
   kCharsetFromDocTypeDefault,  
-  kCharsetFromCache,
   kCharsetFromInitialAutoDetection,
   kCharsetFromFinalAutoDetection,
   kCharsetFromParentFrame,  
