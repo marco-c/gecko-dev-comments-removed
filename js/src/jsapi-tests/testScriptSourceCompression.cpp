@@ -5,11 +5,11 @@
 
 
 
-#include "mozilla/ArrayUtils.h"  
 #include "mozilla/Assertions.h"  
 #include "mozilla/Utf8.h"        
 
 #include <algorithm>  
+#include <iterator>   
 #include <memory>     
 #include <stddef.h>   
 #include <stdint.h>   
@@ -37,7 +37,6 @@
 #include "vm/JSScript.h"  
 #include "vm/Monitor.h"   
 
-using mozilla::ArrayLength;
 using mozilla::Utf8Unit;
 
 struct JS_PUBLIC_API JSContext;
@@ -90,8 +89,7 @@ static JSFunction* EvaluateChars(JSContext* cx, Source<Unit> chars, size_t len,
   JS::Rooted<JS::Value> rval(cx);
   const char16_t name[] = {char16_t(functionName)};
   JS::SourceText<char16_t> srcbuf;
-  if (!srcbuf.init(cx, name, ArrayLength(name),
-                   JS::SourceOwnership::Borrowed)) {
+  if (!srcbuf.init(cx, name, std::size(name), JS::SourceOwnership::Borrowed)) {
     return nullptr;
   }
   if (!JS::Evaluate(cx, options, srcbuf, &rval)) {

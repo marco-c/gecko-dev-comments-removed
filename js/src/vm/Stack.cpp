@@ -6,10 +6,10 @@
 
 #include "vm/Stack-inl.h"
 
-#include "mozilla/ArrayUtils.h"  
-#include "mozilla/Maybe.h"       
+#include "mozilla/Maybe.h"  
 
 #include <algorithm>  
+#include <iterator>   
 #include <stddef.h>   
 #include <stdint.h>   
 #include <utility>    
@@ -34,7 +34,6 @@
 
 using namespace js;
 
-using mozilla::ArrayLength;
 using mozilla::Maybe;
 
 using JS::Value;
@@ -720,8 +719,8 @@ uint32_t JS::ProfilingFrameIterator::extractStack(Frame* frames,
   const char* labels[64];
   uint32_t depth = entry.callStackAtAddr(cx_->runtime(),
                                          jsJitIter().resumePCinCurrentFrame(),
-                                         labels, ArrayLength(labels));
-  MOZ_ASSERT(depth < ArrayLength(labels));
+                                         labels, std::size(labels));
+  MOZ_ASSERT(depth < std::size(labels));
   for (uint32_t i = 0; i < depth; i++) {
     if (offset + i >= end) {
       return i;

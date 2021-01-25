@@ -6,10 +6,10 @@
 
 #include "vm/ToSource.h"
 
-#include "mozilla/ArrayUtils.h"     
 #include "mozilla/Assertions.h"     
 #include "mozilla/FloatingPoint.h"  
 
+#include <iterator>  
 #include <stdint.h>  
 
 #include "jsfriendapi.h"  
@@ -144,8 +144,7 @@ JSString* js::ValueToSource(JSContext* cx, HandleValue v) {
       if (IsNegativeZero(v.toDouble())) {
         static const Latin1Char negativeZero[] = {'-', '0'};
 
-        return NewStringCopyN<CanGC>(cx, negativeZero,
-                                     mozilla::ArrayLength(negativeZero));
+        return NewStringCopyN<CanGC>(cx, negativeZero, std::size(negativeZero));
       }
       [[fallthrough]];
     case JS::ValueType::Int32:
