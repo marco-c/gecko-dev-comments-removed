@@ -1477,44 +1477,27 @@ void CodeGenerator::testValueTruthy(const ValueOperand& value,
 
 void CodeGenerator::visitTestOAndBranch(LTestOAndBranch* lir) {
   MIRType inputType = lir->mir()->input()->type();
-  MOZ_ASSERT(inputType == MIRType::ObjectOrNull ||
-                 lir->mir()->operandMightEmulateUndefined(),
-             "If the object couldn't emulate undefined, this should have been "
-             "folded.");
 
   Label* truthy = getJumpLabelForBranch(lir->ifTruthy());
   Label* falsy = getJumpLabelForBranch(lir->ifFalsy());
   Register input = ToRegister(lir->input());
 
-  if (lir->mir()->operandMightEmulateUndefined()) {
-    if (inputType == MIRType::ObjectOrNull) {
-      masm.branchTestPtr(Assembler::Zero, input, input, falsy);
-    }
-
-    OutOfLineTestObject* ool = new (alloc()) OutOfLineTestObject();
-    addOutOfLineCode(ool, lir->mir());
-
-    testObjectEmulatesUndefined(input, falsy, truthy, ToRegister(lir->temp()),
-                                ool);
-  } else {
-    MOZ_ASSERT(inputType == MIRType::ObjectOrNull);
-    testZeroEmitBranch(Assembler::NotEqual, input, lir->ifTruthy(),
-                       lir->ifFalsy());
+  if (inputType == MIRType::ObjectOrNull) {
+    masm.branchTestPtr(Assembler::Zero, input, input, falsy);
   }
+
+  auto* ool = new (alloc()) OutOfLineTestObject();
+  addOutOfLineCode(ool, lir->mir());
+
+  testObjectEmulatesUndefined(input, falsy, truthy, ToRegister(lir->temp()),
+                              ool);
 }
 
 void CodeGenerator::visitTestVAndBranch(LTestVAndBranch* lir) {
-  OutOfLineTestObject* ool = nullptr;
   MDefinition* input = lir->mir()->input();
-  
-  
-  
-  
-  if (lir->mir()->operandMightEmulateUndefined() &&
-      input->mightBeType(MIRType::Object)) {
-    ool = new (alloc()) OutOfLineTestObject();
-    addOutOfLineCode(ool, lir->mir());
-  }
+
+  auto* ool = new (alloc()) OutOfLineTestObject();
+  addOutOfLineCode(ool, lir->mir());
 
   Label* truthy = getJumpLabelForBranch(lir->ifTruthy());
   Label* falsy = getJumpLabelForBranch(lir->ifFalsy());
