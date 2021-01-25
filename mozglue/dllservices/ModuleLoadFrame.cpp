@@ -38,6 +38,13 @@ void ModuleLoadFrame::StaticInit(
     
     gFallbackLoaderAPI.SetObserver(aNewObserver);
     sLoaderAPI = &gFallbackLoaderAPI;
+
+    if (aOutWinLauncherFunctions) {
+      aOutWinLauncherFunctions->mHandleLauncherError =
+          [](const mozilla::LauncherError&, const char*) {};
+      
+      
+    }
     return;
   }
 
