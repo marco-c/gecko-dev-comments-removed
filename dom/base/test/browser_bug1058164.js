@@ -205,10 +205,12 @@ add_task(async function test_swap_frameloader_pagevisibility_events() {
   
   await ContentTask.spawn(emptyBrowser, null, async () => {
     if (content.document.visibilityState === "hidden") {
-      info("waiting for hidden emptyBrowser to pageshow");
-      await ContentTaskUtils.waitForEvent(content, "pageshow", {});
+      info("waiting for hidden emptyBrowser to be visible");
+      await ContentTaskUtils.waitForEvent(content.document, "visibilitychange", {});
     }
   });
+
+  info("emptyBrowser is shown now.");
 
   
   
