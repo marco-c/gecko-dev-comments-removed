@@ -659,12 +659,6 @@ class ScriptStencil {
   TaggedParserAtomIndex functionAtom;
 
   
-  FunctionFlags functionFlags = {};
-
-  
-  uint16_t nargs = 0;
-
-  
   
   
   
@@ -674,28 +668,31 @@ class ScriptStencil {
   ScopeIndex lazyFunctionEnclosingScopeIndex_;
 
   
+  FunctionFlags functionFlags = {};
+
   
-  static constexpr uint32_t WasFunctionEmittedFlag = 1 << 0;
+  
+  static constexpr uint16_t WasFunctionEmittedFlag = 1 << 0;
 
   
   
   
   
-  static constexpr uint32_t AllowRelazifyFlag = 1 << 1;
+  static constexpr uint16_t AllowRelazifyFlag = 1 << 1;
 
   
   
-  static constexpr uint32_t HasSharedDataFlag = 1 << 2;
+  static constexpr uint16_t HasSharedDataFlag = 1 << 2;
 
   
   
-  static constexpr uint32_t HasMemberInitializersFlag = 1 << 3;
+  static constexpr uint16_t HasMemberInitializersFlag = 1 << 3;
 
   
   
-  static constexpr uint32_t HasLazyFunctionEnclosingScopeIndexFlag = 1 << 4;
+  static constexpr uint16_t HasLazyFunctionEnclosingScopeIndexFlag = 1 << 4;
 
-  uint32_t flags_ = 0;
+  uint16_t flags_ = 0;
 
   
 
@@ -781,6 +778,12 @@ class ScriptStencilExtra {
  public:
   
   SourceExtent extent;
+
+  
+  uint16_t nargs = 0;
+
+  
+  uint16_t padding_ = 0;
 
   ScriptStencilExtra() = default;
 
