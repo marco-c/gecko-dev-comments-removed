@@ -175,6 +175,7 @@ def generic_worker_toolchain(config, job, taskdesc):
     run = job["run"]
 
     worker = taskdesc["worker"] = job["worker"]
+    worker["chain-of-trust"] = True
 
     
     
@@ -183,9 +184,6 @@ def generic_worker_toolchain(config, job, taskdesc):
         generic_worker_add_artifacts(config, job, taskdesc)
 
     if job["worker"]["os"] == "windows":
-        
-        worker["chain-of-trust"] = True
-
         
         
         
