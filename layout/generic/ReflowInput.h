@@ -350,10 +350,6 @@ struct ReflowInput : public SizeComputationInput {
                       : ht + ComputedPhysicalBorderPadding().TopBottom());
   }
 
-  bool ComputedBSizeIsSetByAspectRatio() const {
-    return mFlags.mBSizeIsSetByAspectRatio;
-  }
-
   
   LogicalSize mContainingBlockSize{mWritingMode};
 
@@ -513,7 +509,7 @@ struct ReflowInput : public SizeComputationInput {
     
     
     
-    bool mBSizeIsSetByAspectRatio : 1;
+    bool mIsBSizeSetByAspectRatio : 1;
   };
   Flags mFlags;
   mozilla::ComputeSizeFlags mComputeSizeFlags;

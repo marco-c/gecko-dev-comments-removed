@@ -1894,7 +1894,7 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     
     
-    if (aReflowInput.ComputedBSizeIsSetByAspectRatio() &&
+    if (aReflowInput.mFlags.mIsBSizeSetByAspectRatio &&
         ShouldApplyAutomaticMinimumOnBlockAxis(wm, aReflowInput.mStyleDisplay,
                                                aReflowInput.mStylePosition)) {
       
