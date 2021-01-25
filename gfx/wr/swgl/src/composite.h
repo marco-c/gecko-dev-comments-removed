@@ -24,10 +24,10 @@ static NO_INLINE void scale_blit(Texture& srctex, const IntRect& srcReq,
   int dstWidth = dstReq.width();
   int dstHeight = dstReq.height();
   
-  IntRect dstBounds = dsttex.sample_bounds(dstReq, invertY);
+  IntRect dstBounds = dsttex.sample_bounds(dstReq);
   
   
-  IntRect srcBounds = srctex.sample_bounds(srcReq).scale(
+  IntRect srcBounds = srctex.sample_bounds(srcReq, invertY).scale(
       srcWidth, srcHeight, dstWidth, dstHeight, true);
   
   dstBounds.intersect(srcBounds);
@@ -44,11 +44,11 @@ static NO_INLINE void scale_blit(Texture& srctex, const IntRect& srcReq,
   int bpp = srctex.bpp();
   int srcStride = srctex.stride();
   int destStride = dsttex.stride();
-  char* dest = dsttex.sample_ptr(dstReq, dstBounds, dstZ, invertY);
-  char* src = srctex.sample_ptr(srcReq, srcBounds, srcZ);
+  char* dest = dsttex.sample_ptr(dstReq, dstBounds, dstZ);
+  char* src = srctex.sample_ptr(srcReq, srcBounds, srcZ, invertY);
   
   if (invertY) {
-    destStride = -destStride;
+    srcStride = -srcStride;
   }
   int span = clippedDest.width();
   int fracX = srcWidth * clippedDest.x0;
@@ -146,7 +146,7 @@ static NO_INLINE void linear_blit(Texture& srctex, const IntRect& srcReq,
   assert(srctex.internal_format == GL_RGBA8 ||
          srctex.internal_format == GL_R8 || srctex.internal_format == GL_RG8);
   
-  IntRect dstBounds = dsttex.sample_bounds(dstReq, invertY);
+  IntRect dstBounds = dsttex.sample_bounds(dstReq);
   dstBounds.intersect(clipRect);
   
   if (dstBounds.is_empty()) {
@@ -163,6 +163,11 @@ static NO_INLINE void linear_blit(Texture& srctex, const IntRect& srcReq,
   vec2_scalar srcDUV(float(srcReq.width()) / dstReq.width(),
                      float(srcReq.height()) / dstReq.height());
   
+  if (invertY) {
+    srcUV.y += srcReq.height();
+    srcDUV.y = -srcDUV.y;
+  }
+  
   srcUV += srcDUV * (vec2_scalar(dstBounds.x0, dstBounds.y0) + 0.5f);
   
   srcUV = linearQuantize(srcUV, 128);
@@ -170,11 +175,7 @@ static NO_INLINE void linear_blit(Texture& srctex, const IntRect& srcReq,
   
   int bpp = dsttex.bpp();
   int destStride = dsttex.stride();
-  char* dest = dsttex.sample_ptr(dstReq, dstBounds, dstZ, invertY);
-  
-  if (invertY) {
-    destStride = -destStride;
-  }
+  char* dest = dsttex.sample_ptr(dstReq, dstBounds, dstZ);
   int span = dstBounds.width();
   for (int rows = dstBounds.height(); rows > 0; rows--) {
     switch (bpp) {
@@ -226,7 +227,7 @@ static NO_INLINE void linear_composite(Texture& srctex, const IntRect& srcReq,
   assert(srctex.bpp() == 4);
   assert(dsttex.bpp() == 4);
   
-  IntRect dstBounds = dsttex.sample_bounds(dstReq, invertY);
+  IntRect dstBounds = dsttex.sample_bounds(dstReq);
   dstBounds.intersect(clipRect);
   
   if (dstBounds.is_empty()) {
@@ -241,17 +242,18 @@ static NO_INLINE void linear_composite(Texture& srctex, const IntRect& srcReq,
   vec2_scalar srcDUV(float(srcReq.width()) / dstReq.width(),
                      float(srcReq.height()) / dstReq.height());
   
+  if (invertY) {
+    srcUV.y += srcReq.height();
+    srcDUV.y = -srcDUV.y;
+  }
+  
   srcUV += srcDUV * (vec2_scalar(dstBounds.x0, dstBounds.y0) + 0.5f);
   
   srcUV = linearQuantize(srcUV, 128);
   srcDUV *= 128.0f;
   
   int destStride = dsttex.stride();
-  char* dest = dsttex.sample_ptr(dstReq, dstBounds, 0, invertY);
-  
-  if (invertY) {
-    destStride = -destStride;
-  }
+  char* dest = dsttex.sample_ptr(dstReq, dstBounds, 0);
   int span = dstBounds.width();
   for (int rows = dstBounds.height(); rows > 0; rows--) {
     linear_row_composite((uint32_t*)dest, span, srcUV, srcDUV.x, &sampler);
@@ -387,15 +389,15 @@ static NO_INLINE void unscaled_composite(Texture& srctex, const IntRect& srcReq,
                                          Texture& dsttex, const IntRect& dstReq,
                                          bool invertY,
                                          const IntRect& clipRect) {
-  IntRect bounds = dsttex.sample_bounds(dstReq, invertY);
+  IntRect bounds = dsttex.sample_bounds(dstReq);
   bounds.intersect(clipRect);
-  bounds.intersect(srctex.sample_bounds(srcReq));
-  char* dest = dsttex.sample_ptr(dstReq, bounds, 0, invertY);
-  char* src = srctex.sample_ptr(srcReq, bounds, 0);
+  bounds.intersect(srctex.sample_bounds(srcReq, invertY));
+  char* dest = dsttex.sample_ptr(dstReq, bounds, 0);
+  char* src = srctex.sample_ptr(srcReq, bounds, 0, invertY);
   int srcStride = srctex.stride();
   int destStride = dsttex.stride();
   if (invertY) {
-    destStride = -destStride;
+    srcStride = -srcStride;
   }
   for (int rows = bounds.height(); rows > 0; rows--) {
     unscaled_row_composite((uint32_t*)dest, (const uint32_t*)src,
@@ -821,6 +823,11 @@ static void linear_convert_yuv(Texture& ytex, Texture& utex, Texture& vtex,
   vec2_scalar srcDUV(float(srcReq.width()) / dstReq.width(),
                      float(srcReq.height()) / dstReq.height());
   
+  if (invertY) {
+    srcUV.y += srcReq.height();
+    srcDUV.y = -srcDUV.y;
+  }
+  
   srcUV += srcDUV * (vec2_scalar(dstBounds.x0, dstBounds.y0) + 0.5f);
   
   vec2_scalar chromaScale(float(utex.width) / ytex.width,
@@ -837,11 +844,7 @@ static void linear_convert_yuv(Texture& ytex, Texture& utex, Texture& vtex,
   }
   
   int destStride = dsttex.stride();
-  char* dest = dsttex.sample_ptr(dstReq, dstBounds, 0, invertY);
-  
-  if (invertY) {
-    destStride = -destStride;
-  }
+  char* dest = dsttex.sample_ptr(dstReq, dstBounds, 0);
   int span = dstBounds.width();
   for (int rows = dstBounds.height(); rows > 0; rows--) {
     switch (colorSpace) {
