@@ -2732,7 +2732,7 @@ class nsLayoutUtils {
 
 
 
-  static nsRect GetSelectionBoundingRect(mozilla::dom::Selection* aSel);
+  static nsRect GetSelectionBoundingRect(const mozilla::dom::Selection* aSel);
 
   
 

@@ -170,7 +170,7 @@ class nsCaret final : public nsISelectionListener {
 
 
 
-  static nsIFrame* GetGeometry(mozilla::dom::Selection* aSelection,
+  static nsIFrame* GetGeometry(const mozilla::dom::Selection* aSelection,
                                nsRect* aRect);
   static nsIFrame* GetCaretFrameForNodeOffset(
       nsFrameSelection* aFrameSelection, nsIContent* aContentNode,
@@ -186,7 +186,7 @@ class nsCaret final : public nsISelectionListener {
   
   
   
-  static nsIFrame* GetFrameAndOffset(mozilla::dom::Selection* aSelection,
+  static nsIFrame* GetFrameAndOffset(const mozilla::dom::Selection* aSelection,
                                      nsINode* aOverrideNode,
                                      int32_t aOverrideOffset,
                                      int32_t* aFrameOffset,
