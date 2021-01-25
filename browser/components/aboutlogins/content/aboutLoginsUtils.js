@@ -56,3 +56,17 @@ export function promptForMasterPassword(messageId) {
     window.AboutLoginsUtils.promptForMasterPassword(resolve, messageId);
   });
 }
+
+
+
+
+
+
+
+export function initDialog(element, templateSelector) {
+  let template = document.querySelector(templateSelector);
+  let shadowRoot = element.attachShadow({ mode: "open" });
+  document.l10n.connectRoot(shadowRoot);
+  shadowRoot.appendChild(template.content.cloneNode(true));
+  return shadowRoot;
+}

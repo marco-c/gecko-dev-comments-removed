@@ -147,6 +147,10 @@ add_task(async function setup_head() {
     if (msg.errorMessage.includes(EXPECTED_ERROR_MESSAGE)) {
       return;
     }
+    if (msg.errorMessage == "FILE_FORMAT_ERROR") {
+      
+      return;
+    }
     ok(false, msg.message || msg.errorMessage);
   });
 
