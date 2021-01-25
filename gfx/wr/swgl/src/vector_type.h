@@ -114,7 +114,7 @@ struct VectorType {
     };
   };
 
-  VectorType() : data{0} { }
+  VectorType() : data{0} {}
 
   constexpr VectorType(const VectorType& rhs) : data(rhs.data) {}
   
