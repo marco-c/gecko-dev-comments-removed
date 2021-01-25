@@ -68,6 +68,8 @@ class nsHTMLDocument : public mozilla::dom::Document {
 
   nsContentList* GetExistingForms() const { return mForms; }
 
+  bool IsPlainText() const { return mIsPlainText; }
+
   
   bool ResolveName(JSContext* aCx, const nsAString& aName,
                    JS::MutableHandle<JS::Value> aRetval,
