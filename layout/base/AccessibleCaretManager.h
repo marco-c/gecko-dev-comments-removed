@@ -228,13 +228,15 @@ class AccessibleCaretManager {
 
   void ClearMaintainedSelection() const;
 
+  enum class Terminated : bool { No, Yes };
+
   
   
   
   
   
   
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT bool FlushLayout();
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Terminated MaybeFlushLayout();
 
   dom::Element* GetEditingHostForFrame(nsIFrame* aFrame) const;
   dom::Selection* GetSelection() const;
@@ -265,7 +267,9 @@ class AccessibleCaretManager {
   
   
   
-  virtual bool IsTerminated() const { return !mPresShell; }
+  virtual Terminated IsTerminated() const {
+    return mPresShell ? Terminated::No : Terminated::Yes;
+  }
 
   
   virtual CaretMode GetCaretMode() const;
