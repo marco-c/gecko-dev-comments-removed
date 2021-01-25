@@ -55,8 +55,8 @@ def dependentlibs_readelf(lib):
         
         
         
-        tmp = line.split(" ", 3)
-        if len(tmp) > 3 and "NEEDED" in tmp[2]:
+        tmp = line.strip().split(" ", 3)
+        if len(tmp) > 3 and "NEEDED" in tmp[1]:
             
             
             
