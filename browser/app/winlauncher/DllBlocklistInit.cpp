@@ -44,6 +44,12 @@ LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPFromLauncher(
 static LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPInternal(
     const wchar_t* aFullImagePath, nt::CrossExecTransferManager& aTransferMgr,
     const IMAGE_THUNK_DATA* aCachedNtdllThunk) {
+  LauncherVoidResult transferResult =
+      freestanding::gSharedSection.TransferHandle(aTransferMgr);
+  if (transferResult.isErr()) {
+    return transferResult.propagateErr();
+  }
+
   CrossProcessDllInterceptor intcpt(aTransferMgr.RemoteProcess());
   intcpt.Init(L"ntdll.dll");
 
@@ -163,14 +169,6 @@ LauncherVoidResultWithLineInfo InitializeDllBlocklistOOP(
     return RestoreImportDirectory(aFullImagePath, transferMgr);
   }
 
-  
-  
-  LauncherVoidResult transferResult =
-      freestanding::gSharedSection.TransferHandle(transferMgr, GENERIC_READ);
-  if (transferResult.isErr()) {
-    return transferResult.propagateErr();
-  }
-
   return InitializeDllBlocklistOOPInternal(aFullImagePath, transferMgr,
                                            aCachedNtdllThunk);
 }
@@ -189,15 +187,6 @@ LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPFromLauncher(
       freestanding::gSharedSection.Init(transferMgr.LocalPEHeaders());
   if (result.isErr()) {
     return result.propagateErr();
-  }
-
-  
-  
-  LauncherVoidResult transferResult =
-      freestanding::gSharedSection.TransferHandle(transferMgr,
-                                                  GENERIC_READ | GENERIC_WRITE);
-  if (transferResult.isErr()) {
-    return transferResult.propagateErr();
   }
 
   auto clearInstance = MakeScopeExit([]() {

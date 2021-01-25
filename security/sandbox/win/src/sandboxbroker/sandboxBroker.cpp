@@ -397,13 +397,16 @@ static void AddCachedDirRule(sandbox::TargetPolicy* aPolicy,
 
 
 
-static const Maybe<Vector<const wchar_t*>>& GetPrespawnCigExceptionModules() {
+
+
+
+static const Maybe<Span<uint32_t>>& GetPrespawnCigExceptionModules() {
   
   
   
-  static Maybe<Vector<const wchar_t*>> sDependentModules =
-      []() -> Maybe<Vector<const wchar_t*>> {
-    using GetDependentModulePathsFn = const wchar_t* (*)();
+  static Maybe<Span<uint32_t>> sDependentModules =
+      []() -> Maybe<Span<uint32_t>> {
+    using GetDependentModulePathsFn = uint32_t (*)(uint32_t**);
     GetDependentModulePathsFn getDependentModulePaths =
         reinterpret_cast<GetDependentModulePathsFn>(::GetProcAddress(
             ::GetModuleHandleW(nullptr), "GetDependentModulePaths"));
@@ -411,30 +414,17 @@ static const Maybe<Vector<const wchar_t*>>& GetPrespawnCigExceptionModules() {
       return Nothing();
     }
 
-    const wchar_t* arrayBase = getDependentModulePaths();
-    if (!arrayBase) {
-      return Nothing();
-    }
-
-    
-    Vector<const wchar_t*> paths;
-    for (const wchar_t* p = arrayBase; *p;) {
-      Unused << paths.append(p);
-      while (*p) {
-        ++p;
-      }
-      ++p;
-    }
-
-    return Some(std::move(paths));
+    uint32_t* modulePathArray = nullptr;
+    uint32_t modulePathArrayLen = getDependentModulePaths(&modulePathArray);
+    return modulePathArray ? Some(Span(modulePathArray, modulePathArrayLen))
+                           : Nothing();
   }();
 
   return sDependentModules;
 }
 
 static sandbox::ResultCode InitSignedPolicyRulesToBypassCig(
-    sandbox::TargetPolicy* aPolicy,
-    const Vector<const wchar_t*>& aExceptionModules) {
+    sandbox::TargetPolicy* aPolicy, const Span<uint32_t>& aExceptionModules) {
   
   
   nsAutoString rulePath(*sBinDir);
@@ -446,13 +436,17 @@ static sandbox::ResultCode InitSignedPolicyRulesToBypassCig(
     return result;
   }
 
-  if (aExceptionModules.empty()) {
+  if (aExceptionModules.IsEmpty()) {
     return sandbox::SBOX_ALL_OK;
   }
 
-  for (const wchar_t* path : aExceptionModules) {
-    result = aPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_SIGNED_BINARY,
-                              sandbox::TargetPolicy::SIGNED_ALLOW_LOAD, path);
+  const uint8_t* arrayBase =
+      reinterpret_cast<const uint8_t*>(aExceptionModules.data());
+  for (uint32_t offset : aExceptionModules) {
+    result =
+        aPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_SIGNED_BINARY,
+                         sandbox::TargetPolicy::SIGNED_ALLOW_LOAD,
+                         reinterpret_cast<const wchar_t*>(arrayBase + offset));
     if (result != sandbox::SBOX_ALL_OK) {
       return result;
     }
@@ -967,7 +961,7 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
       sandbox::MITIGATION_DEP_NO_ATL_THUNK | sandbox::MITIGATION_DEP |
       sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32;
 
-  const Maybe<Vector<const wchar_t*>>& exceptionModules =
+  const Maybe<Span<uint32_t>>& exceptionModules =
       GetPrespawnCigExceptionModules();
   if (exceptionModules.isSome()) {
     mitigations |= sandbox::MITIGATION_FORCE_MS_SIGNED_BINS;

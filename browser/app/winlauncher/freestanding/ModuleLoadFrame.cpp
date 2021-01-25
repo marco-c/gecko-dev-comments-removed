@@ -85,9 +85,6 @@ void ModuleLoadFrame::NotifySectionMap(
   topFrame->OnSectionMap(std::move(aSectionName), aMapBaseAddr, aMapNtStatus);
 }
 
-
-bool ModuleLoadFrame::ExistsTopFrame() { return !!sTopFrame.get(); }
-
 void ModuleLoadFrame::OnSectionMap(nt::AllocatedUnicodeString&& aSectionName,
                                    const void* aMapBaseAddr,
                                    NTSTATUS aMapNtStatus) {

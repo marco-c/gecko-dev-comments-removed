@@ -67,6 +67,10 @@ class MOZ_TRIVIAL_CTOR_DTOR Kernel32ExportsSolver final
 
 
 
+
+
+
+
 class MOZ_TRIVIAL_CTOR_DTOR SharedSection final {
   
   
@@ -77,35 +81,21 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final {
   static HANDLE sSectionHandle;
   static void* sWriteCopyView;
 
-  static constexpr size_t kSharedViewSize = 0x1000;
-
  public:
   struct Layout final {
     Kernel32ExportsSolver mK32Exports;
-    wchar_t mModulePathArray[1];
+    uint32_t mModulePathArrayLength;
+    uint32_t mModulePathArray[1];
 
     Layout() = delete;  
   };
 
-  
-  static void Reset(HANDLE aNewSecionObject = sSectionHandle);
-
-  
-  static void ConvertToReadOnly();
-
-  
-  
+  static void Reset(HANDLE aNewSecionObject);
   static LauncherVoidResult Init(const nt::PEHeaders& aPEHeaders);
 
-  
-  static LauncherVoidResult AddDepenentModule(PCUNICODE_STRING aNtPath);
-
-  
   static LauncherResult<Layout*> GetView();
-
-  
   static LauncherVoidResult TransferHandle(
-      nt::CrossExecTransferManager& aTransferMgr, DWORD aDesiredAccess,
+      nt::CrossExecTransferManager& aTransferMgr,
       HANDLE* aDestinationAddress = &sSectionHandle);
 };
 
