@@ -8907,6 +8907,8 @@ class TabDialogBox {
     
     let template = document.getElementById("dialogStackTemplate");
     let dialogStack = template.content.cloneNode(true).firstElementChild;
+    dialogStack.classList.add("tab-prompt-dialog");
+
     this.browser.parentNode.insertBefore(
       dialogStack,
       this.browser.nextElementSibling
@@ -8942,6 +8944,8 @@ class TabDialogBox {
 
 
 
+
+
   open(
     aURL,
     {
@@ -8949,22 +8953,32 @@ class TabDialogBox {
       allowDuplicateDialogs = true,
       sizeTo,
       keepOpenSameOriginNav,
+      modalType = null,
     } = {},
     ...aParams
   ) {
     return new Promise(resolve => {
-      if (!this._dialogManager.hasDialogs) {
+      
+      let dialogManager =
+        modalType === Ci.nsIPrompt.MODAL_TYPE_CONTENT
+          ? this.getContentDialogManager()
+          : this._dialogManager;
+      let hasDialogs =
+        this._dialogManager.hasDialogs ||
+        this._contentDialogManager?.hasDialogs;
+
+      if (!hasDialogs) {
         this._onFirstDialogOpen();
       }
 
       let closingCallback = () => {
-        if (!this._dialogManager.hasDialogs) {
+        if (!hasDialogs) {
           this._onLastDialogClose();
         }
       };
 
       
-      let dialog = this._dialogManager.open(
+      let dialog = dialogManager.open(
         aURL,
         {
           features,
@@ -9009,6 +9023,29 @@ class TabDialogBox {
     this.tab?.removeEventListener("TabClose", this);
   }
 
+  _buildContentPromptDialog() {
+    let template = document.getElementById("dialogStackTemplate");
+    let contentDialogStack = template.content.cloneNode(true).firstElementChild;
+    contentDialogStack.classList.add("content-prompt-dialog");
+
+    
+    let tabPromptDialog = this.browser.parentNode.querySelector(
+      ".tab-prompt-dialog"
+    );
+    this.browser.parentNode.insertBefore(contentDialogStack, tabPromptDialog);
+
+    let contentDialogTemplate = contentDialogStack.firstElementChild;
+    this._contentDialogManager = new SubDialogManager({
+      dialogStack: contentDialogStack,
+      dialogTemplate: contentDialogTemplate,
+      orderType: SubDialogManager.ORDER_QUEUE,
+      allowDuplicateDialogs: true,
+      dialogOptions: {
+        consumeOutsideClicks: false,
+      },
+    });
+  }
+
   handleEvent(event) {
     if (event.type !== "TabClose") {
       return;
@@ -9018,10 +9055,16 @@ class TabDialogBox {
 
   abortAllDialogs() {
     this._dialogManager.abortDialogs();
+    this._contentDialogManager?.abortDialogs();
   }
 
   focus() {
-    this._dialogManager.focusTopDialog();
+    
+    if (this._dialogManager._dialogs.length) {
+      this._dialogManager.focusTopDialog();
+      return;
+    }
+    this._contentDialogManager?.focusTopDialog();
   }
 
   
@@ -9052,6 +9095,7 @@ class TabDialogBox {
     this._lastPrincipal = this.browser.contentPrincipal;
 
     this._dialogManager.abortDialogs(filterFn);
+    this._contentDialogManager?.abortDialogs(filterFn);
   }
 
   get tab() {
@@ -9068,6 +9112,13 @@ class TabDialogBox {
 
   getManager() {
     return this._dialogManager;
+  }
+
+  getContentDialogManager() {
+    if (!this._contentDialogManager) {
+      this._buildContentPromptDialog();
+    }
+    return this._contentDialogManager;
   }
 }
 
