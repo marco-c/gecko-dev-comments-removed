@@ -993,6 +993,14 @@ nsresult StorageDBThread::DBOperation::Perform(StorageDBThread* aThread) {
     }
 
     case opGetUsage: {
+      
+      
+      
+#if 0
+      
+      
+      
+
       nsCOMPtr<mozIStorageStatement> stmt =
           aThread->mWorkerStatements.GetCachedStatement(
               "SELECT SUM(LENGTH(key) + LENGTH(value)) FROM webappsstore2 "
@@ -1024,6 +1032,24 @@ nsresult StorageDBThread::DBOperation::Perform(StorageDBThread* aThread) {
       rv = stmt->BindUTF8StringByName("usageOrigin"_ns,
                                       originScopeEscaped + "%"_ns);
       NS_ENSURE_SUCCESS(rv, rv);
+#else
+      
+      
+      
+      
+      
+
+      nsCOMPtr<mozIStorageStatement> stmt =
+          aThread->mWorkerStatements.GetCachedStatement(
+              "SELECT SUM(LENGTH(key) + LENGTH(value)) FROM webappsstore2 "
+              "WHERE (originAttributes || ':' || originKey) LIKE :usageOrigin");
+      NS_ENSURE_STATE(stmt);
+
+      mozStorageStatementScoper scope(stmt);
+
+      rv = stmt->BindUTF8StringByName("usageOrigin"_ns, mUsage->OriginScope());
+      NS_ENSURE_SUCCESS(rv, rv);
+#endif
 
       bool exists;
       rv = stmt->ExecuteStep(&exists);
