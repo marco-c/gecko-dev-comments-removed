@@ -56,6 +56,11 @@ function setup() {
   Services.prefs.setBoolPref("network.dns.upgrade_with_https_rr", true);
   Services.prefs.setBoolPref("network.dns.use_https_rr_as_altsvc", true);
 
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    "https://foo.example.com:" + h2Port + "/httpssvc_as_altsvc"
+  );
+
   
   
   const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
@@ -78,7 +83,6 @@ registerCleanupFunction(() => {
   prefs.clearUserPref("network.trr.useGET");
   prefs.clearUserPref("network.trr.confirmationNS");
   prefs.clearUserPref("network.trr.bootstrapAddress");
-  prefs.clearUserPref("network.trr.blacklist-duration");
   prefs.clearUserPref("network.trr.request-timeout");
   prefs.clearUserPref("network.trr.clear-cache-on-pref-change");
   prefs.clearUserPref("network.dns.upgrade_with_https_rr");
@@ -112,39 +116,20 @@ function makeChan(url) {
   return chan;
 }
 
-function channelOpenPromise(chan) {
+function channelOpenPromise(chan, flags) {
   return new Promise(resolve => {
     function finish(req, buffer) {
+      certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
+        false
+      );
       resolve([req, buffer]);
     }
-    let internal = chan.QueryInterface(Ci.nsIHttpChannelInternal);
-    internal.setWaitForHTTPSSVCRecord();
-    chan.asyncOpen(new ChannelListener(finish, null, CL_ALLOW_UNKNOWN_CL));
+    certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
+      true
+    );
+    chan.asyncOpen(new ChannelListener(finish, null, flags));
   });
 }
-
-
-
-add_task(async function testUseHTTPSSVCForHttpsUpgrade() {
-  
-  prefs.setCharPref(
-    "network.trr.uri",
-    "https://foo.example.com:" + h2Port + "/httpssvc_as_altsvc"
-  );
-  dns.clearCache(true);
-
-  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
-    true
-  );
-
-  let chan = makeChan(`https://test.httpssvc.com:8080/`);
-  let [req, resp] = await channelOpenPromise(chan);
-  Assert.equal(req.getResponseHeader("x-connection-http2"), "yes");
-
-  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
-    false
-  );
-});
 
 class EventSinkListener {
   getInterface(iid) {
@@ -167,54 +152,9 @@ EventSinkListener.prototype.QueryInterface = ChromeUtils.generateQI([
 
 
 add_task(async function testUseHTTPSSVCAsHSTS() {
-  
-  prefs.setCharPref(
-    "network.trr.uri",
-    "https://foo.example.com:" + h2Port + "/httpssvc_as_altsvc"
-  );
   dns.clearCache(true);
 
-  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
-    true
-  );
-
-  
-  
-  let chan = makeChan(`http://test.httpssvc.com:80/`);
-  let listener = new EventSinkListener();
-  chan.notificationCallbacks = listener;
-
-  let [req, resp] = await channelOpenPromise(chan);
-
-  req.QueryInterface(Ci.nsIHttpChannel);
-  Assert.equal(req.getResponseHeader("x-connection-http2"), "yes");
-
-  
-  
-  chan = makeChan(`http://test.httpssvc.com:80/`);
-  listener = new EventSinkListener();
-  chan.notificationCallbacks = listener;
-
-  [req, resp] = await channelOpenPromise(chan);
-
-  req.QueryInterface(Ci.nsIHttpChannel);
-  Assert.equal(req.getResponseHeader("x-connection-http2"), "yes");
-
-  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
-    false
-  );
-});
-
-
-
-add_task(async function testUseHTTPSSVC() {
-  
-  prefs.setCharPref(
-    "network.trr.uri",
-    "https://foo.example.com:" + h2Port + "/httpssvc_as_altsvc"
-  );
-
-  let listener = new DNSListener();
+  let dnsListener = new DNSListener();
 
   
   
@@ -223,103 +163,51 @@ add_task(async function testUseHTTPSSVC() {
     dns.RESOLVE_TYPE_HTTPSSVC,
     0,
     null, 
-    listener,
+    dnsListener,
     mainThread,
     defaultOriginAttributes
   );
 
-  let [inRequest, inRecord, inStatus] = await listener;
+  let [inRequest, inRecord, inStatus] = await dnsListener;
   Assert.equal(inRequest, request, "correct request was used");
   Assert.equal(inStatus, Cr.NS_OK, "status OK");
 
   
   
-  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
-    true
-  );
+  let chan = makeChan(`http://test.httpssvc.com:80/server-timing`);
+  let listener = new EventSinkListener();
+  chan.notificationCallbacks = listener;
 
-  let chan = makeChan(`https://test.httpssvc.com:8888`);
   let [req, resp] = await channelOpenPromise(chan);
-  
+
+  req.QueryInterface(Ci.nsIHttpChannel);
   Assert.equal(req.getResponseHeader("x-connection-http2"), "yes");
 
-  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
-    false
-  );
+  chan = makeChan(`http://test.httpssvc.com:80/server-timing`);
+  listener = new EventSinkListener();
+  chan.notificationCallbacks = listener;
+
+  [req, resp] = await channelOpenPromise(chan);
+
+  req.QueryInterface(Ci.nsIHttpChannel);
+  Assert.equal(req.getResponseHeader("x-connection-http2"), "yes");
 });
 
 
-add_task(async function testFallback() {
-  let trrServer = new TRRServer();
-  registerCleanupFunction(async () => {
-    await trrServer.stop();
-  });
-  await trrServer.start();
-
-  Services.prefs.setIntPref("network.trr.mode", 3);
-  Services.prefs.setCharPref(
-    "network.trr.uri",
-    `https://foo.example.com:${trrServer.port}/dns-query`
+add_task(async function testInvalidDNSResult() {
+  let chan = makeChan(`http://foo.notexisted.com:80/server-timing`);
+  let [req, resp] = await channelOpenPromise(
+    chan,
+    CL_EXPECT_LATE_FAILURE | CL_ALLOW_UNKNOWN_CL
   );
+  Assert.equal(req.status, Cr.NS_ERROR_CONNECTION_REFUSED);
+});
 
-  await trrServer.registerDoHAnswers("test.fallback.com", "A", [
-    {
-      name: "test.fallback.com",
-      ttl: 55,
-      type: "A",
-      flush: false,
-      data: "127.0.0.1",
-    },
-  ]);
-  
-  await trrServer.registerDoHAnswers("test.fallback.com", "HTTPS", [
-    {
-      name: "test.fallback.com",
-      ttl: 55,
-      type: "HTTPS",
-      flush: false,
-      data: {
-        priority: 1,
-        name: "foo.example.com",
-        values: [{ key: "port", value: 8888 }],
-      },
-    },
-  ]);
-
-  let listener = new DNSListener();
-
-  let request = dns.asyncResolve(
-    "test.fallback.com",
-    dns.RESOLVE_TYPE_HTTPSSVC,
-    0,
-    null, 
-    listener,
-    mainThread,
-    defaultOriginAttributes
+add_task(async function testLiteralIP() {
+  let chan = makeChan(`http://127.0.0.1:80/server-timing`);
+  let [req, resp] = await channelOpenPromise(
+    chan,
+    CL_EXPECT_LATE_FAILURE | CL_ALLOW_UNKNOWN_CL
   );
-
-  let [inRequest, inRecord, inStatus] = await listener;
-  Assert.equal(inRequest, request, "correct request was used");
-  Assert.equal(inStatus, Cr.NS_OK, "status OK");
-
-  let record = inRecord
-    .QueryInterface(Ci.nsIDNSHTTPSSVCRecord)
-    .GetServiceModeRecord(false, false);
-  Assert.equal(record.priority, 1);
-  Assert.equal(record.name, "foo.example.com");
-
-  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
-    true
-  );
-
-  
-  
-  let chan = makeChan(`https://test.fallback.com:${h2Port}`);
-  let [req, resp] = await channelOpenPromise(chan);
-  
-  Assert.equal(req.getResponseHeader("x-connection-http2"), "yes");
-
-  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
-    false
-  );
+  Assert.equal(req.status, Cr.NS_ERROR_CONNECTION_REFUSED);
 });
