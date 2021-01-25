@@ -1089,6 +1089,20 @@ nsExternalHelperAppService::LoadURI(nsIURI* aURI,
       bc = parent;
       wgp = parent->Canonical()->GetCurrentWindowGlobal();
     }
+
+    if (!foundAccessibleFrame) {
+      
+      nsTArray<RefPtr<BrowsingContext>> contexts;
+      aBrowsingContext->GetAllBrowsingContextsInSubtree(contexts);
+      for (const auto& kid : contexts) {
+        wgp = kid->Canonical()->GetCurrentWindowGlobal();
+        if (wgp && aTriggeringPrincipal->Subsumes(wgp->DocumentPrincipal())) {
+          foundAccessibleFrame = true;
+          break;
+        }
+      }
+    }
+
     if (!foundAccessibleFrame) {
       return NS_OK;  
     }
