@@ -40,6 +40,12 @@ class ResourceWatcher {
     this._cache = [];
     this._listenerCount = new Map();
 
+    
+    
+    
+    
+    this._existingLegacyListeners = new WeakMap();
+
     this._notifyWatchers = this._notifyWatchers.bind(this);
     this._throttledNotifyWatchers = throttle(this._notifyWatchers, 100);
   }
@@ -331,6 +337,9 @@ class ResourceWatcher {
 
 
   _onTargetDestroyed({ targetFront }) {
+    
+    this._existingLegacyListeners.set(targetFront, []);
+
     
     
     
@@ -716,6 +725,20 @@ class ResourceWatcher {
     if (!(resourceType in LegacyListeners)) {
       throw new Error(`Missing legacy listener for ${resourceType}`);
     }
+
+    const legacyListeners =
+      this._existingLegacyListeners.get(targetFront) || [];
+    if (legacyListeners.includes(resourceType)) {
+      console.error(
+        `Already started legacy listener for ${resourceType} on ${targetFront.actorID}`
+      );
+      return Promise.resolve();
+    }
+    this._existingLegacyListeners.set(
+      targetFront,
+      legacyListeners.concat(resourceType)
+    );
+
     return LegacyListeners[resourceType]({
       targetList: this.targetList,
       targetFront,
@@ -793,6 +816,15 @@ class ResourceWatcher {
     
     
     
+
+    
+    
+    
+    const listeners = this._existingLegacyListeners.get(targetFront);
+    if (listeners && listeners.includes(resourceType)) {
+      const remainingListeners = listeners.filter(l => l !== resourceType);
+      this._existingLegacyListeners.set(targetFront, remainingListeners);
+    }
   }
 }
 
