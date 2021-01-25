@@ -630,7 +630,22 @@ struct JSRuntime {
 
   js::WriteOnceData<js::NativeObject*> selfHostingGlobal_;
 
+  
+  
+  
+  JS::TranscodeRange selfHostedXDR = {};
+
+  
+  using TranscodeBufferWriter = bool (*)(JSContext* cx,
+                                         const JS::TranscodeBuffer&);
+  TranscodeBufferWriter selfHostedXDRWriter = nullptr;
+
   static js::GlobalObject* createSelfHostingGlobal(JSContext* cx);
+
+  
+  bool initSelfHostingFromXDR(JSContext* cx, const JS::CompileOptions& options,
+                              js::frontend::CompilationInfoVector& ciVec,
+                              js::MutableHandle<JSScript*> scriptOut);
 
  public:
   void getUnclonedSelfHostedValue(js::PropertyName* name, JS::Value* vp);
@@ -658,6 +673,24 @@ struct JSRuntime {
   
   
   
+
+  
+  
+  
+  
+  void setSelfHostedXDR(JS::TranscodeRange enctext) {
+    MOZ_RELEASE_ASSERT(!hasInitializedSelfHosting());
+    MOZ_RELEASE_ASSERT(enctext.length() > 0);
+    new (&selfHostedXDR) mozilla::Range(enctext);
+  }
+
+  
+  
+  void setSelfHostedXDRWriterCallback(TranscodeBufferWriter writer) {
+    MOZ_RELEASE_ASSERT(!hasInitializedSelfHosting());
+    MOZ_RELEASE_ASSERT(!selfHostedXDRWriter);
+    selfHostedXDRWriter = writer;
+  }
 
   bool hasInitializedSelfHosting() const { return selfHostingGlobal_; }
 

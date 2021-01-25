@@ -102,6 +102,8 @@ extern int sArgc;
 extern char** sArgv;
 
 
+extern const char* selfHostedXDRPath;
+extern bool encodeSelfHostedCode;
 extern bool enableCodeCoverage;
 extern bool enableDisassemblyDumps;
 extern bool offthreadCompilation;
