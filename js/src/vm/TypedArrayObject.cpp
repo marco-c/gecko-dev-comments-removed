@@ -1603,7 +1603,7 @@ static bool TypedArray_toStringTagGetter(JSContext* cx, unsigned argc,
 template <typename T>
 static inline bool SetFromTypedArray(Handle<TypedArrayObject*> target,
                                      Handle<TypedArrayObject*> source,
-                                     uint32_t offset) {
+                                     size_t offset) {
   
   
 
@@ -1618,8 +1618,8 @@ static inline bool SetFromTypedArray(Handle<TypedArrayObject*> target,
 template <typename T>
 static inline bool SetFromNonTypedArray(JSContext* cx,
                                         Handle<TypedArrayObject*> target,
-                                        HandleObject source, uint32_t len,
-                                        uint32_t offset) {
+                                        HandleObject source, size_t len,
+                                        size_t offset) {
   MOZ_ASSERT(!source->is<TypedArrayObject>(), "use SetFromTypedArray");
 
   if (target->isSharedMemory()) {
@@ -1698,7 +1698,7 @@ bool TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args) {
     }
 
     
-    uint32_t targetLength = target->length().deprecatedGetUint32();
+    size_t targetLength = target->length().get();
 
     
     if (targetOffset > targetLength) {
@@ -1707,8 +1707,8 @@ bool TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args) {
     }
 
     
-    uint32_t offset = uint32_t(targetOffset);
-    if (srcTypedArray->length().deprecatedGetUint32() > targetLength - offset) {
+    size_t offset = size_t(targetOffset);
+    if (srcTypedArray->length().get() > targetLength - offset) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_SOURCE_ARRAY_TOO_LONG);
       return false;
@@ -1739,7 +1739,7 @@ bool TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args) {
     
     
     
-    uint32_t targetLength = target->length().deprecatedGetUint32();
+    size_t targetLength = target->length().get();
 
     
     uint32_t srcLength;
@@ -1754,7 +1754,7 @@ bool TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args) {
     }
 
     
-    uint32_t offset = uint32_t(targetOffset);
+    size_t offset = size_t(targetOffset);
     if (srcLength > targetLength - offset) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_SOURCE_ARRAY_TOO_LONG);
