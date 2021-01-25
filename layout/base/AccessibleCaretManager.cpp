@@ -200,7 +200,7 @@ void AccessibleCaretManager::UpdateCarets(const UpdateCaretsHintSet& aHint) {
       break;
   }
 
-  UpdateShouldDisableApz();
+  mDesiredAyncPanZoomState.Update(*this);
 }
 
 bool AccessibleCaretManager::IsCaretDisplayableInCursorMode(
@@ -366,35 +366,42 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
   }
 }
 
-void AccessibleCaretManager::UpdateShouldDisableApz() {
-  if (mActiveCaret) {
+void AccessibleCaretManager::DesiredAsyncPanZoomState::Update(
+    const AccessibleCaretManager& aAccessibleCaretManager) {
+  if (aAccessibleCaretManager.mActiveCaret) {
     
-    mShouldDisableApz = false;
+    mValue = Value::Enabled;
     return;
   }
 
-  if (mIsScrollStarted) {
+  if (aAccessibleCaretManager.mIsScrollStarted) {
     
     
-    mShouldDisableApz = mIsCaretPositionChanged;
+    mValue = aAccessibleCaretManager.mIsCaretPositionChanged ? Value::Disabled
+                                                             : Value::Enabled;
     return;
   }
 
   
   
-  switch (mLastUpdateCaretMode) {
+  switch (aAccessibleCaretManager.mLastUpdateCaretMode) {
     case CaretMode::None:
-      mShouldDisableApz = false;
+      mValue = Value::Enabled;
       break;
     case CaretMode::Cursor:
-      mShouldDisableApz = mFirstCaret->IsVisuallyVisible() &&
-                          mFirstCaret->IsInPositionFixedSubtree();
+      mValue = (aAccessibleCaretManager.mFirstCaret->IsVisuallyVisible() &&
+                aAccessibleCaretManager.mFirstCaret->IsInPositionFixedSubtree())
+                   ? Value::Disabled
+                   : Value::Enabled;
       break;
     case CaretMode::Selection:
-      mShouldDisableApz = (mFirstCaret->IsVisuallyVisible() &&
-                           mFirstCaret->IsInPositionFixedSubtree()) ||
-                          (mSecondCaret->IsVisuallyVisible() &&
-                           mSecondCaret->IsInPositionFixedSubtree());
+      mValue =
+          ((aAccessibleCaretManager.mFirstCaret->IsVisuallyVisible() &&
+            aAccessibleCaretManager.mFirstCaret->IsInPositionFixedSubtree()) ||
+           (aAccessibleCaretManager.mSecondCaret->IsVisuallyVisible() &&
+            aAccessibleCaretManager.mSecondCaret->IsInPositionFixedSubtree()))
+              ? Value::Disabled
+              : Value::Enabled;
       break;
   }
 }
@@ -502,7 +509,7 @@ nsresult AccessibleCaretManager::ReleaseCaret() {
 
   mActiveCaret = nullptr;
   SetSelectionDragState(false);
-  UpdateShouldDisableApz();
+  mDesiredAyncPanZoomState.Update(*this);
   DispatchCaretStateChangedEvent(CaretChangedReason::Releasecaret);
   return NS_OK;
 }
@@ -771,6 +778,11 @@ void AccessibleCaretManager::OnFrameReconstruction() {
 
 void AccessibleCaretManager::SetLastInputSource(uint16_t aInputSource) {
   mLastInputSource = aInputSource;
+}
+
+bool AccessibleCaretManager::ShouldDisableApz() const {
+  return mDesiredAyncPanZoomState.Get() ==
+         DesiredAsyncPanZoomState::Value::Disabled;
 }
 
 Selection* AccessibleCaretManager::GetSelection() const {

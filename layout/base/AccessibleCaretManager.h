@@ -121,7 +121,7 @@ class AccessibleCaretManager {
   void SetLastInputSource(uint16_t aInputSource);
 
   
-  bool ShouldDisableApz() const { return mShouldDisableApz; }
+  bool ShouldDisableApz() const;
 
  protected:
   
@@ -344,8 +344,19 @@ class AccessibleCaretManager {
   
   bool mIsCaretPositionChanged = false;
 
-  
-  bool mShouldDisableApz = false;
+  class DesiredAsyncPanZoomState final {
+   public:
+    void Update(const AccessibleCaretManager& aAccessibleCaretManager);
+
+    enum class Value : bool { Disabled, Enabled };
+
+    Value Get() const { return mValue; }
+
+   private:
+    Value mValue = Value::Enabled;
+  };
+
+  DesiredAsyncPanZoomState mDesiredAyncPanZoomState;
 
   static const int32_t kAutoScrollTimerDelay = 30;
 
