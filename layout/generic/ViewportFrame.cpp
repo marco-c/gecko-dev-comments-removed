@@ -16,10 +16,9 @@
 #include "mozilla/RestyleManager.h"
 #include "nsGkAtoms.h"
 #include "nsIScrollableFrame.h"
-#include "nsAbsoluteContainingBlock.h"
-#include "nsCanvasFrame.h"
-#include "nsLayoutUtils.h"
 #include "nsSubDocumentFrame.h"
+#include "nsCanvasFrame.h"
+#include "nsAbsoluteContainingBlock.h"
 #include "GeckoProfiler.h"
 #include "nsIMozBrowserFrame.h"
 #include "nsPlaceholderFrame.h"
@@ -57,27 +56,12 @@ void ViewportFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   AUTO_PROFILER_LABEL("ViewportFrame::BuildDisplayList",
                       GRAPHICS_DisplayListBuilding);
 
-  nsIFrame* kid = mFrames.FirstChild();
-  if (!kid) {
-    return;
+  if (nsIFrame* kid = mFrames.FirstChild()) {
+    
+    
+    
+    BuildDisplayListForChild(aBuilder, kid, aLists);
   }
-
-  nsDisplayListCollection set(aBuilder);
-  BuildDisplayListForChild(aBuilder, kid, set);
-
-  
-  
-  if (!kid->IsScrollFrame()) {
-    bool isOpaque = false;
-    if (auto* list = BuildDisplayListForTopLayer(aBuilder, &isOpaque)) {
-      if (isOpaque) {
-        set.DeleteAll(aBuilder);
-      }
-      set.PositionedDescendants()->AppendToTop(list);
-    }
-  }
-
-  set.MoveTo(aLists);
 }
 
 #ifdef DEBUG
@@ -166,54 +150,51 @@ static bool BackdropListIsOpaque(ViewportFrame* aFrame,
   return opaque.Contains(aFrame->GetRect());
 }
 
-nsDisplayWrapList* ViewportFrame::BuildDisplayListForTopLayer(
-    nsDisplayListBuilder* aBuilder, bool* aIsOpaque) {
-  nsDisplayList topLayerList;
-
+void ViewportFrame::BuildDisplayListForTopLayer(nsDisplayListBuilder* aBuilder,
+                                                nsDisplayList* aList,
+                                                bool* aIsOpaque) {
   nsTArray<dom::Element*> topLayer = PresContext()->Document()->GetTopLayer();
   for (dom::Element* elem : topLayer) {
-    nsIFrame* frame = elem->GetPrimaryFrame();
-    if (!frame) {
-      continue;
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (frame->StyleDisplay()->mTopLayer == StyleTopLayer::None) {
-      MOZ_ASSERT(!aBuilder->IsForPainting() ||
-                 !ShouldInTopLayerForFullscreen(elem));
-      continue;
-    }
-    MOZ_ASSERT(ShouldInTopLayerForFullscreen(elem));
-    
-    
-    
-    if (!frame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-      MOZ_ASSERT(!elem->GetParent()->IsHTMLElement(),
-                 "HTML element should always be out-of-flow if in the top "
-                 "layer");
-      continue;
-    }
-    if (nsIFrame* backdropPh =
-            frame->GetChildList(kBackdropList).FirstChild()) {
-      MOZ_ASSERT(!backdropPh->GetNextSibling(), "more than one ::backdrop?");
-      MOZ_ASSERT(backdropPh->HasAnyStateBits(NS_FRAME_FIRST_REFLOW),
-                 "did you intend to reflow ::backdrop placeholders?");
-      nsIFrame* backdropFrame =
-          nsPlaceholderFrame::GetRealFrameForPlaceholder(backdropPh);
-      BuildDisplayListForTopLayerFrame(aBuilder, backdropFrame, &topLayerList);
-
-      if (aIsOpaque) {
-        *aIsOpaque = BackdropListIsOpaque(this, aBuilder, &topLayerList);
+    if (nsIFrame* frame = elem->GetPrimaryFrame()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (frame->StyleDisplay()->mTopLayer == StyleTopLayer::None) {
+        MOZ_ASSERT(!aBuilder->IsForPainting() ||
+                   !ShouldInTopLayerForFullscreen(elem));
+        continue;
       }
+      MOZ_ASSERT(ShouldInTopLayerForFullscreen(elem));
+      
+      
+      
+      if (!frame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+        MOZ_ASSERT(!elem->GetParent()->IsHTMLElement(),
+                   "HTML element should always be out-of-flow if in the top "
+                   "layer");
+        continue;
+      }
+      if (nsIFrame* backdropPh =
+              frame->GetChildList(kBackdropList).FirstChild()) {
+        MOZ_ASSERT(!backdropPh->GetNextSibling(), "more than one ::backdrop?");
+        MOZ_ASSERT(backdropPh->HasAnyStateBits(NS_FRAME_FIRST_REFLOW),
+                   "did you intend to reflow ::backdrop placeholders?");
+        nsIFrame* backdropFrame =
+            nsPlaceholderFrame::GetRealFrameForPlaceholder(backdropPh);
+        BuildDisplayListForTopLayerFrame(aBuilder, backdropFrame, aList);
+
+        if (aIsOpaque) {
+          *aIsOpaque = BackdropListIsOpaque(this, aBuilder, aList);
+        }
+      }
+      BuildDisplayListForTopLayerFrame(aBuilder, frame, aList);
     }
-    BuildDisplayListForTopLayerFrame(aBuilder, frame, &topLayerList);
   }
 
   if (nsCanvasFrame* canvasFrame = PresShell()->GetCanvasFrame()) {
@@ -222,26 +203,10 @@ nsDisplayWrapList* ViewportFrame::BuildDisplayListForTopLayer(
         MOZ_ASSERT(frame->StyleDisplay()->mTopLayer != StyleTopLayer::None,
                    "ua.css should ensure this");
         MOZ_ASSERT(frame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW));
-        BuildDisplayListForTopLayerFrame(aBuilder, frame, &topLayerList);
+        BuildDisplayListForTopLayerFrame(aBuilder, frame, aList);
       }
     }
   }
-  if (topLayerList.IsEmpty()) {
-    return nullptr;
-  }
-  nsDisplayListBuilder::AutoBuildingDisplayList buildingDisplayList(aBuilder,
-                                                                    this);
-  
-  
-  nsDisplayWrapList* wrapList = MakeDisplayItemWithIndex<nsDisplayWrapList>(
-      aBuilder, this, 2, &topLayerList, aBuilder->CurrentActiveScrolledRoot(),
-      false);
-  if (!wrapList) {
-    return nullptr;
-  }
-  wrapList->SetOverrideZIndex(
-      std::numeric_limits<decltype(wrapList->ZIndex())>::max());
-  return wrapList;
 }
 
 #ifdef DEBUG
