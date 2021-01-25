@@ -425,7 +425,7 @@ void ReflowInput::Init(nsPresContext* aPresContext,
     AvailableBSize() = NS_UNCONSTRAINEDSIZE;
   }
 
-  LAYOUT_WARN_IF_FALSE((mFrameType == NS_CSS_FRAME_TYPE_INLINE &&
+  LAYOUT_WARN_IF_FALSE((mStyleDisplay->IsInlineOutsideStyle() &&
                         !mFrame->IsFrameOfType(nsIFrame::eReplaced)) ||
                            type == LayoutFrameType::Text ||
                            ComputedISize() != NS_UNCONSTRAINEDSIZE,
@@ -784,7 +784,7 @@ void ReflowInput::InitFrameType(LayoutFrameType aFrameType) {
         break;
 
       case StyleDisplayOutside::Inline:
-        frameType = NS_CSS_FRAME_TYPE_INLINE;
+        frameType = NS_CSS_FRAME_TYPE_UNKNOWN;
         break;
 
       case StyleDisplayOutside::InternalRuby:
@@ -795,7 +795,7 @@ void ReflowInput::InitFrameType(LayoutFrameType aFrameType) {
           case StyleDisplayInside::RubyBase:
           case StyleDisplayInside::RubyText:
           case StyleDisplayInside::RubyBaseContainer:
-            frameType = NS_CSS_FRAME_TYPE_INLINE;
+            frameType = NS_CSS_FRAME_TYPE_UNKNOWN;
             break;
           default:
             MOZ_ASSERT_UNREACHABLE("unexpected inside for InternalRuby");
@@ -2052,8 +2052,7 @@ LogicalSize ReflowInput::ComputeContainingBlockRectangle(
       mStyleDisplay->IsAbsolutelyPositioned(mFrame)) {
     
     const auto computedPadding = aContainingBlockRI->ComputedLogicalPadding(wm);
-    if (NS_FRAME_GET_TYPE(aContainingBlockRI->mFrameType) ==
-        NS_CSS_FRAME_TYPE_INLINE) {
+    if (aContainingBlockRI->mStyleDisplay->IsInlineOutsideStyle()) {
       
       
       
@@ -2213,7 +2212,7 @@ void ReflowInput::InitConstraints(
         
         
         
-        if (mFlags.mIsReplaced && NS_CSS_FRAME_TYPE_INLINE == mFrameType) {
+        if (mFlags.mIsReplaced && mStyleDisplay->IsInlineOutsideStyle()) {
           
           NS_ASSERTION(nullptr != cbri, "no containing block");
           
