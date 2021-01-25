@@ -2185,9 +2185,8 @@ void nsCocoaWindow::SetMenuBar(nsMenuBarX* aMenuBar) {
   
   
   
-  id windowDelegate = [mWindow delegate];
   if (mMenuBar && ((!gSomeMenuBarPainted && nsMenuUtilsX::GetHiddenWindowMenuBar() == mMenuBar) ||
-                   (windowDelegate && [windowDelegate toplevelActiveState])))
+                   [mWindow isMainWindow]))
     mMenuBar->Paint();
 }
 
