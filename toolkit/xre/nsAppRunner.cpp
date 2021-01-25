@@ -2186,7 +2186,7 @@ nsresult LaunchChild(bool aBlankCommandLine) {
 
 #ifdef MOZ_JPROF
   
-  unsetenv("JPROF_SLAVE");
+  unsetenv("JPROF_ISCHILD");
 #endif
 
   if (aBlankCommandLine) {
