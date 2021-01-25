@@ -5090,13 +5090,19 @@ void nsWindow::NativeMoveResize() {
 void nsWindow::PauseRemoteRenderer() {
 #ifdef MOZ_WAYLAND
   if (!mIsDestroyed) {
-    if (mContainer && moz_container_wayland_has_egl_window(mContainer)) {
+    if (mContainer) {
       
       
       
       
-      MOZ_ASSERT(GetRemoteRenderer());
-      if (CompositorBridgeChild* remoteRenderer = GetRemoteRenderer()) {
+
+      
+      
+
+      CompositorBridgeChild* remoteRenderer = GetRemoteRenderer();
+      bool needsCompositorPause = !mNeedsCompositorResume && !!remoteRenderer &&
+                                  mCompositorWidgetDelegate;
+      if (needsCompositorPause) {
         
         remoteRenderer->SendPause();
         
