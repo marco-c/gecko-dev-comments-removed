@@ -79,6 +79,7 @@ const links = {
     "Asia/Vientiane": "Asia/Vientiane",
     "Atlantic/Jan_Mayen": "Atlantic/Jan_Mayen",
     "Atlantic/St_Helena": "Atlantic/St_Helena",
+    "Australia/Currie": "Australia/Currie",
     "Europe/Belfast": "Europe/Belfast",
     "Europe/Guernsey": "Europe/Guernsey",
     "Europe/Isle_of_Man": "Europe/Isle_of_Man",

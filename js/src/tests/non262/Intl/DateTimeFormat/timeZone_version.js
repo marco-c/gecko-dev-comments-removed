@@ -2,7 +2,7 @@
 
 
 
-const tzdata = "2020d";
+const tzdata = "2020f";
 
 if (typeof getICUOptions === "undefined") {
     var getICUOptions = SpecialPowers.Cu.getJSTestingFunctions().getICUOptions;
