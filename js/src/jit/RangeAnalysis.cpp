@@ -3085,6 +3085,34 @@ static void AdjustTruncatedInputs(TempAllocator& alloc,
   }
 }
 
+bool RangeAnalysis::canTruncate(MDefinition* def, TruncateKind kind) const {
+  if (kind == TruncateKind::NoTruncate) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mir->outerInfo().hadEagerTruncationBailout()) {
+    if (kind == TruncateKind::TruncateAfterBailouts) {
+      return false;
+    }
+    for (uint32_t i = 0; i < def->numOperands(); i++) {
+      if (def->operandTruncateKind(i) <= TruncateKind::TruncateAfterBailouts) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 
 
 
@@ -3141,26 +3169,9 @@ bool RangeAnalysis::truncate() {
 
       bool shouldClone = false;
       TruncateKind kind = ComputeTruncateKind(*iter, &shouldClone);
-      if (kind == TruncateKind::NoTruncate) {
-        continue;
-      }
 
       
-      
-      
-      
-      
-      
-      
-      
-      
-      if (kind <= TruncateKind::TruncateAfterBailouts &&
-          mir->outerInfo().hadEagerTruncationBailout()) {
-        continue;
-      }
-
-      
-      if (!iter->needTruncation(kind)) {
+      if (!canTruncate(*iter, kind) || !iter->needTruncation(kind)) {
         continue;
       }
 
@@ -3186,12 +3197,10 @@ bool RangeAnalysis::truncate() {
          iter != end; ++iter) {
       bool shouldClone = false;
       TruncateKind kind = ComputeTruncateKind(*iter, &shouldClone);
-      if (kind == TruncateKind::NoTruncate) {
-        continue;
-      }
 
       
-      if (shouldClone || !iter->needTruncation(kind)) {
+      if (shouldClone || !canTruncate(*iter, kind) ||
+          !iter->needTruncation(kind)) {
         continue;
       }
 

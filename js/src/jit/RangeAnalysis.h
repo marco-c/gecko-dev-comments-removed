@@ -38,6 +38,8 @@ class MIRGraph;
 class MPhi;
 class MTest;
 
+enum class TruncateKind;
+
 
 
 
@@ -122,6 +124,8 @@ class RangeAnalysis {
   [[nodiscard]] bool tryRemovingGuards();
   [[nodiscard]] bool truncate();
   [[nodiscard]] bool removeUnnecessaryBitops();
+
+  bool canTruncate(MDefinition* def, TruncateKind kind) const;
 
   
   LoopIterationBoundVector loopIterationBounds;
