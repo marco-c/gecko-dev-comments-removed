@@ -1673,7 +1673,7 @@ class HTMLMediaElement::AudioChannelAgentCallback final
     }
 
     
-    if (!mOwner->IsActive()) {
+    if (!mOwner->OwnerDoc()->IsActive()) {
       return false;
     }
 
@@ -2149,10 +2149,6 @@ void HTMLMediaElement::SetVisible(bool aVisible) {
 
 bool HTMLMediaElement::IsVideoDecodingSuspended() const {
   return mDecoder && mDecoder->IsVideoDecodingSuspended();
-}
-
-bool HTMLMediaElement::IsVisible() const {
-  return mVisibilityState == Visibility::ApproximatelyVisible;
 }
 
 already_AddRefed<layers::Image> HTMLMediaElement::GetCurrentImage() {
@@ -4937,7 +4933,7 @@ void HTMLMediaElement::UnbindFromTree(bool aNullParent) {
 
   nsGenericHTMLElement::UnbindFromTree(aNullParent);
 
-  MOZ_ASSERT(IsHidden());
+  MOZ_ASSERT(IsActuallyInvisible());
   NotifyDecoderActivityChanges();
 
   
@@ -6218,13 +6214,31 @@ void HTMLMediaElement::CheckAutoplayDataReady() {
   DispatchAsyncEvent(u"playing"_ns);
 }
 
-bool HTMLMediaElement::IsActive() const {
-  Document* ownerDoc = OwnerDoc();
-  return ownerDoc->IsActive() && ownerDoc->IsVisible();
+bool HTMLMediaElement::IsActuallyInvisible() const {
+  
+  
+  if (!IsInComposedDoc()) {
+    return true;
+  }
+
+  
+  
+  
+  if (!IsInViewPort()) {
+    return true;
+  }
+
+  
+  if (IsBeingUsedInPictureInPictureMode()) {
+    return false;
+  }
+
+  
+  return OwnerDoc()->Hidden();
 }
 
-bool HTMLMediaElement::IsHidden() const {
-  return !IsInComposedDoc() || OwnerDoc()->Hidden();
+bool HTMLMediaElement::IsInViewPort() const {
+  return mVisibilityState == Visibility::ApproximatelyVisible;
 }
 
 VideoFrameContainer* HTMLMediaElement::GetVideoFrameContainer() {
@@ -6343,7 +6357,7 @@ void HTMLMediaElement::DispatchAsyncEvent(const nsAString& aName) {
 
   if ((aName.EqualsLiteral("play") || aName.EqualsLiteral("playing"))) {
     mPlayTime.Start();
-    if (IsHidden()) {
+    if (IsActuallyInvisible()) {
       HiddenVideoStart();
     }
   } else if (aName.EqualsLiteral("waiting")) {
@@ -6477,8 +6491,9 @@ void HTMLMediaElement::UpdateMediaSize(const nsIntSize& aSize) {
 }
 
 void HTMLMediaElement::SuspendOrResumeElement(bool aSuspendElement) {
-  LOG(LogLevel::Debug, ("%p SuspendOrResumeElement(suspend=%d) hidden=%d", this,
-                        aSuspendElement, OwnerDoc()->Hidden()));
+  LOG(LogLevel::Debug, ("%p SuspendOrResumeElement(suspend=%d) docHidden=%d",
+                        this, aSuspendElement, OwnerDoc()->Hidden()));
+
   if (aSuspendElement == mSuspendedByInactiveDocOrDocshell) {
     return;
   }
@@ -6544,7 +6559,7 @@ bool HTMLMediaElement::ShouldBeSuspendedByInactiveDocShell() const {
 }
 
 void HTMLMediaElement::NotifyOwnerDocumentActivityChanged() {
-  bool visible = !IsHidden();
+  bool visible = !IsActuallyInvisible();
   if (visible) {
     
     HiddenVideoStop();
@@ -6560,7 +6575,8 @@ void HTMLMediaElement::NotifyOwnerDocumentActivityChanged() {
   
   
   
-  bool shouldSuspend = !IsActive() || ShouldBeSuspendedByInactiveDocShell();
+  bool shouldSuspend =
+      !OwnerDoc()->IsActive() || ShouldBeSuspendedByInactiveDocShell();
   SuspendOrResumeElement(shouldSuspend);
 
   

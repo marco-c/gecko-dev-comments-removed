@@ -247,9 +247,11 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   void NotifySuspendedByCache(bool aSuspendedByCache) final;
 
-  bool IsActive() const;
+  
+  bool IsActuallyInvisible() const;
 
-  bool IsHidden() const;
+  
+  bool IsInViewPort() const;
 
   
   
@@ -617,9 +619,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   bool IsVideoDecodingSuspended() const;
-
-  
-  bool IsVisible() const;
 
   
   
