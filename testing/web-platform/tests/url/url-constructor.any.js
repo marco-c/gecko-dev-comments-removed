@@ -1,9 +1,3 @@
-<!doctype html>
-<meta charset=utf-8>
-<script src=/resources/testharness.js></script>
-<script src=/resources/testharnessreport.js></script>
-<div id=log></div>
-<script>
 function bURL(url, base) {
   return new URL(url, base || "about:blank")
 }
@@ -11,7 +5,7 @@ function bURL(url, base) {
 function runURLTests(urltests) {
   for(var i = 0, l = urltests.length; i < l; i++) {
     var expected = urltests[i]
-    if (typeof expected === "string") continue // skip comments
+    if (typeof expected === "string") continue 
 
     test(function() {
       if (expected.failure) {
@@ -41,4 +35,3 @@ function runURLTests(urltests) {
 }
 
 promise_test(() => fetch("resources/urltestdata.json").then(res => res.json()).then(runURLTests), "Loading data…");
-</script>
