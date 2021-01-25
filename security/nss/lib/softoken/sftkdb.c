@@ -2860,10 +2860,9 @@ sftk_DBInit(const char *configdir, const char *certPrefix,
         case NSS_DB_TYPE_EXTERN: 
             crv = s_open(confdir, certPrefix, keyPrefix, 9, 4, flags,
                          noCertDB ? NULL : &certSDB, noKeyDB ? NULL : &keySDB, &newInit);
-
-#ifndef NSS_DISABLE_DBM
             legacy = PR_FALSE;
 
+#ifndef NSS_DISABLE_DBM
             
 
 
