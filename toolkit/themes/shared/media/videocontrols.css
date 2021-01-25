@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @namespace url("http://www.w3.org/1999/xhtml");
 
@@ -12,7 +12,7 @@
   overflow: hidden;
 
   direction: ltr;
-  
+  /* Prevent unwanted style inheritance. See bug 554717. */
   text-align: left;
   list-style-image: none !important;
   font: normal normal normal 100%/normal sans-serif !important;
@@ -46,10 +46,10 @@
   --label-font-size: 16px;
 }
 
-
+/* Some CSS custom properties defined here are referenced by videocontrols.js */
 .controlBar {
-  
-
+  /* Do not delete: these variables are accessed by JavaScript directly.
+     see videocontrols.js and search for |-width|. */
   --clickToPlay-width: var(--clickToPlay-size);
   --playButton-width: var(--button-size);
   --scrubberStack-width: 64px;
@@ -65,8 +65,8 @@
 }
 
 .touch .controlBar {
-  
-
+  /* Do not delete: these variables are accessed by JavaScript directly.
+     see videocontrols.js and search for |-width|. */
   --scrubberStack-width: 84px;
   --volumeStack-width: 64px;
 }
@@ -79,10 +79,10 @@
   display: none;
 }
 
-
-
-
-
+/* We hide the controlBar visually so it doesn't obscure the video. However,
+ * we still want to expose it to a11y so users who don't use a mouse can access
+ * it.
+ */
 .controlBar[hidden] {
   display: flex;
   opacity: 0;
@@ -167,7 +167,7 @@
   -moz-context-properties: fill;
   fill: currentColor;
   color: inherit;
-  
+  /* We don't suppress ::-moz-focus-inner, so that does for a focus indicator */
   outline: none;
 }
 
@@ -258,7 +258,7 @@
 }
 
 .scrubberStack {
-  
+  /* minus margin to get basis of required width */
   min-width: calc(var(--scrubberStack-width) - 18px);
   flex-basis: calc(var(--scrubberStack-width) - 18px);
   flex-grow: 2;
@@ -430,7 +430,7 @@
   margin-bottom: 20px;
 }
 
-
+/* Not showing the throbber on mobile because of conflict with m.youtube.com (see bug 1289412) */
 .controlsContainer:not(.mobile) .statusIcon[type="throbber"] {
   background: url(chrome://global/skin/media/throbber.png) no-repeat center;
 }
@@ -499,20 +499,7 @@
   translate: var(--pip-toggle-translate-x) -100%;
 }
 
-.pictureInPictureToggleIcon {
-  display: inline-block;
-  background-image: url(chrome://global/skin/media/pictureinpicture.svg);
-  background-position: center left;
-  background-repeat: no-repeat;
-  -moz-context-properties: fill;
-  fill: currentColor;
-  width: var(--pip-toggle-icon-width-height);
-  height: var(--pip-toggle-icon-width-height);
-  min-width: max-content;
-}
-
-.videocontrols[localedir="rtl"] .statusIcon[type="pictureInPicture"],
-.videocontrols[localedir="rtl"] .pictureInPictureToggleIcon {
+.videocontrols[localedir="rtl"] .statusIcon[type="pictureInPicture"] {
   transform: scaleX(-1);
 }
 
@@ -521,16 +508,16 @@
 }
 
 @supports -moz-bool-pref("media.videocontrols.picture-in-picture.video-toggle.testing") {
-  
-
-
-
+  /**
+   * To make automated tests faster, we drop the transition duration in
+   * testing mode.
+   */
   .pictureInPictureToggleButton {
     transition-duration: 10ms;
   }
 }
 
-
+/* Overlay Play button */
 .clickToPlay {
   min-width: var(--clickToPlay-size);
   min-height: var(--clickToPlay-size);
@@ -575,7 +562,7 @@
   color: #fff;
 }
 
-
+/* Status description formatting */
 .statusLabel {
   padding: 0 10px;
   text-align: center;
@@ -780,7 +767,7 @@
 .pip-wrapper.hovering > .pip-expanded {
   box-shadow: none;
   border: var(--pip-highlight-width) var(--pip-highlight-style);
-  
+  /* Remove bottom border but keep text centred with padding. */
   border-bottom: none;
   padding-bottom: var(--pip-highlight-width);
   pointer-events: none;
