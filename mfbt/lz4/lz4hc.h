@@ -198,57 +198,32 @@ LZ4LIB_API int LZ4_saveDictHC (LZ4_streamHC_t* streamHCPtr, char* safeBuffer, in
 #define LZ4HC_HASH_MASK (LZ4HC_HASHTABLESIZE - 1)
 
 
-#if defined(__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) )
-#include <stdint.h>
-
 typedef struct LZ4HC_CCtx_internal LZ4HC_CCtx_internal;
 struct LZ4HC_CCtx_internal
 {
-    uint32_t   hashTable[LZ4HC_HASHTABLESIZE];
-    uint16_t   chainTable[LZ4HC_MAXD];
-    const uint8_t* end;         
-    const uint8_t* base;        
-    const uint8_t* dictBase;    
-    uint32_t   dictLimit;       
-    uint32_t   lowLimit;        
-    uint32_t   nextToUpdate;    
-    short      compressionLevel;
-    int8_t     favorDecSpeed;   
+    LZ4_u32   hashTable[LZ4HC_HASHTABLESIZE];
+    LZ4_u16   chainTable[LZ4HC_MAXD];
+    const LZ4_byte* end;       
+    const LZ4_byte* base;      
+    const LZ4_byte* dictBase;  
+    LZ4_u32   dictLimit;       
+    LZ4_u32   lowLimit;        
+    LZ4_u32   nextToUpdate;    
+    short     compressionLevel;
+    LZ4_i8    favorDecSpeed;   
 
-    int8_t     dirty;           
+    LZ4_i8    dirty;           
     const LZ4HC_CCtx_internal* dictCtx;
 };
 
-#else
-
-typedef struct LZ4HC_CCtx_internal LZ4HC_CCtx_internal;
-struct LZ4HC_CCtx_internal
-{
-    unsigned int   hashTable[LZ4HC_HASHTABLESIZE];
-    unsigned short chainTable[LZ4HC_MAXD];
-    const unsigned char* end;        
-    const unsigned char* base;       
-    const unsigned char* dictBase;   
-    unsigned int   dictLimit;        
-    unsigned int   lowLimit;         
-    unsigned int   nextToUpdate;     
-    short          compressionLevel;
-    char           favorDecSpeed;    
-
-    char           dirty;            
-    const LZ4HC_CCtx_internal* dictCtx;
-};
-
-#endif
 
 
 
 
-
-#define LZ4_STREAMHCSIZE       (4*LZ4HC_HASHTABLESIZE + 2*LZ4HC_MAXD + 56 + ((sizeof(void*)==16) ? 56 : 0) /* AS400*/ ) /* 262200 or 262256*/
-#define LZ4_STREAMHCSIZE_SIZET (LZ4_STREAMHCSIZE / sizeof(size_t))
+#define LZ4_STREAMHCSIZE       262200  /* static size, for inter-version compatibility */
+#define LZ4_STREAMHCSIZE_VOIDP (LZ4_STREAMHCSIZE / sizeof(void*))
 union LZ4_streamHC_u {
-    size_t table[LZ4_STREAMHCSIZE_SIZET];
+    void* table[LZ4_STREAMHCSIZE_VOIDP];
     LZ4HC_CCtx_internal internal_donotuse;
 }; 
 

@@ -100,7 +100,7 @@ extern "C" {
 
 #define LZ4_VERSION_MAJOR    1    /* for breaking interface changes  */
 #define LZ4_VERSION_MINOR    9    /* for new (non-breaking) interface capabilities */
-#define LZ4_VERSION_RELEASE  2    /* for tweaks, bug-fixes, or development */
+#define LZ4_VERSION_RELEASE  3    /* for tweaks, bug-fixes, or development */
 
 #define LZ4_VERSION_NUMBER (LZ4_VERSION_MAJOR *100*100 + LZ4_VERSION_MINOR *100 + LZ4_VERSION_RELEASE)
 
@@ -188,6 +188,7 @@ LZ4LIB_API int LZ4_compressBound(int inputSize);
 
 
 
+
 LZ4LIB_API int LZ4_compress_fast (const char* src, char* dst, int srcSize, int dstCapacity, int acceleration);
 
 
@@ -199,6 +200,17 @@ LZ4LIB_API int LZ4_compress_fast (const char* src, char* dst, int srcSize, int d
 
 LZ4LIB_API int LZ4_sizeofState(void);
 LZ4LIB_API int LZ4_compress_fast_extState (void* state, const char* src, char* dst, int srcSize, int dstCapacity, int acceleration);
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -568,48 +580,34 @@ LZ4LIB_STATIC_API void LZ4_attach_dictionary(LZ4_stream_t* workingStream, const 
 #define LZ4_HASH_SIZE_U32 (1 << LZ4_HASHLOG)       /* required as macro for static allocation */
 
 #if defined(__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) )
-#include <stdint.h>
-
-typedef struct LZ4_stream_t_internal LZ4_stream_t_internal;
-struct LZ4_stream_t_internal {
-    uint32_t hashTable[LZ4_HASH_SIZE_U32];
-    uint32_t currentOffset;
-    uint16_t dirty;
-    uint16_t tableType;
-    const uint8_t* dictionary;
-    const LZ4_stream_t_internal* dictCtx;
-    uint32_t dictSize;
-};
-
-typedef struct {
-    const uint8_t* externalDict;
-    size_t extDictSize;
-    const uint8_t* prefixEnd;
-    size_t prefixSize;
-} LZ4_streamDecode_t_internal;
-
+# include <stdint.h>
+  typedef  int8_t  LZ4_i8;
+  typedef uint8_t  LZ4_byte;
+  typedef uint16_t LZ4_u16;
+  typedef uint32_t LZ4_u32;
 #else
-
-typedef struct LZ4_stream_t_internal LZ4_stream_t_internal;
-struct LZ4_stream_t_internal {
-    unsigned int hashTable[LZ4_HASH_SIZE_U32];
-    unsigned int currentOffset;
-    unsigned short dirty;
-    unsigned short tableType;
-    const unsigned char* dictionary;
-    const LZ4_stream_t_internal* dictCtx;
-    unsigned int dictSize;
-};
-
-typedef struct {
-    const unsigned char* externalDict;
-    const unsigned char* prefixEnd;
-    size_t extDictSize;
-    size_t prefixSize;
-} LZ4_streamDecode_t_internal;
-
+  typedef   signed char  LZ4_i8;
+  typedef unsigned char  LZ4_byte;
+  typedef unsigned short LZ4_u16;
+  typedef unsigned int   LZ4_u32;
 #endif
 
+typedef struct LZ4_stream_t_internal LZ4_stream_t_internal;
+struct LZ4_stream_t_internal {
+    LZ4_u32 hashTable[LZ4_HASH_SIZE_U32];
+    LZ4_u32 currentOffset;
+    LZ4_u32 tableType;
+    const LZ4_byte* dictionary;
+    const LZ4_stream_t_internal* dictCtx;
+    LZ4_u32 dictSize;
+};
+
+typedef struct {
+    const LZ4_byte* externalDict;
+    size_t extDictSize;
+    const LZ4_byte* prefixEnd;
+    size_t prefixSize;
+} LZ4_streamDecode_t_internal;
 
 
 
@@ -619,12 +617,16 @@ typedef struct {
 
 
 
-#define LZ4_STREAMSIZE_U64 ((1 << (LZ4_MEMORY_USAGE-3)) + 4 + ((sizeof(void*)==16) ? 4 : 0) /*AS-400*/ )
-#define LZ4_STREAMSIZE     (LZ4_STREAMSIZE_U64 * sizeof(unsigned long long))
+
+
+
+#define LZ4_STREAMSIZE       16416  /* static size, for inter-version compatibility */
+#define LZ4_STREAMSIZE_VOIDP (LZ4_STREAMSIZE / sizeof(void*))
 union LZ4_stream_u {
-    unsigned long long table[LZ4_STREAMSIZE_U64];
+    void* table[LZ4_STREAMSIZE_VOIDP];
     LZ4_stream_t_internal internal_donotuse;
-} ;  
+}; 
+
 
 
 
@@ -677,17 +679,16 @@ union LZ4_streamDecode_u {
 #ifdef LZ4_DISABLE_DEPRECATE_WARNINGS
 #  define LZ4_DEPRECATED(message)
 #else
-#  define LZ4_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #  if defined (__cplusplus) && (__cplusplus >= 201402) 
 #    define LZ4_DEPRECATED(message) [[deprecated(message)]]
-#  elif (LZ4_GCC_VERSION >= 405) || defined(__clang__)
-#    define LZ4_DEPRECATED(message) __attribute__((deprecated(message)))
-#  elif (LZ4_GCC_VERSION >= 301)
-#    define LZ4_DEPRECATED(message) __attribute__((deprecated))
 #  elif defined(_MSC_VER)
 #    define LZ4_DEPRECATED(message) __declspec(deprecated(message))
+#  elif defined(__clang__) || (defined(__GNUC__) && (__GNUC__ * 10 + __GNUC_MINOR__ >= 45))
+#    define LZ4_DEPRECATED(message) __attribute__((deprecated(message)))
+#  elif defined(__GNUC__) && (__GNUC__ * 10 + __GNUC_MINOR__ >= 31)
+#    define LZ4_DEPRECATED(message) __attribute__((deprecated))
 #  else
-#    pragma message("WARNING: You need to implement LZ4_DEPRECATED for this compiler")
+#    pragma message("WARNING: LZ4_DEPRECATED needs custom implementation for this compiler")
 #    define LZ4_DEPRECATED(message)
 #  endif
 #endif 
@@ -713,6 +714,7 @@ LZ4_DEPRECATED("use LZ4_decompress_safe() instead") LZ4LIB_API int LZ4_uncompres
 
 
 
+
 LZ4_DEPRECATED("Use LZ4_createStream() instead") LZ4LIB_API void* LZ4_create (char* inputBuffer);
 LZ4_DEPRECATED("Use LZ4_createStream() instead") LZ4LIB_API int   LZ4_sizeofStreamState(void);
 LZ4_DEPRECATED("Use LZ4_resetStream() instead")  LZ4LIB_API int   LZ4_resetStreamState(void* state, char* inputBuffer);
@@ -721,8 +723,6 @@ LZ4_DEPRECATED("Use LZ4_saveDict() instead")     LZ4LIB_API char* LZ4_slideInput
 
 LZ4_DEPRECATED("use LZ4_decompress_safe_usingDict() instead") LZ4LIB_API int LZ4_decompress_safe_withPrefix64k (const char* src, char* dst, int compressedSize, int maxDstSize);
 LZ4_DEPRECATED("use LZ4_decompress_fast_usingDict() instead") LZ4LIB_API int LZ4_decompress_fast_withPrefix64k (const char* src, char* dst, int originalSize);
-
-
 
 
 

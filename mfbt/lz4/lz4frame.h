@@ -69,14 +69,19 @@ extern "C" {
 
 
 
+#ifndef LZ4FLIB_VISIBILITY
+#  if defined(__GNUC__) && (__GNUC__ >= 4)
+#    define LZ4FLIB_VISIBILITY __attribute__ ((visibility ("default")))
+#  else
+#    define LZ4FLIB_VISIBILITY
+#  endif
+#endif
 #if defined(LZ4_DLL_EXPORT) && (LZ4_DLL_EXPORT==1)
-#  define LZ4FLIB_API __declspec(dllexport)
+#  define LZ4FLIB_API __declspec(dllexport) LZ4FLIB_VISIBILITY
 #elif defined(LZ4_DLL_IMPORT) && (LZ4_DLL_IMPORT==1)
-#  define LZ4FLIB_API __declspec(dllimport)
-#elif defined(__GNUC__) && (__GNUC__ >= 4)
-#  define LZ4FLIB_API __attribute__ ((__visibility__ ("default")))
+#  define LZ4FLIB_API __declspec(dllimport) LZ4FLIB_VISIBILITY
 #else
-#  define LZ4FLIB_API
+#  define LZ4FLIB_API LZ4FLIB_VISIBILITY
 #endif
 
 #ifdef LZ4F_DISABLE_DEPRECATE_WARNINGS
@@ -110,6 +115,7 @@ LZ4FLIB_API const char* LZ4F_getErrorName(LZ4F_errorCode_t code);
 #else
 #  define LZ4F_OBSOLETE_ENUM(x)
 #endif
+
 
 
 
@@ -376,7 +382,7 @@ LZ4FLIB_API LZ4F_errorCode_t LZ4F_freeDecompressionContext(LZ4F_dctx* dctx);
 
 
 
-size_t LZ4F_headerSize(const void* src, size_t srcSize);
+LZ4FLIB_API size_t LZ4F_headerSize(const void* src, size_t srcSize);
 
 
 
@@ -454,6 +460,8 @@ LZ4FLIB_API size_t LZ4F_getFrameInfo(LZ4F_dctx* dctx,
 
 
 
+
+
 LZ4FLIB_API size_t LZ4F_decompress(LZ4F_dctx* dctx,
                                    void* dstBuffer, size_t* dstSizePtr,
                                    const void* srcBuffer, size_t* srcSizePtr,
@@ -493,9 +501,9 @@ extern "C" {
 
 
 #ifdef LZ4F_PUBLISH_STATIC_FUNCTIONS
-#define LZ4FLIB_STATIC_API LZ4FLIB_API
+# define LZ4FLIB_STATIC_API LZ4FLIB_API
 #else
-#define LZ4FLIB_STATIC_API
+# define LZ4FLIB_STATIC_API
 #endif
 
 
