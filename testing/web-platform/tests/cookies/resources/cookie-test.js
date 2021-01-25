@@ -24,9 +24,36 @@ async function getDefaultPathCookies(path = '/cookies/resources') {
 
 
 
+async function getRedirectedCookies(location, cookie) {
+  return new Promise((resolve, reject) => {
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style = 'display: none';
+      iframe.src = `${location}`;
+
+      iframe.addEventListener('load', (e) => {
+        const win = e.target.contentWindow;
+        const iframeCookies = win.getCookies();
+        win.expireCookie(cookie);
+        resolve(iframeCookies);
+      }, {once: true});
+
+      document.documentElement.appendChild(iframe);
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+
+
+
+
+
+
 
 function httpCookieTest(cookie, expectedValue, name, defaultPath = true) {
-  let encodedCookie = encodeURIComponent(cookie);
+  let encodedCookie = encodeURIComponent(JSON.stringify(cookie));
   return promise_test(
       async t => {
           return fetch(`/cookies/resources/cookie.py?set=${encodedCookie}`)
@@ -52,4 +79,31 @@ function httpCookieTest(cookie, expectedValue, name, defaultPath = true) {
                     `/cookies/resources/cookie.py?drop=${encodedCookie}`);
               })},
       name);
+}
+
+
+
+
+function httpRedirectCookieTest(cookie, expectedValue, name, location) {
+  const encodedCookie = encodeURIComponent(JSON.stringify(cookie));
+  const encodedLocation = encodeURIComponent(location);
+  const setParams = `?set=${encodedCookie}&location=${encodedLocation}`;
+  return promise_test(
+    async t => {
+      return fetch(`/cookies/resources/cookie.py${setParams}`)
+        .then(async () => {
+          
+          
+          const cookies = await getRedirectedCookies(location, cookie);
+          if (Boolean(expectedValue)) {
+            assert_equals(cookies, expectedValue,
+                          'The cookie was set as expected.');
+          } else {
+            assert_equals(cookies, expectedValue, 'The cookie was rejected.');
+          }
+        }).then(() => {
+          return fetch(`/cookies/resources/cookie.py?drop=${encodedCookie}`);
+        })
+    },
+    name);
 }
