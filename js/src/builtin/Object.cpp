@@ -546,7 +546,7 @@ static bool GetBuiltinTagSlow(JSContext* cx, HandleObject obj,
           return true;
         }
       }
-      builtinTag.set(nullptr);
+      builtinTag.set(cx->names().objectObject);
       return true;
   }
 }
@@ -559,7 +559,6 @@ static MOZ_ALWAYS_INLINE JSString* GetBuiltinTagFast(JSObject* obj,
 
   
   if (clasp == &PlainObject::class_) {
-    
     
     return cx->names().objectObject;
   }
@@ -605,7 +604,7 @@ static MOZ_ALWAYS_INLINE JSString* GetBuiltinTagFast(JSObject* obj,
     return cx->names().objectFunction;
   }
 
-  return nullptr;
+  return cx->names().objectObject;
 }
 
 
@@ -691,23 +690,12 @@ bool js::obj_toString(JSContext* cx, unsigned argc, Value* vp) {
     builtinTag = GetBuiltinTagFast(obj, clasp, cx);
 #ifdef DEBUG
     
-    
-    
     RootedString builtinTagSlow(cx);
     if (!GetBuiltinTagSlow(cx, obj, &builtinTagSlow)) {
       return false;
     }
-    if (clasp == &PlainObject::class_) {
-      MOZ_ASSERT(!builtinTagSlow);
-    } else {
-      MOZ_ASSERT(builtinTagSlow == builtinTag);
-    }
+    MOZ_ASSERT(builtinTagSlow == builtinTag);
 #endif
-  }
-
-  
-  if (!builtinTag) {
-    builtinTag = cx->names().objectObject;
   }
 
   
@@ -740,14 +728,7 @@ bool js::obj_toString(JSContext* cx, unsigned argc, Value* vp) {
 
 JSString* js::ObjectClassToString(JSContext* cx, JSObject* obj) {
   AutoUnsafeCallWithABI unsafe;
-
-  const JSClass* clasp = obj->getClass();
-
-  if (JSString* tag = GetBuiltinTagFast(obj, clasp, cx)) {
-    return tag;
-  }
-
-  return cx->names().objectObject;
+  return GetBuiltinTagFast(obj, obj->getClass(), cx);
 }
 
 static bool obj_setPrototypeOf(JSContext* cx, unsigned argc, Value* vp) {
