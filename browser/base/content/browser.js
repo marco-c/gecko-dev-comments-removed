@@ -561,6 +561,18 @@ XPCOMUtils.defineLazyPreferenceGetter(
   }
 );
 
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gProtonTabs",
+  "browser.proton.tabs.enabled",
+  false,
+  (pref, oldValue, newValue) => {
+    document.documentElement.toggleAttribute("proton", newValue);
+  }
+);
+
 customElements.setElementCreationCallback("translation-notification", () => {
   Services.scriptloader.loadSubScript(
     "chrome://browser/content/translation-notification.js",
