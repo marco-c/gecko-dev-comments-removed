@@ -36,7 +36,8 @@ class MOZ_RAII ModuleLoadFrame final {
 
 
   static void NotifySectionMap(nt::AllocatedUnicodeString&& aSectionName,
-                               const void* aMapBaseAddr, NTSTATUS aMapNtStatus);
+                               const void* aMapBaseAddr, NTSTATUS aMapNtStatus,
+                               ModuleLoadInfo::Status aLoadStatus);
   static bool ExistsTopFrame();
 
   
@@ -55,11 +56,13 @@ class MOZ_RAII ModuleLoadFrame final {
 
 
   ModuleLoadFrame(nt::AllocatedUnicodeString&& aSectionName,
-                  const void* aMapBaseAddr, NTSTATUS aNtStatus);
+                  const void* aMapBaseAddr, NTSTATUS aNtStatus,
+                  ModuleLoadInfo::Status aLoadStatus);
 
   void SetLSPSubstitutionRequired(PCUNICODE_STRING aLeafName);
   void OnSectionMap(nt::AllocatedUnicodeString&& aSectionName,
-                    const void* aMapBaseAddr, NTSTATUS aMapNtStatus);
+                    const void* aMapBaseAddr, NTSTATUS aMapNtStatus,
+                    ModuleLoadInfo::Status aLoadStatus);
 
   
 
@@ -67,7 +70,8 @@ class MOZ_RAII ModuleLoadFrame final {
 
 
   static void OnBareSectionMap(nt::AllocatedUnicodeString&& aSectionName,
-                               const void* aMapBaseAddr, NTSTATUS aMapNtStatus);
+                               const void* aMapBaseAddr, NTSTATUS aMapNtStatus,
+                               ModuleLoadInfo::Status aLoadStatus);
 
  private:
   
