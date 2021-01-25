@@ -744,7 +744,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   MOZ_ATOMIC_BITFIELDS(mAtomicBitfields6, 32, (
     
     
-    (uint32_t, HTTPSSVCTelemetryReported, 1)
+    (uint32_t, HTTPSSVCTelemetryReported, 1),
+    (uint32_t, EchConfigUsed, 1)
   ))
   
 
