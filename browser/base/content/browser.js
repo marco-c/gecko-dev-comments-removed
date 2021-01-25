@@ -8900,7 +8900,6 @@ const SafeBrowsingNotificationBox = {
 
 
 
-
 class TabDialogBox {
   constructor(browser) {
     this._weakBrowserRef = Cu.getWeakReference(browser);
@@ -8908,8 +8907,6 @@ class TabDialogBox {
     
     let template = document.getElementById("dialogStackTemplate");
     let dialogStack = template.content.cloneNode(true).firstElementChild;
-    dialogStack.classList.add("tab-prompt-dialog");
-
     this.browser.parentNode.insertBefore(
       dialogStack,
       this.browser.nextElementSibling
@@ -8918,8 +8915,7 @@ class TabDialogBox {
     
     let dialogTemplate = dialogStack.firstElementChild;
 
-    
-    this._tabDialogManager = new SubDialogManager({
+    this._dialogManager = new SubDialogManager({
       dialogStack,
       dialogTemplate,
       orderType: SubDialogManager.ORDER_QUEUE,
@@ -8946,8 +8942,6 @@ class TabDialogBox {
 
 
 
-
-
   open(
     aURL,
     {
@@ -8955,32 +8949,22 @@ class TabDialogBox {
       allowDuplicateDialogs = true,
       sizeTo,
       keepOpenSameOriginNav,
-      modalType = null,
     } = {},
     ...aParams
   ) {
     return new Promise(resolve => {
-      
-      let dialogManager =
-        modalType === Ci.nsIPrompt.MODAL_TYPE_CONTENT
-          ? this.getContentDialogManager()
-          : this._tabDialogManager;
-      let hasDialogs =
-        this._tabDialogManager.hasDialogs ||
-        this._contentDialogManager?.hasDialogs;
-
-      if (!hasDialogs) {
+      if (!this._dialogManager.hasDialogs) {
         this._onFirstDialogOpen();
       }
 
       let closingCallback = () => {
-        if (!hasDialogs) {
+        if (!this._dialogManager.hasDialogs) {
           this._onLastDialogClose();
         }
       };
 
       
-      let dialog = dialogManager.open(
+      let dialog = this._dialogManager.open(
         aURL,
         {
           features,
@@ -9025,29 +9009,6 @@ class TabDialogBox {
     this.tab?.removeEventListener("TabClose", this);
   }
 
-  _buildContentPromptDialog() {
-    let template = document.getElementById("dialogStackTemplate");
-    let contentDialogStack = template.content.cloneNode(true).firstElementChild;
-    contentDialogStack.classList.add("content-prompt-dialog");
-
-    
-    let tabPromptDialog = this.browser.parentNode.querySelector(
-      ".tab-prompt-dialog"
-    );
-    this.browser.parentNode.insertBefore(contentDialogStack, tabPromptDialog);
-
-    let contentDialogTemplate = contentDialogStack.firstElementChild;
-    this._contentDialogManager = new SubDialogManager({
-      dialogStack: contentDialogStack,
-      dialogTemplate: contentDialogTemplate,
-      orderType: SubDialogManager.ORDER_QUEUE,
-      allowDuplicateDialogs: true,
-      dialogOptions: {
-        consumeOutsideClicks: false,
-      },
-    });
-  }
-
   handleEvent(event) {
     if (event.type !== "TabClose") {
       return;
@@ -9056,17 +9017,11 @@ class TabDialogBox {
   }
 
   abortAllDialogs() {
-    this._tabDialogManager.abortDialogs();
-    this._contentDialogManager?.abortDialogs();
+    this._dialogManager.abortDialogs();
   }
 
   focus() {
-    
-    if (this._tabDialogManager._dialogs.length) {
-      this._tabDialogManager.focusTopDialog();
-      return;
-    }
-    this._contentDialogManager?.focusTopDialog();
+    this._dialogManager.focusTopDialog();
   }
 
   
@@ -9096,8 +9051,7 @@ class TabDialogBox {
 
     this._lastPrincipal = this.browser.contentPrincipal;
 
-    this._tabDialogManager.abortDialogs(filterFn);
-    this._contentDialogManager?.abortDialogs(filterFn);
+    this._dialogManager.abortDialogs(filterFn);
   }
 
   get tab() {
@@ -9112,15 +9066,8 @@ class TabDialogBox {
     return browser;
   }
 
-  getTabDialogManager() {
-    return this._tabDialogManager;
-  }
-
-  getContentDialogManager() {
-    if (!this._contentDialogManager) {
-      this._buildContentPromptDialog();
-    }
-    return this._contentDialogManager;
+  getManager() {
+    return this._dialogManager;
   }
 }
 
