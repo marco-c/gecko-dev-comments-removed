@@ -474,7 +474,6 @@ enum class MIRType : uint8_t {
   MagicUninitializedLexical,  
   
   Value,
-  ObjectOrNull,
   None,          
   Slots,         
   Elements,      
@@ -606,8 +605,6 @@ static inline const char* StringFromMIRType(MIRType type) {
       return "MagicUninitializedLexical";
     case MIRType::Value:
       return "Value";
-    case MIRType::ObjectOrNull:
-      return "ObjectOrNull";
     case MIRType::None:
       return "None";
     case MIRType::Slots:
@@ -696,7 +693,6 @@ static inline MIRType ScalarTypeToMIRType(Scalar::Type type) {
 
 static constexpr bool NeedsPostBarrier(MIRType type) {
   MOZ_ASSERT(type != MIRType::Value);
-  MOZ_ASSERT(type != MIRType::ObjectOrNull);
   return type == MIRType::Object || type == MIRType::String ||
          type == MIRType::BigInt;
 }

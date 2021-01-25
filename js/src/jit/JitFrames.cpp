@@ -1502,9 +1502,8 @@ uintptr_t SnapshotIterator::fromStack(int32_t offset) const {
 }
 
 static Value FromObjectPayload(uintptr_t payload) {
-  
-  
-  return ObjectOrNullValue(reinterpret_cast<JSObject*>(payload));
+  MOZ_ASSERT(payload != 0);
+  return ObjectValue(*reinterpret_cast<JSObject*>(payload));
 }
 
 static Value FromStringPayload(uintptr_t payload) {
