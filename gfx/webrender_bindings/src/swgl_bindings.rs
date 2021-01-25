@@ -1053,13 +1053,18 @@ impl SwCompositor {
         overlap_transform: &CompositorSurfaceTransform,
         overlap_clip_rect: &DeviceIntRect,
     ) {
-        let overlap_rect = match overlap_tile.overlap_rect(overlap_surface, overlap_transform, overlap_clip_rect) {
-            Some(overlap_rect) => overlap_rect,
-            None => return,
-        };
         
         
         let mut overlaps = if overlap_tile.invalid.get() { 1 } else { 0 };
+
+        let overlap_rect = match overlap_tile.overlap_rect(overlap_surface, overlap_transform, overlap_clip_rect) {
+            Some(overlap_rect) => overlap_rect,
+            None => {
+                overlap_tile.overlaps.set(overlaps);
+                return
+            },
+        };
+
         for &(ref id, ref transform, ref clip_rect, _) in &self.frame_surfaces {
             
             
