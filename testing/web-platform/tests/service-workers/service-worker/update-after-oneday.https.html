@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-
-
-
+<!-- This test requires browser to treat all registrations are older than 24 hours.
+     Preference 'dom.serviceWorkers.testUpdateOverOneDay' should be enabled during
+     the execution of the test -->
 <title>Service Worker: Functional events should trigger update if last update time is over 24 hours</title>
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
@@ -40,7 +40,7 @@ promise_test(function(t) {
         })
       .then(function() {
           // Trigger a non-navigation fetch event
-          frame.contentWindow.load_image(normalizeURL('resources/update/dummy'));
+          frame.contentWindow.load_image(normalizeURL('resources/update/sample'));
           return wait_for_update(t, registration);
        })
        .then(function() {

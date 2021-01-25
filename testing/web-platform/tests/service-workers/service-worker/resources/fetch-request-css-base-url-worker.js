@@ -23,7 +23,7 @@ self.addEventListener('fetch', event => {
     }
     
     else if (url.search == '?newResponse') {
-      const styleString = 'body { background-image: url("./dummy.png");}';
+      const styleString = 'body { background-image: url("./sample.png");}';
       const headers = {'content-type': 'text/css'};
       event.respondWith(new Response(styleString, headers));
     }
@@ -31,7 +31,7 @@ self.addEventListener('fetch', event => {
 
   
   
-  else if (url.pathname.indexOf('dummy.png') != -1) {
+  else if (url.pathname.indexOf('sample.png') != -1) {
     
     
     

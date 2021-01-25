@@ -1,5 +1,5 @@
 self.addEventListener('fetch', function(event) {
-  if (event.request.url.indexOf('dummy.js') != -1) {
+  if (event.request.url.indexOf('sample.js') != -1) {
     event.respondWith(new Promise(resolve => {
       
       
@@ -7,6 +7,6 @@ self.addEventListener('fetch', function(event) {
     }));
   }
   else if (event.request.url.indexOf('missing.jpg?SWRespondsWithFetch') != -1) {
-    event.respondWith(fetch('dummy.txt?SWFetched'));
+    event.respondWith(fetch('sample.txt?SWFetched'));
   }
 });

@@ -290,7 +290,7 @@ function with_sandboxed_iframe(url, sandbox) {
 
 
 
-async function wait_for_activation_on_dummy_scope(t, window_or_workerglobalscope) {
+async function wait_for_activation_on_sample_scope(t, window_or_workerglobalscope) {
   const script = '/service-workers/service-worker/resources/empty-worker.js';
   const scope = 'resources/there/is/no/there/there?' + Date.now();
   let registration = await window_or_workerglobalscope.navigator.serviceWorker.register(script, { scope });
