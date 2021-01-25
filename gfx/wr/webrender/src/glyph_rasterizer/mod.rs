@@ -181,6 +181,16 @@ impl GlyphRasterizer {
 
                 
                 glyph.downscale_bitmap_if_required(&font);
+
+                
+                
+                
+                if glyph.format.image_format().bytes_per_pixel() == 1 {
+                    glyph.bytes = glyph.bytes
+                        .chunks_mut(4)
+                        .map(|pixel| pixel[3])
+                        .collect::<Vec<_>>();
+                }
             }
 
             job
@@ -283,7 +293,7 @@ impl GlyphRasterizer {
                             ImageDescriptor {
                                 size: size2(glyph.width, glyph.height),
                                 stride: None,
-                                format: FORMAT,
+                                format: glyph.format.image_format(),
                                 flags: ImageDescriptorFlags::empty(),
                                 offset: 0,
                             },
@@ -314,9 +324,6 @@ impl GlyphRasterizer {
         profile.end_time(profiler::GLYPH_RESOLVE_TIME);
     }
 }
-
-#[allow(dead_code)]
-pub const FORMAT: ImageFormat = ImageFormat::BGRA8;
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -756,6 +763,20 @@ impl GlyphFormat {
             _ => self,
         }
     }
+
+    
+    pub fn image_format(&self) -> ImageFormat {
+        match *self {
+            
+            
+            
+            GlyphFormat::Alpha | GlyphFormat::TransformedAlpha => ImageFormat::R8,
+            GlyphFormat::Subpixel |
+            GlyphFormat::TransformedSubpixel |
+            GlyphFormat::Bitmap |
+            GlyphFormat::ColorBitmap => ImageFormat::BGRA8,
+        }
+    }
 }
 
 pub struct RasterizedGlyph {
@@ -1119,6 +1140,8 @@ struct GlyphRasterJobs {
 
 #[cfg(test)]
 mod test_glyph_rasterizer {
+    pub const FORMAT: api::ImageFormat = api::ImageFormat::BGRA8;
+
     #[test]
     fn rasterize_200_glyphs() {
         
@@ -1135,7 +1158,7 @@ mod test_glyph_rasterizer {
                   IdNamespace, ColorU};
         use api::units::DevicePoint;
         use std::sync::Arc;
-        use crate::glyph_rasterizer::{FORMAT, FontInstance, BaseFontInstance, GlyphKey, GlyphRasterizer};
+        use crate::glyph_rasterizer::{FontInstance, BaseFontInstance, GlyphKey, GlyphRasterizer};
 
         let worker = ThreadPoolBuilder::new()
             .thread_name(|idx|{ format!("WRWorker#{}", idx) })
@@ -1213,7 +1236,7 @@ mod test_glyph_rasterizer {
                   IdNamespace, ColorU};
         use api::units::DevicePoint;
         use std::sync::Arc;
-        use crate::glyph_rasterizer::{FORMAT, FontInstance, BaseFontInstance, GlyphKey, GlyphRasterizer};
+        use crate::glyph_rasterizer::{FontInstance, BaseFontInstance, GlyphKey, GlyphRasterizer};
 
         let worker = ThreadPoolBuilder::new()
             .thread_name(|idx|{ format!("WRWorker#{}", idx) })
