@@ -19,8 +19,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 const SEARCH_COUNTS_HISTOGRAM_KEY = "SEARCH_COUNTS";
-const SEARCH_WITH_ADS_SCALAR = "browser.search.with_ads";
-const SEARCH_AD_CLICKS_SCALAR = "browser.search.ad_clicks";
+const SEARCH_WITH_ADS_SCALAR_OLD = "browser.search.with_ads";
+const SEARCH_WITH_ADS_SCALAR_BASE = "browser.search.withads.";
+const SEARCH_AD_CLICKS_SCALAR_OLD = "browser.search.ad_clicks";
+const SEARCH_AD_CLICKS_SCALAR_BASE = "browser.search.adclicks.";
 const SEARCH_DATA_TRANSFERRED_SCALAR = "browser.search.data_transferred";
 const SEARCH_TELEMETRY_PRIVATE_BROWSING_KEY_SUFFIX = "pb";
 
@@ -69,6 +71,10 @@ class TelemetryHandler {
   
   
   _browserInfoByURL = new Map();
+
+  
+  
+  _browserSourceMap = new WeakMap();
 
   constructor() {
     this._contentHandler = new ContentHandler({
@@ -128,6 +134,19 @@ class TelemetryHandler {
     Services.wm.removeListener(this);
 
     this._initialized = false;
+  }
+
+  
+
+
+
+
+
+
+
+
+  recordBrowserSource(browser, source) {
+    this._browserSourceMap.set(browser, source);
   }
 
   
@@ -205,15 +224,23 @@ class TelemetryHandler {
 
     this._reportSerpPage(info, url);
 
+    let source = "unknown";
+    if (this._browserSourceMap.has(browser)) {
+      source = this._browserSourceMap.get(browser);
+      this._browserSourceMap.delete(browser);
+    }
+
     let item = this._browserInfoByURL.get(url);
     if (item) {
       item.browsers.add(browser);
       item.count++;
+      item.source = source;
     } else {
       this._browserInfoByURL.set(url, {
         browsers: new WeakSet([browser]),
         info,
         count: 1,
+        source,
       });
     }
   }
@@ -432,6 +459,10 @@ class TelemetryHandler {
     }
     
     
+    
+    
+    
+    let oldType = "organic";
     let type = "organic";
     let code;
     if (searchProviderInfo.codeParamName) {
@@ -444,9 +475,11 @@ class TelemetryHandler {
           searchProviderInfo.followOnParamNames &&
           searchProviderInfo.followOnParamNames.some(p => queries.has(p))
         ) {
-          type = "sap-follow-on";
+          oldType = "sap-follow-on";
+          type = "tagged-follow-on";
         } else {
-          type = "sap";
+          oldType = "sap";
+          type = "tagged";
         }
       } else if (searchProviderInfo.followOnCookies) {
         
@@ -479,7 +512,8 @@ class TelemetryHandler {
               cookieParam == followOnCookie.codeParamName &&
               followOnCookie.codePrefixes.some(p => cookieValue.startsWith(p))
             ) {
-              type = "sap-follow-on";
+              oldType = "sap-follow-on";
+              type = "tagged-follow-on";
               code = cookieValue;
               break;
             }
@@ -487,7 +521,7 @@ class TelemetryHandler {
         }
       }
     }
-    return { provider: searchProviderInfo.telemetryId, type, code };
+    return { provider: searchProviderInfo.telemetryId, oldType, type, code };
   }
 
   
@@ -500,7 +534,7 @@ class TelemetryHandler {
 
 
   _reportSerpPage(info, url) {
-    let payload = `${info.provider}.in-content:${info.type}:${info.code ||
+    let payload = `${info.provider}.in-content:${info.oldType}:${info.code ||
       "none"}`;
     let histogram = Services.telemetry.getKeyedHistogramById(
       SEARCH_COUNTS_HISTOGRAM_KEY
@@ -714,18 +748,24 @@ class ContentHandler {
       }
 
       try {
+        logConsole.debug(
+          "Counting ad click in page for",
+          info.telemetryId,
+          item.source,
+          originURL,
+          URL
+        );
         Services.telemetry.keyedScalarAdd(
-          SEARCH_AD_CLICKS_SCALAR,
+          SEARCH_AD_CLICKS_SCALAR_OLD,
+          `${info.telemetryId}:${item.info.oldType}`,
+          1
+        );
+        Services.telemetry.keyedScalarAdd(
+          SEARCH_AD_CLICKS_SCALAR_BASE + item.source,
           `${info.telemetryId}:${item.info.type}`,
           1
         );
         channel._adClickRecorded = true;
-        logConsole.debug(
-          "Counting ad click in page for",
-          info.telemetryId,
-          originURL,
-          URL
-        );
       } catch (e) {
         Cu.reportError(e);
       }
@@ -751,9 +791,20 @@ class ContentHandler {
       return;
     }
 
-    logConsole.debug("Counting ads in page for", item.info.provider, info.url);
+    logConsole.debug(
+      "Counting ads in page for",
+      item.info.provider,
+      item.info.type,
+      item.source,
+      info.url
+    );
     Services.telemetry.keyedScalarAdd(
-      SEARCH_WITH_ADS_SCALAR,
+      SEARCH_WITH_ADS_SCALAR_OLD,
+      `${item.info.provider}:${item.info.oldType}`,
+      1
+    );
+    Services.telemetry.keyedScalarAdd(
+      SEARCH_WITH_ADS_SCALAR_BASE + item.source,
       `${item.info.provider}:${item.info.type}`,
       1
     );

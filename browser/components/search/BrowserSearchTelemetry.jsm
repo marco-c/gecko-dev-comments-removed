@@ -13,6 +13,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+  SearchSERPTelemetry: "resource:///modules/SearchSERPTelemetry.jsm",
   Services: "resource://gre/modules/Services.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
@@ -41,6 +42,8 @@ const KNOWN_SEARCH_SOURCES = new Map([
 
 
 class BrowserSearchTelemetryHandler {
+  KNOWN_SEARCH_SOURCES = KNOWN_SEARCH_SOURCES;
+
   
 
 
@@ -219,14 +222,14 @@ class BrowserSearchTelemetryHandler {
         case "urlbar":
         case "searchbar":
         case "urlbar-searchmode":
-          this._handleSearchAndUrlbar(engine, source, details);
+          this._handleSearchAndUrlbar(browser, engine, source, details);
           break;
         case "abouthome":
         case "newtab":
-          this._recordSearch(engine, details.url, source, "enter");
+          this._recordSearch(browser, engine, details.url, source, "enter");
           break;
         default:
-          this._recordSearch(engine, details.url, source);
+          this._recordSearch(browser, engine, details.url, source);
           break;
       }
     } catch (ex) {
@@ -247,7 +250,9 @@ class BrowserSearchTelemetryHandler {
 
 
 
-  _handleSearchAndUrlbar(engine, source, details) {
+
+
+  _handleSearchAndUrlbar(browser, engine, source, details) {
     const isOneOff = !!details.isOneOff;
     let action = "enter";
     if (isOneOff) {
@@ -260,10 +265,10 @@ class BrowserSearchTelemetryHandler {
       action = "alias";
     }
 
-    this._recordSearch(engine, details.url, source, action);
+    this._recordSearch(browser, engine, details.url, source, action);
   }
 
-  _recordSearch(engine, url, source, action = null) {
+  _recordSearch(browser, engine, url, source, action = null) {
     if (url) {
       PartnerLinkAttribution.makeSearchEngineRequest(engine, url).catch(
         Cu.reportError
@@ -271,6 +276,8 @@ class BrowserSearchTelemetryHandler {
     }
 
     let scalarSource = KNOWN_SEARCH_SOURCES.get(source);
+
+    SearchSERPTelemetry.recordBrowserSource(browser, scalarSource);
 
     let scalarKey = action ? "search_" + action : "search";
     Services.telemetry.keyedScalarAdd(
