@@ -1560,6 +1560,10 @@ nsresult nsHostResolver::NameLookup(nsHostRecord* rec) {
     return NS_OK;
   }
 
+  
+  
+  rec->mTRRTRRSkippedReason = nsHostRecord::TRR_UNSET;
+
   ComputeEffectiveTRRMode(rec);
 
   if (rec->IsAddrRecord()) {
