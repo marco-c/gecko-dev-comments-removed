@@ -78,7 +78,6 @@ finishgc();
 
 
 for (let mode of [ 17, 19 ]) {
-    print(mode);
     gczeal(mode, 0);
     gcslice(1);
     assertEq(gcstate(), "Sweep");
@@ -89,7 +88,6 @@ for (let mode of [ 17, 19 ]) {
 
 const sweepingZealModes = [ 20, 21, 22, 23 ];
 for (let mode of sweepingZealModes) {
-    print(mode);
     gczeal(mode, 0);
     gcslice(1);
     while (gcstate() === "Sweep")

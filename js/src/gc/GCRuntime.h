@@ -1016,9 +1016,11 @@ class GCRuntime {
   
   MainThreadOrGCTaskData<State> initialState;
 
-#ifdef JS_GC_ZEAL
   
+#ifdef JS_GC_ZEAL
   MainThreadData<bool> useZeal;
+#else
+  const bool useZeal;
 #endif
 
   
