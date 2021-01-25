@@ -141,7 +141,9 @@ impl BucketedAtlasAllocator {
 
     
     pub fn allocate(&mut self, mut requested_size: Size) -> Option<Allocation> {
-        if requested_size.is_empty() {
+        if requested_size.is_empty()
+            || requested_size.width > std::u16::MAX as i32
+            || requested_size.height > std::u16::MAX as i32 {
             return None;
         }
 
@@ -348,6 +350,7 @@ impl BucketedAtlasAllocator {
     
     
     
+
     fn coalesce_shelves(&mut self, w: u16, h: u16) -> (usize, BucketIndex) {
         let len = self.shelves.len();
         let mut coalesce_range = None;
@@ -386,7 +389,9 @@ impl BucketedAtlasAllocator {
         }
 
         if let Some(range) = coalesce_range {
+            let y_top = self.shelves[range.start].y + coalesced_height;
             for i in range.start + 1 .. range.end {
+                self.shelves[i].y = y_top;
                 self.shelves[i].height = 0;
             }
 
@@ -403,10 +408,9 @@ impl BucketedAtlasAllocator {
     fn num_buckets(&self, width: u16, height: u16) -> u16 {
         match self.column_width / u16::max(width, height) {
             0 ..= 4 => 1,
-            5 ..= 15 => 2,
-            16 ..= 64 => 4,
-            65 ..= 256 => 8,
-            _ => 16,
+            5 ..= 16 => 2,
+            17 ..= 32 => 4,
+            n => (n /16 - 1).next_power_of_two(),
         }.min((MAX_BIN_COUNT - self.buckets.len()) as u16)
     }
 
@@ -674,14 +678,6 @@ fn atlas_basic() {
 }
 
 #[test]
-fn fuzz_01() {
-    let mut atlas = BucketedAtlasAllocator::new(size2(1000, 1000));
-
-    assert!(atlas.allocate(size2(65280, 1)).is_none());
-    assert!(atlas.allocate(size2(1, 65280)).is_none());
-}
-
-#[test]
 fn test_coalesce_shelves() {
     let mut atlas = BucketedAtlasAllocator::new(size2(256, 256));
 
@@ -891,4 +887,66 @@ fn clear() {
         atlas.allocate(size2(29, 28)).unwrap();
         atlas.allocate(size2(32, 32)).unwrap();
     }
+}
+
+
+#[test]
+fn fuzz_01() {
+    let mut atlas = BucketedAtlasAllocator::new(size2(1000, 1000));
+
+    assert!(atlas.allocate(size2(65280, 1)).is_none());
+    assert!(atlas.allocate(size2(1, 65280)).is_none());
+}
+
+#[test]
+fn fuzz_02() {
+    let mut atlas = BucketedAtlasAllocator::new(size2(1000, 1000));
+
+    assert!(atlas.allocate(size2(255, 65599)).is_none());
+}
+
+#[test]
+fn fuzz_03() {
+    let mut atlas = BucketedAtlasAllocator::new(size2(1000, 1000));
+
+    let sizes = &[
+        size2(999, 128),
+        size2(168492810, 10),
+        size2(45, 96),
+        size2(-16711926, 0),
+    ];
+
+    let mut allocations = Vec::new();
+    let mut allocated_space = 0;
+
+    for size in sizes {
+        if let Some(alloc) = atlas.allocate(*size) {
+            allocations.push(alloc);
+            allocated_space += alloc.rectangle.area();
+            assert_eq!(allocated_space, atlas.allocated_space());
+        }
+    }
+
+    for alloc in &allocations {
+        atlas.deallocate(alloc.id);
+
+        allocated_space -= alloc.rectangle.area();
+        assert_eq!(allocated_space, atlas.allocated_space());
+    }
+
+    assert_eq!(atlas.allocated_space(), 0);
+}
+
+#[test]
+fn fuzz_04() {
+    let mut atlas = BucketedAtlasAllocator::new(size2(1000, 1000));
+
+    assert!(atlas.allocate(size2(2560, 2147483647)).is_none());
+}
+
+#[test]
+fn fuzz_05() {
+    let mut atlas = BucketedAtlasAllocator::new(size2(2048, 2048));
+
+    assert!(atlas.allocate(size2(0, -1978597547)).is_none());
 }
