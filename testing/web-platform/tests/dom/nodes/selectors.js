@@ -219,7 +219,7 @@ var validSelectors = [
   
   
   {name: ":link and :visited pseudo-class selectors, matching a and area elements with href attributes",        selector: "#pseudo-link :link, #pseudo-link :visited", expect: ["pseudo-link-a1", "pseudo-link-a2", "pseudo-link-area1"],                                level: 1, testType: TEST_QSA | TEST_MATCH},
-  {name: ":link and :visited pseudo-class selectors, matching link elements with href attributes",              selector: "#head :link, #head :visited",               expect: ["pseudo-link-link1", "pseudo-link-link2"], exclude: ["element", "fragment", "detached"], level: 1, testType: TEST_QSA | TEST_MATCH},
+  {name: ":link and :visited pseudo-class selectors, matching no elements",                                     selector: "#head :link, #head :visited",               expect: [] ,                          exclude: ["element", "fragment", "detached"], level: 1, testType: TEST_QSA | TEST_MATCH},
   {name: ":link and :visited pseudo-class selectors, not matching link elements with href attributes",          selector: "#head :link, #head :visited",               expect: [] ,                          exclude: ["document"],                        level: 1, testType: TEST_QSA},
   {name: ":link and :visited pseudo-class selectors, chained, mutually exclusive pseudo-classes match nothing", selector: ":link:visited",                             expect: [] ,                          exclude: ["document"],                        level: 1, testType: TEST_QSA},
 
@@ -600,7 +600,7 @@ var scopedSelectors = [
   
   
   {name: ":link and :visited pseudo-class selectors, matching a and area elements with href attributes",        selector: " :link, #pseudo-link :visited", ctx: "#pseudo-link", expect: ["pseudo-link-a1", "pseudo-link-a2", "pseudo-link-area1"],                                level: 1, testType: TEST_FIND | TEST_MATCH},
-  {name: ":link and :visited pseudo-class selectors, matching link elements with href attributes",              selector: " :link, #head :visited",        ctx: "#head",        expect: ["pseudo-link-link1", "pseudo-link-link2"], exclude: ["element", "fragment", "detached"], level: 1, testType: TEST_FIND | TEST_MATCH},
+  {name: ":link and :visited pseudo-class selectors, matching no elements",                                     selector: " :link, #head :visited",        ctx: "#head",        expect: [] ,                          exclude: ["element", "fragment", "detached"], level: 1, testType: TEST_FIND | TEST_MATCH},
   {name: ":link and :visited pseudo-class selectors, not matching link elements with href attributes",          selector: " :link, #head :visited",        ctx: "#head",        expect: [] ,                          exclude: ["document"],                        level: 1, testType: TEST_FIND},
   {name: ":link and :visited pseudo-class selectors, chained, mutually exclusive pseudo-classes match nothing", selector: ":link:visited",                 ctx: "#html",        expect: [] ,                          exclude: ["document"],                        level: 1, testType: TEST_FIND},
 
