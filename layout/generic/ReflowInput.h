@@ -176,14 +176,15 @@ struct SizeComputationInput {
 
 
   template <typename SizeOrMaxSize>
-  inline nscoord ComputeISizeValue(nscoord aContainingBlockISize,
-                                   nscoord aContentEdgeToBoxSizing,
+  inline nscoord ComputeISizeValue(const WritingMode aWM,
+                                   const LogicalSize& aContainingBlockSize,
+                                   const LogicalSize& aContentEdgeToBoxSizing,
                                    nscoord aBoxSizingToMarginEdge,
                                    const SizeOrMaxSize&) const;
   
   
   template <typename SizeOrMaxSize>
-  inline nscoord ComputeISizeValue(nscoord aContainingBlockISize,
+  inline nscoord ComputeISizeValue(const LogicalSize& aContainingBlockSize,
                                    mozilla::StyleBoxSizing aBoxSizing,
                                    const SizeOrMaxSize&) const;
 

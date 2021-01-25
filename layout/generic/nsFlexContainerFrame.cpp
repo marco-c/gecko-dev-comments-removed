@@ -1497,7 +1497,7 @@ static nscoord PartiallyResolveAutoMinSize(
       
       
       specifiedSizeSuggestion = aFlexItem.Frame()->ComputeISizeValue(
-          percentBasis.ISize(cbWM), boxSizingAdjust.ISize(cbWM),
+          cbWM, percentBasis, boxSizingAdjust,
           mainStyleSize.AsLengthPercentage());
     }
   } else {
