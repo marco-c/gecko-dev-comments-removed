@@ -360,9 +360,6 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
   
   
   
-  
-  
-  
   static RequestDestination MapContentPolicyTypeToRequestDestination(
       nsContentPolicyType aContentPolicyType);
 
