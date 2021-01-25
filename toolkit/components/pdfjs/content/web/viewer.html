@@ -1,32 +1,32 @@
 ﻿<!DOCTYPE html>
+<!--
+Copyright 2012 Mozilla Foundation
 
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
+    http://www.apache.org/licenses/LICENSE-2.0
 
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
+Adobe CMap resources are covered by their own copyright but the same license:
 
+    Copyright 1990-2015 Adobe Systems Incorporated.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+See https://github.com/adobe-type-tools/cmap-resources
+-->
 <html dir="ltr" mozdisallowselectionprint>
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>PDF.js viewer</title>
 
-
+<!-- This snippet is used in the Firefox extension (included from viewer.html) -->
 <base href="resource://pdf.js/web/">
 <script src="../build/pdf.js"></script>
 
@@ -44,19 +44,31 @@
 
       <div id="sidebarContainer">
         <div id="toolbarSidebar">
-          <div class="splitToolbarButton toggled">
-            <button id="viewThumbnail" class="toolbarButton toggled" title="Show Thumbnails" tabindex="2" data-l10n-id="thumbs">
-               <span data-l10n-id="thumbs_label">Thumbnails</span>
-            </button>
-            <button id="viewOutline" class="toolbarButton" title="Show Document Outline (double-click to expand/collapse all items)" tabindex="3" data-l10n-id="document_outline">
-               <span data-l10n-id="document_outline_label">Document Outline</span>
-            </button>
-            <button id="viewAttachments" class="toolbarButton" title="Show Attachments" tabindex="4" data-l10n-id="attachments">
-               <span data-l10n-id="attachments_label">Attachments</span>
-            </button>
-            <button id="viewLayers" class="toolbarButton" title="Show Layers (double-click to reset all layers to the default state)" tabindex="5" data-l10n-id="layers">
-               <span data-l10n-id="layers_label">Layers</span>
-            </button>
+          <div id="toolbarSidebarLeft">
+            <div class="splitToolbarButton toggled">
+              <button id="viewThumbnail" class="toolbarButton toggled" title="Show Thumbnails" tabindex="2" data-l10n-id="thumbs">
+                 <span data-l10n-id="thumbs_label">Thumbnails</span>
+              </button>
+              <button id="viewOutline" class="toolbarButton" title="Show Document Outline (double-click to expand/collapse all items)" tabindex="3" data-l10n-id="document_outline">
+                 <span data-l10n-id="document_outline_label">Document Outline</span>
+              </button>
+              <button id="viewAttachments" class="toolbarButton" title="Show Attachments" tabindex="4" data-l10n-id="attachments">
+                 <span data-l10n-id="attachments_label">Attachments</span>
+              </button>
+              <button id="viewLayers" class="toolbarButton" title="Show Layers (double-click to reset all layers to the default state)" tabindex="5" data-l10n-id="layers">
+                 <span data-l10n-id="layers_label">Layers</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="toolbarSidebarRight">
+            <div id="outlineOptionsContainer" class="hidden">
+              <div class="verticalToolbarSeparator"></div>
+
+              <button id="currentOutlineItem" class="toolbarButton" disabled="disabled" title="Find Current Outline Item" tabindex="6" data-l10n-id="current_outline_item">
+                <span data-l10n-id="current_outline_item_label">Current Outline Item</span>
+              </button>
+            </div>
           </div>
         </div>
         <div id="sidebarContent">
@@ -70,7 +82,7 @@
           </div>
         </div>
         <div id="sidebarResizer"></div>
-      </div>  
+      </div>  <!-- sidebarContainer -->
 
       <div id="mainContainer">
         <div class="findbar hidden doorHanger" id="findbar">
@@ -102,7 +114,7 @@
           <div id="findbarMessageContainer">
             <span id="findMsg" class="toolbarLabel"></span>
           </div>
-        </div>  
+        </div>  <!-- findbar -->
 
         <div id="secondaryToolbar" class="secondaryToolbar hidden doorHangerRight">
           <div id="secondaryToolbarButtonContainer">
@@ -183,7 +195,7 @@
               <span data-l10n-id="document_properties_label">Document Properties…</span>
             </button>
           </div>
-        </div>  
+        </div>  <!-- secondaryToolbar -->
 
         <div class="toolbar">
           <div id="toolbarContainer">
@@ -305,7 +317,7 @@
           <div class="clearBoth"></div>
           <textarea id="errorMoreInfo" hidden='true' readonly="readonly"></textarea>
         </div>
-      </div> 
+      </div> <!-- mainContainer -->
 
       <div id="overlayContainer" class="hidden">
         <div id="passwordOverlay" class="container hidden">
@@ -374,9 +386,9 @@
             </div>
           </div>
         </div>
-      </div>  
+      </div>  <!-- overlayContainer -->
 
-    </div> 
+    </div> <!-- outerContainer -->
     <div id="printContainer"></div>
   </body>
 </html>

@@ -150,6 +150,8 @@ var whitelist = [
   },
 
   
+  { file: "resource://pdf.js/build/pdf.sandbox.external.js" },
+  { file: "resource://pdf.js/build/pdf.scripting.js" },
   { file: "resource://pdf.js/web/debugger.js" },
 
   
