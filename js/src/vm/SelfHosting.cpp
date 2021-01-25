@@ -2707,6 +2707,7 @@ void js::FillSelfHostingCompileOptions(CompileOptions& options) {
   options.setSelfHostingMode(true);
   options.setForceFullParse();
   options.setForceStrictMode();
+  options.setIsRunOnce(true);
 }
 
 GlobalObject* JSRuntime::createSelfHostingGlobal(JSContext* cx) {
@@ -2983,6 +2984,8 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
 
   
   
+  
+  script.set(nullptr);
   cx->runtime()->gc.freezeSelfHostingZone();
 
   return true;
