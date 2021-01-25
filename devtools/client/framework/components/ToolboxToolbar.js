@@ -119,6 +119,8 @@ class ToolboxToolbar extends Component {
         runtimeInfo: PropTypes.object.isRequired,
         targetType: PropTypes.string.isRequired,
       }),
+      
+      errorCount: PropTypes.number.isRequired,
     };
   }
 
@@ -183,7 +185,10 @@ class ToolboxToolbar extends Component {
       return isVisible && (isStart ? isInStartContainer : !isInStartContainer);
     });
 
-    if (visibleButtons.length === 0) {
+    
+    const errorIcon = isStart ? null : this.renderErrorIcon();
+
+    if (visibleButtons.length === 0 && !errorIcon) {
       return null;
     }
 
@@ -231,6 +236,12 @@ class ToolboxToolbar extends Component {
       });
     });
 
+    if (errorIcon) {
+      
+      
+      renderedButtons.unshift(errorIcon);
+    }
+
     
     const children = renderedButtons;
     if (renderedButtons.length) {
@@ -238,7 +249,7 @@ class ToolboxToolbar extends Component {
         children.push(this.renderSeparator());
         
         
-      } else if (rdmIndex !== -1 && visibleButtons.length > 1) {
+      } else if (rdmIndex !== -1 && renderedButtons.length > 1) {
         children.splice(children.length - 1, 0, this.renderSeparator());
       }
     }
@@ -275,6 +286,33 @@ class ToolboxToolbar extends Component {
         },
       },
       this.createFrameList
+    );
+  }
+
+  renderErrorIcon() {
+    let { errorCount } = this.props;
+
+    if (!errorCount) {
+      return null;
+    }
+
+    if (errorCount > 99) {
+      errorCount = "99+";
+    }
+    return button(
+      {
+        className: "devtools-tabbar-button command-button toolbox-error",
+        onClick: () => {
+          if (this.props.currentToolId !== "webconsole") {
+            this.props.toolbox.openSplitConsole();
+          }
+        },
+        title:
+          this.props.currentToolId !== "webconsole"
+            ? this.props.L10N.getStr("toolbox.errorCountButton.tooltip")
+            : null,
+      },
+      errorCount
     );
   }
 

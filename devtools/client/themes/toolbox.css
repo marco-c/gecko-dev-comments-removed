@@ -1,13 +1,13 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
+/*
+ *  Debug Target Info layout
+ *  +------------+--------------+------------------------+
+ *  | connection | runtime info | target info icon + text |
+ *  +------------+--------------+------------------------+
+ */
 .debug-target-info {
   --border-inline-end-width: 1px;
   --padding-inline-end-size: 24px;
@@ -19,13 +19,13 @@
   color: var(--theme-toolbar-color);
 }
 
-
-
-
-
-
-
-
+/*
+ *  Debug Target labels with icon layout
+ *  +------+------------------------+---------------+
+ *  | icon | label text (bold)      | optional text |
+ *  | 20px |     max-content        | max-content   |
+ *  +------+------------------------+---------------+
+ */
 .debug-target-info .iconized-label {
   display: grid;
   align-items: center;
@@ -56,12 +56,12 @@
   fill: var(--theme-toolbar-color);
 }
 
-
-
-
-
-
-
+/*
+ * XXX: This was added to match the padding 8px used by the reload button.
+ * This padding makes the debug target component taller and also creates
+ * spacing with the debug-target-title separator.
+ * See Bug 1641920 for improving the CSS of the DebugTargetInfo component.
+ */
 .debug-target-info .debug-target-url-readonly {
   padding: 8px;
 }
@@ -110,7 +110,7 @@
   border-radius: 2px;
   height: 20px;
   padding-inline-start: 10px;
-  
+  /* Ensure that the url is displayed correctly for RTL locales. */
   unicode-bidi: plaintext;
   text-align: match-parent;
 }
@@ -120,18 +120,18 @@
   width: 100%;
 }
 
-
+/* Toolbox tabbar */
 
 .devtools-tabbar {
   appearance: none;
-  
+  /* For narrow devtool width, we define the each column width of tabbar.
+    Defined layout is as follow:
 
-
-
-
-
-
-
+    -------------------------------------------------
+    | Picker |  tooltabs  |  commands |   controls  |
+    |  auto  | 26px ~ 1fr |    auto   |  max-content|
+    -------------------------------------------------
+  */
   display: grid;
   grid-template-columns: auto minmax(26px, 1fr) auto max-content;
   background: var(--theme-tab-toolbar-background);
@@ -150,8 +150,8 @@
   flex: 1;
 }
 
-
-
+/* These classes use to stretch the tool tabs wrapper width if toolbox does'n
+  have start buttons or end buttons element. */
 
 .devtools-tabbar .toolbox-tabs-wrapper {
   grid-column-start: 2;
@@ -178,8 +178,8 @@
   overflow: hidden;
 }
 
-
-
+/* Set flex attribute to Toolbox buttons and Picker container so,
+   they don't overlap with the tab bar */
 #toolbox-buttons-start,
 #toolbox-buttons-end,
 #toolbox-controls {
@@ -188,7 +188,7 @@
   overflow: hidden;
 }
 
-
+/* Toolbox tabs */
 
 .devtools-tab {
   position: relative;
@@ -209,7 +209,7 @@
 .devtools-tab-label {
   font-size: 12px;
   mask-image: linear-gradient(to left, transparent 0, black 6px);
-  
+  /* Set the end padding on the label to make sure the label gets faded out properly */
   padding-inline-end: 8px;
   min-width: 1px;
 }
@@ -234,7 +234,7 @@
   background-color: var(--theme-toolbar-hover);
 }
 
-
+/* Remove system control border from devtools-tab. */
 .devtools-tab::-moz-focus-inner {
   border: 0;
 }
@@ -267,7 +267,7 @@
   fill: var(--theme-toolbar-highlighted-color);
 }
 
-
+/* Toolbox controls */
 
 .devtools-tabbar-button {
   appearance: none;
@@ -287,7 +287,7 @@
   background-color: transparent;
 }
 
-
+/* Button icon style */
 .devtools-tabbar-button::before {
   content: "";
   flex: none;
@@ -333,8 +333,8 @@
   transform: rotate(180deg);
 }
 
-
-
+/* On OSX the cursor turns into a window-resizing cursor at the edges of the
+ * window, so bring the end of the toolbox in. */
 :root[platform="mac"] #toolbox-controls {
   margin-inline-end: 2px;
 }
@@ -387,7 +387,21 @@
   --menuitem-icon-image: url("chrome://devtools/skin/images/settings.svg");
 }
 
+.toolbox-error {
+  background-color: transparent !important;
+  font-variant-numeric: tabular-nums;
+}
 
+.toolbox-error::before {
+  background-image: url("chrome://devtools/skin/images/error-small.svg");
+  fill: var(--theme-icon-error-color) !important;
+}
+
+.toolbox-error:hover {
+  background-color: var(--toolbarbutton-hover-background) !important;
+}
+
+/* Command buttons */
 
 #command-button-pick {
   min-width: 32px;
@@ -401,7 +415,7 @@
   background-image: url("chrome://devtools/skin/images/command-pick-accessibility.svg");
 }
 
-
+/* Command button images */
 
 #command-button-paintflashing::before {
   background-image: url("chrome://devtools/skin/images/command-paintflashing.svg");
@@ -464,7 +478,7 @@
   fill-opacity: 0.25;
 }
 
-
+/* Tooltip of frames menu  */
 
 #command-button-frames-panel > .tooltip-panel {
   max-width: 500px;
@@ -476,7 +490,7 @@
   text-overflow: ellipsis;
 }
 
-
+/* Toolbox panels */
 
 .toolbox-panel {
   display: -moz-box;
@@ -488,26 +502,26 @@
   visibility: visible;
 }
 
-
-
-
-
-
-
+/**
+ * When panels are collapsed or hidden, making sure that they are also
+ * inaccessible by keyboard. This is not the case by default because the are
+ * predominantly hidden using visibility: collapse; style or collapsed
+ * attribute.
+ */
 .toolbox-panel *,
 #toolbox-panel-webconsole[collapsed] * {
   -moz-user-focus: ignore;
 }
 
-
-
-
-
+/**
+ * Enrure that selected toolbox panel's contents are keyboard accessible as they
+ * are explicitly made not to be when hidden (default).
+ */
 .toolbox-panel[selected] * {
   -moz-user-focus: normal;
 }
 
-
+/* Let the component gain focus when a click hits an empty area */
 #toolbox-container {
   -moz-user-focus: normal;
 }
@@ -516,7 +530,7 @@
   outline: 0;
 }
 
-
+/* Toolbox tabs reordering */
 #toolbox-container.tabs-reordering > .theme-body {
   pointer-events: none;
 }

@@ -16,6 +16,7 @@ const DISABLE_AUTOHIDE_PREF = "ui.popup.disable_autohide";
 const HOST_HISTOGRAM = "DEVTOOLS_TOOLBOX_HOST";
 const CURRENT_THEME_SCALAR = "devtools.current_theme";
 const HTML_NS = "http://www.w3.org/1999/xhtml";
+const REGEX_4XX_5XX = /^[4,5]\d\d$/;
 
 var { Ci, Cc } = require("chrome");
 var promise = require("promise");
@@ -337,6 +338,8 @@ function Toolbox(
   this._onTargetAvailable = this._onTargetAvailable.bind(this);
   this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
   this._onNavigate = this._onNavigate.bind(this);
+  this._onResourceAvailable = this._onResourceAvailable.bind(this);
+  this._onResourceUpdated = this._onResourceUpdated.bind(this);
 
   this.isPaintFlashing = false;
 
@@ -779,13 +782,21 @@ Toolbox.prototype = {
 
       
       
-      
-      
-      
-      this.noopNetworkEventListener = () => {};
-      await this.resourceWatcher.watchResources(
-        [this.resourceWatcher.TYPES.NETWORK_EVENT],
-        { onAvailable: this.noopNetworkEventListener }
+      const onResourcesWatched = this.resourceWatcher.watchResources(
+        [
+          this.resourceWatcher.TYPES.CONSOLE_MESSAGE,
+          this.resourceWatcher.TYPES.ERROR_MESSAGE,
+          
+          
+          
+          
+          
+          this.resourceWatcher.TYPES.NETWORK_EVENT,
+        ],
+        {
+          onAvailable: this._onResourceAvailable,
+          onUpdated: this._onResourceUpdated,
+        }
       );
 
       await domReady;
@@ -897,7 +908,11 @@ Toolbox.prototype = {
         );
       }
 
-      await promise.all([splitConsolePromise, framesPromise]);
+      await promise.all([
+        splitConsolePromise,
+        framesPromise,
+        onResourcesWatched,
+      ]);
 
       
       
@@ -3687,8 +3702,12 @@ Toolbox.prototype = {
       this._onTargetDestroyed
     );
     this.resourceWatcher.unwatchResources(
-      [this.resourceWatcher.TYPES.NETWORK_EVENT],
-      { onAvailable: this.noopNetworkEventListener }
+      [
+        this.resourceWatcher.TYPES.CONSOLE_MESSAGE,
+        this.resourceWatcher.TYPES.ERROR_MESSAGE,
+        this.resourceWatcher.TYPES.NETWORK_EVENT,
+      ],
+      { onAvailable: this._onResourceAvailable }
     );
 
     this.targetList.destroy();
@@ -4218,5 +4237,67 @@ Toolbox.prototype = {
       
       this.component.setDebugTargetData(this._getDebugTargetData());
     }
+  },
+
+  _onResourceAvailable(resources) {
+    let errors = 0;
+
+    for (const resource of resources) {
+      if (
+        resource.resourceType === this.resourceWatcher.TYPES.ERROR_MESSAGE &&
+        
+        resource.pageError.error
+      ) {
+        errors++;
+        continue;
+      }
+
+      if (
+        resource.resourceType === this.resourceWatcher.TYPES.CONSOLE_MESSAGE
+      ) {
+        const { level } = resource.message;
+        if (level === "error" || level === "exception" || level === "assert") {
+          errors++;
+        }
+
+        
+        if (level === "clear") {
+          this._errorCount = 0;
+          errors = 0;
+        }
+      }
+    }
+
+    this.setErrorCount((this._errorCount || 0) + errors);
+  },
+
+  _onResourceUpdated(resources) {
+    let errors = 0;
+
+    for (const { update } of resources) {
+      
+      if (
+        update.resourceType === this.resourceWatcher.TYPES.NETWORK_EVENT &&
+        update.resourceUpdates.status &&
+        update.resourceUpdates.status.toString().match(REGEX_4XX_5XX)
+      ) {
+        errors++;
+      }
+    }
+
+    this.setErrorCount((this._errorCount || 0) + errors);
+  },
+
+  
+
+
+
+
+  setErrorCount(count) {
+    this._errorCount = count;
+    if (!this.component) {
+      return;
+    }
+    this.component.setErrorCount(this._errorCount);
   },
 };
