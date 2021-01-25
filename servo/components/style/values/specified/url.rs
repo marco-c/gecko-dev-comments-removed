@@ -13,6 +13,3 @@ pub use crate::servo::url::{SpecifiedImageUrl, SpecifiedUrl};
 
 
 pub type UrlOrNone = GenericUrlOrNone<SpecifiedUrl>;
-
-
-pub type ImageUrlOrNone = GenericUrlOrNone<SpecifiedImageUrl>;

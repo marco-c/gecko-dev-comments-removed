@@ -16,12 +16,12 @@ ${helpers.single_keyword(
     servo_restyle_damage="rebuild_and_reflow",
 )}
 
-// TODO(pcwalton): Implement the full set of counter styles per CSS-COUNTER-STYLES [1] 6.1:
-//
-//     decimal-leading-zero, armenian, upper-armenian, lower-armenian, georgian, lower-roman,
-//     upper-roman
-//
-// [1]: http://dev.w3.org/csswg/css-counter-styles/
+
+
+
+
+
+
 % if engine in ["servo-2013", "servo-2020"]:
     ${helpers.single_keyword(
         "list-style-type",
@@ -52,10 +52,10 @@ ${helpers.single_keyword(
 
 ${helpers.predefined_type(
     "list-style-image",
-    "url::ImageUrlOrNone",
+    "Image",
     engines="gecko servo-2013",
-    initial_value="computed::url::ImageUrlOrNone::none()",
-    initial_specified_value="specified::url::ImageUrlOrNone::none()",
+    initial_value="computed::Image::None",
+    initial_specified_value="specified::Image::None",
     animation_value_type="discrete",
     spec="https://drafts.csswg.org/css-lists/#propdef-list-style-image",
     servo_restyle_damage="rebuild_and_reflow",
