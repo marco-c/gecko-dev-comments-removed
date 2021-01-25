@@ -1608,11 +1608,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                            Register scratch,
                                            const void* handlerp, Label* label);
 
-  
-  
-  void maybeBranchTestType(MIRType type, MDefinition* maybeDef, Register tag,
-                           Label* label);
-
   inline void branchTestNeedsIncrementalBarrier(Condition cond, Label* label);
   inline void branchTestNeedsIncrementalBarrierAnyZone(Condition cond,
                                                        Label* label,
