@@ -45,22 +45,8 @@ enum NewObjectKind {
 
 
 
-  SingletonObject,
-
-  
-
-
-
-
   TenuredObject
 };
-
-
-enum : uint32_t {
-  
-  OBJECT_FLAG_SINGLETON = 0x2,
-};
-using ObjectGroupFlags = uint32_t;
 
 class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
  public:
@@ -73,9 +59,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   
   JS::Realm* realm_;  
-
-  
-  ObjectGroupFlags flags_;  
 
   
   TypeDescr* typeDescr_ = nullptr;
@@ -93,10 +76,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
     return offsetof(ObjectGroup, realm_);
   }
 
-  static inline uint32_t offsetOfFlags() {
-    return offsetof(ObjectGroup, flags_);
-  }
-
   friend class gc::GCRuntime;
 
   
@@ -111,15 +90,14 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   void setProtoUnchecked(TaggedProto proto);
 
+  
   bool hasUncacheableProto() const {
     
     
     
     MOZ_ASSERT(!hasDynamicPrototype());
-    return singleton();
+    return false;
   }
-
-  bool singleton() const { return flags() & OBJECT_FLAG_SINGLETON; }
 
   JS::Compartment* compartment() const {
     return JS::GetCompartmentForRealm(realm_);
@@ -127,10 +105,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   JS::Compartment* maybeCompartment() const { return compartment(); }
   JS::Realm* realm() const { return realm_; }
 
- private:
-  ObjectGroupFlags flags() const { return flags_; }
-
- public:
   TypeDescr* maybeTypeDescr() {
     
     
@@ -145,8 +119,7 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   void setTypeDescr(TypeDescr* descr) { typeDescr_ = descr; }
 
  public:
-  inline ObjectGroup(const JSClass* clasp, TaggedProto proto, JS::Realm* realm,
-                     ObjectGroupFlags initialFlags);
+  inline ObjectGroup(const JSClass* clasp, TaggedProto proto, JS::Realm* realm);
 
   
 

@@ -139,11 +139,6 @@ class JSObject
 
   void initGroup(js::ObjectGroup* group) { initHeaderPtr(group); }
 
-  
-
-
-  bool isSingleton() const { return group()->singleton(); }
-
   JS::Compartment* compartment() const { return group()->compartment(); }
   JS::Compartment* maybeCompartment() const { return compartment(); }
 
@@ -276,10 +271,6 @@ class JSObject
   
   
   size_t sizeOfIncludingThisInNursery() const;
-
-  
-  
-  static bool setSingleton(JSContext* cx, js::HandleObject obj);
 
 #ifdef DEBUG
   static void debugCheckNewObject(js::ObjectGroup* group, js::Shape* shape,

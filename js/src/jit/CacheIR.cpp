@@ -5088,13 +5088,6 @@ AttachDecision CallIRGenerator::tryAttachArraySlice(HandleFunction callee) {
 
   RootedArrayObject arr(cx_, &thisval_.toObject().as<ArrayObject>());
 
-  
-  
-  
-  if (arr->isSingleton()) {
-    return AttachDecision::NoAction;
-  }
-
   JSObject* templateObj =
       NewDenseFullyAllocatedArray(cx_, 0,  nullptr, TenuredObject);
   if (!templateObj) {
