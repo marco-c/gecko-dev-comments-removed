@@ -972,6 +972,16 @@ nsDependentCSubstring GetLeafName(const nsACString& aPath);
 Result<nsCOMPtr<nsIFile>, nsresult> CloneFileAndAppend(
     nsIFile& aDirectory, const nsAString& aPathElement);
 
+enum class nsIFileKind {
+  ExistsAsDirectory,
+  ExistsAsFile,
+  DoesNotExist,
+};
+
+
+
+Result<nsIFileKind, nsresult> GetDirEntryKind(nsIFile& aFile);
+
 Result<nsCOMPtr<mozIStorageStatement>, nsresult> CreateStatement(
     mozIStorageConnection& aConnection, const nsACString& aStatementString);
 
