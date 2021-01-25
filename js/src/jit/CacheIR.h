@@ -829,7 +829,6 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
   
   
   void guardGroupForProto(ObjOperandId obj, ObjectGroup* group) {
-    MOZ_ASSERT(!group->hasUncacheableProto());
     guardGroup(obj, group);
   }
 

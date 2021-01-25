@@ -90,15 +90,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   void setProtoUnchecked(TaggedProto proto);
 
-  
-  bool hasUncacheableProto() const {
-    
-    
-    
-    MOZ_ASSERT(!hasDynamicPrototype());
-    return false;
-  }
-
   JS::Compartment* compartment() const {
     return JS::GetCompartmentForRealm(realm_);
   }

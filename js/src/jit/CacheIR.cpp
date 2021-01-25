@@ -599,19 +599,9 @@ static void GuardGroupProto(CacheIRWriter& writer, JSObject* obj,
   
   
   
-  
 
   ObjectGroup* group = obj->group();
-
-  if (group->hasUncacheableProto()) {
-    if (JSObject* proto = obj->staticPrototype()) {
-      writer.guardProto(objId, proto);
-    } else {
-      writer.guardNullProto(objId);
-    }
-  } else {
-    writer.guardGroupForProto(objId, group);
-  }
+  writer.guardGroupForProto(objId, group);
 }
 
 
@@ -654,14 +644,9 @@ static void GeneratePrototypeGuardsForReceiver(CacheIRWriter& writer,
     GuardGroupProto(writer, obj, objId);
   }
 
-#ifdef DEBUG
   
-  if (obj->is<TypedObject>()) {
-    MOZ_ASSERT(!obj->group()->hasUncacheableProto());
-  } else if (obj->is<ProxyObject>()) {
-    MOZ_ASSERT(!obj->hasUncacheableProto());
-  }
-#endif  
+  MOZ_ASSERT_IF(obj->is<TypedObject>() || obj->is<ProxyObject>(),
+                !obj->hasUncacheableProto());
 }
 
 static bool ProtoChainSupportsTeleporting(JSObject* obj, JSObject* holder) {
