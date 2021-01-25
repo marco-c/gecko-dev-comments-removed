@@ -348,6 +348,27 @@ class nsNavHistory final : public nsSupportsWeakReference,
   
 
 
+  void NotifyFrecencyChanged(const nsACString& aSpec, int32_t aNewFrecency,
+                             const nsACString& aGUID, bool aHidden,
+                             PRTime aLastVisitDate);
+
+  
+
+
+  void NotifyManyFrecenciesChanged();
+
+  
+
+
+  void DispatchFrecencyChangedNotification(const nsACString& aSpec,
+                                           int32_t aNewFrecency,
+                                           const nsACString& aGUID,
+                                           bool aHidden,
+                                           PRTime aLastVisitDate) const;
+
+  
+
+
 
 
   bool IsFrecencyDecaying() const;
@@ -379,7 +400,7 @@ class nsNavHistory final : public nsSupportsWeakReference,
       const RefPtr<nsNavHistoryQuery>& aQuery,
       nsNavHistoryQueryOptions* aOptions);
 
-  void DecayFrecencyCompleted();
+  void DecayFrecencyCompleted(uint16_t reason);
 
  private:
   ~nsNavHistory();

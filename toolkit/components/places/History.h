@@ -73,7 +73,13 @@ class History final : public BaseHistory,
 
 
 
-  nsresult InsertPlace(VisitData& aVisitData);
+
+
+
+
+
+  nsresult InsertPlace(VisitData& aVisitData,
+                       bool aShouldNotifyFrecencyChanged = true);
 
   
 

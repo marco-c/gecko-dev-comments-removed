@@ -596,6 +596,13 @@ var PlacesProvider = {
   
 
 
+
+
+  _batchCalledFrecencyChanged: false,
+
+  
+
+
   maxNumLinks: HISTORY_RESULTS_LIMIT,
 
   
@@ -607,12 +614,7 @@ var PlacesProvider = {
       this.handlePlacesEvents.bind(this)
     );
     PlacesObservers.addListener(
-      [
-        "page-visited",
-        "page-title-changed",
-        "history-cleared",
-        "pages-rank-changed",
-      ],
+      ["page-visited", "page-title-changed", "history-cleared"],
       this._placesObserver
     );
   },
@@ -718,6 +720,10 @@ var PlacesProvider = {
 
   onEndUpdateBatch() {
     this._batchProcessingDepth -= 1;
+    if (this._batchProcessingDepth == 0 && this._batchCalledFrecencyChanged) {
+      this.onManyFrecenciesChanged();
+      this._batchCalledFrecencyChanged = false;
+    }
   },
 
   handlePlacesEvents(aEvents) {
@@ -745,10 +751,6 @@ var PlacesProvider = {
           this.onClearHistory();
           break;
         }
-        case "pages-rank-changed": {
-          this.onManyFrecenciesChanged();
-          break;
-        }
       }
     }
   },
@@ -764,7 +766,39 @@ var PlacesProvider = {
     this._callObservers("onClearHistory");
   },
 
-  onManyFrecenciesChanged() {
+  
+
+
+  onFrecencyChanged: function PlacesProvider_onFrecencyChanged(
+    aURI,
+    aNewFrecency,
+    aGUID,
+    aHidden,
+    aLastVisitDate
+  ) {
+    
+    
+    
+    if (this._batchProcessingDepth > 0) {
+      this._batchCalledFrecencyChanged = true;
+      return;
+    }
+    
+    
+    if (!aHidden && aLastVisitDate) {
+      this._callObservers("onLinkChanged", {
+        url: aURI.spec,
+        frecency: aNewFrecency,
+        lastVisitDate: aLastVisitDate,
+        type: "history",
+      });
+    }
+  },
+
+  
+
+
+  onManyFrecenciesChanged: function PlacesProvider_onManyFrecenciesChanged() {
     this._callObservers("onManyLinksChanged");
   },
 
