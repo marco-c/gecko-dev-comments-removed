@@ -218,6 +218,9 @@
 - (NSString* _Nullable)moxIdentifier;
 
 
+- (NSArray* _Nullable)moxVisibleChildren;
+
+
 
 
 - (NSNumber* _Nullable)moxDisclosing;

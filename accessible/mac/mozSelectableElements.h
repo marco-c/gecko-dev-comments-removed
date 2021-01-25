@@ -87,6 +87,15 @@
 - (NSString*)moxLabel;
 
 
+- (NSArray*)moxChildren;
+
+
+- (NSArray*)moxVisibleChildren;
+
+
+- (id)moxTitleUIElement;
+
+
 - (void)moxPostNotification:(NSString*)notification;
 
 
