@@ -620,29 +620,17 @@ struct CompilationStencilSet : public CompilationStencil {
 
   MOZ_MUST_USE bool buildDelazificationIndices(JSContext* cx);
 
-  
-  static constexpr size_t LifoAllocChunkSize = 512;
-
  public:
-  LifoAlloc allocForDelazifications;
   Vector<BaseCompilationStencil, 0, js::SystemAllocPolicy> delazifications;
   ScriptIndexVector delazificationIndices;
   CompilationAtomCache::AtomCacheVector delazificationAtomCache;
 
   CompilationStencilSet(JSContext* cx,
                         const JS::ReadOnlyCompileOptions& options)
-      : CompilationStencil(cx, options),
-        allocForDelazifications(LifoAllocChunkSize) {}
+      : CompilationStencil(cx, options) {}
 
   
-  CompilationStencilSet(CompilationStencilSet&& other) noexcept
-      : CompilationStencil(std::move(other)),
-        allocForDelazifications(LifoAllocChunkSize),
-        delazifications(std::move(other.delazifications)),
-        delazificationAtomCache(std::move(other.delazificationAtomCache)) {
-    
-    allocForDelazifications.steal(&other.allocForDelazifications);
-  }
+  CompilationStencilSet(CompilationStencilSet&& other) = default;
 
   
   CompilationStencilSet(const CompilationStencilSet&) = delete;
