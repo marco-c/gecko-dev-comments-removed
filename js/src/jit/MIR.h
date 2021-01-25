@@ -8793,6 +8793,10 @@ class MMegamorphicLoadSlot : public MUnaryInstruction,
   MMegamorphicLoadSlot(MDefinition* obj, PropertyName* name)
       : MUnaryInstruction(classOpcode, obj), name_(name) {
     setResultType(MIRType::Value);
+
+    
+    
+    setGuard();
   }
 
  public:
@@ -8825,6 +8829,10 @@ class MMegamorphicLoadSlotByValue
   MMegamorphicLoadSlotByValue(MDefinition* obj, MDefinition* idVal)
       : MBinaryInstruction(classOpcode, obj, idVal) {
     setResultType(MIRType::Value);
+
+    
+    
+    setGuard();
   }
 
  public:
@@ -8883,6 +8891,10 @@ class MMegamorphicHasProp
   MMegamorphicHasProp(MDefinition* obj, MDefinition* idVal, bool hasOwn)
       : MBinaryInstruction(classOpcode, obj, idVal), hasOwn_(hasOwn) {
     setResultType(MIRType::Boolean);
+
+    
+    
+    setGuard();
   }
 
  public:
