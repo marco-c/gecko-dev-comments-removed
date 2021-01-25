@@ -3207,11 +3207,7 @@ class Document : public nsINode,
 
   
   
-  
-  
-  enum class DispatchVisibilityChange { No, Yes };
-  void UpdateVisibilityState(
-      DispatchVisibilityChange = DispatchVisibilityChange::Yes);
+  void UpdateVisibilityState();
 
   
   void PostVisibilityUpdateEvent();
