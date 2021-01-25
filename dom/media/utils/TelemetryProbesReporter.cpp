@@ -149,9 +149,10 @@ void TelemetryProbesReporter::ReportResultForVideo() {
     return;
   }
 
-  const double totalPlayTimeS = mTotalPlayTime.Total();
-  const double invisiblePlayTimeS = mInvisibleVideoPlayTime.Total();
-  const double videoDecodeSuspendTimeS = mVideoDecodeSuspendedTime.Total();
+  const double totalPlayTimeS = mTotalPlayTime.GetAndClearTotal();
+  const double invisiblePlayTimeS = mInvisibleVideoPlayTime.GetAndClearTotal();
+  const double videoDecodeSuspendTimeS =
+      mVideoDecodeSuspendedTime.GetAndClearTotal();
 
   
   if (totalPlayTimeS == 0.0) {
