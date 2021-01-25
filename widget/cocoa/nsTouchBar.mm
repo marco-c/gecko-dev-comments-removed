@@ -17,17 +17,6 @@
 @implementation nsTouchBar
 
 
-
-static NSTouchBarItemIdentifier ShareScrubberIdentifier =
-    [TouchBarInput nativeIdentifierWithType:@"scrubber" withKey:@"share"];
-
-
-
-
-static NSTouchBarItemIdentifier SearchPopoverIdentifier =
-    [TouchBarInput nativeIdentifierWithType:@"popover" withKey:@"search-popover"];
-
-
 static char sIdentifierAssociationKey;
 
 
@@ -111,7 +100,7 @@ static const uint32_t kInputIconSize = 16;
         [TouchBarInput nativeIdentifierWithType:@"button" withKey:@"reload"],
         [TouchBarInput nativeIdentifierWithType:@"mainButton" withKey:@"open-location"],
         [TouchBarInput nativeIdentifierWithType:@"button" withKey:@"new-tab"],
-        ShareScrubberIdentifier, SearchPopoverIdentifier
+        [TouchBarInput shareScrubberIdentifier], [TouchBarInput searchPopoverIdentifier]
       ];
       self.defaultItemIdentifiers = [defaultItemIdentifiers copy];
     } else {
@@ -166,7 +155,7 @@ static const uint32_t kInputIconSize = 16;
 
   if ([input baseType] == TouchBarInputBaseType::kScrubber) {
     
-    if (![aIdentifier isEqualToString:ShareScrubberIdentifier]) {
+    if (![aIdentifier isEqualToString:[TouchBarInput shareScrubberIdentifier]]) {
       
       return nil;
     }
@@ -383,7 +372,7 @@ static const uint32_t kInputIconSize = 16;
   }
 
   
-  if ([[input nativeIdentifier] isEqualToString:SearchPopoverIdentifier]) {
+  if ([[input nativeIdentifier] isEqualToString:[TouchBarInput searchPopoverIdentifier]]) {
     
     
     if (!mTouchBarHelper) {

@@ -76,6 +76,15 @@ class nsTouchBarInputIcon;
 + (NSTouchBarItemIdentifier)nativeIdentifierWithType:(NSString*)aType withKey:(NSString*)aKey;
 + (NSTouchBarItemIdentifier)nativeIdentifierWithXPCOM:(nsCOMPtr<nsITouchBarInput>)aInput;
 
+
+
++ (NSTouchBarItemIdentifier)shareScrubberIdentifier;
+
+
+
+
++ (NSTouchBarItemIdentifier)searchPopoverIdentifier;
+
 @end
 
 #endif  
