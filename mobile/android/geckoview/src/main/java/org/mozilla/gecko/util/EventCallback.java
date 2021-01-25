@@ -42,7 +42,12 @@ public interface EventCallback {
             sendSuccess(null);
             return;
         }
-        response.accept(this::sendSuccess, throwable ->
-            sendError(throwable.getMessage()));
+        response.accept(this::sendSuccess, throwable -> {
+            
+            if (!(throwable instanceof Exception)) {
+                throw new GeckoResult.UncaughtException(throwable);
+            }
+            sendError(throwable.getMessage());
+        });
     }
 }
