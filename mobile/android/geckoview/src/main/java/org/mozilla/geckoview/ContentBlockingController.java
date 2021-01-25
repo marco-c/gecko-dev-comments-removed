@@ -319,15 +319,6 @@ public class ContentBlockingController {
 
 
 
-
-        @Deprecated
-        @DeprecationSchedule(version = 86, id = "unsafe-content")
-        public static final int REPLACED_UNSAFE_CONTENT        = 0x00000010;
-
-        
-
-
-
         public static final int REPLACED_TRACKING_CONTENT       = 0x00000010;
 
         protected Event() {}
@@ -352,7 +343,7 @@ public class ContentBlockingController {
                       Event.COOKIES_BLOCKED_TRACKER, Event.COOKIES_BLOCKED_SOCIALTRACKER,
                       Event.COOKIES_BLOCKED_ALL, Event.COOKIES_PARTITIONED_FOREIGN,
                       Event.COOKIES_BLOCKED_FOREIGN, Event.BLOCKED_SOCIALTRACKING_CONTENT,
-                      Event.LOADED_SOCIALTRACKING_CONTENT, Event.REPLACED_UNSAFE_CONTENT })
+                      Event.LOADED_SOCIALTRACKING_CONTENT, Event.REPLACED_TRACKING_CONTENT })
              @interface LogEvent {}
 
             
