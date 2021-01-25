@@ -4,6 +4,9 @@
 
 
 #include "mozilla/Assertions.h"
+#ifdef MOZ_WASM_SANDBOXING_HUNSPELL
+#  include "mozilla/ipc/LibrarySandboxPreload.h"
+#endif
 #include "RLBoxHunspell.h"
 #include "mozHunspellRLBoxGlue.h"
 #include "mozHunspellRLBoxHost.h"
@@ -34,7 +37,19 @@ static tainted_hunspell<char*> allocStrInSandbox(
 RLBoxHunspell::RLBoxHunspell(const nsAutoCString& affpath,
                              const nsAutoCString& dpath)
     : mHandle(nullptr) {
+#ifdef MOZ_WASM_SANDBOXING_HUNSPELL
+  
+  
+  const bool external_loads_exist = true;
+  
+  
+  
+  const bool allow_stdio = false;
+  mSandbox.create_sandbox(mozilla::ipc::GetSandboxedHunspellPath().get(),
+                          external_loads_exist, allow_stdio);
+#else
   mSandbox.create_sandbox();
+#endif
 
   
   mozHunspellCallbacks::AllowFile(affpath);
