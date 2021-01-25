@@ -11,10 +11,6 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/SharedPromptUtils.jsm"
 );
 
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
-
 function CommonDialog(args, ui) {
   this.args = args;
   this.ui = ui;
@@ -111,23 +107,9 @@ CommonDialog.prototype = {
 
     
     let title = this.args.title;
+    
     let infoTitle = this.ui.infoTitle;
     infoTitle.appendChild(infoTitle.ownerDocument.createTextNode(title));
-
-    
-    let contentSubDialogPromptEnabled = Services.prefs.getBoolPref(
-      "prompts.contentPromptSubDialog"
-    );
-    
-    let hideForTabPromptModal =
-      !contentSubDialogPromptEnabled &&
-      this.args.modalType == Ci.nsIPrompt.MODAL_TYPE_CONTENT;
-
-    infoTitle.hidden =
-      hideForTabPromptModal ||
-      (this.args.modalType != Ci.nsIPrompt.MODAL_TYPE_CONTENT &&
-        AppConstants.platform != "macosx");
-
     if (commonDialogEl) {
       commonDialogEl.ownerDocument.title = title;
     }
