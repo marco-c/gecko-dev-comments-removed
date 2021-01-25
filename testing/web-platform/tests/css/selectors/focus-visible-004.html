@@ -11,9 +11,14 @@
   <script src="/resources/testdriver-actions.js"></script>
   <script src="/resources/testdriver-vendor.js"></script>
   <style>
+    @supports not (selector(:focus-visible)) {
+      :focus {
+        outline: red solid 5px;
+      }
+    }
+
     :focus-visible {
-      outline: red dotted 1px; /* fallback for Edge */
-      outline: red auto 5px;
+      outline: red solid 5px;
     }
 
     :focus:not(:focus-visible) {
@@ -61,16 +66,16 @@
     <label><input data-tested="false" id="el-10" type="radio"></input> Focus me.</label>
   </div>
   <div>
-    
+    <!-- Focusing file input triggers a modal, so only test manually -->
     <input id="el-12" type="file" value="Focus me."></input>
   </div>
   <div>
     <label><input data-tested="false" id="el-13" type="range"></input> Focus me.</label>
   </div>
   <div>
-    
-
-
+    <!-- Ensure the color input is last, as it has a pop-up which obscures other elements,
+         causing the `mouseClickInTarget` method to fail and the test to hang waiting for
+         a click event.-->
     <label><input data-tested="false" id="el-11" type="color"></input> Focus me.</label>
   </div>
   <script>
