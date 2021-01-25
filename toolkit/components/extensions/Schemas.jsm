@@ -388,7 +388,7 @@ class Context {
       }
     }
 
-    let props = ["preprocessors", "isChromeCompat"];
+    let props = ["preprocessors", "isChromeCompat", "manifestVersion"];
     for (let prop of props) {
       if (prop in params) {
         if (prop in this && typeof this[prop] == "object") {
@@ -1099,7 +1099,14 @@ const FORMATS = {
   },
 
   contentSecurityPolicy(string, context) {
-    let error = contentPolicyService.validateAddonCSP(string);
+    
+    
+    
+    let flags =
+      context.manifestVersion < 3
+        ? Ci.nsIAddonContentPolicy.CSP_ALLOW_ANY
+        : Ci.nsIAddonContentPolicy.CSP_ALLOW_LOCALHOST;
+    let error = contentPolicyService.validateAddonCSP(string, flags);
     if (error != null) {
       
       
