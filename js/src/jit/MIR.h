@@ -13600,17 +13600,6 @@ class MWasmReduceSimd128 : public MUnaryInstruction, public NoTypePolicy::Data {
 
 
 
-class MUnknownValue : public MNullaryInstruction {
- protected:
-  MUnknownValue() : MNullaryInstruction(classOpcode) {
-    setResultType(MIRType::Value);
-  }
-
- public:
-  INSTRUCTION_HEADER(UnknownValue)
-  TRIVIAL_NEW_WRAPPERS
-};
-
 
 
 class MUnreachableResult : public MNullaryInstruction {
