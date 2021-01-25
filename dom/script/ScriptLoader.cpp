@@ -2415,6 +2415,11 @@ nsresult ScriptLoader::AttemptAsyncScriptCompile(ScriptLoadRequest* aRequest,
     }
   } else {
     MOZ_ASSERT(aRequest->IsBytecode());
+
+    
+    
+    options.useOffThreadParseGlobal = true;
+
     size_t length =
         aRequest->mScriptBytecode.length() - aRequest->mBytecodeOffset;
     if (!JS::CanDecodeOffThread(cx, options, length)) {
