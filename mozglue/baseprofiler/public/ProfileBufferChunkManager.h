@@ -70,7 +70,7 @@ class ProfileBufferChunkManager {
   
   
   
-  virtual void ReleaseChunks(UniquePtr<ProfileBufferChunk> aChunks) = 0;
+  virtual void ReleaseChunk(UniquePtr<ProfileBufferChunk> aChunk) = 0;
 
   
   

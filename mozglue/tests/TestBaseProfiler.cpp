@@ -574,7 +574,7 @@ static void TestChunkManagerSingle() {
 
   
   chunk->MarkDone();
-  cm.ReleaseChunks(std::move(chunk));
+  cm.ReleaseChunk(std::move(chunk));
   MOZ_RELEASE_ASSERT(!chunk, "chunk UniquePtr should have been moved-from");
 
   
@@ -734,6 +734,10 @@ static void TestChunkManagerWithLocalLimit() {
   MOZ_RELEASE_ASSERT(!extantReleasedChunks, "Unexpected released chunk(s)");
 
   
+  cm.ReleaseChunk(nullptr);
+  MOZ_RELEASE_ASSERT(!extantReleasedChunks, "Unexpected released chunk(s)");
+
+  
   
   
   
@@ -776,7 +780,7 @@ static void TestChunkManagerWithLocalLimit() {
     
     WaitUntilTimeStampChanges();  
     chunk->MarkDone();
-    cm.ReleaseChunks(std::move(chunk));
+    cm.ReleaseChunk(std::move(chunk));
 
     
     chunk = std::move(newChunk);
@@ -1253,10 +1257,10 @@ static void TestControlledChunkManagerWithLocalLimit() {
     chunk->MarkDone();
     const auto doneTimeStamp = chunk->ChunkHeader().mDoneTimeStamp;
     const auto bufferBytes = chunk->BufferBytes();
-    cm.ReleaseChunks(std::move(chunk));
+    cm.ReleaseChunk(std::move(chunk));
 
     MOZ_RELEASE_ASSERT(updateCount == 1,
-                       "ReleaseChunks() should have triggered an update");
+                       "ReleaseChunk() should have triggered an update");
     MOZ_RELEASE_ASSERT(!update.IsFinal());
     MOZ_RELEASE_ASSERT(!update.IsNotUpdate());
     MOZ_RELEASE_ASSERT(update.UnreleasedBytes() ==

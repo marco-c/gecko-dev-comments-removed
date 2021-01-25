@@ -121,45 +121,39 @@ class ProfileBufferChunkManagerWithLocalLimit final
     }
   }
 
-  void ReleaseChunks(UniquePtr<ProfileBufferChunk> aChunks) final {
+  void ReleaseChunk(UniquePtr<ProfileBufferChunk> aChunk) final {
+    if (!aChunk) {
+      return;
+    }
+
+    MOZ_RELEASE_ASSERT(!aChunk->GetNext(), "ReleaseChunk only accepts 1 chunk");
+    MOZ_RELEASE_ASSERT(!aChunk->ChunkHeader().mDoneTimeStamp.IsNull(),
+                       "Released chunk should have a 'Done' timestamp");
+
     Update update = [&]() {
       baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
       MOZ_ASSERT(mUser, "Not registered yet");
       
       
-      const ProfileBufferChunk* const newlyReleasedChunks = aChunks.get();
+      const ProfileBufferChunk* const newlyReleasedChunk = aChunk.get();
       
-      size_t bytes = 0;
-      for (const ProfileBufferChunk* chunk = newlyReleasedChunks; chunk;
-           chunk = chunk->GetNext()) {
-        bytes += chunk->BufferBytes();
-        MOZ_ASSERT(!chunk->ChunkHeader().mDoneTimeStamp.IsNull(),
-                   "All released chunks should have a 'Done' timestamp");
-        MOZ_ASSERT(!chunk->GetNext() ||
-                       (chunk->ChunkHeader().mDoneTimeStamp <
-                        chunk->GetNext()->ChunkHeader().mDoneTimeStamp),
-                   "Released chunk groups must have increasing timestamps");
-      }
-      
-      
-      mUnreleasedBufferBytes -= bytes;
+      mUnreleasedBufferBytes -= aChunk->BufferBytes();
+      mReleasedBufferBytes += aChunk->BufferBytes();
       if (!mReleasedChunks) {
         
-        MOZ_ASSERT(mReleasedBufferBytes == 0);
-        mReleasedBufferBytes = bytes;
-        mReleasedChunks = std::move(aChunks);
+        MOZ_ASSERT(mReleasedBufferBytes == aChunk->BufferBytes());
+        mReleasedChunks = std::move(aChunk);
       } else {
         
         
         MOZ_ASSERT(mReleasedChunks->Last()->ChunkHeader().mDoneTimeStamp <
-                       aChunks->ChunkHeader().mDoneTimeStamp,
+                       aChunk->ChunkHeader().mDoneTimeStamp,
                    "Chunks must be released in increasing timestamps");
-        mReleasedBufferBytes += bytes;
-        mReleasedChunks->SetLast(std::move(aChunks));
+        mReleasedChunks->SetLast(std::move(aChunk));
       }
 
       return Update(mUnreleasedBufferBytes, mReleasedBufferBytes,
-                    mReleasedChunks.get(), newlyReleasedChunks);
+                    mReleasedChunks.get(), newlyReleasedChunk);
     }();
 
     baseprofiler::detail::BaseProfilerAutoLock lock(mUpdateCallbackMutex);

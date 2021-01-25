@@ -1518,7 +1518,7 @@ class ProfileChunkedBuffer {
 
         
         filled->MarkDone();
-        mChunkManager->ReleaseChunks(std::move(filled));
+        mChunkManager->ReleaseChunk(std::move(filled));
 
         
         
