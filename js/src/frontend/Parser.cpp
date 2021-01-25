@@ -3386,14 +3386,22 @@ bool GeneralParser<ParseHandler, Unit>::functionFormalParametersAndBody(
   }
 
   if (kind == FunctionSyntaxKind::Arrow) {
-    bool matched;
-    if (!tokenStream.matchToken(&matched, TokenKind::Arrow)) {
+    TokenKind tt;
+    if (!tokenStream.peekTokenSameLine(&tt)) {
       return false;
     }
-    if (!matched) {
+
+    if (tt == TokenKind::Eol) {
+      error(JSMSG_UNEXPECTED_TOKEN,
+            "'=>' on the same line after an argument list",
+            TokenKindToDesc(tt));
+      return false;
+    }
+    if (tt != TokenKind::Arrow) {
       error(JSMSG_BAD_ARROW_ARGS);
       return false;
     }
+    tokenStream.consumeKnownToken(TokenKind::Arrow);
   }
 
   
@@ -9152,17 +9160,33 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::assignExpr(
       return null();
     }
 
-    if (!tokenStream.peekTokenSameLine(&tokenAfterLHS)) {
-      return null();
-    }
-    if (tokenAfterLHS != TokenKind::Arrow) {
-      error(JSMSG_UNEXPECTED_TOKEN,
-            "'=>' on the same line after an argument list",
-            TokenKindToDesc(tokenAfterLHS));
+    if (!tokenStream.peekToken(&tokenAfterLHS, TokenStream::SlashIsRegExp)) {
       return null();
     }
 
-    isArrow = true;
+    isArrow = tokenAfterLHS == TokenKind::Arrow;
+
+    
+    
+    
+    
+    if (!isArrow) {
+      anyChars.ungetToken();  
+
+      
+      
+      anyChars.allowGettingNextTokenWithSlashIsRegExp();
+
+      const ParserName* asyncName = identifierReference(yieldHandling);
+      if (!asyncName) {
+        return null();
+      }
+
+      lhs = identifierReference(asyncName);
+      if (!lhs) {
+        return null();
+      }
+    }
   } else {
     lhs = condExpr(inHandling, yieldHandling, tripledotHandling,
                    &possibleErrorInner, invoked);
@@ -9173,8 +9197,7 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::assignExpr(
     
     
     
-    if (!tokenStream.peekTokenSameLine(&tokenAfterLHS,
-                                       TokenStream::SlashIsRegExp)) {
+    if (!tokenStream.peekToken(&tokenAfterLHS, TokenStream::SlashIsRegExp)) {
       return null();
     }
 
