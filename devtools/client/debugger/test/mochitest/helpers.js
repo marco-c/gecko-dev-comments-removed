@@ -2010,16 +2010,24 @@ async function toggleDebbuggerSettingsMenuItem(dbg, { className, isChecked }) {
 }
 
 
-const { PromiseTestUtils } = ChromeUtils.import(
-  "resource://testing-common/PromiseTestUtils.jsm"
-);
 
 
+const protocolHandler = Services.io
+    .getProtocolHandler("resource")
+    .QueryInterface(Ci.nsIResProtocolHandler);
+if (protocolHandler.hasSubstitution("testing-common")) {
+  const { PromiseTestUtils } = ChromeUtils.import(
+    "resource://testing-common/PromiseTestUtils.jsm"
+  );
 
-
-PromiseTestUtils.allowMatchingRejectionsGlobally(/Page has navigated/);
-PromiseTestUtils.allowMatchingRejectionsGlobally(/Current thread has changed/);
-PromiseTestUtils.allowMatchingRejectionsGlobally(
-  /Current thread has paused or resumed/
-);
-PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection closed/);
+  
+  
+  
+  PromiseTestUtils.allowMatchingRejectionsGlobally(/Page has navigated/);
+  PromiseTestUtils.allowMatchingRejectionsGlobally(/Current thread has changed/);
+  PromiseTestUtils.allowMatchingRejectionsGlobally(
+    /Current thread has paused or resumed/
+  );
+  PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection closed/);
+  this.PromiseTestUtils = PromiseTestUtils;
+}
