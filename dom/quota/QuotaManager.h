@@ -535,8 +535,8 @@ class QuotaManager final : public BackgroundThreadObject {
 
   nsresult MaybeRemoveLocalStorageDirectories();
 
-  nsresult CreateLocalStorageArchiveConnectionFromWebAppsStore(
-      mozIStorageConnection** aConnection);
+  Result<nsCOMPtr<mozIStorageConnection>, nsresult>
+  CreateLocalStorageArchiveConnectionFromWebAppsStore();
 
   
   
