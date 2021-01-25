@@ -607,31 +607,22 @@ bool CompilationStencil::instantiateStencils(JSContext* cx,
 bool CompilationStencil::instantiateStencilsAfterPreparation(
     JSContext* cx, CompilationInput& input, BaseCompilationStencil& stencil,
     CompilationGCOutput& gcOutput) {
+  
+  
+  bool isInitialParse = (input.lazy == nullptr);
+
   if (!gcOutput.functions.resize(stencil.scriptData.size())) {
     ReportOutOfMemory(cx);
     return false;
   }
 
+  
   if (!InstantiateAtoms(cx, input, stencil)) {
     return false;
   }
 
-  if (input.lazy) {
-    MOZ_ASSERT(
-        stencil.scriptData[CompilationStencil::TopLevelIndex].isFunction());
-
-    
-    
-    
-    MOZ_ASSERT(stencil.functionKey ==
-               BaseCompilationStencil::toFunctionKey(input.lazy->extent()));
-
-    FunctionsFromExistingLazy(input, gcOutput);
-
-#ifdef DEBUG
-    AssertDelazificationFieldsMatch(stencil, gcOutput);
-#endif
-  } else {
+  
+  if (isInitialParse) {
     if (stencil.asCompilationStencil()
             .scriptExtra[CompilationStencil::TopLevelIndex]
             .isModule()) {
@@ -653,29 +644,50 @@ bool CompilationStencil::instantiateStencilsAfterPreparation(
     if (!InstantiateFunctions(cx, input, stencil, gcOutput)) {
       return false;
     }
+  } else {
+    MOZ_ASSERT(
+        stencil.scriptData[CompilationStencil::TopLevelIndex].isFunction());
+
+    
+    
+    
+    MOZ_ASSERT(stencil.functionKey ==
+               BaseCompilationStencil::toFunctionKey(input.lazy->extent()));
+
+    FunctionsFromExistingLazy(input, gcOutput);
+
+#ifdef DEBUG
+    AssertDelazificationFieldsMatch(stencil, gcOutput);
+#endif
   }
 
+  
   if (!InstantiateScopes(cx, input, stencil, gcOutput)) {
     return false;
   }
 
-  if (!input.lazy) {
+  
+  if (isInitialParse) {
     if (!InstantiateScriptStencils(cx, input, stencil.asCompilationStencil(),
                                    gcOutput)) {
       return false;
     }
   }
 
+  
   if (!InstantiateTopLevel(cx, input, stencil, gcOutput)) {
     return false;
   }
 
   
 
-  UpdateEmittedInnerFunctions(cx, input, stencil, gcOutput);
+  
+  {
+    UpdateEmittedInnerFunctions(cx, input, stencil, gcOutput);
 
-  if (!input.lazy) {
-    LinkEnclosingLazyScript(stencil, gcOutput);
+    if (isInitialParse) {
+      LinkEnclosingLazyScript(stencil, gcOutput);
+    }
   }
 
   return true;
