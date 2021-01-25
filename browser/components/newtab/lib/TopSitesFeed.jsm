@@ -75,7 +75,6 @@ ChromeUtils.defineModuleGetter(
 const DEFAULT_SITES_PREF = "default.sites";
 const SHOWN_ON_NEWTAB_PREF = "feeds.topsites";
 const DEFAULT_TOP_SITES = [];
-const ATTRIBUTION_REQUEST_SITES = [];
 const FRECENCY_THRESHOLD = 100 + 1; 
 const MIN_FAVICON_SIZE = 96;
 const CACHED_LINK_PROPS_TO_MIGRATE = ["screenshot", "customScreenshot"];
@@ -231,13 +230,13 @@ this.TopSitesFeed = class TopSitesFeed {
 
     
     DEFAULT_TOP_SITES.length = 0;
-    ATTRIBUTION_REQUEST_SITES.length = 0;
 
     for (let siteData of remoteSettingData) {
       let link = {
         isDefault: true,
         url: siteData.url,
         hostname: shortURL(siteData),
+        sendAttributionRequest: !!siteData.send_attribution_request,
       };
       if (siteData.url_urlbar_override) {
         link.url_urlbar = siteData.url_urlbar_override;
@@ -247,13 +246,8 @@ this.TopSitesFeed = class TopSitesFeed {
       }
       if (siteData.search_shortcut) {
         link = await this.topSiteToSearchTopSite(link);
-      } else {
-        if (siteData.sponsored_position) {
-          link.sponsored_position = siteData.sponsored_position;
-        }
-        if (siteData.send_attribution_request) {
-          ATTRIBUTION_REQUEST_SITES.push(siteData.url);
-        }
+      } else if (siteData.sponsored_position) {
+        link.sponsored_position = siteData.sponsored_position;
       }
       DEFAULT_TOP_SITES.push(link);
     }
@@ -264,7 +258,6 @@ this.TopSitesFeed = class TopSitesFeed {
   refreshDefaults(sites, { isStartup = false } = {}) {
     
     DEFAULT_TOP_SITES.length = 0;
-    ATTRIBUTION_REQUEST_SITES.length = 0;
 
     
     if (sites) {
@@ -521,9 +514,14 @@ this.TopSitesFeed = class TopSitesFeed {
       if (this.shouldFilterSearchTile(link.hostname)) {
         continue;
       }
-      let isBlocked = NewTabUtils.blockedLinks.isBlocked({
-        url: link.url,
-      });
+      
+      if (
+        NewTabUtils.blockedLinks.isBlocked({
+          url: link.url,
+        })
+      ) {
+        continue;
+      }
       
       let url_end;
       let url_start;
@@ -541,30 +539,6 @@ this.TopSitesFeed = class TopSitesFeed {
         if (link.url_urlbar) {
           link.url_urlbar = link.url_urlbar.replace("%YYYYMMDDHH%", yyyymmddhh);
         }
-        
-        
-        
-        let frecentIndex = frecent.findIndex(
-          frecentLink =>
-            
-            frecentLink.url === link.original_url ||
-            
-            (frecentLink.url.startsWith(url_start) &&
-              frecentLink.url.endsWith(url_end) &&
-              frecentLink.url.length === link.url.length)
-        );
-        if (frecentIndex > -1) {
-          if (isBlocked) {
-            frecent.splice(frecentIndex, 1);
-          } else {
-            frecent[frecentIndex].original_url = link.original_url;
-            frecent[frecentIndex].url = link.url;
-          }
-        }
-      }
-      
-      if (isBlocked) {
-        continue;
       }
       
       
@@ -691,10 +665,6 @@ this.TopSitesFeed = class TopSitesFeed {
 
         
         link.typedBonus = true;
-
-        if (ATTRIBUTION_REQUEST_SITES.includes(link.original_url || link.url)) {
-          link.sendAttributionRequest = true;
-        }
       }
     }
 
