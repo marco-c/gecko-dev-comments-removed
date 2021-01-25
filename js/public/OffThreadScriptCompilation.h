@@ -122,11 +122,14 @@ extern JS_PUBLIC_API bool CanDecodeOffThread(
 
 
 
+
+
 extern JS_PUBLIC_API bool DecodeOffThreadScript(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     mozilla::Vector<uint8_t>& buffer , size_t cursor,
     OffThreadCompileCallback callback, void* callbackData,
     OffThreadToken** tokenOut = nullptr);
+
 
 extern JS_PUBLIC_API bool DecodeOffThreadScript(
     JSContext* cx, const ReadOnlyCompileOptions& options,
