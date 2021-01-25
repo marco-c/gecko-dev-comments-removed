@@ -42,11 +42,6 @@ class nsNSSCertificate final : public nsIX509Cert,
 
   
   
-  static nsresult GetDbKey(const mozilla::UniqueCERTCertificate& cert,
-                           nsACString& aDbKey);
-
-  
-  
   
   
   
