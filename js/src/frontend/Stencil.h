@@ -604,7 +604,7 @@ class ScriptStencil {
   
   
   
-  mozilla::Maybe<ScopeIndex> lazyFunctionEnclosingScopeIndex_;
+  ScopeIndex lazyFunctionEnclosingScopeIndex_;
 
   
   
@@ -625,12 +625,17 @@ class ScriptStencil {
   bool hasMemberInitializers : 1;
 
   
+  
+  bool hasLazyFunctionEnclosingScopeIndex : 1;
+
+  
 
   ScriptStencil()
       : wasFunctionEmitted(false),
         allowRelazify(false),
         hasSharedData(false),
-        hasMemberInitializers(false) {}
+        hasMemberInitializers(false),
+        hasLazyFunctionEnclosingScopeIndex(false) {}
 
   bool isFunction() const {
     bool result = functionFlags.toRaw() != 0x0000;
@@ -658,6 +663,16 @@ class ScriptStencil {
   MemberInitializers memberInitializers() const {
     MOZ_ASSERT(hasMemberInitializers);
     return MemberInitializers(memberInitializers_);
+  }
+
+  void setLazyFunctionEnclosingScopeIndex(ScopeIndex index) {
+    lazyFunctionEnclosingScopeIndex_ = index;
+    hasLazyFunctionEnclosingScopeIndex = true;
+  }
+
+  ScopeIndex lazyFunctionEnclosingScopeIndex() const {
+    MOZ_ASSERT(hasLazyFunctionEnclosingScopeIndex);
+    return lazyFunctionEnclosingScopeIndex_;
   }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
