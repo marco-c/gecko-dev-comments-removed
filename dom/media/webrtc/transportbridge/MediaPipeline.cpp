@@ -1010,8 +1010,8 @@ nsresult MediaPipelineTransmit::SetTrack(RefPtr<MediaStreamTrack> aDomTrack) {
     mSendPort = nullptr;
   }
 
-  if (aDomTrack && mDomTrack && !aDomTrack->Ended() && !mDomTrack->Ended() &&
-      aDomTrack->Graph() != mDomTrack->Graph() && mSendTrack) {
+  if (aDomTrack && !aDomTrack->Ended() && mSendTrack &&
+      aDomTrack->Graph() != mSendTrack->Graph()) {
     
     
     
