@@ -139,6 +139,9 @@
 - (NSNumber*)moxDisclosing;
 
 
+- (void)moxSetDisclosing:(NSNumber*)disclosing;
+
+
 - (NSNumber*)moxExpanded;
 
 

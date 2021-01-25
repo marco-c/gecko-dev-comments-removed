@@ -461,6 +461,14 @@ using namespace mozilla::a11y;
   return @([self stateWithMask:states::EXPANDED] != 0);
 }
 
+- (void)moxSetDisclosing:(NSNumber*)disclosing {
+  
+  
+  
+  
+  return;
+}
+
 - (NSNumber*)moxExpanded {
   return @([self stateWithMask:states::EXPANDED] != 0);
 }

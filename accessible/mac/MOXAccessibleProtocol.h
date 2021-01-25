@@ -308,6 +308,9 @@
 #pragma mark - AttributeSetters
 
 
+- (void)moxSetDisclosing:(NSNumber* _Nullable)disclosing;
+
+
 - (void)moxSetValue:(id _Nullable)value;
 
 
