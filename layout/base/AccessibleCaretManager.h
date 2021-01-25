@@ -102,6 +102,8 @@ class AccessibleCaretManager {
   virtual void OnBlur();
 
   
+  
+  
   MOZ_CAN_RUN_SCRIPT
   virtual nsresult OnSelectionChanged(dom::Document* aDoc, dom::Selection* aSel,
                                       int16_t aReason);
