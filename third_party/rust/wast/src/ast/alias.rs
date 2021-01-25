@@ -12,10 +12,36 @@ pub struct Alias<'a> {
     
     pub name: Option<ast::NameAnnotation<'a>>,
     
+    pub kind: AliasKind<'a>,
+}
+
+#[derive(Debug)]
+#[allow(missing_docs)]
+pub enum AliasKind<'a> {
+    InstanceExport {
+        instance: ast::ItemRef<'a, kw::instance>,
+        export: &'a str,
+        kind: ast::ExportKind,
+    },
+    Outer {
+        
+        module: ast::Index<'a>,
+        
+        
+        index: ast::Index<'a>,
+        
+        kind: ast::ExportKind,
+    },
+}
+
+impl Alias<'_> {
     
-    pub instance: Option<ast::Index<'a>>,
-    
-    pub kind: ast::ExportKind<'a>,
+    pub fn item_kind(&self) -> ast::ExportKind {
+        match self.kind {
+            AliasKind::InstanceExport { kind, .. } => kind,
+            AliasKind::Outer { kind, .. } => kind,
+        }
+    }
 }
 
 impl<'a> Parse<'a> for Alias<'a> {
@@ -23,21 +49,28 @@ impl<'a> Parse<'a> for Alias<'a> {
         let span = parser.parse::<kw::alias>()?.0;
         let id = parser.parse()?;
         let name = parser.parse()?;
-        let instance = if parser.parse::<Option<kw::parent>>()?.is_some() {
-            None
-        } else {
-            Some(parser.parens(|p| {
-                p.parse::<kw::instance>()?;
-                p.parse()
-            })?)
-        };
+        let kind = parser.parens(|p| {
+            let kind = p.parse()?;
+            Ok(if parser.parse::<Option<kw::outer>>()?.is_some() {
+                AliasKind::Outer {
+                    module: parser.parse()?,
+                    index: parser.parse()?,
+                    kind,
+                }
+            } else {
+                AliasKind::InstanceExport {
+                    instance: parser.parse::<ast::IndexOrRef<_>>()?.0,
+                    export: parser.parse()?,
+                    kind,
+                }
+            })
+        })?;
 
         Ok(Alias {
             span,
             id,
             name,
-            instance,
-            kind: parser.parens(|p| p.parse())?,
+            kind,
         })
     }
 }

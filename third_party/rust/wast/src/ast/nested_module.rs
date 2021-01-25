@@ -32,8 +32,6 @@ pub enum NestedModuleKind<'a> {
     
     Inline {
         
-        ty: Option<ast::Index<'a>>,
-        
         fields: Vec<ast::ModuleField<'a>>,
     },
 }
@@ -64,19 +62,11 @@ impl<'a> Parse<'a> for NestedModule<'a> {
                 ty: parser.parse()?,
             }
         } else {
-            let ty = if parser.peek::<InlineType>() {
-                Some(parser.parens(|p| {
-                    p.parse::<kw::r#type>()?;
-                    p.parse()
-                })?)
-            } else {
-                None
-            };
             let mut fields = Vec::new();
             while !parser.is_empty() {
                 fields.push(parser.parens(|p| p.parse())?);
             }
-            NestedModuleKind::Inline { ty, fields }
+            NestedModuleKind::Inline { fields }
         };
 
         Ok(NestedModule {

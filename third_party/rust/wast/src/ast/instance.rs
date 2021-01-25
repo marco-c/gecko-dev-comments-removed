@@ -30,10 +30,18 @@ pub enum InstanceKind<'a> {
     
     Inline {
         
-        module: ast::Index<'a>,
+        module: ast::ItemRef<'a, kw::module>,
         
-        items: Vec<ast::ExportKind<'a>>,
+        args: Vec<InstanceArg<'a>>,
     },
+}
+
+
+#[derive(Debug)]
+#[allow(missing_docs)]
+pub struct InstanceArg<'a> {
+    pub name: &'a str,
+    pub index: ast::ItemRef<'a, ast::ExportKind>,
 }
 
 impl<'a> Parse<'a> for Instance<'a> {
@@ -50,12 +58,12 @@ impl<'a> Parse<'a> for Instance<'a> {
         } else {
             parser.parens(|p| {
                 p.parse::<kw::instantiate>()?;
-                let module = p.parse()?;
-                let mut items = Vec::new();
+                let module = p.parse::<ast::IndexOrRef<_>>()?.0;
+                let mut args = Vec::new();
                 while !p.is_empty() {
-                    items.push(p.parens(|p| p.parse())?);
+                    args.push(p.parse()?);
                 }
-                Ok(InstanceKind::Inline { module, items })
+                Ok(InstanceKind::Inline { module, args })
             })?
         };
 
@@ -64,6 +72,15 @@ impl<'a> Parse<'a> for Instance<'a> {
             id,
             exports,
             kind,
+        })
+    }
+}
+
+impl<'a> Parse<'a> for InstanceArg<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        Ok(InstanceArg {
+            name: parser.parse()?,
+            index: parser.parse()?,
         })
     }
 }
