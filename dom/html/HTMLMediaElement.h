@@ -151,6 +151,17 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void ReportCanPlayTelemetry();
 
   
+  
+  
+  
+  
+  
+  enum class TimeupdateType : bool {
+    eMandatory = false,
+    ePeriodic = true,
+  };
+
+  
 
 
 
@@ -437,7 +448,11 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  void FireTimeUpdate(bool aPeriodic) final;
+  void FireTimeUpdate(TimeupdateType aType);
+
+  void MaybeQueueTimeupdateEvent() final {
+    FireTimeUpdate(TimeupdateType::ePeriodic);
+  }
 
   
 

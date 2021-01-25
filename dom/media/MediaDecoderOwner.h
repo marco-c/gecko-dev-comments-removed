@@ -36,12 +36,8 @@ class MediaDecoderOwner {
   virtual void UpdateReadyState() = 0;
 
   
-
-
-
-
-
-  virtual void FireTimeUpdate(bool aPeriodic) = 0;
+  
+  virtual void MaybeQueueTimeupdateEvent() = 0;
 
   
   virtual bool GetPaused() = 0;

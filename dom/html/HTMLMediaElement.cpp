@@ -2321,7 +2321,7 @@ void HTMLMediaElement::AbortExistingLoads() {
       
       
       
-      FireTimeUpdate(false);
+      FireTimeUpdate(TimeupdateType::eMandatory);
     }
     DispatchAsyncEvent(u"emptied"_ns);
     UpdateAudioChannelPlayingState();
@@ -3353,7 +3353,7 @@ void HTMLMediaElement::PauseInternal() {
   ClearResumeDelayedMediaPlaybackAgentIfNeeded();
 
   if (!oldPaused) {
-    FireTimeUpdate(false);
+    FireTimeUpdate(TimeupdateType::eMandatory);
     DispatchAsyncEvent(u"pause"_ns);
     AsyncRejectPendingPlayPromises(NS_ERROR_DOM_MEDIA_ABORT_ERR);
   }
@@ -5094,7 +5094,7 @@ void HTMLMediaElement::UpdateSrcStreamTime() {
     return;
   }
 
-  FireTimeUpdate(true);
+  FireTimeUpdate(TimeupdateType::ePeriodic);
 }
 
 void HTMLMediaElement::SetupSrcMediaStreamPlayback(DOMMediaStream* aStream) {
@@ -5453,7 +5453,7 @@ void HTMLMediaElement::PlaybackEnded() {
     }
   }
 
-  FireTimeUpdate(false);
+  FireTimeUpdate(TimeupdateType::eMandatory);
 
   if (!mPaused) {
     Pause();
@@ -5483,7 +5483,7 @@ void HTMLMediaElement::SeekCompleted() {
   if (mTextTrackManager) {
     mTextTrackManager->DidSeek();
   }
-  FireTimeUpdate(false);
+  FireTimeUpdate(TimeupdateType::eMandatory);
   DispatchAsyncEvent(u"seeked"_ns);
   
   AddRemoveSelfReference();
@@ -5886,7 +5886,7 @@ void HTMLMediaElement::ChangeReadyState(nsMediaReadyState aState) {
     DispatchAsyncEvent(u"waiting"_ns);
   } else if (oldState >= HAVE_FUTURE_DATA && mReadyState < HAVE_FUTURE_DATA &&
              !Paused() && !Ended() && !mErrorSink->mError) {
-    FireTimeUpdate(false);
+    FireTimeUpdate(TimeupdateType::eMandatory);
     DispatchAsyncEvent(u"waiting"_ns);
   }
 
@@ -6578,7 +6578,7 @@ void HTMLMediaElement::SetRequestHeaders(nsIHttpChannel* aChannel) {
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
-void HTMLMediaElement::FireTimeUpdate(bool aPeriodic) {
+void HTMLMediaElement::FireTimeUpdate(TimeupdateType aType) {
   NS_ASSERTION(NS_IsMainThread(), "Should be on main thread.");
 
   TimeStamp now = TimeStamp::Now();
@@ -6588,10 +6588,11 @@ void HTMLMediaElement::FireTimeUpdate(bool aPeriodic) {
   
   
   
-  if (!aPeriodic || (mLastCurrentTime != time &&
-                     (mTimeUpdateTime.IsNull() ||
-                      now - mTimeUpdateTime >=
-                          TimeDuration::FromMilliseconds(TIMEUPDATE_MS)))) {
+  if (aType == TimeupdateType::eMandatory ||
+      (mLastCurrentTime != time &&
+       (mTimeUpdateTime.IsNull() ||
+        now - mTimeUpdateTime >=
+            TimeDuration::FromMilliseconds(TIMEUPDATE_MS)))) {
     DispatchAsyncEvent(u"timeupdate"_ns);
     mTimeUpdateTime = now;
     mLastCurrentTime = time;
