@@ -3124,25 +3124,10 @@ void LIRGenerator::visitNot(MNot* ins) {
       define(new (alloc()) LInteger(0), ins);
       break;
     case MIRType::Object:
-      if (!ins->operandMightEmulateUndefined()) {
-        
-        define(new (alloc()) LInteger(0), ins);
-      } else {
-        
-        define(new (alloc()) LNotO(useRegister(op)), ins);
-      }
+      define(new (alloc()) LNotO(useRegister(op)), ins);
       break;
     case MIRType::Value: {
-      LDefinition temp0, temp1;
-      if (ins->operandMightEmulateUndefined()) {
-        temp0 = temp();
-        temp1 = temp();
-      } else {
-        temp0 = LDefinition::BogusTemp();
-        temp1 = LDefinition::BogusTemp();
-      }
-
-      LNotV* lir = new (alloc()) LNotV(useBox(op), tempDouble(), temp0, temp1);
+      auto* lir = new (alloc()) LNotV(useBox(op), tempDouble(), temp(), temp());
       define(lir, ins);
       break;
     }
