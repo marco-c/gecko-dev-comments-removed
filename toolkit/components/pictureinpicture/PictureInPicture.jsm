@@ -336,11 +336,7 @@ var PictureInPicture = {
     let browser = wgp.browsingContext.top.embedderElement;
     let parentWin = browser.ownerGlobal;
 
-    let actorRef = browser.browsingContext.currentWindowGlobal.getActor(
-      "PictureInPicture"
-    );
-
-    let win = await this.openPipWindow(parentWin, videoData, actorRef);
+    let win = await this.openPipWindow(parentWin, videoData);
     win.setIsPlayingState(videoData.playing);
     win.setIsMutedState(videoData.isMuted);
 
@@ -404,12 +400,8 @@ var PictureInPicture = {
 
 
 
-  async openPipWindow(parentWin, videoData, actorReference) {
-    let { top, left, width, height } = this.fitToScreen(
-      parentWin,
-      videoData,
-      actorReference
-    );
+  async openPipWindow(parentWin, videoData) {
+    let { top, left, width, height } = this.fitToScreen(parentWin, videoData);
 
     let features =
       `${PLAYER_FEATURES},top=${top},left=${left},` +
@@ -477,22 +469,22 @@ var PictureInPicture = {
 
 
 
-
-
-
-  fitToScreen(windowOrPlayer, videoData, actorReference) {
+  fitToScreen(requestingWin, videoData) {
     let { videoHeight, videoWidth } = videoData;
 
-    
-    
-    let isPlayerWindow =
-      windowOrPlayer == this.getWeakPipPlayer(actorReference);
-    if (isPlayerWindow) {
-      this.savePosition(windowOrPlayer);
-    }
+    const isPlayer = requestingWin.document.location.href == PLAYER_URI;
 
-    
-    let { top, left, width, height } = this.loadPosition();
+    let top, left, width, height;
+    if (isPlayer) {
+      
+      left = requestingWin.screenX;
+      top = requestingWin.screenY;
+      width = requestingWin.innerWidth;
+      height = requestingWin.innerHeight;
+    } else {
+      
+      ({ top, left, width, height } = this.loadPosition());
+    }
 
     
     if (!isNaN(top) && !isNaN(left) && !isNaN(width) && !isNaN(height)) {
@@ -577,10 +569,10 @@ var PictureInPicture = {
     
     
     let screen = this.getWorkingScreen(
-      windowOrPlayer.screenX,
-      windowOrPlayer.screenY,
-      windowOrPlayer.innerWidth,
-      windowOrPlayer.innerHeight
+      requestingWin.screenX,
+      requestingWin.screenY,
+      requestingWin.innerWidth,
+      requestingWin.innerHeight
     );
     let [
       screenLeft,
@@ -647,11 +639,7 @@ var PictureInPicture = {
       return;
     }
 
-    let { top, left, width, height } = this.fitToScreen(
-      win,
-      videoData,
-      actorRef
-    );
+    let { top, left, width, height } = this.fitToScreen(win, videoData);
     win.resizeTo(width, height);
     win.moveTo(left, top);
   },
