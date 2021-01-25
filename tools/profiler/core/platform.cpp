@@ -278,8 +278,9 @@ static uint32_t DefaultFeatures() {
 static uint32_t StartupExtraDefaultFeatures() {
   
   
-  return ProfilerFeature::MainThreadIO | ProfilerFeature::FileIO |
-         ProfilerFeature::FileIOAll;
+  
+  
+  return ProfilerFeature::CPUUtilization | ProfilerFeature::FileIOAll;
 }
 
 

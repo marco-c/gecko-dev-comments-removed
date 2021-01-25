@@ -237,7 +237,9 @@ static uint32_t DefaultFeatures() {
 static uint32_t StartupExtraDefaultFeatures() {
   
   
-  return ProfilerFeature::MainThreadIO;
+  
+  
+  return ProfilerFeature::CPUUtilization | ProfilerFeature::MainThreadIO;
 }
 
 class MOZ_RAII PSAutoTryLock;
