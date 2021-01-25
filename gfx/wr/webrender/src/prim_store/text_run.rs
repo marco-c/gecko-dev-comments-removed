@@ -19,10 +19,12 @@ use crate::util::{MatrixHelpers};
 use crate::prim_store::{InternablePrimitive, PrimitiveInstanceKind};
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use crate::space::SpaceSnapper;
+use crate::util::PrimaryArc;
+
 use std::ops;
 use std::sync::Arc;
-use crate::storage;
-use crate::util::PrimaryArc;
+
+use super::storage;
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
