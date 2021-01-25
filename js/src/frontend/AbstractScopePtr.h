@@ -155,11 +155,6 @@ class AbstractScopePtrIter {
     scope_ = scope_.enclosing();
   }
 
-  
-  
-  
-  bool hasSyntacticEnvironment() const;
-
   void trace(JSTracer* trc) {
     if (scope_) {
       scope_.trace(trc);

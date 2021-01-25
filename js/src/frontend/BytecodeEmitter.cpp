@@ -1577,9 +1577,11 @@ bool BytecodeEmitter::emitThisEnvironmentCallee() {
   
   unsigned numHops = 0;
   for (AbstractScopePtrIter si(innermostScope()); si; si++) {
-    if (si.hasSyntacticEnvironment() &&
-        si.abstractScopePtr().is<FunctionScope>()) {
+    if (si.abstractScopePtr().is<FunctionScope>()) {
       if (!si.abstractScopePtr().isArrow()) {
+        
+        
+        MOZ_ASSERT(si.abstractScopePtr().hasEnvironment());
         break;
       }
     }
