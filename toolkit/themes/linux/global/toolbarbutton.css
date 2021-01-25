@@ -1,12 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* ===== toolbarbutton.css =====================================================
+  == Styles used by the XUL button element.
+  ======================================================================= */
 
-
-
-
-
-
-
-
+/* ::::: toolbarbutton ::::: */
 
 toolbarbutton {
   appearance: auto;
@@ -51,14 +51,22 @@ toolbarbutton:-moz-lwtheme:not(:hover, [checked="true"], [open="true"], [disable
   text-shadow: inherit;
 }
 
-
+/* ::::: toolbarbutton menu ::::: */
 
 .toolbarbutton-menu-dropmarker {
   appearance: auto;
   -moz-default-appearance: toolbarbutton-dropdown;
 }
 
+.toolbarbutton-combined-buttons-dropmarker {
+  appearance: none;
+  list-style-image: url("chrome://global/skin/icons/arrow-dropdown-12.svg");
+  -moz-context-properties: fill;
+  fill: currentColor;
+  width: auto;
+}
 
+/* ::::: toolbarbutton badged ::::: */
 .toolbarbutton-badge-stack > .toolbarbutton-icon[label]:not([label=""]) {
   margin-inline-end: 0;
 }

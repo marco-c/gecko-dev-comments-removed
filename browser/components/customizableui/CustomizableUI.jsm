@@ -110,9 +110,24 @@ var gPlacements = new Map();
 
 var gFuturePlacements = new Map();
 
+var gSupportedWidgetTypes = new Set([
+  
+  "button",
 
+  
+  "view",
 
-var gSupportedWidgetTypes = new Set(["button", "view", "custom"]);
+  
+  
+  
+  
+  
+  
+  "button-and-view",
+
+  
+  "custom",
+]);
 
 
 
@@ -1710,7 +1725,29 @@ var CustomizableUIInternal = {
       if (aWidget.onBeforeCreated) {
         aWidget.onBeforeCreated(aDocument);
       }
-      node = aDocument.createXULElement("toolbarbutton");
+
+      let button = aDocument.createXULElement("toolbarbutton");
+      button.classList.add("toolbarbutton-1");
+
+      let viewbutton = null;
+      if (aWidget.type == "button-and-view") {
+        button.setAttribute("id", aWidget.id + "-button");
+        let dropmarker = aDocument.createXULElement("toolbarbutton");
+        dropmarker.setAttribute("id", aWidget.id + "-dropmarker");
+        dropmarker.classList.add(
+          "toolbarbutton-1",
+          "toolbarbutton-combined-buttons-dropmarker"
+        );
+        node = aDocument.createXULElement("toolbaritem");
+        node.classList.add("toolbaritem-combined-buttons");
+        node.append(button, dropmarker);
+        viewbutton = dropmarker;
+      } else {
+        node = button;
+        if (aWidget.type == "view") {
+          viewbutton = button;
+        }
+      }
 
       node.setAttribute("id", aWidget.id);
       node.setAttribute("widget-id", aWidget.id);
@@ -1724,6 +1761,10 @@ var CustomizableUIInternal = {
         node.setAttribute("tabspecific", aWidget.tabSpecific);
       }
       node.setAttribute("label", this.getLocalizedProperty(aWidget, "label"));
+      if (button != node) {
+        button.setAttribute("label", node.getAttribute("label"));
+      }
+
       let additionalTooltipArguments = [];
       if (aWidget.shortcutId) {
         let keyEl = aDocument.getElementById(aWidget.shortcutId);
@@ -1749,6 +1790,9 @@ var CustomizableUIInternal = {
       );
       if (tooltip) {
         node.setAttribute("tooltiptext", tooltip);
+        if (button != node) {
+          button.setAttribute("tooltiptext", tooltip);
+        }
       }
 
       let commandHandler = this.handleWidgetCommand.bind(this, aWidget, node);
@@ -1756,11 +1800,13 @@ var CustomizableUIInternal = {
       let clickHandler = this.handleWidgetClick.bind(this, aWidget, node);
       node.addEventListener("click", clickHandler);
 
-      let nodeClasses = ["toolbarbutton-1", "chromeclass-toolbar-additional"];
+      node.classList.add("chromeclass-toolbar-additional");
 
       
       
-      if (aWidget.type == "view") {
+      
+      
+      if (viewbutton) {
         log.debug(
           "Widget " +
             aWidget.id +
@@ -1768,7 +1814,7 @@ var CustomizableUIInternal = {
         );
 
         if (aWidget.source == CustomizableUI.SOURCE_BUILTIN) {
-          nodeClasses.push("subviewbutton-nav");
+          node.classList.add("subviewbutton-nav");
         }
 
         let keyPressHandler = this.handleWidgetKeyPress.bind(
@@ -1776,9 +1822,8 @@ var CustomizableUIInternal = {
           aWidget,
           node
         );
-        node.addEventListener("keypress", keyPressHandler);
+        viewbutton.addEventListener("keypress", keyPressHandler);
       }
-      node.setAttribute("class", nodeClasses.join(" "));
 
       if (aWidget.onCreated) {
         aWidget.onCreated(node);
@@ -1884,6 +1929,41 @@ var CustomizableUIInternal = {
     );
   },
 
+  doWidgetCommand(aWidget, aNode, aEvent) {
+    if (aWidget.onCommand) {
+      try {
+        aWidget.onCommand.call(null, aEvent);
+      } catch (e) {
+        log.error(e);
+      }
+    } else {
+      
+      Services.obs.notifyObservers(
+        aNode,
+        "customizedui-widget-command",
+        aWidget.id
+      );
+    }
+  },
+
+  showWidgetView(aWidget, aNode, aEvent) {
+    let ownerWindow = aNode.ownerGlobal;
+    let area = this.getPlacementOfWidget(aNode.id).area;
+    let areaType = CustomizableUI.getAreaType(area);
+    let anchor = aNode;
+    if (areaType != CustomizableUI.TYPE_MENU_PANEL) {
+      let wrapper = this.wrapWidget(aWidget.id).forWindow(ownerWindow);
+
+      let hasMultiView = !!aNode.closest("panelmultiview");
+      if (wrapper && !hasMultiView && wrapper.anchor) {
+        this.hidePanelForNode(aNode);
+        anchor = wrapper.anchor;
+      }
+    }
+
+    ownerWindow.PanelUI.showSubView(aWidget.viewId, anchor, aEvent);
+  },
+
   handleWidgetCommand(aWidget, aNode, aEvent) {
     
     log.debug("handleWidgetCommand");
@@ -1897,36 +1977,24 @@ var CustomizableUIInternal = {
     }
 
     if (aWidget.type == "button") {
-      if (aWidget.onCommand) {
-        try {
-          aWidget.onCommand.call(null, aEvent);
-        } catch (e) {
-          log.error(e);
-        }
-      } else {
-        
-        Services.obs.notifyObservers(
-          aNode,
-          "customizedui-widget-command",
-          aWidget.id
-        );
-      }
+      this.doWidgetCommand(aWidget, aNode, aEvent);
     } else if (aWidget.type == "view") {
-      let ownerWindow = aNode.ownerGlobal;
+      this.showWidgetView(aWidget, aNode, aEvent);
+    } else if (aWidget.type == "button-and-view") {
+      
+      
+      
+      let button = aNode.firstElementChild;
       let area = this.getPlacementOfWidget(aNode.id).area;
       let areaType = CustomizableUI.getAreaType(area);
-      let anchor = aNode;
-      if (areaType != CustomizableUI.TYPE_MENU_PANEL) {
-        let wrapper = this.wrapWidget(aWidget.id).forWindow(ownerWindow);
-
-        let hasMultiView = !!aNode.closest("panelmultiview");
-        if (wrapper && !hasMultiView && wrapper.anchor) {
-          this.hidePanelForNode(aNode);
-          anchor = wrapper.anchor;
-        }
+      if (
+        areaType == CustomizableUI.TYPE_TOOLBAR &&
+        button.contains(aEvent.target)
+      ) {
+        this.doWidgetCommand(aWidget, aNode, aEvent);
+      } else {
+        this.showWidgetView(aWidget, aNode, aEvent);
       }
-
-      ownerWindow.PanelUI.showSubView(aWidget.viewId, anchor, aEvent);
     }
   },
 
@@ -2106,7 +2174,8 @@ var CustomizableUIInternal = {
     while (target.parentNode && target.localName != "panel") {
       if (
         target.getAttribute("closemenu") == "none" ||
-        target.getAttribute("widget-type") == "view"
+        target.getAttribute("widget-type") == "view" ||
+        target.getAttribute("widget-type") == "button-and-view"
       ) {
         return;
       }
@@ -2821,10 +2890,11 @@ var CustomizableUIInternal = {
       widget.onBeforeCommand = aData.onBeforeCommand;
     }
 
-    if (widget.type == "button") {
+    if (widget.type == "button" || widget.type == "button-and-view") {
       widget.onCommand =
         typeof aData.onCommand == "function" ? aData.onCommand : null;
-    } else if (widget.type == "view") {
+    }
+    if (widget.type == "view" || widget.type == "button-and-view") {
       if (typeof aData.viewId != "string") {
         log.error(
           "Expected a string for widget " +
@@ -2927,7 +2997,7 @@ var CustomizableUIInternal = {
           true
         );
       }
-      if (widget.type == "view") {
+      if (widget.type == "view" || widget.type == "button-and-view") {
         let viewNode = window.document.getElementById(widget.viewId);
         if (viewNode) {
           for (let eventName of kSubviewEvents) {
@@ -3839,6 +3909,18 @@ var CustomizableUI = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
   createWidget(aProperties) {
     return CustomizableUIInternal.wrapWidget(
       CustomizableUIInternal.createWidget(aProperties)
@@ -4599,8 +4681,13 @@ function WidgetSingleWrapper(aWidget, aNode) {
     if (!anchorId) {
       anchorId = aNode.getAttribute("cui-anchorid");
     }
-
-    return anchorId ? aNode.ownerDocument.getElementById(anchorId) : aNode;
+    if (anchorId) {
+      return aNode.ownerDocument.getElementById(anchorId);
+    }
+    if (aWidget.type == "button-and-view") {
+      return aNode.lastElementChild;
+    }
+    return aNode;
   });
 
   this.__defineGetter__("overflowed", function() {

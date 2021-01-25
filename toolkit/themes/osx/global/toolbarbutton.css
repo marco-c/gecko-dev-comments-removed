@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 toolbarbutton {
   -moz-box-align: center;
@@ -21,18 +21,18 @@ toolbarbutton[disabled="true"] {
   color: -moz-mac-disabledtoolbartext;
 }
 
+/* ::::: toolbarbutton menu ::::: */
 
-
-.toolbarbutton-menu-dropmarker {
+.toolbarbutton-menu-dropmarker,
+.toolbarbutton-combined-buttons-dropmarker {
   appearance: none;
   list-style-image: url("chrome://global/skin/icons/arrow-dropdown-12.svg");
   -moz-context-properties: fill;
   fill: currentColor;
-  padding-inline-start: 2px;
   width: auto;
 }
 
-
+/* ::::: toolbarbutton badged ::::: */
 
 .toolbarbutton-badge {
   box-sizing: border-box;
