@@ -571,7 +571,7 @@ struct SwCompositeGraphNode {
     
     job: Option<SwCompositeJob>,
     
-    max_bands: u8,
+    max_bands: AtomicU8,
     
     
     
@@ -594,7 +594,7 @@ impl SwCompositeGraphNode {
     fn new() -> SwCompositeGraphNodeRef {
         SwCompositeGraphNodeRef::new(SwCompositeGraphNode {
             job: None,
-            max_bands: 0,
+            max_bands: AtomicU8::new(0),
             remaining_bands: AtomicU8::new(0),
             band_index: AtomicU8::new(0),
             parents: AtomicU32::new(0),
@@ -605,7 +605,7 @@ impl SwCompositeGraphNode {
     
     fn reset(&mut self) {
         self.job = None;
-        self.max_bands = 0;
+        self.max_bands.store(0, Ordering::SeqCst);
         self.remaining_bands.store(0, Ordering::SeqCst);
         self.band_index.store(0, Ordering::SeqCst);
         
@@ -624,7 +624,7 @@ impl SwCompositeGraphNode {
     
     fn set_job(&mut self, job: SwCompositeJob, num_bands: u8) -> bool {
         self.job = Some(job);
-        self.max_bands = num_bands;
+        self.max_bands.store(num_bands, Ordering::SeqCst);
         self.remaining_bands.store(num_bands, Ordering::SeqCst);
         
         
@@ -633,7 +633,7 @@ impl SwCompositeGraphNode {
 
     fn take_band(&self) -> Option<u8> {
         let band_index = self.band_index.fetch_add(1, Ordering::SeqCst);
-        if band_index < self.max_bands {
+        if band_index < self.max_bands.load(Ordering::SeqCst) {
             Some(band_index)
         } else {
             None
