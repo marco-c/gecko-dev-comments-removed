@@ -86,6 +86,7 @@ impl<K: Eq> Eq for KeyRef<K> {}
 
 
 #[derive(Hash, PartialEq, Eq)]
+#[repr(transparent)]
 struct Qey<Q: ?Sized>(Q);
 
 impl<Q: ?Sized> Qey<Q> {
@@ -109,11 +110,15 @@ impl<K, V> Node<K, V> {
     }
 }
 
+
 unsafe fn drop_empty_node<K, V>(the_box: *mut Node<K, V>) {
     
-    let Node { key, value, .. } = *Box::from_raw(the_box);
-    mem::forget(key);
-    mem::forget(value);
+    
+    
+    
+    
+    let layout = std::alloc::Layout::new::<Node<K, V>>();
+    std::alloc::dealloc(the_box as *mut u8, layout);
 }
 
 impl<K: Hash + Eq, V> LinkedHashMap<K, V> {
@@ -171,7 +176,8 @@ impl<K, V, S> LinkedHashMap<K, V, S> {
         if self.head.is_null() {
             
             unsafe {
-                self.head = Box::into_raw(Box::new(mem::uninitialized()));
+                let node_layout = std::alloc::Layout::new::<Node<K, V>>();
+                self.head =  std::alloc::alloc(node_layout) as *mut Node<K, V>;
                 (*self.head).next = self.head;
                 (*self.head).prev = self.head;
             }
@@ -1134,7 +1140,7 @@ impl<K: Hash + Eq, V, S: BuildHasher> IntoIterator for LinkedHashMap<K, V, S> {
         }
         self.clear_free_list();
         
-        self.map = unsafe { mem::uninitialized() };
+        unsafe { ptr::drop_in_place(&mut self.map); }
         mem::forget(self);
 
         IntoIter {
