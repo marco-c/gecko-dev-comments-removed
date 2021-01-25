@@ -518,44 +518,38 @@ class FirefoxDataProvider {
     
     this.emitForTests(EVENTS[updatingEventName], actor);
 
-    let response;
-    if (
-      clientMethodName == "getStackTrace" &&
-      this.resourceWatcher.hasResourceWatcherSupport(
-        this.resourceWatcher.TYPES.NETWORK_EVENT_STACKTRACE
-      )
-    ) {
-      const requestInfo = this.stackTraceRequestInfoByActorID.get(
-        actor.replace("-clone", "")
-      );
-      const { stacktrace } = await this._getStackTraceFromWatcher(requestInfo);
-      response = { from: actor, stacktrace };
-    } else {
-      response = await new Promise((resolve, reject) => {
+    let response = await new Promise((resolve, reject) => {
+      
+      if (
+        clientMethodName == "getStackTrace" &&
+        this.resourceWatcher.hasResourceWatcherSupport(
+          this.resourceWatcher.TYPES.NETWORK_EVENT_STACKTRACE
+        )
+      ) {
+        const requestInfo = this.stackTraceRequestInfoByActorID.get(actor);
+        resolve(this._getStackTraceFromWatcher(requestInfo));
+      } else if (typeof this.webConsoleFront[clientMethodName] === "function") {
         
-        if (typeof this.webConsoleFront[clientMethodName] === "function") {
-          
-          
-          this.webConsoleFront[clientMethodName](
-            actor.replace("-clone", ""),
-            res => {
-              if (res.error) {
-                reject(
-                  new Error(
-                    `Error while calling method ${clientMethodName}: ${res.message}`
-                  )
-                );
-              }
-              resolve(res);
+        
+        this.webConsoleFront[clientMethodName](
+          actor.replace("-clone", ""),
+          res => {
+            if (res.error) {
+              reject(
+                new Error(
+                  `Error while calling method ${clientMethodName}: ${res.message}`
+                )
+              );
             }
-          );
-        } else {
-          reject(
-            new Error(`Error: No such client method '${clientMethodName}'!`)
-          );
-        }
-      });
-    }
+            resolve(res);
+          }
+        );
+      } else {
+        reject(
+          new Error(`Error: No such client method '${clientMethodName}'!`)
+        );
+      }
+    });
 
     
     if (actor.includes("-clone")) {
