@@ -38,6 +38,11 @@ add_task(async function() {
   const onSidebarShown = waitFor(() =>
     hud.ui.document.querySelector(".sidebar")
   );
+  AccessibilityUtils.setEnv({
+    
+    
+    mustHaveAccessibleRule: false,
+  });
   await EventUtils.sendMouseEvent(
     {
       type: "click",
@@ -46,6 +51,7 @@ add_task(async function() {
     object,
     hud.ui.window
   );
+  AccessibilityUtils.resetEnv();
   const sidebar = await onSidebarShown;
   await waitForFilterBarLayout(hud, ".narrow");
   ok(true, "FilterBar layout changed when opening the sidebar");
