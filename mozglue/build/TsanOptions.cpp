@@ -282,6 +282,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:AudioCallbackDriver::MixerCallback\n"
          "race:AudioCallbackDriver::Init\n"
 
+         
+         "race:DataChannelConnection::SetSignals\n"
+         "race:DataChannelConnection::SetReady\n"
+
       
       ;  
 }
