@@ -352,11 +352,6 @@ class JSFunction : public js::NativeObject {
     return u.scripted.env_;
   }
 
-  void setEnvironment(JSObject* obj) {
-    MOZ_ASSERT(isInterpreted());
-    *reinterpret_cast<js::GCPtrObject*>(&u.scripted.env_) = obj;
-  }
-
   void initEnvironment(JSObject* obj) {
     MOZ_ASSERT(isInterpreted());
     reinterpret_cast<js::GCPtrObject*>(&u.scripted.env_)->init(obj);
@@ -764,14 +759,6 @@ extern JSFunction* DefineFunction(
     gc::AllocKind allocKind = gc::AllocKind::FUNCTION);
 
 extern bool fun_toString(JSContext* cx, unsigned argc, Value* vp);
-
-struct WellKnownSymbols;
-
-
-
-
-extern bool FunctionHasDefaultHasInstance(JSFunction* fun,
-                                          const WellKnownSymbols& symbols);
 
 extern void ThrowTypeErrorBehavior(JSContext* cx);
 
