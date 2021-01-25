@@ -412,24 +412,7 @@ interface nsITelemetry : nsISupports
 
 
 
-
   double msSinceProcessStart();
-
-  
-
-
-
-
-
-  double msSinceProcessStartIncludingSuspend();
-
-  
-
-
-
-
-
-  double msSinceProcessStartExcludingSuspend();
 
   
 

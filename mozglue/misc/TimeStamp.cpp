@@ -10,7 +10,6 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/Uptime.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -37,9 +36,6 @@ struct TimeStampInitialization {
   TimeStampInitialization() {
     TimeStamp::Startup();
     mFirstTimeStamp = TimeStamp::Now();
-    
-    
-    mozilla::InitializeUptime();
   };
 
   ~TimeStampInitialization() { TimeStamp::Shutdown(); };
