@@ -170,7 +170,7 @@ def _parse_html(f):
     
     doc = html5lib.parse(f, treebuilder="etree", useChardet=False)
     if MYPY:
-        return cast(ElementTree.ElementTree, doc)
+        return cast(ElementTree.Element, doc)
     return doc
 
 def _parse_xml(f):
@@ -178,10 +178,10 @@ def _parse_xml(f):
     try:
         
         
-        return ElementTree.parse(f)
+        return ElementTree.parse(f).getroot()
     except (ValueError, ElementTree.ParseError):
         f.seek(0)
-        return ElementTree.parse(f, XMLParser.XMLParser())  
+        return ElementTree.parse(f, XMLParser.XMLParser()).getroot()  
 
 
 class SourceFile(object):
@@ -461,12 +461,7 @@ class SourceFile(object):
             except Exception:
                 return None
 
-        if hasattr(tree, "getroot"):
-            root = tree.getroot()  
-        else:
-            root = tree
-
-        return root
+        return tree
 
     @cached_property
     def timeout_nodes(self):
