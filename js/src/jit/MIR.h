@@ -596,10 +596,6 @@ class MDefinition : public MNode {
   BailoutKind bailoutKind() const { return bailoutKind_; }
   void setBailoutKind(BailoutKind kind) { bailoutKind_ = kind; }
 
-  JSScript* profilerLeaveScript() const {
-    return trackedTree()->outermostCaller()->script();
-  }
-
   jsbytecode* profilerLeavePc() const {
     
     if (trackedTree()->isOutermostCaller()) {
@@ -909,12 +905,6 @@ class MDefinition : public MNode {
   virtual bool canRecoverOnBailout() const { return false; }
 };
 
-static inline bool SimpleArithOperand(MDefinition* op) {
-  return op->definitelyType({MIRType::Undefined, MIRType::Null,
-                             MIRType::Boolean, MIRType::Int32, MIRType::Double,
-                             MIRType::Float32});
-}
-
 
 
 
@@ -1171,11 +1161,6 @@ class MBinaryInstruction : public MAryInstruction<2> {
 
  public:
   NAMED_OPERANDS((0, lhs), (1, rhs))
-  void swapOperands() {
-    MDefinition* temp = getOperand(0);
-    replaceOperand(0, getOperand(1));
-    replaceOperand(1, temp);
-  }
 
  protected:
   HashNumber valueHash() const override;
@@ -1393,15 +1378,6 @@ class MConstant : public MNullaryInstruction {
   
   
   [[nodiscard]] bool valueToBoolean(bool* res) const;
-
-  
-  
-  
-  bool valueToBooleanInfallible() const {
-    bool res;
-    MOZ_ALWAYS_TRUE(valueToBoolean(&res));
-    return res;
-  }
 
 #ifdef JS_JITSPEW
   void printOpcode(GenericPrinter& out) const override;
@@ -10984,11 +10960,6 @@ class MResumePoint final : public MNode
     MOZ_ASSERT(!instruction_);
     instruction_ = ins;
   }
-  
-  void replaceInstruction(MInstruction* ins) {
-    MOZ_ASSERT(instruction_);
-    instruction_ = ins;
-  }
   void resetInstruction() {
     MOZ_ASSERT(instruction_);
     instruction_ = nullptr;
@@ -12428,7 +12399,6 @@ class MAsmJSLoadHeap
   }
 
   MDefinition* base() const { return getOperand(0); }
-  void replaceBase(MDefinition* newBase) { replaceOperand(0, newBase); }
   bool hasMemoryBase() const { return memoryBaseIndex_ != UINT32_MAX; }
   MDefinition* memoryBase() const {
     MOZ_ASSERT(hasMemoryBase());
@@ -12481,7 +12451,6 @@ class MAsmJSStoreHeap
   }
 
   MDefinition* base() const { return getOperand(0); }
-  void replaceBase(MDefinition* newBase) { replaceOperand(0, newBase); }
   MDefinition* value() const { return getOperand(1); }
   bool hasMemoryBase() const { return memoryBaseIndex_ != UINT32_MAX; }
   MDefinition* memoryBase() const {
