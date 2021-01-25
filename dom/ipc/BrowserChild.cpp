@@ -2898,14 +2898,6 @@ void BrowserChild::MakeHidden() {
     }
   }
 
-  
-  
-  
-  if (mIsTopLevel && mBrowsingContext && mBrowsingContext->IsActive()) {
-    Unused << mBrowsingContext->SetExplicitActive(
-        dom::ExplicitActiveStatus::None);
-  }
-
   if (mPuppetWidget) {
     mPuppetWidget->Show(false);
   }
