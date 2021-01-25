@@ -100,8 +100,6 @@ class FormValidationParent extends JSWindowActorParent {
 
 
 
-
-
   _showPopup(aPanelData) {
     let previouslyShown = !!this._panel;
     this._panel = this._getAndMaybeCreatePanel();
@@ -112,10 +110,6 @@ class FormValidationParent extends JSWindowActorParent {
 
     let tabBrowser = window.gBrowser;
     this._anchor = tabBrowser.selectedBrowser.popupAnchor;
-    this._anchor.style.left = aPanelData.contentRect.left + "px";
-    this._anchor.style.top = aPanelData.contentRect.top + "px";
-    this._anchor.style.width = aPanelData.contentRect.width + "px";
-    this._anchor.style.height = aPanelData.contentRect.height + "px";
     this._anchor.hidden = false;
 
     
@@ -129,7 +123,16 @@ class FormValidationParent extends JSWindowActorParent {
       tabBrowser.selectedBrowser.addEventListener("TextZoomChange", this);
 
       
-      this._panel.openPopup(this._anchor, aPanelData.position, 0, 0, false);
+      let rect = aPanelData.screenRect;
+      this._panel.openPopupAtScreenRect(
+        aPanelData.position,
+        rect.left,
+        rect.top,
+        rect.width,
+        rect.height,
+        false,
+        false
+      );
     }
   }
 
