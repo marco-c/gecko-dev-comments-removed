@@ -506,7 +506,7 @@ class ScriptStencilIterable {
 };
 
 
-struct CompilationInfo {
+struct CompilationInfo : public BaseCompilationStencil {
   static constexpr ScriptIndex TopLevelIndex = ScriptIndex(0);
 
   
@@ -517,7 +517,6 @@ struct CompilationInfo {
   static constexpr size_t LifoAllocChunkSize = 512;
 
   CompilationInput input;
-  BaseCompilationStencil stencil;
 
   
   
@@ -562,9 +561,9 @@ struct CompilationInfo {
   
   
   CompilationInfo(CompilationInfo&& other) noexcept
-      : alloc(LifoAllocChunkSize),
-        input(std::move(other.input)),
-        stencil(std::move(other.stencil)) {
+      : BaseCompilationStencil(std::move(other)),
+        alloc(LifoAllocChunkSize),
+        input(std::move(other.input)) {
     
     alloc.steal(&other.alloc);
   }
