@@ -3052,8 +3052,6 @@ var updateFrecency = async function(db, urls) {
   
   await db.executeCached(`DELETE FROM moz_updateoriginsupdate_temp`);
 
-  const observers = PlacesUtils.history.getObservers();
-  notify(observers, "onManyFrecenciesChanged");
   PlacesObservers.notifyListeners([new PlacesRanking()]);
 };
 

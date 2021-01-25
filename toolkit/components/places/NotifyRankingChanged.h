@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_places_NotifyManyFrecenciesChanged_h_
-#define mozilla_places_NotifyManyFrecenciesChanged_h_
+#ifndef mozilla_places_NotifyRankingChanged_h_
+#define mozilla_places_NotifyRankingChanged_h_
 
 #include "mozilla/dom/PlacesObservers.h"
 #include "mozilla/dom/PlacesRanking.h"
@@ -15,19 +15,15 @@ using namespace mozilla::dom;
 namespace mozilla {
 namespace places {
 
-class NotifyManyFrecenciesChanged final : public Runnable {
+class NotifyRankingChanged final : public Runnable {
  public:
-  NotifyManyFrecenciesChanged()
-      : Runnable("places::NotifyManyFrecenciesChanged") {}
+  NotifyRankingChanged() : Runnable("places::NotifyRankingChanged") {}
 
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   NS_IMETHOD Run() override {
     MOZ_ASSERT(NS_IsMainThread(), "This should be called on the main thread");
-    nsNavHistory* navHistory = nsNavHistory::GetHistoryService();
-    NS_ENSURE_STATE(navHistory);
-    navHistory->NotifyManyFrecenciesChanged();
 
     RefPtr<PlacesRanking> event = new PlacesRanking();
     Sequence<OwningNonNull<PlacesEvent>> events;

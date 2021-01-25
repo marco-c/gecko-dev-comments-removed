@@ -348,11 +348,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
   
 
 
-  void NotifyManyFrecenciesChanged();
-
-  
-
-
 
 
   bool IsFrecencyDecaying() const;
@@ -384,7 +379,7 @@ class nsNavHistory final : public nsSupportsWeakReference,
       const RefPtr<nsNavHistoryQuery>& aQuery,
       nsNavHistoryQueryOptions* aOptions);
 
-  void DecayFrecencyCompleted(uint16_t reason);
+  void DecayFrecencyCompleted();
 
  private:
   ~nsNavHistory();
