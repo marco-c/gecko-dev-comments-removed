@@ -208,7 +208,7 @@ function verifyLayersRendering(ctx) {
 }
 
 function testCompositor(test, win, ctx) {
-  if (win.windowUtils.layerManagerType == "WebRender") {
+  if (win.windowUtils.layerManagerType.startsWith("WebRender")) {
     
     
     
