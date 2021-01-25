@@ -2863,8 +2863,8 @@ bool JSRuntime::initSelfHostingFromXDR(
 
   
   Rooted<frontend::CompilationGCOutput> output(cx);
-  if (!frontend::CompilationInfo::instantiateStencils(cx, stencilSet,
-                                                      output.get())) {
+  if (!frontend::CompilationStencil::instantiateStencils(cx, stencilSet,
+                                                         output.get())) {
     return false;
   }
 
@@ -2920,9 +2920,9 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
   
   
   if (!script) {
-    Rooted<frontend::CompilationInfo> compilationInfo(
-        cx, frontend::CompilationInfo(cx, options));
-    if (!compilationInfo.get().input.initForSelfHostingGlobal(cx)) {
+    Rooted<frontend::CompilationStencil> stencil(
+        cx, frontend::CompilationStencil(cx, options));
+    if (!stencil.get().input.initForSelfHostingGlobal(cx)) {
       return false;
     }
 
@@ -2944,15 +2944,15 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
       return false;
     }
 
-    if (!frontend::CompileGlobalScriptToStencil(cx, compilationInfo.get(),
-                                                srcBuf, ScopeKind::Global)) {
+    if (!frontend::CompileGlobalScriptToStencil(cx, stencil.get(), srcBuf,
+                                                ScopeKind::Global)) {
       return false;
     }
 
     
     if (selfHostedXDRWriter) {
       JS::TranscodeBuffer xdrBuffer;
-      if (!compilationInfo.get().serializeStencils(cx, xdrBuffer)) {
+      if (!stencil.get().serializeStencils(cx, xdrBuffer)) {
         return false;
       }
 
@@ -2963,8 +2963,8 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
 
     
     Rooted<frontend::CompilationGCOutput> output(cx);
-    if (!frontend::CompilationInfo::instantiateStencils(
-            cx, compilationInfo.get(), output.get())) {
+    if (!frontend::CompilationStencil::instantiateStencils(cx, stencil.get(),
+                                                           output.get())) {
       return false;
     }
 

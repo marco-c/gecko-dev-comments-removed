@@ -11,7 +11,6 @@
 
 #include "ds/LifoAlloc.h"
 #include "frontend/BytecodeCompilation.h"
-#include "frontend/CompilationInfo.h"
 #include "gc/HashUtil.h"
 #include "js/friend/ErrorMessages.h"   
 #include "js/friend/JSMEnvironment.h"  

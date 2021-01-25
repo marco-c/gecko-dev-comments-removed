@@ -218,7 +218,7 @@ struct CompilationInput {
   void trace(JSTracer* trc);
 } JS_HAZ_GC_POINTER;
 
-struct CompilationInfo;
+struct CompilationStencil;
 
 struct MOZ_RAII CompilationState {
   
@@ -255,12 +255,12 @@ struct MOZ_RAII CompilationState {
 
   CompilationState(JSContext* cx, LifoAllocScope& frontendAllocScope,
                    const JS::ReadOnlyCompileOptions& options,
-                   CompilationInfo& compilationInfo,
+                   CompilationStencil& stencil,
                    InheritThis inheritThis = InheritThis::No,
                    Scope* enclosingScope = nullptr,
                    JSObject* enclosingEnv = nullptr);
 
-  bool finish(JSContext* cx, CompilationInfo& compilationInfo);
+  bool finish(JSContext* cx, CompilationStencil& stencil);
 
   const ParserAtom* getParserAtomAt(JSContext* cx,
                                     TaggedParserAtomIndex taggedIndex) const;
@@ -506,7 +506,7 @@ class ScriptStencilIterable {
 };
 
 
-struct CompilationInfo : public BaseCompilationStencil {
+struct CompilationStencil : public BaseCompilationStencil {
   static constexpr ScriptIndex TopLevelIndex = ScriptIndex(0);
 
   
@@ -536,7 +536,7 @@ struct CompilationInfo : public BaseCompilationStencil {
   void rewind(CompilationState& state, const RewindToken& pos);
 
   
-  CompilationInfo(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
+  CompilationStencil(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
       : alloc(LifoAllocChunkSize), input(options) {}
 
   static MOZ_MUST_USE bool prepareInputAndStencilForInstantiate(
@@ -545,11 +545,11 @@ struct CompilationInfo : public BaseCompilationStencil {
       JSContext* cx, BaseCompilationStencil& stencil,
       CompilationGCOutput& gcOutput);
 
-  static MOZ_MUST_USE bool prepareForInstantiate(
-      JSContext* cx, CompilationInfo& compilationInfo,
-      CompilationGCOutput& gcOutput);
+  static MOZ_MUST_USE bool prepareForInstantiate(JSContext* cx,
+                                                 CompilationStencil& stencil,
+                                                 CompilationGCOutput& gcOutput);
   static MOZ_MUST_USE bool instantiateStencils(JSContext* cx,
-                                               CompilationInfo& compilationInfo,
+                                               CompilationStencil& stencil,
                                                CompilationGCOutput& gcOutput);
   static MOZ_MUST_USE bool instantiateStencilsAfterPreparation(
       JSContext* cx, CompilationInput& input, BaseCompilationStencil& stencil,
@@ -560,7 +560,7 @@ struct CompilationInfo : public BaseCompilationStencil {
 
   
   
-  CompilationInfo(CompilationInfo&& other) noexcept
+  CompilationStencil(CompilationStencil&& other) noexcept
       : BaseCompilationStencil(std::move(other)),
         alloc(LifoAllocChunkSize),
         input(std::move(other.input)) {
@@ -569,9 +569,9 @@ struct CompilationInfo : public BaseCompilationStencil {
   }
 
   
-  CompilationInfo(const CompilationInfo&) = delete;
-  CompilationInfo& operator=(const CompilationInfo&) = delete;
-  CompilationInfo& operator=(CompilationInfo&&) = delete;
+  CompilationStencil(const CompilationStencil&) = delete;
+  CompilationStencil& operator=(const CompilationStencil&) = delete;
+  CompilationStencil& operator=(CompilationStencil&&) = delete;
 
   static ScriptStencilIterable functionScriptStencils(
       BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput) {
@@ -583,7 +583,7 @@ struct CompilationInfo : public BaseCompilationStencil {
 
 
 
-struct CompilationStencilSet : public CompilationInfo {
+struct CompilationStencilSet : public CompilationStencil {
  private:
   using ScriptIndexVector = Vector<ScriptIndex, 0, js::SystemAllocPolicy>;
 
@@ -600,12 +600,12 @@ struct CompilationStencilSet : public CompilationInfo {
 
   CompilationStencilSet(JSContext* cx,
                         const JS::ReadOnlyCompileOptions& options)
-      : CompilationInfo(cx, options),
+      : CompilationStencil(cx, options),
         allocForDelazifications(LifoAllocChunkSize) {}
 
   
   CompilationStencilSet(CompilationStencilSet&& other) noexcept
-      : CompilationInfo(std::move(other)),
+      : CompilationStencil(std::move(other)),
         allocForDelazifications(LifoAllocChunkSize),
         delazifications(std::move(other.delazifications)),
         delazificationAtomCache(std::move(other.delazificationAtomCache)) {
@@ -637,4 +637,5 @@ struct CompilationStencilSet : public CompilationInfo {
 
 }  
 }  
-#endif
+
+#endif  

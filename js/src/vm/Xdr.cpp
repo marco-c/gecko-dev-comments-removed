@@ -429,8 +429,7 @@ XDRResult XDRState<mode>::codeScript(MutableHandleScript scriptp) {
 }
 
 template <XDRMode mode>
-XDRResult XDRState<mode>::codeStencil(
-    frontend::CompilationInfo& compilationInfo) {
+XDRResult XDRState<mode>::codeStencil(frontend::CompilationStencil& stencil) {
 #ifdef DEBUG
   auto sanityCheck = mozilla::MakeScopeExit(
       [&] { MOZ_ASSERT(validateResultCode(cx(), resultCode())); });
@@ -443,9 +442,9 @@ XDRResult XDRState<mode>::codeStencil(
   MOZ_TRY(VersionCheck(this));
 
   if (hasOptions()) {
-    MOZ_ASSERT(&options() == &compilationInfo.input.options);
+    MOZ_ASSERT(&options() == &stencil.input.options);
   }
-  MOZ_TRY(XDRCompilationInput(this, compilationInfo.input));
+  MOZ_TRY(XDRCompilationInput(this, stencil.input));
 
   
   
@@ -457,10 +456,10 @@ XDRResult XDRState<mode>::codeStencil(
   if (mode == XDR_ENCODE) {
     switchToMainBuf();
   }
-  MOZ_TRY(ParserAtomTable(this, compilationInfo));
+  MOZ_TRY(ParserAtomTable(this, stencil));
 
   MOZ_ASSERT(isMainBuf());
-  MOZ_TRY(XDRBaseCompilationStencil(this, compilationInfo));
+  MOZ_TRY(XDRBaseCompilationStencil(this, stencil));
 
   return Ok();
 }

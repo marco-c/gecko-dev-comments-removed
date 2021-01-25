@@ -106,7 +106,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   mozilla::Maybe<EitherParser> ep_ = {};
   BCEParserHandle* parser = nullptr;
 
-  CompilationInfo& compilationInfo;
+  CompilationStencil& stencil;
   CompilationState& compilationState;
 
   uint32_t maxFixedSlots = 0; 
@@ -169,7 +169,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
  private:
   
   BytecodeEmitter(BytecodeEmitter* parent, SharedContext* sc,
-                  CompilationInfo& compilationInfo,
+                  CompilationStencil& stencil,
                   CompilationState& compilationState, EmitterMode emitterMode);
 
   void initFromBodyPosition(TokenPos bodyPosition);
@@ -185,22 +185,22 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
  public:
   BytecodeEmitter(BytecodeEmitter* parent, BCEParserHandle* handle,
-                  SharedContext* sc, CompilationInfo& compilationInfo,
+                  SharedContext* sc, CompilationStencil& stencil,
                   CompilationState& compilationState,
                   EmitterMode emitterMode = Normal);
 
   BytecodeEmitter(BytecodeEmitter* parent, const EitherParser& parser,
-                  SharedContext* sc, CompilationInfo& compilationInfo,
+                  SharedContext* sc, CompilationStencil& stencil,
                   CompilationState& compilationState,
                   EmitterMode emitterMode = Normal);
 
   template <typename Unit>
   BytecodeEmitter(BytecodeEmitter* parent,
                   Parser<FullParseHandler, Unit>* parser, SharedContext* sc,
-                  CompilationInfo& compilationInfo,
+                  CompilationStencil& stencil,
                   CompilationState& compilationState,
                   EmitterMode emitterMode = Normal)
-      : BytecodeEmitter(parent, EitherParser(parser), sc, compilationInfo,
+      : BytecodeEmitter(parent, EitherParser(parser), sc, stencil,
                         compilationState, emitterMode) {}
 
   MOZ_MUST_USE bool init();

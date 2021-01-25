@@ -7,11 +7,10 @@
 #ifndef frontend_StencilXdr_h
 #define frontend_StencilXdr_h
 
-#include "frontend/CompilationInfo.h"  
-#include "frontend/ObjLiteral.h"       
-#include "frontend/Stencil.h"          
-#include "vm/Scope.h"                  
-#include "vm/Xdr.h"                    
+#include "frontend/ObjLiteral.h"  
+#include "frontend/Stencil.h"     
+#include "vm/Scope.h"             
+#include "vm/Xdr.h"               
 
 namespace js {
 namespace frontend {

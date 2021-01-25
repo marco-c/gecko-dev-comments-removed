@@ -80,7 +80,7 @@ class Shape;
 class DebugScript;
 
 namespace frontend {
-struct CompilationInfo;
+struct CompilationStencil;
 struct BaseCompilationStencil;
 struct CompilationGCOutput;
 }  
@@ -1032,7 +1032,7 @@ class ScriptSource {
   
   
   bool xdrEncodeInitialStencil(
-      JSContext* cx, frontend::CompilationInfo& compilationInfo,
+      JSContext* cx, frontend::CompilationStencil& stencil,
       UniquePtr<XDRIncrementalEncoderBase>& xdrEncoder);
 
   

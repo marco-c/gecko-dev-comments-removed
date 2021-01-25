@@ -38,6 +38,7 @@
 #include "debugger/Object.h"             
 #include "debugger/Script.h"             
 #include "debugger/Source.h"             
+#include "frontend/CompilationInfo.h"    
 #include "frontend/NameAnalysisTypes.h"  
 #include "frontend/ParseContext.h"       
 #include "frontend/Parser.h"             
@@ -6031,21 +6032,21 @@ bool Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp) {
   bool result = true;
 
   CompileOptions options(cx);
-  Rooted<frontend::CompilationInfo> compilationInfo(
-      cx, frontend::CompilationInfo(cx, options));
-  if (!compilationInfo.get().input.initForGlobal(cx)) {
+  Rooted<frontend::CompilationStencil> stencil(
+      cx, frontend::CompilationStencil(cx, options));
+  if (!stencil.get().input.initForGlobal(cx)) {
     return false;
   }
 
   LifoAllocScope allocScope(&cx->tempLifoAlloc());
   frontend::CompilationState compilationState(cx, allocScope, options,
-                                              compilationInfo.get());
+                                              stencil.get());
 
   JS::AutoSuppressWarningReporter suppressWarnings(cx);
   frontend::Parser<frontend::FullParseHandler, char16_t> parser(
       cx, options, chars.twoByteChars(), length,
-       true, compilationInfo.get(), compilationState,
-      nullptr, nullptr);
+       true, stencil.get(), compilationState, nullptr,
+      nullptr);
   if (!parser.checkOptions() || !parser.parse()) {
     
     

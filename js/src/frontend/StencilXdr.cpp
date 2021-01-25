@@ -14,9 +14,10 @@
 #include <type_traits>  
 #include <utility>      
 
-#include "frontend/ScriptIndex.h"  
-#include "vm/JSScript.h"           
-#include "vm/StencilEnums.h"       
+#include "frontend/CompilationInfo.h"  
+#include "frontend/ScriptIndex.h"      
+#include "vm/JSScript.h"               
+#include "vm/StencilEnums.h"           
 
 using namespace js;
 using namespace js::frontend;
@@ -556,7 +557,7 @@ XDRResult XDRBaseCompilationStencil(XDRState<mode>* xdr,
   MOZ_TRY(XDRSpanContent(xdr, stencil.scriptExtra));
 
   if (stencil.isInitialStencil() &&
-      stencil.scriptExtra[CompilationInfo::TopLevelIndex].isModule()) {
+      stencil.scriptExtra[CompilationStencil::TopLevelIndex].isModule()) {
     if (mode == XDR_DECODE) {
       stencil.moduleMetadata.emplace();
     }

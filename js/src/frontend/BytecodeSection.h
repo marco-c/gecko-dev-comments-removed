@@ -19,22 +19,22 @@
 
 #include "frontend/AbstractScopePtr.h"  
 #include "frontend/BytecodeOffset.h"    
-#include "frontend/CompilationInfo.h"   
-#include "frontend/JumpList.h"          
-#include "frontend/NameCollections.h"   
-#include "frontend/ObjLiteral.h"        
-#include "frontend/ParseNode.h"         
-#include "frontend/SourceNotes.h"       
-#include "frontend/Stencil.h"           
-#include "gc/Rooting.h"                 
-#include "js/GCVariant.h"               
-#include "js/GCVector.h"                
-#include "js/TypeDecls.h"               
-#include "js/Value.h"                   
-#include "js/Vector.h"                  
-#include "vm/Opcodes.h"                 
-#include "vm/SharedStencil.h"           
-#include "vm/StencilEnums.h"            
+#include "frontend/CompilationInfo.h"  
+#include "frontend/JumpList.h"         
+#include "frontend/NameCollections.h"  
+#include "frontend/ObjLiteral.h"       
+#include "frontend/ParseNode.h"        
+#include "frontend/SourceNotes.h"      
+#include "frontend/Stencil.h"          
+#include "gc/Rooting.h"                
+#include "js/GCVariant.h"              
+#include "js/GCVector.h"               
+#include "js/TypeDecls.h"              
+#include "js/Value.h"                  
+#include "js/Vector.h"                 
+#include "vm/Opcodes.h"                
+#include "vm/SharedStencil.h"          
+#include "vm/StencilEnums.h"           
 
 namespace js {
 
@@ -49,18 +49,16 @@ struct MOZ_STACK_CLASS GCThingList {
   
   using ScriptThingsStackVector = Vector<TaggedScriptThingIndex, 8>;
 
-  CompilationInfo& compilationInfo;
+  CompilationStencil& stencil;
   CompilationState& compilationState;
   ScriptThingsStackVector vector;
 
   
   mozilla::Maybe<GCThingIndex> firstScopeIndex;
 
-  explicit GCThingList(JSContext* cx, CompilationInfo& compilationInfo,
+  explicit GCThingList(JSContext* cx, CompilationStencil& stencil,
                        CompilationState& compilationState)
-      : compilationInfo(compilationInfo),
-        compilationState(compilationState),
-        vector(cx) {}
+      : stencil(stencil), compilationState(compilationState), vector(cx) {}
 
   MOZ_MUST_USE bool append(const ParserAtom* atom, GCThingIndex* index) {
     *index = GCThingIndex(vector.length());
@@ -395,8 +393,7 @@ class BytecodeSection {
 
 class PerScriptData {
  public:
-  explicit PerScriptData(JSContext* cx,
-                         frontend::CompilationInfo& compilationInfo,
+  explicit PerScriptData(JSContext* cx, frontend::CompilationStencil& stencil,
                          frontend::CompilationState& compilationState);
 
   MOZ_MUST_USE bool init(JSContext* cx);

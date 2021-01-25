@@ -11,8 +11,7 @@
 
 #include "jstypes.h"               
 #include "builtin/ModuleObject.h"  
-#include "frontend/CompilationInfo.h"  
-#include "frontend/EitherParser.h"     
+#include "frontend/EitherParser.h"  
 #include "frontend/ParserAtom.h"  
 #include "frontend/Stencil.h"  
 #include "js/GCHashTable.h"    

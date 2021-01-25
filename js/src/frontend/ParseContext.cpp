@@ -424,15 +424,14 @@ bool ParseContext::isVarRedeclaredInEval(const ParserName* name,
   MOZ_ASSERT(sc()->isEvalContext());
 
   
-  JSAtom* nameAtom =
-      name->toJSAtom(sc()->cx_, sc()->compilationInfo().input.atomCache);
+  JSAtom* nameAtom = name->toJSAtom(sc()->cx_, sc()->stencil().input.atomCache);
   if (!nameAtom) {
     return false;
   }
 
   
   
-  js::Scope* enclosingScope = sc()->compilationInfo().input.enclosingScope;
+  js::Scope* enclosingScope = sc()->stencil().input.enclosingScope;
   js::Scope* varScope = EvalScope::nearestVarScopeForDirectEval(enclosingScope);
   MOZ_ASSERT(varScope);
   for (ScopeIter si(enclosingScope); si; si++) {

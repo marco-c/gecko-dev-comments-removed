@@ -2783,7 +2783,7 @@ bool ScriptSource::xdrEncodeTopLevel(JSContext* cx, HandleScript script) {
 }
 
 bool ScriptSource::xdrEncodeInitialStencil(
-    JSContext* cx, frontend::CompilationInfo& compilationInfo,
+    JSContext* cx, frontend::CompilationStencil& stencil,
     UniquePtr<XDRIncrementalEncoderBase>& xdrEncoder) {
   
   if (containsAsmJS()) {
@@ -2799,7 +2799,7 @@ bool ScriptSource::xdrEncodeInitialStencil(
   AutoIncrementalTimer timer(cx->realm()->timers.xdrEncodingTime);
   auto failureCase = mozilla::MakeScopeExit([&] { xdrEncoder.reset(nullptr); });
 
-  XDRResult res = xdrEncoder->codeStencil(compilationInfo);
+  XDRResult res = xdrEncoder->codeStencil(stencil);
   if (res.isErr()) {
     
     

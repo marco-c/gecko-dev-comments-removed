@@ -520,7 +520,7 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   GCVector<ScriptSourceObject*, 1, SystemAllocPolicy> sourceObjects;
 
   
-  UniquePtr<frontend::CompilationInfo> compilationInfo_;
+  UniquePtr<frontend::CompilationStencil> stencil_;
 
   
   UniquePtr<frontend::CompilationStencilSet> stencilSet_;

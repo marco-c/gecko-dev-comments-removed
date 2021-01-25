@@ -146,13 +146,12 @@ bool GeneralParser<ParseHandler, Unit>::mustMatchTokenInternal(
   return true;
 }
 
-ParserSharedBase::ParserSharedBase(JSContext* cx,
-                                   CompilationInfo& compilationInfo,
+ParserSharedBase::ParserSharedBase(JSContext* cx, CompilationStencil& stencil,
                                    CompilationState& compilationState,
                                    Kind kind)
     : cx_(cx),
       alloc_(compilationState.allocScope.alloc()),
-      compilationInfo_(compilationInfo),
+      stencil_(stencil),
       compilationState_(compilationState),
       pc_(nullptr),
       usedNames_(compilationState.usedNames) {
@@ -164,9 +163,9 @@ ParserSharedBase::~ParserSharedBase() {
 }
 
 ParserBase::ParserBase(JSContext* cx, const ReadOnlyCompileOptions& options,
-                       bool foldConstants, CompilationInfo& compilationInfo,
+                       bool foldConstants, CompilationStencil& stencil,
                        CompilationState& compilationState)
-    : ParserSharedBase(cx, compilationInfo, compilationState,
+    : ParserSharedBase(cx, stencil, compilationState,
                        ParserSharedBase::Kind::Parser),
       anyChars(cx, options, this),
       ss(nullptr),
@@ -192,20 +191,20 @@ ParserBase::~ParserBase() { MOZ_ASSERT(checkOptionsCalled_); }
 template <class ParseHandler>
 PerHandlerParser<ParseHandler>::PerHandlerParser(
     JSContext* cx, const ReadOnlyCompileOptions& options, bool foldConstants,
-    CompilationInfo& compilationInfo, CompilationState& compilationState,
+    CompilationStencil& stencil, CompilationState& compilationState,
     BaseScript* lazyOuterFunction, void* internalSyntaxParser)
-    : ParserBase(cx, options, foldConstants, compilationInfo, compilationState),
+    : ParserBase(cx, options, foldConstants, stencil, compilationState),
       handler_(cx, compilationState.allocScope.alloc(), lazyOuterFunction),
       internalSyntaxParser_(internalSyntaxParser) {}
 
 template <class ParseHandler, typename Unit>
 GeneralParser<ParseHandler, Unit>::GeneralParser(
     JSContext* cx, const ReadOnlyCompileOptions& options, const Unit* units,
-    size_t length, bool foldConstants, CompilationInfo& compilationInfo,
+    size_t length, bool foldConstants, CompilationStencil& stencil,
     CompilationState& compilationState, SyntaxParser* syntaxParser,
     BaseScript* lazyOuterFunction)
-    : Base(cx, options, foldConstants, compilationInfo, compilationState,
-           syntaxParser, lazyOuterFunction),
+    : Base(cx, options, foldConstants, stencil, compilationState, syntaxParser,
+           lazyOuterFunction),
       tokenStream(cx, &compilationState.parserAtoms, options, units, length) {}
 
 template <typename Unit>
@@ -286,7 +285,7 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
 
 
   FunctionBox* funbox = alloc_.new_<FunctionBox>(
-      cx_, extent, compilationInfo_, compilationState_, inheritedDirectives,
+      cx_, extent, stencil_, compilationState_, inheritedDirectives,
       generatorKind, asyncKind, explicitName, flags, index);
   if (!funbox) {
     ReportOutOfMemory(cx_);
@@ -356,7 +355,8 @@ typename ParseHandler::ListNodeType GeneralParser<ParseHandler, Unit>::parse() {
        0, options().lineno, options().column);
   Directives directives(options().forceStrictMode());
   GlobalSharedContext globalsc(cx_, ScopeKind::Global,
-                               this->getCompilationInfo(), directives, extent);
+                               this->getCompilationStencil(), directives,
+                               extent);
   SourceParseContext globalpc(this, &globalsc,  nullptr);
   if (!globalpc.init()) {
     return null();
@@ -850,7 +850,7 @@ bool PerHandlerParser<ParseHandler>::
       
       const ParserAtom* parserAtom =
           this->compilationState_.parserAtoms.internJSAtom(
-              cx_, this->getCompilationInfo(), name);
+              cx_, this->getCompilationStencil(), name);
       if (!parserAtom) {
         return false;
       }
@@ -1594,12 +1594,12 @@ LexicalScopeNode* Parser<FullParseHandler, Unit>::evalBody(
 
 #ifdef DEBUG
   if (evalpc.superScopeNeedsHomeObject() &&
-      this->getCompilationInfo().input.enclosingScope) {
+      this->getCompilationStencil().input.enclosingScope) {
     
     
     
     
-    ScopeIter si(this->getCompilationInfo().input.enclosingScope);
+    ScopeIter si(this->getCompilationStencil().input.enclosingScope);
     for (; si; si++) {
       if (si.kind() == ScopeKind::Function) {
         JSFunction* fun = si.scope()->as<FunctionScope>().canonicalFunction();
@@ -1719,7 +1719,7 @@ ModuleNode* Parser<FullParseHandler, Unit>::moduleBody(
     ModuleSharedContext* modulesc) {
   MOZ_ASSERT(checkOptionsCalled_);
 
-  this->compilationInfo_.moduleMetadata.emplace();
+  this->stencil_.moduleMetadata.emplace();
 
   SourceParseContext modulepc(this, modulesc, nullptr);
   if (!modulepc.init()) {
@@ -1768,17 +1768,16 @@ ModuleNode* Parser<FullParseHandler, Unit>::moduleBody(
   
   if (pc_->isAsync()) {
     pc_->sc()->asModuleContext()->builder.noteAsync(
-        *this->compilationInfo_.moduleMetadata);
+        *this->stencil_.moduleMetadata);
   }
 
   
-  if (!modulesc->builder.buildTables(*this->compilationInfo_.moduleMetadata)) {
+  if (!modulesc->builder.buildTables(*this->stencil_.moduleMetadata)) {
     return null();
   }
 
   
-  StencilModuleMetadata& moduleMetadata =
-      *this->compilationInfo_.moduleMetadata;
+  StencilModuleMetadata& moduleMetadata = *this->stencil_.moduleMetadata;
   for (auto entry : moduleMetadata.localExportEntries) {
     const ParserAtom* nameId =
         this->compilationState_.getParserAtomAt(cx_, entry.localName);
@@ -2192,7 +2191,7 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneFunction(
   }
 
   
-  MOZ_ASSERT(funbox->index() == CompilationInfo::TopLevelIndex);
+  MOZ_ASSERT(funbox->index() == CompilationStencil::TopLevelIndex);
 
   funbox->initStandalone(this->compilationState_.scopeContext, flags,
                          syntaxKind);
@@ -2782,7 +2781,7 @@ bool Parser<FullParseHandler, Unit>::skipLazyInnerFunction(
   const ParserAtom* displayAtom = nullptr;
   if (fun->displayAtom()) {
     displayAtom = this->compilationState_.parserAtoms.internJSAtom(
-        cx_, this->compilationInfo_, fun->displayAtom());
+        cx_, this->stencil_, fun->displayAtom());
     if (!displayAtom) {
       return false;
     }
@@ -2960,8 +2959,8 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
   Directives newDirectives = directives;
 
   Position start(tokenStream);
-  CompilationInfo::RewindToken startObj =
-      this->compilationInfo_.getRewindToken(this->compilationState_);
+  CompilationStencil::RewindToken startObj =
+      this->stencil_.getRewindToken(this->compilationState_);
 
   
   
@@ -2987,7 +2986,7 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
 
     
     tokenStream.rewind(start);
-    this->compilationInfo_.rewind(this->compilationState_, startObj);
+    this->stencil_.rewind(this->compilationState_, startObj);
 
     
     
@@ -3038,8 +3037,8 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
     }
 
     UsedNameTracker::RewindToken token = usedNames_.getRewindToken();
-    CompilationInfo::RewindToken startObj =
-        this->compilationInfo_.getRewindToken(this->compilationState_);
+    CompilationStencil::RewindToken startObj =
+        this->stencil_.getRewindToken(this->compilationState_);
 
     
     
@@ -3077,7 +3076,7 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
         
         syntaxParser->clearAbortedSyntaxParse();
         usedNames_.rewind(token);
-        this->compilationInfo_.rewind(this->compilationState_, startObj);
+        this->stencil_.rewind(this->compilationState_, startObj);
         MOZ_ASSERT_IF(!syntaxParser->cx_->isHelperThreadContext(),
                       !syntaxParser->cx_->isExceptionPending());
         break;
@@ -3272,7 +3271,7 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneLazyFunction(
   const ParserAtom* displayAtom = nullptr;
   if (fun->displayAtom()) {
     displayAtom = this->compilationState_.parserAtoms.internJSAtom(
-        cx_, this->compilationInfo_, fun->displayAtom());
+        cx_, this->stencil_, fun->displayAtom());
     if (!displayAtom) {
       return null();
     }
@@ -10425,23 +10424,23 @@ BigIntLiteral* Parser<FullParseHandler, Unit>::newBigInt() {
   
   const auto& chars = tokenStream.getCharBuffer();
 
-  BigIntIndex index(this->getCompilationInfo().bigIntData.length());
+  BigIntIndex index(this->getCompilationStencil().bigIntData.length());
   if (uint32_t(index) >= TaggedScriptThingIndex::IndexLimit) {
     ReportAllocationOverflow(cx_);
     return null();
   }
-  if (!this->getCompilationInfo().bigIntData.emplaceBack()) {
+  if (!this->getCompilationStencil().bigIntData.emplaceBack()) {
     js::ReportOutOfMemory(cx_);
     return null();
   }
 
-  if (!this->getCompilationInfo().bigIntData[index].init(this->cx_, chars)) {
+  if (!this->getCompilationStencil().bigIntData[index].init(this->cx_, chars)) {
     return null();
   }
 
   
   
-  return handler_.newBigInt(index, this->getCompilationInfo(), pos());
+  return handler_.newBigInt(index, this->getCompilationStencil(), pos());
 }
 
 template <typename Unit>
@@ -11595,13 +11594,13 @@ template class Parser<SyntaxParseHandler, Utf8Unit>;
 template class Parser<FullParseHandler, char16_t>;
 template class Parser<SyntaxParseHandler, char16_t>;
 
-CompilationInfo::RewindToken CompilationInfo::getRewindToken(
+CompilationStencil::RewindToken CompilationStencil::getRewindToken(
     CompilationState& state) {
   return RewindToken{state.scriptData.length(), asmJS.count()};
 }
 
-void CompilationInfo::rewind(CompilationState& state,
-                             const CompilationInfo::RewindToken& pos) {
+void CompilationStencil::rewind(CompilationState& state,
+                                const CompilationStencil::RewindToken& pos) {
   if (asmJS.count() != pos.asmJSCount) {
     for (size_t i = pos.scriptDataLength; i < state.scriptData.length(); i++) {
       asmJS.remove(ScriptIndex(i));

@@ -28,7 +28,7 @@ namespace js {
 struct SourceExtent;
 
 namespace frontend {
-struct CompilationInfo;
+struct CompilationStencil;
 struct CompilationStencilSet;
 struct CompilationInput;
 struct BaseCompilationStencil;
@@ -546,7 +546,7 @@ class XDRState : public XDRCoderBase {
   XDRResult codeFunction(JS::MutableHandleFunction objp,
                          HandleScriptSourceObject sourceObject = nullptr);
   XDRResult codeScript(MutableHandleScript scriptp);
-  XDRResult codeStencil(frontend::CompilationInfo& compilationInfo);
+  XDRResult codeStencil(frontend::CompilationStencil& stencil);
   XDRResult codeFunctionStencil(frontend::BaseCompilationStencil& stencil);
 };
 

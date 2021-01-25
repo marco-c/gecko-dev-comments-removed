@@ -51,19 +51,19 @@ template <typename Unit>
 class StandaloneFunctionCompiler;
 
 extern bool CompileGlobalScriptToStencil(JSContext* cx,
-                                         CompilationInfo& compilationInfo,
+                                         CompilationStencil& stencil,
                                          JS::SourceText<char16_t>& srcBuf,
                                          ScopeKind scopeKind);
 
 extern bool CompileGlobalScriptToStencil(
-    JSContext* cx, CompilationInfo& compilationInfo,
+    JSContext* cx, CompilationStencil& stencil,
     JS::SourceText<mozilla::Utf8Unit>& srcBuf, ScopeKind scopeKind);
 
-extern UniquePtr<CompilationInfo> CompileGlobalScriptToStencil(
+extern UniquePtr<CompilationStencil> CompileGlobalScriptToStencil(
     JSContext* cx, const JS::ReadOnlyCompileOptions& options,
     JS::SourceText<char16_t>& srcBuf, ScopeKind scopeKind);
 
-extern UniquePtr<CompilationInfo> CompileGlobalScriptToStencil(
+extern UniquePtr<CompilationStencil> CompileGlobalScriptToStencil(
     JSContext* cx, const JS::ReadOnlyCompileOptions& options,
     JS::SourceText<mozilla::Utf8Unit>& srcBuf, ScopeKind scopeKind);
 
@@ -72,15 +72,14 @@ extern UniquePtr<CompilationInfo> CompileGlobalScriptToStencil(
 
 
 
-extern bool PrepareForInstantiate(JSContext* cx,
-                                  CompilationInfo& compilationInfo,
+extern bool PrepareForInstantiate(JSContext* cx, CompilationStencil& stencil,
                                   CompilationGCOutput& gcOutput);
 extern bool PrepareForInstantiate(
     JSContext* cx, CompilationStencilSet& stencilSet,
     CompilationGCOutput& gcOutput,
     CompilationGCOutput& gcOutputForDelazification);
 
-extern bool InstantiateStencils(JSContext* cx, CompilationInfo& compilationInfo,
+extern bool InstantiateStencils(JSContext* cx, CompilationStencil& stencil,
                                 CompilationGCOutput& gcOutput);
 
 extern bool InstantiateStencils(JSContext* cx,
@@ -108,16 +107,15 @@ extern void FillCompileOptionsForLazyFunction(JS::CompileOptions& options,
                                               Handle<BaseScript*> lazy);
 
 extern MOZ_MUST_USE bool CompileLazyFunctionToStencil(
-    JSContext* cx, CompilationInfo& compilationInfo,
-    JS::Handle<BaseScript*> lazy, const char16_t* units, size_t length);
+    JSContext* cx, CompilationStencil& stencil, JS::Handle<BaseScript*> lazy,
+    const char16_t* units, size_t length);
 
 extern MOZ_MUST_USE bool CompileLazyFunctionToStencil(
-    JSContext* cx, CompilationInfo& compilationInfo,
-    JS::Handle<BaseScript*> lazy, const mozilla::Utf8Unit* units,
-    size_t length);
+    JSContext* cx, CompilationStencil& stencil, JS::Handle<BaseScript*> lazy,
+    const mozilla::Utf8Unit* units, size_t length);
 
 extern bool InstantiateStencilsForDelazify(JSContext* cx,
-                                           CompilationInfo& compilationInfo);
+                                           CompilationStencil& stencil);
 
 }  
 
