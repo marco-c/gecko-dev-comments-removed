@@ -9392,9 +9392,7 @@ bool BytecodeEmitter::emitPrivateMethodInitializer(
     const ParserAtom* storedMethodAtom, AccessorType accessorType) {
   
   FunctionNode* funNode = prop->as<ClassMethod>().initializerIfPrivate();
-  if (!funNode) {
-    return false;
-  }
+  MOZ_ASSERT(funNode);
   FunctionBox* funbox = funNode->funbox();
   FunctionEmitter fe(this, funbox, funNode->syntaxKind(),
                      FunctionEmitter::IsHoisted::No);
