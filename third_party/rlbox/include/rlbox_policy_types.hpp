@@ -48,8 +48,9 @@ private:
   
   
   
-  using T_Interceptor = decltype(
-    callback_detail::interceptor_type_helper<T_Sbx>(std::declval<T>()));
+  using T_Interceptor =
+    decltype(callback_detail::interceptor_type_helper<T_Sbx>(
+      std::declval<T>()));
   T_Interceptor callback_interceptor;
 
   
