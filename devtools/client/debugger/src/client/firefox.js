@@ -5,7 +5,10 @@
 
 
 import { setupCommands, clientCommands } from "./firefox/commands";
-import { setupEvents, ensureSourceActor } from "./firefox/events";
+import {
+  setupEvents,
+  waitForSourceActorToBeRegisteredInStore,
+} from "./firefox/events";
 import { createPause, prepareSourcePayload } from "./firefox/create";
 import { features, prefs } from "../utils/prefs";
 
@@ -162,7 +165,9 @@ async function onBreakpointAvailable(breakpoints) {
       if (resource.frame) {
         
         
-        await ensureSourceActor(resource.frame.where.actor);
+        await waitForSourceActorToBeRegisteredInStore(
+          resource.frame.where.actor
+        );
       }
 
       const pause = createPause(threadFront.actor, resource);
