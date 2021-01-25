@@ -239,11 +239,11 @@ class nsFrameSelection final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult HandleClick(nsIContent* aNewFocus,
-                                          uint32_t aContentOffset,
-                                          uint32_t aContentEndOffset,
-                                          FocusMode aFocusMode,
-                                          CaretAssociateHint aHint);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult HandleClick(nsIContent* aNewFocus,
+                                                   uint32_t aContentOffset,
+                                                   uint32_t aContentEndOffset,
+                                                   FocusMode aFocusMode,
+                                                   CaretAssociateHint aHint);
 
   
 
@@ -256,6 +256,7 @@ class nsFrameSelection final {
 
 
 
+  
   MOZ_CAN_RUN_SCRIPT void HandleDrag(nsIFrame* aFrame, const nsPoint& aPoint);
 
   
@@ -370,7 +371,7 @@ class nsFrameSelection final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void SetDragState(bool aState);
 
   
@@ -630,17 +631,17 @@ class nsFrameSelection final {
 
 
 
-  bool HasDelayedCaretData() const { return mDelayedMouseEvent.mIsValid; }
-  bool IsShiftDownInDelayedCaretData() const {
+  bool HasDelayedCaretData() { return mDelayedMouseEvent.mIsValid; }
+  bool IsShiftDownInDelayedCaretData() {
     NS_ASSERTION(mDelayedMouseEvent.mIsValid, "No valid delayed caret data");
     return mDelayedMouseEvent.mIsShift;
   }
-  uint32_t GetClickCountInDelayedCaretData() const {
+  uint32_t GetClickCountInDelayedCaretData() {
     NS_ASSERTION(mDelayedMouseEvent.mIsValid, "No valid delayed caret data");
     return mDelayedMouseEvent.mClickCount;
   }
 
-  bool MouseDownRecorded() const {
+  bool MouseDownRecorded() {
     return !GetDragState() && HasDelayedCaretData() &&
            GetClickCountInDelayedCaretData() < 2;
   }
