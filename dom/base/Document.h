@@ -1806,6 +1806,12 @@ class Document : public nsINode,
   
 
 
+
+  bool CrossOriginIsolated() const;
+
+  
+
+
   nsPIDOMWindowOuter* GetWindow() const {
     return mWindow ? mWindow->GetOuterWindow() : GetWindowInternal();
   }
