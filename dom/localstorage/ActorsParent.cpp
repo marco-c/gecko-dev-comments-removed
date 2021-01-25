@@ -478,11 +478,10 @@ nsresult SetDefaultPragmas(mozIStorageConnection* aConnection) {
   return NS_OK;
 }
 
-
-
-Result<std::pair<nsCOMPtr<mozIStorageConnection>, bool>, nsresult>
-CreateStorageConnection(nsIFile& aDBFile, nsIFile& aUsageFile,
-                        const nsACString& aOrigin) {
+template <typename CorruptedFileHandler>
+Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateStorageConnection(
+    nsIFile& aDBFile, nsIFile& aUsageFile, const nsACString& aOrigin,
+    CorruptedFileHandler&& aCorruptedFileHandler) {
   MOZ_ASSERT(IsOnIOThread() || IsOnConnectionThread());
 
   
@@ -493,47 +492,39 @@ CreateStorageConnection(nsIFile& aDBFile, nsIFile& aUsageFile,
       ToResultGet<nsCOMPtr<mozIStorageService>>(
           MOZ_SELECT_OVERLOAD(do_GetService), MOZ_STORAGE_SERVICE_CONTRACTID));
 
-  
   LS_TRY_UNWRAP(
-      (auto [connection, removedUsageFile]),
+      auto connection,
       MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<mozIStorageConnection>,
                                  storageService, OpenDatabase, &aDBFile)
-          .map([](auto connection) { return std::pair(connection, false); })
-          .orElse(
-              [&aUsageFile, &aDBFile, &storageService](const nsresult rv)
-                  -> Result<std::pair<nsCOMPtr<mozIStorageConnection>, bool>,
-                            nsresult> {
-                if (rv == NS_ERROR_FILE_CORRUPTED) {
-                  
-                  
-                  LS_TRY(
-                      ToResult(aUsageFile.Remove(false))
-                          .orElse(
-                              [](const nsresult rv) -> Result<Ok, nsresult> {
-                                if (rv == NS_ERROR_FILE_NOT_FOUND ||
-                                    rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
-                                  return Ok{};
-                                }
+          .orElse([&aUsageFile, &aDBFile, &aCorruptedFileHandler,
+                   &storageService](const nsresult rv)
+                      -> Result<nsCOMPtr<mozIStorageConnection>, nsresult> {
+            if (rv == NS_ERROR_FILE_CORRUPTED) {
+              
+              
+              LS_TRY(ToResult(aUsageFile.Remove(false))
+                         .orElse([](const nsresult rv) -> Result<Ok, nsresult> {
+                           if (rv == NS_ERROR_FILE_NOT_FOUND ||
+                               rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
+                             return Ok{};
+                           }
 
-                                return Err(rv);
-                              }));
+                           return Err(rv);
+                         }));
 
-                  
-                  LS_TRY(aDBFile.Remove(false));
+              
+              
+              std::forward<CorruptedFileHandler>(aCorruptedFileHandler)();
 
-                  LS_TRY_RETURN(MOZ_TO_RESULT_INVOKE_TYPED(
-                                    nsCOMPtr<mozIStorageConnection>,
-                                    storageService, OpenDatabase, &aDBFile)
-                                    .map([](auto connection) {
-                                      return std::pair(
-                                          connection,
-                                          
-                                          
-                                          true);
-                                    }));
-                }
-                return Err(rv);
-              }));
+              
+              LS_TRY(aDBFile.Remove(false));
+
+              LS_TRY_RETURN(MOZ_TO_RESULT_INVOKE_TYPED(
+                  nsCOMPtr<mozIStorageConnection>, storageService, OpenDatabase,
+                  &aDBFile));
+            }
+            return Err(rv);
+          }));
 
   LS_TRY(SetDefaultPragmas(connection));
 
@@ -649,7 +640,7 @@ CreateStorageConnection(nsIFile& aDBFile, nsIFile& aUsageFile,
     }
   }
 
-  return std::pair{std::move(connection), removedUsageFile};
+  return connection;
 }
 
 nsresult GetStorageConnection(const nsAString& aDatabaseFilePath,
@@ -4336,12 +4327,9 @@ nsresult Connection::EnsureStorageConnection() {
     }
   });
 
-  bool removedUsageFile;
-
-  LS_TRY_UNWRAP(std::tie(storageConnection, removedUsageFile),
-                CreateStorageConnection(*directoryEntry, *usageFile, Origin()));
-
-  MOZ_ASSERT(!removedUsageFile);
+  LS_TRY_UNWRAP(storageConnection,
+                CreateStorageConnection(*directoryEntry, *usageFile, Origin(),
+                                        [] { MOZ_ASSERT_UNREACHABLE(); }));
 
   MOZ_ASSERT(mQuotaClient);
 
@@ -7396,7 +7384,9 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
 
   
   
-  RefPtr<QuotaObject> quotaObject;
+  const RefPtr<QuotaObject> quotaObject = GetQuotaObject();
+
+  LS_TRY(OkIf(quotaObject), Err(NS_ERROR_FAILURE));
 
   LS_TRY_INSPECT(const auto& usageFile, GetUsageFile(directoryPath));
 
@@ -7404,27 +7394,18 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
                  GetUsageJournalFile(directoryPath));
 
   LS_TRY_INSPECT(
-      (const auto& [connection, removedUsageFile]),
-      CreateStorageConnection(*directoryEntry, *usageFile, Origin()));
+      const auto& connection,
+      (CreateStorageConnection(
+          *directoryEntry, *usageFile, Origin(), [&quotaObject, this] {
+            
+            
+            
 
-  
-  
-  if (removedUsageFile) {
-    if (!quotaObject) {
-      quotaObject = GetQuotaObject();
-      if (!quotaObject) {
-        return NS_ERROR_FAILURE;
-      }
-    }
+            MOZ_ALWAYS_TRUE(
+                quotaObject->MaybeUpdateSize(0,  true));
 
-    MOZ_ALWAYS_TRUE(quotaObject->MaybeUpdateSize(0,  true));
-
-    mUsage = 0;
-  }
-
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
+            mUsage = 0;
+          })));
 
   rv = VerifyDatabaseInformation(connection);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -7441,13 +7422,6 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
 
     LS_TRY_INSPECT(const int64_t& newUsage,
                    GetUsage(*connection, mArchivedOriginScope.get()));
-
-    if (!quotaObject) {
-      quotaObject = GetQuotaObject();
-      if (!quotaObject) {
-        return NS_ERROR_FAILURE;
-      }
-    }
 
     if (!quotaObject->MaybeUpdateSize(newUsage,  true)) {
       return NS_ERROR_FILE_NO_DEVICE_SPACE;
@@ -8808,11 +8782,9 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
                            &aGroupAndOrigin](
                               const nsresult) -> Result<UsageInfo, nsresult> {
                     LS_TRY_INSPECT(
-                        (const auto& [connection, usageFileRemoved]),
-                        CreateStorageConnection(*file, *usageFile,
-                                                aGroupAndOrigin.mOrigin));
-
-                    Unused << usageFileRemoved;
+                        const auto& connection,
+                        CreateStorageConnection(
+                            *file, *usageFile, aGroupAndOrigin.mOrigin, [] {}));
 
                     LS_TRY_INSPECT(
                         const int64_t& usage,
