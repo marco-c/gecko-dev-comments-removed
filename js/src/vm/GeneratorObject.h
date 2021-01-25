@@ -107,6 +107,12 @@ class AbstractGeneratorObject : public NativeObject {
   
   
   
+  const Value& getUnaliasedLocal(uint32_t slot) const;
+  void setUnaliasedLocal(uint32_t slot, const Value& value);
+
+  
+  
+  
   
   
   
@@ -225,6 +231,16 @@ bool GeneratorThrowOrReturn(JSContext* cx, AbstractFramePtr frame,
 
 AbstractGeneratorObject* GetGeneratorObjectForFrame(JSContext* cx,
                                                     AbstractFramePtr frame);
+
+
+
+
+
+
+
+
+AbstractGeneratorObject* GetGeneratorObjectForEnvironment(JSContext* cx,
+                                                          HandleObject env);
 
 GeneratorResumeKind ParserAtomToResumeKind(JSContext* cx,
                                            const frontend::ParserAtom* atom);

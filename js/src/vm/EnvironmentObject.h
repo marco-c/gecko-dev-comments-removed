@@ -346,6 +346,12 @@ class CallObject : public EnvironmentObject {
   static CallObject* createHollowForDebug(JSContext* cx, HandleFunction callee);
 
   
+  
+  
+  
+  static CallObject* find(JSObject* env);
+
+  
 
 
 
