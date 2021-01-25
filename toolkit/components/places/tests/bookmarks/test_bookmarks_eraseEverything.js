@@ -1,19 +1,6 @@
 
 
 
-function promiseManyFrecenciesChanged() {
-  return new Promise(resolve => {
-    let obs = new NavHistoryObserver();
-    obs.onManyFrecenciesChanged = () => {
-      Assert.ok(true, "onManyFrecenciesChanged is triggered.");
-      PlacesUtils.history.removeObserver(obs);
-      resolve();
-    };
-
-    PlacesUtils.history.addObserver(obs);
-  });
-}
-
 add_task(async function test_eraseEverything() {
   await PlacesTestUtils.addVisits({
     uri: NetUtil.newURI("http://example.com/"),
@@ -83,12 +70,16 @@ add_task(async function test_eraseEverything() {
   Assert.ok(frecencyForUrl("http://example.com/") > frecencyForExample);
   Assert.ok(frecencyForUrl("http://example.com/") > frecencyForMozilla);
 
-  let manyFrecenciesPromise = promiseManyFrecenciesChanged();
+  const promise = PlacesTestUtils.waitForNotification(
+    "pages-rank-changed",
+    () => true,
+    "places"
+  );
 
   await PlacesUtils.bookmarks.eraseEverything();
 
   
-  await manyFrecenciesPromise;
+  await promise;
 
   Assert.equal(frecencyForUrl("http://example.com/"), frecencyForExample);
   Assert.equal(frecencyForUrl("http://example.com/"), frecencyForMozilla);

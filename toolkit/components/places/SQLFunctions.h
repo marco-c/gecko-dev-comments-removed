@@ -566,6 +566,29 @@ class NoteSyncChangeFunction final : public mozIStorageFunction {
   ~NoteSyncChangeFunction() = default;
 };
 
+
+
+
+
+
+
+class InvalidateDaysOfHistoryFunction final : public mozIStorageFunction {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_MOZISTORAGEFUNCTION
+
+  
+
+
+
+
+
+  static nsresult create(mozIStorageConnection* aDBConn);
+
+ private:
+  ~InvalidateDaysOfHistoryFunction() = default;
+};
+
 }  
 }  
 

@@ -9,16 +9,12 @@ const PREF_FREC_DECAY_RATE_DEF = 0.975;
 
 
 
-function promiseManyFrecenciesChanged() {
-  let deferred = PromiseUtils.defer();
-  let obs = new NavHistoryObserver();
-  obs.onManyFrecenciesChanged = () => {
-    PlacesUtils.history.removeObserver(obs);
-    Assert.ok(true);
-    deferred.resolve();
-  };
-  PlacesUtils.history.addObserver(obs);
-  return deferred.promise;
+function promiseRankingChanged() {
+  return PlacesTestUtils.waitForNotification(
+    "pages-rank-changed",
+    () => true,
+    "places"
+  );
 }
 
 add_task(async function setup() {
@@ -35,7 +31,7 @@ add_task(async function test_frecency_decay() {
 
   
   let url = "http://example.com/b";
-  let promiseOne = promiseManyFrecenciesChanged();
+  let promiseOne = promiseRankingChanged();
   await PlacesUtils.bookmarks.insert({
     url,
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
@@ -43,7 +39,7 @@ add_task(async function test_frecency_decay() {
   await promiseOne;
 
   
-  let promiseMany = promiseManyFrecenciesChanged();
+  let promiseMany = promiseRankingChanged();
   PlacesUtils.history
     .QueryInterface(Ci.nsIObserver)
     .observe(null, "idle-daily", "");

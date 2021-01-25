@@ -874,8 +874,6 @@ var invalidateFrecencies = async function(db, idList) {
     );
   }
 
-  const observers = PlacesUtils.history.getObservers();
-  notify(observers, "onManyFrecenciesChanged");
   PlacesObservers.notifyListeners([new PlacesRanking()]);
 
   
@@ -919,10 +917,6 @@ var clear = async function(db) {
                           END)
                         WHERE frecency > 0`);
   });
-
-  let observers = PlacesUtils.history.getObservers();
-  
-  notify(observers, "onManyFrecenciesChanged");
 
   PlacesObservers.notifyListeners([
     new PlacesHistoryCleared(),
