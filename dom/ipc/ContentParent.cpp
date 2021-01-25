@@ -5293,7 +5293,8 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
   });
 
   
-  if (aParent.IsDiscarded()) {
+  RefPtr<BrowsingContext> parent = aParent.GetMaybeDiscarded();
+  if (NS_WARN_IF(!parent)) {
     rv = NS_ERROR_FAILURE;
     return IPC_OK();
   }
@@ -5304,8 +5305,8 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
     return IPC_FAIL(this, "Missing BrowsingContext for new tab");
   }
 
-  RefPtr<BrowsingContext> newBCOpener = newBC->GetOpener();
-  if (newBCOpener && aParent.get() != newBCOpener) {
+  uint64_t newBCOpenerId = newBC->GetOpenerId();
+  if (newBCOpenerId != 0 && parent->Id() != newBCOpenerId) {
     return IPC_FAIL(this, "Invalid opener BrowsingContext for new tab");
   }
   if (newBC->GetParent() != nullptr) {
@@ -5336,7 +5337,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
   nsCOMPtr<nsIRemoteTab> newRemoteTab;
   int32_t openLocation = nsIBrowserDOMWindow::OPEN_NEWWINDOW;
   mozilla::ipc::IPCResult ipcResult = CommonCreateWindow(
-      aThisTab, aParent.get(), !!newBCOpener, aChromeFlags, aCalledFromJS,
+      aThisTab, parent, newBCOpenerId != 0, aChromeFlags, aCalledFromJS,
       aWidthSpecified, aForPrinting, aForPrintPreview, aURIToLoad, aFeatures,
       aFullZoom, newTab, VoidString(), rv, newRemoteTab, &cwi.windowOpened(),
       openLocation, aTriggeringPrincipal, aReferrerInfo,  false,
@@ -5376,7 +5377,8 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindowInDifferentProcess(
   MOZ_DIAGNOSTIC_ASSERT(!nsContentUtils::IsSpecialName(aName));
 
   
-  if (NS_WARN_IF(aParent.IsDiscarded())) {
+  RefPtr<BrowsingContext> parent = aParent.GetMaybeDiscarded();
+  if (NS_WARN_IF(!parent)) {
     return IPC_OK();
   }
 
@@ -5411,8 +5413,8 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindowInDifferentProcess(
 
   nsresult rv;
   mozilla::ipc::IPCResult ipcResult = CommonCreateWindow(
-      aThisTab, aParent.get(),  false, aChromeFlags,
-      aCalledFromJS, aWidthSpecified,  false,
+      aThisTab, parent,  false, aChromeFlags, aCalledFromJS,
+      aWidthSpecified,  false,
        false, aURIToLoad, aFeatures, aFullZoom,
        nullptr, aName, rv, newRemoteTab, &windowIsNew,
       openLocation, aTriggeringPrincipal, aReferrerInfo,
