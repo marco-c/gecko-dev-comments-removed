@@ -140,6 +140,11 @@ class alignas(8) IonScript final : public TrailingArray {
   
   TraceLoggerEventVector traceLoggerEvents_;
 
+#ifdef DEBUG
+  
+  mozilla::HashNumber icHash_ = 0;
+#endif
+
   
 
  private:
@@ -450,6 +455,11 @@ class alignas(8) IonScript final : public TrailingArray {
   size_t allocBytes() const { return allocBytes_; }
 
   static void preWriteBarrier(Zone* zone, IonScript* ionScript);
+
+#ifdef DEBUG
+  mozilla::HashNumber icHash() const { return icHash_; }
+  void setICHash(mozilla::HashNumber hash) { icHash_ = hash; }
+#endif
 };
 
 
