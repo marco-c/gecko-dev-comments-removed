@@ -1340,3 +1340,23 @@ function compareValues(first, second) {
   }
   return first > second ? 1 : -1;
 }
+
+
+
+
+
+
+
+
+const clickOnSidebarTab = async (doc, name) => {
+  AccessibilityUtils.setEnv({
+    
+    
+    nonNegativeTabIndexRule: false,
+  });
+  await EventUtils.sendMouseEvent(
+    { type: "click" },
+    doc.querySelector(`#${name}-tab`)
+  );
+  AccessibilityUtils.resetEnv();
+};

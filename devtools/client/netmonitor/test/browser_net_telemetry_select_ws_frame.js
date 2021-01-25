@@ -49,10 +49,7 @@ add_task(async function() {
   );
 
   
-  await EventUtils.sendMouseEvent(
-    { type: "click" },
-    document.querySelector("#response-tab")
-  );
+  await clickOnSidebarTab(document, "response");
   await wait;
 
   

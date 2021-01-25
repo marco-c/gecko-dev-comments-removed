@@ -75,6 +75,11 @@ add_task(async function() {
 
   onTabLoaded = BrowserTestUtils.waitForNewTab(gBrowser, firstURL, true);
 
+  AccessibilityUtils.setEnv({
+    
+    
+    nonNegativeTabIndexRule: false,
+  });
   await EventUtils.sendMouseEvent(
     {
       type: "click",
@@ -83,6 +88,7 @@ add_task(async function() {
     urlEl3,
     hud.ui.window
   );
+  AccessibilityUtils.resetEnv();
   await onTabLoaded;
 
   info("Log a message and wait for it to appear so we know the UI was updated");
