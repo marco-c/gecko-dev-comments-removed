@@ -3350,16 +3350,23 @@ void SamplerThread::Run() {
 
   
   
-  TimeDuration lastSleepOvershoot = 0;
-  TimeStamp sampleStart = TimeStamp::NowUnfuzzed();
-
-  
-  
   UniquePtr<PostSamplingCallbackListItem> postSamplingCallbacks;
   
   SamplingState samplingState{};
 
+  const TimeDuration sampleInterval =
+      TimeDuration::FromMicroseconds(mIntervalMicroseconds);
+  const uint32_t minimumIntervalSleepUs =
+      static_cast<uint32_t>(mIntervalMicroseconds / 4);
+
+  
+  
+  
+  TimeStamp scheduledSampleStart = TimeStamp::NowUnfuzzed();
+
   while (true) {
+    const TimeStamp sampleStart = TimeStamp::NowUnfuzzed();
+
     
     {
       
@@ -3764,19 +3771,30 @@ void SamplerThread::Run() {
 
     
     
+    scheduledSampleStart += sampleInterval;
+
     
-    
-    
-    TimeStamp targetSleepEndTime =
-        sampleStart + TimeDuration::FromMicroseconds(mIntervalMicroseconds);
-    TimeStamp beforeSleep = TimeStamp::NowUnfuzzed();
-    TimeDuration targetSleepDuration = targetSleepEndTime - beforeSleep;
-    double sleepTime = std::max(
-        0.0, (targetSleepDuration - lastSleepOvershoot).ToMicroseconds());
-    SleepMicro(static_cast<uint32_t>(sleepTime));
-    sampleStart = TimeStamp::NowUnfuzzed();
-    lastSleepOvershoot =
-        sampleStart - (beforeSleep + TimeDuration::FromMicroseconds(sleepTime));
+    const TimeStamp beforeSleep = TimeStamp::NowUnfuzzed();
+    if (scheduledSampleStart >= beforeSleep) {
+      
+      const uint32_t sleepTimeUs = static_cast<uint32_t>(
+          (scheduledSampleStart - beforeSleep).ToMicroseconds());
+      if (sleepTimeUs >= minimumIntervalSleepUs) {
+        SleepMicro(sleepTimeUs);
+      } else {
+        
+        
+        
+        SleepMicro(minimumIntervalSleepUs);
+      }
+    } else {
+      
+      
+      
+      
+      scheduledSampleStart = beforeSleep + sampleInterval;
+      SleepMicro(static_cast<uint32_t>(sampleInterval.ToMicroseconds()));
+    }
   }
 
   
