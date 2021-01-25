@@ -307,7 +307,7 @@ struct SharedDataContainer {
 };
 
 
-struct CompilationStencil {
+struct BaseCompilationStencil {
   
   
   mozilla::Span<RegExpStencil> regExpData;
@@ -347,10 +347,10 @@ struct CompilationStencil {
   using FunctionKey = uint64_t;
   FunctionKey functionKey = {};
 
-  CompilationStencil() = default;
+  BaseCompilationStencil() = default;
 
   
-  CompilationStencil(CompilationStencil&& other) = default;
+  BaseCompilationStencil(BaseCompilationStencil&& other) = default;
 
   const ParserAtom* getParserAtomAt(JSContext* cx,
                                     TaggedParserAtomIndex taggedIndex) const;
@@ -429,17 +429,17 @@ class ScriptStencilIterable {
 
   class Iterator {
     size_t index_ = 0;
-    const CompilationStencil& stencil_;
+    const BaseCompilationStencil& stencil_;
     CompilationGCOutput& gcOutput_;
 
-    Iterator(const CompilationStencil& stencil, CompilationGCOutput& gcOutput,
-             size_t index)
+    Iterator(const BaseCompilationStencil& stencil,
+             CompilationGCOutput& gcOutput, size_t index)
         : index_(index), stencil_(stencil), gcOutput_(gcOutput) {
       MOZ_ASSERT(index == stencil.scriptData.size());
     }
 
    public:
-    explicit Iterator(const CompilationStencil& stencil,
+    explicit Iterator(const BaseCompilationStencil& stencil,
                       CompilationGCOutput& gcOutput)
         : stencil_(stencil), gcOutput_(gcOutput) {
       skipTopLevelNonFunction();
@@ -487,16 +487,16 @@ class ScriptStencilIterable {
                                index);
     }
 
-    static Iterator end(const CompilationStencil& stencil,
+    static Iterator end(const BaseCompilationStencil& stencil,
                         CompilationGCOutput& gcOutput) {
       return Iterator(stencil, gcOutput, stencil.scriptData.size());
     }
   };
 
-  const CompilationStencil& stencil_;
+  const BaseCompilationStencil& stencil_;
   CompilationGCOutput& gcOutput_;
 
-  explicit ScriptStencilIterable(const CompilationStencil& stencil,
+  explicit ScriptStencilIterable(const BaseCompilationStencil& stencil,
                                  CompilationGCOutput& gcOutput)
       : stencil_(stencil), gcOutput_(gcOutput) {}
 
@@ -517,7 +517,7 @@ struct CompilationInfo {
   static constexpr size_t LifoAllocChunkSize = 512;
 
   CompilationInput input;
-  CompilationStencil stencil;
+  BaseCompilationStencil stencil;
 
   
   
@@ -541,9 +541,9 @@ struct CompilationInfo {
       : alloc(LifoAllocChunkSize), input(options) {}
 
   static MOZ_MUST_USE bool prepareInputAndStencilForInstantiate(
-      JSContext* cx, CompilationInput& input, CompilationStencil& stencil);
+      JSContext* cx, CompilationInput& input, BaseCompilationStencil& stencil);
   static MOZ_MUST_USE bool prepareGCOutputForInstantiate(
-      JSContext* cx, CompilationStencil& stencil,
+      JSContext* cx, BaseCompilationStencil& stencil,
       CompilationGCOutput& gcOutput);
 
   static MOZ_MUST_USE bool prepareForInstantiate(
@@ -553,7 +553,7 @@ struct CompilationInfo {
                                                CompilationInfo& compilationInfo,
                                                CompilationGCOutput& gcOutput);
   static MOZ_MUST_USE bool instantiateStencilsAfterPreparation(
-      JSContext* cx, CompilationInput& input, CompilationStencil& stencil,
+      JSContext* cx, CompilationInput& input, BaseCompilationStencil& stencil,
       CompilationGCOutput& gcOutput);
 
   MOZ_MUST_USE bool serializeStencils(JSContext* cx, JS::TranscodeBuffer& buf,
@@ -575,7 +575,7 @@ struct CompilationInfo {
   CompilationInfo& operator=(CompilationInfo&&) = delete;
 
   static ScriptStencilIterable functionScriptStencils(
-      CompilationStencil& stencil, CompilationGCOutput& gcOutput) {
+      BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput) {
     return ScriptStencilIterable(stencil, gcOutput);
   }
 
@@ -596,7 +596,7 @@ struct CompilationInfoVector {
  public:
   CompilationInfo initial;
   LifoAlloc allocForDelazifications;
-  Vector<CompilationStencil, 0, js::SystemAllocPolicy> delazifications;
+  Vector<BaseCompilationStencil, 0, js::SystemAllocPolicy> delazifications;
   ScriptIndexVector delazificationIndices;
   CompilationAtomCache::AtomCacheVector delazificationAtomCache;
 

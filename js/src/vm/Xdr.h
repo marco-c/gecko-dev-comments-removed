@@ -31,7 +31,7 @@ namespace frontend {
 struct CompilationInfo;
 struct CompilationInfoVector;
 struct CompilationInput;
-struct CompilationStencil;
+struct BaseCompilationStencil;
 }  
 
 class LifoAlloc;
@@ -283,7 +283,7 @@ class XDRState : public XDRCoderBase {
   JSContext* cx() const { return mainBuf.cx(); }
   virtual bool isForStencil() const { return false; }
   virtual XDRResultT<bool> checkAlreadyCoded(
-      const frontend::CompilationStencil& stencil) {
+      const frontend::BaseCompilationStencil& stencil) {
     return false;
   }
 
@@ -547,7 +547,7 @@ class XDRState : public XDRCoderBase {
                          HandleScriptSourceObject sourceObject = nullptr);
   XDRResult codeScript(MutableHandleScript scriptp);
   XDRResult codeStencil(frontend::CompilationInfo& compilationInfo);
-  XDRResult codeFunctionStencil(frontend::CompilationStencil& stencil);
+  XDRResult codeFunctionStencil(frontend::BaseCompilationStencil& stencil);
 };
 
 using XDREncoder = XDRState<XDR_ENCODE>;
@@ -833,7 +833,7 @@ class XDRIncrementalStencilEncoder : public XDRIncrementalEncoderBase {
   virtual ~XDRIncrementalStencilEncoder() = default;
 
   XDRResultT<bool> checkAlreadyCoded(
-      const frontend::CompilationStencil& stencil) override;
+      const frontend::BaseCompilationStencil& stencil) override;
 
   bool isForStencil() const override { return true; }
 
@@ -860,8 +860,8 @@ XDRResult XDRCompilationInput(XDRState<mode>* xdr,
                               frontend::CompilationInput& input);
 
 template <XDRMode mode>
-XDRResult XDRCompilationStencil(XDRState<mode>* xdr,
-                                frontend::CompilationStencil& stencil);
+XDRResult XDRBaseCompilationStencil(XDRState<mode>* xdr,
+                                    frontend::BaseCompilationStencil& stencil);
 
 } 
 

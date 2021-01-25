@@ -48,7 +48,7 @@ namespace frontend {
 
 struct CompilationInfo;
 struct CompilationAtomCache;
-struct CompilationStencil;
+struct BaseCompilationStencil;
 struct CompilationGCOutput;
 class RegExpStencil;
 class BigIntStencil;
@@ -113,14 +113,15 @@ class RegExpStencil {
 
   
   
-  RegExpObject* createRegExpAndEnsureAtom(JSContext* cx,
-                                          CompilationAtomCache& atomCache,
-                                          CompilationStencil& stencil) const;
+  RegExpObject* createRegExpAndEnsureAtom(
+      JSContext* cx, CompilationAtomCache& atomCache,
+      BaseCompilationStencil& stencil) const;
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
-  void dump(JSONPrinter& json, CompilationStencil* compilationStencil);
-  void dumpFields(JSONPrinter& json, CompilationStencil* compilationStencil);
+  void dump(JSONPrinter& json, BaseCompilationStencil* compilationStencil);
+  void dumpFields(JSONPrinter& json,
+                  BaseCompilationStencil* compilationStencil);
 #endif
 };
 
@@ -323,9 +324,9 @@ class ScopeStencil {
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
   void dump(JSONPrinter& json, BaseParserScopeData* baseScopeData,
-            CompilationStencil* compilationStencil);
+            BaseCompilationStencil* compilationStencil);
   void dumpFields(JSONPrinter& json, BaseParserScopeData* baseScopeData,
-                  CompilationStencil* compilationStencil);
+                  BaseCompilationStencil* compilationStencil);
 #endif
 
  private:
@@ -492,8 +493,9 @@ class StencilModuleMetadata {
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
-  void dump(JSONPrinter& json, CompilationStencil* compilationStencil);
-  void dumpFields(JSONPrinter& json, CompilationStencil* compilationStencil);
+  void dump(JSONPrinter& json, BaseCompilationStencil* compilationStencil);
+  void dumpFields(JSONPrinter& json,
+                  BaseCompilationStencil* compilationStencil);
 #endif
 };
 
@@ -642,6 +644,7 @@ class ScriptStencil {
 
   
   
+  
   CompilationGCThingIndex gcThingsOffset;
   uint32_t gcThingsLength = 0;
 
@@ -705,7 +708,7 @@ class ScriptStencil {
   bool hasGCThings() const { return gcThingsLength; }
 
   mozilla::Span<TaggedScriptThingIndex> gcthings(
-      CompilationStencil& stencil) const;
+      BaseCompilationStencil& stencil) const;
 
   bool wasFunctionEmitted() const { return flags_ & WasFunctionEmittedFlag; }
 
@@ -759,8 +762,9 @@ class ScriptStencil {
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();
-  void dump(JSONPrinter& json, CompilationStencil* compilationStencil);
-  void dumpFields(JSONPrinter& json, CompilationStencil* compilationStencil);
+  void dump(JSONPrinter& json, BaseCompilationStencil* compilationStencil);
+  void dumpFields(JSONPrinter& json,
+                  BaseCompilationStencil* compilationStencil);
 #endif
 };
 
@@ -795,7 +799,7 @@ class ScriptStencilExtra {
 #if defined(DEBUG) || defined(JS_JITSPEW)
 void DumpTaggedParserAtomIndex(js::JSONPrinter& json,
                                TaggedParserAtomIndex taggedIndex,
-                               CompilationStencil* compilationStencil);
+                               BaseCompilationStencil* compilationStencil);
 #endif
 
 } 
