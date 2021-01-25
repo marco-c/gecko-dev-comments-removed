@@ -18,16 +18,23 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 
-const KNOWN_SEARCH_SOURCES = [
-  "abouthome",
-  "contextmenu",
-  "newtab",
-  "searchbar",
-  "system",
-  "urlbar",
-  "urlbar-searchmode",
-  "webextension",
-];
+
+
+
+
+
+
+
+const KNOWN_SEARCH_SOURCES = new Map([
+  ["abouthome", "about_home"],
+  ["contextmenu", "contextmenu"],
+  ["newtab", "about_newtab"],
+  ["searchbar", "searchbar"],
+  ["system", "system"],
+  ["urlbar", "urlbar"],
+  ["urlbar-searchmode", "urlbar_searchmode"],
+  ["webextension", "webextension"],
+]);
 
 
 
@@ -186,7 +193,7 @@ class BrowserSearchTelemetryHandler {
       if (!this.shouldRecordSearchCount(browser)) {
         return;
       }
-      if (!KNOWN_SEARCH_SOURCES.includes(source)) {
+      if (!KNOWN_SEARCH_SOURCES.has(source)) {
         console.error("Unknown source for search: ", source);
         return;
       }
@@ -208,34 +215,24 @@ class BrowserSearchTelemetryHandler {
       }
 
       
-      this._handleSearchAction(engine, source, details);
+      switch (source) {
+        case "urlbar":
+        case "searchbar":
+        case "urlbar-searchmode":
+          this._handleSearchAndUrlbar(engine, source, details);
+          break;
+        case "abouthome":
+        case "newtab":
+          this._recordSearch(engine, details.url, source, "enter");
+          break;
+        default:
+          this._recordSearch(engine, details.url, source);
+          break;
+      }
     } catch (ex) {
       
       
       console.error(ex);
-    }
-  }
-
-  _handleSearchAction(engine, source, details) {
-    switch (source) {
-      case "urlbar":
-      case "searchbar":
-        this._handleSearchAndUrlbar(engine, source, details);
-        break;
-      case "urlbar-searchmode":
-        this._handleSearchAndUrlbar(engine, "urlbar_searchmode", details);
-        break;
-      case "abouthome":
-        this._recordSearch(engine, details.url, "about_home", "enter");
-        break;
-      case "newtab":
-        this._recordSearch(engine, details.url, "about_newtab", "enter");
-        break;
-      case "contextmenu":
-      case "system":
-      case "webextension":
-        this._recordSearch(engine, details.url, source);
-        break;
     }
   }
 
@@ -273,15 +270,23 @@ class BrowserSearchTelemetryHandler {
       );
     }
 
+    let scalarSource = KNOWN_SEARCH_SOURCES.get(source);
+
     let scalarKey = action ? "search_" + action : "search";
     Services.telemetry.keyedScalarAdd(
-      "browser.engagement.navigation." + source,
+      "browser.engagement.navigation." + scalarSource,
       scalarKey,
       1
     );
-    Services.telemetry.recordEvent("navigation", "search", source, action, {
-      engine: engine.telemetryId,
-    });
+    Services.telemetry.recordEvent(
+      "navigation",
+      "search",
+      scalarSource,
+      action,
+      {
+        engine: engine.telemetryId,
+      }
+    );
   }
 }
 
