@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/HTMLIFrameElement.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLIFrameElementBinding.h"
 #include "mozilla/dom/FeaturePolicy.h"
@@ -234,24 +235,10 @@ void HTMLIFrameElement::MaybeStoreCrossOriginFeaturePolicy() {
     return;
   }
 
-  
-  
-  nsPIDOMWindowOuter* topWindow = browsingContext->Top()->GetDOMWindow();
-  if (NS_WARN_IF(!topWindow)) {
-    return;
+  if (ContentChild* cc = ContentChild::GetSingleton()) {
+    Unused << cc->SendSetContainerFeaturePolicy(browsingContext,
+                                                mFeaturePolicy);
   }
-
-  Document* topLevelDocument = topWindow->GetExtantDoc();
-  if (NS_WARN_IF(!topLevelDocument)) {
-    return;
-  }
-
-  if (!NS_SUCCEEDED(nsContentUtils::CheckSameOrigin(topLevelDocument, this))) {
-    return;
-  }
-
-  
-  Unused << browsingContext->SetFeaturePolicy(mFeaturePolicy);
 }
 
 already_AddRefed<nsIPrincipal>
