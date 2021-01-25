@@ -53,7 +53,6 @@ CSS_PSEUDO_ELEMENT(selection, ":selection",
 
 
 CSS_PSEUDO_ELEMENT(mozFocusInner, ":-moz-focus-inner", 0)
-CSS_PSEUDO_ELEMENT(mozFocusOuter, ":-moz-focus-outer", 0)
 
 
 CSS_PSEUDO_ELEMENT(mozComplexControlWrapper, ":-moz-complex-control-wrapper",
