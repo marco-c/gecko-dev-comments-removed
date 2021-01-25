@@ -276,7 +276,11 @@ pref("browser.startup.firstrunSkipsHomepage", true);
 
 
 #if defined(XP_WIN)
+#ifdef NIGHTLY_BUILD
+pref("browser.startup.preXulSkeletonUI", true);
+#else
 pref("browser.startup.preXulSkeletonUI", false);
+#endif
 #endif
 
 
