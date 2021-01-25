@@ -172,26 +172,6 @@ AbortReasonOr<WarpSnapshot*> WarpOracle::createSnapshot() {
   }
 #endif
 
-#ifdef DEBUG
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  HashNumber hash = icScript->hash();
-  if (outerScript_->jitScript()->hasFailedICHash()) {
-    HashNumber oldHash = outerScript_->jitScript()->getFailedICHash();
-    MOZ_ASSERT_IF(hash == oldHash, cx_->hadNondeterministicException());
-  }
-  snapshot->setICHash(hash);
-#endif
-
   return snapshot;
 }
 
@@ -1025,7 +1005,8 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
         
         
         fallbackStub->setTrialInliningState(TrialInliningState::Failure);
-        fallbackStub->unlinkStub(cx_->zone(), nullptr, stub);
+        fallbackStub->unlinkStubDontInvalidateWarp(cx_->zone(),
+                                                   nullptr, stub);
         targetScript->setUninlineable();
         info_->inlineScriptTree()->removeCallee(inlineScriptTree);
         icScript_->removeInlinedChild(loc.bytecodeToOffset(script_));
