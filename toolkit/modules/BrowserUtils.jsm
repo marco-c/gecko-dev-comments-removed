@@ -17,6 +17,37 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/PlacesUtils.jsm"
 );
 
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "fissionExperimentMaxOrigins",
+  "fission.experiment.max-origins.origin-cap",
+  30
+);
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "fissionExperimentSlidingWindowMS",
+  "fission.experiment.max-origins.sliding-window-ms",
+  7 * 24 * 60 * 60 * 1000
+);
+
+
+const FISSION_EXPERIMENT_PREF_QUALIFIED =
+  "fission.experiment.max-origins.qualified";
+
+
+
+const FISSION_EXPERIMENT_PREF_LAST_QUALIFIED =
+  "fission.experiment.max-origins.last-qualified";
+
+
+const FISSION_EXPERIMENT_PREF_LAST_DISQUALIFIED =
+  "fission.experiment.max-origins.last-disqualified";
+
 var BrowserUtils = {
   
 
@@ -882,23 +913,94 @@ var BrowserUtils = {
       );
     }
 
+    let originCount = this.computeSiteOriginCount(aWindows, aIsGeckoView);
+    let histogram = Services.telemetry.getHistogramById(
+      "FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_ALL_TABS"
+    );
+
+    
+    
+    if (!this._lastRecordSiteOrigin) {
+      this._lastRecordSiteOrigin = currentTime;
+    } else if (currentTime >= this._lastRecordSiteOrigin + this.min_interval) {
+      this._lastRecordSiteOrigin = currentTime;
+
+      histogram.add(originCount);
+    }
+
+    
+    
+
+    
+    
+    
     
     
     if (
-      !this._lastRecordSiteOrigin ||
-      currentTime < this._lastRecordSiteOrigin + this.min_interval
+      !Services.prefs.prefHasUserValue(
+        FISSION_EXPERIMENT_PREF_LAST_DISQUALIFIED
+      )
     ) {
-      if (!this._lastRecordSiteOrigin) {
-        this._lastRecordSiteOrigin = currentTime;
+      for (let [bucketStr, entryCount] of Object.entries(
+        histogram.snapshot().values
+      )) {
+        let bucket = Number(bucketStr);
+        if (bucket > originCount && entryCount > 0) {
+          originCount = bucket;
+        }
       }
-      return;
+      Services.prefs.setIntPref(FISSION_EXPERIMENT_PREF_LAST_DISQUALIFIED, 0);
     }
 
-    this._lastRecordSiteOrigin = currentTime;
+    let currentTimeSec = currentTime / 1000;
+    if (originCount < fissionExperimentMaxOrigins) {
+      let lastDisqualified = Services.prefs.getIntPref(
+        FISSION_EXPERIMENT_PREF_LAST_DISQUALIFIED
+      );
+      let lastQualified = Services.prefs.getIntPref(
+        FISSION_EXPERIMENT_PREF_LAST_QUALIFIED,
+        0
+      );
 
-    Services.telemetry
-      .getHistogramById("FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_ALL_TABS")
-      .add(this.computeSiteOriginCount(aWindows, aIsGeckoView));
+      
+      
+      
+      
+      
+      if (lastDisqualified > 0 && lastQualified <= lastDisqualified) {
+        Services.prefs.setIntPref(
+          FISSION_EXPERIMENT_PREF_LAST_DISQUALIFIED,
+          currentTimeSec - 1
+        );
+      }
+
+      let qualified = Services.prefs.getBoolPref(
+        FISSION_EXPERIMENT_PREF_QUALIFIED,
+        false
+      );
+      if (!qualified) {
+        Services.prefs.setIntPref(
+          FISSION_EXPERIMENT_PREF_LAST_QUALIFIED,
+          currentTimeSec
+        );
+
+        
+        
+        
+        if (
+          currentTimeSec - lastDisqualified >=
+          fissionExperimentSlidingWindowMS / 1000
+        ) {
+          Services.prefs.setBoolPref(FISSION_EXPERIMENT_PREF_QUALIFIED, true);
+        }
+      }
+    } else {
+      Services.prefs.setIntPref(
+        FISSION_EXPERIMENT_PREF_LAST_DISQUALIFIED,
+        currentTimeSec
+      );
+      Services.prefs.setBoolPref(FISSION_EXPERIMENT_PREF_QUALIFIED, false);
+    }
   },
 
   
