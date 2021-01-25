@@ -182,11 +182,15 @@ function edgeUsesVariable(edge, variable, body)
     switch (edge.Kind) {
 
     case "Assign": {
+        
         if (isReturningImmobileValue(edge, variable))
             return 0;
         const [lhs, rhs] = edge.Exp;
+        
         if (expressionUsesVariable(rhs, variable))
             return src;
+        
+        
         if (expressionUsesVariable(lhs, variable) && !expressionIsVariable(lhs, variable))
             return src;
         return 0;
@@ -273,6 +277,16 @@ function edgeTakesVariableAddress(edge, variable, body)
 
 function expressionIsVariable(exp, variable)
 {
+    return exp.Kind == "Var" && sameVariable(exp.Variable, variable);
+}
+
+function expressionIsMethodOnVariable(exp, variable)
+{
+    
+    
+    while (exp.Kind == "Fld" && exp.Field.Name[0].startsWith("field:"))
+        exp = exp.Exp[0];
+
     return exp.Kind == "Var" && sameVariable(exp.Variable, variable);
 }
 
@@ -453,33 +467,32 @@ function edgeInvalidatesVariable(edge, variable, body)
     if (edge.Type.Kind == 'Function' &&
         edge.Type.TypeFunctionCSU &&
         edge.PEdgeCallInstance &&
-        edge.PEdgeCallInstance.Exp.Kind == 'Var' &&
-        expressionIsVariable(edge.PEdgeCallInstance.Exp, variable))
-    do {
+        expressionIsMethodOnVariable(edge.PEdgeCallInstance.Exp, variable))
+    {
         const typeName = edge.Type.TypeFunctionCSU.Type.Name;
         const m = typeName.match(/^(((\w|::)+?)(\w+))</);
-        if (!m)
-            break;
-        const [, type, namespace,, classname] = m;
+        if (m) {
+            const [, type, namespace,, classname] = m;
 
-        
-        
-        if (callee.Kind == 'Var' &&
-            typesWithSafeConstructors.has(type) &&
-            callee.Variable.Name[0].includes(`${namespace}${classname}<T>::${classname}()`))
-        {
-            return true;
+            
+            
+            const ctorName = `${namespace}${classname}<T>::${classname}()`;
+            if (callee.Kind == 'Var' &&
+                typesWithSafeConstructors.has(type) &&
+                callee.Variable.Name[0].includes(ctorName))
+            {
+                return true;
+            }
+
+            
+            if (callee.Kind == 'Var' &&
+                type in resetterMethods &&
+                resetterMethods[type].has(callee.Variable.Name[1]))
+            {
+                return true;
+            }
         }
-
-        
-        if (callee.Kind == 'Var' &&
-            type in resetterMethods &&
-            resetterMethods[type].has(callee.Variable.Name[1]))
-        {
-            return true;
-        }
-
-    } while(0);
+    }
 
     
     if (edge.Type.Kind == 'Function' &&

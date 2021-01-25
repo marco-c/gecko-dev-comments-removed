@@ -45,10 +45,7 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
         mLength(aOther.mLength),
         mShared(aOther.mShared),
         mComputed(aOther.mComputed) {
-    aOther.mData = nullptr;
-    aOther.mLength = 0;
-    aOther.mShared = false;
-    aOther.mComputed = false;
+    aOther.Reset();
   }
 
  private:
@@ -137,6 +134,16 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
     MOZ_ASSERT(!mComputed);
     GetLengthAndDataAndSharedness(mImplObj, &mLength, &mShared, &mData);
     mComputed = true;
+  }
+
+  inline void Reset() {
+    
+    
+    
+    mData = nullptr;
+    mLength = 0;
+    mShared = false;
+    mComputed = false;
   }
 
  private:
