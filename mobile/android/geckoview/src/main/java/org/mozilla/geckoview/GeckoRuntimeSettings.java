@@ -748,12 +748,12 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         
         if (mRequestedLocales != null) {
             for (String locale : mRequestedLocales) {
-                locales.add(locale.toLowerCase());
+                locales.add(locale.toLowerCase(Locale.ROOT));
             }
         }
         
         for (String locale : getDefaultLocales()) {
-            locale = locale.toLowerCase();
+            locale = locale.toLowerCase(Locale.ROOT);
             if (!locales.contains(locale)) {
                 locales.add(locale);
             }
