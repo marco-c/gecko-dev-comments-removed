@@ -140,7 +140,7 @@ impl<'a> ParserContext<'a> {
     
     #[inline]
     pub fn chrome_rules_enabled(&self) -> bool {
-        self.url_data.chrome_rules_enabled() || self.stylesheet_origin == Origin::User
+        self.url_data.is_chrome() || self.stylesheet_origin == Origin::User
     }
 
     
