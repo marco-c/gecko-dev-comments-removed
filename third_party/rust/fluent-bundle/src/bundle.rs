@@ -16,12 +16,12 @@ use unic_langid::LanguageIdentifier;
 use crate::args::FluentArgs;
 use crate::entry::Entry;
 use crate::entry::GetEntry;
-use crate::errors::{EntryKind, FluentError};
+use crate::errors::FluentError;
 use crate::memoizer::MemoizerKind;
-use crate::message::{FluentAttribute, FluentMessage};
 use crate::resolver::{ResolveValue, Scope, WriteValue};
 use crate::resource::FluentResource;
 use crate::types::FluentValue;
+use crate::message::{FluentMessage, FluentAttribute};
 
 
 
@@ -57,15 +57,19 @@ impl<R, M: MemoizerKind> FluentBundleBase<R, M> {
     
     
     
-    
-    
-    pub fn new(locales: Vec<LanguageIdentifier>) -> Self {
-        let first_locale = locales.get(0).cloned().unwrap_or_default();
+    pub fn new<'a, L: 'a + Into<LanguageIdentifier> + PartialEq + Clone>(
+        locales: impl IntoIterator<Item = &'a L>,
+    ) -> Self {
+        let locales = locales
+            .into_iter()
+            .map(|s| s.clone().into())
+            .collect::<Vec<_>>();
+        let lang = locales.get(0).cloned().unwrap_or_default();
         Self {
             locales,
             resources: vec![],
             entries: HashMap::new(),
-            intls: M::new(first_locale),
+            intls: M::new(lang),
             use_isolating: true,
             transform: None,
             formatter: None,
@@ -134,10 +138,8 @@ impl<R, M: MemoizerKind> FluentBundleBase<R, M> {
             };
 
             let (entry, kind) = match entry {
-                ast::Entry::Message(..) => {
-                    (Entry::Message([res_pos, entry_pos]), EntryKind::Message)
-                }
-                ast::Entry::Term(..) => (Entry::Term([res_pos, entry_pos]), EntryKind::Term),
+                ast::Entry::Message(..) => (Entry::Message([res_pos, entry_pos]), "message"),
+                ast::Entry::Term(..) => (Entry::Term([res_pos, entry_pos]), "term"),
                 _ => continue,
             };
 
@@ -346,8 +348,8 @@ impl<R, M: MemoizerKind> FluentBundleBase<R, M> {
 
         for attr in &message.attributes {
             attributes.push(FluentAttribute {
-                id: attr.id.name,
-                value: &attr.value,
+                id: &attr.id.name,
+                value: &attr.value
             });
         }
         Some(FluentMessage { value, attributes })
@@ -487,7 +489,7 @@ impl<R, M: MemoizerKind> FluentBundleBase<R, M> {
                 Ok(())
             }
             HashEntry::Occupied(_) => Err(FluentError::Overriding {
-                kind: EntryKind::Function,
+                kind: "function",
                 id: id.to_owned(),
             }),
         }
@@ -497,7 +499,7 @@ impl<R, M: MemoizerKind> FluentBundleBase<R, M> {
 impl<R, M: MemoizerKind> Default for FluentBundleBase<R, M> {
     fn default() -> Self {
         let langid = LanguageIdentifier::default();
-        Self {
+        FluentBundleBase {
             locales: vec![langid.clone()],
             resources: vec![],
             entries: Default::default(),
