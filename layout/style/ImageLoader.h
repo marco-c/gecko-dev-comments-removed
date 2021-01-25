@@ -48,10 +48,13 @@ class ImageLoader final {
   
   enum class Flags : uint32_t {
     
-    RequiresReflowOnFirstFrameCompleteAndLoadEventBlocking = 1u << 0,
+    RequiresReflowOnSizeAvailable = 1u << 0,
 
     
-    IsBlockingLoadEvent = 1u << 1,
+    RequiresReflowOnFirstFrameCompleteAndLoadEventBlocking = 1u << 1,
+
+    
+    IsBlockingLoadEvent = 1u << 2,
   };
 
   explicit ImageLoader(dom::Document* aDocument) : mDocument(aDocument) {
