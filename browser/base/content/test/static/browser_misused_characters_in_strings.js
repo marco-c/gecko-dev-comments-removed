@@ -8,7 +8,8 @@
 
 
 
-let gWhitelist = [
+
+let gExceptionsList = [
   {
     file: "netError.dtd",
     key: "certerror.introPara2",
@@ -134,14 +135,14 @@ let gWhitelist = [
 
 
 function ignoredError(filepath, key, type) {
-  for (let index in gWhitelist) {
-    let whitelistItem = gWhitelist[index];
+  for (let index in gExceptionsList) {
+    let exceptionItem = gExceptionsList[index];
     if (
-      filepath.endsWith(whitelistItem.file) &&
-      key == whitelistItem.key &&
-      type == whitelistItem.type
+      filepath.endsWith(exceptionItem.file) &&
+      key == exceptionItem.key &&
+      type == exceptionItem.type
     ) {
-      gWhitelist.splice(index, 1);
+      gExceptionsList.splice(index, 1);
       return true;
     }
   }
@@ -159,7 +160,7 @@ function testForErrors(filepath, key, str) {
     filepath,
     key,
     str,
-    /\w'\w/,
+    /(\w|^)'\w/,
     "apostrophe",
     "Strings with apostrophes should use foo\u2019s instead of foo's."
   );
@@ -335,6 +336,6 @@ add_task(async function checkAllTheFluents() {
   }
 });
 
-add_task(async function ensureWhiteListIsEmpty() {
-  is(gWhitelist.length, 0, "No remaining whitelist entries exist");
+add_task(async function ensureExceptionsListIsEmpty() {
+  is(gExceptionsList.length, 0, "No remaining exceptions exist");
 });
