@@ -19,9 +19,8 @@
 #ifndef wasm_js_h
 #define wasm_js_h
 
-#include "mozilla/Attributes.h"  
-#include "mozilla/HashTable.h"   
-#include "mozilla/Maybe.h"       
+#include "mozilla/HashTable.h"  
+#include "mozilla/Maybe.h"      
 
 #include <stdint.h>  
 
