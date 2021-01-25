@@ -1212,6 +1212,9 @@ already_AddRefed<Promise> FetchBody<Derived>::ConsumeBody(
     return nullptr;
   }
 
+  nsAutoCString mimeType;
+  DerivedClass()->GetMimeType(mimeType);
+
   
   
   
@@ -1226,7 +1229,7 @@ already_AddRefed<Promise> FetchBody<Derived>::ConsumeBody(
   if (!bodyStream) {
     RefPtr<EmptyBody> emptyBody = EmptyBody::Create(
         DerivedClass()->GetParentObject(),
-        DerivedClass()->GetPrincipalInfo().get(), signalImpl, mMimeType, aRv);
+        DerivedClass()->GetPrincipalInfo().get(), signalImpl, mimeType, aRv);
     if (NS_WARN_IF(aRv.Failed())) {
       return nullptr;
     }
@@ -1259,7 +1262,7 @@ already_AddRefed<Promise> FetchBody<Derived>::ConsumeBody(
 
   RefPtr<Promise> promise = BodyConsumer::Create(
       global, mMainThreadEventTarget, bodyStream, signalImpl, aType,
-      BodyBlobURISpec(), BodyLocalPath(), MimeType(), blobStorageType, aRv);
+      BodyBlobURISpec(), BodyLocalPath(), mimeType, blobStorageType, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
@@ -1277,7 +1280,7 @@ template already_AddRefed<Promise> FetchBody<EmptyBody>::ConsumeBody(
     JSContext* aCx, BodyConsumer::ConsumeType aType, ErrorResult& aRv);
 
 template <class Derived>
-void FetchBody<Derived>::SetMimeType() {
+void FetchBody<Derived>::GetMimeType(nsACString& aMimeType) {
   
   ErrorResult result;
   nsCString contentTypeValues;
@@ -1290,19 +1293,13 @@ void FetchBody<Derived>::SetMimeType() {
   
   if (!contentTypeValues.IsVoid() && contentTypeValues.Find(",") == -1) {
     
-    CopyLatin1toUTF8(contentTypeValues, mMimeType);
-    ToLowerCase(mMimeType);
+    CopyLatin1toUTF8(contentTypeValues, aMimeType);
+    ToLowerCase(aMimeType);
   }
 }
 
-template void FetchBody<Request>::SetMimeType();
-
-template void FetchBody<Response>::SetMimeType();
-
-template <class Derived>
-void FetchBody<Derived>::OverrideMimeType(const nsACString& aMimeType) {
-  mMimeType = aMimeType;
-}
+template void FetchBody<Request>::GetMimeType(nsACString& aMimeType);
+template void FetchBody<Response>::GetMimeType(nsACString& aMimeType);
 
 template <class Derived>
 const nsACString& FetchBody<Derived>::BodyBlobURISpec() const {
