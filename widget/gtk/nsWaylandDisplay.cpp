@@ -33,34 +33,13 @@ void WaylandDisplayShutdown() {
   }
 }
 
-static void DispatchDisplay(RefPtr<nsWaylandDisplay> aDisplay) {
-  
-  
-  
-  for (auto& display : gWaylandDisplays) {
-    if (display == aDisplay) {
-      aDisplay->DispatchEventQueue();
-      return;
-    }
-  }
-  NS_WARNING("DispatchDisplay was called for released display!");
-}
-
-
-
-
-
-
-
 
 void WaylandDispatchDisplays() {
+  MOZ_ASSERT(NS_IsMainThread(),
+             "WaylandDispatchDisplays() is supposed to run in main thread");
   for (auto& display : gWaylandDisplays) {
     if (display) {
-      MessageLoop* loop = display->GetThreadLoop();
-      if (loop) {
-        loop->PostTask(NewRunnableFunction("WaylandDisplayDispatch",
-                                           &DispatchDisplay, display));
-      }
+      display->DispatchEventQueue();
     }
   }
 }
@@ -213,7 +192,9 @@ static const struct wl_registry_listener registry_listener = {
     global_registry_handler, global_registry_remover};
 
 bool nsWaylandDisplay::DispatchEventQueue() {
-  wl_display_dispatch_queue_pending(mDisplay, mEventQueue);
+  if (mEventQueue) {
+    wl_display_dispatch_queue_pending(mDisplay, mEventQueue);
+  }
   return true;
 }
 
