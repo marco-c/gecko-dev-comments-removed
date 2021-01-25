@@ -2053,6 +2053,8 @@ JSFunction* js::NewFunctionWithProto(
   MOZ_ASSERT_IF(native, !enclosingEnv);
   MOZ_ASSERT(NewFunctionEnvironmentIsWellFormed(cx, enclosingEnv));
 
+  
+
   JSFunction* fun =
       NewObjectWithClassProto<JSFunction>(cx, proto, allocKind, newKind);
   if (!fun) {
