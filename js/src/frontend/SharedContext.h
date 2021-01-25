@@ -105,6 +105,10 @@ enum class ThisBinding : uint8_t {
   DerivedConstructor
 };
 
+
+
+enum class InheritThis { No, Yes };
+
 class GlobalSharedContext;
 class EvalSharedContext;
 class ModuleSharedContext;

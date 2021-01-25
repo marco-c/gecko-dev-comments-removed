@@ -912,14 +912,14 @@ bool CompilationInfoVector::deserializeStencils(JSContext* cx,
   return true;
 }
 
-CompilationState::CompilationState(JSContext* cx,
-                                   LifoAllocScope& frontendAllocScope,
-                                   const JS::ReadOnlyCompileOptions& options,
-                                   CompilationInfo& compilationInfo,
-                                   Scope* enclosingScope ,
-                                   JSObject* enclosingEnv )
+CompilationState::CompilationState(
+    JSContext* cx, LifoAllocScope& frontendAllocScope,
+    const JS::ReadOnlyCompileOptions& options, CompilationInfo& compilationInfo,
+    InheritThis inheritThis ,
+    Scope* enclosingScope ,
+    JSObject* enclosingEnv )
     : directives(options.forceStrictMode()),
-      scopeContext(cx, enclosingScope, enclosingEnv),
+      scopeContext(cx, inheritThis, enclosingScope, enclosingEnv),
       usedNames(cx),
       allocScope(frontendAllocScope),
       parserAtoms(cx->runtime(), compilationInfo.alloc,
