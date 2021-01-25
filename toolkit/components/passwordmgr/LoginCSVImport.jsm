@@ -153,7 +153,7 @@ class LoginCSVImport {
       );
     });
 
-    await LoginHelper.maybeImportLogins(loginsToImport);
+    let summary = await LoginHelper.maybeImportLogins(loginsToImport);
 
     
     try {
@@ -171,5 +171,6 @@ class LoginCSVImport {
     } catch (ex) {
       Cu.reportError(ex);
     }
+    return summary;
   }
 }
