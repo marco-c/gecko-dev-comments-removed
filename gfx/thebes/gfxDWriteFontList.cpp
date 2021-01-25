@@ -15,7 +15,9 @@
 #include "nsCharSeparatedTokenizer.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/WindowsVersion.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsAppDirectoryServiceDefs.h"
@@ -1487,7 +1489,13 @@ void gfxDWriteFontList::InitSharedFontListForPlatform() {
     return;
   }
 #ifdef MOZ_BUNDLED_FONTS
-  mBundledFonts = CreateBundledFontsCollection(factory);
+  
+  
+  if (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() > 0 ||
+      (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() < 0 &&
+       !IsWin8Point1OrLater())) {
+    mBundledFonts = CreateBundledFontsCollection(factory);
+  }
 #endif
 
   if (XRE_IsParentProcess()) {
@@ -1569,7 +1577,13 @@ nsresult gfxDWriteFontList::InitFontListForPlatform() {
   
   
   
-  mBundledFonts = CreateBundledFontsCollection(factory);
+  
+  
+  if (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() > 0 ||
+      (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() < 0 &&
+       !IsWin8Point1OrLater())) {
+    mBundledFonts = CreateBundledFontsCollection(factory);
+  }
   if (mBundledFonts) {
     GetFontsFromCollection(mBundledFonts);
   }

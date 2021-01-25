@@ -71,6 +71,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/gfx/2D.h"
 
@@ -815,7 +816,11 @@ gfxMacPlatformFontList::gfxMacPlatformFontList()
   CheckFamilyList(kBaseFonts, ArrayLength(kBaseFonts));
 
 #ifdef MOZ_BUNDLED_FONTS
-  ActivateBundledFonts();
+  
+  
+  if (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() != 0) {
+    ActivateBundledFonts();
+  }
 #endif
 
   nsresult rv;

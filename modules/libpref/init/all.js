@@ -589,11 +589,6 @@ pref("gfx.downloadable_fonts.fallback_delay_short", 100);
 
 pref("gfx.downloadable_fonts.disable_cache", false);
 
-#ifdef ANDROID
-  pref("gfx.bundled_fonts.enabled", true);
-  pref("gfx.bundled_fonts.force-enabled", false);
-#endif
-
 
 
 pref("gfx.missing_fonts.notify", false);
