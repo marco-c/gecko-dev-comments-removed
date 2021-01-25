@@ -684,6 +684,17 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   js::ContextData<bool> overRecursed_;
 
+#ifdef DEBUG
+  
+  js::ContextData<bool> hadOverRecursed_;
+
+ public:
+  bool hadNondeterministicException() const {
+    return hadOverRecursed_ || runtime()->hadOutOfMemory;
+  }
+#endif
+
+ private:
   
   
   js::ContextData<bool> propagatingForcedReturn_;
