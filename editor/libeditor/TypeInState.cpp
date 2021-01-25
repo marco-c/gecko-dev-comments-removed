@@ -291,6 +291,16 @@ void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
     
     AutoEditorDOMPointChildInvalidator saveOnlyOffset(mLastSelectionPoint);
   } else {
+    if (aSelection.RangeCount()) {
+      
+      
+      EditorRawDOMRange firstRange(*aSelection.GetRangeAt(0));
+      if (firstRange.StartRef().IsInContentNode() &&
+          HTMLEditUtils::IsContentInclusiveDescendantOfLink(
+              *firstRange.StartRef().ContainerAsContent())) {
+        unlink = !HTMLEditUtils::IsRangeEntirelyInLink(firstRange);
+      }
+    }
     mLastSelectionPoint.Clear();
   }
 
