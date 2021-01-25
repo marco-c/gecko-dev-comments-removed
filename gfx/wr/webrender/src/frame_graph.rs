@@ -168,6 +168,9 @@ pub struct FrameGraphBuilder {
     
     
     active_surfaces: FastHashMap<CacheTextureId, Surface>,
+
+    
+    child_task_buffer: Vec<RenderTaskId>,
 }
 
 impl FrameGraphBuilder {
@@ -181,6 +184,7 @@ impl FrameGraphBuilder {
             frame_id: FrameId::INVALID,
             textures_to_free: FastHashSet::default(),
             active_surfaces: FastHashMap::default(),
+            child_task_buffer: Vec::new(),
         }
     }
 
@@ -304,6 +308,7 @@ impl FrameGraphBuilder {
                 match roots.get(&target_id) {
                     Some(root_task_id) => {
                         graph.tasks[task_id.index as usize].children.push(*root_task_id);
+                        self.roots.remove(root_task_id);
                     }
                     None => {
                         println!("WARN: {:?} depends on root {:?} but it has no tasks!",
@@ -334,9 +339,12 @@ impl FrameGraphBuilder {
         }
 
         
-        for root_id in &self.roots {
+        
+        for i in 0 .. graph.tasks.len() {
+            let task_id = RenderTaskId { index: i as u32 };
             assign_free_pass(
-                *root_id,
+                task_id,
+                &mut self.child_task_buffer,
                 &mut graph,
             );
         }
@@ -626,6 +634,12 @@ fn assign_render_pass(
 
     
     
+    if task.render_on > pass {
+        return;
+    }
+
+    
+    
     
     task.render_on = task.render_on.max(pass);
 
@@ -641,20 +655,20 @@ fn assign_render_pass(
     }
 }
 
-
 fn assign_free_pass(
     id: RenderTaskId,
+    child_task_buffer: &mut Vec<RenderTaskId>,
     graph: &mut FrameGraph,
 ) {
     let task = &graph.tasks[id.index as usize];
     let render_on = task.render_on;
+    debug_assert!(child_task_buffer.is_empty());
 
     
     
-    let mut child_task_ids: SmallVec<[RenderTaskId; 8]> = SmallVec::new();
-    child_task_ids.extend_from_slice(&task.children);
+    child_task_buffer.extend_from_slice(&task.children);
 
-    for child_id in child_task_ids {
+    for child_id in child_task_buffer.drain(..) {
         let child_task = &mut graph.tasks[child_id.index as usize];
 
         
@@ -673,11 +687,6 @@ fn assign_free_pass(
                 panic!("bug: should not be allocated yet");
             }
         }
-
-        assign_free_pass(
-            child_id,
-            graph,
-        );
     }
 }
 
