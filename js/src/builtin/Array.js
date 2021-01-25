@@ -1169,3 +1169,5 @@ function ArrayAt(index) {
     
     return O[k];
 }
+
+_SetIsInlinableLargeFunction(ArrayAt);
