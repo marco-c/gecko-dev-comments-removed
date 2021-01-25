@@ -22,6 +22,10 @@ registerCleanupFunction(function() {
 
 
 add_task(async function() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["prompts.contentPromptSubDialog", false]],
+  });
+
   let firstTab = gBrowser.selectedTab;
   
   let openedTab = await BrowserTestUtils.openNewForegroundTab(
