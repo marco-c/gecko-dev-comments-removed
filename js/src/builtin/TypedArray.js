@@ -1691,7 +1691,7 @@ function ArrayBufferSlice(start, end) {
         ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
 
     
-    ArrayBufferCopyData(newBuffer, 0, O, first | 0, newLen | 0, isWrapped);
+    ArrayBufferCopyData(newBuffer, 0, O, first, newLen, isWrapped);
 
     
     return newBuffer;
@@ -1774,7 +1774,7 @@ function SharedArrayBufferSlice(start, end) {
         ThrowTypeError(JSMSG_SHORT_SHARED_ARRAY_BUFFER_RETURNED, newLen, actualLen);
 
     
-    SharedArrayBufferCopyData(newObj, 0, O, first | 0, newLen | 0, isWrapped);
+    SharedArrayBufferCopyData(newObj, 0, O, first, newLen, isWrapped);
 
     
     return newObj;
