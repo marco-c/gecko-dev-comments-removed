@@ -344,19 +344,8 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
   }
 
   nsContentUtils::GenerateUUIDInPlace(fields.mHistoryID);
-  fields.mExplicitActive = [&] {
-    if (parentBC) {
-      
-      return ExplicitActiveStatus::None;
-    }
-    if (aType == Type::Content) {
-      
-      
-      return ExplicitActiveStatus::Inactive;
-    }
-    
-    return ExplicitActiveStatus::Active;
-  }();
+  fields.mExplicitActive =
+      parentBC ? ExplicitActiveStatus::None : ExplicitActiveStatus::Active;
 
   fields.mFullZoom = parentBC ? parentBC->FullZoom() : 1.0f;
   fields.mTextZoom = parentBC ? parentBC->TextZoom() : 1.0f;
@@ -587,14 +576,6 @@ bool BrowsingContext::IsActive() const {
   return false;
 }
 
-void BrowsingContext::SetInitiallyActive() {
-  MOZ_DIAGNOSTIC_ASSERT(!EverAttached());
-  MOZ_DIAGNOSTIC_ASSERT(IsContent());
-  MOZ_DIAGNOSTIC_ASSERT(IsTop());
-
-  mFields.SetWithoutSyncing<IDX_ExplicitActive>(ExplicitActiveStatus::Active);
-}
-
 bool BrowsingContext::GetIsActiveBrowserWindow() {
   if (!XRE_IsParentProcess()) {
     return Top()->GetIsActiveBrowserWindowInternal();
@@ -652,7 +633,8 @@ void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
     if (XRE_IsParentProcess() && IsTopContent()) {
       nsAutoString messageManagerGroup;
       if (aEmbedder->IsXULElement()) {
-        aEmbedder->GetAttr(nsGkAtoms::messagemanagergroup, messageManagerGroup);
+        aEmbedder->GetAttr(kNameSpaceID_None, nsGkAtoms::messagemanagergroup,
+                           messageManagerGroup);
       }
       txn.SetMessageManagerGroup(messageManagerGroup);
 

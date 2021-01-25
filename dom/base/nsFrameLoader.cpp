@@ -3745,16 +3745,14 @@ bool nsFrameLoader::EnsureBrowsingContextAttached() {
 
   
   bool usePrivateBrowsing = parentContext->UsePrivateBrowsing();
-  const bool useRemoteSubframes = parentContext->UseRemoteSubframes();
-  const bool useRemoteTabs = parentContext->UseRemoteTabs();
-
-  const bool isContent = mPendingBrowsingContext->IsContent();
+  bool useRemoteSubframes = parentContext->UseRemoteSubframes();
+  bool useRemoteTabs = parentContext->UseRemoteTabs();
 
   
   
   
   OriginAttributes attrs;
-  if (isContent) {
+  if (mPendingBrowsingContext->IsContent()) {
     if (mPendingBrowsingContext->GetParent()) {
       MOZ_ASSERT(mPendingBrowsingContext->GetParent() == parentContext);
       parentContext->GetOriginAttributes(attrs);
@@ -3786,7 +3784,8 @@ bool nsFrameLoader::EnsureBrowsingContextAttached() {
     
     
     if (OwnerIsMozBrowserFrame()) {
-      if (mOwnerContent->HasAttr(nsGkAtoms::mozprivatebrowsing)) {
+      if (mOwnerContent->HasAttr(kNameSpaceID_None,
+                                 nsGkAtoms::mozprivatebrowsing)) {
         attrs.SyncAttributesWithPrivateBrowsing(true);
         usePrivateBrowsing = true;
       }
@@ -3815,15 +3814,6 @@ bool nsFrameLoader::EnsureBrowsingContextAttached() {
   NS_ENSURE_SUCCESS(rv, false);
   rv = mPendingBrowsingContext->SetRemoteSubframes(useRemoteSubframes);
   NS_ENSURE_SUCCESS(rv, false);
-
-  if (isContent && mPendingBrowsingContext->IsTop() &&
-      mOwnerContent->IsXULElement() &&
-      !mOwnerContent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::initiallyactive,
-                                  nsGkAtoms::_false, eIgnoreCase)) {
-    
-    
-    mPendingBrowsingContext->SetInitiallyActive();
-  }
 
   
   mPendingBrowsingContext->EnsureAttached();
