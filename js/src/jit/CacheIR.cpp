@@ -6341,8 +6341,11 @@ AttachDecision CallIRGenerator::tryAttachMathFloor(HandleFunction callee) {
   if (args_[0].isInt32()) {
     MOZ_ASSERT(resultIsInt32);
 
+    
+    
+    
     Int32OperandId intId = writer.guardToInt32(argumentId);
-    writer.loadInt32Result(intId);
+    writer.indirectTruncateInt32Result(intId);
   } else {
     NumberOperandId numberId = writer.guardIsNumber(argumentId);
 
@@ -6382,8 +6385,11 @@ AttachDecision CallIRGenerator::tryAttachMathCeil(HandleFunction callee) {
   if (args_[0].isInt32()) {
     MOZ_ASSERT(resultIsInt32);
 
+    
+    
+    
     Int32OperandId intId = writer.guardToInt32(argumentId);
-    writer.loadInt32Result(intId);
+    writer.indirectTruncateInt32Result(intId);
   } else {
     NumberOperandId numberId = writer.guardIsNumber(argumentId);
 
@@ -6423,6 +6429,8 @@ AttachDecision CallIRGenerator::tryAttachMathTrunc(HandleFunction callee) {
   if (args_[0].isInt32()) {
     MOZ_ASSERT(resultIsInt32);
 
+    
+    
     Int32OperandId intId = writer.guardToInt32(argumentId);
     writer.loadInt32Result(intId);
   } else {
@@ -6464,8 +6472,11 @@ AttachDecision CallIRGenerator::tryAttachMathRound(HandleFunction callee) {
   if (args_[0].isInt32()) {
     MOZ_ASSERT(resultIsInt32);
 
+    
+    
+    
     Int32OperandId intId = writer.guardToInt32(argumentId);
-    writer.loadInt32Result(intId);
+    writer.indirectTruncateInt32Result(intId);
   } else {
     NumberOperandId numberId = writer.guardIsNumber(argumentId);
 
