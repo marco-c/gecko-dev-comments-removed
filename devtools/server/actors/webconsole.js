@@ -144,6 +144,11 @@ if (isWorker) {
     true
   );
 }
+loader.lazyRequireGetter(
+  this,
+  "ObjectUtils",
+  "devtools/server/actors/object/utils"
+);
 
 function isObject(value) {
   return Object(value) === value;
@@ -1004,7 +1009,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     DevToolsUtils.executeSoon(async () => {
       try {
         
-        let response = this.evaluateJS(request);
+        let response = await this.evaluateJS(request);
         
         response = await this._maybeWaitForResponseResult(response);
         
@@ -1092,7 +1097,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
-  
   evaluateJS: function(request) {
     const input = request.text;
 
@@ -1117,6 +1121,33 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
     this.parentActor.threadActor.insideClientEvaluation = null;
 
+    return new Promise((resolve, reject) => {
+      
+      
+      
+      
+      
+      
+      
+      
+      DevToolsUtils.executeSoon(() => {
+        try {
+          const result = this.prepareEvaluationResult(
+            evalInfo,
+            input,
+            request.eager,
+            mapped
+          );
+          resolve(result);
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+  },
+
+  
+  prepareEvaluationResult: function(evalInfo, input, eager, mapped) {
     const evalResult = evalInfo.result;
     const helperResult = evalInfo.helperResult;
 
@@ -1258,7 +1289,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
     
     
-    if (!request.eager) {
+    if (!eager) {
       if (!awaitResult) {
         this._lastConsoleInputEvaluation = result;
       } else {
@@ -1266,9 +1297,22 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
         
         
         
-        awaitResult.then(res => {
+
+        const p = awaitResult.then(res => {
           this._lastConsoleInputEvaluation = this.makeDebuggeeValue(res);
         });
+
+        
+        
+        
+        
+        
+        
+        
+        const { state } = ObjectUtils.getPromiseState(evalResult.return);
+        if (state === "rejected") {
+          p.catch(() => {});
+        }
       }
     }
 
