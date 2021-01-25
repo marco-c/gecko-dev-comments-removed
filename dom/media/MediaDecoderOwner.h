@@ -185,6 +185,9 @@ class MediaDecoderOwner {
       const RefPtr<VideoFrameContainer>& aSecondaryContainer) {}
 
   
+  virtual bool IsActuallyInvisible() const = 0;
+
+  
 
 
 

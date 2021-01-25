@@ -128,9 +128,6 @@ class HTMLVideoElement final : public HTMLMediaElement {
 
   bool MozHasAudio() const;
 
-  
-  FrameStatistics* GetFrameStatistics();
-
   already_AddRefed<VideoPlaybackQuality> GetVideoPlaybackQuality();
 
   bool MozOrientationLockEnabled() const {

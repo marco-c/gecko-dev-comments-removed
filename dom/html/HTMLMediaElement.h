@@ -13,6 +13,7 @@
 #include "MediaDecoderOwner.h"
 #include "MediaPlaybackDelayPolicy.h"
 #include "MediaPromiseDefs.h"
+#include "TelemetryProbesReporter.h"
 #include "nsCycleCollectionParticipant.h"
 #include "Visibility.h"
 #include "mozilla/CORSMode.h"
@@ -108,7 +109,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
                          public MediaDecoderOwner,
                          public PrincipalChangeObserver<MediaStreamTrack>,
                          public SupportsWeakPtr,
-                         public nsStubMutationObserver {
+                         public nsStubMutationObserver,
+                         public TelemetryProbesReporterOwner {
  public:
   typedef mozilla::TimeStamp TimeStamp;
   typedef mozilla::layers::ImageContainer ImageContainer;
@@ -248,7 +250,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void NotifySuspendedByCache(bool aSuspendedByCache) final;
 
   
-  bool IsActuallyInvisible() const;
+  bool IsActuallyInvisible() const override;
 
   
   bool IsInViewPort() const;
@@ -729,6 +731,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
 
   void SetMediaInfo(const MediaInfo& aInfo);
+  MediaInfo GetMediaInfo() const override;
+
+  
+  FrameStatistics* GetFrameStatistics() const override;
 
   AbstractThread* AbstractMainThread() const final;
 
@@ -770,6 +776,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool GetShowPosterFlag() const { return mShowPoster; }
 
   bool IsAudible() const;
+
+  
+  Maybe<nsAutoString> GetKeySystem() const override;
 
  protected:
   virtual ~HTMLMediaElement();
@@ -1210,25 +1219,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool GetPaused() final { return Paused(); }
 
   
-
-
-
-
-  static void VideoDecodeSuspendTimerCallback(nsITimer* aTimer, void* aClosure);
-  
-
-
-
-  void HiddenVideoStart();
-  
-
-
-
-  void HiddenVideoStop();
-
-  void ReportTelemetry();
-
-  
   
   
   
@@ -1571,9 +1561,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   nsCOMPtr<nsITimer> mProgressTimer;
 
   
-  nsCOMPtr<nsITimer> mVideoDecodeSuspendTimer;
-
-  
   RefPtr<MediaKeys> mMediaKeys;
   RefPtr<MediaKeys> mIncomingMediaKeys;
   
@@ -1764,52 +1751,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   void NotifyTextTrackModeChanged();
 
- public:
-  
-  class TimeDurationAccumulator {
-   public:
-    TimeDurationAccumulator() : mCount(0) {}
-    void Start() {
-      if (IsStarted()) {
-        return;
-      }
-      mStartTime = TimeStamp::Now();
-    }
-    void Pause() {
-      if (!IsStarted()) {
-        return;
-      }
-      mSum += (TimeStamp::Now() - mStartTime);
-      mCount++;
-      mStartTime = TimeStamp();
-    }
-    bool IsStarted() const { return !mStartTime.IsNull(); }
-    double Total() const {
-      if (!IsStarted()) {
-        return mSum.ToSeconds();
-      }
-      
-      return (mSum + (TimeStamp::Now() - mStartTime)).ToSeconds();
-    }
-    uint32_t Count() const {
-      if (!IsStarted()) {
-        return mCount;
-      }
-      
-      return mCount + 1;
-    }
-    void Reset() {
-      mStartTime = TimeStamp();
-      mSum = TimeDuration();
-      mCount = 0;
-    }
-
-   private:
-    TimeStamp mStartTime;
-    TimeDuration mSum;
-    uint32_t mCount;
-  };
-
  private:
   already_AddRefed<PlayPromise> CreatePlayPromise(ErrorResult& aRv) const;
 
@@ -1827,15 +1768,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
   void AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName, bool aNotify);
-
-  
-  TimeDurationAccumulator mPlayTime;
-
-  
-  TimeDurationAccumulator mHiddenPlayTime;
-
-  
-  TimeDurationAccumulator mVideoDecodeSuspendTime;
 
   
   bool mInitialized = false;
