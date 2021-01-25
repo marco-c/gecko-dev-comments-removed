@@ -452,24 +452,6 @@ class DesktopSingleLocale(LocalesMixin, AutomationMixin, VCSMixin, BaseScript):
         """creates the repacks and udpates"""
         self._map(self.repack_locale, self.query_locales())
 
-    
-    def _get_tooltool_auth_file(self):
-        
-        
-        if "tooltool_authentication_file" in self.config:
-            fn = self.config["tooltool_authentication_file"]
-        elif self._is_windows():
-            fn = r"c:\builds\relengapi.tok"
-        else:
-            fn = "/builds/relengapi.tok"
-
-        
-        
-        
-        
-        if os.path.exists(fn):
-            return fn
-
     def _run_tooltool(self):
         env = self.query_bootstrap_env()
         config = self.config
@@ -501,9 +483,6 @@ class DesktopSingleLocale(LocalesMixin, AutomationMixin, VCSMixin, BaseScript):
                     os.path.join(dirs["abs_src_dir"], manifest_src),
                 ]
             )
-            auth_file = self._get_tooltool_auth_file()
-            if auth_file and os.path.exists(auth_file):
-                cmd.extend(["--authentication-file", auth_file])
         cache = config["bootstrap_env"].get("TOOLTOOL_CACHE")
         if cache:
             cmd.extend(["--cache-dir", cache])

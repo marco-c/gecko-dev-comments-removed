@@ -38,7 +38,6 @@ config = {
     
     "tooltool_cache": os.path.join(LOCAL_WORKDIR, "builds/tooltool_cache"),
     "tooltool_cache_path": os.path.join(LOCAL_WORKDIR, "builds/tooltool_cache"),
-    "tooltool_authentication_file": os.path.join(LOCAL_WORKDIR, "relengapi.tok"),
     
     "gittool.py": "http://hg.mozilla.org/build/puppet/raw-file/faaf5abd792e/modules/packages/files/gittool.py",
     
