@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1000870
+-->
   <head>
     <meta charset="utf-8">
     <title>Test for Bug 1000870</title>
@@ -14,12 +14,15 @@
     <script type="text/javascript">
       SimpleTest.waitForExplicitFinish();
       function startTest() {
-        runTestInNewWindow("pointerevent_pointerout_pen-manual.html");
+        runTestInNewWindow("pointerevent_setpointercapture_override_pending_capture_element-manual.html");
       }
       function executeTest(int_win) {
-        sendMouseEvent(int_win, "target0", "mousedown",   {inputSource:MouseEvent.MOZ_SOURCE_PEN});
-        sendMouseEvent(int_win, "target0", "mouseup",     {inputSource:MouseEvent.MOZ_SOURCE_PEN});
-        sendMouseEvent(int_win, "target0", "mousecancel", {inputSource:MouseEvent.MOZ_SOURCE_PEN});
+        sendMouseEvent(int_win, "target0", "mousemove");
+        sendMouseEvent(int_win, "target0", "mousedown");
+        sendMouseEvent(int_win, "target0", "mousemove");
+        sendMouseEvent(int_win, "target0", "mousemove");
+        sendMouseEvent(int_win, "target0", "mousemove");
+        sendMouseEvent(int_win, "target0", "mouseup");
       }
     </script>
   </head>

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1000870
+-->
   <head>
     <meta charset="utf-8">
     <title>Test for Bug 1000870</title>
@@ -14,10 +14,13 @@
     <script type="text/javascript">
       SimpleTest.waitForExplicitFinish();
       function startTest() {
-        runTestInNewWindow("pointerevent_pointerId_scope-manual.html");
+        runTestInNewWindow("pointerevent_releasepointercapture_onpointercancel_touch-manual.html");
       }
       function executeTest(int_win) {
         sendTouchEvent(int_win, "target0", "touchstart");
+        sendTouchEvent(int_win, "target0", "touchcancel");
+
+        // Need a touchend event to terminated the test gracefully.
         sendTouchEvent(int_win, "target0", "touchend");
       }
     </script>
