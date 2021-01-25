@@ -11,6 +11,8 @@ let TEST_URL =
 
 TEST_URL += '<iframe src="data:text/plain,iframe"></iframe>';
 
+TEST_URL += '<script>console.error("err")</script>';
+
 var modifiedPrefs = [];
 registerCleanupFunction(() => {
   for (const pref of modifiedPrefs) {
@@ -57,7 +59,7 @@ async function testToggleToolboxButtons(toolbox, optionsPanelWin) {
   const visibleToolbarButtons = toolbarButtons.filter(tool => tool.isVisible);
 
   const toolbarButtonNodes = [
-    ...toolbox.doc.querySelectorAll(".command-button:not(.toolbox-error)"),
+    ...toolbox.doc.querySelectorAll(".command-button"),
   ];
 
   is(
@@ -93,11 +95,15 @@ async function testToggleToolboxButtons(toolbox, optionsPanelWin) {
         1,
         "There should be a DOM button for the visible: " + id
       );
-      is(
-        matchedButtons[0].getAttribute("title"),
-        tool.description,
-        "The tooltip for button matches the tool definition."
-      );
+
+      
+      if (id !== "command-button-errorcount") {
+        is(
+          matchedButtons[0].getAttribute("title"),
+          tool.description,
+          "The tooltip for button matches the tool definition."
+        );
+      }
     } else {
       is(
         matchedButtons.length,

@@ -1860,7 +1860,11 @@ Toolbox.prototype = {
 
   _buildButtons() {
     
-    this.toolbarButtons = [this._buildPickerButton(), this._buildFrameButton()];
+    this.toolbarButtons = [
+      this._buildErrorCountButton(),
+      this._buildPickerButton(),
+      this._buildFrameButton(),
+    ];
 
     ToolboxButtons.forEach(definition => {
       const button = this._createButtonState(definition);
@@ -1888,6 +1892,23 @@ Toolbox.prototype = {
     });
 
     return this.frameButton;
+  },
+
+  
+
+
+  _buildErrorCountButton() {
+    this.errorCountButton = this._createButtonState({
+      id: "command-button-errorcount",
+      isInStartContainer: false,
+      isTargetSupported: target => true,
+      description: L10N.getStr("toolbox.errorCountButton.description"),
+    });
+    
+    
+    this.updateErrorCountButton();
+
+    return this.errorCountButton;
   },
 
   
@@ -2158,6 +2179,12 @@ Toolbox.prototype = {
     if (isVisible) {
       this.frameButton.isChecked = selectedFrame.parentID != null;
     }
+  },
+
+  updateErrorCountButton() {
+    this.errorCountButton.isVisible =
+      this._commandIsVisible(this.errorCountButton) && this._errorCount > 0;
+    this.errorCountButton.errorCount = this._errorCount;
   },
 
   
@@ -3538,6 +3565,7 @@ Toolbox.prototype = {
 
     this.updatePickerButton();
     this.updateFrameButton();
+    this.updateErrorCountButton();
 
     
     this.component.setToolboxButtons(this.toolbarButtons);
@@ -4298,6 +4326,9 @@ Toolbox.prototype = {
     if (!this.component) {
       return;
     }
-    this.component.setErrorCount(this._errorCount);
+
+    
+    this.updateErrorCountButton();
+    this.component.setToolboxButtons(this.toolbarButtons);
   },
 };
