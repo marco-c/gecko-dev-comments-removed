@@ -884,23 +884,28 @@ nsresult ContentChild::ProvideWindowCommon(
     parentSandboxFlags = doc->GetSandboxFlags();
   }
 
-  bool sandboxFlagsPropagate =
-      parentSandboxFlags & SANDBOX_PROPAGATES_TO_AUXILIARY_BROWSING_CONTEXTS;
-
   
   
   
   
   
-  bool loadInDifferentProcess =
-      aForceNoOpener && StaticPrefs::dom_noopener_newprocess_enabled() &&
-      !useRemoteSubframes && !sandboxFlagsPropagate &&
-      !aOpenWindowInfo->GetIsForPrinting();
-  if (!loadInDifferentProcess && aURI) {
+  
+  
+  
+  
+  bool cannotLoadInDifferentProcess =
+      useRemoteSubframes || aOpenWindowInfo->GetIsForPrinting() ||
+      (parentSandboxFlags &
+       SANDBOX_PROPAGATES_TO_AUXILIARY_BROWSING_CONTEXTS) ||
+      (aLoadState &&
+       (aLoadState->IsFormSubmission() || aLoadState->PostDataStream()));
+  if (!cannotLoadInDifferentProcess) {
     
     
     
-    if (!(parent && parent->UseRemoteSubframes())) {
+    bool loadInDifferentProcess =
+        aForceNoOpener && StaticPrefs::dom_noopener_newprocess_enabled();
+    if (!loadInDifferentProcess && aURI) {
       nsCOMPtr<nsIWebBrowserChrome3> browserChrome3;
       rv = aTabOpener->GetWebBrowserChrome(getter_AddRefs(browserChrome3));
       if (NS_SUCCEEDED(rv) && browserChrome3) {
@@ -909,37 +914,37 @@ nsresult ContentChild::ProvideWindowCommon(
         loadInDifferentProcess = NS_SUCCEEDED(rv) && !shouldLoad;
       }
     }
-  }
-
-  
-  
-  if (loadInDifferentProcess && !sandboxFlagsPropagate) {
-    float fullZoom;
-    nsCOMPtr<nsIPrincipal> triggeringPrincipal;
-    nsCOMPtr<nsIContentSecurityPolicy> csp;
-    nsCOMPtr<nsIReferrerInfo> referrerInfo;
-    rv = GetCreateWindowParams(aOpenWindowInfo, aLoadState, aForceNoReferrer,
-                               &fullZoom, getter_AddRefs(referrerInfo),
-                               getter_AddRefs(triggeringPrincipal),
-                               getter_AddRefs(csp));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    if (name.LowerCaseEqualsLiteral("_blank")) {
-      name.Truncate();
-    }
-
-    MOZ_DIAGNOSTIC_ASSERT(!nsContentUtils::IsSpecialName(name));
-
-    Unused << SendCreateWindowInDifferentProcess(
-        aTabOpener, parent, aChromeFlags, aCalledFromJS, aWidthSpecified, aURI,
-        features, fullZoom, name, triggeringPrincipal, csp, referrerInfo,
-        aOpenWindowInfo->GetOriginAttributes());
 
     
     
-    return NS_ERROR_ABORT;
+    if (loadInDifferentProcess) {
+      float fullZoom;
+      nsCOMPtr<nsIPrincipal> triggeringPrincipal;
+      nsCOMPtr<nsIContentSecurityPolicy> csp;
+      nsCOMPtr<nsIReferrerInfo> referrerInfo;
+      rv = GetCreateWindowParams(aOpenWindowInfo, aLoadState, aForceNoReferrer,
+                                 &fullZoom, getter_AddRefs(referrerInfo),
+                                 getter_AddRefs(triggeringPrincipal),
+                                 getter_AddRefs(csp));
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+
+      if (name.LowerCaseEqualsLiteral("_blank")) {
+        name.Truncate();
+      }
+
+      MOZ_DIAGNOSTIC_ASSERT(!nsContentUtils::IsSpecialName(name));
+
+      Unused << SendCreateWindowInDifferentProcess(
+          aTabOpener, parent, aChromeFlags, aCalledFromJS, aWidthSpecified,
+          aURI, features, fullZoom, name, triggeringPrincipal, csp,
+          referrerInfo, aOpenWindowInfo->GetOriginAttributes());
+
+      
+      
+      return NS_ERROR_ABORT;
+    }
   }
 
   TabId tabId(nsContentUtils::GenerateTabId());

@@ -8575,7 +8575,8 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
                      INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER)),
                  "Only INTERNAL_LOAD_FLAGS_NO_OPENER and "
                  "INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER can be set");
-      MOZ_ASSERT(!aLoadState->PostDataStream());
+      MOZ_ASSERT_IF(aLoadState->PostDataStream(),
+                    aLoadState->IsFormSubmission());
       MOZ_ASSERT(!aLoadState->HeadersStream());
       
       
@@ -8616,6 +8617,10 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
 
       loadState->SetHasValidUserGestureActivation(
           aLoadState->HasValidUserGestureActivation());
+
+      
+      loadState->SetPostDataStream(aLoadState->PostDataStream());
+      loadState->SetIsFormSubmission(aLoadState->IsFormSubmission());
 
       rv = win->Open(NS_ConvertUTF8toUTF16(spec),
                      aLoadState->Target(),  
