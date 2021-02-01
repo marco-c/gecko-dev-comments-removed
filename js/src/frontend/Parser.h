@@ -185,6 +185,7 @@
 #include "frontend/NameAnalysisTypes.h"
 #include "frontend/NameCollections.h"
 #include "frontend/ParseContext.h"
+#include "frontend/ParserAtom.h"  
 #include "frontend/SharedContext.h"
 #include "frontend/SyntaxParseHandler.h"
 #include "frontend/TokenStream.h"
@@ -418,7 +419,8 @@ class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
   
   bool nextTokenContinuesLetDeclaration(TokenKind next);
 
-  bool noteUsedNameInternal(const ParserName* name, NameVisibility visibility,
+  bool noteUsedNameInternal(TaggedParserAtomIndex name,
+                            NameVisibility visibility,
                             mozilla::Maybe<TokenPos> tokenPosition);
 
   bool checkAndMarkSuperScope();
@@ -494,7 +496,7 @@ class MOZ_STACK_CLASS PerHandlerParser : public ParserBase {
                                                  Node destruct);
 
   bool noteUsedName(
-      const ParserName* name,
+      TaggedParserAtomIndex name,
       NameVisibility visibility = NameVisibility::Public,
       mozilla::Maybe<TokenPos> tokenPosition = mozilla::Nothing()) {
     

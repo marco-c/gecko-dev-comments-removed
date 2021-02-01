@@ -36,26 +36,27 @@
 #include "frontend/NameCollections.h"      
 #include "frontend/ParseNode.h"            
 #include "frontend/Parser.h"               
-#include "frontend/ScriptIndex.h"          
-#include "frontend/SharedContext.h"        
-#include "frontend/SourceNotes.h"          
-#include "frontend/TokenStream.h"          
-#include "frontend/ValueUsage.h"           
-#include "js/RootingAPI.h"                 
-#include "js/TypeDecls.h"                  
-#include "vm/BuiltinObjectKind.h"          
-#include "vm/BytecodeUtil.h"               
-#include "vm/CheckIsObjectKind.h"          
-#include "vm/FunctionPrefixKind.h"         
-#include "vm/GeneratorResumeKind.h"        
-#include "vm/Instrumentation.h"            
-#include "vm/JSFunction.h"                 
-#include "vm/JSScript.h"       
-#include "vm/Runtime.h"        
-#include "vm/SharedStencil.h"  
-#include "vm/StencilEnums.h"   
-#include "vm/StringType.h"     
-#include "vm/ThrowMsgKind.h"   
+#include "frontend/ParserAtom.h"  
+#include "frontend/ScriptIndex.h"    
+#include "frontend/SharedContext.h"  
+#include "frontend/SourceNotes.h"    
+#include "frontend/TokenStream.h"    
+#include "frontend/ValueUsage.h"     
+#include "js/RootingAPI.h"           
+#include "js/TypeDecls.h"            
+#include "vm/BuiltinObjectKind.h"    
+#include "vm/BytecodeUtil.h"         
+#include "vm/CheckIsObjectKind.h"    
+#include "vm/FunctionPrefixKind.h"   
+#include "vm/GeneratorResumeKind.h"  
+#include "vm/Instrumentation.h"      
+#include "vm/JSFunction.h"           
+#include "vm/JSScript.h"             
+#include "vm/Runtime.h"              
+#include "vm/SharedStencil.h"        
+#include "vm/StencilEnums.h"         
+#include "vm/StringType.h"           
+#include "vm/ThrowMsgKind.h"         
 
 namespace js {
 namespace frontend {
@@ -250,7 +251,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_ALWAYS_INLINE MOZ_MUST_USE bool makeAtomIndex(const ParserAtom* atom,
                                                     GCThingIndex* indexp) {
     MOZ_ASSERT(perScriptData().atomIndices());
-    AtomIndexMap::AddPtr p = perScriptData().atomIndices()->lookupForAdd(atom);
+    AtomIndexMap::AddPtr p =
+        perScriptData().atomIndices()->lookupForAdd(atom->toIndex());
     if (p) {
       *indexp = GCThingIndex(p->value());
       return true;
@@ -263,7 +265,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
     
     
-    if (!perScriptData().atomIndices()->add(p, atom, index.index)) {
+    if (!perScriptData().atomIndices()->add(p, atom->toIndex(), index.index)) {
       ReportOutOfMemory(cx);
       return false;
     }
@@ -543,7 +545,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitGetPrivateName(NameNode* name);
   MOZ_MUST_USE bool emitGetPrivateName(const ParserAtom* name);
 
-  MOZ_MUST_USE bool emitTDZCheckIfNeeded(const ParserAtom* name,
+  MOZ_MUST_USE bool emitTDZCheckIfNeeded(TaggedParserAtomIndex name,
                                          const NameLocation& loc,
                                          ValueIsOnStack isOnStack);
 

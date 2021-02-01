@@ -9,11 +9,34 @@
 
 #include <type_traits>
 
-#include "ds/InlineTable.h"
+#include "ds/InlineTable.h"  
 #include "frontend/NameAnalysisTypes.h"
+#include "frontend/ParserAtom.h"  
+#include "frontend/TaggedParserAtomIndexHasher.h"  
 #include "js/Vector.h"
 
 namespace js {
+
+namespace detail {
+
+
+
+template <>
+class DefaultKeyPolicy<frontend::TrivialTaggedParserAtomIndex> {
+ public:
+  DefaultKeyPolicy() = delete;
+  DefaultKeyPolicy(const frontend::TrivialTaggedParserAtomIndex&) = delete;
+
+  static bool isTombstone(const frontend::TrivialTaggedParserAtomIndex& atom) {
+    return atom.isNull();
+  }
+  static void setToTombstone(frontend::TrivialTaggedParserAtomIndex& atom) {
+    atom = frontend::TrivialTaggedParserAtomIndex::null();
+  }
+};
+
+}  
+
 namespace frontend {
 
 class FunctionBox;
@@ -134,21 +157,36 @@ struct RecyclableAtomMapValueWrapper {
   const Wrapped* operator->() const { return &wrapped; }
 };
 
-struct NameMapHasher : public DefaultHasher<const ParserAtom*> {
-  static inline HashNumber hash(const Lookup& l) {
-    
-    
-    
-    
-    
-    return l->hash();
-  }
-};
+template <typename MapValue>
+using RecyclableNameMapBase =
+    InlineMap<TrivialTaggedParserAtomIndex,
+              RecyclableAtomMapValueWrapper<MapValue>, 24,
+              TrivialTaggedParserAtomIndexHasher, SystemAllocPolicy>;
+
 
 template <typename MapValue>
-using RecyclableNameMap =
-    InlineMap<const ParserAtom*, RecyclableAtomMapValueWrapper<MapValue>, 24,
-              NameMapHasher, SystemAllocPolicy>;
+class RecyclableNameMap : public RecyclableNameMapBase<MapValue> {
+  using Base = RecyclableNameMapBase<MapValue>;
+
+ public:
+  template <typename... Args>
+  MOZ_ALWAYS_INLINE MOZ_MUST_USE bool add(typename Base::AddPtr& p,
+                                          const TaggedParserAtomIndex& key,
+                                          Args&&... args) {
+    return Base::add(p, TrivialTaggedParserAtomIndex::from(key),
+                     std::forward<Args>(args)...);
+  }
+
+  MOZ_ALWAYS_INLINE
+  typename Base::Ptr lookup(const TaggedParserAtomIndex& l) {
+    return Base::lookup(TrivialTaggedParserAtomIndex::from(l));
+  }
+
+  MOZ_ALWAYS_INLINE
+  typename Base::AddPtr lookupForAdd(const TaggedParserAtomIndex& l) {
+    return Base::lookupForAdd(TrivialTaggedParserAtomIndex::from(l));
+  }
+};
 
 using DeclaredNameMap = RecyclableNameMap<DeclaredNameInfo>;
 using NameLocationMap = RecyclableNameMap<NameLocation>;

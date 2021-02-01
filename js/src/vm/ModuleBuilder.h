@@ -14,10 +14,11 @@
 #include "frontend/EitherParser.h"  
 #include "frontend/ParserAtom.h"  
 #include "frontend/Stencil.h"  
-#include "js/GCHashTable.h"    
-#include "js/GCVector.h"       
-#include "js/RootingAPI.h"     
-#include "vm/AtomsTable.h"     
+#include "frontend/TaggedParserAtomIndexHasher.h"  
+#include "js/GCHashTable.h"                        
+#include "js/GCVector.h"                           
+#include "js/RootingAPI.h"                         
+#include "vm/AtomsTable.h"                         
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSAtom;
@@ -31,19 +32,6 @@ class ListNode;
 class ParseNode;
 
 }  
-
-class TaggedParserAtomIndexHasher {
- public:
-  using Lookup = frontend::TaggedParserAtomIndex;
-
-  static inline HashNumber hash(const Lookup& l) {
-    return HashNumber(l.rawData());
-  }
-  static inline bool match(frontend::TaggedParserAtomIndex entry,
-                           const Lookup& l) {
-    return l == entry;
-  }
-};
 
 
 
@@ -78,7 +66,7 @@ class MOZ_STACK_CLASS ModuleBuilder {
   using ExportEntryVector = Vector<frontend::StencilModuleEntry>;
   using ImportEntryMap =
       HashMap<frontend::TaggedParserAtomIndex, frontend::StencilModuleEntry,
-              TaggedParserAtomIndexHasher>;
+              frontend::TaggedParserAtomIndexHasher>;
 
   JSContext* cx_;
   frontend::EitherParser eitherParser_;
