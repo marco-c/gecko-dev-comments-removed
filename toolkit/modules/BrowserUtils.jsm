@@ -21,16 +21,6 @@ var BrowserUtils = {
   
 
 
-  dumpLn(...args) {
-    for (let a of args) {
-      dump(a + " ");
-    }
-    dump("\n");
-  },
-
-  
-
-
 
   restartApplication() {
     let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
