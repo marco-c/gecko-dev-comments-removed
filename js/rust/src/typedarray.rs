@@ -30,7 +30,7 @@ pub enum CreateWith<'a, T: 'a> {
 
 pub struct TypedArray<'a, T: 'a + TypedArrayElement> {
     object: RootedGuard<'a, *mut JSObject>,
-    computed: Option<(*mut T::Element, u32)>,
+    computed: Option<(*mut T::Element, usize)>,
 }
 
 impl<'a, T: TypedArrayElement> TypedArray<'a, T> {
@@ -60,7 +60,7 @@ impl<'a, T: TypedArrayElement> TypedArray<'a, T> {
         }
     }
 
-    fn data(&mut self) -> (*mut T::Element, u32) {
+    fn data(&mut self) -> (*mut T::Element, usize) {
         if let Some(data) = self.computed {
             return data;
         }
@@ -137,7 +137,7 @@ pub trait TypedArrayElement {
     
     unsafe fn unwrap_array(obj: *mut JSObject) -> *mut JSObject;
     
-    unsafe fn length_and_data(obj: *mut JSObject) -> (*mut Self::Element, u32);
+    unsafe fn length_and_data(obj: *mut JSObject) -> (*mut Self::Element, usize);
 }
 
 
@@ -162,7 +162,7 @@ macro_rules! typed_array_element {
                 $unwrap(obj)
             }
 
-            unsafe fn length_and_data(obj: *mut JSObject) -> (*mut Self::Element, u32) {
+            unsafe fn length_and_data(obj: *mut JSObject) -> (*mut Self::Element, usize) {
                 let mut len = 0;
                 let mut shared = false;
                 let mut data = ptr::null_mut();

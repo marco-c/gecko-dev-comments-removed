@@ -63,7 +63,7 @@ extern JS_PUBLIC_API JSObject* UnwrapArrayBufferMaybeShared(JSObject* obj);
 
 
 extern JS_PUBLIC_API void GetArrayBufferMaybeSharedLengthAndData(
-    JSObject* obj, uint32_t* length, bool* isSharedMemory, uint8_t** data);
+    JSObject* obj, size_t* length, bool* isSharedMemory, uint8_t** data);
 
 
 
