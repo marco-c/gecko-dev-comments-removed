@@ -25,9 +25,7 @@ AutoCompleteInput.prototype = {
   textValue: "hello",
   disableAutoComplete: false,
   completeDefaultIndex: false,
-  set popupOpen(val) {
-    return val;
-  }, 
+  set popupOpen(val) {}, 
   get popupOpen() {
     return false;
   },
@@ -44,9 +42,7 @@ AutoCompleteInput.prototype = {
   popup: {
     selectBy() {},
     invalidate() {},
-    set selectedIndex(val) {
-      return val;
-    }, 
+    set selectedIndex(val) {}, 
     get selectedIndex() {
       return -1;
     },

@@ -115,7 +115,8 @@
     set value(val) {
       
       if (val == null) {
-        return (this.selectedItem = val);
+        this.selectedItem = val;
+        return;
       }
 
       var arr = null;
@@ -130,8 +131,6 @@
         this.selectedItem = null;
         this.setAttribute("value", val);
       }
-
-      return val;
     }
 
     
@@ -152,7 +151,6 @@
     
     set image(val) {
       this.setAttribute("image", val);
-      return val;
     }
 
     
@@ -167,7 +165,6 @@
 
     set description(val) {
       this.setAttribute("description", val);
-      return val;
     }
 
     get description() {
@@ -177,7 +174,6 @@
     
     set open(val) {
       this.openMenu(val);
-      return val;
     }
 
     
@@ -208,7 +204,6 @@
       } else {
         this.selectedItem = null;
       }
-      return val;
     }
 
     
@@ -237,11 +232,11 @@
     set selectedItem(val) {
       var oldval = this.mSelectedInternal;
       if (oldval == val) {
-        return val;
+        return;
       }
 
       if (val && !this.contains(val)) {
-        return val;
+        return;
       }
 
       if (oldval) {
@@ -278,8 +273,6 @@
       event = document.createEvent("Events");
       event.initEvent("ValueChange", true, true);
       this.dispatchEvent(event);
-
-      return val;
     }
 
     
