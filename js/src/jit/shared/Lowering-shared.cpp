@@ -494,8 +494,14 @@ static bool TryRotateRight8x16(SimdConstant* control) {
   int i = ScanIncreasingMasked(lanes, 0);
 
   
+  
+  if (lanes[0] != 16 - i) {
+    return false;
+  }
+
+  
   if (i == 16) {
-    return lanes[0] == 0;
+    return true;
   }
 
   
