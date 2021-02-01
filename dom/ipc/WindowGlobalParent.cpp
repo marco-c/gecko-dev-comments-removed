@@ -364,11 +364,11 @@ IPCResult WindowGlobalParent::RecvUpdateDocumentPrincipal(
 }
 mozilla::ipc::IPCResult WindowGlobalParent::RecvUpdateDocumentTitle(
     const nsString& aTitle) {
-  if (mDocumentTitle.isSome() && mDocumentTitle.value() == aTitle) {
+  if (mDocumentTitle == aTitle) {
     return IPC_OK();
   }
 
-  mDocumentTitle = Some(aTitle);
+  mDocumentTitle = aTitle;
 
   
   
