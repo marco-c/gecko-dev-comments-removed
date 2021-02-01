@@ -26,6 +26,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PerfStats.h"
+#include "mozilla/PointerLockManager.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/RangeUtils.h"
 #include "mozilla/ScopeExit.h"
@@ -6960,7 +6961,7 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
       EventHandler::GetCapturingContentFor(aGUIEvent);
 
   if (GetDocument() && aGUIEvent->mClass == eTouchEventClass) {
-    Document::UnlockPointer();
+    PointerLockManager::Unlock();
   }
 
   nsIFrame* frameForPresShell = MaybeFlushThrottledStyles(aFrameForPresShell);
@@ -8440,8 +8441,7 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
     }
   }
 
-  nsCOMPtr<Document> pointerLockedDoc =
-      do_QueryReferent(EventStateManager::sPointerLockedDoc);
+  nsCOMPtr<Document> pointerLockedDoc = PointerLockManager::GetLockedDocument();
   if (!mPresShell->mIsLastChromeOnlyEscapeKeyConsumed && pointerLockedDoc) {
     
     
@@ -8449,7 +8449,7 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
     aKeyboardEvent->PreventDefaultBeforeDispatch(CrossProcessForwarding::eStop);
     aKeyboardEvent->mFlags.mOnlyChromeDispatch = true;
     if (aKeyboardEvent->mMessage == eKeyUp) {
-      Document::UnlockPointer();
+      PointerLockManager::Unlock();
     }
   }
 }
