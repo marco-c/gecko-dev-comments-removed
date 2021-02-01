@@ -266,7 +266,7 @@ class TrackBuffersManager final
 
   struct TrackData {
     TrackData() : mNumTracks(0), mNeedRandomAccessPoint(true), mSizeBuffer(0) {}
-    uint32_t mNumTracks;
+    Atomic<uint32_t> mNumTracks;
     
     
     
