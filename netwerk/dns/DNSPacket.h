@@ -32,25 +32,28 @@ enum TrrType {
 
 class DNSPacket {
  public:
+  DNSPacket() = default;
+  virtual ~DNSPacket() = default;
+
   
   nsresult OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInputStream,
                            uint64_t aOffset, const uint32_t aCount);
 
   
-  static nsresult EncodeRequest(nsCString& aBody, const nsACString& aHost,
-                                uint16_t aType, bool aDisableECS);
+  virtual nsresult EncodeRequest(nsCString& aBody, const nsACString& aHost,
+                                 uint16_t aType, bool aDisableECS);
 
   
   
   
-  nsresult Decode(
+  virtual nsresult Decode(
       nsCString& aHost, enum TrrType aType, nsCString& aCname,
       bool aAllowRFC1918, nsHostRecord::TRRSkippedReason& reason,
       DOHresp& aResp, TypeRecordResultType& aTypeResult,
       nsClassHashtable<nsCStringHashKey, DOHresp>& aAdditionalRecords,
       uint32_t& aTTL);
 
- private:
+ protected:
   
   
   static const unsigned int MAX_SIZE = 3200;
@@ -63,6 +66,27 @@ class DNSPacket {
   
   unsigned char mResponse[MAX_SIZE]{};
   unsigned int mBodySize = 0;
+};
+
+class ODoHDNSPacket final : public DNSPacket {
+ public:
+  ODoHDNSPacket() {}
+  virtual ~ODoHDNSPacket();
+
+  static bool ParseODoHConfigs(const nsCString& aRawODoHConfig,
+                               nsTArray<ObliviousDoHConfig>& aOut);
+
+  virtual nsresult EncodeRequest(nsCString& aBody, const nsACString& aHost,
+                                 uint16_t aType, bool aDisableECS) override;
+
+  virtual nsresult Decode(
+      nsCString& aHost, enum TrrType aType, nsCString& aCname,
+      bool aAllowRFC1918, nsHostRecord::TRRSkippedReason& reason,
+      DOHresp& aResp, TypeRecordResultType& aTypeResult,
+      nsClassHashtable<nsCStringHashKey, DOHresp>& aAdditionalRecords,
+      uint32_t& aTTL) override;
+
+ protected:
 };
 
 }  

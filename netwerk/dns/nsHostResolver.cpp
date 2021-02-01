@@ -37,6 +37,7 @@
 #include "TRR.h"
 #include "TRRQuery.h"
 #include "TRRService.h"
+#include "ODoHService.h"
 
 #include "mozilla/Atomics.h"
 #include "mozilla/HashFunctions.h"
@@ -421,7 +422,7 @@ void AddrHostRecord::ResolveComplete() {
                     : Telemetry::LABELS_DNS_LOOKUP_DISPOSITION2::trrFail);
   }
 
-  if (nsHostResolver::Mode() == MODE_TRRFIRST) {
+  if (nsHostResolver::Mode() == nsIDNSService::MODE_TRRFIRST) {
     Telemetry::Accumulate(Telemetry::TRR_SKIP_REASON_TRR_FIRST,
                           mTRRTRRSkippedReason);
 
@@ -963,7 +964,7 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
 
   
   
-  if (IS_OTHER_TYPE(type) && Mode() == MODE_TRROFF) {
+  if (IS_OTHER_TYPE(type) && Mode() == nsIDNSService::MODE_TRROFF) {
     return NS_ERROR_UNKNOWN_HOST;
   }
 
@@ -1350,7 +1351,8 @@ void nsHostResolver::MaybeRenewHostRecordLocked(nsHostRecord* aRec) {
 
 
 nsresult nsHostResolver::TrrLookup(nsHostRecord* aRec, TRR* pushedTRR) {
-  if (Mode() == MODE_TRROFF || StaticPrefs::network_dns_disabled()) {
+  if (Mode() == nsIDNSService::MODE_TRROFF ||
+      StaticPrefs::network_dns_disabled()) {
     return NS_ERROR_UNKNOWN_HOST;
   }
   LOG(("TrrLookup host:%s af:%" PRId16, aRec->host.get(), aRec->af));
@@ -1382,7 +1384,9 @@ nsresult nsHostResolver::TrrLookup(nsHostRecord* aRec, TRR* pushedTRR) {
   MaybeRenewHostRecordLocked(rec);
 
   RefPtr<TRRQuery> query = new TRRQuery(this, rec);
-  nsresult rv = query->DispatchLookup(pushedTRR);
+  bool useODoH = gODoHService->Enabled() &&
+                 !((rec->flags & nsIDNSService::RESOLVE_DISABLE_ODOH));
+  nsresult rv = query->DispatchLookup(pushedTRR, useODoH);
   if (NS_FAILED(rv)) {
     rec->RecordReason(nsHostRecord::TRR_DID_NOT_MAKE_QUERY);
     return rv;
@@ -1463,14 +1467,14 @@ nsresult nsHostResolver::NativeLookup(nsHostRecord* aRec) {
 }
 
 
-ResolverMode nsHostResolver::Mode() {
+nsIDNSService::ResolverMode nsHostResolver::Mode() {
   if (gTRRService) {
-    return static_cast<ResolverMode>(gTRRService->Mode());
+    return gTRRService->Mode();
   }
 
   
   
-  return MODE_TRROFF;
+  return nsIDNSService::MODE_TRROFF;
 }
 
 nsIRequest::TRRMode nsHostRecord::TRRMode() {
@@ -1479,7 +1483,7 @@ nsIRequest::TRRMode nsHostRecord::TRRMode() {
 
 
 void nsHostResolver::ComputeEffectiveTRRMode(nsHostRecord* aRec) {
-  ResolverMode resolverMode = nsHostResolver::Mode();
+  nsIDNSService::ResolverMode resolverMode = nsHostResolver::Mode();
   nsIRequest::TRRMode requestMode = aRec->TRRMode();
 
   
@@ -1511,7 +1515,7 @@ void nsHostResolver::ComputeEffectiveTRRMode(nsHostRecord* aRec) {
     return;
   }
 
-  if (resolverMode == MODE_TRROFF) {
+  if (resolverMode == nsIDNSService::MODE_TRROFF) {
     aRec->RecordReason(nsHostRecord::TRR_OFF_EXPLICIT);
     aRec->mEffectiveTRRMode = nsIRequest::TRR_DISABLED_MODE;
     return;
@@ -1524,20 +1528,20 @@ void nsHostResolver::ComputeEffectiveTRRMode(nsHostRecord* aRec) {
   }
 
   if ((requestMode == nsIRequest::TRR_DEFAULT_MODE &&
-       resolverMode == MODE_NATIVEONLY)) {
+       resolverMode == nsIDNSService::MODE_NATIVEONLY)) {
     aRec->RecordReason(nsHostRecord::TRR_MODE_NOT_ENABLED);
     aRec->mEffectiveTRRMode = nsIRequest::TRR_DISABLED_MODE;
     return;
   }
 
   if (requestMode == nsIRequest::TRR_DEFAULT_MODE &&
-      resolverMode == MODE_TRRFIRST) {
+      resolverMode == nsIDNSService::MODE_TRRFIRST) {
     aRec->mEffectiveTRRMode = nsIRequest::TRR_FIRST_MODE;
     return;
   }
 
   if (requestMode == nsIRequest::TRR_DEFAULT_MODE &&
-      resolverMode == MODE_TRRONLY) {
+      resolverMode == nsIDNSService::MODE_TRRONLY) {
     aRec->mEffectiveTRRMode = nsIRequest::TRR_ONLY_MODE;
     return;
   }
