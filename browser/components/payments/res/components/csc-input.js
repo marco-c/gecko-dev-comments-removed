@@ -105,6 +105,7 @@ export default class CscInput extends ObservedPropertiesMixin(HTMLElement) {
     
     
     this._input.disabled = value;
+    return !!value;
   }
 }
 

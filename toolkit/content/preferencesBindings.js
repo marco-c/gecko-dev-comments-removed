@@ -522,6 +522,7 @@ const Preferences = (window.Preferences = (function() {
         }
         this.emit("change");
       }
+      return val;
     }
 
     get locked() {
@@ -602,13 +603,13 @@ const Preferences = (window.Preferences = (function() {
     set valueFromPreferences(val) {
       
       if (this.readonly || this.valueFromPreferences == val) {
-        return;
+        return val;
       }
 
       
       if (val === undefined) {
         Services.prefs.clearUserPref(this.id);
-        return;
+        return val;
       }
 
       
@@ -656,6 +657,7 @@ const Preferences = (window.Preferences = (function() {
       if (!this.batching) {
         Services.prefs.savePrefFile(null);
       }
+      return val;
     }
   }
 
