@@ -1,0 +1,21 @@
+
+
+
+
+
+
+document.dispatchEvent(
+  new CustomEvent("AboutLoginsImportReportInit", { bubbles: true })
+);
+
+window.addEventListener("AboutLoginsChromeToContent", event => {
+  switch (event.detail.messageType) {
+    case "ImportReportData":
+      
+      console.log(
+        "about:loginsimportreport: Got ImportReportData message: ",
+        event
+      );
+      break;
+  }
+});

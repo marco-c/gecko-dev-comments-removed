@@ -172,6 +172,14 @@ class AboutLoginsParent extends JSWindowActorParent {
         }
         break;
       }
+
+      case "AboutLogins:ImportReportInit": {
+        
+        let reportData = [];
+        this.sendAsyncMessage("AboutLogins:ImportReportData", reportData);
+        break;
+      }
+
       case "AboutLogins:GetHelp": {
         const SUPPORT_URL =
           Services.urlFormatter.formatURLPref("app.support.baseURL") +
