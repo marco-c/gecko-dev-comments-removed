@@ -770,28 +770,21 @@ function getQueryArgs() {
 
 
 
-
-
-
-
-
-
-function injectScript(aScript, aWindow = window) {
-  return function() {
-    return new Promise(function(resolve, reject) {
-      var e = aWindow.document.createElement("script");
-      e.type = "text/javascript";
-      e.onload = function() {
-        resolve();
-      };
-      e.onerror = function() {
-        dump("Script [" + aScript + "] errored out\n");
-        reject();
-      };
-      e.src = aScript;
-      aWindow.document.getElementsByTagName("head")[0].appendChild(e);
-    });
-  };
+async function injectScript(aScript, aWindow = window) {
+  var e = aWindow.document.createElement("script");
+  e.type = "text/javascript";
+  let loadPromise = new Promise((resolve, reject) => {
+    e.onload = function() {
+      resolve();
+    };
+    e.onerror = function() {
+      dump("Script [" + aScript + "] errored out\n");
+      reject();
+    };
+  });
+  e.src = aScript;
+  aWindow.document.getElementsByTagName("head")[0].appendChild(e);
+  await loadPromise;
 }
 
 
