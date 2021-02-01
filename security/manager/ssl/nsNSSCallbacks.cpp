@@ -45,6 +45,7 @@
 #include "TrustOverrideUtils.h"
 #include "TrustOverride-SymantecData.inc"
 #include "TrustOverride-AppleGoogleDigiCertData.inc"
+#include "TrustOverride-TestImminentDistrustData.inc"
 
 using namespace mozilla;
 using namespace mozilla::pkix;
@@ -1138,6 +1139,57 @@ static void RebuildVerifiedCertificateInformation(PRFileDesc* fd,
   }
 }
 
+nsresult IsCertificateDistrustImminent(
+    const nsTArray<RefPtr<nsIX509Cert>>& aCertArray,
+     bool& isDistrusted) {
+  if (aCertArray.IsEmpty()) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  nsCOMPtr<nsIX509Cert> rootCert;
+  nsTArray<RefPtr<nsIX509Cert>> intCerts;
+  nsCOMPtr<nsIX509Cert> eeCert;
+
+  nsresult rv = nsNSSCertificate::SegmentCertificateChain(aCertArray, rootCert,
+                                                          intCerts, eeCert);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  
+  
+  
+  
+  UniqueCERTCertificate nssEECert(eeCert->GetCert());
+  if (!nssEECert) {
+    return NS_ERROR_FAILURE;
+  }
+  isDistrusted =
+      CertDNIsInList(nssEECert.get(), TestImminentDistrustEndEntityDNs);
+  if (isDistrusted) {
+    
+    return NS_OK;
+  }
+
+  UniqueCERTCertificate nssRootCert(rootCert->GetCert());
+  if (!nssRootCert) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  
+  if (CertDNIsInList(nssRootCert.get(), RootSymantecDNs)) {
+    rv = CheckForSymantecDistrust(intCerts, RootAppleAndGoogleSPKIs,
+                                  isDistrusted);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  }
+  return NS_OK;
+}
+
 void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   SECStatus rv;
 
@@ -1280,6 +1332,20 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
     } else {
       RebuildVerifiedCertificateInformation(fd, infoObject);
     }
+  }
+
+  nsTArray<RefPtr<nsIX509Cert>> succeededCertArray;
+  
+  
+  nsresult srv = infoObject->GetSucceededCertChain(succeededCertArray);
+
+  bool distrustImminent;
+  if (NS_SUCCEEDED(srv)) {
+    srv = IsCertificateDistrustImminent(succeededCertArray, distrustImminent);
+  }
+
+  if (NS_SUCCEEDED(srv) && distrustImminent) {
+    state |= nsIWebProgressListener::STATE_CERT_DISTRUST_IMMINENT;
   }
 
   bool domainMismatch;
