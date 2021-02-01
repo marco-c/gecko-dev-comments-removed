@@ -127,8 +127,6 @@
       }
 
       sendMessageToBrowser("FormAutofill:PreviewProfile");
-
-      return val;
     }
 
     get selected() {
@@ -347,7 +345,6 @@
 
     set selected(val) {
       
-      return false;
     }
 
     get selected() {
