@@ -7,8 +7,6 @@
 #ifndef AccessibleCaretManager_h
 #define AccessibleCaretManager_h
 
-#include <utility>
-
 #include "AccessibleCaret.h"
 
 #include "mozilla/Attributes.h"
@@ -54,7 +52,6 @@ class AccessibleCaretManager {
  public:
   
   explicit AccessibleCaretManager(PresShell* aPresShell);
-
   virtual ~AccessibleCaretManager() = default;
 
   
@@ -130,11 +127,6 @@ class AccessibleCaretManager {
   bool ShouldDisableApz() const;
 
  protected:
-  class Carets;
-
-  
-  AccessibleCaretManager(PresShell* aPresShell, Carets aCarets);
-
   
   enum class CaretMode : uint8_t {
     
@@ -250,47 +242,11 @@ class AccessibleCaretManager {
   void ClearMaintainedSelection() const;
 
   static dom::Element* GetEditingHostForFrame(const nsIFrame* aFrame);
-
   dom::Selection* GetSelection() const;
-  static dom::Selection* GetSelection(PresShell& aPresShell);
-
   already_AddRefed<nsFrameSelection> GetFrameSelection() const;
-  static already_AddRefed<nsFrameSelection> GetFrameSelection(
-      PresShell& aPresShell);
 
-  class LayoutFlusher final {
-   public:
-    ~LayoutFlusher();
-
-    MOZ_CAN_RUN_SCRIPT void MaybeFlush(const PresShell& aPresShell);
-
-    
-    
-    
-    bool mAllowFlushing = true;
-
-   private:
-    
-    bool mFlushing = false;
-  };
-
-  LayoutFlusher mLayoutFlusher;
-
-  MOZ_CAN_RUN_SCRIPT nsAutoString StringifiedSelection() const;
-
-  class SelectionStringifyer final {
-   public:
-    explicit SelectionStringifyer(LayoutFlusher& aLayoutFlusher)
-        : mLayoutFlusher{aLayoutFlusher} {}
-
-    [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsAutoString
-    Stringify(dom::Selection& aSelection) const;
-
-   private:
-    LayoutFlusher mLayoutFlusher;
-  };
-
-  SelectionStringifyer mSelectionStringifyer;
+  MOZ_CAN_RUN_SCRIPT
+  nsAutoString StringifiedSelection() const;
 
   
   
@@ -358,42 +314,13 @@ class AccessibleCaretManager {
   
   PresShell* MOZ_NON_OWNING_REF mPresShell = nullptr;
 
-  class Carets {
-   public:
-    Carets(UniquePtr<AccessibleCaret> aFirst,
-           UniquePtr<AccessibleCaret> aSecond)
-        : mFirst{std::move(aFirst)}, mSecond{std::move(aSecond)} {}
+  
+  
+  UniquePtr<AccessibleCaret> mFirstCaret;
 
-    
-    bool AreLogicallyVisible() const {
-      return mFirst->IsLogicallyVisible() || mSecond->IsLogicallyVisible();
-    }
-
-    
-    bool AreVisuallyVisible() const {
-      return mFirst->IsVisuallyVisible() || mSecond->IsVisuallyVisible();
-    }
-
-    AccessibleCaret* GetFirst() const { return mFirst.get(); }
-
-    AccessibleCaret* GetSecond() const { return mSecond.get(); }
-
-    void Terminate() {
-      mFirst.reset();
-      mSecond.reset();
-    }
-
-   private:
-    
-    
-    UniquePtr<AccessibleCaret> mFirst;
-
-    
-    
-    UniquePtr<AccessibleCaret> mSecond;
-  };
-
-  Carets mCarets;
+  
+  
+  UniquePtr<AccessibleCaret> mSecondCaret;
 
   
   AccessibleCaret* mActiveCaret = nullptr;
@@ -409,6 +336,24 @@ class AccessibleCaretManager {
 
   
   bool mIsScrollStarted = false;
+
+  class LayoutFlusher final {
+   public:
+    ~LayoutFlusher();
+
+    MOZ_CAN_RUN_SCRIPT void MaybeFlush(const PresShell& aPresShell);
+
+    
+    
+    
+    bool mAllowFlushing = true;
+
+   private:
+    
+    bool mFlushing = false;
+  };
+
+  LayoutFlusher mLayoutFlusher;
 
   
   bool mIsCaretPositionChanged = false;
