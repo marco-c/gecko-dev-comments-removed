@@ -4819,16 +4819,10 @@ class MHypot : public MVariadicInstruction, public AllDoublePolicy::Data {
 class MPow : public MBinaryInstruction, public PowPolicy::Data {
   
   
-  
-  bool powerIsInt32_ : 1;
-
-  
-  
-  bool canBeNegativeZero_ : 1;
+  bool canBeNegativeZero_;
 
   MPow(MDefinition* input, MDefinition* power, MIRType specialization)
-      : MBinaryInstruction(classOpcode, input, power),
-        powerIsInt32_(power->type() == MIRType::Int32) {
+      : MBinaryInstruction(classOpcode, input, power) {
     MOZ_ASSERT(specialization == MIRType::Int32 ||
                specialization == MIRType::Double);
     setResultType(specialization);
@@ -4850,12 +4844,8 @@ class MPow : public MBinaryInstruction, public PowPolicy::Data {
 
   MDefinition* input() const { return lhs(); }
   MDefinition* power() const { return rhs(); }
-  bool powerIsInt32() const { return powerIsInt32_; }
 
   bool congruentTo(const MDefinition* ins) const override {
-    if (!ins->isPow() || ins->toPow()->powerIsInt32() != powerIsInt32()) {
-      return false;
-    }
     return congruentIfOperandsEqual(ins);
   }
   AliasSet getAliasSet() const override { return AliasSet::None(); }
