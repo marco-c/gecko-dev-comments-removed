@@ -8516,6 +8516,9 @@ bool nsWindow::WidgetTypeSupportsAcceleration() {
   
   
   
+  
+  
+  
   return mTransparencyMode != eTransparencyTransparent &&
          !(IsPopup() && DeviceManagerDx::Get()->IsWARP());
 }
