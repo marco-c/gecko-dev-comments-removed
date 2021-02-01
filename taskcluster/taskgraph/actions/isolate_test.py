@@ -33,33 +33,37 @@ def get_failures(task_id):
     MOZHARNESS_TEST_PATHS.  If no appropriate test path can be
     determined, nothing is returned.
     """
-    re_bad_tests = [
-        re.compile(r"Last test finished"),
-        re.compile(r"LeakSanitizer"),
-        re.compile(r"Main app process exited normally"),
-        re.compile(r"ShutdownLeaks"),
-        re.compile(r"[(]SimpleTest/TestRunner.js[)]"),
-        re.compile(r"automation.py"),
-        re.compile(r"https?://localhost:\d+/\d+/\d+/.*[.]html"),
-        re.compile(r"jsreftest"),
-        re.compile(r"leakcheck"),
-        re.compile(r"mozrunner-startup"),
-        re.compile(r"pid: "),
-        re.compile(r"RemoteProcessMonitor"),
-        re.compile(r"unknown test url"),
-    ]
-    re_extract_tests = [
-        re.compile(r'"test": "(?:[^:]+:)?(?:https?|file):[^ ]+/reftest/tests/([^ "]+)'),
-        re.compile(r'"test": "(?:[^:]+:)?(?:https?|file):[^:]+:[0-9]+/tests/([^ "]+)'),
-        re.compile(r'xpcshell-?[^ "]*\.ini:([^ "]+)'),
-        re.compile(r'/tests/([^ "]+) - finished .*'),
-        re.compile(r'"test": "([^ "]+)"'),
-        re.compile(
-            r'"message": "Error running command run_test with arguments '
-            "[(]<wptrunner[.]wpttest[.]TestharnessTest ([^>]+)>"
-        ),
-        re.compile(r'"message": "TEST-[^ ]+ [|] ([^ "]+)[^|]*[|]'),
-    ]
+
+    def re_compile_list(*lst):
+        
+        
+        return [re.compile(s.encode("utf-8")) for s in lst]
+
+    re_bad_tests = re_compile_list(
+        r"Last test finished",
+        r"LeakSanitizer",
+        r"Main app process exited normally",
+        r"ShutdownLeaks",
+        r"[(]SimpleTest/TestRunner.js[)]",
+        r"automation.py",
+        r"https?://localhost:\d+/\d+/\d+/.*[.]html",
+        r"jsreftest",
+        r"leakcheck",
+        r"mozrunner-startup",
+        r"pid: ",
+        r"RemoteProcessMonitor",
+        r"unknown test url",
+    )
+    re_extract_tests = re_compile_list(
+        r'"test": "(?:[^:]+:)?(?:https?|file):[^ ]+/reftest/tests/([^ "]+)',
+        r'"test": "(?:[^:]+:)?(?:https?|file):[^:]+:[0-9]+/tests/([^ "]+)',
+        r'xpcshell-?[^ "]*\.ini:([^ "]+)',
+        r'/tests/([^ "]+) - finished .*',
+        r'"test": "([^ "]+)"',
+        r'"message": "Error running command run_test with arguments '
+        r"[(]<wptrunner[.]wpttest[.]TestharnessTest ([^>]+)>",
+        r'"message": "TEST-[^ ]+ [|] ([^ "]+)[^|]*[|]',
+    )
 
     def munge_test_path(line):
         test_path = None
@@ -97,14 +101,17 @@ def get_failures(task_id):
         
         
 
-        for line in stream.read().split("\n"):
+        
+        
+        
+        for line in stream.read().split(b"\n"):
             test_path = munge_test_path(line.strip())
 
             if test_path:
-                tests.add(test_path)
+                tests.add(test_path.decode("utf-8"))
                 test_dir = os.path.dirname(test_path)
                 if test_dir:
-                    dirs.add(test_dir)
+                    dirs.add(test_dir.decode("utf-8"))
 
             if len(tests) > 4:
                 break
