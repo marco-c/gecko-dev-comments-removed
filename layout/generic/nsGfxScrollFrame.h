@@ -404,7 +404,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
       nsIFrame* aFrame, nsPresContext* aPresContext, nsRect& aRect,
       bool aHasResizer, mozilla::layers::ScrollDirection aDirection);
   
-  bool HasResizer() { return mResizerBox && !mCollapsedResizer; }
+  bool HasResizer() { return mResizerBox; }
   void LayoutScrollbars(nsBoxLayoutState& aState, const nsRect& aContentArea,
                         const nsRect& aOldScrollArea);
 
@@ -665,8 +665,6 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   
   bool mHasBeenScrolledRecently : 1;
-  
-  bool mCollapsedResizer : 1;
 
   
   
@@ -769,7 +767,6 @@ class ScrollFrameHelper : public nsIReflowCallback {
   void CompleteAsyncScroll(const nsRect& aRange,
                            ScrollOrigin aOrigin = ScrollOrigin::NotSpecified);
 
-  bool HasPluginFrames();
   bool HasPerspective() const { return mOuter->ChildrenHavePerspective(); }
   bool HasBgAttachmentLocal() const;
   mozilla::StyleDirection GetScrolledFrameDir() const;

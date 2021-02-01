@@ -77,7 +77,6 @@
 #include "ScrollAnimationMSDPhysics.h"
 #include "ScrollSnap.h"
 #include "UnitTransforms.h"
-#include "nsPluginFrame.h"
 #include "nsSliderFrame.h"
 #include "ViewportFrame.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -1252,7 +1251,6 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
   }
 
   if (mHelper.mIsRoot) {
-    mHelper.mCollapsedResizer = true;
     reflowScrollCorner = false;
 
     
@@ -2209,7 +2207,6 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
       mMayHaveDirtyFixedChildren(false),
       mUpdateScrollbarAttributes(false),
       mHasBeenScrolledRecently(false),
-      mCollapsedResizer(false),
       mWillBuildScrollableLayer(false),
       mIsScrollParent(false),
       mAddClipRectToLayer(false),
@@ -2333,20 +2330,6 @@ void ScrollFrameHelper::CompleteAsyncScroll(const nsRect& aRange,
   
   mDestination = GetScrollPosition();
   PostScrollEndEvent();
-}
-
-bool ScrollFrameHelper::HasPluginFrames() {
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  if (XRE_IsContentProcess()) {
-    nsPresContext* presContext = mOuter->PresContext();
-    nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
-    if (!rootPresContext ||
-        rootPresContext->NeedToComputePluginGeometryUpdates()) {
-      return true;
-    }
-  }
-#endif
-  return false;
 }
 
 bool ScrollFrameHelper::HasBgAttachmentLocal() const {
@@ -3041,12 +3024,12 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
     displayPort.MoveBy(-mScrolledFrame->GetPosition());
 
     PAINT_SKIP_LOG(
-        "New scrollpos %s usingDP %d dpEqual %d scrollableByApz %d plugins"
+        "New scrollpos %s usingDP %d dpEqual %d scrollableByApz "
         "%d perspective %d bglocal %d filter %d\n",
         ToString(CSSPoint::FromAppUnits(GetScrollPosition())).c_str(),
         usingDisplayPort, displayPort.IsEqualEdges(oldDisplayPort),
-        mScrollableByAPZ, HasPluginFrames(), HasPerspective(),
-        HasBgAttachmentLocal(), mHasOutOfFlowContentInsideFilter);
+        mScrollableByAPZ, HasPerspective(), HasBgAttachmentLocal(),
+        mHasOutOfFlowContentInsideFilter);
     if (usingDisplayPort && displayPort.IsEqualEdges(oldDisplayPort) &&
         !HasPerspective() && !HasBgAttachmentLocal() &&
         !mHasOutOfFlowContentInsideFilter) {
@@ -3054,7 +3037,7 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
           content->GetComposedDoc()->HasScrollLinkedEffect();
       bool apzDisabled = haveScrollLinkedEffects &&
                          StaticPrefs::apz_disable_for_scroll_linked_effects();
-      if (!apzDisabled && !HasPluginFrames()) {
+      if (!apzDisabled) {
         if (LastScrollOrigin() == ScrollOrigin::Apz) {
           schedulePaint = false;
           PAINT_SKIP_LOG("Skipping due to APZ scroll\n");
@@ -5356,6 +5339,8 @@ nsresult ScrollFrameHelper::CreateAnonymousContent(
   }
 
   if (isResizable) {
+    MOZ_ASSERT(!mIsRoot, "Root scroll frame shouldn't be resizable");
+
     AnonymousContentKey key = AnonymousContentKey::Type_Resizer;
 
     RefPtr<NodeInfo> nodeInfo;
@@ -5398,20 +5383,10 @@ nsresult ScrollFrameHelper::CreateAnonymousContent(
         NS_WARNING("only resizable types should have resizers");
     }
     mResizerContent->SetAttr(kNameSpaceID_None, nsGkAtoms::dir, dir, false);
-
-    if (mIsRoot) {
-      mResizerContent->SetProperty(nsGkAtoms::docLevelNativeAnonymousContent,
-                                   reinterpret_cast<void*>(true));
-
-      mCollapsedResizer = true;
-    } else {
-      mResizerContent->SetAttr(kNameSpaceID_None, nsGkAtoms::element,
-                               u"_parent"_ns, false);
-    }
-
+    mResizerContent->SetAttr(kNameSpaceID_None, nsGkAtoms::element,
+                             u"_parent"_ns, false);
     mResizerContent->SetAttr(kNameSpaceID_None, nsGkAtoms::clickthrough,
                              u"always"_ns, false);
-
     aElements.AppendElement(ContentInfo(mResizerContent, key));
   }
 
