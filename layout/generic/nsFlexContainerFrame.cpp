@@ -182,16 +182,10 @@ static inline bool IsAutoOrEnumOnBSize(const StyleSize& aSize, bool aIsInline) {
 
 
 #define GET_MAIN_COMPONENT_LOGICAL(axisTracker_, wm_, isize_, bsize_) \
-  wm_.IsOrthogonalTo((axisTracker_).GetWritingMode()) !=              \
-          (axisTracker_).IsRowOriented()                              \
-      ? (isize_)                                                      \
-      : (bsize_)
+  (axisTracker_).IsInlineAxisMainAxis((wm_)) ? (isize_) : (bsize_)
 
 #define GET_CROSS_COMPONENT_LOGICAL(axisTracker_, wm_, isize_, bsize_) \
-  wm_.IsOrthogonalTo((axisTracker_).GetWritingMode()) !=               \
-          (axisTracker_).IsRowOriented()                               \
-      ? (bsize_)                                                       \
-      : (isize_)
+  (axisTracker_).IsInlineAxisMainAxis((wm_)) ? (bsize_) : (isize_)
 
 
 
@@ -319,6 +313,16 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
     
     
     return IsRowOriented() != mWM.IsVertical();
+  }
+
+  
+  
+  
+  
+  
+  
+  bool IsInlineAxisMainAxis(WritingMode aItemWM) const {
+    return IsRowOriented() != GetWritingMode().IsOrthogonalTo(aItemWM);
   }
 
   
@@ -1984,8 +1988,7 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       mCrossMinSize(aCrossMinSize),
       mCrossMaxSize(aCrossMaxSize),
       mCrossSize(aTentativeCrossSize),
-      mIsInlineAxisMainAxis(aAxisTracker.IsRowOriented() !=
-                            aAxisTracker.GetWritingMode().IsOrthogonalTo(mWM))
+      mIsInlineAxisMainAxis(aAxisTracker.IsInlineAxisMainAxis(mWM))
 
 
 {
