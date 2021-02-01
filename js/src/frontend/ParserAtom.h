@@ -419,6 +419,7 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
   template <typename CharT>
   bool equalsSeq(HashNumber hash, InflatedChar16Sequence<CharT> seq) const;
 
+ private:
   TaggedParserAtomIndex toIndex() const { return index_; }
 
   ParserAtomIndex toParserAtomIndex() const {
@@ -439,6 +440,7 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
   bool isStaticParserString1() const { return index_.isStaticParserString1(); }
   bool isStaticParserString2() const { return index_.isStaticParserString2(); }
 
+ public:
   void setParserAtomIndex(ParserAtomIndex index) {
     index_ = TaggedParserAtomIndex(index);
   }
@@ -461,14 +463,12 @@ class alignas(alignof(uint32_t)) ParserAtomEntry {
  public:
   
   
-  JSAtom* toJSAtom(JSContext* cx, CompilationAtomCache& atomCache) const;
+  JSAtom* toJSAtom(JSContext* cx, TaggedParserAtomIndex index,
+                   CompilationAtomCache& atomCache) const;
 
   
-  JSAtom* toExistingJSAtom(JSContext* cx,
-                           CompilationAtomCache& atomCache) const;
-
-  
-  JSAtom* instantiate(JSContext* cx, CompilationAtomCache& atomCache) const;
+  JSAtom* instantiate(JSContext* cx, TaggedParserAtomIndex index,
+                      CompilationAtomCache& atomCache) const;
 
   
   bool toNumber(JSContext* cx, double* result) const;

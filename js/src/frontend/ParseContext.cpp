@@ -430,7 +430,8 @@ bool ParseContext::isVarRedeclaredInEval(TaggedParserAtomIndex name,
   
   const ParserAtom* atom =
       parser->getCompilationState().parserAtoms.getParserAtom(name);
-  JSAtom* nameAtom = atom->toJSAtom(sc()->cx_, sc()->stencil().input.atomCache);
+  JSAtom* nameAtom =
+      atom->toJSAtom(sc()->cx_, name, sc()->stencil().input.atomCache);
   if (!nameAtom) {
     return false;
   }
