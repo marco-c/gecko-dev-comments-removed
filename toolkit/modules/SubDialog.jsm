@@ -755,7 +755,22 @@ SubDialog.prototype = {
     this._untrapFocus();
   },
 
-  focus() {
+  
+
+
+
+
+
+
+  focus(isInitialFocus = false) {
+    
+    let focusHandler = this._frame?.contentDocument?.subDialogSetDefaultFocus;
+    if (focusHandler) {
+      focusHandler(isInitialFocus);
+      return;
+    }
+    
+    
     let fm = Services.focus;
     let focusedElement = fm.moveFocus(
       this._frame.contentWindow,
@@ -771,7 +786,6 @@ SubDialog.prototype = {
   },
 
   _trapFocus() {
-    this.focus();
     
     
     this._box.addEventListener("keydown", this, { mozSystemGroup: true });
@@ -890,22 +904,19 @@ class SubDialogManager {
       this._dialogStack.hidden = false;
       this._dialogStack.classList.remove("temporarilyHidden");
       this._topLevelPrevActiveElement = doc.activeElement;
-
-      
-      
-      
-      this._preloadDialog.isTop = true;
-    } else if (this._orderType === SubDialogManager.ORDER_STACK) {
-      this._preloadDialog.isTop = true;
-      this._dialogs[this._dialogs.length - 1].isTop = false;
     }
 
+    this._dialogs.push(this._preloadDialog);
     this._preloadDialog.open(
       aURL,
-      { features, closingCallback, closedCallback, sizeTo },
+      {
+        features,
+        closingCallback,
+        closedCallback,
+        sizeTo,
+      },
       ...aParams
     );
-    this._dialogs.push(this._preloadDialog);
 
     let openedDialog = this._preloadDialog;
 
@@ -973,20 +984,19 @@ class SubDialogManager {
   }
 
   _onDialogOpen(dialog) {
-    
-    if (this._dialogs.length === 1) {
-      return;
-    }
-
     let lowerDialogs = [];
-
-    if (!dialog.isTop) {
+    if (dialog == this._topDialog) {
+      dialog.focus(true);
+    } else {
       
       lowerDialogs.push(dialog);
     }
 
     
-    if (this._orderType === SubDialogManager.ORDER_STACK) {
+    if (
+      this._dialogs.length &&
+      this._orderType === SubDialogManager.ORDER_STACK
+    ) {
       let index = this._dialogs.indexOf(dialog);
       if (index > 0) {
         lowerDialogs.push(this._dialogs[index - 1]);
@@ -1006,7 +1016,11 @@ class SubDialogManager {
 
     if (this._topDialog) {
       
-      this._topDialog._prevActiveElement?.focus();
+      if (this._topDialog._prevActiveElement) {
+        this._topDialog._prevActiveElement.focus();
+      } else {
+        this._topDialog.focus(true);
+      }
       this._topDialog._overlay.setAttribute("topmost", true);
       this._topDialog._addDialogEventListeners(false);
       this._dialogStack.hidden = false;
