@@ -102,6 +102,16 @@ class PivotRoleRule : public PivotRule {
   AccessibleOrProxy mDirectDescendantsFrom;
 };
 
+
+
+
+
+
+class LocalAccInSameDocRule : public PivotRule {
+ public:
+  virtual uint16_t Match(const AccessibleOrProxy& aAccOrProxy) override;
+};
+
 }  
 }  
 
