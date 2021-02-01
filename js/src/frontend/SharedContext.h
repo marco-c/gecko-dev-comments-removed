@@ -270,9 +270,6 @@ class SharedContext {
     return retVal;
   }
 
-  inline JSAtom* liftParserAtomToJSAtom(JSContext* cx,
-                                        const ParserAtom* atomId);
-
   void copyScriptExtraFields(ScriptStencilExtra& scriptExtra);
 };
 
@@ -355,7 +352,7 @@ class FunctionBox : public SuspendableContext {
   
   
   
-  const ParserAtom* atom_ = nullptr;
+  TaggedParserAtomIndex atom_;
 
   
   ScriptIndex funcDataIndex_ = ScriptIndex(-1);
@@ -428,7 +425,8 @@ class FunctionBox : public SuspendableContext {
   FunctionBox(JSContext* cx, SourceExtent extent, CompilationStencil& stencil,
               CompilationState& compilationState, Directives directives,
               GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
-              const ParserAtom* atom, FunctionFlags flags, ScriptIndex index);
+              TaggedParserAtomIndex atom, FunctionFlags flags,
+              ScriptIndex index);
 
   ScriptStencil& functionStencil() const;
   ScriptStencilExtra& functionExtraStencil() const;
@@ -546,7 +544,7 @@ class FunctionBox : public SuspendableContext {
   }
 
   bool isNamedLambda() const {
-    return flags_.isNamedLambda(explicitName() != nullptr);
+    return flags_.isNamedLambda(!!explicitNameIndex());
   }
   bool isGetter() const { return flags_.isGetter(); }
   bool isSetter() const { return flags_.isSetter(); }
@@ -560,29 +558,24 @@ class FunctionBox : public SuspendableContext {
   bool hasInferredName() const { return flags_.hasInferredName(); }
   bool hasGuessedAtom() const { return flags_.hasGuessedAtom(); }
 
-  const ParserAtom* displayAtom() const { return atom_; }
-  TaggedParserAtomIndex displayAtomIndex() const {
-    return atom_ ? atom_->toIndex() : TaggedParserAtomIndex::null();
-  }
-  const ParserAtom* explicitName() const {
-    return (hasInferredName() || hasGuessedAtom()) ? nullptr : atom_;
-  }
+  TaggedParserAtomIndex displayAtomIndex() const { return atom_; }
   TaggedParserAtomIndex explicitNameIndex() const {
-    const ParserAtom* name = explicitName();
-    return name ? name->toIndex() : TaggedParserAtomIndex::null();
+    return (hasInferredName() || hasGuessedAtom())
+               ? TaggedParserAtomIndex::null()
+               : atom_;
   }
 
   
   
   
-  void setInferredName(const ParserAtom* atom) {
+  void setInferredName(TaggedParserAtomIndex atom) {
     atom_ = atom;
     flags_.setInferredName();
     if (isFunctionFieldCopiedToStencil) {
       copyUpdatedAtomAndFlags();
     }
   }
-  void setGuessedAtom(const ParserAtom* atom) {
+  void setGuessedAtom(TaggedParserAtomIndex atom) {
     atom_ = atom;
     flags_.setGuessedAtom();
     if (isFunctionFieldCopiedToStencil) {

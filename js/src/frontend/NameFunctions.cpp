@@ -235,13 +235,14 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
     *retId = nullptr;
 
     
-    if (funbox->displayAtom()) {
+    if (funbox->displayAtomIndex()) {
       if (!prefix_) {
-        *retId = funbox->displayAtom();
+        *retId = parserAtoms_.getParserAtom(funbox->displayAtomIndex());
         return true;
       }
       if (!buf_.append(prefix_) || !buf_.append('/') ||
-          !buf_.append(funbox->displayAtom())) {
+          !buf_.append(
+              parserAtoms_.getParserAtom(funbox->displayAtomIndex()))) {
         return false;
       }
       *retId = buf_.finishParserAtom(parserAtoms_);
@@ -329,7 +330,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
     
     
     if (!funNode->isDirectRHSAnonFunction()) {
-      funbox->setGuessedAtom(*retId);
+      funbox->setGuessedAtom((*retId)->toIndex());
     }
     return true;
   }
