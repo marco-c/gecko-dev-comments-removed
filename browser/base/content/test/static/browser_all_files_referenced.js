@@ -57,6 +57,8 @@ if (AppConstants.platform == "macosx") {
 
 if (AppConstants.MOZ_BACKGROUNDTASKS) {
   
+  gExceptionPaths.push("resource://gre/defaults/backgroundtasks/");
+  
   gExceptionPaths.push("resource://gre/modules/backgroundtasks/");
 }
 
