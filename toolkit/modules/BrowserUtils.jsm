@@ -266,60 +266,12 @@ var BrowserUtils = {
     );
   },
 
-  _visibleToolbarsMap: new WeakMap(),
-
-  
-
-
-
-
-
-
-
-
-  isToolbarVisible(docShell, which) {
-    let window = this.getRootWindow(docShell);
-    if (!this._visibleToolbarsMap.has(window)) {
-      return false;
-    }
-    let toolbars = this._visibleToolbarsMap.get(window);
-    return !!toolbars && toolbars.has(which);
-  },
-
-  
-
-
-
-
-
-
-
-
-  trackToolbarVisibility(docShell, which, visible = true) {
-    
-    
-    let window = this.getRootWindow(docShell);
-    let toolbars = this._visibleToolbarsMap.get(window);
-    if (!toolbars) {
-      toolbars = new Set();
-      this._visibleToolbarsMap.set(window, toolbars);
-    }
-    if (!visible) {
-      toolbars.delete(which);
-    } else {
-      toolbars.add(which);
-    }
-  },
-
-  
-
-
-
-
-
-
-  getRootWindow(docShell) {
-    return docShell.browsingContext.top.window;
+  isFindbarVisible(docShell) {
+    const FINDER_JSM = "resource://gre/modules/Finder.jsm";
+    return (
+      Cu.isModuleLoaded(FINDER_JSM) &&
+      ChromeUtils.import(FINDER_JSM).Finder.isFindbarVisible(docShell)
+    );
   },
 
   
