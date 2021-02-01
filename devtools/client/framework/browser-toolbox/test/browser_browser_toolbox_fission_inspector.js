@@ -9,6 +9,12 @@ const { PromiseTestUtils } = ChromeUtils.import(
 PromiseTestUtils.allowMatchingRejectionsGlobally(/File closed/);
 
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/inspector/test/shared-head.js",
+  this
+);
+
+
 requestLongerTimeout(4);
 
 
@@ -22,7 +28,10 @@ add_task(async function() {
     enableBrowserToolboxFission: true,
   });
   await ToolboxTask.importFunctions({
-    selectNodeFront,
+    getNodeFront,
+    selectNode,
+    
+    selectNodeInFrames,
   });
 
   
@@ -40,14 +49,10 @@ add_task(async function() {
     inspector.sidebar.select("computedview");
     await onSidebarSelect;
 
-    const browser = await selectNodeFront(
-      inspector,
-      inspector.walker,
-      'browser[remote="true"][test-tab]'
+    await selectNodeInFrames(
+      ['browser[remote="true"][test-tab]', "#my-div"],
+      inspector
     );
-    const browserTarget = await browser.connectToRemoteFrame();
-    const walker = (await browserTarget.getFront("inspector")).walker;
-    await selectNodeFront(inspector, walker, "#my-div");
 
     const view = inspector.getPanel("computedview").computedView;
     function getProperty(name) {
