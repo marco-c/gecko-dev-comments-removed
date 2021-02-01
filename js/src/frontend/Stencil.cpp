@@ -18,6 +18,7 @@
 #include "frontend/CompilationInfo.h"  
 #include "frontend/SharedContext.h"
 #include "gc/AllocKind.h"    
+#include "gc/Rooting.h"      
 #include "gc/Tracer.h"       
 #include "js/CallArgs.h"     
 #include "js/RootingAPI.h"   
@@ -33,6 +34,7 @@
 #include "vm/JSScript.h"      
 #include "vm/ObjectGroup.h"   
 #include "vm/Printer.h"       
+#include "vm/RegExpObject.h"  
 #include "vm/Scope.h"         
 #include "vm/ScopeKind.h"     
 #include "vm/StencilEnums.h"  
@@ -203,6 +205,24 @@ void CompilationGCOutput::trace(JSTracer* trc) {
   TraceNullableRoot(trc, &sourceObject, "compilation-gc-output-source");
   functions.trace(trc);
   scopes.trace(trc);
+}
+
+RegExpObject* RegExpStencil::createRegExp(
+    JSContext* cx, const CompilationAtomCache& atomCache) const {
+  RootedAtom atom(cx, atomCache.getExistingAtomAt(cx, atom_));
+  return RegExpObject::createSyntaxChecked(cx, atom, flags(), TenuredObject);
+}
+
+RegExpObject* RegExpStencil::createRegExpAndEnsureAtom(
+    JSContext* cx, CompilationAtomCache& atomCache,
+    BaseCompilationStencil& stencil) const {
+  const ParserAtom* parserAtom = stencil.getParserAtomAt(cx, atom_);
+  MOZ_ASSERT(parserAtom);
+  RootedAtom atom(cx, parserAtom->toJSAtom(cx, atom_, atomCache));
+  if (!atom) {
+    return nullptr;
+  }
+  return RegExpObject::createSyntaxChecked(cx, atom, flags(), TenuredObject);
 }
 
 AbstractScopePtr ScopeStencil::enclosing(
