@@ -90,6 +90,19 @@ function createFrame(browser, src, id, sandboxAttr) {
   );
 }
 
+add_task(async setup => {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.restrict3rdpartystorage.heuristic.redirect", false],
+      ["privacy.restrict3rdpartystorage.heuristic.recently_visited", false],
+      ["privacy.restrict3rdpartystorage.heuristic.window_open", false],
+    ],
+  });
+});
+
 
 
 

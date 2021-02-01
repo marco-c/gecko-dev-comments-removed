@@ -100,6 +100,9 @@ add_task(async function setup() {
   });
 
   
+  
+  
+  
   clearTelemetry();
 
   await UrlClassifierTestUtils.addTestTrackers();
