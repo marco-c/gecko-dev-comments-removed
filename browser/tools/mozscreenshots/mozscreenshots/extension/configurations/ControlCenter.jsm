@@ -304,7 +304,7 @@ async function openIdentityPopup(expand) {
   if (AppConstants.platform == "macosx") {
     gIdentityHandler._identityPopup.classList.add("no-shadow");
   }
-  gIdentityHandler._identityBox.querySelector("#identity-icon").click();
+  gIdentityHandler._identityIconBox.click();
   if (expand) {
     
     await new Promise(c => setTimeout(c, 500));
