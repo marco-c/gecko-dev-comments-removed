@@ -985,9 +985,7 @@ void nsCocoaWindow::Show(bool bState) {
 bool nsCocoaWindow::NeedsRecreateToReshow() {
   
   
-  
-  return (mWindowType == eWindowType_popup) && (mPopupType != ePopupTypeTooltip) && mWasShown &&
-         ([[NSScreen screens] count] > 1);
+  return (mWindowType == eWindowType_popup) && mWasShown && ([[NSScreen screens] count] > 1);
 }
 
 struct ShadowParams {
@@ -1176,6 +1174,11 @@ void nsCocoaWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {
   NSSize minSize = {nsCocoaUtils::DevPixelsToCocoaPoints(c.mMinSize.width, scaleFactor),
                     nsCocoaUtils::DevPixelsToCocoaPoints(c.mMinSize.height, scaleFactor)};
   [mWindow setMinSize:minSize];
+
+  c.mMaxSize.width = std::max(nsCocoaUtils::CocoaPointsToDevPixels(c.mMaxSize.width, scaleFactor),
+                              c.mMaxSize.width);
+  c.mMaxSize.height = std::max(nsCocoaUtils::CocoaPointsToDevPixels(c.mMaxSize.height, scaleFactor),
+                               c.mMaxSize.height);
 
   NSSize maxSize = {c.mMaxSize.width == NS_MAXSIZE
                         ? FLT_MAX
