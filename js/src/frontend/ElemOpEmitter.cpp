@@ -255,8 +255,14 @@ bool ElemOpEmitter::emitAssignment() {
 
   MOZ_ASSERT_IF(isPropInit(), !isSuper());
 
-  if (!emitPrivateGuardForAssignment()) {
-    return false;
+  if (!isCompoundAssignment()) {
+    
+    
+    
+    
+    if (!emitPrivateGuardForAssignment()) {
+      return false;
+    }
   }
 
   JSOp setOp = isPropInit() ? JSOp::InitElem
