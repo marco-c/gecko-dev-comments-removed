@@ -143,11 +143,7 @@ struct Token {
    private:
     friend struct Token;
 
-    
-    const ParserName* name;
-
-    
-    const ParserAtom* atom;
+    TrivialTaggedParserAtomIndex atom;
 
     struct {
       
@@ -168,15 +164,15 @@ struct Token {
 
   
 
-  void setName(const ParserName* name) {
+  void setName(TaggedParserAtomIndex name) {
     MOZ_ASSERT(type == TokenKind::Name || type == TokenKind::PrivateName);
-    u.name = name;
+    u.atom = TrivialTaggedParserAtomIndex::from(name);
   }
 
-  void setAtom(const ParserAtom* atom) {
+  void setAtom(TaggedParserAtomIndex atom) {
     MOZ_ASSERT(type == TokenKind::String || type == TokenKind::TemplateHead ||
                type == TokenKind::NoSubsTemplate);
-    u.atom = atom;
+    u.atom = TrivialTaggedParserAtomIndex::from(atom);
   }
 
   void setRegExpFlags(JS::RegExpFlags flags) {
@@ -192,18 +188,16 @@ struct Token {
 
   
 
-  const ParserName* name() const {
+  TaggedParserAtomIndex name() const {
     MOZ_ASSERT(type == TokenKind::Name || type == TokenKind::PrivateName);
-    return u.name->asName();  
+    return u.atom;
   }
 
-  const ParserAtom* atom() const {
+  TaggedParserAtomIndex atom() const {
     MOZ_ASSERT(type == TokenKind::String || type == TokenKind::TemplateHead ||
                type == TokenKind::NoSubsTemplate);
     return u.atom;
   }
-
-  TaggedParserAtomIndex atomIndex() const { return atom()->toIndex(); }
 
   JS::RegExpFlags regExpFlags() const {
     MOZ_ASSERT(type == TokenKind::RegExp);
