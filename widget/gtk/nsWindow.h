@@ -405,10 +405,10 @@ class nsWindow final : public nsBaseWidget {
   nsresult GetSystemFont(nsCString& aFontName) override;
 
   typedef enum {
-    CSD_SUPPORT_SYSTEM,  
-    CSD_SUPPORT_CLIENT,  
-    CSD_SUPPORT_NONE,    
-    CSD_SUPPORT_UNKNOWN
+    GTK_DECORATION_SYSTEM,  
+    GTK_DECORATION_CLIENT,  
+    GTK_DECORATION_NONE,    
+    GTK_DECORATION_UNKNOWN
   } CSDSupportLevel;
   
 
