@@ -2474,11 +2474,13 @@ void MacroAssembler::convertValueToInt(
   }
 
   
-  if (isNull.used()) {
-    bind(&isNull);
+  if (conversion == IntConversionInputKind::Any) {
+    if (isNull.used()) {
+      bind(&isNull);
+    }
+    mov(ImmWord(0), output);
+    jump(&done);
   }
-  mov(ImmWord(0), output);
-  jump(&done);
 
   
   bool handleStringIndices = handleStrings && output != stringReg;
