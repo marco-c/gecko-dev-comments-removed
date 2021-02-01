@@ -15,6 +15,7 @@ namespace frontend {
 class FullParseHandler;
 template <class ParseHandler>
 class PerHandlerParser;
+class ParserAtomsTable;
 
 
 
