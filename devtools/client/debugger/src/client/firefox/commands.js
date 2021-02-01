@@ -5,7 +5,7 @@
 
 
 import { createThread, createFrame } from "./create";
-import { ensureSourceActor } from "./events";
+import { waitForSourceActorToBeRegisteredInStore } from "./events";
 import { makePendingLocationId } from "../../utils/breakpoint";
 
 
@@ -347,7 +347,9 @@ async function getFrames(thread: string) {
   
   
   await Promise.all(
-    response.frames.map(frame => ensureSourceActor(frame.where.actor))
+    response.frames.map(frame =>
+      waitForSourceActorToBeRegisteredInStore(frame.where.actor)
+    )
   );
 
   return response.frames.map<?Frame>((frame, i) =>
