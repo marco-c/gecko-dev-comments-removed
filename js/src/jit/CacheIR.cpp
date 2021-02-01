@@ -6732,6 +6732,44 @@ AttachDecision CallIRGenerator::tryAttachMathMinMax(HandleFunction callee,
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachSpreadMathMinMax(HandleFunction callee,
+                                                          bool isMax) {
+  MOZ_ASSERT(op_ == JSOp::SpreadCall);
+
+  
+  
+  bool int32Result = args_.length() > 0;
+  for (size_t i = 0; i < args_.length(); i++) {
+    if (!args_[i].isNumber()) {
+      return AttachDecision::NoAction;
+    }
+    if (!args_[i].isInt32()) {
+      int32Result = false;
+    }
+  }
+
+  if (!int32Result) {
+    
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ObjOperandId argsId = writer.loadSpreadArgs();
+
+  writer.int32MinMaxArrayResult(argsId, isMax);
+
+  writer.returnFromIC();
+
+  trackAttached(isMax ? "MathMax" : "MathMin");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachMathFunction(HandleFunction callee,
                                                       UnaryMathFunction fun) {
   
@@ -8406,7 +8444,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
   MOZ_ASSERT(callee->isNativeWithoutJitEntry());
 
   
-  if (op_ != JSOp::Call && op_ != JSOp::New && op_ != JSOp::CallIgnoresRv) {
+  if (op_ != JSOp::Call && op_ != JSOp::New && op_ != JSOp::CallIgnoresRv &&
+      op_ != JSOp::SpreadCall) {
     return AttachDecision::NoAction;
   }
 
@@ -8436,6 +8475,19 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
         return tryAttachTypedArrayConstructor(callee);
       case InlinableNative::String:
         return tryAttachStringConstructor(callee);
+      default:
+        break;
+    }
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (op_ == JSOp::SpreadCall) {
+    switch (native) {
+      case InlinableNative::MathMin:
+        return tryAttachSpreadMathMinMax(callee,  false);
+      case InlinableNative::MathMax:
+        return tryAttachSpreadMathMinMax(callee,  true);
       default:
         break;
     }
