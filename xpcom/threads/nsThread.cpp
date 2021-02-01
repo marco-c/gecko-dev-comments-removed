@@ -1160,7 +1160,16 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
 
       mLastEventStart = now;
 
-      event->Run();
+      if (!usingTaskController) {
+        AUTO_PROFILE_FOLLOWING_RUNNABLE(event);
+        event->Run();
+      } else {
+        
+        
+        
+        
+        event->Run();
+      }
 
       if (usingTaskController) {
         *aResult = TaskController::Get()->MTTaskRunnableProcessedTask();
