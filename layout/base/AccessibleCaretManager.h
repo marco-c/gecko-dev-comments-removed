@@ -322,6 +322,11 @@ class AccessibleCaretManager {
     }
 
     
+    bool AreVisuallyVisible() const {
+      return mFirst->IsVisuallyVisible() || mSecond->IsVisuallyVisible();
+    }
+
+    
     
     UniquePtr<AccessibleCaret> mFirst;
 
