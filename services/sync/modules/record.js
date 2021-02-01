@@ -350,7 +350,7 @@ CryptoWrapper.prototype = {
   
   set id(val) {
     super.id = val;
-    return (this.cleartext.id = val);
+    this.cleartext.id = val;
   },
 };
 
