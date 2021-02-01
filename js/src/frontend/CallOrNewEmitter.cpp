@@ -177,7 +177,7 @@ bool CallOrNewEmitter::wantSpreadOperand() {
   MOZ_ASSERT(isSpread());
 
   state_ = State::WantSpreadOperand;
-  return isSingleSpreadRest();
+  return isSingleSpread();
 }
 
 bool CallOrNewEmitter::emitSpreadArgumentsTest() {
@@ -185,7 +185,7 @@ bool CallOrNewEmitter::emitSpreadArgumentsTest() {
   MOZ_ASSERT(state_ == State::WantSpreadOperand);
   MOZ_ASSERT(isSpread());
 
-  if (isSingleSpreadRest()) {
+  if (isSingleSpread()) {
     
     
     
@@ -194,10 +194,6 @@ bool CallOrNewEmitter::emitSpreadArgumentsTest() {
     
     
     
-    
-    
-    
-
     
 
     ifNotOptimizable_.emplace(bce_);
@@ -222,7 +218,7 @@ bool CallOrNewEmitter::emitSpreadArgumentsTest() {
 bool CallOrNewEmitter::emitEnd(uint32_t argc, const Maybe<uint32_t>& beginPos) {
   MOZ_ASSERT(state_ == State::Arguments);
 
-  if (isSingleSpreadRest()) {
+  if (isSingleSpread()) {
     if (!ifNotOptimizable_->emitEnd()) {
       
       return false;

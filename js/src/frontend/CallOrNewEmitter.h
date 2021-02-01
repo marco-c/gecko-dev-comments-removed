@@ -117,20 +117,6 @@ struct BytecodeEmitter;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class MOZ_STACK_CLASS CallOrNewEmitter {
  public:
   enum class ArgumentsKind {
@@ -144,9 +130,7 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
     
     
     
-    
-    
-    SingleSpreadRest
+    SingleSpread
   };
 
  private:
@@ -275,8 +259,8 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
 
   MOZ_MUST_USE bool isSpread() const { return JOF_OPTYPE(op_) == JOF_BYTE; }
 
-  MOZ_MUST_USE bool isSingleSpreadRest() const {
-    return argumentsKind_ == ArgumentsKind::SingleSpreadRest;
+  MOZ_MUST_USE bool isSingleSpread() const {
+    return argumentsKind_ == ArgumentsKind::SingleSpread;
   }
 
  public:
