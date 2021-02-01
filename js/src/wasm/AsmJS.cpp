@@ -6034,7 +6034,7 @@ static bool ParseFunction(ModuleValidator<Unit>& m, FunctionNode** funNodeOut,
                    
   }
 
-  const ParserName* name = m.parser().bindingIdentifier(YieldIsName);
+  TaggedParserAtomIndex name = m.parser().bindingIdentifier(YieldIsName);
   if (!name) {
     return false;
   }
