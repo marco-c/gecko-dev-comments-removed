@@ -9,7 +9,7 @@ use crate::frame_builder::FrameBuilderConfig;
 use crate::internal_types::{FastHashMap, FastHashSet};
 use crate::picture::{PrimitiveList, PictureCompositeMode, PictureOptions, PicturePrimitive, SliceId};
 use crate::picture::{Picture3DContext, TileCacheParams, TileOffset};
-use crate::prim_store::{PrimitiveInstance, PrimitiveInstanceKind, PrimitiveStore, PictureIndex};
+use crate::prim_store::{PrimitiveInstance, PrimitiveStore, PictureIndex};
 use crate::scene_building::SliceFlags;
 use crate::scene_builder_thread::Interners;
 use crate::spatial_tree::{ROOT_SPATIAL_NODE_INDEX, SpatialNodeIndex, SpatialTree};
@@ -32,7 +32,7 @@ pub struct PendingTileCache {
 
 pub struct TileCacheBuilder {
     
-    need_new_tile_cache: bool,
+    force_new_tile_cache: Option<SliceFlags>,
     
     pending_tile_caches: Vec<PendingTileCache>,
 
@@ -75,7 +75,7 @@ impl TileCacheBuilder {
     
     pub fn new() -> Self {
         TileCacheBuilder {
-            need_new_tile_cache: true,
+            force_new_tile_cache: None,
             pending_tile_caches: Vec::new(),
             prev_scroll_root_cache: (ROOT_SPATIAL_NODE_INDEX, ROOT_SPATIAL_NODE_INDEX),
             prim_clips_buffer: Vec::new(),
@@ -84,8 +84,11 @@ impl TileCacheBuilder {
     }
 
     
-    pub fn add_tile_cache_barrier(&mut self) {
-        self.need_new_tile_cache = true;
+    pub fn add_tile_cache_barrier(
+        &mut self,
+        slice_flags: SliceFlags,
+    ) {
+        self.force_new_tile_cache = Some(slice_flags);
     }
 
     
@@ -102,20 +105,11 @@ impl TileCacheBuilder {
         quality_settings: &QualitySettings,
     ) {
         
-        let is_scrollbar_container = prim_flags.contains(PrimitiveFlags::IS_SCROLLBAR_CONTAINER);
-        let is_clear_prim = match prim_instance.kind {
-            PrimitiveInstanceKind::Clear { .. } => true,
-            _ => false,
-        };
-        let requires_own_slice = is_scrollbar_container || is_clear_prim;
-
-        
         let scroll_root = self.find_scroll_root(spatial_node_index, spatial_tree);
 
         
         let mut want_new_tile_cache =
-            self.need_new_tile_cache ||
-            requires_own_slice ||
+            self.force_new_tile_cache.is_some() ||
             self.pending_tile_caches.is_empty();
 
         let current_scroll_root = self.pending_tile_caches
@@ -231,11 +225,7 @@ impl TileCacheBuilder {
                         virtual_surface_size: config.compositor_kind.get_virtual_surface_size(),
                     }
                 } else {
-                    let slice_flags = if is_scrollbar_container {
-                        SliceFlags::IS_SCROLLBAR
-                    } else {
-                        SliceFlags::empty()
-                    };
+                    let slice_flags = self.force_new_tile_cache.unwrap_or(SliceFlags::empty());
 
                     let background_color = if slice == 0 {
                         config.background_color
@@ -271,7 +261,7 @@ impl TileCacheBuilder {
                     params,
                 });
 
-                self.need_new_tile_cache = requires_own_slice;
+                self.force_new_tile_cache = None;
             }
         }
 
