@@ -35,18 +35,6 @@
 #include "strtod.h"
 #include "utils.h"
 
-#ifdef _MSC_VER
-#  if _MSC_VER >= 1900
-
-
-
- __pragma(warning(disable: 4244))
-#  endif
-#  if _MSC_VER <= 1700 
-#    define VS2012_RADIXWARN
-#  endif
-#endif
-
 namespace double_conversion {
 
 namespace {
@@ -163,7 +151,7 @@ static double SignedZero(bool sign) {
 
 
 
-#ifdef VS2012_RADIXWARN
+#ifdef _MSC_VER
 #pragma optimize("",off)
 static bool IsDecimalDigitForRadix(int c, int radix) {
   return '0' <= c && c <= '9' && (c - '0') < radix;
@@ -454,6 +442,11 @@ double StringToDoubleConverter::StringToIeee(
   }
 
   
+  const int kBufferSize = kMaxSignificantDigits + 10;
+  char buffer[kBufferSize];  
+  int buffer_pos = 0;
+
+  
   
   int exponent = 0;
   int significant_digits = 0;
@@ -487,6 +480,7 @@ double StringToDoubleConverter::StringToIeee(
         return junk_string_value_;
       }
 
+      DOUBLE_CONVERSION_ASSERT(buffer_pos == 0);
       *processed_characters_count = static_cast<int>(current - input);
       return sign ? -Double::Infinity() : Double::Infinity();
     }
@@ -505,6 +499,7 @@ double StringToDoubleConverter::StringToIeee(
         return junk_string_value_;
       }
 
+      DOUBLE_CONVERSION_ASSERT(buffer_pos == 0);
       *processed_characters_count = static_cast<int>(current - input);
       return sign ? -Double::NaN() : Double::NaN();
     }
@@ -560,12 +555,6 @@ double StringToDoubleConverter::StringToIeee(
   }
 
   bool octal = leading_zero && (flags_ & ALLOW_OCTALS) != 0;
-
-  
-  const int kBufferSize = kMaxSignificantDigits + 10;
-  DOUBLE_CONVERSION_STACK_UNINITIALIZED char
-      buffer[kBufferSize];  
-  int buffer_pos = 0;
 
   
   while (*current >= '0' && *current <= '9') {
