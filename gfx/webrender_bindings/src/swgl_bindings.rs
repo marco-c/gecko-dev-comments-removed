@@ -91,22 +91,6 @@ pub extern "C" fn wr_swgl_set_texture_buffer(
     );
 }
 
-#[no_mangle]
-pub extern "C" fn wr_swgl_clear_color_rect(
-    ctx: *mut c_void,
-    fbo: u32,
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32,
-    r: f32,
-    g: f32,
-    b: f32,
-    a: f32,
-) {
-    swgl::Context::from(ctx).clear_color_rect(fbo, x, y, width, height, r, g, b, a);
-}
-
 
 #[repr(C)]
 struct WrSWGLCompositeSurfaceInfo {
@@ -1636,11 +1620,15 @@ impl Compositor for SwCompositor {
     
     
     
-    fn start_compositing(&mut self, dirty_rects: &[DeviceIntRect], _opaque_rects: &[DeviceIntRect]) {
+    fn start_compositing(
+        &mut self,
+        dirty_rects: &[DeviceIntRect],
+        _opaque_rects: &[DeviceIntRect],
+    ) {
         
         
         
-        let mut opaque_rects: Vec<DeviceIntRect> = Vec::new();
+        let mut opaque_rects : Vec<DeviceIntRect> = Vec::new();
         for &(ref id, ref transform, ref clip_rect, _filter) in &self.frame_surfaces {
             if let Some(surface) = self.surfaces.get(id) {
                 if !surface.is_opaque {
