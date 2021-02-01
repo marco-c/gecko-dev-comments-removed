@@ -128,11 +128,6 @@ class DevToolsWorkerChild extends JSWindowActorChild {
           watcherActorID,
           parentConnectionPrefix: connectionPrefix,
           watchedData,
-          
-          
-          
-          
-          ignoreExistingTargets: true,
         });
       }
     }
@@ -210,14 +205,9 @@ class DevToolsWorkerChild extends JSWindowActorChild {
 
 
 
-
-
-
-
   async _watchWorkerTargets({
     watcherActorID,
     parentConnectionPrefix,
-    ignoreExistingTargets,
     watchedData,
   }) {
     if (this._connections.has(watcherActorID)) {
@@ -254,20 +244,18 @@ class DevToolsWorkerChild extends JSWindowActorChild {
       watchedData,
     });
 
-    if (ignoreExistingTargets !== true) {
-      await Promise.all(
-        Array.from(wdm.getWorkerDebuggerEnumerator())
-          .filter(dbg => this._shouldHandleWorker(dbg))
-          .map(dbg =>
-            this._createWorkerTargetActor({
-              dbg,
-              connection,
-              forwardingPrefix,
-              watcherActorID,
-            })
-          )
-      );
-    }
+    await Promise.all(
+      Array.from(wdm.getWorkerDebuggerEnumerator())
+        .filter(dbg => this._shouldHandleWorker(dbg))
+        .map(dbg =>
+          this._createWorkerTargetActor({
+            dbg,
+            connection,
+            forwardingPrefix,
+            watcherActorID,
+          })
+        )
+    );
   }
 
   _createConnection(forwardingPrefix) {
@@ -302,8 +290,7 @@ class DevToolsWorkerChild extends JSWindowActorChild {
     return (
       DevToolsUtils.isWorkerDebuggerAlive(dbg) &&
       dbg.type === Ci.nsIWorkerDebugger.TYPE_DEDICATED &&
-      dbg.window?.windowGlobalChild?.innerWindowId ===
-        this.manager.innerWindowId
+      dbg.windowIDs.includes(this.manager.innerWindowId)
     );
   }
 
