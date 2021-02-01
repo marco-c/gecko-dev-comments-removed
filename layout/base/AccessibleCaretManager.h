@@ -245,8 +245,39 @@ class AccessibleCaretManager {
   dom::Selection* GetSelection() const;
   already_AddRefed<nsFrameSelection> GetFrameSelection() const;
 
-  MOZ_CAN_RUN_SCRIPT
-  nsAutoString StringifiedSelection() const;
+  class LayoutFlusher final {
+   public:
+    ~LayoutFlusher();
+
+    MOZ_CAN_RUN_SCRIPT void MaybeFlush(const PresShell& aPresShell);
+
+    
+    
+    
+    bool mAllowFlushing = true;
+
+   private:
+    
+    bool mFlushing = false;
+  };
+
+  LayoutFlusher mLayoutFlusher;
+
+  MOZ_CAN_RUN_SCRIPT nsAutoString StringifiedSelection() const;
+
+  class SelectionStringifyer final {
+   public:
+    explicit SelectionStringifyer(LayoutFlusher& aLayoutFlusher)
+        : mLayoutFlusher{aLayoutFlusher} {}
+
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsAutoString
+    Stringify(dom::Selection& aSelection) const;
+
+   private:
+    LayoutFlusher mLayoutFlusher;
+  };
+
+  SelectionStringifyer mSelectionStringifyer;
 
   
   
@@ -351,24 +382,6 @@ class AccessibleCaretManager {
 
   
   bool mIsScrollStarted = false;
-
-  class LayoutFlusher final {
-   public:
-    ~LayoutFlusher();
-
-    MOZ_CAN_RUN_SCRIPT void MaybeFlush(const PresShell& aPresShell);
-
-    
-    
-    
-    bool mAllowFlushing = true;
-
-  private:
-    
-    bool mFlushing = false;
-  };
-
-  LayoutFlusher mLayoutFlusher;
 
   
   bool mIsCaretPositionChanged = false;
