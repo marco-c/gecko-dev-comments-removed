@@ -41,7 +41,6 @@
 #include "nsFlexContainerFrame.h"
 #include "nsFrameList.h"
 #include "nsPlaceholderFrame.h"
-#include "nsPluginFrame.h"
 #include "nsIBaseWindow.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
@@ -3114,18 +3113,16 @@ void nsIFrame::BuildDisplayListForStackingContext(
       this, nsCSSPropertyIDSet::OpacityProperties());
   
   
-  
-  
   bool needHitTestInfo =
       aBuilder->BuildCompositorHitTestInfo() &&
       StyleUI()->GetEffectivePointerEvents(this) != StylePointerEvents::None;
-  bool opacityItemForEventsAndPluginsOnly = false;
+  bool opacityItemForEventsOnly = false;
   if (effects->mOpacity == 0.0 && aBuilder->IsForPainting() &&
       !(disp->mWillChange.bits & StyleWillChangeBits::OPACITY) &&
       !nsLayoutUtils::HasAnimationOfPropertySet(
           this, nsCSSPropertyIDSet::OpacityProperties(), effectSetForOpacity)) {
-    if (needHitTestInfo || aBuilder->WillComputePluginGeometry()) {
-      opacityItemForEventsAndPluginsOnly = true;
+    if (needHitTestInfo) {
+      opacityItemForEventsOnly = true;
     } else {
       return;
     }
@@ -3404,8 +3401,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
                                                                   inTransform);
     nsDisplayListBuilder::AutoEnterFilter filterASRSetter(aBuilder,
                                                           usingFilter);
-    nsDisplayListBuilder::AutoInEventsAndPluginsOnly inEventsAndPluginsSetter(
-        aBuilder, opacityItemForEventsAndPluginsOnly);
+    nsDisplayListBuilder::AutoInEventsOnly inEventsSetter(
+        aBuilder, opacityItemForEventsOnly);
 
     CheckForApzAwareEventHandlers(aBuilder, this);
 
@@ -3632,8 +3629,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
         nsDisplayOpacity::NeedsActiveLayer(aBuilder, this);
 
     resultList.AppendNewToTop<nsDisplayOpacity>(
-        aBuilder, this, &resultList, containerItemASR,
-        opacityItemForEventsAndPluginsOnly, needsActiveOpacityLayer);
+        aBuilder, this, &resultList, containerItemASR, opacityItemForEventsOnly,
+        needsActiveOpacityLayer);
     ct.TrackContainer(resultList.GetTop());
   }
 
@@ -6079,13 +6076,14 @@ static MinMaxSize ComputeTransferredMinMaxInlineSize(
 nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
     nscoord aAvailableISize, const LogicalSize& aMargin,
-    const LogicalSize& aBorderPadding, ComputeSizeFlags aFlags) {
+    const LogicalSize& aBorderPadding, const StyleSizeOverrides& aSizeOverrides,
+    ComputeSizeFlags aFlags) {
   MOZ_ASSERT(!GetIntrinsicRatio(),
              "Please override this method and call "
              "nsContainerFrame::ComputeSizeWithIntrinsicDimensions instead.");
   LogicalSize result =
       ComputeAutoSize(aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin,
-                      aBorderPadding, aFlags);
+                      aBorderPadding, aSizeOverrides, aFlags);
   const nsStylePosition* stylePos = StylePosition();
   const nsStyleDisplay* disp = StyleDisplay();
   auto aspectRatioUsage = AspectRatioUsage::None;
@@ -6434,7 +6432,8 @@ LogicalSize nsIFrame::ComputeAutoSize(
     gfxContext* aRenderingContext, WritingMode aWM,
     const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
     const mozilla::LogicalSize& aMargin,
-    const mozilla::LogicalSize& aBorderPadding, ComputeSizeFlags aFlags) {
+    const mozilla::LogicalSize& aBorderPadding,
+    const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) {
   
   LogicalSize result(aWM, 0xdeadbeef, NS_UNCONSTRAINEDSIZE);
 
@@ -6743,7 +6742,6 @@ void nsIFrame::SetView(nsView* aView) {
     LayoutFrameType frameType = Type();
     NS_ASSERTION(frameType == LayoutFrameType::SubDocument ||
                      frameType == LayoutFrameType::ListControl ||
-                     frameType == LayoutFrameType::Object ||
                      frameType == LayoutFrameType::Viewport ||
                      frameType == LayoutFrameType::MenuPopup,
                  "Only specific frame types can have an nsView");
@@ -7419,13 +7417,8 @@ Layer* nsIFrame::InvalidateLayer(DisplayItemType aDisplayItemKey,
     
     
     
-    
-    
-    
-    
     DisplayItemType displayItemKey = aDisplayItemKey;
-    if (aDisplayItemKey == DisplayItemType::TYPE_PLUGIN ||
-        aDisplayItemKey == DisplayItemType::TYPE_REMOTE) {
+    if (aDisplayItemKey == DisplayItemType::TYPE_REMOTE) {
       displayItemKey = DisplayItemType::TYPE_ZERO;
     }
 
@@ -10691,7 +10684,7 @@ void nsIFrame::BoxReflow(nsBoxLayoutState& aState, nsPresContext* aPresContext,
             ComputeSize(
                 aRenderingContext, wm, logicalSize, logicalSize.ISize(wm),
                 reflowInput.ComputedLogicalMargin(wm).Size(wm),
-                reflowInput.ComputedLogicalBorderPadding(wm).Size(wm), {})
+                reflowInput.ComputedLogicalBorderPadding(wm).Size(wm), {}, {})
                 .mLogicalSize.Height(wm));
       }
     }
@@ -11271,13 +11264,6 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
     result += CompositorHitTestFlags::eInactiveScrollframe;
   } else if (aBuilder->GetAncestorHasApzAwareEventHandler()) {
     result += CompositorHitTestFlags::eApzAwareListeners;
-  } else if (IsObjectFrame()) {
-    
-    
-    nsPluginFrame* pluginFrame = do_QueryFrame(this);
-    if (pluginFrame && pluginFrame->WantsToHandleWheelEventAsDefaultAction()) {
-      result += CompositorHitTestFlags::eApzAwareListeners;
-    }
   } else if (IsRangeFrame()) {
     
     
@@ -12031,7 +12017,6 @@ void DR_State::InitFrameTypeTable() {
   AddFrameTypeInfo(LayoutFrameType::Letter, "letter", "letter");
   AddFrameTypeInfo(LayoutFrameType::Line, "line", "line");
   AddFrameTypeInfo(LayoutFrameType::ListControl, "select", "select");
-  AddFrameTypeInfo(LayoutFrameType::Object, "obj", "object");
   AddFrameTypeInfo(LayoutFrameType::Page, "page", "page");
   AddFrameTypeInfo(LayoutFrameType::Placeholder, "place", "placeholder");
   AddFrameTypeInfo(LayoutFrameType::Canvas, "canvas", "canvas");
