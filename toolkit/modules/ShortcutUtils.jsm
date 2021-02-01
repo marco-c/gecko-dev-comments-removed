@@ -51,13 +51,8 @@ var ShortcutUtils = {
 
 
 
-
-
-  prettifyShortcut(aElemKey, aNoCloverLeaf) {
-    let elemString = this.getModifierString(
-      aElemKey.getAttribute("modifiers"),
-      aNoCloverLeaf
-    );
+  prettifyShortcut(aElemKey) {
+    let elemString = this.getModifierString(aElemKey.getAttribute("modifiers"));
     let key = this.getKeyString(
       aElemKey.getAttribute("keycode"),
       aElemKey.getAttribute("key")
@@ -65,19 +60,13 @@ var ShortcutUtils = {
     return elemString + key;
   },
 
-  getModifierString(elemMod, aNoCloverLeaf) {
+  getModifierString(elemMod) {
     let elemString = "";
     let haveCloverLeaf = false;
 
     if (elemMod.match("accel")) {
       if (Services.appinfo.OS == "Darwin") {
-        
-        
-        if (aNoCloverLeaf) {
-          elemString += "Cmd-";
-        } else {
-          haveCloverLeaf = true;
-        }
+        haveCloverLeaf = true;
       } else {
         elemString +=
           PlatformKeys.GetStringFromName("VK_CONTROL") +
