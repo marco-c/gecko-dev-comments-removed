@@ -116,13 +116,6 @@ let gExceptionsList = [
     key: "tos",
     type: "double-quote",
   },
-  
-  
-  {
-    file: "features.ftl",
-    key: "experimental-features-web-api-link-preload-description",
-    type: "double-quote",
-  },
 ];
 
 
