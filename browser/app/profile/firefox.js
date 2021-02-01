@@ -1370,7 +1370,7 @@ pref("browser.newtabpage.activity-stream.newNewtabExperience.enabled", false);
 
 
 pref("browser.newtabpage.activity-stream.customizationMenu.enabled", false);
-pref("browser.newtabpage.activity-stream.newNewtabExperience.colors", "#0090ED,#FF4F5F,#2AC3A2,#FF7139,#A172FF,#FFA437,#FF2A8A,#FFD567");
+pref("browser.newtabpage.activity-stream.newNewtabExperience.colors", "#0090ED,#FF4F5F,#2AC3A2,#FF7139,#A172FF,#FFA437,#FF2A8A");
 
 
 #ifndef RELEASE_OR_BETA
