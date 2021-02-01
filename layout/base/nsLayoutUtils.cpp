@@ -2537,7 +2537,7 @@ nsRect nsLayoutUtils::TransformFrameRectToAncestor(
 static LayoutDeviceIntPoint GetWidgetOffset(nsIWidget* aWidget,
                                             nsIWidget*& aRootWidget) {
   LayoutDeviceIntPoint offset(0, 0);
-  while ((aWidget->WindowType() == eWindowType_child || aWidget->IsPlugin())) {
+  while (aWidget->WindowType() == eWindowType_child) {
     nsIWidget* parent = aWidget->GetParent();
     if (!parent) {
       break;
@@ -3082,10 +3082,6 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
 
   nsPresContext* presContext = aFrame->PresContext();
   PresShell* presShell = presContext->PresShell();
-  nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
-  if (!rootPresContext) {
-    return NS_OK;
-  }
 
   TimeStamp startBuildDisplayList = TimeStamp::Now();
 
@@ -3173,6 +3169,12 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
     }
   }
 
+  builder->ClearHaveScrollableDisplayPort();
+  if (builder->IsPaintingToWindow()) {
+    DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered(
+        aFrame, builder);
+  }
+
   nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame();
   if (rootScrollFrame && !aFrame->GetParent()) {
     nsIScrollableFrame* rootScrollableFrame =
@@ -3196,18 +3198,6 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
     visibleRegion = rootInkOverflow;
   } else {
     visibleRegion = aDirtyRegion;
-  }
-
-  
-  
-  if ((aFlags & PaintFrameFlags::WidgetLayers) &&
-      !(aFlags & PaintFrameFlags::DocumentRelative) &&
-      rootPresContext->NeedToComputePluginGeometryUpdates()) {
-    builder->SetWillComputePluginGeometry(true);
-
-    
-    
-    builder->SetDisablePartialUpdates(true);
   }
 
   nsRect canvasArea(nsPoint(0, 0), aFrame->GetSize());
@@ -3240,12 +3230,6 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
           canvasArea,
           canvasFrame->CanvasArea() + builder->ToReferenceFrame(canvasFrame));
     }
-  }
-
-  builder->ClearHaveScrollableDisplayPort();
-  if (builder->IsPaintingToWindow()) {
-    DisplayPortUtils::MaybeCreateDisplayPortInFirstScrollFrameEncountered(
-        aFrame, builder);
   }
 
   nsRect visibleRect = visibleRegion.GetBounds();
@@ -3458,7 +3442,6 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
 
   
   
-  
   if ((aFlags & PaintFrameFlags::WidgetLayers) &&
       !(aFlags & PaintFrameFlags::DocumentRelative)) {
     nsIWidget* widget = aFrame->GetNearestWidget();
@@ -3471,35 +3454,6 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
 
       widget->UpdateWindowDraggingRegion(builder->GetWindowDraggingRegion());
     }
-  }
-
-  if (builder->WillComputePluginGeometry()) {
-    
-    
-    
-    
-    
-    if (XRE_IsParentProcess()) {
-      rootPresContext->ComputePluginGeometryUpdates(aFrame, builder, list);
-      
-      
-      
-      
-      if (layerManager && !layerManager->NeedsWidgetInvalidation()) {
-        rootPresContext->ApplyPluginGeometryUpdates();
-      }
-    }
-
-    
-    
-    
-    if (layerManager) {
-      layerManager->ScheduleComposite();
-    }
-
-    
-    
-    builder->SetDisablePartialUpdates(true);
   }
 
   
