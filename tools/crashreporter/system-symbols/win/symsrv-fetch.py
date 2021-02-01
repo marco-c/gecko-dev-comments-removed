@@ -268,6 +268,7 @@ async def dump_module(
     sym_path = os.path.join(filename, debug_id, filename.replace(".pdb", ".sym"))
     output_path = os.path.join(output, sym_path)
     sym_srv = SYM_SRV.format(symcache)
+    res = {"path": sym_path, "error": "ok"}
 
     if has_code:
         cmd = (
@@ -285,11 +286,13 @@ async def dump_module(
     if err:
         log.error(f"Error with {cmd}")
         log.error(err)
-        return 1
+        res["error"] = "dump error"
+        return res
 
     if not os.path.exists(output_path):
         log.error(f"Could not find file {output_path} after running {cmd}")
-        return 1
+        res["error"] = "dump error"
+        return res
 
     if not has_code and not await check_x86_file(output_path):
         
@@ -300,10 +303,11 @@ async def dump_module(
             log.debug(f"x86_64 binary {code_file}/{code_id} required")
         else:
             log.debug(f"x86_64 binary for {filename}/{debug_id} required")
-        return 2
+        res["error"] = "no binary"
+        return res
 
     log.info(f"Successfully dumped: {filename}/{debug_id}")
-    return sym_path
+    return res
 
 
 async def dump(output, symcache, modules, dump_syms):
@@ -323,10 +327,13 @@ async def dump(output, symcache, modules, dump_syms):
         )
 
     res = await asyncio.gather(*tasks)
-    file_index = {x for x in res if isinstance(x, str)}
+
+    
+    
+    file_index = {x["path"] for x in res if x["error"] in ["ok", "no binary"]}
     stats = {
-        "dump_error": sum(1 for x in res if x == 1),
-        "no_bin": sum(1 for x in res if x == 2),
+        "dump_error": sum(1 for x in res if x["error"] == "dump error"),
+        "no_bin": sum(1 for x in res if x["error"] == "no binary"),
     }
 
     return file_index, stats
