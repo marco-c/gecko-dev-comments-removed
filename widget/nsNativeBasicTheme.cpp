@@ -60,15 +60,26 @@ static bool IsScrollbarWidthThin(nsIFrame* aFrame) {
 }
 
 
+auto nsNativeBasicTheme::GetDPIRatioForScrollbarPart(nsPresContext* aPc)
+    -> DPIRatio {
+  return DPIRatio(float(AppUnitsPerCSSPixel()) /
+                  aPc->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom());
+}
+
+
+auto nsNativeBasicTheme::GetDPIRatio(nsPresContext* aPc,
+                                     StyleAppearance aAppearance) -> DPIRatio {
+  
+  if (IsWidgetScrollbarPart(aAppearance)) {
+    return GetDPIRatioForScrollbarPart(aPc);
+  }
+  return DPIRatio(float(AppUnitsPerCSSPixel()) / aPc->AppUnitsPerDevPixel());
+}
+
+
 auto nsNativeBasicTheme::GetDPIRatio(nsIFrame* aFrame,
                                      StyleAppearance aAppearance) -> DPIRatio {
-  nsPresContext* pc = aFrame->PresContext();
-  
-  nscoord auPerPx =
-      IsWidgetScrollbarPart(aAppearance)
-          ? pc->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom()
-          : pc->AppUnitsPerDevPixel();
-  return DPIRatio(float(AppUnitsPerCSSPixel()) / auPerPx);
+  return GetDPIRatio(aFrame->PresContext(), aAppearance);
 }
 
 
@@ -505,8 +516,8 @@ void nsNativeBasicTheme::PaintRoundedRectWithRadius(
   }
 
   RectCornerRadii radii(radius, radius, radius, radius);
-  RefPtr<Path> roundedRect = MakePathForRoundedRect(
-      *aDrawTarget, rect.ToUnknownRect(), radii);
+  RefPtr<Path> roundedRect =
+      MakePathForRoundedRect(*aDrawTarget, rect.ToUnknownRect(), radii);
 
   aDrawTarget->Fill(roundedRect, ColorPattern(ToDeviceColor(aBackgroundColor)));
   aDrawTarget->Stroke(roundedRect, ColorPattern(ToDeviceColor(aBorderColor)),
@@ -779,7 +790,8 @@ void nsNativeBasicTheme::PaintSpinnerButton(nsIFrame* aFrame,
 
   RefPtr<PathBuilder> builder = aDrawTarget->CreatePathBuilder();
   auto center = aRect.Center().ToUnknownPoint();
-  Point p = center + Point(arrowPolygonX[0] * scaleX, arrowPolygonY[0] * scaleY);
+  Point p =
+      center + Point(arrowPolygonX[0] * scaleX, arrowPolygonY[0] * scaleY);
   builder->MoveTo(p);
   for (int32_t i = 1; i < arrowNumPoints; i++) {
     p = center + Point(arrowPolygonX[i] * scaleX, arrowPolygonY[i] * scaleY);
@@ -1262,6 +1274,7 @@ nsNativeBasicTheme::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
 
 
 
+
 LayoutDeviceIntMargin nsNativeBasicTheme::GetWidgetBorder(
     nsDeviceContext* aContext, nsIFrame* aFrame, StyleAppearance aAppearance) {
   DPIRatio dpiRatio = GetDPIRatio(aFrame, aAppearance);
@@ -1358,6 +1371,17 @@ bool nsNativeBasicTheme::GetWidgetOverflow(nsDeviceContext* aContext,
   return true;
 }
 
+auto nsNativeBasicTheme::GetScrollbarSizes(nsPresContext* aPresContext,
+                                           StyleScrollbarWidth aWidth, Overlay)
+    -> ScrollbarSizes {
+  CSSCoord size = aWidth == StyleScrollbarWidth::Thin
+                      ? kMinimumThinScrollbarSize
+                      : kMinimumScrollbarSize;
+  LayoutDeviceIntCoord s =
+      (size * GetDPIRatioForScrollbarPart(aPresContext)).Rounded();
+  return {s, s};
+}
+
 NS_IMETHODIMP
 nsNativeBasicTheme::GetMinimumWidgetSize(nsPresContext* aPresContext,
                                          nsIFrame* aFrame,
@@ -1403,13 +1427,12 @@ nsNativeBasicTheme::GetMinimumWidgetSize(nsPresContext* aPresContext,
     case StyleAppearance::ScrollbartrackHorizontal:
     case StyleAppearance::ScrollbartrackVertical:
     case StyleAppearance::Scrollcorner: {
-      if (IsScrollbarWidthThin(aFrame)) {
-        aResult->SizeTo((kMinimumThinScrollbarSize * dpiRatio).Rounded(),
-                        (kMinimumThinScrollbarSize * dpiRatio).Rounded());
-      } else {
-        aResult->SizeTo((kMinimumScrollbarSize * dpiRatio).Rounded(),
-                        (kMinimumScrollbarSize * dpiRatio).Rounded());
-
+      auto* style = nsLayoutUtils::StyleForScrollbar(aFrame);
+      auto width = style->StyleUIReset()->mScrollbarWidth;
+      auto sizes = GetScrollbarSizes(aPresContext, width, Overlay::No);
+      MOZ_ASSERT(sizes.mHorizontal == sizes.mVertical);
+      aResult->SizeTo(sizes.mHorizontal, sizes.mHorizontal);
+      if (width != StyleScrollbarWidth::Thin) {
         
         
         

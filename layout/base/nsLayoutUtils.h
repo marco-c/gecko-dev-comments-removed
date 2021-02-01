@@ -83,6 +83,7 @@ class EffectSet;
 struct ActiveScrolledRoot;
 enum class ScrollOrigin : uint8_t;
 enum class StyleImageOrientation : uint8_t;
+enum class StyleScrollbarWidth : uint8_t;
 struct OverflowAreas;
 namespace dom {
 class CanvasRenderingContext2D;
@@ -311,6 +312,11 @@ class nsLayoutUtils {
 
 
   static nsIFrame* GetStyleFrame(const nsIContent* aContent);
+
+  
+
+
+  static mozilla::CSSIntCoord UnthemedScrollbarSize(mozilla::StyleScrollbarWidth);
 
   
 

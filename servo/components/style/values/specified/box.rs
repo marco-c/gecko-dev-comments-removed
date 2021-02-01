@@ -1836,10 +1836,6 @@ pub enum Appearance {
     MozMacVibrantTitlebarLight,
 
     
-    #[css(skip)]
-    ScrollbarNonDisappearing,
-
-    
     
     
     #[css(skip)]
