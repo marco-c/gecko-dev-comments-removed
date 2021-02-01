@@ -33,7 +33,7 @@ const BAD_CERTS = [
 
 function getConnectionState() {
   
-  document.getElementById("identity-icon-box").click();
+  document.getElementById("identity-box").click();
   gIdentityHandler.refreshIdentityPopup();
   return document.getElementById("identity-popup").getAttribute("connection");
 }

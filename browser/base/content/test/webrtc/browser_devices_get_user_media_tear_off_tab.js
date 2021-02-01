@@ -48,21 +48,21 @@ var gTests = [
 
       
       
-      ok(permissionPopupHidden(win), "control center should be hidden");
+      ok(identityPopupHidden(win), "control center should be hidden");
       let activeStreams = webrtcUI.getActiveStreams(true, false, false);
       webrtcUI.showSharingDoorhanger(activeStreams[0], "Devices");
       
       
       
-      let popup = win.gPermissionPanel._permissionPopup;
+      let popup = win.gIdentityHandler._identityPopup;
       let hiddenEvent = BrowserTestUtils.waitForEvent(popup, "popuphidden");
       let shownEvent = BrowserTestUtils.waitForEvent(popup, "popupshown");
       let ev = await Promise.race([hiddenEvent, shownEvent]);
       ok(ev.type, "Tried to show popup");
-      win.gPermissionPanel._permissionPopup.hidePopup();
+      win.gIdentityHandler._identityPopup.hidePopup();
 
       ok(
-        permissionPopupHidden(window),
+        identityPopupHidden(window),
         "control center should be hidden in the first window"
       );
 

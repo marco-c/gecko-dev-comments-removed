@@ -22,23 +22,23 @@ const PRINCIPAL = Services.scriptSecurityManager.createContentPrincipal(
   {}
 );
 
-function openPermissionPopup() {
+function openIdentityPopup() {
   let promise = BrowserTestUtils.waitForEvent(
     window,
     "popupshown",
     true,
-    event => event.target == gPermissionPanel._permissionPopup
+    event => event.target == gIdentityHandler._identityPopup
   );
-  gPermissionPanel._identityPermissionBox.click();
+  gIdentityHandler._identityBox.click();
   return promise;
 }
 
-function closePermissionPopup() {
+function closeIdentityPopup() {
   let promise = BrowserTestUtils.waitForEvent(
-    gPermissionPanel._permissionPopup,
+    gIdentityHandler._identityPopup,
     "popuphidden"
   );
-  gPermissionPanel._permissionPopup.hidePopup();
+  gIdentityHandler._identityPopup.hidePopup();
   return promise;
 }
 
@@ -56,12 +56,12 @@ add_task(async function check_blocked_popup_indicator() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
 
   
-  await openPermissionPopup();
+  await openIdentityPopup();
   Assert.equal(document.getElementById("blocked-popup-indicator-item"), null);
-  await closePermissionPopup();
+  await closeIdentityPopup();
 
   
-  let icon = gPermissionPanel._identityPermissionBox.querySelector(
+  let icon = gIdentityHandler._identityBox.querySelector(
     ".blocked-permission-icon[data-permission-id='popup']"
   );
   Assert.equal(icon.hasAttribute("showing"), false);
@@ -77,18 +77,18 @@ add_task(async function check_blocked_popup_indicator() {
   );
 
   
-  document.getElementById("identity-permission-box").click();
-  await openPermissionPopup();
+  document.getElementById("identity-icon").click();
+  await openIdentityPopup();
   await TestUtils.waitForCondition(
     () => document.getElementById("blocked-popup-indicator-item") !== null
   );
 
   
-  let menulist = document.getElementById("permission-popup-menulist");
+  let menulist = document.getElementById("identity-popup-popup-menulist");
   Assert.equal(menulist.value, "0");
   Assert.equal(menulist.label, "Block");
 
-  await closePermissionPopup();
+  await closeIdentityPopup();
 
   
   Assert.equal(icon.getAttribute("showing"), "true");
@@ -118,7 +118,7 @@ add_task(async function check_popup_showing() {
   gBrowser.tabContainer.addEventListener("TabOpen", onTabOpen);
 
   
-  await openPermissionPopup();
+  await openIdentityPopup();
   let e = document.getElementById("blocked-popup-indicator-item");
   let text = e.getElementsByTagName("label")[0];
   text.click();
@@ -159,12 +159,12 @@ add_task(async function check_permission_state_change() {
   );
 
   
-  await openPermissionPopup();
-  let menulist = document.getElementById("permission-popup-menulist");
+  await openIdentityPopup();
+  let menulist = document.getElementById("identity-popup-popup-menulist");
   menulist.menupopup.openPopup(); 
   let menuitem = menulist.getElementsByTagName("menuitem")[0];
   menuitem.click();
-  await closePermissionPopup();
+  await closeIdentityPopup();
 
   state = SitePermissions.getForPrincipal(PRINCIPAL, "popup", gBrowser).state;
   Assert.equal(state, SitePermissions.ALLOW);
@@ -198,12 +198,12 @@ add_task(async function check_permission_state_change() {
   gBrowser.removeTab(popup);
 
   
-  await openPermissionPopup();
-  menulist = document.getElementById("permission-popup-menulist");
+  await openIdentityPopup();
+  menulist = document.getElementById("identity-popup-popup-menulist");
   menulist.menupopup.openPopup(); 
   menuitem = menulist.getElementsByTagName("menuitem")[1];
   menuitem.click();
-  await closePermissionPopup();
+  await closeIdentityPopup();
 
   
   
@@ -222,19 +222,19 @@ add_task(async function check_explicit_default_permission() {
   
   PermissionTestUtils.add(URI, "popup", Ci.nsIPermissionManager.DENY_ACTION);
 
-  await openPermissionPopup();
-  let menulist = document.getElementById("permission-popup-menulist");
+  await openIdentityPopup();
+  let menulist = document.getElementById("identity-popup-popup-menulist");
   Assert.equal(menulist.value, "0");
   Assert.equal(menulist.label, "Block");
-  await closePermissionPopup();
+  await closeIdentityPopup();
 
   PermissionTestUtils.add(URI, "popup", Services.perms.ALLOW_ACTION);
 
-  await openPermissionPopup();
-  menulist = document.getElementById("permission-popup-menulist");
+  await openIdentityPopup();
+  menulist = document.getElementById("identity-popup-popup-menulist");
   Assert.equal(menulist.value, "1");
   Assert.equal(menulist.label, "Allow");
-  await closePermissionPopup();
+  await closeIdentityPopup();
 
   PermissionTestUtils.remove(URI, "popup");
   gBrowser.removeTab(tab);
