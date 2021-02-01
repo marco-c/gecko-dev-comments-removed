@@ -59,6 +59,7 @@ VALID_LICENSES = [
     "Anti-Grain-Geometry",  
     "JPNIC",  
     "Khronos",  
+    "libpng",  
     "Unicode",  
 ]
 
