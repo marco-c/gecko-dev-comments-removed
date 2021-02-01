@@ -167,8 +167,8 @@ class CompositorWidget {
 
 
 
-  virtual void ClearBeforePaint(RefPtr<gfx::DrawTarget> aTarget,
-                                const LayoutDeviceIntRegion& aRegion) {}
+
+  virtual LayoutDeviceIntRegion GetTransparentRegion();
 
   
 
