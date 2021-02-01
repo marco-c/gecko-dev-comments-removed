@@ -56,16 +56,7 @@ struct ScopeContext {
 
   
   
-  
-  
-  ThisBinding thisBinding = ThisBinding::Global;
-
-  
-  
-  bool allowNewTarget = false;
-  bool allowSuperProperty = false;
-  bool allowSuperCall = false;
-  bool allowArguments = true;
+  mozilla::Maybe<MemberInitializers> memberInitializers = {};
 
   
   
@@ -76,7 +67,16 @@ struct ScopeContext {
 
   
   
-  mozilla::Maybe<MemberInitializers> memberInitializers = {};
+  
+  
+  ThisBinding thisBinding = ThisBinding::Global;
+
+  
+  
+  bool allowNewTarget = false;
+  bool allowSuperProperty = false;
+  bool allowSuperCall = false;
+  bool allowArguments = true;
 
   
   bool inClass = false;
