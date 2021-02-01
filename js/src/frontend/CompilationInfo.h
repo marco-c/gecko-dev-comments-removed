@@ -326,9 +326,6 @@ struct MOZ_RAII CompilationState {
 
   bool finish(JSContext* cx, CompilationStencil& stencil);
 
-  const ParserAtom* getParserAtomAt(JSContext* cx,
-                                    TaggedParserAtomIndex taggedIndex) const;
-
   
   
   bool allocateGCThingsUninitialized(JSContext* cx, ScriptIndex scriptIndex,

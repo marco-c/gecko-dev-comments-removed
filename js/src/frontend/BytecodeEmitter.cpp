@@ -9302,8 +9302,8 @@ bool BytecodeEmitter::emitPrivateMethodInitializers(ClassEmitter& ce,
     
     
     StringBuffer storedMethodName(cx);
-    const ParserAtom* prop =
-        compilationState.getParserAtomAt(cx, propName->as<NameNode>().atom());
+    const ParserAtom* prop = compilationState.parserAtoms.getParserAtom(
+        propName->as<NameNode>().atom());
     if (!storedMethodName.append(prop)) {
       return false;
     }
