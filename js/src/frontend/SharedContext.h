@@ -177,7 +177,7 @@ class SharedContext {
   
   
   
-  bool isScriptFieldCopiedToStencil : 1;
+  bool isScriptExtraFieldCopiedToStencil : 1;
 
   
 
@@ -190,7 +190,7 @@ class SharedContext {
     return immutableFlags_.hasFlag(flag);
   }
   void setFlag(ImmutableFlags flag, bool b = true) {
-    MOZ_ASSERT(!isScriptFieldCopiedToStencil);
+    MOZ_ASSERT(!isScriptExtraFieldCopiedToStencil);
     immutableFlags_.setFlag(flag, b);
   }
 
@@ -272,7 +272,6 @@ class SharedContext {
   inline JSAtom* liftParserAtomToJSAtom(JSContext* cx,
                                         const ParserAtom* atomId);
 
-  void copyScriptFields(ScriptStencil& script);
   void copyScriptExtraFields(ScriptStencilExtra& scriptExtra);
 };
 
@@ -376,7 +375,7 @@ class FunctionBox : public SuspendableContext {
   
   
   
-  mozilla::Maybe<MemberInitializers> memberInitializers_ = {};
+  MemberInitializers memberInitializers_ = MemberInitializers::Invalid();
 
  public:
   
@@ -476,6 +475,7 @@ class FunctionBox : public SuspendableContext {
   
   
   
+  IMMUTABLE_FLAG_GETTER(useMemberInitializers, UseMemberInitializers)
   IMMUTABLE_FLAG_GETTER_SETTER(hasRest, HasRest)
   IMMUTABLE_FLAG_GETTER_SETTER(needsFunctionEnvironmentObjects,
                                NeedsFunctionEnvironmentObjects)
@@ -608,14 +608,14 @@ class FunctionBox : public SuspendableContext {
   bool useAsmOrInsideUseAsm() const { return useAsm; }
 
   void setStart(uint32_t offset, uint32_t line, uint32_t column) {
-    MOZ_ASSERT(!isScriptFieldCopiedToStencil);
+    MOZ_ASSERT(!isScriptExtraFieldCopiedToStencil);
     extent_.sourceStart = offset;
     extent_.lineno = line;
     extent_.column = column;
   }
 
   void setEnd(uint32_t end) {
-    MOZ_ASSERT(!isScriptFieldCopiedToStencil);
+    MOZ_ASSERT(!isScriptExtraFieldCopiedToStencil);
     
     
     
@@ -625,14 +625,14 @@ class FunctionBox : public SuspendableContext {
 
   void setCtorToStringEnd(uint32_t end) {
     extent_.toStringEnd = end;
-    if (isScriptFieldCopiedToStencil) {
+    if (isScriptExtraFieldCopiedToStencil) {
       copyUpdatedExtent();
     }
   }
 
   void setCtorFunctionHasThisBinding() {
     immutableFlags_.setFlag(ImmutableFlags::FunctionHasThisBinding, true);
-    if (isScriptFieldCopiedToStencil) {
+    if (isScriptExtraFieldCopiedToStencil) {
       copyUpdatedImmutableFlags();
     }
   }
@@ -647,14 +647,15 @@ class FunctionBox : public SuspendableContext {
 
   size_t nargs() { return nargs_; }
 
-  bool hasMemberInitializers() const { return memberInitializers_.isSome(); }
   const MemberInitializers& memberInitializers() const {
-    return *memberInitializers_;
+    MOZ_ASSERT(useMemberInitializers());
+    return memberInitializers_;
   }
   void setMemberInitializers(MemberInitializers memberInitializers) {
-    MOZ_ASSERT(memberInitializers_.isNothing());
-    memberInitializers_ = mozilla::Some(memberInitializers);
-    if (isScriptFieldCopiedToStencil) {
+    immutableFlags_.setFlag(ImmutableFlags::UseMemberInitializers, true);
+    memberInitializers_ = memberInitializers;
+    if (isScriptExtraFieldCopiedToStencil) {
+      copyUpdatedImmutableFlags();
       copyUpdatedMemberInitializers();
     }
   }
@@ -662,7 +663,6 @@ class FunctionBox : public SuspendableContext {
   ScriptIndex index() { return funcDataIndex_; }
 
   void finishScriptFlags();
-  void copyScriptFields(ScriptStencil& script);
   void copyFunctionFields(ScriptStencil& script);
   void copyFunctionExtraFields(ScriptStencilExtra& scriptExtra);
 

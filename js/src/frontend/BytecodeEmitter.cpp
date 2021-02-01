@@ -10,8 +10,8 @@
 
 #include "frontend/BytecodeEmitter.h"
 
-#include "mozilla/Casting.h"     
-#include "mozilla/DebugOnly.h"   
+#include "mozilla/Casting.h"    
+#include "mozilla/DebugOnly.h"  
 #include "mozilla/FloatingPoint.h"  
 #include "mozilla/Maybe.h"          
 #include "mozilla/PodOperations.h"  
@@ -11269,7 +11269,6 @@ bool BytecodeEmitter::intoScriptStencil(ScriptIndex scriptIndex) {
     MOZ_ASSERT(script.isFunction());
   } else {
     ScriptStencilExtra& scriptExtra = compilationState.scriptExtra[scriptIndex];
-    sc->copyScriptFields(script);
     sc->copyScriptExtraFields(scriptExtra);
   }
 

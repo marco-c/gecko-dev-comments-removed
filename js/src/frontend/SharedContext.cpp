@@ -38,7 +38,7 @@ SharedContext::SharedContext(JSContext* cx, Kind kind,
       inClass_(false),
       localStrict(false),
       hasExplicitUseStrict_(false),
-      isScriptFieldCopiedToStencil(false) {
+      isScriptExtraFieldCopiedToStencil(false) {
   
   if (kind == Kind::FunctionBox) {
     setFlag(ImmutableFlags::IsFunction);
@@ -88,7 +88,9 @@ void ScopeContext::computeThisEnvironment(Scope* scope) {
 
         if (fun->isClassConstructor()) {
           memberInitializers =
-              mozilla::Some(fun->baseScript()->getMemberInitializers());
+              fun->baseScript()->useMemberInitializers()
+                  ? mozilla::Some(fun->baseScript()->getMemberInitializers())
+                  : mozilla::Some(MemberInitializers::Empty());
           MOZ_ASSERT(memberInitializers->valid);
         }
 
@@ -394,33 +396,20 @@ bool FunctionBox::hasFunctionExtraStencil() const {
   return funcDataIndex_ < compilationState_.scriptExtra.length();
 }
 
-void SharedContext::copyScriptFields(ScriptStencil& script) {
-  MOZ_ASSERT(!isScriptFieldCopiedToStencil);
-  isScriptFieldCopiedToStencil = true;
-}
-
 void SharedContext::copyScriptExtraFields(ScriptStencilExtra& scriptExtra) {
+  MOZ_ASSERT(!isScriptExtraFieldCopiedToStencil);
+
   scriptExtra.immutableFlags = immutableFlags_;
   scriptExtra.extent = extent_;
+
+  isScriptExtraFieldCopiedToStencil = true;
 }
 
 void FunctionBox::finishScriptFlags() {
-  MOZ_ASSERT(!isScriptFieldCopiedToStencil);
+  MOZ_ASSERT(!isScriptExtraFieldCopiedToStencil);
 
   using ImmutableFlags = ImmutableScriptFlagsEnum;
   immutableFlags_.setFlag(ImmutableFlags::HasMappedArgsObj, hasMappedArgsObj());
-}
-
-void FunctionBox::copyScriptFields(ScriptStencil& script) {
-  MOZ_ASSERT(&script == &functionStencil());
-
-  SharedContext::copyScriptFields(script);
-
-  if (memberInitializers_) {
-    script.setMemberInitializers(*memberInitializers_);
-  }
-
-  isScriptFieldCopiedToStencil = true;
 }
 
 void FunctionBox::copyFunctionFields(ScriptStencil& script) {
@@ -443,6 +432,10 @@ void FunctionBox::copyFunctionFields(ScriptStencil& script) {
 }
 
 void FunctionBox::copyFunctionExtraFields(ScriptStencilExtra& scriptExtra) {
+  if (useMemberInitializers()) {
+    scriptExtra.setMemberInitializers(memberInitializers());
+  }
+
   scriptExtra.nargs = nargs_;
 }
 
@@ -459,9 +452,13 @@ void FunctionBox::copyUpdatedExtent() {
 }
 
 void FunctionBox::copyUpdatedMemberInitializers() {
-  ScriptStencil& script = functionStencil();
-  if (memberInitializers_) {
-    script.setMemberInitializers(*memberInitializers_);
+  MOZ_ASSERT(useMemberInitializers());
+  if (hasFunctionExtraStencil()) {
+    ScriptStencilExtra& scriptExtra = functionExtraStencil();
+    scriptExtra.setMemberInitializers(memberInitializers());
+  } else {
+    
+    
   }
 }
 
