@@ -440,9 +440,6 @@ class PromptFactory {
   asyncPromptAuth() {
     return this.callProxy("asyncPromptAuth", arguments);
   }
-  asyncPromptAuthBC() {
-    return this.callProxy("asyncPromptAuth", arguments);
-  }
 }
 
 PromptFactory.prototype.classID = Components.ID(
@@ -758,48 +755,21 @@ class PromptDelegate {
     return this._fillAuthInfo(aAuthInfo, aCheckState, result);
   }
 
-  asyncPromptAuth(
-    aChannel,
-    aCallback,
-    aContext,
-    aLevel,
-    aAuthInfo,
-    aCheckMsg,
-    aCheckState
-  ) {
-    let responded = false;
-    const callback = result => {
-      
-      
-      
-      if (responded) {
-        return;
-      }
-      responded = true;
-      if (this._fillAuthInfo(aAuthInfo, aCheckState, result)) {
-        aCallback.onAuthAvailable(aContext, aAuthInfo);
-      } else {
-        aCallback.onAuthCancelled(aContext,  true);
-      }
+  async asyncPromptAuth(aChannel, aLevel, aAuthInfo, aCheckMsg, aCheckState) {
+    const check = {
+      value: aCheckState,
     };
-    this._prompter.asyncShowPrompt(
+    const result = await this._prompter.asyncShowPromptPromise(
       this._addCheck(
         aCheckMsg,
-        aCheckState,
+        check,
         this._getAuthMsg(aChannel, aLevel, aAuthInfo)
-      ),
-      callback
+      )
     );
-    return {
-      QueryInterface: ChromeUtils.generateQI(["nsICancelable"]),
-      cancel() {
-        if (responded) {
-          return;
-        }
-        responded = true;
-        aCallback.onAuthCancelled(aContext,  false);
-      },
-    };
+    
+    
+    
+    return this._fillAuthInfo(aAuthInfo, check, result);
   }
 
   _getAuthText(aChannel, aAuthInfo) {
