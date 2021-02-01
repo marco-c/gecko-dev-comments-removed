@@ -125,22 +125,16 @@ void GtkCompositorWidget::SetEGLNativeWindowSize(
 }
 #endif
 
-void GtkCompositorWidget::ClearBeforePaint(
-    RefPtr<gfx::DrawTarget> aTarget, const LayoutDeviceIntRegion& aRegion) {
+LayoutDeviceIntRegion GtkCompositorWidget::GetTransparentRegion() {
   
   
   if (mWidget->IsPopup()) {
-    for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
-      aTarget->ClearRect(gfx::Rect(iter.Get().ToUnknownRect()));
-    }
+    return LayoutDeviceIntRect(LayoutDeviceIntPoint(0, 0), GetClientSize());
   }
 
   
   
-  gfx::Rect rect;
-  if (mWidget->GetTitlebarRect(rect)) {
-    aTarget->ClearRect(rect);
-  }
+  return mWidget->GetTitlebarRect();
 }
 
 }  
