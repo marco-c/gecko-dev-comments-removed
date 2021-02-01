@@ -689,9 +689,11 @@ void ICFallbackStub::unlinkStub(Zone* zone, ICCacheIRStub* prev,
 
   state_.trackUnlinkedStub();
 
-  
-  
-  PreWriteBarrier(zone, stub);
+  if (zone->needsIncrementalBarrier()) {
+    
+    
+    stub->trace(zone->barrierTracer());
+  }
 
 #ifdef DEBUG
   

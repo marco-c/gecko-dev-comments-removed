@@ -76,10 +76,10 @@ Register IonIC::scratchRegisterForEntryJump() {
 }
 
 void IonIC::discardStubs(Zone* zone, IonScript* ionScript) {
-  if (firstStub_) {
+  if (firstStub_ && zone->needsIncrementalBarrier()) {
     
     
-    PreWriteBarrier(zone, ionScript);
+    trace(zone->barrierTracer(), ionScript);
   }
 
 #ifdef JS_CRASH_DIAGNOSTICS
