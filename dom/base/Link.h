@@ -37,6 +37,12 @@ class Link : public nsISupports {
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(MOZILLA_DOM_LINK_IMPLEMENTATION_IID)
 
+  enum class State : uint8_t {
+    Unvisited = 0,
+    Visited,
+    NotLink,
+  };
+
   
 
 
@@ -169,16 +175,15 @@ class Link : public nsISupports {
 
   Element* const mElement;
 
-  uint16_t mLinkState;
-
+  
+  
+  
+  
+  State mState;
   bool mNeedsRegistration : 1;
-
   bool mRegistered : 1;
-
   bool mHasPendingLinkUpdate : 1;
-
   bool mInDNSPrefetch : 1;
-
   bool mHistory : 1;
 };
 

@@ -29,12 +29,6 @@ struct IMEState;
 }  
 }  
 
-enum nsLinkState {
-  eLinkState_Unvisited = 1,
-  eLinkState_Visited = 2,
-  eLinkState_NotLink = 3
-};
-
 
 
 #define NS_ICONTENT_IID                              \
