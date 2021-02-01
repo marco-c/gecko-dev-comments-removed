@@ -49,8 +49,6 @@ using namespace mozilla::dom;
 using namespace mozilla::Telemetry;
 
 extern mozilla::LazyLogModule sCSMLog;
-extern Atomic<bool, mozilla::Relaxed> sJSHacksChecked;
-extern Atomic<bool, mozilla::Relaxed> sJSHacksPresent;
 extern Atomic<bool, mozilla::Relaxed> sTelemetryEventEnabled;
 
 
@@ -481,7 +479,11 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
   
   
   
-  if (MOZ_UNLIKELY(!sJSHacksChecked) && NS_IsMainThread()) {
+  
+  
+  
+  
+  if (NS_IsMainThread()) {
     
     
     
@@ -489,28 +491,13 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     nsAutoString jsConfigPref;
     Preferences::GetString("general.config.filename", jsConfigPref);
     if (!jsConfigPref.IsEmpty()) {
-      sJSHacksPresent = true;
+      MOZ_LOG(sCSMLog, LogLevel::Debug,
+              ("Allowing eval() %s because of "
+               "general.config.filename",
+               (aIsSystemPrincipal ? "with System Principal"
+                                   : "in parent process")));
+      return true;
     }
-
-    
-    
-    
-    bool xpinstallSignatures;
-    Preferences::GetBool("xpinstall.signatures.required", &xpinstallSignatures);
-    if (xpinstallSignatures) {
-      sJSHacksPresent = true;
-    }
-
-    sJSHacksChecked = true;
-  }
-
-  if (MOZ_UNLIKELY(sJSHacksPresent)) {
-    MOZ_LOG(
-        sCSMLog, LogLevel::Debug,
-        ("Allowing eval() %s because some "
-         "JS hacks may be present.",
-         (aIsSystemPrincipal ? "with System Principal" : "in parent process")));
-    return true;
   }
 
   if (XRE_IsE10sParentProcess() &&
@@ -1006,35 +993,25 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
   
   
   
-  if (MOZ_UNLIKELY(!sJSHacksChecked) && NS_IsMainThread()) {
+  
+  
+  
+  if (NS_IsMainThread()) {
     
     
     
-    
-    nsAutoString jsConfigPref;
-    Preferences::GetString("general.config.filename", jsConfigPref);
-    if (!jsConfigPref.IsEmpty()) {
-      sJSHacksPresent = true;
+    if (!sGeneralConfigFilenameSet.isSome()) {
+      nsAutoString jsConfigPref;
+      Preferences::GetString("general.config.filename", jsConfigPref);
+      sGeneralConfigFilenameSet.emplace(!jsConfigPref.IsEmpty());
     }
-
-    
-    
-    
-    bool xpinstallSignatures;
-    Preferences::GetBool("xpinstall.signatures.required", &xpinstallSignatures);
-    if (xpinstallSignatures) {
-      sJSHacksPresent = true;
+    if (sGeneralConfigFilenameSet.value()) {
+      MOZ_LOG(sCSMLog, LogLevel::Debug,
+              ("Allowing a javascript load of %s because "
+               "general.config.filename is set",
+               aFilename));
+      return true;
     }
-
-    sJSHacksChecked = true;
-  }
-
-  if (MOZ_UNLIKELY(sJSHacksPresent)) {
-    MOZ_LOG(sCSMLog, LogLevel::Debug,
-            ("Allowing a javascript load of %s because "
-             "some JS hacks may be present",
-             aFilename));
-    return true;
   }
 
   if (XRE_IsE10sParentProcess() &&
