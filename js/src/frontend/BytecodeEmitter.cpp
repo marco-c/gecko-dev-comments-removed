@@ -1762,6 +1762,12 @@ bool BytecodeEmitter::emitTDZCheckIfNeeded(const ParserAtom* name,
   MOZ_ASSERT(loc.hasKnownSlot());
   MOZ_ASSERT(loc.isLexical());
 
+  
+  
+  if (name->isPrivateName()) {
+    return true;
+  }
+
   Maybe<MaybeCheckTDZ> check =
       innermostTDZCheckCache->needsTDZCheck(this, name);
   if (!check) {
@@ -5806,12 +5812,8 @@ bool BytecodeEmitter::emitFor(ForNode* forNode,
 }
 
 MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
-    FunctionNode* funNode, bool needsProto ,
-    ListNode* classContentsIfConstructor ) {
+    FunctionNode* funNode, bool needsProto ) {
   FunctionBox* funbox = funNode->funbox();
-
-  MOZ_ASSERT((classContentsIfConstructor != nullptr) ==
-             funbox->isClassConstructor());
 
   
 
@@ -5833,21 +5835,6 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
   }
 
   if (funbox->isInterpreted()) {
-    
-    
-    
-    
-    if (classContentsIfConstructor) {
-      mozilla::Maybe<MemberInitializers> memberInitializers =
-          setupMemberInitializers(classContentsIfConstructor,
-                                  FieldPlacement::Instance);
-      if (!memberInitializers) {
-        ReportAllocationOverflow(cx);
-        return false;
-      }
-      funbox->setMemberInitializers(*memberInitializers);
-    }
-
     if (!funbox->emitBytecode) {
       return fe.emitLazy();
       
@@ -9514,8 +9501,8 @@ const MemberInitializers& BytecodeEmitter::findMemberInitializersForCall() {
       
       MOZ_RELEASE_ASSERT(funbox->isClassConstructor());
 
-      MOZ_ASSERT(funbox->memberInitializers().valid);
-      return funbox->memberInitializers();
+      return funbox->useMemberInitializers() ? funbox->memberInitializers()
+                                             : MemberInitializers::Empty();
     }
   }
 
@@ -9526,6 +9513,7 @@ const MemberInitializers& BytecodeEmitter::findMemberInitializersForCall() {
 bool BytecodeEmitter::emitInitializeInstanceMembers() {
   const MemberInitializers& memberInitializers =
       findMemberInitializersForCall();
+  MOZ_ASSERT(memberInitializers.valid);
   size_t numInitializers = memberInitializers.numMemberInitializers;
 
   if (numInitializers == 0) {
@@ -10383,7 +10371,7 @@ bool BytecodeEmitter::emitClass(
         return false;
       }
     }
-    if (!emitFunction(ctor, isDerived, classMembers)) {
+    if (!emitFunction(ctor, isDerived)) {
       
       return false;
     }
