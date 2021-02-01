@@ -30,7 +30,7 @@ class ThreadEventTarget final : public nsISerialEventTarget {
 
   
   
-  void SetCurrentThread();
+  void SetCurrentThread(PRThread* aThread);
   
   void ClearCurrentThread();
 
@@ -43,7 +43,7 @@ class ThreadEventTarget final : public nsISerialEventTarget {
   }
 
  private:
-  ~ThreadEventTarget() {}
+  ~ThreadEventTarget() = default;
 
   RefPtr<ThreadTargetSink> mSink;
   bool mIsMainThread;
