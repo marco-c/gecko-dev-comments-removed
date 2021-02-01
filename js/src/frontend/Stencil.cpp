@@ -7,9 +7,11 @@
 #include "frontend/Stencil.h"
 
 #include "mozilla/OperatorNewExtensions.h"  
+#include "mozilla/PodOperations.h"          
 #include "mozilla/RefPtr.h"                 
 #include "mozilla/Sprintf.h"                
 
+#include "ds/LifoAlloc.h"                  
 #include "frontend/AbstractScopePtr.h"     
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/BytecodeSection.h"      
@@ -1214,6 +1216,26 @@ mozilla::Span<TaggedScriptThingIndex> ScriptStencil::gcthings(
   return stencil.gcThingData.Subspan(gcThingsOffset, gcThingsLength);
 }
 
+MOZ_MUST_USE bool BigIntStencil::init(JSContext* cx, LifoAlloc& alloc,
+                                      const Vector<char16_t, 32>& buf) {
+#ifdef DEBUG
+  
+  
+  for (char16_t c : buf) {
+    MOZ_ASSERT(c != '_');
+  }
+#endif
+  size_t length = buf.length();
+  char16_t* p = alloc.template newArrayUninitialized<char16_t>(length);
+  if (!p) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+  mozilla::PodCopy(p, buf.begin(), length);
+  source_ = mozilla::Span(p, length);
+  return true;
+}
+
 #if defined(DEBUG) || defined(JS_JITSPEW)
 
 void frontend::DumpTaggedParserAtomIndex(js::JSONPrinter& json,
@@ -1346,8 +1368,8 @@ void BigIntStencil::dump(js::JSONPrinter& json) {
 }
 
 void BigIntStencil::dumpCharsNoQuote(GenericPrinter& out) {
-  for (size_t i = 0; i < length_; i++) {
-    out.putChar(char(buf_[i]));
+  for (char16_t c : source_) {
+    out.putChar(char(c));
   }
 }
 
