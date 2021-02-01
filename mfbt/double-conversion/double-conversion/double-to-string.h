@@ -38,7 +38,7 @@ class DoubleToStringConverter {
   
   
   
-  static const int kMaxFixedDigitsBeforePoint = 60;
+  static const int kMaxFixedDigitsBeforePoint = 308;
   static const int kMaxFixedDigitsAfterPoint = 60;
 
   

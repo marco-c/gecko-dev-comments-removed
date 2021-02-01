@@ -244,5 +244,14 @@ int main()
   TestGlibcPrintf(tllformat::sprint_ints, "tllformat.c", str_match);
   TestGlibcPrintf(tfformat::sprint_doubles, "tfformat.c", approx_match);
 
+  
+  
+  
+  mozilla::SmprintfPointer dbl_max = mozilla::Smprintf("%f", -DBL_MAX);
+  MOZ_RELEASE_ASSERT(dbl_max);
+  
+  
+  MOZ_RELEASE_ASSERT(strlen(dbl_max.get()) == 317);
+
   return 0;
 }
