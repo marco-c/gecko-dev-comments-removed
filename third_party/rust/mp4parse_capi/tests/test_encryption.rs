@@ -12,6 +12,7 @@ extern "C" fn buf_read(buf: *mut u8, size: usize, userdata: *mut std::os::raw::c
 }
 
 #[test]
+#[allow(clippy::cognitive_complexity)] 
 fn parse_cenc() {
     let mut file = std::fs::File::open("tests/short-cenc.mp4").expect("Unknown file");
     let io = Mp4parseIo {

@@ -6,14 +6,7 @@ use core::{i128, u128};
 use core::{i16, i32, i64, i8, isize};
 use core::{u16, u32, u64, u8, usize};
 
-
-
-
-
-
-
-
-
+use float::FloatCore;
 
 
 pub trait ToPrimitive {
@@ -111,17 +104,11 @@ pub trait ToPrimitive {
 
     
     
-    
     #[inline]
     fn to_f32(&self) -> Option<f32> {
         self.to_f64().as_ref().and_then(ToPrimitive::to_f32)
     }
 
-    
-    
-    
-    
-    
     
     
     #[inline]
@@ -284,27 +271,17 @@ macro_rules! impl_to_primitive_float_to_float {
     ($SrcT:ident : $( fn $method:ident -> $DstT:ident ; )*) => {$(
         #[inline]
         fn $method(&self) -> Option<$DstT> {
-            // We can safely cast all values, whether NaN, +-inf, or finite.
-            // Finite values that are reducing size may saturate to +-inf.
+            // Only finite values that are reducing size need to worry about overflow.
+            if size_of::<$SrcT>() > size_of::<$DstT>() && FloatCore::is_finite(*self) {
+                let n = *self as f64;
+                if n < $DstT::MIN as f64 || n > $DstT::MAX as f64 {
+                    return None;
+                }
+            }
+            // We can safely cast NaN, +-inf, and finite values in range.
             Some(*self as $DstT)
         }
     )*}
-}
-
-#[cfg(has_to_int_unchecked)]
-macro_rules! float_to_int_unchecked {
-    
-    
-    ($float:expr => $int:ty) => {
-        unsafe { $float.to_int_unchecked::<$int>() }
-    };
-}
-
-#[cfg(not(has_to_int_unchecked))]
-macro_rules! float_to_int_unchecked {
-    ($float:expr => $int:ty) => {
-        $float as $int
-    };
 }
 
 macro_rules! impl_to_primitive_float_to_signed_int {
@@ -319,7 +296,7 @@ macro_rules! impl_to_primitive_float_to_signed_int {
                 const MIN_M1: $f = $i::MIN as $f - 1.0;
                 const MAX_P1: $f = $i::MAX as $f + 1.0;
                 if *self > MIN_M1 && *self < MAX_P1 {
-                    return Some(float_to_int_unchecked!(*self => $i));
+                    return Some(*self as $i);
                 }
             } else {
                 // We can't represent `MIN-1` exactly, but there's no fractional part
@@ -329,7 +306,7 @@ macro_rules! impl_to_primitive_float_to_signed_int {
                 // `MAX+1` (a power of two) when we cast it.
                 const MAX_P1: $f = $i::MAX as $f;
                 if *self >= MIN && *self < MAX_P1 {
-                    return Some(float_to_int_unchecked!(*self => $i));
+                    return Some(*self as $i);
                 }
             }
             None
@@ -348,7 +325,7 @@ macro_rules! impl_to_primitive_float_to_unsigned_int {
                 // With a larger size, we can represent the range exactly.
                 const MAX_P1: $f = $u::MAX as $f + 1.0;
                 if *self > -1.0 && *self < MAX_P1 {
-                    return Some(float_to_int_unchecked!(*self => $u));
+                    return Some(*self as $u);
                 }
             } else {
                 // We can't represent `MAX` exactly, but it will round up to exactly
@@ -356,7 +333,7 @@ macro_rules! impl_to_primitive_float_to_unsigned_int {
                 // (`u128::MAX as f32` is infinity, but this is still ok.)
                 const MAX_P1: $f = $u::MAX as $f;
                 if *self > -1.0 && *self < MAX_P1 {
-                    return Some(float_to_int_unchecked!(*self => $u));
+                    return Some(*self as $u);
                 }
             }
             None
@@ -397,15 +374,6 @@ macro_rules! impl_to_primitive_float {
 
 impl_to_primitive_float!(f32);
 impl_to_primitive_float!(f64);
-
-
-
-
-
-
-
-
-
 
 
 pub trait FromPrimitive: Sized {
@@ -506,10 +474,6 @@ pub trait FromPrimitive: Sized {
         FromPrimitive::from_f64(From::from(n))
     }
 
-    
-    
-    
-    
     
     
     #[inline]
@@ -692,15 +656,6 @@ pub trait NumCast: Sized + ToPrimitive {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn from<T: ToPrimitive>(n: T) -> Option<Self>;
 }
 
@@ -740,6 +695,15 @@ impl<T: NumCast> NumCast for Wrapping<T> {
         T::from(n).map(Wrapping)
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 
