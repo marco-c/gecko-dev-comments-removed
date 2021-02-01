@@ -1250,7 +1250,7 @@ static bool FoldAdd(FoldInfo info, ParseNode** nodePtr) {
       
       if (accum.length() > 1) {
         
-        const ParserAtom* combination = info.parserAtoms.concatAtoms(
+        auto combination = info.parserAtoms.concatAtoms(
             info.cx, mozilla::Range(accum.begin(), accum.length()));
         if (!combination) {
           return false;
@@ -1258,7 +1258,7 @@ static bool FoldAdd(FoldInfo info, ParseNode** nodePtr) {
 
         
         MOZ_ASSERT((*current)->isKind(ParseNodeKind::StringExpr));
-        (*current)->as<NameNode>().setAtom(combination->toIndex());
+        (*current)->as<NameNode>().setAtom(combination);
       }
 
       
