@@ -27,6 +27,7 @@
 #include "mozilla/FileUtils.h"
 #include "mozilla/HalTypes.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReportingProcess.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/TimeStamp.h"
@@ -1471,6 +1472,9 @@ class ContentParent final
 
 
 
+
+
+
   static void DidLaunchSubprocess();
 
  private:
@@ -1635,6 +1639,7 @@ class ContentParent final
   UniquePtr<mozilla::ipc::SharedPreferenceSerializer> mPrefSerializer;
 
   static uint32_t sMaxContentProcesses;
+  static Maybe<TimeStamp> sLastContentProcessLaunch;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(ContentParent, NS_CONTENTPARENT_IID)
