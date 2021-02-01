@@ -2362,11 +2362,6 @@ function blockAboutPage(manager, feature, neededOnContentProcess = false) {
   } catch (e) {
     
   }
-
-  if (feature == "about:config") {
-    
-    gBlockedAboutPages.push("chrome://global/content/config.xhtml");
-  }
 }
 
 let ChromeURLBlockPolicy = {
