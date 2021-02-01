@@ -212,6 +212,10 @@ GfxInfo::GetDesktopEnvironment(nsAString& aDesktopEnvironment) { return NS_ERROR
 
 
 NS_IMETHODIMP
+GfxInfo::GetTestType(nsAString& aTestType) { return NS_ERROR_NOT_IMPLEMENTED; }
+
+
+NS_IMETHODIMP
 GfxInfo::GetAdapterDescription(nsAString& aAdapterDescription) {
   aAdapterDescription.AssignLiteral("");
   return NS_OK;
