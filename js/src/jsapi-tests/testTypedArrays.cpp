@@ -111,7 +111,7 @@ BEGIN_TEST(testTypedArrays) {
 
 
 
-template <JSObject* Create(JSContext*, uint32_t), typename Element,
+template <JSObject* Create(JSContext*, size_t), typename Element,
           Element* GetData(JSObject*, bool* isShared,
                            const JS::AutoRequireNoGC&)>
 bool TestPlainTypedArray(JSContext* cx) {

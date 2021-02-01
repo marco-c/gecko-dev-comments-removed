@@ -15,15 +15,15 @@ use glue::GetUint16ArrayLengthAndData;
 use glue::GetUint32ArrayLengthAndData;
 use glue::GetUint8ArrayLengthAndData;
 use glue::GetUint8ClampedArrayLengthAndData;
-use jsapi::*;
 use jsapi::js::*;
 use jsapi::JS::*;
+use jsapi::*;
 use rust::RootedGuard;
 use std::ptr;
 use std::slice;
 
 pub enum CreateWith<'a, T: 'a> {
-    Length(u32),
+    Length(usize),
     Slice(&'a [T]),
 }
 
@@ -37,10 +37,11 @@ impl<'a, T: TypedArrayElement> TypedArray<'a, T> {
     
     
     
-    pub fn from(cx: *mut JSContext,
-                root: &'a mut Rooted<*mut JSObject>,
-                object: *mut JSObject)
-                -> Result<Self, ()> {
+    pub fn from(
+        cx: *mut JSContext,
+        root: &'a mut Rooted<*mut JSObject>,
+        object: *mut JSObject,
+    ) -> Result<Self, ()> {
         if object.is_null() {
             return Err(());
         }
@@ -94,13 +95,14 @@ impl<'a, T: TypedArrayElement> TypedArray<'a, T> {
 impl<'a, T: TypedArrayElementCreator + TypedArrayElement> TypedArray<'a, T> {
     
     
-    pub unsafe fn create(cx: *mut JSContext,
-                         with: CreateWith<T::Element>,
-                         result: MutableHandleObject)
-                         -> Result<(), ()> {
+    pub unsafe fn create(
+        cx: *mut JSContext,
+        with: CreateWith<T::Element>,
+        result: MutableHandleObject,
+    ) -> Result<(), ()> {
         let length = match with {
             CreateWith::Length(len) => len,
-            CreateWith::Slice(slice) => slice.len() as u32,
+            CreateWith::Slice(slice) => slice.len(),
         };
 
         result.set(T::create_new(cx, length));
@@ -141,7 +143,7 @@ pub trait TypedArrayElement {
 
 pub trait TypedArrayElementCreator: TypedArrayElement {
     
-    unsafe fn create_new(cx: *mut JSContext, length: u32) -> *mut JSObject;
+    unsafe fn create_new(cx: *mut JSContext, length: usize) -> *mut JSObject;
     
     unsafe fn get_data(obj: *mut JSObject) -> *mut Self::Element;
 }
@@ -150,7 +152,7 @@ macro_rules! typed_array_element {
     ($t: ident,
      $element: ty,
      $unwrap: ident,
-     $length_and_data: ident) => (
+     $length_and_data: ident) => {
         /// A kind of typed array.
         pub struct $t;
 
@@ -169,18 +171,18 @@ macro_rules! typed_array_element {
                 (data, len)
             }
         }
-    );
+    };
 
     ($t: ident,
      $element: ty,
      $unwrap: ident,
      $length_and_data: ident,
      $create_new: ident,
-     $get_data: ident) => (
+     $get_data: ident) => {
         typed_array_element!($t, $element, $unwrap, $length_and_data);
 
         impl TypedArrayElementCreator for $t {
-            unsafe fn create_new(cx: *mut JSContext, length: u32) -> *mut JSObject {
+            unsafe fn create_new(cx: *mut JSContext, length: usize) -> *mut JSObject {
                 $create_new(cx, length)
             }
 
@@ -191,73 +193,95 @@ macro_rules! typed_array_element {
                 data
             }
         }
-    );
+    };
 }
 
-typed_array_element!(Uint8,
-                     u8,
-                     UnwrapUint8Array,
-                     GetUint8ArrayLengthAndData,
-                     JS_NewUint8Array,
-                     JS_GetUint8ArrayData);
-typed_array_element!(Uint16,
-                     u16,
-                     UnwrapUint16Array,
-                     GetUint16ArrayLengthAndData,
-                     JS_NewUint16Array,
-                     JS_GetUint16ArrayData);
-typed_array_element!(Uint32,
-                     u32,
-                     UnwrapUint32Array,
-                     GetUint32ArrayLengthAndData,
-                     JS_NewUint32Array,
-                     JS_GetUint32ArrayData);
-typed_array_element!(Int8,
-                     i8,
-                     UnwrapInt8Array,
-                     GetInt8ArrayLengthAndData,
-                     JS_NewInt8Array,
-                     JS_GetInt8ArrayData);
-typed_array_element!(Int16,
-                     i16,
-                     UnwrapInt16Array,
-                     GetInt16ArrayLengthAndData,
-                     JS_NewInt16Array,
-                     JS_GetInt16ArrayData);
-typed_array_element!(Int32,
-                     i32,
-                     UnwrapInt32Array,
-                     GetInt32ArrayLengthAndData,
-                     JS_NewInt32Array,
-                     JS_GetInt32ArrayData);
-typed_array_element!(Float32,
-                     f32,
-                     UnwrapFloat32Array,
-                     GetFloat32ArrayLengthAndData,
-                     JS_NewFloat32Array,
-                     JS_GetFloat32ArrayData);
-typed_array_element!(Float64,
-                     f64,
-                     UnwrapFloat64Array,
-                     GetFloat64ArrayLengthAndData,
-                     JS_NewFloat64Array,
-                     JS_GetFloat64ArrayData);
-typed_array_element!(ClampedU8,
-                     u8,
-                     UnwrapUint8ClampedArray,
-                     GetUint8ClampedArrayLengthAndData,
-                     JS_NewUint8ClampedArray,
-                     JS_GetUint8ClampedArrayData);
-typed_array_element!(ArrayBufferU8,
-                     u8,
-                     UnwrapArrayBuffer,
-                     GetArrayBufferLengthAndData,
-                     NewArrayBuffer,
-                     GetArrayBufferData);
-typed_array_element!(ArrayBufferViewU8,
-                     u8,
-                     UnwrapArrayBufferView,
-                     GetArrayBufferViewLengthAndData);
+typed_array_element!(
+    Uint8,
+    u8,
+    UnwrapUint8Array,
+    GetUint8ArrayLengthAndData,
+    JS_NewUint8Array,
+    JS_GetUint8ArrayData
+);
+typed_array_element!(
+    Uint16,
+    u16,
+    UnwrapUint16Array,
+    GetUint16ArrayLengthAndData,
+    JS_NewUint16Array,
+    JS_GetUint16ArrayData
+);
+typed_array_element!(
+    Uint32,
+    u32,
+    UnwrapUint32Array,
+    GetUint32ArrayLengthAndData,
+    JS_NewUint32Array,
+    JS_GetUint32ArrayData
+);
+typed_array_element!(
+    Int8,
+    i8,
+    UnwrapInt8Array,
+    GetInt8ArrayLengthAndData,
+    JS_NewInt8Array,
+    JS_GetInt8ArrayData
+);
+typed_array_element!(
+    Int16,
+    i16,
+    UnwrapInt16Array,
+    GetInt16ArrayLengthAndData,
+    JS_NewInt16Array,
+    JS_GetInt16ArrayData
+);
+typed_array_element!(
+    Int32,
+    i32,
+    UnwrapInt32Array,
+    GetInt32ArrayLengthAndData,
+    JS_NewInt32Array,
+    JS_GetInt32ArrayData
+);
+typed_array_element!(
+    Float32,
+    f32,
+    UnwrapFloat32Array,
+    GetFloat32ArrayLengthAndData,
+    JS_NewFloat32Array,
+    JS_GetFloat32ArrayData
+);
+typed_array_element!(
+    Float64,
+    f64,
+    UnwrapFloat64Array,
+    GetFloat64ArrayLengthAndData,
+    JS_NewFloat64Array,
+    JS_GetFloat64ArrayData
+);
+typed_array_element!(
+    ClampedU8,
+    u8,
+    UnwrapUint8ClampedArray,
+    GetUint8ClampedArrayLengthAndData,
+    JS_NewUint8ClampedArray,
+    JS_GetUint8ClampedArrayData
+);
+typed_array_element!(
+    ArrayBufferU8,
+    u8,
+    UnwrapArrayBuffer,
+    GetArrayBufferLengthAndData,
+    NewArrayBuffer,
+    GetArrayBufferData
+);
+typed_array_element!(
+    ArrayBufferViewU8,
+    u8,
+    UnwrapArrayBufferView,
+    GetArrayBufferViewLengthAndData
+);
 
 
 pub type Uint8ClampedArray<'a> = TypedArray<'a, ClampedU8>;
@@ -297,5 +321,5 @@ macro_rules! typedarray {
     (in($cx:expr) let mut $name:ident : $ty:ident = $init:expr) => {
         let mut __root = $crate::jsapi::JS::Rooted::new_unrooted();
         let mut $name = $crate::typedarray::$ty::from($cx, &mut __root, $init);
-    }
+    };
 }
