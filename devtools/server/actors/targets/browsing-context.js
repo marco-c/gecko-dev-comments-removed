@@ -92,20 +92,24 @@ function getDocShellChromeEventHandler(docShell) {
   return handler;
 }
 
-function getChildDocShells(parentDocShell) {
-  const allDocShells = parentDocShell.getAllDocShellsInSubtree(
-    Ci.nsIDocShellTreeItem.typeAll,
-    Ci.nsIDocShell.ENUMERATE_FORWARDS
-  );
 
-  const docShells = [];
-  for (const docShell of allDocShells) {
-    docShell
-      .QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIWebProgress);
-    docShells.push(docShell);
-  }
-  return docShells;
+
+
+
+
+
+
+function getChildDocShells(parentDocShell) {
+  return parentDocShell.browsingContext
+    .getAllBrowsingContextsInSubtree()
+    .filter(browsingContext => {
+      
+      return browsingContext.docShell;
+    })
+    .map(browsingContext => {
+      
+      return browsingContext.docShell;
+    });
 }
 
 exports.getChildDocShells = getChildDocShells;

@@ -20,7 +20,11 @@
 
 
 
-const { Ci, Cu } = require("chrome");
+const { Cu } = require("chrome");
+
+const {
+  getChildDocShells,
+} = require("devtools/server/actors/targets/browsing-context");
 
 
 
@@ -101,12 +105,7 @@ Timeline.prototype = {
       return [];
     }
 
-    const docShells = originalDocShell.getAllDocShellsInSubtree(
-      Ci.nsIDocShellTreeItem.typeAll,
-      Ci.nsIDocShell.ENUMERATE_FORWARDS
-    );
-
-    return docShells;
+    return getChildDocShells(originalDocShell);
   },
 
   
