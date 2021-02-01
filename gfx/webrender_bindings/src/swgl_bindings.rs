@@ -170,7 +170,13 @@ impl SwTile {
         clip_rect: &DeviceIntRect,
     ) -> Option<DeviceIntRect> {
         let origin = self.origin(surface);
-        let bounds = self.valid_rect.translate(origin.to_vector());
+        
+        
+        let bounds = if self.invalid.get() {
+            DeviceIntRect::new(origin, surface.tile_size)
+        } else {
+            self.valid_rect.translate(origin.to_vector())
+        };
         let device_rect = transform.outer_transformed_rect(&bounds.to_f32())?.round_out().to_i32();
         device_rect.intersection(clip_rect)
     }
@@ -1420,14 +1426,13 @@ impl Compositor for SwCompositor {
         }
     }
 
-    fn invalidate_tile(&mut self, id: NativeTileId, valid_rect: DeviceIntRect) {
+    fn invalidate_tile(&mut self, id: NativeTileId) {
         if self.use_native_compositor {
-            self.compositor.invalidate_tile(id, valid_rect);
+            self.compositor.invalidate_tile(id);
         }
         if let Some(surface) = self.surfaces.get_mut(&id.surface_id) {
             if let Some(tile) = surface.tiles.iter_mut().find(|t| t.x == id.x && t.y == id.y) {
                 tile.invalid.set(true);
-                tile.valid_rect = valid_rect;
             }
         }
     }
@@ -1443,7 +1448,7 @@ impl Compositor for SwCompositor {
         if let Some(surface) = self.surfaces.get_mut(&id.surface_id) {
             if let Some(tile) = surface.tiles.iter_mut().find(|t| t.x == id.x && t.y == id.y) {
                 tile.dirty_rect = dirty_rect;
-                assert_eq!(tile.valid_rect, valid_rect);
+                tile.valid_rect = valid_rect;
                 if valid_rect.is_empty() {
                     return surface_info;
                 }
@@ -1620,30 +1625,8 @@ impl Compositor for SwCompositor {
     
     
     
-    fn start_compositing(
-        &mut self,
-        dirty_rects: &[DeviceIntRect],
-        _opaque_rects: &[DeviceIntRect],
-    ) {
-        
-        
-        
-        let mut opaque_rects : Vec<DeviceIntRect> = Vec::new();
-        for &(ref id, ref transform, ref clip_rect, _filter) in &self.frame_surfaces {
-            if let Some(surface) = self.surfaces.get(id) {
-                if !surface.is_opaque {
-                    continue;
-                }
-
-                for tile in &surface.tiles {
-                    if let Some(rect) = tile.overlap_rect(surface, transform, clip_rect) {
-                        opaque_rects.push(rect);
-                    }
-                }
-            }
-        }
-
-        self.compositor.start_compositing(dirty_rects, &opaque_rects);
+    fn start_compositing(&mut self, dirty_rects: &[DeviceIntRect]) {
+        self.compositor.start_compositing(dirty_rects);
 
         if dirty_rects.len() == 1 {
             

@@ -981,7 +981,6 @@ pub trait Compositor {
     fn invalidate_tile(
         &mut self,
         _id: NativeTileId,
-        _valid_rect: DeviceIntRect
     ) {}
 
     
@@ -1032,12 +1031,9 @@ pub trait Compositor {
     
     
     
-    
-    
     fn start_compositing(
         &mut self,
         _dirty_rects: &[DeviceIntRect],
-        _opaque_rects: &[DeviceIntRect],
     ) {}
 
     

@@ -139,9 +139,7 @@ class RenderCompositor {
   
   
   virtual void StartCompositing(const wr::DeviceIntRect* aDirtyRects,
-                                size_t aNumDirtyRects,
-                                const wr::DeviceIntRect* aOpaqueRects,
-                                size_t aNumOpaqueRects) {}
+                                size_t aNumDirtyRects) {}
   virtual void EnableNativeCompositor(bool aEnable) {}
   virtual void DeInit() {}
   virtual CompositorCapabilities GetCompositorCapabilities() = 0;
