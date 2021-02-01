@@ -1842,10 +1842,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
     
     
     
-    
-    
-    return !hasInnerFunctions() && !hasDirectEval() && !isGenerator() &&
-           !isAsync() && !hasCallSiteObj();
+    return !hasInnerFunctions() && !hasDirectEval() && !hasCallSiteObj();
   }
 
  public:
