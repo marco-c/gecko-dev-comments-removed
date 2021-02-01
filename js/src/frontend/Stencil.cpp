@@ -451,8 +451,6 @@ static bool InstantiateScriptStencils(JSContext* cx,
         return false;
       }
 
-      
-      
       if (scriptStencil.allowRelazify()) {
         MOZ_ASSERT(script->isRelazifiable());
         script->setAllowRelazify();
