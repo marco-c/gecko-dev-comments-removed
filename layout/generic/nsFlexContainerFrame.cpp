@@ -1287,12 +1287,61 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
     FlexLine& aLine, nsIFrame* aChildFrame,
     const ReflowInput& aParentReflowInput,
     const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis) {
+  const auto flexWM = aAxisTracker.GetWritingMode();
+  const auto childWM = aChildFrame->GetWritingMode();
+  const auto* stylePos = aChildFrame->StylePosition();
+
   
   
   
-  ReflowInput childRI(
-      PresContext(), aParentReflowInput, aChildFrame,
-      aParentReflowInput.ComputedSize(aChildFrame->GetWritingMode()));
+  StyleSizeOverrides sizeOverrides;
+  if (!IsLegacyBox(this)) {
+    Maybe<StyleSize> styleFlexBaseSize;
+
+    
+    
+    
+    
+    const auto& flexBasis = stylePos->mFlexBasis;
+    const auto& styleMainSize = stylePos->Size(aAxisTracker.MainAxis(), flexWM);
+    if (IsUsedFlexBasisContent(flexBasis, styleMainSize)) {
+      
+      
+      
+      if (aChildFrame->GetAspectRatio()) {
+        
+        
+        
+        styleFlexBaseSize.emplace(StyleSize::Auto());
+      } else {
+        styleFlexBaseSize.emplace(
+            StyleSize::ExtremumLength(StyleExtremumLength::MaxContent));
+      }
+    } else if (flexBasis.IsSize() && !flexBasis.IsAuto()) {
+      
+      
+      styleFlexBaseSize.emplace(flexBasis.AsSize());
+    } else {
+      
+      
+      
+      MOZ_ASSERT(flexBasis.IsAuto());
+    }
+
+    
+    if (aAxisTracker.IsInlineAxisMainAxis(childWM)) {
+      sizeOverrides.mStyleISize = std::move(styleFlexBaseSize);
+    } else {
+      sizeOverrides.mStyleBSize = std::move(styleFlexBaseSize);
+    }
+  }
+
+  
+  
+  
+  ReflowInput childRI(PresContext(), aParentReflowInput, aChildFrame,
+                      aParentReflowInput.ComputedSize(childWM), Nothing(), {},
+                      sizeOverrides);
   childRI.mFlags.mInsideLineClamp = GetLineClampValue() != 0;
 
   
@@ -1306,13 +1355,9 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
       flexGrow = flexShrink = aChildFrame->StyleXUL()->mBoxFlex;
     }
   } else {
-    const nsStylePosition* stylePos = aChildFrame->StylePosition();
     flexGrow = stylePos->mFlexGrow;
     flexShrink = stylePos->mFlexShrink;
   }
-
-  const auto childWM = childRI.GetWritingMode();
-  const auto flexWM = aAxisTracker.GetWritingMode();
 
   
   
