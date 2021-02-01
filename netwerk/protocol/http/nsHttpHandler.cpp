@@ -2639,7 +2639,7 @@ nsresult nsHttpHandler::SpeculativeConnectInternal(
   
   
   RefPtr<nsHttpConnectionInfo> ci =
-      new nsHttpConnectionInfo(host, port, ""_ns, username, ""_ns, nullptr,
+      new nsHttpConnectionInfo(host, port, ""_ns, username, nullptr,
                                originAttributes, aURI->SchemeIs("https"));
   ci->SetAnonymous(anonymous);
 
