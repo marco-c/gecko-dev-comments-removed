@@ -97,7 +97,7 @@ assertOffsetColumns(
     "var obj = { base: { a(){ return { b(){} }; } } };\n" +
     "function f(n) { obj.base.a().b(...args); }",
   "                ^        ^   ^ ^         ^",
-  "0 1 3 2 4"
+  "0 1 2 4"
 );
 
 
@@ -106,7 +106,7 @@ assertOffsetColumns(
     "var obj = { base: { a(){ return { b(){} }; } } };\n" +
     "var f = function() { this.base.a().b(...args);  }.bind(obj);",
   "                     ^         ^   ^ ^          ^",
-  "0 1 3 2 4"
+  "0 1 2 4"
 );
 
 
@@ -115,7 +115,7 @@ assertOffsetColumns(
     "var obj = { base: { a(){ return { b(){} }; } } };\n" +
     "var f = { __proto__: obj, f(n) { super.base.a().b(...args); } }.f;",
   "                                 ^          ^   ^ ^         ^",
-  "0 1 3 2 4"
+  "0 1 2 4"
 );
 
 
@@ -124,7 +124,7 @@ assertOffsetColumns(
     "var obj = { base: { a(){ return { b(){} }; } } };\n" +
     "function f(n) { (0, obj).base.a().b(...args); }",
   "                 ^  ^         ^   ^ ^         ^",
-  "0 1 2 4 3 5"
+  "0 1 2 3 5"
 );
 
 
@@ -134,7 +134,7 @@ assertOffsetColumns(
     
     "function f(n) { obj.base['a']()['b'](...args); }",
   "                ^        ^      ^    ^         ^",
-  "0 1 3 2 4"
+  "0 1 2 4"
 );
 
 
@@ -143,5 +143,15 @@ assertOffsetColumns(
     "var obj = { base: { a(){ return { b(){} }; } } };\n" +
     "function f(n) { obj.base[a]()[b](...args); }",
   "                ^          ^    ^^         ^",
+  "0 1 2 4"
+);
+
+
+
+assertOffsetColumns(
+  "var args = [,];\n" +
+    "var obj = { base: { a(){ return { b(){} }; } } };\n" +
+    "function f(n) { obj.base.a().b(...args); }",
+  "                ^        ^   ^ ^         ^",
   "0 1 3 2 4"
 );
