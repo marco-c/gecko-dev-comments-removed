@@ -3109,7 +3109,11 @@ UpdateService.prototype = {
   _checkForBackgroundUpdates: function AUS__checkForBackgroundUpdates(
     isNotify
   ) {
-    if (this.disabledByPolicy) {
+    if (this.disabledByPolicy || this.manualUpdateOnly) {
+      
+      
+      
+      
       
       
       
@@ -3471,7 +3475,7 @@ UpdateService.prototype = {
     }
 
     if (this.disabledByPolicy) {
-      AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_PREF_DISABLED);
+      AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_DISABLED_BY_POLICY);
       LOG(
         "UpdateService:_selectAndInstallUpdate - not prompting because " +
           "update is disabled"
@@ -3575,6 +3579,15 @@ UpdateService.prototype = {
     return (
       (Services.policies && !Services.policies.isAllowed("appUpdate")) ||
       this.disabledForTesting
+    );
+  },
+
+  
+
+
+  get manualUpdateOnly() {
+    return (
+      Services.policies && !Services.policies.isAllowed("autoAppUpdateChecking")
     );
   },
 
