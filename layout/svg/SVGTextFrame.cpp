@@ -4663,7 +4663,8 @@ void SVGTextFrame::DoTextPathLayout() {
     bool skippedEndOfTextPath = false;
 
     
-    while (!it.AtEnd() && it.TextPathFrame()) {
+    while (!it.AtEnd() && it.TextPathFrame() &&
+           it.TextPathFrame()->GetContent() == textPath) {
       
       uint32_t i = it.TextElementCharIndex();
 
