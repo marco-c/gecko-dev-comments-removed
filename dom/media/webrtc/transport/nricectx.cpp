@@ -44,6 +44,7 @@
 #include <vector>
 
 #include "nr_socket_proxy_config.h"
+#include "nsXULAppAPI.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 
@@ -497,6 +498,14 @@ void NrIceCtx::InitializeGlobals(const GlobalConfig& aConfig) {
     if (!aConfig.mForceNetInterface.Length()) {
       NR_reg_set_string((char*)NR_ICE_REG_PREF_FORCE_INTERFACE_NAME,
                         const_cast<char*>(aConfig.mForceNetInterface.get()));
+    }
+
+    
+    NR_reg_set_char((char*)NR_ICE_REG_USE_NR_RESOLVER_FOR_UDP, 1);
+
+    
+    if (XRE_IsParentProcess()) {
+      NR_reg_set_char((char*)NR_ICE_REG_USE_NR_RESOLVER_FOR_TCP, 1);
     }
   }
 }
