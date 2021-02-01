@@ -18,6 +18,9 @@ const { AppConstants } = ChromeUtils.import(
 function CommonDialog(args, ui) {
   this.args = args;
   this.ui = ui;
+  this.initialFocusPromise = new Promise(resolve => {
+    this.initialFocusResolver = resolve;
+  });
 }
 
 CommonDialog.prototype = {
@@ -29,6 +32,8 @@ CommonDialog.prototype = {
   iconClass: undefined,
   soundID: undefined,
   focusTimer: null,
+  initialFocusPromise: null,
+  initialFocusResolver: null,
 
   
 
@@ -202,21 +207,12 @@ CommonDialog.prototype = {
       button.setAttribute("default", "true");
     }
 
-    let focusReady;
-    if (!this.ui.promptContainer || !this.ui.promptContainer.hidden) {
+    let isEmbedded =
+      commonDialogEl && this.ui.prompt.docShell.chromeEventHandler;
+    if (!isEmbedded && !this.ui.promptContainer?.hidden) {
       
-
-      if (commonDialogEl && this.ui.prompt.docShell.chromeEventHandler) {
-        
-        
-        focusReady = new Promise(resolve =>
-          this.ui.prompt.addEventListener("load", resolve, { once: true })
-        ).then(() => {
-          this.setDefaultFocus(true);
-        });
-      } else {
-        this.setDefaultFocus(true);
-      }
+      
+      this.setDefaultFocus(true);
     }
 
     if (this.args.enableDelay) {
@@ -240,10 +236,11 @@ CommonDialog.prototype = {
     }
 
     if (commonDialogEl) {
-      
-      
-      await focusReady;
-      
+      if (isEmbedded) {
+        
+        
+        await this.initialFocusPromise;
+      }
       Services.obs.notifyObservers(this.ui.prompt, "common-dialog-loaded");
     } else {
       
@@ -322,6 +319,10 @@ CommonDialog.prototype = {
       this.ui.loginTextbox.select();
     } else {
       this.ui.loginTextbox.focus();
+    }
+
+    if (isInitialLoad) {
+      this.initialFocusResolver();
     }
   },
 
