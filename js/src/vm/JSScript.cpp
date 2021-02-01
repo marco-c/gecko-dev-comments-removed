@@ -684,9 +684,7 @@ void js::BaseScript::swapData(UniquePtr<PrivateScriptData>& other) {
     
     
     
-    if (zone()->needsIncrementalBarrier()) {
-      data_->trace(zone()->barrierTracer());
-    }
+    PreWriteBarrier(zone(), data_);
 
     RemoveCellMemory(this, data_->allocationSize(),
                      MemoryUse::ScriptPrivateData);
