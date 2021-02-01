@@ -271,6 +271,7 @@ class MOZ_STACK_CLASS ElemOpEmitter {
   
   
   MOZ_MUST_USE bool emitPrivateGuard();
+  MOZ_MUST_USE bool emitPrivateGuardForAssignment();
 };
 
 } 

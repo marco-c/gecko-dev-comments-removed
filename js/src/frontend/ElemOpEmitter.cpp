@@ -57,7 +57,7 @@ bool ElemOpEmitter::prepareForKey() {
 }
 
 bool ElemOpEmitter::emitPrivateGuard() {
-  MOZ_ASSERT(state_ == State::Key);
+  MOZ_ASSERT(state_ == State::Key || state_ == State::Rhs);
 
   if (!isPrivate()) {
     return true;
@@ -83,6 +83,30 @@ bool ElemOpEmitter::emitPrivateGuard() {
   
   return bce_->emit1(JSOp::Pop);
   
+}
+
+bool ElemOpEmitter::emitPrivateGuardForAssignment() {
+  if (!isPrivate()) {
+    return true;
+  }
+
+  
+  if (!bce_->emitUnpickN(2)) {
+    
+    return false;
+  }
+
+  if (!emitPrivateGuard()) {
+    
+    return false;
+  }
+
+  if (!bce_->emitPickN(2)) {
+    
+    return false;
+  }
+
+  return true;
 }
 
 bool ElemOpEmitter::emitGet() {
@@ -158,9 +182,6 @@ bool ElemOpEmitter::prepareForRhs() {
   MOZ_ASSERT_IF(isCompoundAssignment(), state_ == State::Get);
 
   if (isSimpleAssignment() || isPropInit()) {
-    if (!emitPrivateGuard()) {
-      return false;
-    }
     
     if (isSuper()) {
       if (!bce_->emitSuperBase()) {
@@ -233,6 +254,10 @@ bool ElemOpEmitter::emitAssignment() {
   MOZ_ASSERT(state_ == State::Rhs);
 
   MOZ_ASSERT_IF(isPropInit(), !isSuper());
+
+  if (!emitPrivateGuardForAssignment()) {
+    return false;
+  }
 
   JSOp setOp = isPropInit() ? JSOp::InitElem
                : isSuper()  ? bce_->sc->strict() ? JSOp::StrictSetElemSuper
