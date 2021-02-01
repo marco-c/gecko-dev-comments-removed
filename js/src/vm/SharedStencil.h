@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"     
 #include "mozilla/Atomics.h"        
 #include "mozilla/Attributes.h"     
+#include "mozilla/CheckedInt.h"     
 #include "mozilla/HashFunctions.h"  
 #include "mozilla/HashTable.h"      
 #include "mozilla/MemoryReporting.h"  
@@ -434,6 +435,22 @@ class alignas(uint32_t) ImmutableScriptData final : public TrailingArray {
       JSContext* cx, uint32_t codeLength, uint32_t noteLength,
       uint32_t numResumeOffsets, uint32_t numScopeNotes, uint32_t numTryNotes);
 
+  static js::UniquePtr<ImmutableScriptData> new_(JSContext* cx,
+                                                 uint32_t totalSize);
+
+#ifdef DEBUG
+  
+  void validate(uint32_t totalSize);
+#endif
+
+ private:
+  static mozilla::CheckedInt<uint32_t> sizeFor(uint32_t codeLength,
+                                               uint32_t noteLength,
+                                               uint32_t numResumeOffsets,
+                                               uint32_t numScopeNotes,
+                                               uint32_t numTryNotes);
+
+ public:
   
   
   
@@ -619,6 +636,14 @@ struct MemberInitializers {
   }
 
   static MemberInitializers Invalid() { return MemberInitializers(); }
+
+  
+  
+  
+  static const MemberInitializers& Empty() {
+    static const MemberInitializers zeroInitializers(0);
+    return zeroInitializers;
+  }
 
   uint32_t serialize() const { return numMemberInitializers; }
 
