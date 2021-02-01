@@ -33,6 +33,9 @@ const PREF_PER_USER_DIR = "toolkit.policies.perUserDir";
 
 const PREF_ALTERNATE_PATH = "browser.policies.alternatePath";
 
+const PREF_ALTERNATE_GPO = "browser.policies.alternateGPO";
+
+
 
 
 
@@ -601,8 +604,11 @@ class WindowsGPOPoliciesProvider {
     
     log.debug("root = HKEY_CURRENT_USER");
     this._readData(wrk, wrk.ROOT_KEY_CURRENT_USER);
-    log.debug("root = HKEY_LOCAL_MACHINE");
-    this._readData(wrk, wrk.ROOT_KEY_LOCAL_MACHINE);
+    
+    if (!Cu.isInAutomation && !isXpcshell) {
+      log.debug("root = HKEY_LOCAL_MACHINE");
+      this._readData(wrk, wrk.ROOT_KEY_LOCAL_MACHINE);
+    }
   }
 
   get hasPolicies() {
@@ -619,7 +625,13 @@ class WindowsGPOPoliciesProvider {
 
   _readData(wrk, root) {
     try {
-      wrk.open(root, "SOFTWARE\\Policies", wrk.ACCESS_READ);
+      let regLocation = "SOFTWARE\\Policies";
+      if (Cu.isInAutomation || isXpcshell) {
+        try {
+          regLocation = Services.prefs.getStringPref(PREF_ALTERNATE_GPO);
+        } catch (e) {}
+      }
+      wrk.open(root, regLocation, wrk.ACCESS_READ);
       if (wrk.hasChild("Mozilla\\" + Services.appinfo.name)) {
         this._policies = WindowsGPOParser.readPolicies(wrk, this._policies);
       }
