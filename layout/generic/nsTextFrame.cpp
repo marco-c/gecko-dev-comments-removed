@@ -8183,6 +8183,7 @@ static int32_t FindEndOfPunctuationRun(const nsTextFragment* aFrag,
 
 
 static bool FindFirstLetterRange(const nsTextFragment* aFrag,
+                                 const nsAtom* aLang,
                                  const gfxTextRun* aTextRun, int32_t aOffset,
                                  const gfxSkipCharsIterator& aIter,
                                  int32_t* aLength) {
@@ -8192,10 +8193,31 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
   gfxSkipCharsIterator iter(aIter);
 
   
+  
+  auto LangTagIsDutch = [](const nsAtom* aLang) -> bool {
+    if (!aLang) {
+      return false;
+    }
+    if (aLang == nsGkAtoms::nl) {
+      return true;
+    }
+    
+    nsDependentAtomString langStr(aLang);
+    int32_t index = langStr.FindChar('-');
+    if (index > 0) {
+      langStr.Truncate(index);
+      return langStr.EqualsLiteral("nl");
+    }
+    return false;
+  };
+
+  
   i = FindEndOfPunctuationRun(
       aFrag, aTextRun, &iter, aOffset,
       GetTrimmableWhitespaceCount(aFrag, aOffset, length, 1), endOffset);
-  if (i == length) return false;
+  if (i == length) {
+    return false;
+  }
 
   
   
@@ -8212,7 +8234,8 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
   bool allowSplitLigature;
 
   typedef unicode::Script Script;
-  switch (unicode::GetScriptCode(aFrag->CharAt(aOffset + i))) {
+  Script script = unicode::GetScriptCode(aFrag->CharAt(aOffset + i));
+  switch (script) {
     default:
       allowSplitLigature = true;
       break;
@@ -8269,12 +8292,29 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
   FindClusterEnd(aTextRun, endOffset, &iter, allowSplitLigature);
 
   i = iter.GetOriginalOffset() - aOffset;
-  if (i + 1 == length) return true;
+  if (i + 1 == length) {
+    return true;
+  }
+
+  
+  if (script == Script::LATIN && LangTagIsDutch(aLang)) {
+    if (ToLowerCase(aFrag->CharAt(aOffset + i)) == 'i' &&
+        ToLowerCase(aFrag->CharAt(aOffset + i + 1)) == 'j') {
+      iter.SetOriginalOffset(aOffset + i + 1);
+      FindClusterEnd(aTextRun, endOffset, &iter, allowSplitLigature);
+      i = iter.GetOriginalOffset() - aOffset;
+      if (i + 1 == length) {
+        return true;
+      }
+    }
+  }
 
   
   i = FindEndOfPunctuationRun(aFrag, aTextRun, &iter, aOffset, i + 1,
                               endOffset);
-  if (i < length) *aLength = i;
+  if (i < length) {
+    *aLength = i;
+  }
   return true;
 }
 
@@ -9149,8 +9189,14 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
       if (mTextRun) {
         int32_t firstLetterLength = length;
         if (aLineLayout.GetFirstLetterStyleOK()) {
-          completedFirstLetter = FindFirstLetterRange(frag, mTextRun, offset,
-                                                      iter, &firstLetterLength);
+          
+          
+          const nsStyleFont* styleFont = StyleFont();
+          const nsAtom* lang = styleFont->mExplicitLanguage
+                                   ? styleFont->mLanguage.get()
+                                   : nullptr;
+          completedFirstLetter = FindFirstLetterRange(
+              frag, lang, mTextRun, offset, iter, &firstLetterLength);
           if (newLineOffset >= 0) {
             
             firstLetterLength = std::min(firstLetterLength, length - 1);
