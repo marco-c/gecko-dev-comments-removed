@@ -37,18 +37,12 @@ namespace mozilla {
 namespace net {
 class TRR;
 class TRRQuery;
-enum ResolverMode {
-  MODE_NATIVEONLY,  
-  MODE_RESERVED1,   
-  MODE_TRRFIRST,    
-  MODE_TRRONLY,     
-  MODE_RESERVED4,   
-  MODE_TRROFF       
-};
 }  
 }  
 
-#define TRR_DISABLED(x) (((x) == MODE_NATIVEONLY) || ((x) == MODE_TRROFF))
+#define TRR_DISABLED(x)                       \
+  (((x) == nsIDNSService::MODE_NATIVEONLY) || \
+   ((x) == nsIDNSService::MODE_TRROFF))
 
 extern mozilla::Atomic<bool, mozilla::Relaxed> gNativeIsLocalhost;
 
@@ -108,8 +102,8 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
     TRR_DISABLED_FLAG = 10,           
     TRR_TIMEOUT = 11,                 
     TRR_CHANNEL_DNS_FAIL = 12,        
-    TRR_IS_OFFLINE = 13,     
-    TRR_NOT_CONFIRMED = 14,  
+    TRR_IS_OFFLINE = 13,              
+    TRR_NOT_CONFIRMED = 14,           
     TRR_DID_NOT_MAKE_QUERY = 15,  
     TRR_UNKNOWN_CHANNEL_FAILURE = 16,  
     TRR_HOST_BLOCKED_TEMPORARY = 17,   
@@ -124,6 +118,7 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
     TRR_EXCLUDED = 26,             
     TRR_SERVER_RESPONSE_ERR = 27,  
     TRR_RCODE_FAIL = 28,           
+    TRR_NO_CONNECTIVITY = 29,      
   };
 
   
@@ -564,7 +559,7 @@ class nsHostResolver : public nsISupports, public AHostResolver {
                          nsHostRecord** result) override;
   nsresult TrrLookup_unlocked(nsHostRecord*,
                               mozilla::net::TRR* pushedTRR = nullptr) override;
-  static mozilla::net::ResolverMode Mode();
+  static nsIDNSService::ResolverMode Mode();
 
   virtual void MaybeRenewHostRecord(nsHostRecord* aRec) override;
 
