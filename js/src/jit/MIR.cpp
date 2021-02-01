@@ -2750,6 +2750,9 @@ MDefinition* MSub::foldsTo(TempAllocator& alloc) {
   
   
   if (lhs() == rhs()) {
+    
+    
+    lhs()->setGuardRangeBailoutsUnchecked();
     return MConstant::New(alloc, Int32Value(0));
   }
 
