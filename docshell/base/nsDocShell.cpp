@@ -1047,8 +1047,7 @@ bool nsDocShell::MaybeHandleSubframeHistory(
   
   
   if (aLoadState->LoadIsFromSessionHistory() &&
-      (parentLoadType == LOAD_NORMAL || parentLoadType == LOAD_LINK ||
-       parentLoadType == LOAD_NORMAL_EXTERNAL)) {
+      (parentLoadType == LOAD_NORMAL || parentLoadType == LOAD_LINK)) {
     
     
     
@@ -9228,7 +9227,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   {
     bool inherits;
 
-    if (aLoadState->LoadType() != LOAD_NORMAL_EXTERNAL &&
+    if (!aLoadState->HasLoadFlags(LOAD_FLAGS_FROM_EXTERNAL) &&
         !aLoadState->PrincipalToInherit() &&
         (aLoadState->HasInternalLoadFlags(
             INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL)) &&
@@ -9253,7 +9252,9 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   }
 
   
-  if (aLoadState->LoadType() == LOAD_NORMAL_EXTERNAL) {
+  if (aLoadState->HasLoadFlags(LOAD_FLAGS_FROM_EXTERNAL)) {
+    MOZ_DIAGNOSTIC_ASSERT(aLoadState->LoadType() == LOAD_NORMAL);
+
     
     if (SchemeIsChrome(aLoadState->URI())) {
       NS_WARNING("blocked external chrome: url -- use '--chrome' option");
@@ -9265,10 +9266,6 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     if (NS_FAILED(rv)) {
       return NS_ERROR_FAILURE;
     }
-
-    
-    
-    aLoadState->SetLoadType(LOAD_NORMAL);
   }
 
   mAllowKeywordFixup = aLoadState->HasInternalLoadFlags(
@@ -9687,8 +9684,8 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
   if (aLoadState->PrincipalToInherit()) {
     aLoadInfo->SetPrincipalToInherit(aLoadState->PrincipalToInherit());
   }
-  aLoadInfo->SetLoadTriggeredFromExternal(aLoadState->LoadType() ==
-                                          LOAD_NORMAL_EXTERNAL);
+  aLoadInfo->SetLoadTriggeredFromExternal(
+      aLoadState->HasLoadFlags(LOAD_FLAGS_FROM_EXTERNAL));
   aLoadInfo->SetForceAllowDataURI(aLoadState->HasInternalLoadFlags(
       INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI));
   aLoadInfo->SetOriginalFrameSrcLoad(
@@ -10287,8 +10284,6 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   
   
   if (aLoadState->HasValidUserGestureActivation() ||
-      
-      
       aLoadState->HasLoadFlags(LOAD_FLAGS_FROM_EXTERNAL)) {
     loadInfo->SetHasValidUserGestureActivation(true);
   }
