@@ -17,8 +17,8 @@
 #include <stdint.h>  
 
 #include "frontend/ParserAtom.h"  
-#include "frontend/TokenKind.h"   
-#include "js/RegExpFlags.h"       
+#include "frontend/TokenKind.h"  
+#include "js/RegExpFlags.h"      
 
 namespace js {
 
@@ -202,6 +202,8 @@ struct Token {
                type == TokenKind::NoSubsTemplate);
     return u.atom;
   }
+
+  TaggedParserAtomIndex atomIndex() const { return atom()->toIndex(); }
 
   JS::RegExpFlags regExpFlags() const {
     MOZ_ASSERT(type == TokenKind::RegExp);
