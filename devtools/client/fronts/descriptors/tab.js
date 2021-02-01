@@ -3,7 +3,6 @@
 
 "use strict";
 
-const Services = require("Services");
 const { tabDescriptorSpec } = require("devtools/shared/specs/descriptors/tab");
 
 loader.lazyRequireGetter(
@@ -16,12 +15,6 @@ loader.lazyRequireGetter(
   this,
   "BrowsingContextTargetFront",
   "devtools/client/fronts/targets/browsing-context",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "TargetFactory",
-  "devtools/client/framework/target",
   true
 );
 const {
@@ -232,30 +225,9 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
       return;
     }
 
-    const toolbox = gDevTools.getToolbox(this._targetFront);
-
-    const targetSwitchingEnabled = Services.prefs.getBoolPref(
-      "devtools.target-switching.enabled",
-      false
-    );
-
     
     
-    
-    if (targetSwitchingEnabled) {
-      this.emit("remoteness-change", this._targetFront);
-      return;
-    }
-
-    
-    
-    
-    await toolbox.destroy();
-
-    
-    const newTarget = await TargetFactory.forTab(this.localTab, null);
-
-    gDevTools.showToolbox(newTarget);
+    this.emit("remoteness-change", this._targetFront);
   }
 }
 
