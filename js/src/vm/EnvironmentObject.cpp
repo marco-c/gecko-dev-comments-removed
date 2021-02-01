@@ -876,46 +876,42 @@ bool js::CreateNonSyntacticEnvironmentChain(JSContext* cx,
                                             HandleObjectVector envChain,
                                             MutableHandleObject env,
                                             MutableHandleScope scope) {
+  
+  
+  MOZ_RELEASE_ASSERT(!envChain.empty());
+
   RootedObject globalLexical(cx, &cx->global()->lexicalEnvironment());
   if (!CreateObjectsForEnvironmentChain(cx, envChain, globalLexical, env)) {
     return false;
   }
 
-  if (!envChain.empty()) {
-    scope.set(GlobalScope::createEmpty(cx, ScopeKind::NonSyntactic));
-    if (!scope) {
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    if (!JSObject::setQualifiedVarObj(cx, env)) {
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    env.set(ObjectRealm::get(env).getOrCreateNonSyntacticLexicalEnvironment(
-        cx, env));
-    if (!env) {
-      return false;
-    }
-  } else {
-    scope.set(&cx->global()->emptyGlobalScope());
+  scope.set(GlobalScope::createEmpty(cx, ScopeKind::NonSyntactic));
+  if (!scope) {
+    return false;
   }
 
-  return true;
+  
+  
+  
+  
+  
+  
+  
+  if (!JSObject::setQualifiedVarObj(cx, env)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  env.set(
+      ObjectRealm::get(env).getOrCreateNonSyntacticLexicalEnvironment(cx, env));
+  return !!env;
 }
 
 

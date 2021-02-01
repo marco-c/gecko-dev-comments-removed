@@ -2233,22 +2233,6 @@ JSFunction* js::CloneFunctionAndScript(JSContext* cx, HandleFunction fun,
   clone->initScript(nullptr);
   clone->initEnvironment(enclosingEnv);
 
-  
-
-
-
-
-
-
-#ifdef DEBUG
-  RootedObject terminatingEnv(cx, enclosingEnv);
-  while (IsSyntacticEnvironment(terminatingEnv)) {
-    terminatingEnv = terminatingEnv->enclosingEnvironment();
-  }
-  MOZ_ASSERT_IF(!terminatingEnv->is<GlobalObject>(),
-                newScope->hasOnChain(ScopeKind::NonSyntactic));
-#endif
-
   RootedScript script(cx, fun->nonLazyScript());
   MOZ_ASSERT(script->realm() == fun->realm());
   MOZ_ASSERT(cx->compartment() == clone->compartment(),

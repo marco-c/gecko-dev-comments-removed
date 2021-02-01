@@ -152,6 +152,12 @@ nsresult JSExecutionContext::InternalCompile(
   MOZ_ASSERT(!mScript);
 
   if (mScopeChain.length() != 0) {
+    
+    
+    
+    MOZ_ASSERT(!mEncodeBytecode);
+    MOZ_ASSERT(mExpectScopeChain);
+
     aCompileOptions.setNonSyntacticScope(true);
   }
 
@@ -270,7 +276,8 @@ nsresult JSExecutionContext::ExecScript() {
 
   MOZ_ASSERT(mScript);
 
-  if (!JS_ExecuteScript(mCx, mScopeChain, mScript)) {
+  if (!(mScopeChain.empty() ? JS_ExecuteScript(mCx, mScript)
+                            : JS_ExecuteScript(mCx, mScopeChain, mScript))) {
     mSkip = true;
     mRv = EvaluationExceptionToNSResult(mCx);
     return mRv;
@@ -303,7 +310,9 @@ nsresult JSExecutionContext::ExecScript(
   MOZ_ASSERT(mScript);
   MOZ_ASSERT(mWantsReturnValue);
 
-  if (!JS_ExecuteScript(mCx, mScopeChain, mScript, aRetValue)) {
+  if (!(mScopeChain.empty()
+            ? JS_ExecuteScript(mCx, mScript, aRetValue)
+            : JS_ExecuteScript(mCx, mScopeChain, mScript, aRetValue))) {
     mSkip = true;
     mRv = EvaluationExceptionToNSResult(mCx);
     return mRv;
