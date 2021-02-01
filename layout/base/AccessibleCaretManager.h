@@ -364,6 +364,8 @@ class AccessibleCaretManager {
 
     AccessibleCaret* GetFirst() const { return mFirst.get(); }
 
+    AccessibleCaret* GetSecond() const { return mSecond.get(); }
+
     
     
     UniquePtr<AccessibleCaret> mFirst;
