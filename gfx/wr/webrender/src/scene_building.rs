@@ -203,6 +203,201 @@ impl CompositeOps {
             self.filter_primitives.is_empty() &&
             self.mix_blend_mode.is_none()
     }
+
+    
+    
+    fn has_valid_filters(&self) -> bool {
+        
+        let mut current_filter_data_index = 0;
+        for filter in &self.filters {
+            match filter {
+                Filter::ComponentTransfer => {
+                    let filter_data =
+                        &self.filter_datas[current_filter_data_index];
+                    let filter_data = filter_data.sanitize();
+                    current_filter_data_index = current_filter_data_index + 1;
+                    if filter_data.is_identity() {
+                        continue
+                    } else {
+                        return true;
+                    }
+                }
+                _ => {
+                    if filter.is_noop() {
+                        continue;
+                    } else {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        if !self.filter_primitives.is_empty() {
+            return true;
+        }
+
+        false
+    }
+}
+
+
+
+enum PictureSource {
+    PrimitiveList {
+        prim_list: PrimitiveList,
+    },
+    WrappedPicture {
+        instance: PrimitiveInstance,
+    },
+}
+
+
+
+struct PictureChainBuilder {
+    
+    current: PictureSource,
+
+    
+    spatial_node_index: SpatialNodeIndex,
+    
+    flags: PrimitiveFlags,
+    
+    requested_raster_space: RasterSpace,
+}
+
+impl PictureChainBuilder {
+    
+    fn from_prim_list(
+        prim_list: PrimitiveList,
+        flags: PrimitiveFlags,
+        requested_raster_space: RasterSpace,
+        spatial_node_index: SpatialNodeIndex,
+    ) -> Self {
+        PictureChainBuilder {
+            current: PictureSource::PrimitiveList {
+                prim_list,
+            },
+            spatial_node_index,
+            flags,
+            requested_raster_space,
+        }
+    }
+
+    
+    fn from_instance(
+        instance: PrimitiveInstance,
+        flags: PrimitiveFlags,
+        requested_raster_space: RasterSpace,
+        spatial_node_index: SpatialNodeIndex,
+    ) -> Self {
+        PictureChainBuilder {
+            current: PictureSource::WrappedPicture {
+                instance,
+            },
+            flags,
+            requested_raster_space,
+            spatial_node_index,
+        }
+    }
+
+    
+    #[must_use]
+    fn add_picture(
+        self,
+        composite_mode: PictureCompositeMode,
+        context_3d: Picture3DContext<OrderedPictureChild>,
+        options: PictureOptions,
+        interners: &mut Interners,
+        prim_store: &mut PrimitiveStore,
+    ) -> PictureChainBuilder {
+        let prim_list = match self.current {
+            PictureSource::PrimitiveList { prim_list } => {
+                prim_list
+            }
+            PictureSource::WrappedPicture { instance } => {
+                let mut prim_list = PrimitiveList::empty();
+
+                prim_list.add_prim(
+                    instance,
+                    LayoutRect::zero(),
+                    self.spatial_node_index,
+                    self.flags,
+                );
+
+                prim_list
+            }
+        };
+
+        let pic_index = PictureIndex(prim_store.pictures
+            .alloc()
+            .init(PicturePrimitive::new_image(
+                Some(composite_mode.clone()),
+                context_3d,
+                true,
+                self.flags,
+                self.requested_raster_space,
+                prim_list,
+                self.spatial_node_index,
+                options,
+            ))
+        );
+
+        let instance = create_prim_instance(
+            pic_index,
+            Some(composite_mode).into(),
+            ClipChainId::NONE,
+            interners,
+        );
+
+        PictureChainBuilder {
+            current: PictureSource::WrappedPicture {
+                instance,
+            },
+            spatial_node_index: self.spatial_node_index,
+            flags: self.flags,
+            requested_raster_space: self.requested_raster_space,
+        }
+    }
+
+    
+    fn finalize(
+        self,
+        clip_chain_id: ClipChainId,
+        interners: &mut Interners,
+        prim_store: &mut PrimitiveStore,
+    ) -> PrimitiveInstance {
+        match self.current {
+            PictureSource::WrappedPicture { mut instance } => {
+                instance.clip_set.clip_chain_id = clip_chain_id;
+                instance
+            }
+            PictureSource::PrimitiveList { prim_list } => {
+                
+                
+                
+                let pic_index = PictureIndex(prim_store.pictures
+                    .alloc()
+                    .init(PicturePrimitive::new_image(
+                        None,
+                        Picture3DContext::Out,
+                        true,
+                        self.flags,
+                        self.requested_raster_space,
+                        prim_list,
+                        self.spatial_node_index,
+                        PictureOptions::default(),
+                    ))
+                );
+
+                create_prim_instance(
+                    pic_index,
+                    None.into(),
+                    clip_chain_id,
+                    interners,
+                )
+            }
+        }
+    }
 }
 
 bitflags! {
@@ -1696,7 +1891,7 @@ impl<'a> SceneBuilder<'a> {
             None => true,
         };
 
-        let (leaf_context_3d, leaf_composite_mode) = match stacking_context.context_3d {
+        let mut source = match stacking_context.context_3d {
             
             
             
@@ -1704,59 +1899,97 @@ impl<'a> SceneBuilder<'a> {
             
             
             
-            Picture3DContext::In { ancestor_index, .. } => (
-                Picture3DContext::In { root_data: None, ancestor_index },
-                Some(PictureCompositeMode::Blit(BlitReason::PRESERVE3D | stacking_context.blit_reason)),
-            ),
-            Picture3DContext::Out => (
-                Picture3DContext::Out,
+            Picture3DContext::In { ancestor_index, .. } => {
+                let composite_mode = Some(
+                    PictureCompositeMode::Blit(BlitReason::PRESERVE3D | stacking_context.blit_reason)
+                );
+
+                
+                let pic_index = PictureIndex(self.prim_store.pictures
+                    .alloc()
+                    .init(PicturePrimitive::new_image(
+                        composite_mode.clone(),
+                        Picture3DContext::In { root_data: None, ancestor_index },
+                        true,
+                        stacking_context.prim_flags,
+                        stacking_context.requested_raster_space,
+                        stacking_context.prim_list,
+                        stacking_context.spatial_node_index,
+                        PictureOptions::default(),
+                    ))
+                );
+
+                let instance = create_prim_instance(
+                    pic_index,
+                    composite_mode.into(),
+                    ClipChainId::NONE,
+                    &mut self.interners,
+                );
+
+                PictureChainBuilder::from_instance(
+                    instance,
+                    stacking_context.prim_flags,
+                    stacking_context.requested_raster_space,
+                    stacking_context.spatial_node_index,
+                )
+            }
+            Picture3DContext::Out => {
                 if stacking_context.blit_reason.is_empty() {
-                    
-                    
-                    None
+                    PictureChainBuilder::from_prim_list(
+                        stacking_context.prim_list,
+                        stacking_context.prim_flags,
+                        stacking_context.requested_raster_space,
+                        stacking_context.spatial_node_index,
+                    )
                 } else {
+                    let composite_mode = Some(
+                        PictureCompositeMode::Blit(stacking_context.blit_reason)
+                    );
+
                     
-                    Some(PictureCompositeMode::Blit(stacking_context.blit_reason))
-                },
-            ),
+                    let pic_index = PictureIndex(self.prim_store.pictures
+                        .alloc()
+                        .init(PicturePrimitive::new_image(
+                            composite_mode.clone(),
+                            Picture3DContext::Out,
+                            true,
+                            stacking_context.prim_flags,
+                            stacking_context.requested_raster_space,
+                            stacking_context.prim_list,
+                            stacking_context.spatial_node_index,
+                            PictureOptions::default(),
+                        ))
+                    );
+
+                    let instance = create_prim_instance(
+                        pic_index,
+                        composite_mode.into(),
+                        ClipChainId::NONE,
+                        &mut self.interners,
+                    );
+
+                    PictureChainBuilder::from_instance(
+                        instance,
+                        stacking_context.prim_flags,
+                        stacking_context.requested_raster_space,
+                        stacking_context.spatial_node_index,
+                    )
+                }
+            }
         };
-
-        
-        let leaf_pic_index = PictureIndex(self.prim_store.pictures
-            .alloc()
-            .init(PicturePrimitive::new_image(
-                leaf_composite_mode.clone(),
-                leaf_context_3d,
-                true,
-                stacking_context.prim_flags,
-                stacking_context.requested_raster_space,
-                stacking_context.prim_list,
-                stacking_context.spatial_node_index,
-                PictureOptions::default(),
-            ))
-        );
-
-        
-        
-
-        let mut current_pic_index = leaf_pic_index;
-        let mut cur_instance = create_prim_instance(
-            leaf_pic_index,
-            leaf_composite_mode.into(),
-            ClipChainId::NONE,
-            &mut self.interners,
-        );
-
-        if cur_instance.is_chased() {
-            println!("\tis a leaf primitive for a stacking context");
-        }
 
         
         
         
         if let Picture3DContext::In { root_data: Some(mut prims), ancestor_index } = stacking_context.context_3d {
+            let instance = source.finalize(
+                ClipChainId::NONE,
+                &mut self.interners,
+                &mut self.prim_store,
+            );
+
             prims.push(ExtendedPrimitiveInstance {
-                instance: cur_instance,
+                instance,
                 spatial_node_index: stacking_context.spatial_node_index,
                 flags: stacking_context.prim_flags,
             });
@@ -1772,7 +2005,7 @@ impl<'a> SceneBuilder<'a> {
             }
 
             
-            current_pic_index = PictureIndex(self.prim_store.pictures
+            let pic_index = PictureIndex(self.prim_store.pictures
                 .alloc()
                 .init(PicturePrimitive::new_image(
                     None,
@@ -1789,29 +2022,30 @@ impl<'a> SceneBuilder<'a> {
                 ))
             );
 
-            cur_instance = create_prim_instance(
-                current_pic_index,
+            let instance = create_prim_instance(
+                pic_index,
                 PictureCompositeKey::Identity,
                 ClipChainId::NONE,
                 &mut self.interners,
             );
+
+            source = PictureChainBuilder::from_instance(
+                instance,
+                stacking_context.prim_flags,
+                stacking_context.requested_raster_space,
+                stacking_context.spatial_node_index,
+            );
         }
 
-        let (filtered_pic_index, filtered_instance) = self.wrap_prim_with_filters(
-            cur_instance,
-            current_pic_index,
+        let has_filters = stacking_context.composite_ops.has_valid_filters();
+
+        source = self.wrap_prim_with_filters(
+            source,
             stacking_context.composite_ops.filters,
             stacking_context.composite_ops.filter_primitives,
             stacking_context.composite_ops.filter_datas,
-            stacking_context.prim_flags,
-            stacking_context.requested_raster_space,
-            stacking_context.spatial_node_index,
             true,
         );
-
-        let has_filters = current_pic_index != filtered_pic_index;
-
-        cur_instance = filtered_instance;
 
         
         
@@ -1831,40 +2065,15 @@ impl<'a> SceneBuilder<'a> {
                 None => false,
             };
             if parent_is_isolated {
-                let composite_mode = Some(PictureCompositeMode::MixBlend(mix_blend_mode));
+                let composite_mode = PictureCompositeMode::MixBlend(mix_blend_mode);
 
-                let mut prim_list = PrimitiveList::empty();
-                prim_list.add_prim(
-                    cur_instance,
-                    LayoutRect::zero(),
-                    stacking_context.spatial_node_index,
-                    stacking_context.prim_flags,
-                );
-
-                let blend_pic_index = PictureIndex(self.prim_store.pictures
-                    .alloc()
-                    .init(PicturePrimitive::new_image(
-                        composite_mode.clone(),
-                        Picture3DContext::Out,
-                        true,
-                        stacking_context.prim_flags,
-                        stacking_context.requested_raster_space,
-                        prim_list,
-                        stacking_context.spatial_node_index,
-                        PictureOptions::default(),
-                    ))
-                );
-
-                cur_instance = create_prim_instance(
-                    blend_pic_index,
-                    composite_mode.into(),
-                    ClipChainId::NONE,
+                source = source.add_picture(
+                    composite_mode,
+                    Picture3DContext::Out,
+                    PictureOptions::default(),
                     &mut self.interners,
+                    &mut self.prim_store,
                 );
-
-                if cur_instance.is_chased() {
-                    println!("\tis a mix-blend picture for a stacking context with {:?}", mix_blend_mode);
-                }
             } else {
                 
                 
@@ -1875,7 +2084,11 @@ impl<'a> SceneBuilder<'a> {
 
         
         
-        cur_instance.clip_set.clip_chain_id = stacking_context.clip_chain_id;
+        let cur_instance = source.finalize(
+            stacking_context.clip_chain_id,
+            &mut self.interners,
+            &mut self.prim_store,
+        );
 
         
         
@@ -3054,15 +3267,18 @@ impl<'a> SceneBuilder<'a> {
             );
         }
 
-        let (mut filtered_pic_index, mut filtered_instance) = self.wrap_prim_with_filters(
+        let mut source = PictureChainBuilder::from_instance(
             instance,
-            backdrop_pic_index,
-            filters,
-            filter_primitives,
-            filter_datas,
             info.flags,
             requested_raster_space,
             backdrop_spatial_node_index,
+        );
+
+        source = self.wrap_prim_with_filters(
+            source,
+            filters,
+            filter_primitives,
+            filter_datas,
             false,
         );
 
@@ -3077,23 +3293,20 @@ impl<'a> SceneBuilder<'a> {
             let filter_primitives = stacking_context.composite_ops.filter_primitives.clone();
             let filter_datas = stacking_context.composite_ops.filter_datas.clone();
 
-            let (pic_index, instance) = self.wrap_prim_with_filters(
-                filtered_instance,
-                filtered_pic_index,
+            source = self.wrap_prim_with_filters(
+                source,
                 filters,
                 filter_primitives,
                 filter_datas,
-                info.flags,
-                requested_raster_space,
-                backdrop_spatial_node_index,
                 false,
             );
-
-            filtered_instance = instance;
-            filtered_pic_index = pic_index;
         }
 
-        filtered_instance.clip_set.clip_chain_id = clip_chain_id;
+        let filtered_instance = source.finalize(
+            clip_chain_id,
+            &mut self.interners,
+            &mut self.prim_store,
+        );
 
         self.sc_stack
             .iter_mut()
@@ -3152,18 +3365,15 @@ impl<'a> SceneBuilder<'a> {
         Some(pic_index)
     }
 
+    #[must_use]
     fn wrap_prim_with_filters(
         &mut self,
-        mut cur_instance: PrimitiveInstance,
-        mut current_pic_index: PictureIndex,
+        mut source: PictureChainBuilder,
         mut filter_ops: Vec<Filter>,
         mut filter_primitives: Vec<FilterPrimitive>,
         filter_datas: Vec<FilterData>,
-        flags: PrimitiveFlags,
-        requested_raster_space: RasterSpace,
-        spatial_node_index: SpatialNodeIndex,
         inflate_if_required: bool,
-    ) -> (PictureIndex, PrimitiveInstance) {
+    ) -> PictureChainBuilder {
         
         
         
@@ -3199,53 +3409,25 @@ impl<'a> SceneBuilder<'a> {
                         let handle = self.interners
                             .filter_data
                             .intern(&filter_data_key, || ());
-                        Some(PictureCompositeMode::ComponentTransferFilter(handle))
+                        PictureCompositeMode::ComponentTransferFilter(handle)
                     }
                 }
                 _ => {
                     if filter.is_noop() {
-                        None
+                        continue;
                     } else {
-                        Some(PictureCompositeMode::Filter(filter.clone()))
+                        PictureCompositeMode::Filter(filter.clone())
                     }
                 }
             };
 
-            let mut prim_list = PrimitiveList::empty();
-            prim_list.add_prim(
-                cur_instance,
-                LayoutRect::zero(),
-                spatial_node_index,
-                flags,
-            );
-
-            let filter_pic_index = PictureIndex(self.prim_store.pictures
-                .alloc()
-                .init(PicturePrimitive::new_image(
-                    composite_mode.clone(),
-                    Picture3DContext::Out,
-                    true,
-                    flags,
-                    requested_raster_space,
-                    prim_list,
-                    spatial_node_index,
-                    PictureOptions {
-                       inflate_if_required,
-                    },
-                ))
-            );
-
-            current_pic_index = filter_pic_index;
-            cur_instance = create_prim_instance(
-                current_pic_index,
-                composite_mode.into(),
-                ClipChainId::NONE,
+            source = source.add_picture(
+                composite_mode,
+                Picture3DContext::Out,
+                PictureOptions { inflate_if_required },
                 &mut self.interners,
+                &mut self.prim_store,
             );
-
-            if cur_instance.is_chased() {
-                println!("\tis a composite picture for a stacking context with {:?}", filter);
-            }
         }
 
         if !filter_primitives.is_empty() {
@@ -3275,43 +3457,16 @@ impl<'a> SceneBuilder<'a> {
                 filter_datas,
             );
 
-            let mut prim_list = PrimitiveList::empty();
-            prim_list.add_prim(
-                cur_instance,
-                LayoutRect::zero(),
-                spatial_node_index,
-                flags,
-            );
-
-            let filter_pic_index = PictureIndex(self.prim_store.pictures
-                .alloc()
-                .init(PicturePrimitive::new_image(
-                    Some(composite_mode.clone()),
-                    Picture3DContext::Out,
-                    true,
-                    flags,
-                    requested_raster_space,
-                    prim_list,
-                    spatial_node_index,
-                    PictureOptions {
-                        inflate_if_required,
-                    },
-                ))
-            );
-
-            current_pic_index = filter_pic_index;
-            cur_instance = create_prim_instance(
-                current_pic_index,
-                Some(composite_mode).into(),
-                ClipChainId::NONE,
+            source = source.add_picture(
+                composite_mode,
+                Picture3DContext::Out,
+                PictureOptions { inflate_if_required },
                 &mut self.interners,
+                &mut self.prim_store,
             );
-
-            if cur_instance.is_chased() {
-                println!("\tis a composite picture for a stacking context with an SVG filter");
-            }
         }
-        (current_pic_index, cur_instance)
+
+        source
     }
 }
 
@@ -3411,12 +3566,7 @@ impl FlattenedStackingContext {
         }
 
         
-        if !composite_ops.filters.is_empty() {
-            return false;
-        }
-
-        
-        if !composite_ops.filter_primitives.is_empty() {
+        if composite_ops.has_valid_filters() {
             return false;
         }
 
