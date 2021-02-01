@@ -608,6 +608,10 @@ void CacheRegisterAllocator::allocateFixedValueRegister(MacroAssembler& masm,
 #endif
 }
 
+#ifdef JS_NUNBOX32
+
+MOZ_NEVER_INLINE
+#endif
 ValueOperand CacheRegisterAllocator::allocateValueRegister(
     MacroAssembler& masm) {
 #ifdef JS_NUNBOX32
