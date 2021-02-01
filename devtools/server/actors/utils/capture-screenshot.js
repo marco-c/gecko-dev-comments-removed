@@ -3,7 +3,7 @@
 
 
 "use strict";
-const { Cu, Cc, Ci } = require("chrome");
+const { Cc, Ci } = require("chrome");
 const Services = require("Services");
 const { LocalizationHelper } = require("devtools/shared/l10n");
 
@@ -26,9 +26,16 @@ const MAX_IMAGE_HEIGHT = 10000;
 
 
 function simulateCameraFlash(document) {
-  const window = document.defaultView;
-  const frames = Cu.cloneInto({ opacity: [0, 1] }, window);
-  document.documentElement.animate(frames, CONTAINER_FLASHING_DURATION);
+  const node = document.documentElement;
+
+  
+  if (node.ownerGlobal.matchMedia("(prefers-reduced-motion)").matches) {
+    return;
+  }
+
+  node.animate([{ opacity: 0 }, { opacity: 1 }], {
+    duration: CONTAINER_FLASHING_DURATION,
+  });
 }
 
 
