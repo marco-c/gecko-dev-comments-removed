@@ -815,9 +815,16 @@ void gfxPlatformFontList::UpdateFontList(bool aFullRebuild) {
     InitFontList();
     RebuildLocalFonts();
   } else {
-    InitializeCodepointsWithNoFonts();
-    mStartedLoadingCmapsFrom = 0xffffffffu;
-    gfxPlatform::ForceGlobalReflow();
+    
+    
+    
+    
+    
+    if (mStartedLoadingCmapsFrom != 0xffffffffu) {
+      InitializeCodepointsWithNoFonts();
+      mStartedLoadingCmapsFrom = 0xffffffffu;
+      gfxPlatform::ForceGlobalReflow();
+    }
   }
 }
 
