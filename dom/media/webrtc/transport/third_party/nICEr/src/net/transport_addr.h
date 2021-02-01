@@ -69,8 +69,9 @@ typedef struct nr_transport_addr_ {
   
 
   char as_string[56];
-  char tls_host[256];
+  char fqdn[256];
   bool is_proxied;
+  bool tls;
 } nr_transport_addr;
 
 typedef struct nr_transport_addr_mask_ {
