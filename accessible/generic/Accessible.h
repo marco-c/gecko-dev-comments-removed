@@ -935,9 +935,7 @@ class Accessible : public nsISupports {
 
 
 
-  bool HasNameDependentParent() const {
-    return mContextFlags & eHasNameDependentParent;
-  }
+  bool HasNameDependent() const { return mContextFlags & eHasNameDependent; }
 
   
 
@@ -1046,8 +1044,7 @@ class Accessible : public nsISupports {
 
 
   enum ContextFlags {
-    eHasNameDependentParent =
-        1 << 0,  
+    eHasNameDependent = 1 << 0,  
     eInsideAlert = 1 << 1,
 
     eLastContextFlag = eInsideAlert

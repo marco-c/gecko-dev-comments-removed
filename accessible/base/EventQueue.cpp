@@ -51,7 +51,7 @@ bool EventQueue::PushNameChange(Accessible* aTarget) {
   
   
   
-  if (aTarget->HasNameDependentParent()) {
+  if (aTarget->HasNameDependent()) {
     
     
     Accessible* parent = aTarget->Parent();
