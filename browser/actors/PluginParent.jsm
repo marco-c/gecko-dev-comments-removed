@@ -24,11 +24,6 @@ XPCOMUtils.defineLazyServiceGetter(
 
 ChromeUtils.defineModuleGetter(
   this,
-  "BrowserUtils",
-  "resource://gre/modules/BrowserUtils.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
   "CrashSubmit",
   "resource://gre/modules/CrashSubmit.jsm"
 );
@@ -46,6 +41,37 @@ const {
   PLUGIN_VULNERABLE_UPDATABLE,
   PLUGIN_CLICK_TO_PLAY_QUIET,
 } = Ci.nsIObjectLoadingContent;
+
+
+
+
+
+
+
+
+
+function makeNicePluginName(aName) {
+  if (aName == "Shockwave Flash") {
+    return "Adobe Flash";
+  }
+  
+  if (/^Java\W/.test(aName)) {
+    return "Java";
+  }
+
+  
+  
+  
+  
+  
+  
+  let newName = aName
+    .replace(/\(.*?\)/g, "")
+    .replace(/[\s\d\.\-\_\(\)]+$/, "")
+    .replace(/\bplug-?in\b/i, "")
+    .trim();
+  return newName;
+}
 
 const PluginManager = {
   _initialized: false,
@@ -129,7 +155,7 @@ const PluginManager = {
 
     let runID = propertyBag.getPropertyAsUint32("runID");
     let uglyPluginName = propertyBag.getPropertyAsAString("pluginName");
-    let pluginName = BrowserUtils.makeNicePluginName(uglyPluginName);
+    let pluginName = makeNicePluginName(uglyPluginName);
     let pluginDumpID = propertyBag.getPropertyAsAString("pluginDumpID");
 
     let state;
