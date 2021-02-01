@@ -90,16 +90,11 @@ class EventSource final : public DOMEventTargetHelper {
 
   
   
-  EventSourceImpl* mImpl;
+  RefPtr<EventSourceImpl> mESImpl;
   nsString mOriginalURL;
   uint16_t mReadyState;
   bool mWithCredentials;
   bool mIsMainThread;
-  
-  bool mKeepingAlive;
-
-  void UpdateMustKeepAlive();
-  void UpdateDontKeepAlive();
 };
 
 }  
