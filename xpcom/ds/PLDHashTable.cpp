@@ -500,24 +500,86 @@ PLDHashEntryHdr* PLDHashTable::Search(const void* aKey) const {
 }
 
 PLDHashEntryHdr* PLDHashTable::Add(const void* aKey,
-                                   const mozilla::fallible_t& aFallible) {
-  auto maybeEntryHandle = MakeEntryHandle(aKey, aFallible);
-  if (!maybeEntryHandle) {
-    return nullptr;
-  }
-  return maybeEntryHandle->OrInsert([&aKey, this](PLDHashEntryHdr* entry) {
-    if (mOps->initEntry) {
-      mOps->initEntry(entry, aKey);
+                                   const mozilla::fallible_t&) {
+#ifdef MOZ_HASH_TABLE_CHECKS_ENABLED
+  AutoWriteOp op(mChecker);
+#endif
+
+  
+  if (!mEntryStore.IsAllocated()) {
+    uint32_t nbytes;
+    
+    MOZ_RELEASE_ASSERT(
+        SizeOfEntryStore(CapacityFromHashShift(), mEntrySize, &nbytes));
+    mEntryStore.Set((char*)calloc(1, nbytes), &mGeneration);
+    if (!mEntryStore.IsAllocated()) {
+      return nullptr;
     }
-  });
+  }
+
+  
+  
+  
+  uint32_t capacity = Capacity();
+  if (mEntryCount + mRemovedCount >= MaxLoad(capacity)) {
+    
+    int deltaLog2;
+    if (mRemovedCount >= capacity >> 2) {
+      deltaLog2 = 0;
+    } else {
+      deltaLog2 = 1;
+    }
+
+    
+    
+    if (!ChangeTable(deltaLog2) &&
+        mEntryCount + mRemovedCount >= MaxLoadOnGrowthFailure(capacity)) {
+      return nullptr;
+    }
+  }
+
+  
+  
+  PLDHashNumber keyHash = ComputeKeyHash(aKey);
+  Slot slot = SearchTable<ForAdd>(
+      aKey, keyHash, [&](Slot& found) -> Slot { return found; },
+      [&]() -> Slot {
+        MOZ_CRASH("Nope");
+        return Slot(nullptr, nullptr);
+      });
+  if (!slot.IsLive()) {
+    
+    if (slot.IsRemoved()) {
+      mRemovedCount--;
+      keyHash |= kCollisionFlag;
+    }
+    if (mOps->initEntry) {
+      mOps->initEntry(slot.ToEntry(), aKey);
+    }
+    slot.SetKeyHash(keyHash);
+    mEntryCount++;
+  }
+
+  return slot.ToEntry();
 }
 
 PLDHashEntryHdr* PLDHashTable::Add(const void* aKey) {
-  return MakeEntryHandle(aKey).OrInsert([&aKey, this](PLDHashEntryHdr* entry) {
-    if (mOps->initEntry) {
-      mOps->initEntry(entry, aKey);
+  PLDHashEntryHdr* entry = Add(aKey, fallible);
+  if (!entry) {
+    if (!mEntryStore.IsAllocated()) {
+      
+      uint32_t nbytes;
+      (void)SizeOfEntryStore(CapacityFromHashShift(), mEntrySize, &nbytes);
+      NS_ABORT_OOM(nbytes);
+    } else {
+      
+      
+      
+      
+      NS_ABORT_OOM(2 * EntrySize() * EntryCount());
     }
-  });
+  }
+  return entry;
 }
 
 void PLDHashTable::Remove(const void* aKey) {
@@ -607,129 +669,6 @@ size_t PLDHashTable::ShallowSizeOfExcludingThis(
 size_t PLDHashTable::ShallowSizeOfIncludingThis(
     MallocSizeOf aMallocSizeOf) const {
   return aMallocSizeOf(this) + ShallowSizeOfExcludingThis(aMallocSizeOf);
-}
-
-mozilla::Maybe<PLDHashTable::EntryHandle> PLDHashTable::MakeEntryHandle(
-    const void* aKey, const mozilla::fallible_t&) {
-#ifdef MOZ_HASH_TABLE_CHECKS_ENABLED
-  mChecker.StartWriteOp();
-  auto endWriteOp = MakeScopeExit([&] { mChecker.EndWriteOp(); });
-#endif
-
-  
-  if (!mEntryStore.IsAllocated()) {
-    uint32_t nbytes;
-    
-    MOZ_RELEASE_ASSERT(
-        SizeOfEntryStore(CapacityFromHashShift(), mEntrySize, &nbytes));
-    mEntryStore.Set((char*)calloc(1, nbytes), &mGeneration);
-    if (!mEntryStore.IsAllocated()) {
-      return Nothing();
-    }
-  }
-
-  
-  
-  
-  uint32_t capacity = Capacity();
-  if (mEntryCount + mRemovedCount >= MaxLoad(capacity)) {
-    
-    int deltaLog2 = 1;
-    if (mRemovedCount >= capacity >> 2) {
-      deltaLog2 = 0;
-    }
-
-    
-    
-    if (!ChangeTable(deltaLog2) &&
-        mEntryCount + mRemovedCount >= MaxLoadOnGrowthFailure(capacity)) {
-      return Nothing();
-    }
-  }
-
-  
-  
-  PLDHashNumber keyHash = ComputeKeyHash(aKey);
-  Slot slot = SearchTable<ForAdd>(
-      aKey, keyHash, [](Slot& found) -> Slot { return found; },
-      []() -> Slot {
-        MOZ_CRASH("Nope");
-        return Slot(nullptr, nullptr);
-      });
-
-  
-#ifdef MOZ_HASH_TABLE_CHECKS_ENABLED
-  endWriteOp.release();
-#endif
-
-  return Some(EntryHandle{this, keyHash, slot});
-}
-
-PLDHashTable::EntryHandle PLDHashTable::MakeEntryHandle(const void* aKey) {
-  auto res = MakeEntryHandle(aKey, fallible);
-  if (!res) {
-    if (!mEntryStore.IsAllocated()) {
-      
-      uint32_t nbytes;
-      (void)SizeOfEntryStore(CapacityFromHashShift(), mEntrySize, &nbytes);
-      NS_ABORT_OOM(nbytes);
-    } else {
-      
-      
-      
-      
-      NS_ABORT_OOM(2 * EntrySize() * EntryCount());
-    }
-  }
-  return res.extract();
-}
-
-PLDHashTable::EntryHandle::EntryHandle(PLDHashTable* aTable,
-                                       PLDHashNumber aKeyHash, Slot aSlot)
-    : mTable(aTable), mKeyHash(aKeyHash), mSlot(aSlot) {}
-
-PLDHashTable::EntryHandle::EntryHandle(EntryHandle&& aOther) noexcept
-    : mTable(std::exchange(aOther.mTable, nullptr)),
-      mKeyHash(aOther.mKeyHash),
-      mSlot(aOther.mSlot) {}
-
-PLDHashTable::EntryHandle::~EntryHandle() {
-  if (!mTable) {
-    return;
-  }
-
-  
-  
-  if (!HasEntry()) {
-    mTable->ShrinkIfAppropriate();
-  }
-#ifdef MOZ_HASH_TABLE_CHECKS_ENABLED
-  mTable->mChecker.EndWriteOp();
-#endif
-}
-
-void PLDHashTable::EntryHandle::Remove() {
-  MOZ_ASSERT(HasEntry());
-
-  mTable->RawRemove(mSlot);
-}
-
-void PLDHashTable::EntryHandle::OrRemove() {
-  if (HasEntry()) {
-    Remove();
-  }
-}
-
-void PLDHashTable::EntryHandle::OccupySlot() {
-  MOZ_ASSERT(!HasEntry());
-
-  PLDHashNumber keyHash = mKeyHash;
-  if (mSlot.IsRemoved()) {
-    mTable->mRemovedCount--;
-    keyHash |= kCollisionFlag;
-  }
-  mSlot.SetKeyHash(keyHash);
-  mTable->mEntryCount++;
 }
 
 PLDHashTable::Iterator::Iterator(Iterator&& aOther)
