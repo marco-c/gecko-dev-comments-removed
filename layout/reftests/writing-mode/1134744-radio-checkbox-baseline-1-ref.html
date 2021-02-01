@@ -4,6 +4,7 @@
 <title>Bug 1134744 testcase</title>
 <meta charset="utf-8">
 <style>
+input { margin: 0 }
 div {
   height: 200px;
   margin: 1px;
@@ -12,7 +13,7 @@ div {
 </style>
 </head>
 <body>
-
+<!-- these two blocks should look the same -->
 <div style="writing-mode: vertical-lr; text-orientation: sideways-right">
  <label><input type="checkbox">Checkbox</label></br>
  <label><input type="radio">Radio</label></br>
