@@ -1762,6 +1762,12 @@ bool BytecodeEmitter::emitTDZCheckIfNeeded(const ParserAtom* name,
   MOZ_ASSERT(loc.hasKnownSlot());
   MOZ_ASSERT(loc.isLexical());
 
+  
+  
+  if (name->isPrivateName()) {
+    return true;
+  }
+
   Maybe<MaybeCheckTDZ> check =
       innermostTDZCheckCache->needsTDZCheck(this, name);
   if (!check) {
