@@ -13,6 +13,7 @@
 #include "frontend/BytecodeControlStructures.h"  
 #include "frontend/BytecodeOffset.h"             
 #include "frontend/JumpList.h"                   
+#include "frontend/ParserAtom.h"                 
 #include "js/TypeDecls.h"                        
 
 namespace js {

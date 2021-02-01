@@ -70,16 +70,16 @@ inline bool NestableControl::is<BreakableControl>() const {
 }
 
 class LabelControl : public BreakableControl {
-  const ParserAtom* label_;
+  TaggedParserAtomIndex label_;
 
   
   BytecodeOffset startOffset_;
 
  public:
-  LabelControl(BytecodeEmitter* bce, const ParserAtom* label,
+  LabelControl(BytecodeEmitter* bce, TaggedParserAtomIndex label,
                BytecodeOffset startOffset);
 
-  const ParserAtom* label() const { return label_; }
+  TaggedParserAtomIndex label() const { return label_; }
 
   BytecodeOffset startOffset() const { return startOffset_; }
 };
