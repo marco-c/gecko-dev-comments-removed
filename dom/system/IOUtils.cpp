@@ -1136,6 +1136,9 @@ Result<Ok, IOUtils::IOError> IOUtils::CopyOrMoveSync(CopyOrMoveFn aMethod,
   MOZ_TRY(aDest->GetParent(getter_AddRefs(destDir)));
 
   
+  MOZ_RELEASE_ASSERT(destDir);
+
+  
   
   rv = (aSource->*aMethod)(destDir, destName);
   if (NS_FAILED(rv)) {
@@ -1189,15 +1192,21 @@ Result<Ok, IOUtils::IOError> IOUtils::MakeDirectorySync(nsIFile* aFile,
   if (!aCreateAncestors) {
     nsCOMPtr<nsIFile> parent;
     MOZ_TRY(aFile->GetParent(getter_AddRefs(parent)));
-    bool parentExists = false;
-    MOZ_TRY(parent->Exists(&parentExists));
-    if (!parentExists) {
-      return Err(IOError(NS_ERROR_FILE_NOT_FOUND)
-                     .WithMessage("Could not create directory at %s because "
-                                  "the path has missing "
-                                  "ancestor components",
-                                  aFile->HumanReadablePath().get()));
+    if (parent) {
+      bool parentExists = false;
+      MOZ_TRY(parent->Exists(&parentExists));
+      if (!parentExists) {
+        return Err(IOError(NS_ERROR_FILE_NOT_FOUND)
+                       .WithMessage("Could not create directory at %s because "
+                                    "the path has missing "
+                                    "ancestor components",
+                                    aFile->HumanReadablePath().get()));
+      }
     }
+    
+    
+    
+    
   }
 
   nsresult rv = aFile->Create(nsIFile::DIRECTORY_TYPE, aMode);
