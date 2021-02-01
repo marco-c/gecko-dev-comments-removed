@@ -4080,18 +4080,18 @@ class LTypedArrayElementShift : public LInstructionHelper<1, 1, 0> {
 
 
 
-class LTypedArrayIndexToInt32 : public LInstructionHelper<1, 1, 0> {
- public:
-  LIR_HEADER(TypedArrayIndexToInt32)
 
-  explicit LTypedArrayIndexToInt32(const LAllocation& obj)
+class LGuardNumberToIntPtrIndex : public LInstructionHelper<1, 1, 0> {
+ public:
+  LIR_HEADER(GuardNumberToIntPtrIndex)
+
+  explicit LGuardNumberToIntPtrIndex(const LAllocation& obj)
       : LInstructionHelper(classOpcode) {
     setOperand(0, obj);
   }
 
-  const LAllocation* index() { return getOperand(0); }
-  const MTypedArrayIndexToInt32* mir() const {
-    return mir_->toTypedArrayIndexToInt32();
+  const MGuardNumberToIntPtrIndex* mir() const {
+    return mir_->toGuardNumberToIntPtrIndex();
   }
 };
 

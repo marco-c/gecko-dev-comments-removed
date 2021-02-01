@@ -4923,26 +4923,34 @@ MDefinition* MGetFirstDollarIndex::foldsTo(TempAllocator& alloc) {
   return MConstant::New(alloc, Int32Value(index));
 }
 
-MDefinition* MTypedArrayIndexToInt32::foldsTo(TempAllocator& alloc) {
-  MDefinition* input = getOperand(0);
+MDefinition* MGuardNumberToIntPtrIndex::foldsTo(TempAllocator& alloc) {
+  MDefinition* input = this->input();
 
   if (input->isToDouble() && input->getOperand(0)->type() == MIRType::Int32) {
-    return input->getOperand(0);
+    return MInt32ToIntPtr::New(alloc, input->getOperand(0));
   }
 
-  if (!input->isConstant() || input->type() != MIRType::Double) {
+  if (!input->isConstant()) {
     return this;
   }
 
   
-  int32_t ival;
-  if (!mozilla::NumberEqualsInt32(input->toConstant()->numberToDouble(),
-                                  &ival)) {
+  int64_t ival;
+  if (!mozilla::NumberEqualsInt64(input->toConstant()->toDouble(), &ival)) {
     
     
+    
+    if (!supportOOB()) {
+      return this;
+    }
     ival = -1;
   }
-  return MConstant::New(alloc, Int32Value(ival));
+
+  if (ival < INTPTR_MIN || ival > INTPTR_MAX) {
+    return this;
+  }
+
+  return MConstant::NewIntPtr(alloc, intptr_t(ival));
 }
 
 MDefinition* MIsObject::foldsTo(TempAllocator& alloc) {

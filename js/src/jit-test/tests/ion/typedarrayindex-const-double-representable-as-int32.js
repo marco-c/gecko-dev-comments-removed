@@ -4,7 +4,6 @@ function f(n) {
   
   
   
-  
   const r = n === 0 ? undefined : 0;
 
   
