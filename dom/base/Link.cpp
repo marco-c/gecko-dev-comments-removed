@@ -479,7 +479,8 @@ void Link::ResetLinkState(bool aNotify, bool aHasHref) {
   
   
   
-  mNeedsRegistration = aHasHref;
+  
+  mNeedsRegistration = aHasHref && !mElement->IsHTMLElement(nsGkAtoms::link);
 
   
   UnregisterFromHistory();
@@ -538,8 +539,11 @@ void Link::SetHrefAttribute(nsIURI* aURI) {
 size_t Link::SizeOfExcludingThis(mozilla::SizeOfState& aState) const {
   size_t n = 0;
 
-  if (nsCOMPtr<nsISizeOf> iface = do_QueryInterface(mCachedURI)) {
-    n += iface->SizeOfIncludingThis(aState.mMallocSizeOf);
+  if (mCachedURI) {
+    nsCOMPtr<nsISizeOf> iface = do_QueryInterface(mCachedURI);
+    if (iface) {
+      n += iface->SizeOfIncludingThis(aState.mMallocSizeOf);
+    }
   }
 
   

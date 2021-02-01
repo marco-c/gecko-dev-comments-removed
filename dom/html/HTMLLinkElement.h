@@ -22,8 +22,11 @@ class PreloaderBase;
 
 namespace dom {
 
+
+
 class HTMLLinkElement final : public nsGenericHTMLElement,
                               public LinkStyle,
+                              public Link,
                               public SupportsDNSPrefetch {
  public:
   explicit HTMLLinkElement(
@@ -43,6 +46,11 @@ class HTMLLinkElement final : public nsGenericHTMLElement,
   void LinkRemoved();
 
   
+  void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
+  MOZ_CAN_RUN_SCRIPT
+  nsresult PostHandleEvent(EventChainPostVisitor& aVisitor) override;
+
+  
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;
@@ -56,24 +64,22 @@ class HTMLLinkElement final : public nsGenericHTMLElement,
   nsresult AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                         const nsAttrValue* aValue, const nsAttrValue* aOldValue,
                         nsIPrincipal* aSubjectPrincipal, bool aNotify) override;
+  bool IsLink(nsIURI** aURI) const override;
+  already_AddRefed<nsIURI> GetHrefURI() const override;
+
   
   bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                       const nsAString& aValue,
                       nsIPrincipal* aMaybeScriptedPrincipal,
                       nsAttrValue& aResult) override;
+  void GetLinkTarget(nsAString& aTarget) override;
+  EventStates IntrinsicState() const override;
 
   void CreateAndDispatchEvent(Document* aDoc, const nsAString& aEventName);
 
   
   bool Disabled() const;
   void SetDisabled(bool aDisabled, ErrorResult& aRv);
-
-  nsIURI* GetURI() {
-    if (!mCachedURI) {
-      GetURIAttr(nsGkAtoms::href, nullptr, getter_AddRefs(mCachedURI));
-    }
-    return mCachedURI.get();
-  }
 
   void GetHref(nsAString& aValue) {
     GetURIAttr(nsGkAtoms::href, nullptr, aValue);
@@ -172,7 +178,7 @@ class HTMLLinkElement final : public nsGenericHTMLElement,
   }
 
   void NodeInfoChanged(Document* aOldDoc) final {
-    mCachedURI = nullptr;
+    ClearHasPendingLinkUpdate();
     nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
   }
 
@@ -211,9 +217,6 @@ class HTMLLinkElement final : public nsGenericHTMLElement,
   
   
   WeakPtr<PreloaderBase> mPreload;
-
-  
-  nsCOMPtr<nsIURI> mCachedURI;
 
   
   
