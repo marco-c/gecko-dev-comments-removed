@@ -33,6 +33,14 @@ add_task(async function() {
   ]);
 
   
+  
+  await checkInlinePreview(dbg, "objectProperties", [
+    { identifier: "obj:", value: 'Object { hello: "world", a: {…} }' },
+    { identifier: "obj.hello:", value: '"world"' },
+    { identifier: "obj.a.b:", value: '"c"' },
+  ]);
+
+  
   invokeInTab("btnClick");
   await checkInspectorIcon(dbg);
 

@@ -97,13 +97,16 @@ export function generateInlinePreview(cx: ThreadContext, frame: ?Frame) {
         
         
         let properties = null;
-        const objectFront = bindings[name].value;
-        if (objectFront.actorID && objectFront.class === "Object") {
-          properties = await client.loadObjectProperties({
-            name,
-            path: name,
-            contents: { value: objectFront },
-          });
+        const objectGrip = bindings[name].value;
+        if (objectGrip.actor && objectGrip.class === "Object") {
+          properties = await client.loadObjectProperties(
+            {
+              name,
+              path: name,
+              contents: { value: objectGrip },
+            },
+            cx.thread
+          );
         }
 
         const previewsFromBindings: Array<Preview> = getBindingValues(

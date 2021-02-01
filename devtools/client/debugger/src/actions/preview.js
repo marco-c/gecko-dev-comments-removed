@@ -145,7 +145,7 @@ export function setPreview(
         front: getFront(result),
       },
     };
-    const properties = await client.loadObjectProperties(root);
+    const properties = await client.loadObjectProperties(root, thread);
 
     
     
