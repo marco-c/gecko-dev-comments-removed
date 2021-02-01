@@ -96,18 +96,6 @@ const PanelUI = {
 
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
-      "libraryRecentHighlightsEnabled",
-      "browser.library.activity-stream.enabled",
-      false,
-      (pref, previousValue, newValue) => {
-        if (!newValue) {
-          this.clearLibraryRecentHighlights();
-        }
-      }
-    );
-
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
       "protonAppMenuEnabled",
       "browser.proton.appmenu.enabled",
       false
@@ -343,9 +331,7 @@ const PanelUI = {
         this._updateNotifications();
         break;
       case "ViewShowing":
-        if (aEvent.target == this.libraryView) {
-          this.onLibraryViewShowing(aEvent.target).catch(Cu.reportError);
-        } else if (aEvent.target == this.whatsNewPanel) {
+        if (aEvent.target == this.whatsNewPanel) {
           this.onWhatsNewPanelShowing();
         }
         break;
@@ -557,154 +543,6 @@ const PanelUI = {
 
     viewNode._initialized = true;
     viewNode.addEventListener("ViewShowing", this);
-  },
-
-  
-
-
-
-
-
-
-  async onLibraryViewShowing(viewNode) {
-    
-    
-    
-    if (this._loadingRecentHighlights || !this.libraryRecentHighlightsEnabled) {
-      return;
-    }
-
-    if (!this.libraryRecentHighlights) {
-      this.libraryRecentHighlights = document.getElementById(
-        "appMenu-library-recentHighlights"
-      );
-    }
-
-    
-    if (
-      Services.prefs.getBoolPref(
-        "browser.newtabpage.activity-stream.customizationMenu.enabled"
-      ) ||
-      Services.prefs.getBoolPref(
-        "browser.newtabpage.activity-stream.newNewtabExperience.enabled"
-      )
-    ) {
-      this.libraryRecentHighlights.previousElementSibling.setAttribute(
-        "data-l10n-id",
-        "library-recent-activity-title"
-      );
-    } else {
-      this.libraryRecentHighlights.previousElementSibling.removeAttribute(
-        "data-l10n-id"
-      );
-    }
-
-    
-    this.makeLibraryRecentHighlightsInvisible();
-
-    
-    this._loadingRecentHighlights = true;
-    try {
-      await this.fetchAndPopulateLibraryRecentHighlights();
-    } finally {
-      this._loadingRecentHighlights = false;
-    }
-  },
-
-  
-
-
-
-  async fetchAndPopulateLibraryRecentHighlights() {
-    let highlights = await NewTabUtils.activityStreamLinks
-      .getHighlights({
-        
-        
-        numItems: 6,
-        withFavicons: true,
-        excludePocket: true,
-      })
-      .catch(ex => {
-        
-        Cu.reportError(ex);
-        return [];
-      });
-
-    
-    
-    
-    
-    this.clearLibraryRecentHighlights();
-    if (!highlights.length) {
-      return;
-    }
-
-    let container = this.libraryRecentHighlights;
-    container.hidden = container.previousElementSibling.hidden = container.previousElementSibling.previousElementSibling.hidden = false;
-    let fragment = document.createDocumentFragment();
-    for (let highlight of highlights) {
-      let button = document.createXULElement("toolbarbutton");
-      button.classList.add(
-        "subviewbutton",
-        "highlight",
-        "subviewbutton-iconic",
-        "bookmark-item"
-      );
-      let title = highlight.title || highlight.url;
-      button.setAttribute("label", title);
-      button.setAttribute("tooltiptext", title);
-      button.setAttribute("type", "highlight-" + highlight.type);
-      button.setAttribute("onclick", "PanelUI.onLibraryHighlightClick(event)");
-      if (highlight.favicon) {
-        button.setAttribute("image", highlight.favicon);
-      }
-      button._highlight = highlight;
-      fragment.appendChild(button);
-    }
-    container.appendChild(fragment);
-  },
-
-  
-
-
-
-
-  makeLibraryRecentHighlightsInvisible() {
-    for (let button of this.libraryRecentHighlights.children) {
-      button.style.visibility = "hidden";
-    }
-  },
-
-  
-
-
-  clearLibraryRecentHighlights() {
-    let container = this.libraryRecentHighlights;
-    while (container.firstChild) {
-      container.firstChild.remove();
-    }
-    container.hidden = container.previousElementSibling.hidden = container.previousElementSibling.previousElementSibling.hidden = true;
-  },
-
-  
-
-
-
-
-  onLibraryHighlightClick(event) {
-    let button = event.target;
-    if (event.button > 1 || !button._highlight) {
-      return;
-    }
-    if (event.button == 1) {
-      
-      CustomizableUI.hidePanelForNode(button);
-    }
-    window.openUILink(button._highlight.url, event, {
-      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
-        {}
-      ),
-    });
   },
 
   
