@@ -1277,26 +1277,29 @@ nsNativeBasicTheme::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
 
 LayoutDeviceIntMargin nsNativeBasicTheme::GetWidgetBorder(
     nsDeviceContext* aContext, nsIFrame* aFrame, StyleAppearance aAppearance) {
-  DPIRatio dpiRatio = GetDPIRatio(aFrame, aAppearance);
   switch (aAppearance) {
     case StyleAppearance::Textfield:
     case StyleAppearance::Textarea:
-    case StyleAppearance::NumberInput: {
-      LayoutDeviceIntCoord w = SnapBorderWidth(kTextFieldBorderWidth, dpiRatio);
-      return LayoutDeviceIntMargin(w, w, w, w);
-    }
+    case StyleAppearance::NumberInput:
     case StyleAppearance::Listbox:
     case StyleAppearance::Menulist:
-    case StyleAppearance::MenulistButton: {
-      LayoutDeviceIntCoord w = SnapBorderWidth(kMenulistBorderWidth, dpiRatio);
-      return LayoutDeviceIntMargin(w, w, w, w);
-    }
-    case StyleAppearance::Button: {
-      LayoutDeviceIntCoord w = SnapBorderWidth(kButtonBorderWidth, dpiRatio);
-      return LayoutDeviceIntMargin(w, w, w, w);
-    }
+    case StyleAppearance::MenulistButton:
+    case StyleAppearance::Button:
+      
+      
+      
+      
+      
+      
+      
+      
+      return LayoutDeviceIntMargin::FromAppUnits(
+                 aFrame->StyleBorder()->GetComputedBorder(),
+                 aFrame->PresContext()->AppUnitsPerDevPixel())
+          .Rounded();
     case StyleAppearance::Checkbox:
     case StyleAppearance::Radio: {
+      DPIRatio dpiRatio = GetDPIRatio(aFrame, aAppearance);
       LayoutDeviceIntCoord w =
           SnapBorderWidth(kCheckboxRadioBorderWidth, dpiRatio);
       return LayoutDeviceIntMargin(w, w, w, w);
