@@ -2167,109 +2167,90 @@ WorkerThreadPrimaryRunnable::Run() {
 
   using mozilla::ipc::BackgroundChild;
 
-  class MOZ_STACK_CLASS SetThreadHelper final {
-    
-    WorkerPrivate* mWorkerPrivate;
-
-   public:
-    SetThreadHelper(WorkerPrivate* aWorkerPrivate, WorkerThread& aThread)
-        : mWorkerPrivate(aWorkerPrivate) {
-      MOZ_ASSERT(mWorkerPrivate);
-
-      mWorkerPrivate->SetWorkerPrivateInWorkerThread(&aThread);
-    }
-
-    ~SetThreadHelper() {
-      if (mWorkerPrivate) {
-        mWorkerPrivate->ResetWorkerPrivateInWorkerThread();
-      }
-    }
-
-    void Nullify() {
-      MOZ_ASSERT(mWorkerPrivate);
-      mWorkerPrivate->ResetWorkerPrivateInWorkerThread();
-      mWorkerPrivate = nullptr;
-    }
-  };
-
-  SetThreadHelper threadHelper(mWorkerPrivate, *mThread);
-
-  auto failureCleanup = MakeScopeExit([&]() {
-    
-    
-    
-    
-    mWorkerPrivate->RunLoopNeverRan();
-  });
-
-  mWorkerPrivate->AssertIsOnWorkerThread();
-
-  
-  
-  mWorkerPrivate->EnsurePerformanceStorage();
-
-  if (NS_WARN_IF(!BackgroundChild::GetOrCreateForCurrentThread())) {
-    return NS_ERROR_FAILURE;
-  }
-
   {
-    nsCycleCollector_startup();
+    auto failureCleanup = MakeScopeExit([&]() {
+      
+      
+      
+      
+      mWorkerPrivate->RunLoopNeverRan();
+    });
 
-    auto context = MakeUnique<WorkerJSContext>(mWorkerPrivate);
-    nsresult rv = context->Initialize(mParentRuntime);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
+    mWorkerPrivate->SetWorkerPrivateInWorkerThread(mThread.unsafeGetRawPtr());
 
-    JSContext* cx = context->Context();
+    const auto threadCleanup = MakeScopeExit([&] {
+      
+      
+      mWorkerPrivate->ResetWorkerPrivateInWorkerThread();
+    });
 
-    if (!InitJSContextForWorker(mWorkerPrivate, cx)) {
+    mWorkerPrivate->AssertIsOnWorkerThread();
+
+    
+    
+    mWorkerPrivate->EnsurePerformanceStorage();
+
+    if (NS_WARN_IF(!BackgroundChild::GetOrCreateForCurrentThread())) {
       return NS_ERROR_FAILURE;
     }
 
-    failureCleanup.release();
-
     {
-      PROFILER_SET_JS_CONTEXT(cx);
+      nsCycleCollector_startup();
 
-      {
-        
-        
-        
-        
-        MOZ_KnownLive(mWorkerPrivate)->DoRunLoop(cx);
-        
-        
-        MOZ_ASSERT(!JS_IsExceptionPending(cx));
+      auto context = MakeUnique<WorkerJSContext>(mWorkerPrivate);
+      nsresult rv = context->Initialize(mParentRuntime);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
       }
 
-      BackgroundChild::CloseForCurrentThread();
+      JSContext* cx = context->Context();
 
-      PROFILER_CLEAR_JS_CONTEXT();
+      if (!InitJSContextForWorker(mWorkerPrivate, cx)) {
+        return NS_ERROR_FAILURE;
+      }
+
+      failureCleanup.release();
+
+      {
+        PROFILER_SET_JS_CONTEXT(cx);
+
+        {
+          
+          
+          
+          
+          MOZ_KnownLive(mWorkerPrivate)->DoRunLoop(cx);
+          
+          
+          MOZ_ASSERT(!JS_IsExceptionPending(cx));
+        }
+
+        BackgroundChild::CloseForCurrentThread();
+
+        PROFILER_CLEAR_JS_CONTEXT();
+      }
+
+      
+      
+      
+      
+      
+      mWorkerPrivate->ClearDebuggerEventQueue();
+
+      
+      
+      JS_GC(cx, JS::GCReason::WORKER_SHUTDOWN);
+
+      
+      
+      
+      mWorkerPrivate->ClearMainEventQueue(WorkerPrivate::WorkerRan);
+
+      
+      
+      
     }
-
-    
-    
-    
-    
-    
-    mWorkerPrivate->ClearDebuggerEventQueue();
-
-    
-    
-    JS_GC(cx, JS::GCReason::WORKER_SHUTDOWN);
-
-    
-    
-    
-    mWorkerPrivate->ClearMainEventQueue(WorkerPrivate::WorkerRan);
-
-    
-    
-    
   }
-
-  threadHelper.Nullify();
 
   mWorkerPrivate->ScheduleDeletion(WorkerPrivate::WorkerRan);
 
