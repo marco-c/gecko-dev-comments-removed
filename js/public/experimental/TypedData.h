@@ -309,7 +309,7 @@ extern JS_FRIEND_API uint32_t JS_GetTypedArrayLength(JSObject* obj);
 
 
 
-extern JS_FRIEND_API uint32_t JS_GetTypedArrayByteOffset(JSObject* obj);
+extern JS_FRIEND_API size_t JS_GetTypedArrayByteOffset(JSObject* obj);
 
 
 
@@ -318,17 +318,17 @@ extern JS_FRIEND_API uint32_t JS_GetTypedArrayByteOffset(JSObject* obj);
 
 
 
-extern JS_FRIEND_API uint32_t JS_GetTypedArrayByteLength(JSObject* obj);
+extern JS_FRIEND_API size_t JS_GetTypedArrayByteLength(JSObject* obj);
 
 
 
 
-extern JS_FRIEND_API uint32_t JS_GetArrayBufferViewByteLength(JSObject* obj);
+extern JS_FRIEND_API size_t JS_GetArrayBufferViewByteLength(JSObject* obj);
 
 
 
 
-extern JS_FRIEND_API uint32_t JS_GetArrayBufferViewByteOffset(JSObject* obj);
+extern JS_FRIEND_API size_t JS_GetArrayBufferViewByteOffset(JSObject* obj);
 
 
 
