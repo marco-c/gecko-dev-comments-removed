@@ -235,13 +235,7 @@ with modules["WIDGET"]:
     
     
     
-    
     errors["NS_SUCCESS_EVENT_CONSUMED"] = SUCCESS(1)
-    
-    
-    
-    
-    errors["NS_SUCCESS_EVENT_HANDLED_ASYNCHRONOUSLY"] = SUCCESS(2)
 
 
 

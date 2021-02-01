@@ -57,8 +57,6 @@ using namespace mozilla::widget;
 #  include <windowsx.h>
 
 #  include "mozilla/widget/WinMessages.h"
-#  include "mozilla/widget/WinModifierKeyState.h"
-#  include "mozilla/widget/WinNativeEventData.h"
 #  include "nsWindowsDllInterceptor.h"
 #  include "X11UndefineNone.h"
 
@@ -116,8 +114,6 @@ static RefPtr<DrawTarget> CreateDrawTargetForSurface(gfxASurface* aSurface) {
   return drawTarget;
 }
 
-bool PluginInstanceChild::sIsIMEComposing = false;
-
 PluginInstanceChild::PluginInstanceChild(const NPPluginFuncs* aPluginIface,
                                          const nsCString& aMimeType,
                                          const nsTArray<nsCString>& aNames,
@@ -132,8 +128,6 @@ PluginInstanceChild::PluginInstanceChild(const NPPluginFuncs* aPluginIface,
 #endif
       ,
       mCSSZoomFactor(0.0),
-      mPostingKeyEvents(0),
-      mPostingKeyEventsOutdated(0),
       mDrawingModel(kDefaultDrawingModel),
       mCurrentDirectSurface(nullptr),
       mAsyncInvalidateMutex("PluginInstanceChild::mAsyncInvalidateMutex"),
@@ -180,7 +174,6 @@ PluginInstanceChild::PluginInstanceChild(const NPPluginFuncs* aPluginIface,
       mDestroyed(false)
 #ifdef XP_WIN
       ,
-      mLastKeyEventConsumed(false),
       mLastEnableIMEState(true)
 #endif  
       ,
@@ -1286,92 +1279,6 @@ bool PluginInstanceChild::Initialize() {
   return true;
 }
 
-mozilla::ipc::IPCResult PluginInstanceChild::RecvHandledWindowedPluginKeyEvent(
-    const NativeEventData& aKeyEventData, const bool& aIsConsumed) {
-#if defined(OS_WIN)
-  const WinNativeKeyEventData* eventData =
-      static_cast<const WinNativeKeyEventData*>(aKeyEventData);
-  switch (eventData->mMessage) {
-    case WM_KEYDOWN:
-    case WM_SYSKEYDOWN:
-    case WM_KEYUP:
-    case WM_SYSKEYUP:
-      mLastKeyEventConsumed = aIsConsumed;
-      break;
-    case WM_CHAR:
-    case WM_SYSCHAR:
-    case WM_DEADCHAR:
-    case WM_SYSDEADCHAR:
-      
-      
-      if (mLastKeyEventConsumed) {
-        return IPC_OK();
-      }
-    default:
-      MOZ_CRASH("Needs to handle all messages posted to the parent");
-  }
-#endif  
-
-  
-  
-  
-  if (NS_WARN_IF(!mPostingKeyEvents && !mPostingKeyEventsOutdated)) {
-    return IPC_OK();
-  }
-
-  
-  
-  if (mPostingKeyEventsOutdated) {
-    mPostingKeyEventsOutdated--;
-    return IPC_OK();
-  }
-
-  mPostingKeyEvents--;
-
-  
-  
-  
-  
-  if (aIsConsumed || sIsIMEComposing) {
-    return IPC_OK();
-  }
-
-#if defined(OS_WIN)
-  UINT message = 0;
-  switch (eventData->mMessage) {
-    case WM_KEYDOWN:
-      message = MOZ_WM_KEYDOWN;
-      break;
-    case WM_SYSKEYDOWN:
-      message = MOZ_WM_SYSKEYDOWN;
-      break;
-    case WM_KEYUP:
-      message = MOZ_WM_KEYUP;
-      break;
-    case WM_SYSKEYUP:
-      message = MOZ_WM_SYSKEYUP;
-      break;
-    case WM_CHAR:
-      message = MOZ_WM_CHAR;
-      break;
-    case WM_SYSCHAR:
-      message = MOZ_WM_SYSCHAR;
-      break;
-    case WM_DEADCHAR:
-      message = MOZ_WM_DEADCHAR;
-      break;
-    case WM_SYSDEADCHAR:
-      message = MOZ_WM_SYSDEADCHAR;
-      break;
-    default:
-      MOZ_CRASH("Needs to handle all messages posted to the parent");
-  }
-  PluginWindowProcInternal(mPluginWindowHWND, message, eventData->mWParam,
-                           eventData->mLParam);
-#endif
-  return IPC_OK();
-}
-
 #if defined(OS_WIN)
 
 static const TCHAR kWindowClassName[] = TEXT("GeckoPluginWindow");
@@ -1513,66 +1420,17 @@ LRESULT CALLBACK PluginInstanceChild::PluginWindowProcInternal(HWND hWnd,
       break;
     }
 
-    case WM_SETFOCUS:
-      
-      
-      
-      NS_WARNING_ASSERTION(self->mPostingKeyEvents == 0, "pending events");
-      self->mPostingKeyEvents = 0;
-      self->mLastKeyEventConsumed = false;
-      break;
-
-    case WM_KEYDOWN:
-    case WM_SYSKEYDOWN:
-    case WM_KEYUP:
-    case WM_SYSKEYUP:
-      if (self->MaybePostKeyMessage(message, wParam, lParam)) {
-        
-        
-        
-        return 0;  
-      }
-      break;
-
-    case MOZ_WM_KEYDOWN:
-      message = WM_KEYDOWN;
-      break;
-    case MOZ_WM_SYSKEYDOWN:
-      message = WM_SYSKEYDOWN;
-      break;
-    case MOZ_WM_KEYUP:
-      message = WM_KEYUP;
-      break;
-    case MOZ_WM_SYSKEYUP:
-      message = WM_SYSKEYUP;
-      break;
-    case MOZ_WM_CHAR:
-      message = WM_CHAR;
-      break;
-    case MOZ_WM_SYSCHAR:
-      message = WM_SYSCHAR;
-      break;
-    case MOZ_WM_DEADCHAR:
-      message = WM_DEADCHAR;
-      break;
-    case MOZ_WM_SYSDEADCHAR:
-      message = WM_SYSDEADCHAR;
-      break;
-
     case WM_IME_STARTCOMPOSITION:
       isIMECompositionMessage = true;
-      sIsIMEComposing = true;
       break;
     case WM_IME_ENDCOMPOSITION:
       isIMECompositionMessage = true;
-      sIsIMEComposing = false;
       break;
     case WM_IME_COMPOSITION:
       isIMECompositionMessage = true;
       
       
       
-      sIsIMEComposing = !(lParam & GCS_RESULTSTR);
       break;
 
     
@@ -1580,15 +1438,6 @@ LRESULT CALLBACK PluginInstanceChild::PluginWindowProcInternal(HWND hWnd,
     case WM_MOUSEACTIVATE:
       self->CallPluginFocusChange(true);
       break;
-  }
-
-  
-  
-  
-  
-  if (isIMECompositionMessage && !sIsIMEComposing) {
-    self->mPostingKeyEventsOutdated += self->mPostingKeyEvents;
-    self->mPostingKeyEvents = 0;
   }
 
   
@@ -1645,89 +1494,6 @@ LRESULT CALLBACK PluginInstanceChild::PluginWindowProcInternal(HWND hWnd,
   }
 
   return res;
-}
-
-bool PluginInstanceChild::ShouldPostKeyMessage(UINT message, WPARAM wParam,
-                                               LPARAM lParam) {
-  
-  
-  
-  
-  if (sIsIMEComposing) {
-    return false;
-  }
-
-  
-  
-  
-  if (mPostingKeyEvents) {
-    return true;
-  }
-
-  
-  
-  switch (message) {
-    case WM_CHAR:
-    case WM_SYSCHAR:
-    case WM_DEADCHAR:
-    case WM_SYSDEADCHAR:
-      return false;
-  }
-
-  
-  
-  ModifierKeyState modifierState;
-  if (!modifierState.MaybeMatchShortcutKey()) {
-    
-    
-    return false;
-  }
-
-  
-  switch (wParam) {
-    case VK_SHIFT:
-    case VK_CONTROL:
-    case VK_MENU:
-    case VK_LWIN:
-    case VK_RWIN:
-    case VK_CAPITAL:
-    case VK_NUMLOCK:
-    case VK_SCROLL:
-    
-    
-    case VK_LSHIFT:
-    case VK_RSHIFT:
-    case VK_LCONTROL:
-    case VK_RCONTROL:
-    case VK_LMENU:
-    case VK_RMENU:
-    case VK_PROCESSKEY:
-    case VK_PACKET:
-    case 0xFF:  
-      return false;
-    default:
-      break;
-  }
-  return true;
-}
-
-bool PluginInstanceChild::MaybePostKeyMessage(UINT message, WPARAM wParam,
-                                              LPARAM lParam) {
-  if (!ShouldPostKeyMessage(message, wParam, lParam)) {
-    return false;
-  }
-
-  ModifierKeyState modifierState;
-  WinNativeKeyEventData winNativeKeyData(message, wParam, lParam,
-                                         modifierState);
-  NativeEventData nativeKeyData;
-  nativeKeyData.Copy(winNativeKeyData);
-  if (NS_WARN_IF(!SendOnWindowedPluginKeyEvent(nativeKeyData))) {
-    return false;
-  }
-
-  mPostingKeyEvents++;
-  return true;
 }
 
 

@@ -20,7 +20,6 @@
 #include "nsBaseScreen.h"
 #include "nsBaseWidget.h"
 #include "nsCOMArray.h"
-#include "nsIKeyEventInPluginCallback.h"
 #include "nsIScreenManager.h"
 #include "nsThreadUtils.h"
 #include "mozilla/Attributes.h"
@@ -284,13 +283,6 @@ class PuppetWidget : public nsBaseWidget,
 
   virtual bool HasPendingInputEvent() override;
 
-  void HandledWindowedPluginKeyEvent(const NativeEventData& aKeyEventData,
-                                     bool aIsConsumed);
-
-  virtual nsresult OnWindowedPluginKeyEvent(
-      const NativeEventData& aKeyEventData,
-      nsIKeyEventInPluginCallback* aCallback) override;
-
   virtual void LookUpDictionary(
       const nsAString& aText,
       const nsTArray<mozilla::FontRange>& aFontRangeArray,
@@ -374,8 +366,6 @@ class PuppetWidget : public nsBaseWidget,
   uint32_t mCursorHotspotX, mCursorHotspotY;
 
   ScreenIntMargin mSafeAreaInsets;
-
-  nsCOMArray<nsIKeyEventInPluginCallback> mKeyEventInPluginCallbacks;
 
   RefPtr<TextEventDispatcherListener> mNativeTextEventDispatcherListener;
 

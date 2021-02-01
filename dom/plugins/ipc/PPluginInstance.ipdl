@@ -132,16 +132,6 @@ child:
   intr NPP_Destroy()
     returns (NPError rv);
 
-  
-  
-  
-  
-  
-  
-  
-  async HandledWindowedPluginKeyEvent(NativeEventData aKeyEventData,
-                                      bool aIsConsumed);
-
 parent:
   intr NPN_GetValue_NPNVWindowNPObject()
     returns (nullable PPluginScriptableObject value, NPError result);
@@ -255,13 +245,6 @@ parent:
   sync GetCompositionString(uint32_t aType)
                             returns (uint8_t[] aDist, int32_t aLength);
   async RequestCommitOrCancel(bool aCommitted);
-
-  
-  
-  
-  
-  
-  async OnWindowedPluginKeyEvent(NativeEventData aKeyEventData);
 
 both:
   async PPluginScriptableObject();

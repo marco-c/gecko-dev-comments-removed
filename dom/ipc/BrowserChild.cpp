@@ -2613,15 +2613,6 @@ mozilla::ipc::IPCResult BrowserChild::RecvNavigateByKey(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult BrowserChild::RecvHandledWindowedPluginKeyEvent(
-    const NativeEventData& aKeyEventData, const bool& aIsConsumed) {
-  if (NS_WARN_IF(!mPuppetWidget)) {
-    return IPC_OK();
-  }
-  mPuppetWidget->HandledWindowedPluginKeyEvent(aKeyEventData, aIsConsumed);
-  return IPC_OK();
-}
-
 bool BrowserChild::InitBrowserChildMessageManager() {
   if (!mBrowserChildMessageManager) {
     nsCOMPtr<nsPIDOMWindowOuter> window = do_GetInterface(WebNavigation());
@@ -2887,13 +2878,6 @@ void BrowserChild::MakeHidden() {
     
     
     if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
-      if (nsPresContext* presContext = presShell->GetPresContext()) {
-        nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
-        nsIFrame* rootFrame = presShell->GetRootFrame();
-        rootPresContext->ComputePluginGeometryUpdates(rootFrame, nullptr,
-                                                      nullptr);
-        rootPresContext->ApplyPluginGeometryUpdates();
-      }
       presShell->SetIsActive(false);
     }
   }

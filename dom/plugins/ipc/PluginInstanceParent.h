@@ -283,12 +283,6 @@ class PluginInstanceParent : public PPluginInstanceParent {
                                                    int32_t* aLength);
   mozilla::ipc::IPCResult RecvRequestCommitOrCancel(const bool& aCommitted);
 
-  
-  nsresult HandledWindowedPluginKeyEvent(
-      const mozilla::NativeEventData& aKeyEventData, bool aIsConsumed);
-  mozilla::ipc::IPCResult RecvOnWindowedPluginKeyEvent(
-      const mozilla::NativeEventData& aKeyEventData);
-
  private:
   
   

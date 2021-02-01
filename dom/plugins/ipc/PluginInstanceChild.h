@@ -207,9 +207,6 @@ class PluginInstanceChild : public PPluginInstanceChild {
 
   void DoAsyncRedraw();
 
-  mozilla::ipc::IPCResult RecvHandledWindowedPluginKeyEvent(
-      const NativeEventData& aKeyEventData, const bool& aIsConsumed);
-
 #if defined(XP_WIN)
   NPError DefaultAudioDeviceChanged(NPAudioDeviceChangeDetails& details);
   NPError AudioDeviceStateChanged(NPAudioDeviceStateChanged& aDeviceState);
@@ -311,8 +308,6 @@ class PluginInstanceChild : public PPluginInstanceChild {
     bool mWindowed;
   };
 
-  bool ShouldPostKeyMessage(UINT message, WPARAM wParam, LPARAM lParam);
-  bool MaybePostKeyMessage(UINT message, WPARAM wParam, LPARAM lParam);
 #endif  
   const NPPluginFuncs* mPluginIface;
   nsCString mMimeType;
@@ -324,8 +319,6 @@ class PluginInstanceChild : public PPluginInstanceChild {
   double mContentsScaleFactor;
 #endif
   double mCSSZoomFactor;
-  uint32_t mPostingKeyEvents;
-  uint32_t mPostingKeyEventsOutdated;
   int16_t mDrawingModel;
 
   NPAsyncSurface* mCurrentDirectSurface;
@@ -575,18 +568,8 @@ class PluginInstanceChild : public PPluginInstanceChild {
 #ifdef XP_WIN
   
   
-  
-  
-  bool mLastKeyEventConsumed;
-
-  
-  
   bool mLastEnableIMEState;
 #endif  
-
-  
-  
-  static bool sIsIMEComposing;
 
   
   
