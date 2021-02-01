@@ -27,6 +27,11 @@ const STORAGE_KEY = "testKey";
 
 
 
+let skipLocalStorageTests = !Services.prefs.getBoolPref("dom.storage.next_gen");
+
+
+
+
 
 
 
@@ -505,6 +510,11 @@ add_task(async function cookieClearFirstParty() {
 
 
 add_task(async function localStorageClearThirdParty() {
+  
+  if (skipLocalStorageTests) {
+    info("Skipping test");
+    return;
+  }
   await runClearSiteDataTest(
     
     () => setupInitialStorageState("localStorage"),
@@ -539,6 +549,11 @@ add_task(async function localStorageClearThirdParty() {
 
 
 add_task(async function localStorageClearFirstParty() {
+  
+  if (skipLocalStorageTests) {
+    info("Skipping test");
+    return;
+  }
   await runClearSiteDataTest(
     
     () => setupInitialStorageState("localStorage"),
