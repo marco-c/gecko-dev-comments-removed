@@ -1625,8 +1625,30 @@ impl Compositor for SwCompositor {
     
     
     
-    fn start_compositing(&mut self, dirty_rects: &[DeviceIntRect]) {
-        self.compositor.start_compositing(dirty_rects);
+    fn start_compositing(
+        &mut self,
+        dirty_rects: &[DeviceIntRect],
+        _opaque_rects: &[DeviceIntRect],
+    ) {
+        
+        
+        
+        let mut opaque_rects : Vec<DeviceIntRect> = Vec::new();
+        for &(ref id, ref transform, ref clip_rect, _filter) in &self.frame_surfaces {
+            if let Some(surface) = self.surfaces.get(id) {
+                if !surface.is_opaque {
+                    continue;
+                }
+
+                for tile in &surface.tiles {
+                    if let Some(rect) = tile.overlap_rect(surface, transform, clip_rect) {
+                        opaque_rects.push(rect);
+                    }
+                }
+            }
+        }
+
+        self.compositor.start_compositing(dirty_rects, &opaque_rects);
 
         if dirty_rects.len() == 1 {
             
