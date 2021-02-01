@@ -36,12 +36,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-XPCOMUtils.defineLazyGetter(this, "gTabBrowserBundle", () => {
-  return Services.strings.createBundle(
-    "chrome://browser/locale/tabbrowser.properties"
-  );
-});
-
 
 
 
@@ -287,8 +281,7 @@ class PromptParent extends JSWindowActorParent {
       args.promptAborted = false;
       args.openedWithTabDialog = true;
 
-      
-      let bag;
+      let bag = PromptUtils.objectToPropBag(args);
 
       if (
         args.modalType === Services.prompt.MODAL_TYPE_TAB ||
@@ -303,24 +296,16 @@ class PromptParent extends JSWindowActorParent {
         }
         
         let dialogBox = win.gBrowser.getTabDialogBox(browser);
-
-        if (dialogBox._allowTabFocusByPromptPrincipal) {
-          this.addTabSwitchCheckboxToArgs(dialogBox, args);
-        }
-
-        bag = PromptUtils.objectToPropBag(args);
         await dialogBox.open(
           uri,
           {
             features: "resizable=no",
             modalType: args.modalType,
-            allowFocusCheckbox: args.allowFocusCheckbox,
           },
           bag
         );
       } else {
         
-        bag = PromptUtils.objectToPropBag(args);
         Services.ww.openWindow(
           win,
           uri,
@@ -368,32 +353,5 @@ class PromptParent extends JSWindowActorParent {
         : null;
 
     return details;
-  }
-
-  
-
-
-
-
-
-
-
-
-  addTabSwitchCheckboxToArgs(dialogBox, args) {
-    let allowTabFocusByPromptPrincipal =
-      dialogBox._allowTabFocusByPromptPrincipal;
-
-    if (
-      allowTabFocusByPromptPrincipal &&
-      args.modalType === Services.prompt.MODAL_TYPE_CONTENT
-    ) {
-      let allowTabswitchCheckboxLabel = gTabBrowserBundle.formatStringFromName(
-        "tabs.allowTabFocusByPromptForSite",
-        [allowTabFocusByPromptPrincipal.URI.host]
-      );
-
-      args.allowFocusCheckbox = true;
-      args.checkLabel = allowTabswitchCheckboxLabel;
-    }
   }
 }

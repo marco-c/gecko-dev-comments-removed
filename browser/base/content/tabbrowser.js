@@ -5460,12 +5460,9 @@
               );
               if (permission != Services.perms.ALLOW_ACTION) {
                 
-                let tabPrompt = Services.prefs.getBoolPref(
-                  "prompts.contentPromptSubDialog"
-                )
-                  ? this.getTabDialogBox(tabForEvent.linkedBrowser)
-                  : this.getTabModalPromptBox(tabForEvent.linkedBrowser);
-
+                let tabPrompt = this.getTabModalPromptBox(
+                  tabForEvent.linkedBrowser
+                );
                 tabPrompt.onNextPromptShowAllowFocusCheckboxFor(
                   promptPrincipal
                 );
