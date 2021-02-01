@@ -113,7 +113,6 @@ class TRRServiceChannel : public HttpBaseChannel,
   virtual ~TRRServiceChannel();
 
   void CancelNetworkRequest(nsresult aStatus);
-  const nsCString& GetTopWindowOrigin();
   nsresult BeginConnect();
   nsresult ContinueOnBeforeConnect();
   nsresult Connect();
@@ -139,13 +138,7 @@ class TRRServiceChannel : public HttpBaseChannel,
   virtual bool SameOriginWithOriginalUri(nsIURI* aURI) override;
   bool DispatchRelease();
 
-  
-  bool mTopWindowOriginComputed;
-
   nsCString mUsername;
-  
-  
-  nsCString mTopWindowOrigin;
 
   
   RefPtr<nsDNSPrefetch> mDNSPrefetch;

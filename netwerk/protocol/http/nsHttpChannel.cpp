@@ -3654,44 +3654,6 @@ nsresult nsHttpChannel::OpenCacheEntry(bool isHttps) {
   return OpenCacheEntryInternal(isHttps, mApplicationCache, true);
 }
 
-bool nsHttpChannel::IsIsolated() {
-  return false;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-}
-
-const nsCString& nsHttpChannel::GetTopWindowOrigin() {
-  if (LoadTopWindowOriginComputed()) {
-    return mTopWindowOrigin;
-  }
-
-  nsCOMPtr<nsIURI> topWindowURI;
-  nsresult rv = GetTopWindowURI(getter_AddRefs(topWindowURI));
-  bool isDocument = false;
-  if (NS_FAILED(rv) && NS_SUCCEEDED(GetIsMainDocumentChannel(&isDocument)) &&
-      isDocument) {
-    
-    
-    rv = NS_GetFinalChannelURI(this, getter_AddRefs(topWindowURI));
-    NS_ENSURE_SUCCESS(rv, mTopWindowOrigin);
-  }
-
-  rv = nsContentUtils::GetASCIIOrigin(topWindowURI ? topWindowURI : mURI,
-                                      mTopWindowOrigin);
-  NS_ENSURE_SUCCESS(rv, mTopWindowOrigin);
-
-  StoreTopWindowOriginComputed(true);
-
-  return mTopWindowOrigin;
-}
-
 nsresult nsHttpChannel::OpenCacheEntryInternal(
     bool isHttps, nsIApplicationCache* applicationCache,
     bool allowApplicationCache) {
