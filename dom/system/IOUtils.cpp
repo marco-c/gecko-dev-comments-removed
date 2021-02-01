@@ -47,10 +47,6 @@
 #include "prtime.h"
 #include "prtypes.h"
 
-#ifndef ANDROID
-#  include "nsSystemInfo.h"
-#endif
-
 #define REJECT_IF_SHUTTING_DOWN(aJSPromise)                       \
   do {                                                            \
     if (sShutdownStarted) {                                       \
@@ -592,8 +588,7 @@ already_AddRefed<Promise> IOUtils::GetChildren(GlobalObject& aGlobal,
 
 already_AddRefed<Promise> IOUtils::SetPermissions(GlobalObject& aGlobal,
                                                   const nsAString& aPath,
-                                                  uint32_t aPermissions,
-                                                  const bool aHonorUmask) {
+                                                  const uint32_t aPermissions) {
   MOZ_ASSERT(XRE_IsParentProcess());
   RefPtr<Promise> promise = CreateJSPromise(aGlobal);
   if (!promise) {
@@ -602,12 +597,6 @@ already_AddRefed<Promise> IOUtils::SetPermissions(GlobalObject& aGlobal,
 
   nsCOMPtr<nsIFile> file = new nsLocalFile();
   REJECT_IF_INIT_PATH_FAILED(file, aPath, promise);
-
-#if defined(XP_UNIX) && !defined(ANDROID)
-  if (aHonorUmask) {
-    aPermissions &= ~nsSystemInfo::gUserUmask;
-  }
-#endif
 
   RunOnBackgroundThreadAndResolve<Ok>(
       promise, [file = std::move(file), permissions = aPermissions]() {
@@ -1147,9 +1136,6 @@ Result<Ok, IOUtils::IOError> IOUtils::CopyOrMoveSync(CopyOrMoveFn aMethod,
   MOZ_TRY(aDest->GetParent(getter_AddRefs(destDir)));
 
   
-  MOZ_RELEASE_ASSERT(destDir);
-
-  
   
   rv = (aSource->*aMethod)(destDir, destName);
   if (NS_FAILED(rv)) {
@@ -1203,21 +1189,15 @@ Result<Ok, IOUtils::IOError> IOUtils::MakeDirectorySync(nsIFile* aFile,
   if (!aCreateAncestors) {
     nsCOMPtr<nsIFile> parent;
     MOZ_TRY(aFile->GetParent(getter_AddRefs(parent)));
-    if (parent) {
-      bool parentExists = false;
-      MOZ_TRY(parent->Exists(&parentExists));
-      if (!parentExists) {
-        return Err(IOError(NS_ERROR_FILE_NOT_FOUND)
-                       .WithMessage("Could not create directory at %s because "
-                                    "the path has missing "
-                                    "ancestor components",
-                                    aFile->HumanReadablePath().get()));
-      }
+    bool parentExists = false;
+    MOZ_TRY(parent->Exists(&parentExists));
+    if (!parentExists) {
+      return Err(IOError(NS_ERROR_FILE_NOT_FOUND)
+                     .WithMessage("Could not create directory at %s because "
+                                  "the path has missing "
+                                  "ancestor components",
+                                  aFile->HumanReadablePath().get()));
     }
-    
-    
-    
-    
   }
 
   nsresult rv = aFile->Create(nsIFile::DIRECTORY_TYPE, aMode);
