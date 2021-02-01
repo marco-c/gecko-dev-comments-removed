@@ -18,18 +18,6 @@ class ContextMenuParent extends JSWindowActorParent {
     if (!win.openContextMenu) {
       let topBrowser = browser.ownerGlobal.docShell.chromeEventHandler;
       win = topBrowser.ownerGlobal;
-
-      
-      
-      
-      
-      
-      if (win.gBrowser) {
-        let tab = win.gBrowser.getTabForBrowser(browser);
-        if (tab && tab.isResponsiveDesignMode) {
-          browser = topBrowser;
-        }
-      }
     }
 
     win.openContextMenu(message, browser, this);

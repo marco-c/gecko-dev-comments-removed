@@ -214,13 +214,6 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
 
   async _onRemotenessChange() {
     
-    
-    
-    if (this.localTab.isResponsiveDesignMode) {
-      return;
-    }
-
-    
     if (this.isDevToolsExtensionContext) {
       return;
     }
