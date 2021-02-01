@@ -14,7 +14,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   BrowserSearchTelemetry: "resource:///modules/BrowserSearchTelemetry.jsm",
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.jsm",
-  BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   ExtensionSearchHandler: "resource://gre/modules/ExtensionSearchHandler.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
@@ -3262,6 +3261,7 @@ function getDroppableData(event) {
       
       
       
+      
       let url = new URL(href);
       
       
@@ -3269,9 +3269,9 @@ function getDroppableData(event) {
         let principal = Services.droppedLinkHandler.getTriggeringPrincipal(
           event
         );
-        BrowserUtils.urlSecurityCheck(
-          url,
+        Services.scriptSecurityManager.checkLoadURIStrWithPrincipal(
           principal,
+          url.href,
           Ci.nsIScriptSecurityManager.DISALLOW_INHERIT_PRINCIPAL
         );
         return url;
