@@ -411,6 +411,10 @@ class FunctionBox : public SuspendableContext {
   bool isFunctionFieldCopiedToStencil : 1;
 
   
+  
+  bool isInitialCompilation : 1;
+
+  
 
   FunctionBox(JSContext* cx, SourceExtent extent, CompilationStencil& stencil,
               CompilationState& compilationState, Directives directives,
@@ -419,8 +423,6 @@ class FunctionBox : public SuspendableContext {
 
   ScriptStencil& functionStencil() const;
   ScriptStencilExtra& functionExtraStencil() const;
-
-  bool hasFunctionExtraStencil() const;
 
   LexicalScope::ParserData* namedLambdaBindings() {
     return namedLambdaBindings_;
