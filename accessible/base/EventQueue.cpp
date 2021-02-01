@@ -14,6 +14,7 @@
 #ifdef A11Y_LOG
 #  include "Logging.h"
 #endif
+#include "Relation.h"
 
 namespace mozilla {
 namespace a11y {
@@ -51,28 +52,38 @@ bool EventQueue::PushNameChange(Accessible* aTarget) {
   
   
   
+  bool pushed = false;
+  bool checkAncestor = true;
   if (aTarget->HasNameDependent()) {
+    
     
     
     Accessible* parent = aTarget->Parent();
     while (parent &&
            nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeIfReqRule)) {
       
-      if (nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeRule)) {
+      if (checkAncestor &&
+          nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeRule)) {
         nsAutoString name;
         ENameValueFlag nameFlag = parent->Name(name);
         
         if (nameFlag == eNameFromSubtree) {
           RefPtr<AccEvent> nameChangeEvent =
               new AccEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, parent);
-          return PushEvent(nameChangeEvent);
+          pushed |= PushEvent(nameChangeEvent);
         }
-        break;
+        checkAncestor = false;
+      }
+      Relation rel = parent->RelationByType(RelationType::LABEL_FOR);
+      while (Accessible* relTarget = rel.Next()) {
+        RefPtr<AccEvent> nameChangeEvent =
+            new AccEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, relTarget);
+        pushed |= PushEvent(nameChangeEvent);
       }
       parent = parent->Parent();
     }
   }
-  return false;
+  return pushed;
 }
 
 

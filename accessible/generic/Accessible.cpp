@@ -2069,8 +2069,8 @@ void Accessible::BindToParent(Accessible* aParent, uint32_t aIndexInParent) {
   mParent = aParent;
   mIndexInParent = aIndexInParent;
 
-  
-  if (mParent->HasNameDependent() || mParent->IsXULListItem()) {
+  if (mParent->HasNameDependent() || mParent->IsXULListItem() ||
+      RelationByType(RelationType::LABEL_FOR).Next()) {
     mContextFlags |= eHasNameDependent;
   } else {
     mContextFlags &= ~eHasNameDependent;

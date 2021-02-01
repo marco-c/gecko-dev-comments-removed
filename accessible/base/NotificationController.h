@@ -117,7 +117,6 @@ class NotificationController final : public EventQueue,
 
 
 
-
   void QueueNameChange(Accessible* aChangeTarget) {
     if (PushNameChange(aChangeTarget)) {
       ScheduleProcessing();
