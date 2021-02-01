@@ -1189,9 +1189,6 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
     scriptp.set(script);
 
     
-    script->resetArgsUsageAnalysis();
-
-    
     
     if (isFunctionScript) {
       funOrMod->as<JSFunction>().initScript(script);
@@ -3872,9 +3869,6 @@ bool JSScript::fullyInitFromStencil(
                                                 .immutableFlags);
 
   
-  script->resetArgsUsageAnalysis();
-
-  
   if (!PrivateScriptData::InitFromStencil(cx, script, input, stencil, gcOutput,
                                           scriptIndex)) {
     return false;
@@ -3961,14 +3955,6 @@ JSScript* JSScript::fromStencil(JSContext* cx,
   }
 
   return script;
-}
-
-void JSScript::resetArgsUsageAnalysis() {
-  MOZ_ASSERT_IF(alwaysNeedsArgsObj(), argumentsHasVarBinding());
-  if (argumentsHasVarBinding()) {
-    setFlag(MutableFlags::NeedsArgsObj, alwaysNeedsArgsObj());
-    setFlag(MutableFlags::NeedsArgsAnalysis, !alwaysNeedsArgsObj());
-  }
 }
 
 #ifdef DEBUG
@@ -4535,9 +4521,6 @@ static JSScript* CopyScriptImpl(JSContext* cx, HandleScript src,
   if (!dst) {
     return nullptr;
   }
-
-  
-  dst->resetArgsUsageAnalysis();
 
   
   if (src->isInlinableLargeFunction()) {
