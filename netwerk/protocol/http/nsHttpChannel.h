@@ -544,6 +544,10 @@ class nsHttpChannel final : public HttpBaseChannel,
   void SetOriginHeader();
   void SetDoNotTrack();
 
+  bool IsIsolated();
+
+  const nsCString& GetTopWindowOrigin();
+
   already_AddRefed<nsChannelClassifier> GetOrCreateChannelClassifier();
 
   
@@ -718,6 +722,17 @@ class nsHttpChannel final : public HttpBaseChannel,
 
     
     
+    (uint32_t, HasBeenIsolatedChecked, 1),
+    
+    
+    
+    (uint32_t, IsIsolated, 1),
+
+    
+    (uint32_t, TopWindowOriginComputed, 1),
+
+    
+    
     (uint32_t, DataSentToChildProcess, 1),
 
     (uint32_t, UseHTTPSSVC, 1),
@@ -733,6 +748,10 @@ class nsHttpChannel final : public HttpBaseChannel,
     (uint32_t, EchConfigUsed, 1)
   ))
   
+
+  
+  
+  nsCString mTopWindowOrigin;
 
   nsTArray<nsContinueRedirectionFunc> mRedirectFuncStack;
 
