@@ -1753,6 +1753,7 @@ both:
 
 
 
+
     async ReportFrameTimingData(uint64_t innerWindowId, nsString entryName,
                                 nsString initiatorType,
                                 UniquePtr<PerformanceTimingData> aData);

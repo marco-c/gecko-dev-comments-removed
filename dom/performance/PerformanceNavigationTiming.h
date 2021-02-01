@@ -39,6 +39,7 @@ class PerformanceNavigationTiming final : public PerformanceResourceTiming {
   
   
   
+  
   PerformanceNavigationTiming(
       UniquePtr<PerformanceTimingData>&& aPerformanceTiming,
       Performance* aPerformance, const nsAString& aName)
