@@ -707,15 +707,15 @@ class ResourceWatcher {
 
 
 
-  _watchResourcesForTarget(targetFront, resourceType) {
+  async _watchResourcesForTarget(targetFront, resourceType) {
     if (this._hasResourceWatcherSupportForTarget(resourceType, targetFront)) {
       
       
-      return Promise.resolve();
+      return;
     }
 
     if (targetFront.isDestroyed()) {
-      return Promise.resolve();
+      return;
     }
 
     const onAvailable = this._onResourceAvailable.bind(this, { targetFront });
@@ -732,20 +732,32 @@ class ResourceWatcher {
       console.error(
         `Already started legacy listener for ${resourceType} on ${targetFront.actorID}`
       );
-      return Promise.resolve();
+      return;
     }
     this._existingLegacyListeners.set(
       targetFront,
       legacyListeners.concat(resourceType)
     );
 
-    return LegacyListeners[resourceType]({
-      targetList: this.targetList,
-      targetFront,
-      onAvailable,
-      onDestroyed,
-      onUpdated,
-    });
+    try {
+      await LegacyListeners[resourceType]({
+        targetList: this.targetList,
+        targetFront,
+        onAvailable,
+        onDestroyed,
+        onUpdated,
+      });
+    } catch (e) {
+      
+      
+      
+      
+      
+      console.error(
+        `Failed to start [${resourceType}] legacy listener for target ${targetFront.actorID}`,
+        e
+      );
+    }
   }
 
   
