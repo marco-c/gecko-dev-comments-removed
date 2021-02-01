@@ -24,17 +24,18 @@
 #include "frontend/NameCollections.h"  
 #include "frontend/ObjLiteral.h"       
 #include "frontend/ParseNode.h"        
-#include "frontend/SourceNotes.h"      
-#include "frontend/Stencil.h"          
-#include "gc/Rooting.h"                
-#include "js/GCVariant.h"              
-#include "js/GCVector.h"               
-#include "js/TypeDecls.h"              
-#include "js/Value.h"                  
-#include "js/Vector.h"                 
-#include "vm/Opcodes.h"                
-#include "vm/SharedStencil.h"          
-#include "vm/StencilEnums.h"           
+#include "frontend/ParserAtom.h"   
+#include "frontend/SourceNotes.h"  
+#include "frontend/Stencil.h"      
+#include "gc/Rooting.h"            
+#include "js/GCVariant.h"          
+#include "js/GCVector.h"           
+#include "js/TypeDecls.h"          
+#include "js/Value.h"              
+#include "js/Vector.h"             
+#include "vm/Opcodes.h"            
+#include "vm/SharedStencil.h"      
+#include "vm/StencilEnums.h"       
 
 namespace js {
 
@@ -58,10 +59,10 @@ struct MOZ_STACK_CLASS GCThingList {
   explicit GCThingList(JSContext* cx, CompilationState& compilationState)
       : compilationState(compilationState), vector(cx) {}
 
-  MOZ_MUST_USE bool append(const ParserAtom* atom, GCThingIndex* index) {
+  MOZ_MUST_USE bool append(TaggedParserAtomIndex atom, GCThingIndex* index) {
     *index = GCThingIndex(vector.length());
-    atom->markUsedByStencil();
-    if (!vector.emplaceBack(atom->toIndex())) {
+    compilationState.parserAtoms.markUsedByStencil(atom);
+    if (!vector.emplaceBack(atom)) {
       return false;
     }
     return true;
