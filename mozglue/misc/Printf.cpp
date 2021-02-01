@@ -227,7 +227,9 @@ bool mozilla::PrintfTarget::cvt_l(long num, int width, int prec, int radix,
   int digits;
 
   
-  if ((prec == 0) && (num == 0)) return true;
+  if ((prec == 0) && (num == 0)) {
+    return fill_n("", 0, width, prec, type, flags);
+  }
 
   
   
@@ -254,7 +256,9 @@ bool mozilla::PrintfTarget::cvt_l(long num, int width, int prec, int radix,
 bool mozilla::PrintfTarget::cvt_ll(int64_t num, int width, int prec, int radix,
                                    int type, int flags, const char* hexp) {
   
-  if (prec == 0 && num == 0) return true;
+  if (prec == 0 && num == 0) {
+    return fill_n("", 0, width, prec, type, flags);
+  }
 
   
   
