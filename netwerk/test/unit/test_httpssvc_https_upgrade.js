@@ -62,6 +62,11 @@ function setup() {
     "https://foo.example.com:" + h2Port + "/httpssvc_as_altsvc"
   );
 
+  Services.prefs.setBoolPref(
+    "network.dns.use_https_rr_for_speculative_connection",
+    true
+  );
+
   
   
   const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
@@ -88,6 +93,7 @@ registerCleanupFunction(() => {
   prefs.clearUserPref("network.trr.clear-cache-on-pref-change");
   prefs.clearUserPref("network.dns.upgrade_with_https_rr");
   prefs.clearUserPref("network.dns.use_https_rr_as_altsvc");
+  prefs.clearUserPref("network.dns.use_https_rr_for_speculative_connection");
 });
 
 class DNSListener {
