@@ -825,9 +825,7 @@ void IonScript::trace(JSTracer* trc) {
 
 
 void IonScript::preWriteBarrier(Zone* zone, IonScript* ionScript) {
-  if (zone->needsIncrementalBarrier()) {
-    ionScript->trace(zone->barrierTracer());
-  }
+  PreWriteBarrier(zone, ionScript);
 }
 
 void IonScript::copySnapshots(const SnapshotWriter* writer) {
@@ -2446,14 +2444,12 @@ static void InvalidateActivation(JSFreeOp* fop,
 
     JitCode* ionCode = ionScript->method();
 
-    JS::Zone* zone = script->zone();
-    if (zone->needsIncrementalBarrier()) {
-      
-      
-      
-      
-      ionCode->traceChildren(zone->barrierTracer());
-    }
+    
+    
+    PreWriteBarrier(script->zone(), ionCode, [](JSTracer* trc, JitCode* code) {
+      code->traceChildren(trc);
+    });
+
     ionCode->setInvalidated();
 
     

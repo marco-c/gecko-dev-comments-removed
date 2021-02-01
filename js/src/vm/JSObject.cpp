@@ -1710,10 +1710,12 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
 
 
 
-  if (zone->needsIncrementalBarrier()) {
-    a->traceChildren(zone->barrierTracer());
-    b->traceChildren(zone->barrierTracer());
-  }
+  PreWriteBarrier(zone, a.get(), [](JSTracer* trc, JSObject* obj) {
+    obj->traceChildren(trc);
+  });
+  PreWriteBarrier(zone, b.get(), [](JSTracer* trc, JSObject* obj) {
+    obj->traceChildren(trc);
+  });
 
   NotifyGCPostSwap(a, b, r);
 }
