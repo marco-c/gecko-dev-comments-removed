@@ -859,14 +859,26 @@ void ScriptPreloader::NoteScript(const nsCString& url,
 void ScriptPreloader::FillCompileOptionsForCachedScript(
     JS::CompileOptions& options) {
   
+  
   options.setNoScriptRval(true);
-  MOZ_ASSERT(!options.selfHostingMode);
-  MOZ_ASSERT(!options.isRunOnce);
+
+  
+  
+  
+  
+  options.setSourceIsLazy(true);
 }
 
 JSScript* ScriptPreloader::GetCachedScript(
     JSContext* cx, const JS::ReadOnlyCompileOptions& options,
     const nsCString& path) {
+  
+  
+  MOZ_ASSERT(options.noScriptRval);
+  MOZ_ASSERT(!options.selfHostingMode);
+  MOZ_ASSERT(!options.isRunOnce);
+  MOZ_ASSERT(options.sourceIsLazy);
+
   
   
   if (mChildCache) {
@@ -1088,7 +1100,6 @@ void ScriptPreloader::DecodeNextBatch(size_t chunkSize,
 
   JS::CompileOptions options(cx);
   FillCompileOptionsForCachedScript(options);
-  options.setSourceIsLazy(true);
 
   if (!JS::CanCompileOffThread(cx, options, size) ||
       !JS::DecodeMultiOffThreadScripts(cx, options, mParsingSources,

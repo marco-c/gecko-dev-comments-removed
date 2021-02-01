@@ -121,25 +121,6 @@ static void ReportError(JSContext* cx, const char* origMsg, nsIURI* uri) {
   ReportError(cx, msg);
 }
 
-static void FillCompileOptions(JS::CompileOptions& options, const char* uriStr,
-                               bool wantGlobalScript, bool wantReturnValue) {
-  options.setFileAndLine(uriStr, 1).setNoScriptRval(!wantReturnValue);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  options.setSourceIsLazy(true);
-
-  if (!wantGlobalScript) {
-    options.setNonSyntacticScope(true);
-  }
-}
-
 static JSScript* PrepareScript(nsIURI* uri, JSContext* cx,
                                const JS::ReadOnlyCompileOptions& options,
                                const char* buf, int64_t len) {
@@ -472,12 +453,18 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   SubscriptCachePath(cx, uri, targetObj, cachePath);
 
   JS::CompileOptions compileOptions(cx);
-  FillCompileOptions(compileOptions, uriStr.get(), JS_IsGlobalObject(targetObj),
-                     options.wantReturnValue);
+  ScriptPreloader::FillCompileOptionsForCachedScript(compileOptions);
+  compileOptions.setFileAndLine(uriStr.get(), 1);
+  compileOptions.setNonSyntacticScope(!JS_IsGlobalObject(targetObj));
+
+  if (options.wantReturnValue) {
+    compileOptions.setNoScriptRval(false);
+  }
 
   RootedScript script(cx);
   if (!options.ignoreCache) {
     if (!options.wantReturnValue) {
+      
       script = ScriptPreloader::GetSingleton().GetCachedScript(
           cx, compileOptions, cachePath);
     }
