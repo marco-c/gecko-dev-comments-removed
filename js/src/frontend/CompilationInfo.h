@@ -237,6 +237,7 @@ struct MOZ_RAII CompilationState {
   
   Vector<RegExpStencil, 0, js::SystemAllocPolicy> regExpData;
   Vector<BigIntStencil, 0, js::SystemAllocPolicy> bigIntData;
+  Vector<ObjLiteralStencil, 0, js::SystemAllocPolicy> objLiteralData;
   Vector<ScriptStencil, 0, js::SystemAllocPolicy> scriptData;
   Vector<ScriptStencilExtra, 0, js::SystemAllocPolicy> scriptExtra;
   Vector<ScopeStencil, 0, js::SystemAllocPolicy> scopeData;
@@ -359,7 +360,7 @@ struct BaseCompilationStencil {
   
   mozilla::Span<RegExpStencil> regExpData;
   mozilla::Span<BigIntStencil> bigIntData;
-  Vector<ObjLiteralStencil, 0, js::SystemAllocPolicy> objLiteralData;
+  mozilla::Span<ObjLiteralStencil> objLiteralData;
 
   
   
