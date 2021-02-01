@@ -1956,6 +1956,14 @@ impl Renderer {
                 let surface_size = self.debug_overlay_state.current_size.unwrap();
 
                 
+                compositor.invalidate_tile(
+                    NativeTileId::DEBUG_OVERLAY,
+                    DeviceIntRect::new(
+                        DeviceIntPoint::zero(),
+                        surface_size,
+                    ),
+                );
+                
                 let surface_info = compositor.bind(
                     NativeTileId::DEBUG_OVERLAY,
                     DeviceIntRect::new(
