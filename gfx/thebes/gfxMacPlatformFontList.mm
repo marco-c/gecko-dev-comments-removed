@@ -809,7 +809,14 @@ void gfxSingleFaceMacFontFamily::ReadOtherFamilyNames(gfxPlatformFontList* aPlat
 
 
 
-#define LANG_FONTS_DIR "/Library/Application Support/Apple/Fonts/Language Support"
+
+
+
+
+
+static const nsLiteralCString kLangFontsDirs[] = {
+    "/Library/Application Support/Apple/Fonts/Language Support"_ns,
+    "/System/Library/Fonts/Supplemental"_ns};
 
 gfxMacPlatformFontList::gfxMacPlatformFontList()
     : gfxPlatformFontList(false), mDefaultFont(nullptr), mUseSizeSensitiveSystemFont(false) {
@@ -823,12 +830,14 @@ gfxMacPlatformFontList::gfxMacPlatformFontList()
   }
 #endif
 
-  nsresult rv;
-  nsCOMPtr<nsIFile> langFonts(do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv));
-  if (NS_SUCCEEDED(rv)) {
-    rv = langFonts->InitWithNativePath(nsLiteralCString(LANG_FONTS_DIR));
+  for (const auto& dir : kLangFontsDirs) {
+    nsresult rv;
+    nsCOMPtr<nsIFile> langFonts(do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv));
     if (NS_SUCCEEDED(rv)) {
-      ActivateFontsFromDir(langFonts);
+      rv = langFonts->InitWithNativePath(dir);
+      if (NS_SUCCEEDED(rv)) {
+        ActivateFontsFromDir(langFonts);
+      }
     }
   }
 
