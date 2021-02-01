@@ -471,8 +471,34 @@ static MOZ_ALWAYS_INLINE bool NumberIsInt32(T aValue, int32_t* aInt32) {
 
 
 template <typename T>
+static MOZ_ALWAYS_INLINE bool NumberIsInt64(T aValue, int64_t* aInt64) {
+  return detail::NumberIsSignedInteger(aValue, aInt64);
+}
+
+
+
+
+
+
+
+
+
+template <typename T>
 static MOZ_ALWAYS_INLINE bool NumberEqualsInt32(T aValue, int32_t* aInt32) {
   return detail::NumberEqualsSignedInteger(aValue, aInt32);
+}
+
+
+
+
+
+
+
+
+
+template <typename T>
+static MOZ_ALWAYS_INLINE bool NumberEqualsInt64(T aValue, int64_t* aInt64) {
+  return detail::NumberEqualsSignedInteger(aValue, aInt64);
 }
 
 
