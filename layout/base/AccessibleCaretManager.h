@@ -127,6 +127,11 @@ class AccessibleCaretManager {
   bool ShouldDisableApz() const;
 
  protected:
+  class Carets;
+
+  
+  AccessibleCaretManager(PresShell* aPresShell, Carets aCarets);
+
   
   enum class CaretMode : uint8_t {
     
@@ -314,7 +319,15 @@ class AccessibleCaretManager {
   
   PresShell* MOZ_NON_OWNING_REF mPresShell = nullptr;
 
-  struct Carets {
+  class Carets {
+   public:
+    Carets(UniquePtr<AccessibleCaret> aFirst,
+           UniquePtr<AccessibleCaret> aSecond);
+
+    Carets(Carets&&) = default;
+    Carets(const Carets&) = delete;
+    Carets& operator=(const Carets&) = delete;
+
     AccessibleCaret* GetFirst() const { return mFirst.get(); }
 
     AccessibleCaret* GetSecond() const { return mSecond.get(); }
@@ -327,6 +340,12 @@ class AccessibleCaretManager {
       return mFirst->IsVisuallyVisible() || mSecond->IsVisuallyVisible();
     }
 
+    void Terminate() {
+      mFirst = nullptr;
+      mSecond = nullptr;
+    }
+
+   private:
     
     
     UniquePtr<AccessibleCaret> mFirst;
