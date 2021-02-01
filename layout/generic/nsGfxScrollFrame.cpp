@@ -6749,21 +6749,23 @@ void ScrollFrameHelper::LayoutScrollbars(nsBoxLayoutState& aState,
     if (hasResizer) {
       
       
-      nscoord defaultSize = nsPresContext::CSSPixelsToAppUnits(15);
+      
+      nsPresContext* pc = aState.PresContext();
+      auto scrollbarWidth = nsLayoutUtils::StyleForScrollbar(mOuter)
+                                ->StyleUIReset()
+                                ->mScrollbarWidth;
+      auto sizes = pc->Theme()->GetScrollbarSizes(pc, scrollbarWidth,
+                                                  nsITheme::Overlay::No);
       nsSize resizerMinSize = mResizerBox->GetXULMinSize(aState);
 
-      nscoord vScrollbarWidth =
-          mVScrollbarBox ? mVScrollbarBox->GetXULPrefSize(aState).width
-                         : defaultSize;
+      nscoord vScrollbarWidth = pc->DevPixelsToAppUnits(sizes.mVertical);
       r.width =
           std::max(std::max(r.width, vScrollbarWidth), resizerMinSize.width);
       if (aContentArea.x == mScrollPort.x && !scrollbarOnLeft) {
         r.x = aContentArea.XMost() - r.width;
       }
 
-      nscoord hScrollbarHeight =
-          mHScrollbarBox ? mHScrollbarBox->GetXULPrefSize(aState).height
-                         : defaultSize;
+      nscoord hScrollbarHeight = pc->DevPixelsToAppUnits(sizes.mHorizontal);
       r.height =
           std::max(std::max(r.height, hScrollbarHeight), resizerMinSize.height);
       if (aContentArea.y == mScrollPort.y) {
