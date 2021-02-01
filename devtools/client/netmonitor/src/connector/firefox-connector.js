@@ -155,10 +155,7 @@ class FirefoxConnector {
     });
 
     
-    if (isTargetSwitching) {
-      await this.addTargetListeners();
-    } else {
-      
+    if (!isTargetSwitching) {
       await this.addListeners();
     }
 
@@ -229,6 +226,21 @@ class FirefoxConnector {
             break;
           }
         }
+        continue;
+      }
+
+      if (resource.resourceType === TYPES.SERVER_SENT_EVENT) {
+        const { messageType, httpChannelId, data } = resource;
+        switch (messageType) {
+          case "eventSourceConnectionClosed": {
+            this.dataProvider.onEventSourceConnectionClosed(httpChannelId);
+            break;
+          }
+          case "eventReceived": {
+            this.dataProvider.onEventReceived(httpChannelId, data);
+            break;
+          }
+        }
       }
     }
   }
@@ -254,31 +266,21 @@ class FirefoxConnector {
       targetResources.push(this.toolbox.resourceWatcher.TYPES.WEBSOCKET);
     }
 
-    await this.toolbox.resourceWatcher.watchResources(targetResources, {
-      onAvailable: this.onResourceAvailable,
-      onUpdated: this.onResourceUpdated,
-      ignoreExistingResources,
-    });
-
-    await this.addTargetListeners();
-  }
-
-  async addTargetListeners() {
-    
     if (
       Services.prefs.getBoolPref(
         "devtools.netmonitor.features.serverSentEvents"
       )
     ) {
-      const eventSourceFront = await this.currentTarget.getFront("eventSource");
-      eventSourceFront.startListening();
-
-      eventSourceFront.on(
-        "eventSourceConnectionClosed",
-        this.dataProvider.onEventSourceConnectionClosed
+      targetResources.push(
+        this.toolbox.resourceWatcher.TYPES.SERVER_SENT_EVENT
       );
-      eventSourceFront.on("eventReceived", this.dataProvider.onEventReceived);
     }
+
+    await this.toolbox.resourceWatcher.watchResources(targetResources, {
+      onAvailable: this.onResourceAvailable,
+      onUpdated: this.onResourceUpdated,
+      ignoreExistingResources,
+    });
   }
 
   removeListeners() {
@@ -287,21 +289,13 @@ class FirefoxConnector {
         this.toolbox.resourceWatcher.TYPES.NETWORK_EVENT,
         this.toolbox.resourceWatcher.TYPES.NETWORK_EVENT_STACKTRACE,
         this.toolbox.resourceWatcher.TYPES.WEBSOCKET,
+        this.toolbox.resourceWatcher.TYPES.SERVER_SENT_EVENT,
       ],
       {
         onAvailable: this.onResourceAvailable,
         onUpdated: this.onResourceUpdated,
       }
     );
-
-    const eventSourceFront = this.currentTarget.getCachedFront("eventSource");
-    if (eventSourceFront) {
-      eventSourceFront.off(
-        "eventSourceConnectionClosed",
-        this.dataProvider.onEventSourceConnectionClosed
-      );
-      eventSourceFront.off("eventReceived", this.dataProvider.onEventReceived);
-    }
   }
 
   enableActions(enable) {
