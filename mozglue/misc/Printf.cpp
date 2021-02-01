@@ -10,6 +10,7 @@
 
 
 
+#include "double-conversion/double-conversion.h"
 #include "mozilla/AllocPolicy.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Printf.h"
@@ -25,6 +26,9 @@
 #if defined(XP_WIN)
 #  include <windows.h>
 #endif
+
+using double_conversion::DoubleToStringConverter;
+using DTSC = DoubleToStringConverter;
 
 
 
@@ -49,6 +53,8 @@ struct NumArgState {
 typedef mozilla::Vector<NumArgState, 20, mozilla::MallocAllocPolicy>
     NumArgStateVector;
 
+
+
 #define TYPE_SHORT 0
 #define TYPE_USHORT 1
 #define TYPE_INTN 2
@@ -57,8 +63,8 @@ typedef mozilla::Vector<NumArgState, 20, mozilla::MallocAllocPolicy>
 #define TYPE_ULONG 5
 #define TYPE_LONGLONG 6
 #define TYPE_ULONGLONG 7
-#define TYPE_STRING 8
-#define TYPE_DOUBLE 9
+#define TYPE_DOUBLE 8
+#define TYPE_STRING 9
 #define TYPE_INTSTR 10
 #define TYPE_POINTER 11
 #if defined(XP_WIN)
@@ -126,14 +132,14 @@ bool mozilla::PrintfTarget::fill_n(const char* src, int srclen, int width,
   }
   cvtwidth = signwidth + srclen;
 
-  if (prec > 0) {
+  if (prec > 0 && (type != TYPE_DOUBLE)) {
     if (prec > srclen) {
       precwidth = prec - srclen;  
       cvtwidth += precwidth;
     }
   }
 
-  if ((flags & FLAG_ZEROS) && (prec < 0)) {
+  if ((flags & FLAG_ZEROS) && ((type == TYPE_DOUBLE) || (prec < 0))) {
     if (width > cvtwidth) {
       zerowidth = width - cvtwidth;  
       cvtwidth += zerowidth;
@@ -285,57 +291,80 @@ bool mozilla::PrintfTarget::cvt_ll(int64_t num, int width, int prec, int radix,
   return fill_n(cvt, digits, width, prec, type, flags);
 }
 
+template <size_t N>
+constexpr static size_t lengthof(const char (&)[N]) {
+  return N - 1;
+}
+
+
+
+constexpr int FIXED_MAX_CHARS =
+    DTSC::kMaxFixedDigitsBeforePoint + 1 + DTSC::kMaxFixedDigitsAfterPoint;
 
 
 
 
-bool mozilla::PrintfTarget::cvt_f(double d, const char* fmt0,
-                                  const char* fmt1) {
-  char fin[20];
+constexpr int EXPONENTIAL_MAX_CHARS =
+    lengthof("1.") + DTSC::kMaxExponentialDigits + lengthof("e+999");
+
+
+
+
+constexpr int PRECISE_MAX_CHARS =
+    lengthof("1.") + DTSC::kMaxPrecisionDigits - 1 + lengthof("e+999");
+
+constexpr int DTSC_MAX_CHARS =
+    std::max({FIXED_MAX_CHARS, EXPONENTIAL_MAX_CHARS, PRECISE_MAX_CHARS});
+
+
+
+
+
+bool mozilla::PrintfTarget::cvt_f(double d, char c, int width, int prec,
+                                  int flags) {
+  bool lower = islower(c);
+  const char* inf = lower ? "inf" : "INF";
+  const char* nan = lower ? "nan" : "NAN";
+  char e = lower ? 'e' : 'E';
+  DoubleToStringConverter converter(DTSC::UNIQUE_ZERO | DTSC::NO_TRAILING_ZERO |
+                                        DTSC::EMIT_POSITIVE_EXPONENT_SIGN,
+                                    inf, nan, e, 0, 0, 4, 0, 2);
   
-  char fout[320];
-  int amount = fmt1 - fmt0;
-
-  MOZ_ASSERT((amount > 0) && (amount < (int)sizeof(fin)));
-  if (amount >= (int)sizeof(fin)) {
-    
-    return true;
+  char buf[DTSC_MAX_CHARS + 1];
+  double_conversion::StringBuilder builder(buf, sizeof(buf));
+  bool success = false;
+  if (std::signbit(d)) {
+    d = std::abs(d);
+    flags |= FLAG_NEG;
   }
-  memcpy(fin, fmt0, (size_t)amount);
-  fin[amount] = 0;
-
-  
-#ifdef DEBUG
-  {
-    const char* p = fin;
-    while (*p) {
-      MOZ_ASSERT(*p != 'L');
-      p++;
-    }
+  if (!std::isfinite(d)) {
+    flags &= ~FLAG_ZEROS;
   }
-#endif
-  size_t len = SprintfLiteral(fout, fin, d);
   
-  
-  
-  
-  if (MOZ_LIKELY(len < sizeof(fout))) {
-    return emit(fout, len);
+  if (prec < 0) {
+    prec = 6;
   }
-
-  
-  size_t buf_size = len + 1;
-  UniqueFreePtr<char> buf((char*)malloc(buf_size));
-  if (!buf) {
+  switch (c) {
+    case 'e':
+    case 'E':
+      success = converter.ToExponential(d, prec, &builder);
+      break;
+    case 'f':
+    case 'F':
+      success = converter.ToFixed(d, prec, &builder);
+      break;
+    case 'g':
+    case 'G':
+      
+      success = converter.ToPrecision(d, prec ? prec : 1, &builder);
+      break;
+  }
+  if (!success) {
     return false;
   }
-  len = snprintf(buf.get(), buf_size, fin, d);
-  
-  
-  
-  MOZ_RELEASE_ASSERT(len < buf_size);
-
-  return emit(buf.get(), len);
+  int len = builder.position();
+  char* cvt = builder.Finalize();
+  return fill_n(cvt, len, width, prec, TYPE_DOUBLE, flags);
 }
 
 
@@ -619,11 +648,8 @@ bool mozilla::PrintfTarget::vprint(const char* fmt, va_list ap) {
     const wchar_t* ws;
 #endif
   } u;
-  const char* fmt0;
   const char* hexp;
   int i;
-  char pattern[20];
-  const char* dolPt = nullptr;  
 
   
   
@@ -640,7 +666,6 @@ bool mozilla::PrintfTarget::vprint(const char* fmt, va_list ap) {
 
       continue;
     }
-    fmt0 = fmt - 1;
 
     
     
@@ -664,7 +689,6 @@ bool mozilla::PrintfTarget::vprint(const char* fmt, va_list ap) {
       if (nas[i - 1].type == TYPE_UNKNOWN) MOZ_CRASH("Bad format string");
 
       ap = nas[i - 1].ap;
-      dolPt = fmt;
       c = *fmt++;
     }
 
@@ -836,16 +860,7 @@ bool mozilla::PrintfTarget::vprint(const char* fmt, va_list ap) {
       case 'g':
       case 'G':
         u.d = va_arg(ap, double);
-        if (!nas.empty()) {
-          i = fmt - dolPt;
-          if (i < int(sizeof(pattern))) {
-            pattern[0] = '%';
-            memcpy(&pattern[1], dolPt, size_t(i));
-            if (!cvt_f(u.d, pattern, &pattern[i + 1])) return false;
-          }
-        } else {
-          if (!cvt_f(u.d, fmt0, fmt)) return false;
-        }
+        if (!cvt_f(u.d, c, width, prec, flags)) return false;
 
         break;
 
