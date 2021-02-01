@@ -2140,22 +2140,7 @@ void WarpCacheIRTranspiler::addDataViewData(MDefinition* obj, Scalar::Type type,
     
     
     
-    
-    
-    
-
-    auto* byteSizeMinusOne = MConstant::New(alloc(), Int32Value(byteSize - 1));
-    add(byteSizeMinusOne);
-
-    length = MSub::New(alloc(), length, byteSizeMinusOne, MIRType::Int32);
-    length->toSub()->setTruncateKind(TruncateKind::Truncate);
-    add(length);
-
-    
-    auto* zero = MConstant::New(alloc(), Int32Value(0));
-    add(zero);
-
-    length = MMinMax::New(alloc(), length, zero, MIRType::Int32, true);
+    length = MAdjustDataViewLength::New(alloc(), length, byteSize);
     add(length);
   }
 
