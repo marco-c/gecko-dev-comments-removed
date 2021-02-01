@@ -4645,7 +4645,7 @@ static inline MIRType ToMIRType(ABIArgType argType) {
 }
 
 
-inline DynFn JitMarkFunction(MIRType type);
+inline DynFn JitPreWriteBarrier(MIRType type);
 
 template <class VecT, class ABIArgGeneratorT>
 class ABIArgIterBase {
