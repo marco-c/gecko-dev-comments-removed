@@ -546,6 +546,11 @@ MarkupContainer.prototype = {
     }
 
     
+    if (target.classList.contains("expander")) {
+      return;
+    }
+
+    
     this.hovered = false;
     this.markup.navigate(this);
     
@@ -808,8 +813,6 @@ MarkupContainer.prototype = {
 
 
   expandContainer: function(applyToDescendants) {
-    this.markup.navigate(this);
-
     if (this.hasChildren) {
       this.markup.setNodeExpanded(
         this.node,

@@ -1183,37 +1183,11 @@ async function expandContainer(inspector, container) {
 
 
 
-async function expandContainerByClick(
+async function toggleContainerByClick(
   inspector,
   container,
   { altKey = false } = {}
 ) {
-  const onUpdated = inspector.once("inspector-updated");
-  EventUtils.synthesizeMouseAtCenter(
-    container.expander,
-    {
-      altKey,
-    },
-    inspector.markup.doc.defaultView
-  );
-
-  
-  await waitForMultipleChildrenUpdates(inspector);
-
-  
-  await onUpdated;
-}
-
-
-
-
-async function collapseContainerByClick(
-  inspector,
-  container,
-  { altKey = false } = {}
-) {
-  
-  
   EventUtils.synthesizeMouseAtCenter(
     container.expander,
     {
