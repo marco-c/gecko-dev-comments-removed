@@ -123,6 +123,15 @@ var ShortcutUtils = {
     let key;
     if (keyCode) {
       keyCode = keyCode.toUpperCase();
+      if (AppConstants.platform == "macosx") {
+        
+        switch (keyCode) {
+          case "VK_LEFT":
+            return "\u2190"; 
+          case "VK_RIGHT":
+            return "\u2192"; 
+        }
+      }
       try {
         let bundle = keyCode == "VK_RETURN" ? PlatformKeys : Keys;
         
