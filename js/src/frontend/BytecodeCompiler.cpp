@@ -1006,6 +1006,7 @@ static bool CompileLazyFunctionToStencilImpl(JSContext* cx,
                                              Handle<BaseScript*> lazy,
                                              const Unit* units, size_t length) {
   MOZ_ASSERT(cx->compartment() == lazy->compartment());
+  MOZ_ASSERT(!stencil.isInitialStencil());
 
   
   
@@ -1063,10 +1064,6 @@ static bool CompileLazyFunctionToStencilImpl(JSContext* cx,
   if (!compilationState.finish(cx, stencil)) {
     return false;
   }
-
-  
-  
-  stencil.functionKey = BaseCompilationStencil::toFunctionKey(lazy->extent());
 
   assertException.reset();
   return true;
