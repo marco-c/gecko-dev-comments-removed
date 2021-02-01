@@ -7,13 +7,23 @@
 #ifndef frontend_NameCollections_h
 #define frontend_NameCollections_h
 
-#include <type_traits>
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
 
-#include "ds/InlineTable.h"  
-#include "frontend/NameAnalysisTypes.h"
+#include <stddef.h>     
+#include <stdint.h>     
+#include <type_traits>  
+#include <utility>      
+
+#include "ds/InlineTable.h"              
+#include "frontend/NameAnalysisTypes.h"  
 #include "frontend/ParserAtom.h"  
 #include "frontend/TaggedParserAtomIndexHasher.h"  
-#include "js/Vector.h"
+#include "js/AllocPolicy.h"  
+#include "js/Utility.h"      
+#include "js/Vector.h"       
+
+struct JSContext;
 
 namespace js {
 
@@ -270,7 +280,8 @@ class VectorPool : public CollectionPool<RepresentativeVector,
 
 class NameCollectionPool {
   InlineTablePool<AtomIndexMap> mapPool_;
-  VectorPool<AtomVector> vectorPool_;
+  VectorPool<AtomVector> atomVectorPool_;
+  VectorPool<FunctionBoxVector> functionBoxVectorPool_;
   uint32_t activeCompilations_;
 
  public:
@@ -301,27 +312,52 @@ class NameCollectionPool {
   }
 
   template <typename Vector>
-  Vector* acquireVector(JSContext* cx) {
-    MOZ_ASSERT(hasActiveCompilation());
-    return vectorPool_.acquire<Vector>(cx);
-  }
+  inline Vector* acquireVector(JSContext* cx);
 
   template <typename Vector>
-  void releaseVector(Vector** vec) {
-    MOZ_ASSERT(hasActiveCompilation());
-    MOZ_ASSERT(vec);
-    if (*vec) {
-      vectorPool_.release(vec);
-    }
-  }
+  inline void releaseVector(Vector** vec);
 
   void purge() {
     if (!hasActiveCompilation()) {
       mapPool_.purgeAll();
-      vectorPool_.purgeAll();
+      atomVectorPool_.purgeAll();
+      functionBoxVectorPool_.purgeAll();
     }
   }
 };
+
+template <>
+inline AtomVector* NameCollectionPool::acquireVector<AtomVector>(
+    JSContext* cx) {
+  MOZ_ASSERT(hasActiveCompilation());
+  return atomVectorPool_.acquire<AtomVector>(cx);
+}
+
+template <>
+inline void NameCollectionPool::releaseVector<AtomVector>(AtomVector** vec) {
+  MOZ_ASSERT(hasActiveCompilation());
+  MOZ_ASSERT(vec);
+  if (*vec) {
+    atomVectorPool_.release(vec);
+  }
+}
+
+template <>
+inline FunctionBoxVector* NameCollectionPool::acquireVector<FunctionBoxVector>(
+    JSContext* cx) {
+  MOZ_ASSERT(hasActiveCompilation());
+  return functionBoxVectorPool_.acquire<FunctionBoxVector>(cx);
+}
+
+template <>
+inline void NameCollectionPool::releaseVector<FunctionBoxVector>(
+    FunctionBoxVector** vec) {
+  MOZ_ASSERT(hasActiveCompilation());
+  MOZ_ASSERT(vec);
+  if (*vec) {
+    functionBoxVectorPool_.release(vec);
+  }
+}
 
 template <typename T, template <typename> typename Impl>
 class PooledCollectionPtr {

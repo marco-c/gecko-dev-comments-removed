@@ -364,12 +364,12 @@ class NameLocation {
 };
 
 
-using AtomVector = Vector<const ParserAtom*, 24, SystemAllocPolicy>;
+using AtomVector = Vector<TrivialTaggedParserAtomIndex, 24, SystemAllocPolicy>;
 
 class FunctionBox;
 
 
-using FunctionBoxVector = Vector<const FunctionBox*, 8>;
+using FunctionBoxVector = Vector<FunctionBox*, 24, SystemAllocPolicy>;
 
 }  
 }  
