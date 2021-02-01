@@ -533,7 +533,8 @@ void LIRGeneratorX86Shared::lowerCompareExchangeTypedArrayElement(
   MOZ_ASSERT(ins->index()->type() == MIRType::Int32);
 
   const LUse elements = useRegister(ins->elements());
-  const LAllocation index = useRegisterOrInt32Constant(ins->index());
+  const LAllocation index =
+      useRegisterOrIndexConstant(ins->index(), ins->arrayType());
 
   
   
@@ -586,7 +587,8 @@ void LIRGeneratorX86Shared::lowerAtomicExchangeTypedArrayElement(
   MOZ_ASSERT(ins->index()->type() == MIRType::Int32);
 
   const LUse elements = useRegister(ins->elements());
-  const LAllocation index = useRegisterOrInt32Constant(ins->index());
+  const LAllocation index =
+      useRegisterOrIndexConstant(ins->index(), ins->arrayType());
   const LAllocation value = useRegister(ins->value());
 
   
@@ -625,7 +627,8 @@ void LIRGeneratorX86Shared::lowerAtomicTypedArrayElementBinop(
   MOZ_ASSERT(ins->index()->type() == MIRType::Int32);
 
   const LUse elements = useRegister(ins->elements());
-  const LAllocation index = useRegisterOrInt32Constant(ins->index());
+  const LAllocation index =
+      useRegisterOrIndexConstant(ins->index(), ins->arrayType());
 
   
   

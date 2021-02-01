@@ -162,6 +162,10 @@ class CodeGeneratorShared : public LElementVisitor {
   inline Address ToAddress(const LAllocation& a) const;
   inline Address ToAddress(const LAllocation* a) const;
 
+  static inline Address ToAddress(Register elements, const LAllocation* index,
+                                  Scalar::Type type,
+                                  int32_t offsetAdjustment = 0);
+
   
   
   inline int32_t ToFramePointerOffset(LAllocation a) const;

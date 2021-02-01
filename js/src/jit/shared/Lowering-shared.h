@@ -185,6 +185,12 @@ class LIRGeneratorShared {
   inline LAllocation useRegisterOrInt32Constant(MDefinition* mir);
   inline LAllocation useAnyOrInt32Constant(MDefinition* mir);
 
+  
+  
+  
+  LAllocation useRegisterOrIndexConstant(MDefinition* mir, Scalar::Type type,
+                                         int32_t offsetAdjustment = 0);
+
   inline LUse useRegisterForTypedLoad(MDefinition* mir, MIRType type);
 
 #ifdef JS_NUNBOX32
