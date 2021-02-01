@@ -4,8 +4,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 add_task(async function test_without_backgroundtask() {
   let bts = Cc["@mozilla.org/backgroundtasks;1"].getService(
     Ci.nsIBackgroundTasks
