@@ -2369,11 +2369,11 @@ void ReflowInput::InitConstraints(
       
       if (isBlockLevel && !IsSideCaption(mFrame, mStyleDisplay, cbwm) &&
           mStyleDisplay->mDisplay != StyleDisplay::InlineTable &&
-          !alignCB->IsFlexOrGridContainer() &&
+          !mFrame->IsTableFrame() && !alignCB->IsFlexOrGridContainer() &&
           !(mFrame->Style()->GetPseudoType() == PseudoStyleType::marker &&
             mFrame->GetParent()->StyleList()->mListStylePosition ==
                 NS_STYLE_LIST_STYLE_POSITION_OUTSIDE)) {
-        CalculateBlockSideMargins(aFrameType);
+        CalculateBlockSideMargins();
       }
     }
   }
@@ -2534,7 +2534,10 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
 
 
 
-void ReflowInput::CalculateBlockSideMargins(LayoutFrameType aFrameType) {
+void ReflowInput::CalculateBlockSideMargins() {
+  MOZ_ASSERT(!mFrame->IsTableFrame(),
+             "Inner table frame cannot have computed margins!");
+
   
   
   
@@ -2595,13 +2598,6 @@ void ReflowInput::CalculateBlockSideMargins(LayoutFrameType aFrameType) {
     
     
     const ReflowInput* pri = mParentReflowInput;
-    if (aFrameType == LayoutFrameType::Table) {
-      NS_ASSERTION(pri->mFrame->IsTableWrapperFrame(),
-                   "table not inside table wrapper");
-      
-      
-      pri = pri->mParentReflowInput;
-    }
     if (pri && (pri->mStyleText->mTextAlign == StyleTextAlign::MozLeft ||
                 pri->mStyleText->mTextAlign == StyleTextAlign::MozCenter ||
                 pri->mStyleText->mTextAlign == StyleTextAlign::MozRight)) {

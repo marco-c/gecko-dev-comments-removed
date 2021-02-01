@@ -906,7 +906,7 @@ struct ReflowInput : public SizeComputationInput {
                                     nscoord* aInsideBoxSizing,
                                     nscoord* aOutsideBoxSizing) const;
 
-  void CalculateBlockSideMargins(LayoutFrameType aFrameType);
+  void CalculateBlockSideMargins();
 
   
 
