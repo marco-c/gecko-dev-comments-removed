@@ -1970,6 +1970,10 @@ PeerConnectionImpl::Close() {
   CSFLogDebug(LOGTAG, "%s: for %s", __FUNCTION__, mHandle.c_str());
   PC_AUTO_ENTER_API_CALL_NO_CHECK();
 
+  if (IsClosed()) {
+    return NS_OK;
+  }
+
   CloseInt();
   
   if (mWindow && mActiveOnWindow) {
@@ -2074,6 +2078,8 @@ void PeerConnectionImpl::RecordEndOfCallTelemetry() {
 
 nsresult PeerConnectionImpl::CloseInt() {
   PC_AUTO_ENTER_API_CALL_NO_CHECK();
+
+  mSignalingState = RTCSignalingState::Closed;
 
   
   
