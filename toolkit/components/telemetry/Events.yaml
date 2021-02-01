@@ -38,6 +38,8 @@ activity_stream:
       "CLICK",
       "CLICK_PRIVACY_INFO",
       "CLOSE_NEWTAB_PREFS",
+      "SHOW_PERSONALIZE",
+      "HIDE_PERSONALIZE",
       "DELETE",
       "DELETE_FROM_POCKET",
       "DELETE_CONFIRM",
@@ -700,6 +702,7 @@ normandy:
     expiry_version: never
     extra_keys:
       enrollmentId: A unique ID for this enrollment that will be included in all related Telemetry.
+      reason: The reason the rollout graduated
 
   expose:
     objects: [

@@ -126,12 +126,19 @@ var PreferenceRollouts = {
   STATE_GRADUATED: "graduated",
 
   
+  
+  
+  
+  
+  GRADUATION_SET: new Set(),
+
+  
 
 
 
   async recordOriginalValues(originalPreferences) {
     for (const rollout of await this.getAllActive()) {
-      let changed = false;
+      let shouldSaveRollout = false;
 
       
       let prefMatchingDefaultCount = 0;
@@ -146,28 +153,19 @@ var PreferenceRollouts = {
         
         if (prefSpec.previousValue !== builtInDefault) {
           prefSpec.previousValue = builtInDefault;
-          changed = true;
+          shouldSaveRollout = true;
         }
       }
 
       if (prefMatchingDefaultCount === rollout.preferences.length) {
         
         
-        rollout.state = this.STATE_GRADUATED;
-        changed = true;
-        log.debug(`Graduating rollout: ${rollout.slug}`);
-        TelemetryEvents.sendEvent(
-          "graduate",
-          "preference_rollout",
-          rollout.slug,
-          {
-            enrollmentId:
-              rollout.enrollmentId || TelemetryEvents.NO_ENROLLMENT_ID_MARKER,
-          }
-        );
+        await this.graduate(rollout, "all-prefs-match");
+        
+        shouldSaveRollout = false;
       }
 
-      if (changed) {
+      if (shouldSaveRollout) {
         const db = await getDatabase();
         await getStore(db, "readwrite").put(rollout);
       }
@@ -178,6 +176,10 @@ var PreferenceRollouts = {
     CleanupManager.addCleanupHandler(() => this.saveStartupPrefs());
 
     for (const rollout of await this.getAllActive()) {
+      if (this.GRADUATION_SET.has(rollout.slug)) {
+        await this.graduate(rollout, "in-graduation-set");
+        continue;
+      }
       TelemetryEnvironment.setExperimentActive(rollout.slug, rollout.state, {
         type: "normandy-prefrollout",
         enrollmentId:
@@ -199,19 +201,26 @@ var PreferenceRollouts = {
 
 
 
-  withTestMock(testFunction) {
-    return async function inner(...args) {
-      let db = await getDatabase();
-      const oldData = await getStore(db, "readonly").getAll();
-      await getStore(db, "readwrite").clear();
-      try {
-        await testFunction(...args);
-      } finally {
-        db = await getDatabase();
+  withTestMock({ graduationSet = new Set(), rollouts = [] } = {}) {
+    return testFunction => {
+      return async (...args) => {
+        let db = await getDatabase();
+        const oldData = await getStore(db, "readonly").getAll();
         await getStore(db, "readwrite").clear();
-        const store = getStore(db, "readwrite");
-        await Promise.all(oldData.map(d => store.add(d)));
-      }
+        await Promise.all(rollouts.map(r => this.add(r)));
+        const oldGraduationSet = this.GRADUATION_SET;
+        this.GRADUATION_SET = graduationSet;
+
+        try {
+          await testFunction(...args);
+        } finally {
+          this.GRADUATION_SET = oldGraduationSet;
+          db = await getDatabase();
+          await getStore(db, "readwrite").clear();
+          const store = getStore(db, "readwrite");
+          await Promise.all(oldData.map(d => store.add(d)));
+        }
+      };
     };
   },
 
@@ -327,5 +336,17 @@ var PreferenceRollouts = {
         );
       }
     }
+  },
+
+  async graduate(rollout, reason) {
+    log.debug(`Graduating rollout: ${rollout.slug}`);
+    rollout.state = this.STATE_GRADUATED;
+    const db = await getDatabase();
+    await getStore(db, "readwrite").put(rollout);
+    TelemetryEvents.sendEvent("graduate", "preference_rollout", rollout.slug, {
+      reason,
+      enrollmentId:
+        rollout.enrollmentId || TelemetryEvents.NO_ENROLLMENT_ID_MARKER,
+    });
   },
 };

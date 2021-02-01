@@ -14,9 +14,9 @@ ChromeUtils.import("resource://normandy/lib/TelemetryEvents.jsm", this);
 
 
 decorate_task(
-  PreferenceRollouts.withTestMock,
+  PreferenceRollouts.withTestMock(),
   withStub(TelemetryEnvironment, "setExperimentInactive"),
-  withSendEventStub,
+  withSendEventSpy,
   async function simple_rollback(setExperimentInactiveStub, sendEventStub) {
     Services.prefs.getDefaultBranch("").setIntPref("test.pref1", 2);
     Services.prefs
@@ -127,8 +127,8 @@ decorate_task(
 
 
 decorate_task(
-  PreferenceRollouts.withTestMock,
-  withSendEventStub,
+  PreferenceRollouts.withTestMock(),
+  withSendEventSpy,
   async function cant_rollback_graduated(sendEventStub) {
     Services.prefs.getDefaultBranch("").setIntPref("test.pref", 1);
     await PreferenceRollouts.add({
@@ -186,8 +186,8 @@ decorate_task(
 
 
 decorate_task(
-  PreferenceRollouts.withTestMock,
-  withSendEventStub,
+  PreferenceRollouts.withTestMock(),
+  withSendEventSpy,
   withStub(Uptake, "reportRecipe"),
   async function rollback_without_rollout(sendEventStub, reportRecipeStub) {
     let recipe = { id: 1, arguments: { rolloutSlug: "missing-rollout" } };
@@ -208,9 +208,9 @@ decorate_task(
 
 
 decorate_task(
-  PreferenceRollouts.withTestMock,
+  PreferenceRollouts.withTestMock(),
   withStub(TelemetryEnvironment, "setExperimentInactive"),
-  withSendEventStub,
+  withSendEventSpy,
   async function rollback_already_rolled_back(
     setExperimentInactiveStub,
     sendEventStub
@@ -261,7 +261,7 @@ decorate_task(
 );
 
 
-decorate_task(PreferenceRollouts.withTestMock, async function simple_rollback(
+decorate_task(PreferenceRollouts.withTestMock(), async function simple_rollback(
   setExperimentInactiveStub,
   sendEventStub
 ) {
@@ -303,3 +303,50 @@ decorate_task(PreferenceRollouts.withTestMock, async function simple_rollback(
   Services.prefs.deleteBranch("test.pref");
   Services.prefs.getDefaultBranch("").deleteBranch("test.pref");
 });
+
+
+decorate_task(
+  PreferenceRollouts.withTestMock({
+    graduationSet: new Set(["graduated-rollout"]),
+  }),
+  withSendEventSpy,
+  async function cant_rollback_graduation_set(sendEventStub) {
+    Services.prefs.getDefaultBranch("").setIntPref("test.pref", 1);
+
+    let recipe = { id: 1, arguments: { rolloutSlug: "graduated-rollout" } };
+
+    const action = new PreferenceRollbackAction();
+    await action.processRecipe(recipe, BaseAction.suitability.FILTER_MATCH);
+    await action.finalize();
+    is(action.lastError, null, "lastError should be null");
+
+    is(Services.prefs.getIntPref("test.pref"), 1, "pref should not change");
+    is(
+      Services.prefs.getPrefType("app.normandy.startupRolloutPrefs.test.pref"),
+      Services.prefs.PREF_INVALID,
+      "no startup pref should be added"
+    );
+
+    
+    Assert.deepEqual(
+      await PreferenceRollouts.getAll(),
+      [],
+      "Rollout should be in the db"
+    );
+
+    sendEventStub.assertEvents([
+      [
+        "unenrollFailed",
+        "preference_rollback",
+        "graduated-rollout",
+        {
+          reason: "in-graduation-set",
+          enrollmentId: TelemetryEvents.NO_ENROLLMENT_ID,
+        },
+      ],
+    ]);
+
+    
+    Services.prefs.getDefaultBranch("").deleteBranch("test.pref");
+  }
+);

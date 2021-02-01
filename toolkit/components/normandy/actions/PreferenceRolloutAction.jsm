@@ -56,6 +56,14 @@ class PreferenceRolloutAction extends BaseAction {
     const args = recipe.arguments;
 
     
+    if (PreferenceRollouts.GRADUATION_SET.has(args.slug)) {
+      this.log.debug(
+        `Skipping rollout "${args.slug}" because it is in the graduation set.`
+      );
+      return;
+    }
+
+    
     
     await this._verifyRolloutPrefs(args);
 
