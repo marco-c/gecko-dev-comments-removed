@@ -986,16 +986,10 @@ LogicalSize nsContainerFrame::ComputeAutoSize(
   if (aFlags.contains(ComputeSizeFlag::ShrinkWrap) ||
       IsFrameOfType(eReplaced)) {
     
-    
-    
-    
-    
-    
-    const nsStylePosition* pos = StylePosition();
-    if (pos->ISize(aWM).IsAuto() ||
-        aFlags.contains(ComputeSizeFlag::UseAutoISize) ||
-        (pos->mFlexBasis.IsContent() && IsFlexItem() &&
-         nsFlexContainerFrame::IsItemInlineAxisMainAxis(this))) {
+    const auto& styleISize = aSizeOverrides.mStyleISize
+                                 ? *aSizeOverrides.mStyleISize
+                                 : StylePosition()->ISize(aWM);
+    if (styleISize.IsAuto() || aFlags.contains(ComputeSizeFlag::UseAutoISize)) {
       result.ISize(aWM) =
           ShrinkWidthToFit(aRenderingContext, availBased, aFlags);
     }
@@ -2394,8 +2388,12 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
     const LogicalSize& aBorderPadding, const StyleSizeOverrides& aSizeOverrides,
     ComputeSizeFlags aFlags) {
   const nsStylePosition* stylePos = StylePosition();
-  const auto* inlineStyleCoord = &stylePos->ISize(aWM);
-  const auto* blockStyleCoord = &stylePos->BSize(aWM);
+  const auto* inlineStyleCoord = aSizeOverrides.mStyleISize
+                                     ? aSizeOverrides.mStyleISize.ptr()
+                                     : &stylePos->ISize(aWM);
+  const auto* blockStyleCoord = aSizeOverrides.mStyleBSize
+                                    ? aSizeOverrides.mStyleBSize.ptr()
+                                    : &stylePos->BSize(aWM);
   auto* parentFrame = GetParent();
   const bool isGridItem = IsGridItem();
   const bool isFlexItem =
@@ -2431,45 +2429,6 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
         inlineStyleCoord = imposedMainSizeStyleCoord.ptr();
       } else {
         blockStyleCoord = imposedMainSizeStyleCoord.ptr();
-      }
-
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      const auto* flexBasis = &stylePos->mFlexBasis;
-      auto& mainAxisCoord =
-          (flexMainAxis == eLogicalAxisInline ? inlineStyleCoord
-                                              : blockStyleCoord);
-
-      if (nsFlexContainerFrame::IsUsedFlexBasisContent(*flexBasis,
-                                                       *mainAxisCoord)) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        static const StyleSize autoSize(StyleSize::Auto());
-        mainAxisCoord = &autoSize;
-      } else if (flexBasis->IsSize() && !flexBasis->IsAuto()) {
-        
-        
-        mainAxisCoord = &flexBasis->AsSize();
-      } else {
-        MOZ_ASSERT(flexBasis->IsAuto());
-        
-        
       }
     }
   }

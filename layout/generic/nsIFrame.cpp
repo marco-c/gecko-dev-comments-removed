@@ -6095,8 +6095,12 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
                                        aBorderPadding.ISize(aWM) -
                                        boxSizingAdjust.ISize(aWM);
 
-  const auto* inlineStyleCoord = &stylePos->ISize(aWM);
-  const auto* blockStyleCoord = &stylePos->BSize(aWM);
+  const auto* inlineStyleCoord = aSizeOverrides.mStyleISize
+                                     ? aSizeOverrides.mStyleISize.ptr()
+                                     : &stylePos->ISize(aWM);
+  const auto* blockStyleCoord = aSizeOverrides.mStyleBSize
+                                    ? aSizeOverrides.mStyleBSize.ptr()
+                                    : &stylePos->BSize(aWM);
 
   auto parentFrame = GetParent();
   auto alignCB = parentFrame;
@@ -6129,21 +6133,9 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   Maybe<StyleSize> imposedMainSizeStyleCoord;
 
   if (isFlexItem) {
-    
-    
-    
     flexMainAxis = nsFlexContainerFrame::IsItemInlineAxisMainAxis(this)
                        ? eLogicalAxisInline
                        : eLogicalAxisBlock;
-
-    
-    
-    
-    
-    const auto* flexBasis = &stylePos->mFlexBasis;
-    auto& mainAxisCoord =
-        (flexMainAxis == eLogicalAxisInline ? inlineStyleCoord
-                                            : blockStyleCoord);
 
     
     
@@ -6158,30 +6150,6 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
         inlineStyleCoord = imposedMainSizeStyleCoord.ptr();
       } else {
         blockStyleCoord = imposedMainSizeStyleCoord.ptr();
-      }
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      if (nsFlexContainerFrame::IsUsedFlexBasisContent(*flexBasis,
-                                                       *mainAxisCoord) &&
-          MOZ_LIKELY(!IsTableWrapperFrame())) {
-        static const StyleSize maxContStyleCoord(
-            StyleSize::ExtremumLength(StyleExtremumLength::MaxContent));
-        mainAxisCoord = &maxContStyleCoord;
-        
-        
-      } else if (flexBasis->IsSize() && !flexBasis->IsAuto()) {
-        
-        
-        mainAxisCoord = &flexBasis->AsSize();
-      } else {
-        
-        
       }
     }
   }
@@ -6438,8 +6406,10 @@ LogicalSize nsIFrame::ComputeAutoSize(
   LogicalSize result(aWM, 0xdeadbeef, NS_UNCONSTRAINEDSIZE);
 
   
-  if (StylePosition()->ISize(aWM).IsAuto() ||
-      aFlags.contains(ComputeSizeFlag::UseAutoISize)) {
+  const auto& styleISize = aSizeOverrides.mStyleISize
+                               ? *aSizeOverrides.mStyleISize
+                               : StylePosition()->ISize(aWM);
+  if (styleISize.IsAuto() || aFlags.contains(ComputeSizeFlag::UseAutoISize)) {
     nscoord availBased =
         aAvailableISize - aMargin.ISize(aWM) - aBorderPadding.ISize(aWM);
     result.ISize(aWM) = ShrinkWidthToFit(aRenderingContext, availBased, aFlags);
