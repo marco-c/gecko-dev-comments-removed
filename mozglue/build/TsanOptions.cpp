@@ -250,11 +250,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "mutex:XErrorTrap\n"
 
          
-         "race:IdentifyTextureHost\n"
-         "race:GetCompositorBackendType\n"
-         "race:SupportsTextureDirectMapping\n"
-
-         
          "race:CamerasParent::ActorDestroy\n"
          "race:CamerasParent::DispatchToVideoCaptureThread\n"
 
