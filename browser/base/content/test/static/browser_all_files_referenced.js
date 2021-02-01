@@ -55,13 +55,6 @@ if (AppConstants.platform == "macosx") {
   gExceptionPaths.push("resource://gre/res/touchbar/");
 }
 
-if (AppConstants.MOZ_BACKGROUNDTASKS) {
-  
-  gExceptionPaths.push("resource://gre/defaults/backgroundtasks/");
-  
-  gExceptionPaths.push("resource://gre/modules/backgroundtasks/");
-}
-
 
 
 
