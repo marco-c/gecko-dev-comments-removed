@@ -9,15 +9,24 @@
 
 
 
+
+
+
+
+
+
+
 #[cfg(feature = "io-compat")]
+#[cfg_attr(docsrs, doc(cfg(feature = "io-compat")))]
 use crate::compat::Compat;
-use std::ptr;
+use std::{ptr, pin::Pin};
 
 pub use futures_io::{
     AsyncRead, AsyncWrite, AsyncSeek, AsyncBufRead, Error, ErrorKind,
     IoSlice, IoSliceMut, Result, SeekFrom,
 };
 #[cfg(feature = "read-initializer")]
+#[cfg_attr(docsrs, doc(cfg(feature = "read-initializer")))]
 pub use futures_io::Initializer;
 
 
@@ -65,12 +74,17 @@ pub use self::cursor::Cursor;
 mod empty;
 pub use self::empty::{empty, Empty};
 
+mod fill_buf;
+pub use self::fill_buf::FillBuf;
+
 mod flush;
 pub use self::flush::Flush;
 
 #[cfg(feature = "sink")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
 mod into_sink;
 #[cfg(feature = "sink")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
 pub use self::into_sink::IntoSink;
 
 mod lines;
@@ -107,7 +121,7 @@ mod sink;
 pub use self::sink::{sink, Sink};
 
 mod split;
-pub use self::split::{ReadHalf, WriteHalf};
+pub use self::split::{ReadHalf, WriteHalf, ReuniteError};
 
 mod take;
 pub use self::take::Take;
@@ -123,6 +137,11 @@ pub use self::write_vectored::WriteVectored;
 
 mod write_all;
 pub use self::write_all::WriteAll;
+
+#[cfg(feature = "write-all-vectored")]
+mod write_all_vectored;
+#[cfg(feature = "write-all-vectored")]
+pub use self::write_all_vectored::WriteAllVectored;
 
 
 pub trait AsyncReadExt: AsyncRead {
@@ -367,6 +386,7 @@ pub trait AsyncReadExt: AsyncRead {
     
     
     #[cfg(feature = "io-compat")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "io-compat")))]
     fn compat(self) -> Compat<Self>
         where Self: Sized + Unpin,
     {
@@ -463,13 +483,68 @@ pub trait AsyncWriteExt: AsyncWrite {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "write-all-vectored")]
+    fn write_all_vectored<'a>(
+        &'a mut self,
+        bufs: &'a mut [IoSlice<'a>],
+    ) -> WriteAllVectored<'a, Self>
+    where
+        Self: Unpin,
+    {
+        WriteAllVectored::new(self, bufs)
+    }
+
+    
+    
+    
     #[cfg(feature = "io-compat")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "io-compat")))]
     fn compat_write(self) -> Compat<Self>
         where Self: Sized + Unpin,
     {
         Compat::new(self)
     }
-
 
     
     
@@ -498,6 +573,7 @@ pub trait AsyncWriteExt: AsyncWrite {
     
     
     #[cfg(feature = "sink")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
     fn into_sink<Item: AsRef<[u8]>>(self) -> IntoSink<Self, Item>
         where Self: Sized,
     {
@@ -525,6 +601,58 @@ impl<S: AsyncSeek + ?Sized> AsyncSeekExt for S {}
 
 
 pub trait AsyncBufReadExt: AsyncBufRead {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn fill_buf(&mut self) -> FillBuf<'_, Self>
+        where Self: Unpin,
+    {
+        FillBuf::new(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn consume_unpin(&mut self, amt: usize)
+        where Self: Unpin,
+    {
+        Pin::new(self).consume(amt)
+    }
+
     
     
     

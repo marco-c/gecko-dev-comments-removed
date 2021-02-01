@@ -16,10 +16,9 @@
 
 #![cfg_attr(test, warn(single_use_lifetimes))]
 #![warn(clippy::all)]
-
 #![doc(test(attr(deny(warnings), allow(dead_code, unused_assignments, unused_variables))))]
 
-#![doc(html_root_url = "https://docs.rs/futures-io/0.3.0")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[cfg(all(feature = "read-initializer", not(feature = "unstable")))]
 compile_error!("The `read-initializer` feature requires the `unstable` feature as an explicit opt-in to unstable features");
@@ -44,6 +43,7 @@ mod if_std {
     };
 
     #[cfg(feature = "read-initializer")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "read-initializer")))]
     #[allow(unreachable_pub)] 
     pub use io::Initializer as Initializer;
 
@@ -70,6 +70,7 @@ mod if_std {
         
         
         #[cfg(feature = "read-initializer")]
+        #[cfg_attr(docsrs, doc(cfg(feature = "read-initializer")))]
         #[inline]
         unsafe fn initializer(&self) -> Initializer {
             Initializer::zeroing()
@@ -151,6 +152,9 @@ mod if_std {
         
         
         
+        
+        
+        
         fn poll_write(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8])
             -> Poll<Result<usize>>;
 
@@ -189,6 +193,8 @@ mod if_std {
             self.poll_write(cx, &[])
         }
 
+        
+        
         
         
         

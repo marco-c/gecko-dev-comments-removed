@@ -36,8 +36,8 @@ unsafe impl<T: Send> Sync for Lock<T> {}
 
 impl<T> Lock<T> {
     
-    pub(crate) fn new(t: T) -> Lock<T> {
-        Lock {
+    pub(crate) fn new(t: T) -> Self {
+        Self {
             locked: AtomicBool::new(false),
             data: UnsafeCell::new(t),
         }

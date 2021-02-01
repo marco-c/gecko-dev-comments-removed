@@ -15,6 +15,7 @@ use std::task::Context;
 use futures_sink::Sink as Sink03;
 
 #[cfg(feature = "io-compat")]
+#[cfg_attr(docsrs, doc(cfg(feature = "io-compat")))]
 #[allow(unreachable_pub)] 
 pub use io::{AsyncRead01CompatExt, AsyncWrite01CompatExt};
 
@@ -31,8 +32,8 @@ impl<T> Unpin for Compat01As03<T> {}
 impl<T> Compat01As03<T> {
     
     
-    pub fn new(object: T) -> Compat01As03<T> {
-        Compat01As03 {
+    pub fn new(object: T) -> Self {
+        Self {
             inner: spawn01(object),
         }
     }
@@ -115,6 +116,7 @@ impl<St: Stream01> Stream01CompatExt for St {}
 
 
 #[cfg(feature = "sink")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
 pub trait Sink01CompatExt: Sink01 {
     
     
@@ -180,6 +182,7 @@ impl<St: Stream01> Stream03 for Compat01As03<St> {
 
 
 #[cfg(feature = "sink")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
 #[derive(Debug)]
 #[must_use = "sinks do nothing unless polled"]
 pub struct Compat01As03Sink<S, SinkItem> {
@@ -194,8 +197,8 @@ impl<S, SinkItem> Unpin for Compat01As03Sink<S, SinkItem> {}
 #[cfg(feature = "sink")]
 impl<S, SinkItem> Compat01As03Sink<S, SinkItem> {
     
-    pub fn new(inner: S) -> Compat01As03Sink<S, SinkItem> {
-        Compat01As03Sink {
+    pub fn new(inner: S) -> Self {
+        Self {
             inner: spawn01(inner),
             buffer: None,
             close_started: false
@@ -341,10 +344,10 @@ struct NotifyWaker(task03::Waker);
 struct WakerToHandle<'a>(&'a task03::Waker);
 
 impl From<WakerToHandle<'_>> for NotifyHandle01 {
-    fn from(handle: WakerToHandle<'_>) -> NotifyHandle01 {
+    fn from(handle: WakerToHandle<'_>) -> Self {
         let ptr = Box::new(NotifyWaker(handle.0.clone()));
 
-        unsafe { NotifyHandle01::new(Box::into_raw(ptr)) }
+        unsafe { Self::new(Box::into_raw(ptr)) }
     }
 }
 
@@ -366,6 +369,7 @@ unsafe impl UnsafeNotify01 for NotifyWaker {
 }
 
 #[cfg(feature = "io-compat")]
+#[cfg_attr(docsrs, doc(cfg(feature = "io-compat")))]
 mod io {
     use super::*;
     #[cfg(feature = "read-initializer")]
@@ -375,9 +379,8 @@ mod io {
     use tokio_io::{AsyncRead as AsyncRead01, AsyncWrite as AsyncWrite01};
 
     
+    #[cfg_attr(docsrs, doc(cfg(feature = "io-compat")))]
     pub trait AsyncRead01CompatExt: AsyncRead01 {
-        
-        
         
         
         
@@ -405,6 +408,7 @@ mod io {
     impl<R: AsyncRead01> AsyncRead01CompatExt for R {}
 
     
+    #[cfg_attr(docsrs, doc(cfg(feature = "io-compat")))]
     pub trait AsyncWrite01CompatExt: AsyncWrite01 {
         
         

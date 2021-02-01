@@ -42,8 +42,8 @@ impl<T> Cursor<T> {
     
     
     
-    pub fn new(inner: T) -> Cursor<T> {
-        Cursor {
+    pub fn new(inner: T) -> Self {
+        Self {
             inner: io::Cursor::new(inner),
         }
     }

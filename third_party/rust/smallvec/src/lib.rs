@@ -71,11 +71,9 @@
 
 
 #![no_std]
-#![cfg_attr(feature = "union", feature(untagged_unions))]
 #![cfg_attr(feature = "specialization", allow(incomplete_features))]
 #![cfg_attr(feature = "specialization", feature(specialization))]
 #![cfg_attr(feature = "may_dangle", feature(dropck_eyepatch))]
-#![cfg_attr(feature = "const_generics", feature(min_const_generics))]
 #![deny(missing_docs)]
 
 #[doc(hidden)]
@@ -87,6 +85,7 @@ extern crate std;
 #[cfg(test)]
 mod tests;
 
+#[allow(deprecated)]
 use alloc::alloc::{Layout, LayoutErr};
 use alloc::boxed::Box;
 use alloc::{vec, vec::Vec};
@@ -239,6 +238,7 @@ impl fmt::Display for CollectionAllocErr {
     }
 }
 
+#[allow(deprecated)]
 impl From<LayoutErr> for CollectionAllocErr {
     fn from(_: LayoutErr) -> Self {
         CollectionAllocErr::CapacityOverflow
@@ -351,7 +351,7 @@ impl<'a, T: 'a + Array> Drop for Drain<'a, T> {
 
 #[cfg(feature = "union")]
 union SmallVecData<A: Array> {
-    inline: MaybeUninit<A>,
+    inline: core::mem::ManuallyDrop<MaybeUninit<A>>,
     heap: (*mut A::Item, usize),
 }
 
@@ -367,11 +367,13 @@ impl<A: Array> SmallVecData<A> {
     }
     #[inline]
     fn from_inline(inline: MaybeUninit<A>) -> SmallVecData<A> {
-        SmallVecData { inline }
+        SmallVecData {
+            inline: core::mem::ManuallyDrop::new(inline),
+        }
     }
     #[inline]
     unsafe fn into_inline(self) -> MaybeUninit<A> {
-        self.inline
+        core::mem::ManuallyDrop::into_inner(self.inline)
     }
     #[inline]
     unsafe fn heap(&self) -> (*mut A::Item, usize) {
@@ -792,7 +794,8 @@ impl<A: Array> SmallVec<A> {
     
     
     pub fn append<B>(&mut self, other: &mut SmallVec<B>)
-    where B: Array<Item = A::Item>
+    where
+        B: Array<Item = A::Item>,
     {
         self.extend(other.drain(..))
     }
@@ -1006,7 +1009,7 @@ impl<A: Array> SmallVec<A> {
     
     
     pub fn insert_many<I: IntoIterator<Item = A::Item>>(&mut self, index: usize, iterable: I) {
-        let iter = iterable.into_iter();
+        let mut iter = iterable.into_iter();
         if index == self.len() {
             return self.extend(iter);
         }
@@ -1014,13 +1017,16 @@ impl<A: Array> SmallVec<A> {
         let (lower_size_bound, _) = iter.size_hint();
         assert!(lower_size_bound <= core::isize::MAX as usize); 
         assert!(index + lower_size_bound >= index); 
-        self.reserve(lower_size_bound);
+
+        let mut num_added = 0;
+        let old_len = self.len();
+        assert!(index <= old_len);
 
         unsafe {
-            let old_len = self.len();
-            assert!(index <= old_len);
+            
+            self.reserve(lower_size_bound);
             let start = self.as_mut_ptr();
-            let mut ptr = start.add(index);
+            let ptr = start.add(index);
 
             
             ptr::copy(ptr, ptr.add(lower_size_bound), old_len - index);
@@ -1033,26 +1039,16 @@ impl<A: Array> SmallVec<A> {
                 len: old_len + lower_size_bound,
             };
 
-            let mut num_added = 0;
-            for element in iter {
-                let mut cur = ptr.add(num_added);
-                if num_added >= lower_size_bound {
-                    
-                    self.reserve(1);
-                    let start = self.as_mut_ptr();
-                    ptr = start.add(index);
-                    cur = ptr.add(num_added);
-                    ptr::copy(cur, cur.add(1), old_len - index);
-
-                    guard.start = start;
-                    guard.len += 1;
-                    guard.skip.end += 1;
-                }
+            while num_added < lower_size_bound {
+                let element = match iter.next() {
+                    Some(x) => x,
+                    None => break,
+                };
+                let cur = ptr.add(num_added);
                 ptr::write(cur, element);
                 guard.skip.start += 1;
                 num_added += 1;
             }
-            mem::forget(guard);
 
             if num_added < lower_size_bound {
                 
@@ -1062,13 +1058,20 @@ impl<A: Array> SmallVec<A> {
                     old_len - index,
                 );
             }
-
+            
             self.set_len(old_len + num_added);
+            mem::forget(guard);
+        }
+
+        
+        for element in iter {
+            self.insert(index + num_added, element);
+            num_added += 1;
         }
 
         struct DropOnPanic<T> {
             start: *mut T,
-            skip: Range<usize>,
+            skip: Range<usize>, 
             len: usize,
         }
 
@@ -1956,10 +1959,9 @@ macro_rules! impl_array(
 
 #[cfg(not(feature = "const_generics"))]
 impl_array!(
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 36, 0x40, 0x60, 0x80,
-    0x100, 0x200, 0x400, 0x600, 0x800, 0x1000, 0x2000, 0x4000, 0x6000, 0x8000, 0x10000, 0x20000,
-    0x40000, 0x60000, 0x80000, 0x10_0000
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+    26, 27, 28, 29, 30, 31, 32, 36, 0x40, 0x60, 0x80, 0x100, 0x200, 0x400, 0x600, 0x800, 0x1000,
+    0x2000, 0x4000, 0x6000, 0x8000, 0x10000, 0x20000, 0x40000, 0x60000, 0x80000, 0x10_0000
 );
 
 

@@ -19,7 +19,7 @@ impl<Si: Unpin + ?Sized, Item> Unpin for Close<'_, Si, Item> {}
 
 impl<'a, Si: Sink<Item> + Unpin + ?Sized, Item> Close<'a, Si, Item> {
     pub(super) fn new(sink: &'a mut Si) -> Self {
-        Close {
+        Self {
             sink,
             _phantom: PhantomData,
         }

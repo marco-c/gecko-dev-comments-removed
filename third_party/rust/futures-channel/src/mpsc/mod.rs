@@ -334,7 +334,7 @@ struct SenderTask {
 
 impl SenderTask {
     fn new() -> Self {
-        SenderTask {
+        Self {
             task: None,
             is_parked: false,
         }
@@ -479,6 +479,11 @@ impl<T> UnboundedSenderInner<T> {
     
     fn same_receiver(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.inner, &other.inner)
+    }
+
+    
+    fn is_connected_to(&self, inner: &Arc<UnboundedInner<T>>) -> bool {
+        Arc::ptr_eq(&self.inner, inner)
     }
 
     
@@ -658,6 +663,11 @@ impl<T> BoundedSenderInner<T> {
     }
 
     
+    fn is_connected_to(&self, receiver: &Arc<BoundedInner<T>>) -> bool {
+        Arc::ptr_eq(&self.inner, receiver)
+    }
+
+    
     
     
     fn ptr(&self) -> *const BoundedInner<T> {
@@ -780,6 +790,14 @@ impl<T> Sender<T> {
     }
 
     
+    pub fn is_connected_to(&self, receiver: &Receiver<T>) -> bool {
+        match (&self.0, &receiver.inner) {
+            (Some(inner), Some(receiver)) => inner.is_connected_to(receiver),
+            _ => false,
+        }
+    }
+
+    
     pub fn hash_receiver<H>(&self, hasher: &mut H) where H: std::hash::Hasher {
         use std::hash::Hash;
 
@@ -861,6 +879,14 @@ impl<T> UnboundedSender<T> {
     }
 
     
+    pub fn is_connected_to(&self, receiver: &UnboundedReceiver<T>) -> bool {
+        match (&self.0, &receiver.inner) {
+            (Some(inner), Some(receiver)) => inner.is_connected_to(receiver),
+            _ => false,
+        }
+    }
+
+    
     pub fn hash_receiver<H>(&self, hasher: &mut H) where H: std::hash::Hasher {
         use std::hash::Hash;
 
@@ -870,19 +896,19 @@ impl<T> UnboundedSender<T> {
 }
 
 impl<T> Clone for Sender<T> {
-    fn clone(&self) -> Sender<T> {
-        Sender(self.0.clone())
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
     }
 }
 
 impl<T> Clone for UnboundedSender<T> {
-    fn clone(&self) -> UnboundedSender<T> {
-        UnboundedSender(self.0.clone())
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
     }
 }
 
 impl<T> Clone for UnboundedSenderInner<T> {
-    fn clone(&self) -> UnboundedSenderInner<T> {
+    fn clone(&self) -> Self {
         
         
         
@@ -897,23 +923,22 @@ impl<T> Clone for UnboundedSenderInner<T> {
             debug_assert!(curr < MAX_BUFFER);
 
             let next = curr + 1;
-            let actual = self.inner.num_senders.compare_and_swap(curr, next, SeqCst);
-
-            
-            
-            if actual == curr {
-                return UnboundedSenderInner {
-                    inner: self.inner.clone(),
-                };
+            match self.inner.num_senders.compare_exchange(curr, next, SeqCst, SeqCst) {
+                Ok(_) => {
+                    
+                    
+                    return Self {
+                        inner: self.inner.clone(),
+                    };
+                }
+                Err(actual) => curr = actual,
             }
-
-            curr = actual;
         }
     }
 }
 
 impl<T> Clone for BoundedSenderInner<T> {
-    fn clone(&self) -> BoundedSenderInner<T> {
+    fn clone(&self) -> Self {
         
         
         
@@ -928,19 +953,18 @@ impl<T> Clone for BoundedSenderInner<T> {
             debug_assert!(curr < self.inner.max_senders());
 
             let next = curr + 1;
-            let actual = self.inner.num_senders.compare_and_swap(curr, next, SeqCst);
-
-            
-            
-            if actual == curr {
-                return BoundedSenderInner {
-                    inner: self.inner.clone(),
-                    sender_task: Arc::new(Mutex::new(SenderTask::new())),
-                    maybe_parked: false,
-                };
+            match self.inner.num_senders.compare_exchange(curr, next, SeqCst, SeqCst) {
+                Ok(_) => {
+                    
+                    
+                    return Self {
+                        inner: self.inner.clone(),
+                        sender_task: Arc::new(Mutex::new(SenderTask::new())),
+                        maybe_parked: false,
+                    };
+                }
+                Err(actual) => curr = actual,
             }
-
-            curr = actual;
         }
     }
 }

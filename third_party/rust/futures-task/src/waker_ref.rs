@@ -22,7 +22,7 @@ impl<'a> WakerRef<'a> {
         
         
         let waker = ManuallyDrop::new(unsafe { core::ptr::read(waker) });
-        WakerRef {
+        Self {
             waker,
             _marker: PhantomData,
         }
@@ -35,7 +35,7 @@ impl<'a> WakerRef<'a> {
     
     
     pub fn new_unowned(waker: ManuallyDrop<Waker>) -> Self {
-        WakerRef {
+        Self {
             waker,
             _marker: PhantomData,
         }

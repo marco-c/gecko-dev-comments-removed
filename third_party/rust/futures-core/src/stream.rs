@@ -55,6 +55,14 @@ pub trait Stream {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     fn poll_next(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,

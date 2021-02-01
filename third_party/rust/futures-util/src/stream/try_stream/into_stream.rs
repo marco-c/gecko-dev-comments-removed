@@ -3,54 +3,25 @@ use futures_core::stream::{FusedStream, Stream, TryStream};
 use futures_core::task::{Context, Poll};
 #[cfg(feature = "sink")]
 use futures_sink::Sink;
-use pin_utils::unsafe_pinned;
+use pin_project_lite::pin_project;
 
-
-#[derive(Debug)]
-#[must_use = "streams do nothing unless polled"]
-pub struct IntoStream<St> {
-    stream: St,
+pin_project! {
+    /// Stream for the [`into_stream`](super::TryStreamExt::into_stream) method.
+    #[derive(Debug)]
+    #[must_use = "streams do nothing unless polled"]
+    pub struct IntoStream<St> {
+        #[pin]
+        stream: St,
+    }
 }
 
 impl<St> IntoStream<St> {
-    unsafe_pinned!(stream: St);
-
     #[inline]
     pub(super) fn new(stream: St) -> Self {
-        IntoStream { stream }
+        Self { stream }
     }
 
-    
-    
-    pub fn get_ref(&self) -> &St {
-        &self.stream
-    }
-
-    
-    
-    
-    
-    
-    pub fn get_mut(&mut self) -> &mut St {
-        &mut self.stream
-    }
-
-    
-    
-    
-    
-    
-    pub fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut St> {
-        self.stream()
-    }
-
-    
-    
-    
-    
-    pub fn into_inner(self) -> St {
-        self.stream
-    }
+    delegate_access_inner!(stream, St, ());
 }
 
 impl<St: TryStream + FusedStream> FusedStream for IntoStream<St> {
@@ -67,7 +38,7 @@ impl<St: TryStream> Stream for IntoStream<St> {
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
     ) -> Poll<Option<Self::Item>> {
-        self.stream().try_poll_next(cx)
+        self.project().stream.try_poll_next(cx)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {

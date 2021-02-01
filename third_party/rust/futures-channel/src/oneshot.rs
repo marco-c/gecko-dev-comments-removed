@@ -1,11 +1,13 @@
 
 
+
+
 use alloc::sync::Arc;
 use core::fmt;
 use core::pin::Pin;
 use core::sync::atomic::AtomicBool;
 use core::sync::atomic::Ordering::SeqCst;
-use futures_core::future::Future;
+use futures_core::future::{Future, FusedFuture};
 use futures_core::task::{Context, Poll, Waker};
 
 use crate::lock::Lock;
@@ -99,6 +101,9 @@ struct Inner<T> {
 
 
 
+
+
+
 pub fn channel<T>() -> (Sender<T>, Receiver<T>) {
     let inner = Arc::new(Inner::new());
     let receiver = Receiver {
@@ -111,8 +116,8 @@ pub fn channel<T>() -> (Sender<T>, Receiver<T>) {
 }
 
 impl<T> Inner<T> {
-    fn new() -> Inner<T> {
-        Inner {
+    fn new() -> Self {
+        Self {
             complete: AtomicBool::new(false),
             data: Lock::new(None),
             rx_task: Lock::new(None),
@@ -337,7 +342,6 @@ impl<T> Sender<T> {
     
     
     
-    
     pub fn send(self, t: T) -> Result<(), T> {
         self.inner.send(t)
     }
@@ -363,15 +367,47 @@ impl<T> Sender<T> {
     
     
     
+    pub fn cancellation(&mut self) -> Cancellation<'_, T> {
+        Cancellation { inner: self }
+    }
+
+    
+    
+    
+    
+    
     
     pub fn is_canceled(&self) -> bool {
         self.inner.is_canceled()
+    }
+
+    
+    
+    pub fn is_connected_to(&self, receiver: &Receiver<T>) -> bool {
+        Arc::ptr_eq(&self.inner, &receiver.inner)
     }
 }
 
 impl<T> Drop for Sender<T> {
     fn drop(&mut self) {
         self.inner.drop_tx()
+    }
+}
+
+
+
+
+#[must_use = "futures do nothing unless you `.await` or poll them"]
+#[derive(Debug)]
+pub struct Cancellation<'a, T> {
+    inner: &'a mut Sender<T>,
+}
+
+impl<T> Future for Cancellation<'_, T> {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
+        self.inner.poll_canceled(cx)
     }
 }
 
@@ -422,6 +458,21 @@ impl<T> Future for Receiver<T> {
         cx: &mut Context<'_>,
     ) -> Poll<Result<T, Canceled>> {
         self.inner.recv(cx)
+    }
+}
+
+impl<T> FusedFuture for Receiver<T> {
+    fn is_terminated(&self) -> bool {
+        if self.inner.complete.load(SeqCst) {
+            if let Some(slot) = self.inner.data.try_lock() {
+                if slot.is_some() {
+                    return false;
+                }
+            }
+            true
+        } else {
+            false
+        }
     }
 }
 

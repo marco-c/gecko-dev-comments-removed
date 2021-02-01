@@ -4,7 +4,6 @@
 use futures_core::future::Future;
 use futures_core::task::{Context, Poll, Waker};
 use core::cell::UnsafeCell;
-#[cfg(any(feature = "bilock", feature = "sink"))]
 use core::fmt;
 use core::ops::{Deref, DerefMut};
 use core::pin::Pin;
@@ -35,6 +34,7 @@ use alloc::sync::Arc;
 
 
 #[derive(Debug)]
+#[cfg_attr(docsrs, doc(cfg(feature = "bilock")))]
 pub struct BiLock<T> {
     arc: Arc<Inner<T>>,
 }
@@ -60,13 +60,13 @@ impl<T> BiLock<T> {
     
     
     
-    pub fn new(t: T) -> (BiLock<T>, BiLock<T>) {
+    pub fn new(t: T) -> (Self, Self) {
         let arc = Arc::new(Inner {
             state: AtomicUsize::new(0),
             value: Some(UnsafeCell::new(t)),
         });
 
-        (BiLock { arc: arc.clone() }, BiLock { arc })
+        (Self { arc: arc.clone() }, Self { arc })
     }
 
     
@@ -88,6 +88,7 @@ impl<T> BiLock<T> {
     
     
     pub fn poll_lock(&self, cx: &mut Context<'_>) -> Poll<BiLockGuard<'_, T>> {
+        let mut waker = None;
         loop {
             match self.arc.state.swap(1, SeqCst) {
                 
@@ -99,12 +100,14 @@ impl<T> BiLock<T> {
                 
                 
                 n => unsafe {
-                    drop(Box::from_raw(n as *mut Waker));
+                    let mut prev = Box::from_raw(n as *mut Waker);
+                    *prev = cx.waker().clone();
+                    waker = Some(prev);
                 }
             }
 
             
-            let me: Box<Waker> = Box::new(cx.waker().clone());
+            let me: Box<Waker> = waker.take().unwrap_or_else(||Box::new(cx.waker().clone()));
             let me = Box::into_raw(me) as usize;
 
             match self.arc.state.compare_exchange(1, me, SeqCst, SeqCst) {
@@ -116,7 +119,7 @@ impl<T> BiLock<T> {
                 
                 
                 Err(0) => unsafe {
-                    drop(Box::from_raw(me as *mut Waker));
+                    waker = Some(Box::from_raw(me as *mut Waker));
                 },
 
                 
@@ -140,6 +143,7 @@ impl<T> BiLock<T> {
     
     
     #[cfg(feature = "bilock")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "bilock")))]
     pub fn lock(&self) -> BiLockAcquire<'_, T> {
         BiLockAcquire {
             bilock: self,
@@ -149,7 +153,6 @@ impl<T> BiLock<T> {
     
     
     
-    #[cfg(any(feature = "bilock", feature = "sink"))]
     pub fn reunite(self, other: Self) -> Result<T, ReuniteError<T>>
     where
         T: Unpin,
@@ -183,7 +186,6 @@ impl<T> BiLock<T> {
     }
 }
 
-#[cfg(any(feature = "bilock", feature = "sink"))]
 impl<T: Unpin> Inner<T> {
     unsafe fn into_value(mut self) -> T {
         self.value.take().unwrap().into_inner()
@@ -198,10 +200,9 @@ impl<T> Drop for Inner<T> {
 
 
 
-#[cfg(any(feature = "bilock", feature = "sink"))]
+#[cfg_attr(docsrs, doc(cfg(feature = "bilock")))]
 pub struct ReuniteError<T>(pub BiLock<T>, pub BiLock<T>);
 
-#[cfg(any(feature = "bilock", feature = "sink"))]
 impl<T> fmt::Debug for ReuniteError<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("ReuniteError")
@@ -210,14 +211,12 @@ impl<T> fmt::Debug for ReuniteError<T> {
     }
 }
 
-#[cfg(any(feature = "bilock", feature = "sink"))]
 impl<T> fmt::Display for ReuniteError<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "tried to reunite two BiLocks that don't form a pair")
     }
 }
 
-#[cfg(any(feature = "bilock", feature = "sink"))]
 #[cfg(feature = "std")]
 impl<T: core::any::Any> std::error::Error for ReuniteError<T> {}
 
@@ -227,6 +226,7 @@ impl<T: core::any::Any> std::error::Error for ReuniteError<T> {}
 
 
 #[derive(Debug)]
+#[cfg_attr(docsrs, doc(cfg(feature = "bilock")))]
 pub struct BiLockGuard<'a, T> {
     bilock: &'a BiLock<T>,
 }
@@ -262,6 +262,7 @@ impl<T> Drop for BiLockGuard<'_, T> {
 
 
 #[cfg(feature = "bilock")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bilock")))]
 #[must_use = "futures do nothing unless you `.await` or poll them"]
 #[derive(Debug)]
 pub struct BiLockAcquire<'a, T> {

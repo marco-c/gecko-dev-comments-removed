@@ -3,10 +3,14 @@
 
 
 
-use super::{assert_future, Either};
 #[cfg(feature = "alloc")]
 use alloc::boxed::Box;
 use core::pin::Pin;
+
+use crate::future::{assert_future, Either};
+use crate::stream::assert_stream;
+use crate::fns::{inspect_fn, into_fn, ok_fn, InspectFn, IntoFn, OkFn};
+use crate::never::Never;
 #[cfg(feature = "alloc")]
 use futures_core::future::{BoxFuture, LocalBoxFuture};
 use futures_core::{
@@ -14,44 +18,81 @@ use futures_core::{
     stream::Stream,
     task::{Context, Poll},
 };
+use pin_utils::pin_mut;
 
 
 
 mod flatten;
-#[allow(unreachable_pub)] 
-pub use self::flatten::Flatten;
-
-mod flatten_stream;
-#[allow(unreachable_pub)] 
-pub use self::flatten_stream::FlattenStream;
-
 mod fuse;
-#[allow(unreachable_pub)] 
-pub use self::fuse::Fuse;
-
-mod into_stream;
-#[allow(unreachable_pub)] 
-pub use self::into_stream::IntoStream;
-
 mod map;
-#[allow(unreachable_pub)] 
-pub use self::map::Map;
 
-mod then;
-#[allow(unreachable_pub)] 
-pub use self::then::Then;
+delegate_all!(
+    /// Future for the [`flatten`](super::FutureExt::flatten) method.
+    Flatten<F>(
+        flatten::Flatten<F, <F as Future>::Output>
+    ): Debug + Future + FusedFuture + New[|x: F| flatten::Flatten::new(x)]
+    where F: Future
+);
 
-mod inspect;
-#[allow(unreachable_pub)] 
-pub use self::inspect::Inspect;
+delegate_all!(
+    /// Stream for the [`flatten_stream`](FutureExt::flatten_stream) method.
+    FlattenStream<F>(
+        flatten::Flatten<F, <F as Future>::Output>
+    ): Debug + Sink + Stream + FusedStream + New[|x: F| flatten::Flatten::new(x)]
+    where F: Future
+);
 
-mod unit_error;
 #[allow(unreachable_pub)] 
-pub use self::unit_error::UnitError;
+pub use fuse::Fuse;
 
-mod never_error;
-#[allow(unreachable_pub)] 
-pub use self::never_error::NeverError;
+delegate_all!(
+    /// Future for the [`map`](super::FutureExt::map) method.
+    Map<Fut, F>(
+        map::Map<Fut, F>
+    ): Debug + Future + FusedFuture + New[|x: Fut, f: F| map::Map::new(x, f)]
+);
+
+delegate_all!(
+    /// Stream for the [`into_stream`](FutureExt::into_stream) method.
+    IntoStream<F>(
+        crate::stream::Once<F>
+    ): Debug + Stream + FusedStream + New[|x: F| crate::stream::Once::new(x)]
+);
+
+delegate_all!(
+    /// Future for the [`map_into`](FutureExt::map_into) combinator.
+    MapInto<Fut, T>(
+        Map<Fut, IntoFn<T>>
+    ): Debug + Future + FusedFuture + New[|x: Fut| Map::new(x, into_fn())]
+);
+
+delegate_all!(
+    /// Future for the [`then`](FutureExt::then) method.
+    Then<Fut1, Fut2, F>(
+        flatten::Flatten<Map<Fut1, F>, Fut2>
+    ): Debug + Future + FusedFuture + New[|x: Fut1, y: F| flatten::Flatten::new(Map::new(x, y))]
+);
+
+delegate_all!(
+    /// Future for the [`inspect`](FutureExt::inspect) method.
+    Inspect<Fut, F>(
+        map::Map<Fut, InspectFn<F>>
+    ): Debug + Future + FusedFuture + New[|x: Fut, f: F| map::Map::new(x, inspect_fn(f))]
+);
+
+delegate_all!(
+    /// Future for the [`never_error`](super::FutureExt::never_error) combinator.
+    NeverError<Fut>(
+        Map<Fut, OkFn<Never>>
+    ): Debug + Future + FusedFuture + New[|x: Fut| Map::new(x, ok_fn())]
+);
+
+delegate_all!(
+    /// Future for the [`unit_error`](super::FutureExt::unit_error) combinator.
+    UnitError<Fut>(
+        Map<Fut, OkFn<()>>
+    ): Debug + Future + FusedFuture + New[|x: Fut| Map::new(x, ok_fn())]
+);
 
 #[cfg(feature = "std")]
 mod catch_unwind;
@@ -60,9 +101,11 @@ mod catch_unwind;
 pub use self::catch_unwind::CatchUnwind;
 
 #[cfg(feature = "channel")]
+#[cfg_attr(docsrs, doc(cfg(feature = "channel")))]
 #[cfg(feature = "std")]
 mod remote_handle;
 #[cfg(feature = "channel")]
+#[cfg_attr(docsrs, doc(cfg(feature = "channel")))]
 #[cfg(feature = "std")]
 #[allow(unreachable_pub)] 
 pub use self::remote_handle::{Remote, RemoteHandle};
@@ -71,12 +114,7 @@ pub use self::remote_handle::{Remote, RemoteHandle};
 mod shared;
 #[cfg(feature = "std")]
 #[allow(unreachable_pub)] 
-pub use self::shared::Shared;
-
-
-
-mod chain;
-pub(crate) use self::chain::Chain;
+pub use self::shared::{Shared, WeakShared};
 
 impl<T: ?Sized> FutureExt for T where T: Future {}
 
@@ -111,6 +149,19 @@ pub trait FutureExt: Future {
         Self: Sized,
     {
         assert_future::<U, _>(Map::new(self, f))
+    }
+
+    
+    
+    
+    
+    
+    fn map_into<U>(self) -> MapInto<Self, U>
+    where
+        Self::Output: Into<U>,
+        Self: Sized,
+    {
+        assert_future::<U, _>(MapInto::new(self))
     }
 
     
@@ -173,7 +224,7 @@ pub trait FutureExt: Future {
         B: Future<Output = Self::Output>,
         Self: Sized,
     {
-        Either::Left(self)
+        assert_future::<Self::Output, _>(Either::Left(self))
     }
 
     
@@ -203,7 +254,7 @@ pub trait FutureExt: Future {
         A: Future<Output = Self::Output>,
         Self: Sized,
     {
-        Either::Right(self)
+        assert_future::<Self::Output, _>(Either::Right(self))
     }
 
     
@@ -228,7 +279,7 @@ pub trait FutureExt: Future {
     where
         Self: Sized,
     {
-        IntoStream::new(self)
+        assert_stream::<Self::Output, _>(IntoStream::new(self))
     }
 
     
@@ -292,7 +343,7 @@ pub trait FutureExt: Future {
         Self::Output: Stream,
         Self: Sized,
     {
-        FlattenStream::new(self)
+        assert_stream::<<Self::Output as Stream>::Item, _>(FlattenStream::new(self))
     }
 
     
@@ -381,7 +432,9 @@ pub trait FutureExt: Future {
     where
         Self: Sized + ::std::panic::UnwindSafe,
     {
-        CatchUnwind::new(self)
+        assert_future::<Result<Self::Output, Box<dyn std::any::Any + Send>>, _>(CatchUnwind::new(
+            self,
+        ))
     }
 
     
@@ -435,7 +488,7 @@ pub trait FutureExt: Future {
         Self: Sized,
         Self::Output: Clone,
     {
-        Shared::new(self)
+        assert_future::<Self::Output, _>(Shared::new(self))
     }
 
     
@@ -447,6 +500,7 @@ pub trait FutureExt: Future {
     
     
     #[cfg(feature = "channel")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "channel")))]
     #[cfg(feature = "std")]
     fn remote_handle(self) -> (Remote<Self>, RemoteHandle<Self::Output>)
     where
@@ -464,7 +518,7 @@ pub trait FutureExt: Future {
     where
         Self: Sized + Send + 'a,
     {
-        Box::pin(self)
+        assert_future::<Self::Output, _>(Box::pin(self))
     }
 
     
@@ -478,7 +532,7 @@ pub trait FutureExt: Future {
     where
         Self: Sized + 'a,
     {
-        Box::pin(self)
+        assert_future::<Self::Output, _>(Box::pin(self))
     }
 
     
@@ -487,7 +541,7 @@ pub trait FutureExt: Future {
     where
         Self: Sized,
     {
-        UnitError::new(self)
+        assert_future::<Result<Self::Output, ()>, _>(UnitError::new(self))
     }
 
     
@@ -496,7 +550,7 @@ pub trait FutureExt: Future {
     where
         Self: Sized,
     {
-        NeverError::new(self)
+        assert_future::<Result<Self::Output, Never>, _>(NeverError::new(self))
     }
 
     
@@ -538,19 +592,16 @@ pub trait FutureExt: Future {
     
     
     
-    fn now_or_never(mut self) -> Option<Self::Output>
+    fn now_or_never(self) -> Option<Self::Output>
     where
         Self: Sized,
     {
         let noop_waker = crate::task::noop_waker();
         let mut cx = Context::from_waker(&noop_waker);
 
-        
-        
-        
-        let pinned = unsafe { Pin::new_unchecked(&mut self) };
-
-        match pinned.poll(&mut cx) {
+        let this = self;
+        pin_mut!(this);
+        match this.poll(&mut cx) {
             Poll::Ready(x) => Some(x),
             _ => None,
         }

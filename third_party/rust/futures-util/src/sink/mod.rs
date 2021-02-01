@@ -6,9 +6,11 @@
 
 
 
+use crate::future::Either;
+use core::pin::Pin;
 use futures_core::future::Future;
 use futures_core::stream::{Stream, TryStream};
-use crate::future::Either;
+use futures_core::task::{Context, Poll};
 
 #[cfg(feature = "compat")]
 use crate::compat::CompatSink;
@@ -24,6 +26,9 @@ pub use self::drain::{drain, Drain};
 mod fanout;
 pub use self::fanout::Fanout;
 
+mod feed;
+pub use self::feed::Feed;
+
 mod flush;
 pub use self::flush::Flush;
 
@@ -38,6 +43,9 @@ pub use self::send::Send;
 
 mod send_all;
 pub use self::send_all::SendAll;
+
+mod unfold;
+pub use self::unfold::{unfold, Unfold};
 
 mod with;
 pub use self::with::With;
@@ -67,10 +75,11 @@ pub trait SinkExt<Item>: Sink<Item> {
     
     
     fn with<U, Fut, F, E>(self, f: F) -> With<Self, Item, U, Fut, F>
-        where F: FnMut(U) -> Fut,
-              Fut: Future<Output = Result<Item, E>>,
-              E: From<Self::Error>,
-              Self: Sized
+    where
+        F: FnMut(U) -> Fut,
+        Fut: Future<Output = Result<Item, E>>,
+        E: From<Self::Error>,
+        Self: Sized,
     {
         With::new(self, f)
     }
@@ -108,9 +117,10 @@ pub trait SinkExt<Item>: Sink<Item> {
     
     
     fn with_flat_map<U, St, F>(self, f: F) -> WithFlatMap<Self, Item, U, St, F>
-        where F: FnMut(U) -> St,
-              St: Stream<Item = Result<Item, Self::Error>>,
-              Self: Sized
+    where
+        F: FnMut(U) -> St,
+        St: Stream<Item = Result<Item, Self::Error>>,
+        Self: Sized,
     {
         WithFlatMap::new(self, f)
     }
@@ -131,8 +141,9 @@ pub trait SinkExt<Item>: Sink<Item> {
 
     
     fn sink_map_err<E, F>(self, f: F) -> SinkMapErr<Self, F>
-        where F: FnOnce(Self::Error) -> E,
-              Self: Sized,
+    where
+        F: FnOnce(Self::Error) -> E,
+        Self: Sized,
     {
         SinkMapErr::new(self, f)
     }
@@ -141,12 +152,12 @@ pub trait SinkExt<Item>: Sink<Item> {
     
     
     fn sink_err_into<E>(self) -> err_into::SinkErrInto<Self, Item, E>
-        where Self: Sized,
-              Self::Error: Into<E>,
+    where
+        Self: Sized,
+        Self::Error: Into<E>,
     {
         SinkErrInto::new(self)
     }
-
 
     
     
@@ -162,14 +173,16 @@ pub trait SinkExt<Item>: Sink<Item> {
     
     #[cfg(feature = "alloc")]
     fn buffer(self, capacity: usize) -> Buffer<Self, Item>
-        where Self: Sized,
+    where
+        Self: Sized,
     {
         Buffer::new(self, capacity)
     }
 
     
     fn close(&mut self) -> Close<'_, Self, Item>
-        where Self: Unpin,
+    where
+        Self: Unpin,
     {
         Close::new(self)
     }
@@ -179,9 +192,10 @@ pub trait SinkExt<Item>: Sink<Item> {
     
     
     fn fanout<Si>(self, other: Si) -> Fanout<Self, Si>
-        where Self: Sized,
-              Item: Clone,
-              Si: Sink<Item, Error=Self::Error>
+    where
+        Self: Sized,
+        Item: Clone,
+        Si: Sink<Item, Error = Self::Error>,
     {
         Fanout::new(self, other)
     }
@@ -191,7 +205,8 @@ pub trait SinkExt<Item>: Sink<Item> {
     
     
     fn flush(&mut self) -> Flush<'_, Self, Item>
-        where Self: Unpin,
+    where
+        Self: Unpin,
     {
         Flush::new(self)
     }
@@ -203,7 +218,8 @@ pub trait SinkExt<Item>: Sink<Item> {
     
     
     fn send(&mut self, item: Item) -> Send<'_, Self, Item>
-        where Self: Unpin,
+    where
+        Self: Unpin,
     {
         Send::new(self, item)
     }
@@ -214,17 +230,27 @@ pub trait SinkExt<Item>: Sink<Item> {
     
     
     
+    fn feed(&mut self, item: Item) -> Feed<'_, Self, Item>
+        where Self: Unpin,
+    {
+        Feed::new(self, item)
+    }
+
     
     
     
     
     
-    fn send_all<'a, St>(
-        &'a mut self,
-        stream: &'a mut St
-    ) -> SendAll<'a, Self, St>
-        where St: TryStream<Ok = Item, Error = Self::Error> + Stream + Unpin + ?Sized,
-              Self: Unpin,
+    
+    
+    
+    
+    
+    
+    fn send_all<'a, St>(&'a mut self, stream: &'a mut St) -> SendAll<'a, Self, St>
+    where
+        St: TryStream<Ok = Item, Error = Self::Error> + Stream + Unpin + ?Sized,
+        Self: Unpin,
     {
         SendAll::new(self, stream)
     }
@@ -235,8 +261,9 @@ pub trait SinkExt<Item>: Sink<Item> {
     
     
     fn left_sink<Si2>(self) -> Either<Self, Si2>
-        where Si2: Sink<Item, Error = Self::Error>,
-              Self: Sized
+    where
+        Si2: Sink<Item, Error = Self::Error>,
+        Self: Sized,
     {
         Either::Left(self)
     }
@@ -247,8 +274,9 @@ pub trait SinkExt<Item>: Sink<Item> {
     
     
     fn right_sink<Si1>(self) -> Either<Si1, Self>
-        where Si1: Sink<Item, Error = Self::Error>,
-              Self: Sized
+    where
+        Si1: Sink<Item, Error = Self::Error>,
+        Self: Sized,
     {
         Either::Right(self)
     }
@@ -256,9 +284,47 @@ pub trait SinkExt<Item>: Sink<Item> {
     
     
     #[cfg(feature = "compat")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "compat")))]
     fn compat(self) -> CompatSink<Self, Item>
-        where Self: Sized + Unpin,
+    where
+        Self: Sized + Unpin,
     {
         CompatSink::new(self)
+    }
+
+    
+    
+    fn poll_ready_unpin(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>>
+    where
+        Self: Unpin,
+    {
+        Pin::new(self).poll_ready(cx)
+    }
+
+    
+    
+    fn start_send_unpin(&mut self, item: Item) -> Result<(), Self::Error>
+    where
+        Self: Unpin,
+    {
+        Pin::new(self).start_send(item)
+    }
+
+    
+    
+    fn poll_flush_unpin(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>>
+    where
+        Self: Unpin,
+    {
+        Pin::new(self).poll_flush(cx)
+    }
+
+    
+    
+    fn poll_close_unpin(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>>
+    where
+        Self: Unpin,
+    {
+        Pin::new(self).poll_close(cx)
     }
 }

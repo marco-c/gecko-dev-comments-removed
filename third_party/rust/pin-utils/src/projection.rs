@@ -32,9 +32,14 @@
 
 
 
+
+
+
+
 #[macro_export]
 macro_rules! unsafe_pinned {
     ($f:tt: $t:ty) => (
+        #[allow(unsafe_code)]
         fn $f<'__a>(
             self: $crate::core_reexport::pin::Pin<&'__a mut Self>
         ) -> $crate::core_reexport::pin::Pin<&'__a mut $t> {
@@ -74,9 +79,16 @@ macro_rules! unsafe_pinned {
 
 
 
+
+
+
+
+
+
 #[macro_export]
 macro_rules! unsafe_unpinned {
     ($f:tt: $t:ty) => (
+        #[allow(unsafe_code)]
         fn $f<'__a>(
             self: $crate::core_reexport::pin::Pin<&'__a mut Self>
         ) -> &'__a mut $t {

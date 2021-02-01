@@ -3,10 +3,18 @@ use futures_core::task::{Context, Poll, Waker};
 use slab::Slab;
 use std::{fmt, mem};
 use std::cell::UnsafeCell;
+use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::sync::Mutex as StdMutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
+
+
+
+
+
+
+
 
 
 pub struct Mutex<T: ?Sized> {
@@ -32,8 +40,8 @@ impl<T> From<T> for Mutex<T> {
 }
 
 impl<T: Default> Default for Mutex<T> {
-    fn default() -> Mutex<T> {
-        Mutex::new(Default::default())
+    fn default() -> Self {
+        Self::new(Default::default())
     }
 }
 
@@ -45,15 +53,15 @@ enum Waiter {
 impl Waiter {
     fn register(&mut self, waker: &Waker) {
         match self {
-            Waiter::Waiting(w) if waker.will_wake(w) => {},
-            _ => *self = Waiter::Waiting(waker.clone()),
+            Self::Waiting(w) if waker.will_wake(w) => {},
+            _ => *self = Self::Waiting(waker.clone()),
         }
     }
 
     fn wake(&mut self) {
-        match mem::replace(self, Waiter::Woken) {
-            Waiter::Waiting(waker) => waker.wake(),
-            Waiter::Woken => {},
+        match mem::replace(self, Self::Woken) {
+            Self::Waiting(waker) => waker.wake(),
+            Self::Woken => {},
         }
     }
 }
@@ -64,8 +72,8 @@ const HAS_WAITERS: usize = 1 << 1;
 
 impl<T> Mutex<T> {
     
-    pub fn new(t: T) -> Mutex<T> {
-        Mutex {
+    pub fn new(t: T) -> Self {
+        Self {
             state: AtomicUsize::new(0),
             waiters: StdMutex::new(Slab::new()),
             value: UnsafeCell::new(t),
@@ -281,7 +289,7 @@ impl<'a, T: ?Sized> MutexGuard<'a, T> {
         
         
         mem::forget(this);
-        MappedMutexGuard { mutex, value }
+        MappedMutexGuard { mutex, value, _marker: PhantomData }
     }
 }
 
@@ -318,6 +326,7 @@ impl<T: ?Sized> DerefMut for MutexGuard<'_, T> {
 pub struct MappedMutexGuard<'a, T: ?Sized, U: ?Sized> {
     mutex: &'a Mutex<T>,
     value: *mut U,
+    _marker: PhantomData<&'a mut U>,
 }
 
 impl<'a, T: ?Sized, U: ?Sized> MappedMutexGuard<'a, T, U> {
@@ -347,7 +356,7 @@ impl<'a, T: ?Sized, U: ?Sized> MappedMutexGuard<'a, T, U> {
         
         
         mem::forget(this);
-        MappedMutexGuard { mutex, value }
+        MappedMutexGuard { mutex, value, _marker: PhantomData }
     }
 }
 
@@ -394,8 +403,8 @@ unsafe impl<T: ?Sized> Sync for MutexLockFuture<'_, T> {}
 
 unsafe impl<T: ?Sized + Send> Send for MutexGuard<'_, T> {}
 unsafe impl<T: ?Sized + Sync> Sync for MutexGuard<'_, T> {}
-unsafe impl<T: ?Sized + Send, U: ?Sized> Send for MappedMutexGuard<'_, T, U> {}
-unsafe impl<T: ?Sized + Sync, U: ?Sized> Sync for MappedMutexGuard<'_, T, U> {}
+unsafe impl<T: ?Sized + Send, U: ?Sized + Send> Send for MappedMutexGuard<'_, T, U> {}
+unsafe impl<T: ?Sized + Sync, U: ?Sized + Sync> Sync for MappedMutexGuard<'_, T, U> {}
 
 #[test]
 fn test_mutex_guard_debug_not_recurse() {

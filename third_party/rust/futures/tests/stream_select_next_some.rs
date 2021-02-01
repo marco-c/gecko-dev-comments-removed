@@ -1,12 +1,11 @@
-use futures::{future, select};
-use futures::future::{FusedFuture, FutureExt};
-use futures::stream::{FuturesUnordered, StreamExt};
-use futures::task::{Context, Poll};
-use futures_test::future::FutureTestExt;
-use futures_test::task::new_count_waker;
-
 #[test]
 fn is_terminated() {
+    use futures::future;
+    use futures::future::{FusedFuture, FutureExt};
+    use futures::stream::{FuturesUnordered, StreamExt};
+    use futures::task::{Context, Poll};
+    use futures_test::task::new_count_waker;
+
     let (waker, counter) = new_count_waker();
     let mut cx = Context::from_waker(&waker);
 
@@ -31,6 +30,10 @@ fn is_terminated() {
 
 #[test]
 fn select() {
+    use futures::{future, select};
+    use futures::stream::{FuturesUnordered, StreamExt};
+    use futures_test::future::FutureTestExt;
+
     
     
     
@@ -58,6 +61,10 @@ fn select() {
 
 #[test]
 fn futures_util_select() {
+    use futures::future;
+    use futures::stream::{FuturesUnordered, StreamExt};
+    use futures_test::future::FutureTestExt;
+
     use futures_util::select;
 
     

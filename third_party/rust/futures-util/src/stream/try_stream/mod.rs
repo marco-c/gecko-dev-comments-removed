@@ -11,34 +11,53 @@ use futures_core::{
     stream::TryStream,
     task::{Context, Poll},
 };
+use crate::fns::{
+    InspectOkFn, inspect_ok_fn, InspectErrFn, inspect_err_fn, MapErrFn, map_err_fn, IntoFn, into_fn, MapOkFn, map_ok_fn,
+};
+use crate::stream::{Map, Inspect};
 
 mod and_then;
 #[allow(unreachable_pub)] 
 pub use self::and_then::AndThen;
 
-mod err_into;
-#[allow(unreachable_pub)] 
-pub use self::err_into::ErrInto;
+delegate_all!(
+    /// Stream for the [`err_into`](super::TryStreamExt::err_into) method.
+    ErrInto<St, E>(
+        MapErr<St, IntoFn<E>>
+    ): Debug + Sink + Stream + FusedStream + AccessInner[St, (.)] + New[|x: St| MapErr::new(x, into_fn())]
+);
 
-mod inspect_ok;
-#[allow(unreachable_pub)] 
-pub use self::inspect_ok::InspectOk;
+delegate_all!(
+    /// Stream for the [`inspect_ok`](super::TryStreamExt::inspect_ok) method.
+    InspectOk<St, F>(
+        Inspect<IntoStream<St>, InspectOkFn<F>>
+    ): Debug + Sink + Stream + FusedStream + AccessInner[St, (. .)] + New[|x: St, f: F| Inspect::new(IntoStream::new(x), inspect_ok_fn(f))]
+);
 
-mod inspect_err;
-#[allow(unreachable_pub)] 
-pub use self::inspect_err::InspectErr;
+delegate_all!(
+    /// Stream for the [`inspect_err`](super::TryStreamExt::inspect_err) method.
+    InspectErr<St, F>(
+        Inspect<IntoStream<St>, InspectErrFn<F>>
+    ): Debug + Sink + Stream + FusedStream + AccessInner[St, (. .)] + New[|x: St, f: F| Inspect::new(IntoStream::new(x), inspect_err_fn(f))]
+);
 
 mod into_stream;
 #[allow(unreachable_pub)] 
 pub use self::into_stream::IntoStream;
 
-mod map_ok;
-#[allow(unreachable_pub)] 
-pub use self::map_ok::MapOk;
+delegate_all!(
+    /// Stream for the [`map_ok`](super::TryStreamExt::map_ok) method.
+    MapOk<St, F>(
+        Map<IntoStream<St>, MapOkFn<F>>
+    ): Debug + Sink + Stream + FusedStream + AccessInner[St, (. .)] + New[|x: St, f: F| Map::new(IntoStream::new(x), map_ok_fn(f))]
+);
 
-mod map_err;
-#[allow(unreachable_pub)] 
-pub use self::map_err::MapErr;
+delegate_all!(
+    /// Stream for the [`map_err`](super::TryStreamExt::map_err) method.
+    MapErr<St, F>(
+        Map<IntoStream<St>, MapErrFn<F>>
+    ): Debug + Sink + Stream + FusedStream + AccessInner[St, (. .)] + New[|x: St, f: F| Map::new(IntoStream::new(x), map_err_fn(f))]
+);
 
 mod or_else;
 #[allow(unreachable_pub)] 
@@ -84,12 +103,22 @@ mod try_skip_while;
 #[allow(unreachable_pub)] 
 pub use self::try_skip_while::TrySkipWhile;
 
+mod try_take_while;
+#[allow(unreachable_pub)] 
+pub use self::try_take_while::TryTakeWhile;
+
 cfg_target_has_atomic! {
     #[cfg(feature = "alloc")]
     mod try_buffer_unordered;
     #[cfg(feature = "alloc")]
     #[allow(unreachable_pub)] // https://github.com/rust-lang/rust/issues/57411
     pub use self::try_buffer_unordered::TryBufferUnordered;
+
+    #[cfg(feature = "alloc")]
+    mod try_buffered;
+    #[cfg(feature = "alloc")]
+    #[allow(unreachable_pub)] // https://github.com/rust-lang/rust/issues/57411
+    pub use self::try_buffered::TryBuffered;
 
     #[cfg(feature = "alloc")]
     mod try_for_each_concurrent;
@@ -102,9 +131,12 @@ cfg_target_has_atomic! {
 #[cfg(feature = "std")]
 mod into_async_read;
 #[cfg(feature = "io")]
+#[cfg_attr(docsrs, doc(cfg(feature = "io")))]
 #[cfg(feature = "std")]
 #[allow(unreachable_pub)] 
 pub use self::into_async_read::IntoAsyncRead;
+use crate::future::assert_future;
+use crate::stream::assert_stream;
 
 impl<S: ?Sized + TryStream> TryStreamExt for S {}
 
@@ -132,7 +164,7 @@ pub trait TryStreamExt: TryStream {
         Self: Sized,
         Self::Error: Into<E>,
     {
-        ErrInto::new(self)
+        assert_stream::<Result<Self::Ok, E>, _>(ErrInto::new(self))
     }
 
     
@@ -157,7 +189,7 @@ pub trait TryStreamExt: TryStream {
         Self: Sized,
         F: FnMut(Self::Ok) -> T,
     {
-        MapOk::new(self, f)
+        assert_stream::<Result<T, Self::Error>, _>(MapOk::new(self, f))
     }
 
     
@@ -182,7 +214,7 @@ pub trait TryStreamExt: TryStream {
         Self: Sized,
         F: FnMut(Self::Error) -> E,
     {
-        MapErr::new(self, f)
+        assert_stream::<Result<Self::Ok, E>, _>(MapErr::new(self, f))
     }
 
     
@@ -229,7 +261,7 @@ pub trait TryStreamExt: TryStream {
         Fut: TryFuture<Error = Self::Error>,
         Self: Sized,
     {
-        AndThen::new(self, f)
+        assert_stream::<Result<Fut::Ok, Fut::Error>, _>(AndThen::new(self, f))
     }
 
     
@@ -255,7 +287,7 @@ pub trait TryStreamExt: TryStream {
         Fut: TryFuture<Ok = Self::Ok>,
         Self: Sized,
     {
-        OrElse::new(self, f)
+        assert_stream::<Result<Self::Ok, Fut::Error>, _>(OrElse::new(self, f))
     }
 
     
@@ -269,7 +301,7 @@ pub trait TryStreamExt: TryStream {
         F: FnMut(&Self::Ok),
         Self: Sized,
     {
-        InspectOk::new(self, f)
+        assert_stream::<Result<Self::Ok, Self::Error>, _>(InspectOk::new(self, f))
     }
 
     
@@ -282,7 +314,7 @@ pub trait TryStreamExt: TryStream {
         F: FnMut(&Self::Error),
         Self: Sized,
     {
-        InspectErr::new(self, f)
+        assert_stream::<Result<Self::Ok, Self::Error>, _>(InspectErr::new(self, f))
     }
 
     
@@ -310,7 +342,7 @@ pub trait TryStreamExt: TryStream {
     where
         Self: Sized,
     {
-        IntoStream::new(self)
+        assert_stream::<Result<Self::Ok, Self::Error>, _>(IntoStream::new(self))
     }
 
     
@@ -337,7 +369,7 @@ pub trait TryStreamExt: TryStream {
     where
         Self: Unpin,
     {
-        TryNext::new(self)
+        assert_future::<Result<Option<Self::Ok>, Self::Error>, _>(TryNext::new(self))
     }
 
     
@@ -379,9 +411,10 @@ pub trait TryStreamExt: TryStream {
         Fut: TryFuture<Ok = (), Error = Self::Error>,
         Self: Sized,
     {
-        TryForEach::new(self, f)
+        assert_future::<Result<(), Self::Error>, _>(TryForEach::new(self, f))
     }
 
+    
     
     
     
@@ -408,7 +441,37 @@ pub trait TryStreamExt: TryStream {
         Fut: TryFuture<Ok = bool, Error = Self::Error>,
         Self: Sized,
     {
-        TrySkipWhile::new(self, f)
+        assert_stream::<Result<Self::Ok, Self::Error>, _>(TrySkipWhile::new(self, f))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn try_take_while<Fut, F>(self, f: F) -> TryTakeWhile<Self, Fut, F>
+    where
+        F: FnMut(&Self::Ok) -> Fut,
+        Fut: TryFuture<Ok = bool, Error = Self::Error>,
+        Self: Sized,
+    {
+        TryTakeWhile::new(self, f)
     }
 
     
@@ -464,7 +527,11 @@ pub trait TryStreamExt: TryStream {
         Fut: Future<Output = Result<(), Self::Error>>,
         Self: Sized,
     {
-        TryForEachConcurrent::new(self, limit.into(), f)
+        assert_future::<Result<(), Self::Error>, _>(TryForEachConcurrent::new(
+            self,
+            limit.into(),
+            f,
+        ))
     }
 
     
@@ -501,7 +568,7 @@ pub trait TryStreamExt: TryStream {
     where
         Self: Sized,
     {
-        TryCollect::new(self)
+        assert_future::<Result<C, Self::Error>, _>(TryCollect::new(self))
     }
 
     
@@ -540,7 +607,7 @@ pub trait TryStreamExt: TryStream {
         F: FnMut(&Self::Ok) -> Fut,
         Self: Sized,
     {
-        TryFilter::new(self, f)
+        assert_stream::<Result<Self::Ok, Self::Error>, _>(TryFilter::new(self, f))
     }
 
     
@@ -581,7 +648,7 @@ pub trait TryStreamExt: TryStream {
         F: FnMut(Self::Ok) -> Fut,
         Self: Sized,
     {
-        TryFilterMap::new(self, f)
+        assert_stream::<Result<T, Self::Error>, _>(TryFilterMap::new(self, f))
     }
 
     
@@ -628,7 +695,9 @@ pub trait TryStreamExt: TryStream {
         <Self::Ok as TryStream>::Error: From<Self::Error>,
         Self: Sized,
     {
-        TryFlatten::new(self)
+        assert_stream::<Result<<Self::Ok as TryStream>::Ok, <Self::Ok as TryStream>::Error>, _>(
+            TryFlatten::new(self),
+        )
     }
 
     
@@ -665,7 +734,7 @@ pub trait TryStreamExt: TryStream {
         Fut: TryFuture<Ok = T, Error = Self::Error>,
         Self: Sized,
     {
-        TryFold::new(self, f, init)
+        assert_future::<Result<T, Self::Error>, _>(TryFold::new(self, f, init))
     }
 
     
@@ -707,7 +776,7 @@ pub trait TryStreamExt: TryStream {
         Self: Sized,
         Self::Ok: Extend<<<Self as TryStream>::Ok as IntoIterator>::Item> + IntoIterator + Default,
     {
-        TryConcat::new(self)
+        assert_future::<Result<Self::Ok, Self::Error>, _>(TryConcat::new(self))
     }
 
     
@@ -774,7 +843,83 @@ pub trait TryStreamExt: TryStream {
         Self::Ok: TryFuture<Error = Self::Error>,
         Self: Sized,
     {
-        TryBufferUnordered::new(self, n)
+        assert_stream::<Result<<Self::Ok as TryFuture>::Ok, Self::Error>, _>(
+            TryBufferUnordered::new(self, n),
+        )
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "cfg-target-has-atomic", cfg(target_has_atomic = "ptr"))]
+    #[cfg(feature = "alloc")]
+    fn try_buffered(self, n: usize) -> TryBuffered<Self>
+    where
+        Self::Ok: TryFuture<Error = Self::Error>,
+        Self: Sized,
+    {
+        TryBuffered::new(self, n)
     }
 
     
@@ -811,6 +956,7 @@ pub trait TryStreamExt: TryStream {
     
     
     #[cfg(feature = "compat")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "compat")))]
     fn compat(self) -> Compat<Self>
     where
         Self: Sized + Unpin,
@@ -844,6 +990,7 @@ pub trait TryStreamExt: TryStream {
     
     
     #[cfg(feature = "io")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "io")))]
     #[cfg(feature = "std")]
     fn into_async_read(self) -> IntoAsyncRead<Self>
     where

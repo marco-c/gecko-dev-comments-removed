@@ -70,7 +70,7 @@ impl<Fut> ArcWake for Task<Fut> {
 
 impl<Fut> Task<Fut> {
     
-    pub(super) fn waker_ref<'a>(this: &'a Arc<Task<Fut>>) -> WakerRef<'a> {
+    pub(super) fn waker_ref(this: &Arc<Self>) -> WakerRef<'_> {
         waker_ref(this)
     }
 

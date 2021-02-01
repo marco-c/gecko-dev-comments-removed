@@ -3,7 +3,7 @@
 
 
 
-use crate::future::Either;
+use crate::future::{assert_future, Either};
 #[cfg(feature = "alloc")]
 use alloc::boxed::Box;
 use core::pin::Pin;
@@ -19,6 +19,8 @@ use futures_core::{
 #[cfg(feature = "sink")]
 use futures_sink::Sink;
 
+use crate::fns::{InspectFn, inspect_fn};
+
 mod chain;
 #[allow(unreachable_pub)] 
 pub use self::chain::Chain;
@@ -27,9 +29,17 @@ mod collect;
 #[allow(unreachable_pub)] 
 pub use self::collect::Collect;
 
+mod unzip;
+#[allow(unreachable_pub)] 
+pub use self::unzip::Unzip;
+
 mod concat;
 #[allow(unreachable_pub)] 
 pub use self::concat::Concat;
+
+mod cycle;
+#[allow(unreachable_pub)] 
+pub use self::cycle::Cycle;
 
 mod enumerate;
 #[allow(unreachable_pub)] 
@@ -44,8 +54,14 @@ mod filter_map;
 pub use self::filter_map::FilterMap;
 
 mod flatten;
-#[allow(unreachable_pub)] 
-pub use self::flatten::Flatten;
+
+delegate_all!(
+    /// Stream for the [`flatten`](StreamExt::flatten) method.
+    Flatten<St>(
+        flatten::Flatten<St, St::Item>
+    ): Debug + Sink + Stream + FusedStream + AccessInner[St, (.)] + New[|x: St| flatten::Flatten::new(x)]
+    where St: Stream
+);
 
 mod fold;
 #[allow(unreachable_pub)] 
@@ -53,9 +69,16 @@ pub use self::fold::Fold;
 
 #[cfg(feature = "sink")]
 mod forward;
+
 #[cfg(feature = "sink")]
-#[allow(unreachable_pub)] 
-pub use self::forward::Forward;
+delegate_all!(
+    /// Future for the [`forward`](super::StreamExt::forward) method.
+    #[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
+    Forward<St, Si>(
+        forward::Forward<St, Si, St::Ok>
+    ): Debug + Future + FusedFuture + New[|x: St, y: Si| forward::Forward::new(x, y)]
+    where St: TryStream
+);
 
 mod for_each;
 #[allow(unreachable_pub)] 
@@ -69,14 +92,23 @@ mod into_future;
 #[allow(unreachable_pub)] 
 pub use self::into_future::StreamFuture;
 
-mod inspect;
-pub(crate) use self::inspect::inspect; 
-#[allow(unreachable_pub)] 
-pub use self::inspect::Inspect;
+delegate_all!(
+    /// Stream for the [`inspect`](StreamExt::inspect) method.
+    Inspect<St, F>(
+        map::Map<St, InspectFn<F>>
+    ): Debug + Sink + Stream + FusedStream + AccessInner[St, (.)] + New[|x: St, f: F| map::Map::new(x, inspect_fn(f))]
+);
 
 mod map;
 #[allow(unreachable_pub)] 
 pub use self::map::Map;
+
+delegate_all!(
+    /// Stream for the [`flat_map`](StreamExt::flat_map) method.
+    FlatMap<St, U, F>(
+        flatten::Flatten<Map<St, F>, U>
+    ): Debug + Sink + Stream + FusedStream + AccessInner[St, (. .)] + New[|x: St, f: F| flatten::Flatten::new(Map::new(x, f))]
+);
 
 mod next;
 #[allow(unreachable_pub)] 
@@ -106,6 +138,10 @@ mod take_while;
 #[allow(unreachable_pub)] 
 pub use self::take_while::TakeWhile;
 
+mod take_until;
+#[allow(unreachable_pub)] 
+pub use self::take_until::TakeUntil;
+
 mod then;
 #[allow(unreachable_pub)] 
 pub use self::then::Then;
@@ -119,6 +155,12 @@ mod chunks;
 #[cfg(feature = "alloc")]
 #[allow(unreachable_pub)] 
 pub use self::chunks::Chunks;
+
+#[cfg(feature = "alloc")]
+mod ready_chunks;
+#[cfg(feature = "alloc")]
+#[allow(unreachable_pub)] 
+pub use self::ready_chunks::ReadyChunks;
 
 mod scan;
 #[allow(unreachable_pub)] 
@@ -144,9 +186,11 @@ cfg_target_has_atomic! {
     pub use self::for_each_concurrent::ForEachConcurrent;
 
     #[cfg(feature = "sink")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
     #[cfg(feature = "alloc")]
     mod split;
     #[cfg(feature = "sink")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
     #[cfg(feature = "alloc")]
     #[allow(unreachable_pub)] // https://github.com/rust-lang/rust/issues/57411
     pub use self::split::{SplitStream, SplitSink, ReuniteError};
@@ -157,6 +201,7 @@ mod catch_unwind;
 #[cfg(feature = "std")]
 #[allow(unreachable_pub)] 
 pub use self::catch_unwind::CatchUnwind;
+use crate::stream::assert_stream;
 
 impl<T: ?Sized> StreamExt for T where T: Stream {}
 
@@ -190,7 +235,7 @@ pub trait StreamExt: Stream {
     where
         Self: Unpin,
     {
-        Next::new(self)
+        assert_future::<Option<Self::Item>, _>(Next::new(self))
     }
 
     
@@ -225,7 +270,7 @@ pub trait StreamExt: Stream {
     where
         Self: Sized + Unpin,
     {
-        StreamFuture::new(self)
+        assert_future::<(Option<Self::Item>, Self), _>(StreamFuture::new(self))
     }
 
     
@@ -256,7 +301,7 @@ pub trait StreamExt: Stream {
         F: FnMut(Self::Item) -> T,
         Self: Sized,
     {
-        Map::new(self, f)
+        assert_stream::<T, _>(Map::new(self, f))
     }
 
     
@@ -301,7 +346,7 @@ pub trait StreamExt: Stream {
     where
         Self: Sized,
     {
-        Enumerate::new(self)
+        assert_stream::<(usize, Self::Item), _>(Enumerate::new(self))
     }
 
     
@@ -336,7 +381,7 @@ pub trait StreamExt: Stream {
         Fut: Future<Output = bool>,
         Self: Sized,
     {
-        Filter::new(self, f)
+        assert_stream::<Self::Item, _>(Filter::new(self, f))
     }
 
     
@@ -370,7 +415,7 @@ pub trait StreamExt: Stream {
         Fut: Future<Output = Option<T>>,
         Self: Sized,
     {
-        FilterMap::new(self, f)
+        assert_stream::<T, _>(FilterMap::new(self, f))
     }
 
     
@@ -401,7 +446,7 @@ pub trait StreamExt: Stream {
         Fut: Future,
         Self: Sized,
     {
-        Then::new(self, f)
+        assert_stream::<Fut::Output, _>(Then::new(self, f))
     }
 
     
@@ -433,7 +478,46 @@ pub trait StreamExt: Stream {
     where
         Self: Sized,
     {
-        Collect::new(self)
+        assert_future::<C, _>(Collect::new(self))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn unzip<A, B, FromA, FromB>(self) -> Unzip<Self, FromA, FromB>
+    where
+        FromA: Default + Extend<A>,
+        FromB: Default + Extend<B>,
+        Self: Sized + Stream<Item = (A, B)>,
+    {
+        assert_future::<(FromA, FromB), _>(Unzip::new(self))
     }
 
     
@@ -473,7 +557,37 @@ pub trait StreamExt: Stream {
         Self: Sized,
         Self::Item: Extend<<<Self as Stream>::Item as IntoIterator>::Item> + IntoIterator + Default,
     {
-        Concat::new(self)
+        assert_future::<Self::Item, _>(Concat::new(self))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn cycle(self) -> Cycle<Self>
+    where
+        Self: Sized + Clone,
+    {
+        assert_stream::<Self::Item, _>(Cycle::new(self))
     }
 
     
@@ -502,7 +616,7 @@ pub trait StreamExt: Stream {
         Fut: Future<Output = T>,
         Self: Sized,
     {
-        Fold::new(self, f, init)
+        assert_future::<T, _>(Fold::new(self, f, init))
     }
 
     
@@ -541,9 +655,45 @@ pub trait StreamExt: Stream {
         Self::Item: Stream,
         Self: Sized,
     {
-        Flatten::new(self)
+        assert_stream::<<Self::Item as Stream>::Item, _>(Flatten::new(self))
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn flat_map<U, F>(self, f: F) -> FlatMap<Self, U, F>
+    where
+        F: FnMut(Self::Item) -> U,
+        U: Stream,
+        Self: Sized,
+    {
+        FlatMap::new(self, f)
+    }
+
+    
+    
     
     
     
@@ -603,7 +753,7 @@ pub trait StreamExt: Stream {
         Fut: Future<Output = bool>,
         Self: Sized,
     {
-        SkipWhile::new(self, f)
+        assert_stream::<Self::Item, _>(SkipWhile::new(self, f))
     }
 
     
@@ -633,7 +783,51 @@ pub trait StreamExt: Stream {
         Fut: Future<Output = bool>,
         Self: Sized,
     {
-        TakeWhile::new(self, f)
+        assert_stream::<Self::Item, _>(TakeWhile::new(self, f))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn take_until<Fut>(self, fut: Fut) -> TakeUntil<Self, Fut>
+    where
+        Fut: Future,
+        Self: Sized,
+    {
+        TakeUntil::new(self, fut)
     }
 
     
@@ -675,7 +869,7 @@ pub trait StreamExt: Stream {
         Fut: Future<Output = ()>,
         Self: Sized,
     {
-        ForEach::new(self, f)
+        assert_future::<(), _>(ForEach::new(self, f))
     }
 
     
@@ -735,7 +929,7 @@ pub trait StreamExt: Stream {
         Fut: Future<Output = ()>,
         Self: Sized,
     {
-        ForEachConcurrent::new(self, limit.into(), f)
+        assert_future::<(), _>(ForEachConcurrent::new(self, limit.into(), f))
     }
 
     
@@ -758,7 +952,7 @@ pub trait StreamExt: Stream {
     where
         Self: Sized,
     {
-        Take::new(self, n)
+        assert_stream::<Self::Item, _>(Take::new(self, n))
     }
 
     
@@ -781,7 +975,7 @@ pub trait StreamExt: Stream {
     where
         Self: Sized,
     {
-        Skip::new(self, n)
+        assert_stream::<Self::Item, _>(Skip::new(self, n))
     }
 
     
@@ -827,7 +1021,7 @@ pub trait StreamExt: Stream {
     where
         Self: Sized,
     {
-        Fuse::new(self)
+        assert_stream::<Self::Item, _>(Fuse::new(self))
     }
 
     
@@ -905,7 +1099,7 @@ pub trait StreamExt: Stream {
     where
         Self: Sized + std::panic::UnwindSafe,
     {
-        CatchUnwind::new(self)
+        assert_stream(CatchUnwind::new(self))
     }
 
     
@@ -917,7 +1111,7 @@ pub trait StreamExt: Stream {
     where
         Self: Sized + Send + 'a,
     {
-        Box::pin(self)
+        assert_stream::<Self::Item, _>(Box::pin(self))
     }
 
     
@@ -931,7 +1125,7 @@ pub trait StreamExt: Stream {
     where
         Self: Sized + 'a,
     {
-        Box::pin(self)
+        assert_stream::<Self::Item, _>(Box::pin(self))
     }
 
     
@@ -953,7 +1147,7 @@ pub trait StreamExt: Stream {
         Self::Item: Future,
         Self: Sized,
     {
-        Buffered::new(self, n)
+        assert_stream::<<Self::Item as Future>::Output, _>(Buffered::new(self, n))
     }
 
     
@@ -998,7 +1192,7 @@ pub trait StreamExt: Stream {
         Self::Item: Future,
         Self: Sized,
     {
-        BufferUnordered::new(self, n)
+        assert_stream::<<Self::Item as Future>::Output, _>(BufferUnordered::new(self, n))
     }
 
     
@@ -1028,7 +1222,7 @@ pub trait StreamExt: Stream {
         St: Stream,
         Self: Sized,
     {
-        Zip::new(self, other)
+        assert_stream::<(Self::Item, St::Item), _>(Zip::new(self, other))
     }
 
     
@@ -1059,7 +1253,7 @@ pub trait StreamExt: Stream {
         St: Stream<Item = Self::Item>,
         Self: Sized,
     {
-        Chain::new(self, other)
+        assert_stream::<Self::Item, _>(Chain::new(self, other))
     }
 
     
@@ -1069,7 +1263,7 @@ pub trait StreamExt: Stream {
     where
         Self: Sized,
     {
-        Peekable::new(self)
+        assert_stream::<Self::Item, _>(Peekable::new(self))
     }
 
     
@@ -1095,7 +1289,33 @@ pub trait StreamExt: Stream {
     where
         Self: Sized,
     {
-        Chunks::new(self, capacity)
+        assert_stream::<alloc::vec::Vec<Self::Item>, _>(Chunks::new(self, capacity))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "alloc")]
+    fn ready_chunks(self, capacity: usize) -> ReadyChunks<Self>
+        where
+            Self: Sized,
+    {
+        ReadyChunks::new(self, capacity)
     }
 
     
@@ -1109,10 +1329,11 @@ pub trait StreamExt: Stream {
     
     
     #[cfg(feature = "sink")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
     fn forward<S>(self, sink: S) -> Forward<Self, S>
     where
-        S: Sink<<Self as TryStream>::Ok>,
-        Self: TryStream<Error = S::Error> + Sized,
+        S: Sink<Self::Ok, Error = Self::Error>,
+        Self: TryStream + Sized,
     {
         Forward::new(self, sink)
     }
@@ -1127,13 +1348,15 @@ pub trait StreamExt: Stream {
     
     
     #[cfg(feature = "sink")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
     #[cfg_attr(feature = "cfg-target-has-atomic", cfg(target_has_atomic = "ptr"))]
     #[cfg(feature = "alloc")]
     fn split<Item>(self) -> (SplitSink<Self, Item>, SplitStream<Self>)
     where
         Self: Sink<Item> + Sized,
     {
-        split::split(self)
+        let (sink, stream) = split::split(self);
+        (sink, assert_stream::<Self::Item, _>(stream))
     }
 
     
@@ -1146,7 +1369,7 @@ pub trait StreamExt: Stream {
         F: FnMut(&Self::Item),
         Self: Sized,
     {
-        Inspect::new(self, f)
+        assert_stream::<Self::Item, _>(Inspect::new(self, f))
     }
 
     
@@ -1159,7 +1382,7 @@ pub trait StreamExt: Stream {
         B: Stream<Item = Self::Item>,
         Self: Sized,
     {
-        Either::Left(self)
+        assert_stream::<Self::Item, _>(Either::Left(self))
     }
 
     
@@ -1172,7 +1395,7 @@ pub trait StreamExt: Stream {
         B: Stream<Item = Self::Item>,
         Self: Sized,
     {
-        Either::Right(self)
+        assert_stream::<Self::Item, _>(Either::Right(self))
     }
 
     

@@ -69,6 +69,7 @@ pub trait SpawnExt: Spawn {
     
     
     #[cfg(feature = "channel")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "channel")))]
     #[cfg(feature = "std")]
     fn spawn_with_handle<Fut>(&self, future: Fut) -> Result<RemoteHandle<Fut::Output>, SpawnError>
     where
@@ -83,6 +84,7 @@ pub trait SpawnExt: Spawn {
     
     
     #[cfg(feature = "compat")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "compat")))]
     fn compat(self) -> Compat<Self>
     where
         Self: Sized,
@@ -145,6 +147,7 @@ pub trait LocalSpawnExt: LocalSpawn {
     
     
     #[cfg(feature = "channel")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "channel")))]
     #[cfg(feature = "std")]
     fn spawn_local_with_handle<Fut>(
         &self,

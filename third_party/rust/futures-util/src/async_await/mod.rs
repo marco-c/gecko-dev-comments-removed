@@ -3,37 +3,37 @@
 
 
 
-use futures_core::future::Future;
-use futures_core::stream::Stream;
-
-#[doc(hidden)]
-pub use futures_core::future::FusedFuture;
-#[doc(hidden)]
-pub use futures_core::stream::FusedStream;
+use futures_core::future::{Future, FusedFuture};
+use futures_core::stream::{Stream, FusedStream};
 
 #[macro_use]
 mod poll;
+#[allow(unreachable_pub)] 
 pub use self::poll::*;
 
 #[macro_use]
 mod pending;
+#[allow(unreachable_pub)] 
 pub use self::pending::*;
 
 
 #[cfg(feature = "async-await-macro")]
 mod join_mod;
+#[allow(unreachable_pub)] 
 #[cfg(feature = "async-await-macro")]
 pub use self::join_mod::*;
 
 
 #[cfg(feature = "async-await-macro")]
 mod select_mod;
+#[allow(unreachable_pub)] 
 #[cfg(feature = "async-await-macro")]
 pub use self::select_mod::*;
 
 #[cfg(feature = "std")]
 #[cfg(feature = "async-await-macro")]
 mod random;
+#[allow(unreachable_pub)] 
 #[cfg(feature = "std")]
 #[cfg(feature = "async-await-macro")]
 pub use self::random::*;

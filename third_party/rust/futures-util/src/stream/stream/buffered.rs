@@ -1,30 +1,28 @@
 use crate::stream::{Fuse, FuturesOrdered, StreamExt};
 use futures_core::future::Future;
+use futures_core::ready;
 use futures_core::stream::Stream;
 use futures_core::task::{Context, Poll};
 #[cfg(feature = "sink")]
 use futures_sink::Sink;
-use pin_utils::{unsafe_pinned, unsafe_unpinned};
+use pin_project_lite::pin_project;
 use core::fmt;
 use core::pin::Pin;
 
-
-#[must_use = "streams do nothing unless polled"]
-pub struct Buffered<St>
-where
-    St: Stream,
-    St::Item: Future,
-{
-    stream: Fuse<St>,
-    in_progress_queue: FuturesOrdered<St::Item>,
-    max: usize,
+pin_project! {
+    /// Stream for the [`buffered`](super::StreamExt::buffered) method.
+    #[must_use = "streams do nothing unless polled"]
+    pub struct Buffered<St>
+    where
+        St: Stream,
+        St::Item: Future,
+    {
+        #[pin]
+        stream: Fuse<St>,
+        in_progress_queue: FuturesOrdered<St::Item>,
+        max: usize,
+    }
 }
-
-impl<St> Unpin for Buffered<St>
-where
-    St: Stream + Unpin,
-    St::Item: Future,
-{}
 
 impl<St> fmt::Debug for Buffered<St>
 where
@@ -45,48 +43,15 @@ where
     St: Stream,
     St::Item: Future,
 {
-    unsafe_pinned!(stream: Fuse<St>);
-    unsafe_unpinned!(in_progress_queue: FuturesOrdered<St::Item>);
-
-    pub(super) fn new(stream: St, n: usize) -> Buffered<St> {
-        Buffered {
+    pub(super) fn new(stream: St, n: usize) -> Self {
+        Self {
             stream: super::Fuse::new(stream),
             in_progress_queue: FuturesOrdered::new(),
             max: n,
         }
     }
 
-    
-    
-    pub fn get_ref(&self) -> &St {
-        self.stream.get_ref()
-    }
-
-    
-    
-    
-    
-    
-    pub fn get_mut(&mut self) -> &mut St {
-        self.stream.get_mut()
-    }
-
-    
-    
-    
-    
-    
-    pub fn get_pin_mut(self: Pin<&mut Self>) -> Pin<&mut St> {
-        self.stream().get_pin_mut()
-    }
-
-    
-    
-    
-    
-    pub fn into_inner(self) -> St {
-        self.stream.into_inner()
-    }
+    delegate_access_inner!(stream, St, (.));
 }
 
 impl<St> Stream for Buffered<St>
@@ -97,26 +62,28 @@ where
     type Item = <St::Item as Future>::Output;
 
     fn poll_next(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
     ) -> Poll<Option<Self::Item>> {
+        let mut this = self.project();
+
         
         
-        while self.in_progress_queue.len() < self.max {
-            match self.as_mut().stream().poll_next(cx) {
-                Poll::Ready(Some(fut)) => self.as_mut().in_progress_queue().push(fut),
+        while this.in_progress_queue.len() < *this.max {
+            match this.stream.as_mut().poll_next(cx) {
+                Poll::Ready(Some(fut)) => this.in_progress_queue.push(fut),
                 Poll::Ready(None) | Poll::Pending => break,
             }
         }
 
         
-        let res = self.as_mut().in_progress_queue().poll_next_unpin(cx);
+        let res = this.in_progress_queue.poll_next_unpin(cx);
         if let Some(val) = ready!(res) {
             return Poll::Ready(Some(val))
         }
 
         
-        if self.stream.is_done() {
+        if this.stream.is_done() {
             Poll::Ready(None)
         } else {
             Poll::Pending

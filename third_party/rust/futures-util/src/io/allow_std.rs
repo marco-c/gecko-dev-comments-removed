@@ -41,7 +41,7 @@ macro_rules! try_with_interrupt {
 impl<T> AllowStdIo<T> {
     
     pub fn new(io: T) -> Self {
-        AllowStdIo(io)
+        Self(io)
     }
 
     

@@ -44,6 +44,34 @@ impl<A: Unpin, B: Unpin> Unpin for Select<A, B> {}
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub fn select<A, B>(future1: A, future2: B) -> Select<A, B>
     where A: Future + Unpin, B: Future + Unpin
 {

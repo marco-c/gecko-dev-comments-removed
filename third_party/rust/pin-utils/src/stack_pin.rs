@@ -8,9 +8,11 @@
 
 
 
+
+
 #[macro_export]
 macro_rules! pin_mut {
-    ($($x:ident),*) => { $(
+    ($($x:ident),* $(,)?) => { $(
         
         let mut $x = $x;
         
