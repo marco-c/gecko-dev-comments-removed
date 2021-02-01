@@ -1060,6 +1060,7 @@ impl Shaders {
         key: &BatchKey,
         mut features: BatchFeatures,
         debug_flags: DebugFlags,
+        device: &Device,
     ) -> &mut LazilyCompiledShader {
         match key.kind {
             BatchKind::SplitComposite => {
@@ -1089,31 +1090,15 @@ impl Shaders {
                     BrushBatchKind::MixBlend { .. } => {
                         &mut self.brush_mix_blend
                     }
+                    BrushBatchKind::LinearGradient |
+                    BrushBatchKind::RadialGradient |
                     BrushBatchKind::ConicGradient => {
                         
                         
-                        if !features.intersects(
-                            BatchFeatures::ANTIALIASING
-                                | BatchFeatures::REPETITION
-                                | BatchFeatures::CLIP_MASK,
-                        ) {
-                            features.remove(BatchFeatures::ALPHA_PASS);
-                        }
-                        &mut self.brush_conic_gradient
-                    }
-                    BrushBatchKind::RadialGradient => {
                         
-                        
-                        if !features.intersects(
-                            BatchFeatures::ANTIALIASING
-                                | BatchFeatures::REPETITION
-                                | BatchFeatures::CLIP_MASK,
-                        ) {
-                            features.remove(BatchFeatures::ALPHA_PASS);
+                        if device.get_capabilities().uses_native_clip_mask {
+                            features.remove(BatchFeatures::CLIP_MASK);
                         }
-                        &mut self.brush_radial_gradient
-                    }
-                    BrushBatchKind::LinearGradient => {
                         
                         
                         if !features.intersects(
@@ -1123,7 +1108,12 @@ impl Shaders {
                         ) {
                             features.remove(BatchFeatures::ALPHA_PASS);
                         }
-                        &mut self.brush_linear_gradient
+                        match brush_kind {
+                            BrushBatchKind::LinearGradient => &mut self.brush_linear_gradient,
+                            BrushBatchKind::RadialGradient => &mut self.brush_radial_gradient,
+                            BrushBatchKind::ConicGradient => &mut self.brush_conic_gradient,
+                            _ => panic!(),
+                        }
                     }
                     BrushBatchKind::YuvImage(image_buffer_kind, ..) => {
                         let shader_index =
