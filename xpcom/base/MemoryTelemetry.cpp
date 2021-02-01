@@ -219,9 +219,8 @@ nsresult MemoryTelemetry::GatherReports(
 
   
   
-  if (XRE_IsParentProcess() && !mTotalMemoryGatherer) {
-    mTotalMemoryGatherer = new TotalMemoryGatherer();
-    mTotalMemoryGatherer->Begin(mThreadPool);
+  if (XRE_IsParentProcess() && !mGatheringTotalMemory) {
+    GatherTotalMemory();
   }
 
   if (!Telemetry::CanRecordReleaseData()) {
@@ -305,62 +304,107 @@ nsresult MemoryTelemetry::GatherReports(
   return NS_OK;
 }
 
-NS_IMPL_ISUPPORTS(MemoryTelemetry::TotalMemoryGatherer, nsITimerCallback)
+namespace {
+struct ChildProcessInfo {
+  GeckoProcessType mType;
+#if defined(XP_WIN)
+  HANDLE mHandle;
+#elif defined(XP_MACOSX)
+  task_t mHandle;
+#else
+  pid_t mHandle;
+#endif
+};
+}  
 
 
 
 
 
+void MemoryTelemetry::GatherTotalMemory() {
+  MOZ_ASSERT(!mGatheringTotalMemory);
+  mGatheringTotalMemory = true;
 
-void MemoryTelemetry::TotalMemoryGatherer::Begin(nsIEventTarget* aThreadPool) {
-  nsCOMPtr<nsISerialEventTarget> target = GetMainThreadSerialEventTarget();
+  nsTArray<ChildProcessInfo> infos;
+  mozilla::ipc::GeckoChildProcessHost::GetAll(
+      [&](mozilla::ipc::GeckoChildProcessHost* aGeckoProcess) {
+        if (!aGeckoProcess->GetChildProcessHandle()) {
+          return;
+        }
 
-  nsTArray<ContentParent*> parents;
-  ContentParent::GetAll(parents);
-  for (auto& parent : parents) {
-    mRemainingChildCount++;
-    parent->SendGetMemoryUniqueSetSize()->Then(
-        target, "TotalMemoryGather::Begin", this,
-        &TotalMemoryGatherer::CollectResult, &TotalMemoryGatherer::OnFailure);
-  }
+        ChildProcessInfo info{};
+        info.mType = aGeckoProcess->GetProcessType();
 
-  mChildSizes.SetCapacity(mRemainingChildCount);
+        
+        
+        
+        if (info.mType != GeckoProcessType_Content) {
+          return;
+        }
 
-  RefPtr<TotalMemoryGatherer> self{this};
+#if defined(XP_WIN)
+        if (!::DuplicateHandle(::GetCurrentProcess(),
+                               aGeckoProcess->GetChildProcessHandle(),
+                               ::GetCurrentProcess(), &info.mHandle, 0, false,
+                               DUPLICATE_SAME_ACCESS)) {
+          return;
+        }
+#elif defined(XP_MACOSX)
+        info.mHandle = aGeckoProcess->GetChildTask();
+        if (mach_port_mod_refs(mach_task_self(), info.mHandle,
+                               MACH_PORT_RIGHT_SEND, 1) != KERN_SUCCESS) {
+          return;
+        }
+#else
+        info.mHandle = base::GetProcId(aGeckoProcess->GetChildProcessHandle());
+#endif
 
-  aThreadPool->Dispatch(
-      NS_NewRunnableFunction(
-          "TotalMemoryGather::Begin",
-          [self]() {
-            RefPtr<nsMemoryReporterManager> mgr =
-                nsMemoryReporterManager::GetOrCreate();
-            MOZ_RELEASE_ASSERT(mgr);
+        infos.AppendElement(info);
+      });
 
-            NS_DispatchToMainThread(NewRunnableMethod<int64_t>(
-                "TotalMemoryGather::CollectParentSize", self,
-                &TotalMemoryGatherer::CollectParentSize, mgr->ResidentFast()));
-          }),
-      NS_DISPATCH_NORMAL);
+  mThreadPool->Dispatch(NS_NewRunnableFunction(
+      "MemoryTelemetry::GatherTotalMemory", [infos = std::move(infos)] {
+        RefPtr<nsMemoryReporterManager> mgr =
+            nsMemoryReporterManager::GetOrCreate();
+        MOZ_RELEASE_ASSERT(mgr);
 
-  NS_NewTimerWithCallback(getter_AddRefs(mTimeout), this,
-                          kTotalMemoryCollectorTimeout,
-                          nsITimer::TYPE_ONE_SHOT);
+        int64_t totalMemory = mgr->ResidentFast();
+        nsTArray<int64_t> childSizes(infos.Length());
+
+        
+        
+        for (const auto& info : infos) {
+          int64_t memory =
+              nsMemoryReporterManager::ResidentUnique(info.mHandle);
+          if (memory > 0) {
+            childSizes.AppendElement(memory);
+            totalMemory += memory;
+          }
+
+#if defined(XP_WIN)
+          ::CloseHandle(info.mHandle);
+#elif defined(XP_MACOSX)
+          mach_port_deallocate(mach_task_self(), info.mHandle);
+#endif
+        }
+
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            "MemoryTelemetry::FinishGatheringTotalMemory",
+            [totalMemory, childSizes = std::move(childSizes)] {
+              MemoryTelemetry::Get().FinishGatheringTotalMemory(totalMemory,
+                                                                childSizes);
+            }));
+      }));
 }
 
-nsresult MemoryTelemetry::TotalMemoryGatherer::MaybeFinish() {
-  
-  
-  if (!mTimeout || !mHaveParentSize || mRemainingChildCount) {
-    return NS_OK;
-  }
-
-  mTimeout = nullptr;
-  MemoryTelemetry::Get().mTotalMemoryGatherer = nullptr;
+nsresult MemoryTelemetry::FinishGatheringTotalMemory(
+    int64_t aTotalMemory, const nsTArray<int64_t>& aChildSizes) {
+  mGatheringTotalMemory = false;
 
   HandleMemoryReport(Telemetry::MEMORY_TOTAL, nsIMemoryReporter::UNITS_BYTES,
-                     mTotalMemory);
+                     aTotalMemory);
 
-  if (mChildSizes.Length() > 1) {
+  if (aChildSizes.Length() > 1) {
     int32_t tabsCount;
     MOZ_TRY_VAR(tabsCount, GetOpenTabsCount());
 
@@ -375,10 +419,10 @@ nsresult MemoryTelemetry::TotalMemoryGatherer::MaybeFinish() {
 
     
     int64_t mean = 0;
-    for (auto size : mChildSizes) {
+    for (auto size : aChildSizes) {
       mean += size;
     }
-    mean /= mChildSizes.Length();
+    mean /= aChildSizes.Length();
 
     
     
@@ -391,7 +435,7 @@ nsresult MemoryTelemetry::TotalMemoryGatherer::MaybeFinish() {
     
     
     
-    for (auto size : mChildSizes) {
+    for (auto size : aChildSizes) {
       int64_t diff = llabs(size - mean) * 100 / mean;
 
       HandleMemoryReport(Telemetry::MEMORY_DISTRIBUTION_AMONG_CONTENT,
@@ -404,37 +448,6 @@ nsresult MemoryTelemetry::TotalMemoryGatherer::MaybeFinish() {
     obs->NotifyObservers(nullptr, "gather-memory-telemetry-finished", nullptr);
   }
 
-  return NS_OK;
-}
-
-void MemoryTelemetry::TotalMemoryGatherer::CollectParentSize(
-    int64_t aResident) {
-  mTotalMemory += aResident;
-  mHaveParentSize = true;
-
-  MaybeFinish();
-}
-
-void MemoryTelemetry::TotalMemoryGatherer::CollectResult(int64_t aChildUSS) {
-  mChildSizes.AppendElement(aChildUSS);
-
-  mTotalMemory += aChildUSS;
-  mRemainingChildCount--;
-
-  MaybeFinish();
-}
-
-void MemoryTelemetry::TotalMemoryGatherer::OnFailure(
-    mozilla::ipc::ResponseRejectReason aReason) {
-  
-  Notify(nullptr);
-}
-
-nsresult MemoryTelemetry::TotalMemoryGatherer::Notify(nsITimer* aTimer) {
-  
-  
-  mTimeout = nullptr;
-  MemoryTelemetry::Get().mTotalMemoryGatherer = nullptr;
   return NS_OK;
 }
 
