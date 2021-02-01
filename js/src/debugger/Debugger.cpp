@@ -6045,8 +6045,8 @@ bool Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp) {
   JS::AutoSuppressWarningReporter suppressWarnings(cx);
   frontend::Parser<frontend::FullParseHandler, char16_t> parser(
       cx, options, chars.twoByteChars(), length,
-       true, stencil.get(), compilationState, nullptr,
-      nullptr);
+       true, stencil.get(), compilationState,
+       nullptr);
   if (!parser.checkOptions() || !parser.parse()) {
     
     

@@ -192,19 +192,17 @@ template <class ParseHandler>
 PerHandlerParser<ParseHandler>::PerHandlerParser(
     JSContext* cx, const ReadOnlyCompileOptions& options, bool foldConstants,
     CompilationStencil& stencil, CompilationState& compilationState,
-    BaseScript* lazyOuterFunction, void* internalSyntaxParser)
+    void* internalSyntaxParser)
     : ParserBase(cx, options, foldConstants, stencil, compilationState),
-      handler_(cx, compilationState.allocScope.alloc(), lazyOuterFunction),
+      handler_(cx, compilationState.allocScope.alloc(), stencil.input.lazy),
       internalSyntaxParser_(internalSyntaxParser) {}
 
 template <class ParseHandler, typename Unit>
 GeneralParser<ParseHandler, Unit>::GeneralParser(
     JSContext* cx, const ReadOnlyCompileOptions& options, const Unit* units,
     size_t length, bool foldConstants, CompilationStencil& stencil,
-    CompilationState& compilationState, SyntaxParser* syntaxParser,
-    BaseScript* lazyOuterFunction)
-    : Base(cx, options, foldConstants, stencil, compilationState, syntaxParser,
-           lazyOuterFunction),
+    CompilationState& compilationState, SyntaxParser* syntaxParser)
+    : Base(cx, options, foldConstants, stencil, compilationState, syntaxParser),
       tokenStream(cx, &compilationState.parserAtoms, options, units, length) {}
 
 template <typename Unit>
@@ -2806,8 +2804,6 @@ bool Parser<FullParseHandler, Unit>::skipLazyInnerFunction(
   
   
   MOZ_ASSERT(fun->baseScript()->hasEnclosingScript());
-  MOZ_ASSERT_IF(fun->isClassConstructor(),
-                !fun->baseScript()->getMemberInitializers().valid);
 
   PropagateTransitiveParseFlags(funbox, pc_->sc());
 
@@ -3287,7 +3283,7 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneLazyFunction(
   funbox->initFromLazyFunction(fun);
   funbox->initStandalone(this->compilationState_.scopeContext, fun->flags(),
                          syntaxKind);
-  if (fun->isClassConstructor()) {
+  if (funbox->useMemberInitializers()) {
     funbox->setMemberInitializers(fun->baseScript()->getMemberInitializers());
   }
 
@@ -7499,11 +7495,9 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
   
   
   
-  size_t numPrivateMethods = classInitializedMembers.privateMethods;
-  size_t numFields = classInitializedMembers.instanceFields;
-
-  if (classStmt.constructorBox == nullptr &&
-      numFields + numPrivateMethods > 0) {
+  size_t numMemberInitializers = classInitializedMembers.privateMethods +
+                                 classInitializedMembers.instanceFields;
+  if (classStmt.constructorBox == nullptr && numMemberInitializers) {
     MOZ_ASSERT(!options().selfHostingMode);
     
     
@@ -7555,7 +7549,11 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
     
     ctorbox->setCtorToStringEnd(classEndOffset);
 
-    if (numFields + numPrivateMethods > 0) {
+    if (numMemberInitializers) {
+      
+      MemberInitializers initializers(numMemberInitializers);
+      ctorbox->setMemberInitializers(initializers);
+
       
       ctorbox->setCtorFunctionHasThisBinding();
     }
