@@ -6,6 +6,7 @@
 #include "gtest/gtest.h"
 
 #include "js/RegExp.h"
+#include "mozilla/BinarySearch.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/UntrustedModulesProcessor.h"
 #include "mozilla/WinDllServices.h"
@@ -135,6 +136,22 @@ class UntrustedModulesCollector {
 };
 
 static void ValidateUntrustedModules(const UntrustedModulesData& aData) {
+  
+  
+  
+  
+  
+  const struct {
+    const wchar_t* mName;
+    ModuleLoadInfo::Status mStatus;
+  } kKnownModules[] = {
+      
+      {L"TestDllBlocklist_MatchByName.dll", ModuleLoadInfo::Status::Blocked},
+      {L"TestDllBlocklist_MatchByVersion.dll", ModuleLoadInfo::Status::Blocked},
+      {L"TestDllBlocklist_NoOpEntryPoint.dll",
+       ModuleLoadInfo::Status::Redirected},
+  };
+
   EXPECT_EQ(aData.mProcessType, GeckoProcessType_Default);
   EXPECT_EQ(aData.mPid, ::GetCurrentProcessId());
 
@@ -145,11 +162,28 @@ static void ValidateUntrustedModules(const UntrustedModulesData& aData) {
   }
 
   for (const auto& evt : aData.mEvents) {
-    EXPECT_EQ(evt.mThreadId, ::GetCurrentThreadId());
+    const nsDependentSubstring leafName =
+        nt::GetLeafName(evt.mModule->mResolvedNtName);
+    const nsAutoString leafNameStr(leafName.Data(), leafName.Length());
+    size_t match;
+    if (BinarySearchIf(
+            kKnownModules, 0, ArrayLength(kKnownModules),
+            [&leafNameStr](const auto& aVal) {
+              return _wcsicmp(leafNameStr.get(), aVal.mName);
+            },
+            &match)) {
+      
+      
+      EXPECT_EQ(evt.mLoadStatus,
+                static_cast<uint32_t>(kKnownModules[match].mStatus));
+    } else {
+      EXPECT_EQ(evt.mThreadId, ::GetCurrentThreadId());
+      EXPECT_EQ(evt.mLoadStatus, 0);
+    }
+
     
     EXPECT_TRUE(moduleSet.Contains(evt.mModule));
     EXPECT_FALSE(evt.mIsDependent);
-    EXPECT_EQ(evt.mLoadStatus, 0);
   }
 
   
