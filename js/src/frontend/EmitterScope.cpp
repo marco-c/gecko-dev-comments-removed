@@ -345,13 +345,7 @@ NameLocation EmitterScope::searchAndCache(BytecodeEmitter* bce,
 
     
     
-    
-    
-    MOZ_ASSERT_IF(!bce->stencil.input.lazy,
-                  bce->stencil.input.enclosingScope->is<GlobalScope>());
-    MOZ_ASSERT_IF(
-        !bce->stencil.input.lazy,
-        !bce->stencil.input.enclosingScope->as<GlobalScope>().hasBindings());
+    MOZ_ASSERT(bce->stencil.input.lazy);
 
     inCurrentScript = false;
     loc = Some(searchInEnclosingScope(jsname, bce->stencil.input.enclosingScope,
@@ -674,6 +668,14 @@ bool EmitterScope::enterFunction(BytecodeEmitter* bce, FunctionBox* funbox) {
   
   if (funbox->funHasExtensibleScope()) {
     fallbackFreeNameLocation_ = Some(NameLocation::Dynamic());
+  } else if (funbox->isStandalone) {
+    
+    
+    if (funbox->hasNonSyntacticEnclosingScopeForStandalone) {
+      fallbackFreeNameLocation_ = Some(NameLocation::Dynamic());
+    } else {
+      fallbackFreeNameLocation_ = Some(NameLocation::Global(BindingKind::Var));
+    }
   }
 
   
