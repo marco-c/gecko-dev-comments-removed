@@ -1088,14 +1088,22 @@ async function scroll() {
 
 
 
-
-function checkTree(doc, storage, host, isExpected = true) {
-  const treeId = JSON.stringify([storage, host]);
-  const element = doc.querySelector(`[data-id='${treeId}']`);
+function checkTree(doc, path, isExpected = true) {
+  const doesExist = isInTree(doc, path);
   ok(
-    isExpected ? element : !element,
-    `${storage} > ${host} is ${isExpected ? "" : "not "}in the tree`
+    isExpected ? doesExist : !doesExist,
+    `${path.join(" > ")} is ${isExpected ? "" : "not "}in the tree`
   );
+}
+
+
+
+
+
+
+function isInTree(doc, path) {
+  const treeId = JSON.stringify(path);
+  return !!doc.querySelector(`[data-id='${treeId}']`);
 }
 
 
@@ -1109,4 +1117,13 @@ function checkStorageData(name, value) {
     value,
     `Table row has an entry for: ${name} with value: ${value}`
   );
+}
+
+
+
+
+
+
+function buildURLWithContent(domain, html) {
+  return `http://${domain}/document-builder.sjs?html=${encodeURI(html)}`;
 }

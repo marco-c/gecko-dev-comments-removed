@@ -22,7 +22,7 @@ add_task(async function() {
   const doc = gPanelWindow.document;
 
   
-  checkTree(doc, "localStorage", "http://example.com");
+  checkTree(doc, ["localStorage", "http://example.com"]);
   
   await selectTreeItem(["localStorage", "http://example.com"]);
   checkStorageData("foo", "bar");
@@ -43,7 +43,3 @@ add_task(async function() {
   await selectTreeItem(["localStorage", "http://example.net"]);
   checkStorageData("lorem2", "ipsum2");
 });
-
-function buildURLWithContent(domain, html) {
-  return `http://${domain}/document-builder.sjs?html=${encodeURI(html)}`;
-}
