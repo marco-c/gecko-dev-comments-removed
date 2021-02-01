@@ -1,12 +1,12 @@
 %if 0
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 %endif
 
 %filter substitution
 %define urlbarViewPadding 4px
-%define urlbarViewIconMarginEnd (@identityBoxPaddingInline@ + @identityBoxMarginInlineEnd@)
+%define urlbarViewIconMarginEnd (@identityBoxPaddingInline@ + @identityBoxMarginInline@)
 %define urlbarViewMarginInline 7px
 %define urlbarViewItemInlinePadding 6px
 %define urlbarViewFaviconWidth 16px
@@ -19,7 +19,7 @@
   --autocomplete-popup-highlight-background: Highlight;
   --autocomplete-popup-highlight-color: HighlightText;
 
-  
+  /* Colors copied from in-content button styling */
   --urlbarView-button-background: rgba(12, 12, 13, 0.1);
   --urlbarView-button-background-hover: rgba(12, 12, 13, 0.2);
   --urlbarView-button-background-active: rgba(12, 12, 13, 0.3);
@@ -39,7 +39,7 @@
   --urlbar-popup-url-color: @lwtPopupBrighttextLinkColor@;
   --urlbar-popup-action-color: #30e60b;
 
-  
+  /* Colors copied from in-content button styling */
   --urlbarView-button-background: rgba(249, 249, 250, 0.24);
   --urlbarView-button-background-hover: rgba(249, 249, 250, 0.15);
   --urlbarView-button-background-active: rgba(249, 249, 250, 0.2);
@@ -50,7 +50,7 @@
 }
 
 .urlbarView {
-  
+  /* Don't handle window drag events in case we are overlapping a toolbar */
   -moz-window-dragging: no-drag;
 
   display: block;
@@ -59,12 +59,12 @@
   margin-inline: @urlbarViewMarginInline@;
   width: calc(100% - 2 * @urlbarViewMarginInline@);
 
-  
+  /* Match urlbar-background's border. */
   border-inline: 1px solid transparent;
 }
 
-
-
+/* If the view is open, offset the toolbar overlap so the view's top border
+   aligns with the toolbar. */
 #urlbar[open] > .urlbarView {
   margin-block-start: -@urlbarBreakoutExtend@;
 }
@@ -82,7 +82,7 @@
   white-space: nowrap;
 }
 
-
+/* Vertically center the one-offs when no results are present. */
 .urlbarView[noresults] > .urlbarView-body-outer > .urlbarView-body-inner > .urlbarView-results {
   padding-block: 0;
 }
@@ -105,9 +105,9 @@
 
 .urlbarView-row[type=tip] {
   padding-block-start: 18px;
-  
+  /* Compensating for the 16px bottom margin on the tip elements. */
   padding-block-end: calc(18px - 16px);
-  
+  /* Compensating for the 4px focus ring on tip buttons. */
   padding-inline-end: calc(@urlbarViewItemInlinePadding@ + 4px);
 }
 
@@ -122,14 +122,14 @@
 .urlbarView[actionoverride] .urlbarView-row[has-url] > .urlbarView-row-inner > .urlbarView-no-wrap,
 .urlbarView-row[has-url]:not([type$=tab]) > .urlbarView-row-inner > .urlbarView-no-wrap,
 .urlbarView-row[has-url]:is([type=remotetab], [sponsored]):is(:hover, [selected]) > .urlbarView-row-inner > .urlbarView-no-wrap {
-  
-
+  /* We prioritize icons + title + action over the url, so they can grow freely,
+     but the url should never disappear when it's visible */
   flex-shrink: 0;
   max-width: calc(70% - 2 * (@urlbarViewFaviconWidth@ + (6px + 2px)));
 }
 
-
-
+/* Wrap the url to a second line when the window is narrow. Do not wrap when the
+   window is also short, because fewer results will be shown. */
 @media screen and (min-height: 600px) {
   .urlbarView-results[wrap] > .urlbarView-row > .urlbarView-row-inner {
     flex-wrap: wrap;
@@ -141,15 +141,15 @@
   .urlbarView-results[wrap] > .urlbarView-row[has-url] > .urlbarView-row-inner > .urlbarView-url {
     margin-top: 2px;
   }
-  
+  /* urlbarView-url is forced to be LTR for RTL locales, so set the padding based on the browser's directionality. */
   .urlbarView-results[wrap] > .urlbarView-row[has-url] > .urlbarView-row-inner > .urlbarView-url:-moz-locale-dir(ltr) {
-    padding-left: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInlineEnd@ + @urlbarViewFaviconWidth@);
+    padding-left: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInline@ + @urlbarViewFaviconWidth@);
   }
   .urlbarView-results[wrap] > .urlbarView-row[has-url] > .urlbarView-row-inner > .urlbarView-url:-moz-locale-dir(rtl) {
-    padding-right: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInlineEnd@ + @urlbarViewFaviconWidth@);
+    padding-right: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInline@ + @urlbarViewFaviconWidth@);
   }
-  
-
+  /* Note: switchtab entries show the url only in override mode,
+     remotetab and sponsored ones only when selected or :hover. */
   .urlbarView[actionoverride] .urlbarView-results[wrap] > .urlbarView-row[has-url] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title-separator,
   .urlbarView-results[wrap] > .urlbarView-row[has-url]:not([type$=tab], [sponsored]) > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title-separator,
   .urlbarView-results[wrap] > .urlbarView-row:is([type=remotetab], [sponsored]):is(:hover, [selected]) > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title-separator,
@@ -161,13 +161,13 @@
   }
   .urlbarView-results[wrap] > .urlbarView-row[type=tabtosearch] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-action {
     flex-basis: 100%;
-    margin-inline-start: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInlineEnd@ + @urlbarViewFaviconWidth@);
+    margin-inline-start: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInline@ + @urlbarViewFaviconWidth@);
   }
 }
 
-
-
-
+/* We should always wrap tip results at narrow widths regardless of screen
+   height. Unlike regular results, unwrapped tips are taller than wrapped
+   tips. */
 .urlbarView-results[wrap] > .urlbarView-row[type=tip] > .urlbarView-row-inner {
   flex-wrap: wrap;
 }
@@ -196,7 +196,7 @@
   fill-opacity: 1;
 }
 
-
+/* Favicon */
 
 .urlbarView-favicon {
   width: @urlbarViewFaviconWidth@;
@@ -222,7 +222,7 @@
 }
 
 .urlbarView-row[type=tabtosearch] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-favicon {
-  color: #0060df; 
+  color: #0060df; /* Blue-60 */
   stroke: #fff;
   -moz-context-properties: fill, stroke;
 }
@@ -233,14 +233,14 @@
 }
 
 :root[lwt-toolbar-field-brighttext] .urlbarView-row[type=tabtosearch]:not([selected]) > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-favicon {
-  color: #0a84ff; 
+  color: #0a84ff; /* Blue-50 */
 }
 
 :root[lwt-toolbar-field-brighttext] .urlbarView-row[type=tabtosearch][selected] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-favicon {
   stroke: #0a84ff;
 }
 
-
+/* Type icon */
 
 .urlbarView-type-icon {
   position: absolute;
@@ -253,44 +253,44 @@
   -moz-context-properties: fill, stroke;
 }
 
-
+/* Favicon badges have this priority: switchtab/remotetab > pinned > bookmark. */
 
 .urlbarView-row[type=bookmark] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-type-icon {
   background-image: url(chrome://browser/skin/bookmark-12.svg);
-  color: #0060df; 
+  color: #0060df; /* Blue-60 */
   stroke: #fff;
 }
 
 .urlbarView-row[pinned] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-type-icon {
   background-image: url(chrome://browser/skin/pin-12.svg);
-  color: #b1b1b3; 
+  color: #b1b1b3; /* Grey-40 */
   stroke: #fff;
 }
 
 .urlbarView:not([actionoverride]) .urlbarView-row[type=switchtab] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-type-icon,
 .urlbarView-row[type=remotetab] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-type-icon {
   background-image: url(chrome://browser/skin/tab-12.svg);
-  color: #008eaf; 
+  color: #008eaf; /* Teal-70 */
   stroke: #fff;
 }
 
 :root[lwt-toolbar-field-brighttext] .urlbarView-row[type=bookmark] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-type-icon {
-  color: #0a84ff; 
-  stroke: #38383d; 
+  color: #0a84ff; /* Blue-50 */
+  stroke: #38383d; /* Grey-70 */
 }
 
 :root[lwt-toolbar-field-brighttext] .urlbarView-row[pinned] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-type-icon {
-  color: #d7d7db; 
-  stroke: #38383d; 
+  color: #d7d7db; /* Grey-30 */
+  stroke: #38383d; /* Grey-70 */
 }
 
 :root[lwt-toolbar-field-brighttext] .urlbarView:not([actionoverride]) .urlbarView-row[type=switchtab] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-type-icon,
 :root[lwt-toolbar-field-brighttext] .urlbarView-row[type=remotetab] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-type-icon {
-  color: #00c8d7; 
-  stroke: #38383d; 
+  color: #00c8d7; /* Teal-60 */
+  stroke: #38383d; /* Grey-70 */
 }
 
-
+/* Tip rows */
 
 .urlbarView-row[type=tip]:not(:last-child) {
   border-bottom: 1px solid var(--panel-separator-color);
@@ -309,10 +309,10 @@
   width: 100%;
 }
 
-
-
-
-
+/* For tips, give the title some bottom margin so that when the window is narrow
+   and the buttons wrap below it, there's space between it and the buttons.  We
+   then need to give the same bottom margin to the other tip elements so that
+   they all remain vertically aligned. */
 .urlbarView-row[type=tip] > .urlbarView-row-inner > .urlbarView-favicon,
 .urlbarView-row[type=tip] > .urlbarView-row-inner > .urlbarView-title,
 .urlbarView-tip-button,
@@ -320,7 +320,7 @@
   margin-block-end: 16px;
 }
 
-
+/* The help icon is a standard Photon ghost button. */
 .urlbarView-tip-help {
   min-width: 16px;
   height: 32px;
@@ -345,8 +345,8 @@
   background-color: var(--urlbarView-button-background-active);
 }
 
-
-
+/* The tip button is a Photon default button when unfocused and a
+   primary button in all other states. */
 .urlbarView-tip-button {
   min-height: 16px;
   padding: 7px;
@@ -391,7 +391,7 @@
   flex-shrink: 1;
 }
 
-
+/* Title */
 
 .urlbarView-title {
   overflow: hidden;
@@ -400,16 +400,16 @@
 
 .urlbarView-row[type=tip] > .urlbarView-row-inner > .urlbarView-title {
   white-space: normal;
-  
-
-
-
-  flex-basis: calc(100% -  6px -  24px -  12px);
+  /* Give the tip title appropriate flex so that when the window is narrow, the
+     tip buttons wrap around under it.  We want the icon and title to remain on
+     one line.  So make the title's flex-basis the width of the parent minus the
+     width of the icon. */
+  flex-basis: calc(100% - /* .urlbarView-row-inner padding-inline-start */ 6px - /* .urlbarView-favicon width */ 24px - /* .urlbarView-favicon margin-inline-end */ 12px);
   flex-grow: 1;
   flex-shrink: 1;
 }
 
-
+/* Tail suggestions */
 .urlbarView-tail-prefix {
   display: none;
   justify-content: flex-end;
@@ -428,7 +428,7 @@
   position: absolute;
 }
 
-
+/* Title separator */
 
 .urlbarView-title-separator::before {
   content: "\2014";
@@ -440,7 +440,7 @@
   display: none;
 }
 
-
+/* URLs, action labels, tags */
 
 .urlbarView-tags,
 .urlbarView-url,
@@ -458,9 +458,9 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  
-
-
+  /* The slide-in effect is delayed ~100ms to reduce motion during result
+     composition. We set opacity: 0 at the 0% keyframe to ensure the text is not
+     seen by the user until after the delay. */
   @keyframes urlbarView-action-slide-in {
     0%, 28.6% {
       translate: var(--urlbarView-action-slide-in-distance);
@@ -493,9 +493,9 @@
 .urlbarView-row:is([type=search], [restyled-search]):not([selected], [show-action-text], :hover) > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title-separator,
 .urlbarView-row:not([has-action], [has-url], [restyled-search]) > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-title-separator,
 .urlbarView:not([actionoverride]) .urlbarView-row[type=switchtab] > .urlbarView-row-inner > .urlbarView-url {
-  
-
-
+  /* Use visibility:collapse instead of display:none since the latter can
+     confuse the overflow state of title and url elements when their content
+     changes while they're hidden. */
   visibility: collapse;
 }
 
@@ -523,7 +523,7 @@
   color: var(--autocomplete-popup-highlight-background);
 }
 
-
+/* Search one-offs */
 
 #urlbar .search-one-offs:not([hidden]) {
   display: flex;
@@ -537,8 +537,8 @@
 }
 
 #urlbar .search-panel-one-offs-container {
-  
-  min-width: calc(4 *  40px +  56px);
+  /* Make sure horizontally we can fit four buttons, empty space, settings. */
+  min-width: calc(4 * /* one-off with end margin */ 40px + /* settings with start margin */ 56px);
 }
 
 #urlbar .search-panel-header {
@@ -562,13 +562,13 @@
 }
 
 #urlbar .searchbar-engine-one-off-item:last-child {
-  
+  /* This applies to both the last one-off and the compact settings button */
   margin-inline-end: 0;
 }
 
 #urlbar .search-setting-button-compact {
-  
-  margin-inline-start: calc(32px -  8px );
+  /* Force empty space before the button */
+  margin-inline-start: calc(32px - /* settings start padding */ 8px );
 }
 
 #urlbar .search-one-offs-spacer {
@@ -578,7 +578,7 @@
 .urlbarView-row[source="bookmarks"] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-favicon,
 #urlbar-engine-one-off-item-bookmarks {
   list-style-image: url("chrome://browser/skin/bookmark.svg");
-  fill: #0060df; 
+  fill: #0060df; /* Blue-60 */
   fill-opacity: 1;
   -moz-context-properties: fill, fill-opacity;
 }
@@ -586,7 +586,7 @@
 .urlbarView-row[source="tabs"] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-favicon,
 #urlbar-engine-one-off-item-tabs {
   list-style-image: url("chrome://browser/skin/tab.svg");
-  fill: #008eaf; 
+  fill: #008eaf; /* Teal-70 */
   fill-opacity: 1;
   -moz-context-properties: fill, fill-opacity;
 }
@@ -601,12 +601,12 @@
 
 :root[lwt-toolbar-field-brighttext] .urlbarView-row[source="bookmarks"]:not([selected]) > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-favicon,
 :root[lwt-toolbar-field-brighttext] #urlbar-engine-one-off-item-bookmarks:not([selected]) {
-  fill: #0a84ff; 
+  fill: #0a84ff; /* Blue-50 */
 }
 
 :root[lwt-toolbar-field-brighttext] .urlbarView-row[source="tabs"]:not([selected]) > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-favicon,
 :root[lwt-toolbar-field-brighttext] #urlbar-engine-one-off-item-tabs:not([selected]) {
-  fill: #00c8d7; 
+  fill: #00c8d7; /* Teal-60 */
 }
 
 .urlbarView-row[source="bookmarks"][selected] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-favicon,
@@ -617,7 +617,7 @@
   fill-opacity: .9;
 }
 
-
+/* search bar popup */
 
 #PopupSearchAutoComplete {
   background: var(--autocomplete-popup-background);
