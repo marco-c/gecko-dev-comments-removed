@@ -102,34 +102,9 @@ class Link : public nsISupports {
   
   Element* GetElement() const { return mElement; }
 
-  
-
-
-  virtual void OnDNSPrefetchDeferred() { 
-  }
-
-  
-
-
-  virtual void OnDNSPrefetchRequested() { 
-  }
-
-  
-
-
-
-
-
-  virtual bool HasDeferredDNSPrefetchRequest() { return true; }
-
   virtual size_t SizeOfExcludingThis(mozilla::SizeOfState& aState) const;
 
   virtual bool ElementHasHref() const;
-
-  
-  void TryDNSPrefetch();
-  void CancelDNSPrefetch(nsWrapperCache::FlagsType aDeferredFlag,
-                         nsWrapperCache::FlagsType aRequestedFlag);
 
   bool HasPendingLinkUpdate() const { return mHasPendingLinkUpdate; }
   void SetHasPendingLinkUpdate() { mHasPendingLinkUpdate = true; }
@@ -140,10 +115,6 @@ class Link : public nsISupports {
   
   
   virtual void NodeInfoChanged(Document* aOldDoc) = 0;
-
-  bool IsInDNSPrefetch() { return mInDNSPrefetch; }
-  void SetIsInDNSPrefetch() { mInDNSPrefetch = true; }
-  void ClearIsInDNSPrefetch() { mInDNSPrefetch = false; }
 
  protected:
   virtual ~Link();
@@ -183,7 +154,6 @@ class Link : public nsISupports {
   bool mNeedsRegistration : 1;
   bool mRegistered : 1;
   bool mHasPendingLinkUpdate : 1;
-  bool mInDNSPrefetch : 1;
   bool mHistory : 1;
 };
 
