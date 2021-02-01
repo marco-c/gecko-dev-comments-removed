@@ -354,9 +354,8 @@ typename ParseHandler::ListNodeType GeneralParser<ParseHandler, Unit>::parse() {
   SourceExtent extent = SourceExtent::makeGlobalExtent(
        0, options().lineno, options().column);
   Directives directives(options().forceStrictMode());
-  GlobalSharedContext globalsc(cx_, ScopeKind::Global,
-                               this->getCompilationStencil(), directives,
-                               extent);
+  GlobalSharedContext globalsc(cx_, ScopeKind::Global, this->stencil_,
+                               directives, extent);
   SourceParseContext globalpc(this, &globalsc,  nullptr);
   if (!globalpc.init()) {
     return null();
@@ -849,8 +848,8 @@ bool PerHandlerParser<ParseHandler>::
       
       
       const ParserAtom* parserAtom =
-          this->compilationState_.parserAtoms.internJSAtom(
-              cx_, this->getCompilationStencil(), name);
+          this->compilationState_.parserAtoms.internJSAtom(cx_, this->stencil_,
+                                                           name);
       if (!parserAtom) {
         return false;
       }
@@ -1594,12 +1593,12 @@ LexicalScopeNode* Parser<FullParseHandler, Unit>::evalBody(
 
 #ifdef DEBUG
   if (evalpc.superScopeNeedsHomeObject() &&
-      this->getCompilationStencil().input.enclosingScope) {
+      this->stencil_.input.enclosingScope) {
     
     
     
     
-    ScopeIter si(this->getCompilationStencil().input.enclosingScope);
+    ScopeIter si(this->stencil_.input.enclosingScope);
     for (; si; si++) {
       if (si.kind() == ScopeKind::Function) {
         JSFunction* fun = si.scope()->as<FunctionScope>().canonicalFunction();
@@ -10466,23 +10465,23 @@ BigIntLiteral* Parser<FullParseHandler, Unit>::newBigInt() {
   
   const auto& chars = tokenStream.getCharBuffer();
 
-  BigIntIndex index(this->getCompilationStencil().bigIntData.length());
+  BigIntIndex index(this->stencil_.bigIntData.length());
   if (uint32_t(index) >= TaggedScriptThingIndex::IndexLimit) {
     ReportAllocationOverflow(cx_);
     return null();
   }
-  if (!this->getCompilationStencil().bigIntData.emplaceBack()) {
+  if (!this->stencil_.bigIntData.emplaceBack()) {
     js::ReportOutOfMemory(cx_);
     return null();
   }
 
-  if (!this->getCompilationStencil().bigIntData[index].init(this->cx_, chars)) {
+  if (!this->stencil_.bigIntData[index].init(this->cx_, chars)) {
     return null();
   }
 
   
   
-  return handler_.newBigInt(index, this->getCompilationStencil(), pos());
+  return handler_.newBigInt(index, this->stencil_, pos());
 }
 
 template <typename Unit>
