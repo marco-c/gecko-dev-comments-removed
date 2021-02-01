@@ -14,6 +14,7 @@
 
 #include "frontend/ElemOpEmitter.h"
 #include "frontend/IfEmitter.h"
+#include "frontend/ParserAtom.h"  
 #include "frontend/PropOpEmitter.h"
 #include "frontend/ValueUsage.h"
 #include "js/TypeDecls.h"

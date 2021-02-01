@@ -9,6 +9,7 @@
 #include "frontend/BytecodeEmitter.h"
 #include "frontend/EmitterScope.h"
 #include "frontend/IfEmitter.h"
+#include "frontend/ParserAtom.h"  
 #include "frontend/SourceNotes.h"
 #include "vm/Opcodes.h"
 #include "vm/Scope.h"
@@ -120,7 +121,8 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
     
     return false;
   }
-  if (!bce_->emitAtomOp(JSOp::GetProp, bce_->cx->parserNames().done)) {
+  if (!bce_->emitAtomOp(JSOp::GetProp,
+                        TaggedParserAtomIndex::WellKnown::done())) {
     
     return false;
   }
@@ -137,7 +139,8 @@ bool ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos) {
   
   
   
-  if (!bce_->emitAtomOp(JSOp::GetProp, bce_->cx->parserNames().value)) {
+  if (!bce_->emitAtomOp(JSOp::GetProp,
+                        TaggedParserAtomIndex::WellKnown::value())) {
     
     return false;
   }

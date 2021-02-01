@@ -36,27 +36,27 @@
 #include "frontend/NameCollections.h"      
 #include "frontend/ParseNode.h"            
 #include "frontend/Parser.h"               
-#include "frontend/ParserAtom.h"  
-#include "frontend/ScriptIndex.h"    
-#include "frontend/SharedContext.h"  
-#include "frontend/SourceNotes.h"    
-#include "frontend/TokenStream.h"    
-#include "frontend/ValueUsage.h"     
-#include "js/RootingAPI.h"           
-#include "js/TypeDecls.h"            
-#include "vm/BuiltinObjectKind.h"    
-#include "vm/BytecodeUtil.h"         
-#include "vm/CheckIsObjectKind.h"    
-#include "vm/FunctionPrefixKind.h"   
-#include "vm/GeneratorResumeKind.h"  
-#include "vm/Instrumentation.h"      
-#include "vm/JSFunction.h"           
-#include "vm/JSScript.h"             
-#include "vm/Runtime.h"              
-#include "vm/SharedStencil.h"        
-#include "vm/StencilEnums.h"         
-#include "vm/StringType.h"           
-#include "vm/ThrowMsgKind.h"         
+#include "frontend/ParserAtom.h"           
+#include "frontend/ScriptIndex.h"          
+#include "frontend/SharedContext.h"        
+#include "frontend/SourceNotes.h"          
+#include "frontend/TokenStream.h"          
+#include "frontend/ValueUsage.h"           
+#include "js/RootingAPI.h"                 
+#include "js/TypeDecls.h"                  
+#include "vm/BuiltinObjectKind.h"          
+#include "vm/BytecodeUtil.h"               
+#include "vm/CheckIsObjectKind.h"          
+#include "vm/FunctionPrefixKind.h"         
+#include "vm/GeneratorResumeKind.h"        
+#include "vm/Instrumentation.h"            
+#include "vm/JSFunction.h"                 
+#include "vm/JSScript.h"       
+#include "vm/Runtime.h"        
+#include "vm/SharedStencil.h"  
+#include "vm/StencilEnums.h"   
+#include "vm/StringType.h"     
+#include "vm/ThrowMsgKind.h"   
 
 namespace js {
 namespace frontend {
@@ -248,24 +248,23 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   AbstractScopePtr innermostScope() const;
   ScopeIndex innermostScopeIndex() const;
 
-  MOZ_ALWAYS_INLINE MOZ_MUST_USE bool makeAtomIndex(const ParserAtom* atom,
+  MOZ_ALWAYS_INLINE MOZ_MUST_USE bool makeAtomIndex(TaggedParserAtomIndex atom,
                                                     GCThingIndex* indexp) {
     MOZ_ASSERT(perScriptData().atomIndices());
-    AtomIndexMap::AddPtr p =
-        perScriptData().atomIndices()->lookupForAdd(atom->toIndex());
+    AtomIndexMap::AddPtr p = perScriptData().atomIndices()->lookupForAdd(atom);
     if (p) {
       *indexp = GCThingIndex(p->value());
       return true;
     }
 
     GCThingIndex index;
-    if (!perScriptData().gcThingList().append(atom->toIndex(), &index)) {
+    if (!perScriptData().gcThingList().append(atom, &index)) {
       return false;
     }
 
     
     
-    if (!perScriptData().atomIndices()->add(p, atom->toIndex(), index.index)) {
+    if (!perScriptData().atomIndices()->add(p, atom, index.index)) {
       ReportOutOfMemory(cx);
       return false;
     }
@@ -462,7 +461,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitGCIndexOp(JSOp op, GCThingIndex index);
 
   MOZ_MUST_USE bool emitAtomOp(
-      JSOp op, const ParserAtom* atom,
+      JSOp op, TaggedParserAtomIndex atom,
       ShouldInstrument shouldInstrument = ShouldInstrument::No);
   MOZ_MUST_USE bool emitAtomOp(
       JSOp op, GCThingIndex atomIndex,
@@ -524,7 +523,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
                                                   ListNode* obj);
   MOZ_MUST_USE bool emitPrivateMethodInitializer(
       ClassEmitter& ce, ParseNode* prop, ParseNode* propName,
-      const ParserAtom* storedMethodAtom, AccessorType accessorType);
+      TaggedParserAtomIndex storedMethodAtom, AccessorType accessorType);
 
   
   
@@ -536,14 +535,14 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitArgOp(JSOp op, uint16_t slot);
   MOZ_MUST_USE bool emitEnvCoordOp(JSOp op, EnvironmentCoordinate ec);
 
-  MOZ_MUST_USE bool emitGetNameAtLocation(const ParserAtom* name,
+  MOZ_MUST_USE bool emitGetNameAtLocation(TaggedParserAtomIndex name,
                                           const NameLocation& loc);
-  MOZ_MUST_USE bool emitGetName(const ParserAtom* name) {
-    return emitGetNameAtLocation(name, lookupName(name->toIndex()));
+  MOZ_MUST_USE bool emitGetName(TaggedParserAtomIndex name) {
+    return emitGetNameAtLocation(name, lookupName(name));
   }
   MOZ_MUST_USE bool emitGetName(NameNode* name);
   MOZ_MUST_USE bool emitGetPrivateName(NameNode* name);
-  MOZ_MUST_USE bool emitGetPrivateName(const ParserAtom* name);
+  MOZ_MUST_USE bool emitGetPrivateName(TaggedParserAtomIndex name);
 
   MOZ_MUST_USE bool emitTDZCheckIfNeeded(TaggedParserAtomIndex name,
                                          const NameLocation& loc,
@@ -555,7 +554,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitSingleDeclaration(ListNode* declList, NameNode* decl,
                                           ParseNode* initializer);
   MOZ_MUST_USE bool emitAssignmentRhs(ParseNode* rhs,
-                                      const ParserAtom* anonFunctionName);
+                                      TaggedParserAtomIndex anonFunctionName);
   MOZ_MUST_USE bool emitAssignmentRhs(uint8_t offset);
 
   MOZ_MUST_USE bool emitPrepareIteratorResult();
@@ -696,12 +695,12 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitDefault(ParseNode* defaultExpr, ParseNode* pattern);
 
   MOZ_MUST_USE bool emitAnonymousFunctionWithName(ParseNode* node,
-                                                  const ParserAtom* name);
+                                                  TaggedParserAtomIndex name);
 
   MOZ_MUST_USE bool emitAnonymousFunctionWithComputedName(
       ParseNode* node, FunctionPrefixKind prefixKind);
 
-  MOZ_MUST_USE bool setFunName(FunctionBox* fun, const ParserAtom* name);
+  MOZ_MUST_USE bool setFunName(FunctionBox* fun, TaggedParserAtomIndex name);
   MOZ_MUST_USE bool emitInitializer(ParseNode* initializer, ParseNode* pattern);
 
   MOZ_MUST_USE bool emitCallSiteObjectArray(ListNode* cookedOrRaw,
@@ -805,7 +804,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitFunctionFormalParameters(ListNode* paramsBody);
   MOZ_MUST_USE bool emitInitializeFunctionSpecialNames();
   MOZ_MUST_USE bool emitLexicalInitialization(NameNode* name);
-  MOZ_MUST_USE bool emitLexicalInitialization(const ParserAtom* name);
+  MOZ_MUST_USE bool emitLexicalInitialization(TaggedParserAtomIndex name);
 
   
   
@@ -830,7 +829,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   MOZ_MUST_USE bool emitClass(
       ClassNode* classNode, ClassNameKind nameKind = ClassNameKind::BindingName,
-      const ParserAtom* nameForAnonymousClass = nullptr);
+      TaggedParserAtomIndex nameForAnonymousClass =
+          TaggedParserAtomIndex::null());
 
   MOZ_MUST_USE bool emitSuperElemOperands(
       PropertyByValue* elem, EmitElemOption opts = EmitElemOption::Get);
