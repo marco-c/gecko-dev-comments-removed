@@ -73,7 +73,7 @@ class MOZ_STACK_CLASS FunctionEmitter {
   FunctionBox* funbox_;
 
   
-  const ParserAtom* name_;
+  TaggedParserAtomIndex name_;
 
   FunctionSyntaxKind syntaxKind_;
   IsHoisted isHoisted_;
@@ -406,10 +406,10 @@ class MOZ_STACK_CLASS FunctionParamsEmitter {
 
   
   
-  MOZ_MUST_USE bool emitSimple(const ParserAtom* paramName);
+  MOZ_MUST_USE bool emitSimple(TaggedParserAtomIndex paramName);
 
   MOZ_MUST_USE bool prepareForDefault();
-  MOZ_MUST_USE bool emitDefaultEnd(const ParserAtom* paramName);
+  MOZ_MUST_USE bool emitDefaultEnd(TaggedParserAtomIndex paramName);
 
   MOZ_MUST_USE bool prepareForDestructuring();
   MOZ_MUST_USE bool emitDestructuringEnd();
@@ -418,7 +418,7 @@ class MOZ_STACK_CLASS FunctionParamsEmitter {
   MOZ_MUST_USE bool prepareForDestructuringDefault();
   MOZ_MUST_USE bool emitDestructuringDefaultEnd();
 
-  MOZ_MUST_USE bool emitRest(const ParserAtom* paramName);
+  MOZ_MUST_USE bool emitRest(TaggedParserAtomIndex paramName);
 
   MOZ_MUST_USE bool prepareForDestructuringRest();
   MOZ_MUST_USE bool emitDestructuringRestEnd();
@@ -429,7 +429,7 @@ class MOZ_STACK_CLASS FunctionParamsEmitter {
 
   MOZ_MUST_USE bool emitRestArray();
 
-  MOZ_MUST_USE bool emitAssignment(const ParserAtom* paramName);
+  MOZ_MUST_USE bool emitAssignment(TaggedParserAtomIndex paramName);
 };
 
 } 

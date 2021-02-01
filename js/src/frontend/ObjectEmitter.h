@@ -234,7 +234,8 @@ class MOZ_STACK_CLASS PropertyEmitter {
 
   
   
-  MOZ_MUST_USE bool emitInit(AccessorType accessorType, const ParserAtom* key);
+  MOZ_MUST_USE bool emitInit(AccessorType accessorType,
+                             TaggedParserAtomIndex key);
 
   MOZ_MUST_USE bool emitInitIndexOrComputed(AccessorType accessorType);
 
@@ -246,7 +247,7 @@ class MOZ_STACK_CLASS PropertyEmitter {
   
   
   
-  MOZ_MUST_USE bool emitInit(JSOp op, const ParserAtom* key);
+  MOZ_MUST_USE bool emitInit(JSOp op, TaggedParserAtomIndex key);
   MOZ_MUST_USE bool emitInitIndexOrComputed(JSOp op);
 
   MOZ_MUST_USE bool emitPopClassConstructor();
