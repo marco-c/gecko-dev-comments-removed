@@ -13,7 +13,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   BrowserSearchTelemetry: "resource:///modules/BrowserSearchTelemetry.jsm",
-  BrowserUIUtils: "resource:///modules/BrowserUIUtils.jsm",
+  BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   ExtensionSearchHandler: "resource://gre/modules/ExtensionSearchHandler.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
@@ -330,7 +330,7 @@ class UrlbarInput {
       
       if (
         this.window.isInitialPage(uri) &&
-        BrowserUIUtils.checkEmptyPageOrigin(
+        BrowserUtils.checkEmptyPageOrigin(
           this.window.gBrowser.selectedBrowser,
           uri
         )
@@ -349,7 +349,7 @@ class UrlbarInput {
         !this.window.isBlankPageURL(uri.spec) || uri.schemeIs("moz-extension");
     } else if (
       this.window.isInitialPage(value) &&
-      BrowserUIUtils.checkEmptyPageOrigin(this.window.gBrowser.selectedBrowser)
+      BrowserUtils.checkEmptyPageOrigin(this.window.gBrowser.selectedBrowser)
     ) {
       value = "";
       valid = true;
@@ -1076,10 +1076,10 @@ class UrlbarInput {
     if (
       result.type == UrlbarUtils.RESULT_TYPE.URL &&
       UrlbarPrefs.get("trimURLs") &&
-      result.payload.url.startsWith(BrowserUIUtils.trimURLProtocol)
+      result.payload.url.startsWith(BrowserUtils.trimURLProtocol)
     ) {
       let fixupInfo = this._getURIFixupInfo(
-        BrowserUIUtils.trimURL(result.payload.url)
+        BrowserUtils.trimURL(result.payload.url)
       );
       if (fixupInfo?.keywordAsSent) {
         allowTrim = false;
@@ -2089,12 +2089,12 @@ class UrlbarInput {
     
 
     if (
-      !selectedVal.startsWith(BrowserUIUtils.trimURLProtocol) &&
+      !selectedVal.startsWith(BrowserUtils.trimURLProtocol) &&
       
       
       !displaySpec.startsWith(this._trimValue(displaySpec))
     ) {
-      selectedVal = BrowserUIUtils.trimURLProtocol + selectedVal;
+      selectedVal = BrowserUtils.trimURLProtocol + selectedVal;
     }
 
     return selectedVal;
@@ -2176,7 +2176,7 @@ class UrlbarInput {
 
 
   _trimValue(val) {
-    return UrlbarPrefs.get("trimURLs") ? BrowserUIUtils.trimURL(val) : val;
+    return UrlbarPrefs.get("trimURLs") ? BrowserUtils.trimURL(val) : val;
   }
 
   
@@ -3261,7 +3261,6 @@ function getDroppableData(event) {
       
       
       
-      
       let url = new URL(href);
       
       
@@ -3269,9 +3268,9 @@ function getDroppableData(event) {
         let principal = Services.droppedLinkHandler.getTriggeringPrincipal(
           event
         );
-        Services.scriptSecurityManager.checkLoadURIStrWithPrincipal(
+        BrowserUtils.urlSecurityCheck(
+          url,
           principal,
-          url.href,
           Ci.nsIScriptSecurityManager.DISALLOW_INHERIT_PRINCIPAL
         );
         return url;
