@@ -248,6 +248,10 @@
 #  include "nsIPK11Token.h"
 #endif
 
+#ifdef MOZ_BACKGROUNDTASKS
+#  include "mozilla/BackgroundTasks.h"
+#endif
+
 extern uint32_t gRestartMode;
 extern void InstallSignalHandlers(const char* ProgramName);
 
@@ -2275,6 +2279,15 @@ class ReturnAbortOnError {
 }  
 
 static nsresult ProfileMissingDialog(nsINativeAppSupport* aNative) {
+#ifdef MOZ_BACKGROUNDTASKS
+  if (BackgroundTasks::IsBackgroundTaskMode()) {
+    
+    Output(false,
+           "Could not determine any profile running in backgroundtask mode!\n");
+    return NS_ERROR_ABORT;
+  }
+#endif
+
   nsresult rv;
 
   ScopedXPCOMStartup xpcom;
@@ -3461,10 +3474,26 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   DisableAppNap();
 #endif
 
+#ifdef MOZ_BACKGROUNDTASKS
+  Maybe<nsCString> backgroundTask = Nothing();
+  const char* backgroundTaskName = nullptr;
+  if (ARG_FOUND == CheckArg("backgroundtask", &backgroundTaskName)) {
+    backgroundTask = Some(backgroundTaskName);
+  }
+  BackgroundTasks::Init(backgroundTask);
+
+  if (BackgroundTasks::IsBackgroundTaskMode()) {
+    printf_stderr("*** You are running in background task mode. ***\n");
+  }
+#endif
+
 #ifndef ANDROID
   if (PR_GetEnv("MOZ_RUN_GTEST")
 #  ifdef FUZZING
       || PR_GetEnv("FUZZER")
+#  endif
+#  ifdef MOZ_BACKGROUNDTASKS
+      || BackgroundTasks::IsBackgroundTaskMode()
 #  endif
   ) {
     
@@ -3812,6 +3841,11 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   if (!safeModeRequested) {
     return 1;
   }
+#ifdef MOZ_BACKGROUNDTASKS
+  if (BackgroundTasks::IsBackgroundTaskMode()) {
+    safeModeRequested = Some(false);
+  }
+#endif
 
   gSafeMode = safeModeRequested.value();
 
@@ -4397,6 +4431,19 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     return 1;
   }
 
+#ifdef MOZ_BACKGROUNDTASKS
+  if (BackgroundTasks::IsBackgroundTaskMode()) {
+    nsCOMPtr<nsIFile> file;
+    nsresult rv = BackgroundTasks::GetOrCreateTemporaryProfileDirectory(
+        getter_AddRefs(file));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return 1;
+    }
+
+    SaveFileToEnv("XRE_PROFILE_PATH", file);
+  }
+#endif
+
   bool wasDefaultSelection;
   nsCOMPtr<nsIToolkitProfile> profile;
   rv = SelectProfile(mProfileSvc, mNativeApp, getter_AddRefs(mProfD),
@@ -4734,6 +4781,9 @@ nsresult XREMain::XRE_mainRun() {
   
   
   nsCOMPtr<nsIAppStartup> appStartup;
+  
+  nsCOMPtr<nsICommandLineRunner> cmdLine;
+
   {
 #ifdef XP_MACOSX
     
@@ -4959,8 +5009,6 @@ nsresult XREMain::XRE_mainRun() {
 
     appStartup->GetShuttingDown(&mShuttingDown);
 
-    nsCOMPtr<nsICommandLineRunner> cmdLine;
-
     nsCOMPtr<nsIFile> workingDir;
     rv = NS_GetSpecialDirectory(NS_OS_CURRENT_WORKING_DIR,
                                 getter_AddRefs(workingDir));
@@ -5017,6 +5065,13 @@ nsresult XREMain::XRE_mainRun() {
           Preferences::GetBool("toolkit.lazyHiddenWindow", false);
 #endif
 
+#ifdef MOZ_BACKGROUNDTASKS
+      if (BackgroundTasks::IsBackgroundTaskMode()) {
+        
+        lazyHiddenWindow = true;
+      }
+#endif
+
       if (!lazyHiddenWindow) {
         rv = appStartup->CreateHiddenWindow();
         NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
@@ -5032,18 +5087,26 @@ nsresult XREMain::XRE_mainRun() {
       SetupLauncherProcessPref();
 #  endif  
 #  if defined(MOZ_DEFAULT_BROWSER_AGENT)
-      Preferences::RegisterCallbackAndCall(&OnDefaultAgentTelemetryPrefChanged,
-                                           kPrefHealthReportUploadEnabled);
-      Preferences::RegisterCallbackAndCall(&OnDefaultAgentTelemetryPrefChanged,
-                                           kPrefDefaultAgentEnabled);
+#    if defined(MOZ_BACKGROUNDTASKS)
+      
+      
+      if (!BackgroundTasks::IsBackgroundTaskMode())
+#    endif  
+      {
+        Preferences::RegisterCallbackAndCall(
+            &OnDefaultAgentTelemetryPrefChanged,
+            kPrefHealthReportUploadEnabled);
+        Preferences::RegisterCallbackAndCall(
+            &OnDefaultAgentTelemetryPrefChanged, kPrefDefaultAgentEnabled);
 
-      Preferences::RegisterCallbackAndCall(
-          &OnDefaultAgentRemoteSettingsPrefChanged,
-          kPrefServicesSettingsServer);
-      Preferences::RegisterCallbackAndCall(
-          &OnDefaultAgentRemoteSettingsPrefChanged,
-          kPrefSecurityContentSignatureRootHash);
-      SetDefaultAgentLastRunTime();
+        Preferences::RegisterCallbackAndCall(
+            &OnDefaultAgentRemoteSettingsPrefChanged,
+            kPrefServicesSettingsServer);
+        Preferences::RegisterCallbackAndCall(
+            &OnDefaultAgentRemoteSettingsPrefChanged,
+            kPrefSecurityContentSignatureRootHash);
+        SetDefaultAgentLastRunTime();
+      }
 #  endif  
 #endif
 
@@ -5154,6 +5217,24 @@ nsresult XREMain::XRE_mainRun() {
 
     mProfileSvc->CompleteStartup();
   }
+
+#ifdef MOZ_BACKGROUNDTASKS
+  if (BackgroundTasks::IsBackgroundTaskMode()) {
+    
+    
+    
+    
+    rv = appStartup->TrackStartupCrashEnd();
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    rv = appStartup->EnterLastWindowClosingSurvivalArea();
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = BackgroundTasks::RunBackgroundTask(cmdLine);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+#endif
 
   {
     rv = appStartup->Run();
@@ -5375,6 +5456,10 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   
   mProfileLock->Unlock();
   gProfileLock = nullptr;
+
+#ifdef MOZ_BACKGROUNDTASKS
+  BackgroundTasks::Shutdown();
+#endif
 
   gLastAppVersion.Truncate();
   gLastAppBuildID.Truncate();
