@@ -388,7 +388,7 @@ class FunctionBox : public SuspendableContext {
   
   
   
-  bool wasEmitted_ : 1;
+  bool wasEmittedByEnclosingScript_ : 1;
 
   
   bool isAnnexB : 1;
@@ -471,9 +471,11 @@ class FunctionBox : public SuspendableContext {
 
   void setEnclosingScopeForInnerLazyFunction(ScopeIndex scopeIndex);
 
-  bool wasEmitted() const { return wasEmitted_; }
-  void setWasEmitted(bool wasEmitted) {
-    wasEmitted_ = wasEmitted;
+  bool wasEmittedByEnclosingScript() const {
+    return wasEmittedByEnclosingScript_;
+  }
+  void setWasEmittedByEnclosingScript(bool wasEmitted) {
+    wasEmittedByEnclosingScript_ = wasEmitted;
     if (isFunctionFieldCopiedToStencil) {
       copyUpdatedWasEmitted();
     }

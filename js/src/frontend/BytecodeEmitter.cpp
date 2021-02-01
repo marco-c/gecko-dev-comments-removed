@@ -5826,7 +5826,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
   
   
   
-  if (funbox->wasEmitted()) {
+  if (funbox->wasEmittedByEnclosingScript()) {
     if (!fe.emitAgain()) {
       
       return false;

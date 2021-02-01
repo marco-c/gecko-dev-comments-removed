@@ -46,11 +46,11 @@ bool FunctionEmitter::prepareForNonLazy() {
 
   MOZ_ASSERT(funbox_->isInterpreted());
   MOZ_ASSERT(funbox_->emitBytecode);
-  MOZ_ASSERT(!funbox_->wasEmitted());
+  MOZ_ASSERT(!funbox_->wasEmittedByEnclosingScript());
 
   
 
-  funbox_->setWasEmitted(true);
+  funbox_->setWasEmittedByEnclosingScript(true);
 
 #ifdef DEBUG
   state_ = State::NonLazy;
@@ -79,11 +79,11 @@ bool FunctionEmitter::emitLazy() {
 
   MOZ_ASSERT(funbox_->isInterpreted());
   MOZ_ASSERT(!funbox_->emitBytecode);
-  MOZ_ASSERT(!funbox_->wasEmitted());
+  MOZ_ASSERT(!funbox_->wasEmittedByEnclosingScript());
 
   
 
-  funbox_->setWasEmitted(true);
+  funbox_->setWasEmittedByEnclosingScript(true);
 
   
   
@@ -102,7 +102,7 @@ bool FunctionEmitter::emitLazy() {
 
 bool FunctionEmitter::emitAgain() {
   MOZ_ASSERT(state_ == State::Start);
-  MOZ_ASSERT(funbox_->wasEmitted());
+  MOZ_ASSERT(funbox_->wasEmittedByEnclosingScript());
 
   
 
@@ -171,12 +171,12 @@ bool FunctionEmitter::emitAgain() {
 bool FunctionEmitter::emitAsmJSModule() {
   MOZ_ASSERT(state_ == State::Start);
 
-  MOZ_ASSERT(!funbox_->wasEmitted());
+  MOZ_ASSERT(!funbox_->wasEmittedByEnclosingScript());
   MOZ_ASSERT(funbox_->isAsmJSModule());
 
   
 
-  funbox_->setWasEmitted(true);
+  funbox_->setWasEmittedByEnclosingScript(true);
 
   if (!emitFunction()) {
     
