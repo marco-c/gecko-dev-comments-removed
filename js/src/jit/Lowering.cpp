@@ -572,10 +572,6 @@ void LIRGenerator::visitTest(MTest* test) {
   MOZ_ASSERT(opd->type() != MIRType::String);
 
   
-  MOZ_ASSERT(opd->type() != MIRType::BigInt,
-             "BigInt should be boxed by TestPolicy");
-
-  
   if (MConstant* constant = opd->maybeConstantValue()) {
     bool b;
     if (constant->valueToBoolean(&b)) {
@@ -813,6 +809,9 @@ void LIRGenerator::visitTest(MTest* test) {
     case MIRType::Int64:
       add(new (alloc())
               LTestI64AndBranch(useInt64Register(opd), ifTrue, ifFalse));
+      break;
+    case MIRType::BigInt:
+      add(new (alloc()) LTestBIAndBranch(useRegister(opd), ifTrue, ifFalse));
       break;
     default:
       MOZ_CRASH("Bad type");
@@ -3008,9 +3007,9 @@ void LIRGenerator::visitNot(MNot* ins) {
   
   
   MOZ_ASSERT(op->type() != MIRType::String);
-  MOZ_ASSERT(op->type() != MIRType::BigInt,
-             "BigInt should be boxed by TestPolicy");
 
+  
+  
   
   
   
@@ -3041,6 +3040,9 @@ void LIRGenerator::visitNot(MNot* ins) {
       break;
     case MIRType::Symbol:
       define(new (alloc()) LInteger(0), ins);
+      break;
+    case MIRType::BigInt:
+      define(new (alloc()) LNotBI(useRegisterAtStart(op)), ins);
       break;
     case MIRType::Object:
       define(new (alloc()) LNotO(useRegister(op)), ins);

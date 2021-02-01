@@ -1390,6 +1390,23 @@ class LTestFAndBranch : public LControlInstructionHelper<2, 1, 0> {
 };
 
 
+class LTestBIAndBranch : public LControlInstructionHelper<2, 1, 0> {
+ public:
+  LIR_HEADER(TestBIAndBranch)
+
+  LTestBIAndBranch(const LAllocation& in, MBasicBlock* ifTrue,
+                   MBasicBlock* ifFalse)
+      : LControlInstructionHelper(classOpcode) {
+    setOperand(0, in);
+    setSuccessor(0, ifTrue);
+    setSuccessor(1, ifFalse);
+  }
+
+  MBasicBlock* ifTrue() { return getSuccessor(0); }
+  MBasicBlock* ifFalse() { return getSuccessor(1); }
+};
+
+
 
 class LTestOAndBranch : public LControlInstructionHelper<2, 1, 1> {
  public:
@@ -1878,6 +1895,18 @@ class LNotF : public LInstructionHelper<1, 1, 0> {
   LIR_HEADER(NotF)
 
   explicit LNotF(const LAllocation& input) : LInstructionHelper(classOpcode) {
+    setOperand(0, input);
+  }
+
+  MNot* mir() { return mir_->toNot(); }
+};
+
+
+class LNotBI : public LInstructionHelper<1, 1, 0> {
+ public:
+  LIR_HEADER(NotBI)
+
+  explicit LNotBI(const LAllocation& input) : LInstructionHelper(classOpcode) {
     setOperand(0, input);
   }
 
