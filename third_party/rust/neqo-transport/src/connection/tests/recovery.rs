@@ -6,16 +6,16 @@
 
 use super::super::{Output, State, LOCAL_IDLE_TIMEOUT};
 use super::{
-    assert_full_cwnd, connect, connect_force_idle, connect_with_rtt, default_client,
-    default_server, fill_cwnd, maybe_authenticate, send_and_receive, send_something, AT_LEAST_PTO,
-    POST_HANDSHAKE_CWND,
+    assert_full_cwnd, connect, connect_force_idle, connect_rtt_idle, connect_with_rtt,
+    default_client, default_server, fill_cwnd, maybe_authenticate, send_and_receive,
+    send_something, AT_LEAST_PTO, DEFAULT_RTT, POST_HANDSHAKE_CWND,
 };
-use crate::frame::StreamType;
 use crate::path::PATH_MTU_V6;
 use crate::recovery::PTO_PACKET_COUNT;
 use crate::stats::MAX_PTO_COUNTS;
 use crate::tparams::TransportParameter;
 use crate::tracking::ACK_DELAY;
+use crate::StreamType;
 
 use neqo_common::qdebug;
 use neqo_crypto::AuthenticationStatus;
@@ -34,12 +34,12 @@ fn pto_works_basic() {
     assert_eq!(res, Output::Callback(LOCAL_IDLE_TIMEOUT));
 
     
-    assert_eq!(client.stream_create(StreamType::UniDi).unwrap(), 2);
-    assert_eq!(client.stream_send(2, b"hello").unwrap(), 5);
-    assert_eq!(client.stream_send(2, b" world").unwrap(), 6);
+    let stream1 = client.stream_create(StreamType::UniDi).unwrap();
+    assert_eq!(client.stream_send(stream1, b"hello").unwrap(), 5);
+    assert_eq!(client.stream_send(stream1, b" world!").unwrap(), 7);
 
-    assert_eq!(client.stream_create(StreamType::UniDi).unwrap(), 6);
-    assert_eq!(client.stream_send(6, b"there!").unwrap(), 6);
+    let stream2 = client.stream_create(StreamType::UniDi).unwrap();
+    assert_eq!(client.stream_send(stream2, b"there!").unwrap(), 6);
 
     
     now += Duration::from_secs(10);
@@ -63,19 +63,15 @@ fn pto_works_basic() {
 fn pto_works_full_cwnd() {
     let mut client = default_client();
     let mut server = default_server();
-    connect_force_idle(&mut client, &mut server);
-
-    let res = client.process(None, now());
-    assert_eq!(res, Output::Callback(LOCAL_IDLE_TIMEOUT));
+    let now = connect_rtt_idle(&mut client, &mut server, DEFAULT_RTT);
 
     
-    assert_eq!(client.stream_create(StreamType::UniDi).unwrap(), 2);
-    let (dgrams, now) = fill_cwnd(&mut client, 2, now());
+    let stream_id = client.stream_create(StreamType::UniDi).unwrap();
+    let (dgrams, now) = fill_cwnd(&mut client, stream_id, now);
     assert_full_cwnd(&dgrams, POST_HANDSHAKE_CWND);
 
-    neqo_common::qwarn!("waiting over");
     
-    let (dgrams, now) = fill_cwnd(&mut client, 2, now + AT_LEAST_PTO);
+    let (dgrams, now) = fill_cwnd(&mut client, stream_id, now + AT_LEAST_PTO);
     
     
     assert_eq!(dgrams.len(), 2);
@@ -90,94 +86,65 @@ fn pto_works_full_cwnd() {
 }
 
 #[test]
-#[allow(clippy::cognitive_complexity)]
 fn pto_works_ping() {
     let mut client = default_client();
     let mut server = default_server();
     connect_force_idle(&mut client, &mut server);
-
-    let now = now();
+    let mut now = now();
 
     let res = client.process(None, now);
     assert_eq!(res, Output::Callback(LOCAL_IDLE_TIMEOUT));
 
-    
-    assert_eq!(client.stream_create(StreamType::UniDi).unwrap(), 2);
-    assert_eq!(client.stream_send(2, b"zero").unwrap(), 4);
-    let pkt0 = client.process(None, now + Duration::from_secs(10));
-    assert!(matches!(pkt0, Output::Datagram(_)));
+    now += Duration::from_secs(10);
 
     
-    assert_eq!(client.stream_send(2, b"one").unwrap(), 3);
-    let pkt1 = client.process(None, now + Duration::from_secs(10));
+    let pkt0 = send_something(&mut client, now);
+    let pkt1 = send_something(&mut client, now);
+    let pkt2 = send_something(&mut client, now);
+    let pkt3 = send_something(&mut client, now);
 
     
-    assert_eq!(client.stream_send(2, b"two").unwrap(), 3);
-    let pkt2 = client.process(None, now + Duration::from_secs(10));
+    let cb = client.process(None, now).callback();
+    assert_eq!(cb, Duration::from_millis(45));
 
     
-    assert_eq!(client.stream_send(2, b"three").unwrap(), 5);
-    let pkt3 = client.process(None, now + Duration::from_secs(10));
+    let srv0 = server.process(Some(pkt1), now).dgram();
+    assert!(srv0.is_some()); 
+
+    now += Duration::from_millis(20);
 
     
-    let out = client.process(None, now + Duration::from_secs(10));
-    
-    assert!(matches!(out, Output::Callback(x) if x == Duration::from_millis(45)));
+    let srv1 = server.process(Some(pkt2), now).dgram();
+    assert!(srv1.is_none());
 
     
-    let srv0_pkt1 = server.process(pkt1.dgram(), now + Duration::from_secs(10));
+    let srv2 = server.process(Some(pkt3), now).dgram();
     
-    assert!(matches!(srv0_pkt1, Output::Datagram(_)));
+    assert!(srv2.is_some());
+
+    now += Duration::from_millis(20);
+    
+    let pkt4 = client.process(srv2, now).dgram();
+    
+    assert!(pkt4.is_some());
 
     
-    let srv2 = server.process(
-        pkt2.dgram(),
-        now + Duration::from_secs(10) + Duration::from_millis(20),
-    );
-    assert!(matches!(srv2, Output::Callback(_)));
+    let srv3 = server.process(Some(pkt0), now).dgram();
+    assert!(srv3.is_some());
 
     
-    let srv2 = server.process(
-        pkt3.dgram(),
-        now + Duration::from_secs(10) + Duration::from_millis(20),
-    );
-    
-    assert!(matches!(srv2, Output::Datagram(_)));
+    let pkt5 = client.process(srv3, now).dgram();
+    assert!(pkt5.is_none());
 
+    now += Duration::from_millis(70);
     
-    let pkt4 = client.process(
-        srv2.dgram(),
-        now + Duration::from_secs(10) + Duration::from_millis(40),
-    );
-    
-    assert!(matches!(pkt4, Output::Datagram(_)));
+    let client_pings = client.stats().frame_tx.ping;
+    let pkt6 = client.process(None, now).dgram();
+    assert_eq!(client.stats().frame_tx.ping, client_pings + 1);
 
-    
-    let srv_pkt2 = server.process(
-        pkt0.dgram(),
-        now + Duration::from_secs(10) + Duration::from_millis(40),
-    );
-    assert!(matches!(srv_pkt2, Output::Datagram(_)));
-
-    
-    let pkt5 = client.process(
-        srv_pkt2.dgram(),
-        now + Duration::from_secs(10) + Duration::from_millis(40),
-    );
-    assert!(matches!(pkt5, Output::Callback(_)));
-
-    
-    let pkt6 = client.process(
-        None,
-        now + Duration::from_secs(10) + Duration::from_millis(110),
-    );
-
-    let ping_before = server.stats().frame_rx.ping;
-    server.process_input(
-        pkt6.dgram().unwrap(),
-        now + Duration::from_secs(10) + Duration::from_millis(110),
-    );
-    assert_eq!(server.stats().frame_rx.ping, ping_before + 1);
+    let server_pings = server.stats().frame_rx.ping;
+    server.process_input(pkt6.unwrap(), now);
+    assert_eq!(server.stats().frame_rx.ping, server_pings + 1);
 }
 
 #[test]
@@ -261,6 +228,7 @@ fn pto_handshake_complete() {
     qdebug!("---- client: SH..FIN -> FIN");
     let pkt1 = client.process(None, now).dgram();
     assert!(pkt1.is_some());
+    assert_eq!(*client.state(), State::Connected);
 
     let cb = client.process(None, now).callback();
     assert_eq!(cb, Duration::from_millis(60));
@@ -269,16 +237,21 @@ fn pto_handshake_complete() {
     assert_eq!(client.stats.borrow().pto_counts, pto_counts);
 
     
+    
+    qdebug!("---- client: PTO");
     now += Duration::from_millis(60);
     let pkt2 = client.process(None, now).dgram();
-    assert!(pkt2.is_some());
 
     pto_counts[0] = 1;
     assert_eq!(client.stats.borrow().pto_counts, pto_counts);
 
     
+    
+    
+    let stream_id = client.stream_create(StreamType::UniDi).unwrap();
+    client.stream_close_send(stream_id).unwrap();
     let pkt3 = client.process(None, now).dgram();
-    assert!(pkt3.is_some());
+    let (pkt3_hs, pkt3_1rtt) = split_datagram(&pkt3.unwrap());
 
     
     let cb = client.process(None, now).callback();
@@ -287,30 +260,39 @@ fn pto_handshake_complete() {
     
     assert_eq!(client.stats.borrow().pto_counts, pto_counts);
 
+    qdebug!("---- server: receive FIN and send ACK");
     now += Duration::from_millis(10);
     
     
     
-    let pkt = server.process(pkt1, now).dgram();
-    assert!(pkt.is_some());
+    
+    let server_acks = server.stats().frame_tx.ack;
+    let server_done = server.stats().frame_tx.handshake_done;
+    server.process_input(pkt3_1rtt.unwrap(), now);
+    let ack = server.process(pkt1, now).dgram();
+    assert!(ack.is_some());
+    assert_eq!(server.stats().frame_tx.ack, server_acks + 2);
+    assert_eq!(server.stats().frame_tx.handshake_done, server_done + 1);
 
+    
     
     
     let dropped_before1 = server.stats().dropped_rx;
-    let frames_before = server.stats().frame_rx.all;
+    let server_frames = server.stats().frame_rx.all;
     server.process_input(pkt2.unwrap(), now);
     assert_eq!(1, server.stats().dropped_rx - dropped_before1);
-    assert_eq!(server.stats().frame_rx.all, frames_before);
+    assert_eq!(server.stats().frame_rx.all, server_frames);
 
     let dropped_before2 = server.stats().dropped_rx;
-    server.process_input(pkt3.unwrap(), now);
+    server.process_input(pkt3_hs, now);
     assert_eq!(1, server.stats().dropped_rx - dropped_before2);
-    assert_eq!(server.stats().frame_rx.all, frames_before);
+    assert_eq!(server.stats().frame_rx.all, server_frames);
 
     now += Duration::from_millis(10);
+
     
-    let cb = client.process(pkt, now).callback();
     
+    let cb = client.process(ack, now).callback();
     assert_eq!(cb, ACK_DELAY);
 
     
@@ -322,8 +304,6 @@ fn pto_handshake_complete() {
     
     
 
-    pto_counts[0] = 1;
-    assert_eq!(client.stats.borrow().pto_counts, pto_counts);
     assert_eq!(cb, LOCAL_IDLE_TIMEOUT - ACK_DELAY);
 }
 
