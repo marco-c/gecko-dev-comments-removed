@@ -7,6 +7,7 @@
 
 
 
+
 add_task(async () => {
   info("Test for listening to single event and firing single event");
 
@@ -319,6 +320,21 @@ add_task(async () => {
 
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.remove(bookmark.guid);
+});
+
+add_task(async function test_empty_notifications_array() {
+  info("Test whether listener does not receive empty events");
+
+  if (AppConstants.DEBUG) {
+    info(
+      "Ignore this test since we added a MOZ_ASSERT for empty events in debug build"
+    );
+    return;
+  }
+
+  const observer = startObservation(["page-visited"]);
+  PlacesObservers.notifyListeners([]);
+  Assert.equal(observer.firedEvents.length, 0, "Listener does not receive any");
 });
 
 function startObservation(targets) {
