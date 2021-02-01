@@ -477,7 +477,8 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   }
 
   auto* documentContext = GetDocumentBrowsingContext();
-  if (documentContext && mozilla::SessionHistoryInParent()) {
+  if (documentContext && aLoadState->LoadType() != LOAD_ERROR_PAGE &&
+      mozilla::SessionHistoryInParent()) {
     
     
     mLoadingSessionHistoryInfo =
