@@ -5080,9 +5080,6 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType,
     return;
   }
 
-  
-  
-  
   RefPtr<BrowsingContext> parent;
   BrowsingContext* bc = GetBrowsingContext();
   if (bc) {
@@ -5104,12 +5101,8 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType,
       }
       return;
     }
-    nsCOMPtr<Document> parentdoc = parent->GetDocument();
-    if (!parentdoc) {
-      return;
-    }
 
-    if (Element* frame = parentdoc->FindContentForSubDocument(mDoc)) {
+    if (Element* frame = mDoc->GetEmbedderElement()) {
       nsContentUtils::RequestFrameFocus(*frame, canFocus, aCallerType);
     }
     return;
@@ -6943,15 +6936,20 @@ nsresult nsGlobalWindowOuter::OpenInternal(
 
   
   
-  
-  
   nsAutoString windowName(aName);
-  auto topPolicy = mBrowsingContext->Top()->GetOpenerPolicy();
-  if ((topPolicy == nsILoadInfo::OPENER_POLICY_SAME_ORIGIN ||
-       topPolicy ==
-           nsILoadInfo::
-               OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP) &&
-      !mBrowsingContext->SameOriginWithTop()) {
+  if (nsDocShell::Cast(GetDocShell())->NoopenerForceEnabled()) {
+    
+    
+    
+    if (aPrintKind != PrintKind::None) {
+      NS_WARNING(
+          "printing frames with noopener force-enabled isn't supported yet");
+      return NS_ERROR_FAILURE;
+    }
+
+    MOZ_DIAGNOSTIC_ASSERT(aNavigate,
+                          "cannot OpenNoNavigate if noopener is force-enabled");
+
     forceNoOpener = true;
     windowName = u"_blank"_ns;
   }

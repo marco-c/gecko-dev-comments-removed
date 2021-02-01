@@ -1059,6 +1059,12 @@ class nsDocShell final : public nsDocLoader,
 
   void ActivenessMaybeChanged();
 
+  
+
+
+
+  bool NoopenerForceEnabled();
+
  private:  
   nsString mTitle;
   nsCString mOriginalUriString;
