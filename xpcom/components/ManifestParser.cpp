@@ -27,6 +27,10 @@
 #  include "mozilla/java/GeckoAppShellWrappers.h"
 #endif
 
+#ifdef MOZ_BACKGROUNDTASKS
+#  include "mozilla/BackgroundTasks.h"
+#endif
+
 #include "mozilla/Services.h"
 
 #include "nsCRT.h"
@@ -402,6 +406,10 @@ void ParseManifest(NSLocationType aType, FileLocation& aFile, char* aBuf,
 #if defined(MOZ_WIDGET_ANDROID)
   constexpr auto kTablet = u"tablet"_ns;
 #endif
+  
+  
+  
+  constexpr auto kBackgroundTask = u"backgroundtask"_ns;
 
   constexpr auto kMain = u"main"_ns;
   constexpr auto kContent = u"content"_ns;
@@ -571,6 +579,14 @@ void ParseManifest(NSLocationType aType, FileLocation& aFile, char* aBuf,
 #if defined(MOZ_WIDGET_ANDROID)
     TriState stTablet = eUnspecified;
 #endif
+#ifdef MOZ_BACKGROUNDTASKS
+    
+    
+    TriState stBackgroundTask = (BackgroundTasks::IsBackgroundTaskMode() &&
+                                 strcmp("category", directive->directive) == 0)
+                                    ? eBad
+                                    : eUnspecified;
+#endif
     int flags = 0;
 
     while ((token = nsCRT::strtok(whitespace, kWhitespace, &whitespace)) &&
@@ -596,6 +612,18 @@ void ParseManifest(NSLocationType aType, FileLocation& aFile, char* aBuf,
         continue;
       }
 #endif
+
+      
+      
+      bool flag;
+      if (CheckFlag(kBackgroundTask, wtoken, flag)) {
+#if defined(MOZ_BACKGROUNDTASKS)
+        
+        stBackgroundTask =
+            (flag == BackgroundTasks::IsBackgroundTaskMode()) ? eOK : eBad;
+#endif 
+        continue;
+      }
 
       if (directive->contentflags) {
         bool flag;
@@ -630,6 +658,9 @@ void ParseManifest(NSLocationType aType, FileLocation& aFile, char* aBuf,
         stGeckoVersion == eBad || stOs == eBad || stOsVersion == eBad ||
 #ifdef MOZ_WIDGET_ANDROID
         stTablet == eBad ||
+#endif
+#ifdef MOZ_BACKGROUNDTASKS
+        stBackgroundTask == eBad ||
 #endif
         stABI == eBad || stProcess == eBad) {
       continue;
