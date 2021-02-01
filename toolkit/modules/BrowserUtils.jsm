@@ -11,11 +11,6 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-ChromeUtils.defineModuleGetter(
-  this,
-  "PlacesUtils",
-  "resource://gre/modules/PlacesUtils.jsm"
-);
 
 var BrowserUtils = {
   
@@ -473,84 +468,6 @@ var BrowserUtils = {
       linkURL: url ? url.spec : null,
       linkText: url ? linkText : "",
     };
-  },
-
-  
-
-
-
-
-
-
-  async parseUrlAndPostData(url, postData, param) {
-    let hasGETParam = /%s/i.test(url);
-    let decodedPostData = postData ? unescape(postData) : "";
-    let hasPOSTParam = /%s/i.test(decodedPostData);
-
-    if (!hasGETParam && !hasPOSTParam) {
-      if (param) {
-        
-        
-        throw new Error(
-          "A param was provided but there's nothing to bind it to"
-        );
-      }
-      return [url, postData];
-    }
-
-    let charset = "";
-    const re = /^(.*)\&mozcharset=([a-zA-Z][_\-a-zA-Z0-9]+)\s*$/;
-    let matches = url.match(re);
-    if (matches) {
-      [, url, charset] = matches;
-    } else {
-      
-      try {
-        
-        let pageInfo = await PlacesUtils.history.fetch(url, {
-          includeAnnotations: true,
-        });
-        if (pageInfo && pageInfo.annotations.has(PlacesUtils.CHARSET_ANNO)) {
-          charset = pageInfo.annotations.get(PlacesUtils.CHARSET_ANNO);
-        }
-      } catch (ex) {
-        
-        Cu.reportError(ex);
-      }
-    }
-
-    
-    
-    
-    
-    
-    let encodedParam = "";
-    if (charset && charset != "UTF-8") {
-      try {
-        let converter = Cc[
-          "@mozilla.org/intl/scriptableunicodeconverter"
-        ].createInstance(Ci.nsIScriptableUnicodeConverter);
-        converter.charset = charset;
-        encodedParam = converter.ConvertFromUnicode(param) + converter.Finish();
-      } catch (ex) {
-        encodedParam = param;
-      }
-      encodedParam = escape(encodedParam).replace(
-        /[+@\/]+/g,
-        encodeURIComponent
-      );
-    } else {
-      
-      encodedParam = encodeURIComponent(param);
-    }
-
-    url = url.replace(/%s/g, encodedParam).replace(/%S/g, param);
-    if (hasPOSTParam) {
-      postData = decodedPostData
-        .replace(/%s/g, encodedParam)
-        .replace(/%S/g, param);
-    }
-    return [url, postData];
   },
 
   
