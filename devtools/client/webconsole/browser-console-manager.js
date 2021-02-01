@@ -99,6 +99,9 @@ class BrowserConsoleManager {
     
     this._browserConsoleInitializing = (async () => {
       const target = await this.connect();
+      
+      
+      target.isBrowserConsoleTarget = true;
       await target.attach();
       const win = await this.openWindow();
       const browserConsole = await this.openBrowserConsole(target, win);

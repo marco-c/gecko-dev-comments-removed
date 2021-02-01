@@ -481,6 +481,12 @@ function TargetMixin(parentClass) {
         return;
       }
 
+      
+      
+      if (targetList.targetFront.isBrowserConsoleTarget) {
+        return;
+      }
+
       const options = await getThreadOptions();
       
       if (this.isDestroyedOrBeingDestroyed()) {

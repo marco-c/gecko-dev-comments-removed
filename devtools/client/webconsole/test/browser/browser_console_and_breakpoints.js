@@ -1,0 +1,16 @@
+
+
+
+
+
+
+"use strict";
+
+add_task(async function() {
+  await BrowserConsoleManager.toggleBrowserConsole();
+
+  
+  
+  
+  debugger;
+});
