@@ -484,36 +484,25 @@ void nsNativeBasicTheme::PaintRoundedFocusRect(DrawTarget* aDrawTarget,
                       StrokeOptions(strokeWidth));
 }
 
-void nsNativeBasicTheme::PaintRoundedRect(DrawTarget* aDrawTarget,
-                                          const LayoutDeviceRect& aRect,
-                                          const sRGBColor& aBackgroundColor,
-                                          const sRGBColor& aBorderColor,
-                                          CSSCoord aBorderWidth,
-                                          RectCornerRadii aDpiAdjustedRadii,
-                                          DPIRatio aDpiRatio) {
+void nsNativeBasicTheme::PaintRoundedRectWithRadius(
+    DrawTarget* aDrawTarget, const LayoutDeviceRect& aRect,
+    const sRGBColor& aBackgroundColor, const sRGBColor& aBorderColor,
+    CSSCoord aBorderWidth, CSSCoord aRadius, DPIRatio aDpiRatio) {
+  const LayoutDeviceCoord radius(aRadius * aDpiRatio);
   const LayoutDeviceCoord borderWidth(SnapBorderWidth(aBorderWidth, aDpiRatio));
 
+  RectCornerRadii radii(radius, radius, radius, radius);
   LayoutDeviceRect rect(aRect);
   
   
   rect.Deflate(borderWidth * 0.5f);
 
   RefPtr<Path> roundedRect = MakePathForRoundedRect(
-      *aDrawTarget, rect.ToUnknownRect(), aDpiAdjustedRadii);
+      *aDrawTarget, rect.ToUnknownRect(), radii);
 
   aDrawTarget->Fill(roundedRect, ColorPattern(ToDeviceColor(aBackgroundColor)));
   aDrawTarget->Stroke(roundedRect, ColorPattern(ToDeviceColor(aBorderColor)),
                       StrokeOptions(borderWidth));
-}
-
-void nsNativeBasicTheme::PaintRoundedRectWithRadius(
-    DrawTarget* aDrawTarget, const LayoutDeviceRect& aRect,
-    const sRGBColor& aBackgroundColor, const sRGBColor& aBorderColor,
-    CSSCoord aBorderWidth, CSSCoord aRadius, DPIRatio aDpiRatio) {
-  const LayoutDeviceCoord radius(aRadius * aDpiRatio);
-  RectCornerRadii radii(radius, radius, radius, radius);
-  PaintRoundedRect(aDrawTarget, aRect, aBackgroundColor, aBorderColor,
-                   aBorderWidth, radii, aDpiRatio);
 }
 
 void nsNativeBasicTheme::PaintCheckboxControl(DrawTarget* aDrawTarget,
@@ -889,129 +878,59 @@ void nsNativeBasicTheme::PaintRange(nsIFrame* aFrame, DrawTarget* aDrawTarget,
   }
 }
 
-void nsNativeBasicTheme::PaintProgressBar(DrawTarget* aDrawTarget,
-                                          const LayoutDeviceRect& aRect,
-                                          const EventStates& aState,
-                                          DPIRatio aDpiRatio) {
-  const CSSCoord borderWidth = 1.0f;
-  const CSSCoord radius = 2.0f;
 
+
+void nsNativeBasicTheme::PaintProgress(
+    nsIFrame* aFrame, DrawTarget* aDrawTarget, const LayoutDeviceRect& aRect,
+    const EventStates& aState, DPIRatio aDpiRatio, bool aIsMeter, bool aBar) {
+  auto [backgroundColor, borderColor] = [&] {
+    if (aIsMeter) {
+      return aBar ? ComputeMeterTrackColors() : ComputeMeterchunkColors(aState);
+    }
+    return aBar ? ComputeProgressTrackColors() : ComputeProgressColors();
+  }();
+
+  const CSSCoord borderWidth = 1.0f;
+  const CSSCoord radius = aIsMeter ? 5.0f : 2.0f;
+
+  
   LayoutDeviceRect rect(aRect);
-  const LayoutDeviceCoord height = kProgressbarHeight * aDpiRatio;
+  const LayoutDeviceCoord height =
+      (aIsMeter ? kMeterHeight : kProgressbarHeight) * aDpiRatio;
   rect.y += (rect.height - height) / 2;
   rect.height = height;
 
-  auto [trackColor, trackBorderColor] = ComputeProgressTrackColors();
-
-  PaintRoundedRectWithRadius(aDrawTarget, rect, trackColor, trackBorderColor,
-                             borderWidth, radius, aDpiRatio);
-}
-
-void nsNativeBasicTheme::PaintProgresschunk(nsIFrame* aFrame,
-                                            DrawTarget* aDrawTarget,
-                                            const LayoutDeviceRect& aRect,
-                                            const EventStates& aState,
-                                            DPIRatio aDpiRatio) {
   
-  
-  
-  nsProgressFrame* progressFrame = do_QueryFrame(aFrame->GetParent());
-  if (!progressFrame) {
-    return;
+  if (!aBar) {
+    double position = [&] {
+      if (aIsMeter) {
+        auto* meter = dom::HTMLMeterElement::FromNode(aFrame->GetContent());
+        if (!meter) {
+          return 0.0;
+        }
+        return meter->Value() / meter->Max();
+      }
+      auto* progress = dom::HTMLProgressElement::FromNode(aFrame->GetContent());
+      if (!progress) {
+        return 0.0;
+      }
+      return progress->Value() / progress->Max();
+    }();
+    LayoutDeviceRect clipRect = rect;
+    double clipWidth = rect.width * position;
+    clipRect.width = clipWidth;
+    if (IsFrameRTL(aFrame)) {
+      clipRect.x += rect.width - clipWidth;
+    }
+    aDrawTarget->PushClipRect(clipRect.ToUnknownRect());
   }
-
-  const CSSCoord borderWidth = 1.0f;
-  const LayoutDeviceCoord radius = CSSCoord(2.0f) * aDpiRatio;
-  LayoutDeviceCoord progressEndRadius = 0.0f;
-
-  LayoutDeviceRect rect(aRect);
-  const LayoutDeviceCoord height = kProgressbarHeight * aDpiRatio;
-  rect.y += (rect.height - height) / 2;
-  rect.height = height;
-
-  double position = GetProgressValue(aFrame) / GetProgressMaxValue(aFrame);
-  if (rect.width - (rect.width * position) <
-      (borderWidth * aDpiRatio + radius)) {
-    
-    
-    progressEndRadius = radius;
-  }
-  RectCornerRadii radii;
-  if (IsFrameRTL(aFrame)) {
-    radii =
-        RectCornerRadii(progressEndRadius, radius, radius, progressEndRadius);
-  } else {
-    radii =
-        RectCornerRadii(radius, progressEndRadius, progressEndRadius, radius);
-  }
-
-  auto [progressColor, progressBorderColor] = ComputeProgressColors();
-
-  PaintRoundedRect(aDrawTarget, rect, progressColor, progressBorderColor,
-                   borderWidth, radii, aDpiRatio);
-}
-
-void nsNativeBasicTheme::PaintMeter(DrawTarget* aDrawTarget,
-                                    const LayoutDeviceRect& aRect,
-                                    const EventStates& aState,
-                                    DPIRatio aDpiRatio) {
-  const CSSCoord borderWidth = 1.0f;
-  const CSSCoord radius = 5.0f;
-
-  LayoutDeviceRect rect(aRect);
-  const LayoutDeviceCoord height = kMeterHeight * aDpiRatio;
-  rect.y += (rect.height - height) / 2;
-  rect.height = height;
-
-  auto [backgroundColor, borderColor] = ComputeMeterTrackColors();
 
   PaintRoundedRectWithRadius(aDrawTarget, rect, backgroundColor, borderColor,
                              borderWidth, radius, aDpiRatio);
-}
 
-void nsNativeBasicTheme::PaintMeterchunk(nsIFrame* aFrame,
-                                         DrawTarget* aDrawTarget,
-                                         const LayoutDeviceRect& aRect,
-                                         DPIRatio aDpiRatio) {
-  
-  nsMeterFrame* meterFrame = do_QueryFrame(aFrame->GetParent());
-  if (!meterFrame) {
-    return;
+  if (!aBar) {
+    aDrawTarget->PopClip();
   }
-
-  const CSSCoord borderWidth = 1.0f;
-  const LayoutDeviceCoord radius = CSSCoord(5.0f) * aDpiRatio;
-  LayoutDeviceCoord progressEndRadius = 0.0f;
-
-  LayoutDeviceRect rect(aRect);
-  const LayoutDeviceCoord height = kMeterHeight * aDpiRatio;
-  rect.y += (rect.height - height) / 2;
-  rect.height = height;
-
-  auto* meter =
-      static_cast<mozilla::dom::HTMLMeterElement*>(meterFrame->GetContent());
-  double value = meter->Value();
-  double max = meter->Max();
-  double position = value / max;
-  if (rect.width - (rect.width * position) <
-      (borderWidth * aDpiRatio + radius)) {
-    
-    
-    progressEndRadius = radius;
-  }
-  RectCornerRadii radii;
-  if (IsFrameRTL(aFrame)) {
-    radii =
-        RectCornerRadii(progressEndRadius, radius, radius, progressEndRadius);
-  } else {
-    radii =
-        RectCornerRadii(radius, progressEndRadius, progressEndRadius, radius);
-  }
-
-  auto [chunkColor, borderColor] = ComputeMeterchunkColors(meter->State());
-
-  PaintRoundedRect(aDrawTarget, rect, chunkColor, borderColor, borderWidth,
-                   radii, aDpiRatio);
 }
 
 void nsNativeBasicTheme::PaintButton(nsIFrame* aFrame, DrawTarget* aDrawTarget,
@@ -1247,16 +1166,24 @@ nsNativeBasicTheme::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
       
       break;
     case StyleAppearance::ProgressBar:
-      PaintProgressBar(dt, devPxRect, eventState, dpiRatio);
+      PaintProgress(aFrame, dt, devPxRect, eventState, dpiRatio,
+                     false,  true);
       break;
     case StyleAppearance::Progresschunk:
-      PaintProgresschunk(aFrame, dt, devPxRect, eventState, dpiRatio);
+      if (nsProgressFrame* f = do_QueryFrame(aFrame->GetParent())) {
+        PaintProgress(f, dt, devPxRect, f->GetContent()->AsElement()->State(),
+                      dpiRatio,  false,  false);
+      }
       break;
     case StyleAppearance::Meter:
-      PaintMeter(dt, devPxRect, eventState, dpiRatio);
+      PaintProgress(aFrame, dt, devPxRect, eventState, dpiRatio,
+                     true,  true);
       break;
     case StyleAppearance::Meterchunk:
-      PaintMeterchunk(aFrame, dt, devPxRect, dpiRatio);
+      if (nsMeterFrame* f = do_QueryFrame(aFrame->GetParent())) {
+        PaintProgress(f, dt, devPxRect, f->GetContent()->AsElement()->State(),
+                      dpiRatio,  true,  false);
+      }
       break;
     case StyleAppearance::ScrollbarthumbHorizontal:
     case StyleAppearance::ScrollbarthumbVertical: {
