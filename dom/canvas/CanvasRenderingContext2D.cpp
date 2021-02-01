@@ -4522,12 +4522,7 @@ void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
       
       
       
-      
-      
-      
-      
-      if (!res.mIsStillLoading && !res.mHasSize &&
-          (aImage.IsHTMLImageElement() || aImage.IsSVGImageElement())) {
+      if (!res.mIsStillLoading && !res.mHasSize) {
         aError.ThrowInvalidStateError("Passed-in image is \"broken\"");
       }
       return;
