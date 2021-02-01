@@ -92,11 +92,12 @@ class nsTableWrapperFrame : public nsContainerFrame {
   virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
   virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
 
-  virtual mozilla::LogicalSize ComputeAutoSize(
+  mozilla::LogicalSize ComputeAutoSize(
       gfxContext* aRenderingContext, mozilla::WritingMode aWM,
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
       const mozilla::LogicalSize& aMargin,
       const mozilla::LogicalSize& aBorderPadding,
+      const mozilla::StyleSizeOverrides& aSizeOverrides,
       mozilla::ComputeSizeFlags aFlags) override;
 
   
@@ -266,11 +267,12 @@ class nsTableWrapperFrame : public nsContainerFrame {
 
 
 
-  nscoord ChildShrinkWrapISize(gfxContext* aRenderingContext,
-                               nsIFrame* aChildFrame, mozilla::WritingMode aWM,
-                               mozilla::LogicalSize aCBSize,
-                               nscoord aAvailableISize,
-                               nscoord* aMarginResult = nullptr) const;
+  nscoord ChildShrinkWrapISize(
+      gfxContext* aRenderingContext, nsIFrame* aChildFrame,
+      mozilla::WritingMode aWM, mozilla::LogicalSize aCBSize,
+      nscoord aAvailableISize,
+      const mozilla::StyleSizeOverrides& aSizeOverrides,
+      nscoord* aMarginResult = nullptr) const;
 
  private:
   nsFrameList mCaptionFrames;
