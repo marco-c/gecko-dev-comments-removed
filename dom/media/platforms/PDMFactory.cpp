@@ -30,7 +30,6 @@
 #include "mozilla/RemoteDecoderModule.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -63,25 +62,16 @@ namespace mozilla {
 
 extern already_AddRefed<PlatformDecoderModule> CreateNullDecoderModule();
 
-class PDMFactoryImpl final {
+class PDMInitializer final {
  public:
-  PDMFactoryImpl() {
-    if (XRE_IsGPUProcess()) {
-      InitGpuPDMs();
-    } else if (XRE_IsRDDProcess()) {
-      InitRddPDMs();
-    } else if (XRE_IsContentProcess()) {
-      InitContentPDMs();
-    } else {
-      MOZ_DIAGNOSTIC_ASSERT(
-          XRE_IsParentProcess(),
-          "PDMFactory is only usable in the Parent/GPU/RDD/Content process");
-      InitDefaultPDMs();
-    }
-  }
+  
+  static void InitPDMs();
+
+  
+  static bool HasInitializedPDMs();
 
  private:
-  void InitGpuPDMs() {
+  static void InitGpuPDMs() {
 #ifdef XP_WIN
     if (!IsWin7AndPre2000Compatible()) {
       WMFDecoderModule::Init();
@@ -89,7 +79,7 @@ class PDMFactoryImpl final {
 #endif
   }
 
-  void InitRddPDMs() {
+  static void InitRddPDMs() {
 #ifdef XP_WIN
     if (!IsWin7AndPre2000Compatible()) {
       WMFDecoderModule::Init();
@@ -108,7 +98,7 @@ class PDMFactoryImpl final {
 #endif
   }
 
-  void InitContentPDMs() {
+  static void InitContentPDMs() {
 #ifdef XP_WIN
     if (!IsWin7AndPre2000Compatible()) {
       WMFDecoderModule::Init();
@@ -129,7 +119,7 @@ class PDMFactoryImpl final {
     RemoteDecoderManagerChild::Init();
   }
 
-  void InitDefaultPDMs() {
+  static void InitDefaultPDMs() {
 #ifdef XP_WIN
     if (!IsWin7AndPre2000Compatible()) {
       WMFDecoderModule::Init();
@@ -148,10 +138,39 @@ class PDMFactoryImpl final {
     FFmpegRuntimeLinker::Init();
 #endif
   }
+
+  static bool sHasInitializedPDMs;
+  static StaticMutex sMonitor;
 };
 
-StaticAutoPtr<PDMFactoryImpl> PDMFactory::sInstance;
-StaticMutex PDMFactory::sMonitor;
+bool PDMInitializer::sHasInitializedPDMs = false;
+StaticMutex PDMInitializer::sMonitor;
+
+
+void PDMInitializer::InitPDMs() {
+  StaticMutexAutoLock mon(sMonitor);
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!sHasInitializedPDMs);
+  if (XRE_IsGPUProcess()) {
+    InitGpuPDMs();
+  } else if (XRE_IsRDDProcess()) {
+    InitRddPDMs();
+  } else if (XRE_IsContentProcess()) {
+    InitContentPDMs();
+  } else {
+    MOZ_DIAGNOSTIC_ASSERT(
+        XRE_IsParentProcess(),
+        "PDMFactory is only usable in the Parent/GPU/RDD/Content process");
+    InitDefaultPDMs();
+  }
+  sHasInitializedPDMs = true;
+}
+
+
+bool PDMInitializer::HasInitializedPDMs() {
+  StaticMutexAutoLock mon(sMonitor);
+  return sHasInitializedPDMs;
+}
 
 class SupportChecker {
  public:
@@ -234,33 +253,25 @@ PDMFactory::~PDMFactory() = default;
 
 
 void PDMFactory::EnsureInit() {
-  {
-    StaticMutexAutoLock mon(sMonitor);
-    if (sInstance) {
-      
-      return;
-    }
+  if (PDMInitializer::HasInitializedPDMs()) {
+    return;
   }
-
   auto initalization = []() {
     MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
-    StaticMutexAutoLock mon(sMonitor);
-    if (!sInstance) {
+    if (!PDMInitializer::HasInitializedPDMs()) {
       
       gfx::gfxVars::Initialize();
       
       Unused << BrowserTabsRemoteAutostart();
-      
-      sInstance = new PDMFactoryImpl();
-      ClearOnShutdown(&sInstance);
+      PDMInitializer::InitPDMs();
     }
   };
+  
+  
   if (NS_IsMainThread()) {
     initalization();
     return;
   }
-
-  
   nsCOMPtr<nsIEventTarget> mainTarget = GetMainThreadEventTarget();
   nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
       "PDMFactory::EnsureInit", std::move(initalization));
