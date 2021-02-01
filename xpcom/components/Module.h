@@ -76,6 +76,17 @@ struct Module {
 
 
 
+  
+  
+  enum BackgroundTasksSelector {
+    NO_TASKS = 0x0,
+    ALL_TASKS = 0xFFFF,
+  };
+
+  
+
+
+
   struct CIDEntry {
     const nsCID* cid;
     bool service;

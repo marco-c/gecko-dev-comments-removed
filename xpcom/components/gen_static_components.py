@@ -15,7 +15,10 @@ NO_CONTRACT_ID = 0xFFFFFFFF
 
 PHF_SIZE = 512
 
-ENDIAN = "<" if buildconfig.substs["TARGET_ENDIANNESS"] == "little" else ">"
+
+ENDIAN = (
+    "<" if buildconfig.substs.get("TARGET_ENDIANNESS", "little") == "little" else ">"
+)
 
 
 
@@ -106,6 +109,28 @@ def lower_processes(processes):
 
 def lower_module_id(module):
     return "ModuleID::%s" % module.name
+
+
+
+
+
+
+class BackgroundTasksSelector:
+    NO_TASKS = 0x0
+    ALL_TASKS = 0xFFFF
+
+
+
+
+BACKGROUNDTASKS = {
+    BackgroundTasksSelector.ALL_TASKS: "ALL_TASKS",
+    BackgroundTasksSelector.NO_TASKS: "NO_TASKS",
+}
+
+
+
+def lower_backgroundtasks(backgroundtasks):
+    return "Module::BackgroundTasksSelector::%s" % BACKGROUNDTASKS[backgroundtasks]
 
 
 
@@ -495,7 +520,11 @@ def gen_categories(substs, categories):
 
     count = 0
     for category, entries in sorted(categories.items()):
-        entries.sort()
+
+        def k(entry):
+            return tuple(entry[0]["name"]) + entry[1:]
+
+        entries.sort(key=k)
 
         cats.append(
             "  { %s,\n"
@@ -505,13 +534,20 @@ def gen_categories(substs, categories):
 
         ents.append("  /* %s */\n" % pretty_string(category))
         for entry, value, processes in entries:
+            name = entry["name"]
+            backgroundtasks = entry.get(
+                "backgroundtasks", BackgroundTasksSelector.NO_TASKS
+            )
+
             ents.append(
                 "  { %s,\n"
                 "    %s,\n"
+                "    %s,\n"
                 "    %s },\n"
                 % (
-                    strings.entry_to_cxx(entry),
+                    strings.entry_to_cxx(name),
                     strings.entry_to_cxx(value),
+                    lower_backgroundtasks(backgroundtasks),
                     lower_processes(processes),
                 )
             )
@@ -626,10 +662,34 @@ def gen_includes(substs, all_headers):
     substs["relative_includes"] = "\n".join(relative_includes) + "\n"
 
 
-def to_list(val):
+def to_category_list(val):
+    
+    
+    
+
+    def ensure_dict(v):
+        
+        if isinstance(v, dict):
+            return v
+        return {"name": v}
+
     if isinstance(val, (list, tuple)):
-        return val
-    return (val,)
+        return tuple(ensure_dict(v) for v in val)
+
+    if isinstance(val, dict):
+        
+        
+        names = val.pop("name")
+
+        vals = []
+        for entry in to_category_list(names):
+            d = dict(val)
+            d["name"] = entry["name"]
+            vals.append(d)
+
+        return tuple(vals)
+
+    return (ensure_dict(val),)
 
 
 def gen_substs(manifests):
@@ -682,7 +742,7 @@ def gen_substs(manifests):
             contract_map[contract_id] = entry
 
         for category, entries in mod.categories.items():
-            for entry in to_list(entries):
+            for entry in to_category_list(entries):
                 categories[category].append((entry, mod.contract_id, mod.processes))
 
         if mod.type and not mod.headers:
@@ -794,8 +854,10 @@ def read_manifest(filename):
         "buildconfig": buildconfig,
         "defined": defined,
         "ProcessSelector": ProcessSelector,
+        "BackgroundTasksSelector": BackgroundTasksSelector,
     }
-    exec(open(filename).read(), glbl)
+    code = compile(open(filename).read(), filename, "exec")
+    exec(code, glbl)
     return glbl
 
 
