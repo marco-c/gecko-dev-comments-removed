@@ -315,7 +315,6 @@ nsresult DNSPacket::OnDataAvailable(nsIRequest* aRequest,
 
 const uint8_t kDNS_CLASS_IN = 1;
 
-
 nsresult DNSPacket::EncodeRequest(nsCString& aBody, const nsACString& aHost,
                                   uint16_t aType, bool aDisableECS) {
   aBody.Truncate();
@@ -969,6 +968,46 @@ nsresult DNSPacket::Decode(
   }
 
   return NS_OK;
+}
+
+
+bool ODoHDNSPacket::ParseODoHConfigs(const nsCString& aRawODoHConfig,
+                                     nsTArray<ObliviousDoHConfig>& aOut) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  return false;
+}
+
+ODoHDNSPacket::~ODoHDNSPacket() {}
+
+nsresult ODoHDNSPacket::EncodeRequest(nsCString& aBody, const nsACString& aHost,
+                                      uint16_t aType, bool aDisableECS) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+nsresult ODoHDNSPacket::Decode(
+    nsCString& aHost, enum TrrType aType, nsCString& aCname, bool aAllowRFC1918,
+    nsHostRecord::TRRSkippedReason& reason, DOHresp& aResp,
+    TypeRecordResultType& aTypeResult,
+    nsClassHashtable<nsCStringHashKey, DOHresp>& aAdditionalRecords,
+    uint32_t& aTTL) {
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 }  
