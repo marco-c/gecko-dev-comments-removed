@@ -6663,7 +6663,8 @@ nsresult nsHttpChannel::BeginConnect() {
 
   
   
-  if (gHttpHandler->IsHttp2Excluded(mConnectionInfo)) {
+  if (!mConnectionInfo->IsHttp3() &&
+      gHttpHandler->IsHttp2Excluded(mConnectionInfo)) {
     StoreAllowSpdy(0);
     mCaps |= NS_HTTP_DISALLOW_SPDY;
     mConnectionInfo->SetNoSpdy(true);
