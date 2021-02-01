@@ -4806,9 +4806,7 @@ bool Parser<FullParseHandler, Unit>::namedImportsOrNamespaceImport(
         return false;
       }
 
-      const ParserName* importName = this->compilationState_.parserAtoms
-                                         .getParserAtom(anyChars.currentName())
-                                         ->asName();
+      auto importName = anyChars.currentName();
       TokenPos importNamePos = pos();
 
       bool matched;
@@ -4831,8 +4829,11 @@ bool Parser<FullParseHandler, Unit>::namedImportsOrNamespaceImport(
         
         
         
-        if (IsKeyword(importName)) {
-          error(JSMSG_AS_AFTER_RESERVED_WORD, ReservedWordToCharZ(importName));
+        const ParserName* name =
+            this->compilationState_.parserAtoms.getParserAtom(importName)
+                ->asName();
+        if (IsKeyword(name)) {
+          error(JSMSG_AS_AFTER_RESERVED_WORD, ReservedWordToCharZ(name));
           return false;
         }
       }
@@ -4850,8 +4851,7 @@ bool Parser<FullParseHandler, Unit>::namedImportsOrNamespaceImport(
         return false;
       }
 
-      NameNodeType importNameNode =
-          newName(importName->toIndex(), importNamePos);
+      NameNodeType importNameNode = newName(importName, importNamePos);
       if (!importNameNode) {
         return false;
       }
