@@ -7,6 +7,7 @@
 #include "SocketProcessLogging.h"
 
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/net/NeckoChild.h"
 #include "nsIObserverService.h"
 #include "nsThreadUtils.h"
@@ -151,6 +152,24 @@ mozilla::ipc::IPCResult SocketProcessBridgeChild::RecvTest() {
 
 void SocketProcessBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
   LOG(("SocketProcessBridgeChild::ActorDestroy\n"));
+  if (gNeckoChild) {
+    
+    
+    gNeckoChild->SendResetSocketProcessBridge();
+  }
+  nsresult res;
+  nsCOMPtr<nsISerialEventTarget> mSTSThread =
+      do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID, &res);
+  if (NS_SUCCEEDED(res) && mSTSThread) {
+    
+    
+    
+    
+    MOZ_ALWAYS_SUCCEEDS(mSTSThread->Dispatch(NS_NewRunnableFunction(
+        "net::SocketProcessBridgeChild::ActorDestroy",
+        []() { ipc::BackgroundChild::CloseForCurrentThread(); })));
+  }
+
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (os) {
     os->RemoveObserver(this, "content-child-shutdown");
