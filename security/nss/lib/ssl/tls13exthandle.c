@@ -1211,6 +1211,12 @@ tls13_ClientHandleEchXtn(const sslSocket *ss, TLSExtensionData *xtnData,
     PRCList parsedConfigs;
     PR_INIT_CLIST(&parsedConfigs);
 
+    PORT_Assert(!xtnData->ech);
+    xtnData->ech = PORT_ZNew(sslEchXtnState);
+    if (!xtnData->ech) {
+        return SECFailure;
+    }
+
     
 
     rv = tls13_DecodeEchConfigs(data, &parsedConfigs);
@@ -1223,7 +1229,7 @@ tls13_ClientHandleEchXtn(const sslSocket *ss, TLSExtensionData *xtnData,
 
 
     if (ss->ssl3.hs.echHpkeCtx && !PR_CLIST_IS_EMPTY(&parsedConfigs)) {
-        rv = SECITEM_CopyItem(NULL, &xtnData->echRetryConfigs, data);
+        rv = SECITEM_CopyItem(NULL, &xtnData->ech->retryConfigs, data);
     }
     tls13_DestroyEchConfigs(&parsedConfigs);
 
@@ -1465,14 +1471,22 @@ tls13_ServerHandleEchXtn(const sslSocket *ss, TLSExtensionData *xtnData,
         return SECSuccess;
     }
 
-    
-    if (ss->ssl3.hs.echAccepted && data->len > 0) {
+    if (ss->ssl3.hs.echAccepted) {
         ssl3_ExtSendAlert(ss, alert_fatal, illegal_parameter);
-        PORT_SetError(SSL_ERROR_RX_MALFORMED_ECH_EXTENSION);
+        PORT_SetError(SSL_ERROR_RX_UNEXPECTED_EXTENSION);
         return SECFailure;
-    } else if (ss->ssl3.hs.echAccepted) {
-        xtnData->negotiated[xtnData->numNegotiated++] = ssl_tls13_encrypted_client_hello_xtn;
-        return SECSuccess;
+    }
+
+    if (ssl3_FindExtension(CONST_CAST(sslSocket, ss), ssl_tls13_ech_is_inner_xtn)) {
+        ssl3_ExtSendAlert(ss, alert_fatal, illegal_parameter);
+        PORT_SetError(SSL_ERROR_RX_UNEXPECTED_EXTENSION);
+        return SECFailure;
+    }
+
+    PORT_Assert(!xtnData->ech);
+    xtnData->ech = PORT_ZNew(sslEchXtnState);
+    if (!xtnData->ech) {
+        return SECFailure;
     }
 
     
@@ -1509,31 +1523,34 @@ tls13_ServerHandleEchXtn(const sslSocket *ss, TLSExtensionData *xtnData,
     if (rv != SECSuccess) {
         goto alert_loser;
     }
-
-    if (data->len) {
+    if (data->len || !encryptedCh.len) {
         goto alert_loser;
     }
 
-    
-    if (!configId.len || !senderPubKey.len || !encryptedCh.len) {
-        goto alert_loser;
+    if (!ss->ssl3.hs.helloRetry) {
+        
+
+        if (!configId.len || !senderPubKey.len) {
+            goto alert_loser;
+        }
+
+        rv = SECITEM_CopyItem(NULL, &xtnData->ech->senderPubKey, &senderPubKey);
+        if (rv == SECFailure) {
+            return SECFailure;
+        }
+
+        rv = SECITEM_CopyItem(NULL, &xtnData->ech->configId, &configId);
+        if (rv == SECFailure) {
+            return SECFailure;
+        }
     }
 
-    rv = SECITEM_CopyItem(NULL, &xtnData->echSenderPubKey, &senderPubKey);
+    rv = SECITEM_CopyItem(NULL, &xtnData->ech->innerCh, &encryptedCh);
     if (rv == SECFailure) {
         return SECFailure;
     }
-
-    rv = SECITEM_CopyItem(NULL, &xtnData->innerCh, &encryptedCh);
-    if (rv == SECFailure) {
-        return SECFailure;
-    }
-
-    rv = SECITEM_CopyItem(NULL, &xtnData->echConfigId, &configId);
-    if (rv == SECFailure) {
-        return SECFailure;
-    }
-    xtnData->echCipherSuite = (aead & 0xFFFF) << 16 | (kdf & 0xFFFF);
+    xtnData->ech->kdfId = kdf;
+    xtnData->ech->aeadId = aead;
 
     
     return SECSuccess;
@@ -1542,4 +1559,37 @@ alert_loser:
     ssl3_ExtSendAlert(ss, alert_fatal, decode_error);
     PORT_SetError(SSL_ERROR_RX_MALFORMED_ECH_EXTENSION);
     return SECFailure;
+}
+
+SECStatus
+tls13_ServerHandleEchIsInnerXtn(const sslSocket *ss,
+                                TLSExtensionData *xtnData,
+                                SECItem *data)
+{
+    SSL_TRC(3, ("%d: TLS13[%d]: handle ech_is_inner extension",
+                SSL_GETPID(), ss->fd));
+
+    if (data->len) {
+        PORT_SetError(SSL_ERROR_RX_MALFORMED_ECH_EXTENSION);
+        return SECFailure;
+    }
+
+    if (ssl3_FindExtension(CONST_CAST(sslSocket, ss), ssl_tls13_encrypted_client_hello_xtn)) {
+        ssl3_ExtSendAlert(ss, alert_fatal, illegal_parameter);
+        PORT_SetError(SSL_ERROR_RX_UNEXPECTED_EXTENSION);
+        return SECFailure;
+    }
+
+    
+
+
+
+
+
+
+    if (ss->ssl3.hs.echAccepted) {
+        xtnData->negotiated[xtnData->numNegotiated++] = ssl_tls13_encrypted_client_hello_xtn;
+    }
+    xtnData->negotiated[xtnData->numNegotiated++] = ssl_tls13_ech_is_inner_xtn;
+    return SECSuccess;
 }

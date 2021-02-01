@@ -746,9 +746,28 @@ HpkeContext *PK11_HPKE_NewContext(HpkeKemId kemId, HpkeKdfId kdfId, HpkeAeadId a
 SECStatus PK11_HPKE_Deserialize(const HpkeContext *cx, const PRUint8 *enc,
                                 unsigned int encLen, SECKEYPublicKey **outPubKey);
 void PK11_HPKE_DestroyContext(HpkeContext *cx, PRBool freeit);
-const SECItem *PK11_HPKE_GetEncapPubKey(const HpkeContext *cx);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SECStatus PK11_HPKE_ExportContext(const HpkeContext *cx, PK11SymKey *wrapKey, SECItem **serialized);
 SECStatus PK11_HPKE_ExportSecret(const HpkeContext *cx, const SECItem *info, unsigned int L,
                                  PK11SymKey **outKey);
+const SECItem *PK11_HPKE_GetEncapPubKey(const HpkeContext *cx);
+HpkeContext *PK11_HPKE_ImportContext(const SECItem *serialized, PK11SymKey *wrapKey);
 SECStatus PK11_HPKE_Open(HpkeContext *cx, const SECItem *aad, const SECItem *ct, SECItem **outPt);
 SECStatus PK11_HPKE_Seal(HpkeContext *cx, const SECItem *aad, const SECItem *pt, SECItem **outCt);
 SECStatus PK11_HPKE_Serialize(const SECKEYPublicKey *pk, PRUint8 *buf, unsigned int *len, unsigned int maxLen);

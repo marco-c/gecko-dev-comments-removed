@@ -513,6 +513,14 @@ typedef SECStatus(PR_CALLBACK *SSLResumptionTokenCallback)(
 
 
 
+#define SSL_EnableTls13BackendEch(fd, enabled)        \
+    SSL_EXPERIMENTAL_API("SSL_EnableTls13BackendEch", \
+                         (PRFileDesc * _fd, PRBool _enabled), (fd, enabled))
+
+
+
+
+
 
 #define SSL_GetEchRetryConfigs(fd, out)            \
     SSL_EXPERIMENTAL_API("SSL_GetEchRetryConfigs", \

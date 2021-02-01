@@ -132,12 +132,8 @@ struct TLSExtensionDataStr {
     sslPsk *selectedPsk;
 
     
-    SECItem innerCh;             
-    SECItem echSenderPubKey;     
-    SECItem echConfigId;         
-    PRUint32 echCipherSuite;     
-    SECItem echRetryConfigs;     
-    PRBool echRetryConfigsValid; 
+
+    sslEchXtnState *ech;
 };
 
 typedef struct TLSExtensionStr {

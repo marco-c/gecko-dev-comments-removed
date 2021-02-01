@@ -70,6 +70,9 @@ PRBool ssl_IsRsaPssSignatureScheme(SSLSignatureScheme scheme);
 PRBool ssl_IsRsaeSignatureScheme(SSLSignatureScheme scheme);
 PRBool ssl_IsRsaPkcs1SignatureScheme(SSLSignatureScheme scheme);
 PRBool ssl_IsDsaSignatureScheme(SSLSignatureScheme scheme);
+static SECStatus ssl3_UpdateDefaultHandshakeHashes(sslSocket *ss,
+                                                   const unsigned char *b,
+                                                   unsigned int l);
 
 const PRUint8 ssl_hello_retry_random[] = {
     0xCF, 0x21, 0xAD, 0x74, 0xE5, 0x9A, 0x61, 0x11,
@@ -3848,11 +3851,18 @@ ssl3_InitHandshakeHashes(sslSocket *ss)
 
     if (ss->ssl3.hs.hashType != handshake_hash_record &&
         ss->ssl3.hs.messages.len > 0) {
-        if (ssl3_UpdateHandshakeHashes(ss, ss->ssl3.hs.messages.buf,
-                                       ss->ssl3.hs.messages.len) != SECSuccess) {
+        
+
+
+        if (ssl3_UpdateDefaultHandshakeHashes(ss, ss->ssl3.hs.messages.buf,
+                                              ss->ssl3.hs.messages.len) != SECSuccess) {
             return SECFailure;
         }
-        sslBuffer_Clear(&ss->ssl3.hs.messages);
+        
+
+        if (!ss->ssl3.hs.echHpkeCtx) {
+            sslBuffer_Clear(&ss->ssl3.hs.messages);
+        }
     }
     if (ss->ssl3.hs.shaEchInner &&
         ss->ssl3.hs.echInnerMessages.len > 0) {
@@ -3861,7 +3871,9 @@ ssl3_InitHandshakeHashes(sslSocket *ss)
             ssl_MapLowLevelError(SSL_ERROR_DIGEST_FAILURE);
             return SECFailure;
         }
-        sslBuffer_Clear(&ss->ssl3.hs.echInnerMessages);
+        if (!ss->ssl3.hs.echHpkeCtx) {
+            sslBuffer_Clear(&ss->ssl3.hs.echInnerMessages);
+        }
     }
 
     return SECSuccess;
@@ -3898,49 +3910,24 @@ ssl3_RestartHandshakeHashes(sslSocket *ss)
 
 
 SECStatus
-ssl3_UpdateExplicitHandshakeTranscript(sslSocket *ss, const unsigned char *b,
-                                       unsigned int l, sslBuffer *target)
+ssl3_UpdateHandshakeHashesInt(sslSocket *ss, const unsigned char *b,
+                              unsigned int l, sslBuffer *target)
 {
-    PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
-    PORT_Assert(ss->vrange.max >= SSL_LIBRARY_VERSION_TLS_1_3);
-    if (ss->sec.isServer) {
-        
-        PORT_Assert(target != &ss->ssl3.hs.echInnerMessages);
-    }
-    return sslBuffer_Append(target, b, l);
-}
-static SECStatus
-ssl3_UpdateOuterHandshakeHashes(sslSocket *ss, const unsigned char *b,
-                                unsigned int l)
-{
-    return ssl3_UpdateExplicitHandshakeTranscript(ss, b, l,
-                                                  &ss->ssl3.hs.messages);
-}
-static SECStatus
-ssl3_UpdateInnerHandshakeHashes(sslSocket *ss, const unsigned char *b,
-                                unsigned int l)
-{
-    return ssl3_UpdateExplicitHandshakeTranscript(ss, b, l,
-                                                  &ss->ssl3.hs.echInnerMessages);
-}
 
-
-
-
-
-
-
-
-
-SECStatus
-ssl3_UpdateHandshakeHashes(sslSocket *ss, const unsigned char *b, unsigned int l)
-{
     SECStatus rv = SECSuccess;
-
+    PRBool explicit = (target != NULL);
+    PRBool appendToEchInner = !ss->sec.isServer &&
+                              ss->ssl3.hs.echHpkeCtx &&
+                              !explicit;
     PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
+    PORT_Assert(target != &ss->ssl3.hs.echInnerMessages ||
+                !ss->sec.isServer);
 
+    if (target == NULL) {
+        
+        target = &ss->ssl3.hs.messages;
+    }
     
-
 
 
 
@@ -3953,12 +3940,12 @@ ssl3_UpdateHandshakeHashes(sslSocket *ss, const unsigned char *b, unsigned int l
 
     if (ss->ssl3.hs.hashType == handshake_hash_unknown ||
         ss->ssl3.hs.hashType == handshake_hash_record) {
-        rv = sslBuffer_Append(&ss->ssl3.hs.messages, b, l);
+        rv = sslBuffer_Append(target, b, l);
         if (rv != SECSuccess) {
             return SECFailure;
         }
-        if (!ss->sec.isServer && ss->ssl3.hs.echHpkeCtx) {
-            return ssl3_UpdateInnerHandshakeHashes(ss, b, l);
+        if (appendToEchInner) {
+            return sslBuffer_Append(&ss->ssl3.hs.echInnerMessages, b, l);
         }
         return SECSuccess;
     }
@@ -3967,10 +3954,20 @@ ssl3_UpdateHandshakeHashes(sslSocket *ss, const unsigned char *b, unsigned int l
 
     if (ss->ssl3.hs.hashType == handshake_hash_single) {
         PORT_Assert(ss->version >= SSL_LIBRARY_VERSION_TLS_1_3);
-        rv = PK11_DigestOp(ss->ssl3.hs.sha, b, l);
-        if (rv != SECSuccess) {
-            ssl_MapLowLevelError(SSL_ERROR_DIGEST_FAILURE);
-            return rv;
+        if (target == &ss->ssl3.hs.messages) {
+            rv = PK11_DigestOp(ss->ssl3.hs.sha, b, l);
+            if (rv != SECSuccess) {
+                ssl_MapLowLevelError(SSL_ERROR_DIGEST_FAILURE);
+                return rv;
+            }
+        }
+        if (ss->ssl3.hs.shaEchInner &&
+            (target == &ss->ssl3.hs.echInnerMessages || !explicit)) {
+            rv = PK11_DigestOp(ss->ssl3.hs.shaEchInner, b, l);
+            if (rv != SECSuccess) {
+                ssl_MapLowLevelError(SSL_ERROR_DIGEST_FAILURE);
+                return rv;
+            }
         }
     } else if (ss->ssl3.hs.hashType == handshake_hash_combo) {
         rv = PK11_DigestOp(ss->ssl3.hs.md5, b, l);
@@ -3985,6 +3982,37 @@ ssl3_UpdateHandshakeHashes(sslSocket *ss, const unsigned char *b, unsigned int l
         }
     }
     return rv;
+}
+
+static SECStatus
+ssl3_UpdateDefaultHandshakeHashes(sslSocket *ss, const unsigned char *b,
+                                  unsigned int l)
+{
+    return ssl3_UpdateHandshakeHashesInt(ss, b, l,
+                                         &ss->ssl3.hs.messages);
+}
+
+static SECStatus
+ssl3_UpdateInnerHandshakeHashes(sslSocket *ss, const unsigned char *b,
+                                unsigned int l)
+{
+    return ssl3_UpdateHandshakeHashesInt(ss, b, l,
+                                         &ss->ssl3.hs.echInnerMessages);
+}
+
+
+
+
+
+
+
+
+
+
+SECStatus
+ssl3_UpdateHandshakeHashes(sslSocket *ss, const unsigned char *b, unsigned int l)
+{
+    return ssl3_UpdateHandshakeHashesInt(ss, b, l, NULL);
 }
 
 SECStatus
@@ -5513,7 +5541,7 @@ ssl3_SendClientHello(sslSocket *ss, sslClientHelloType type)
         if (rv != SECSuccess) {
             goto loser; 
         }
-        rv = ssl3_UpdateOuterHandshakeHashes(ss, chBuf.buf, chBuf.len);
+        rv = ssl3_UpdateDefaultHandshakeHashes(ss, chBuf.buf, chBuf.len);
         if (rv != SECSuccess) {
             goto loser; 
         }
@@ -7064,11 +7092,6 @@ ssl3_HandleServerHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
         return SECSuccess;
     }
 
-    rv = tls13_MaybeHandleEchSignal(ss);
-    if (rv != SECSuccess) {
-        goto alert_loser;
-    }
-
     rv = ssl3_HandleParsedExtensions(ss, ssl_hs_server_hello);
     ssl3_DestroyRemoteExtensions(&ss->ssl3.hs.remoteExtensions);
     if (rv != SECSuccess) {
@@ -7082,7 +7105,7 @@ ssl3_HandleServerHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
     }
 
     if (ss->version >= SSL_LIBRARY_VERSION_TLS_1_3) {
-        rv = tls13_HandleServerHelloPart2(ss);
+        rv = tls13_HandleServerHelloPart2(ss, savedMsg, savedLength);
         if (rv != SECSuccess) {
             errCode = PORT_GetError();
             goto loser;
@@ -7093,6 +7116,7 @@ ssl3_HandleServerHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
             goto loser;
     }
 
+    ss->ssl3.hs.preliminaryInfo |= ssl_preinfo_ech;
     return SECSuccess;
 
 alert_loser:
@@ -8628,13 +8652,6 @@ ssl_GenerateServerRandom(sslSocket *ss)
         return SECFailure;
     }
 
-    if (ss->ssl3.hs.echAccepted) {
-        rv = tls13_WriteServerEchSignal(ss);
-        if (rv != SECSuccess) {
-            return SECFailure;
-        }
-    }
-
     if (ss->version == ss->vrange.max) {
         return SECSuccess;
     }
@@ -9772,6 +9789,15 @@ ssl_ConstructServerHello(sslSocket *ss, PRBool helloRetry,
         rv = sslBuffer_AppendBufferVariable(messageBuf, extensionBuf, 2);
         if (rv != SECSuccess) {
             return SECFailure;
+        }
+    }
+
+    if (!helloRetry && ssl3_ExtensionNegotiated(ss, ssl_tls13_ech_is_inner_xtn)) {
+        
+
+        if (ss->ssl3.hs.echAccepted || ss->opt.enableTls13BackendEch) {
+            return tls13_WriteServerEchSignal(ss, SSL_BUFFER_BASE(messageBuf),
+                                              SSL_BUFFER_LEN(messageBuf));
         }
     }
 
@@ -12284,7 +12310,7 @@ ssl_HashHandshakeMessageDefault(sslSocket *ss, SSLHandshakeType ct,
                                 const PRUint8 *b, PRUint32 length)
 {
     return ssl_HashHandshakeMessageInt(ss, ct, ss->ssl3.hs.recvMessageSeq,
-                                       b, length, ssl3_UpdateOuterHandshakeHashes);
+                                       b, length, ssl3_UpdateDefaultHandshakeHashes);
 }
 SECStatus
 ssl_HashHandshakeMessageEchInner(sslSocket *ss, SSLHandshakeType ct,
@@ -13847,6 +13873,7 @@ ssl3_DestroySSL3Info(sslSocket *ss)
     
     PK11_HPKE_DestroyContext(ss->ssl3.hs.echHpkeCtx, PR_TRUE);
     PORT_Free((void *)ss->ssl3.hs.echPublicName); 
+    sslBuffer_Clear(&ss->ssl3.hs.greaseEchBuf);
 }
 
 

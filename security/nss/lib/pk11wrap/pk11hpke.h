@@ -9,7 +9,7 @@
 #include "seccomon.h"
 
 #ifdef NSS_ENABLE_DRAFT_HPKE
-#define HPKE_DRAFT_VERSION 5
+#define HPKE_DRAFT_VERSION 7
 
 #define CLEANUP                    \
     PORT_Assert(rv == SECSuccess); \
@@ -49,6 +49,8 @@ typedef enum {
 
 typedef enum {
     HpkeKdfHkdfSha256 = 1,
+    HpkeKdfHkdfSha384 = 2,
+    HpkeKdfHkdfSha512 = 3,
 } HpkeKdfId;
 
 typedef enum {
