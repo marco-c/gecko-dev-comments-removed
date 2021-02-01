@@ -171,7 +171,12 @@ class ParentImpl final : public BackgroundParentImpl {
     THREADSAFETY_ASSERT(IsOnBackgroundThread());
   }
 
-  NS_INLINE_DECL_REFCOUNTING(ParentImpl)
+  
+  
+  
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_MAIN_THREAD(ParentImpl,
+                                                                   override)
 
   void Destroy();
 
@@ -491,7 +496,7 @@ class ChildImpl final : public BackgroundChildImpl {
 #endif
   }
 
-  NS_INLINE_DECL_REFCOUNTING(ChildImpl)
+  NS_INLINE_DECL_REFCOUNTING(ChildImpl, override)
 
  private:
   
