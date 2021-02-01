@@ -15,6 +15,7 @@
 #include "frontend/DefaultEmitter.h"      
 #include "frontend/EmitterScope.h"        
 #include "frontend/FunctionSyntaxKind.h"  
+#include "frontend/ParserAtom.h"          
 #include "frontend/SharedContext.h"       
 #include "frontend/TDZCheckCache.h"       
 #include "gc/Rooting.h"                   

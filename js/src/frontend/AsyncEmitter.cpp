@@ -10,6 +10,7 @@
 
 #include "frontend/BytecodeEmitter.h"     
 #include "frontend/NameOpEmitter.h"       
+#include "frontend/ParserAtom.h"          
 #include "vm/AsyncFunctionResolveKind.h"  
 #include "vm/Opcodes.h"                   
 
@@ -63,8 +64,8 @@ bool AsyncEmitter::prepareForModule() {
   
   
   MOZ_ASSERT(state_ == State::Start);
-  MOZ_ASSERT(
-      bce_->lookupName(bce_->cx->parserNames().dotGenerator).hasKnownSlot());
+  MOZ_ASSERT(bce_->lookupName(TaggedParserAtomIndex::WellKnown::dotGenerator())
+                 .hasKnownSlot());
 
   NameOpEmitter noe(bce_, bce_->cx->parserNames().dotGenerator,
                     NameOpEmitter::Kind::Initialize);

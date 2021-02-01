@@ -121,14 +121,14 @@ bool FunctionEmitter::emitAgain() {
   
   
   Maybe<NameLocation> lhsLoc =
-      bce_->locationOfNameBoundInScope(name_, bce_->varEmitterScope);
+      bce_->locationOfNameBoundInScope(name_->toIndex(), bce_->varEmitterScope);
 
   
   
   if (!lhsLoc && bce_->sc->isFunctionBox() &&
       bce_->sc->asFunctionBox()->functionHasExtraBodyVarScope()) {
     lhsLoc = bce_->locationOfNameBoundInScope(
-        name_, bce_->varEmitterScope->enclosingInFrame());
+        name_->toIndex(), bce_->varEmitterScope->enclosingInFrame());
   }
 
   if (!lhsLoc) {
@@ -212,7 +212,7 @@ bool FunctionEmitter::emitFunction() {
     
     
     
-    NameLocation loc = bce_->lookupName(name_);
+    NameLocation loc = bce_->lookupName(name_->toIndex());
     topLevelFunction = loc.kind() == NameLocation::Kind::Dynamic ||
                        loc.bindingKind() == BindingKind::Var;
   }
@@ -484,7 +484,7 @@ bool FunctionScriptEmitter::emitExtraBodyVarScope() {
     name = bce_->compilationState.getParserAtomAt(bce_->cx, bi.name());
 
     
-    if (!bce_->locationOfNameBoundInScope(name,
+    if (!bce_->locationOfNameBoundInScope(name->toIndex(),
                                           extraBodyVarEmitterScope_.ptr())) {
       continue;
     }
@@ -501,8 +501,8 @@ bool FunctionScriptEmitter::emitExtraBodyVarScope() {
       return false;
     }
 
-    NameLocation paramLoc =
-        *bce_->locationOfNameBoundInScope(name, functionEmitterScope_.ptr());
+    NameLocation paramLoc = *bce_->locationOfNameBoundInScope(
+        name->toIndex(), functionEmitterScope_.ptr());
     if (!bce_->emitGetNameAtLocation(name, paramLoc)) {
       
       return false;
@@ -925,8 +925,8 @@ bool FunctionParamsEmitter::emitRestArray() {
 bool FunctionParamsEmitter::emitAssignment(const ParserAtom* paramName) {
   
 
-  NameLocation paramLoc =
-      *bce_->locationOfNameBoundInScope(paramName, functionEmitterScope_);
+  NameLocation paramLoc = *bce_->locationOfNameBoundInScope(
+      paramName->toIndex(), functionEmitterScope_);
 
   
   

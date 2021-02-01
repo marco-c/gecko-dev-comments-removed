@@ -213,25 +213,25 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   template <typename T, typename Predicate >
   T* findInnermostNestableControl(Predicate predicate) const;
 
-  NameLocation lookupName(const ParserAtom* name);
+  NameLocation lookupName(TaggedParserAtomIndex name);
 
   
   
   
   
   mozilla::Maybe<NameLocation> locationOfNameBoundInScope(
-      const ParserAtom* name, EmitterScope* target);
+      TaggedParserAtomIndex name, EmitterScope* target);
 
   
   
   template <typename T>
   mozilla::Maybe<NameLocation> locationOfNameBoundInScopeType(
-      const ParserAtom* name, EmitterScope* source);
+      TaggedParserAtomIndex name, EmitterScope* source);
 
   
   
   mozilla::Maybe<NameLocation> locationOfNameBoundInFunctionScope(
-      const ParserAtom* name) {
+      TaggedParserAtomIndex name) {
     return locationOfNameBoundInScopeType<FunctionScope>(
         name, innermostEmitterScope());
   }
@@ -539,7 +539,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitGetNameAtLocation(const ParserAtom* name,
                                           const NameLocation& loc);
   MOZ_MUST_USE bool emitGetName(const ParserAtom* name) {
-    return emitGetNameAtLocation(name, lookupName(name));
+    return emitGetNameAtLocation(name, lookupName(name->toIndex()));
   }
   MOZ_MUST_USE bool emitGetName(NameNode* name);
   MOZ_MUST_USE bool emitGetPrivateName(NameNode* name);

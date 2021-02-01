@@ -89,7 +89,7 @@ class EmitterScope : public Nestable<EmitterScope> {
 
   static NameLocation searchInEnclosingScope(JSAtom* name, Scope* scope,
                                              uint8_t hops);
-  NameLocation searchAndCache(BytecodeEmitter* bce, const ParserAtom* name);
+  NameLocation searchAndCache(BytecodeEmitter* bce, TaggedParserAtomIndex name);
 
   MOZ_MUST_USE bool internEmptyGlobalScopeAsBody(BytecodeEmitter* bce);
 
@@ -161,9 +161,9 @@ class EmitterScope : public Nestable<EmitterScope> {
     return Nestable<EmitterScope>::enclosing();
   }
 
-  NameLocation lookup(BytecodeEmitter* bce, const ParserAtom* name);
+  NameLocation lookup(BytecodeEmitter* bce, TaggedParserAtomIndex name);
 
-  mozilla::Maybe<NameLocation> locationBoundInScope(const ParserAtom* name,
+  mozilla::Maybe<NameLocation> locationBoundInScope(TaggedParserAtomIndex name,
                                                     EmitterScope* target);
 };
 
