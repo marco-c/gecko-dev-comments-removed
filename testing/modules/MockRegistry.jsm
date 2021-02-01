@@ -10,6 +10,8 @@ const { MockRegistrar } = ChromeUtils.import(
   "resource://testing-common/MockRegistrar.jsm"
 );
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 class MockRegistry {
   constructor() {
     
@@ -86,6 +88,14 @@ class MockRegistry {
       },
     };
 
+    
+    
+    
+    this.oldSuffixListPref = Services.prefs.getBoolPref(
+      "network.notify.dnsSuffixList"
+    );
+    Services.prefs.setBoolPref("network.notify.dnsSuffixList", false);
+
     this.cid = MockRegistrar.register(
       "@mozilla.org/windows-registry-key;1",
       MockWindowsRegKey
@@ -94,6 +104,10 @@ class MockRegistry {
 
   shutdown() {
     MockRegistrar.unregister(this.cid);
+    Services.prefs.setBoolPref(
+      "network.notify.dnsSuffixList",
+      this.oldSuffixListPref
+    );
     this.cid = null;
   }
 
