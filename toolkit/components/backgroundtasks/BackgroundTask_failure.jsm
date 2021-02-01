@@ -1,0 +1,12 @@
+
+
+
+
+
+var EXPORTED_SYMBOLS = ["runBackgroundTask"];
+
+async function runBackgroundTask() {
+  console.error("runBackgroundTask: failure");
+
+  return 1;
+}
