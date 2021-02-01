@@ -874,19 +874,13 @@ const JSClass NonSyntacticVariablesObject::class_ = {
 
 bool js::CreateNonSyntacticEnvironmentChain(JSContext* cx,
                                             HandleObjectVector envChain,
-                                            MutableHandleObject env,
-                                            MutableHandleScope scope) {
+                                            MutableHandleObject env) {
   
   
   MOZ_RELEASE_ASSERT(!envChain.empty());
 
   RootedObject globalLexical(cx, &cx->global()->lexicalEnvironment());
   if (!CreateObjectsForEnvironmentChain(cx, envChain, globalLexical, env)) {
-    return false;
-  }
-
-  scope.set(GlobalScope::createEmpty(cx, ScopeKind::NonSyntactic));
-  if (!scope) {
     return false;
   }
 

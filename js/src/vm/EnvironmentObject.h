@@ -19,6 +19,7 @@
 #include "vm/JSObject.h"
 #include "vm/ProxyObject.h"
 #include "vm/Scope.h"
+#include "vm/ScopeKind.h"  
 
 namespace js {
 
@@ -642,8 +643,7 @@ class NonSyntacticVariablesObject : public EnvironmentObject {
 
 extern bool CreateNonSyntacticEnvironmentChain(JSContext* cx,
                                                JS::HandleObjectVector envChain,
-                                               MutableHandleObject env,
-                                               MutableHandleScope scope);
+                                               MutableHandleObject env);
 
 
 class WithEnvironmentObject : public EnvironmentObject {

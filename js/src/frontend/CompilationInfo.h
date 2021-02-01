@@ -148,6 +148,7 @@ struct CompilationInput {
   
   
   
+  
   Scope* enclosingScope = nullptr;
 
   explicit CompilationInput(const JS::ReadOnlyCompileOptions& options)
@@ -174,8 +175,16 @@ struct CompilationInput {
     return true;
   }
 
-  bool initForStandaloneFunction(JSContext* cx,
-                                 HandleScope functionEnclosingScope) {
+  bool initForStandaloneFunction(JSContext* cx) {
+    if (!initScriptSource(cx)) {
+      return false;
+    }
+    enclosingScope = &cx->global()->emptyGlobalScope();
+    return true;
+  }
+
+  bool initForStandaloneFunctionInNonSyntacticScope(
+      JSContext* cx, HandleScope functionEnclosingScope) {
     if (!initScriptSource(cx)) {
       return false;
     }
