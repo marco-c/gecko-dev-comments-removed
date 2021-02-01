@@ -1,8 +1,10 @@
 
 
 
-assertEq(!wasmSimdWormholeEnabled() || (getBuildConfiguration().x64 || getBuildConfiguration().x86),
-         true);
+assertEq(!wasmSimdWormholeEnabled() || getBuildConfiguration().x64, true);
+
+
+assertEq(!wasmSimdWormholeEnabled() || wasmCompileMode() == "ion", true);
 
 function wormhole_op(opcode) {
     return `i8x16.shuffle 31 0 30 2 29 4 28 6 27 8 26 10 25 12 24 ${opcode} `
@@ -20,3 +22,4 @@ if (wasmSimdWormholeEnabled()) {
     for ( let i=0; i < 16; i++ )
         assertEq(mem[i], ans[i]);
 }
+
