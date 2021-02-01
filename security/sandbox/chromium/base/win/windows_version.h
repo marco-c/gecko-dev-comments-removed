@@ -50,6 +50,7 @@ enum class Version {
   WIN10_RS4 = 12,   
   WIN10_RS5 = 13,   
   WIN10_19H1 = 14,  
+  WIN10_20H1 = 15,  
   
   
   WIN_LAST,  
