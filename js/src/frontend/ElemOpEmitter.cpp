@@ -112,7 +112,10 @@ bool ElemOpEmitter::emitPrivateGuardForAssignment() {
 bool ElemOpEmitter::emitGet() {
   MOZ_ASSERT(state_ == State::Key);
 
-  if (isIncDec() || isCompoundAssignment()) {
+  
+  
+  
+  if ((isIncDec() || isCompoundAssignment()) && !isPrivate()) {
     if (!bce_->emit1(JSOp::ToPropertyKey)) {
       
       
