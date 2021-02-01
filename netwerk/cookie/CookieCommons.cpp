@@ -119,7 +119,13 @@ nsresult CookieCommons::GetBaseDomain(nsIPrincipal* aPrincipal,
     return nsContentUtils::GetHostOrIPv6WithBrackets(aPrincipal, aBaseDomain);
   }
 
-  return aPrincipal->GetBaseDomain(aBaseDomain);
+  nsresult rv = aPrincipal->GetBaseDomain(aBaseDomain);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  nsContentUtils::MaybeFixIPv6Host(aBaseDomain);
+  return NS_OK;
 }
 
 

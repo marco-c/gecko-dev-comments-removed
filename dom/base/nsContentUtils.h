@@ -2792,6 +2792,11 @@ class nsContentUtils {
   
 
 
+  static void MaybeFixIPv6Host(nsACString& aHost);
+
+  
+
+
 
   static nsresult GetHostOrIPv6WithBrackets(nsIURI* aURI, nsAString& aHost);
   static nsresult GetHostOrIPv6WithBrackets(nsIURI* aURI, nsACString& aHost);
