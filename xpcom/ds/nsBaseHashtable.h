@@ -9,6 +9,7 @@
 
 #include <utility>
 
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "nsDebug.h"
 #include "nsTHashtable.h"
@@ -38,7 +39,12 @@ class nsDefaultConverter {
 
   template <typename U>
   static DataType Wrap(U&& src) {
-    return std::move(src);
+    return std::forward<U>(src);
+  }
+
+  template <typename U>
+  static UserDataType Unwrap(U&& src) {
+    return std::forward<U>(src);
   }
 };
 
@@ -68,6 +74,7 @@ class nsBaseHashtableET : public KeyClass {
   typedef typename KeyClass::KeyTypePointer KeyTypePointer;
 
   explicit nsBaseHashtableET(KeyTypePointer aKey);
+  nsBaseHashtableET(KeyTypePointer aKey, DataType&& aData);
   nsBaseHashtableET(nsBaseHashtableET<KeyClass, DataType>&& aToMove);
   ~nsBaseHashtableET() = default;
 };
@@ -90,6 +97,7 @@ template <class KeyClass, class DataType, class UserDataType,
           class Converter = nsDefaultConverter<DataType, UserDataType>>
 class nsBaseHashtable
     : protected nsTHashtable<nsBaseHashtableET<KeyClass, DataType>> {
+  using Base = nsTHashtable<nsBaseHashtableET<KeyClass, DataType>>;
   typedef mozilla::fallible_t fallible_t;
 
  public:
@@ -126,6 +134,7 @@ class nsBaseHashtable
 
 
 
+
   bool Get(KeyType aKey, UserDataType* aData) const {
     EntryType* ent = this->GetEntry(aKey);
     if (!ent) {
@@ -149,6 +158,10 @@ class nsBaseHashtable
 
 
 
+
+
+
+
   UserDataType Get(KeyType aKey) const {
     EntryType* ent = this->GetEntry(aKey);
     if (!ent) {
@@ -159,6 +172,28 @@ class nsBaseHashtable
   }
 
   
+
+
+
+
+
+
+  mozilla::Maybe<UserDataType> MaybeGet(KeyType aKey) const {
+    EntryType* ent = this->GetEntry(aKey);
+    if (!ent) {
+      return mozilla::Nothing();
+    }
+
+    return mozilla::Some(Converter::Unwrap(ent->mData));
+  }
+
+  
+
+
+
+
+
+
 
 
 
@@ -174,21 +209,20 @@ class nsBaseHashtable
 
 
   void Put(KeyType aKey, const UserDataType& aData) {
-    if (!Put(aKey, aData, mozilla::fallible)) {
-      NS_ABORT_OOM(this->mTable.EntrySize() * this->mTable.EntryCount());
-    }
+    WithEntryHandle(aKey, [&aData](auto entryHandle) {
+      entryHandle.InsertOrUpdate(aData);
+    });
   }
 
   [[nodiscard]] bool Put(KeyType aKey, const UserDataType& aData,
-                         const fallible_t&) {
-    EntryType* ent = this->PutEntry(aKey, mozilla::fallible);
-    if (!ent) {
-      return false;
-    }
-
-    ent->mData = Converter::Wrap(aData);
-
-    return true;
+                         const fallible_t& aFallible) {
+    return WithEntryHandle(aKey, aFallible, [&aData](auto maybeEntryHandle) {
+      if (!maybeEntryHandle) {
+        return false;
+      }
+      maybeEntryHandle->InsertOrUpdate(aData);
+      return true;
+    });
   }
 
   
@@ -197,21 +231,20 @@ class nsBaseHashtable
 
 
   void Put(KeyType aKey, UserDataType&& aData) {
-    if (!Put(aKey, std::move(aData), mozilla::fallible)) {
-      NS_ABORT_OOM(this->mTable.EntrySize() * this->mTable.EntryCount());
-    }
+    WithEntryHandle(aKey, [&aData](auto entryHandle) {
+      entryHandle.InsertOrUpdate(std::move(aData));
+    });
   }
 
   [[nodiscard]] bool Put(KeyType aKey, UserDataType&& aData,
-                         const fallible_t&) {
-    EntryType* ent = this->PutEntry(aKey, mozilla::fallible);
-    if (!ent) {
-      return false;
-    }
-
-    ent->mData = Converter::Wrap(std::move(aData));
-
-    return true;
+                         const fallible_t& aFallible) {
+    return WithEntryHandle(aKey, aFallible, [&aData](auto maybeEntryHandle) {
+      if (!maybeEntryHandle) {
+        return false;
+      }
+      maybeEntryHandle->InsertOrUpdate(std::move(aData));
+      return true;
+    });
   }
 
   
@@ -223,7 +256,12 @@ class nsBaseHashtable
 
 
 
-  bool Remove(KeyType aKey, DataType* aData = nullptr) {
+
+
+
+
+
+  bool Remove(KeyType aKey, DataType* aData) {
     if (auto* ent = this->GetEntry(aKey)) {
       if (aData) {
         *aData = std::move(ent->mData);
@@ -235,6 +273,38 @@ class nsBaseHashtable
       *aData = std::move(DataType());
     }
     return false;
+  }
+
+  
+
+
+
+
+
+  bool Remove(KeyType aKey) {
+    if (auto* ent = this->GetEntry(aKey)) {
+      this->RemoveEntry(ent);
+      return true;
+    }
+
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+  [[nodiscard]] mozilla::Maybe<DataType> GetAndRemove(KeyType aKey) {
+    mozilla::Maybe<DataType> value;
+    if (EntryType* ent = this->GetEntry(aKey)) {
+      value.emplace(std::move(ent->mData));
+      this->RemoveEntry(ent);
+    }
+    return value;
   }
 
   struct LookupResult {
@@ -398,12 +468,113 @@ class nsBaseHashtable
 
 
 
+
+
+
   [[nodiscard]] EntryPtr LookupForAdd(KeyType aKey) {
     auto count = Count();
     EntryType* ent = this->PutEntry(aKey);
     return EntryPtr(*this, ent, count == Count());
   }
 
+ protected:
+  
+
+
+
+
+
+  class EntryHandle : protected nsTHashtable<EntryType>::EntryHandle {
+   public:
+    using Base = typename nsTHashtable<EntryType>::EntryHandle;
+
+    EntryHandle(EntryHandle&& aOther) = default;
+    ~EntryHandle() = default;
+
+    EntryHandle(const EntryHandle&) = delete;
+    EntryHandle& operator=(const EntryHandle&) = delete;
+    EntryHandle& operator=(const EntryHandle&&) = delete;
+
+    using Base::Key;
+
+    using Base::HasEntry;
+
+    using Base::operator bool;
+
+    using Base::Entry;
+
+    template <typename U>
+    void Insert(U&& aData) {
+      Base::InsertInternal(Converter::Wrap(std::forward<U>(aData)));
+    }
+
+    template <typename U>
+    DataType& OrInsert(U&& aData) {
+      if (!HasEntry()) {
+        Insert(std::forward<U>(aData));
+      }
+      return Data();
+    }
+
+    
+    
+
+    template <typename U>
+    void Update(U&& aData) {
+      MOZ_ASSERT(HasEntry());
+      Data() = Converter::Wrap(std::forward<U>(aData));
+    }
+
+    template <typename U>
+    void OrUpdate(U&& aData) {
+      if (HasEntry()) {
+        Update(std::forward<U>(aData));
+      }
+    }
+
+    template <typename U>
+    DataType& InsertOrUpdate(U&& aData) {
+      if (!HasEntry()) {
+        Insert(std::forward<U>(aData));
+      } else {
+        Update(std::forward<U>(aData));
+      }
+      return Data();
+    }
+
+    using Base::Remove;
+
+    using Base::OrRemove;
+
+    DataType& Data() { return Entry()->mData; }
+
+   private:
+    friend class nsBaseHashtable;
+
+    explicit EntryHandle(Base&& aBase) : Base(std::move(aBase)) {}
+  };
+
+  template <class F>
+  auto WithEntryHandle(KeyType aKey, F&& aFunc)
+      -> std::invoke_result_t<F, EntryHandle&&> {
+    return Base::WithEntryHandle(aKey, [&aFunc](auto entryHandle) {
+      return std::forward<F>(aFunc)(EntryHandle{std::move(entryHandle)});
+    });
+  }
+
+  template <class F>
+  auto WithEntryHandle(KeyType aKey, const fallible_t& aFallible, F&& aFunc)
+      -> std::invoke_result_t<F, mozilla::Maybe<EntryHandle>&&> {
+    return Base::WithEntryHandle(
+        aKey, aFallible, [&aFunc](auto maybeEntryHandle) {
+          return std::forward<F>(aFunc)(
+              maybeEntryHandle
+                  ? mozilla::Some(EntryHandle{maybeEntryHandle.extract()})
+                  : mozilla::Nothing());
+        });
+  }
+
+ public:
   
   
   
@@ -490,6 +661,11 @@ class nsBaseHashtable
 template <class KeyClass, class DataType>
 nsBaseHashtableET<KeyClass, DataType>::nsBaseHashtableET(KeyTypePointer aKey)
     : KeyClass(aKey), mData() {}
+
+template <class KeyClass, class DataType>
+nsBaseHashtableET<KeyClass, DataType>::nsBaseHashtableET(KeyTypePointer aKey,
+                                                         DataType&& aData)
+    : KeyClass(aKey), mData(std::move(aData)) {}
 
 template <class KeyClass, class DataType>
 nsBaseHashtableET<KeyClass, DataType>::nsBaseHashtableET(
