@@ -62,7 +62,6 @@ class VideoFrameContainer {
                      nsTArray<ImageContainer::NonOwningImage>());
   }
 
-  void ClearCurrentFrame();
   
   
   void ClearFutureFrames(TimeStamp aNow = TimeStamp::Now());
