@@ -8853,6 +8853,7 @@ class TabDialogBox {
       sizeTo,
       keepOpenSameOriginNav,
       modalType = null,
+      allowFocusCheckbox = false,
     } = {},
     ...aParams
   ) {
@@ -8870,9 +8871,13 @@ class TabDialogBox {
         this._onFirstDialogOpen();
       }
 
-      let closingCallback = () => {
+      let closingCallback = event => {
         if (!hasDialogs) {
           this._onLastDialogClose();
+        }
+
+        if (allowFocusCheckbox) {
+          this.maybeSetAllowTabSwitchPermission(event.target);
         }
       };
 
@@ -9018,6 +9023,28 @@ class TabDialogBox {
       this._buildContentPromptDialog();
     }
     return this._contentDialogManager;
+  }
+
+  onNextPromptShowAllowFocusCheckboxFor(principal) {
+    this._allowTabFocusByPromptPrincipal = principal;
+  }
+
+  
+
+
+  maybeSetAllowTabSwitchPermission(dialog) {
+    let checkbox = dialog.querySelector("checkbox");
+
+    if (checkbox.checked) {
+      Services.perms.addFromPrincipal(
+        this._allowTabFocusByPromptPrincipal,
+        "focus-tab-by-prompt",
+        Services.perms.ALLOW_ACTION
+      );
+    }
+
+    
+    this._allowTabFocusByPromptPrincipal = null;
   }
 }
 
