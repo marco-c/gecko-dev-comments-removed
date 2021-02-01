@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @namespace html url("http://www.w3.org/1999/xhtml");
 
@@ -54,13 +54,13 @@
   --tabs-border-color: rgba(0,0,0,.3);
 }
 
-
-
-
-
-
-
-
+/*
+  This is a workaround for Bug 1482157
+  -moz-default-appearance: toolbox; makes the macOS sheets attached to the
+  element's bottom border. We cannot put this property on the toolbox itself as
+  it cancels all backgrounds that are there, so we set it on the toolbox bottom
+  border.
+*/
 #navigator-toolbox::after {
   content: "";
   display: -moz-box;
@@ -80,10 +80,10 @@
   text-shadow: inherit;
 }
 
-
+/** Begin titlebar **/
 
 #titlebar {
-  
+  /* Centrally align content items vertically */
   -moz-box-pack: center;
 }
 
@@ -91,12 +91,12 @@
   display: none;
 }
 
-
-
+/* Making the toolbox position:relative (browser.inc.css) occludes titlebar indicators
+ * if the toolbox has a background. Fix this by positioning the relevant elements, too: */
 #titlebar-secondary-buttonbox {
   position: relative;
   z-index: 1;
-  
+  /* Centrally align indicators and full screen button vertically */
   -moz-box-align: center;
 }
 
@@ -104,13 +104,13 @@
   -moz-box-align: center;
 }
 
-
-
+/* These would be margin-inline-start/end if it wasn't for the fact that OS X
+ * doesn't reverse the order of the items in the titlebar in RTL mode. */
 .titlebar-buttonbox {
   margin-left: 12px;
 }
 
-
+/** End titlebar **/
 
 :root[chromehidden~="toolbar"][chromehidden~="location"][chromehidden~="directories"] {
   border-top: 1px solid rgba(0,0,0,0.65);
@@ -122,15 +122,15 @@
   color: var(--toolbar-color);
 }
 
-
+/* Draw the bottom border of the tabs toolbar when titlebar isn't using vibrancy */
 :root:not([inFullscreen], [tabsintitlebar]) #nav-bar:not([tabs-hidden="true"]),
 #nav-bar:not([tabs-hidden="true"]):-moz-lwtheme {
   box-shadow: 0 calc(-1 * var(--tabs-navbar-shadow-size)) 0 var(--tabs-border-color);
 }
 
 #nav-bar:not([tabs-hidden="true"]) {
-  
-
+  /* The toolbar buttons that animate are only visible when the #TabsToolbar is not collapsed.
+     The animations use position:absolute and require a positioned #nav-bar. */
   position: relative;
 }
 
@@ -139,14 +139,14 @@
   background-color: -moz-mac-chrome-inactive;
 }
 
-
+/* ----- BOOKMARK TOOLBAR ----- */
 
 #nav-bar-customization-target > #wrapper-personal-bookmarks > #personal-bookmarks {
   min-height: 32px;
   -moz-box-align: center;
 }
 
-
+/* Workaround for native menubar inheritance */
 .openintabs-menuitem {
   list-style-image: none;
 }
@@ -161,7 +161,7 @@
   opacity: 0.7;
 }
 
-
+/* ----- BOOKMARK MENUS ----- */
 
 .bookmark-item > .menu-iconic-left > .menu-iconic-icon {
   width: 16px;
@@ -178,32 +178,32 @@
 %include ../shared/toolbarbutton-icons.inc.css
 %include ../shared/menupanel.inc.css
 
-
+/* Override OSX-specific toolkit findbar button styles */
 .findbar-button {
   background-image: none !important;
   box-shadow: none !important;
   border: none;
 }
 
-
-
+/* On Mac, native buttons keep their full opacity when they become disabled
+ * and only the glyph or text on top of them becomes less opaque. */
 :root:not([customizing]) #back-button[disabled="true"] {
   opacity: 1 !important;
-  
-
-
-
+  /* Disabled toolbar buttons get an opacity of 0.4 which multiplies
+   * their fill-opacity of 0.7. calc() doesn't work here - we'd need
+   * to multiply two unitless numbers and that's invalid in CSS, so
+   * we need to hard code the value for now. */
   fill-opacity: 0.28;
 }
 
-
+/* Inactive elements are faded out on OSX */
 .toolbarbutton-1:not(:hover):-moz-window-inactive,
 .bookmark-item:not(:hover):-moz-window-inactive,
 :root:not([customizing]) .toolbarbutton-1:-moz-window-inactive[disabled="true"] {
   opacity: 0.5;
 }
 
-
+/* ----- FULLSCREEN WINDOW CONTROLS ----- */
 
 #minimize-button,
 #close-button,
@@ -211,7 +211,7 @@
   display: none;
 }
 
-
+/* Address bar */
 
 %include ../shared/urlbar-searchbar.inc.css
 
@@ -226,8 +226,8 @@
   }
 }
 
-
-
+/* Ensure diacritics and other edge-of-font-box glyphs do not get clipped,
+ * even in non-Latin scripts. */
 #urlbar-input {
   line-height: 1.745em;
 }
@@ -241,7 +241,7 @@
   list-style-image: url("chrome://browser/skin/share.svg");
 }
 
-
+/* Address bar results view */
 
 %include ../shared/urlbarView.inc.css
 
@@ -252,11 +252,11 @@
 
 .urlbarView:not(:-moz-lwtheme),
 #PopupSearchAutoComplete:not(:-moz-lwtheme) {
-  
+  /* Set custom disabled text color since native graytext is too faint on macOS 10.14+. */
   --panel-disabled-color: #737373;
 }
 
-
+/* ----- AUTOCOMPLETE ----- */
 
 %include ../shared/autocomplete.inc.css
 
@@ -274,7 +274,7 @@
   margin-block: -26px;
 }
 
-
+/* Bookmarking panel */
 
 %include ../shared/places/editBookmarkPanel.inc.css
 
@@ -295,10 +295,10 @@
   box-shadow: var(--focus-ring-box-shadow);
 }
 
-
-
-
-
+/* The following elements come from editBookmarkPanel.inc.xhtml. Styling that's
+   specific to the editBookmarkPanel should be in browser.css. Styling that
+   should be shared by all editBookmarkPanel.inc.xhtml consumers should be in
+   editBookmark.css. */
 
 #editBMPanel_newFolderBox {
   background-color: var(--arrowpanel-field-background);
@@ -322,7 +322,7 @@
   min-height: 24px;
   height: 24px;
   color: inherit;
-  list-style-image: url("chrome://browser/skin/add.svg");
+  list-style-image: url("chrome://global/skin/icons/add.svg");
 }
 
 #editBMPanel_newFolderButton:hover {
@@ -338,7 +338,7 @@
 }
 
 #editBMPanel_newFolderButton .button-text {
-  -moz-box-flex: 1; 
+  -moz-box-flex: 1; /* push the button icon to the start side */
   text-align: start;
 }
 
@@ -365,7 +365,7 @@
   width: 7px;
 }
 
-
+/**** folder tree and tag selector ****/
 
 #editBMPanel_folderTree,
 #editBMPanel_tagsSelector {
@@ -399,17 +399,17 @@
   border-bottom: none;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
-  
+  /* Implements editBookmarkPanel resizing on folderTree un-collapse. */
   margin: 0 !important;
   min-width: 27em;
   position: relative;
 }
 
-
+/**** expanders ****/
 
 #editBookmarkPanel .expander-up,
 #editBookmarkPanel .expander-down {
-  appearance: none; 
+  appearance: none; /* override button.css */
   -moz-context-properties: fill, fill-opacity;
   fill: currentColor;
   fill-opacity: 0.8;
@@ -437,7 +437,7 @@
   list-style-image: url("chrome://global/skin/icons/arrow-dropdown-12.svg");
 }
 
-
+/* ----- SIDEBAR ELEMENTS ----- */
 
 %include ../shared/sidebar.inc.css
 
@@ -446,27 +446,27 @@
 }
 
 #sidebar-box {
-  
+  /* Default font size is 11px on mac, so this is 12px */
   font-size: 1.0909rem;
   --sidebar-background-color: -moz-mac-source-list;
 }
 
-
-
-
-
-
-
+/* Give the sidebar a vibrant appearance. Only do this when no lwtheme is
+ * in use, because vibrant appearance values only work if there is no
+ * background-color rendered behind the element, and we have :root:-moz-lwtheme
+ * rules which set appearance: none and an opaque background color on the
+ * root element. That background color would interfere with the vibrancy.
+ * See bug 1594132 for fixing this. */
 #sidebar-box:not(:-moz-lwtheme) {
   appearance: auto;
   -moz-default-appearance: -moz-mac-source-list;
   -moz-font-smoothing-background-color: -moz-mac-source-list;
 }
 
-
+/* ----- CONTENT ----- */
 
 .browserContainer > findbar {
-  
+  /* Use the default background gradient from findBar.css */
   background-color: transparent;
   color: -moz-DialogText;
 }
@@ -475,7 +475,7 @@
   list-style-image: none;
 }
 
-
+/* ::::: tabbrowser ::::: */
 
 #tabbrowser-tabbox {
   margin: 0;
@@ -491,10 +491,10 @@
   opacity: .9;
 }
 
-
-
-
-
+/*
+ * Force the overlay to create a new stacking context so it always appears on
+ * top of the icon.
+ */
 .tab-icon-overlay {
   opacity: 0.9999;
 }
@@ -509,13 +509,13 @@
 }
 .tabbrowser-tab[multiselected]:not(:-moz-lwtheme),
 .tabbrowser-tab[visuallyselected=true]:not(:-moz-lwtheme) {
-  
+  /* overriding tabbox.css */
   color: hsl(240, 5%, 5%);
 }
 
 .tabbrowser-tab[multiselected],
 .tabbrowser-tab[visuallyselected=true] {
-  
+  /* overriding tabbox.css */
   text-shadow: inherit;
 }
 
@@ -554,18 +554,18 @@
   position: static;
 }
 
-
+/* Bookmark drag and drop styles */
 
 .bookmark-item[dragover-into="true"] {
   background: Highlight !important;
   color: HighlightText !important;
 }
 
-
+/* Translation */
 
 %include ../shared/translation/infobar.inc.css
 
-
+/* Status panel */
 
 #statuspanel-label {
   margin: 0;
@@ -602,19 +602,19 @@
 %include ../shared/fullscreen/warning.inc.css
 %include ../shared/ctrlTab.inc.css
 
-
-
+/* On mac, the popup notification contents are indented by default and so
+  the default closebutton margins from notification.css require adjustment */
 
 .click-to-play-plugins-notification-description-box > .popup-notification-closebutton {
   margin-inline-end: -6px;
   margin-top: -7px;
 }
 
-
+/* Customization mode */
 
 %include ../shared/customizableui/customizeMode.inc.css
 
-
+/* End customization mode */
 
 %include ../shared/UITour.inc.css
 

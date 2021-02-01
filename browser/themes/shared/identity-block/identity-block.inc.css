@@ -1,7 +1,7 @@
 %if 0
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 %endif
 
 %filter substitution
@@ -13,15 +13,15 @@
 
 #identity-box,
 #tracking-protection-icon-container {
-  
-
+  /* Set default fill for icons in the identity block.
+     Individual icons can override this. */
   fill: currentColor;
   fill-opacity: .6;
 }
 
-
-
-
+/* The tracking protection icon will be hidden if it is a chrome page. There
+   will be only the brand icon in the url bar. So, we need to change the padding
+   start for proper positing the icon. */
 #identity-box[pageproxystate="valid"].chromeUI {
   padding-inline-start: 8px;
 }
@@ -124,7 +124,7 @@
   margin-inline-start: 0;
 }
 
-
+/* MAIN IDENTITY ICON */
 #identity-icon {
   margin-inline-start: 0;
   list-style-image: url(chrome://global/skin/icons/identity-icon.svg);
@@ -139,7 +139,7 @@
 }
 
 #urlbar:not(.searchButton) > #urlbar-input-container > #identity-box[pageproxystate="invalid"] > #identity-icon {
-  list-style-image: url(chrome://browser/skin/search-glass.svg);
+  list-style-image: url(chrome://global/skin/icons/search-glass.svg);
   fill-opacity: .4;
 }
 
@@ -185,7 +185,7 @@
   display: none;
 }
 
-
+/* SHARING ICON */
 
 #webrtc-sharing-icon[sharing="camera"] {
   list-style-image: url("chrome://browser/skin/notification-icons/camera.svg");
@@ -217,15 +217,15 @@
   50% { opacity: 0; }
 }
 
-
+/* TRACKING PROTECTION ICON */
 
 #tracking-protection-icon-container {
   padding-inline: @identityBoxPaddingInline@;
-  
+  /* Separator */
   border-inline-end: 1px solid var(--urlbar-separator-color);
   border-image: linear-gradient(transparent 15%, var(--urlbar-separator-color) 15%, var(--urlbar-separator-color) 85%, transparent 85%);
   border-image-slice: 1;
-  
+  /* This is needed in order to position the blue dot indicator. */
   position: relative;
 }
 
@@ -253,8 +253,8 @@
 }
 
 #tracking-protection-icon-box:not([hasException])[active] > #tracking-protection-icon-animatable-box > #tracking-protection-icon-animatable-image {
-  
-
+  /* Overrides the default 'display: -moz-box' to prevent icon shifting issue
+     with scaled text, see Bug 1591049 */
   display: block;
   background-image: url(chrome://browser/skin/tracking-protection-animation.svg);
   transform: translateX(-256px);
@@ -272,8 +272,8 @@
 #tracking-protection-icon-box[hasException]:-moz-locale-dir(rtl)::before {
   left: 0;
   right: unset;
-  
-
+  /* This is needed in order to put the dot in front of the shield icon in rtl
+     mode */
   z-index: 1;
 }
 
@@ -328,7 +328,7 @@
   }
 }
 
-
+/* REMOTE CONTROL ICON */
 
 #remote-control-icon {
   visibility: collapse;

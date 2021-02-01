@@ -45,7 +45,7 @@ ContentSearchHandoffUIController.prototype = {
     
     
     if (!engine.isAppProvided) {
-      this._engineIcon = "chrome://browser/skin/search-glass.svg";
+      this._engineIcon = "chrome://global/skin/icons/search-glass.svg";
     } else if (engine.iconData) {
       this._engineIcon = this._getFaviconURIFromIconData(engine.iconData);
     } else {

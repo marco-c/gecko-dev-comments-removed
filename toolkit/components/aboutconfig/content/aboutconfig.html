@@ -1,6 +1,6 @@
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <!DOCTYPE html>
 <html>
@@ -12,10 +12,10 @@
     <link rel="stylesheet" media="screen, projection" type="text/css"
           href="chrome://global/skin/in-content/info-pages.css" title="infop">
     <link rel="stylesheet" type="text/css"
-          href="chrome://browser/content/aboutconfig/aboutconfig.css">
+          href="chrome://global/content/aboutconfig/aboutconfig.css">
     <link rel="localization" href="branding/brand.ftl">
-    <link rel="localization" href="browser/aboutConfig.ftl">
-    <script src="chrome://browser/content/aboutconfig/aboutconfig.js"></script>
+    <link rel="localization" href="toolkit/about/config.ftl">
+    <script src="chrome://global/content/aboutconfig/aboutconfig.js"></script>
     <title data-l10n-id="about-config-page-title"></title>
   </head>
   <body>
@@ -45,8 +45,8 @@
 
     <template id="main">
       <div id="search-container">
-        
-
+        <!-- Use a unique ID to prevent showing autocomplete results from other
+             browser pages with similarly named fields. -->
         <input type="text" id="about-config-search"
                data-l10n-id="about-config-search-input1">
       </div>

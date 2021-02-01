@@ -64,7 +64,7 @@ async function runNewTabTest() {
 
   
   
-  await ensureIcon(tab, "chrome://browser/skin/search-glass.svg");
+  await ensureIcon(tab, "chrome://global/skin/icons/search-glass.svg");
 
   await Services.search.setDefault(defaultEngine);
 
@@ -102,7 +102,7 @@ add_task(async function test_content_search_icon_in_private_window() {
 
   
   
-  await ensureIcon(tab, "chrome://browser/skin/search-glass.svg");
+  await ensureIcon(tab, "chrome://global/skin/icons/search-glass.svg");
 
   await Services.search.setDefault(defaultEngine);
 
