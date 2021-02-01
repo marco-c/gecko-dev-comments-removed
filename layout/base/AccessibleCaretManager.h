@@ -314,7 +314,13 @@ class AccessibleCaretManager {
   
   PresShell* MOZ_NON_OWNING_REF mPresShell = nullptr;
 
-  struct Carets {
+  class Carets {
+   public:
+    
+    bool AreLogicallyVisible() const {
+      return mFirst->IsLogicallyVisible() || mSecond->IsLogicallyVisible();
+    }
+
     
     
     UniquePtr<AccessibleCaret> mFirst;
