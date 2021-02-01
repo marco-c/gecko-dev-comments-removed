@@ -28,10 +28,19 @@ class ContentProcessTargetFront extends TargetMixin(
     
     
     this.targetForm = json;
+
+    this.remoteType = json.remoteType;
   }
 
   get name() {
-    return `Content Process (pid ${this.processID})`;
+    
+    if (this.remoteType) {
+      return `(pid ${this.processID}) ${this.remoteType.replace(
+        "webIsolated=",
+        ""
+      )}`;
+    }
+    return `(pid ${this.processID}) Content Process`;
   }
 
   attach() {

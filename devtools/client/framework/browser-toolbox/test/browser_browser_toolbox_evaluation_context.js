@@ -21,7 +21,9 @@ add_task(async function() {
 
   
   
-  const tab = await addTab(`data:text/html,<title>Test tab</title>`);
+  const tab = await addTab(
+    "http://example.com/document-builder.sjs?html=<html><title>Test tab</title></html>"
+  );
 
   const ToolboxTask = await initBrowserToolboxTask({
     enableBrowserToolboxFission: true,
@@ -30,44 +32,50 @@ add_task(async function() {
   const tabProcessID =
     tab.linkedBrowser.browsingContext.currentWindowGlobal.osPid;
 
-  await ToolboxTask.spawn(tabProcessID, async processID => {
-    
-    const { hud } = await gToolbox.getPanel("webconsole");
+  await ToolboxTask.spawn(
+    [tabProcessID, isFissionEnabled()],
+    async (processID, _isFissionEnabled) => {
+      
+      const { hud } = await gToolbox.getPanel("webconsole");
 
-    const evaluationContextSelectorButton = hud.ui.outputNode.querySelector(
-      ".webconsole-evaluation-selector-button"
-    );
+      const evaluationContextSelectorButton = hud.ui.outputNode.querySelector(
+        ".webconsole-evaluation-selector-button"
+      );
 
-    is(
-      !!evaluationContextSelectorButton,
-      true,
-      "The evaluation context selector is visible"
-    );
-    is(
-      evaluationContextSelectorButton.innerText,
-      "Top",
-      "The button has the expected 'Top' text"
-    );
+      is(
+        !!evaluationContextSelectorButton,
+        true,
+        "The evaluation context selector is visible"
+      );
+      is(
+        evaluationContextSelectorButton.innerText,
+        "Top",
+        "The button has the expected 'Top' text"
+      );
 
-    
-    
-    const labels = hud.chromeWindow.document.querySelectorAll(
-      "#webconsole-console-evaluation-context-selector-menu-list li .label"
-    );
-    const labelTexts = Array.from(labels).map(item => item.textContent);
+      
+      
+      const labels = hud.chromeWindow.document.querySelectorAll(
+        "#webconsole-console-evaluation-context-selector-menu-list li .label"
+      );
+      const labelTexts = Array.from(labels).map(item => item.textContent);
 
-    is(
-      labelTexts.includes(`Content Process (pid ${processID})`),
-      true,
-      `${processID} content process visible in the execution context (${labelTexts})`
-    );
+      const expectedTitle = _isFissionEnabled
+        ? `(pid ${processID}) http://example.com`
+        : `(pid ${processID}) web`;
+      is(
+        labelTexts.includes(expectedTitle),
+        true,
+        `${processID} content process visible in the execution context (${labelTexts})`
+      );
 
-    is(
-      labelTexts.includes(`Test tab`),
-      true,
-      `Test tab is visible in the execution context (${labelTexts})`
-    );
-  });
+      is(
+        labelTexts.includes(`Test tab`),
+        true,
+        `Test tab is visible in the execution context (${labelTexts})`
+      );
+    }
+  );
 
   await ToolboxTask.destroy();
 });
