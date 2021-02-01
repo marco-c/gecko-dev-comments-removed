@@ -89,14 +89,6 @@ extern JS_PUBLIC_API void GetArrayBufferMaybeSharedLengthAndData(
 extern JS_PUBLIC_API uint8_t* GetArrayBufferMaybeSharedData(
     JSObject* obj, bool* isSharedMemory, const AutoRequireNoGC&);
 
-
-
-
-
-
-
-extern JS_FRIEND_API bool IsLargeArrayBufferMaybeShared(JSObject* obj);
-
 }  
 
 #endif 

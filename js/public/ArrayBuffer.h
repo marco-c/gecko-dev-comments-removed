@@ -259,12 +259,6 @@ extern JS_PUBLIC_API bool DetachArrayBuffer(JSContext* cx,
 extern JS_PUBLIC_API void* StealArrayBufferContents(JSContext* cx,
                                                     Handle<JSObject*> obj);
 
-
-
-
-
-extern JS_PUBLIC_API void SetLargeArrayBuffersEnabled(bool enable);
-
 }  
 
 #endif 

@@ -184,8 +184,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   static bool supportLargeBuffers;
 
-  static constexpr size_t MaxByteLengthForSmallBuffer = INT32_MAX;
-
   
   
   
@@ -195,7 +193,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
       return size_t(8) * 1024 * 1024 * 1024;  
     }
 #endif
-    return MaxByteLengthForSmallBuffer;
+    return INT32_MAX;
   }
 
   

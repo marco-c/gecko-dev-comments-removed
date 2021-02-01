@@ -419,16 +419,4 @@ JS_FRIEND_API JSObject* JS_NewDataView(JSContext* cx,
                                        JS::Handle<JSObject*> buffer,
                                        size_t byteOffset, size_t byteLength);
 
-namespace JS {
-
-
-
-
-
-
-
-JS_FRIEND_API bool IsLargeArrayBufferView(JSObject* obj);
-
-}  
-
 #endif  
