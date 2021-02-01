@@ -977,8 +977,7 @@ void nsContainerFrame::DoInlineIntrinsicISize(gfxContext* aRenderingContext,
 LogicalSize nsContainerFrame::ComputeAutoSize(
     gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
     nscoord aAvailableISize, const LogicalSize& aMargin,
-    const mozilla::LogicalSize& aBorderPadding,
-    const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) {
+    const LogicalSize& aBorderPadding, ComputeSizeFlags aFlags) {
   LogicalSize result(aWM, 0xdeadbeef, NS_UNCONSTRAINEDSIZE);
   nscoord availBased =
       aAvailableISize - aMargin.ISize(aWM) - aBorderPadding.ISize(aWM);
@@ -986,10 +985,16 @@ LogicalSize nsContainerFrame::ComputeAutoSize(
   if (aFlags.contains(ComputeSizeFlag::ShrinkWrap) ||
       IsFrameOfType(eReplaced)) {
     
-    const auto& styleISize = aSizeOverrides.mStyleISize
-                                 ? *aSizeOverrides.mStyleISize
-                                 : StylePosition()->ISize(aWM);
-    if (styleISize.IsAuto() || aFlags.contains(ComputeSizeFlag::UseAutoISize)) {
+    
+    
+    
+    
+    
+    const nsStylePosition* pos = StylePosition();
+    if (pos->ISize(aWM).IsAuto() ||
+        aFlags.contains(ComputeSizeFlag::UseAutoISize) ||
+        (pos->mFlexBasis.IsContent() && IsFlexItem() &&
+         nsFlexContainerFrame::IsItemInlineAxisMainAxis(this))) {
       result.ISize(aWM) =
           ShrinkWidthToFit(aRenderingContext, availBased, aFlags);
     }
@@ -2385,15 +2390,10 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
     gfxContext* aRenderingContext, WritingMode aWM,
     const IntrinsicSize& aIntrinsicSize, const AspectRatio& aAspectRatio,
     const LogicalSize& aCBSize, const LogicalSize& aMargin,
-    const LogicalSize& aBorderPadding, const StyleSizeOverrides& aSizeOverrides,
-    ComputeSizeFlags aFlags) {
+    const LogicalSize& aBorderPadding, ComputeSizeFlags aFlags) {
   const nsStylePosition* stylePos = StylePosition();
-  const auto& styleISize = aSizeOverrides.mStyleISize
-                               ? *aSizeOverrides.mStyleISize
-                               : stylePos->ISize(aWM);
-  const auto& styleBSize = aSizeOverrides.mStyleBSize
-                               ? *aSizeOverrides.mStyleBSize
-                               : stylePos->BSize(aWM);
+  const auto* inlineStyleCoord = &stylePos->ISize(aWM);
+  const auto* blockStyleCoord = &stylePos->BSize(aWM);
   auto* parentFrame = GetParent();
   const bool isGridItem = IsGridItem();
   const bool isFlexItem =
@@ -2404,11 +2404,72 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   
   LogicalAxis flexMainAxis =
       eLogicalAxisInline;  
+  Maybe<StyleSize> imposedMainSizeStyleCoord;
 
+  
+  
+  
+  
+  
   if (isFlexItem) {
     flexMainAxis = nsFlexContainerFrame::IsItemInlineAxisMainAxis(this)
                        ? eLogicalAxisInline
                        : eLogicalAxisBlock;
+
+    
+    
+    
+    bool didImposeMainSize;
+    nscoord imposedMainSize =
+        GetProperty(nsIFrame::FlexItemMainSizeOverride(), &didImposeMainSize);
+    if (didImposeMainSize) {
+      imposedMainSizeStyleCoord = Some(StyleSize::LengthPercentage(
+          LengthPercentage::FromAppUnits(imposedMainSize)));
+      if (flexMainAxis == eLogicalAxisInline) {
+        inlineStyleCoord = imposedMainSizeStyleCoord.ptr();
+      } else {
+        blockStyleCoord = imposedMainSizeStyleCoord.ptr();
+      }
+
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      const auto* flexBasis = &stylePos->mFlexBasis;
+      auto& mainAxisCoord =
+          (flexMainAxis == eLogicalAxisInline ? inlineStyleCoord
+                                              : blockStyleCoord);
+
+      if (nsFlexContainerFrame::IsUsedFlexBasisContent(*flexBasis,
+                                                       *mainAxisCoord)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        static const StyleSize autoSize(StyleSize::Auto());
+        mainAxisCoord = &autoSize;
+      } else if (flexBasis->IsSize() && !flexBasis->IsAuto()) {
+        
+        
+        mainAxisCoord = &flexBasis->AsSize();
+      } else {
+        MOZ_ASSERT(flexBasis->IsAuto());
+        
+        
+      }
+    }
   }
 
   
@@ -2419,10 +2480,10 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   
   
 
-  const bool isAutoISize =
-      styleISize.IsAuto() || aFlags.contains(ComputeSizeFlag::UseAutoISize);
+  const bool isAutoISize = inlineStyleCoord->IsAuto() ||
+                           aFlags.contains(ComputeSizeFlag::UseAutoISize);
   const bool isAutoBSize =
-      nsLayoutUtils::IsAutoBSize(styleBSize, aCBSize.BSize(aWM)) ||
+      nsLayoutUtils::IsAutoBSize(*blockStyleCoord, aCBSize.BSize(aWM)) ||
       aFlags.contains(ComputeSizeFlag::UseAutoBSize);
 
   const auto boxSizingAdjust = stylePos->mBoxSizing == StyleBoxSizing::Border
@@ -2463,9 +2524,10 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   nscoord intrinsicBSize = std::max(0, bsizeCoord.valueOr(0));
 
   if (!isAutoISize) {
-    iSize = ComputeISizeValue(aRenderingContext, aWM, aCBSize, boxSizingAdjust,
-                              boxSizingToMarginEdgeISize, styleISize, aFlags)
-                .mISize;
+    iSize =
+        ComputeISizeValue(aRenderingContext, aWM, aCBSize, boxSizingAdjust,
+                          boxSizingToMarginEdgeISize, *inlineStyleCoord, aFlags)
+            .mISize;
   } else if (MOZ_UNLIKELY(isGridItem) &&
              !parentFrame->IsMasonry(isOrthogonal ? eLogicalAxisBlock
                                                   : eLogicalAxisInline)) {
@@ -2526,9 +2588,9 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   }
 
   if (!isAutoBSize) {
-    bSize = nsLayoutUtils::ComputeBSizeValue(aCBSize.BSize(aWM),
-                                             boxSizingAdjust.BSize(aWM),
-                                             styleBSize.AsLengthPercentage());
+    bSize = nsLayoutUtils::ComputeBSizeValue(
+        aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
+        blockStyleCoord->AsLengthPercentage());
   } else if (MOZ_UNLIKELY(isGridItem) &&
              !parentFrame->IsMasonry(isOrthogonal ? eLogicalAxisInline
                                                   : eLogicalAxisBlock)) {

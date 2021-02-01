@@ -6076,14 +6076,13 @@ static MinMaxSize ComputeTransferredMinMaxInlineSize(
 nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
     nscoord aAvailableISize, const LogicalSize& aMargin,
-    const LogicalSize& aBorderPadding, const StyleSizeOverrides& aSizeOverrides,
-    ComputeSizeFlags aFlags) {
+    const LogicalSize& aBorderPadding, ComputeSizeFlags aFlags) {
   MOZ_ASSERT(!GetIntrinsicRatio(),
              "Please override this method and call "
              "nsContainerFrame::ComputeSizeWithIntrinsicDimensions instead.");
   LogicalSize result =
       ComputeAutoSize(aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin,
-                      aBorderPadding, aSizeOverrides, aFlags);
+                      aBorderPadding, aFlags);
   const nsStylePosition* stylePos = StylePosition();
   const nsStyleDisplay* disp = StyleDisplay();
   auto aspectRatioUsage = AspectRatioUsage::None;
@@ -6095,12 +6094,8 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
                                        aBorderPadding.ISize(aWM) -
                                        boxSizingAdjust.ISize(aWM);
 
-  const auto& styleISize = aSizeOverrides.mStyleISize
-                               ? *aSizeOverrides.mStyleISize
-                               : stylePos->ISize(aWM);
-  const auto& styleBSize = aSizeOverrides.mStyleBSize
-                               ? *aSizeOverrides.mStyleBSize
-                               : stylePos->BSize(aWM);
+  const auto* inlineStyleCoord = &stylePos->ISize(aWM);
+  const auto* blockStyleCoord = &stylePos->BSize(aWM);
 
   auto parentFrame = GetParent();
   auto alignCB = parentFrame;
@@ -6127,28 +6122,85 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   
   LogicalAxis flexMainAxis =
       eLogicalAxisInline;  
+
+  
+  
+  Maybe<StyleSize> imposedMainSizeStyleCoord;
+
   if (isFlexItem) {
+    
+    
+    
     flexMainAxis = nsFlexContainerFrame::IsItemInlineAxisMainAxis(this)
                        ? eLogicalAxisInline
                        : eLogicalAxisBlock;
+
+    
+    
+    
+    
+    const auto* flexBasis = &stylePos->mFlexBasis;
+    auto& mainAxisCoord =
+        (flexMainAxis == eLogicalAxisInline ? inlineStyleCoord
+                                            : blockStyleCoord);
+
+    
+    
+    
+    bool didImposeMainSize;
+    nscoord imposedMainSize =
+        GetProperty(nsIFrame::FlexItemMainSizeOverride(), &didImposeMainSize);
+    if (didImposeMainSize) {
+      imposedMainSizeStyleCoord = Some(StyleSize::LengthPercentage(
+          LengthPercentage::FromAppUnits(imposedMainSize)));
+      if (flexMainAxis == eLogicalAxisInline) {
+        inlineStyleCoord = imposedMainSizeStyleCoord.ptr();
+      } else {
+        blockStyleCoord = imposedMainSizeStyleCoord.ptr();
+      }
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      if (nsFlexContainerFrame::IsUsedFlexBasisContent(*flexBasis,
+                                                       *mainAxisCoord) &&
+          MOZ_LIKELY(!IsTableWrapperFrame())) {
+        static const StyleSize maxContStyleCoord(
+            StyleSize::ExtremumLength(StyleExtremumLength::MaxContent));
+        mainAxisCoord = &maxContStyleCoord;
+        
+        
+      } else if (flexBasis->IsSize() && !flexBasis->IsAuto()) {
+        
+        
+        mainAxisCoord = &flexBasis->AsSize();
+      } else {
+        
+        
+      }
+    }
   }
 
   const auto aspectRatio = GetAspectRatio();
   const bool isOrthogonal = aWM.IsOrthogonalTo(alignCB->GetWritingMode());
-  const bool isAutoISize =
-      styleISize.IsAuto() || aFlags.contains(ComputeSizeFlag::UseAutoISize);
+  const bool isAutoISize = inlineStyleCoord->IsAuto() ||
+                           aFlags.contains(ComputeSizeFlag::UseAutoISize);
   
   if (!isAutoISize) {
-    auto iSizeResult =
-        ComputeISizeValue(aRenderingContext, aWM, aCBSize, boxSizingAdjust,
-                          boxSizingToMarginEdgeISize, styleISize, aFlags);
+    auto iSizeResult = ComputeISizeValue(
+        aRenderingContext, aWM, aCBSize, boxSizingAdjust,
+        boxSizingToMarginEdgeISize, *inlineStyleCoord, aFlags);
     result.ISize(aWM) = iSizeResult.mISize;
     aspectRatioUsage = iSizeResult.mAspectRatioUsage;
-  } else if (aspectRatio &&
-             !nsLayoutUtils::IsAutoBSize(styleBSize, aCBSize.BSize(aWM))) {
+  } else if (aspectRatio && !nsLayoutUtils::IsAutoBSize(*blockStyleCoord,
+                                                        aCBSize.BSize(aWM))) {
     auto bSize = nsLayoutUtils::ComputeBSizeValue(
         aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
-        styleBSize.AsLengthPercentage());
+        blockStyleCoord->AsLengthPercentage());
     result.ISize(aWM) = aspectRatio.ComputeRatioDependentSize(
         LogicalAxis::eLogicalAxisInline, aWM, bSize, boxSizingAdjust);
     aspectRatioUsage = AspectRatioUsage::ToComputeISize;
@@ -6186,7 +6238,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   
   
   const bool isDefiniteISize =
-      styleISize.IsLengthPercentage() ||
+      inlineStyleCoord->IsLengthPercentage() ||
       aspectRatioUsage == AspectRatioUsage::ToComputeISize;
   const bool isFlexItemInlineAxisMainAxis =
       isFlexItem && flexMainAxis == eLogicalAxisInline;
@@ -6238,7 +6290,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
     
     
     minISize = std::min(maxISize, GetMinISize(aRenderingContext));
-    if (styleISize.IsLengthPercentage()) {
+    if (inlineStyleCoord->IsLengthPercentage()) {
       minISize = std::min(minISize, result.ISize(aWM));
     } else if (aFlags.contains(ComputeSizeFlag::IClampMarginBoxMinSize)) {
       
@@ -6276,17 +6328,17 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   
   
   if (!aFlags.contains(ComputeSizeFlag::UseAutoBSize)) {
-    if (!nsLayoutUtils::IsAutoBSize(styleBSize, aCBSize.BSize(aWM))) {
+    if (!nsLayoutUtils::IsAutoBSize(*blockStyleCoord, aCBSize.BSize(aWM))) {
       result.BSize(aWM) = nsLayoutUtils::ComputeBSizeValue(
           aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
-          styleBSize.AsLengthPercentage());
+          blockStyleCoord->AsLengthPercentage());
     } else if (aspectRatio && result.ISize(aWM) != NS_UNCONSTRAINEDSIZE) {
       result.BSize(aWM) = aspectRatio.ComputeRatioDependentSize(
           LogicalAxis::eLogicalAxisBlock, aWM, result.ISize(aWM),
           boxSizingAdjust);
       MOZ_ASSERT(aspectRatioUsage == AspectRatioUsage::None);
       aspectRatioUsage = AspectRatioUsage::ToComputeBSize;
-    } else if (MOZ_UNLIKELY(isGridItem) && styleBSize.IsAuto() &&
+    } else if (MOZ_UNLIKELY(isGridItem) && blockStyleCoord->IsAuto() &&
                !IsTrueOverflowContainer() &&
                !alignCB->IsMasonry(isOrthogonal ? eLogicalAxisInline
                                                 : eLogicalAxisBlock)) {
@@ -6379,16 +6431,13 @@ LogicalSize nsIFrame::ComputeAutoSize(
     gfxContext* aRenderingContext, WritingMode aWM,
     const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
     const mozilla::LogicalSize& aMargin,
-    const mozilla::LogicalSize& aBorderPadding,
-    const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) {
+    const mozilla::LogicalSize& aBorderPadding, ComputeSizeFlags aFlags) {
   
   LogicalSize result(aWM, 0xdeadbeef, NS_UNCONSTRAINEDSIZE);
 
   
-  const auto& styleISize = aSizeOverrides.mStyleISize
-                               ? *aSizeOverrides.mStyleISize
-                               : StylePosition()->ISize(aWM);
-  if (styleISize.IsAuto() || aFlags.contains(ComputeSizeFlag::UseAutoISize)) {
+  if (StylePosition()->ISize(aWM).IsAuto() ||
+      aFlags.contains(ComputeSizeFlag::UseAutoISize)) {
     nscoord availBased =
         aAvailableISize - aMargin.ISize(aWM) - aBorderPadding.ISize(aWM);
     result.ISize(aWM) = ShrinkWidthToFit(aRenderingContext, availBased, aFlags);
@@ -10633,7 +10682,7 @@ void nsIFrame::BoxReflow(nsBoxLayoutState& aState, nsPresContext* aPresContext,
             ComputeSize(
                 aRenderingContext, wm, logicalSize, logicalSize.ISize(wm),
                 reflowInput.ComputedLogicalMargin(wm).Size(wm),
-                reflowInput.ComputedLogicalBorderPadding(wm).Size(wm), {}, {})
+                reflowInput.ComputedLogicalBorderPadding(wm).Size(wm), {})
                 .mLogicalSize.Height(wm));
       }
     }
