@@ -814,40 +814,35 @@ Result<IOUtils::JsBuffer, IOUtils::IOError> IOUtils::ReadSync(
   }
 
   JsBuffer buffer = JsBuffer::CreateEmpty(aBufferKind);
-  Span<char> toRead;
 
-  if (aDecompress || bufSize > 0) {
+  if (bufSize > 0) {
     auto result = JsBuffer::Create(aBufferKind, bufSize);
     if (result.isErr()) {
       return result.propagateErr();
     }
     buffer = result.unwrap();
-  } else {
+    Span<char> toRead = buffer.BeginWriting();
+
     
-    return buffer;
-  }
-
-  toRead = buffer.BeginWriting();
-
-  
-  uint32_t totalRead = 0;
-  while (totalRead != bufSize) {
-    uint32_t bytesRead = 0;
-    if (nsresult rv =
-            stream->Read(toRead.Elements(), bufSize - totalRead, &bytesRead);
-        NS_FAILED(rv)) {
-      return Err(IOError(rv).WithMessage(
-          "Encountered an unexpected error while reading file(%s)",
-          aFile->HumanReadablePath().get()));
+    uint32_t totalRead = 0;
+    while (totalRead != bufSize) {
+      uint32_t bytesRead = 0;
+      if (nsresult rv =
+              stream->Read(toRead.Elements(), bufSize - totalRead, &bytesRead);
+          NS_FAILED(rv)) {
+        return Err(IOError(rv).WithMessage(
+            "Encountered an unexpected error while reading file(%s)",
+            aFile->HumanReadablePath().get()));
+      }
+      if (bytesRead == 0) {
+        break;
+      }
+      totalRead += bytesRead;
+      toRead = toRead.From(bytesRead);
     }
-    if (bytesRead == 0) {
-      break;
-    }
-    totalRead += bytesRead;
-    toRead = toRead.From(bytesRead);
-  }
 
-  buffer.SetLength(totalRead);
+    buffer.SetLength(totalRead);
+  }
 
   
   if (aDecompress) {
