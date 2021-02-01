@@ -507,7 +507,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   
-  uint32_t mLoadStateLoadFlags = 0;
+  uint32_t mLoadStateExternalLoadFlags = 0;
+  uint32_t mLoadStateInternalLoadFlags = 0;
   uint32_t mLoadStateLoadType = 0;
 
   

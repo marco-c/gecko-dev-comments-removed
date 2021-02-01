@@ -213,6 +213,16 @@ class nsDocShellLoadState final {
 
   bool HasLoadFlags(uint32_t aFlag);
 
+  uint32_t InternalLoadFlags() const;
+
+  void SetInternalLoadFlags(uint32_t aFlags);
+
+  void SetInternalLoadFlag(uint32_t aFlag);
+
+  void UnsetInternalLoadFlag(uint32_t aFlag);
+
+  bool HasInternalLoadFlags(uint32_t aFlag);
+
   bool FirstParty() const;
 
   void SetFirstParty(bool aFirstParty);
@@ -433,6 +443,9 @@ class nsDocShellLoadState final {
 
   
   uint32_t mLoadFlags;
+
+  
+  uint32_t mInternalLoadFlags;
 
   
   bool mFirstParty;
