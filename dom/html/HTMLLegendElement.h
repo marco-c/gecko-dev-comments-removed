@@ -57,16 +57,6 @@ class HTMLLegendElement final : public nsGenericHTMLElement {
     InlineStart,
     InlineEnd,
   };
-
-  
-
-
-
-
-
-
-  LegendAlignValue LogicalAlign(mozilla::WritingMode aCBWM) const;
-
   
 
 

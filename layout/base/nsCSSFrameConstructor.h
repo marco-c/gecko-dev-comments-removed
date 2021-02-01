@@ -375,8 +375,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     AllowTextPathChild,
     
     IsAnonymousContentCreatorContent,
-    
-    IsForRenderedLegend,
   };
 
   using ItemFlags = mozilla::EnumSet<ItemFlag>;
@@ -1088,8 +1086,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
           mIsAllInline(false),
           mIsBlock(false),
           mIsPopup(false),
-          mIsLineParticipant(false),
-          mIsRenderedLegend(false) {
+          mIsLineParticipant(false) {
       MOZ_COUNT_CTOR(FrameConstructionItem);
     }
 
@@ -1163,8 +1160,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     bool mIsPopup : 1;
     
     bool mIsLineParticipant : 1;
-    
-    bool mIsRenderedLegend : 1;
 
    private:
     

@@ -267,12 +267,6 @@ impl Display {
 
     
     #[inline]
-    pub const fn to_u16(&self) -> u16 {
-        self.0
-    }
-
-    
-    #[inline]
     pub fn is_inline_flow(&self) -> bool {
         self.outside() == DisplayOutside::Inline && self.inside() == DisplayInside::Flow
     }

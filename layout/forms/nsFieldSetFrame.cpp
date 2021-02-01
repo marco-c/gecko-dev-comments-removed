@@ -14,7 +14,6 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/webrender/WebRenderAPI.h"
-#include "nsBlockFrame.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSRendering.h"
@@ -22,6 +21,7 @@
 #include "nsGkAtoms.h"
 #include "nsIFrameInlines.h"
 #include "nsLayoutUtils.h"
+#include "nsLegendFrame.h"
 #include "nsStyleConsts.h"
 
 using namespace mozilla;
@@ -445,15 +445,8 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
   if (legend) {
     const auto legendWM = legend->GetWritingMode();
     LogicalSize legendAvailSize = availSize.ConvertTo(legendWM, wm);
-    ComputeSizeFlags sizeFlags;
-    if (legend->StylePosition()->ISize(wm).IsAuto()) {
-      sizeFlags = ComputeSizeFlag::ShrinkWrap;
-    }
-    ReflowInput::InitFlags initFlags;  
-    StyleSizeOverrides sizeOverrides;  
     legendReflowInput.emplace(aPresContext, aReflowInput, legend,
-                              legendAvailSize, Nothing(), initFlags,
-                              sizeOverrides, sizeFlags);
+                              legendAvailSize);
   }
   const bool avoidBreakInside = ShouldAvoidBreakInside(aReflowInput);
   if (reflowLegend) {
@@ -683,9 +676,10 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
       
       
       
-      auto* legendElement =
-          dom::HTMLLegendElement::FromNode(legend->GetContent());
-      switch (legendElement->LogicalAlign(wm)) {
+      LegendAlignValue align =
+          static_cast<nsLegendFrame*>(legend->GetContentInsertionFrame())
+              ->GetLogicalAlign(wm);
+      switch (align) {
         case LegendAlignValue::InlineEnd:
           mLegendRect.IStart(wm) =
               innerContentRect.IEnd(wm) - mLegendRect.ISize(wm);
@@ -795,29 +789,18 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
+#ifdef DEBUG
 void nsFieldSetFrame::SetInitialChildList(ChildListID aListID,
                                           nsFrameList& aChildList) {
   nsContainerFrame::SetInitialChildList(aListID, aChildList);
-  if (nsBlockFrame* legend = do_QueryFrame(GetLegend())) {
-    
-    
-    legend->AddStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS);
-  }
-  MOZ_ASSERT(aListID != kPrincipalList || GetInner() || GetLegend(),
-             "Setting principal child list should populate our inner frame "
-             "or our rendered legend");
+  MOZ_ASSERT(aListID != kPrincipalList || GetInner(),
+             "Setting principal child list should populate our inner frame");
 }
 void nsFieldSetFrame::AppendFrames(ChildListID aListID,
                                    nsFrameList& aFrameList) {
-  MOZ_ASSERT(aListID == kNoReflowPrincipalList &&
-                 HasAnyStateBits(NS_FRAME_FIRST_REFLOW),
-             "AppendFrames should only be used from "
-             "nsCSSFrameConstructor::ConstructFieldSetFrame");
-  nsContainerFrame::AppendFrames(aListID, aFrameList);
-  MOZ_ASSERT(GetInner(), "at this point we should have an inner frame");
+  MOZ_CRASH("nsFieldSetFrame::AppendFrames not supported");
 }
 
-#ifdef DEBUG
 void nsFieldSetFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
                                    const nsLineList::iterator* aPrevFrameLine,
                                    nsFrameList& aFrameList) {
