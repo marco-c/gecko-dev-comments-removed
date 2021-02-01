@@ -171,14 +171,6 @@ extern bool ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
                                    ErrorArgumentsType argumentsType,
                                    JSErrorNotes::Note* notep, va_list ap);
 
-
-
-
-
-
-
-extern void MaybePrintAndClearPendingException(JSContext* cx);
-
 }  
 
 #endif 

@@ -112,10 +112,7 @@ bool ElemOpEmitter::emitPrivateGuardForAssignment() {
 bool ElemOpEmitter::emitGet() {
   MOZ_ASSERT(state_ == State::Key);
 
-  
-  
-  
-  if ((isIncDec() || isCompoundAssignment()) && !isPrivate()) {
+  if (isIncDec() || isCompoundAssignment()) {
     if (!bce_->emit1(JSOp::ToPropertyKey)) {
       
       
@@ -258,14 +255,8 @@ bool ElemOpEmitter::emitAssignment() {
 
   MOZ_ASSERT_IF(isPropInit(), !isSuper());
 
-  if (!isCompoundAssignment()) {
-    
-    
-    
-    
-    if (!emitPrivateGuardForAssignment()) {
-      return false;
-    }
+  if (!emitPrivateGuardForAssignment()) {
+    return false;
   }
 
   JSOp setOp = isPropInit() ? JSOp::InitElem
