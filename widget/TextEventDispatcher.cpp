@@ -501,10 +501,9 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
   
   
   
-  MOZ_ASSERT(WidgetKeyboardEvent::IsKeyDownOrKeyDownOnPlugin(aMessage) ||
-                 WidgetKeyboardEvent::IsKeyUpOrKeyUpOnPlugin(aMessage) ||
-                 aMessage == eKeyPress,
-             "Invalid aMessage value");
+  MOZ_ASSERT(
+      aMessage == eKeyDown || aMessage == eKeyUp || aMessage == eKeyPress,
+      "Invalid aMessage value");
   nsresult rv = GetState();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return false;
@@ -519,7 +518,7 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
   
   
   
-  if (IsComposing() && !WidgetKeyboardEvent::IsKeyEventOnPlugin(aMessage)) {
+  if (IsComposing()) {
     
     
     
@@ -560,16 +559,11 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
     
     keyEvent.SetCharCode(0);
   } else {
-    if (WidgetKeyboardEvent::IsKeyDownOrKeyDownOnPlugin(aMessage) ||
-        WidgetKeyboardEvent::IsKeyUpOrKeyUpOnPlugin(aMessage)) {
-      MOZ_RELEASE_ASSERT(
-          !aIndexOfKeypress,
-          "aIndexOfKeypress must be 0 for either eKeyDown or eKeyUp");
-    } else {
-      MOZ_RELEASE_ASSERT(
-          !aIndexOfKeypress || aIndexOfKeypress < keyEvent.mKeyValue.Length(),
-          "aIndexOfKeypress must be 0 - mKeyValue.Length() - 1");
-    }
+    MOZ_DIAGNOSTIC_ASSERT_IF(aMessage == eKeyDown || aMessage == eKeyUp,
+                             !aIndexOfKeypress);
+    MOZ_DIAGNOSTIC_ASSERT_IF(
+        aMessage == eKeyPress,
+        aIndexOfKeypress < std::max(keyEvent.mKeyValue.Length(), 1u));
     char16_t ch =
         keyEvent.mKeyValue.IsEmpty() ? 0 : keyEvent.mKeyValue[aIndexOfKeypress];
     keyEvent.SetCharCode(static_cast<uint32_t>(ch));
@@ -585,7 +579,7 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
       }
     }
   }
-  if (WidgetKeyboardEvent::IsKeyUpOrKeyUpOnPlugin(aMessage)) {
+  if (aMessage == eKeyUp) {
     
     keyEvent.mIsRepeat = false;
   }
@@ -608,8 +602,7 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
   
   
   keyEvent.mAlternativeCharCodes.Clear();
-  if ((WidgetKeyboardEvent::IsKeyDownOrKeyDownOnPlugin(aMessage) ||
-       aMessage == eKeyPress) &&
+  if ((aMessage == eKeyDown || aMessage == eKeyPress) &&
       (aNeedsCallback || keyEvent.IsControl() || keyEvent.IsAlt() ||
        keyEvent.IsMeta() || keyEvent.IsOS())) {
     nsCOMPtr<TextEventDispatcherListener> listener =

@@ -51,24 +51,24 @@ KeyEventHandler* ShortcutKeys::GetHandlers(HandlerType aType) {
 
 nsAtom* ShortcutKeys::ConvertEventToDOMEventType(
     const WidgetKeyboardEvent* aWidgetKeyboardEvent) {
-  if (aWidgetKeyboardEvent->IsKeyDownOrKeyDownOnPlugin()) {
-    return nsGkAtoms::keydown;
+  switch (aWidgetKeyboardEvent->mMessage) {
+    case eKeyDown:
+      return nsGkAtoms::keydown;
+    case eKeyUp:
+      return nsGkAtoms::keyup;
+    
+    
+    
+    
+    
+    case eKeyPress:
+    case eAccessKeyNotFound:
+      return nsGkAtoms::keypress;
+    default:
+      MOZ_ASSERT_UNREACHABLE(
+          "All event messages relating to shortcut keys should be handled");
+      return nullptr;
   }
-  if (aWidgetKeyboardEvent->IsKeyUpOrKeyUpOnPlugin()) {
-    return nsGkAtoms::keyup;
-  }
-  
-  
-  
-  
-  
-  if (aWidgetKeyboardEvent->mMessage == eKeyPress ||
-      aWidgetKeyboardEvent->mMessage == eAccessKeyNotFound) {
-    return nsGkAtoms::keypress;
-  }
-  MOZ_ASSERT_UNREACHABLE(
-      "All event messages relating to shortcut keys should be handled");
-  return nullptr;
 }
 
 KeyEventHandler* ShortcutKeys::EnsureHandlers(HandlerType aType) {
