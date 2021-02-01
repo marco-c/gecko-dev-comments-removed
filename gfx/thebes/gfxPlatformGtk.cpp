@@ -31,6 +31,7 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "nsAppRunner.h"
 #include "nsIGfxInfo.h"
@@ -80,6 +81,15 @@ static void screen_resolution_changed(GdkScreen* aScreen, GParamSpec* aPspec,
   sDPI = 0;
 }
 
+#if defined(MOZ_X11)
+
+
+static bool IsX11EGLEnvvarEnabled() {
+  const char* eglPref = PR_GetEnv("MOZ_X11_EGL");
+  return (eglPref && *eglPref);
+}
+#endif
+
 gfxPlatformGtk::gfxPlatformGtk() {
   if (!gfxPlatform::IsHeadless()) {
     gtk_init(nullptr, nullptr);
@@ -98,7 +108,17 @@ gfxPlatformGtk::gfxPlatformGtk() {
 
     bool useEGLOnX11 = false;
 #ifdef MOZ_X11
-    useEGLOnX11 = IsX11EGLEnabled();
+    useEGLOnX11 =
+        StaticPrefs::gfx_prefer_x11_egl_AtStartup() || IsX11EGLEnvvarEnabled();
+    if (useEGLOnX11) {
+      nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
+      nsAutoString testType;
+      gfxInfo->GetTestType(testType);
+      
+      
+      useEGLOnX11 = testType == u"EGL";
+    }
+
 #endif
     if (IsWaylandDisplay() || useEGLOnX11) {
       gfxVars::SetUseEGL(true);

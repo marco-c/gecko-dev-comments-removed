@@ -156,6 +156,9 @@ GfxInfo::GetDesktopEnvironment(nsAString& aDesktopEnvironment) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+NS_IMETHODIMP
+GfxInfo::GetTestType(nsAString& aTestType) { return NS_ERROR_NOT_IMPLEMENTED; }
+
 void GfxInfo::EnsureInitialized() {
   if (mInitialized) return;
 
@@ -597,7 +600,9 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       isUnblocked |= gpu.Find("Adreno (TM) 6",  true) >= 0;
 
       
-      isUnblocked |= gpu.Find("Mali-G",  true) >= 0;
+      
+      isUnblocked |= gpu.Find("Mali-G",  true) >= 0 &&
+                     gpu.Find("Mali-G76",  true) == kNotFound;
 
       if (!isUnblocked) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
