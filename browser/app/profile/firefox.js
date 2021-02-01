@@ -334,6 +334,10 @@ pref("browser.urlbar.suggest.engines",              true);
 
 
 
+pref("browser.urlbar.showSearchSuggestionsFirst", true);
+
+
+
 pref("browser.urlbar.maxCharsForSearchSuggestions", 100);
 
 pref("browser.urlbar.trimURLs", true);
@@ -1260,6 +1264,7 @@ pref("services.sync.prefs.sync.browser.tabs.warnOnOpen", true);
 pref("services.sync.prefs.sync.browser.taskbar.previews.enable", true);
 pref("services.sync.prefs.sync.browser.urlbar.matchBuckets", true);
 pref("services.sync.prefs.sync.browser.urlbar.maxRichResults", true);
+pref("services.sync.prefs.sync.browser.urlbar.showSearchSuggestionsFirst", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.bookmark", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.history", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.openpage", true);

@@ -40,8 +40,6 @@ add_task(async function setup() {
       
       ["browser.urlbar.maxHistoricalSearchSuggestions", 0],
       
-      ["browser.urlbar.matchBuckets", "general:5,suggestion:4"],
-      
       ["browser.urlbar.autoFill", false],
     ],
   });

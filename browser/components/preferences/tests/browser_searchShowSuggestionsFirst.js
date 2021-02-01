@@ -1,49 +1,61 @@
 
 
 
-const PREF_NAME = "browser.urlbar.matchBuckets";
-const HISTORY_FIRST_PREF_VALUE = "general:5,suggestion:Infinity";
-const CHECKBOX_ID = "showSearchSuggestionsFirstCheckbox";
+const MAIN_PREF = "browser.search.suggest.enabled";
+const URLBAR_PREF = "browser.urlbar.suggest.searches";
+const FIRST_PREF = "browser.urlbar.showSearchSuggestionsFirst";
+const FIRST_CHECKBOX_ID = "showSearchSuggestionsFirstCheckbox";
+
+add_task(async function init() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [MAIN_PREF, true],
+      [URLBAR_PREF, true],
+    ],
+  });
+});
 
 
 add_task(async function openWithSearchSuggestionsShownFirst() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.suggest.searches", true]],
-  });
-
   
-  
-  Assert.equal(
-    Services.prefs.getCharPref(PREF_NAME, ""),
-    "",
-    "Pref should be cleared initially"
+  Assert.ok(
+    Services.prefs.getBoolPref(FIRST_PREF),
+    "Pref should be true initially"
   );
 
   
   await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
   let doc = gBrowser.selectedBrowser.contentDocument;
-  let checkbox = doc.getElementById(CHECKBOX_ID);
-  Assert.equal(checkbox.checked, true, "Checkbox should be checked");
+  let checkbox = doc.getElementById(FIRST_CHECKBOX_ID);
+  Assert.ok(checkbox.checked, "Checkbox should be checked");
+  Assert.ok(!checkbox.disabled, "Checkbox should be enabled");
 
   
   checkbox.checked = false;
   checkbox.doCommand();
 
   
-  Assert.equal(
-    Services.prefs.getCharPref(PREF_NAME, ""),
-    HISTORY_FIRST_PREF_VALUE,
-    "Pref should now be set to show history first"
+  Assert.ok(
+    !Services.prefs.getBoolPref(FIRST_PREF),
+    "Pref should now be false to show history first"
   );
 
   
-  Services.prefs.clearUserPref(PREF_NAME);
+  Assert.ok(!checkbox.checked, "Checkbox should remain unchecked");
+  Assert.ok(!checkbox.disabled, "Checkbox should remain enabled");
 
   
-  Assert.equal(
+  Services.prefs.clearUserPref(FIRST_PREF);
+
+  
+  Assert.ok(
     checkbox.checked,
-    true,
     "Checkbox should become checked after clearing pref"
+  );
+  Assert.ok(
+    !checkbox.disabled,
+    "Checkbox should remain enabled after clearing pref"
   );
 
   
@@ -53,36 +65,176 @@ add_task(async function openWithSearchSuggestionsShownFirst() {
 
 add_task(async function openWithHistoryShownFirst() {
   
-  Services.prefs.setCharPref(PREF_NAME, HISTORY_FIRST_PREF_VALUE);
+  Services.prefs.setBoolPref(FIRST_PREF, false);
 
   
   await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
   let doc = gBrowser.selectedBrowser.contentDocument;
-  let checkbox = doc.getElementById(CHECKBOX_ID);
-  Assert.equal(checkbox.checked, false, "Checkbox should be unchecked");
+  let checkbox = doc.getElementById(FIRST_CHECKBOX_ID);
+  Assert.ok(!checkbox.checked, "Checkbox should be unchecked");
+  Assert.ok(!checkbox.disabled, "Checkbox should be enabled");
 
   
   checkbox.checked = true;
   checkbox.doCommand();
 
   
-  Assert.equal(
-    Services.prefs.getCharPref(PREF_NAME, ""),
-    "",
-    "Pref should now be cleared to show search suggestions first"
+  Assert.ok(checkbox.checked, "Checkbox should remain checked");
+  Assert.ok(!checkbox.disabled, "Checkbox should remain enabled");
+
+  
+  Assert.ok(
+    Services.prefs.getBoolPref(FIRST_PREF),
+    "Pref should now be true to show search suggestions first"
   );
 
   
-  Services.prefs.setCharPref(PREF_NAME, HISTORY_FIRST_PREF_VALUE);
+  Services.prefs.setBoolPref(FIRST_PREF, false);
 
   
-  Assert.equal(
-    checkbox.checked,
-    false,
-    "Checkbox should become unchecked after setting pref"
+  Assert.ok(
+    !checkbox.checked,
+    "Checkbox should become unchecked after setting pref to false"
+  );
+  Assert.ok(
+    !checkbox.disabled,
+    "Checkbox should remain enabled after setting pref to false"
   );
 
   
   gBrowser.removeCurrentTab();
-  Services.prefs.clearUserPref(PREF_NAME);
+  Services.prefs.clearUserPref(FIRST_PREF);
+});
+
+
+
+add_task(async function superprefInteraction() {
+  
+  Assert.ok(
+    Services.prefs.getBoolPref(FIRST_PREF),
+    "Pref should be true initially"
+  );
+
+  
+  await openPreferencesViaOpenPreferencesAPI("search", { leaveOpen: true });
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  let checkbox = doc.getElementById(FIRST_CHECKBOX_ID);
+  Assert.ok(checkbox.checked, "Checkbox should be checked");
+  Assert.ok(!checkbox.disabled, "Checkbox should be enabled");
+
+  
+  
+  
+  for (let superiorPref of [URLBAR_PREF, MAIN_PREF]) {
+    info(`Testing superior pref ${superiorPref}`);
+
+    
+    Services.prefs.setBoolPref(superiorPref, false);
+
+    
+    Assert.ok(
+      Services.prefs.getBoolPref(FIRST_PREF),
+      "Pref should remain true"
+    );
+
+    
+    Assert.ok(
+      !checkbox.checked,
+      "Checkbox should become unchecked after disabling urlbar suggestions"
+    );
+    Assert.ok(
+      checkbox.disabled,
+      "Checkbox should become disabled after disabling urlbar suggestions"
+    );
+
+    
+    Services.prefs.setBoolPref(superiorPref, true);
+
+    
+    Assert.ok(
+      Services.prefs.getBoolPref(FIRST_PREF),
+      "Pref should remain true"
+    );
+
+    
+    Assert.ok(
+      checkbox.checked,
+      "Checkbox should become checked after re-enabling urlbar suggestions"
+    );
+    Assert.ok(
+      !checkbox.disabled,
+      "Checkbox should become enabled after re-enabling urlbar suggestions"
+    );
+
+    
+    Services.prefs.setBoolPref(FIRST_PREF, false);
+
+    
+    Assert.ok(
+      !checkbox.checked,
+      "Checkbox should become unchecked after setting pref to false"
+    );
+    Assert.ok(
+      !checkbox.disabled,
+      "Checkbox should remain enabled after setting pref to false"
+    );
+
+    
+    Services.prefs.setBoolPref(superiorPref, false);
+
+    
+    Assert.ok(
+      !Services.prefs.getBoolPref(FIRST_PREF),
+      "Pref should remain false"
+    );
+
+    
+    Assert.ok(
+      !checkbox.checked,
+      "Checkbox should remain unchecked after disabling urlbar suggestions"
+    );
+    Assert.ok(
+      checkbox.disabled,
+      "Checkbox should become disabled after disabling urlbar suggestions"
+    );
+
+    
+    Services.prefs.setBoolPref(superiorPref, true);
+
+    
+    Assert.ok(
+      !Services.prefs.getBoolPref(FIRST_PREF),
+      "Pref should remain false"
+    );
+
+    
+    Assert.ok(
+      !checkbox.checked,
+      "Checkbox should remain unchecked after re-enabling urlbar suggestions"
+    );
+    Assert.ok(
+      !checkbox.disabled,
+      "Checkbox should become enabled after re-enabling urlbar suggestions"
+    );
+
+    
+    Services.prefs.setBoolPref(FIRST_PREF, true);
+
+    
+    Assert.ok(
+      checkbox.checked,
+      "Checkbox should become checked after setting pref back to true"
+    );
+    Assert.ok(
+      !checkbox.disabled,
+      "Checkbox should remain enabled after setting pref back to true"
+    );
+  }
+
+  
+  gBrowser.removeCurrentTab();
+
+  Services.prefs.clearUserPref(FIRST_PREF);
+  Services.prefs.clearUserPref(URLBAR_PREF);
+  Services.prefs.clearUserPref(MAIN_PREF);
 });

@@ -125,7 +125,7 @@ add_task(async function setup() {
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.matchBuckets", "general:5,suggestion:4"]],
+    set: [["browser.urlbar.showSearchSuggestionsFirst", false]],
   });
 
   

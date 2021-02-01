@@ -25,6 +25,11 @@ const PREF_URLBAR_BRANCH = "browser.urlbar.";
 
 
 
+const MATCH_BUCKETS_SUGGESTIONS_FIRST = "suggestion:4,general:Infinity";
+const MATCH_BUCKETS_GENERAL_FIRST = "general:5,suggestion:Infinity";
+
+
+
 
 const PREF_URLBAR_DEFAULTS = new Map([
   
@@ -98,7 +103,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["keepPanelOpenDuringImeComposition", false],
 
   
-  ["matchBuckets", "suggestion:4,general:Infinity"],
+  
+  
+  ["matchBuckets", MATCH_BUCKETS_SUGGESTIONS_FIRST],
 
   
   
@@ -135,6 +142,11 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["shortcuts.bookmarks", true],
   ["shortcuts.tabs", true],
   ["shortcuts.history", true],
+
+  
+  
+  
+  ["showSearchSuggestionsFirst", true],
 
   
   ["speculativeConnect.enabled", true],
@@ -341,10 +353,22 @@ class Preferences {
 
   onPrefChanged(pref) {
     this._map.delete(pref);
+
     
-    if (pref == "matchBuckets") {
-      this._map.delete("matchBucketsSearch");
+    switch (pref) {
+      case "matchBuckets":
+        this._map.delete("matchBucketsSearch");
+        return;
+      case "showSearchSuggestionsFirst":
+        this.set(
+          "matchBuckets",
+          this.get(pref)
+            ? MATCH_BUCKETS_SUGGESTIONS_FIRST
+            : MATCH_BUCKETS_GENERAL_FIRST
+        );
+        return;
     }
+
     if (pref.startsWith("suggest.")) {
       this._map.delete("defaultBehavior");
     }
@@ -461,6 +485,41 @@ class Preferences {
       
       setter: branch[`set${type == "Float" ? "Char" : type}Pref`],
     };
+  }
+
+  
+
+
+
+
+  initializeShowSearchSuggestionsFirstPref() {
+    let matchBuckets = [];
+    let pref = Services.prefs.getCharPref("browser.urlbar.matchBuckets", "");
+    try {
+      matchBuckets = PlacesUtils.convertMatchBucketsStringToArray(pref);
+    } catch (ex) {}
+    let bucketNames = matchBuckets.map(bucket => bucket[0]);
+    let suggestionIndex = bucketNames.indexOf("suggestion");
+    let generalIndex = bucketNames.indexOf("general");
+    let showSearchSuggestionsFirst =
+      generalIndex < 0 ||
+      (suggestionIndex >= 0 && suggestionIndex < generalIndex);
+    let oldValue = Services.prefs.getBoolPref(
+      "browser.urlbar.showSearchSuggestionsFirst"
+    );
+    Services.prefs.setBoolPref(
+      "browser.urlbar.showSearchSuggestionsFirst",
+      showSearchSuggestionsFirst
+    );
+
+    
+    
+    
+    
+    
+    if (oldValue == showSearchSuggestionsFirst) {
+      this.onPrefChanged("showSearchSuggestionsFirst");
+    }
   }
 }
 
