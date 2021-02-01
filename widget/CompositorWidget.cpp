@@ -61,16 +61,5 @@ RefPtr<VsyncObserver> CompositorWidget::GetVsyncObserver() const {
   return nullptr;
 }
 
-LayoutDeviceIntRegion CompositorWidget::GetTransparentRegion() {
-  
-  
-  
-  
-  if (RealWidget()->GetTransparencyMode() != eTransparencyOpaque) {
-    return LayoutDeviceIntRect(LayoutDeviceIntPoint(0, 0), GetClientSize());
-  }
-  return LayoutDeviceIntRegion();
-}
-
 }  
 }  

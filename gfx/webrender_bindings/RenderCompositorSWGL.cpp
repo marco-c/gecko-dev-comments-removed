@@ -50,7 +50,7 @@ bool RenderCompositorSWGL::BeginFrame() {
   
   
   ClearMappedBuffer();
-  mDirtyRegion = LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetBufferSize());
+  mRegion = LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetBufferSize());
   wr_swgl_make_current(mContext);
   return true;
 }
@@ -60,10 +60,11 @@ bool RenderCompositorSWGL::AllocateMappedBuffer(
   
   MOZ_ASSERT(!mDT);
   layers::BufferMode bufferMode = layers::BufferMode::BUFFERED;
-  mDT = mWidget->StartRemoteDrawingInRegion(mDirtyRegion, &bufferMode);
+  mDT = mWidget->StartRemoteDrawingInRegion(mRegion, &bufferMode);
   if (!mDT) {
     return false;
   }
+  mWidget->ClearBeforePaint(mDT, mRegion);
   
   
   
@@ -80,7 +81,7 @@ bool RenderCompositorSWGL::AllocateMappedBuffer(
     mDT->ReleaseBits(data);
     data = nullptr;
   }
-  LayoutDeviceIntRect bounds = mDirtyRegion.GetBounds();
+  LayoutDeviceIntRect bounds = mRegion.GetBounds();
   
   if (data) {
     mMappedData = data;
@@ -105,7 +106,7 @@ bool RenderCompositorSWGL::AllocateMappedBuffer(
     gfx::DataSourceSurface::MappedSurface map = {nullptr, 0};
     if (!mSurface || !mSurface->Map(gfx::DataSourceSurface::READ_WRITE, &map)) {
       
-      mWidget->EndRemoteDrawingInRegion(mDT, mDirtyRegion);
+      mWidget->EndRemoteDrawingInRegion(mDT, mRegion);
       ClearMappedBuffer();
       return false;
     }
@@ -123,13 +124,15 @@ bool RenderCompositorSWGL::AllocateMappedBuffer(
                                       rect.size.width, rect.size.height));
   }
 
-  LayoutDeviceIntRegion clear = mWidget->GetTransparentRegion();
-  clear.AndWith(mDirtyRegion);
-  clear.SubOut(opaque);
+  RefPtr<DrawTarget> dt = gfx::Factory::CreateDrawTargetForData(
+      BackendType::SKIA, mMappedData, bounds.Size().ToUnknownSize(),
+      mMappedStride, SurfaceFormat::B8G8R8A8, false);
+
+  LayoutDeviceIntRegion clear;
+  clear.Sub(mRegion, opaque);
   for (auto iter = clear.RectIter(); !iter.Done(); iter.Next()) {
-    const auto& rect = iter.Get();
-    wr_swgl_clear_color_rect(mContext, 0, rect.x, rect.y, rect.width,
-                             rect.height, 0, 0, 0, 0);
+    dt->ClearRect(
+        IntRectToRect((iter.Get() - bounds.TopLeft()).ToUnknownRect()));
   }
 
   return true;
@@ -142,19 +145,19 @@ void RenderCompositorSWGL::StartCompositing(
     
     CommitMappedBuffer(false);
     
-    mDirtyRegion = LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetBufferSize());
+    mRegion = LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetBufferSize());
   }
   if (aNumDirtyRects) {
     
-    auto bounds = mDirtyRegion.GetBounds();
-    mDirtyRegion.SetEmpty();
+    auto bounds = mRegion.GetBounds();
+    mRegion.SetEmpty();
     for (size_t i = 0; i < aNumDirtyRects; i++) {
       const auto& rect = aDirtyRects[i];
-      mDirtyRegion.OrWith(LayoutDeviceIntRect(
-          rect.origin.x, rect.origin.y, rect.size.width, rect.size.height));
+      mRegion.OrWith(LayoutDeviceIntRect(rect.origin.x, rect.origin.y,
+                                         rect.size.width, rect.size.height));
     }
     
-    mDirtyRegion.AndWith(bounds);
+    mRegion.AndWith(bounds);
   }
   
   
@@ -186,12 +189,12 @@ void RenderCompositorSWGL::CommitMappedBuffer(bool aDirty) {
       
       
       
-      LayoutDeviceIntRect bounds = mDirtyRegion.GetBounds();
+      LayoutDeviceIntRect bounds = mRegion.GetBounds();
       gfx::IntPoint srcOffset = bounds.TopLeft().ToUnknownPoint();
       gfx::IntPoint dstOffset = mDT->GetSize() == bounds.Size().ToUnknownSize()
                                     ? srcOffset
                                     : gfx::IntPoint(0, 0);
-      for (auto iter = mDirtyRegion.RectIter(); !iter.Done(); iter.Next()) {
+      for (auto iter = mRegion.RectIter(); !iter.Done(); iter.Next()) {
         gfx::IntRect dirtyRect = iter.Get().ToUnknownRect();
         mDT->CopySurface(mSurface, dirtyRect - srcOffset,
                          dirtyRect.TopLeft() - dstOffset);
@@ -202,7 +205,7 @@ void RenderCompositorSWGL::CommitMappedBuffer(bool aDirty) {
     mDT->ReleaseBits(mMappedData);
   }
   
-  mWidget->EndRemoteDrawingInRegion(mDT, mDirtyRegion);
+  mWidget->EndRemoteDrawingInRegion(mDT, mRegion);
   ClearMappedBuffer();
 }
 
