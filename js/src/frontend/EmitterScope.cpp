@@ -240,6 +240,9 @@ NameLocation EmitterScope::searchInEnclosingScope(JSAtom* name, Scope* scope,
         break;
 
       case ScopeKind::Module:
+        
+        
+        
         if (hasEnv) {
           for (BindingIter bi(si.scope()); bi; bi++) {
             if (bi.name() != name) {
@@ -339,6 +342,16 @@ NameLocation EmitterScope::searchAndCache(BytecodeEmitter* bce,
     if (!jsname) {
       oomUnsafe.crash("EmitterScope::searchAndCache");
     }
+
+    
+    
+    
+    
+    MOZ_ASSERT_IF(!bce->stencil.input.lazy,
+                  bce->stencil.input.enclosingScope->is<GlobalScope>());
+    MOZ_ASSERT_IF(
+        !bce->stencil.input.lazy,
+        !bce->stencil.input.enclosingScope->as<GlobalScope>().hasBindings());
 
     inCurrentScript = false;
     loc = Some(searchInEnclosingScope(jsname, bce->stencil.input.enclosingScope,
