@@ -319,6 +319,10 @@ class AccessibleCaretManager {
       return mFirst->IsLogicallyVisible() || mSecond->IsLogicallyVisible();
     }
 
+    bool HasVisuallyVisibleCaret() const {
+      return mFirst->IsVisuallyVisible() || mSecond->IsVisuallyVisible();
+    }
+
     
     
     UniquePtr<AccessibleCaret> mFirst;
