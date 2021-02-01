@@ -5,7 +5,7 @@
 
 
 
-const url = BrowserUIUtils.trimURLProtocol + "invalid.somehost/mytest";
+const url = BrowserUtils.trimURLProtocol + "invalid.somehost/mytest";
 
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({

@@ -2188,7 +2188,7 @@ var BookmarkingUI = {
     ) {
       let isBookmarked = this._itemGuids.size > 0;
       if (!isBookmarked) {
-        BrowserUIUtils.setToolbarButtonHeightProperty(this.star);
+        BrowserUtils.setToolbarButtonHeightProperty(this.star);
         
         
         let animatableBox = document.getElementById(

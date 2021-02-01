@@ -9,6 +9,9 @@ var EXPORTED_SYMBOLS = ["PluginChild"];
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
+const { BrowserUtils } = ChromeUtils.import(
+  "resource://gre/modules/BrowserUtils.jsm"
+);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -40,37 +43,6 @@ const OVERLAY_DISPLAY = {
 
 
 const kSubmitMsg = "PluginParent:NPAPIPluginCrashReportSubmitted";
-
-
-
-
-
-
-
-
-
-function makeNicePluginName(aName) {
-  if (aName == "Shockwave Flash") {
-    return "Adobe Flash";
-  }
-  
-  if (/^Java\W/.test(aName)) {
-    return "Java";
-  }
-
-  
-  
-  
-  
-  
-  
-  let newName = aName
-    .replace(/\(.*?\)/g, "")
-    .replace(/[\s\d\.\-\_\(\)]+$/, "")
-    .replace(/\bplug-?in\b/i, "")
-    .trim();
-  return newName;
-}
 
 class PluginChild extends JSWindowActorChild {
   constructor() {
@@ -167,7 +139,7 @@ class PluginChild extends JSWindowActorChild {
   _getPluginInfo(pluginElement) {
     if (this.isKnownPlugin(pluginElement)) {
       let pluginTag = gPluginHost.getPluginTagForType(pluginElement.actualType);
-      let pluginName = makeNicePluginName(pluginTag.name);
+      let pluginName = BrowserUtils.makeNicePluginName(pluginTag.name);
       let fallbackType = pluginElement.defaultFallbackType;
       let permissionString = gPluginHost.getPermissionStringForType(
         pluginElement.actualType
@@ -197,7 +169,7 @@ class PluginChild extends JSWindowActorChild {
     
     let fallbackType = Ci.nsIObjectLoadingContent.PLUGIN_CLICK_TO_PLAY;
     if (pluginTag) {
-      let pluginName = makeNicePluginName(pluginTag.name);
+      let pluginName = BrowserUtils.makeNicePluginName(pluginTag.name);
       let permissionString = gPluginHost.getPermissionStringForTag(pluginTag);
       return { pluginTag, pluginName, permissionString, fallbackType };
     }
