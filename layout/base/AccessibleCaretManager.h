@@ -362,6 +362,8 @@ class AccessibleCaretManager {
       return mFirst->IsVisuallyVisible() || mSecond->IsVisuallyVisible();
     }
 
+    AccessibleCaret* GetFirst() const { return mFirst.get(); }
+
     
     
     UniquePtr<AccessibleCaret> mFirst;
