@@ -138,9 +138,7 @@ class RegionDetector {
   
   _initPromise = null;
   
-  REGION_TOPIC = "browser-region";
-  
-  REGION_UPDATED = "region-updated";
+  REGION_TOPIC = "browser-region-updated";
   
   TELEMETRY = {
     SUCCESS: 0,
@@ -380,8 +378,7 @@ class RegionDetector {
     if (notify) {
       Services.obs.notifyObservers(
         this._createSupportsString(region),
-        this.REGION_TOPIC,
-        this.REGION_UPDATED
+        this.REGION_TOPIC
       );
     }
   }
