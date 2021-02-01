@@ -80,7 +80,6 @@ class IPCStreamDestination {
   
   class DelayedStartInputStream;
   RefPtr<DelayedStartInputStream> mDelayedStartInputStream;
-  int64_t mLength = -1;
 
   nsCOMPtr<nsIThread> mOwningThread;
   bool mDelayedStart;
