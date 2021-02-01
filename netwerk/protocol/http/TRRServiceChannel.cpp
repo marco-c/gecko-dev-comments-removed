@@ -1171,15 +1171,9 @@ nsresult TRRServiceChannel::SetupReplacementChannel(nsIURI* aNewURI,
   }
 
   
-  MOZ_ASSERT(mContentTypeHint.Equals("application/dns-message") ||
-             mContentTypeHint.Equals("application/oblivious-dns-message"));
-
-  
-  
   return TRR::SetupTRRServiceChannelInternal(
       httpChannel,
-      mRequestHead.ParsedMethod() == nsHttpRequestHead::kMethod_Get,
-      mContentTypeHint);
+      mRequestHead.ParsedMethod() == nsHttpRequestHead::kMethod_Get);
 }
 
 NS_IMETHODIMP

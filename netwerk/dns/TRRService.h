@@ -11,7 +11,6 @@
 #include "nsIObserver.h"
 #include "nsITimer.h"
 #include "nsWeakReference.h"
-#include "ODoHService.h"
 #include "TRRServiceBase.h"
 
 class nsDNSService;
@@ -76,7 +75,6 @@ class TRRService : public TRRServiceBase,
 
   friend class TRRServiceChild;
   friend class TRRServiceParent;
-  friend class ODoHService;
   static void AddObserver(nsIObserver* aObserver,
                           nsIObserverService* aObserverService = nullptr);
   static bool CheckCaptivePortalIsPassed();
@@ -98,7 +96,6 @@ class TRRService : public TRRServiceBase,
 
   nsresult DispatchTRRRequestInternal(TRR* aTrrRequest, bool aWithLock);
   already_AddRefed<nsIThread> TRRThread_locked();
-  already_AddRefed<nsIThread> MainThreadOrTRRThread(bool aWithLock = true);
 
   
   
@@ -145,7 +142,6 @@ class TRRService : public TRRServiceBase,
   uint32_t mRetryConfirmInterval;  
   Atomic<uint32_t, Relaxed> mTRRFailures;
   bool mParentalControlEnabled;
-  RefPtr<ODoHService> mODoHService;
 };
 
 extern TRRService* gTRRService;

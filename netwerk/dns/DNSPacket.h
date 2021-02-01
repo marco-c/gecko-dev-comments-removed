@@ -7,8 +7,6 @@
 
 #include "mozilla/Result.h"
 #include "nsHostResolver.h"
-#include "pk11pub.h"
-#include "ScopedNSSTypes.h"
 
 namespace mozilla {
 namespace net {
@@ -34,76 +32,37 @@ enum TrrType {
 
 class DNSPacket {
  public:
-  DNSPacket() = default;
-  virtual ~DNSPacket() = default;
-
   
   nsresult OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInputStream,
                            uint64_t aOffset, const uint32_t aCount);
 
   
-  virtual nsresult EncodeRequest(nsCString& aBody, const nsACString& aHost,
-                                 uint16_t aType, bool aDisableECS);
+  static nsresult EncodeRequest(nsCString& aBody, const nsACString& aHost,
+                                uint16_t aType, bool aDisableECS);
 
   
   
   
-  virtual nsresult Decode(
+  nsresult Decode(
       nsCString& aHost, enum TrrType aType, nsCString& aCname,
       bool aAllowRFC1918, nsHostRecord::TRRSkippedReason& reason,
       DOHresp& aResp, TypeRecordResultType& aTypeResult,
       nsClassHashtable<nsCStringHashKey, DOHresp>& aAdditionalRecords,
       uint32_t& aTTL);
 
- protected:
+ private:
   
   
   static const unsigned int MAX_SIZE = 3200;
 
-  nsresult PassQName(unsigned int& index, const unsigned char* aBuffer);
-  nsresult GetQname(nsACString& aQname, unsigned int& aIndex,
-                    const unsigned char* aBuffer);
+  nsresult PassQName(unsigned int& index);
+  nsresult GetQname(nsACString& aQname, unsigned int& aIndex);
   nsresult ParseSvcParam(unsigned int svcbIndex, uint16_t key,
-                         SvcFieldValue& field, uint16_t length,
-                         const unsigned char* aBuffer);
-  nsresult DecodeInternal(
-      nsCString& aHost, enum TrrType aType, nsCString& aCname,
-      bool aAllowRFC1918, nsHostRecord::TRRSkippedReason& reason,
-      DOHresp& aResp, TypeRecordResultType& aTypeResult,
-      nsClassHashtable<nsCStringHashKey, DOHresp>& aAdditionalRecords,
-      uint32_t& aTTL, const unsigned char* aBuffer, uint32_t aLen);
+                         SvcFieldValue& field, uint16_t length);
 
   
   unsigned char mResponse[MAX_SIZE]{};
   unsigned int mBodySize = 0;
-};
-
-class ODoHDNSPacket final : public DNSPacket {
- public:
-  ODoHDNSPacket() {}
-  virtual ~ODoHDNSPacket();
-
-  static bool ParseODoHConfigs(const nsCString& aRawODoHConfig,
-                               nsTArray<ObliviousDoHConfig>& aOut);
-
-  virtual nsresult EncodeRequest(nsCString& aBody, const nsACString& aHost,
-                                 uint16_t aType, bool aDisableECS) override;
-
-  virtual nsresult Decode(
-      nsCString& aHost, enum TrrType aType, nsCString& aCname,
-      bool aAllowRFC1918, nsHostRecord::TRRSkippedReason& reason,
-      DOHresp& aResp, TypeRecordResultType& aTypeResult,
-      nsClassHashtable<nsCStringHashKey, DOHresp>& aAdditionalRecords,
-      uint32_t& aTTL) override;
-
- protected:
-  bool EncryptDNSQuery(const nsACString& aQuery, uint16_t aPaddingLen,
-                       const ObliviousDoHConfig& aConfig,
-                       ObliviousDoHMessage& aOut);
-  bool DecryptDNSResponse();
-
-  HpkeContext* mContext = nullptr;
-  UniqueSECItem mPlainQuery;
 };
 
 }  
