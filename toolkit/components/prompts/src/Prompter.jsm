@@ -707,9 +707,59 @@ Prompter.prototype = {
 
 
 
-  asyncPromptAuth(browsingContext, modalType, ...promptArgs) {
-    let p = this.pickPrompter({ browsingContext, modalType, async: true });
-    return p.promptAuth(...promptArgs);
+
+
+
+
+  asyncPromptAuth(
+    domWin,
+    channel,
+    callback,
+    context,
+    level,
+    authInfo,
+    checkLabel,
+    checkValue
+  ) {
+    let p = this.pickPrompter({ domWin });
+    return p.asyncPromptAuth(
+      channel,
+      callback,
+      context,
+      level,
+      authInfo,
+      checkLabel,
+      checkValue
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  asyncPromptAuthBC(browsingContext, modalType, ...promptArgs) {
+    let p = this.pickPrompter({ browsingContext, modalType });
+    return p.asyncPromptAuth(...promptArgs);
   },
 };
 
@@ -1596,12 +1646,12 @@ class ModalPrompter {
 
     let [username, password] = PromptUtils.getAuthInfo(authInfo);
 
-    let userParam = this.async ? username : { value: username };
-    let passParam = this.async ? password : { value: password };
+    let userParam = { value: username };
+    let passParam = { value: password };
 
-    let result;
+    let ok;
     if (authInfo.flags & Ci.nsIAuthInformation.ONLY_PASSWORD) {
-      result = this.nsIPrompt_promptPassword(
+      ok = this.nsIPrompt_promptPassword(
         null,
         message,
         passParam,
@@ -1609,7 +1659,7 @@ class ModalPrompter {
         checkValue
       );
     } else {
-      result = this.nsIPrompt_promptUsernameAndPassword(
+      ok = this.nsIPrompt_promptUsernameAndPassword(
         null,
         message,
         userParam,
@@ -1619,25 +1669,10 @@ class ModalPrompter {
       );
     }
 
-    
-    if (this.async) {
-      return result.then(bag => {
-        let ok = bag.getProperty("ok");
-        if (ok) {
-          let username = bag.getProperty("user");
-          let password = bag.getProperty("pass");
-          PromptUtils.setAuthInfo(authInfo, username, password);
-        }
-        return ok;
-      });
-    }
-
-    
-    
-    if (result) {
+    if (ok) {
       PromptUtils.setAuthInfo(authInfo, userParam.value, passParam.value);
     }
-    return result;
+    return ok;
   }
 
   asyncPromptAuth(

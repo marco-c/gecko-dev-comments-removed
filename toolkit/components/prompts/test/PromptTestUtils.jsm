@@ -160,30 +160,19 @@ let PromptTestUtils = {
 
     let dialog;
     await TestUtils.topicObserved(topic, subject => {
-      
-      let browser =
-        parentBrowser || subject.ownerGlobal.gBrowser.selectedBrowser;
       if (isCommonDialog(modalType)) {
         
         if (parentWindow && subject.opener !== parentWindow) {
           return false;
         }
-
-        
-        if (modalType == Services.prompt.MODAL_TYPE_TAB) {
-          let dialogBox = parentWindow.gBrowser.getTabDialogBox(browser);
-          let hasMatchingDialog = dialogBox._tabDialogManager._dialogs.some(
-            d => d._frame?.browsingContext == subject.browsingContext
-          );
-          if (!hasMatchingDialog) {
-            return false;
-          }
-        }
-
         
         
         dialog = subject.Dialog;
       } else {
+        
+        let browser =
+          parentBrowser || subject.ownerGlobal.gBrowser.selectedBrowser;
+
         
         
         let prompt = browser.tabModalPromptBox.getPrompt(subject);
