@@ -314,13 +314,17 @@ class AccessibleCaretManager {
   
   PresShell* MOZ_NON_OWNING_REF mPresShell = nullptr;
 
-  
-  
-  UniquePtr<AccessibleCaret> mFirstCaret;
+  struct Carets {
+    
+    
+    UniquePtr<AccessibleCaret> mFirst;
 
-  
-  
-  UniquePtr<AccessibleCaret> mSecondCaret;
+    
+    
+    UniquePtr<AccessibleCaret> mSecond;
+  };
+
+  Carets mCarets;
 
   
   AccessibleCaret* mActiveCaret = nullptr;
