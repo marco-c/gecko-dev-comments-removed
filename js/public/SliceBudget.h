@@ -7,7 +7,9 @@
 #ifndef js_SliceBudget_h
 #define js_SliceBudget_h
 
+#include "mozilla/Assertions.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/Variant.h"
 
 #include <stdint.h>
 
@@ -16,16 +18,22 @@
 namespace js {
 
 struct JS_PUBLIC_API TimeBudget {
-  int64_t budget;
+  const int64_t budget;
+  mozilla::TimeStamp deadline;  
 
-  explicit TimeBudget(int64_t milliseconds) { budget = milliseconds; }
+  explicit TimeBudget(int64_t milliseconds) : budget(milliseconds) {}
 };
 
 struct JS_PUBLIC_API WorkBudget {
-  int64_t budget;
+  const int64_t budget;
 
-  explicit WorkBudget(int64_t work) { budget = work; }
+  explicit WorkBudget(int64_t work) : budget(work) {}
 };
+
+struct UnlimitedBudget {};
+
+
+
 
 
 
@@ -34,27 +42,17 @@ struct JS_PUBLIC_API WorkBudget {
 
 
 class JS_PUBLIC_API SliceBudget {
-  static mozilla::TimeStamp unlimitedDeadline;
-  static const intptr_t unlimitedStartCounter = INTPTR_MAX;
+  static const intptr_t UnlimitedCounter = INTPTR_MAX;
+
+  mozilla::Variant<TimeBudget, WorkBudget, UnlimitedBudget> budget;
+  int64_t counter;
+
+  SliceBudget() : budget(UnlimitedBudget()), counter(UnlimitedCounter) {}
 
   bool checkOverBudget();
 
-  SliceBudget();
-
  public:
-  
-  
-  
-  TimeBudget timeBudget;
-  WorkBudget workBudget;
-
-  mozilla::TimeStamp deadline;
-  intptr_t counter;
-
-  static const intptr_t CounterReset = 1000;
-
-  static const int64_t UnlimitedTimeBudget = -1;
-  static const int64_t UnlimitedWorkBudget = -1;
+  static const intptr_t StepsPerTimeCheck = 1000;
 
   
   static SliceBudget unlimited() { return SliceBudget(); }
@@ -68,28 +66,21 @@ class JS_PUBLIC_API SliceBudget {
   explicit SliceBudget(mozilla::TimeDuration time)
       : SliceBudget(TimeBudget(time.ToMilliseconds())) {}
 
-  void makeUnlimited() {
-    MOZ_ASSERT(unlimitedDeadline);
-    deadline = unlimitedDeadline;
-    counter = unlimitedStartCounter;
+  void step(uint64_t steps = 1) {
+    MOZ_ASSERT(steps > 0);
+    counter -= steps;
   }
 
-  void step(intptr_t amt = 1) { counter -= amt; }
+  bool isOverBudget() { return counter <= 0 && checkOverBudget(); }
 
-  bool isOverBudget() {
-    if (counter > 0) {
-      return false;
-    }
-    return checkOverBudget();
-  }
+  bool isWorkBudget() const { return budget.is<WorkBudget>(); }
+  bool isTimeBudget() const { return budget.is<TimeBudget>(); }
+  bool isUnlimited() const { return budget.is<UnlimitedBudget>(); }
 
-  bool isWorkBudget() const { return deadline.IsNull(); }
-  bool isTimeBudget() const { return !deadline.IsNull() && !isUnlimited(); }
-  bool isUnlimited() const { return deadline == unlimitedDeadline; }
+  int64_t timeBudget() const { return budget.as<TimeBudget>().budget; }
+  int64_t workBudget() const { return budget.as<WorkBudget>().budget; }
 
   int describe(char* buffer, size_t maxlen) const;
-
-  static void Init();
 };
 
 }  

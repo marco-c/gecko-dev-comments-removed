@@ -390,7 +390,7 @@ static const uint32_t MinEmptyChunkCount = 1;
 static const uint32_t MaxEmptyChunkCount = 30;
 
 
-static const int64_t DefaultTimeBudgetMS = SliceBudget::UnlimitedTimeBudget;
+static const int64_t DefaultTimeBudgetMS = 0;  
 
 
 static const bool IncrementalGCEnabled = false;

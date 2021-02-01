@@ -152,7 +152,7 @@ void TestCC::ForgetSkippable() {
   
   js::SliceBudget budget =
       mScheduler.ComputeForgetSkippableBudget(Now(), Now() + kTenthSecond);
-  EXPECT_NEAR(budget.timeBudget.budget, kTenthSecond.ToMilliseconds(), 1);
+  EXPECT_NEAR(budget.timeBudget(), kTenthSecond.ToMilliseconds(), 1);
   AdvanceTime(kTenthSecond);
   mScheduler.NoteForgetSkippableComplete(Now(), suspectedBefore);
 }
@@ -213,7 +213,7 @@ void TestIdleCC::RunSlice(TimeStamp aCCStartTime, TimeStamp aPrevSliceEnd,
   js::SliceBudget budget = mScheduler.ComputeCCSliceBudget(
       idleDeadline, aCCStartTime, aPrevSliceEnd, &preferShorter);
   
-  EXPECT_NEAR(budget.timeBudget.budget, kTenthSecond.ToMilliseconds(), 1);
+  EXPECT_NEAR(budget.timeBudget(), kTenthSecond.ToMilliseconds(), 1);
   EXPECT_FALSE(preferShorter);
 
   AdvanceTime(kTenthSecond);
@@ -254,20 +254,17 @@ void TestNonIdleCC::RunSlice(TimeStamp aCCStartTime, TimeStamp aPrevSliceEnd,
   if (aSliceNum == 0) {
     
     
-    EXPECT_NEAR(budget.timeBudget.budget, kICCSliceBudget.ToMilliseconds(),
-                0.1);
+    EXPECT_NEAR(budget.timeBudget(), kICCSliceBudget.ToMilliseconds(), 0.1);
   } else if (aSliceNum == 1) {
     
     
-    EXPECT_NEAR(budget.timeBudget.budget, kICCSliceBudget.ToMilliseconds(),
-                0.1);
+    EXPECT_NEAR(budget.timeBudget(), kICCSliceBudget.ToMilliseconds(), 0.1);
   } else if (aSliceNum == 2) {
     
     EXPECT_FALSE(budget.isUnlimited());
     
     
-    EXPECT_NEAR(budget.timeBudget.budget, kICCSliceBudget.ToMilliseconds() * 2,
-                0.1);
+    EXPECT_NEAR(budget.timeBudget(), kICCSliceBudget.ToMilliseconds() * 2, 0.1);
   } else {
     
     EXPECT_FALSE(budget.isUnlimited());
@@ -275,13 +272,13 @@ void TestNonIdleCC::RunSlice(TimeStamp aCCStartTime, TimeStamp aPrevSliceEnd,
     
     
     
-    EXPECT_TRUE(budget.timeBudget.budget > kICCSliceBudget.ToMilliseconds());
-    EXPECT_TRUE(budget.timeBudget.budget <=
+    EXPECT_TRUE(budget.timeBudget() > kICCSliceBudget.ToMilliseconds());
+    EXPECT_TRUE(budget.timeBudget() <=
                 MainThreadIdlePeriod::GetLongIdlePeriod());
   }
   EXPECT_TRUE(preferShorter);  
 
-  AdvanceTime(TimeDuration::FromMilliseconds(budget.timeBudget.budget));
+  AdvanceTime(TimeDuration::FromMilliseconds(budget.timeBudget()));
   if (aSliceNum == 1) {
     
     AdvanceTime(kICCIntersliceDelay * 2);

@@ -135,8 +135,6 @@ JS_PUBLIC_API const char* JS::detail::InitWithFailureDiagnostic(
 
   PRMJ_NowInit();
 
-  js::SliceBudget::Init();
-
   
   
   
