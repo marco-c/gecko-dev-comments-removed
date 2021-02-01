@@ -255,16 +255,16 @@ template <XDRMode mode>
 
 XDRResult BaseScript::XDRLazyScriptData(XDRState<mode>* xdr,
                                         HandleScriptSourceObject sourceObject,
-                                        Handle<BaseScript*> lazy,
-                                        bool hasMemberInitializers) {
+                                        Handle<BaseScript*> lazy) {
   JSContext* cx = xdr->cx();
 
   RootedAtom atom(cx);
   RootedFunction func(cx);
 
-  if (hasMemberInitializers) {
+  if (lazy->useMemberInitializers()) {
     uint32_t numMemberInitializers;
     if (mode == XDR_ENCODE) {
+      MOZ_ASSERT(lazy->getMemberInitializers().valid);
       numMemberInitializers =
           lazy->getMemberInitializers().numMemberInitializers;
     }
@@ -815,12 +815,10 @@ XDRResult js::PrivateScriptData::XDR(XDRState<mode>* xdr, HandleScript script,
   }
 
   
-  if (funOrMod && funOrMod->is<JSFunction>() &&
-      funOrMod->as<JSFunction>().isClassConstructor()) {
-    MOZ_ASSERT(scriptEnclosingScope);
-
+  if (script->useMemberInitializers()) {
     uint32_t numMemberInitializers;
     if (mode == XDR_ENCODE) {
+      MOZ_ASSERT(data->getMemberInitializers().valid);
       numMemberInitializers =
           data->getMemberInitializers().numMemberInitializers;
     }
@@ -1329,12 +1327,7 @@ XDRResult js::XDRLazyScript(XDRState<mode>* xdr, HandleScope enclosingScope,
     }
   }
 
-  
-  
-  bool hasMemberInitializers = fun->isClassConstructor() && enclosingScope;
-
-  MOZ_TRY(BaseScript::XDRLazyScriptData(xdr, sourceObject, lazy,
-                                        hasMemberInitializers));
+  MOZ_TRY(BaseScript::XDRLazyScriptData(xdr, sourceObject, lazy));
 
   return Ok();
 }
@@ -3729,7 +3722,7 @@ PrivateScriptData* PrivateScriptData::new_(JSContext* cx, uint32_t ngcthings) {
 bool PrivateScriptData::InitFromStencil(
     JSContext* cx, js::HandleScript script,
     js::frontend::CompilationInput& input,
-    js::frontend::BaseCompilationStencil& stencil,
+    const js::frontend::BaseCompilationStencil& stencil,
     js::frontend::CompilationGCOutput& gcOutput,
     const js::frontend::ScriptIndex scriptIndex) {
   js::frontend::ScriptStencil& scriptStencil = stencil.scriptData[scriptIndex];
@@ -3749,10 +3742,6 @@ bool PrivateScriptData::InitFromStencil(
                                 data->gcthings())) {
       return false;
     }
-  }
-
-  if (scriptStencil.hasMemberInitializers()) {
-    script->setMemberInitializers(scriptStencil.memberInitializers());
   }
 
   return true;
@@ -3827,7 +3816,7 @@ bool JSScript::createPrivateScriptData(JSContext* cx, HandleScript script,
 
 bool JSScript::fullyInitFromStencil(
     JSContext* cx, js::frontend::CompilationInput& input,
-    js::frontend::BaseCompilationStencil& stencil,
+    const js::frontend::BaseCompilationStencil& stencil,
     frontend::CompilationGCOutput& gcOutput, HandleScript script,
     const js::frontend::ScriptIndex scriptIndex) {
   MutableScriptFlags lazyMutableFlags;
@@ -3895,6 +3884,20 @@ bool JSScript::fullyInitFromStencil(
     return false;
   }
 
+  
+  
+  
+  if (script->useMemberInitializers()) {
+    if (stencil.isInitialStencil()) {
+      MemberInitializers initializers(stencil.asCompilationStencil()
+                                          .scriptExtra[scriptIndex]
+                                          .memberInitializers());
+      script->setMemberInitializers(initializers);
+    } else {
+      script->setMemberInitializers(lazyData.get()->getMemberInitializers());
+    }
+  }
+
   script->initSharedData(stencil.sharedData.get(scriptIndex));
 
   
@@ -3935,7 +3938,7 @@ bool JSScript::fullyInitFromStencil(
 
 JSScript* JSScript::fromStencil(JSContext* cx,
                                 js::frontend::CompilationInput& input,
-                                js::frontend::CompilationStencil& stencil,
+                                const js::frontend::CompilationStencil& stencil,
                                 frontend::CompilationGCOutput& gcOutput,
                                 const js::frontend::ScriptIndex scriptIndex) {
   js::frontend::ScriptStencil& scriptStencil = stencil.scriptData[scriptIndex];
@@ -5007,7 +5010,8 @@ BaseScript* BaseScript::CreateRawLazy(JSContext* cx, uint32_t ngcthings,
 
   
   
-  if (ngcthings || fun->isClassConstructor()) {
+  
+  if (ngcthings || lazy->useMemberInitializers()) {
     UniquePtr<PrivateScriptData> data(PrivateScriptData::new_(cx, ngcthings));
     if (!data) {
       return nullptr;
