@@ -8749,12 +8749,12 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
         if (key->isKind(ParseNodeKind::NumberExpr)) {
           MOZ_ASSERT(accessorType == AccessorType::None);
 
-          const ParserAtom* keyAtom = key->as<NumericLiteral>().toAtom(
+          auto keyAtom = key->as<NumericLiteral>().toAtom(
               cx, compilationState.parserAtoms);
           if (!keyAtom) {
             return false;
           }
-          if (!emitAnonymousFunctionWithName(propVal, keyAtom->toIndex())) {
+          if (!emitAnonymousFunctionWithName(propVal, keyAtom)) {
             
             return false;
           }

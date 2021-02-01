@@ -479,7 +479,7 @@ static bool FoldType(FoldInfo info, ParseNode** pnp, ParseNodeKind kind) {
 
       case ParseNodeKind::StringExpr:
         if (pn->isKind(ParseNodeKind::NumberExpr)) {
-          const ParserAtom* atom =
+          TaggedParserAtomIndex atom =
               pn->as<NumericLiteral>().toAtom(info.cx, info.parserAtoms);
           if (!atom) {
             return false;
@@ -585,21 +585,21 @@ static bool FoldTypeOfExpr(FoldInfo info, ParseNode** nodePtr) {
   ParseNode* expr = node->kid();
 
   
-  const ParserName* result = nullptr;
+  TaggedParserAtomIndex result;
   if (expr->isKind(ParseNodeKind::StringExpr) ||
       expr->isKind(ParseNodeKind::TemplateStringExpr)) {
-    result = info.cx->parserNames().string;
+    result = TaggedParserAtomIndex::WellKnown::string();
   } else if (expr->isKind(ParseNodeKind::NumberExpr)) {
-    result = info.cx->parserNames().number;
+    result = TaggedParserAtomIndex::WellKnown::number();
   } else if (expr->isKind(ParseNodeKind::BigIntExpr)) {
-    result = info.cx->parserNames().bigint;
+    result = TaggedParserAtomIndex::WellKnown::bigint();
   } else if (expr->isKind(ParseNodeKind::NullExpr)) {
-    result = info.cx->parserNames().object;
+    result = TaggedParserAtomIndex::WellKnown::object();
   } else if (expr->isKind(ParseNodeKind::TrueExpr) ||
              expr->isKind(ParseNodeKind::FalseExpr)) {
-    result = info.cx->parserNames().boolean;
+    result = TaggedParserAtomIndex::WellKnown::boolean();
   } else if (expr->is<FunctionNode>()) {
-    result = info.cx->parserNames().function;
+    result = TaggedParserAtomIndex::WellKnown::function();
   }
 
   if (result) {
@@ -1090,10 +1090,10 @@ static bool FoldElement(FoldInfo info, ParseNode** nodePtr) {
 
   ParseNode* expr = &elem->expression();
   ParseNode* key = &elem->key();
-  const ParserName* name = nullptr;
+  TaggedParserAtomIndex name;
   if (key->isKind(ParseNodeKind::StringExpr)) {
-    const ParserAtom* atom =
-        info.parserAtoms.getParserAtom(key->as<NameNode>().atomIndex());
+    auto keyIndex = key->as<NameNode>().atomIndex();
+    const ParserAtom* atom = info.parserAtoms.getParserAtom(keyIndex);
     uint32_t index;
 
     if (atom->isIndex(&index)) {
@@ -1106,7 +1106,7 @@ static bool FoldElement(FoldInfo info, ParseNode** nodePtr) {
       }
       key = &elem->key();
     } else {
-      name = atom->asName();
+      name = keyIndex;
     }
   } else if (key->isKind(ParseNodeKind::NumberExpr)) {
     auto* numeric = &key->as<NumericLiteral>();
@@ -1115,11 +1115,10 @@ static bool FoldElement(FoldInfo info, ParseNode** nodePtr) {
       
       
       
-      const ParserAtom* atom = numeric->toAtom(info.cx, info.parserAtoms);
-      if (!atom) {
+      name = numeric->toAtom(info.cx, info.parserAtoms);
+      if (!name) {
         return false;
       }
-      name = atom->asName();
     }
   }
 
@@ -1259,7 +1258,7 @@ static bool FoldAdd(FoldInfo info, ParseNode** nodePtr) {
 
         
         MOZ_ASSERT((*current)->isKind(ParseNodeKind::StringExpr));
-        (*current)->as<NameNode>().setAtom(combination);
+        (*current)->as<NameNode>().setAtom(combination->toIndex());
       }
 
       
