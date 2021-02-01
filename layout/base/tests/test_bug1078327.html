@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1078327
+-->
   <head>
     <meta charset="utf-8">
     <title>Test for Bug 1078327</title>
@@ -14,14 +14,7 @@
       function prepareTest() {
         SimpleTest.waitForExplicitFinish();
         iframe = document.getElementById("testFrame");
-        turnOnPointerEvents(startTest);
-      }
-      function turnOnPointerEvents(callback) {
-        SpecialPowers.pushPrefEnv({
-          "set": [
-            ["dom.w3c_pointer_events.enabled", true]
-          ]
-        }, callback);
+        SimpleTest.executeSoon(startTest);
       }
       function startTest() {
         iframe.src = "bug1078327_inner.html";

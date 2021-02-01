@@ -899,8 +899,7 @@ void nsBaseWidget::ConfigureAPZCTreeManager() {
   
   
   
-  if (StaticPrefs::dom_w3c_touch_events_enabled() ||
-      StaticPrefs::dom_w3c_pointer_events_enabled()) {
+  if (StaticPrefs::dom_w3c_touch_events_enabled()) {
     RegisterTouchWindow();
   }
 }

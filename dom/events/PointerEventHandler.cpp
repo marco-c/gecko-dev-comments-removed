@@ -63,14 +63,13 @@ void PointerEventHandler::ReleaseStatics() {
 
 
 bool PointerEventHandler::IsPointerEventImplicitCaptureForTouchEnabled() {
-  return StaticPrefs::dom_w3c_pointer_events_enabled() &&
-         StaticPrefs::dom_w3c_pointer_events_implicit_capture();
+  return StaticPrefs::dom_w3c_pointer_events_implicit_capture();
 }
 
 
 void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent,
                                                    nsIContent* aTargetContent) {
-  if (!StaticPrefs::dom_w3c_pointer_events_enabled() || !aEvent) {
+  if (!aEvent) {
     return;
   }
   switch (aEvent->mMessage) {
@@ -323,7 +322,6 @@ void PointerEventHandler::CheckPointerCaptureState(WidgetPointerEvent* aEvent) {
   if (!aEvent) {
     return;
   }
-  MOZ_ASSERT(StaticPrefs::dom_w3c_pointer_events_enabled());
   MOZ_ASSERT(aEvent->mClass == ePointerEventClass);
 
   PointerCaptureInfo* captureInfo = GetPointerCaptureInfo(aEvent->pointerId);
@@ -381,8 +379,7 @@ void PointerEventHandler::CheckPointerCaptureState(WidgetPointerEvent* aEvent) {
 void PointerEventHandler::ImplicitlyCapturePointer(nsIFrame* aFrame,
                                                    WidgetEvent* aEvent) {
   MOZ_ASSERT(aEvent->mMessage == ePointerDown);
-  if (!aFrame || !StaticPrefs::dom_w3c_pointer_events_enabled() ||
-      !IsPointerEventImplicitCaptureForTouchEnabled()) {
+  if (!aFrame || !IsPointerEventImplicitCaptureForTouchEnabled()) {
     return;
   }
   WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
@@ -426,8 +423,7 @@ Element* PointerEventHandler::GetPointerCapturingElement(uint32_t aPointerId) {
 
 Element* PointerEventHandler::GetPointerCapturingElement(
     WidgetGUIEvent* aEvent) {
-  if (!StaticPrefs::dom_w3c_pointer_events_enabled() ||
-      (aEvent->mClass != ePointerEventClass &&
+  if ((aEvent->mClass != ePointerEventClass &&
        aEvent->mClass != eMouseEventClass) ||
       aEvent->mMessage == ePointerDown || aEvent->mMessage == eMouseDown) {
     
@@ -564,7 +560,6 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
     PresShell* aShell, nsIFrame* aFrame, nsIContent* aContent,
     WidgetGUIEvent* aEvent, bool aDontRetargetEvents, nsEventStatus* aStatus,
     nsIContent** aTargetContent) {
-  MOZ_ASSERT(StaticPrefs::dom_w3c_pointer_events_enabled());
   MOZ_ASSERT(aFrame || aContent);
   MOZ_ASSERT(aEvent);
 

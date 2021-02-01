@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1420589
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1420589</title>
@@ -103,8 +103,7 @@ function withoutImplicitlyPointerCaptureForTouch() {
 }
 
 SimpleTest.waitForFocus(() => {
-  SpecialPowers.pushPrefEnv({"set": [["dom.w3c_pointer_events.enabled", true],
-                                     ["dom.w3c_pointer_events.implicit_capture", false]]},
+  SpecialPowers.pushPrefEnv({"set": [["dom.w3c_pointer_events.implicit_capture", false]]},
                             withoutImplicitlyPointerCaptureForTouch);
 });
 

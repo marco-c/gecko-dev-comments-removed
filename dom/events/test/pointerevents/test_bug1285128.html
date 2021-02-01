@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1285128
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1285128</title>
@@ -44,9 +44,7 @@ function runTests() {
   synthesizeMouseAtCenter(target1, { type: "mouseup" });
 }
 
-SimpleTest.waitForFocus(() => {
-  SpecialPowers.pushPrefEnv({"set": [["dom.w3c_pointer_events.enabled", true]]}, runTests);
-});
+SimpleTest.waitForFocus(runTests);
 
 </script>
 </body>

@@ -1,11 +1,11 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=977003
+https://bugzilla.mozilla.org/show_bug.cgi?id=1073563
+https://bugzilla.mozilla.org/show_bug.cgi?id=1094913
+https://bugzilla.mozilla.org/show_bug.cgi?id=1098139
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bugs 977003, 1073563, 1094913, 1098139</title>
@@ -69,7 +69,7 @@
     }
 
     function prepareTest() {
-      parent.turnOnPointerEvents(executeTest);
+      SimpleTest.executeSoon(executeTest);
     }
     function executeTest()
     {

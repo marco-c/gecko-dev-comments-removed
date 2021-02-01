@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1359076
+-->
 <head>
   <title>Test for Bug 675884</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -23,8 +23,7 @@ SpecialPowers.pushPrefEnv({"set": [
   ["device.sensors.orientation.enabled", false],
   ["device.sensors.motion.enabled", false],
   ["device.sensors.proximity.enabled", false],
-  ["device.sensors.ambientLight.enabled", false],
-  ["dom.w3c_pointer_events.enabled", false]
+  ["device.sensors.ambientLight.enabled", false]
 ]}, () => {
   is("DeviceProximityEvent" in window, false, "DeviceProximityEvent does not exist");
   is("UserProximityEvent" in window, false, "UserProximityEvent does not exist");

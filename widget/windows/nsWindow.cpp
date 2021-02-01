@@ -4528,8 +4528,7 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
       
       && nsWindowType::eWindowType_toplevel == mWindowType
       
-      && StaticPrefs::dom_w3c_pointer_events_enabled() &&
-      InkCollector::sInkCollector) {
+      && InkCollector::sInkCollector) {
     InkCollector::sInkCollector->SetTarget(mWnd);
     InkCollector::sInkCollector->SetPointerId(pointerId);
   }

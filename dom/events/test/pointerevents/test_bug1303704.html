@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1303704
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1303704</title>
@@ -127,7 +127,7 @@ function runTests() {
 }
 
 SimpleTest.waitForFocus(() => {
-  SpecialPowers.pushPrefEnv({"set": [["dom.w3c_pointer_events.enabled", true], ["general.smoothScroll", false]]}, runTests);
+  SpecialPowers.pushPrefEnv({"set": [["general.smoothScroll", false]]}, runTests);
 });
 
 </script>

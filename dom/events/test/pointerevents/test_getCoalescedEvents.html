@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1303957
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1303957</title>
@@ -83,8 +83,7 @@ function runTests() {
 }
 
 SimpleTest.waitForFocus(() => {
-  SpecialPowers.pushPrefEnv({"set": [["dom.w3c_pointer_events.enabled", true],
-                                     ["dom.event.coalesce_mouse_move", true]]}, runTests);
+  SpecialPowers.pushPrefEnv({"set": [["dom.event.coalesce_mouse_move", true]]}, runTests);
 });
 
 </script>

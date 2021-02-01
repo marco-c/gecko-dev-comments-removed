@@ -37,8 +37,7 @@ void CoalescedMouseData::Coalesce(const WidgetMouseEvent& aEvent,
     mCoalescedInputEvent->AssignPointerHelperData(aEvent);
   }
 
-  if (aEvent.mMessage == eMouseMove &&
-      StaticPrefs::dom_w3c_pointer_events_enabled()) {
+  if (aEvent.mMessage == eMouseMove) {
     
     if (!mCoalescedInputEvent->mCoalescedWidgetEvents) {
       mCoalescedInputEvent->mCoalescedWidgetEvents =
