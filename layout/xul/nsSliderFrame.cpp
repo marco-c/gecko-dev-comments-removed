@@ -1463,8 +1463,8 @@ bool nsSliderFrame::OnlySystemGroupDispatch(EventMessage aMessage) const {
   
   
   
-  return (aMessage == eMouseMove || aMessage == ePointerMove) &&
-         isDraggingThumb() && GetContent()->IsInNativeAnonymousSubtree();
+  return aMessage == eMouseMove && isDraggingThumb() &&
+         GetContent()->IsInNativeAnonymousSubtree();
 }
 
 NS_IMPL_ISUPPORTS(nsSliderMediator, nsIDOMEventListener)
