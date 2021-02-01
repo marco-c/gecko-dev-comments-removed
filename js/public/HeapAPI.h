@@ -367,9 +367,9 @@ class JS_FRIEND_API GCCellPtr {
   explicit GCCellPtr(const Value& v);
 
   JS::TraceKind kind() const {
-    JS::TraceKind traceKind = JS::TraceKind(ptr & OutOfLineTraceKindMask);
-    if (uintptr_t(traceKind) != OutOfLineTraceKindMask) {
-      return traceKind;
+    uintptr_t kindBits = ptr & OutOfLineTraceKindMask;
+    if (kindBits != OutOfLineTraceKindMask) {
+      return JS::TraceKind(kindBits);
     }
     return outOfLineKind();
   }
@@ -431,11 +431,11 @@ class JS_FRIEND_API GCCellPtr {
     MOZ_ASSERT((uintptr_t(p) & OutOfLineTraceKindMask) == 0);
     AssertGCThingHasType(cell, traceKind);
     
-    
-    MOZ_ASSERT_IF(uintptr_t(traceKind) >= OutOfLineTraceKindMask,
-                  (uintptr_t(traceKind) & OutOfLineTraceKindMask) ==
-                      OutOfLineTraceKindMask);
-    return uintptr_t(p) | (uintptr_t(traceKind) & OutOfLineTraceKindMask);
+    uintptr_t kindBits = uintptr_t(traceKind);
+    if (kindBits >= OutOfLineTraceKindMask) {
+      kindBits = OutOfLineTraceKindMask;
+    }
+    return uintptr_t(p) | kindBits;
   }
 
   JS::TraceKind outOfLineKind() const;
