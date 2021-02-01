@@ -7816,6 +7816,12 @@ AttachDecision CallIRGenerator::tryAttachArrayBufferByteLength(
   MOZ_ASSERT(args_[0].toObject().is<ArrayBufferObject>());
 
   
+  auto* buffer = &args_[0].toObject().as<ArrayBufferObject>();
+  if (buffer->byteLength().get() > INT32_MAX) {
+    return AttachDecision::NoAction;
+  }
+
+  
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
