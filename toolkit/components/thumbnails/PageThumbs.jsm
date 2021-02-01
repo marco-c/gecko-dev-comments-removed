@@ -292,11 +292,7 @@ var PageThumbs = {
       return aCanvas;
     }
     
-    PageThumbUtils.createSnapshotThumbnail(
-      aBrowser.contentWindow,
-      aCanvas,
-      aArgs
-    );
+    await PageThumbUtils.createSnapshotThumbnail(aBrowser, aCanvas, aArgs);
     return aCanvas;
   },
 

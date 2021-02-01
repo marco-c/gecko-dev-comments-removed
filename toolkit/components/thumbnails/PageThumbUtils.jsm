@@ -206,7 +206,8 @@ var PageThumbUtils = {
 
 
 
-  createSnapshotThumbnail(aWindow, aDestCanvas, aArgs) {
+  async createSnapshotThumbnail(aBrowser, aDestCanvas, aArgs) {
+    const aWindow = aBrowser.contentWindow;
     let backgroundColor = aArgs
       ? aArgs.backgroundColor
       : PageThumbUtils.THUMBNAIL_BG_COLOR;
@@ -268,15 +269,15 @@ var PageThumbUtils = {
     let snapshotCtx = snapshotCanvas.getContext("2d");
     snapshotCtx.save();
     snapshotCtx.scale(scale, scale);
-    snapshotCtx.drawWindow(
-      aWindow,
+    const image = await aBrowser.drawSnapshot(
       0,
       0,
       contentWidth,
       contentHeight,
-      backgroundColor,
-      snapshotCtx.DRAWWINDOW_DO_NOT_FLUSH
+      scale,
+      backgroundColor
     );
+    snapshotCtx.drawImage(image, 0, 0, contentWidth, contentHeight);
     snapshotCtx.restore();
 
     
