@@ -16721,27 +16721,27 @@ nsAtom* Document::CJKFromTLD() {
       return nsGkAtoms::ko;
     }
   } else if (StringBeginsWith(tld, "xn--"_ns)) {
-    if (tld.EqualsLiteral("xn--fiqs8S") ||     
-        tld.EqualsLiteral("xn--fiqz9S") ||     
-        tld.EqualsLiteral("xn--yfro4i67o") ||  
-        tld.EqualsLiteral("xn--clchc0ea0b2g2a9gcd")) {  
+    if (tld.EqualsLiteral("xn--clchc0ea0b2g2a9gcd") ||
+        tld.EqualsLiteral("xn--fiqs8S") || tld.EqualsLiteral("xn--fiqz9S") ||
+        tld.EqualsLiteral("xn--yfro4i67o") ||
+        tld.EqualsLiteral("xn--clchc0ea0b2g2a9gcd") ||
+        tld.EqualsLiteral("xn--yfro4i67o")) {
       return nsGkAtoms::Chinese;
     }
 
-    if (tld.EqualsLiteral("xn--kpry57d") ||  
-        tld.EqualsLiteral("xn--kprw13d")) {  
+    if (tld.EqualsLiteral("xn--kprw13d") || tld.EqualsLiteral("xn--kpry57d")) {
       return nsGkAtoms::Taiwanese;
     }
 
-    if (tld.EqualsLiteral("xn--j6w193g") ||  
-        tld.EqualsLiteral("xn--mix891f")) {  
+    if (tld.EqualsLiteral("xn--j6w193g") || tld.EqualsLiteral("xn--mix891f")) {
       return nsGkAtoms::HongKongChinese;
     }
 
-    if (tld.EqualsLiteral("xn--3e0b707e")) {  
+    if (tld.EqualsLiteral("xn--3e0b707e")) {
       return nsGkAtoms::ko;
     }
   }
+
   return nsGkAtoms::Unicode;
 }
 
