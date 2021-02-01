@@ -11,6 +11,7 @@
 #import <Cocoa/Cocoa.h>
 
 #include "CustomCocoaEvents.h"
+#include "GeckoProfiler.h"
 #include "mozilla/WidgetTraceEvent.h"
 #include "nsAppShell.h"
 #include "gfxPlatform.h"
@@ -125,11 +126,6 @@ static bool gAppShellMethodsSwizzled = false;
 @implementation GeckoNSApplication
 
 - (void)sendEvent:(NSEvent*)anEvent {
-  
-  
-  
-  AUTO_PROFILER_LABEL("-[GeckoNSApplication sendEvent:]", OTHER);
-
   mozilla::BackgroundHangMonitor().NotifyActivity();
 
   if ([anEvent type] == NSEventTypeApplicationDefined && [anEvent subtype] == kEventSubtypeTrace) {
@@ -149,21 +145,6 @@ static bool gAppShellMethodsSwizzled = false;
                         untilDate:(NSDate*)expiration
                            inMode:(NSString*)mode
                           dequeue:(BOOL)flag {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  AUTO_PROFILER_LABEL("-[GeckoNSApplication nextEventMatchingMask:untilDate:inMode:dequeue:]",
-                      IDLE);
-
   if (expiration) {
     mozilla::BackgroundHangMonitor().NotifyWait();
   }
@@ -232,6 +213,10 @@ nsAppShell::~nsAppShell() {
       ::CFRunLoopRemoveSource(mCFRunLoop, mCFRunLoopSource, kCFRunLoopCommonModes);
       ::CFRelease(mCFRunLoopSource);
     }
+    if (mCFRunLoopObserver) {
+      ::CFRunLoopRemoveObserver(mCFRunLoop, mCFRunLoopObserver, kCFRunLoopCommonModes);
+      ::CFRelease(mCFRunLoopObserver);
+    }
     ::CFRelease(mCFRunLoop);
   }
 
@@ -268,6 +253,43 @@ static void RemoveScreenWakeLockListener() {
     sPowerManagerService = nullptr;
     sWakeLockListener = nullptr;
   }
+}
+
+void RunLoopObserverCallback(CFRunLoopObserverRef aObserver, CFRunLoopActivity aActivity,
+                             void* aInfo) {
+  static_cast<nsAppShell*>(aInfo)->OnRunLoopActivityChanged(aActivity);
+}
+
+void nsAppShell::OnRunLoopActivityChanged(CFRunLoopActivity aActivity) {
+#ifdef MOZ_GECKO_PROFILER
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aActivity == kCFRunLoopBeforeWaiting) {
+    if (ProfilingStackOwner* profilingStackOwner =
+            AutoProfilerLabel::ProfilingStackOwnerTLS::Get()) {
+      mProfilingStackOwnerWhileWaiting = profilingStackOwner;
+      uint8_t variableOnStack = 0;
+      mProfilingStackOwnerWhileWaiting->ProfilingStack().pushLabelFrame(
+          "Native event loop idle", nullptr, &variableOnStack, JS::ProfilingCategoryPair::IDLE, 0);
+    }
+  } else {
+    if (mProfilingStackOwnerWhileWaiting) {
+      mProfilingStackOwnerWhileWaiting->ProfilingStack().pop();
+      mProfilingStackOwnerWhileWaiting = nullptr;
+    }
+  }
+#endif
 }
 
 
@@ -324,6 +346,19 @@ nsresult nsAppShell::Init() {
   NS_ENSURE_STATE(mCFRunLoopSource);
 
   ::CFRunLoopAddSource(mCFRunLoop, mCFRunLoopSource, kCFRunLoopCommonModes);
+
+  
+  
+  CFRunLoopObserverContext observerContext;
+  PodZero(&observerContext);
+  observerContext.info = this;
+
+  mCFRunLoopObserver = ::CFRunLoopObserverCreate(
+      kCFAllocatorDefault, kCFRunLoopBeforeWaiting | kCFRunLoopAfterWaiting | kCFRunLoopExit, true,
+      0, RunLoopObserverCallback, &observerContext);
+  NS_ENSURE_STATE(mCFRunLoopObserver);
+
+  ::CFRunLoopAddObserver(mCFRunLoop, mCFRunLoopObserver, kCFRunLoopCommonModes);
 
   hal::Init();
 

@@ -11,8 +11,14 @@
 #ifndef nsAppShell_h_
 #define nsAppShell_h_
 
+#import <AppKit/NSApplication.h>
+
 #include "nsBaseAppShell.h"
 #include "nsTArray.h"
+
+namespace mozilla {
+class ProfilingStackOwner;
+}
 
 
 
@@ -36,6 +42,8 @@ class nsAppShell : public nsBaseAppShell {
   NS_IMETHOD OnProcessNextEvent(nsIThreadInternal* aThread, bool aMayWait) override;
   NS_IMETHOD AfterProcessNextEvent(nsIThreadInternal* aThread, bool aEventWasProcessed) override;
 
+  void OnRunLoopActivityChanged(CFRunLoopActivity aActivity);
+
   
   void WillTerminate();
 
@@ -53,6 +61,15 @@ class nsAppShell : public nsBaseAppShell {
   AppShellDelegate* mDelegate;
   CFRunLoopRef mCFRunLoop;
   CFRunLoopSourceRef mCFRunLoopSource;
+
+  
+  
+  CFRunLoopObserverRef mCFRunLoopObserver;
+
+#ifdef MOZ_GECKO_PROFILER
+  
+  mozilla::ProfilingStackOwner* mProfilingStackOwnerWhileWaiting = nullptr;
+#endif
 
   bool mRunningEventLoop;
   bool mStarted;
