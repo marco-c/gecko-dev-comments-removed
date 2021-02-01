@@ -1662,10 +1662,10 @@ void js::Nursery::clearRecentGrowthData() {
 
 
 size_t js::Nursery::roundSize(size_t size) {
-  size_t step = size >= ChunkSize ? ChunkSize : SubChunkStep;
+  size_t step = size >= ChunkSize ? ChunkSize : SystemPageSize();
   size = Round(size, step);
 
-  MOZ_ASSERT(size >= ArenaSize);
+  MOZ_ASSERT(size >= SystemPageSize());
 
   return size;
 }
