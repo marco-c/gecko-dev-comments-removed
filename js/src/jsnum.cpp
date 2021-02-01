@@ -873,11 +873,7 @@ frontend::TaggedParserAtomIndex js::Int32ToParserAtom(
     indexValue.emplace(si);
   }
 
-  const auto* atom = parserAtoms.internAscii(cx, start, length);
-  if (!atom) {
-    return frontend::TaggedParserAtomIndex::null();
-  }
-  return atom->toIndex();
+  return parserAtoms.internAscii(cx, start, length);
 }
 
 
@@ -1690,11 +1686,7 @@ frontend::TaggedParserAtomIndex js::NumberToParserAtom(
              numStr < cbuf.sbuf + cbuf.sbufSize);
 
   size_t length = strlen(numStr);
-  const auto* atom = parserAtoms.internAscii(cx, numStr, length);
-  if (!atom) {
-    return frontend::TaggedParserAtomIndex::null();
-  }
-  return atom->toIndex();
+  return parserAtoms.internAscii(cx, numStr, length);
 }
 
 JSLinearString* js::IndexToString(JSContext* cx, uint32_t index) {

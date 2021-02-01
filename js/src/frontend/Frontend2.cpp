@@ -21,8 +21,8 @@
 #include "frontend/BytecodeSection.h"   
 #include "frontend/CompilationInfo.h"   
 #include "frontend/Parser.h"  
-#include "frontend/ParserAtom.h"  
-#include "frontend/ScriptIndex.h"       
+#include "frontend/ParserAtom.h"   
+#include "frontend/ScriptIndex.h"  
 #include "frontend/smoosh_generated.h"  
 #include "frontend/SourceNotes.h"       
 #include "frontend/Stencil.h"           
@@ -65,14 +65,12 @@ bool ConvertAtoms(JSContext* cx, const SmooshResult& result,
     auto s = reinterpret_cast<const mozilla::Utf8Unit*>(
         smoosh_get_atom_at(result, i));
     auto len = smoosh_get_atom_len_at(result, i);
-    const ParserAtom* atom =
-        compilationState.parserAtoms.internUtf8(cx, s, len);
+    auto atom = compilationState.parserAtoms.internUtf8(cx, s, len);
     if (!atom) {
       return false;
     }
-    auto atomIndex = atom->toIndex();
-    compilationState.parserAtoms.markUsedByStencil(atomIndex);
-    allAtoms.infallibleAppend(atomIndex);
+    compilationState.parserAtoms.markUsedByStencil(atom);
+    allAtoms.infallibleAppend(atom);
   }
 
   return true;
@@ -329,16 +327,14 @@ bool ConvertRegExpData(JSContext* cx, const SmooshResult& result,
 
     const mozilla::Utf8Unit* sUtf8 =
         reinterpret_cast<const mozilla::Utf8Unit*>(s);
-    const ParserAtom* atom =
-        compilationState.parserAtoms.internUtf8(cx, sUtf8, len);
+    auto atom = compilationState.parserAtoms.internUtf8(cx, sUtf8, len);
     if (!atom) {
       return false;
     }
 
-    auto atomIndex = atom->toIndex();
-    compilationState.parserAtoms.markUsedByStencil(atomIndex);
+    compilationState.parserAtoms.markUsedByStencil(atom);
     new (mozilla::KnownNotNull, &stencil.regExpData[i])
-        RegExpStencil(atomIndex, JS::RegExpFlags(flags));
+        RegExpStencil(atom, JS::RegExpFlags(flags));
   }
 
   return true;
