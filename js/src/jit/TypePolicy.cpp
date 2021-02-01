@@ -170,6 +170,12 @@ bool ComparePolicy::adjustInputs(TempAllocator& alloc,
     return true;
   }
 
+  if (compare->compareType() == MCompare::Compare_UIntPtr) {
+    MOZ_ASSERT(compare->lhs()->type() == MIRType::IntPtr);
+    MOZ_ASSERT(compare->rhs()->type() == MIRType::IntPtr);
+    return true;
+  }
+
   
   
   

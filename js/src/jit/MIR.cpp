@@ -2811,6 +2811,8 @@ MIRType MCompare::inputType() {
     case Compare_UInt32:
     case Compare_Int32:
       return MIRType::Int32;
+    case Compare_UIntPtr:
+      return MIRType::IntPtr;
     case Compare_Double:
       return MIRType::Double;
     case Compare_Float32:
@@ -3492,15 +3494,15 @@ bool MCompare::tryFoldEqualOperands(bool* result) {
     return false;
   }
 
-  MOZ_ASSERT(compareType_ == Compare_Undefined ||
-             compareType_ == Compare_Null || compareType_ == Compare_Int32 ||
-             compareType_ == Compare_UInt32 || compareType_ == Compare_Double ||
-             compareType_ == Compare_Float32 ||
-             compareType_ == Compare_String || compareType_ == Compare_Object ||
-             compareType_ == Compare_Symbol || compareType_ == Compare_BigInt ||
-             compareType_ == Compare_BigInt_Int32 ||
-             compareType_ == Compare_BigInt_Double ||
-             compareType_ == Compare_BigInt_String);
+  MOZ_ASSERT(
+      compareType_ == Compare_Undefined || compareType_ == Compare_Null ||
+      compareType_ == Compare_Int32 || compareType_ == Compare_UInt32 ||
+      compareType_ == Compare_Double || compareType_ == Compare_Float32 ||
+      compareType_ == Compare_UIntPtr || compareType_ == Compare_String ||
+      compareType_ == Compare_Object || compareType_ == Compare_Symbol ||
+      compareType_ == Compare_BigInt || compareType_ == Compare_BigInt_Int32 ||
+      compareType_ == Compare_BigInt_Double ||
+      compareType_ == Compare_BigInt_String);
 
   if (isDoubleComparison() || isFloat32Comparison()) {
     if (!operandsAreNeverNaN()) {
@@ -4392,10 +4394,10 @@ template <typename T>
 static int32_t Bitmask(const T& v) {
   constexpr size_t count = sizeof(T) / sizeof(*v);
   constexpr size_t shift = 8 * sizeof(*v) - 1;
-  static_assert(shift == 7 || shift == 15 || shift == 31);
+  static_assert(shift == 7 || shift == 15 || shift == 31 || shift == 63);
   int32_t result = 0;
   for (unsigned i = 0; i < count; i++) {
-    result = result | (((v[i] >> shift) & 1) << i);
+    result = result | int32_t(((v[i] >> shift) & 1) << i);
   }
   return result;
 }
@@ -4410,7 +4412,7 @@ MDefinition* MWasmReduceSimd128::foldsTo(TempAllocator& alloc) {
     SimdConstant c = input()->toWasmFloatConstant()->toSimd128();
     int32_t i32Result = 0;
     switch (simdOp()) {
-      case wasm::SimdOp::I8x16AnyTrue:
+      case wasm::SimdOp::V128AnyTrue:
       case wasm::SimdOp::I16x8AnyTrue:
       case wasm::SimdOp::I32x4AnyTrue:
         i32Result = !c.isZeroBits();
@@ -4438,6 +4440,10 @@ MDefinition* MWasmReduceSimd128::foldsTo(TempAllocator& alloc) {
       case wasm::SimdOp::I32x4Bitmask:
         i32Result = Bitmask(
             SimdConstant::CreateSimd128((int32_t*)c.bytes()).asInt32x4());
+        break;
+      case wasm::SimdOp::I64x2Bitmask:
+        i32Result = Bitmask(
+            SimdConstant::CreateSimd128((int64_t*)c.bytes()).asInt64x2());
         break;
       case wasm::SimdOp::I8x16ExtractLaneS:
         i32Result =

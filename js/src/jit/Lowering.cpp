@@ -684,6 +684,7 @@ void LIRGenerator::visitTest(MTest* test) {
     
     if (comp->isInt32Comparison() ||
         comp->compareType() == MCompare::Compare_UInt32 ||
+        comp->compareType() == MCompare::Compare_UIntPtr ||
         comp->compareType() == MCompare::Compare_Object ||
         comp->compareType() == MCompare::Compare_Symbol) {
       JSOp op = ReorderComparison(comp->jsop(), &left, &right);
@@ -929,6 +930,7 @@ void LIRGenerator::visitCompare(MCompare* comp) {
   
   if (comp->isInt32Comparison() ||
       comp->compareType() == MCompare::Compare_UInt32 ||
+      comp->compareType() == MCompare::Compare_UIntPtr ||
       comp->compareType() == MCompare::Compare_Object ||
       comp->compareType() == MCompare::Compare_Symbol ||
       comp->compareType() == MCompare::Compare_RefOrNull) {
