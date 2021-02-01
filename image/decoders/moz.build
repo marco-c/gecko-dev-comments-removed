@@ -43,6 +43,8 @@ LOCAL_INCLUDES += [
     "/gfx/2d",
     
     "/image",
+    
+    "/media/libyuv/libyuv/include",
 ]
 
 LOCAL_INCLUDES += CONFIG["SKIA_INCLUDES"]
