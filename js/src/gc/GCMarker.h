@@ -328,6 +328,7 @@ class GCMarker final : public JSTracer {
     state = MarkingState::IterativeMarking;
   }
 
+  void delayMarkingChildrenOnOOM(gc::Cell* cell);
   void delayMarkingChildren(gc::Cell* cell);
 
   
