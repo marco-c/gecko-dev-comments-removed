@@ -54,6 +54,17 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
   mutable bool mShared;
   mutable bool mComputed;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  JS::AutoCheckCannotGC mNoGC;
+
  public:
   inline bool Init(JSObject* obj) {
     MOZ_ASSERT(!inited());
@@ -136,6 +147,7 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
     mComputed = true;
   }
 
+  
   inline void Reset() {
     
     
