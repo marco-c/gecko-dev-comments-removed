@@ -317,6 +317,10 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
   static CSSIntPoint sLastClientPoint;
 
+  static bool sIsPointerLocked;
+  static nsWeakPtr sPointerLockedElement;
+  static nsWeakPtr sPointerLockedDoc;
+
   
 
 

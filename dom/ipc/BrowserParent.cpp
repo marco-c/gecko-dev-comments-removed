@@ -171,6 +171,8 @@ BrowserParent* BrowserParent::sTopLevelWebFocus = nullptr;
 
 BrowserParent* BrowserParent::sLastMouseRemoteTarget = nullptr;
 
+BrowserParent* BrowserParent::sPointerLockedRemoteTarget = nullptr;
+
 
 
 #define NOTIFY_FLAG_SHIFT 16
@@ -250,6 +252,11 @@ BrowserParent* BrowserParent::GetFocused() { return sFocus; }
 
 BrowserParent* BrowserParent::GetLastMouseRemoteTarget() {
   return sLastMouseRemoteTarget;
+}
+
+
+BrowserParent* BrowserParent::GetPointerLockedRemoteTarget() {
+  return sPointerLockedRemoteTarget;
 }
 
 
@@ -601,7 +608,7 @@ void BrowserParent::RemoveWindowListeners() {
 void BrowserParent::DestroyInternal() {
   UnsetTopLevelWebFocus(this);
   UnsetLastMouseRemoteTarget(this);
-  PointerLockManager::ReleaseLockedRemoteTarget(this);
+  UnsetPointerLockedRemoteTarget(this);
   PointerEventHandler::ReleasePointerCaptureRemoteTarget(this);
   PresShell::ReleaseCapturingRemoteTarget(this);
 
@@ -685,7 +692,7 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
   
   BrowserParent::UnsetTopLevelWebFocus(this);
   BrowserParent::UnsetLastMouseRemoteTarget(this);
-  PointerLockManager::ReleaseLockedRemoteTarget(this);
+  BrowserParent::UnsetPointerLockedRemoteTarget(this);
   PointerEventHandler::ReleasePointerCaptureRemoteTarget(this);
   PresShell::ReleaseCapturingRemoteTarget(this);
 
@@ -3098,6 +3105,14 @@ void BrowserParent::UnsetLastMouseRemoteTarget(BrowserParent* aBrowserParent) {
   }
 }
 
+
+void BrowserParent::UnsetPointerLockedRemoteTarget(
+    BrowserParent* aBrowserParent) {
+  if (sPointerLockedRemoteTarget == aBrowserParent) {
+    sPointerLockedRemoteTarget = nullptr;
+  }
+}
+
 mozilla::ipc::IPCResult BrowserParent::RecvRequestIMEToCommitComposition(
     const bool& aCancel, bool* aIsCommitted, nsString* aCommittedString) {
   nsCOMPtr<nsIWidget> widget = GetTextInputHandlingWidget();
@@ -4067,10 +4082,19 @@ mozilla::ipc::IPCResult BrowserParent::RecvIsWindowSupportingWebVR(
   return IPC_OK();
 }
 
+bool BrowserParent::SetPointerLock() {
+  if (sPointerLockedRemoteTarget) {
+    return sPointerLockedRemoteTarget == this;
+  }
+
+  sPointerLockedRemoteTarget = this;
+  return true;
+}
+
 mozilla::ipc::IPCResult BrowserParent::RecvRequestPointerLock(
     RequestPointerLockResolver&& aResolve) {
   nsCString error;
-  if (!PointerLockManager::SetLockedRemoteTarget(this)) {
+  if (!SetPointerLock()) {
     error = "PointerLockDeniedInUse";
   } else {
     PointerEventHandler::ReleaseAllPointerCaptureRemoteTarget();
@@ -4080,9 +4104,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvRequestPointerLock(
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvReleasePointerLock() {
-  MOZ_ASSERT_IF(PointerLockManager::GetLockedRemoteTarget(),
-                PointerLockManager::GetLockedRemoteTarget() == this);
-  PointerLockManager::ReleaseLockedRemoteTarget(this);
+  MOZ_ASSERT_IF(sPointerLockedRemoteTarget, sPointerLockedRemoteTarget == this);
+  UnsetPointerLockedRemoteTarget(this);
   return IPC_OK();
 }
 

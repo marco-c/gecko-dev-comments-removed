@@ -2445,6 +2445,14 @@ class nsContentUtils {
 
   static Document* GetRootDocument(Document* aDoc);
 
+  
+
+
+
+
+
+  static bool IsInPointerLockContext(mozilla::dom::BrowsingContext* aContext);
+
   static void GetShiftText(nsAString& text);
   static void GetControlText(nsAString& text);
   static void GetMetaText(nsAString& text);

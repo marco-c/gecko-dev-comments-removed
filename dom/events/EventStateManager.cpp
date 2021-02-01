@@ -15,7 +15,6 @@
 #include "mozilla/MiscEvents.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MouseEvents.h"
-#include "mozilla/PointerLockManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ScrollTypes.h"
@@ -224,6 +223,11 @@ LayoutDeviceIntPoint EventStateManager::sLastRefPoint = kInvalidRefPoint;
 CSSIntPoint EventStateManager::sLastScreenPoint = CSSIntPoint(0, 0);
 LayoutDeviceIntPoint EventStateManager::sSynthCenteringPoint = kInvalidRefPoint;
 CSSIntPoint EventStateManager::sLastClientPoint = CSSIntPoint(0, 0);
+bool EventStateManager::sIsPointerLocked = false;
+
+nsWeakPtr EventStateManager::sPointerLockedElement;
+
+nsWeakPtr EventStateManager::sPointerLockedDoc;
 nsCOMPtr<nsIContent> EventStateManager::sDragOverContent = nullptr;
 
 EventStateManager::WheelPrefs* EventStateManager::WheelPrefs::sInstance =
@@ -530,10 +534,11 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     return NS_ERROR_NULL_POINTER;
   }
 #ifdef DEBUG
-  if (aEvent->HasDragEventMessage() && PointerLockManager::IsLocked()) {
-    NS_ASSERTION(PointerLockManager::IsLocked(),
-                 "Pointer is locked. Drag events should be suppressed when "
-                 "the pointer is locked.");
+  if (aEvent->HasDragEventMessage() && sIsPointerLocked) {
+    NS_ASSERTION(
+        sIsPointerLocked,
+        "sIsPointerLocked is true. Drag events should be suppressed when "
+        "the pointer is locked.");
   }
 #endif
   
@@ -541,7 +546,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
   if (aEvent->IsTrusted() &&
       ((mouseEvent && mouseEvent->IsReal()) ||
        aEvent->mClass == eWheelEventClass) &&
-      !PointerLockManager::IsLocked()) {
+      !sIsPointerLocked) {
     sLastScreenPoint =
         Event::GetScreenCoords(aPresContext, aEvent, aEvent->mRefPoint);
     sLastClientPoint = Event::GetClientCoords(
@@ -567,7 +572,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
 
   switch (aEvent->mMessage) {
     case eContextMenu:
-      if (PointerLockManager::IsLocked()) {
+      if (sIsPointerLocked) {
         return NS_ERROR_DOM_INVALID_STATE_ERR;
       }
       break;
@@ -693,7 +698,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       UpdateCursor(aPresContext, aEvent, mCurrentTarget, aStatus);
 
       UpdateLastRefPointOfMouseEvent(mouseEvent);
-      if (PointerLockManager::IsLocked()) {
+      if (sIsPointerLocked) {
         ResetPointerToWindowCenterWhilePointerLocked(mouseEvent);
       }
       UpdateLastPointerPosition(mouseEvent);
@@ -1378,7 +1383,7 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
       }
 
       if (BrowserParent* pointerLockedRemote =
-              PointerLockManager::GetLockedRemoteTarget()) {
+              BrowserParent::GetPointerLockedRemoteTarget()) {
         remote = pointerLockedRemote;
       } else if (BrowserParent* pointerCapturedRemote =
                      PointerEventHandler::GetPointerCapturingRemoteTarget(
@@ -1572,8 +1577,7 @@ void EventStateManager::CreateClickHoldTimer(nsPresContext* inPresContext,
                                              nsIFrame* inDownFrame,
                                              WidgetGUIEvent* inMouseDownEvent) {
   if (!inMouseDownEvent->IsTrusted() ||
-      IsTopLevelRemoteTarget(mGestureDownContent) ||
-      PointerLockManager::IsLocked()) {
+      IsTopLevelRemoteTarget(mGestureDownContent) || sIsPointerLocked) {
     return;
   }
 
@@ -1640,7 +1644,7 @@ void EventStateManager::sClickHoldCallback(nsITimer* aTimer, void* aESM) {
 
 
 void EventStateManager::FireContextClick() {
-  if (!mGestureDownContent || !mPresContext || PointerLockManager::IsLocked()) {
+  if (!mGestureDownContent || !mPresContext || sIsPointerLocked) {
     return;
   }
 
@@ -4247,12 +4251,11 @@ nsIFrame* EventStateManager::DispatchMouseOrPointerEvent(
   
   
   
-  if (PointerLockManager::IsLocked() &&
-      (aMessage == eMouseLeave || aMessage == eMouseEnter ||
-       aMessage == eMouseOver || aMessage == eMouseOut)) {
+  if (sIsPointerLocked && (aMessage == eMouseLeave || aMessage == eMouseEnter ||
+                           aMessage == eMouseOver || aMessage == eMouseOut)) {
     mCurrentTargetContent = nullptr;
     nsCOMPtr<Element> pointerLockedElement =
-        PointerLockManager::GetLockedElement();
+        do_QueryReferent(EventStateManager::sPointerLockedElement);
     if (!pointerLockedElement) {
       NS_WARNING("Should have pointer locked element, but didn't.");
       return nullptr;
@@ -4540,7 +4543,7 @@ void EventStateManager::UpdateLastRefPointOfMouseEvent(
   
   
   
-  if (PointerLockManager::IsLocked() && aMouseEvent->mWidget) {
+  if (sIsPointerLocked && aMouseEvent->mWidget) {
     
     
     
@@ -4564,7 +4567,7 @@ void EventStateManager::UpdateLastRefPointOfMouseEvent(
 
 void EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
     WidgetMouseEvent* aMouseEvent) {
-  MOZ_ASSERT(PointerLockManager::IsLocked());
+  MOZ_ASSERT(sIsPointerLocked);
   if ((aMouseEvent->mMessage != eMouseMove &&
        aMouseEvent->mMessage != ePointerMove) ||
       !aMouseEvent->mWidget) {
@@ -4703,13 +4706,16 @@ OverOutElementsWrapper* EventStateManager::GetWrapperByEventID(
 void EventStateManager::SetPointerLock(nsIWidget* aWidget,
                                        nsIContent* aElement) {
   
+  sIsPointerLocked = !!aElement;
+
+  
   WheelTransaction::EndTransaction();
 
   
   nsCOMPtr<nsIDragService> dragService =
       do_GetService("@mozilla.org/widget/dragservice;1");
 
-  if (PointerLockManager::IsLocked()) {
+  if (sIsPointerLocked) {
     MOZ_ASSERT(aWidget, "Locking pointer requires a widget");
 
     
