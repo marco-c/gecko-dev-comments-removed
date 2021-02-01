@@ -2634,10 +2634,6 @@ nsresult nsHttpHandler::SpeculativeConnectInternal(
   nsAutoCString username;
   aURI->GetUsername(username);
 
-  
-  
-  
-  
   RefPtr<nsHttpConnectionInfo> ci =
       new nsHttpConnectionInfo(host, port, ""_ns, username, nullptr,
                                originAttributes, aURI->SchemeIs("https"));
