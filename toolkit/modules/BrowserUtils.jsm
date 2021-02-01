@@ -199,26 +199,6 @@ var BrowserUtils = {
 
 
 
-
-
-
-  makeURI(aURL, aOriginCharset, aBaseURI) {
-    return Services.io.newURI(aURL, aOriginCharset, aBaseURI);
-  },
-
-  
-
-
-  makeFileURI(aFile) {
-    return Services.io.newFileURI(aFile);
-  },
-
-  
-
-
-
-
-
   getElementBoundingScreenRect(aElement) {
     return this.getElementBoundingRect(aElement, true);
   },
@@ -559,7 +539,7 @@ var BrowserUtils = {
       linkText = selectionStr.trim();
       if (/^(?:https?|ftp):/i.test(linkText)) {
         try {
-          url = this.makeURI(linkText);
+          url = Services.io.newURI(linkText);
         } catch (ex) {}
       } else if (/^(?:[a-z\d-]+\.)+[a-z]+$/i.test(linkText)) {
         
