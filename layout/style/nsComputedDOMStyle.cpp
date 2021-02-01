@@ -838,7 +838,9 @@ static bool IsNonReplacedInline(nsIFrame* aFrame) {
   
   
   return aFrame->StyleDisplay()->IsInlineFlow() &&
-         !aFrame->IsFrameOfType(nsIFrame::eReplaced);
+         !aFrame->IsFrameOfType(nsIFrame::eReplaced) &&
+         !aFrame->IsBlockFrame() && !aFrame->IsScrollFrame() &&
+         !aFrame->IsColumnSetWrapperFrame();
 }
 
 static Side SideForPaddingOrMarginOrInsetProperty(nsCSSPropertyID aPropID) {
