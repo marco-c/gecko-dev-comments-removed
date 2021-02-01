@@ -641,7 +641,7 @@ add_task(async function sessionTimeExcludingAndIncludingSuspend() {
   
   
   if (
-    AppConstants.platform != "windows" ||
+    AppConstants.platform != "win" ||
     AppConstants.isPlatformAndVersionAtLeast("win", "10.0")
   ) {
     Assert.greaterOrEqual(
