@@ -762,37 +762,10 @@ double ProxyAccessible::Step() {
 void ProxyAccessible::TakeFocus() { Unused << mDoc->SendTakeFocus(mID); }
 
 ProxyAccessible* ProxyAccessible::FocusedChild() {
-  if (mOuterDoc) {
-    
-    
-    
-    
-    MOZ_ASSERT(ChildrenCount() == 1);
-    ProxyAccessible* child = FirstChild();
-    MOZ_ASSERT(child->IsDoc());
-    return (child->State() & states::FOCUSED) ? child : nullptr;
-  }
-
-  auto* doc = mDoc;
-  uint64_t id = mID;
-  if (IsDoc()) {
-    
-    
-    
-    if (dom::BrowserParent* browser = dom::BrowserParent::GetFocused()) {
-      if (auto* focusedDoc = browser->GetTopLevelDocAccessible()) {
-        doc = focusedDoc;
-      }
-    }
-  }
-
-  PDocAccessibleParent* resultDoc = nullptr;
-  uint64_t resultID = 0;
-  Unused << doc->SendFocusedChild(id, &resultDoc, &resultID);
-
-  auto* useDoc = static_cast<DocAccessibleParent*>(resultDoc);
-  
-  return useDoc ? useDoc->GetAccessible(resultID) : nullptr;
+  uint64_t childID = 0;
+  bool ok = false;
+  Unused << mDoc->SendFocusedChild(mID, &childID, &ok);
+  return ok ? mDoc->GetAccessible(childID) : nullptr;
 }
 
 ProxyAccessible* ProxyAccessible::ChildAtPoint(
