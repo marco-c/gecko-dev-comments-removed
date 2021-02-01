@@ -395,6 +395,9 @@ struct TraversalTracer : public JS::CallbackTracer {
 
 void TraversalTracer::onChild(const JS::GCCellPtr& aThing) {
   
+  JS::AutoClearTracingContext actc(this);
+
+  
   
   if (aThing.is<JSString>() || aThing.is<JS::Symbol>()) {
     return;
