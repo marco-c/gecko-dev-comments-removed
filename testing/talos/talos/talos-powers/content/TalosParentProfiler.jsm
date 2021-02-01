@@ -188,9 +188,14 @@ const TalosParentProfiler = {
 
 
 
-  pause(marker = "") {
+
+
+
+
+
+  pause(marker = "", startTime = undefined) {
     if (this.initted) {
-      this.TalosPowers.profilerPause(marker);
+      this.TalosPowers.profilerPause(marker, startTime);
     }
   },
 
@@ -200,14 +205,19 @@ const TalosParentProfiler = {
 
 
 
-  mark(marker) {
+
+
+
+
+
+  mark(marker, startTime = undefined) {
     if (this.initted) {
       
       if (!marker) {
         marker = this.currentTest;
       }
 
-      this.TalosPowers.profilerMarker(marker);
+      this.TalosPowers.addIntervalMarker(marker, startTime);
     }
   },
 

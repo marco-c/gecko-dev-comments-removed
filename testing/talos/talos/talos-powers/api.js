@@ -35,6 +35,7 @@ Cu.importGlobalProperties(["TextEncoder"]);
 const Cm = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
 
 let frameScriptURL;
+let profilerStartTime;
 
 function TalosPowersService() {
   this.wrappedJSObject = this;
@@ -175,9 +176,8 @@ TalosPowersService.prototype = {
 
   profilerPause(marker = null) {
     if (marker) {
-      ChromeUtils.addProfilerMarker(marker);
+      this.addIntervalMarker(marker, profilerStartTime);
     }
-
     Services.profiler.PauseSampling();
   },
 
@@ -191,16 +191,35 @@ TalosPowersService.prototype = {
   profilerResume(marker = null) {
     Services.profiler.ResumeSampling();
 
+    profilerStartTime = Cu.now();
+
     if (marker) {
-      ChromeUtils.addProfilerMarker(marker);
+      this.addInstantMarker(marker);
     }
   },
 
   
 
 
-  profilerMarker(marker) {
-    ChromeUtils.addProfilerMarker(marker);
+
+
+
+  addInstantMarker(marker) {
+    ChromeUtils.addProfilerMarker("Talos", undefined, marker);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  addIntervalMarker(marker, startTime) {
+    ChromeUtils.addProfilerMarker("Talos", startTime, marker);
   },
 
   receiveProfileCommand(message) {
@@ -229,7 +248,7 @@ TalosPowersService.prototype = {
       }
 
       case "Profiler:Pause": {
-        this.profilerPause(data.marker);
+        this.profilerPause(data.marker, data.startTime);
         mm.sendAsyncMessage(ACK_NAME, { name });
         break;
       }
@@ -241,8 +260,9 @@ TalosPowersService.prototype = {
       }
 
       case "Profiler:Marker": {
-        this.profilerMarker(data.marker);
+        this.profilerMarker(data.marker, data.startTime);
         mm.sendAsyncMessage(ACK_NAME, { name });
+        break;
       }
     }
   },

@@ -253,9 +253,12 @@ var TalosContentProfiler;
 
 
 
-    pause(marker = "", inittedInParent = false) {
+
+
+
+    pause(marker = "", inittedInParent = false, startTime = undefined) {
       if (initted || inittedInParent) {
-        return sendEventAndWait("Profiler:Pause", { marker });
+        return sendEventAndWait("Profiler:Pause", { marker, startTime });
       }
 
       return Promise.resolve();
@@ -267,14 +270,23 @@ var TalosContentProfiler;
 
 
 
-    mark(marker) {
-      if (initted) {
+
+
+
+
+
+
+
+
+
+    mark(marker, inittedInParent = false, startTime = undefined) {
+      if (initted || inittedInParent) {
         
         if (!marker) {
           marker = currentTest;
         }
 
-        return sendEventAndWait("Profiler:Marker", { marker });
+        return sendEventAndWait("Profiler:Marker", { marker, startTime });
       }
 
       return Promise.resolve();
