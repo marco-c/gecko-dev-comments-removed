@@ -382,7 +382,7 @@ pref("browser.urlbar.dnsResolveSingleWordsAfterSearch", 1);
 
 
 
-pref("browser.urlbar.imeCompositionClosesPanel", true);
+pref("browser.urlbar.keepPanelOpenDuringImeComposition", false);
 
 pref("browser.altClickSave", false);
 

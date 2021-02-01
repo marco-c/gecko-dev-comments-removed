@@ -2921,7 +2921,7 @@ class UrlbarInput {
     
     
     if (
-      UrlbarPrefs.get("imeCompositionClosesPanel") &&
+      !UrlbarPrefs.get("keepPanelOpenDuringImeComposition") &&
       (compositionState == UrlbarUtils.COMPOSITION.COMPOSING ||
         (compositionState == UrlbarUtils.COMPOSITION.CANCELED &&
           !compositionClosedPopup))
@@ -3106,7 +3106,7 @@ class UrlbarInput {
     }
     this._compositionState = UrlbarUtils.COMPOSITION.COMPOSING;
 
-    if (!UrlbarPrefs.get("imeCompositionClosesPanel")) {
+    if (UrlbarPrefs.get("keepPanelOpenDuringImeComposition")) {
       return;
     }
 
@@ -3136,7 +3136,7 @@ class UrlbarInput {
       throw new Error("Trying to stop a non existing composition?");
     }
 
-    if (UrlbarPrefs.get("imeCompositionClosesPanel")) {
+    if (!UrlbarPrefs.get("keepPanelOpenDuringImeComposition")) {
       
       
       
