@@ -67,7 +67,20 @@ Accessible* TableCellAccessible::PrevColHeader() {
 
     
     cachedHeader = cache.GetWeak(tableCell, &inCache);
-    if (inCache && cell->Role() != roles::COLUMNHEADER) {
+    if (
+        
+        
+        inCache &&
+        
+        
+        
+        
+        cell->Role() != roles::COLUMNHEADER &&
+        
+        
+        
+        
+        (tableCell->ColExtent() == 1 || tableCell->ColIdx() == colIdx)) {
       if (!cachedHeader || !cachedHeader->IsDefunct()) {
         
         cache.Put(this, RefPtr<Accessible>(cachedHeader));
