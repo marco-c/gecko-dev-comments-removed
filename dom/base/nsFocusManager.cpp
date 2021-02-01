@@ -35,7 +35,6 @@
 #include "nsIScriptObjectPrincipal.h"
 #include "nsIPrincipal.h"
 #include "nsIObserverService.h"
-#include "nsIObjectFrame.h"
 #include "BrowserChild.h"
 #include "nsFrameLoader.h"
 #include "nsHTMLDocument.h"
@@ -62,6 +61,7 @@
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/LookAndFeel.h"
+#include "mozilla/PointerLockManager.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/Services.h"
@@ -2210,36 +2210,6 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
                              false);
     }
 
-    
-    
-    
-    
-    if (GetActiveBrowsingContext()) {
-      nsIFrame* contentFrame = element->GetPrimaryFrame();
-      nsIObjectFrame* objectFrame = do_QueryFrame(contentFrame);
-      if (aAdjustWidget && objectFrame && !sTestMode) {
-        if (XRE_IsContentProcess()) {
-          
-          nsCOMPtr<nsIBrowserChild> browserChild = docShell->GetBrowserChild();
-          if (browserChild) {
-            static_cast<BrowserChild*>(browserChild.get())
-                ->SendDispatchFocusToTopLevelWindow();
-          }
-        } else {
-          
-          
-          if (nsViewManager* vm = presShell->GetViewManager()) {
-            nsCOMPtr<nsIWidget> widget;
-            vm->GetRootWidget(getter_AddRefs(widget));
-            if (widget) {
-              
-              widget->SetFocus(nsIWidget::Raise::No, CallerType::System);
-            }
-          }
-        }
-      }
-    }
-
     bool windowBeingLowered = !aBrowsingContextToClear &&
                               !aAncestorBrowsingContextToFocus &&
                               aIsLeavingDocument && aAdjustWidget;
@@ -2458,18 +2428,7 @@ void nsFocusManager::Focus(
 
   SetFocusedWindowInternal(aWindow);
 
-  
-  
-  
-  nsCOMPtr<nsIWidget> objectFrameWidget;
-  if (aElement) {
-    nsIFrame* contentFrame = aElement->GetPrimaryFrame();
-    nsIObjectFrame* objectFrame = do_QueryFrame(contentFrame);
-    if (objectFrame) {
-      objectFrameWidget = objectFrame->GetWidget();
-    }
-  }
-  if (aAdjustWidget && !objectFrameWidget && !sTestMode) {
+  if (aAdjustWidget && !sTestMode) {
     if (nsViewManager* vm = presShell->GetViewManager()) {
       nsCOMPtr<nsIWidget> widget;
       vm->GetRootWidget(getter_AddRefs(widget));
@@ -2532,13 +2491,6 @@ void nsFocusManager::Focus(
       
       
       if (presShell->GetDocument() == aElement->GetComposedDoc()) {
-        if (aAdjustWidget && objectFrameWidget && !sTestMode) {
-          objectFrameWidget->SetFocus(nsIWidget::Raise::No,
-                                      aFlags & FLAG_NONSYSTEMCALLER
-                                          ? CallerType::NonSystem
-                                          : CallerType::System);
-        }
-
         
         
         ActivateRemoteFrameIfNeeded(*aElement, aActionId);
@@ -2572,23 +2524,6 @@ void nsFocusManager::Focus(
       }
     }
   } else {
-    
-    
-    
-    if (aAdjustWidget && objectFrameWidget &&
-        GetFocusedBrowsingContext() == aWindow->GetBrowsingContext() &&
-        mFocusedElement == nullptr && !sTestMode) {
-      if (nsViewManager* vm = presShell->GetViewManager()) {
-        nsCOMPtr<nsIWidget> widget;
-        vm->GetRootWidget(getter_AddRefs(widget));
-        if (widget) {
-          widget->SetFocus(nsIWidget::Raise::No, aFlags & FLAG_NONSYSTEMCALLER
-                                                     ? CallerType::NonSystem
-                                                     : CallerType::System);
-        }
-      }
-    }
-
     if (!mFocusedElement) {
       
       
@@ -4713,11 +4648,8 @@ void nsFocusManager::GetFocusInSelection(nsPIDOMWindowOuter* aWindow,
 }
 
 static void MaybeUnlockPointer(BrowsingContext* aCurrentFocusedContext) {
-  nsCOMPtr<Document> pointerLockedDoc =
-      do_QueryReferent(EventStateManager::sPointerLockedDoc);
-  if (pointerLockedDoc &&
-      !nsContentUtils::IsInPointerLockContext(aCurrentFocusedContext)) {
-    Document::UnlockPointer();
+  if (PointerLockManager::IsInLockContext(aCurrentFocusedContext)) {
+    PointerLockManager::Unlock();
   }
 }
 
@@ -4947,8 +4879,8 @@ uint64_t nsFocusManager::GenerateFocusActionId() {
 }
 
 static bool IsInPointerLockContext(nsPIDOMWindowOuter* aWin) {
-  return nsContentUtils::IsInPointerLockContext(
-      aWin ? aWin->GetBrowsingContext() : nullptr);
+  return PointerLockManager::IsInLockContext(aWin ? aWin->GetBrowsingContext()
+                                                  : nullptr);
 }
 
 void nsFocusManager::SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow) {

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1662587
+-->
 <head>
 <title>Test for Bug 1662587</title>
 <script type="application/javascript"  src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -22,6 +22,7 @@ SimpleTest.waitForExplicitFinish();
 
 let gTestFiles = [
   "file_pointerlock_xorigin_iframe.html",
+  "file_pointerlock_xorigin_iframe_no_user_gesture.html",
 ];
 
 let gTestWindow = null;

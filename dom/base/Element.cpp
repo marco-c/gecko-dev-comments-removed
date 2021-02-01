@@ -45,6 +45,7 @@
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/NotNull.h"
+#include "mozilla/PointerLockManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellForwards.h"
 #include "mozilla/ReflowOutput.h"
@@ -1233,7 +1234,7 @@ already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
   SetShadowRoot(shadowRoot);
 
   
-  {
+  if (MOZ_UNLIKELY(nim->GetDocument()->ShadowRootAttachedEventEnabled())) {
     AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
         this, u"shadowrootattached"_ns, CanBubble::eYes,
         ChromeOnlyDispatch::eYes, Composed::eYes);
@@ -1830,7 +1831,7 @@ void Element::UnbindFromTree(bool aNullParent) {
   Document* document = GetComposedDoc();
 
   if (HasPointerLock()) {
-    Document::UnlockPointer();
+    PointerLockManager::Unlock();
   }
   if (mState.HasState(NS_EVENT_STATE_FULLSCREEN)) {
     
@@ -3339,7 +3340,7 @@ already_AddRefed<Promise> Element::RequestFullscreen(CallerType aCallerType,
 }
 
 void Element::RequestPointerLock(CallerType aCallerType) {
-  OwnerDoc()->RequestPointerLock(this, aCallerType);
+  PointerLockManager::RequestLock(this, aCallerType);
 }
 
 already_AddRefed<Flex> Element::GetAsFlexContainer() {
