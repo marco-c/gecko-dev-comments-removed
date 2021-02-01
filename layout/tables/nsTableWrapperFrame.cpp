@@ -819,20 +819,21 @@ void nsTableWrapperFrame::Reflow(nsPresContext* aPresContext,
   WritingMode wm = aOuterRI.GetWritingMode();
   uint8_t captionSide = GetCaptionSide();
   WritingMode captionWM = wm;  
+  const nscoord contentBoxISize = aOuterRI.ComputedSize(wm).ISize(wm);
 
   if (captionSide == NO_SIDE) {
     
     OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRI, innerRI,
-                          aOuterRI.ComputedSize(wm).ISize(wm));
+                          contentBoxISize);
   } else if (captionSide == NS_STYLE_CAPTION_SIDE_LEFT ||
              captionSide == NS_STYLE_CAPTION_SIDE_RIGHT) {
     
     
     OuterBeginReflowChild(aPresContext, mCaptionFrames.FirstChild(), aOuterRI,
-                          captionRI, aOuterRI.ComputedSize(wm).ISize(wm));
+                          captionRI, contentBoxISize);
     captionWM = captionRI->GetWritingMode();
     nscoord innerAvailISize =
-        aOuterRI.ComputedSize(wm).ISize(wm) -
+        contentBoxISize -
         captionRI->ComputedSizeWithMarginBorderPadding(wm).ISize(wm);
     OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRI, innerRI,
                           innerAvailISize);
@@ -847,7 +848,7 @@ void nsTableWrapperFrame::Reflow(nsPresContext* aPresContext,
     
     
     OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRI, innerRI,
-                          aOuterRI.ComputedSize(wm).ISize(wm));
+                          contentBoxISize);
     
     
     
@@ -868,7 +869,7 @@ void nsTableWrapperFrame::Reflow(nsPresContext* aPresContext,
                           captionRI,
                           aOuterRI.ComputedSize(captionWM).ISize(captionWM));
     OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRI, innerRI,
-                          aOuterRI.ComputedSize(wm).ISize(wm));
+                          contentBoxISize);
   }
 
   
@@ -916,7 +917,7 @@ void nsTableWrapperFrame::Reflow(nsPresContext* aPresContext,
           
           innerRI.reset();
           OuterBeginReflowChild(aPresContext, InnerTableFrame(), aOuterRI,
-                                innerRI, aOuterRI.ComputedSize(wm).ISize(wm));
+                                innerRI, contentBoxISize);
         }
       }
     }
