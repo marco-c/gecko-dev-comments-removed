@@ -40,6 +40,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
 #include "mozilla/fallible.h"
+#include "mozilla/XorShift128PlusRNG.h"
 
 #include "nsBaseHashtable.h"
 #include "nsCOMPtr.h"
@@ -172,113 +173,6 @@ double nsRFPService::TimerResolution() {
 
 
 
-#define LRU_CACHE_SIZE (45)
-#define HASH_DIGEST_SIZE_BITS (256)
-#define HASH_DIGEST_SIZE_BYTES (HASH_DIGEST_SIZE_BITS / 8)
-
-class LRUCache final {
- public:
-  LRUCache() : mLock("mozilla.resistFingerprinting.LRUCache") {
-    this->cache.SetLength(LRU_CACHE_SIZE);
-  }
-
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(LRUCache)
-
-  bool Get(long long aKeyPart1, long long aKeyPart2, nsACString& aOutString) {
-    for (auto& cacheEntry : this->cache) {
-      
-      if (cacheEntry.keyPart1 == aKeyPart1 &&
-          cacheEntry.keyPart2 == aKeyPart2) {
-        MutexAutoLock lock(mLock);
-
-        
-        if (MOZ_UNLIKELY(cacheEntry.keyPart1 != aKeyPart1 ||
-                         cacheEntry.keyPart2 != aKeyPart2)) {
-          
-          long long tmp_keyPart1 = cacheEntry.keyPart1;
-          long long tmp_keyPart2 = cacheEntry.keyPart2;
-          MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
-                  ("LRU Cache HIT-MISS with %lli != %lli and %lli != %lli",
-                   aKeyPart1, tmp_keyPart1, aKeyPart2, tmp_keyPart2));
-          return false;
-        }
-
-        cacheEntry.accessTime = ++mTimeCounter;
-        MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
-                ("LRU Cache HIT with %lli %lli", aKeyPart1, aKeyPart2));
-        aOutString.Assign(cacheEntry.data, HASH_DIGEST_SIZE_BYTES);
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  void Store(long long aKeyPart1, long long aKeyPart2,
-             const Span<char>& aValue) {
-    MOZ_DIAGNOSTIC_ASSERT(aValue.Length() == HASH_DIGEST_SIZE_BYTES);
-    MutexAutoLock lock(mLock);
-
-    CacheEntry* lowestKey = &this->cache[0];
-    for (auto& cacheEntry : this->cache) {
-      if (MOZ_UNLIKELY(cacheEntry.keyPart1 == aKeyPart1 &&
-                       cacheEntry.keyPart2 == aKeyPart2)) {
-        
-        MOZ_LOG(
-            gResistFingerprintingLog, LogLevel::Verbose,
-            ("LRU Cache DOUBLE STORE with %lli %lli", aKeyPart1, aKeyPart2));
-        return;
-      }
-      if (cacheEntry.accessTime < lowestKey->accessTime) {
-        lowestKey = &cacheEntry;
-      }
-    }
-
-    lowestKey->keyPart1 = aKeyPart1;
-    lowestKey->keyPart2 = aKeyPart2;
-    PodCopy(lowestKey->data, aValue.Elements(), HASH_DIGEST_SIZE_BYTES);
-    lowestKey->accessTime = ++mTimeCounter;
-    MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
-            ("LRU Cache STORE with %lli %lli", aKeyPart1, aKeyPart2));
-  }
-
- private:
-  ~LRUCache() = default;
-
-  struct CacheEntry {
-    Atomic<long long, Relaxed> keyPart1;
-    Atomic<long long, Relaxed> keyPart2;
-    uint64_t accessTime = 0;
-    char data[HASH_DIGEST_SIZE_BYTES];
-
-    CacheEntry() {
-      this->keyPart1 = 0xFFFFFFFFFFFFFFFF;
-      this->keyPart2 = 0xFFFFFFFFFFFFFFFF;
-      this->accessTime = 0;
-      PodArrayZero(this->data);
-    }
-    CacheEntry(const CacheEntry& obj) = delete;
-  };
-
-  AutoTArray<CacheEntry, LRU_CACHE_SIZE> cache;
-  mozilla::Mutex mLock;
-
-  
-  
-  
-  
-  
-  uint64_t mTimeCounter = 0;
-};
-
-
-static StaticRefPtr<LRUCache> sCache;
-
-
-
-
-
-
 
 
 
@@ -349,23 +243,12 @@ nsresult nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
                                       uint8_t* aSecretSeed ) {
   nsresult rv;
   const int kSeedSize = 16;
-  const int kClampTimesPerDigest = HASH_DIGEST_SIZE_BITS / 32;
   static uint8_t* sSecretMidpointSeed = nullptr;
 
   if (MOZ_UNLIKELY(!aMidpointOut)) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  RefPtr<LRUCache> cache;
-  {
-    StaticMutexAutoLock lock(sLock);
-    cache = sCache;
-  }
-
-  if (!cache) {
-    return NS_ERROR_FAILURE;
-  }
-
   
 
 
@@ -375,119 +258,41 @@ nsresult nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
 
 
 
+  
+  
+  if (aSecretSeed != nullptr) {
+    StaticMutexAutoLock lock(sLock);
 
+    delete[] sSecretMidpointSeed;
 
+    sSecretMidpointSeed = new uint8_t[kSeedSize];
+    memcpy(sSecretMidpointSeed, aSecretSeed, kSeedSize);
+  }
 
-
-
-
-
-
-
-
-
-
-
-  long long reducedResolution = aResolutionUSec * kClampTimesPerDigest;
-  long long extraClampedTime =
-      (aClampedTimeUSec / reducedResolution) * reducedResolution;
-
-  nsAutoCStringN<HASH_DIGEST_SIZE_BYTES + 1> hashResult;
-  bool foundCacheHit = cache->Get(extraClampedTime, aContextMixin, hashResult);
-
-  if (!foundCacheHit) {  
-    
-    
-    if (aSecretSeed != nullptr) {
-      StaticMutexAutoLock lock(sLock);
-
-      delete[] sSecretMidpointSeed;
-
-      sSecretMidpointSeed = new uint8_t[kSeedSize];
-      memcpy(sSecretMidpointSeed, aSecretSeed, kSeedSize);
+  
+  if (MOZ_UNLIKELY(!sSecretMidpointSeed)) {
+    nsCOMPtr<nsIRandomGenerator> randomGenerator =
+        do_GetService("@mozilla.org/security/random-generator;1", &rv);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
 
-    
-    if (MOZ_UNLIKELY(!sSecretMidpointSeed)) {
-      nsCOMPtr<nsIRandomGenerator> randomGenerator =
-          do_GetService("@mozilla.org/security/random-generator;1", &rv);
+    if (MOZ_LIKELY(!sSecretMidpointSeed)) {
+      rv =
+          randomGenerator->GenerateRandomBytes(kSeedSize, &sSecretMidpointSeed);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-
-      StaticMutexAutoLock lock(sLock);
-      if (MOZ_LIKELY(!sSecretMidpointSeed)) {
-        rv = randomGenerator->GenerateRandomBytes(kSeedSize,
-                                                  &sSecretMidpointSeed);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-      }
     }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    nsCOMPtr<nsICryptoHash> hasher =
-        do_CreateInstance("@mozilla.org/security/hash;1", &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = hasher->Init(nsICryptoHash::SHA256);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = hasher->Update(sSecretMidpointSeed, kSeedSize);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = hasher->Update((const uint8_t*)&aContextMixin, sizeof(aContextMixin));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = hasher->Update((const uint8_t*)&extraClampedTime,
-                        sizeof(extraClampedTime));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsAutoCStringN<HASH_DIGEST_SIZE_BYTES + 1> derivedSecret;
-    rv = hasher->Finish(false, derivedSecret);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    cache->Store(extraClampedTime, aContextMixin, derivedSecret);
-    hashResult = derivedSecret;
   }
 
   
+  non_crypto::XorShift128PlusRNG rng(
+      aContextMixin ^ *(uint64_t*)(sSecretMidpointSeed),
+      aClampedTimeUSec ^ *(uint64_t*)(sSecretMidpointSeed + 8));
+
   
-  
-  
-  int byteOffset =
-      abs(((aClampedTimeUSec - extraClampedTime) / aResolutionUSec) * 4);
-  if (MOZ_UNLIKELY(byteOffset > (HASH_DIGEST_SIZE_BYTES - 4))) {
-    byteOffset = 0;
-  }
-  uint32_t deterministiclyRandomValue =
-      *BitwiseCast<uint32_t*>(hashResult.get() + byteOffset);
-  deterministiclyRandomValue %= aResolutionUSec;
-  *aMidpointOut = deterministiclyRandomValue;
+  *aMidpointOut = rng.next() % aResolutionUSec;
 
   return NS_OK;
 }
@@ -843,12 +648,6 @@ nsresult nsRFPService::Init() {
   
   UpdateRFPPref();
 
-  
-  
-  if (sCache == nullptr) {
-    sCache = new LRUCache();
-  }
-
   return rv;
 }
 
@@ -934,9 +733,6 @@ void nsRFPService::StartShutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-
-  StaticMutexAutoLock lock(sLock);
-  { sCache = nullptr; }
 
   if (obs) {
     obs->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);

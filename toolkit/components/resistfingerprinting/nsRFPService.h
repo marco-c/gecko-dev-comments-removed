@@ -62,9 +62,6 @@ struct JSContext;
 template <class KeyClass, class DataType>
 class nsDataHashtable;
 
-
-class LRUCache;
-
 namespace mozilla {
 class WidgetKeyboardEvent;
 namespace dom {
