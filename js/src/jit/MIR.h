@@ -2745,9 +2745,6 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
 
     
     Compare_RefOrNull,
-
-    
-    Compare_Unknown
   };
 
  private:
