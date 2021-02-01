@@ -43,26 +43,32 @@ bool EventQueue::PushEvent(AccEvent* aEvent) {
       (aEvent->mEventType == nsIAccessibleEvent::EVENT_NAME_CHANGE ||
        aEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_REMOVED ||
        aEvent->mEventType == nsIAccessibleEvent::EVENT_TEXT_INSERTED)) {
-    PushNameChange(aEvent->mAccessible);
+    PushNameOrDescriptionChange(aEvent->mAccessible);
   }
   return true;
 }
 
-bool EventQueue::PushNameChange(Accessible* aTarget) {
+bool EventQueue::PushNameOrDescriptionChange(Accessible* aTarget) {
   
   
   
+  
+  const bool doName = aTarget->HasNameDependent();
+  const bool doDesc = aTarget->HasDescriptionDependent();
+  if (!doName && !doDesc) {
+    return false;
+  }
   bool pushed = false;
-  bool checkAncestor = true;
-  if (aTarget->HasNameDependent()) {
+  bool nameCheckAncestor = true;
+  
+  
+  
+  Accessible* parent = aTarget->Parent();
+  while (parent &&
+         nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeIfReqRule)) {
     
-    
-    
-    Accessible* parent = aTarget->Parent();
-    while (parent &&
-           nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeIfReqRule)) {
-      
-      if (checkAncestor &&
+    if (doName) {
+      if (nameCheckAncestor &&
           nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeRule)) {
         nsAutoString name;
         ENameValueFlag nameFlag = parent->Name(name);
@@ -72,16 +78,27 @@ bool EventQueue::PushNameChange(Accessible* aTarget) {
               new AccEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, parent);
           pushed |= PushEvent(nameChangeEvent);
         }
-        checkAncestor = false;
+        nameCheckAncestor = false;
       }
+
       Relation rel = parent->RelationByType(RelationType::LABEL_FOR);
       while (Accessible* relTarget = rel.Next()) {
         RefPtr<AccEvent> nameChangeEvent =
             new AccEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, relTarget);
         pushed |= PushEvent(nameChangeEvent);
       }
-      parent = parent->Parent();
     }
+
+    if (doDesc) {
+      Relation rel = parent->RelationByType(RelationType::DESCRIPTION_FOR);
+      while (Accessible* relTarget = rel.Next()) {
+        RefPtr<AccEvent> descChangeEvent = new AccEvent(
+            nsIAccessibleEvent::EVENT_DESCRIPTION_CHANGE, relTarget);
+        pushed |= PushEvent(descChangeEvent);
+      }
+    }
+
+    parent = parent->Parent();
   }
   return pushed;
 }

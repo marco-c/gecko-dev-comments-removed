@@ -180,7 +180,9 @@ bool NotificationController::QueueMutationEvent(AccTreeMutationEvent* aEvent) {
 
     
     
-    QueueNameChange(target);
+    if (PushNameOrDescriptionChange(target)) {
+      ScheduleProcessing();
+    }
   } else {
     AccReorderEvent* event = downcast_accEvent(
         mMutationMap.GetEvent(container, EventMap::ReorderEvent));
@@ -766,9 +768,7 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
       continue;
     }
 
-    nsIContent* ownerContent =
-        mDocument->DocumentNode()->FindContentForSubDocument(
-            childDoc->DocumentNode());
+    nsIContent* ownerContent = childDoc->DocumentNode()->GetEmbedderElement();
     if (ownerContent) {
       Accessible* outerDocAcc = mDocument->GetAccessible(ownerContent);
       if (outerDocAcc && outerDocAcc->AppendChild(childDoc)) {

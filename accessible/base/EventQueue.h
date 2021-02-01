@@ -28,7 +28,7 @@ class EventQueue {
   
 
 
-  bool PushNameChange(Accessible* aTarget);
+  bool PushNameOrDescriptionChange(Accessible* aTarget);
 
   
 

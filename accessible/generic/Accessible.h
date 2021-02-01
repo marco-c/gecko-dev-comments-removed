@@ -940,6 +940,14 @@ class Accessible : public nsISupports {
   
 
 
+
+  bool HasDescriptionDependent() const {
+    return mContextFlags & eHasDescriptionDependent;
+  }
+
+  
+
+
   bool IsInsideAlert() const { return mContextFlags & eInsideAlert; }
 
   
@@ -1046,8 +1054,9 @@ class Accessible : public nsISupports {
   enum ContextFlags {
     eHasNameDependent = 1 << 0,  
     eInsideAlert = 1 << 1,
+    eHasDescriptionDependent = 1 << 2,  
 
-    eLastContextFlag = eInsideAlert
+    eLastContextFlag = eHasDescriptionDependent
   };
 
  protected:
@@ -1153,7 +1162,7 @@ class Accessible : public nsISupports {
   int32_t mIndexInParent;
 
   static const uint8_t kStateFlagsBits = 11;
-  static const uint8_t kContextFlagsBits = 2;
+  static const uint8_t kContextFlagsBits = 3;
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 16;
 
