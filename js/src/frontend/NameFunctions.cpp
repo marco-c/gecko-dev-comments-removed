@@ -224,7 +224,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
 
 
   MOZ_MUST_USE bool resolveFun(FunctionNode* funNode,
-                               const ParserAtom** retId) {
+                               TaggedParserAtomIndex* retId) {
     MOZ_ASSERT(funNode != nullptr);
 
     FunctionBox* funbox = funNode->funbox();
@@ -232,12 +232,12 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
     MOZ_ASSERT(buf_.empty());
     auto resetBuf = mozilla::MakeScopeExit([&] { buf_.clear(); });
 
-    *retId = nullptr;
+    *retId = TaggedParserAtomIndex::null();
 
     
     if (funbox->displayAtom()) {
       if (!prefix_) {
-        *retId = parserAtoms_.getParserAtom(funbox->displayAtom());
+        *retId = funbox->displayAtom();
         return true;
       }
       if (!buf_.append(prefix_) || !buf_.append('/') ||
@@ -329,7 +329,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
     
     
     if (!funNode->isDirectRHSAnonFunction()) {
-      funbox->setGuessedAtom((*retId)->toIndex());
+      funbox->setGuessedAtom(*retId);
     }
     return true;
   }
@@ -347,7 +347,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
  public:
   MOZ_MUST_USE bool visitFunction(FunctionNode* pn) {
     const ParserAtom* savedPrefix = prefix_;
-    const ParserAtom* newPrefix = nullptr;
+    TaggedParserAtomIndex newPrefix;
     if (!resolveFun(pn, &newPrefix)) {
       return false;
     }
@@ -357,7 +357,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
     
     
     if (!isDirectCall(nparents_ - 2, pn)) {
-      prefix_ = newPrefix;
+      prefix_ = parserAtoms_.getParserAtom(newPrefix);
     }
 
     bool ok = Base::visitFunction(pn);

@@ -11,17 +11,11 @@
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/Utf8.h"
 
+#include "frontend/ParserAtom.h"  
 #include "js/Vector.h"
 #include "vm/JSContext.h"
 
 namespace js {
-
-namespace frontend {
-
-class ParserAtom;
-class ParserAtomsTable;
-
-}  
 
 class StringBufferAllocPolicy {
   TempAllocPolicy impl_;
@@ -319,7 +313,7 @@ class StringBuffer {
 
   
   JSAtom* finishAtom();
-  const frontend::ParserAtom* finishParserAtom(
+  frontend::TaggedParserAtomIndex finishParserAtom(
       frontend::ParserAtomsTable& parserAtoms);
 
   
