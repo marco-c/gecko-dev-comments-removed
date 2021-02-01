@@ -274,7 +274,10 @@ class RaptorResultsHandler(PerftestResultsHandler):
         
         LOG.info("summarizing raptor test results")
         output = RaptorOutput(
-            self.results, self.supporting_data, test_config["subtest_alert_on"]
+            self.results,
+            self.supporting_data,
+            test_config["subtest_alert_on"],
+            self.app,
         )
         output.set_browser_meta(self.browser_name, self.browser_version)
         output.summarize(test_names)
@@ -823,7 +826,10 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
 
         
         output = BrowsertimeOutput(
-            self.results, self.supporting_data, test_config["subtest_alert_on"]
+            self.results,
+            self.supporting_data,
+            test_config["subtest_alert_on"],
+            self.app,
         )
         output.set_browser_meta(self.browser_name, self.browser_version)
         output.summarize(test_names)
