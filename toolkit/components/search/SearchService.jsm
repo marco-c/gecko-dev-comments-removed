@@ -965,7 +965,8 @@ SearchService.prototype = {
       if (this._engines.has(name)) {
         logConsole.debug(
           "_loadEnginesMetadataFromSettings, transfering metadata for",
-          name
+          name,
+          engine._metaData
         );
         let eng = this._engines.get(name);
         

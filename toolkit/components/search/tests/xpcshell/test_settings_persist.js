@@ -48,8 +48,10 @@ add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
   
   
+  let settingsFileWritten = promiseAfterSettings();
   await Services.search.init(false);
   Services.search.wrappedJSObject._removeObservers();
+  await settingsFileWritten;
 });
 
 add_task(async function() {
