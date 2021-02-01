@@ -1227,7 +1227,7 @@
       }
 
       updateUserContextUIIndicator();
-      gPermissionPanel.updateSharingIndicator();
+      gIdentityHandler.updateSharingIndicator();
 
       
       
@@ -1402,7 +1402,7 @@
       tab.removeAttribute("sharing");
       this._tabAttrModified(tab, ["sharing"]);
       if (aBrowser == this.selectedBrowser) {
-        gPermissionPanel.updateSharingIndicator();
+        gIdentityHandler.updateSharingIndicator();
       }
     },
 
@@ -1431,7 +1431,7 @@
       }
 
       if (aBrowser == this.selectedBrowser) {
-        gPermissionPanel.updateSharingIndicator();
+        gIdentityHandler.updateSharingIndicator();
       }
     },
 
@@ -4187,7 +4187,6 @@
       
       delete browser.authPromptAbuseCounter;
       gIdentityHandler.hidePopup();
-      gPermissionPanel.hidePopup();
       browser.reload();
     },
 

@@ -86,7 +86,7 @@ async function runTest(options) {
         true,
         event => event.target == gIdentityHandler._identityPopup
       );
-      gIdentityHandler._identityIconBox.click();
+      gIdentityHandler._identityBox.click();
       await promisePanelOpen;
 
       

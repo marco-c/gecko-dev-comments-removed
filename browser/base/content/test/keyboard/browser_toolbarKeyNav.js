@@ -353,25 +353,18 @@ add_task(async function testPanelCloseRestoresFocus() {
 
 
 add_task(async function testArrowKeyForTPIconContainerandIdentityBox() {
-  await BrowserTestUtils.withNewTab("https://example.com", async function(
-    browser
-  ) {
-    
-    gBrowser.updateBrowserSharing(browser, { geo: true });
+  await BrowserTestUtils.withNewTab("https://example.com", async function() {
     await waitUntilReloadEnabled();
     startFromUrlBar();
     await expectFocusAfterKey(
       "Shift+Tab",
       "tracking-protection-icon-container"
     );
-    await expectFocusAfterKey("ArrowRight", "identity-icon-box");
-    await expectFocusAfterKey("ArrowRight", "identity-permission-box");
-    await expectFocusAfterKey("ArrowLeft", "identity-icon-box");
+    await expectFocusAfterKey("ArrowRight", "identity-box");
     await expectFocusAfterKey(
       "ArrowLeft",
       "tracking-protection-icon-container"
     );
-    gBrowser.updateBrowserSharing(browser, { geo: false });
   });
 });
 
