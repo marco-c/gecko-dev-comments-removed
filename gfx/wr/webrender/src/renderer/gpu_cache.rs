@@ -92,7 +92,6 @@ pub struct GpuCacheTexture {
 
 impl GpuCacheTexture {
     
-    
     fn ensure_texture(&mut self, device: &mut Device, height: i32) {
         
         if self.texture.as_ref().map_or(false, |t| t.get_dimensions().height >= height) {
@@ -115,11 +114,14 @@ impl GpuCacheTexture {
         
         
         
-        
         let supports_copy_image_sub_data = device.get_capabilities().supports_copy_image_sub_data;
-        let rt_info =  match self.bus {
-            GpuCacheBus::PixelBuffer { .. } if supports_copy_image_sub_data => None,
-            _ => Some(RenderTargetInfo { has_depth: false }),
+        let supports_color_buffer_float = device.get_capabilities().supports_color_buffer_float;
+        let rt_info = if matches!(self.bus, GpuCacheBus::PixelBuffer { .. })
+            && (supports_copy_image_sub_data || !supports_color_buffer_float)
+        {
+            None
+        } else {
+            Some(RenderTargetInfo { has_depth: false })
         };
         let mut texture = device.create_texture(
             api::ImageBufferKind::Texture2D,
@@ -133,7 +135,21 @@ impl GpuCacheTexture {
 
         
         if let Some(blit_source) = blit_source {
-            device.copy_entire_texture(&mut texture, &blit_source);
+            if !supports_copy_image_sub_data && !supports_color_buffer_float {
+                
+                match self.bus {
+                    GpuCacheBus::PixelBuffer { ref mut rows } => {
+                        for row in rows {
+                            row.add_dirty(0, super::MAX_VERTEX_TEXTURE_WIDTH);
+                        }
+                    }
+                    GpuCacheBus::Scatter { .. } => {
+                        panic!("Texture must be copyable to use scatter GPU cache bus method");
+                    }
+                }
+            } else {
+                device.copy_entire_texture(&mut texture, &blit_source);
+            }
             device.delete_texture(blit_source);
         }
 
@@ -144,6 +160,10 @@ impl GpuCacheTexture {
         use super::desc::GPU_CACHE_UPDATE;
 
         let bus = if use_scatter {
+            assert!(
+                device.get_capabilities().supports_color_buffer_float,
+                "GpuCache scatter method requires EXT_color_buffer_float",
+            );
             let program = device.create_program_linked(
                 "gpu_cache_update",
                 &[],

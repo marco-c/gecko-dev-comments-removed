@@ -955,6 +955,8 @@ pub struct Capabilities {
     
     pub supports_copy_image_sub_data: bool,
     
+    pub supports_color_buffer_float: bool,
+    
     pub supports_buffer_storage: bool,
     
     
@@ -1540,6 +1542,11 @@ impl Device {
             supports_extension(&extensions, "GL_ARB_copy_image")
         };
 
+        let supports_color_buffer_float = match gl.get_type() {
+            gl::GlType::Gl => true,
+            gl::GlType::Gles => supports_extension(&extensions, "GL_EXT_color_buffer_float"),
+        };
+
         let is_adreno = renderer_name.starts_with("Adreno");
 
         
@@ -1652,6 +1659,7 @@ impl Device {
             capabilities: Capabilities {
                 supports_multisampling: false, 
                 supports_copy_image_sub_data,
+                supports_color_buffer_float,
                 supports_buffer_storage,
                 supports_blit_to_texture_array,
                 supports_advanced_blend_equation,
