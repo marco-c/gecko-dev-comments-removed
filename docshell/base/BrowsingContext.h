@@ -985,7 +985,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   
-  bool CheckOnlyOwningProcessCanSet(ContentParent* aSource);
+  
+  bool LegacyCheckOnlyOwningProcessCanSet(ContentParent* aSource);
 
   
   
