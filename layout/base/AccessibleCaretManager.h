@@ -54,6 +54,7 @@ class AccessibleCaretManager {
  public:
   
   explicit AccessibleCaretManager(PresShell* aPresShell);
+
   virtual ~AccessibleCaretManager() = default;
 
   
@@ -129,6 +130,11 @@ class AccessibleCaretManager {
   bool ShouldDisableApz() const;
 
  protected:
+  class Carets;
+
+  
+  AccessibleCaretManager(PresShell* aPresShell, Carets aCarets);
+
   
   enum class CaretMode : uint8_t {
     
@@ -372,6 +378,12 @@ class AccessibleCaretManager {
 
     AccessibleCaret* GetSecond() const { return mSecond.get(); }
 
+    void Terminate() {
+      mFirst.reset();
+      mSecond.reset();
+    }
+
+   private:
     
     
     UniquePtr<AccessibleCaret> mFirst;
