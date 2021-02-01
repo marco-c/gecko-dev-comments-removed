@@ -6,10 +6,6 @@ var { AppConstants } = SpecialPowers.Cu.import(
   "resource://gre/modules/AppConstants.jsm",
   {}
 );
-var { AppTestDelegate } = SpecialPowers.Cu.import(
-  "resource://specialpowers/AppTestDelegate.jsm",
-  {}
-);
 
 let remote = SpecialPowers.getBoolPref("extensions.webextensions.remote");
 if (remote) {
