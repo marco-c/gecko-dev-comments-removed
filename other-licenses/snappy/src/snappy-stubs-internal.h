@@ -45,6 +45,26 @@
 #include <sys/mman.h>
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif  
+
+#ifndef __has_feature
+#define __has_feature(x) 0
+#endif
+
+#if __has_feature(memory_sanitizer)
+#include <sanitizer/msan_interface.h>
+#define SNAPPY_ANNOTATE_MEMORY_IS_INITIALIZED(address, size) \
+    __msan_unpoison((address), (size))
+#else
+#define SNAPPY_ANNOTATE_MEMORY_IS_INITIALIZED(address, size)
+#endif  
+
 #include "snappy-stubs-public.h"
 
 #if defined(__x86_64__)
@@ -52,16 +72,20 @@
 
 #define ARCH_K8 1
 
+#elif defined(__ppc64__)
+
+#define ARCH_PPC 1
+
+#elif defined(__aarch64__)
+
+#define ARCH_ARM 1
+
 #endif
 
 
 #ifndef MAP_ANONYMOUS
 #define MAP_ANONYMOUS MAP_ANON
 #endif
-
-
-
-using namespace std;
 
 
 
@@ -73,11 +97,11 @@ using namespace std;
 
 
 #ifdef HAVE_BUILTIN_EXPECT
-#define PREDICT_FALSE(x) (__builtin_expect(x, 0))
-#define PREDICT_TRUE(x) (__builtin_expect(!!(x), 1))
+#define SNAPPY_PREDICT_FALSE(x) (__builtin_expect(x, 0))
+#define SNAPPY_PREDICT_TRUE(x) (__builtin_expect(!!(x), 1))
 #else
-#define PREDICT_FALSE(x) x
-#define PREDICT_TRUE(x) x
+#define SNAPPY_PREDICT_FALSE(x) x
+#define SNAPPY_PREDICT_TRUE(x) x
 #endif
 
 
@@ -98,7 +122,8 @@ static const int64 kint64max = static_cast<int64>(0x7FFFFFFFFFFFFFFFLL);
 
 
 
-#if defined(__i386__) || defined(__x86_64__) || defined(__powerpc__)
+#if defined(__i386__) || defined(__x86_64__) || defined(__powerpc__) || \
+    defined(__aarch64__)
 
 #define UNALIGNED_LOAD16(_p) (*reinterpret_cast<const uint16 *>(_p))
 #define UNALIGNED_LOAD32(_p) (*reinterpret_cast<const uint32 *>(_p))
@@ -226,21 +251,7 @@ inline void UNALIGNED_STORE64(void *p, uint64 v) {
 #endif
 
 
-
-inline void UnalignedCopy64(const void *src, void *dst) {
-  if (sizeof(void *) == 8) {
-    UNALIGNED_STORE64(dst, UNALIGNED_LOAD64(src));
-  } else {
-    const char *src_char = reinterpret_cast<const char *>(src);
-    char *dst_char = reinterpret_cast<char *>(dst);
-
-    UNALIGNED_STORE32(dst_char, UNALIGNED_LOAD32(src_char));
-    UNALIGNED_STORE32(dst_char + 4, UNALIGNED_LOAD32(src_char + 4));
-  }
-}
-
-
-#ifdef WORDS_BIGENDIAN
+#if defined(SNAPPY_IS_BIG_ENDIAN)
 
 #ifdef HAVE_SYS_BYTEORDER_H
 #include <sys/byteorder.h>
@@ -311,7 +322,7 @@ inline uint64 bswap_64(uint64 x) {
 class LittleEndian {
  public:
   
-#ifdef WORDS_BIGENDIAN
+#if defined(SNAPPY_IS_BIG_ENDIAN)
 
   static uint16 FromHost16(uint16 x) { return bswap_16(x); }
   static uint16 ToHost16(uint16 x) { return bswap_16(x); }
@@ -355,37 +366,94 @@ class LittleEndian {
 class Bits {
  public:
   
+  static int Log2FloorNonZero(uint32 n);
+
+  
   static int Log2Floor(uint32 n);
 
   
   
   
   static int FindLSBSetNonZero(uint32 n);
+
+#if defined(ARCH_K8) || defined(ARCH_PPC) || defined(ARCH_ARM)
   static int FindLSBSetNonZero64(uint64 n);
+#endif  
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(Bits);
+  
+  Bits(const Bits&);
+  void operator=(const Bits&);
 };
 
 #ifdef HAVE_BUILTIN_CTZ
 
+inline int Bits::Log2FloorNonZero(uint32 n) {
+  assert(n != 0);
+  
+  
+  
+  
+  
+  
+  return 31 ^ __builtin_clz(n);
+}
+
 inline int Bits::Log2Floor(uint32 n) {
-  return n == 0 ? -1 : 31 ^ __builtin_clz(n);
+  return (n == 0) ? -1 : Bits::Log2FloorNonZero(n);
 }
 
 inline int Bits::FindLSBSetNonZero(uint32 n) {
+  assert(n != 0);
   return __builtin_ctz(n);
 }
 
+#if defined(ARCH_K8) || defined(ARCH_PPC) || defined(ARCH_ARM)
 inline int Bits::FindLSBSetNonZero64(uint64 n) {
+  assert(n != 0);
   return __builtin_ctzll(n);
 }
+#endif  
+
+#elif defined(_MSC_VER)
+
+inline int Bits::Log2FloorNonZero(uint32 n) {
+  assert(n != 0);
+  unsigned long where;
+  _BitScanReverse(&where, n);
+  return static_cast<int>(where);
+}
+
+inline int Bits::Log2Floor(uint32 n) {
+  unsigned long where;
+  if (_BitScanReverse(&where, n))
+    return static_cast<int>(where);
+  return -1;
+}
+
+inline int Bits::FindLSBSetNonZero(uint32 n) {
+  assert(n != 0);
+  unsigned long where;
+  if (_BitScanForward(&where, n))
+    return static_cast<int>(where);
+  return 32;
+}
+
+#if defined(ARCH_K8) || defined(ARCH_PPC) || defined(ARCH_ARM)
+inline int Bits::FindLSBSetNonZero64(uint64 n) {
+  assert(n != 0);
+  unsigned long where;
+  if (_BitScanForward64(&where, n))
+    return static_cast<int>(where);
+  return 64;
+}
+#endif  
 
 #else  
 
-inline int Bits::Log2Floor(uint32 n) {
-  if (n == 0)
-    return -1;
+inline int Bits::Log2FloorNonZero(uint32 n) {
+  assert(n != 0);
+
   int log = 0;
   uint32 value = n;
   for (int i = 4; i >= 0; --i) {
@@ -400,7 +468,13 @@ inline int Bits::Log2Floor(uint32 n) {
   return log;
 }
 
+inline int Bits::Log2Floor(uint32 n) {
+  return (n == 0) ? -1 : Bits::Log2FloorNonZero(n);
+}
+
 inline int Bits::FindLSBSetNonZero(uint32 n) {
+  assert(n != 0);
+
   int rc = 31;
   for (int i = 4, shift = 1 << 4; i >= 0; --i) {
     const uint32 x = n << shift;
@@ -413,8 +487,11 @@ inline int Bits::FindLSBSetNonZero(uint32 n) {
   return rc;
 }
 
+#if defined(ARCH_K8) || defined(ARCH_PPC) || defined(ARCH_ARM)
 
 inline int Bits::FindLSBSetNonZero64(uint64 n) {
+  assert(n != 0);
+
   const uint32 bottombits = static_cast<uint32>(n);
   if (bottombits == 0) {
     
@@ -423,6 +500,7 @@ inline int Bits::FindLSBSetNonZero64(uint64 n) {
     return FindLSBSetNonZero(bottombits);
   }
 }
+#endif  
 
 #endif  
 
@@ -446,7 +524,7 @@ class Varint {
   static char* Encode32(char* ptr, uint32 v);
 
   
-  static void Append32(string* s, uint32 value);
+  static void Append32(std::string* s, uint32 value);
 };
 
 inline const char* Varint::Parse32WithLimit(const char* p,
@@ -503,7 +581,7 @@ inline char* Varint::Encode32(char* sptr, uint32 v) {
 
 
 
-inline void STLStringResizeUninitialized(string* s, size_t new_size) {
+inline void STLStringResizeUninitialized(std::string* s, size_t new_size) {
   s->resize(new_size);
 }
 
@@ -519,7 +597,7 @@ inline void STLStringResizeUninitialized(string* s, size_t new_size) {
 
 
 
-inline char* string_as_array(string* str) {
+inline char* string_as_array(std::string* str) {
   return str->empty() ? NULL : &*str->begin();
 }
 

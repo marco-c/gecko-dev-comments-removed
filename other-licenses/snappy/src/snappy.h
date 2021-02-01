@@ -39,7 +39,7 @@
 #ifndef THIRD_PARTY_SNAPPY_SNAPPY_H__
 #define THIRD_PARTY_SNAPPY_SNAPPY_H__
 
-#include <stddef.h>
+#include <cstddef>
 #include <string>
 
 #include "snappy-stubs-public.h"
@@ -73,7 +73,8 @@ namespace snappy {
   
   
   
-  size_t Compress(const char* input, size_t input_length, string* output);
+  size_t Compress(const char* input, size_t input_length,
+                  std::string* compressed);
 
   
   
@@ -82,7 +83,7 @@ namespace snappy {
   
   
   bool Uncompress(const char* compressed, size_t compressed_length,
-                  string* uncompressed);
+                  std::string* uncompressed);
 
   
   
@@ -193,11 +194,14 @@ namespace snappy {
   
   
   
-  static const int kBlockLog = 16;
-  static const size_t kBlockSize = 1 << kBlockLog;
+  static constexpr int kBlockLog = 16;
+  static constexpr size_t kBlockSize = 1 << kBlockLog;
 
-  static const int kMaxHashTableBits = 14;
-  static const size_t kMaxHashTableSize = 1 << kMaxHashTableBits;
+  static constexpr int kMinHashTableBits = 8;
+  static constexpr size_t kMinHashTableSize = 1 << kMinHashTableBits;
+
+  static constexpr int kMaxHashTableBits = 14;
+  static constexpr size_t kMaxHashTableSize = 1 << kMaxHashTableBits;
 }  
 
 #endif  

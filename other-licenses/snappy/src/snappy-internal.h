@@ -36,21 +36,30 @@
 namespace snappy {
 namespace internal {
 
+
+
 class WorkingMemory {
  public:
-  WorkingMemory() : large_table_(NULL) { }
-  ~WorkingMemory() { delete[] large_table_; }
+  explicit WorkingMemory(size_t input_size);
+  ~WorkingMemory();
 
   
   
   
-  uint16* GetHashTable(size_t input_size, int* table_size);
+  uint16* GetHashTable(size_t fragment_size, int* table_size) const;
+  char* GetScratchInput() const { return input_; }
+  char* GetScratchOutput() const { return output_; }
 
  private:
-  uint16 small_table_[1<<10];    
-  uint16* large_table_;          
+  char* mem_;      
+  size_t size_;    
+  uint16* table_;  
+  char* input_;    
+  char* output_;   
 
-  DISALLOW_COPY_AND_ASSIGN(WorkingMemory);
+  
+  WorkingMemory(const WorkingMemory&);
+  void operator=(const WorkingMemory&);
 };
 
 
@@ -81,46 +90,61 @@ char* CompressFragment(const char* input,
 
 
 
-#if defined(ARCH_K8)
-static inline int FindMatchLength(const char* s1,
-                                  const char* s2,
-                                  const char* s2_limit) {
+#if !defined(SNAPPY_IS_BIG_ENDIAN) && \
+    (defined(ARCH_K8) || defined(ARCH_PPC) || defined(ARCH_ARM))
+static inline std::pair<size_t, bool> FindMatchLength(const char* s1,
+                                                      const char* s2,
+                                                      const char* s2_limit) {
   assert(s2_limit >= s2);
-  int matched = 0;
+  size_t matched = 0;
 
   
   
   
   
-  while (PREDICT_TRUE(s2 <= s2_limit - 8)) {
+  
+  if (SNAPPY_PREDICT_TRUE(s2 <= s2_limit - 8)) {
+    uint64 a1 = UNALIGNED_LOAD64(s1);
+    uint64 a2 = UNALIGNED_LOAD64(s2);
+    if (a1 != a2) {
+      return std::pair<size_t, bool>(Bits::FindLSBSetNonZero64(a1 ^ a2) >> 3,
+                                     true);
+    } else {
+      matched = 8;
+      s2 += 8;
+    }
+  }
+
+  
+  
+  
+  
+  while (SNAPPY_PREDICT_TRUE(s2 <= s2_limit - 8)) {
     if (UNALIGNED_LOAD64(s2) == UNALIGNED_LOAD64(s1 + matched)) {
       s2 += 8;
       matched += 8;
     } else {
-      
-      
-      
-      
       uint64 x = UNALIGNED_LOAD64(s2) ^ UNALIGNED_LOAD64(s1 + matched);
       int matching_bits = Bits::FindLSBSetNonZero64(x);
       matched += matching_bits >> 3;
-      return matched;
+      assert(matched >= 8);
+      return std::pair<size_t, bool>(matched, false);
     }
   }
-  while (PREDICT_TRUE(s2 < s2_limit)) {
+  while (SNAPPY_PREDICT_TRUE(s2 < s2_limit)) {
     if (s1[matched] == *s2) {
       ++s2;
       ++matched;
     } else {
-      return matched;
+      return std::pair<size_t, bool>(matched, matched < 8);
     }
   }
-  return matched;
+  return std::pair<size_t, bool>(matched, matched < 8);
 }
 #else
-static inline int FindMatchLength(const char* s1,
-                                  const char* s2,
-                                  const char* s2_limit) {
+static inline std::pair<size_t, bool> FindMatchLength(const char* s1,
+                                                      const char* s2,
+                                                      const char* s2_limit) {
   
   assert(s2_limit >= s2);
   int matched = 0;
@@ -140,7 +164,7 @@ static inline int FindMatchLength(const char* s1,
       ++matched;
     }
   }
-  return matched;
+  return std::pair<size_t, bool>(matched, matched < 8);
 }
 #endif
 
@@ -154,11 +178,6 @@ enum {
   COPY_4_BYTE_OFFSET = 3
 };
 static const int kMaximumTagLength = 5;  
-
-
-static const uint32 wordmask[] = {
-  0u, 0xffu, 0xffffu, 0xffffffu, 0xffffffffu
-};
 
 
 
