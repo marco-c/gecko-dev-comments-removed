@@ -654,10 +654,11 @@ class InactivePropertyHelper {
       return false;
     }
 
-    const wm = this.getTableTrackParentWritingMode();
-    const isVertical = wm.includes("vertical") || wm.includes("sideways");
+    const tableTrackParent = this.getTableTrackParent();
 
-    return isVertical ? this.tableColumn : this.tableRow;
+    return this.hasVerticalWritingMode(tableTrackParent)
+      ? this.tableColumn
+      : this.tableRow;
   }
 
   
@@ -670,10 +671,11 @@ class InactivePropertyHelper {
       return false;
     }
 
-    const wm = this.getTableTrackParentWritingMode();
-    const isVertical = wm.includes("vertical") || wm.includes("sideways");
+    const tableTrackParent = this.getTableTrackParent();
 
-    return isVertical ? this.tableRow : this.tableColumn;
+    return this.hasVerticalWritingMode(tableTrackParent)
+      ? this.tableRow
+      : this.tableColumn;
   }
 
   
@@ -700,8 +702,8 @@ class InactivePropertyHelper {
       return false;
     }
 
-    const wm = this.getTableTrackParentWritingMode(true);
-    const isVertical = wm.includes("vertical") || wm.includes("sideways");
+    const tableTrackParent = this.getTableTrackParent(true);
+    const isVertical = this.hasVerticalWritingMode(tableTrackParent);
 
     const isHorizontalRowGroup = this.rowGroup && !isVertical;
     const isHorizontalColumnGroup = this.columnGroup && isVertical;
@@ -719,8 +721,8 @@ class InactivePropertyHelper {
       return false;
     }
 
-    const wm = this.getTableTrackParentWritingMode(true);
-    const isVertical = wm.includes("vertical") || wm.includes("sideways");
+    const tableTrackParent = this.getTableTrackParent(true);
+    const isVertical = this.hasVerticalWritingMode(tableTrackParent);
 
     const isVerticalRowGroup = this.rowGroup && isVertical;
     const isVerticalColumnGroup = this.columnGroup && !isVertical;
@@ -1020,6 +1022,12 @@ class InactivePropertyHelper {
   
 
 
+  hasVerticalWritingMode(node) {
+    const writingMode = computedStyle(node).writingMode;
+    return writingMode.includes("vertical") || writingMode.includes("sideways");
+  }
+
+  
 
 
 
@@ -1028,7 +1036,9 @@ class InactivePropertyHelper {
 
 
 
-  getTableTrackParentWritingMode(isGroup) {
+
+
+  getTableTrackParent(isGroup) {
     let current = this.node.parentNode;
 
     
@@ -1046,7 +1056,7 @@ class InactivePropertyHelper {
       current = current.parentNode;
     }
 
-    return computedStyle(current).writingMode;
+    return current;
   }
 }
 
