@@ -57,7 +57,7 @@ class DoubleToStringConverter {
   
   
   
-  static const MFBT_DATA int kBase10MaximalLength = 17;
+  static const int kBase10MaximalLength = 17;
 
   
   
