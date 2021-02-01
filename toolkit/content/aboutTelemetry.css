@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import url("chrome://global/skin/in-content/common.css");
 
@@ -8,7 +8,7 @@ body {
   display: flex;
 }
 
-
+/* This is needed to make the sidebar not hide the last button but breaks printing by hiding overflowing content */
 @media not print {
   html, body {
     height: 100%;
@@ -230,7 +230,7 @@ section:not(.active) {
   float: inline-start;
   white-space: nowrap;
   padding: 10px;
-  position: relative; 
+  position: relative; /* required for position:absolute of the contained .copy-node */
   padding-block: 12px;
   padding-inline: 20px;
   border: 1px solid var(--in-content-box-border-color);
@@ -254,7 +254,7 @@ section:not(.active) {
 
 .keyed-histogram {
   white-space: nowrap;
-  position: relative; 
+  position: relative; /* required for position:absolute of the contained .copy-node */
   overflow: hidden;
   margin-bottom: 1em;
 }

@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* Abuse Reports card */
 
 :root {
   --close-icon-url: url("chrome://global/skin/icons/close.svg");
@@ -45,8 +45,8 @@
   }
 }
 
-
-
+/* Ensure that the document (embedded in the XUL about:addons using a
+   XUL browser) has a transparent background */
 html {
   background-color: transparent;
 }
@@ -75,7 +75,7 @@ html {
 }
 
 .addon-abuse-report:hover {
-  
+  /* Avoid the card box highlighting on hover. */
   box-shadow: none;
 }
 
@@ -84,7 +84,7 @@ html {
 }
 
 .abuse-report-close-icon {
-  
+  /* position the close button in the panel upper-right corner */
   position: absolute;
   top: 12px;
   inset-inline-end: 16px;
@@ -217,7 +217,7 @@ abuse-report-submit-panel textarea {
   box-sizing: border-box;
 }
 
-
+/* Adapt styles for the panel opened in its own dialog window */
 
 html.dialog-window {
   background-color: var(--in-content-box-background);
@@ -239,7 +239,7 @@ html.dialog-window .abuse-report-close-icon {
 html.dialog-window addon-abuse-report {
   flex-grow: 1;
   display: flex;
-  
+  /* Ensure that the dialog window starts from a reasonable initial size */
   --modal-panel-min-width: 700px;
 }
 
