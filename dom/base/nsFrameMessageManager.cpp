@@ -1236,7 +1236,16 @@ void nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   
   
   
+  
+  
+  
+  
   bool isRunOnce = !aShouldCache || IsProcessScoped();
+
+  
+  nsAutoCString scheme;
+  uri->GetScheme(scheme);
+  bool useScriptPreloader = aShouldCache && !scheme.EqualsLiteral("data");
 
   
   
@@ -1251,6 +1260,7 @@ void nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   ScriptPreloader::FillCompileOptionsForCachedScript(options);
   options.setFileAndLine(url.get(), 1);
   options.setNonSyntacticScope(true);
+  options.setSourceIsLazy(true);
 
   JS::Rooted<JSScript*> script(cx);
   script =
@@ -1290,6 +1300,12 @@ void nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
       return;
     }
 
+    
+    
+    if (!useScriptPreloader || !ScriptPreloader::GetChildSingleton().Active()) {
+      options.setSourceIsLazy(false);
+    }
+
     JS::UniqueTwoByteChars srcChars(dataStringBuf);
 
     JS::SourceText<char16_t> srcBuf;
@@ -1306,10 +1322,7 @@ void nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   MOZ_ASSERT(script);
   aScriptp.set(script);
 
-  nsAutoCString scheme;
-  uri->GetScheme(scheme);
-  
-  if (aShouldCache && !scheme.EqualsLiteral("data")) {
+  if (useScriptPreloader) {
     ScriptPreloader::GetChildSingleton().NoteScript(url, url, script,
                                                     isRunOnce);
 
