@@ -9,6 +9,7 @@
 
 
 
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 const {ComponentUtils} = ChromeUtils.import("resource://gre/modules/ComponentUtils.jsm");
 const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -203,10 +204,17 @@ add_test(function test_categoryBackgroundTaskRegistration()
   
   do_load_manifest("CatBackgroundTaskRegistrationComponents.manifest");
 
-  const expectedEntries = new Map([
+  let expectedEntriesList = [
     ["Cat1RegisteredComponent", "@unit.test.com/cat1-registered-component;1"],
     ["Cat1BackgroundTaskNotRegisteredComponent", "@unit.test.com/cat1-backgroundtask-notregistered-component;1"],
-  ]);
+  ];
+  if (!AppConstants.MOZ_BACKGROUNDTASKS) {
+    expectedEntriesList.push(...[
+      ["Cat1BackgroundTaskRegisteredComponent", "@unit.test.com/cat1-backgroundtask-registered-component;1"],
+      ["Cat1BackgroundTaskAlwaysRegisteredComponent", "@unit.test.com/cat1-backgroundtask-alwaysregistered-component;1"],
+    ]);
+  }
+  const expectedEntries = new Map(expectedEntriesList);
 
   
   for (let {entry, value} of Services.catMan.enumerateCategory(CATEGORY_NAME)) {
