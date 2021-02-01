@@ -16,6 +16,7 @@
 #include "frontend/AbstractScopePtr.h"    
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ParseNode.h"
+#include "frontend/ParserAtom.h"       
 #include "frontend/ScriptIndex.h"      
 #include "js/WasmModule.h"             
 #include "vm/FunctionFlags.h"          
@@ -560,8 +561,15 @@ class FunctionBox : public SuspendableContext {
   bool hasGuessedAtom() const { return flags_.hasGuessedAtom(); }
 
   const ParserAtom* displayAtom() const { return atom_; }
+  TaggedParserAtomIndex displayAtomIndex() const {
+    return atom_ ? atom_->toIndex() : TaggedParserAtomIndex::null();
+  }
   const ParserAtom* explicitName() const {
     return (hasInferredName() || hasGuessedAtom()) ? nullptr : atom_;
+  }
+  TaggedParserAtomIndex explicitNameIndex() const {
+    const ParserAtom* name = explicitName();
+    return name ? name->toIndex() : TaggedParserAtomIndex::null();
   }
 
   
