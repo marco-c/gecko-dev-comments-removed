@@ -2380,6 +2380,11 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+  bool IsRenderedLegend() const;
+
+  
+
+
 
   virtual nsresult CharacterDataChanged(const CharacterDataChangeInfo&);
 

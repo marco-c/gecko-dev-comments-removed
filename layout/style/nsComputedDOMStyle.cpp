@@ -822,12 +822,13 @@ bool nsComputedDOMStyle::NeedsToFlushStyle(nsCSSPropertyID aPropID) const {
   
   
   while (doc->StyleOrLayoutObservablyDependsOnParentDocumentLayout()) {
-    Document* parentDocument = doc->GetInProcessParentDocument();
-    Element* element = parentDocument->FindContentForSubDocument(doc);
-    if (ElementNeedsRestyle(element, nullptr, mayNeedToFlushLayout)) {
-      return true;
+    if (Element* element = doc->GetEmbedderElement()) {
+      if (ElementNeedsRestyle(element, nullptr, mayNeedToFlushLayout)) {
+        return true;
+      }
     }
-    doc = parentDocument;
+
+    doc = doc->GetInProcessParentDocument();
   }
 
   return false;
@@ -837,7 +838,9 @@ static bool IsNonReplacedInline(nsIFrame* aFrame) {
   
   
   return aFrame->StyleDisplay()->IsInlineFlow() &&
-         !aFrame->IsFrameOfType(nsIFrame::eReplaced);
+         !aFrame->IsFrameOfType(nsIFrame::eReplaced) &&
+         !aFrame->IsBlockFrame() && !aFrame->IsScrollFrame() &&
+         !aFrame->IsColumnSetWrapperFrame();
 }
 
 static Side SideForPaddingOrMarginOrInsetProperty(nsCSSPropertyID aPropID) {

@@ -2315,16 +2315,8 @@ void ReflowInput::InitConstraints(
         }
       } else {
         
-        
-        
-        if (isBlockLevel &&
-            ((aFrameType == LayoutFrameType::Legend &&
-              mFrame->Style()->GetPseudoType() !=
-                  PseudoStyleType::scrolledContent) ||
-             (aFrameType == LayoutFrameType::Scroll &&
-              mFrame->GetContentInsertionFrame()->IsLegendFrame()) ||
-             (mCBReflowInput &&
-              mCBReflowInput->GetWritingMode().IsOrthogonalTo(mWritingMode)))) {
+        if (isBlockLevel && mCBReflowInput &&
+            mCBReflowInput->GetWritingMode().IsOrthogonalTo(mWritingMode)) {
           mComputeSizeFlags += ComputeSizeFlag::ShrinkWrap;
         }
 
