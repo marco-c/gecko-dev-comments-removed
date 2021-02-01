@@ -265,6 +265,13 @@ class HashMap {
                         std::forward<ValueInput>(aValue));
   }
 
+  template <typename KeyInput, typename ValueInput>
+  MOZ_MUST_USE bool putNew(const Lookup& aLookup, KeyInput&& aKey,
+                           ValueInput&& aValue) {
+    return mImpl.putNew(aLookup, std::forward<KeyInput>(aKey),
+                        std::forward<ValueInput>(aValue));
+  }
+
   
   
   
