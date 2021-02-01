@@ -3617,6 +3617,9 @@ class Document : public nsINode,
   void ReportDocumentUseCounters();
 
   
+  void ReportDocumentLazyLoadCounters();
+
+  
   
   
   
@@ -3729,7 +3732,18 @@ class Document : public nsINode,
   DOMIntersectionObserver* GetLazyLoadImageObserver() {
     return mLazyLoadImageObserver;
   }
+  DOMIntersectionObserver* GetLazyLoadImageObserverViewport() {
+    return mLazyLoadImageObserverViewport;
+  }
   DOMIntersectionObserver& EnsureLazyLoadImageObserver();
+  DOMIntersectionObserver& EnsureLazyLoadImageObserverViewport();
+  void IncLazyLoadImageCount() { ++mLazyLoadImageCount; }
+  void DecLazyLoadImageCount() {
+    MOZ_DIAGNOSTIC_ASSERT(mLazyLoadImageCount > 0);
+    --mLazyLoadImageCount;
+  }
+  void IncLazyLoadImageStarted() { ++mLazyLoadImageStarted; }
+  void IncLazyLoadImageReachViewport(bool aLoading);
 
   
   nsresult Dispatch(TaskCategory aCategory,
@@ -4714,6 +4728,19 @@ class Document : public nsINode,
   
   uint32_t mWriteLevel;
 
+  
+  
+  uint32_t mLazyLoadImageCount;
+  
+  
+  uint32_t mLazyLoadImageStarted;
+  
+  
+  uint32_t mLazyLoadImageReachViewportLoading;
+  
+  
+  uint32_t mLazyLoadImageReachViewportLoaded;
+
   uint32_t mContentEditableCount;
   EditingState mEditingState;
 
@@ -5009,6 +5036,8 @@ class Document : public nsINode,
   nsTHashtable<nsPtrHashKey<DOMIntersectionObserver>> mIntersectionObservers;
 
   RefPtr<DOMIntersectionObserver> mLazyLoadImageObserver;
+  
+  RefPtr<DOMIntersectionObserver> mLazyLoadImageObserverViewport;
 
   
   nsTArray<nsWeakPtr> mTopLayer;
