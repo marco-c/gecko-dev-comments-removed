@@ -113,9 +113,20 @@ interface nsIScriptSecurityManager : nsISupports
 
 
 
+    [binaryname(CheckLoadURIWithPrincipal)]
+    void checkLoadURIWithPrincipalXPCOM(in nsIPrincipal aPrincipal,
+                                        in nsIURI uri,
+                                        in unsigned long flags,
+                                        [optional] in unsigned long long innerWindowID);
+
+    
+
+
+
+    [implicit_jscontext, binaryname(CheckLoadURIWithPrincipalFromJS)]
     void checkLoadURIWithPrincipal(in nsIPrincipal aPrincipal,
                                    in nsIURI uri,
-                                   in unsigned long flags,
+                                   [optional] in unsigned long flags,
                                    [optional] in unsigned long long innerWindowID);
 
     
@@ -127,9 +138,19 @@ interface nsIScriptSecurityManager : nsISupports
 
 
 
+    [binaryname(CheckLoadURIStrWithPrincipal)]
+    void checkLoadURIStrWithPrincipalXPCOM(in nsIPrincipal aPrincipal,
+                                           in AUTF8String uri,
+                                           in unsigned long flags);
+
+    
+
+
+
+    [implicit_jscontext, binaryname(CheckLoadURIStrWithPrincipalFromJS)]
     void checkLoadURIStrWithPrincipal(in nsIPrincipal aPrincipal,
                                       in AUTF8String uri,
-                                      in unsigned long flags);
+                                      [optional] in unsigned long flags);
 
     
 
