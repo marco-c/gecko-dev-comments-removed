@@ -1465,6 +1465,14 @@ class ContentParent final
 
   void AssertAlive();
 
+  
+
+
+
+
+
+  static void DidLaunchSubprocess();
+
  private:
   
   RefPtr<ContentParent> mSelfRef;
@@ -1625,6 +1633,8 @@ class ContentParent final
   
   
   UniquePtr<mozilla::ipc::SharedPreferenceSerializer> mPrefSerializer;
+
+  static uint32_t sMaxContentProcesses;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(ContentParent, NS_CONTENTPARENT_IID)

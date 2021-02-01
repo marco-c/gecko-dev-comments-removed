@@ -371,6 +371,9 @@ static std::map<RemoteDecodeIn, PDMFactory::MediaCodecsSupported>
     sCodecsSupported;
 
 
+uint32_t ContentParent::sMaxContentProcesses = 0;
+
+
 LogModule* ContentParent::GetLog() { return gProcessLog; }
 
 #define NS_IPC_IOSERVICE_SET_OFFLINE_TOPIC "ipc:network:set-offline"
@@ -2656,6 +2659,7 @@ bool ContentParent::LaunchSubprocessSync(
   }
   const bool ok = mSubprocess->WaitForProcessHandle();
   if (ok && LaunchSubprocessResolve( true, aInitialPriority)) {
+    ContentParent::DidLaunchSubprocess();
     return true;
   }
   LaunchSubprocessReject();
@@ -2685,6 +2689,7 @@ RefPtr<ContentParent::LaunchPromise> ContentParent::LaunchSubprocessAsync(
         if (aValue.IsResolve() &&
             self->LaunchSubprocessResolve( false,
                                           aInitialPriority)) {
+          ContentParent::DidLaunchSubprocess();
           return LaunchPromise::CreateAndResolve(self, __func__);
         }
         self->LaunchSubprocessReject();
@@ -7503,6 +7508,19 @@ NS_IMETHODIMP ContentParent::GetCanSend(bool* aCanSend) {
 ContentParent* ContentParent::AsContentParent() { return this; }
 
 JSActorManager* ContentParent::AsJSActorManager() { return this; }
+
+
+void ContentParent::DidLaunchSubprocess() {
+  uint32_t count = 0;
+  for (auto* parent : ContentParent::AllProcesses(ContentParent::eLive)) {
+    Unused << parent;
+    count += 1;
+  }
+
+  if (count > sMaxContentProcesses) {
+    Telemetry::Accumulate(Telemetry::CONTENT_PROCESS_MAX, count);
+  }
+}
 
 }  
 }  
