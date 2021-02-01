@@ -323,18 +323,18 @@ add_task(async function test_unix_permissions() {
         }
 
         let isTemporary = launchWhenSucceeded && (autoDelete || isPrivate);
-        let stat = await OS.File.stat(download.target.path);
+        let stat = await IOUtils.stat(download.target.path);
         if (Services.appinfo.OS == "WINNT") {
           
           
-          Assert.equal(stat.winAttributes.readOnly, !!isTemporary);
+          Assert.equal(stat.permissions, isTemporary ? 0o444 : 0o666);
         } else {
           
           
           
           
           Assert.equal(
-            stat.unixMode,
+            stat.permissions,
             isTemporary ? 0o400 : 0o666 & ~OS.Constants.Sys.umask
           );
         }
@@ -423,7 +423,7 @@ add_task(async function test_windows_zoneInformation() {
       },
       expectedZoneId:
         "[ZoneTransfer]\r\nZoneId=3\r\n" +
-        "ReferrerUrl=http://example.com/abc\r\n" +
+        "ReferrerUrl=http://example.com/\r\n" +
         "HostUrl=" +
         httpSourceUrl +
         "\r\n",
