@@ -1,8 +1,20 @@
 const { Cc, Ci, Cu: ChromeUtils } = SpecialPowers;
 
-const { propBagToObject } = ChromeUtils.import(
-  "resource://gre/modules/BrowserUtils.jsm"
-).BrowserUtils;
+
+
+
+
+
+function propBagToObject(bag) {
+  if (!(bag instanceof Ci.nsIPropertyBag)) {
+    throw new TypeError("Not a property bag");
+  }
+  let result = {};
+  for (let { name, value } of bag.enumerator) {
+    result[name] = value;
+  }
+  return result;
+}
 
 var modalType;
 var tabSubDialogsEnabled = SpecialPowers.Services.prefs.getBoolPref(
