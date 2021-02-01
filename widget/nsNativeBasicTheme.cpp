@@ -6,6 +6,7 @@
 #include "nsNativeBasicTheme.h"
 
 #include "gfxBlur.h"
+#include "mozilla/MathAlgorithms.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/Types.h"
@@ -1388,6 +1389,11 @@ bool nsNativeBasicTheme::GetWidgetPadding(nsDeviceContext* aContext,
   return false;
 }
 
+static int GetScrollbarButtonCount() {
+  int32_t buttons = LookAndFeel::GetInt(LookAndFeel::IntID::ScrollArrowStyle);
+  return CountPopulation32(static_cast<uint32_t>(buttons));
+}
+
 bool nsNativeBasicTheme::GetWidgetOverflow(nsDeviceContext* aContext,
                                            nsIFrame* aFrame,
                                            StyleAppearance aAppearance,
@@ -1481,6 +1487,24 @@ nsNativeBasicTheme::GetMinimumWidgetSize(nsPresContext* aPresContext,
       } else {
         aResult->SizeTo((kMinimumScrollbarSize * dpiRatio).Rounded(),
                         (kMinimumScrollbarSize * dpiRatio).Rounded());
+
+        
+        
+        
+        
+        
+        
+        
+        switch (aAppearance) {
+          case StyleAppearance::ScrollbarHorizontal:
+            aResult->width *= GetScrollbarButtonCount() + 1;
+            break;
+          case StyleAppearance::ScrollbarVertical:
+            aResult->height *= GetScrollbarButtonCount() + 1;
+            break;
+          default:
+            break;
+        }
       }
       break;
     }
