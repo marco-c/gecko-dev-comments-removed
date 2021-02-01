@@ -226,8 +226,9 @@ class DebuggerFrame : public NativeObject {
 
 
 
-  MOZ_MUST_USE bool setGeneratorInfo(JSContext* cx,
-                                     Handle<AbstractGeneratorObject*> genObj);
+  static MOZ_MUST_USE bool setGeneratorInfo(
+      JSContext* cx, HandleDebuggerFrame frame,
+      Handle<AbstractGeneratorObject*> genObj);
 
   
 
