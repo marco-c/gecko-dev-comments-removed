@@ -35,9 +35,11 @@ function expectDuration(marker) {
     "number",
     "startTime should be a number"
   );
-  Assert.equal(
-    Math.round(marker.startTime * 10 ** 6) / 10 ** 6,
-    startTime,
+  
+  
+  Assert.less(
+    Math.abs(marker.startTime - startTime),
+    1e-5,
     "startTime should be the expected time"
   );
   Assert.equal(typeof marker.endTime, "number", "endTime should be a number");
@@ -84,7 +86,12 @@ add_task(async () => {
   }
 
   startProfiler();
-  startTime = Math.round(Cu.now() * 10 ** 6) / 10 ** 6;
+  startTime = Cu.now();
+  while (Cu.now() < startTime + 1) {
+    
+    
+    
+  }
   info("startTime used for markers with durations: " + startTime);
 
   
