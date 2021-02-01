@@ -32,6 +32,7 @@
 #include "vm/JSFunction.h"  
 #include "vm/JSScript.h"    
 #include "vm/Realm.h"
+#include "vm/ScopeKind.h"      
 #include "vm/SharedStencil.h"  
 
 namespace js {
@@ -68,6 +69,11 @@ struct ScopeContext {
   
   
   
+  ScopeKind enclosingScopeKind = ScopeKind::Global;
+
+  
+  
+  
   
   ThisBinding thisBinding = ThisBinding::Global;
 
@@ -82,20 +88,32 @@ struct ScopeContext {
   bool inClass = false;
   bool inWith = false;
 
-  explicit ScopeContext(JSContext* cx, InheritThis inheritThis, Scope* scope,
-                        JSObject* enclosingEnv = nullptr)
-      : effectiveScope(cx, determineEffectiveScope(scope, enclosingEnv)) {
+  
+  bool enclosingScopeIsArrow = false;
+
+  
+  bool enclosingScopeHasEnvironment = false;
+
+#ifdef DEBUG
+  
+  bool hasNonSyntacticScopeOnChain = false;
+#endif
+
+  explicit ScopeContext(JSContext* cx, InheritThis inheritThis,
+                        Scope* enclosingScope, JSObject* enclosingEnv = nullptr)
+      : effectiveScope(cx,
+                       determineEffectiveScope(enclosingScope, enclosingEnv)) {
     if (inheritThis == InheritThis::Yes) {
       computeThisBinding(effectiveScope);
-      computeThisEnvironment(scope);
+      computeThisEnvironment(enclosingScope);
     }
-    computeInScope(scope);
+    computeInScope(enclosingScope);
   }
 
  private:
   void computeThisBinding(Scope* scope);
-  void computeThisEnvironment(Scope* scope);
-  void computeInScope(Scope* scope);
+  void computeThisEnvironment(Scope* enclosingScope);
+  void computeInScope(Scope* enclosingScope);
 
   static Scope* determineEffectiveScope(Scope* scope, JSObject* environment);
 };

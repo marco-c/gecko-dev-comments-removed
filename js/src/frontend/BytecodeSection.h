@@ -49,16 +49,14 @@ struct MOZ_STACK_CLASS GCThingList {
   
   using ScriptThingsStackVector = Vector<TaggedScriptThingIndex, 8>;
 
-  CompilationStencil& stencil;
   CompilationState& compilationState;
   ScriptThingsStackVector vector;
 
   
   mozilla::Maybe<GCThingIndex> firstScopeIndex;
 
-  explicit GCThingList(JSContext* cx, CompilationStencil& stencil,
-                       CompilationState& compilationState)
-      : stencil(stencil), compilationState(compilationState), vector(cx) {}
+  explicit GCThingList(JSContext* cx, CompilationState& compilationState)
+      : compilationState(compilationState), vector(cx) {}
 
   MOZ_MUST_USE bool append(const ParserAtom* atom, GCThingIndex* index) {
     *index = GCThingIndex(vector.length());
@@ -393,7 +391,7 @@ class BytecodeSection {
 
 class PerScriptData {
  public:
-  explicit PerScriptData(JSContext* cx, frontend::CompilationStencil& stencil,
+  explicit PerScriptData(JSContext* cx,
                          frontend::CompilationState& compilationState);
 
   MOZ_MUST_USE bool init(JSContext* cx);
