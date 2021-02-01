@@ -647,47 +647,6 @@ function isKeyApzEnabled() {
 
 
 
-function runContinuation(testFunction) {
-  
-  
-  
-  
-  
-  return function() {
-    return new Promise(function(resolve, reject) {
-      var testContinuation = null;
-
-      function driveTest() {
-        if (!testContinuation) {
-          testContinuation = testFunction(driveTest);
-        }
-        var ret = testContinuation.next();
-        if (ret.done) {
-          resolve();
-        }
-      }
-
-      try {
-        driveTest();
-      } catch (ex) {
-        SimpleTest.ok(
-          false,
-          "APZ test continuation failed with exception: " + ex
-        );
-      }
-    });
-  };
-}
-
-
-
-
-
-
-
-
-
-
 
 
 
