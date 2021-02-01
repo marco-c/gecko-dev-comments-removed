@@ -1027,10 +1027,10 @@ CompilationState::CompilationState(
     JSContext* cx, LifoAllocScope& frontendAllocScope,
     const JS::ReadOnlyCompileOptions& options, CompilationStencil& stencil,
     InheritThis inheritThis ,
-    Scope* enclosingScope ,
     JSObject* enclosingEnv )
     : directives(options.forceStrictMode()),
-      scopeContext(cx, inheritThis, enclosingScope, enclosingEnv),
+      scopeContext(cx, inheritThis,
+                   stencil.input.maybeNonDefaultEnclosingScope(), enclosingEnv),
       usedNames(cx),
       allocScope(frontendAllocScope),
       input(stencil.input),
