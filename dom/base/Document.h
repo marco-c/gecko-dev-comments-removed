@@ -1249,7 +1249,7 @@ class Document : public nsINode,
   
 
 
-  Element* FindContentForSubDocument(Document* aDocument) const;
+  Element* GetEmbedderElement() const;
 
   
 
@@ -3518,6 +3518,13 @@ class Document : public nsINode,
     return mStyleSheetChangeEventsEnabled;
   }
 
+  void SetShadowRootAttachedEventEnabled(bool aValue) {
+    mShadowRootAttachedEventEnabled = aValue;
+  }
+  bool ShadowRootAttachedEventEnabled() const {
+    return mShadowRootAttachedEventEnabled;
+  }
+
   already_AddRefed<Promise> BlockParsing(Promise& aPromise,
                                          const BlockParsingOptions& aOptions,
                                          ErrorResult& aRv);
@@ -4525,6 +4532,9 @@ class Document : public nsINode,
   bool mStyleSheetChangeEventsEnabled : 1;
 
   
+  bool mShadowRootAttachedEventEnabled : 1;
+
+  
   bool mIsSrcdocDocument : 1;
 
   
@@ -5218,14 +5228,33 @@ class MOZ_STACK_CLASS mozAutoSubtreeModified {
 
 enum class SyncOperationBehavior { eSuspendInput, eAllowInput };
 
-class MOZ_STACK_CLASS nsAutoSyncOperation {
+class AutoWalkBrowsingContextGroup {
+ public:
+  virtual ~AutoWalkBrowsingContextGroup() = default;
+
+ protected:
+  void SuppressBrowsingContextGroup(BrowsingContextGroup* aGroup);
+  void UnsuppressDocuments() {
+    for (const auto& doc : mDocuments) {
+      UnsuppressDocument(doc);
+    }
+  }
+  virtual void SuppressDocument(Document* aDocument) = 0;
+  virtual void UnsuppressDocument(Document* aDocument) = 0;
+  AutoTArray<RefPtr<Document>, 16> mDocuments;
+};
+
+class MOZ_RAII nsAutoSyncOperation : private AutoWalkBrowsingContextGroup {
  public:
   explicit nsAutoSyncOperation(Document* aDocument,
                                SyncOperationBehavior aSyncBehavior);
   ~nsAutoSyncOperation();
 
+ protected:
+  void SuppressDocument(Document* aDocument) override;
+  void UnsuppressDocument(Document* aDocument) override;
+
  private:
-  nsTArray<RefPtr<Document>> mDocuments;
   uint32_t mMicroTaskLevel;
   const SyncOperationBehavior mSyncBehavior;
   RefPtr<BrowsingContext> mBrowsingContext;
