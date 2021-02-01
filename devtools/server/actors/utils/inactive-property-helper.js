@@ -302,7 +302,7 @@ class InactivePropertyHelper {
       
       {
         invalidProperties: ["text-overflow"],
-        when: () => !this.checkComputedStyle("overflow", ["hidden"]),
+        when: () => !this.hasInlineOverflow,
         fixId: "inactive-text-overflow-when-no-overflow-fix",
         msgId: "inactive-text-overflow-when-no-overflow",
         numFixProps: 1,
@@ -782,6 +782,17 @@ class InactivePropertyHelper {
 
   get isFloated() {
     return this.style && this.style.cssFloat !== "none";
+  }
+
+  
+
+
+  get hasInlineOverflow() {
+    const property = this.hasVerticalWritingMode(this.node)
+      ? "overflow-y"
+      : "overflow-x";
+
+    return !this.checkComputedStyle(property, ["visible"]);
   }
 
   
