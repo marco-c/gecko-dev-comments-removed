@@ -2404,33 +2404,11 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
   
   LogicalAxis flexMainAxis =
       eLogicalAxisInline;  
-  Maybe<StyleSize> imposedMainSizeStyleCoord;
 
-  
-  
-  
-  
-  
   if (isFlexItem) {
     flexMainAxis = nsFlexContainerFrame::IsItemInlineAxisMainAxis(this)
                        ? eLogicalAxisInline
                        : eLogicalAxisBlock;
-
-    
-    
-    
-    bool didImposeMainSize;
-    nscoord imposedMainSize =
-        GetProperty(nsIFrame::FlexItemMainSizeOverride(), &didImposeMainSize);
-    if (didImposeMainSize) {
-      imposedMainSizeStyleCoord = Some(StyleSize::LengthPercentage(
-          LengthPercentage::FromAppUnits(imposedMainSize)));
-      if (flexMainAxis == eLogicalAxisInline) {
-        inlineStyleCoord = imposedMainSizeStyleCoord.ptr();
-      } else {
-        blockStyleCoord = imposedMainSizeStyleCoord.ptr();
-      }
-    }
   }
 
   
