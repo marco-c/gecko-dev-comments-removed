@@ -1,10 +1,7 @@
 
 
 
-
 "use strict";
-
-loadHelperScript("helper_screenshot_node.js");
 
 const exampleNetDocument = `http://example.net/document-builder.sjs`;
 const exampleComDocument = `http://example.com/document-builder.sjs`;

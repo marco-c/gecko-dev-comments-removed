@@ -1,10 +1,7 @@
 
 
 
-
 "use strict";
-
-loadHelperScript("helper_screenshot_node.js");
 
 const TEST_URL = `data:text/html;charset=utf8,
   <div id="blue-node" style="width:30px;height:30px;background:rgb(0, 0, 255)"></div>`;

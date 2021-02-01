@@ -1,10 +1,7 @@
 
 
 
-
 "use strict";
-
-loadHelperScript("helper_screenshot_node.js");
 
 const TEST_URL = `data:text/html;charset=utf8,
   <test-component></test-component>
