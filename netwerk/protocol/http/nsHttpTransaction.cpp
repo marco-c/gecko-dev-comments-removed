@@ -2863,14 +2863,6 @@ void nsHttpTransaction::GetNetworkAddresses(NetAddr& self, NetAddr& peer,
   aEchConfigUsed = mEchConfigUsed;
 }
 
-bool nsHttpTransaction::CanDo0RTT() {
-  if (mRequestHead->IsSafeMethod() && !mDoNotTryEarlyData &&
-      (!mConnection || !mConnection->IsProxyConnectInProgress())) {
-    return true;
-  }
-  return false;
-}
-
 bool nsHttpTransaction::Do0RTT() {
   if (mRequestHead->IsSafeMethod() && !mDoNotTryEarlyData &&
       (!mConnection || !mConnection->IsProxyConnectInProgress())) {
@@ -2894,6 +2886,9 @@ nsresult nsHttpTransaction::Finish0RTT(bool aRestart,
     mEarlyDataDisposition = EARLY_ACCEPTED;
   }
   if (aRestart) {
+    
+    mDoNotTryEarlyData = true;
+
     
     nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mRequestStream);
     if (seekable) {

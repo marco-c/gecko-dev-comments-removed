@@ -191,8 +191,6 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual void DoNotRemoveAltSvc() {}
 
   
-  [[nodiscard]] virtual bool CanDo0RTT() { return false; }
-  
   
   
   [[nodiscard]] virtual bool Do0RTT() { return false; }
