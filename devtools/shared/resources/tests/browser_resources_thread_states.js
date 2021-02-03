@@ -36,8 +36,10 @@ async function checkBreakpointBeforeWatchResources() {
   
   info("Attach the top level target");
   await targetList.targetFront.attach();
+  
+  
   info("Attach the top level thread actor");
-  const threadFront = await targetList.targetFront.attachThread();
+  await targetList.targetFront.attachAndInitThread(targetList);
 
   info("Run the 'debugger' statement");
   
@@ -77,6 +79,7 @@ async function checkBreakpointBeforeWatchResources() {
     },
   });
 
+  const { threadFront } = targetList.targetFront;
   await threadFront.resume();
 
   await waitFor(

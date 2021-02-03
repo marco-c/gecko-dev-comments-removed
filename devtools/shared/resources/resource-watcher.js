@@ -673,15 +673,9 @@ class ResourceWatcher {
     if (this.hasResourceWatcherSupport(resourceType)) {
       await this.watcherFront.watchResources([resourceType]);
 
-      
-      
-      
-      
-      
-      
-      
-      const shouldRunLegacyListeners =
-        resourceType == ResourceWatcher.TYPES.SOURCE;
+      const shouldRunLegacyListeners = this._shouldRunLegacyListenerEvenWithWatcherSupport(
+        resourceType
+      );
       if (!shouldRunLegacyListeners) {
         return;
       }
@@ -697,6 +691,27 @@ class ResourceWatcher {
       promises.push(this._watchResourcesForTarget(target, resourceType));
     }
     await Promise.all(promises);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _shouldRunLegacyListenerEvenWithWatcherSupport(resourceType) {
+    return (
+      resourceType == ResourceWatcher.TYPES.SOURCE ||
+      resourceType == ResourceWatcher.TYPES.THREAD_STATE
+    );
   }
 
   async _forwardCachedResources(resourceTypes, onAvailable) {
@@ -798,9 +813,9 @@ class ResourceWatcher {
         this.watcherFront.unwatchResources([resourceType]);
       }
 
-      
-      const shouldRunLegacyListeners =
-        resourceType == ResourceWatcher.TYPES.SOURCE;
+      const shouldRunLegacyListeners = this._shouldRunLegacyListenerEvenWithWatcherSupport(
+        resourceType
+      );
       if (!shouldRunLegacyListeners) {
         return;
       }
@@ -945,4 +960,6 @@ const ResourceTransformers = {
     .SESSION_STORAGE]: require("devtools/shared/resources/transformers/storage-session-storage.js"),
   [ResourceWatcher.TYPES
     .NETWORK_EVENT]: require("devtools/shared/resources/transformers/network-events"),
+  [ResourceWatcher.TYPES
+    .THREAD_STATE]: require("devtools/shared/resources/transformers/thread-states"),
 };

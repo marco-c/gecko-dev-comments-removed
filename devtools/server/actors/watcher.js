@@ -150,6 +150,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
           [Resources.TYPES.STYLESHEET]:
             enableServerWatcher && hasBrowserElement,
           [Resources.TYPES.SOURCE]: hasBrowserElement,
+          [Resources.TYPES.THREAD_STATE]: hasBrowserElement,
         },
         
         
