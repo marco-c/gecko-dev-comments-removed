@@ -7,6 +7,7 @@
 #include "ActorsParent.h"
 
 
+#include "Flatten.h"
 #include "InitializationTypes.h"
 #include "OriginScope.h"
 #include "QuotaCommon.h"
@@ -7128,11 +7129,11 @@ QuotaManager::CollectLRUOriginInfosUntil(Collect&& aCollect, Pred&& aPred) {
   return originInfos;
 }
 
-QuotaManager::OriginInfosFlatTraversable
+QuotaManager::OriginInfosNestedTraversable
 QuotaManager::LockedGetOriginInfosExceedingGroupLimit() const {
   mQuotaMutex.AssertCurrentThreadOwns();
 
-  OriginInfosFlatTraversable originInfos;
+  OriginInfosNestedTraversable originInfos;
 
   for (const auto& entry : mGroupInfoPairs) {
     const auto& pair = entry.GetData();
@@ -7159,9 +7160,7 @@ QuotaManager::LockedGetOriginInfosExceedingGroupLimit() const {
       MOZ_ASSERT(quotaManager, "Shouldn't be null!");
 
       if (groupUsage > quotaManager->GetGroupLimit()) {
-        
-        
-        originInfos.AppendElements(CollectLRUOriginInfosUntil(
+        originInfos.AppendElement(CollectLRUOriginInfosUntil(
             [&temporaryGroupInfo, &defaultGroupInfo](auto inserter) {
               MaybeInsertOriginInfos(std::move(inserter), temporaryGroupInfo,
                                      defaultGroupInfo,
@@ -7183,7 +7182,7 @@ QuotaManager::LockedGetOriginInfosExceedingGroupLimit() const {
 
 QuotaManager::OriginInfosFlatTraversable
 QuotaManager::LockedGetOriginInfosExceedingGlobalLimit(
-    const OriginInfosFlatTraversable& aAlreadyDoomedOriginInfos,
+    const OriginInfosNestedTraversable& aAlreadyDoomedOriginInfos,
     const uint64_t aAlreadyDoomedUsage) const {
   mQuotaMutex.AssertCurrentThreadOwns();
 
@@ -7199,7 +7198,13 @@ QuotaManager::LockedGetOriginInfosExceedingGlobalLimit(
               inserter, pair->LockedGetGroupInfo(PERSISTENCE_TYPE_TEMPORARY),
               pair->LockedGetGroupInfo(PERSISTENCE_TYPE_DEFAULT),
               [&aAlreadyDoomedOriginInfos](const auto& originInfo) {
-                return !aAlreadyDoomedOriginInfos.Contains(originInfo) &&
+                return !std::any_of(aAlreadyDoomedOriginInfos.cbegin(),
+                                    aAlreadyDoomedOriginInfos.cend(),
+                                    
+                                    
+                                    [&originInfo](const auto& array) {
+                                      return array.Contains(originInfo);
+                                    }) &&
                        !originInfo->LockedPersisted();
               });
         }
@@ -7216,24 +7221,28 @@ QuotaManager::LockedGetOriginInfosExceedingGlobalLimit(
       });
 }
 
-QuotaManager::OriginInfosFlatTraversable
+QuotaManager::OriginInfosNestedTraversable
 QuotaManager::GetOriginInfosExceedingLimits() const {
   MutexAutoLock lock(mQuotaMutex);
 
   auto originInfos = LockedGetOriginInfosExceedingGroupLimit();
 
-  const uint64_t doomedUsage =
-      std::accumulate(originInfos.cbegin(), originInfos.cend(), uint64_t(0),
-                      [](uint64_t oldValue, const auto& originInfo) {
-                        return oldValue + originInfo->LockedUsage();
-                      });
+  const uint64_t doomedUsage = std::accumulate(
+      originInfos.cbegin(), originInfos.cend(), uint64_t(0),
+      [](uint64_t oldValue, const auto& currentOriginInfos) {
+        return std::accumulate(currentOriginInfos.cbegin(),
+                               currentOriginInfos.cend(), oldValue,
+                               [](uint64_t oldValue, const auto& originInfo) {
+                                 return oldValue + originInfo->LockedUsage();
+                               });
+      });
 
   
   
   
   
   if (mTemporaryStorageUsage - doomedUsage > mTemporaryStorageLimit) {
-    originInfos.AppendElements(
+    originInfos.AppendElement(
         LockedGetOriginInfosExceedingGlobalLimit(originInfos, doomedUsage));
   }
 
@@ -7241,13 +7250,12 @@ QuotaManager::GetOriginInfosExceedingLimits() const {
 }
 
 void QuotaManager::ClearOrigins(
-    const OriginInfosFlatTraversable& aDoomedOriginInfos) {
+    const OriginInfosNestedTraversable& aDoomedOriginInfos) {
   AssertIsOnIOThread();
 
   
-  
-  
-  for (const auto& doomedOriginInfo : aDoomedOriginInfos) {
+  for (const auto& doomedOriginInfo :
+       Flatten<OriginInfosFlatTraversable::elem_type>(aDoomedOriginInfos)) {
 #ifdef DEBUG
     {
       MutexAutoLock lock(mQuotaMutex);
@@ -7269,7 +7277,8 @@ void QuotaManager::ClearOrigins(
   {
     MutexAutoLock lock(mQuotaMutex);
 
-    for (const auto& doomedOriginInfo : aDoomedOriginInfos) {
+    for (const auto& doomedOriginInfo :
+         Flatten<OriginInfosFlatTraversable::elem_type>(aDoomedOriginInfos)) {
       
       
       
