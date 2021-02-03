@@ -295,18 +295,6 @@ class ResponsiveUI {
       
       
       await this.updateNetworkThrottling();
-
-      this.targetList.unwatchTargets(
-        [this.targetList.TYPES.FRAME],
-        this.onTargetAvailable
-      );
-
-      this.resourceWatcher.unwatchResources(
-        [this.resourceWatcher.TYPES.NETWORK_EVENT],
-        { onAvailable: this.onNetworkResourceAvailable }
-      );
-
-      this.targetList.destroy();
     }
 
     this.tab.removeEventListener("TabClose", this);
@@ -344,6 +332,22 @@ class ResponsiveUI {
       if (reloadNeeded && currentTarget) {
         await currentTarget.reload();
       }
+
+      
+      
+      
+      
+      this.targetList.unwatchTargets(
+        [this.targetList.TYPES.FRAME],
+        this.onTargetAvailable
+      );
+
+      this.resourceWatcher.unwatchResources(
+        [this.resourceWatcher.TYPES.NETWORK_EVENT],
+        { onAvailable: this.onNetworkResourceAvailable }
+      );
+
+      this.targetList.destroy();
     }
 
     
