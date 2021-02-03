@@ -1367,11 +1367,10 @@ bool nsExternalAppHandler::ShouldForceExtension(const nsString& aFileExt) {
         break;
       }
     }
+    if (!canForce) {
+      return false;
+    }
   }
-  if (!canForce) {
-    return false;
-  }
-
   
   
 
