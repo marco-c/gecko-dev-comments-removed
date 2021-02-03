@@ -18,6 +18,15 @@ Services.prefs.setBoolPref(
   false
 );
 
+const observer = {
+  observe(subject, topic, data) {
+    if (topic == "webextension-optional-permission-prompt") {
+      let { resolve } = subject.wrappedJSObject;
+      resolve(true);
+    }
+  },
+};
+
 
 async function getCachedPermissions(extensionId) {
   const NotFound = Symbol("extension ID not found in permissions cache");
@@ -51,12 +60,19 @@ add_task(async function setup() {
   
   await ExtensionPermissions._uninit();
 
-  optionalPermissionsPromptHandler.init();
-  optionalPermissionsPromptHandler.acceptPrompt = true;
-
+  Services.prefs.setBoolPref(
+    "extensions.webextOptionalPermissionPrompts",
+    true
+  );
+  Services.obs.addObserver(observer, "webextension-optional-permission-prompt");
   await AddonTestUtils.promiseStartupManager();
   registerCleanupFunction(async () => {
     await AddonTestUtils.promiseShutdownManager();
+    Services.obs.removeObserver(
+      observer,
+      "webextension-optional-permission-prompt"
+    );
+    Services.prefs.clearUserPref("extensions.webextOptionalPermissionPrompts");
   });
 });
 
