@@ -3367,93 +3367,27 @@ void gfxPlatform::NotifyCompositorCreated(LayersBackend aBackend) {
 }
 
 
-bool gfxPlatform::FallbackFromAcceleration(FeatureStatus aStatus,
-                                           const char* aMessage,
-                                           const nsACString& aFailureId) {
-  
+void gfxPlatform::DisableWebRender(FeatureStatus aStatus, const char* aMessage,
+                                   const nsACString& aFailureId) {
   if (gfxConfig::IsEnabled(Feature::WEBRENDER)) {
     gfxConfig::GetFeature(Feature::WEBRENDER)
         .ForceDisable(aStatus, aMessage, aFailureId);
   }
-
-#ifdef XP_WIN
   
   
-  if (StaticPrefs::gfx_webrender_fallback_software_d3d11_AtStartup() &&
-      gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE) &&
-      gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING) &&
-      gfxVars::UseWebRender() && !gfxVars::UseSoftwareWebRender()) {
-    
-    gfxCriticalNote << "Fallback WR to SW-WR + D3D11";
-    gfxVars::SetUseSoftwareWebRender(true);
-    return true;
-  }
-
-  
-  
-  if (gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
-    gfxConfig::GetFeature(Feature::D3D11_COMPOSITING)
+  if (gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE)) {
+    gfxConfig::GetFeature(Feature::WEBRENDER_SOFTWARE)
         .ForceDisable(aStatus, aMessage, aFailureId);
   }
-  if (gfxConfig::IsEnabled(Feature::DIRECT2D)) {
-    gfxConfig::GetFeature(Feature::DIRECT2D)
-        .ForceDisable(aStatus, aMessage, aFailureId);
-  }
-#endif
-
-#ifndef MOZ_WIDGET_ANDROID
-  
-  
-  if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
-    gfxConfig::GetFeature(Feature::HW_COMPOSITING)
-        .ForceDisable(aStatus, aMessage, aFailureId);
-  }
-#endif
-
-  if (!gfxVars::UseWebRender()) {
-    
-    
-    return false;
-  }
-
-  if (StaticPrefs::gfx_webrender_fallback_software_AtStartup() &&
-      gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE) &&
-      !gfxVars::UseSoftwareWebRender()) {
-    
-    gfxCriticalNote << "Fallback WR to SW-WR";
-    gfxVars::SetUseSoftwareWebRender(true);
-    return true;
-  }
-
-  if (StaticPrefs::gfx_webrender_fallback_basic_AtStartup()) {
-    
-    gfxCriticalNote << "Fallback (SW-)WR to Basic";
-    if (gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE)) {
-      gfxConfig::GetFeature(Feature::WEBRENDER_SOFTWARE)
-          .ForceDisable(aStatus, aMessage, aFailureId);
-    }
-    gfxVars::SetUseWebRender(false);
-    gfxVars::SetUseSoftwareWebRender(false);
-    return false;
-  }
-
-  
-  gfxCriticalNoteOnce << "Fallback remains SW-WR";
-  MOZ_ASSERT(gfxVars::UseWebRender());
-  MOZ_ASSERT(gfxVars::UseSoftwareWebRender());
-  return false;
+  gfxVars::SetUseWebRender(false);
+  gfxVars::SetUseSoftwareWebRender(false);
 }
 
 
-void gfxPlatform::DisableGPUProcess() {
+void gfxPlatform::NotifyGPUProcessDisabled() {
+  DisableWebRender(FeatureStatus::Unavailable, "GPU Process is disabled",
+                   "FEATURE_FAILURE_GPU_PROCESS_DISABLED"_ns);
   gfxVars::SetRemoteCanvasEnabled(false);
-
-  if (gfxVars::UseWebRender()) {
-    
-    
-    wr::RenderThread::Start();
-    image::ImageMemoryReporter::InitForWebRender();
-  }
 }
 
 void gfxPlatform::FetchAndImportContentDeviceData() {
