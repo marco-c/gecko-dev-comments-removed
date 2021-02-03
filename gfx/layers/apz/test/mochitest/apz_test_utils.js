@@ -282,23 +282,6 @@ function flushApzRepaints(aCallback, aWindow = window) {
 
 
 
-function waitForApzFlushedRepaints(aCallback) {
-  
-  promiseAllPaintsDone()
-    
-    
-    
-    
-    .then(() => promiseApzRepaintsFlushed())
-    
-    
-    
-    .then(promiseAllPaintsDone)
-    
-    .then(aCallback);
-}
-
-
 async function promiseApzFlushedRepaints() {
   await promiseAllPaintsDone();
   await promiseApzRepaintsFlushed();
