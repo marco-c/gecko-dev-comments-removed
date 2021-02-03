@@ -6,6 +6,7 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/TextUtils.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/Utf8.h"
 
@@ -309,6 +310,109 @@ static __int64 MyFileSeek64(HANDLE aHandle, __int64 aDistance,
   }
 
   return li.QuadPart;
+}
+
+
+static bool IsRootPath(const nsAString& aPath) {
+  
+  if (aPath.Last() != L'\\') {
+    return false;
+  }
+  if (StringEndsWith(aPath, u":\\"_ns)) {
+    return true;
+  }
+
+  nsAString::const_iterator begin, end;
+  aPath.BeginReading(begin);
+  aPath.EndReading(end);
+  
+  end--;
+  
+  if (RFindInReadable(u"\\"_ns, begin, end)) {
+    
+    aPath.EndReading(end);
+    end--;
+    auto lastSegment = Substring(++begin, end);
+    if (lastSegment.IsEmpty()) {
+      return false;
+    }
+
+    
+    if (lastSegment.Last() == L'$' && lastSegment.Length() == 2 &&
+        IsAsciiAlpha(lastSegment.First())) {
+      return true;
+    }
+    
+    if (StringBeginsWith(lastSegment, u"Volume{"_ns) &&
+        lastSegment.Last() == L'}') {
+      return true;
+    }
+  }
+  return false;
+}
+
+static auto kSpecialNTFSFilesInRoot = {
+    u"$MFT"_ns,     u"$MFTMirr"_ns, u"$LogFile"_ns, u"$Volume"_ns,
+    u"$AttrDef"_ns, u"$Bitmap"_ns,  u"$Boot"_ns,    u"$BadClus"_ns,
+    u"$Secure"_ns,  u"$UpCase"_ns,  u"$Extend"_ns};
+static bool IsSpecialNTFSPath(const nsAString& aFilePath) {
+  nsAString::const_iterator begin, end;
+  aFilePath.BeginReading(begin);
+  aFilePath.EndReading(end);
+  auto iter = begin;
+  
+  if (!FindCharInReadable(L'$', iter, end)) {
+    return false;
+  }
+
+  iter = begin;
+  
+  
+  if (FindInReadable(u":$"_ns, iter, end)) {
+    return true;
+  }
+
+  auto normalized = mozilla::MakeUniqueFallible<wchar_t[]>(MAX_PATH);
+  if (!normalized) {
+    return true;
+  }
+  auto flatPath = PromiseFlatString(aFilePath);
+  auto fullPathRV =
+      GetFullPathNameW(flatPath.get(), MAX_PATH - 1, normalized.get(), nullptr);
+  if (fullPathRV == 0 || fullPathRV > MAX_PATH - 1) {
+    return false;
+  }
+
+  nsString normalizedPath(normalized.get());
+  normalizedPath.BeginReading(begin);
+  normalizedPath.EndReading(end);
+  iter = begin;
+  auto kDelimiters = u"\\:"_ns;
+  while (iter != end && FindCharInReadable(L'$', iter, end)) {
+    for (auto str : kSpecialNTFSFilesInRoot) {
+      if (StringBeginsWith(Substring(iter, end), str,
+                           nsCaseInsensitiveStringComparator)) {
+        
+        
+        auto iterCopy = iter;
+        iterCopy.advance(str.Length());
+        
+        
+        
+        if (iterCopy == end || kDelimiters.Contains(*iterCopy)) {
+          iterCopy = iter;
+          
+          
+          if (iterCopy == begin || *(--iterCopy) == L'\\') {
+            return IsRootPath(Substring(begin, iter));
+          }
+        }
+      }
+    }
+    iter++;
+  }
+
+  return false;
 }
 
 
@@ -921,6 +1025,10 @@ nsLocalFile::InitWithPath(const nsAString& aFilePath) {
     }
   }
 
+  if (IsSpecialNTFSPath(aFilePath)) {
+    return NS_ERROR_FILE_UNRECOGNIZED_PATH;
+  }
+
   mWorkingPath = aFilePath;
   
   if (mWorkingPath.Last() == L'\\') {
@@ -1236,6 +1344,12 @@ nsresult nsLocalFile::AppendInternal(const nsString& aNode,
   mWorkingPath.Append('\\');
   mWorkingPath.Append(aNode);
 
+  if (IsSpecialNTFSPath(mWorkingPath)) {
+    
+    mWorkingPath.SetLength(mWorkingPath.Length() - aNode.Length() - 1);
+    return NS_ERROR_FILE_UNRECOGNIZED_PATH;
+  }
+
   return NS_OK;
 }
 
@@ -1442,10 +1556,17 @@ nsLocalFile::SetLeafName(const nsAString& aLeafName) {
 
   
   int32_t offset = mWorkingPath.RFindChar(L'\\');
+  nsString newDir;
   if (offset) {
-    mWorkingPath.Truncate(offset + 1);
+    newDir = Substring(mWorkingPath, 0, offset + 1) + aLeafName;
+  } else {
+    newDir = mWorkingPath + aLeafName;
   }
-  mWorkingPath.Append(aLeafName);
+  if (IsSpecialNTFSPath(newDir)) {
+    return NS_ERROR_FILE_UNRECOGNIZED_PATH;
+  }
+
+  mWorkingPath.Assign(newDir);
 
   return NS_OK;
 }
