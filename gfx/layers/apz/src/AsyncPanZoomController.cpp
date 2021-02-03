@@ -4875,10 +4875,10 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
 
+    scrollOffsetUpdated = true;
+
     if (scrollUpdate.GetMode() == ScrollMode::Smooth ||
         scrollUpdate.GetMode() == ScrollMode::SmoothMsd) {
-      scrollOffsetUpdated = true;
-
       
       
       
@@ -4945,8 +4945,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
           ToString(scrollUpdate.GetDestination() - scrollUpdate.GetSource())
               .c_str());
 
-      scrollOffsetUpdated = true;
-
       
       
       
@@ -4964,8 +4962,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       APZC_LOG("%p pure-relative updating scroll offset from %s by %s\n", this,
                ToString(Metrics().GetVisualScrollOffset()).c_str(),
                ToString(scrollUpdate.GetDelta()).c_str());
-
-      scrollOffsetUpdated = true;
 
       
       
@@ -4990,18 +4986,8 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       APZC_LOG("%p updating scroll offset from %s to %s\n", this,
                ToString(Metrics().GetVisualScrollOffset()).c_str(),
                ToString(scrollUpdate.GetDestination()).c_str());
-      bool offsetChanged = Metrics().ApplyScrollUpdateFrom(scrollUpdate);
+      Metrics().ApplyScrollUpdateFrom(scrollUpdate);
       Metrics().RecalculateLayoutViewportOffset();
-
-      if (offsetChanged || scrollUpdate.GetMode() != ScrollMode::Instant ||
-          scrollUpdate.GetType() != ScrollUpdateType::Absolute ||
-          scrollUpdate.GetOrigin() != ScrollOrigin::None) {
-        
-        
-        
-        
-        scrollOffsetUpdated = true;
-      }
     }
 
     
