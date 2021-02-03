@@ -12,6 +12,7 @@
 #include "mozilla/PerfectHash.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/glean/bindings/MetricTypes.h"
+#include "mozilla/glean/fog_ffi_generated.h"
 
 #define GLEAN_INDEX_BITS (32)
 #define GLEAN_ID_BITS (27)
@@ -41,13 +42,25 @@ static already_AddRefed<nsISupports> NewMetricFromId(uint32_t id) {
     {
       return MakeAndAddRef<GleanBoolean>(metricId);
     }
+    case 2: 
+    {
+      return MakeAndAddRef<GleanLabeled>(metricId, 2);
+    }
     case 3: 
     {
       return MakeAndAddRef<GleanCounter>(metricId);
     }
+    case 4: 
+    {
+      return MakeAndAddRef<GleanLabeled>(metricId, 4);
+    }
     case 5: 
     {
       return MakeAndAddRef<GleanString>(metricId);
+    }
+    case 6: 
+    {
+      return MakeAndAddRef<GleanLabeled>(metricId, 6);
     }
     case 7: 
     {
@@ -80,6 +93,24 @@ static already_AddRefed<nsISupports> NewMetricFromId(uint32_t id) {
     default:
     MOZ_ASSERT_UNREACHABLE("Invalid type ID reached when trying to instantiate a new metric");
     return nullptr;
+  }
+}
+
+static already_AddRefed<nsISupports> NewSubMetricFromIds(uint32_t aParentTypeId, uint32_t aParentMetricId, const nsACString& aLabel) {
+  switch (aParentTypeId) {
+    case 2: { 
+      return MakeAndAddRef<GleanBoolean>(impl::fog_labeled_boolean_get(aParentMetricId, &aLabel));
+    }
+    case 4: { 
+      return MakeAndAddRef<GleanCounter>(impl::fog_labeled_counter_get(aParentMetricId, &aLabel));
+    }
+    case 6: { 
+      return MakeAndAddRef<GleanString>(impl::fog_labeled_string_get(aParentMetricId, &aLabel));
+    }
+    default: {
+      MOZ_ASSERT_UNREACHABLE("Invalid type ID for submetric.");
+      return nullptr;
+    }
   }
 }
 
