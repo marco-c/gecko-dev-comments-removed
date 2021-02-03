@@ -1050,6 +1050,11 @@ class nsDocShell final : public nsDocLoader,
 
   void SetCacheKeyOnHistoryEntry(nsISHEntry* aSHEntry, uint32_t aCacheKey);
 
+  
+  
+  
+  nsresult CheckDisallowedJavascriptLoad(nsDocShellLoadState* aLoadState);
+
   nsresult LoadURI(nsDocShellLoadState* aLoadState, bool aSetNavigating,
                    bool aContinueHandlingSubframeHistory);
 
