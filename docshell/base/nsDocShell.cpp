@@ -6252,32 +6252,28 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
   
   
   if (aStatus == NS_ERROR_UNKNOWN_HOST || aStatus == NS_ERROR_NET_RESET) {
-    bool doCreateAlternate = true;
-
     
     
+    bool doCreateAlternate = aLoadType == LOAD_NORMAL && aIsTopFrame;
 
-    if (aLoadType != LOAD_NORMAL || !aIsTopFrame) {
-      doCreateAlternate = false;
-    } else {
+    if (doCreateAlternate) {
+      nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+      nsIPrincipal* principal = loadInfo->TriggeringPrincipal();
       
-      if (newURI) {
-        bool sameURI = false;
-        url->Equals(newURI, &sameURI);
-        if (!sameURI) {
-          
-          
-          doCreateAlternate = false;
-        }
-      }
-
-      if (doCreateAlternate) {
-        nsCOMPtr<nsILoadInfo> info = aChannel->LoadInfo();
+      
+      
+      
+      doCreateAlternate = principal && principal->IsSystemPrincipal() &&
+                          loadInfo->RedirectChain().IsEmpty();
+    }
+    
+    if (doCreateAlternate && newURI) {
+      bool sameURI = false;
+      url->Equals(newURI, &sameURI);
+      if (!sameURI) {
         
         
-        if (!info->RedirectChain().IsEmpty()) {
-          doCreateAlternate = false;
-        }
+        doCreateAlternate = false;
       }
     }
     if (doCreateAlternate) {
