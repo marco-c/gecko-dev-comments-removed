@@ -3,18 +3,6 @@
 
 "use strict";
 
-
-
-
-
-
-function shouldBeImminentlyDistrusted(aTransportSecurityInfo) {
-  let isDistrust =
-    aTransportSecurityInfo.securityState &
-    Ci.nsIWebProgressListener.STATE_CERT_DISTRUST_IMMINENT;
-  Assert.ok(isDistrust, "This host should be imminently distrusted");
-}
-
 do_get_profile();
 
 const certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(

@@ -132,10 +132,6 @@ var gIdentityHandler = {
     return this._state & Ci.nsIWebProgressListener.STATE_CERT_USER_OVERRIDDEN;
   },
 
-  get _isCertDistrustImminent() {
-    return this._state & Ci.nsIWebProgressListener.STATE_CERT_DISTRUST_IMMINENT;
-  },
-
   get _isAboutCertErrorPage() {
     return (
       gBrowser.selectedBrowser.documentURI &&
@@ -707,30 +703,6 @@ var gIdentityHandler = {
     
     
     
-
-    
-    if (this._isCertDistrustImminent) {
-      let consoleMsg = Cc["@mozilla.org/scripterror;1"].createInstance(
-        Ci.nsIScriptError
-      );
-      let windowId = gBrowser.selectedBrowser.innerWindowID;
-      let message = gBrowserBundle.GetStringFromName(
-        "certImminentDistrust.message"
-      );
-      
-      
-      consoleMsg.initWithWindowID(
-        message,
-        uri.prePath,
-        null,
-        0,
-        0,
-        Ci.nsIScriptError.warningFlag,
-        "SSL",
-        windowId
-      );
-      Services.console.logMessage(consoleMsg);
-    }
   },
 
   updateSharingIndicator() {
