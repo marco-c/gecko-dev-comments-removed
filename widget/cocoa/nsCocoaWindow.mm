@@ -42,10 +42,12 @@
 
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BasicEvents.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_widget.h"
-#include "mozilla/PresShell.h"
+#include "mozilla/WritingModes.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include <algorithm>
 
@@ -2594,7 +2596,11 @@ bool nsCocoaWindow::GetEditCommands(NativeKeyBindingsType aType, const WidgetKey
   }
 
   NativeKeyBindings* keyBindings = NativeKeyBindings::GetInstance(aType);
-  keyBindings->GetEditCommands(aEvent, aCommands);
+  
+  
+  
+  
+  keyBindings->GetEditCommands(aEvent, Nothing(), aCommands);
   return true;
 }
 

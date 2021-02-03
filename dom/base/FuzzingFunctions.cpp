@@ -322,8 +322,10 @@ void FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
   }
 
   
+  
+  
   Modifiers activatedModifiers = ActivateModifiers(
-      textInputProcessor, event.mModifiers, event.mWidget, aRv);
+      textInputProcessor, event.mModifiers, MOZ_KnownLive(event.mWidget), aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
@@ -341,8 +343,10 @@ void FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
   }
 
   
-  InactivateModifiers(textInputProcessor, activatedModifiers, event.mWidget,
-                      aRv);
+  
+  
+  InactivateModifiers(textInputProcessor, activatedModifiers,
+                      MOZ_KnownLive(event.mWidget), aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }

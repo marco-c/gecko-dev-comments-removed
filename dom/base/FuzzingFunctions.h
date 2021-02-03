@@ -33,10 +33,9 @@ class FuzzingFunctions final {
 
   static void EnableAccessibility(const GlobalObject&, ErrorResult& aRv);
 
-  static void SynthesizeKeyboardEvents(const GlobalObject& aGlobalObject,
-                                       const nsAString& aKeyValue,
-                                       const KeyboardEventInit& aKeyboardEvent,
-                                       ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void SynthesizeKeyboardEvents(
+      const GlobalObject& aGlobalObject, const nsAString& aKeyValue,
+      const KeyboardEventInit& aKeyboardEvent, ErrorResult& aRv);
 
  private:
   
@@ -50,9 +49,9 @@ class FuzzingFunctions final {
 
 
 
-  static Modifiers ActivateModifiers(TextInputProcessor* aTextInputProcessor,
-                                     Modifiers aModifiers, nsIWidget* aWidget,
-                                     ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT static Modifiers ActivateModifiers(
+      TextInputProcessor* aTextInputProcessor, Modifiers aModifiers,
+      nsIWidget* aWidget, ErrorResult& aRv);
 
   
 
@@ -65,9 +64,9 @@ class FuzzingFunctions final {
 
 
 
-  static Modifiers InactivateModifiers(TextInputProcessor* aTextInputProcessor,
-                                       Modifiers aModifiers, nsIWidget* aWidget,
-                                       ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT static Modifiers InactivateModifiers(
+      TextInputProcessor* aTextInputProcessor, Modifiers aModifiers,
+      nsIWidget* aWidget, ErrorResult& aRv);
 };
 
 }  

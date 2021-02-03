@@ -10,9 +10,11 @@
 #include "nsString.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/TextEventDispatcherListener.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/widget/IMEData.h"
+#include "WritingModes.h"
 
 class nsIWidget;
 
@@ -147,6 +149,13 @@ class TextEventDispatcher final {
     }
     return const_cast<TextEventDispatcher*>(this);
   }
+
+  
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT Maybe<WritingMode> MaybeWritingModeAtSelection() const;
 
   
 
@@ -326,6 +335,9 @@ class TextEventDispatcher final {
   
   
   IMENotificationRequests mIMENotificationRequests;
+  
+  
+  mutable Maybe<WritingMode> mWritingMode;
 
   
   
