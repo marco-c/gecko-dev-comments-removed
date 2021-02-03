@@ -97,7 +97,14 @@ class EventListener extends Handler {
     if (this.contentRestoreInitialized) {
       
       
-      this.contentRestore.restoreDocument();
+      if (
+        this.contentRestore.restoreDocument() &&
+        Services.appinfo.sessionHistoryInParent
+      ) {
+        this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {
+          epoch: this.store.epoch,
+        });
+      }
     }
   }
 }
@@ -501,14 +508,13 @@ class MessageQueue extends Handler {
 
 const MESSAGES = [
   "SessionStore:restoreHistory",
-  "SessionStore:finishRestoreHistory",
-  "SessionStore:OnHistoryReload",
-  "SessionStore:OnHistoryNewEntry",
+  "SessionStore:restoreDocShellState",
   "SessionStore:restoreTabContent",
   "SessionStore:resetRestore",
   "SessionStore:flush",
   "SessionStore:becomeActiveProcess",
   "SessionStore:prepareForProcessChange",
+  "SessionStore:setRestoringDocument",
 ];
 
 class ContentSessionStore {
@@ -520,18 +526,13 @@ class ContentSessionStore {
 
     this.contentRestoreInitialized = false;
 
-    this.waitRestoreSHistoryInParent = false;
-    this.restoreTabContentData = null;
-
     XPCOMUtils.defineLazyGetter(this, "contentRestore", () => {
       this.contentRestoreInitialized = true;
       return new ContentRestore(mm);
     });
 
     this.handlers = [new EventListener(this), this.messageQueue];
-
-    this._shistoryInParent = Services.appinfo.sessionHistoryInParent;
-    if (this._shistoryInParent) {
+    if (Services.appinfo.sessionHistoryInParent) {
       this.mm.sendAsyncMessage("SessionStore:addSHistoryListener");
     } else {
       this.handlers.push(new SessionHistoryListener(this));
@@ -564,45 +565,11 @@ class ContentSessionStore {
       case "SessionStore:restoreHistory":
         this.restoreHistory(data);
         break;
-      case "SessionStore:finishRestoreHistory":
-        this.finishRestoreHistory();
-        break;
-      case "SessionStore:OnHistoryNewEntry":
-        this.contentRestore.restoreOnNewEntry(data.uri);
-        break;
-      case "SessionStore:OnHistoryReload":
-        
-        this.contentRestore.restoreTabContent(
-          null,
-          false,
-          () => {
-            
-            
-            this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {
-              epoch: this.epoch,
-            });
-          },
-          () => {
-            
-            this.mm.sendAsyncMessage("SessionStore:removeRestoreListener", {
-              epoch: this.epoch,
-            });
-          },
-          () => {
-            
-            this.mm.sendAsyncMessage("SessionStore:reloadCurrentEntry", {
-              epoch: this.epoch,
-            });
-          }
-        );
+      case "SessionStore:restoreDocShellState":
+        this.restoreDocShellState(data);
         break;
       case "SessionStore:restoreTabContent":
-        if (this.waitRestoreSHistoryInParent) {
-          
-          this.restoreTabContentData = data;
-        } else {
-          this.restoreTabContent(data);
-        }
+        this.restoreTabContent(data);
         break;
       case "SessionStore:resetRestore":
         this.contentRestore.resetRestore();
@@ -611,7 +578,7 @@ class ContentSessionStore {
         this.flush(data);
         break;
       case "SessionStore:becomeActiveProcess":
-        if (!this._shistoryInParent) {
+        if (!Services.appinfo.sessionHistoryInParent) {
           SessionHistoryListener.collect();
         }
         break;
@@ -624,62 +591,43 @@ class ContentSessionStore {
         
         this.mm.docShell.persistLayoutHistoryState();
         break;
+      case "SessionStore:setRestoringDocument":
+        this.contentRestore.setRestoringDocument(data);
+        break;
       default:
         debug("received unknown message '" + name + "'");
         break;
     }
   }
 
-  restoreHistory({ epoch, tabData, loadArguments, isRemotenessUpdate }) {
-    this.contentRestore.restoreHistory(
-      tabData,
-      loadArguments,
-      {
+  
+  restoreHistory(data) {
+    let { epoch, tabData, loadArguments, isRemotenessUpdate } = data;
+
+    if (Services.appinfo.sessionHistoryInParent) {
+      throw new Error("This function should be unused with SHIP");
+    }
+    this.contentRestore.restoreHistory(tabData, loadArguments, {
+      
+      
+      
+      
+
+      onLoadStarted: () => {
         
-        
-        
-        
-
-        onLoadStarted: () => {
-          
-          this.mm.sendAsyncMessage("SessionStore:restoreTabContentStarted", {
-            epoch,
-          });
-        },
-
-        onLoadFinished: () => {
-          
-          
-          this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {
-            epoch,
-          });
-        },
-
-        removeRestoreListener: () => {
-          if (!this._shistoryInParent) {
-            return;
-          }
-
-          
-          this.mm.sendAsyncMessage("SessionStore:removeRestoreListener", {
-            epoch,
-          });
-        },
-
-        requestRestoreSHistory: () => {
-          if (!this._shistoryInParent) {
-            return;
-          }
-
-          this.waitRestoreSHistoryInParent = true;
-          
-          this.mm.sendAsyncMessage("SessionStore:restoreSHistoryInParent", {
-            epoch,
-          });
-        },
+        this.mm.sendAsyncMessage("SessionStore:restoreTabContentStarted", {
+          epoch,
+        });
       },
-      this._shistoryInParent
-    );
+
+      onLoadFinished: () => {
+        
+        
+        this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {
+          epoch,
+        });
+      },
+    });
 
     if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT) {
       
@@ -696,7 +644,7 @@ class ContentSessionStore {
         epoch,
         isRemotenessUpdate,
       });
-    } else if (!this._shistoryInParent) {
+    } else {
       this.mm.sendAsyncMessage("SessionStore:restoreHistoryComplete", {
         epoch,
         isRemotenessUpdate,
@@ -704,50 +652,35 @@ class ContentSessionStore {
     }
   }
 
-  finishRestoreHistory() {
-    this.contentRestore.finishRestoreHistory({
-      
-      
-      
-      
-      onLoadStarted: () => {
-        
-        this.mm.sendAsyncMessage("SessionStore:restoreTabContentStarted", {
-          epoch: this.epoch,
-        });
-      },
+  
+  restoreDocShellState(data) {
+    let { epoch, tabData } = data;
 
-      onLoadFinished: () => {
-        
-        
-        this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {
-          epoch: this.epoch,
-        });
-      },
-
-      removeRestoreListener: () => {
-        if (!this._shistoryInParent) {
-          return;
-        }
-
-        
-        this.mm.sendAsyncMessage("SessionStore:removeRestoreListener", {
-          epoch: this.epoch,
-        });
-      },
-    });
-
-    this.mm.sendAsyncMessage("SessionStore:restoreHistoryComplete", {
-      epoch: this.epoch,
-    });
-    if (this.restoreTabContentData) {
-      this.restoreTabContent(this.restoreTabContentData);
-      this.restoreTabContentData = null;
+    if (!Services.appinfo.sessionHistoryInParent) {
+      throw new Error("This function should only be used with SHIP");
     }
-    this.waitRestoreSHistoryInParent = false;
+    let { docShell } = this.mm;
+
+    if (tabData.uri) {
+      docShell.setCurrentURI(Services.io.newURI(tabData.uri));
+    }
+
+    if (tabData.disallow) {
+      SessionStoreUtils.restoreDocShellCapabilities(docShell, tabData.disallow);
+    }
+
+    if (tabData.storage) {
+      SessionStoreUtils.restoreSessionStorage(docShell, tabData.storage);
+    }
+    
+    
+    this.mm.sendAsyncMessage("SessionStore:restoreHistoryComplete", { epoch });
   }
 
   restoreTabContent({ loadArguments, isRemotenessUpdate, reason }) {
+    if (Services.appinfo.sessionHistoryInParent) {
+      throw new Error("This function should be unused with SHIP");
+    }
     let epoch = this.epoch;
 
     
@@ -760,17 +693,6 @@ class ContentSessionStore {
         this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {
           epoch,
           isRemotenessUpdate,
-        });
-      },
-      () => {
-        
-        this.mm.sendAsyncMessage("SessionStore:removeRestoreListener", {
-          epoch,
-        });
-      },
-      () => {
-        this.mm.sendAsyncMessage("SessionStore:reloadCurrentEntry", {
-          epoch,
         });
       }
     );

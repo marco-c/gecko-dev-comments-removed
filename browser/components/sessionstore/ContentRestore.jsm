@@ -53,11 +53,10 @@ function ContentRestore(chromeGlobal) {
 
   let EXPORTED_METHODS = [
     "restoreHistory",
-    "finishRestoreHistory",
-    "restoreOnNewEntry",
     "restoreTabContent",
     "restoreDocument",
     "resetRestore",
+    "setRestoringDocument",
   ];
 
   for (let method of EXPORTED_METHODS) {
@@ -80,11 +79,6 @@ function ContentRestoreInternal(chromeGlobal) {
   
   
   
-  this._tabDataForFinishRestoreHistory = null;
-
-  
-  
-  
   this._restoringDocument = null;
 
   
@@ -96,25 +90,6 @@ function ContentRestoreInternal(chromeGlobal) {
   
   
   this._progressListener = null;
-
-  this._shistoryInParent = false;
-}
-
-function kickOffNewLoadFromBlankPage(webNavigation, newURI) {
-  
-  
-  webNavigation.setCurrentURI(Services.io.newURI("about:blank"));
-
-  
-  
-  
-  
-  let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
-  let loadURIOptions = {
-    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-    loadFlags,
-  };
-  webNavigation.loadURI(newURI, loadURIOptions);
 }
 
 
@@ -126,13 +101,24 @@ ContentRestoreInternal.prototype = {
     return this.chromeGlobal.docShell;
   },
 
+  setRestoringDocument(data) {
+    if (!Services.appinfo.sessionHistoryInParent) {
+      throw new Error("This function should only be used with SHIP");
+    }
+    this._restoringDocument = data;
+  },
+
   
 
 
 
 
 
-  restoreHistory(tabData, loadArguments, callbacks, shistoryInParent) {
+  restoreHistory(tabData, loadArguments, callbacks) {
+    if (Services.appinfo.sessionHistoryInParent) {
+      throw new Error("This function should be unused with SHIP");
+    }
+
     this._tabData = tabData;
 
     
@@ -151,35 +137,16 @@ ContentRestoreInternal.prototype = {
       webNavigation.setCurrentURI(Services.io.newURI(uri));
     }
 
-    this._shistoryInParent = shistoryInParent;
+    SessionHistory.restore(this.docShell, tabData);
 
-    this._tabDataForFinishRestoreHistory = tabData;
-    if (this._shistoryInParent) {
-      callbacks.requestRestoreSHistory();
-    } else {
-      SessionHistory.restore(this.docShell, tabData);
-
+    
+    let listener = new HistoryListener(this.docShell, () => {
       
-      let listener = new HistoryListener(this.docShell, () => {
-        
-        this.restoreTabContent(
-          null,
-          false,
-          callbacks.onLoadFinished,
-          null,
-          null
-        );
-      });
+      this.restoreTabContent(null, false, callbacks.onLoadFinished);
+    });
 
-      webNavigation.sessionHistory.legacySHistory.addSHistoryListener(listener);
-      this._historyListener = listener;
-      this.finishRestoreHistory(callbacks);
-    }
-  },
-
-  finishRestoreHistory(callbacks) {
-    let tabData = this._tabDataForFinishRestoreHistory;
-    this._tabDataForFinishRestoreHistory = null;
+    webNavigation.sessionHistory.legacySHistory.addSHistoryListener(listener);
+    this._historyListener = listener;
 
     
     
@@ -202,10 +169,7 @@ ContentRestoreInternal.prototype = {
         this._tabData = null;
 
         
-        this.restoreTabContentStarted(
-          callbacks.onLoadFinished,
-          callbacks.removeRestoreListener
-        );
+        this.restoreTabContentStarted(callbacks.onLoadFinished);
 
         
         callbacks.onLoadStarted();
@@ -213,29 +177,22 @@ ContentRestoreInternal.prototype = {
     });
   },
 
-  restoreOnNewEntry(newURI) {
-    let webNavigation = this.docShell.QueryInterface(Ci.nsIWebNavigation);
-    kickOffNewLoadFromBlankPage(webNavigation, newURI);
-  },
-
   
 
 
 
-  restoreTabContent(
-    loadArguments,
-    isRemotenessUpdate,
-    finishCallback,
-    removeListenerCallback,
-    reloadSHistoryCallback
-  ) {
+  restoreTabContent(loadArguments, isRemotenessUpdate, finishCallback) {
+    if (Services.appinfo.sessionHistoryInParent) {
+      throw new Error("This function should be unused with SHIP");
+    }
+
     let tabData = this._tabData;
     this._tabData = null;
 
     let webNavigation = this.docShell.QueryInterface(Ci.nsIWebNavigation);
 
     
-    this.restoreTabContentStarted(finishCallback, removeListenerCallback);
+    this.restoreTabContentStarted(finishCallback);
 
     
     
@@ -277,12 +234,8 @@ ContentRestoreInternal.prototype = {
         
         
         
-        if (this._shistoryInParent) {
-          reloadSHistoryCallback();
-        } else {
-          let history = webNavigation.sessionHistory.legacySHistory;
-          history.reloadCurrentEntry();
-        }
+        let history = webNavigation.sessionHistory.legacySHistory;
+        history.reloadCurrentEntry();
       } else {
         
         let loadURIOptions = {
@@ -307,14 +260,14 @@ ContentRestoreInternal.prototype = {
 
 
 
-  restoreTabContentStarted(finishCallback, removeListenerCallback) {
-    
-    if (this._shistoryInParent) {
-      removeListenerCallback();
-    } else if (this._historyListener) {
-      this._historyListener.uninstall();
-      this._historyListener = null;
+  restoreTabContentStarted(finishCallback) {
+    if (Services.appinfo.sessionHistoryInParent) {
+      throw new Error("This function should be unused with SHIP");
     }
+
+    
+    this._historyListener.uninstall();
+    this._historyListener = null;
 
     
     this._progressListener.uninstall();
@@ -338,10 +291,12 @@ ContentRestoreInternal.prototype = {
 
 
 
+
   restoreDocument() {
     if (!this._restoringDocument) {
-      return;
+      return false;
     }
+
     let { formdata, scrollPositions } = this._restoringDocument;
     this._restoringDocument = null;
 
@@ -361,6 +316,7 @@ ContentRestoreInternal.prototype = {
         SessionStoreUtils.restoreScrollPosition(frame, data);
       }
     });
+    return true;
   },
 
   
@@ -428,7 +384,20 @@ HistoryListener.prototype = {
       return;
     }
 
-    kickOffNewLoadFromBlankPage(this.webNavigation, newURI);
+    
+    
+    this.webNavigation.setCurrentURI(Services.io.newURI("about:blank"));
+
+    
+    
+    
+    
+    let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
+    let loadURIOptions = {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      loadFlags,
+    };
+    this.webNavigation.loadURI(newURI.spec, loadURIOptions);
   },
 
   OnHistoryReload() {
