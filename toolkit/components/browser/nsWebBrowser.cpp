@@ -147,10 +147,6 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
   
   
 
-  if (aBrowsingContext->IsTop()) {
-    aBrowsingContext->InitSessionHistory();
-  }
-
   nsresult rv = docShell->InitWindow(nullptr, docShellParentWidget, 0, 0, 0, 0);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
