@@ -123,7 +123,7 @@ void FrameMetrics::KeepLayoutViewportEnclosingVisualViewport(
   aLayoutViewport = aLayoutViewport.MoveInsideAndClamp(aScrollableRect);
 }
 
-void FrameMetrics::ApplyScrollUpdateFrom(const ScrollPositionUpdate& aUpdate) {
+bool FrameMetrics::ApplyScrollUpdateFrom(const ScrollPositionUpdate& aUpdate) {
   
   
   CSSPoint relativeOffset = GetVisualScrollOffset() - GetLayoutScrollOffset();
@@ -131,8 +131,10 @@ void FrameMetrics::ApplyScrollUpdateFrom(const ScrollPositionUpdate& aUpdate) {
   
   
   
-  SetLayoutScrollOffset(aUpdate.GetDestination());
-  ClampAndSetVisualScrollOffset(aUpdate.GetDestination() + relativeOffset);
+  bool offsetChanged = SetLayoutScrollOffset(aUpdate.GetDestination());
+  offsetChanged |=
+      ClampAndSetVisualScrollOffset(aUpdate.GetDestination() + relativeOffset);
+  return offsetChanged;
 }
 
 CSSPoint FrameMetrics::ApplyRelativeScrollUpdateFrom(
