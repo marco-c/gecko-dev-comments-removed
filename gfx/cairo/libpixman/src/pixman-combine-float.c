@@ -42,8 +42,6 @@
 #define force_inline __inline__
 #endif
 
-#define IS_ZERO(f)     (-FLT_MIN < (f) && (f) < FLT_MIN)
-
 typedef float (* combine_channel_t) (float sa, float s, float da, float d);
 
 static force_inline void
@@ -203,56 +201,56 @@ get_factor (combine_factor_t factor, float sa, float da)
 	break;
 
     case SA_OVER_DA:
-	if (IS_ZERO (da))
+	if (FLOAT_IS_ZERO (da))
 	    f = 1.0f;
 	else
 	    f = CLAMP (sa / da);
 	break;
 
     case DA_OVER_SA:
-	if (IS_ZERO (sa))
+	if (FLOAT_IS_ZERO (sa))
 	    f = 1.0f;
 	else
 	    f = CLAMP (da / sa);
 	break;
 
     case INV_SA_OVER_DA:
-	if (IS_ZERO (da))
+	if (FLOAT_IS_ZERO (da))
 	    f = 1.0f;
 	else
 	    f = CLAMP ((1.0f - sa) / da);
 	break;
 
     case INV_DA_OVER_SA:
-	if (IS_ZERO (sa))
+	if (FLOAT_IS_ZERO (sa))
 	    f = 1.0f;
 	else
 	    f = CLAMP ((1.0f - da) / sa);
 	break;
 
     case ONE_MINUS_SA_OVER_DA:
-	if (IS_ZERO (da))
+	if (FLOAT_IS_ZERO (da))
 	    f = 0.0f;
 	else
 	    f = CLAMP (1.0f - sa / da);
 	break;
 
     case ONE_MINUS_DA_OVER_SA:
-	if (IS_ZERO (sa))
+	if (FLOAT_IS_ZERO (sa))
 	    f = 0.0f;
 	else
 	    f = CLAMP (1.0f - da / sa);
 	break;
 
     case ONE_MINUS_INV_DA_OVER_SA:
-	if (IS_ZERO (sa))
+	if (FLOAT_IS_ZERO (sa))
 	    f = 0.0f;
 	else
 	    f = CLAMP (1.0f - (1.0f - da) / sa);
 	break;
 
     case ONE_MINUS_INV_SA_OVER_DA:
-	if (IS_ZERO (da))
+	if (FLOAT_IS_ZERO (da))
 	    f = 0.0f;
 	else
 	    f = CLAMP (1.0f - (1.0f - sa) / da);
@@ -340,6 +338,27 @@ MAKE_PD_COMBINERS (conjoint_xor,		ONE_MINUS_DA_OVER_SA,		ONE_MINUS_SA_OVER_DA)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define MAKE_SEPARABLE_PDF_COMBINERS(name)				\
     static force_inline float						\
     combine_ ## name ## _a (float sa, float s, float da, float d)	\
@@ -357,17 +376,54 @@ MAKE_PD_COMBINERS (conjoint_xor,		ONE_MINUS_DA_OVER_SA,		ONE_MINUS_SA_OVER_DA)
     									\
     MAKE_COMBINERS (name, combine_ ## name ## _a, combine_ ## name ## _c)
 
+
+
+
+
+
+
+
+
 static force_inline float
 blend_multiply (float sa, float s, float da, float d)
 {
     return d * s;
 }
 
+
+
+
+
+
+
+
 static force_inline float
 blend_screen (float sa, float s, float da, float d)
 {
     return d * sa + s * da - s * d;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static force_inline float
 blend_overlay (float sa, float s, float da, float d)
@@ -377,6 +433,13 @@ blend_overlay (float sa, float s, float da, float d)
     else
 	return sa * da - 2 * (da - d) * (sa - s);
 }
+
+
+
+
+
+
+
 
 static force_inline float
 blend_darken (float sa, float s, float da, float d)
@@ -390,6 +453,13 @@ blend_darken (float sa, float s, float da, float d)
 	return s;
 }
 
+
+
+
+
+
+
+
 static force_inline float
 blend_lighten (float sa, float s, float da, float d)
 {
@@ -402,18 +472,56 @@ blend_lighten (float sa, float s, float da, float d)
 	return d;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static force_inline float
 blend_color_dodge (float sa, float s, float da, float d)
 {
-    if (IS_ZERO (d))
+    if (FLOAT_IS_ZERO (d))
 	return 0.0f;
     else if (d * sa >= sa * da - s * da)
 	return sa * da;
-    else if (IS_ZERO (sa - s))
+    else if (FLOAT_IS_ZERO (sa - s))
 	return sa * da;
     else
 	return sa * sa * d / (sa - s);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static force_inline float
 blend_color_burn (float sa, float s, float da, float d)
@@ -422,11 +530,28 @@ blend_color_burn (float sa, float s, float da, float d)
 	return sa * da;
     else if (sa * (da - d) >= s * da)
 	return 0.0f;
-    else if (IS_ZERO (s))
+    else if (FLOAT_IS_ZERO (s))
 	return 0.0f;
     else
 	return sa * (da - sa * (da - d) / s);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static force_inline float
 blend_hard_light (float sa, float s, float da, float d)
@@ -437,21 +562,38 @@ blend_hard_light (float sa, float s, float da, float d)
 	return sa * da - 2 * (da - d) * (sa - s);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static force_inline float
 blend_soft_light (float sa, float s, float da, float d)
 {
-    if (2 * s < sa)
+    if (2 * s <= sa)
     {
-	if (IS_ZERO (da))
+	if (FLOAT_IS_ZERO (da))
 	    return d * sa;
 	else
 	    return d * sa - d * (da - d) * (sa - 2 * s) / da;
     }
     else
     {
-	if (IS_ZERO (da))
+	if (FLOAT_IS_ZERO (da))
 	{
-	    return 0.0f;
+	    return d * sa;
 	}
 	else
 	{
@@ -462,6 +604,20 @@ blend_soft_light (float sa, float s, float da, float d)
 	}
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static force_inline float
 blend_difference (float sa, float s, float da, float d)
@@ -474,6 +630,13 @@ blend_difference (float sa, float s, float da, float d)
     else
 	return sda - dsa;
 }
+
+
+
+
+
+
+
 
 static force_inline float
 blend_exclusion (float sa, float s, float da, float d)
@@ -492,43 +655,6 @@ MAKE_SEPARABLE_PDF_COMBINERS (hard_light)
 MAKE_SEPARABLE_PDF_COMBINERS (soft_light)
 MAKE_SEPARABLE_PDF_COMBINERS (difference)
 MAKE_SEPARABLE_PDF_COMBINERS (exclusion)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -658,7 +784,7 @@ clip_color (rgb_t *color, float a)
     if (n < 0.0f)
     {
 	t = l - n;
-	if (IS_ZERO (t))
+	if (FLOAT_IS_ZERO (t))
 	{
 	    color->r = 0.0f;
 	    color->g = 0.0f;
@@ -674,7 +800,7 @@ clip_color (rgb_t *color, float a)
     if (x > a)
     {
 	t = x - l;
-	if (IS_ZERO (t))
+	if (FLOAT_IS_ZERO (t))
 	{
 	    color->r = a;
 	    color->g = a;
@@ -758,7 +884,7 @@ set_sat (rgb_t *src, float sat)
 
     t = *max - *min;
 
-    if (IS_ZERO (t))
+    if (FLOAT_IS_ZERO (t))
     {
 	*mid = *max = 0.0f;
     }
@@ -770,6 +896,9 @@ set_sat (rgb_t *src, float sat)
 
     *min = 0.0f;
 }
+
+
+
 
 
 
@@ -792,6 +921,11 @@ blend_hsl_hue (rgb_t *res,
 
 
 
+
+
+
+
+
 static force_inline void
 blend_hsl_saturation (rgb_t *res,
 		      const rgb_t *dest, float da,
@@ -809,6 +943,9 @@ blend_hsl_saturation (rgb_t *res,
 
 
 
+
+
+
 static force_inline void
 blend_hsl_color (rgb_t *res,
 		 const rgb_t *dest, float da,
@@ -820,6 +957,9 @@ blend_hsl_color (rgb_t *res,
 
     set_lum (res, sa * da, get_lum (dest) * sa);
 }
+
+
+
 
 
 
