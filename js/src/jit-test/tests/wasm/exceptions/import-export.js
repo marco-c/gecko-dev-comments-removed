@@ -8,6 +8,12 @@ function testException() {
     WebAssembly.RuntimeError,
     /cannot call WebAssembly.Exception/
   );
+
+  assertErrorMessage(
+    () => new WebAssembly.RuntimeException(),
+    WebAssembly.RuntimeError,
+    /cannot call WebAssembly.RuntimeException/
+  );
 }
 
 function testImports() {

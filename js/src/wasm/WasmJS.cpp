@@ -3391,7 +3391,7 @@ bool WasmExceptionObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   
   
   JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                           JSMSG_WASM_EXN_CONSTRUCTOR);
+                           JSMSG_WASM_EXN_CONSTRUCTOR, "WebAssembly.Exception");
 
   return false;
 }
@@ -3453,6 +3453,112 @@ wasm::ResultType WasmExceptionObject::resultType() const {
 }
 
 ExceptionTag& WasmExceptionObject::tag() const {
+  return *(ExceptionTag*)getReservedSlot(TAG_SLOT).toPrivate();
+}
+
+
+
+
+const JSClassOps WasmRuntimeExceptionObject::classOps_ = {
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    WasmRuntimeExceptionObject::finalize,  
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+    nullptr,                               
+};
+
+const JSClass WasmRuntimeExceptionObject::class_ = {
+    "WebAssembly.RuntimeException",
+    JSCLASS_HAS_RESERVED_SLOTS(WasmRuntimeExceptionObject::RESERVED_SLOTS) |
+        JSCLASS_HAS_PRIVATE | JSCLASS_FOREGROUND_FINALIZE,
+    &WasmRuntimeExceptionObject::classOps_,
+    &WasmRuntimeExceptionObject::classSpec_};
+
+const JSClass& WasmRuntimeExceptionObject::protoClass_ = PlainObject::class_;
+
+static constexpr char WasmRuntimeExceptionName[] = "RuntimeException";
+
+const ClassSpec WasmRuntimeExceptionObject::classSpec_ = {
+    CreateWasmConstructor<WasmRuntimeExceptionObject, WasmRuntimeExceptionName>,
+    GenericCreatePrototype<WasmRuntimeExceptionObject>,
+    WasmRuntimeExceptionObject::static_methods,
+    nullptr,
+    WasmRuntimeExceptionObject::methods,
+    WasmRuntimeExceptionObject::properties,
+    nullptr,
+    ClassSpec::DontDefineConstructor};
+
+
+void WasmRuntimeExceptionObject::finalize(JSFreeOp* fop, JSObject* obj) {
+  WasmRuntimeExceptionObject& exnObj = obj->as<WasmRuntimeExceptionObject>();
+  if (!exnObj.isNewborn()) {
+    fop->release(obj, &exnObj.tag(), MemoryUse::WasmRuntimeExceptionTag);
+  }
+}
+
+bool WasmRuntimeExceptionObject::construct(JSContext* cx, unsigned argc,
+                                           Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (!ThrowIfNotConstructing(cx, args, "RuntimeException")) {
+    return false;
+  }
+
+  
+  
+  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                           JSMSG_WASM_EXN_CONSTRUCTOR,
+                           "WebAssembly.RuntimeException");
+
+  return false;
+}
+
+
+WasmRuntimeExceptionObject* WasmRuntimeExceptionObject::create(
+    JSContext* cx, wasm::SharedExceptionTag tag,
+    HandleArrayBufferObject values) {
+  RootedObject proto(
+      cx, &cx->global()->getPrototype(JSProto_WasmRuntimeException).toObject());
+
+  AutoSetNewObjectMetadata metadata(cx);
+  RootedWasmRuntimeExceptionObject obj(
+      cx, NewObjectWithGivenProto<WasmRuntimeExceptionObject>(cx, proto));
+  if (!obj) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(obj->isNewborn());
+  InitReservedSlot(obj, TAG_SLOT, tag.forget().take(),
+                   MemoryUse::WasmRuntimeExceptionTag);
+
+  obj->initFixedSlot(VALUES_SLOT, ObjectValue(*values));
+
+  MOZ_ASSERT(!obj->isNewborn());
+
+  return obj;
+}
+
+bool WasmRuntimeExceptionObject::isNewborn() const {
+  MOZ_ASSERT(is<WasmRuntimeExceptionObject>());
+  return getReservedSlot(VALUES_SLOT).isUndefined();
+}
+
+const JSPropertySpec WasmRuntimeExceptionObject::properties[] = {
+    JS_STRING_SYM_PS(toStringTag, "WebAssembly.RuntimeException",
+                     JSPROP_READONLY),
+    JS_PS_END};
+
+const JSFunctionSpec WasmRuntimeExceptionObject::methods[] = {JS_FS_END};
+
+const JSFunctionSpec WasmRuntimeExceptionObject::static_methods[] = {JS_FS_END};
+
+ExceptionTag& WasmRuntimeExceptionObject::tag() const {
   return *(ExceptionTag*)getReservedSlot(TAG_SLOT).toPrivate();
 }
 
@@ -4435,6 +4541,7 @@ static bool WebAssemblyClassFinish(JSContext* cx, HandleObject object,
       {"Global", JSProto_WasmGlobal},
 #ifdef ENABLE_WASM_EXCEPTIONS
       {"Exception", JSProto_WasmException},
+      {"RuntimeException", JSProto_WasmRuntimeException},
 #endif
       {"CompileError", GetExceptionProtoKey(JSEXN_WASMCOMPILEERROR)},
       {"LinkError", GetExceptionProtoKey(JSEXN_WASMLINKERROR)},
