@@ -1031,9 +1031,7 @@ function renderICEStats(report) {
     iceDiv.append(statsTable);
   }
   
-  
   iceDiv.append(
-    renderElement("br"),
     renderIceMetric("about-webrtc-ice-restart-count-label", report.iceRestarts),
     renderIceMetric(
       "about-webrtc-ice-rollback-count-label",
