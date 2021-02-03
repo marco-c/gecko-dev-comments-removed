@@ -83,12 +83,6 @@ class nsCheckboxRadioFrame final : public nsAtomicContainerFrame,
   virtual nsresult SetFormProperty(nsAtom* aName,
                                    const nsAString& aValue) override;
 
-  
-
-
-
-  static nsRect GetUsableScreenRect(nsPresContext* aPresContext);
-
  protected:
   virtual ~nsCheckboxRadioFrame();
 
