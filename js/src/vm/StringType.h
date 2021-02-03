@@ -1429,8 +1429,7 @@ class StaticStrings {
   
   
   static constexpr size_t getLength2IndexStatic(char c1, char c2) {
-    return (size_t(toSmallCharTable[c1]) << SMALL_CHAR_BITS) +
-           toSmallCharTable[c2];
+    return (size_t(toSmallChar(c1)) << SMALL_CHAR_BITS) + toSmallChar(c2);
   }
 
   MOZ_ALWAYS_INLINE JSAtom* getLength2FromIndex(size_t index) {
