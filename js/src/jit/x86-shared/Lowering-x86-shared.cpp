@@ -796,6 +796,9 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
   MOZ_ASSERT(rhs->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
 
+  
+  
+  
   if (ins->isCommutative()) {
     ReorderCommutative(&lhs, &rhs, ins);
   }
