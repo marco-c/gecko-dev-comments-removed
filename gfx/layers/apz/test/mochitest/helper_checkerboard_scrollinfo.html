@@ -29,10 +29,10 @@
    <div class="spacer"></div>
   </div>
  </div>
-
-
-
-
+<!-- the SVG below copied directly from the Gecko Profiler code that
+     demonstrated the original bug. It basically generates a bit of a "drop
+     shadow" effect on the div it's applied to. Original SVG can be found at
+     https://github.com/firefox-devtools/profiler/blame/624f71bce5469cf4f8b2be720e929ba69fa6bfdc/res/img/svg/shadowfilter.svg -->
  <svg xmlns="http://www.w3.org/2000/svg">
    <defs>
      <filter id="menushadow" color-interpolation-filters="sRGB" x="-10" y="-10" width="30" height="30">
@@ -62,7 +62,7 @@ async function test() {
   // visible; that's where the checkerboarding happens.
   document.scrollingElement.scrollTop = document.scrollingElement.scrollTopMax;
 
-  // After the first call to waitForApzFlushedRepaints, the scroller will have
+  // After the first call to promiseApzFlushedRepaints, the scroller will have
   // zero displayport margins (because it's inside an SVG filter, and so takes
   // the "scroll info layer" codepath in APZ's CalculatePendingDisplayPort
   // function. The main-thread then computes a displayport using those zero
