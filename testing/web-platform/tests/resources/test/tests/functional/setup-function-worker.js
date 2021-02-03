@@ -1,0 +1,14 @@
+importScripts("/resources/testharness.js");
+
+
+
+
+setup(function() {
+    assert_true(true, "True is true");
+});
+
+
+
+test(function() {
+    assert_false(false, "False is false");
+}, 'Worker test');
