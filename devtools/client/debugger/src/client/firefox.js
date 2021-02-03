@@ -55,7 +55,7 @@ export async function onConnect(
   await resourceWatcher.watchResources([resourceWatcher.TYPES.SOURCE], {
     onAvailable: onSourceAvailable,
   });
-  await resourceWatcher.watchResources([resourceWatcher.TYPES.BREAKPOINT], {
+  await resourceWatcher.watchResources([resourceWatcher.TYPES.THREAD_STATE], {
     onAvailable: onBreakpointAvailable,
   });
 }
@@ -69,7 +69,7 @@ export function onDisconnect() {
   resourceWatcher.unwatchResources([resourceWatcher.TYPES.SOURCE], {
     onAvailable: onSourceAvailable,
   });
-  resourceWatcher.unwatchResources([resourceWatcher.TYPES.BREAKPOINT], {
+  resourceWatcher.unwatchResources([resourceWatcher.TYPES.THREAD_STATE], {
     onAvailable: onBreakpointAvailable,
   });
 }
