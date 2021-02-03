@@ -2287,7 +2287,7 @@ impl Gl for Context {
 
     
     fn blend_barrier_khr(&self) {
-        
+        panic!();
     }
 
     

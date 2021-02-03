@@ -1892,33 +1892,11 @@ fn translate_declaration(
         syntax::Declaration::FunctionPrototype(p) => {
             Declaration::FunctionPrototype(translate_function_prototype(state, p))
         }
-        syntax::Declaration::Global(ty, ids) => {
+        syntax::Declaration::Global(_ty, _ids) => {
+            panic!();
             
             
             
-            if !ids.is_empty() {
-                panic!();
-            }
-            let _ = for qual in &ty.qualifiers {
-                match qual {
-                    syntax::TypeQualifierSpec::Layout(l) => {
-                        for id in &l.ids {
-                            match id {
-                                syntax::LayoutQualifierSpec::Identifier(key, _) => {
-                                    match key.as_str() {
-                                        "blend_support_all_equations" => (),
-                                        _ => panic!(),
-                                    }
-                                }
-                                _ => panic!(),
-                            }
-                        }
-                    }
-                    syntax::TypeQualifierSpec::Storage(syntax::StorageQualifier::Out) => (),
-                    _ => panic!(),
-                }
-            };
-            Declaration::Global(lift_type_qualifier_for_declaration(state, &Some(ty.clone())).unwrap(), ids.clone())
         }
         syntax::Declaration::InitDeclaratorList(dl) => {
             translate_init_declarator_list(state, dl, default_run_class)
