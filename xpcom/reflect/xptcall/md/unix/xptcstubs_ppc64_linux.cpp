@@ -103,7 +103,13 @@ PrepareAndDispatch(nsXPTCStubBase * self, uint32_t methodIndex,
         if (!param.IsOut() && type == nsXPTType::T_DOUBLE) {
             if (nr_fpr < FPR_COUNT) {
                 dp->val.d = fpregs[nr_fpr++];
-                nr_gpr++;
+                
+                
+                if (nr_gpr < GPR_COUNT) {
+                    nr_gpr++;
+                } else {
+                    ap++;
+                }
             } else {
                 dp->val.d = *(double*)ap++;
             }
@@ -113,7 +119,11 @@ PrepareAndDispatch(nsXPTCStubBase * self, uint32_t methodIndex,
             if (nr_fpr < FPR_COUNT) {
                 
                 dp->val.f = (float)fpregs[nr_fpr++];
-                nr_gpr++;
+                if (nr_gpr < GPR_COUNT) {
+                    nr_gpr++;
+                } else {
+                    ap++;
+                }
             } else {
 #ifdef __LITTLE_ENDIAN__
                 dp->val.f = *(float*)ap++;
