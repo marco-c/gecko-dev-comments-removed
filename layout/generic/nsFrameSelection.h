@@ -745,7 +745,7 @@ class nsFrameSelection final {
   
   
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  TakeFocus(nsIContent* aNewFocus, uint32_t aContentOffset,
+  TakeFocus(nsIContent& aNewFocus, uint32_t aContentOffset,
             uint32_t aContentEndOffset, CaretAssociateHint aHint,
             FocusMode aFocusMode);
 
