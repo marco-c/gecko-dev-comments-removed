@@ -982,7 +982,7 @@ pub struct Capabilities {
     pub supports_shader_storage_object: bool,
     
     
-    pub prefers_batched_texture_uploads: bool,
+    pub requires_batched_texture_uploads: bool,
     
     
     pub uses_native_clip_mask: bool,
@@ -1069,6 +1069,12 @@ pub struct Device {
     depth_available: bool,
 
     upload_method: UploadMethod,
+    use_batched_texture_uploads: bool,
+    
+    
+    
+    
+    use_draw_calls_for_texture_copy: bool,
 
     
     capabilities: Capabilities,
@@ -1645,7 +1651,7 @@ impl Device {
 
         
         
-        let prefers_batched_texture_uploads = is_mali_g;
+        let requires_batched_texture_uploads = is_mali_g;
 
         Device {
             gl,
@@ -1654,6 +1660,9 @@ impl Device {
             resource_override_path,
             use_optimized_shaders,
             upload_method,
+            use_batched_texture_uploads: requires_batched_texture_uploads,
+            use_draw_calls_for_texture_copy: false,
+
             inside_frame: false,
 
             capabilities: Capabilities {
@@ -1670,7 +1679,7 @@ impl Device {
                 supports_texture_usage,
                 supports_render_target_partial_update,
                 supports_shader_storage_object,
-                prefers_batched_texture_uploads,
+                requires_batched_texture_uploads,
                 uses_native_clip_mask,
                 renderer_name,
             },
@@ -1783,6 +1792,26 @@ impl Device {
 
     pub fn optimal_pbo_stride(&self) -> StrideAlignment {
         self.optimal_pbo_stride
+    }
+
+    pub fn upload_method(&self) -> &UploadMethod {
+        &self.upload_method
+    }
+
+    pub fn use_batched_texture_uploads(&self) -> bool {
+        self.use_batched_texture_uploads
+    }
+
+    pub fn use_draw_calls_for_texture_copy(&self) -> bool {
+        self.use_draw_calls_for_texture_copy
+    }
+
+    pub fn set_use_batched_texture_uploads(&mut self, enabled: bool) {
+        self.use_batched_texture_uploads = self.capabilities.requires_batched_texture_uploads | enabled;
+    }
+
+    pub fn set_use_draw_calls_for_texture_copy(&mut self, enabled: bool) {
+        self.use_draw_calls_for_texture_copy = enabled;
     }
 
     pub fn reset_state(&mut self) {
@@ -4298,7 +4327,7 @@ pub struct TextureUploader<'a> {
     
     buffers: Vec<PixelBuffer<'a>>,
     
-    pbo_pool: &'a mut UploadPBOPool,
+    pub pbo_pool: &'a mut UploadPBOPool,
 }
 
 impl<'a> Drop for TextureUploader<'a> {
