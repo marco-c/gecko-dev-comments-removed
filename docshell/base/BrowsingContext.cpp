@@ -1798,19 +1798,6 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
                                     aLoadState->GetLoadIdentifier());
 
   const auto& sourceBC = aLoadState->SourceBrowsingContext();
-
-  if (net::SchemeIsJavascript(aLoadState->URI())) {
-    if (!XRE_IsParentProcess()) {
-      
-      
-      
-      return NS_ERROR_DOM_BAD_CROSS_ORIGIN_URI;
-    }
-    MOZ_DIAGNOSTIC_ASSERT(!sourceBC,
-                          "Should never see a cross-process javascript: load "
-                          "triggered from content");
-  }
-
   MOZ_DIAGNOSTIC_ASSERT(!sourceBC || sourceBC->Group() == Group());
   if (sourceBC && sourceBC->IsInProcess()) {
     if (!sourceBC->CanAccess(this)) {
@@ -2678,18 +2665,6 @@ void BrowsingContext::DidSet(FieldIndex<IDX_DefaultLoadFlags>) {
   auto loadFlags = GetDefaultLoadFlags();
   if (GetDocShell()) {
     nsDocShell::Cast(GetDocShell())->SetLoadGroupDefaultLoadFlags(loadFlags);
-  }
-
-  if (net::SchemeIsJavascript(aLoadState->URI())) {
-    if (!XRE_IsParentProcess()) {
-      
-      
-      
-      return NS_ERROR_DOM_BAD_CROSS_ORIGIN_URI;
-    }
-    MOZ_DIAGNOSTIC_ASSERT(!sourceBC,
-                          "Should never see a cross-process javascript: load "
-                          "triggered from content");
   }
 
   if (XRE_IsParentProcess()) {

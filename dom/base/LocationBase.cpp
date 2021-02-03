@@ -154,21 +154,6 @@ void LocationBase::SetURI(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
 
   rv = bc->LoadURI(loadState);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    if (rv == NS_ERROR_DOM_BAD_CROSS_ORIGIN_URI &&
-        net::SchemeIsJavascript(loadState->URI())) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      return;
-    }
     aRv.Throw(rv);
   }
 }
