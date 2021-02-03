@@ -4961,8 +4961,14 @@ bool TextInputHandlerBase::SetSelection(NSRange& aRange) {
 }
 
  bool TextInputHandlerBase::IsSecureEventInputEnabled() {
-  NS_ASSERTION(!!sSecureEventInputCount == !!::IsSecureEventInputEnabled(),
-               "Some other process has enabled secure event input");
+  
+  
+  
+  
+  
+  NS_ASSERTION(
+      ::IsSecureEventInputEnabled() || 0 == sSecureEventInputCount,
+      "sSecureEventInputCount is not zero when the OS thinks SecureEventInput is disabled.");
   return !!sSecureEventInputCount;
 }
 
