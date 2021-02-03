@@ -360,11 +360,7 @@ void GlobalStyleSheetCache::InitSharedSheetsInParent() {
     address = reinterpret_cast<void*>(uintptr_t(p) + kOffset);
   }
 
-  bool parentMapped = shm->Map(kSharedMemorySize, address);
-  Telemetry::Accumulate(Telemetry::SHARED_MEMORY_UA_SHEETS_MAPPED_PARENT,
-                        parentMapped);
-
-  if (!parentMapped) {
+  if (!shm->Map(kSharedMemorySize, address)) {
     
     
     
@@ -401,16 +397,11 @@ void GlobalStyleSheetCache::InitSharedSheetsInParent() {
     header->mSheets[i] = sheet->ToShared(builder.get(), message);       \
     if (!header->mSheets[i]) {                                          \
       CrashReporter::AppendAppNotesToCrashReport("\n"_ns + message);    \
-      Telemetry::Accumulate(                                            \
-          Telemetry::SHARED_MEMORY_UA_SHEETS_TOSHMEM_SUCCEEDED, false); \
       return;                                                           \
     }                                                                   \
   }
 #include "mozilla/UserAgentStyleSheetList.h"
 #undef STYLE_SHEET
-
-  Telemetry::Accumulate(Telemetry::SHARED_MEMORY_UA_SHEETS_TOSHMEM_SUCCEEDED,
-                        true);
 
   
   
@@ -423,10 +414,7 @@ void GlobalStyleSheetCache::InitSharedSheetsInParent() {
   
   
   
-  bool parentRemapped = shm->Map(kSharedMemorySize, address);
-  Telemetry::Accumulate(
-      Telemetry::SHARED_MEMORY_UA_SHEETS_MAPPED_PARENT_AFTER_FREEZE,
-      parentRemapped);
+  shm->Map(kSharedMemorySize, address);
 
   
   
@@ -690,11 +678,7 @@ void GlobalStyleSheetCache::BuildPreferenceSheet(
     return;
   }
 
-  bool contentMapped =
-      shm->Map(kSharedMemorySize, reinterpret_cast<void*>(aAddress));
-  Telemetry::Accumulate(Telemetry::SHARED_MEMORY_UA_SHEETS_MAPPED_CHILD,
-                        contentMapped);
-  if (contentMapped) {
+  if (shm->Map(kSharedMemorySize, reinterpret_cast<void*>(aAddress))) {
     sSharedMemory = shm.release();
   }
 }
