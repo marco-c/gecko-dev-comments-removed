@@ -2543,19 +2543,6 @@ pref("browser.tabs.remote.autostart", false);
 
 
 
-
-
-
-
-
-#if defined(RELEASE_OR_BETA)
-  pref("fission.autostart", false, locked);
-#else
-  pref("fission.autostart", false);
-#endif
-
-
-
 pref("browser.tabs.remote.useOriginAttributesInRemoteType", false);
 
 
