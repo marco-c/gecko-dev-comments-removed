@@ -15,7 +15,6 @@
 
 (function (global_scope)
 {
-    var debug = false;
     
     var settings = {
         output:true,
@@ -24,7 +23,8 @@
             "long":60000
         },
         test_timeout:null,
-        message_events: ["start", "test_state", "result", "completion"]
+        message_events: ["start", "test_state", "result", "completion"],
+        debug: false,
     };
 
     var xhtml_ns = "http://www.w3.org/1999/xhtml";
@@ -132,11 +132,7 @@
                         if (has_selector) {
                             try {
                                 w[selector].apply(undefined, callback_args);
-                            } catch (e) {
-                                if (debug) {
-                                    throw e;
-                                }
-                            }
+                            } catch (e) {}
                         }
                     }
                     if (supports_post_message(w) && w !== self) {
@@ -1190,6 +1186,9 @@
             let status = Test.statuses.TIMEOUT;
             let stack = null;
             try {
+                if (settings.debug) {
+                    console.debug("ASSERT", name, tests.current_test.name, args);
+                }
                 if (settings.output) {
                     tests.set_assert(name, ...args);
                 }
@@ -2064,6 +2063,9 @@
             return;
         }
 
+        if (settings.debug && this.phase !== this.phases.STARTED) {
+            console.log("TEST START", this.name);
+        }
         this.phase = this.phases.STARTED;
         
         this.set_status(this.TIMEOUT, "Test timed out");
@@ -2080,6 +2082,10 @@
 
         if (arguments.length === 1) {
             this_obj = this;
+        }
+
+        if (settings.debug) {
+            console.debug("TEST STEP", this.name);
         }
 
         try {
@@ -2312,6 +2318,12 @@
 
         if (global_scope.clearTimeout) {
             clearTimeout(this.timeout_id);
+        }
+
+        if (settings.debug) {
+            console.log("TEST DONE",
+                        this.status,
+                        this.name,)
         }
 
         this.cleanup();

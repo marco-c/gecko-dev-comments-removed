@@ -42,7 +42,7 @@ def executor_kwargs(test_type, server_config, cache_manager, run_info_data,
     
     if kwargs["pause_after_test"] or kwargs["pause_on_unexpected"]:
         executor_kwargs["cleanup_after_test"] = False
-
+    executor_kwargs["debug_test"] = kwargs["debug_test"]
     return executor_kwargs
 
 
