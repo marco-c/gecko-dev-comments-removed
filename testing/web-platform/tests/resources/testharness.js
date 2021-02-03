@@ -1192,7 +1192,7 @@
                 if (tests.output) {
                     tests.set_assert(name, ...args);
                 }
-                rv = f(...args);
+                const rv = f(...args);
                 status = Test.statuses.PASS;
                 return rv;
             } catch(e) {
@@ -3765,7 +3765,7 @@
 
     AssertionError.prototype = Object.create(Error.prototype);
 
-    get_stack = function() {
+    const get_stack = function() {
         var stack = new Error().stack;
         
         if (!stack) {
