@@ -240,6 +240,11 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   void DisableGPUProcess(const char* aMessage);
 
   
+  
+  
+  bool MaybeDisableGPUProcess(const char* aMessage, bool aAllowRestart);
+
+  
   void CleanShutdown();
   void DestroyProcess();
 
