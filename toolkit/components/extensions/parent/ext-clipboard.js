@@ -73,9 +73,7 @@ this.clipboard = class extends ExtensionAPI {
           
           
           
-
-          
-          transferable.setTransferData(kNativeImageMime, img, 1);
+          transferable.setTransferData(kNativeImageMime, img);
 
           Services.clipboard.setData(
             transferable,

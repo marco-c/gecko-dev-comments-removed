@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=520182
+-->
 <head>
   <title>Test for Bug 520182</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -525,7 +525,7 @@ function runTest(test) {
                           .createInstance(SpecialPowers.Ci.nsISupportsString);
   data.data = test.payload;
   trans.addDataFlavor("text/html");
-  trans.setTransferData("text/html", data, data.data.length * 2);
+  trans.setTransferData("text/html", data);
 
   if ("indirectPaste" in test) {
     var editor, win;
