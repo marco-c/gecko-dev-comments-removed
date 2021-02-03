@@ -1,18 +1,18 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 EXPORTS += [
     'pixman-version.h',
     'pixman.h',
 ]
 
-# Apple's arm assembler doesn't support the same syntax as
-# the standard GNU assembler, so use the C fallback paths for now.
-# This may be fixable if clang's ARM/iOS assembler improves into a
-# viable solution in the future.
+
+
+
+
 if CONFIG['OS_ARCH'] != 'Darwin' and CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     if CONFIG['HAVE_ARM_NEON']:
         SOURCES += [
@@ -35,7 +35,6 @@ SOURCES += [
     'pixman-arm.c',
     'pixman-bits-image.c',
     'pixman-combine-float.c',
-    'pixman-combine16.c',
     'pixman-combine32.c',
     'pixman-conical-gradient.c',
     'pixman-edge-accessors.c',
@@ -62,7 +61,7 @@ SOURCES += [
     'pixman.c',
 ]
 
-# We allow warnings for third-party code that can be updated from upstream.
+
 AllowCompilerWarnings()
 
 FINAL_LIBRARY = 'gkmedias'
@@ -70,8 +69,14 @@ LOCAL_INCLUDES += [
     '../../cairo/src',
 ]
 
+if CONFIG['OS_TARGET'] == 'Android':
+    
+    LOCAL_INCLUDES += [
+        '%%%s/sources/android/cpufeatures' % CONFIG['ANDROID_NDK']
+    ]
+
 if CONFIG['MOZ_USE_PTHREADS']:
-    DEFINES['HAVE_PTHREAD_SETSPECIFIC'] = True
+    DEFINES['HAVE_PTHREADS'] = True
 
 DEFINES['PACKAGE'] = 'mozpixman'
 
@@ -92,10 +97,10 @@ if CONFIG['INTEL_ARCHITECTURE']:
 elif CONFIG['CPU_ARCH'] in ('ppc', 'ppc64'):
     if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
         use_vmx = True
-# Apple's arm assembler doesn't support the same syntax as
-# the standard GNU assembler, so use the C fallback paths for now.
-# This may be fixable if clang's ARM/iOS assembler improves into a
-# viable solution in the future.
+
+
+
+
 elif CONFIG['CPU_ARCH'] == 'arm':
     if CONFIG['OS_ARCH'] != 'Darwin':
         if CONFIG['HAVE_ARM_SIMD']:
@@ -137,25 +142,25 @@ if use_arm_neon_gcc:
     SOURCES['pixman-arm-neon.c'].flags += CONFIG['NEON_FLAGS']
 
 if CONFIG['OS_TARGET'] == 'Android' and (use_arm_neon_gcc or use_arm_simd_gcc):
-    # The assembly files in this directory are built with gas (because of
-    # -no-integrated-as), and they contain `.object_arch armv4`, which
-    # makes gas emit ARM_V4BX relocations that lld doesn't support.
-    # The code being third party and this setup being actually desirable to
-    # keep, until lld supports those relocations[1], hack around it by using
-    # the preprocessor to change it to armv7a, which is the target we use
-    # on arm android (with -march).
-    # 1. https://bugs.llvm.org/show_bug.cgi?id=38303
+    
+    
+    
+    
+    
+    
+    
+    
     ASFLAGS += [
         '-Darmv4=armv7a'
     ]
 
-# Suppress warnings in third-party code.
+
 CFLAGS += [
     '-Wno-address',
     '-Wno-missing-field-initializers',
     '-Wno-sign-compare',
     '-Wno-incompatible-pointer-types',
-    '-Wno-unused',                      # too many unused warnings; ignore
+    '-Wno-unused',                      
 ]
 if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
     CFLAGS += [
@@ -168,6 +173,6 @@ if CONFIG['CC_TYPE'] == 'clang-cl':
         '-Wno-unused-variable',
     ]
 
-# See bug 386897.
+
 if CONFIG['OS_TARGET'] == 'Android' and CONFIG['MOZ_OPTIMIZE']:
     CFLAGS += ['-O2']
