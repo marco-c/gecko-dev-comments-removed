@@ -63,7 +63,8 @@ nsHttpConnectionInfo::nsHttpConnectionInfo(
   mEndToEndSSL = true;  
   mRoutedPort = routedPort == -1 ? DefaultPort() : routedPort;
 
-  if (!originHost.Equals(routedHost) || (originPort != routedPort)) {
+  if (!originHost.Equals(routedHost) || (originPort != routedPort) ||
+      aIsHttp3) {
     mRoutedHost = routedHost;
   }
   Init(originHost, originPort, npnToken, username, proxyInfo, originAttributes,
@@ -440,18 +441,12 @@ nsHttpConnectionInfo::DeserializeHttpConnectionInfoCloneArgs(
 }
 
 void nsHttpConnectionInfo::CloneAsDirectRoute(nsHttpConnectionInfo** outCI) {
-  if (mRoutedHost.IsEmpty()) {
-    RefPtr<nsHttpConnectionInfo> clone = Clone();
-    
-    
-    clone->mIsHttp3 = false;
-    clone.forget(outCI);
-    return;
-  }
-
-  RefPtr<nsHttpConnectionInfo> clone =
-      new nsHttpConnectionInfo(mOrigin, mOriginPort, ""_ns, mUsername,
-                               mProxyInfo, mOriginAttributes, mEndToEndSSL);
+  
+  
+  RefPtr<nsHttpConnectionInfo> clone = new nsHttpConnectionInfo(
+      mOrigin, mOriginPort,
+      (mRoutedHost.IsEmpty() && !mIsHttp3) ? mNPNToken : ""_ns, mUsername,
+      mProxyInfo, mOriginAttributes, mEndToEndSSL);
   
   clone->SetAnonymous(GetAnonymous());
   clone->SetPrivate(GetPrivate());
