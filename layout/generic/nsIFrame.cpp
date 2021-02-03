@@ -5263,8 +5263,6 @@ static bool SelfIsSelectable(nsIFrame* aFrame, uint32_t aFlags) {
 }
 
 static bool SelectionDescendToKids(nsIFrame* aFrame) {
-  StyleUserSelect style = aFrame->StyleUIReset()->mUserSelect;
-  nsIFrame* parent = aFrame->GetParent();
   
   
   
@@ -5273,10 +5271,24 @@ static bool SelectionDescendToKids(nsIFrame* aFrame) {
   
   
   
-  return !aFrame->IsGeneratedContentFrame() && style != StyleUserSelect::All &&
-         style != StyleUserSelect::None &&
-         (parent->HasAnyStateBits(NS_FRAME_INDEPENDENT_SELECTION) ||
-          !aFrame->HasAnyStateBits(NS_FRAME_INDEPENDENT_SELECTION));
+  if (aFrame->IsTextInputFrame() || aFrame->IsListControlFrame()) {
+    MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_INDEPENDENT_SELECTION));
+    return false;
+  }
+
+  
+  
+  
+  MOZ_ASSERT_IF(
+      aFrame->HasAnyStateBits(NS_FRAME_INDEPENDENT_SELECTION),
+      aFrame->GetParent()->HasAnyStateBits(NS_FRAME_INDEPENDENT_SELECTION));
+
+  if (aFrame->IsGeneratedContentFrame()) {
+    return false;
+  }
+
+  auto style = aFrame->StyleUIReset()->mUserSelect;
+  return style != StyleUserSelect::All && style != StyleUserSelect::None;
 }
 
 static FrameTarget GetSelectionClosestFrameForChild(nsIFrame* aChild,
