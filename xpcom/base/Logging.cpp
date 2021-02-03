@@ -26,8 +26,10 @@
 
 #include "prenv.h"
 #ifdef XP_WIN
+#  include <fcntl.h>
 #  include <process.h>
 #else
+#  include <sys/stat.h>  
 #  include <sys/types.h>
 #  include <unistd.h>
 #endif
@@ -146,6 +148,146 @@ static const char* ExpandLogFileName(const char* aFilename,
   return aFilename;
 }
 
+
+
+
+
+
+
+
+
+
+bool LimitFileToLessThanSize(const char* aFilename, uint32_t aSize,
+                             uint16_t aLongLineSize = 16384) {
+  
+  char tempFilename[2048];
+  SprintfLiteral(tempFilename, "%s.tempXXXXXX", aFilename);
+
+  bool failedToWrite = false;
+
+  {  
+    ScopedCloseFile file(fopen(aFilename, "rb"));
+    if (!file) {
+      return false;
+    }
+
+    if (fseek(file, 0, SEEK_END)) {
+      
+      
+      return false;
+    }
+
+    
+    uint64_t fileSize = static_cast<uint64_t>(ftell(file));
+
+    if (fileSize <= aSize) {
+      return true;
+    }
+
+    uint64_t minBytesToDrop = fileSize - aSize;
+    uint64_t numBytesDropped = 0;
+
+    if (fseek(file, 0, SEEK_SET)) {
+      
+      return false;
+    }
+
+    ScopedCloseFile temp;
+
+#if defined(OS_WIN)
+    
+    
+    HANDLE hFile;
+    do {
+      
+      _mktemp_s(tempFilename, strlen(tempFilename) + 1);
+      hFile = CreateFileA(tempFilename, GENERIC_WRITE, 0, nullptr, CREATE_NEW,
+                          FILE_ATTRIBUTE_NORMAL, nullptr);
+    } while (GetLastError() == ERROR_FILE_EXISTS);
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+      NS_WARNING("INVALID_HANDLE_VALUE");
+      return false;
+    }
+
+    int fd = _open_osfhandle((intptr_t)hFile, _O_APPEND);
+    if (fd == -1) {
+      NS_WARNING("_open_osfhandle failed!");
+      return false;
+    }
+
+    temp.reset(_fdopen(fd, "ab"));
+#elif defined(OS_POSIX)
+
+    
+    
+    
+    
+    
+    
+    int fd = mkstemp(tempFilename);
+    if (fd == -1) {
+      NS_WARNING("mkstemp failed!");
+      return false;
+    }
+    temp.reset(fdopen(fd, "ab"));
+#else
+#  error Do not know how to open named temporary file
+#endif
+
+    if (!temp) {
+      NS_WARNING(nsPrintfCString("could not open named temporary file %s",
+                                 tempFilename)
+                     .get());
+      return false;
+    }
+
+    
+    
+    UniquePtr<char[]> line = MakeUnique<char[]>(aLongLineSize + 1);
+    while (fgets(line.get(), aLongLineSize + 1, file)) {
+      if (numBytesDropped >= minBytesToDrop) {
+        if (fputs(line.get(), temp) < 0) {
+          NS_WARNING(
+              nsPrintfCString("fputs failed: ferror %d\n", ferror(temp)).get());
+          failedToWrite = true;
+          break;
+        }
+      } else {
+        
+        
+        
+        numBytesDropped += strlen(line.get());
+      }
+    }
+  }
+
+  
+  if (failedToWrite) {
+    remove(tempFilename);
+    return false;
+  }
+
+#if defined(OS_WIN)
+  if (!::ReplaceFileA(aFilename, tempFilename, nullptr, 0, 0, 0)) {
+    NS_WARNING(
+        nsPrintfCString("ReplaceFileA failed: %d\n", GetLastError()).get());
+    return false;
+  }
+#elif defined(OS_POSIX)
+  if (rename(tempFilename, aFilename)) {
+    NS_WARNING(
+        nsPrintfCString("rename failed: %s (%d)\n", strerror(errno), errno)
+            .get());
+    return false;
+  }
+#else
+#  error Do not know how to atomically replace file
+#endif
+
+  return true;
+}
+
 }  
 
 namespace {
@@ -214,6 +356,7 @@ class LogModuleManager {
     bool isRaw = false;
     bool isMarkers = false;
     int32_t rotate = 0;
+    int32_t maxSize = 0;
     const char* modules = PR_GetEnv("MOZ_LOG");
     if (!modules || !modules[0]) {
       modules = PR_GetEnv("MOZ_LOG_MODULES");
@@ -236,8 +379,8 @@ class LogModuleManager {
     
     NSPRLogModulesParser(
         modules, [this, &shouldAppend, &addTimestamp, &isSync, &isRaw, &rotate,
-                  &isMarkers](const char* aName, LogLevel aLevel,
-                              int32_t aValue) mutable {
+                  &maxSize, &isMarkers](const char* aName, LogLevel aLevel,
+                                        int32_t aValue) mutable {
           if (strcmp(aName, "append") == 0) {
             shouldAppend = true;
           } else if (strcmp(aName, "timestamp") == 0) {
@@ -248,6 +391,8 @@ class LogModuleManager {
             isRaw = true;
           } else if (strcmp(aName, "rotate") == 0) {
             rotate = (aValue << 20) / kRotateFilesNumber;
+          } else if (strcmp(aName, "maxsize") == 0) {
+            maxSize = aValue << 20;
           } else if (strcmp(aName, "profilermarkers") == 0) {
             isMarkers = true;
           } else {
@@ -264,6 +409,20 @@ class LogModuleManager {
 
     if (rotate > 0 && shouldAppend) {
       NS_WARNING("MOZ_LOG: when you rotate the log, you cannot use append!");
+    }
+
+    if (rotate > 0 && maxSize > 0) {
+      NS_WARNING(
+          "MOZ_LOG: when you rotate the log, you cannot use maxsize! (ignoring "
+          "maxsize)");
+      maxSize = 0;
+    }
+
+    if (maxSize > 0 && !shouldAppend) {
+      NS_WARNING(
+          "MOZ_LOG: when you limit the log to maxsize, you must use append! "
+          "(ignorning maxsize)");
+      maxSize = 0;
     }
 
     const char* logFile = PR_GetEnv("MOZ_LOG_FILE");
@@ -287,7 +446,7 @@ class LogModuleManager {
         }
       }
 
-      mOutFile = OpenFile(shouldAppend, mOutFileNum);
+      mOutFile = OpenFile(shouldAppend, mOutFileNum, maxSize);
       mSetFromEnv = true;
     }
   }
@@ -342,7 +501,8 @@ class LogModuleManager {
 
   void SetAddTimestamp(bool aAddTimestamp) { mAddTimestamp = aAddTimestamp; }
 
-  detail::LogFile* OpenFile(bool aShouldAppend, uint32_t aFileNum) {
+  detail::LogFile* OpenFile(bool aShouldAppend, uint32_t aFileNum,
+                            uint32_t aMaxSize = 0) {
     FILE* file;
 
     if (mRotate > 0) {
@@ -351,6 +511,9 @@ class LogModuleManager {
 
       
       file = fopen(buf, "w");
+    } else if (aShouldAppend && aMaxSize > 0) {
+      detail::LimitFileToLessThanSize(mOutFilePath.get(), aMaxSize >> 1);
+      file = fopen(mOutFilePath.get(), "a");
     } else {
       file = fopen(mOutFilePath.get(), aShouldAppend ? "a" : "w");
     }
