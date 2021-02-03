@@ -1203,7 +1203,6 @@ static const MediaTrackConstraints& GetInvariant(
 
 
 
-
 class GetUserMediaStreamRunnable : public Runnable {
  public:
   GetUserMediaStreamRunnable(
@@ -1523,7 +1522,6 @@ RefPtr<MediaManager::BadConstraintsPromise> MediaManager::SelectSettings(
         holder.Resolve(badConstraint, __func__);
       });
 }
-
 
 
 
