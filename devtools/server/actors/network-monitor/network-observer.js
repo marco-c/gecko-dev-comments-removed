@@ -794,6 +794,8 @@ NetworkObserver.prototype = {
     const event = {};
     event.method = channel.requestMethod;
     event.channelId = channel.channelId;
+    event.browingContextID = getChannelBrowsingContextID(channel);
+
     event.url = channel.URI.spec;
     event.private = httpActivity.private;
     event.headersSize = 0;
@@ -1719,3 +1721,18 @@ function stringToCauseType(value) {
   );
 }
 exports.stringToCauseType = stringToCauseType;
+
+function getChannelBrowsingContextID(channel) {
+  if (channel.loadInfo.browsingContextID) {
+    return channel.loadInfo.browsingContextID;
+  }
+  
+  
+  
+  const topFrame = NetworkHelper.getTopFrameForRequest(channel);
+  
+  if (topFrame && topFrame.browsingContext) {
+    return topFrame.browsingContext.id;
+  }
+  return null;
+}

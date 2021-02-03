@@ -83,6 +83,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       networkEvent.isThirdPartyTrackingResource;
     this._referrerPolicy = networkEvent.referrerPolicy;
     this._channelId = networkEvent.channelId;
+    this._browsingContextID = networkEvent.browingContextID;
     this._serial = networkEvent.serial;
     this._blockedReason = networkEvent.blockedReason;
     this._blockingExtension = networkEvent.blockingExtension;
@@ -95,12 +96,25 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   asResource() {
+    
+    
+    const browsingContextID = this._browsingContextID
+      ? this._browsingContextID
+      : -1;
+
+    
+    
+    if (
+      !this._browsingContextID &&
+      this.networkEventWatcher.watcherActor.browserId
+    ) {
+      throw new Error(
+        `Got a request ${this._request.url} without a browsingContextID set`
+      );
+    }
     return {
       resourceType: NETWORK_EVENT,
-      
-      
-      browsingContextID: this.networkEventWatcher.watcherActor.browserElement
-        .browsingContext.id,
+      browsingContextID,
       resourceId: this._channelId,
       actor: this.actorID,
       startedDateTime: this._startedDateTime,

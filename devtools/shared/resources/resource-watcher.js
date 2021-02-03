@@ -367,9 +367,6 @@ class ResourceWatcher {
 
       if (watcherFront) {
         targetFront = await this._getTargetForWatcherResource(resource);
-        if (!targetFront) {
-          continue;
-        }
       }
 
       
@@ -588,6 +585,14 @@ class ResourceWatcher {
   
   _getTargetForWatcherResource(resource) {
     const { browsingContextID, resourceType } = resource;
+
+    
+    
+    
+    
+    if (browsingContextID == -1) {
+      return null;
+    }
 
     
     
