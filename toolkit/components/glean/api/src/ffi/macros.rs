@@ -11,10 +11,38 @@
 
 
 
-macro_rules! metric_get {
-    ($map:ident, $id:ident) => {
+
+
+macro_rules! with_metric {
+    (BOOLEAN_MAP, $id:ident, $f:expr) => {
+        maybe_labeled_with_metric!(BOOLEAN_MAP, $id, $f)
+    };
+    (COUNTER_MAP, $id:ident, $f:expr) => {
+        maybe_labeled_with_metric!(COUNTER_MAP, $id, $f)
+    };
+    (STRING_MAP, $id:ident, $f:expr) => {
+        maybe_labeled_with_metric!(STRING_MAP, $id, $f)
+    };
+    ($map:ident, $id:ident, $f:expr) => {
+        just_with_metric!($map, $id, $f)
+    };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+macro_rules! just_with_metric {
+    ($map:ident, $id:ident, $f:expr) => {
         match $crate::metrics::__glean_metric_maps::$map.get(&$id.into()) {
-            Some(metric) => metric,
+            Some(metric) => $f(metric),
             None => panic!("No metric for id {}", $id),
         }
     };
@@ -28,15 +56,59 @@ macro_rules! metric_get {
 
 
 
+
+
+
+
+
+
+macro_rules! maybe_labeled_with_metric {
+    ($map:ident, $id:ident, $f:expr) => {
+        if $id >= $crate::metrics::__glean_metric_maps::submetric_maps::MIN_LABELED_SUBMETRIC_ID {
+            let map = $crate::metrics::__glean_metric_maps::submetric_maps::$map
+                .read()
+                .expect("Read lock for labeled metric map was poisoned");
+            match map.get(&$id.into()) {
+                Some(metric) => $f(metric),
+                None => panic!("No submetric for id {}", $id),
+            }
+        } else {
+            just_with_metric!($map, $id, $f)
+        }
+    };
+}
+
+
+
+
+
+
+
 macro_rules! test_has {
-    ($map:ident, $id:ident, $storage:ident) => {{
-        let metric = metric_get!($map, $id);
+    ($metric:ident, $storage:ident) => {{
         let storage = if $storage.is_empty() {
             None
         } else {
             Some($storage.to_utf8())
         };
-        metric.test_get_value(storage.as_deref()).is_some()
+        $metric.test_get_value(storage.as_deref()).is_some()
+    }};
+}
+
+
+
+
+
+
+
+macro_rules! test_get {
+    ($metric:ident, $storage:ident) => {{
+        let storage = if $storage.is_empty() {
+            None
+        } else {
+            Some($storage.to_utf8())
+        };
+        $metric.test_get_value(storage.as_deref()).unwrap()
     }};
 }
 
@@ -48,14 +120,42 @@ macro_rules! test_has {
 
 
 
-macro_rules! test_get {
-    ($map:ident, $id:ident, $storage:ident) => {{
-        let metric = metric_get!($map, $id);
-        let storage = if $storage.is_empty() {
-            None
-        } else {
-            Some($storage.to_utf8())
-        };
-        metric.test_get_value(storage.as_deref()).unwrap()
+
+macro_rules! labeled_submetric_get {
+    ($id:ident, $label:ident, $labeled_map:ident, $submetric_map:ident, $metric_type:ty) => {{
+        let tuple = ($id, $label.to_utf8().into());
+        {
+            let map = $crate::metrics::__glean_metric_maps::submetric_maps::LABELED_METRICS_TO_IDS
+                .read()
+                .expect("read lock of submetric ids was poisoned");
+            if let Some(submetric_id) = map.get(&tuple) {
+                return *submetric_id;
+            }
+        }
+
+        // Gotta actually create a new submetric with a new id.
+        let submetric_id =
+            $crate::metrics::__glean_metric_maps::submetric_maps::NEXT_LABELED_SUBMETRIC_ID
+                .fetch_add(1, Ordering::SeqCst);
+        {
+            with_metric!(
+                $labeled_map,
+                $id,
+                |metric: &$crate::private::LabeledMetric<$metric_type>| {
+                    let submetric = metric.get(&tuple.1);
+                    let mut map =
+                        $crate::metrics::__glean_metric_maps::submetric_maps::$submetric_map
+                            .write()
+                            .expect("write lock of submetric map was poisoned");
+                    map.insert(submetric_id.into(), submetric);
+                }
+            );
+        }
+
+        let mut map = $crate::metrics::__glean_metric_maps::submetric_maps::LABELED_METRICS_TO_IDS
+            .write()
+            .expect("write lock of submetric ids was poisoned");
+        map.insert(tuple, submetric_id);
+        submetric_id
     }};
 }
