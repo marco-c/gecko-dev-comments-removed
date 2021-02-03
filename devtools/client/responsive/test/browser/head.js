@@ -185,20 +185,7 @@ function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
       ui = rdmValues.ui;
       manager = rdmValues.manager;
 
-      
-      await message.wait(ui.toolWindow, "post-init");
-
-      
-      const { store } = ui.toolWindow;
-      await waitUntilState(store, state => state.viewports.length == 1);
-
-      if (waitForDeviceList) {
-        
-        await waitUntilState(
-          store,
-          state => state.devices.listState == localTypes.loadableState.LOADED
-        );
-      }
+      await waitForRDMLoaded(ui, { waitForDeviceList });
     }
 
     try {
@@ -230,6 +217,26 @@ function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
     
     await SpecialPowers.flushPrefEnv();
   });
+}
+
+
+
+
+async function waitForRDMLoaded(ui, { waitForDeviceList }) {
+  
+  await message.wait(ui.toolWindow, "post-init");
+
+  
+  const { store } = ui.toolWindow;
+  await waitUntilState(store, state => state.viewports.length == 1);
+
+  if (waitForDeviceList) {
+    
+    await waitUntilState(
+      store,
+      state => state.devices.listState == localTypes.loadableState.LOADED
+    );
+  }
 }
 
 
@@ -924,6 +931,39 @@ async function waitForDeviceAndViewportState(ui) {
       state.viewports.length == 1 &&
       state.devices.listState == localTypes.loadableState.LOADED
   );
+}
+
+
+
+
+
+
+
+
+
+function waitForDevicePixelRatio(ui, expected) {
+  return SpecialPowers.spawn(ui.getViewportBrowser(), [{ expected }], function(
+    args
+  ) {
+    const initial = content.devicePixelRatio;
+    info(
+      `Listening for pixel ratio change ` +
+        `(current: ${initial}, expected: ${args.expected})`
+    );
+    return new Promise(resolve => {
+      const mql = content.matchMedia(`(resolution: ${args.expected}dppx)`);
+      if (mql.matches) {
+        info(`Ratio already changed to ${args.expected}dppx`);
+        resolve(content.devicePixelRatio);
+        return;
+      }
+      mql.addListener(function listener() {
+        info(`Ratio changed to ${args.expected}dppx`);
+        mql.removeListener(listener);
+        resolve(content.devicePixelRatio);
+      });
+    });
+  });
 }
 
 
