@@ -112,8 +112,9 @@ const ExperimentAPI = {
 
 
 
-  isFeatureEnabled(featureId, defaultValue) {
-    const branch = this.getFeatureBranch({ featureId });
+
+  isFeatureEnabled(featureId, defaultValue, { sendExposurePing = true } = {}) {
+    const branch = this.getFeatureBranch({ featureId, sendExposurePing });
     if (branch?.feature.enabled !== undefined) {
       return branch.feature.enabled;
     }
