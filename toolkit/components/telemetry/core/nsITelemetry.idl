@@ -194,12 +194,6 @@ interface nsITelemetry : nsISupports
 
 
 
-  readonly attribute uint32_t maximalNumberOfConcurrentThreads;
-
-  
-
-
-
   
 
 
