@@ -1,5 +1,5 @@
 body {
-  
+  /* to match ua.css, see bug 1020143 */
   font-variant-numeric: tabular-nums;
 }
 ol, ul, section, p {
@@ -15,4 +15,8 @@ li, p {
 }
 p {
   padding-right: .5em;
+}
+li::marker {
+  /* Blink workaround of https://bugzilla.mozilla.org/show_bug.cgi?id=1688769 */
+  white-space: pre;
 }
