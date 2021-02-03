@@ -227,6 +227,14 @@ class TrackBuffersManager final
   void AppendDataToCurrentInputBuffer(const MediaSpan& aData);
 
   RefPtr<MediaByteBuffer> mInitData;
+
+  
+  
+  
+  
+  
+  bool IsRepeatInitData(const MediaInfo& aNewMediaInfo) const;
+
   
   
   

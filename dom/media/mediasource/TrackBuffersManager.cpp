@@ -1126,6 +1126,49 @@ void TrackBuffersManager::InitializationSegmentReceived() {
       ->Track(mDemuxerInitRequest);
 }
 
+bool TrackBuffersManager::IsRepeatInitData(
+    const MediaInfo& aNewMediaInfo) const {
+  MOZ_ASSERT(OnTaskQueue());
+  if (!mInitData) {
+    
+    return false;
+  }
+
+  if (mChangeTypeReceived) {
+    
+    return false;
+  }
+
+  MOZ_DIAGNOSTIC_ASSERT(mInitData, "Init data should be non-null");
+  if (*mInitData == *mParser->InitData()) {
+    
+    
+    return true;
+  }
+
+  
+  
+  
+
+  bool audioInfoIsRepeat = false;
+  if (aNewMediaInfo.HasAudio()) {
+    if (!mAudioTracks.mLastInfo) {
+      
+      return false;
+    }
+    audioInfoIsRepeat =
+        *mAudioTracks.mLastInfo->GetAsAudioInfo() == aNewMediaInfo.mAudio;
+    if (!aNewMediaInfo.HasVideo()) {
+      
+      return audioInfoIsRepeat;
+    }
+  }
+
+  
+
+  return false;
+}
+
 void TrackBuffersManager::OnDemuxerInitDone(const MediaResult& aResult) {
   MOZ_ASSERT(OnTaskQueue());
   MOZ_DIAGNOSTIC_ASSERT(mInputDemuxer, "mInputDemuxer has been destroyed");
@@ -1205,18 +1248,7 @@ void TrackBuffersManager::OnDemuxerInitDone(const MediaResult& aResult) {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  bool isRepeatInitData =
-      !mChangeTypeReceived && mInitData &&
-      ((*mInitData.get() == *mParser->InitData()) ||
-       (numVideos == 0 && numAudios > 0 && mAudioTracks.mLastInfo &&
-        *mAudioTracks.mLastInfo->GetAsAudioInfo() == info.mAudio));
+  bool isRepeatInitData = IsRepeatInitData(info);
 
   MOZ_ASSERT(mFirstInitializationSegmentReceived || !isRepeatInitData,
              "Should never detect repeat init data for first segment!");
