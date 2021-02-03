@@ -124,13 +124,13 @@ void PreloaderBase::AddLoadBackgroundFlag(nsIChannel* aChannel) {
 
 void PreloaderBase::NotifyOpen(const PreloadHashKey& aKey,
                                dom::Document* aDocument, bool aIsPreload) {
-  if (aDocument && !aDocument->Preloads().RegisterPreload(aKey, this)) {
+  if (aDocument) {
+    DebugOnly<bool> alreadyRegistered =
+        aDocument->Preloads().RegisterPreload(aKey, this);
     
     
     
-    MOZ_ASSERT(!aIsPreload);
-    aDocument->Preloads().DeregisterPreload(aKey);
-    aDocument->Preloads().RegisterPreload(aKey, this);
+    MOZ_ASSERT_IF(alreadyRegistered, !aIsPreload);
   }
 
   mKey = aKey;
