@@ -14,8 +14,6 @@ const ENGINE_NAME = "MozSearch";
 const ENGINE_DOMAIN = "example.com";
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  UrlbarProviderTabToSearch:
-    "resource:///modules/UrlbarProviderTabToSearch.jsm",
   UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.jsm",
 });
 
@@ -72,9 +70,7 @@ function assertTelemetryResults(histograms, type, index, method) {
 
 
 
-
-
-async function checkForTabToSearchResult(engineName, isOnboarding) {
+async function checkForOnboardingResult(engineName) {
   Assert.ok(UrlbarTestUtils.isPopupOpen(window), "Popup should be open.");
   let tabToSearchResult = (
     await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1)
@@ -89,18 +85,11 @@ async function checkForTabToSearchResult(engineName, isOnboarding) {
     engineName,
     "The tab-to-search result is for the first engine."
   );
-  if (isOnboarding) {
-    Assert.equal(
-      tabToSearchResult.payload.dynamicType,
-      "onboardTabToSearch",
-      "The tab-to-search result is an onboarding result."
-    );
-  } else {
-    Assert.ok(
-      !tabToSearchResult.payload.dynamicType,
-      "The tab-to-search result should not be an onboarding result."
-    );
-  }
+  Assert.equal(
+    tabToSearchResult.payload.dynamicType,
+    "onboardTabToSearch",
+    "The tab-to-search result is an onboarding result."
+  );
 }
 
 add_task(async function setup() {
@@ -178,24 +167,11 @@ add_task(async function test() {
   });
 });
 
-add_task(async function impressions() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.tabToSearch.onboard.interactionsLeft", 0]],
-  });
-  await impressions_test(false);
-  await SpecialPowers.popPrefEnv();
-});
-
 add_task(async function onboarding_impressions() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.tabToSearch.onboard.interactionsLeft", 3]],
   });
-  await impressions_test(true);
-  await SpecialPowers.popPrefEnv();
-  delete UrlbarProviderTabToSearch.onboardingInteractionAtTime;
-});
 
-async function impressions_test(isOnboarding) {
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
     const firstEngineHost = "example";
     let secondEngine = await Services.search.addEngineWithDetails(
@@ -223,24 +199,14 @@ async function impressions_test(isOnboarding) {
         value: firstEngineHost.slice(0, i),
         fireInputEvent: true,
       });
-      await checkForTabToSearchResult(ENGINE_NAME, isOnboarding);
+      await checkForOnboardingResult(ENGINE_NAME);
     }
 
     await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
-    let scalars = TelemetryTestUtils.getProcessScalars("parent", true);
     TelemetryTestUtils.assertKeyedScalar(
-      scalars,
+      TelemetryTestUtils.getProcessScalars("parent", true),
       "urlbar.tips",
-      isOnboarding ? "tabtosearch_onboard-shown" : "tabtosearch-shown",
-      1
-    );
-    TelemetryTestUtils.assertKeyedScalar(
-      scalars,
-      isOnboarding
-        ? "urlbar.tabtosearch.impressions_onboarding"
-        : "urlbar.tabtosearch.impressions",
-      
-      "other",
+      "tabtosearch_onboard-shown",
       1
     );
 
@@ -250,30 +216,21 @@ async function impressions_test(isOnboarding) {
       value: firstEngineHost,
       fireInputEvent: true,
     });
-    await checkForTabToSearchResult(ENGINE_NAME, isOnboarding);
+    await checkForOnboardingResult(ENGINE_NAME);
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
       value: `${firstEngineHost}-`,
       fireInputEvent: true,
     });
-    await checkForTabToSearchResult(`${ENGINE_NAME}2`, isOnboarding);
+    await checkForOnboardingResult(`${ENGINE_NAME}2`);
     await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
     
     
     
-    scalars = TelemetryTestUtils.getProcessScalars("parent", true);
     TelemetryTestUtils.assertKeyedScalar(
-      scalars,
+      TelemetryTestUtils.getProcessScalars("parent", true),
       "urlbar.tips",
-      isOnboarding ? "tabtosearch_onboard-shown" : "tabtosearch-shown",
-      3
-    );
-    TelemetryTestUtils.assertKeyedScalar(
-      scalars,
-      isOnboarding
-        ? "urlbar.tabtosearch.impressions_onboarding"
-        : "urlbar.tabtosearch.impressions",
-      "other",
+      "tabtosearch_onboard-shown",
       3
     );
 
@@ -283,7 +240,7 @@ async function impressions_test(isOnboarding) {
       value: `${firstEngineHost}-`,
       fireInputEvent: true,
     });
-    await checkForTabToSearchResult(`${ENGINE_NAME}2`, isOnboarding);
+    await checkForOnboardingResult(`${ENGINE_NAME}2`);
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
       value: `${firstEngineHost}-3`,
@@ -299,21 +256,12 @@ async function impressions_test(isOnboarding) {
       value: `${firstEngineHost}-2`,
       fireInputEvent: true,
     });
-    await checkForTabToSearchResult(`${ENGINE_NAME}2`, isOnboarding);
+    await checkForOnboardingResult(`${ENGINE_NAME}2`);
     await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
-    scalars = TelemetryTestUtils.getProcessScalars("parent", true);
     TelemetryTestUtils.assertKeyedScalar(
-      scalars,
+      TelemetryTestUtils.getProcessScalars("parent", true),
       "urlbar.tips",
-      isOnboarding ? "tabtosearch_onboard-shown" : "tabtosearch-shown",
-      4
-    );
-    TelemetryTestUtils.assertKeyedScalar(
-      scalars,
-      isOnboarding
-        ? "urlbar.tabtosearch.impressions_onboarding"
-        : "urlbar.tabtosearch.impressions",
-      "other",
+      "tabtosearch_onboard-shown",
       4
     );
 
@@ -323,7 +271,7 @@ async function impressions_test(isOnboarding) {
       value: `${firstEngineHost}-2`,
       fireInputEvent: true,
     });
-    await checkForTabToSearchResult(`${ENGINE_NAME}2`, isOnboarding);
+    await checkForOnboardingResult(`${ENGINE_NAME}2`);
     let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
     EventUtils.synthesizeKey("KEY_Backspace");
     await searchPromise;
@@ -343,22 +291,12 @@ async function impressions_test(isOnboarding) {
     
     EventUtils.synthesizeKey(".");
     await searchPromise;
-    await checkForTabToSearchResult(`${ENGINE_NAME}2`, isOnboarding);
+    await checkForOnboardingResult(`${ENGINE_NAME}2`);
     await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
-    scalars = TelemetryTestUtils.getProcessScalars("parent", true);
     TelemetryTestUtils.assertKeyedScalar(
-      scalars,
+      TelemetryTestUtils.getProcessScalars("parent", true),
       "urlbar.tips",
-      isOnboarding ? "tabtosearch_onboard-shown" : "tabtosearch-shown",
-      5
-    );
-    TelemetryTestUtils.assertKeyedScalar(
-      scalars,
-      isOnboarding
-        ? "urlbar.tabtosearch.impressions_onboarding"
-        : "urlbar.tabtosearch.impressions",
-      
-      "other",
+      "tabtosearch_onboard-shown",
       5
     );
 
@@ -368,21 +306,12 @@ async function impressions_test(isOnboarding) {
     await UrlbarTestUtils.promisePopupOpen(window, () => {
       EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
     });
-    await checkForTabToSearchResult(`${ENGINE_NAME}2`, isOnboarding);
+    await checkForOnboardingResult(`${ENGINE_NAME}2`);
     await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
-    scalars = TelemetryTestUtils.getProcessScalars("parent", true);
     TelemetryTestUtils.assertKeyedScalar(
-      scalars,
+      TelemetryTestUtils.getProcessScalars("parent", true),
       "urlbar.tips",
-      isOnboarding ? "tabtosearch_onboard-shown" : "tabtosearch-shown",
-      6
-    );
-    TelemetryTestUtils.assertKeyedScalar(
-      scalars,
-      isOnboarding
-        ? "urlbar.tabtosearch.impressions_onboarding"
-        : "urlbar.tabtosearch.impressions",
-      "other",
+      "tabtosearch_onboard-shown",
       6
     );
 
@@ -394,7 +323,7 @@ async function impressions_test(isOnboarding) {
       value: firstEngineHost,
       fireInputEvent: true,
     });
-    await checkForTabToSearchResult(ENGINE_NAME, isOnboarding);
+    await checkForOnboardingResult(ENGINE_NAME);
     
     
     let loadPromise = BrowserTestUtils.browserLoaded(browser);
@@ -411,26 +340,17 @@ async function impressions_test(isOnboarding) {
     searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
     EventUtils.synthesizeKey(firstEngineHost.slice(0, 4));
     await searchPromise;
-    await checkForTabToSearchResult(ENGINE_NAME, isOnboarding);
+    await checkForOnboardingResult(ENGINE_NAME);
     await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
     
-    scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
     TelemetryTestUtils.assertKeyedScalar(
-      scalars,
+      TelemetryTestUtils.getProcessScalars("parent", true, true),
       "urlbar.tips",
-      isOnboarding ? "tabtosearch_onboard-shown" : "tabtosearch-shown",
-      8
-    );
-    TelemetryTestUtils.assertKeyedScalar(
-      scalars,
-      isOnboarding
-        ? "urlbar.tabtosearch.impressions_onboarding"
-        : "urlbar.tabtosearch.impressions",
-      "other",
+      "tabtosearch_onboard-shown",
       8
     );
 
     await PlacesUtils.history.clear();
     await Services.search.removeEngine(secondEngine);
   });
-}
+});

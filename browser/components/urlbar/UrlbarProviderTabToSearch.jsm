@@ -103,10 +103,7 @@ function initializeDynamicResult() {
 class ProviderTabToSearch extends UrlbarProvider {
   constructor() {
     super();
-    this.enginesShown = {
-      onboarding: new Set(),
-      regular: new Set(),
-    };
+    this.onboardingEnginesShown = new Set();
   }
 
   
@@ -261,47 +258,16 @@ class ProviderTabToSearch extends UrlbarProvider {
 
 
   onEngagement(isPrivate, state) {
-    if (!this.enginesShown.regular.size && !this.enginesShown.onboarding.size) {
+    if (!this.onboardingEnginesShown.size) {
       return;
     }
 
-    
-    for (let engine of this.enginesShown.regular) {
-      let scalarKey = UrlbarSearchUtils.getSearchModeScalarKey({
-        engineName: engine,
-      });
-      Services.telemetry.keyedScalarAdd(
-        "urlbar.tabtosearch.impressions",
-        scalarKey,
-        1
-      );
-    }
-    for (let engine of this.enginesShown.onboarding) {
-      let scalarKey = UrlbarSearchUtils.getSearchModeScalarKey({
-        engineName: engine,
-      });
-      Services.telemetry.keyedScalarAdd(
-        "urlbar.tabtosearch.impressions_onboarding",
-        scalarKey,
-        1
-      );
-    }
-
-    
-    
-    Services.telemetry.keyedScalarAdd(
-      "urlbar.tips",
-      "tabtosearch-shown",
-      this.enginesShown.regular.size
-    );
     Services.telemetry.keyedScalarAdd(
       "urlbar.tips",
       "tabtosearch_onboard-shown",
-      this.enginesShown.onboarding.size
+      this.onboardingEnginesShown.size
     );
-
-    this.enginesShown.regular.clear();
-    this.enginesShown.onboarding.clear();
+    this.onboardingEnginesShown.clear();
   }
 
   
