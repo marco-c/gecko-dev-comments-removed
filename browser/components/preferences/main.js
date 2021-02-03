@@ -647,13 +647,7 @@ var gMainPane = {
     }
 
     if (AppConstants.MOZ_UPDATER) {
-      
-      
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          gAppUpdater = new appUpdater();
-        });
-      });
+      gAppUpdater = new appUpdater();
       setEventListener("showUpdateHistory", "command", gMainPane.showUpdates);
 
       let updateDisabled =
