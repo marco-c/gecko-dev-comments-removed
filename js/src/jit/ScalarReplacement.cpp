@@ -1251,6 +1251,7 @@ static bool IsArgumentsObjectEscaped(MInstruction* ins) {
 
       
       case MDefinition::Opcode::ArgumentsObjectLength:
+      case MDefinition::Opcode::GetArgumentsObjectArg:
         break;
 
       default:
@@ -1272,6 +1273,7 @@ class ArgumentsReplacer : public MDefinitionVisitorDefaultNoop {
   TempAllocator& alloc() { return graph_.alloc(); }
 
   void visitGuardToClass(MGuardToClass* ins);
+  void visitGetArgumentsObjectArg(MGetArgumentsObjectArg* ins);
   void visitArgumentsObjectLength(MArgumentsObjectLength* ins);
 
  public:
@@ -1329,6 +1331,26 @@ void ArgumentsReplacer::visitGuardToClass(MGuardToClass* ins) {
 
   
   ins->replaceAllUsesWith(args_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void ArgumentsReplacer::visitGetArgumentsObjectArg(
+    MGetArgumentsObjectArg* ins) {
+  
+  
+  MOZ_ASSERT(ins->getArgsObject() == args_);
+
+  
+  
+  
+  auto* index = MConstant::New(alloc(), Int32Value(ins->argno()));
+  ins->block()->insertBefore(ins, index);
+
+  auto* loadArg = MGetFrameArgument::New(alloc(), index);
+  ins->block()->insertBefore(ins, loadArg);
+  ins->replaceAllUsesWith(loadArg);
 
   
   ins->block()->discard(ins);
