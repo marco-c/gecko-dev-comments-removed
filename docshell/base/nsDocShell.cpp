@@ -774,12 +774,16 @@ nsresult nsDocShell::LoadURI(nsDocShellLoadState* aLoadState,
     mIsNavigating = true;
   }
 
-  PopupBlocker::PopupControlState popupState;
+  PopupBlocker::PopupControlState popupState = PopupBlocker::openOverridden;
   if (aLoadState->HasLoadFlags(LOAD_FLAGS_ALLOW_POPUPS)) {
     popupState = PopupBlocker::openAllowed;
-  } else {
-    popupState = PopupBlocker::openOverridden;
+    
+    
+    if (WindowContext* wc = mBrowsingContext->GetCurrentWindowContext()) {
+      wc->NotifyUserGestureActivation();
+    }
   }
+
   AutoPopupStatePusher statePusher(popupState);
 
   if (aLoadState->GetCancelContentJSEpoch().isSome()) {
