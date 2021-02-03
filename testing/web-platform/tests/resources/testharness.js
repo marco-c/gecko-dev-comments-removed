@@ -3570,9 +3570,11 @@
                 escape_html(test.message ? tests[i].message : " ") +
                 (tests[i].stack ? "<pre>" +
                  escape_html(tests[i].stack) +
-                 "</pre>": "") +
-                 "<details><summary>Asserts run</summary>" + get_asserts_output(test) + "</details>"
-                "</td></tr>";
+                 "</pre>": "");
+            if (!(test instanceof RemoteTest)) {
+                 html += "<details><summary>Asserts run</summary>" + get_asserts_output(test) + "</details>"
+            }
+            html += "</td></tr>";
         }
         html += "</tbody></table>";
         try {
