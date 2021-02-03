@@ -3106,6 +3106,36 @@ typedef Vector<CallSiteTarget, 0, SystemAllocPolicy> CallSiteTargetVector;
 
 
 
+struct WasmTryNote {
+  explicit WasmTryNote(uint32_t begin = 0, uint32_t end = 0,
+                       uint32_t framePushed = 0)
+      : begin(begin), end(end), framePushed(framePushed) {}
+
+  uint32_t begin;        
+  uint32_t end;          
+  uint32_t entryPoint;   
+  uint32_t framePushed;  
+
+  void offsetBy(uint32_t offset) {
+    begin += offset;
+    end += offset;
+    entryPoint += offset;
+  }
+
+  bool operator<(const WasmTryNote& other) const {
+    if (end == other.end) {
+      return begin > other.begin;
+    } else {
+      return end < other.end;
+    }
+  }
+};
+
+WASM_DECLARE_POD_VECTOR(WasmTryNote, WasmTryNoteVector)
+
+
+
+
 
 
 

@@ -572,6 +572,9 @@ class AssemblerShared {
   wasm::CallSiteTargetVector callSiteTargets_;
   wasm::TrapSiteVectorArray trapSites_;
   wasm::SymbolicAccessVector symbolicAccesses_;
+#ifdef ENABLE_WASM_EXCEPTIONS
+  wasm::WasmTryNoteVector tryNotes_;
+#endif
 
  protected:
   CodeLabelVector codeLabels_;
@@ -619,11 +622,22 @@ class AssemblerShared {
   void append(wasm::SymbolicAccess access) {
     enoughMemory_ &= symbolicAccesses_.append(access);
   }
+  
+  
+#ifdef ENABLE_WASM_EXCEPTIONS
+  size_t append(wasm::WasmTryNote tryNote) {
+    enoughMemory_ &= tryNotes_.append(tryNote);
+    return tryNotes_.length() - 1;
+  }
+#endif
 
   wasm::CallSiteVector& callSites() { return callSites_; }
   wasm::CallSiteTargetVector& callSiteTargets() { return callSiteTargets_; }
   wasm::TrapSiteVectorArray& trapSites() { return trapSites_; }
   wasm::SymbolicAccessVector& symbolicAccesses() { return symbolicAccesses_; }
+#ifdef ENABLE_WASM_EXCEPTIONS
+  wasm::WasmTryNoteVector& tryNotes() { return tryNotes_; }
+#endif
 };
 
 }  
