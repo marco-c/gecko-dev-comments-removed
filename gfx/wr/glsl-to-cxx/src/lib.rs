@@ -2313,19 +2313,22 @@ pub fn show_declaration(state: &mut OutputState, d: &hir::Declaration) {
             
         }
         hir::Declaration::Global(ref qual, ref identifiers) => {
-            show_type_qualifier(state, &qual);
+            
+            if !state.output_cxx {
+                show_type_qualifier(state, &qual);
 
-            if !identifiers.is_empty() {
-                let mut iter = identifiers.iter();
-                let first = iter.next().unwrap();
-                show_identifier(state, first);
+                if !identifiers.is_empty() {
+                    let mut iter = identifiers.iter();
+                    let first = iter.next().unwrap();
+                    show_identifier(state, first);
 
-                for identifier in iter {
-                    let _ = write!(state, ", {}", identifier);
+                    for identifier in iter {
+                        let _ = write!(state, ", {}", identifier);
+                    }
                 }
-            }
 
-            state.write(";\n");
+                state.write(";\n");
+            }
         }
         hir::Declaration::StructDefinition(ref sym) => {
             show_sym_decl(state, sym);
