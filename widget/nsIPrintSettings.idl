@@ -88,9 +88,16 @@ interface nsIPrintSettings : nsISupports
   
 
 
-  const short kSimplex          = 0;
-  const short kDuplexHorizontal = 1;
-  const short kDuplexVertical   = 2;
+
+
+
+
+  
+  const short kDuplexNone = 0;
+  
+  const short kDuplexFlipOnSideEdge = 1;
+  
+  const short kDuplexFlipOnTopEdge = 2;
 
   
 

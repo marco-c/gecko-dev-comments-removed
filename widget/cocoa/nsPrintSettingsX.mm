@@ -186,14 +186,14 @@ NSPrintInfo* nsPrintSettingsX::CreateOrCopyPrintInfo(bool aWithScaling) {
     default:
       
       MOZ_FALLTHROUGH_ASSERT("Unknown duplex value");
-    case kSimplex:
+    case kDuplexNone:
       duplexSetting = kPMDuplexNone;
       break;
-    case kDuplexVertical:
-      duplexSetting = kPMDuplexTumble;
-      break;
-    case kDuplexHorizontal:
+    case kDuplexFlipOnSideEdge:
       duplexSetting = kPMDuplexNoTumble;
+      break;
+    case kDuplexFlipOnTopEdge:
+      duplexSetting = kPMDuplexTumble;
       break;
   }
 
@@ -310,20 +310,20 @@ void nsPrintSettingsX::SetFromPrintInfo(NSPrintInfo* aPrintInfo, bool aAdoptPrin
         
         MOZ_FALLTHROUGH_ASSERT("Unknown duplex value");
       case kPMDuplexNone:
-        mDuplex = kSimplex;
+        mDuplex = kDuplexNone;
         break;
       case kPMDuplexNoTumble:
-        mDuplex = kDuplexHorizontal;
+        mDuplex = kDuplexFlipOnSideEdge;
         break;
       case kPMDuplexTumble:
-        mDuplex = kDuplexVertical;
+        mDuplex = kDuplexFlipOnTopEdge;
         break;
     }
   } else {
     
     
     
-    mDuplex = kSimplex;
+    mDuplex = kDuplexNone;
   }
 
   value = [printSettings objectForKey:@"com_apple_print_PrintSettings_PMDestinationType"];
