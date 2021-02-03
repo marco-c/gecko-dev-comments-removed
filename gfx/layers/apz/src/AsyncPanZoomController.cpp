@@ -4737,8 +4737,18 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       sampledState.UpdateZoomProperties(Metrics());
     }
 
-    
-    needContentRepaint = true;
+    if (aLayerMetrics.HasNonZeroDisplayPortMargins()) {
+      
+      
+      
+      
+      
+      
+      
+      APZC_LOG("%p detected non-empty margins which probably need updating\n",
+               this);
+      needContentRepaint = true;
+    }
   } else {
     
     
@@ -4832,6 +4842,8 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     mScrollMetadata.SetIsAutoDirRootContentRTL(
         aScrollMetadata.IsAutoDirRootContentRTL());
     Metrics().SetIsScrollInfoLayer(aLayerMetrics.IsScrollInfoLayer());
+    Metrics().SetHasNonZeroDisplayPortMargins(
+        aLayerMetrics.HasNonZeroDisplayPortMargins());
     mScrollMetadata.SetForceDisableApz(aScrollMetadata.IsApzForceDisabled());
     mScrollMetadata.SetIsRDMTouchSimulationActive(
         aScrollMetadata.GetIsRDMTouchSimulationActive());
@@ -5402,24 +5414,10 @@ void AsyncPanZoomController::DispatchStateChangeNotification(
     if (!IsTransformingState(aOldState) && IsTransformingState(aNewState)) {
       controller->NotifyAPZStateChange(GetGuid(),
                                        APZStateChange::eTransformBegin);
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-      
-      
-      if (StaticPrefs::gfx_e10s_hide_plugins_for_scroll_AtStartup() &&
-          mCompositorController) {
-        mCompositorController->ScheduleHideAllPluginWindows();
-      }
-#endif
     } else if (IsTransformingState(aOldState) &&
                !IsTransformingState(aNewState)) {
       controller->NotifyAPZStateChange(GetGuid(),
                                        APZStateChange::eTransformEnd);
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-      if (StaticPrefs::gfx_e10s_hide_plugins_for_scroll_AtStartup() &&
-          mCompositorController) {
-        mCompositorController->ScheduleShowAllPluginWindows();
-      }
-#endif
     }
   }
 }
