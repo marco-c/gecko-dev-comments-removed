@@ -921,6 +921,18 @@ void DocAccessible::AttributeChangedImpl(Accessible* aAccessible,
     return;
   }
 
+  
+  
+  
+  if (aAccessible->IsTable() || aAccessible->IsTableRow() ||
+      aAccessible->IsTableCell()) {
+    if (aAttribute == nsGkAtoms::summary || aAttribute == nsGkAtoms::headers ||
+        aAttribute == nsGkAtoms::scope || aAttribute == nsGkAtoms::abbr) {
+      FireDelayedEvent(nsIAccessibleEvent::EVENT_OBJECT_ATTRIBUTE_CHANGED,
+                       aAccessible);
+    }
+  }
+
   if (aAttribute == nsGkAtoms::aria_busy) {
     bool isOn = elm->AttrValueIs(aNameSpaceID, aAttribute, nsGkAtoms::_true,
                                  eCaseMatters);
