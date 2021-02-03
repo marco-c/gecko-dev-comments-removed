@@ -97,6 +97,11 @@ foreignObject {
   opacity: inherit;
 }
 
+*:-moz-focusring {
+  
+  outline: 1px dotted;
+}
+
 
 
 circle, ellipse, line, mesh, path, polygon, polyline, rect {
