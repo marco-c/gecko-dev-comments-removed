@@ -291,6 +291,11 @@ class ProviderTabToSearch extends UrlbarProvider {
     
     Services.telemetry.keyedScalarAdd(
       "urlbar.tips",
+      "tabtosearch-shown",
+      this.enginesShown.regular.size
+    );
+    Services.telemetry.keyedScalarAdd(
+      "urlbar.tips",
       "tabtosearch_onboard-shown",
       this.enginesShown.onboarding.size
     );
