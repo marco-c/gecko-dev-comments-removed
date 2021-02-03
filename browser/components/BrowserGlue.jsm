@@ -25,7 +25,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ASRouterDefaultConfig:
     "resource://activity-stream/lib/ASRouterDefaultConfig.jsm",
   ASRouterNewTabHook: "resource://activity-stream/lib/ASRouterNewTabHook.jsm",
-  ASRouter: "resource://activity-stream/lib/ASRouter.jsm",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   Blocklist: "resource://gre/modules/Blocklist.jsm",
   BookmarkHTMLUtils: "resource://gre/modules/BookmarkHTMLUtils.jsm",
@@ -44,7 +43,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "resource:///modules/DownloadsViewableInternally.jsm",
   E10SUtils: "resource://gre/modules/E10SUtils.jsm",
   ExtensionsUI: "resource:///modules/ExtensionsUI.jsm",
-  ExperimentAPI: "resource://messaging-system/experiments/ExperimentAPI.jsm",
   FeatureGate: "resource://featuregates/FeatureGate.jsm",
   FirefoxMonitor: "resource:///modules/FirefoxMonitor.jsm",
   FxAccounts: "resource://gre/modules/FxAccounts.jsm",
@@ -3854,44 +3852,21 @@ BrowserGlue.prototype = {
   },
 
   _maybeShowDefaultBrowserPrompt() {
-    Promise.all([
-      DefaultBrowserCheck.willCheckDefaultBrowser( true),
-      ExperimentAPI.ready,
-    ]).then(async ([willPrompt]) => {
-      let { DefaultBrowserNotification } = ChromeUtils.import(
-        "resource:///actors/AboutNewTabParent.jsm",
-        {}
-      );
-      let isFeatureEnabled = false;
-      try {
-        isFeatureEnabled = ExperimentAPI.getExperiment({
-          featureId: "infobar",
-          sendExposurePing: false,
-        })?.branch.feature.enabled;
-      } catch (e) {}
-      if (willPrompt) {
-        
-        
-        DefaultBrowserNotification.notifyModalDisplayed();
-      }
-      
-      if (willPrompt && !isFeatureEnabled) {
-        let win = BrowserWindowTracker.getTopWindow();
-        DefaultBrowserCheck.prompt(win);
-      }
-      
-      if (isFeatureEnabled) {
-        ASRouter.waitForInitialized.then(() =>
-          ASRouter.sendTriggerMessage({
-            browser: BrowserWindowTracker.getTopWindow()?.gBrowser
-              .selectedBrowser,
-            
-            id: "defaultBrowserCheck",
-            context: { willShowDefaultPrompt: willPrompt },
-          })
+    DefaultBrowserCheck.willCheckDefaultBrowser( true).then(
+      async willPrompt => {
+        let { DefaultBrowserNotification } = ChromeUtils.import(
+          "resource:///actors/AboutNewTabParent.jsm",
+          {}
         );
+        if (willPrompt) {
+          
+          
+          DefaultBrowserNotification.notifyModalDisplayed();
+          let win = BrowserWindowTracker.getTopWindow();
+          DefaultBrowserCheck.prompt(win);
+        }
       }
-    });
+    );
   },
 
   
