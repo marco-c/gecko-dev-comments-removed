@@ -238,8 +238,6 @@ class nsThread : public nsIThreadInternal,
 
   static nsThreadEnumerator Enumerate();
 
-  static uint32_t MaxActiveThreads();
-
   
   
   
@@ -287,11 +285,6 @@ class nsThread : public nsIThreadInternal,
   static mozilla::OffTheBooksMutex& ThreadListMutex();
   static mozilla::LinkedList<nsThread>& ThreadList();
   static void ClearThreadList();
-
-  
-  static uint32_t sActiveThreads;
-  
-  static uint32_t sMaxActiveThreads;
 
   void AddToThreadList();
   void MaybeRemoveFromThreadList();

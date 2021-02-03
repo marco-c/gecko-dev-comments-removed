@@ -68,10 +68,6 @@ class nsThreadManager : public nsIThreadManager {
   already_AddRefed<nsISerialEventTarget> CreateBackgroundTaskQueue(
       const char* aName);
 
-  
-  
-  uint32_t GetHighestNumberOfThreads();
-
   ~nsThreadManager();
 
   void EnableMainThreadEventPrioritization();
