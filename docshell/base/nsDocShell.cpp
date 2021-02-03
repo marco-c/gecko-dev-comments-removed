@@ -10109,7 +10109,8 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
           
           
           const bool hasFreePass = [&] {
-            if (!active || !context->SameOriginWithTop()) {
+            if (!active ||
+                !(context->IsInProcess() && context->SameOriginWithTop())) {
               return false;
             }
             nsGlobalWindowInner* win =
@@ -10117,7 +10118,8 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
             return win && win->TryOpenExternalProtocolIframe();
           }();
 
-          if (context->ConsumeTransientUserGestureActivation()) {
+          if (context->IsInProcess() &&
+              context->ConsumeTransientUserGestureActivation()) {
             
             return false;
           }
@@ -10315,7 +10317,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                          sandboxFlags);
   RefPtr<WindowContext> context = mBrowsingContext->GetCurrentWindowContext();
 
-  if (mLoadType != LOAD_ERROR_PAGE && context &&
+  if (mLoadType != LOAD_ERROR_PAGE && context && context->IsInProcess() &&
       context->HasValidTransientUserGestureActivation()) {
     aLoadState->SetHasValidUserGestureActivation(true);
   }
