@@ -2592,6 +2592,14 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(
                     presContext->DevPixelsToAppUnits(bounds.y),
                     presContext->DevPixelsToAppUnits(bounds.width),
                     presContext->DevPixelsToAppUnits(bounds.height));
+        
+        
+        
+        
+        
+        
+        
+        rect -= view->ViewToWidgetOffset();
         if (shouldInvalidate) {
           view->GetViewManager()->InvalidateViewNoSuppression(view, rect);
         }
