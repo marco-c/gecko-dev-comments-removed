@@ -97,11 +97,6 @@ foreignObject {
   opacity: inherit;
 }
 
-:focus-visible {
-  
-  outline: 1px dotted;
-}
-
 
 
 circle, ellipse, line, mesh, path, polygon, polyline, rect {
