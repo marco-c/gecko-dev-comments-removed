@@ -15,7 +15,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   SearchSERPTelemetry: "resource:///modules/SearchSERPTelemetry.jsm",
   Services: "resource://gre/modules/Services.jsm",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
+  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
 });
 
 
@@ -138,27 +138,8 @@ class BrowserSearchTelemetryHandler {
     if (searchMode.isPreview) {
       return;
     }
-    let scalarKey;
-    if (searchMode.engineName) {
-      let engine = Services.search.getEngineByName(searchMode.engineName);
-      let resultDomain = engine.getResultDomain();
-      
-      
-      if (!engine.isAppProvided) {
-        scalarKey = "other";
-      } else if (resultDomain.includes("amazon.")) {
-        
-        scalarKey = "Amazon";
-      } else if (resultDomain.endsWith("wikipedia.org")) {
-        
-        scalarKey = "Wikipedia";
-      } else {
-        scalarKey = searchMode.engineName;
-      }
-    } else if (searchMode.source) {
-      scalarKey = UrlbarUtils.getResultSourceName(searchMode.source) || "other";
-    }
 
+    let scalarKey = UrlbarSearchUtils.getSearchModeScalarKey(searchMode);
     Services.telemetry.keyedScalarAdd(
       "urlbar.searchmode." + searchMode.entry,
       scalarKey,
