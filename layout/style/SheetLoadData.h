@@ -26,8 +26,7 @@ class nsIURI;
 class nsIReferrerInfo;
 struct StyleUseCounters;
 
-namespace mozilla {
-namespace css {
+namespace mozilla::css {
 
 
 
@@ -43,7 +42,6 @@ class SheetLoadData final : public PreloaderBase,
                             public nsIThreadObserver {
   using MediaMatched = dom::LinkStyle::MediaMatched;
   using IsAlternate = dom::LinkStyle::IsAlternate;
-  using IsPreload = Loader::IsPreload;
   using UseSystemPrincipal = Loader::UseSystemPrincipal;
 
  protected:
@@ -58,7 +56,7 @@ class SheetLoadData final : public PreloaderBase,
   SheetLoadData(Loader* aLoader, const nsAString& aTitle, nsIURI* aURI,
                 StyleSheet* aSheet, bool aSyncLoad, nsINode* aOwningNode,
                 IsAlternate aIsAlternate, MediaMatched aMediaMatched,
-                IsPreload aIsPreload, nsICSSLoaderObserver* aObserver,
+                StylePreloadKind aPreloadKind, nsICSSLoaderObserver* aObserver,
                 nsIPrincipal* aTriggeringPrincipal,
                 nsIReferrerInfo* aReferrerInfo, nsINode* aRequestingNode);
 
@@ -70,7 +68,7 @@ class SheetLoadData final : public PreloaderBase,
 
   
   SheetLoadData(Loader* aLoader, nsIURI* aURI, StyleSheet* aSheet,
-                bool aSyncLoad, UseSystemPrincipal, IsPreload,
+                bool aSyncLoad, UseSystemPrincipal, StylePreloadKind,
                 const Encoding* aPreloadEncoding,
                 nsICSSLoaderObserver* aObserver,
                 nsIPrincipal* aTriggeringPrincipal,
@@ -201,7 +199,7 @@ class SheetLoadData final : public PreloaderBase,
   
   
   
-  const IsPreload mIsPreload;
+  const StylePreloadKind mPreloadKind;
 
   
   
@@ -250,9 +248,10 @@ class SheetLoadData final : public PreloaderBase,
     }
   }
 
-  bool IsLinkPreload() const { return mIsPreload == IsPreload::FromLink; }
+  bool IsPreload() const { return mPreloadKind != StylePreloadKind::None; }
+  bool IsLinkRelPreload() const { return css::IsLinkRelPreload(mPreloadKind); }
 
-  bool BlocksLoadEvent() const { return !RootLoadData().IsLinkPreload(); }
+  bool BlocksLoadEvent() const { return !RootLoadData().IsLinkRelPreload(); }
 
  private:
   const SheetLoadData& RootLoadData() const {
@@ -268,7 +267,6 @@ class SheetLoadData final : public PreloaderBase,
 
 using SheetLoadDataHolder = nsMainThreadPtrHolder<SheetLoadData>;
 
-}  
 }  
 
 

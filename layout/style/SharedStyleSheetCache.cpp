@@ -346,7 +346,7 @@ void SharedStyleSheetCache::LoadCompletedInternal(
           
           return false;
         }
-        if (data->mIsPreload != css::Loader::IsPreload::No) {
+        if (data->IsPreload()) {
           
           return false;
         }
