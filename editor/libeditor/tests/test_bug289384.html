@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=289384
+-->
 <head>
   <title>Test for Bug 289384</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -32,7 +32,7 @@ function continueTest(win) {
     doc.body.focus();
     sel.collapse(doc.body.firstChild, 3);
     SimpleTest.executeSoon(function() {
-      synthesizeKey("VK_LEFT", {accelKey: true}, win);
+      synthesizeKey("KEY_ArrowLeft", {accelKey: true}, win);
       ok(sel.isCollapsed, "The selection must be collapsed");
       is(sel.anchorNode, doc.body.firstChild, "The anchor node should be the body element's text node");
       is(sel.anchorOffset, 0, "The anchor offset should be 0");
