@@ -985,35 +985,47 @@ nsresult TextInputProcessor::PrepareKeyboardEventToDispatch(
             aKeyboardEvent.mKeyNameIndex);
   }
 
-  aKeyboardEvent.mIsSynthesizedByTIP = !mForTests;
+  aKeyboardEvent.mIsSynthesizedByTIP = true;
+  aKeyboardEvent.mFlags.mIsSynthesizedForTests = mForTests;
+
+  return NS_OK;
+}
+
+nsresult TextInputProcessor::InitEditCommands(
+    WidgetKeyboardEvent& aKeyboardEvent) const {
+  MOZ_ASSERT(XRE_IsContentProcess());
+  MOZ_ASSERT(aKeyboardEvent.mMessage == eKeyPress);
 
   
   
   
   
-  if (aKeyboardEvent.mIsSynthesizedByTIP && !XRE_IsParentProcess()) {
-    
-    
-    if (!aKeyboardEvent.IsInputtingText()) {
-      
-      
-      
-      
-      if (NS_WARN_IF(!aKeyboardEvent.InitEditCommandsFor(
-              nsIWidget::NativeKeyBindingsForSingleLineEditor))) {
-        return NS_ERROR_NOT_AVAILABLE;
-      }
-      if (NS_WARN_IF(!aKeyboardEvent.InitEditCommandsFor(
-              nsIWidget::NativeKeyBindingsForMultiLineEditor))) {
-        return NS_ERROR_NOT_AVAILABLE;
-      }
-      if (NS_WARN_IF(!aKeyboardEvent.InitEditCommandsFor(
-              nsIWidget::NativeKeyBindingsForRichTextEditor))) {
-        return NS_ERROR_NOT_AVAILABLE;
-      }
-    } else {
-      aKeyboardEvent.PreventNativeKeyBindings();
-    }
+  
+  
+  
+
+  
+  
+  if (aKeyboardEvent.IsInputtingText()) {
+    aKeyboardEvent.PreventNativeKeyBindings();
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  if (NS_WARN_IF(!aKeyboardEvent.InitEditCommandsFor(
+          nsIWidget::NativeKeyBindingsForSingleLineEditor))) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  if (NS_WARN_IF(!aKeyboardEvent.InitEditCommandsFor(
+          nsIWidget::NativeKeyBindingsForMultiLineEditor))) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  if (NS_WARN_IF(!aKeyboardEvent.InitEditCommandsFor(
+          nsIWidget::NativeKeyBindingsForRichTextEditor))) {
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   return NS_OK;
@@ -1053,6 +1065,8 @@ nsresult TextInputProcessor::KeydownInternal(
 
   
   WidgetKeyboardEvent keyEvent(aKeyboardEvent);
+  keyEvent.mFlags.mIsTrusted = true;
+  keyEvent.mMessage = eKeyDown;
   nsresult rv = PrepareKeyboardEventToDispatch(keyEvent, aKeyFlags);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -1104,8 +1118,26 @@ nsresult TextInputProcessor::KeydownInternal(
                         ? KEYDOWN_IS_CONSUMED
                         : KEYEVENT_NOT_CONSUMED;
 
-  if (aAllowToDispatchKeypress &&
-      kungFuDeathGrip->MaybeDispatchKeypressEvents(keyEvent, status)) {
+  if (!aAllowToDispatchKeypress) {
+    return NS_OK;
+  }
+
+  keyEvent.mMessage = eKeyPress;
+
+  
+  
+  
+  
+  
+  
+  
+  if (XRE_IsContentProcess()) {
+    nsresult rv = InitEditCommands(keyEvent);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+  if (kungFuDeathGrip->MaybeDispatchKeypressEvents(keyEvent, status)) {
     aConsumedFlags |= (status == nsEventStatus_eConsumeNoDefault)
                           ? KEYPRESS_IS_CONSUMED
                           : KEYEVENT_NOT_CONSUMED;
@@ -1147,6 +1179,8 @@ nsresult TextInputProcessor::KeyupInternal(
 
   
   WidgetKeyboardEvent keyEvent(aKeyboardEvent);
+  keyEvent.mFlags.mIsTrusted = true;
+  keyEvent.mMessage = eKeyUp;
   nsresult rv = PrepareKeyboardEventToDispatch(keyEvent, aKeyFlags);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;

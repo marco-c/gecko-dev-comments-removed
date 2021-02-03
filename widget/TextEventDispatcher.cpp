@@ -538,8 +538,26 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
   
   
   
-  if (keyEvent.mIsSynthesizedByTIP) {
-    keyEvent.AssignCommands(aKeyboardEvent);
+  
+  
+  
+  
+  
+  
+  
+  
+  if (XRE_IsContentProcess() && keyEvent.mIsSynthesizedByTIP) {
+    if (aMessage == eKeyPress) {
+      keyEvent.AssignCommands(aKeyboardEvent);
+    } else {
+      
+      
+      
+      
+      
+      
+      keyEvent.PreventNativeKeyBindings();
+    }
   }
 
   if (aStatus == nsEventStatus_eConsumeNoDefault) {

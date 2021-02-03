@@ -141,6 +141,13 @@ class TextInputProcessor final : public nsITextInputProcessor,
   void UnlinkFromTextEventDispatcher();
   nsresult PrepareKeyboardEventToDispatch(WidgetKeyboardEvent& aKeyboardEvent,
                                           uint32_t aKeyFlags);
+  
+
+
+
+
+  nsresult InitEditCommands(WidgetKeyboardEvent& aKeyboardEvent) const;
+
   bool IsValidEventTypeForComposition(
       const WidgetKeyboardEvent& aKeyboardEvent) const;
   nsresult PrepareKeyboardEventForComposition(

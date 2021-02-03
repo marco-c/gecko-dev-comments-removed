@@ -455,7 +455,6 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
         aType);
   }
 
-#ifdef DEBUG
   
 
 
@@ -465,7 +464,6 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
            mEditCommandsForMultiLineEditorInitialized &&
            mEditCommandsForRichTextEditorInitialized;
   }
-#endif  
 
   
 

@@ -24,7 +24,11 @@
 #if defined(XP_WIN)
 #  include "npapi.h"
 #  include "WinUtils.h"
-#endif
+#endif  
+
+#if defined(MOZ_WIDGET_GTK) || defined(XP_MACOSX)
+#  include "NativeKeyBindings.h"
+#endif  
 
 namespace mozilla {
 
@@ -756,21 +760,26 @@ WidgetKeyboardEvent::CodeNameIndexHashtable*
 void WidgetKeyboardEvent::InitAllEditCommands() {
   
   
-  if (NS_WARN_IF(!mWidget)) {
-    return;
-  }
-
   
-  
-  if (NS_WARN_IF(!IsTrusted())) {
-    return;
-  }
+  if (!mFlags.mIsSynthesizedForTests) {
+    
+    
+    if (NS_WARN_IF(!mWidget)) {
+      return;
+    }
 
-  MOZ_ASSERT(
-      XRE_IsParentProcess(),
-      "It's too expensive to retrieve all edit commands from remote process");
-  MOZ_ASSERT(!AreAllEditCommandsInitialized(),
-             "Shouldn't be called two or more times");
+    
+    
+    if (NS_WARN_IF(!IsTrusted())) {
+      return;
+    }
+
+    MOZ_ASSERT(
+        XRE_IsParentProcess(),
+        "It's too expensive to retrieve all edit commands from remote process");
+    MOZ_ASSERT(!AreAllEditCommandsInitialized(),
+               "Shouldn't be called two or more times");
+  }
 
   DebugOnly<bool> okIgnored =
       InitEditCommandsFor(nsIWidget::NativeKeyBindingsForSingleLineEditor);
@@ -794,15 +803,30 @@ void WidgetKeyboardEvent::InitAllEditCommands() {
 
 bool WidgetKeyboardEvent::InitEditCommandsFor(
     nsIWidget::NativeKeyBindingsType aType) {
-  if (NS_WARN_IF(!mWidget) || NS_WARN_IF(!IsTrusted())) {
-    return false;
-  }
-
   bool& initialized = IsEditCommandsInitializedRef(aType);
   if (initialized) {
     return true;
   }
   nsTArray<CommandInt>& commands = EditCommandsRef(aType);
+
+  
+  
+  
+  
+  if (mFlags.mIsSynthesizedForTests) {
+    MOZ_DIAGNOSTIC_ASSERT(IsTrusted());
+#if defined(MOZ_WIDGET_GTK) || defined(XP_MACOSX)
+    
+    
+    widget::NativeKeyBindings::GetEditCommandsForTests(aType, *this, commands);
+#endif
+    initialized = true;
+    return true;
+  }
+
+  if (NS_WARN_IF(!mWidget) || NS_WARN_IF(!IsTrusted())) {
+    return false;
+  }
   initialized = mWidget->GetEditCommands(aType, *this, commands);
   return initialized;
 }

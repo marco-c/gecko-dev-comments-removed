@@ -3,19 +3,20 @@
 
 
 
-#ifndef mozilla_widget_NativeKeyBindings_h_
-#define mozilla_widget_NativeKeyBindings_h_
+#ifndef NativeKeyBindings_h
+#define NativeKeyBindings_h
 
-#import <Cocoa/Cocoa.h>
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "nsDataHashtable.h"
 #include "nsIWidget.h"
 
+struct objc_selector;
+
 namespace mozilla {
 namespace widget {
 
-typedef nsDataHashtable<nsPtrHashKey<struct objc_selector>, Command>
+typedef nsDataHashtable<nsPtrHashKey<objc_selector>, Command>
     SelectorCommandHashtable;
 
 class NativeKeyBindings final {
@@ -25,6 +26,15 @@ class NativeKeyBindings final {
   static NativeKeyBindings* GetInstance(NativeKeyBindingsType aType);
   static void Shutdown();
 
+  
+
+
+
+
+  static void GetEditCommandsForTests(NativeKeyBindingsType aType,
+                                      const WidgetKeyboardEvent& aEvent,
+                                      nsTArray<CommandInt>& aCommands);
+
   void Init(NativeKeyBindingsType aType);
 
   void GetEditCommands(const WidgetKeyboardEvent& aEvent,
@@ -32,6 +42,12 @@ class NativeKeyBindings final {
 
  private:
   NativeKeyBindings();
+
+  void AppendEditCommandsForSelector(objc_selector* aSelector,
+                                     nsTArray<CommandInt>& aCommands) const;
+
+  void LogEditCommands(const nsTArray<CommandInt>& aCommands,
+                       const char* aDescription) const;
 
   SelectorCommandHashtable mSelectorToCommand;
 

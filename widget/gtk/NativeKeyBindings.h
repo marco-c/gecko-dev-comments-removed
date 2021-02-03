@@ -3,13 +3,16 @@
 
 
 
-#ifndef mozilla_widget_NativeKeyBindings_h_
-#define mozilla_widget_NativeKeyBindings_h_
+#ifndef NativeKeyBindings_h
+#define NativeKeyBindings_h
 
-#include <gtk/gtk.h>
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "nsIWidget.h"
+
+#include <glib.h>  
+
+using GtkWidget = struct _GtkWidget;
 
 namespace mozilla {
 namespace widget {
@@ -20,6 +23,15 @@ class NativeKeyBindings final {
  public:
   static NativeKeyBindings* GetInstance(NativeKeyBindingsType aType);
   static void Shutdown();
+
+  
+
+
+
+
+  static void GetEditCommandsForTests(NativeKeyBindingsType aType,
+                                      const WidgetKeyboardEvent& aEvent,
+                                      nsTArray<CommandInt>& aCommands);
 
   void Init(NativeKeyBindingsType aType);
 
