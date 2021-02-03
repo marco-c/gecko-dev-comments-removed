@@ -2593,11 +2593,15 @@ nsresult WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
       
       if (nsPIDOMWindowOuter* outerWindow = globalWindow->GetOuterWindow()) {
         loadInfo.mWindow = outerWindow->GetCurrentInnerWindow();
-        
-        
-        loadInfo.mServiceWorkersTestingInWindow =
-            outerWindow->GetServiceWorkersTestingEnabled();
       }
+
+      BrowsingContext* browsingContext = globalWindow->GetBrowsingContext();
+
+      
+      
+      loadInfo.mServiceWorkersTestingInWindow =
+          browsingContext &&
+          browsingContext->Top()->ServiceWorkersTestingEnabled();
 
       if (!loadInfo.mWindow ||
           (globalWindow != loadInfo.mWindow &&
@@ -2671,9 +2675,8 @@ nsresult WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
 
       loadInfo.mXHRParamsAllowed = perm == nsIPermissionManager::ALLOW_ACTION;
 
-      BrowsingContext* browsingContext = globalWindow->GetBrowsingContext();
       loadInfo.mWatchedByDevTools =
-          browsingContext ? browsingContext->WatchedByDevTools() : false;
+          browsingContext && browsingContext->WatchedByDevTools();
 
       loadInfo.mReferrerInfo =
           ReferrerInfo::CreateForFetch(loadInfo.mLoadingPrincipal, document);
