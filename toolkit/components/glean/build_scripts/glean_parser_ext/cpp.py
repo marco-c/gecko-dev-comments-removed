@@ -48,6 +48,9 @@ def type_name(obj):
     Returns the C++ type to use for a given metric object.
     """
 
+    if getattr(obj, "labeled", False):
+        class_name = util.Camelize(obj.type[8:])  
+        return "Labeled<impl::{}Metric>".format(class_name)
     generate_enums = getattr(obj, "_generate_enums", [])  
     if len(generate_enums):
         for name, suffix in generate_enums:
