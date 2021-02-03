@@ -7,7 +7,7 @@
 importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
-var t = async_test("drawImage with zero-sized source rectangle draws nothing without exception");
+var t = async_test("Stretched images do not get pixels wrapping around the edges");
 var t_pass = t.done.bind(t);
 var t_fail = t.step_func(function(reason) {
     throw reason;
@@ -21,7 +21,7 @@ ctx.fillStyle = '#0f0';
 ctx.fillRect(0, 0, 100, 50);
 var promise = new Promise(function(resolve, reject) {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", '/images/green.png');
+    xhr.open("GET", '/images/redtransparent.png');
     xhr.responseType = 'blob';
     xhr.send();
     xhr.onload = function() {
@@ -30,10 +30,10 @@ var promise = new Promise(function(resolve, reject) {
 });
 promise.then(function(response) {
     createImageBitmap(response).then(bitmap => {
-        ctx.drawImage(bitmap, 10, 10, 0, 1, 0, 0, 100, 50);
-        ctx.drawImage(bitmap, 10, 10, 1, 0, 0, 0, 100, 50);
-        ctx.drawImage(bitmap, 10, 10, 0, 0, 0, 0, 100, 50);
+        ctx.drawImage(bitmap, -1950, 0, 2000, 50);
+        _assertPixelApprox(offscreenCanvas, 45,25, 0,255,0,255, "45,25", "0,255,0,255", 2);
         _assertPixelApprox(offscreenCanvas, 50,25, 0,255,0,255, "50,25", "0,255,0,255", 2);
+        _assertPixelApprox(offscreenCanvas, 55,25, 0,255,0,255, "55,25", "0,255,0,255", 2);
     }, t_fail);
 }).then(t_pass, t_fail);
 

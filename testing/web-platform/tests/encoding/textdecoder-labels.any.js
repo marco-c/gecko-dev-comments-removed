@@ -1,6 +1,7 @@
 
 
 
+
 var whitespace = [' ', '\t', '\n', '\f', '\r'];
 encodings_table.forEach(function(section) {
   section.encodings.filter(function(encoding) {

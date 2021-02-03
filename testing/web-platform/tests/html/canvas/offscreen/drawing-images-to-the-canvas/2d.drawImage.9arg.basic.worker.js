@@ -7,7 +7,7 @@
 importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
-var t = async_test("drawImage with zero-sized source rectangle draws nothing without exception");
+var t = async_test("");
 var t_pass = t.done.bind(t);
 var t_fail = t.step_func(function(reason) {
     throw reason;
@@ -17,7 +17,7 @@ t.step(function() {
 var offscreenCanvas = new OffscreenCanvas(100, 50);
 var ctx = offscreenCanvas.getContext('2d');
 
-ctx.fillStyle = '#0f0';
+ctx.fillStyle = '#f00';
 ctx.fillRect(0, 0, 100, 50);
 var promise = new Promise(function(resolve, reject) {
     var xhr = new XMLHttpRequest();
@@ -30,10 +30,11 @@ var promise = new Promise(function(resolve, reject) {
 });
 promise.then(function(response) {
     createImageBitmap(response).then(bitmap => {
-        ctx.drawImage(bitmap, 10, 10, 0, 1, 0, 0, 100, 50);
-        ctx.drawImage(bitmap, 10, 10, 1, 0, 0, 0, 100, 50);
-        ctx.drawImage(bitmap, 10, 10, 0, 0, 0, 0, 100, 50);
-        _assertPixelApprox(offscreenCanvas, 50,25, 0,255,0,255, "50,25", "0,255,0,255", 2);
+        ctx.drawImage(bitmap, 0, 0, 100, 50, 0, 0, 100, 50);
+        _assertPixelApprox(offscreenCanvas, 0,0, 0,255,0,255, "0,0", "0,255,0,255", 2);
+        _assertPixelApprox(offscreenCanvas, 99,0, 0,255,0,255, "99,0", "0,255,0,255", 2);
+        _assertPixelApprox(offscreenCanvas, 0,49, 0,255,0,255, "0,49", "0,255,0,255", 2);
+        _assertPixelApprox(offscreenCanvas, 99,49, 0,255,0,255, "99,49", "0,255,0,255", 2);
     }, t_fail);
 }).then(t_pass, t_fail);
 
