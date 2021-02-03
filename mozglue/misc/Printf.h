@@ -74,7 +74,7 @@ class PrintfTarget {
   bool MFBT_API print(const char* format, ...) MOZ_FORMAT_PRINTF(2, 3);
 
   
-  bool MFBT_API vprint(const char* format, va_list) MOZ_FORMAT_PRINTF(2, 0);
+  bool MFBT_API vprint(const char* fmt, va_list) MOZ_FORMAT_PRINTF(2, 0);
 
   
 
@@ -112,7 +112,7 @@ class PrintfTarget {
   bool fill_n(const char* src, int srclen, int width, int prec, int type,
               int flags);
   bool cvt_l(long num, int width, int prec, int radix, int type, int flags,
-             const char* hxp);
+             const char* hexp);
   bool cvt_ll(int64_t num, int width, int prec, int radix, int type, int flags,
               const char* hexp);
   bool cvt_f(double d, char c, int width, int prec, int flags);
