@@ -69,7 +69,7 @@ const ExperimentAPI = {
         slug: experimentData.slug,
         active: experimentData.active,
         exposurePingSent: experimentData.exposurePingSent,
-        branch: this.getFeatureBranch({ featureId, sendExposurePing }),
+        branch: this.activateBranch({ featureId, sendExposurePing }),
       };
     }
 
@@ -110,11 +110,38 @@ const ExperimentAPI = {
 
 
 
+  activateBranch({ slug, featureId, sendExposurePing = true }) {
+    for (let experiment of this._store.getAllActive()) {
+      if (
+        experiment?.branch.feature.featureId === featureId ||
+        experiment.slug === slug
+      ) {
+        if (sendExposurePing) {
+          this._store._emitExperimentExposure({
+            experimentSlug: experiment.slug,
+            branchSlug: experiment.branch.slug,
+            featureId,
+          });
+        }
+        
+        
+        return experiment?.branch || null;
+      }
+    }
+
+    return null;
+  },
+
+  
+
+
+
+
 
 
 
   isFeatureEnabled(featureId, defaultValue, { sendExposurePing = true } = {}) {
-    const branch = this.getFeatureBranch({ featureId, sendExposurePing });
+    const branch = this.activateBranch({ featureId, sendExposurePing });
     if (branch?.feature.enabled !== undefined) {
       return branch.feature.enabled;
     }
@@ -128,17 +155,7 @@ const ExperimentAPI = {
 
 
   getFeatureValue(options) {
-    return this._store.activateBranch(options)?.feature.value;
-  },
-
-  
-
-
-
-
-
-  getFeatureBranch(options) {
-    return this._store.activateBranch(options);
+    return this.activateBranch(options)?.feature.value;
   },
 
   
