@@ -781,6 +781,10 @@ with modules["DOM"]:
 
     
     
+    errors["NS_ERROR_DOM_BAD_CROSS_ORIGIN_URI"] = FAILURE(1037)
+
+    
+    
     
     errors["NS_SUCCESS_DOM_NO_OPERATION"] = SUCCESS(1)
 
