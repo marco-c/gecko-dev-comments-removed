@@ -255,7 +255,10 @@ struct FrameMetrics {
            aContentFrameMetrics.GetVisualScrollOffset();
   }
 
-  void ApplyScrollUpdateFrom(const ScrollPositionUpdate& aUpdate);
+  
+
+
+  bool ApplyScrollUpdateFrom(const ScrollPositionUpdate& aUpdate);
 
   
 
@@ -328,8 +331,11 @@ struct FrameMetrics {
   }
 
   CSSPoint GetLayoutScrollOffset() const { return mLayoutViewport.TopLeft(); }
-  void SetLayoutScrollOffset(const CSSPoint& aLayoutScrollOffset) {
+  
+  bool SetLayoutScrollOffset(const CSSPoint& aLayoutScrollOffset) {
+    CSSPoint offsetBefore = GetLayoutScrollOffset();
     mLayoutViewport.MoveTo(aLayoutScrollOffset);
+    return (offsetBefore != GetLayoutScrollOffset());
   }
 
   const CSSPoint& GetVisualScrollOffset() const { return mScrollOffset; }
