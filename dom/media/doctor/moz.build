@@ -5,7 +5,7 @@
 
 
 TEST_DIRS += [
-    "gtest",
+    "test/gtest",
 ]
 
 
