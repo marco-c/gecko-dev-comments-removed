@@ -190,7 +190,10 @@ enum class ExplicitActiveStatus : uint8_t {
   FIELD(AuthorStyleDisabledDefault, bool)                                    \
   FIELD(DisplayMode, mozilla::dom::DisplayMode)                              \
   /* True if the top level browsing context owns a main media controller */  \
-  FIELD(HasMainMediaController, bool)
+  FIELD(HasMainMediaController, bool)                                        \
+  /* The number of entries added to the session history because of this      \
+   * browsing context. */                                                    \
+  FIELD(HistoryEntryCount, uint32_t)
 
 
 
@@ -749,7 +752,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void RemoveDynEntriesFromActiveSessionHistoryEntry();
 
   
-  void RemoveFromSessionHistory();
+  void RemoveFromSessionHistory(const nsID& aChangeID);
 
   void SetTriggeringAndInheritPrincipals(nsIPrincipal* aTriggeringPrincipal,
                                          nsIPrincipal* aPrincipalToInherit,
@@ -783,6 +786,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   PopupBlocker::PopupControlState RevisePopupAbuseLevel(
       PopupBlocker::PopupControlState aControl);
+
+  void IncrementHistoryEntryCountForBrowsingContext();
 
  protected:
   virtual ~BrowsingContext();

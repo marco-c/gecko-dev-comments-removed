@@ -12,6 +12,7 @@
 #include "nsCOMArray.h"
 #include "nsComponentManagerUtils.h"
 #include "nsDocShell.h"
+#include "nsHashKeys.h"
 #include "nsIContentViewer.h"
 #include "nsIDocShell.h"
 #include "nsDocShellLoadState.h"
@@ -23,6 +24,7 @@
 #include "nsIURI.h"
 #include "nsIXULRuntime.h"
 #include "nsNetUtil.h"
+#include "nsDataHashtable.h"
 #include "nsSHEntry.h"
 #include "SessionHistoryEntry.h"
 #include "nsTArray.h"
@@ -822,6 +824,9 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist) {
   mEntries.TruncateLength(mIndex + 1);
   mEntries.AppendElement(aSHEntry);
   mIndex++;
+  if (mIndex > 0) {
+    UpdateEntryLength(mEntries[mIndex - 1], mEntries[mIndex], false);
+  }
 
   
   if (gHistoryMaxSize >= 0 && Length() > gHistoryMaxSize) {
@@ -970,6 +975,29 @@ void nsSHistory::WindowIndices(int32_t aIndex, int32_t* aOutStartIndex,
   *aOutEndIndex = std::min(Length() - 1, aIndex + nsSHistory::VIEWER_WINDOW);
 }
 
+static void MarkAsInitialEntry(
+    SessionHistoryEntry* aEntry,
+    nsDataHashtable<nsIDHashKey, SessionHistoryEntry*>& aHashtable) {
+  if (!aEntry->BCHistoryLength().Modified()) {
+    ++(aEntry->BCHistoryLength());
+  }
+  aHashtable.Put(aEntry->DocshellID(), aEntry);
+  for (const RefPtr<SessionHistoryEntry>& entry : aEntry->Children()) {
+    if (entry) {
+      MarkAsInitialEntry(entry, aHashtable);
+    }
+  }
+}
+
+static void ClearEntries(SessionHistoryEntry* aEntry) {
+  aEntry->ClearBCHistoryLength();
+  for (const RefPtr<SessionHistoryEntry>& entry : aEntry->Children()) {
+    if (entry) {
+      ClearEntries(entry);
+    }
+  }
+}
+
 NS_IMETHODIMP
 nsSHistory::PurgeHistory(int32_t aNumEntries) {
   if (Length() <= 0 || aNumEntries <= 0) {
@@ -981,6 +1009,37 @@ nsSHistory::PurgeHistory(int32_t aNumEntries) {
   aNumEntries = std::min(aNumEntries, Length());
 
   NOTIFY_LISTENERS(OnHistoryPurge, ());
+
+  
+  
+  
+  nsDataHashtable<nsIDHashKey, SessionHistoryEntry*> docshellIDToEntry;
+  if (aNumEntries != Length()) {
+    nsCOMPtr<SessionHistoryEntry> she =
+        do_QueryInterface(mEntries[aNumEntries]);
+    if (she) {
+      MarkAsInitialEntry(she, docshellIDToEntry);
+    }
+  }
+
+  
+  
+  
+  
+  for (int32_t i = 0; i < aNumEntries; ++i) {
+    nsCOMPtr<SessionHistoryEntry> she = do_QueryInterface(mEntries[i]);
+    if (she) {
+      ClearEntries(she);
+    }
+  }
+
+  if (mRootBC) {
+    mRootBC->PreOrderWalk([&docshellIDToEntry](BrowsingContext* aBC) {
+      SessionHistoryEntry* entry = docshellIDToEntry.Get(aBC->GetHistoryID());
+      Unused << aBC->SetHistoryEntryCount(
+          entry ? uint32_t(entry->BCHistoryLength()) : 0);
+    });
+  }
 
   
   mEntries.RemoveElementsAt(0, aNumEntries);
@@ -1550,6 +1609,17 @@ bool nsSHistory::RemoveDuplicate(int32_t aIndex, bool aKeepNext) {
   SHistoryChangeNotifier change(this);
 
   if (IsSameTree(root1, root2)) {
+    if (aIndex < compareIndex) {
+      
+      
+      
+      
+      UpdateEntryLength(root1, root2, true);
+    }
+    nsCOMPtr<SessionHistoryEntry> she = do_QueryInterface(root1);
+    if (she) {
+      ClearEntries(she);
+    }
     mEntries.RemoveElementAt(aIndex);
 
     
@@ -1970,4 +2040,61 @@ nsSHistory::IsEmptyOrHasEntriesForSingleTopLevelPage() {
   }
 
   return true;
+}
+
+static void CollectEntries(
+    nsDataHashtable<nsIDHashKey, SessionHistoryEntry*>& aHashtable,
+    SessionHistoryEntry* aEntry) {
+  aHashtable.Put(aEntry->DocshellID(), aEntry);
+  for (const RefPtr<SessionHistoryEntry>& entry : aEntry->Children()) {
+    if (entry) {
+      CollectEntries(aHashtable, entry);
+    }
+  }
+}
+
+static void UpdateEntryLength(
+    nsDataHashtable<nsIDHashKey, SessionHistoryEntry*>& aHashtable,
+    SessionHistoryEntry* aNewEntry, bool aMove) {
+  SessionHistoryEntry* oldEntry = aHashtable.Get(aNewEntry->DocshellID());
+  if (oldEntry) {
+    MOZ_ASSERT(oldEntry->GetID() != aNewEntry->GetID() || !aMove ||
+               !aNewEntry->BCHistoryLength().Modified());
+    aNewEntry->SetBCHistoryLength(oldEntry->BCHistoryLength());
+    if (oldEntry->GetID() != aNewEntry->GetID()) {
+      MOZ_ASSERT(!aMove);
+      
+      
+      ++aNewEntry->BCHistoryLength();
+    } else if (aMove) {
+      
+      
+      
+      
+      aNewEntry->BCHistoryLength().SetModified(
+          oldEntry->BCHistoryLength().Modified());
+      oldEntry->BCHistoryLength().SetModified(false);
+    }
+  }
+
+  for (const RefPtr<SessionHistoryEntry>& entry : aNewEntry->Children()) {
+    if (entry) {
+      UpdateEntryLength(aHashtable, entry, aMove);
+    }
+  }
+}
+
+void nsSHistory::UpdateEntryLength(nsISHEntry* aOldEntry, nsISHEntry* aNewEntry,
+                                   bool aMove) {
+  nsCOMPtr<SessionHistoryEntry> oldSHE = do_QueryInterface(aOldEntry);
+  nsCOMPtr<SessionHistoryEntry> newSHE = do_QueryInterface(aNewEntry);
+
+  if (!oldSHE || !newSHE) {
+    return;
+  }
+
+  nsDataHashtable<nsIDHashKey, SessionHistoryEntry*> docshellIDToEntry;
+  CollectEntries(docshellIDToEntry, oldSHE);
+
+  ::UpdateEntryLength(docshellIDToEntry, newSHE, aMove);
 }

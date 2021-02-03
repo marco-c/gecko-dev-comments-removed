@@ -230,6 +230,92 @@ struct LoadingSessionHistoryInfo {
 
 
 
+
+
+
+
+class HistoryEntryCounterForBrowsingContext {
+ public:
+  HistoryEntryCounterForBrowsingContext()
+      : mCounter(new RefCountedCounter()), mHasModified(false) {
+    ++(*this);
+  }
+
+  HistoryEntryCounterForBrowsingContext(
+      const HistoryEntryCounterForBrowsingContext& aOther)
+      : mCounter(aOther.mCounter), mHasModified(false) {}
+
+  HistoryEntryCounterForBrowsingContext(
+      HistoryEntryCounterForBrowsingContext&& aOther) = delete;
+
+  ~HistoryEntryCounterForBrowsingContext() {
+    if (mHasModified) {
+      --(*mCounter);
+    }
+  }
+
+  void CopyValueFrom(const HistoryEntryCounterForBrowsingContext& aOther) {
+    if (mHasModified) {
+      --(*mCounter);
+    }
+    mCounter = aOther.mCounter;
+    mHasModified = false;
+  }
+
+  HistoryEntryCounterForBrowsingContext& operator=(
+      const HistoryEntryCounterForBrowsingContext& aOther) = delete;
+
+  HistoryEntryCounterForBrowsingContext& operator++() {
+    mHasModified = true;
+    ++(*mCounter);
+    return *this;
+  }
+
+  operator uint32_t() const { return *mCounter; }
+
+  bool Modified() { return mHasModified; }
+
+  void SetModified(bool aModified) { mHasModified = aModified; }
+
+  void Reset() {
+    if (mHasModified) {
+      --(*mCounter);
+    }
+    mCounter = new RefCountedCounter();
+    mHasModified = false;
+  }
+
+ private:
+  class RefCountedCounter {
+   public:
+    NS_INLINE_DECL_REFCOUNTING(
+        mozilla::dom::HistoryEntryCounterForBrowsingContext::RefCountedCounter)
+
+    RefCountedCounter& operator++() {
+      ++mCounter;
+      return *this;
+    }
+
+    RefCountedCounter& operator--() {
+      --mCounter;
+      return *this;
+    }
+
+    operator uint32_t() const { return mCounter; }
+
+   private:
+    ~RefCountedCounter() = default;
+
+    uint32_t mCounter = 0;
+  };
+
+  RefPtr<RefCountedCounter> mCounter;
+  bool mHasModified;
+};
+
+
+
+
 #define NS_SESSIONHISTORYENTRY_IID                   \
   {                                                  \
     0x5b66a244, 0x8cec, 0x4caa, {                    \
@@ -271,6 +357,16 @@ class SessionHistoryEntry : public nsISHEntry {
 
   const nsID& DocshellID() const;
 
+  HistoryEntryCounterForBrowsingContext& BCHistoryLength() {
+    return mBCHistoryLength;
+  }
+
+  void SetBCHistoryLength(HistoryEntryCounterForBrowsingContext& aCounter) {
+    mBCHistoryLength.CopyValueFrom(aCounter);
+  }
+
+  void ClearBCHistoryLength() { mBCHistoryLength.Reset(); }
+
   void SetIsDynamicallyAdded(bool aDynamic);
 
   
@@ -291,6 +387,8 @@ class SessionHistoryEntry : public nsISHEntry {
   nsTArray<RefPtr<SessionHistoryEntry>> mChildren;
 
   bool mForInitialLoad = false;
+
+  HistoryEntryCounterForBrowsingContext mBCHistoryLength;
 
   static nsDataHashtable<nsUint64HashKey, SessionHistoryEntry*>* sLoadIdToEntry;
 };
