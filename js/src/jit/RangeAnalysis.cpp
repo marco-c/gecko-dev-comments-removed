@@ -2457,7 +2457,7 @@ bool RangeAnalysis::addRangeAssertions() {
 
       
       if (!IsNumberType(ins->type()) && ins->type() != MIRType::Boolean &&
-          ins->type() != MIRType::Value) {
+          ins->type() != MIRType::Value && ins->type() != MIRType::IntPtr) {
         continue;
       }
 
