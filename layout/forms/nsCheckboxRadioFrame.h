@@ -75,9 +75,6 @@ class nsCheckboxRadioFrame final : public nsAtomicContainerFrame,
                       const ReflowInput& aReflowInput,
                       nsReflowStatus& aStatus) override;
 
-  virtual void DestroyFrom(nsIFrame* aDestructRoot,
-                           PostDestroyData& aPostDestroyData) override;
-
   
 
   virtual void SetFocus(bool aOn = true, bool aRepaint = false) override;
@@ -85,9 +82,6 @@ class nsCheckboxRadioFrame final : public nsAtomicContainerFrame,
   
   virtual nsresult SetFormProperty(nsAtom* aName,
                                    const nsAString& aValue) override;
-
-  
-  static nsresult RegUnRegAccessKey(nsIFrame* aFrame, bool aDoReg);
 
   
 

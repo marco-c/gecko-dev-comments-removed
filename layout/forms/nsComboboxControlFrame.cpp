@@ -1359,8 +1359,6 @@ void nsComboboxControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
   
   mRedisplayTextEvent.Revoke();
 
-  nsCheckboxRadioFrame::RegUnRegAccessKey(static_cast<nsIFrame*>(this), false);
-
   if (mDroppedDown) {
     MOZ_ASSERT(mDropdownFrame, "mDroppedDown without frame");
     nsView* view = mDropdownFrame->GetView();
