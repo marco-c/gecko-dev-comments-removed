@@ -1164,7 +1164,27 @@ bool TrackBuffersManager::IsRepeatInitData(
     }
   }
 
-  
+  bool videoInfoIsRepeat = false;
+  if (aNewMediaInfo.HasVideo()) {
+    if (!mVideoTracks.mLastInfo) {
+      
+      return false;
+    }
+    videoInfoIsRepeat =
+        *mVideoTracks.mLastInfo->GetAsVideoInfo() == aNewMediaInfo.mVideo;
+    if (!aNewMediaInfo.HasAudio()) {
+      
+      return videoInfoIsRepeat;
+    }
+  }
+
+  if (audioInfoIsRepeat && videoInfoIsRepeat) {
+    MOZ_DIAGNOSTIC_ASSERT(
+        aNewMediaInfo.HasVideo() && aNewMediaInfo.HasAudio(),
+        "This should only be reachable if audio and video are present");
+    
+    return true;
+  }
 
   return false;
 }
