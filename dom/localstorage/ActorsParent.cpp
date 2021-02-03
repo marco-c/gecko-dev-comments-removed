@@ -6685,10 +6685,18 @@ nsresult PrepareDatastoreOp::OpenDirectory() {
   MOZ_ASSERT(MayProceed());
   MOZ_ASSERT(QuotaManager::Get());
 
-  mNestedState = NestedState::DirectoryOpenPending;
-  mPendingDirectoryLock = QuotaManager::Get()->OpenDirectory(
+  mPendingDirectoryLock = QuotaManager::Get()->CreateDirectoryLock(
       PERSISTENCE_TYPE_DEFAULT, mQuotaInfo, mozilla::dom::quota::Client::LS,
-       false, this);
+       false);
+
+  mNestedState = NestedState::DirectoryOpenPending;
+
+  {
+    
+    
+    RefPtr pinnedDirectoryLock = mPendingDirectoryLock;
+    pinnedDirectoryLock->Acquire(this);
+  }
 
   return NS_OK;
 }

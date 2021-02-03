@@ -230,14 +230,16 @@ void Context::QuotaInitRunnable::OpenDirectory() {
                         mState == STATE_OPEN_DIRECTORY);
   MOZ_DIAGNOSTIC_ASSERT(QuotaManager::Get());
 
+  RefPtr<DirectoryLock> directoryLock =
+      QuotaManager::Get()->CreateDirectoryLock(
+          PERSISTENCE_TYPE_DEFAULT, mQuotaInfo, quota::Client::DOMCACHE,
+           false);
+
   
   
   
   mState = STATE_WAIT_FOR_DIRECTORY_LOCK;
-  RefPtr<DirectoryLock> pendingDirectoryLock =
-      QuotaManager::Get()->OpenDirectory(PERSISTENCE_TYPE_DEFAULT, mQuotaInfo,
-                                         quota::Client::DOMCACHE,
-                                          false, this);
+  directoryLock->Acquire(this);
 }
 
 void Context::QuotaInitRunnable::DirectoryLockAcquired(DirectoryLock* aLock) {
