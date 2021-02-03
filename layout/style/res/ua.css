@@ -1,31 +1,31 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @namespace parsererror url(http://www.mozilla.org/newlayout/xml/parsererror.xml);
 @namespace xul url(http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul);
 
+/* magic -- some of these rules are important to keep pages from overriding
+            them
+*/
 
-
-
-
-
+/* Tables */
 
 *|*::-moz-table {
   display: table;
-  box-sizing: border-box; 
+  box-sizing: border-box; /* XXX do we really want this? */
 }
 
 *|*::-moz-inline-table {
   display: inline-table;
-  box-sizing: border-box; 
+  box-sizing: border-box; /* XXX do we really want this? */
 }
 
 *|*::-moz-table-wrapper {
-  
-
-
-  display: inherit; 
+  /* The inherited properties here need to be safe to have on both the
+   * table and the table wrapper, generally because code ignores them
+   * for the table. */
+  display: inherit; /* table or inline-table */
   -moz-top-layer: inherit;
   margin: inherit;
   float: inherit;
@@ -39,20 +39,20 @@
   page-break-before: inherit;
   page-break-after: inherit;
   page-break-inside: inherit;
-  vertical-align: inherit; 
-  line-height: inherit; 
-  
+  vertical-align: inherit; /* needed for inline-table */
+  line-height: inherit; /* needed for vertical-align on inline-table */
+  /* Bug 722777 */
   transform: inherit;
   transform-origin: inherit;
-  
+  /* Bug 724750 */
   backface-visibility: inherit;
   clip: inherit;
-  
-  
+  /* Other transform-related properties */
+  /* transform-style: inherit; Bug 1560704 */
   rotate: inherit;
   scale: inherit;
   translate: inherit;
-  
+  /* When the table wrapper is a Flex/Grid item we need these: */
   flex-grow: inherit;
   flex-shrink: inherit;
   flex-basis: inherit;
@@ -65,40 +65,40 @@
   order: inherit;
   outline: inherit;
   outline-offset: inherit;
-  column-span: inherit; 
-  contain: inherit; 
-  scroll-margin: inherit;  
+  column-span: inherit; /* needed if <table> has "column-span:all" */
+  contain: inherit; /* needed if table has 'contain:layout' or 'paint' */
+  scroll-margin: inherit;  /* Bug 1633192 */
 }
 
 *|*::-moz-table-row {
   display: table-row;
 }
 
-
-
+/* The ::-moz-table-column pseudo-element is for extra columns at the end
+   of a table. */
 *|*::-moz-table-column {
   display: table-column;
-  
-
-
-
-
-
-
-
+  /* Make sure anonymous columns don't interfere with hit testing.  Basically,
+   * they should pretend as much as possible to not exist (since in the spec
+   * they do not exist).
+   *
+   * Please make sure to not reintroduce
+   * https://bugzilla.mozilla.org/show_bug.cgi?id=1403293 if you change this
+   * bit!
+   */
   visibility: hidden;
 }
 
 *|*::-moz-table-column-group {
   display: table-column-group;
-  
-
-
-
-
-
-
-
+  /* Make sure anonymous colgroups don't interfere with hit testing.  Basically,
+   * they should pretend as much as possible to not exist (since in the spec
+   * they do not exist).
+   *
+   * Please make sure to not reintroduce
+   * https://bugzilla.mozilla.org/show_bug.cgi?id=1403293 if you change this
+   * bit!
+   */
   visibility: hidden;
 }
 
@@ -111,7 +111,7 @@
   white-space: inherit;
 }
 
-
+/* Ruby */
 *|*::-moz-ruby {
   display: ruby;
   unicode-bidi: isolate;
@@ -133,7 +133,7 @@
   unicode-bidi: isolate;
 }
 
-
+/* https://drafts.csswg.org/css-lists-3/#ua-stylesheet */
 *|*::marker {
   text-align: end;
   text-transform: none;
@@ -141,28 +141,30 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* SVG documents don't always load this file but they do have links.
+ * If you change the link rules, consider carefully whether to make
+ * the same changes to svg.css.
+ */
 
-
-
-
-
-
+/* Links */
 
 *|*:any-link {
   cursor: pointer;
 }
 
-*|*:any-link:-moz-focusring {
-  
+*|*:any-link:focus-visible {
+  /* Don't specify the outline-color, we should always use initial value. */
+  /* TODO(emilio): I think this is redundant, html.css does the same for all
+   * :focus-visible elements. */
   outline: 1px dotted;
 }
 
-
+/* Inert subtrees */
 *|*:-moz-inert {
   -moz-inert: inert;
 }
 
-
+/* Miscellaneous */
 
 *|*::-moz-cell-content {
   display: block;
@@ -173,8 +175,8 @@
 
 *|*::-moz-block-inside-inline-wrapper {
   display: block;
-  
-  position: inherit; 
+  /* we currently inherit from the inline that is split */
+  position: inherit; /* static or relative or sticky */
   outline: inherit;
   outline-offset: inherit;
   clip-path: inherit;
@@ -186,9 +188,9 @@
   overflow-clip-box: inherit;
   unicode-bidi: inherit;
   text-overflow: inherit;
-  
-
-
+  /* The properties below here don't apply if our position is static,
+     and we do want them to have an effect if it's not, so it's fine
+     to always inherit them. */
   top: inherit;
   left: inherit;
   bottom: inherit;
@@ -205,33 +207,33 @@
 
 *|*::-moz-scrolled-content, *|*::-moz-scrolled-canvas,
 *|*::-moz-scrolled-page-sequence {
-  
+  /* e.g., text inputs, select boxes */
   padding: inherit;
-  
-
+  /* The display doesn't affect the kind of frame constructed here.  This just
+     affects auto-width sizing of the block we create. */
   display: block;
-  
-
+  /* make unicode-bidi inherit, otherwise it has no effect on text inputs and
+     blocks with overflow: scroll; */
   unicode-bidi: inherit;
   text-overflow: inherit;
-  
-
-  
+  /* Please keep the Multicol/Flex/Grid/Align sections below in sync with
+     ::-moz-fieldset-content/::-moz-button-content in forms.css */
+  /* Multicol container */
   column-count: inherit;
   column-width: inherit;
   column-gap: inherit;
   column-rule: inherit;
   column-fill: inherit;
-  
+  /* Flex container */
   flex-direction: inherit;
   flex-wrap: inherit;
-  
+  /* -webkit-box container (aliased from -webkit versions to -moz versions) */
   -moz-box-orient: inherit;
   -moz-box-direction: inherit;
   -moz-box-pack: inherit;
   -moz-box-align: inherit;
   -webkit-line-clamp: inherit;
-  
+  /* Grid container */
   grid-auto-columns: inherit;
   grid-auto-rows: inherit;
   grid-auto-flow: inherit;
@@ -240,13 +242,13 @@
   grid-template-areas: inherit;
   grid-template-columns: inherit;
   grid-template-rows: inherit;
-  
+  /* CSS Align */
   align-content: inherit;
   align-items: inherit;
   justify-content: inherit;
   justify-items: inherit;
-  
-
+  /* Do not change these. nsCSSFrameConstructor depends on them to create a good
+     frame tree. */
   overflow-clip-box: inherit;
 }
 
@@ -261,17 +263,17 @@
 
 *|*::-moz-column-set,
 *|*::-moz-column-content {
-  
-  
+  /* the column boxes inside a column-flowed block */
+  /* make unicode-bidi inherit, otherwise it has no effect on column boxes */
   unicode-bidi: inherit;
   text-overflow: inherit;
-  
+  /* Both -moz-column-set and -moz-column-content need to be blocks. */
   display: block;
 }
 
 *|*::-moz-column-set {
-  
-
+  /* Inherit from ColumnSetWrapperFrame so that nsColumnSetFrame is aware of
+   them.*/
   columns: inherit;
   column-gap: inherit;
   column-rule: inherit;
@@ -279,37 +281,37 @@
 }
 
 *|*::-moz-column-span-wrapper {
-  
-
-
-
+  /* As a result of the discussion in
+   * https://github.com/w3c/csswg-drafts/issues/1072, most of the styles
+   * currently applied to ::-moz-block-inside-inline-wrapper should not
+   * apply here. */
   display: block;
   column-span: all;
 }
 
 *|*::-moz-anonymous-flex-item,
 *|*::-moz-anonymous-grid-item {
-  
-
+  /* Anonymous blocks that wrap contiguous runs of text
+   * inside of a flex or grid container. */
   display: block;
 }
 
 *|*::-moz-page-sequence, *|*::-moz-scrolled-page-sequence {
-  
-
+  /* Collection of pages in print/print preview. Visual styles may only appear
+   * in print preview. */
   display: block;
   background: linear-gradient(#606060, #8a8a8a) fixed;
   height: 100%;
 }
 
 *|*::-moz-printed-sheet {
-  
-
+  /* Individual sheet of paper in print/print preview. Visual styles may only
+   * appear in print preview. */
   display: block;
   background: white;
   box-shadow: 5px 5px 8px #202020;
   box-decoration-break: clone;
-  
+  /* TODO: Remove margin if viewport is small or something? */
   margin: 0.125in 0.25in;
 }
 
@@ -328,7 +330,7 @@
   display: block;
 }
 
-
+/* Printing */
 
 @media print {
 
@@ -357,15 +359,15 @@
 }
 
 xul|*:fullscreen:not(:root, [hidden="true"]) {
-  
-
-
-
+  /* The position: fixed; property above used to force the computed display
+   * value to block. It is no longer the case now, so we manually set it here to
+   * maintain the old behaviour. We should probably not do this, but we don't
+   * fullscreen XUL element that frequently either. */
   display: block;
 }
 
-
-
+/* Selectors here should match the check in
+ * nsViewportFrame.cpp:ShouldInTopLayerForFullscreen() */
 *|*:fullscreen:not(:root, :-moz-browser-frame) {
   -moz-top-layer: top !important;
 }
@@ -382,7 +384,7 @@ xul|*:fullscreen:not(:root, [hidden="true"]) {
   background: black;
 }
 
-
+/* XML parse error reporting */
 
 parsererror|parsererror {
   display: block;
@@ -411,7 +413,7 @@ parsererror|sourcetext {
 }
 
 div:-moz-native-anonymous.moz-accessiblecaret {
-  
+  /* Add transition effect to make caret size changing smoother. */
   transition-property: width, height, margin-left;
 
   position: absolute;
@@ -421,8 +423,8 @@ div:-moz-native-anonymous.moz-accessiblecaret {
 div:-moz-native-anonymous.moz-accessiblecaret > :is(#text-overlay, #image) {
   width: 100%;
 
-  
-
+  /* Override this property in moz-custom-content-container to make dummy touch
+   * listener work. */
   pointer-events: auto;
 }
 
@@ -505,14 +507,14 @@ div:-moz-native-anonymous.moz-accessiblecaret.hidden {
 
 %ifdef ANDROID
 div:-moz-native-anonymous.moz-accessiblecaret > :is(#text-overlay, #image) {
-   
-  padding-left: 59%; 
-  padding-right: 59%; 
+  /* border: 0.1px solid red; */ /* Uncomment border to see the touch target. */
+  padding-left: 59%; /* Enlarge the touch area. ((48-22)/2)px / 22px ~= 59% */
+  padding-right: 59%; /* Enlarge the touch area. */
   margin-left: -59%;
 }
 
 div:-moz-native-anonymous.moz-accessiblecaret > #image {
-  padding-bottom: 59%; 
+  padding-bottom: 59%; /* Enlarge the touch area. */
 }
 
 div:-moz-native-anonymous.moz-accessiblecaret.normal > #image {
@@ -578,8 +580,8 @@ div:-moz-native-anonymous.moz-accessiblecaret.right > #image {
 }
 %endif
 
-
-
+/* Custom content container in the CanvasFrame, positioned on top of everything
+   everything else, not reacting to pointer events. */
 div:-moz-native-anonymous.moz-custom-content-container {
   pointer-events: none;
   -moz-top-layer: top;

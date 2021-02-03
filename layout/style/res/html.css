@@ -1,11 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-@namespace url(http://www.w3.org/1999/xhtml); 
+@namespace url(http://www.w3.org/1999/xhtml); /* set default namespace to HTML */
 @namespace xul url(http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul);
 
-
+/* bidi */
 
 :-moz-has-dir-attr {
   unicode-bidi: isolate;
@@ -20,16 +20,16 @@
 :-moz-dir-attr-like-auto:dir(ltr) { direction: ltr; }
 :-moz-dir-attr-like-auto:dir(rtl) { direction: rtl; }
 
-
-
-
-
-
-
-
-
-
-
+/* To ensure http://www.w3.org/TR/REC-html40/struct/dirlang.html#style-bidi:
+ *
+ * "When a block element that does not have a dir attribute is transformed to
+ * the style of an inline element by a style sheet, the resulting presentation
+ * should be equivalent, in terms of bidirectional formatting, to the
+ * formatting obtained by explicitly adding a dir attribute (assigned the
+ * inherited value) to the transformed element."
+ *
+ * and the rules in http://dev.w3.org/html5/spec/rendering.html#rendering
+ */
 
 address,
 article,
@@ -89,8 +89,8 @@ xmp {
 bdi, output {
   unicode-bidi: isolate;
 }
-
-
+/* We need the "bdo:-moz-has-dir-attr" bit because "bdo" has lower
+   specificity than the ":-moz-has-dir-attr" selector above. */
 bdo, bdo:-moz-has-dir-attr {
   unicode-bidi: isolate-override;
 }
@@ -99,7 +99,7 @@ pre:-moz-dir-attr-like-auto {
     unicode-bidi: plaintext;
 }
 
-
+/* blocks */
 
 article,
 aside,
@@ -258,13 +258,13 @@ xmp, pre, plaintext {
   margin-block-end: 1em;
 }
 
-
+/* tables */
 
 table {
   display: table;
   border-spacing: 2px;
   border-collapse: separate;
-  
+  /* XXXldb do we want this if we're border-collapse:collapse ? */
   box-sizing: border-box;
   text-indent: 0;
 }
@@ -279,25 +279,25 @@ table[align="right"] {
 }
 
 
+/* border collapse rules */
 
+  /* Set hidden if we have 'frame' or 'rules' attribute.
+     Set it on all sides when we do so there's more consistency
+     in what authors should expect */
 
-  
-
-
-
-  
+  /* Put this first so 'border' and 'frame' rules can override it. */
 table[rules] {
   border-width: thin;
   border-style: hidden;
 }
 
-  
+  /* 'border' before 'frame' so 'frame' overrides
+      A border with a given value should, of course, pass that value
+      as the border-width in pixels -> attr mapping */
 
-
-
-  
-
-
+  /* :-moz-table-border-nonzero is like [border]:not([border="0"]) except it
+     also checks for other zero-like values according to HTML attribute
+     parsing rules */
 table:-moz-table-border-nonzero {
   border-width: thin;
   border-style: outset;
@@ -307,7 +307,7 @@ table[frame] {
   border: thin hidden;
 }
 
-
+/* specificity must beat table:-moz-table-border-nonzero rule above */
 table[frame="void"]   { border-style: hidden; }
 table[frame="above"]  { border-style: outset hidden hidden hidden; }
 table[frame="below"]  { border-style: hidden hidden outset hidden; }
@@ -319,9 +319,9 @@ table[frame="box"],
 table[frame="border"] { border-style: outset; }
 
 
+/* Internal Table Borders */
 
-
-  
+  /* 'border' cell borders first */
 
 table:-moz-table-border-nonzero > * > tr > td,
 table:-moz-table-border-nonzero > * > tr > th,
@@ -334,13 +334,13 @@ table:-moz-table-border-nonzero > th
   border-style: inset;
 }
 
-
+/* collapse only if rules are really specified */
 table[rules]:not([rules="none"], [rules=""]) {
   border-collapse: collapse;
 }
 
-
-
+/* only specified rules override 'border' settings
+  (increased specificity to achieve this) */
 table[rules]:not([rules=""])> tr > td,
 table[rules]:not([rules=""])> * > tr > td,
 table[rules]:not([rules=""])> tr > th,
@@ -410,7 +410,7 @@ table[rules][rules="groups"] > tbody {
 }
 
 
-
+/* caption inherits from table not table-outer */
 caption {
   display: table-caption;
   text-align: center;
@@ -463,7 +463,7 @@ tfoot {
   vertical-align: middle;
 }
 
-
+/* for XHTML tables without tbody */
 table > tr {
   vertical-align: middle;
 }
@@ -485,7 +485,7 @@ th {
 tr > form:-moz-is-html, tbody > form:-moz-is-html,
 thead > form:-moz-is-html, tfoot > form:-moz-is-html,
 table > form:-moz-is-html {
-  
+  /* Important: don't show these forms in HTML */
   display: none !important;
 }
 
@@ -503,7 +503,7 @@ table[bordercolor] > * > tr > th {
   border-color: inherit;
 }
 
-
+/* inlines */
 
 q:before {
   content: open-quote;
@@ -560,12 +560,12 @@ mark {
   color: black;
 }
 
-
+/* titles */
 abbr[title], acronym[title] {
   text-decoration: dotted underline;
 }
 
-
+/* lists */
 
 ul, menu, dir {
   display: block;
@@ -603,7 +603,7 @@ li {
   text-align: match-parent;
 }
 
-
+/* nested lists have no top/bottom margins */
 :is(ul, ol, dir, menu, dl) ul,
 :is(ul, ol, dir, menu, dl) ol,
 :is(ul, ol, dir, menu, dl) dir,
@@ -613,14 +613,14 @@ li {
   margin-block-end: 0;
 }
 
-
+/* 2 deep unordered lists use a circle */
 :is(ol, ul, menu, dir) ul,
 :is(ol, ul, menu, dir) menu,
 :is(ol, ul, menu, dir) dir {
   list-style-type: circle;
 }
 
-
+/* 3 deep (or more) unordered lists use a square */
 :is(ol, ul, menu, dir) :is(ol, ul, menu, dir) ul,
 :is(ol, ul, menu, dir) :is(ol, ul, menu, dir) menu,
 :is(ol, ul, menu, dir) :is(ol, ul, menu, dir) dir {
@@ -628,11 +628,11 @@ li {
 }
 
 
+/* leafs */
 
-
-
-
-
+/* <hr> noshade and color attributes are handled completely by
+ * the nsHTMLHRElement attribute mapping code
+ */
 hr {
   display: block;
   border: 1px inset;
@@ -656,11 +656,11 @@ img:-moz-broken::before {
 }
 
 object:-moz-broken > *|* {
-  
-
-
-
-
+  /*
+    Inherit in the object's alignment so that if we aren't aligned explicitly
+    we'll end up in the right place vertically.  See bug 36997.  Note that this
+    is not !important because we _might_ be aligned explicitly.
+  */
   vertical-align: inherit;
 }
 
@@ -701,45 +701,45 @@ canvas {
   user-select: none;
 }
 
-
-:-moz-focusring {
-  
+/* focusable content: anything w/ tabindex >=0 is focusable */
+:focus-visible {
+  /* Don't specify the outline-color, we should always use initial value. */
    outline: 1px dotted;
 }
 
-iframe:-moz-focusring,
-body:-moz-focusring,
-html:-moz-focusring {
-  
-
+iframe:focus-visible,
+body:focus-visible,
+html:focus-visible {
+  /* These elements historically don't show outlines when focused by default.
+   * We could consider changing that if needed. */
   outline-style: none;
 }
 
-
+/* hidden elements */
 base, basefont, datalist, head, meta, script, style, title,
 noembed, param, template {
    display: none;
 }
 
 area {
-  
+  /* Don't give it frames other than its imageframe */
   display: none ! important;
 }
 
 iframe:fullscreen {
-  
+  /* iframes in full-screen mode don't show a border. */
   border: none !important;
   padding: unset !important;
 }
 
-
+/* media elements */
 video {
   object-fit: contain;
 }
 
 video > img:-moz-native-anonymous {
-  
-
+  /* Video poster images should render with the video element's "object-fit" &
+     "object-position" properties */
   object-fit: inherit !important;
   object-position: inherit !important;
 }
@@ -749,15 +749,15 @@ audio:not([controls]) {
 }
 
 audio[controls] {
-  
-
-
+  /* This ensures that intrinsic sizing can reliably shrinkwrap our
+      controls (which are also always horizontal) and produce a
+      reasonable intrinsic size from them. */
   writing-mode: horizontal-tb !important;
 }
 
 *|*::-moz-html-canvas-content {
   display: block !important;
-  
+  /* we want to be an absolute and fixed container */
   transform: translate(0) !important;
 }
 
@@ -767,12 +767,12 @@ video > .caption-box {
   position: relative;
 }
 
-
-
-
-
-
-
+/**
+ * The pseudo element won't inheirt CSS styles from its direct parent, `::cue`
+ * would acutally inherit styles from video because it's video's pseudo element.
+ * Therefore, we have to explicitly set some styles which are aleady defined in
+ * its parent element in vtt.jsm.
+ */
 ::cue {
   color: rgba(255, 255, 255, 1);
   white-space: pre-line;
@@ -780,13 +780,13 @@ video > .caption-box {
   font: var(--cue-font-size) sans-serif;
   writing-mode: var(--cue-writing-mode, inherit);
   overflow-wrap: break-word;
-  
-
+  /* TODO : enable unicode-bidi, right now enable it would cause incorrect
+            display direction, maybe related with bug 1558431. */
 }
 
-
+/* details & summary */
 details > summary:-moz-native-anonymous {
-  
+  /* TODO(krosylight): Remove this when fixing bug 1308080 */
   user-select: none;
 }
 
@@ -801,11 +801,11 @@ details[open] > summary:is(:first-of-type, :-moz-native-anonymous) {
 }
 
 details > summary:first-of-type > *|* {
-  
+  /* Cancel "list-style-position: inside" inherited from summary. */
   list-style-position: initial;
 }
 
-
+/* <dialog> element styles */
 
 dialog {
   position: absolute;
@@ -827,10 +827,10 @@ dialog:not([open]) {
   display: none;
 }
 
-
-
-
-
+/* This pseudo-class is used to remove the inertness for
+   the topmost modal dialog in top layer. This reverts
+   what StyleAdjuster's adjust_for_inert does.
+*/
 dialog:-moz-topmost-modal-dialog {
   -moz-inert: none;
   -moz-user-focus: initial;
@@ -851,7 +851,7 @@ dialog:-moz-modal-dialog {
   max-height: calc(100% - 6px - 2em);
 }
 
-
+/* https://html.spec.whatwg.org/#flow-content-3 */
 dialog::backdrop {
   background: rgba(0, 0, 0, 0.1);
 }
@@ -867,7 +867,7 @@ marquee:is([direction="up"], [direction="down"]) {
   block-size: 200px;
 }
 
-
+/* Ruby */
 
 ruby {
   display: ruby;
@@ -891,9 +891,9 @@ rtc, rt {
   -moz-min-font-size-ratio: 50%;
   line-height: 1;
 %ifndef XP_WIN
-  
-
-
+  /* The widely-used Windows font Meiryo doesn't work fine with this
+   * setting, so disable this on Windows. We should re-enable it once
+   * Microsoft fixes this issue. See bug 1164279. */
   font-variant-east-asian: ruby;
 %endif
 }
@@ -904,7 +904,7 @@ rtc:lang(zh), rt:lang(zh) {
   ruby-align: center;
 }
 rtc:lang(zh-TW), rt:lang(zh-TW) {
-  font-size: 30%; 
+  font-size: 30%; /* bopomofo */
   -moz-min-font-size-ratio: 30%;
 }
 rtc > rt {
@@ -914,8 +914,8 @@ ruby, rb, rt, rtc {
   unicode-bidi: isolate;
 }
 
-
-
+/* Shadow DOM v1
+ * https://drafts.csswg.org/css-scoping/#slots-in-shadow-tree */
 slot {
   display: contents;
 }

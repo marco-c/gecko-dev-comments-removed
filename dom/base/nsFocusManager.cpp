@@ -1161,6 +1161,10 @@ static bool ShouldMatchFocusVisible(
     const Element& aElement, int32_t aFocusFlags,
     const Maybe<nsFocusManager::BlurredElementInfo>& aBlurredElementInfo) {
   
+  if (aFocusFlags & nsIFocusManager::FLAG_SHOWRING) {
+    return true;
+  }
+  
   
   
   
@@ -1213,31 +1217,6 @@ static bool ShouldMatchFocusVisible(
   return false;
 }
 
-static bool ShouldFocusRingBeVisible(
-    Element& aElement, int32_t aFlags,
-    const Maybe<nsFocusManager::BlurredElementInfo>& aBlurredElementInfo) {
-  if (aFlags & nsIFocusManager::FLAG_SHOWRING) {
-    return true;
-  }
-
-  const bool focusVisibleEnabled =
-      StaticPrefs::layout_css_focus_visible_enabled();
-
-#if defined(XP_MACOSX) || defined(ANDROID)
-  if (!focusVisibleEnabled) {
-    
-    
-    if (aFlags & nsIFocusManager::FLAG_BYMOUSE) {
-      return !nsContentUtils::ContentIsLink(&aElement) &&
-             !aElement.IsAnyOfHTMLElements(nsGkAtoms::video, nsGkAtoms::audio);
-    }
-    return true;
-  }
-#endif
-  return focusVisibleEnabled &&
-         ShouldMatchFocusVisible(aElement, aFlags, aBlurredElementInfo);
-}
-
 
 void nsFocusManager::NotifyFocusStateChange(
     Element* aElement, Element* aElementToFocus,
@@ -1253,7 +1232,7 @@ void nsFocusManager::NotifyFocusStateChange(
   if (aGettingFocus) {
     EventStates eventStateToAdd = NS_EVENT_STATE_FOCUS;
     if (aWindowShouldShowFocusRing ||
-        ShouldFocusRingBeVisible(*aElement, aFlags, aBlurredElementInfo)) {
+        ShouldMatchFocusVisible(*aElement, aFlags, aBlurredElementInfo)) {
       eventStateToAdd |= NS_EVENT_STATE_FOCUSRING;
     }
     aElement->AddStates(eventStateToAdd);
