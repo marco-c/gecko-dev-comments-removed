@@ -3654,6 +3654,26 @@ class MInt32ToIntPtr : public MUnaryInstruction,
 };
 
 
+class MNonNegativeIntPtrToInt32 : public MUnaryInstruction,
+                                  public NoTypePolicy::Data {
+  explicit MNonNegativeIntPtrToInt32(MDefinition* def)
+      : MUnaryInstruction(classOpcode, def) {
+    MOZ_ASSERT(def->type() == MIRType::IntPtr);
+    setResultType(MIRType::Int32);
+    setMovable();
+  }
+
+ public:
+  INSTRUCTION_HEADER(NonNegativeIntPtrToInt32)
+  TRIVIAL_NEW_WRAPPERS
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+};
+
+
 
 class MAdjustDataViewLength : public MUnaryInstruction,
                               public NoTypePolicy::Data {
@@ -7328,10 +7348,9 @@ class MArrayBufferByteLengthInt32 : public MUnaryInstruction,
 
 class MArrayBufferViewLength : public MUnaryInstruction,
                                public SingleObjectPolicy::Data {
-  explicit MArrayBufferViewLength(MDefinition* obj, MIRType type)
+  explicit MArrayBufferViewLength(MDefinition* obj)
       : MUnaryInstruction(classOpcode, obj) {
-    MOZ_ASSERT(type == MIRType::Int32 || type == MIRType::IntPtr);
-    setResultType(type);
+    setResultType(MIRType::IntPtr);
     setMovable();
   }
 
@@ -7339,16 +7358,6 @@ class MArrayBufferViewLength : public MUnaryInstruction,
   INSTRUCTION_HEADER(ArrayBufferViewLength)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, object))
-
-  bool fallible() const {
-    
-    
-#ifdef JS_64BIT
-    return type() == MIRType::Int32;
-#else
-    return false;
-#endif
-  }
 
   bool congruentTo(const MDefinition* ins) const override {
     return congruentIfOperandsEqual(ins);
