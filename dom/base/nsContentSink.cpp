@@ -459,110 +459,109 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
           equals++;
         }
 
-        if (*equals != kNullCh) {
-          *equals = kNullCh;
-          nsAutoString attr(start);
-          attr.StripWhitespace();
+        const bool hadEquals = *equals != kNullCh;
+        *equals = kNullCh;
+        nsAutoString attr(start);
+        attr.StripWhitespace();
 
-          char16_t* value = ++equals;
-          while (nsCRT::IsAsciiSpace(*value)) {
-            value++;
+        char16_t* value = hadEquals ? ++equals : equals;
+        while (nsCRT::IsAsciiSpace(*value)) {
+          value++;
+        }
+
+        if ((*value == kQuote) && (*value == *last)) {
+          *last = kNullCh;
+          value++;
+        }
+
+        if (wasQuotedString) {
+          
+          char16_t* unescaped = value;
+          char16_t* src = value;
+
+          while (*src != kNullCh) {
+            if (*src == kBackSlash && *(src + 1) != kNullCh) {
+              src++;
+            }
+            *unescaped++ = *src++;
           }
 
-          if ((*value == kQuote) && (*value == *last)) {
-            *last = kNullCh;
-            value++;
+          *unescaped = kNullCh;
+        }
+
+        if (attr.LowerCaseEqualsLiteral("rel")) {
+          if (rel.IsEmpty()) {
+            rel = value;
+            rel.CompressWhitespace();
           }
-
-          if (wasQuotedString) {
-            
-            char16_t* unescaped = value;
-            char16_t* src = value;
-
-            while (*src != kNullCh) {
-              if (*src == kBackSlash && *(src + 1) != kNullCh) {
-                src++;
-              }
-              *unescaped++ = *src++;
-            }
-
-            *unescaped = kNullCh;
+        } else if (attr.LowerCaseEqualsLiteral("title")) {
+          if (title.IsEmpty()) {
+            title = value;
+            title.CompressWhitespace();
           }
+        } else if (attr.LowerCaseEqualsLiteral("title*")) {
+          if (titleStar.IsEmpty() && !wasQuotedString) {
+            
+            
+            nsAutoString tmp;
+            tmp = value;
+            if (Decode5987Format(tmp)) {
+              titleStar = tmp;
+              titleStar.CompressWhitespace();
+            } else {
+              
+              titleStar.Truncate();
+            }
+          }
+        } else if (attr.LowerCaseEqualsLiteral("type")) {
+          if (type.IsEmpty()) {
+            type = value;
+            type.StripWhitespace();
+          }
+        } else if (attr.LowerCaseEqualsLiteral("media")) {
+          if (media.IsEmpty()) {
+            media = value;
 
-          if (attr.LowerCaseEqualsLiteral("rel")) {
-            if (rel.IsEmpty()) {
-              rel = value;
-              rel.CompressWhitespace();
-            }
-          } else if (attr.LowerCaseEqualsLiteral("title")) {
-            if (title.IsEmpty()) {
-              title = value;
-              title.CompressWhitespace();
-            }
-          } else if (attr.LowerCaseEqualsLiteral("title*")) {
-            if (titleStar.IsEmpty() && !wasQuotedString) {
-              
-              
-              nsAutoString tmp;
-              tmp = value;
-              if (Decode5987Format(tmp)) {
-                titleStar = tmp;
-                titleStar.CompressWhitespace();
-              } else {
-                
-                titleStar.Truncate();
-              }
-            }
-          } else if (attr.LowerCaseEqualsLiteral("type")) {
-            if (type.IsEmpty()) {
-              type = value;
-              type.StripWhitespace();
-            }
-          } else if (attr.LowerCaseEqualsLiteral("media")) {
-            if (media.IsEmpty()) {
-              media = value;
-
-              
-              
-              nsContentUtils::ASCIIToLower(media);
-            }
-          } else if (attr.LowerCaseEqualsLiteral("anchor")) {
-            if (anchor.IsEmpty()) {
-              anchor = value;
-              anchor.StripWhitespace();
-            }
-          } else if (attr.LowerCaseEqualsLiteral("crossorigin")) {
-            if (crossOrigin.IsVoid()) {
-              crossOrigin.SetIsVoid(false);
-              crossOrigin = value;
-              crossOrigin.StripWhitespace();
-            }
-          } else if (attr.LowerCaseEqualsLiteral("as")) {
-            if (as.IsEmpty()) {
-              as = value;
-              as.CompressWhitespace();
-            }
-          } else if (attr.LowerCaseEqualsLiteral("referrerpolicy")) {
             
             
-            
-            
-            
-            if (referrerPolicy.IsEmpty()) {
-              referrerPolicy = value;
-            }
-          } else if (attr.LowerCaseEqualsLiteral("integrity")) {
-            if (integrity.IsEmpty()) {
-              integrity = value;
-            }
-          } else if (attr.LowerCaseEqualsLiteral("imagesrcset")) {
-            if (srcset.IsEmpty()) {
-              srcset = value;
-            }
-          } else if (attr.LowerCaseEqualsLiteral("imagesizes")) {
-            if (sizes.IsEmpty()) {
-              sizes = value;
-            }
+            nsContentUtils::ASCIIToLower(media);
+          }
+        } else if (attr.LowerCaseEqualsLiteral("anchor")) {
+          if (anchor.IsEmpty()) {
+            anchor = value;
+            anchor.StripWhitespace();
+          }
+        } else if (attr.LowerCaseEqualsLiteral("crossorigin")) {
+          if (crossOrigin.IsVoid()) {
+            crossOrigin.SetIsVoid(false);
+            crossOrigin = value;
+            crossOrigin.StripWhitespace();
+          }
+        } else if (attr.LowerCaseEqualsLiteral("as")) {
+          if (as.IsEmpty()) {
+            as = value;
+            as.CompressWhitespace();
+          }
+        } else if (attr.LowerCaseEqualsLiteral("referrerpolicy")) {
+          
+          
+          
+          
+          
+          if (referrerPolicy.IsEmpty()) {
+            referrerPolicy = value;
+          }
+        } else if (attr.LowerCaseEqualsLiteral("integrity")) {
+          if (integrity.IsEmpty()) {
+            integrity = value;
+          }
+        } else if (attr.LowerCaseEqualsLiteral("imagesrcset")) {
+          if (srcset.IsEmpty()) {
+            srcset = value;
+          }
+        } else if (attr.LowerCaseEqualsLiteral("imagesizes")) {
+          if (sizes.IsEmpty()) {
+            sizes = value;
           }
         }
       }
