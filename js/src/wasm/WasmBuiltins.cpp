@@ -36,11 +36,13 @@
 #include "util/Memory.h"
 #include "util/Poison.h"
 #include "vm/BigIntType.h"
+#include "vm/ErrorObject.h"
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmStubs.h"
 #include "wasm/WasmTypes.h"
 
 #include "debugger/DebugAPI-inl.h"
+#include "vm/ErrorObject-inl.h"
 #include "vm/Stack-inl.h"
 
 using namespace js;
@@ -373,11 +375,56 @@ static bool WasmHandleDebugTrap() {
 }
 
 
+#ifdef ENABLE_WASM_EXCEPTIONS
+static bool HasCatchableException(JitActivation* activation, JSContext* cx,
+                                  MutableHandleValue exn) {
+  if (!cx->isExceptionPending()) {
+    return false;
+  }
+
+  
+  
+  
+  if (activation->isWasmTrapping() &&
+      activation->wasmTrapData().trap != Trap::ThrowReported) {
+    return false;
+  }
+
+  if (cx->isThrowingOverRecursed() || cx->isThrowingOutOfMemory()) {
+    return false;
+  }
+
+  
+  
+  if (cx->getPendingException(exn)) {
+    
+    if (exn.isObject() && exn.toObject().is<ErrorObject>()) {
+      ErrorObject& err = exn.toObject().as<ErrorObject>();
+      if (err.fromWasmTrap()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  MOZ_ASSERT(cx->isThrowingOutOfMemory());
+  return false;
+}
+#endif
 
 
 
 
-void* wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter) {
+
+
+
+
+
+
+
+
+bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
+                       jit::ResumeFromException* rfe) {
   
   
   
@@ -386,7 +433,8 @@ void* wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter) {
   
   
 
-  MOZ_ASSERT(CallingActivation() == iter.activation());
+  JitActivation* activation = CallingActivation();
+  MOZ_ASSERT(activation == iter.activation());
   MOZ_ASSERT(!iter.done());
   iter.setUnwind(WasmFrameIter::Unwind::True);
 
@@ -400,10 +448,55 @@ void* wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter) {
   
   RootedWasmInstanceObject keepAlive(cx, iter.instance()->object());
 
+#ifdef ENABLE_WASM_EXCEPTIONS
+  RootedValue exn(cx);
+  bool hasCatchableException = HasCatchableException(activation, cx, &exn);
+#endif
+
   for (; !iter.done(); ++iter) {
     
     
     cx->setRealmForJitExceptionHandler(iter.instance()->realm());
+
+#ifdef ENABLE_WASM_EXCEPTIONS
+    
+    if (hasCatchableException) {
+      const wasm::Code& code = iter.instance()->code();
+      const uint8_t* pc = iter.resumePCinCurrentFrame();
+      Tier tier;
+      const wasm::WasmTryNote* tryNote =
+          code.lookupWasmTryNote((void*)pc, &tier);
+
+      if (tryNote) {
+        cx->clearPendingException();
+        if (!exn.isObject() ||
+            !exn.toObject().is<WasmRuntimeExceptionObject>()) {
+          RootedObject obj(cx, WasmJSExceptionObject::create(cx, &exn));
+          if (!obj) {
+            MOZ_ASSERT(cx->isThrowingOutOfMemory());
+            continue;
+          }
+          exn.set(ObjectValue(*obj));
+        }
+        
+        
+        rfe->exception = exn;
+
+        rfe->kind = ResumeFromException::RESUME_WASM_CATCH;
+        rfe->framePointer = (uint8_t*)iter.frame();
+        rfe->stackPointer =
+            (uint8_t*)(rfe->framePointer - tryNote->framePushed);
+        rfe->target = iter.instance()->codeBase(tier) + tryNote->entryPoint;
+
+        
+        if (activation->isWasmTrapping()) {
+          activation->finishWasmTrap();
+        }
+
+        return true;
+      }
+    }
+#endif
 
     if (!iter.debugEnabled()) {
       continue;
@@ -440,19 +533,38 @@ void* wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter) {
   MOZ_ASSERT(!cx->activation()->asJit()->isWasmTrapping(),
              "unwinding clears the trapping state");
 
-  return iter.unwoundAddressOfReturnAddress();
+  
+  
+  rfe->kind = ResumeFromException::RESUME_WASM;
+  rfe->framePointer = (uint8_t*)wasm::FailFP;
+  rfe->stackPointer = (uint8_t*)iter.unwoundAddressOfReturnAddress();
+  rfe->target = nullptr;
+  return false;
 }
 
-static void* WasmHandleThrow() {
+static void* WasmHandleThrow(jit::ResumeFromException* rfe) {
   JitActivation* activation = CallingActivation();
   JSContext* cx = activation->cx();
   WasmFrameIter iter(activation);
-  return HandleThrow(cx, iter);
+  
+  
+  HandleThrow(cx, iter, rfe);
+  return rfe;
 }
 
 
 static void* ReportError(JSContext* cx, unsigned errorNumber) {
   JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, errorNumber);
+
+  
+  RootedValue exn(cx);
+  if (!cx->getPendingException(&exn)) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(exn.isObject() && exn.toObject().is<ErrorObject>());
+  exn.toObject().as<ErrorObject>().setFromWasmTrap();
+
   return nullptr;
 };
 
@@ -792,7 +904,7 @@ void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
       *abiType = Args_General0;
       return FuncCast(WasmHandleDebugTrap, *abiType);
     case SymbolicAddress::HandleThrow:
-      *abiType = Args_General0;
+      *abiType = Args_General1;
       return FuncCast(WasmHandleThrow, *abiType);
     case SymbolicAddress::HandleTrap:
       *abiType = Args_General0;

@@ -155,12 +155,14 @@ struct ResumeFromException {
   static const uint32_t RESUME_FORCED_RETURN = 3;
   static const uint32_t RESUME_BAILOUT = 4;
   static const uint32_t RESUME_WASM = 5;
+  static const uint32_t RESUME_WASM_CATCH = 6;
 
   uint8_t* framePointer;
   uint8_t* stackPointer;
   uint8_t* target;
   uint32_t kind;
 
+  
   
   JS::Value exception;
 

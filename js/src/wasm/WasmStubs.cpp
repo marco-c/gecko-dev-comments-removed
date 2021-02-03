@@ -2780,13 +2780,74 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
   }
 
   
+  masm.reserveStack(sizeof(jit::ResumeFromException));
+
+  MIRTypeVector handleThrowTypes;
+  MOZ_ALWAYS_TRUE(handleThrowTypes.append(MIRType::Pointer));
+
+  ABIArgMIRTypeIter i(handleThrowTypes);
+  if (i->kind() == ABIArg::GPR) {
+    masm.moveStackPtrTo(i->gpr());
+  } else {
+    masm.storeStackPtr(Address(masm.getStackPointer(), i->offsetFromArgBase()));
+  }
+  i++;
+  MOZ_ASSERT(i.done());
+
+  
+  
+  
+  
   
   
   masm.call(SymbolicAddress::HandleThrow);
-  masm.moveToStackPtr(ReturnReg);
-  masm.move32(Imm32(FailFP), FramePointer);
+
+  Register scratch = ABINonArgReturnReg0;
+  Register scratch2 = ABINonArgReturnReg1;
+  Label resumeCatch, leaveWasm;
+
+  masm.load32(Address(ReturnReg, offsetof(jit::ResumeFromException, kind)),
+              scratch);
+
+  masm.branch32(Assembler::Equal, scratch,
+                Imm32(jit::ResumeFromException::RESUME_WASM_CATCH),
+                &resumeCatch);
+  masm.branch32(Assembler::Equal, scratch,
+                Imm32(jit::ResumeFromException::RESUME_WASM), &leaveWasm);
+
+  masm.breakpoint();
+
+  
+  masm.bind(&resumeCatch);
+  masm.loadPtr(Address(ReturnReg, offsetof(ResumeFromException, framePointer)),
+               FramePointer);
+  masm.loadStackPtr(
+      Address(ReturnReg, offsetof(ResumeFromException, stackPointer)));
+
+  
+  
+#ifdef JS_64BIT
+  ValueOperand val(scratch);
+#else
+  ValueOperand val(scratch, scratch2);
+#endif
+  masm.loadValue(Address(ReturnReg, offsetof(ResumeFromException, exception)),
+                 val);
+  Register obj = masm.extractObject(val, scratch2);
+  masm.loadPtr(Address(ReturnReg, offsetof(ResumeFromException, target)),
+               scratch);
+  masm.movePtr(obj, WasmExceptionReg);
+  masm.jump(scratch);
+
+  
+  masm.bind(&leaveWasm);
+  masm.loadPtr(Address(ReturnReg, offsetof(ResumeFromException, framePointer)),
+               FramePointer);
+  masm.loadPtr(Address(ReturnReg, offsetof(ResumeFromException, stackPointer)),
+               scratch);
+  masm.moveToStackPtr(scratch);
 #ifdef JS_CODEGEN_ARM64
-  masm.loadPtr(Address(ReturnReg, 0), lr);
+  masm.loadPtr(Address(scratch, 0), lr);
   masm.addToStackPtr(Imm32(8));
   masm.abiret();
 #else
