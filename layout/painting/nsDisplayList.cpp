@@ -155,9 +155,8 @@ void AssertUniqueItem(nsDisplayItem* aItem) {
 }
 #endif
 
-bool ShouldBuildItemForEventsOrPlugins(const DisplayItemType aType) {
+bool ShouldBuildItemForEvents(const DisplayItemType aType) {
   return aType == DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO ||
-         aType == DisplayItemType::TYPE_PLUGIN ||
          (GetDisplayItemFlagsForType(aType) & TYPE_IS_CONTAINER);
 }
 
@@ -589,9 +588,8 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mDescendIntoSubdocuments(true),
       mSelectedFramesOnly(false),
       mAllowMergingAndFlattening(true),
-      mWillComputePluginGeometry(false),
       mInTransform(false),
-      mInEventsAndPluginsOnly(false),
+      mInEventsOnly(false),
       mInFilter(false),
       mInPageSequence(false),
       mIsInChromePresContext(false),
@@ -600,7 +598,6 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mUseHighQualityScaling(false),
       mIsPaintingForWebRender(false),
       mIsCompositingCheap(false),
-      mContainsPluginItem(false),
       mAncestorHasApzAwareEventHandler(false),
       mHaveScrollableDisplayPort(false),
       mWindowDraggingAllowed(false),
@@ -1016,8 +1013,7 @@ void nsDisplayListBuilder::SubtractFromVisibleRegion(nsRegion* aVisibleRegion,
   
   
   
-  if (GetAccurateVisibleRegions() || tmp.GetNumRects() <= 15 ||
-      tmp.Area() <= aVisibleRegion->Area() / 2) {
+  if (tmp.GetNumRects() <= 15 || tmp.Area() <= aVisibleRegion->Area() / 2) {
     *aVisibleRegion = tmp;
   }
 }
@@ -2192,23 +2188,6 @@ static nsRegion TreatAsOpaque(nsDisplayItem* aItem,
   MOZ_ASSERT(
       (aBuilder->IsForEventDelivery() && aBuilder->HitTestIsForVisibility()) ||
       !opaque.IsComplex());
-  if (aBuilder->IsForPluginGeometry() &&
-      aItem->GetType() != DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsIFrame* f = aItem->Frame();
-    if (f->PresContext()->IsChrome() && !aItem->GetChildren() &&
-        f->StyleEffects()->mOpacity != 0.0) {
-      opaque = aItem->GetBounds(aBuilder, &snap);
-    }
-  }
   if (opaque.IsEmpty()) {
     return opaque;
   }
@@ -2482,19 +2461,6 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(
     }
 
     if (!sent) {
-      
-      
-      
-      nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
-      if (rootPresContext && XRE_IsContentProcess()) {
-        if (aBuilder->WillComputePluginGeometry()) {
-          rootPresContext->ComputePluginGeometryUpdates(
-              aBuilder->RootReferenceFrame(), aBuilder, this);
-        }
-        
-        rootPresContext->CollectPluginGeometryUpdates(layerManager);
-      }
-
       auto* wrManager = static_cast<WebRenderLayerManager*>(layerManager.get());
 
       nsIDocShell* docShell = presContext->GetDocShell();
@@ -2566,16 +2532,9 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(
   bool temp =
       aBuilder->SetIsCompositingCheap(layerManager->IsCompositingCheap());
   LayerManager::EndTransactionFlags flags = LayerManager::END_DEFAULT;
-  if (layerManager->NeedsWidgetInvalidation()) {
-    if (aFlags & PAINT_NO_COMPOSITE) {
-      flags = LayerManager::END_NO_COMPOSITE;
-    }
-  } else {
-    
-    
-    if (aBuilder->WillComputePluginGeometry()) {
-      flags = LayerManager::END_NO_REMOTE_COMPOSITE;
-    }
+  if (layerManager->NeedsWidgetInvalidation() &&
+      (aFlags & PAINT_NO_COMPOSITE)) {
+    flags = LayerManager::END_NO_COMPOSITE;
   }
 
   MaybeSetupTransactionIdAllocator(layerManager, presContext);
@@ -2592,20 +2551,6 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(
     if (!layerBuilder) {
       layerManager->SetUserData(&gLayerManagerLayerBuilder, nullptr);
       return nullptr;
-    }
-
-    
-    
-    nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
-    if (rootPresContext && XRE_IsContentProcess()) {
-      if (aBuilder->WillComputePluginGeometry()) {
-        rootPresContext->ComputePluginGeometryUpdates(
-            aBuilder->RootReferenceFrame(), aBuilder, this);
-      }
-      
-      
-      
-      rootPresContext->CollectPluginGeometryUpdates(layerManager);
     }
 
     layerManager->EndTransaction(FrameLayerBuilder::DrawPaintedLayer, aBuilder,
@@ -3026,9 +2971,6 @@ bool nsDisplayItem::RecomputeVisibility(nsDisplayListBuilder* aBuilder,
     SetPaintRect(itemVisible.GetBounds());
   }
 
-  
-  
-  
   if (!ComputeVisibility(aBuilder, aVisibleRegion)) {
     SetPaintRect(nsRect());
     return false;
@@ -3427,7 +3369,8 @@ nsDisplayBackgroundImage::nsDisplayBackgroundImage(
       mLayer(aInitData.layer),
       mIsRasterImage(aInitData.isRasterImage),
       mShouldFixToViewport(aInitData.shouldFixToViewport),
-      mImageFlags(0) {
+      mImageFlags(0),
+      mOpacity(1.0f) {
   MOZ_COUNT_CTOR(nsDisplayBackgroundImage);
 #ifdef DEBUG
   if (mBackgroundStyle && mBackgroundStyle != mFrame->Style()) {
@@ -4045,7 +3988,7 @@ bool nsDisplayBackgroundImage::CreateWebRenderCommands(
   nsCSSRendering::PaintBGParams params =
       nsCSSRendering::PaintBGParams::ForSingleLayer(
           *StyleFrame()->PresContext(), GetPaintRect(), mBackgroundRect,
-          StyleFrame(), mImageFlags, mLayer, CompositionOp::OP_OVER);
+          StyleFrame(), mImageFlags, mLayer, CompositionOp::OP_OVER, mOpacity);
   params.bgClipRect = &mBounds;
   ImgDrawResult result =
       nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayer(
@@ -4112,7 +4055,7 @@ nsRegion nsDisplayBackgroundImage::GetOpaqueRegion(
   nsRegion result;
   *aSnap = false;
 
-  if (!mBackgroundStyle) {
+  if (!mBackgroundStyle || mOpacity != 1.0f) {
     return result;
   }
 
@@ -5804,11 +5747,11 @@ nsresult nsDisplayWrapper::WrapListsInPlace(nsDisplayListBuilder* aBuilder,
 
 nsDisplayOpacity::nsDisplayOpacity(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
-    const ActiveScrolledRoot* aActiveScrolledRoot,
-    bool aForEventsAndPluginsOnly, bool aNeedsActiveLayer)
+    const ActiveScrolledRoot* aActiveScrolledRoot, bool aForEventsOnly,
+    bool aNeedsActiveLayer)
     : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot, true),
       mOpacity(aFrame->StyleEffects()->mOpacity),
-      mForEventsAndPluginsOnly(aForEventsAndPluginsOnly),
+      mForEventsOnly(aForEventsOnly),
       mNeedsActiveLayer(aNeedsActiveLayer),
       mChildOpacityState(ChildOpacityState::Unknown) {
   MOZ_COUNT_CTOR(nsDisplayOpacity);
@@ -6073,7 +6016,7 @@ nsDisplayItem::LayerState nsDisplayOpacity::GetLayerState(
   
   
   
-  if (mForEventsAndPluginsOnly) {
+  if (mForEventsOnly) {
     MOZ_ASSERT(mOpacity == 0);
     return LayerState::LAYER_INACTIVE;
   }

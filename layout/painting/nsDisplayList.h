@@ -340,7 +340,6 @@ struct ActiveScrolledRoot {
 enum class nsDisplayListBuilderMode : uint8_t {
   Painting,
   EventDelivery,
-  PluginGeometry,
   FrameVisibility,
   TransformComputation,
   GenerateGlyph,
@@ -450,24 +449,6 @@ class nsDisplayListBuilder {
     mTemporaryItems.AppendElement(aItem);
   }
 
-  void SetWillComputePluginGeometry(bool aWillComputePluginGeometry) {
-    mWillComputePluginGeometry = aWillComputePluginGeometry;
-  }
-
-  void SetForPluginGeometry(bool aForPlugin) {
-    if (aForPlugin) {
-      NS_ASSERTION(mMode == nsDisplayListBuilderMode::Painting,
-                   "Can only switch from Painting to PluginGeometry");
-      NS_ASSERTION(mWillComputePluginGeometry,
-                   "Should have signalled this in advance");
-      mMode = nsDisplayListBuilderMode::PluginGeometry;
-    } else {
-      NS_ASSERTION(mMode == nsDisplayListBuilderMode::PluginGeometry,
-                   "Can only switch from Painting to PluginGeometry");
-      mMode = nsDisplayListBuilderMode::Painting;
-    }
-  }
-
   mozilla::layers::LayerManager* GetWidgetLayerManager(
       nsView** aView = nullptr);
 
@@ -477,17 +458,6 @@ class nsDisplayListBuilder {
 
   bool IsForEventDelivery() const {
     return mMode == nsDisplayListBuilderMode::EventDelivery;
-  }
-
-  
-
-
-
-
-
-
-  bool IsForPluginGeometry() const {
-    return mMode == nsDisplayListBuilderMode::PluginGeometry;
   }
 
   
@@ -516,8 +486,6 @@ class nsDisplayListBuilder {
   bool BuildCompositorHitTestInfo() const {
     return mBuildCompositorHitTestInfo;
   }
-
-  bool WillComputePluginGeometry() const { return mWillComputePluginGeometry; }
 
   
 
@@ -611,13 +579,6 @@ class nsDisplayListBuilder {
 
   void SetSelectedFramesOnly() { mSelectedFramesOnly = true; }
   bool GetSelectedFramesOnly() { return mSelectedFramesOnly; }
-  
-
-
-
-  bool GetAccurateVisibleRegions() {
-    return mMode == nsDisplayListBuilderMode::PluginGeometry;
-  }
   
 
 
@@ -833,7 +794,7 @@ class nsDisplayListBuilder {
 
   bool IsInTransform() const { return mInTransform; }
 
-  bool InEventsAndPluginsOnly() const { return mInEventsAndPluginsOnly; }
+  bool InEventsOnly() const { return mInEventsOnly; }
   
 
 
@@ -1220,17 +1181,14 @@ class nsDisplayListBuilder {
     bool mOldValue;
   };
 
-  class AutoInEventsAndPluginsOnly {
+  class AutoInEventsOnly {
    public:
-    AutoInEventsAndPluginsOnly(nsDisplayListBuilder* aBuilder,
-                               bool aInEventsAndPluginsOnly)
-        : mBuilder(aBuilder), mOldValue(aBuilder->mInEventsAndPluginsOnly) {
-      aBuilder->mInEventsAndPluginsOnly |= aInEventsAndPluginsOnly;
+    AutoInEventsOnly(nsDisplayListBuilder* aBuilder, bool aInEventsOnly)
+        : mBuilder(aBuilder), mOldValue(aBuilder->mInEventsOnly) {
+      aBuilder->mInEventsOnly |= aInEventsOnly;
     }
 
-    ~AutoInEventsAndPluginsOnly() {
-      mBuilder->mInEventsAndPluginsOnly = mOldValue;
-    }
+    ~AutoInEventsOnly() { mBuilder->mInEventsOnly = mOldValue; }
 
    private:
     nsDisplayListBuilder* mBuilder;
@@ -1647,9 +1605,6 @@ class nsDisplayListBuilder {
 
   bool NeedToForceTransparentSurfaceForItem(nsDisplayItem* aItem);
 
-  void SetContainsPluginItem() { mContainsPluginItem = true; }
-  bool ContainsPluginItem() { return mContainsPluginItem; }
-
   
 
 
@@ -2040,11 +1995,10 @@ class nsDisplayListBuilder {
   bool mDescendIntoSubdocuments;
   bool mSelectedFramesOnly;
   bool mAllowMergingAndFlattening;
-  bool mWillComputePluginGeometry;
   
   
   bool mInTransform;
-  bool mInEventsAndPluginsOnly;
+  bool mInEventsOnly;
   bool mInFilter;
   bool mInPageSequence;
   bool mIsInChromePresContext;
@@ -2053,7 +2007,6 @@ class nsDisplayListBuilder {
   bool mUseHighQualityScaling;
   bool mIsPaintingForWebRender;
   bool mIsCompositingCheap;
-  bool mContainsPluginItem;
   bool mAncestorHasApzAwareEventHandler;
   
   
@@ -2128,7 +2081,7 @@ void AssertUniqueItem(nsDisplayItem* aItem);
 
 
 
-bool ShouldBuildItemForEventsOrPlugins(const DisplayItemType aType);
+bool ShouldBuildItemForEvents(const DisplayItemType aType);
 
 void UpdateDisplayItemData(nsPaintedDisplayItem* aItem);
 
@@ -2142,8 +2095,7 @@ MOZ_ALWAYS_INLINE T* MakeDisplayItemWithIndex(nsDisplayListBuilder* aBuilder,
                 "Frame type should be derived from nsIFrame");
 
   const DisplayItemType type = T::ItemType();
-  if (aBuilder->InEventsAndPluginsOnly() &&
-      !ShouldBuildItemForEventsOrPlugins(type)) {
+  if (aBuilder->InEventsOnly() && !ShouldBuildItemForEvents(type)) {
     
     return nullptr;
   }
@@ -2920,9 +2872,6 @@ class nsDisplayItem : public nsDisplayItemBase {
   }
 
   
-
-
-
 
 
 
@@ -4633,6 +4582,13 @@ class nsDisplayBackgroundImage : public nsDisplayImageContainer {
                                     nsIFrame* aFrameForBounds = nullptr);
   ~nsDisplayBackgroundImage() override;
 
+  bool RestoreState() override {
+    bool superChanged = nsDisplayImageContainer::RestoreState();
+    bool opacityChanged = (mOpacity != 1.0f);
+    mOpacity = 1.0f;
+    return (superChanged || opacityChanged);
+  }
+
   NS_DISPLAY_DECL_NAME("Background", TYPE_BACKGROUND)
 
   
@@ -4670,6 +4626,13 @@ class nsDisplayBackgroundImage : public nsDisplayImageContainer {
                            bool* aSnap) const override;
   mozilla::Maybe<nscolor> IsUniform(
       nsDisplayListBuilder* aBuilder) const override;
+
+  bool CanApplyOpacity() const override { return true; }
+
+  void ApplyOpacity(nsDisplayListBuilder* aBuilder, float aOpacity,
+                    const DisplayItemClipChain* aClip) override {
+    mOpacity = aOpacity;
+  }
 
   
 
@@ -4784,6 +4747,7 @@ class nsDisplayBackgroundImage : public nsDisplayImageContainer {
   
   bool mShouldFixToViewport;
   uint32_t mImageFlags;
+  float mOpacity;
 };
 
 
@@ -5650,13 +5614,13 @@ class nsDisplayOpacity : public nsDisplayWrapList {
   nsDisplayOpacity(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                    nsDisplayList* aList,
                    const ActiveScrolledRoot* aActiveScrolledRoot,
-                   bool aForEventsAndPluginsOnly, bool aNeedsActiveLayer);
+                   bool aForEventsOnly, bool aNeedsActiveLayer);
 
   nsDisplayOpacity(nsDisplayListBuilder* aBuilder,
                    const nsDisplayOpacity& aOther)
       : nsDisplayWrapList(aBuilder, aOther),
         mOpacity(aOther.mOpacity),
-        mForEventsAndPluginsOnly(aOther.mForEventsAndPluginsOnly),
+        mForEventsOnly(aOther.mForEventsOnly),
         mNeedsActiveLayer(aOther.mNeedsActiveLayer),
         mChildOpacityState(ChildOpacityState::Unknown) {
     MOZ_COUNT_CTOR(nsDisplayOpacity);
@@ -5714,7 +5678,7 @@ class nsDisplayOpacity : public nsDisplayWrapList {
                                  nsRegion* aInvalidRegion) const override;
 
   bool IsInvalid(nsRect& aRect) const override {
-    if (mForEventsAndPluginsOnly) {
+    if (mForEventsOnly) {
       return false;
     }
     return nsDisplayWrapList::IsInvalid(aRect);
@@ -5760,7 +5724,7 @@ class nsDisplayOpacity : public nsDisplayWrapList {
   bool ApplyToFilterOrMask(const bool aUsingLayers);
 
   float mOpacity;
-  bool mForEventsAndPluginsOnly : 1;
+  bool mForEventsOnly : 1;
   enum class ChildOpacityState : uint8_t {
     
     
