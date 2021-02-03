@@ -9282,42 +9282,33 @@ void nsLayoutUtils::ComputeSystemFont(nsFont* aSystemFont,
                                       const Document* aDocument) {
   gfxFontStyle fontStyle;
   nsAutoString systemFontName;
-  if (LookAndFeel::GetFont(aFontID, systemFontName, fontStyle)) {
-    systemFontName.Trim("\"'");
-    aSystemFont->fontlist =
-        FontFamilyList(NS_ConvertUTF16toUTF8(systemFontName),
-                       StyleFontFamilyNameSyntax::Identifiers);
-    aSystemFont->fontlist.SetDefaultFontType(StyleGenericFontFamily::None);
-    aSystemFont->style = fontStyle.style;
-    aSystemFont->systemFont = fontStyle.systemFont;
-    aSystemFont->weight = fontStyle.weight;
-    aSystemFont->stretch = fontStyle.stretch;
-    aSystemFont->size = Length::FromPixels(fontStyle.size);
+  if (!LookAndFeel::GetFont(aFontID, systemFontName, fontStyle)) {
+    return;
+  }
+  systemFontName.Trim("\"'");
+  aSystemFont->fontlist =
+      FontFamilyList(NS_ConvertUTF16toUTF8(systemFontName),
+                     StyleFontFamilyNameSyntax::Identifiers);
+  aSystemFont->fontlist.SetDefaultFontType(StyleGenericFontFamily::None);
+  aSystemFont->style = fontStyle.style;
+  aSystemFont->systemFont = fontStyle.systemFont;
+  aSystemFont->weight = fontStyle.weight;
+  aSystemFont->stretch = fontStyle.stretch;
+  aSystemFont->size = Length::FromPixels(fontStyle.size);
 
-    if (aDocument->ShouldAvoidNativeTheme() &&
-        (aFontID == LookAndFeel::FontID::Field ||
-         aFontID == LookAndFeel::FontID::Button ||
-         aFontID == LookAndFeel::FontID::List)) {
-      auto newSize = aDefaultVariableFont->size.ToCSSPixels() - CSSCoord(3.0f);
-      aSystemFont->size = Length::FromPixels(std::max(float(newSize), 0.0f));
-    }
-    
-    aSystemFont->sizeAdjust = fontStyle.sizeAdjust;
+  
+  aSystemFont->sizeAdjust = fontStyle.sizeAdjust;
 
+  if (aFontID == LookAndFeel::FontID::Field ||
+      aFontID == LookAndFeel::FontID::Button ||
+      aFontID == LookAndFeel::FontID::List) {
+    const bool isWindowsOrNonNativeTheme =
 #ifdef XP_WIN
-    
-    
-    
-    
+        true ||
+#endif
+        aDocument->ShouldAvoidNativeTheme();
 
-    if (aFontID == LookAndFeel::FontID::Field ||
-        aFontID == LookAndFeel::FontID::Button ||
-        aFontID == LookAndFeel::FontID::List) {
-      
-      
-      
-      
-      
+    if (isWindowsOrNonNativeTheme) {
       
       
       
@@ -9328,7 +9319,6 @@ void nsLayoutUtils::ComputeSystemFont(nsFont* aSystemFont,
           aDefaultVariableFont->size.ToCSSPixels() - CSSPixel::FromPoints(2.0f);
       aSystemFont->size = Length::FromPixels(std::max(float(newSize), 0.0f));
     }
-#endif
   }
 }
 
