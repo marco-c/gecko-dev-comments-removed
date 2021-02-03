@@ -608,13 +608,14 @@ class QuotaManager final : public BackgroundThreadObject {
 
   
   
-  nsTArray<DirectoryLockImpl*> mDirectoryLocks;
+  nsTArray<NotNull<DirectoryLockImpl*>> mDirectoryLocks;
 
   
   
   
   
-  nsDataHashtable<nsUint64HashKey, DirectoryLockImpl*> mDirectoryLockIdTable;
+  nsDataHashtable<nsUint64HashKey, NotNull<DirectoryLockImpl*>>
+      mDirectoryLockIdTable;
 
   
   DirectoryLockTable mTemporaryDirectoryLockTable;
