@@ -2272,14 +2272,6 @@ class ReturnAbortOnError {
     if (NS_SUCCEEDED(aRv) || aRv == NS_ERROR_LAUNCHED_CHILD_PROCESS) {
       return aRv;
     }
-#ifdef MOZ_BACKGROUNDTASKS
-    
-    
-    
-    if (aRv == NS_ERROR_UNEXPECTED && BackgroundTasks::IsBackgroundTaskMode()) {
-      return aRv;
-    }
-#endif
     return NS_ERROR_ABORT;
   }
 
@@ -2390,14 +2382,6 @@ static ReturnAbortOnError ProfileLockedDialog(nsIFile* aProfileDir,
     nsAutoString killTitle;
     rv = sb->FormatStringFromName("restartTitle", params, killTitle);
     NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-
-#ifdef MOZ_BACKGROUNDTASKS
-    if (BackgroundTasks::IsBackgroundTaskMode()) {
-      
-      Output(false, "%s\n", NS_LossyConvertUTF16toASCII(killMessage).get());
-      return NS_ERROR_UNEXPECTED;
-    }
-#endif
 
     if (gfxPlatform::IsHeadless()) {
       
@@ -4451,17 +4435,14 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 
 #ifdef MOZ_BACKGROUNDTASKS
   if (BackgroundTasks::IsBackgroundTaskMode()) {
-    if (!EnvHasValue("XRE_PROFILE_PATH")) {
-      
-      nsCOMPtr<nsIFile> file;
-      nsresult rv = BackgroundTasks::GetOrCreateTemporaryProfileDirectory(
-          getter_AddRefs(file));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return 1;
-      }
-
-      SaveFileToEnv("XRE_PROFILE_PATH", file);
+    nsCOMPtr<nsIFile> file;
+    nsresult rv = BackgroundTasks::GetOrCreateTemporaryProfileDirectory(
+        getter_AddRefs(file));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return 1;
     }
+
+    SaveFileToEnv("XRE_PROFILE_PATH", file);
   }
 #endif
 
