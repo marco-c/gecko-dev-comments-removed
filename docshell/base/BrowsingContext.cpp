@@ -97,6 +97,13 @@ struct ParamTraits<mozilla::dom::DisplayMode>
                                       mozilla::dom::DisplayMode::EndGuard_> {};
 
 template <>
+struct ParamTraits<mozilla::dom::PrefersColorSchemeOverride>
+    : public ContiguousEnumSerializer<
+          mozilla::dom::PrefersColorSchemeOverride,
+          mozilla::dom::PrefersColorSchemeOverride::None,
+          mozilla::dom::PrefersColorSchemeOverride::EndGuard_> {};
+
+template <>
 struct ParamTraits<mozilla::dom::ExplicitActiveStatus>
     : public ContiguousEnumSerializer<
           mozilla::dom::ExplicitActiveStatus,
@@ -2476,10 +2483,42 @@ bool BrowsingContext::CanSet(
   return true;
 }
 
-bool BrowsingContext::CanSet(FieldIndex<IDX_DisplayMode>,
-                             const enum DisplayMode& aDisplayMOde,
-                             ContentParent* aSource) {
-  return IsTop();
+void BrowsingContext::DidSet(FieldIndex<IDX_PrefersColorSchemeOverride>,
+                             dom::PrefersColorSchemeOverride aOldValue) {
+  MOZ_ASSERT(IsTop());
+  if (PrefersColorSchemeOverride() == aOldValue) {
+    return;
+  }
+  PreOrderWalk([&](BrowsingContext* aContext) {
+    if (nsIDocShell* shell = aContext->GetDocShell()) {
+      if (nsPresContext* pc = shell->GetPresContext()) {
+        
+        
+        
+        
+        
+        
+        pc->MediaFeatureValuesChanged(
+            {MediaFeatureChangeReason::SystemMetricsChange},
+            MediaFeatureChangePropagation::JustThisDocument);
+      }
+    }
+  });
+}
+
+void BrowsingContext::DidSet(FieldIndex<IDX_MediumOverride>,
+                             nsString&& aOldValue) {
+  MOZ_ASSERT(IsTop());
+  if (GetMediumOverride() == aOldValue) {
+    return;
+  }
+  PreOrderWalk([&](BrowsingContext* aContext) {
+    if (nsIDocShell* shell = aContext->GetDocShell()) {
+      if (nsPresContext* pc = shell->GetPresContext()) {
+        pc->RecomputeBrowsingContextDependentData();
+      }
+    }
+  });
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_DisplayMode>,

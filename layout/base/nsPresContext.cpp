@@ -773,6 +773,18 @@ void nsPresContext::RecomputeBrowsingContextDependentData() {
   }
   SetFullZoom(browsingContext->FullZoom());
   SetTextZoom(browsingContext->TextZoom());
+  if (doc == mDocument) {
+    
+    auto* top = browsingContext->Top();
+    RefPtr<nsAtom> mediumToEmulate;
+    if (MOZ_UNLIKELY(!top->GetMediumOverride().IsEmpty())) {
+      nsAutoString lower;
+      nsContentUtils::ASCIIToLower(top->GetMediumOverride(), lower);
+      mediumToEmulate = NS_Atomize(lower);
+    }
+    EmulateMedium(mediumToEmulate);
+  }
+
   mDocument->EnumerateExternalResources([](dom::Document& aSubResource) {
     if (nsPresContext* subResourcePc = aSubResource.GetPresContext()) {
       subResourcePc->RecomputeBrowsingContextDependentData();
@@ -1060,18 +1072,6 @@ void nsPresContext::SetOverrideDPPX(float aDPPX) {
 
   mMediaEmulationData.mDPPX = aDPPX;
   MediaFeatureValuesChanged({MediaFeatureChangeReason::ResolutionChange},
-                            MediaFeatureChangePropagation::JustThisDocument);
-}
-
-void nsPresContext::SetOverridePrefersColorScheme(
-    const Maybe<StylePrefersColorScheme>& aOverride) {
-  if (GetOverridePrefersColorScheme() == aOverride) {
-    return;
-  }
-  mMediaEmulationData.mPrefersColorScheme = aOverride;
-  
-  
-  MediaFeatureValuesChanged({MediaFeatureChangeReason::SystemMetricsChange},
                             MediaFeatureChangePropagation::JustThisDocument);
 }
 

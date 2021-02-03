@@ -60,7 +60,6 @@ class nsCSSFontFeatureValuesRule;
 class nsCSSFrameConstructor;
 class nsDisplayList;
 class nsDisplayListBuilder;
-class nsPluginFrame;
 class nsTransitionManager;
 class nsAnimationManager;
 class nsRefreshDriver;
@@ -136,7 +135,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   template <typename T>
   using Maybe = mozilla::Maybe<T>;
   using MediaEmulationData = mozilla::MediaEmulationData;
-  using StylePrefersColorScheme = mozilla::StylePrefersColorScheme;
 
   typedef mozilla::ScrollStyles ScrollStyles;
   using TransactionId = mozilla::layers::TransactionId;
@@ -554,11 +552,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
 
   void RecomputeBrowsingContextDependentData();
-
-  Maybe<StylePrefersColorScheme> GetOverridePrefersColorScheme() const {
-    return mMediaEmulationData.mPrefersColorScheme;
-  }
-  void SetOverridePrefersColorScheme(const Maybe<StylePrefersColorScheme>&);
 
   mozilla::CSSCoord GetAutoQualityMinFontSize() const {
     return DevPixelsToFloatCSSPixels(mAutoQualityMinFontSizePixelsPref);
@@ -1368,54 +1361,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 class nsRootPresContext final : public nsPresContext {
  public:
   nsRootPresContext(mozilla::dom::Document* aDocument, nsPresContextType aType);
-  virtual ~nsRootPresContext();
-
-  
-
-
-
-
-
-  void RegisterPluginForGeometryUpdates(nsIContent* aPlugin);
-  
-
-
-
-
-  void UnregisterPluginForGeometryUpdates(nsIContent* aPlugin);
-
-  bool NeedToComputePluginGeometryUpdates() {
-    return mRegisteredPlugins.Count() > 0;
-  }
-  
-
-
-
-
-
-
-
-
-
-
-  void ComputePluginGeometryUpdates(nsIFrame* aFrame,
-                                    nsDisplayListBuilder* aBuilder,
-                                    nsDisplayList* aList);
-
-  
-
-
-
-
-  void ApplyPluginGeometryUpdates();
-
-  
-
-
-
-  void CollectPluginGeometryUpdates(
-      mozilla::layers::LayerManager* aLayerManager);
-
   virtual bool IsRoot() override { return true; }
 
   
@@ -1434,15 +1379,6 @@ class nsRootPresContext final : public nsPresContext {
       mozilla::MallocSizeOf aMallocSizeOf) const override;
 
  protected:
-  
-
-
-  void InitApplyPluginGeometryTimer();
-  
-
-
-  void CancelApplyPluginGeometryTimer();
-
   class RunWillPaintObservers : public mozilla::Runnable {
    public:
     explicit RunWillPaintObservers(nsRootPresContext* aPresContext)
@@ -1461,8 +1397,6 @@ class nsRootPresContext final : public nsPresContext {
 
   friend class nsPresContext;
 
-  nsCOMPtr<nsITimer> mApplyPluginGeometryTimer;
-  nsTHashtable<nsRefPtrHashKey<nsIContent>> mRegisteredPlugins;
   nsTArray<nsCOMPtr<nsIRunnable>> mWillPaintObservers;
   nsRevocableEventPtr<RunWillPaintObservers> mWillPaintFallbackEvent;
 };
