@@ -2351,20 +2351,6 @@ bool RangeAnalysis::tryHoistBoundsCheck(MBasicBlock* header,
   preLoop->insertBefore(preLoop->lastIns(), lowerCheck);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  if (upperTerm->isNonNegativeIntPtrToInt32() &&
-      length->type() == MIRType::IntPtr) {
-    upperTerm = upperTerm->toNonNegativeIntPtrToInt32()->input();
-  }
-
-  
   if (upperTerm != length || upperConstant >= 0) {
     
     if (length->block()->isMarked()) {
@@ -2375,8 +2361,8 @@ bool RangeAnalysis::tryHoistBoundsCheck(MBasicBlock* header,
 
     
     
-    if (length->type() == MIRType::IntPtr &&
-        upperTerm->type() == MIRType::Int32) {
+    if (length->type() == MIRType::IntPtr) {
+      MOZ_ASSERT(upperTerm->type() == MIRType::Int32);
       upperTerm = MInt32ToIntPtr::New(alloc(), upperTerm);
       upperTerm->computeRange(alloc());
       upperTerm->collectRangeInfoPreTrunc();
@@ -2471,7 +2457,7 @@ bool RangeAnalysis::addRangeAssertions() {
 
       
       if (!IsNumberType(ins->type()) && ins->type() != MIRType::Boolean &&
-          ins->type() != MIRType::Value && ins->type() != MIRType::IntPtr) {
+          ins->type() != MIRType::Value) {
         continue;
       }
 
