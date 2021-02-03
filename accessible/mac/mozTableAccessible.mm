@@ -21,6 +21,8 @@
 using namespace mozilla;
 using namespace mozilla::a11y;
 
+enum CachedBool { eCachedBoolMiss, eCachedTrue, eCachedFalse };
+
 @implementation mozColumnContainer
 
 - (id)initWithIndex:(uint32_t)aIndex andParent:(mozAccessible*)aParent {
@@ -128,41 +130,70 @@ using namespace mozilla::a11y;
   return [self isLayoutTablePart] ? NSAccessibilityGroupRole : [super moxRole];
 }
 
-- (BOOL)isLayoutTablePart {
-  if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
-    while (acc) {
-      if (acc->Role() == roles::TREE_TABLE) {
-        return false;
-      }
-      if (acc->IsTable()) {
-        return acc->AsTable()->IsProbablyLayoutTable();
-      }
-      acc = acc->Parent();
-    }
-    return false;
-  }
-
-  if (ProxyAccessible* proxy = mGeckoAccessible.AsProxy()) {
-    while (proxy) {
-      if (proxy->Role() == roles::TREE_TABLE) {
-        return false;
-      }
-      if (proxy->IsTable()) {
-        return proxy->TableIsProbablyForLayout();
-      }
-      proxy = proxy->Parent();
+- (void)handleAccessibleEvent:(uint32_t)eventType {
+  if (![self isKindOfClass:[mozTableAccessible class]]) {
+    
+    
+    
+    
+    if (eventType == nsIAccessibleEvent::EVENT_REORDER ||
+        eventType == nsIAccessibleEvent::EVENT_OBJECT_ATTRIBUTE_CHANGED) {
+      
+      [self invalidateLayoutTableCache];
     }
   }
 
-  return false;
+  [super handleAccessibleEvent:eventType];
 }
 
+- (BOOL)isLayoutTablePart {
+  
+  
+  
+  
+  
+  mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
+  MOZ_ASSERT([parent isKindOfClass:[mozTablePartAccessible class]] ||
+                 [parent isKindOfClass:[mozOutlineAccessible class]],
+             "Trying to get layout table info for non-table object");
+  return [parent isLayoutTablePart];
+}
+
+- (void)invalidateLayoutTableCache {
+  mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
+  MOZ_ASSERT([parent isKindOfClass:[mozTablePartAccessible class]],
+             "Trying to invalidate table cache but cannot find table!");
+  [(mozTablePartAccessible*)parent invalidateLayoutTableCache];
+}
 @end
 
 @implementation mozTableAccessible
 
+- (void)invalidateLayoutTableCache {
+  mIsLayoutTable = eCachedBoolMiss;
+}
+
+- (BOOL)isLayoutTablePart {
+  if (mIsLayoutTable != eCachedBoolMiss) {
+    return mIsLayoutTable == eCachedTrue;
+  }
+
+  bool tableGuess;
+  if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
+    tableGuess = acc->AsTable()->IsProbablyLayoutTable();
+  } else {
+    ProxyAccessible* proxy = mGeckoAccessible.AsProxy();
+    tableGuess = proxy->TableIsProbablyForLayout();
+  }
+
+  mIsLayoutTable = tableGuess ? eCachedTrue : eCachedFalse;
+  return tableGuess;
+}
+
 - (void)handleAccessibleEvent:(uint32_t)eventType {
-  if (eventType == nsIAccessibleEvent::EVENT_REORDER) {
+  if (eventType == nsIAccessibleEvent::EVENT_REORDER ||
+      eventType == nsIAccessibleEvent::EVENT_OBJECT_ATTRIBUTE_CHANGED) {
+    [self invalidateLayoutTableCache];
     [self invalidateColumns];
   }
 
@@ -391,6 +422,10 @@ using namespace mozilla::a11y;
 @end
 
 @implementation mozOutlineAccessible
+
+- (BOOL)isLayoutTablePart {
+  return NO;
+}
 
 - (NSArray*)moxRows {
   
