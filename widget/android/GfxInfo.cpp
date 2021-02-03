@@ -602,7 +602,8 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       
       
       isUnblocked |= gpu.Find("Mali-G",  true) >= 0 &&
-                     gpu.Find("Mali-G76",  true) == kNotFound;
+                     gpu.Find("Mali-G76",  true) == kNotFound &&
+                     gpu.Find("Mali-G31",  true) == kNotFound;
 
       if (!isUnblocked) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
