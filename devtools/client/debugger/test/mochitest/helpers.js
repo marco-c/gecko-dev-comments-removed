@@ -1229,12 +1229,124 @@ async function getEditorLineEl(dbg, line) {
   return el;
 }
 
-async function assertEditorBreakpoint(dbg, line, shouldExist) {
+
+
+
+
+
+
+
+
+async function assertNoBreakpoint(
+  dbg,
+  line
+) {
   const el = await getEditorLineEl(dbg, line);
 
   const exists = !!el.querySelector(".new-breakpoint");
-  const existsStr = shouldExist ? "exists" : "does not exist";
-  ok(exists === shouldExist, `Breakpoint ${existsStr} on line ${line}`);
+  ok(!exists, `Breakpoint doesn't exists on line ${line}`);
+}
+
+
+
+
+
+
+
+
+
+async function assertBreakpoint(
+  dbg,
+  line
+) {
+  const el = await getEditorLineEl(dbg, line);
+
+  const exists = !!el.querySelector(".new-breakpoint");
+  ok(exists, `Breakpoint exists on line ${line}`);
+
+  const hasConditionClass = el.classList.contains(
+    "has-condition"
+  );
+
+  ok(
+    !hasConditionClass,
+    `Regular breakpoint doesn't have condition on line ${line}`
+  );
+
+  const hasLogClass = el.classList.contains("has-log");
+
+  ok(
+    !hasLogClass,
+    `Regular breakpoint doesn't have log on line ${line}`
+  );
+}
+
+
+
+
+
+
+
+
+
+async function assertConditionBreakpoint(
+  dbg,
+  line
+) {
+  const el = await getEditorLineEl(dbg, line);
+
+  const exists = !!el.querySelector(".new-breakpoint");
+  ok(exists, `Breakpoint exists on line ${line}`);
+
+  const hasConditionClass = el.classList.contains(
+    "has-condition"
+  );
+
+  ok(
+    hasConditionClass,
+    `Conditional breakpoint on line ${line}`
+  );
+
+  const hasLogClass = el.classList.contains("has-log");
+
+  ok(
+    !hasLogClass,
+    `Conditional breakpoint doesn't have log breakpoint on line ${line}`
+  );
+}
+
+
+
+
+
+
+
+
+
+async function assertLogBreakpoint(
+  dbg,
+  line
+) {
+  const el = await getEditorLineEl(dbg, line);
+
+  const exists = !!el.querySelector(".new-breakpoint");
+  ok(exists, `Breakpoint exists on line ${line}`);
+
+  const hasConditionClass = el.classList.contains(
+    "has-condition"
+  );
+
+  ok(
+    !hasConditionClass,
+    `Log breakpoint doesn't have condition on line ${line}`
+  );
+
+  const hasLogClass = el.classList.contains("has-log");
+
+  ok(
+    hasLogClass,
+    `Log breakpoint on line ${line}`
+  );
 }
 
 function assertBreakpointSnippet(dbg, index, snippet) {
@@ -2007,6 +2119,17 @@ async function toggleDebbuggerSettingsMenuItem(dbg, { className, isChecked }) {
 
   
   await waitFor(() => menuButton.getAttribute("aria-expanded") === "false");
+}
+
+async function setLogPoint(dbg, index, value) {
+  rightClickElement(dbg, "gutter", index);
+  selectContextMenuItem(
+    dbg,
+    `${selectors.addLogItem},${selectors.editLogItem}`
+  );
+  const onBreakpointSet = waitForDispatch(dbg, "SET_BREAKPOINT");
+  await typeInPanel(dbg, value);
+  await onBreakpointSet;
 }
 
 

@@ -18,8 +18,8 @@ add_task(async function() {
   await waitForSelectedSource(dbg, "simple1");
   await syncedBps;
 
-  await assertEditorBreakpoint(dbg, 4);
-  await assertEditorBreakpoint(dbg, 5);
+  await assertBreakpoint(dbg, 4);
+  await assertBreakpoint(dbg, 5);
 });
 
 
@@ -37,7 +37,7 @@ add_task(async function() {
 
   await waitForPaused(dbg);
   assertPausedAtSourceAndLine(dbg, source.id, 22);
-  await assertEditorBreakpoint(dbg, 22);
+  await assertBreakpoint(dbg, 22);
 
   
   
@@ -45,7 +45,7 @@ add_task(async function() {
   await resume(dbg);
   await waitForPaused(dbg);
   assertPausedAtSourceAndLine(dbg, source.id, 27);
-  await assertEditorBreakpoint(dbg, 27);
+  await assertBreakpoint(dbg, 27);
 });
 
 
@@ -61,12 +61,4 @@ function getLineEl(dbg, line) {
 function addBreakpointViaGutter(dbg, line) {
   clickGutter(dbg, line);
   return waitForDispatch(dbg, "SET_BREAKPOINT");
-}
-
-async function assertEditorBreakpoint(dbg, line) {
-  await waitUntil(() => {
-    const lineEl = getLineEl(dbg, line);
-    return lineEl.classList.contains("new-breakpoint");
-  });
-  ok(true, `Breakpoint exists on line ${line}`);
 }
