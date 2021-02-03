@@ -1,0 +1,16 @@
+
+
+
+
+
+"use strict";
+
+idl_test(
+  ["webdriver"],
+  ["html"],
+  idl_array => {
+    idl_array.add_objects({
+      Navigator: ["navigator"]
+    });
+  }
+);
