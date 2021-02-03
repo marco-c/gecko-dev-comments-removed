@@ -498,8 +498,6 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         dependentFrame = nullptr;
       }
     }
-    aLists.BorderBackground()->AppendNewToTop<nsDisplayCanvasBackgroundColor>(
-        aBuilder, this);
 
     if (isThemed) {
       aLists.BorderBackground()
@@ -606,6 +604,25 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
             thisItemASR, true);
       }
       aLists.BorderBackground()->AppendToTop(&thisItemList);
+    }
+
+    bool hasFixedBottomLayer =
+        layers.mImageCount > 0 &&
+        layers.mLayers[0].mAttachment == StyleImageLayerAttachment::Fixed;
+
+    if (!hasFixedBottomLayer || needBlendContainer) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      aLists.BorderBackground()
+          ->AppendNewToBottom<nsDisplayCanvasBackgroundColor>(aBuilder, this);
     }
 
     if (needBlendContainer) {
