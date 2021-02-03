@@ -1347,7 +1347,7 @@ const browsingContextTargetPrototype = {
 
 
   _setPrintSimulationEnabled(enabled) {
-    let value = enabled ? "print" : "";
+    const value = enabled ? "print" : "";
     if (this.browsingContext.mediumOverride != value) {
       this.browsingContext.mediumOverride = value;
     }
@@ -1357,7 +1357,7 @@ const browsingContextTargetPrototype = {
 
 
   _setColorSchemeSimulation(override) {
-    let value = override || "none";
+    const value = override || "none";
     if (this.browsingContext.prefersColorSchemeOverride != value) {
       this.browsingContext.prefersColorSchemeOverride = value;
     }
