@@ -3115,6 +3115,18 @@ class BaseCompiler final : public BaseCompilerInterface {
   using BCESet = uint64_t;
 
   
+  
+
+  struct CatchInfo {
+    uint32_t eventIndex;      
+    NonAssertingLabel label;  
+
+    explicit CatchInfo(uint32_t eventIndex_) : eventIndex(eventIndex_) {}
+  };
+
+  using CatchInfoVector = Vector<CatchInfo, 0, SystemAllocPolicy>;
+
+  
 
   struct Control {
     NonAssertingLabel label;       
@@ -3125,6 +3137,8 @@ class BaseCompiler final : public BaseCompilerInterface {
     BCESet bceSafeOnExit;          
     bool deadOnArrival;            
     bool deadThenBranch;           
+    size_t tryNoteIndex;           
+    CatchInfoVector catchInfos;    
 
     Control()
         : stackHeight(StackHeight::Invalid()),
@@ -7820,6 +7834,23 @@ class BaseCompiler final : public BaseCompilerInterface {
 
   void trap(Trap t) const { masm.wasmTrap(t, bytecodeOffset()); }
 
+#ifdef ENABLE_WASM_EXCEPTIONS
+  
+  
+  [[nodiscard]] bool throwFrom(RegPtr exn, uint32_t lineOrBytecode) {
+    pushRef(exn);
+
+    
+    if (!emitInstanceCall(lineOrBytecode, SASigThrowException)) {
+      return false;
+    }
+    freeRef(popRef());
+    deadCode_ = true;
+
+    return true;
+  }
+#endif
+
   
   
   
@@ -8069,6 +8100,10 @@ class BaseCompiler final : public BaseCompilerInterface {
   [[nodiscard]] bool emitIf();
   [[nodiscard]] bool emitElse();
 #ifdef ENABLE_WASM_EXCEPTIONS
+  
+  void emitCatchSetup(LabelKind kind, Control& tryCatch,
+                      const ResultType& resultType);
+
   [[nodiscard]] bool emitTry();
   [[nodiscard]] bool emitCatch();
   [[nodiscard]] bool emitThrow();
@@ -8122,6 +8157,9 @@ class BaseCompiler final : public BaseCompilerInterface {
   MOZ_MUST_USE bool endBlock(ResultType type);
   MOZ_MUST_USE bool endIfThen(ResultType type);
   MOZ_MUST_USE bool endIfThenElse(ResultType type);
+#ifdef ENABLE_WASM_EXCEPTIONS
+  MOZ_MUST_USE bool endTryCatch(ResultType type);
+#endif
 
   void doReturn(ContinuationKind kind);
   void pushReturnValueOfCall(const FunctionCall& call, MIRType type);
@@ -9994,10 +10032,12 @@ bool BaseCompiler::emitEnd() {
       break;
 #ifdef ENABLE_WASM_EXCEPTIONS
     case LabelKind::Try:
-      MOZ_CRASH("NYI");
+      MOZ_CRASH("Try-catch block cannot end without catch.");
       break;
     case LabelKind::Catch:
-      MOZ_CRASH("NYI");
+      if (!endTryCatch(type)) {
+        return false;
+      }
       break;
 #endif
   }
@@ -10191,11 +10231,61 @@ bool BaseCompiler::emitTry() {
     return false;
   }
 
-  if (deadCode_) {
-    return true;
+  if (!deadCode_) {
+    
+    
+    sync();
   }
 
-  MOZ_CRASH("NYI");
+  initControl(controlItem(), params);
+
+  if (!deadCode_) {
+    
+    controlItem().bceSafeOnExit = 0;
+    
+    controlItem().tryNoteIndex = masm.wasmStartTry();
+  }
+
+  return true;
+}
+
+void BaseCompiler::emitCatchSetup(LabelKind kind, Control& tryCatch,
+                                  const ResultType& resultType) {
+  
+  if (deadCode_) {
+    fr.resetStackHeight(tryCatch.stackHeight, resultType);
+    popValueStackTo(tryCatch.stackSize);
+  } else {
+    MOZ_ASSERT(stk_.length() == tryCatch.stackSize + resultType.length());
+    
+    popBlockResults(resultType, tryCatch.stackHeight, ContinuationKind::Jump);
+    freeResultRegisters(resultType);
+    MOZ_ASSERT(!tryCatch.deadOnArrival);
+  }
+
+  
+  deadCode_ = tryCatch.deadOnArrival;
+
+  
+  
+  fr.resetStackHeight(tryCatch.stackHeight, ResultType::Empty());
+
+  if (deadCode_) {
+    return;
+  }
+
+  bceSafe_ = 0;
+
+  
+  masm.jump(&tryCatch.label);
+
+  
+  
+  if (kind == LabelKind::Try) {
+    WasmTryNoteVector& tryNotes = masm.tryNotes();
+    WasmTryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
+    tryNote.end = masm.currentOffset();
+  }
 }
 
 bool BaseCompiler::emitCatch() {
@@ -10209,14 +10299,181 @@ bool BaseCompiler::emitCatch() {
     return false;
   }
 
+  Control& tryCatch = controlItem();
+
+  emitCatchSetup(kind, tryCatch, resultType);
+
   if (deadCode_) {
     return true;
   }
 
-  MOZ_CRASH("NYI");
+  
+  CatchInfo catchInfo(eventIndex);
+  if (!tryCatch.catchInfos.emplaceBack(catchInfo)) {
+    return false;
+  }
+
+  masm.bind(&tryCatch.catchInfos.back().label);
+
+  
+  const ResultType params = moduleEnv_.events[eventIndex].resultType();
+
+  const uint32_t dataOffset =
+      NativeObject::getFixedSlotOffset(ArrayBufferObject::DATA_SLOT);
+
+  
+  
+  RegPtr exn = RegPtr(WasmExceptionReg);
+  needRef(exn);
+  RegPtr scratch = needRef();
+
+  masm.unboxObject(Address(exn, WasmRuntimeExceptionObject::offsetOfValues()),
+                   scratch);
+  freeRef(exn);
+
+  masm.loadPtr(Address(scratch, dataOffset), scratch);
+  size_t argOffset = 0;
+  for (uint32_t i = 0; i < params.length(); i++) {
+    switch (params[i].kind()) {
+      case ValType::I32: {
+        RegI32 reg = needI32();
+        masm.load32(Address(scratch, argOffset), reg);
+        pushI32(reg);
+        break;
+      }
+      case ValType::I64: {
+        RegI64 reg = needI64();
+        masm.load64(Address(scratch, argOffset), reg);
+        pushI64(reg);
+        break;
+      }
+      case ValType::F32: {
+        RegF32 reg = needF32();
+        masm.loadFloat32(Address(scratch, argOffset), reg);
+        pushF32(reg);
+        break;
+      }
+      case ValType::F64: {
+        RegF64 reg = needF64();
+        masm.loadDouble(Address(scratch, argOffset), reg);
+        pushF64(reg);
+        break;
+      }
+      case ValType::V128: {
+#  ifdef ENABLE_WASM_SIMD
+        RegV128 reg = needV128();
+        masm.loadUnalignedSimd128(Address(scratch, argOffset), reg);
+        pushV128(reg);
+        break;
+#  else
+        MOZ_CRASH("No SIMD support");
+#  endif
+      }
+      case ValType::Ref:
+        MOZ_CRASH("NYI - no reftype support");
+    }
+    argOffset += SizeOf(params[i]);
+  }
+  freeRef(scratch);
+
+  return true;
+}
+
+bool BaseCompiler::endTryCatch(ResultType type) {
+  uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
+
+  Control& tryCatch = controlItem();
+
+  if (deadCode_) {
+    fr.resetStackHeight(tryCatch.stackHeight, type);
+    popValueStackTo(tryCatch.stackSize);
+  } else {
+    MOZ_ASSERT(stk_.length() == tryCatch.stackSize + type.length());
+    
+    
+    popBlockResults(type, tryCatch.stackHeight, ContinuationKind::Jump);
+    
+    
+    freeResultRegisters(type);
+    masm.jump(&tryCatch.label);
+    MOZ_ASSERT(!tryCatch.bceSafeOnExit);
+    MOZ_ASSERT(!tryCatch.deadOnArrival);
+  }
+
+  deadCode_ = tryCatch.deadOnArrival;
+
+  if (deadCode_) {
+    return true;
+  }
+
+  
+  masm.bind(&tryCatch.otherLabel);
+
+  
+  
+  StackHeight prePadHeight = fr.stackHeight();
+  fr.setStackHeight(tryCatch.stackHeight);
+
+  WasmTryNoteVector& tryNotes = masm.tryNotes();
+  WasmTryNote& tryNote = tryNotes[controlItem().tryNoteIndex];
+  tryNote.entryPoint = masm.currentOffset();
+  tryNote.framePushed = masm.framePushed();
+
+  RegPtr exn = RegPtr(WasmExceptionReg);
+  needRef(exn);
+
+  
+  fr.loadTlsPtr(WasmTlsReg);
+  masm.loadWasmPinnedRegsFromTls();
+  RegPtr scratch = needRef();
+  RegPtr scratch2 = needRef();
+  masm.switchToWasmTlsRealm(scratch, scratch2);
+  freeRef(scratch2);
+
+  
+  masm.movePtr(exn, scratch);
+  pushRef(exn);
+  pushRef(scratch);
+
+  if (!emitInstanceCall(lineOrBytecode, SASigGetLocalExceptionIndex)) {
+    return false;
+  }
+
+  
+  needRef(exn);
+  RegI32 index = popI32();
+  freeRef(exn);
+
+  
+  exn = popRef(RegPtr(WasmExceptionReg));
+
+  for (CatchInfo& info : tryCatch.catchInfos) {
+    masm.branch32(Assembler::Equal, index, Imm32(info.eventIndex), &info.label);
+  }
+  freeI32(index);
+
+  
+  if (!throwFrom(exn, lineOrBytecode)) {
+    return false;
+  }
+
+  
+  fr.setStackHeight(prePadHeight);
+
+  
+  if (tryCatch.label.used()) {
+    masm.bind(&tryCatch.label);
+  }
+
+  captureResultRegisters(type);
+  deadCode_ = tryCatch.deadOnArrival;
+  bceSafe_ = tryCatch.bceSafeOnExit;
+
+  return pushBlockResults(type);
 }
 
 bool BaseCompiler::emitThrow() {
+  uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
   uint32_t exnIndex;
   NothingVector unused_argValues;
 
@@ -10228,7 +10485,76 @@ bool BaseCompiler::emitThrow() {
     return true;
   }
 
-  MOZ_CRASH("NYI");
+  const ResultType& params = moduleEnv_.events[exnIndex].resultType();
+
+  
+  uint32_t exnBytes = 0;
+  for (size_t i = 0; i < params.length(); i++) {
+    exnBytes += SizeOf(params[i]);
+  }
+
+  
+  pushI32(exnIndex);
+  pushI32(exnBytes);
+  if (!emitInstanceCall(lineOrBytecode, SASigExceptionNew)) {
+    return false;
+  }
+
+  RegPtr exn = popRef();
+  
+  RegPtr scratch = needRef();
+  const uint32_t dataOffset =
+      NativeObject::getFixedSlotOffset(ArrayBufferObject::DATA_SLOT);
+
+  masm.unboxObject(Address(exn, WasmRuntimeExceptionObject::offsetOfValues()),
+                   scratch);
+  masm.loadPtr(Address(scratch, dataOffset), scratch);
+
+  size_t argOffset = exnBytes;
+  for (int32_t i = params.length() - 1; i >= 0; i--) {
+    argOffset -= SizeOf(params[i]);
+    switch (params[i].kind()) {
+      case ValType::I32: {
+        RegI32 reg = popI32();
+        masm.store32(reg, Address(scratch, argOffset));
+        freeI32(reg);
+        break;
+      }
+      case ValType::I64: {
+        RegI64 reg = popI64();
+        masm.store64(reg, Address(scratch, argOffset));
+        freeI64(reg);
+        break;
+      }
+      case ValType::F32: {
+        RegF32 reg = popF32();
+        masm.storeFloat32(reg, Address(scratch, argOffset));
+        freeF32(reg);
+        break;
+      }
+      case ValType::F64: {
+        RegF64 reg = popF64();
+        masm.storeDouble(reg, Address(scratch, argOffset));
+        freeF64(reg);
+        break;
+      }
+      case ValType::V128: {
+#  ifdef ENABLE_WASM_SIMD
+        RegV128 reg = popV128();
+        masm.storeUnalignedSimd128(reg, Address(scratch, argOffset));
+        freeV128(reg);
+        break;
+#  else
+        MOZ_CRASH("No SIMD support");
+#  endif
+      }
+      case ValType::Ref:
+        MOZ_CRASH("NYI - no reftype support");
+    }
+  }
+  freeRef(scratch);
+
+  return throwFrom(exn, lineOrBytecode);
 }
 #endif
 
