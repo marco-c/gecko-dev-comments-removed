@@ -35,6 +35,10 @@ function run_test() {
     FOG.initializeFOG();
   }
 
+  Services.prefs.setBoolPref(
+    "toolkit.telemetry.testing.overrideProductsCheck",
+    true
+  );
   run_next_test();
 }
 
@@ -76,7 +80,11 @@ add_task(async function test_client_id() {
   ];
 
   
+  Services.telemetry.getSnapshotForScalars("main", true);
+
+  
   await ClientID._reset();
+  await OS.File.remove(drsPath, { ignoreAbsent: true });
   let clientID = await ClientID.getClientID();
   Assert.equal(typeof clientID, "string");
   Assert.ok(uuidRegex.test(clientID));
@@ -88,6 +96,10 @@ add_task(async function test_client_id() {
       clientID
     );
   }
+  let snapshot = Services.telemetry.getSnapshotForScalars("main", true).parent;
+  Assert.equal(snapshot["telemetry.generated_new_client_id"], true);
+  
+  Assert.ok(!("telemetry.loaded_client_id_doesnt_match_pref" in snapshot));
 
   
   await ClientID._reset();
@@ -106,6 +118,10 @@ add_task(async function test_client_id() {
       clientID
     );
   }
+  snapshot = Services.telemetry.getSnapshotForScalars("main", true).parent;
+  Assert.equal(snapshot["telemetry.generated_new_client_id"], true);
+  
+  Assert.ok(!("telemetry.loaded_client_id_doesnt_match_pref" in snapshot));
 
   
   for (let [invalidID] of invalidIDs) {
@@ -122,7 +138,46 @@ add_task(async function test_client_id() {
         clientID
       );
     }
+    snapshot = Services.telemetry.getSnapshotForScalars("main", true).parent;
+    Assert.equal(snapshot["telemetry.generated_new_client_id"], true);
+    Assert.equal(snapshot["telemetry.loaded_client_id_doesnt_match_pref"], 1);
   }
+
+  
+  const validClientID = "5afebd62-a33c-416c-b519-5c60fb988e8e";
+  await ClientID._reset();
+  await CommonUtils.writeJSON({ clientID: validClientID }, drsPath);
+  clientID = await ClientID.getClientID();
+  Assert.equal(clientID, validClientID);
+  if (AppConstants.MOZ_GLEAN) {
+    Assert.equal(
+      Glean.fogValidation.legacyTelemetryClientId.testGetValue(
+        "fog-validation"
+      ),
+      clientID
+    );
+  }
+  snapshot = Services.telemetry.getSnapshotForScalars("main", true).parent;
+  Assert.ok(!("telemetry.generated_new_client_id" in snapshot));
+  Assert.equal(snapshot["telemetry.loaded_client_id_doesnt_match_pref"], 1);
+
+  
+  await ClientID._reset();
+  clientID = await ClientID.getClientID();
+  Assert.equal(clientID, validClientID);
+  if (AppConstants.MOZ_GLEAN) {
+    Assert.equal(
+      Glean.fogValidation.legacyTelemetryClientId.testGetValue(
+        "fog-validation"
+      ),
+      clientID
+    );
+  }
+  
+  snapshot =
+    Services.telemetry.getSnapshotForScalars("main", true).parent || {};
+  Assert.ok(!("telemetry.generated_new_client_id" in snapshot));
+  Assert.ok(!("telemetry.loaded_client_id_doesnt_match_pref" in snapshot));
 
   
   for (let [invalidID, prefFunc] of invalidIDs) {
