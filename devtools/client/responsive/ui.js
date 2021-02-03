@@ -146,8 +146,6 @@ class ResponsiveUI {
     
     this.browserWindow.addEventListener("FullZoomChange", this);
 
-    this.tab.addEventListener("BeforeTabRemotenessChange", this);
-
     
     debug("Wait until RDP server connect");
     await this.connectToServer();
@@ -272,13 +270,9 @@ class ResponsiveUI {
     
     const isTabDestroyed =
       !this.tab.linkedBrowser || this.responsiveFront.isDestroyed();
-    const isWindowClosing =
-      (options && options.reason === "unload") || isTabDestroyed;
+    const isWindowClosing = options?.reason === "unload" || isTabDestroyed;
     const isTabContentDestroying =
-      isWindowClosing ||
-      (options &&
-        (options.reason === "TabClose" ||
-          options.reason === "BeforeTabRemotenessChange"));
+      isWindowClosing || options?.reason === "TabClose";
 
     let currentTarget;
 
@@ -316,7 +310,6 @@ class ResponsiveUI {
     }
 
     this.tab.removeEventListener("TabClose", this);
-    this.tab.removeEventListener("BeforeTabRemotenessChange", this);
     this.browserWindow.removeEventListener("unload", this);
     this.tab.linkedBrowser.leaveResponsiveMode();
 
@@ -389,7 +382,10 @@ class ResponsiveUI {
     this.client = new DevToolsClient(DevToolsServer.connectPipe());
     await this.client.connect();
 
-    const descriptor = await this.client.mainRoot.getTab();
+    
+    
+    
+    const descriptor = await this.client.mainRoot.getTab({ tab: this.tab });
     const targetFront = await descriptor.getTarget();
 
     this.targetList = new TargetList(this.client.mainRoot, targetFront);
@@ -452,9 +448,6 @@ class ResponsiveUI {
         
         const { width, height } = this.getViewportSize();
         this.updateViewportSize(width, height);
-        break;
-      case "BeforeTabRemotenessChange":
-        this.onRemotenessChange(event);
         break;
       case "TabClose":
       case "unload":
@@ -1057,17 +1050,6 @@ class ResponsiveUI {
   
   
   onNetworkResourceAvailable() {}
-
-  async onRemotenessChange(event) {
-    
-    
-    
-    
-    await this.targetList.targetFront.once("target-destroyed");
-    const descriptor = await this.client.mainRoot.getTab();
-    const newTarget = await descriptor.getTarget();
-    await this.targetList.switchToTarget(newTarget);
-  }
 
   
 
