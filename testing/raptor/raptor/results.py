@@ -191,10 +191,6 @@ class PerftestResultsHandler(object):
 
         expected_perfherder = 1
 
-        if output.mozproxy_data:
-            
-            expected_perfherder += 1
-
         if is_resource_test():
             
             
