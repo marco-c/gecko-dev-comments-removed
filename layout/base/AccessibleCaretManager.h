@@ -256,7 +256,7 @@ class AccessibleCaretManager {
   
   
   
-  nsRect GetAllChildFrameRectsUnion(nsIFrame* aFrame) const;
+  static nsRect GetAllChildFrameRectsUnion(nsIFrame* aFrame);
 
   
   

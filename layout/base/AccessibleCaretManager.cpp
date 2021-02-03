@@ -1291,8 +1291,8 @@ nsresult AccessibleCaretManager::DragCaretInternal(const nsPoint& aPoint) {
   return NS_OK;
 }
 
-nsRect AccessibleCaretManager::GetAllChildFrameRectsUnion(
-    nsIFrame* aFrame) const {
+
+nsRect AccessibleCaretManager::GetAllChildFrameRectsUnion(nsIFrame* aFrame) {
   nsRect unionRect;
 
   
@@ -1342,7 +1342,8 @@ nsPoint AccessibleCaretManager::AdjustDragBoundary(
   if (editingHost) {
     nsIFrame* editingHostFrame = editingHost->GetPrimaryFrame();
     if (editingHostFrame) {
-      nsRect boundary = GetAllChildFrameRectsUnion(editingHostFrame);
+      nsRect boundary =
+          AccessibleCaretManager::GetAllChildFrameRectsUnion(editingHostFrame);
       nsLayoutUtils::TransformRect(editingHostFrame, mPresShell->GetRootFrame(),
                                    boundary);
 
