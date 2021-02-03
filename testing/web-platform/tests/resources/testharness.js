@@ -2780,7 +2780,15 @@
 
         this.current_test = null;
         this.asserts_run = [];
-        this.output = settings.output;
+
+        
+        
+        
+        
+        
+        
+        
+        this.output = settings.output && 'document' in global_scope;
 
         this.status = new TestsStatus();
 
