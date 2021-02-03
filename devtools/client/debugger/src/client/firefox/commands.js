@@ -222,25 +222,41 @@ async function setBreakpoint(
   location: BreakpointLocation,
   options: BreakpointOptions
 ) {
+  const breakpoint = breakpoints[makePendingLocationId(location)];
+  if (
+    breakpoint &&
+    JSON.stringify(breakpoint.options) == JSON.stringify(options)
+  ) {
+    return;
+  }
   breakpoints[makePendingLocationId(location)] = { location, options };
 
+  
+  
+  
+  
+  
+  const serverOptions = {
+    condition: options.condition,
+    logValue: options.logValue,
+  };
   const hasWatcherSupport = targetList.hasTargetWatcherSupport(
     "set-breakpoints"
   );
   if (!hasWatcherSupport) {
     
     return forEachThread(async thread =>
-      thread.setBreakpoint(location, options)
+      thread.setBreakpoint(location, serverOptions)
     );
   }
   const breakpointsFront = await targetList.watcherFront.getBreakpointListActor();
-  await breakpointsFront.setBreakpoint(location, options);
+  await breakpointsFront.setBreakpoint(location, serverOptions);
 
   
   
   return forEachThread(async thread => {
     if (!targetList.hasTargetWatcherSupport(thread.targetFront.targetType)) {
-      return thread.setBreakpoint(location, options);
+      return thread.setBreakpoint(location, serverOptions);
     }
   });
 }
