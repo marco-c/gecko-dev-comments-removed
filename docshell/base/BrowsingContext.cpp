@@ -1868,26 +1868,8 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
   MOZ_DIAGNOSTIC_ASSERT(aLoadState->TargetBrowsingContext() == this,
                         "must be targeting this BrowsingContext");
 
-  const auto& sourceBC = aLoadState->SourceBrowsingContext();
-  bool isActive =
-      sourceBC && sourceBC->IsActive() && !IsActive() &&
-      !Preferences::GetBool("browser.tabs.loadDivertedInBackground", false);
   if (mDocShell) {
-    nsresult rv = nsDocShell::Cast(mDocShell)->InternalLoad(aLoadState);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    
-    
-    nsCOMPtr<nsPIDOMWindowOuter> domWin = GetDOMWindow();
-    if (isActive && domWin) {
-      nsFocusManager::FocusWindow(domWin, CallerType::System);
-    }
-
-    
-    
-
-    return rv;
+    return nsDocShell::Cast(mDocShell)->InternalLoad(aLoadState);
   }
 
   
@@ -1897,6 +1879,7 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
   
   MOZ_TRY(CheckSandboxFlags(aLoadState));
 
+  const auto& sourceBC = aLoadState->SourceBrowsingContext();
   if (XRE_IsParentProcess()) {
     ContentParent* cp = Canonical()->GetContentParent();
     if (!cp || !cp->CanSend()) {
@@ -1905,7 +1888,7 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
 
     MOZ_ALWAYS_SUCCEEDS(
         SetCurrentLoadIdentifier(Some(aLoadState->GetLoadIdentifier())));
-    Unused << cp->SendInternalLoad(aLoadState, isActive);
+    Unused << cp->SendInternalLoad(aLoadState);
   } else {
     MOZ_DIAGNOSTIC_ASSERT(sourceBC);
     MOZ_DIAGNOSTIC_ASSERT(sourceBC->Group() == Group());
@@ -2542,7 +2525,8 @@ void BrowsingContext::DidSet(FieldIndex<IDX_PlatformOverride>) {
   });
 }
 
-bool BrowsingContext::LegacyCheckOnlyOwningProcessCanSet(ContentParent* aSource) {
+bool BrowsingContext::LegacyCheckOnlyOwningProcessCanSet(
+    ContentParent* aSource) {
   if (aSource) {
     MOZ_ASSERT(XRE_IsParentProcess());
 
