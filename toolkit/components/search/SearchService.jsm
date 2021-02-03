@@ -1016,7 +1016,9 @@ SearchService.prototype = {
           
           loadPath.includes("[app]/extensions/langpack") ||
           loadPath.includes("[other]/langpack") ||
-          loadPath.includes("[profile]/extensions/langpack"))
+          loadPath.includes("[profile]/extensions/langpack") ||
+          
+          loadPath.startsWith("jar:[app]/omni.ja"))
       ) {
         continue;
       }
