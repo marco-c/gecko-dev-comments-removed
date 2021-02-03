@@ -3844,6 +3844,10 @@ bool jit::AnalyzeArgumentsUsage(JSContext* cx, JSScript* scriptArg) {
   
   script->setNeedsArgsObj(true);
 
+  if (JitOptions.scalarReplaceArguments) {
+    return true;
+  }
+
   
   
   
