@@ -11,7 +11,7 @@ use crate::ipc::need_ipc;
 
 
 mod private {
-    use super::{BooleanMetric, CounterMetric, StringMetric};
+    use super::{BooleanMetric, CounterMetric, MetricId, StringMetric};
 
     
     
@@ -19,6 +19,7 @@ mod private {
     
     pub trait Sealed {
         type GleanMetric: glean::private::AllowLabeled + Clone;
+        fn from_glean_metric(id: MetricId, metric: Self::GleanMetric) -> Self;
     }
 
     
@@ -26,6 +27,9 @@ mod private {
     
     impl Sealed for BooleanMetric {
         type GleanMetric = glean::private::BooleanMetric;
+        fn from_glean_metric(_id: MetricId, metric: Self::GleanMetric) -> Self {
+            BooleanMetric::Parent(metric)
+        }
     }
 
     
@@ -33,6 +37,9 @@ mod private {
     
     impl Sealed for StringMetric {
         type GleanMetric = glean::private::StringMetric;
+        fn from_glean_metric(_id: MetricId, metric: Self::GleanMetric) -> Self {
+            StringMetric::Parent(metric)
+        }
     }
 
     
@@ -40,6 +47,9 @@ mod private {
     
     impl Sealed for CounterMetric {
         type GleanMetric = glean::private::CounterMetric;
+        fn from_glean_metric(id: MetricId, metric: Self::GleanMetric) -> Self {
+            CounterMetric::Parent { id, inner: metric }
+        }
     }
 }
 
@@ -80,13 +90,9 @@ impl<T> AllowLabeled for T where T: private::Sealed {}
 
 
 
-
 pub struct LabeledMetric<T: AllowLabeled> {
     
-    
-    
-    
-    _id: MetricId,
+    id: MetricId,
 
     
     
@@ -107,12 +113,12 @@ where
         labels: Option<Vec<String>>,
     ) -> LabeledMetric<T> {
         let core = glean::private::LabeledMetric::new(meta, labels);
-        LabeledMetric { _id: id, core }
+        LabeledMetric { id, core }
     }
 }
 
 #[inherent(pub)]
-impl<U> glean_core::traits::Labeled<U::GleanMetric> for LabeledMetric<U>
+impl<U> glean_core::traits::Labeled<U> for LabeledMetric<U>
 where
     U: AllowLabeled + Clone,
 {
@@ -127,11 +133,11 @@ where
     
     
     
-    fn get(&self, label: &str) -> U::GleanMetric {
+    fn get(&self, label: &str) -> U {
         if need_ipc() {
             panic!("Use of labeled metrics in IPC land not yet implemented!");
         } else {
-            self.core.get(label)
+            U::from_glean_metric(self.id, self.core.get(label))
         }
     }
 
