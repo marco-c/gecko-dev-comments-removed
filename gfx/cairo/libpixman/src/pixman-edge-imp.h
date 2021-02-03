@@ -55,8 +55,9 @@ RASTERIZE_EDGES (pixman_image_t  *image,
 
 
 
-	lx += X_FRAC_FIRST(1) - pixman_fixed_e;
-	rx += X_FRAC_FIRST(1) - pixman_fixed_e;
+        
+	lx = (unsigned)lx + X_FRAC_FIRST(1) - pixman_fixed_e;
+	rx = (unsigned)rx + X_FRAC_FIRST(1) - pixman_fixed_e;
 #endif
 	
 	if (lx < 0)
