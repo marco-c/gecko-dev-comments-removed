@@ -829,6 +829,7 @@ def build_generic_worker_payload(config, task, task_def):
                 Required("paths"): [text_type],
                 
                 Required("formats"): [text_type],
+                Optional("singleFileGlobs"): [text_type],
             }
         ],
         
@@ -837,6 +838,7 @@ def build_generic_worker_payload(config, task, task_def):
             "mac_notarize_part_3",
             "mac_sign_and_pkg",
             "mac_geckodriver",
+            "mac_single_file",
         ),
         Optional("entitlements-url"): text_type,
     },
