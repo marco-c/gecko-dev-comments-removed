@@ -203,7 +203,6 @@ bool IsIdentifierNameOrPrivateName(const char16_t* chars, size_t length);
 
 
 bool IsKeyword(const ParserAtom* atom);
-bool IsKeyword(JSLinearString* str);
 
 class MOZ_STACK_CLASS AutoFrontendTraceLog {
 #ifdef JS_TRACE_LOGGING
