@@ -1482,6 +1482,10 @@ bool PerHandlerParser<ParseHandler>::checkForUndefinedPrivateFields(
     return true;
   }
 
+  if (!this->stencil_.input.options.privateClassFields) {
+    return true;
+  }
+
   Vector<UnboundPrivateName, 8> unboundPrivateNames(cx_);
   if (!usedNames_.getUnboundPrivateNames(unboundPrivateNames)) {
     return false;
@@ -1510,49 +1514,20 @@ bool PerHandlerParser<ParseHandler>::checkForUndefinedPrivateFields(
 
   
   
-  auto verifyPrivateName = [](JSContext* cx, auto* parser,
-                              HandleScope enclosingScope,
-                              UnboundPrivateName unboundName) {
-    const ParserAtom* unboundAtom =
-        parser->compilationState_.parserAtoms.getParserAtom(unboundName.atom);
-
-    
-    for (ScopeIter si(enclosingScope); si; si++) {
-      
-      if (si.scope()->kind() != ScopeKind::ClassBody) {
-        continue;
-      }
-
-      
-      for (js::BindingIter bi(si.scope()); bi; bi++) {
-        if (unboundAtom->equalsJSAtom(bi.name())) {
-          
-          return true;
-        }
-      }
-    }
-
-    
-    UniqueChars str = ParserAtomToPrintableString(
-        cx, parser->compilationState_.parserAtoms, unboundName.atom);
-    if (!str) {
-      return false;
-    }
-    parser->errorAt(unboundName.position.begin, JSMSG_MISSING_PRIVATE_DECL,
-                    str.get());
-    return false;
-  };
-
-  
-  
   for (UnboundPrivateName unboundName : unboundPrivateNames) {
     
     
     
     
-    if (!verifyPrivateName(cx_, this,
-                           compilationState_.scopeContext.effectiveScope,
-                           unboundName)) {
+    if (!this->compilationState_.scopeContext
+             .effectiveScopePrivateFieldCacheHas(unboundName.atom)) {
+      UniqueChars str = ParserAtomToPrintableString(
+          cx_, this->compilationState_.parserAtoms, unboundName.atom);
+      if (!str) {
+        return false;
+      }
+      errorAt(unboundName.position.begin, JSMSG_MISSING_PRIVATE_DECL,
+              str.get());
       return false;
     }
   }
