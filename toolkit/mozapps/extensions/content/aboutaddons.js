@@ -2251,6 +2251,10 @@ class InlineOptionsBrowser extends HTMLElement {
         this.browser.frameLoader.requestUpdatePosition();
       }
     }, 100);
+
+    this._promiseDisconnected = new Promise(
+      resolve => (this._resolveDisconnected = resolve)
+    );
   }
 
   connectedCallback() {
@@ -2266,6 +2270,7 @@ class InlineOptionsBrowser extends HTMLElement {
   }
 
   disconnectedCallback() {
+    this._resolveDisconnected();
     window.removeEventListener("scroll", this, true);
     top.browsingContext.embedderElement.removeEventListener(
       "FullZoomChange",
@@ -2435,7 +2440,10 @@ class InlineOptionsBrowser extends HTMLElement {
         
         
         
-        promiseEvent("DOMContentLoaded", document).then(() => {
+        Promise.race([
+          promiseEvent("DOMContentLoaded", document),
+          this._promiseDisconnected,
+        ]).then(() => {
           this.loadURI(optionsURL);
         });
       }
