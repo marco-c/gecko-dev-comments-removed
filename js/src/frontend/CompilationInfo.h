@@ -51,17 +51,6 @@ struct CompilationInput;
 struct ScopeContext {
   
   
-  
-  
-  
-  
-  
-  
-  
-  JS::Rooted<Scope*> effectiveScope;
-
-  
-  
   mozilla::Maybe<MemberInitializers> memberInitializers = {};
 
   enum class EnclosingLexicalBindingKind {
@@ -130,8 +119,6 @@ struct ScopeContext {
   bool hasFunctionNeedsHomeObjectOnChain = false;
 #endif
 
-  explicit ScopeContext(JSContext* cx) : effectiveScope(cx) {}
-
   bool init(JSContext* cx, CompilationInput& input,
             ParserAtomsTable& parserAtoms, InheritThis inheritThis,
             JSObject* enclosingEnv);
@@ -157,6 +144,7 @@ struct ScopeContext {
                                          ParserAtomsTable& parserAtoms);
 
   bool cachePrivateFieldsForEval(JSContext* cx, CompilationInput& input,
+                                 Scope* effectiveScope,
                                  ParserAtomsTable& parserAtoms);
 
   bool addToEnclosingLexicalBindingCache(JSContext* cx, CompilationInput& input,
