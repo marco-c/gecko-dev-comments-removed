@@ -16,10 +16,6 @@ extern "C" const char* __tsan_default_suppressions() {
          
          MOZ_TSAN_DEFAULT_EXTLIB_SUPPRESSIONS
 
-         
-         "race:QuitProgressUI\n"
-         "race:ShowProgressUI\n"
-
       
       ;  
   
