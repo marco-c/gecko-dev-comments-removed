@@ -1190,48 +1190,6 @@ static const MediaTrackConstraints& GetInvariant(
                                           : empty;
 }
 
-class GetUserMediaStreamRunnable : public Runnable {
- public:
-  GetUserMediaStreamRunnable(
-      MozPromiseHolder<MediaManager::StreamPromise>&& aHolder,
-      uint64_t aWindowID, RefPtr<GetUserMediaWindowListener> aWindowListener,
-      RefPtr<SourceListener> aSourceListener,
-      const ipc::PrincipalInfo& aPrincipalInfo,
-      const MediaStreamConstraints& aConstraints,
-      RefPtr<MediaDevice> aAudioDevice, RefPtr<MediaDevice> aVideoDevice,
-      RefPtr<PeerIdentity> aPeerIdentity, bool aIsChrome)
-      : Runnable("GetUserMediaStreamRunnable"),
-        mHolder(std::move(aHolder)),
-        mConstraints(aConstraints),
-        mAudioDevice(std::move(aAudioDevice)),
-        mVideoDevice(std::move(aVideoDevice)),
-        mWindowID(aWindowID),
-        mWindowListener(std::move(aWindowListener)),
-        mSourceListener(std::move(aSourceListener)),
-        mPrincipalInfo(aPrincipalInfo),
-        mPeerIdentity(std::move(aPeerIdentity)),
-        mManager(MediaManager::GetInstance()) {}
-
-  ~GetUserMediaStreamRunnable() {
-    mHolder.RejectIfExists(
-        MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError), __func__);
-  }
-
-  NS_IMETHOD Run() override;
-
- private:
-  MozPromiseHolder<MediaManager::StreamPromise> mHolder;
-  MediaStreamConstraints mConstraints;
-  RefPtr<MediaDevice> mAudioDevice;
-  RefPtr<MediaDevice> mVideoDevice;
-  uint64_t mWindowID;
-  RefPtr<GetUserMediaWindowListener> mWindowListener;
-  RefPtr<SourceListener> mSourceListener;
-  ipc::PrincipalInfo mPrincipalInfo;
-  RefPtr<PeerIdentity> mPeerIdentity;
-  RefPtr<MediaManager> mManager;  
-};
-
 
 
 static void GetMediaDevices(MediaEngine* aEngine, uint64_t aWindowId,
@@ -1335,11 +1293,10 @@ RefPtr<MediaManager::BadConstraintsPromise> MediaManager::SelectSettings(
 
 
 
-
-
-
-class GetUserMediaTask : public Runnable {
+class GetUserMediaTask final {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GetUserMediaTask)
+
   GetUserMediaTask(const MediaStreamConstraints& aConstraints,
                    MozPromiseHolder<MediaManager::StreamPromise>&& aHolder,
                    uint64_t aWindowID,
@@ -1349,8 +1306,7 @@ class GetUserMediaTask : public Runnable {
                    const ipc::PrincipalInfo& aPrincipalInfo, bool aIsChrome,
                    RefPtr<MediaManager::MediaDeviceSetRefCnt>&& aMediaDeviceSet,
                    bool aShouldFocusSource)
-      : Runnable("GetUserMediaTask"),
-        mConstraints(aConstraints),
+      : mConstraints(aConstraints),
         mHolder(std::move(aHolder)),
         mWindowID(aWindowID),
         mWindowListener(std::move(aWindowListener)),
@@ -1363,6 +1319,14 @@ class GetUserMediaTask : public Runnable {
         mMediaDeviceSet(aMediaDeviceSet),
         mManager(MediaManager::GetInstance()) {}
 
+  void Allowed() {
+    
+    MediaManager::Dispatch(
+        NewRunnableMethod("GetUserMediaTask::AllocateDevices", this,
+                          &GetUserMediaTask::AllocateDevices));
+  }
+
+ private:
   ~GetUserMediaTask() {
     if (!mHolder.IsEmpty()) {
       Fail(MediaMgrError::Name::NotAllowedError);
@@ -1383,8 +1347,12 @@ class GetUserMediaTask : public Runnable {
         &GetUserMediaWindowListener::Remove, mSourceListener));
   }
 
-  NS_IMETHOD
-  Run() override {
+  
+
+
+
+
+  void AllocateDevices() {
     MOZ_ASSERT(!NS_IsMainThread());
     MOZ_ASSERT(mDeviceChosen);
     LOG("GetUserMediaTask::Run()");
@@ -1453,20 +1421,14 @@ class GetUserMediaTask : public Runnable {
             }
             manager->SendPendingGUMRequest();
           }));
-      return NS_OK;
+      return;
     }
-    PeerIdentity* peerIdentity = nullptr;
-    if (!mConstraints.mPeerIdentity.IsEmpty()) {
-      peerIdentity = new PeerIdentity(mConstraints.mPeerIdentity);
-    }
-
-    NS_DispatchToMainThread(do_AddRef(new GetUserMediaStreamRunnable(
-        std::move(mHolder), mWindowID, mWindowListener, mSourceListener,
-        mPrincipalInfo, mConstraints, mAudioDevice, mVideoDevice, peerIdentity,
-        mIsChrome)));
-    return NS_OK;
+    NS_DispatchToMainThread(
+        NewRunnableMethod("GetUserMediaTask::PrepareDOMStream", this,
+                          &GetUserMediaTask::PrepareDOMStream));
   }
 
+ public:
   nsresult Denied(MediaMgrError::Name aName,
                   const nsCString& aMessage = ""_ns) {
     
@@ -1504,6 +1466,8 @@ class GetUserMediaTask : public Runnable {
   uint64_t GetWindowID() { return mWindowID; }
 
  private:
+  void PrepareDOMStream();
+
   MediaStreamConstraints mConstraints;
 
   MozPromiseHolder<MediaManager::StreamPromise> mHolder;
@@ -1532,9 +1496,9 @@ class GetUserMediaTask : public Runnable {
 
 
 
-NS_IMETHODIMP GetUserMediaStreamRunnable::Run() {
+void GetUserMediaTask::PrepareDOMStream() {
   MOZ_ASSERT(NS_IsMainThread());
-  LOG("GetUserMediaStreamRunnable::Run()");
+  LOG("GetUserMediaTask::PrepareDOMStream()");
   nsGlobalWindowInner* window =
       nsGlobalWindowInner::GetInnerWindowWithId(mWindowID);
 
@@ -1542,7 +1506,7 @@ NS_IMETHODIMP GetUserMediaStreamRunnable::Run() {
   
   if (!mManager->IsWindowListenerStillActive(mWindowListener)) {
     
-    return NS_OK;
+    return;
   }
 
   MediaTrackGraph::GraphDriverType graphDriverType =
@@ -1556,7 +1520,9 @@ NS_IMETHODIMP GetUserMediaStreamRunnable::Run() {
   RefPtr<LocalTrackSource> audioTrackSource;
   RefPtr<LocalTrackSource> videoTrackSource;
   nsCOMPtr<nsIPrincipal> principal;
-  if (mPeerIdentity) {
+  RefPtr<PeerIdentity> peerIdentity = nullptr;
+  if (!mConstraints.mPeerIdentity.IsEmpty()) {
+    peerIdentity = new PeerIdentity(mConstraints.mPeerIdentity);
     principal = NullPrincipal::CreateWithInheritedAttributes(
         window->GetExtantDoc()->NodePrincipal());
   } else {
@@ -1575,7 +1541,7 @@ NS_IMETHODIMP GetUserMediaStreamRunnable::Run() {
           "before shipping.");
       auto audioCaptureSource = MakeRefPtr<AudioCaptureTrackSource>(
           principal, window, u"Window audio capture"_ns,
-          mtg->CreateAudioCaptureTrack(), mPeerIdentity);
+          mtg->CreateAudioCaptureTrack(), peerIdentity);
       audioTrackSource = audioCaptureSource;
       RefPtr<MediaStreamTrack> track = new dom::AudioStreamTrack(
           window, audioCaptureSource->InputTrack(), audioCaptureSource);
@@ -1596,7 +1562,7 @@ NS_IMETHODIMP GetUserMediaStreamRunnable::Run() {
 #endif
       audioTrackSource = new LocalTrackSource(
           principal, audioDeviceName, mSourceListener,
-          mAudioDevice->GetMediaSource(), track, mPeerIdentity);
+          mAudioDevice->GetMediaSource(), track, peerIdentity);
       MOZ_ASSERT(MediaManager::IsOn(mConstraints.mAudio));
       RefPtr<MediaStreamTrack> domTrack = new dom::AudioStreamTrack(
           window, track, audioTrackSource, dom::MediaStreamTrackState::Live,
@@ -1610,7 +1576,7 @@ NS_IMETHODIMP GetUserMediaStreamRunnable::Run() {
     RefPtr<MediaTrack> track = mtg->CreateSourceTrack(MediaSegment::VIDEO);
     videoTrackSource = new LocalTrackSource(
         principal, videoDeviceName, mSourceListener,
-        mVideoDevice->GetMediaSource(), track, mPeerIdentity);
+        mVideoDevice->GetMediaSource(), track, peerIdentity);
     MOZ_ASSERT(MediaManager::IsOn(mConstraints.mVideo));
     RefPtr<MediaStreamTrack> domTrack = new dom::VideoStreamTrack(
         window, track, videoTrackSource, dom::MediaStreamTrackState::Live,
@@ -1636,7 +1602,7 @@ NS_IMETHODIMP GetUserMediaStreamRunnable::Run() {
                        MediaMgrError::Name::AbortError,
                        sHasShutdown ? "In shutdown"_ns : "No stream."_ns),
                    __func__);
-    return NS_OK;
+    return;
   }
 
   
@@ -1653,7 +1619,7 @@ NS_IMETHODIMP GetUserMediaStreamRunnable::Run() {
           GetMainThreadSerialEventTarget(), __func__,
           [manager = mManager, windowListener = mWindowListener,
            firstFramePromise] {
-            LOG("GetUserMediaStreamRunnable::Run: starting success callback "
+            LOG("GetUserMediaTask::PrepareDOMStream: starting success callback "
                 "following InitializeAsync()");
             
             windowListener->ChromeAffectingStateChanged();
@@ -1679,7 +1645,7 @@ NS_IMETHODIMP GetUserMediaStreamRunnable::Run() {
             return resolvePromise;
           },
           [](RefPtr<MediaMgrError>&& aError) {
-            LOG("GetUserMediaStreamRunnable::Run: starting failure callback "
+            LOG("GetUserMediaTask::PrepareDOMStream: starting failure callback "
                 "following InitializeAsync()");
             return SourceListener::SourceListenerPromise::CreateAndReject(
                 aError, __func__);
@@ -1709,7 +1675,6 @@ NS_IMETHODIMP GetUserMediaStreamRunnable::Run() {
               }
             });
   }
-  return NS_OK;
 }
 
 
@@ -3758,8 +3723,7 @@ nsresult MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
     if (sHasShutdown) {
       return task->Denied(MediaMgrError::Name::AbortError, "In shutdown"_ns);
     }
-    
-    MediaManager::Dispatch(task.forget());
+    task->Allowed();
     return NS_OK;
 
   } else if (IsGUMResponseNoAccess(aTopic, gumNoAccessError)) {
