@@ -86,11 +86,13 @@ class GeckoEditableSupport final
   AutoTArray<UniquePtr<mozilla::WidgetEvent>, 4> mIMEKeyEvents;
   AutoTArray<IMETextChange, 4> mIMETextChanges;
   RefPtr<TextRangeArray> mIMERanges;
+  RefPtr<Runnable> mDisposeRunnable;
   int32_t mIMEMaskEventsCount;         
   int32_t mIMEFocusCount;              
   bool mIMEDelaySynchronizeReply;      
   int32_t mIMEActiveSynchronizeCount;  
   int32_t mIMEActiveCompositionCount;  
+  uint32_t mDisposeBlockCount;
   bool mIMESelectionChanged;
   bool mIMETextChangedDuringFlush;
   bool mIMEMonitorCursor;
@@ -166,6 +168,7 @@ class GeckoEditableSupport final
         mIMEFocusCount(0),
         mIMEDelaySynchronizeReply(false),
         mIMEActiveSynchronizeCount(0),
+        mDisposeBlockCount(0),
         mIMESelectionChanged(false),
         mIMETextChangedDuringFlush(false),
         mIMEMonitorCursor(false) {}
@@ -195,6 +198,34 @@ class GeckoEditableSupport final
 
   InputContext GetInputContext();
 
+  bool HasIMEFocus() const { return mIMEFocusCount != 0; }
+
+  void AddBlocker() { mDisposeBlockCount++; }
+
+  void ReleaseBlocker() {
+    mDisposeBlockCount--;
+
+    if (!mDisposeBlockCount && mDisposeRunnable) {
+      if (HasIMEFocus()) {
+        
+        
+        mDisposeRunnable = nullptr;
+        return;
+      }
+
+      RefPtr<GeckoEditableSupport> self(this);
+      RefPtr<Runnable> disposer = std::move(mDisposeRunnable);
+
+      nsAppShell::PostEvent(
+          [self = std::move(self), disposer = std::move(disposer)] {
+            self->mEditableAttached = false;
+            disposer->Run();
+          });
+    }
+  }
+
+  bool IsGeckoEditableUsed() const { return mDisposeBlockCount != 0; }
+
   
   using EditableBase::AttachNative;
   using EditableBase::DisposeNative;
@@ -205,6 +236,12 @@ class GeckoEditableSupport final
     RefPtr<GeckoEditableSupport> self(this);
     nsAppShell::PostEvent(
         [self = std::move(self), disposer = RefPtr<Runnable>(aDisposer)] {
+          if (self->IsGeckoEditableUsed()) {
+            
+            
+            self->mDisposeRunnable = disposer;
+            return;
+          }
           self->mEditableAttached = false;
           disposer->Run();
         });
