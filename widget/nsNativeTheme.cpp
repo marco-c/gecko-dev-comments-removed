@@ -607,15 +607,37 @@ bool nsNativeTheme::IsRangeHorizontal(nsIFrame* aFrame) {
 }
 
 static nsIFrame* GetBodyFrame(nsIFrame* aCanvasFrame) {
-  nsIContent* content = aCanvasFrame->GetContent();
-  if (!content) {
-    return nullptr;
-  }
-  nsIContent* body = content->OwnerDoc()->GetBodyElement();
+  nsIContent* body = aCanvasFrame->PresContext()->Document()->GetBodyElement();
   if (!body) {
     return nullptr;
   }
   return body->GetPrimaryFrame();
+}
+
+static const ComputedStyle* GetBackgroundStyle(nsIFrame* aFrame) {
+  if (nsCSSRendering::IsCanvasFrame(aFrame)) {
+    
+    
+    
+    
+    if (nsIFrame* bodyFrame = GetBodyFrame(aFrame)) {
+      if (!bodyFrame->StyleBackground()->IsTransparent(bodyFrame->Style())) {
+        return bodyFrame->Style();
+      }
+    }
+  }
+  ComputedStyle* bgSC = nullptr;
+  if (nsCSSRendering::FindBackground(aFrame, &bgSC) &&
+      !bgSC->StyleBackground()->IsTransparent(bgSC)) {
+    return bgSC;
+  }
+
+  nsIFrame* backgroundFrame =
+      nsCSSRendering::FindNonTransparentBackgroundFrame(aFrame, true);
+  if (!backgroundFrame) {
+    return nullptr;
+  }
+  return backgroundFrame->Style();
 }
 
 
@@ -625,28 +647,12 @@ bool nsNativeTheme::IsDarkBackground(nsIFrame* aFrame) {
     scrollFrame = aFrame->GetScrollTargetFrame();
     aFrame = aFrame->GetParent();
   }
-  if (!scrollFrame) return false;
+  if (!scrollFrame) {
+    return false;
+  }
 
-  nsIFrame* frame = scrollFrame->GetScrolledFrame();
-  if (nsCSSRendering::IsCanvasFrame(frame)) {
-    
-    
-    
-    
-    nsIFrame* bodyFrame = GetBodyFrame(frame);
-    if (bodyFrame) {
-      frame = bodyFrame;
-    }
-  }
-  ComputedStyle* bgSC = nullptr;
-  if (!nsCSSRendering::FindBackground(frame, &bgSC) ||
-      bgSC->StyleBackground()->IsTransparent(bgSC)) {
-    nsIFrame* backgroundFrame =
-        nsCSSRendering::FindNonTransparentBackgroundFrame(frame, true);
-    nsCSSRendering::FindBackground(backgroundFrame, &bgSC);
-  }
-  if (bgSC) {
-    nscolor bgColor = bgSC->StyleBackground()->BackgroundColor(bgSC);
+  if (const auto* style = GetBackgroundStyle(scrollFrame->GetScrolledFrame())) {
+    nscolor bgColor = style->StyleBackground()->BackgroundColor(style);
     
     
     
