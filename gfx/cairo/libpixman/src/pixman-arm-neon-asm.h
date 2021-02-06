@@ -631,8 +631,16 @@ local skip1
                                    src_basereg_   = 0, \
                                    mask_basereg_  = 24
 
-    pixman_asm_function fname
-
+    .func fname
+    .global fname
+    
+#ifdef __ELF__
+    .hidden fname
+    .type fname, %function
+#endif
+fname:
+    .fnstart
+    .save       {r4-r12, lr}
     push        {r4-r12, lr}        
 
 
@@ -810,6 +818,7 @@ local skip1
 
     init
 .if regs_shortage
+    .save       {r0, r1}
     push        {r0, r1}
 .endif
     subs        H, H, #1
@@ -895,6 +904,7 @@ local skip1
 .endif
     cleanup
     pop         {r4-r12, pc}  
+    .fnend
 
     .purgem     fetch_src_pixblock
     .purgem     pixld_src
@@ -939,8 +949,15 @@ local skip1
                                                    src_basereg_   = 0, \
                                                    mask_basereg_  = 24
 
-    pixman_asm_function fname
-
+    .func fname
+    .global fname
+    
+#ifdef __ELF__
+    .hidden fname
+    .type fname, %function
+#endif
+fname:
+    .fnstart
     .set PREFETCH_TYPE_CURRENT, PREFETCH_TYPE_NONE
 
 
@@ -975,6 +992,7 @@ local skip1
     .endm
 
     ldr         UNIT_X, [sp]
+    .save       {r4-r8, lr}
     push        {r4-r8, lr}
     ldr         SRC_WIDTH_FIXED, [sp, #(24 + 4)]
     .if mask_bpp != 0
@@ -1090,6 +1108,7 @@ local skip1
     .purgem     fetch_src_pixblock
     .purgem     pixld_src
 
+    .fnend
     .endfunc
 .endm
 
@@ -1116,6 +1135,7 @@ local skip1
 
 
 .macro default_init_need_all_regs
+    .vsave      {d8-d15}
     vpush       {d8-d15}
 .endm
 
