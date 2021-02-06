@@ -20,15 +20,13 @@ export function prepareSourcePayload(
   threadFront: ThreadFront,
   source: SourcePayload
 ): GeneratedSourceData {
-  const { isServiceWorker } = threadFront.parentFront;
-
   
   
   
   
   clientCommands.registerSourceActor(
     source.actor,
-    makeSourceId(source, isServiceWorker)
+    makeSourceId(source, threadFront.actor)
   );
 
   source = { ...source };
@@ -44,7 +42,7 @@ export function prepareSourcePayload(
     delete (source: any).introductionUrl;
   }
 
-  return { thread: threadFront.actor, isServiceWorker, source };
+  return { thread: threadFront.actor, source };
 }
 
 export function createFrame(
@@ -77,15 +75,16 @@ export function createFrame(
   };
 }
 
-export function makeSourceId(source: SourcePayload, isServiceWorker: boolean) {
+export function makeSourceId(source: SourcePayload, threadActorId: ThreadId) {
   
   
   
   
-  
-  return source.url && !isServiceWorker
-    ? `sourceURL-${source.url}`
-    : `source-${source.actor}`;
+  const target = clientCommands.lookupTarget(threadActorId);
+  if (target.isTopLevel && source.url) {
+    return `source-${source.url}`;
+  }
+  return `source-${source.actor}`;
 }
 
 export function createPause(thread: string, packet: PausedPacket): any {

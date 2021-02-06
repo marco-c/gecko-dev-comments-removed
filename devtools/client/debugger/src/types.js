@@ -69,7 +69,6 @@ export type OriginalSourceData = {|
 export type GeneratedSourceData = {
   thread: ThreadId,
   source: SourcePayload,
-  isServiceWorker: boolean,
 
   
   
