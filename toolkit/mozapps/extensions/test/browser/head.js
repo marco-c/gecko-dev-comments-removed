@@ -276,11 +276,6 @@ function check_all_in_list(aManager, aIds, aIgnoreExtras) {
   }
 }
 
-
-function get_addon_element(aManager, aId) {
-  return getAddonCard(aManager, aId);
-}
-
 function getAddonCard(win, id) {
   return win.document.querySelector(`addon-card[addon-id="${id}"]`);
 }
