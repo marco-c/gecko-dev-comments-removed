@@ -251,7 +251,8 @@ static ProfileBufferBlockIndex AddMarkerWithOptionalStackToBuffer(
 
 
 
-using BacktraceCaptureFunction = bool (*)(ProfileChunkedBuffer&);
+using BacktraceCaptureFunction = bool (*)(ProfileChunkedBuffer&,
+                                          StackCaptureOptions);
 
 
 
@@ -271,7 +272,8 @@ ProfileBufferBlockIndex AddMarkerToBuffer(
     aOptions.Set(MarkerTiming::InstantNow());
   }
 
-  if (aOptions.Stack().IsCaptureNeeded()) {
+  StackCaptureOptions captureOptions = aOptions.Stack().CaptureOptions();
+  if (captureOptions != StackCaptureOptions::NoStack) {
     
     
     
@@ -282,7 +284,9 @@ ProfileBufferBlockIndex AddMarkerToBuffer(
     ProfileChunkedBuffer chunkedBuffer(
         ProfileChunkedBuffer::ThreadSafety::WithoutMutex, chunkManager);
     aOptions.StackRef().UseRequestedBacktrace(
-        aBacktraceCaptureFunction(chunkedBuffer) ? &chunkedBuffer : nullptr);
+        aBacktraceCaptureFunction(chunkedBuffer, captureOptions)
+            ? &chunkedBuffer
+            : nullptr);
     
     return AddMarkerWithOptionalStackToBuffer<MarkerType>(
         aBuffer, aName, aCategory, std::move(aOptions), aTs...);

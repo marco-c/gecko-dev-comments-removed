@@ -76,7 +76,7 @@ static inline UniqueProfilerBacktrace profiler_get_backtrace() {
 }
 
 static inline bool profiler_capture_backtrace_into(
-    ProfileChunkedBuffer& aChunkedBuffer) {
+    ProfileChunkedBuffer& aChunkedBuffer, StackCaptureOptions aCaptureOptions) {
   return false;
 }
 
@@ -108,6 +108,7 @@ namespace mozilla {
 
 class MallocAllocPolicy;
 class ProfileChunkedBuffer;
+enum class StackCaptureOptions;
 template <class T, size_t MinInlineCapacity, class AllocPolicy>
 class Vector;
 
@@ -555,8 +556,9 @@ using UniqueProfilerBacktrace =
 
 
 
+
 MFBT_API bool profiler_capture_backtrace_into(
-    ProfileChunkedBuffer& aChunkedBuffer);
+    ProfileChunkedBuffer& aChunkedBuffer, StackCaptureOptions aCaptureOptions);
 
 
 

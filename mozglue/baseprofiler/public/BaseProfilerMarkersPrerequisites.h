@@ -13,6 +13,17 @@
 #ifndef BaseProfilerMarkersPrerequisites_h
 #define BaseProfilerMarkersPrerequisites_h
 
+namespace mozilla {
+
+enum class StackCaptureOptions {
+  NoStack,    
+  Full,       
+              
+  NonNative,  
+};
+
+}
+
 #ifdef MOZ_GECKO_PROFILER
 
 #  include "BaseProfilingCategory.h"
@@ -427,7 +438,7 @@ class MarkerStack {
 
   
   MarkerStack(MarkerStack&& aOther)
-      : mIsCaptureRequested(aOther.mIsCaptureRequested),
+      : mCaptureOptions(aOther.mCaptureOptions),
         mOptionalChunkedBufferStorage(
             std::move(aOther.mOptionalChunkedBufferStorage)),
         mChunkedBuffer(aOther.mChunkedBuffer) {
@@ -435,7 +446,7 @@ class MarkerStack {
     aOther.Clear();
   }
   MarkerStack& operator=(MarkerStack&& aOther) {
-    mIsCaptureRequested = aOther.mIsCaptureRequested;
+    mCaptureOptions = aOther.mCaptureOptions;
     mOptionalChunkedBufferStorage =
         std::move(aOther.mOptionalChunkedBufferStorage);
     mChunkedBuffer = aOther.mChunkedBuffer;
@@ -446,8 +457,7 @@ class MarkerStack {
 
   
   explicit MarkerStack(UniquePtr<ProfileChunkedBuffer>&& aExternalChunkedBuffer)
-      : mIsCaptureRequested(false),
-        mOptionalChunkedBufferStorage(
+      : mOptionalChunkedBufferStorage(
             (!aExternalChunkedBuffer || aExternalChunkedBuffer->IsEmpty())
                 ? nullptr
                 : std::move(aExternalChunkedBuffer)),
@@ -458,25 +468,27 @@ class MarkerStack {
   
   
   explicit MarkerStack(ProfileChunkedBuffer& aExternalChunkedBuffer)
-      : mIsCaptureRequested(false),
-        mChunkedBuffer(aExternalChunkedBuffer.IsEmpty()
+      : mChunkedBuffer(aExternalChunkedBuffer.IsEmpty()
                            ? nullptr
                            : &aExternalChunkedBuffer) {
     AssertInvariants();
   }
 
   
-  static MarkerStack NoStack() { return MarkerStack(false); }
+  static MarkerStack NoStack() {
+    return MarkerStack(StackCaptureOptions::NoStack);
+  }
 
   
-  static MarkerStack Capture() {
+  static MarkerStack Capture(
+      StackCaptureOptions aCaptureOptions = StackCaptureOptions::Full) {
     
-    return MarkerStack(true);
+    return MarkerStack(aCaptureOptions);
   }
 
   
   static MarkerStack MaybeCapture(bool aDoCapture) {
-    return MarkerStack(aDoCapture);
+    return aDoCapture ? Capture() : NoStack();
   }
 
   
@@ -493,18 +505,16 @@ class MarkerStack {
     return MarkerStack(std::move(aExternalChunkedBuffer));
   }
 
-  [[nodiscard]] bool IsCaptureNeeded() const {
-    
-    
-    return mIsCaptureRequested;
+  [[nodiscard]] StackCaptureOptions CaptureOptions() const {
+    return mCaptureOptions;
   }
 
   ProfileChunkedBuffer* GetChunkedBuffer() const { return mChunkedBuffer; }
 
   
   void UseRequestedBacktrace(ProfileChunkedBuffer* aExternalChunkedBuffer) {
-    MOZ_RELEASE_ASSERT(IsCaptureNeeded());
-    mIsCaptureRequested = false;
+    MOZ_RELEASE_ASSERT(mCaptureOptions != StackCaptureOptions::NoStack);
+    mCaptureOptions = StackCaptureOptions::NoStack;
     if (aExternalChunkedBuffer && !aExternalChunkedBuffer->IsEmpty()) {
       
       mChunkedBuffer = aExternalChunkedBuffer;
@@ -513,22 +523,22 @@ class MarkerStack {
   }
 
   void Clear() {
-    mIsCaptureRequested = false;
+    mCaptureOptions = StackCaptureOptions::NoStack;
     mOptionalChunkedBufferStorage.reset();
     mChunkedBuffer = nullptr;
     AssertInvariants();
   }
 
  private:
-  explicit MarkerStack(bool aIsCaptureRequested)
-      : mIsCaptureRequested(aIsCaptureRequested) {
+  explicit MarkerStack(StackCaptureOptions aCaptureOptions)
+      : mCaptureOptions(aCaptureOptions) {
     AssertInvariants();
   }
 
   
   void AssertInvariants() const {
 #  ifdef DEBUG
-    if (mIsCaptureRequested) {
+    if (mCaptureOptions != StackCaptureOptions::NoStack) {
       MOZ_ASSERT(!mOptionalChunkedBufferStorage,
                  "We should not hold a buffer when capture is requested");
       MOZ_ASSERT(!mChunkedBuffer,
@@ -547,8 +557,7 @@ class MarkerStack {
 #  endif  
   }
 
-  
-  bool mIsCaptureRequested = false;
+  StackCaptureOptions mCaptureOptions = StackCaptureOptions::NoStack;
 
   
   

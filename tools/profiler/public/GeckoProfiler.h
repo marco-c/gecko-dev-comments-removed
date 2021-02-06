@@ -79,7 +79,8 @@ static inline UniqueProfilerBacktrace profiler_get_backtrace() {
 }
 
 static inline bool profiler_capture_backtrace_into(
-    mozilla::ProfileChunkedBuffer& aChunkedBuffer) {
+    mozilla::ProfileChunkedBuffer& aChunkedBuffer,
+    StackCaptureOptions aCaptureOptions) {
   return false;
 }
 static inline mozilla::UniquePtr<mozilla::ProfileChunkedBuffer>
@@ -700,7 +701,8 @@ using UniqueProfilerBacktrace =
 
 
 bool profiler_capture_backtrace_into(
-    mozilla::ProfileChunkedBuffer& aChunkedBuffer);
+    mozilla::ProfileChunkedBuffer& aChunkedBuffer,
+    mozilla::StackCaptureOptions aCaptureOptions);
 
 
 
