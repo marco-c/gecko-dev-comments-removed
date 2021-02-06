@@ -180,6 +180,7 @@ function FinderHighlighter(finder, useTop = false) {
   this._modal = Services.prefs.getBoolPref(kModalHighlightPref);
   this._useSubFrames = false;
   this._useTop = useTop;
+  this._marksListener = null;
   this.finder = finder;
 }
 
@@ -510,6 +511,7 @@ FinderHighlighter.prototype = {
       (foundInThisFrame && !foundRange)
     ) {
       this.hide(window);
+      this.updateScrollMarks();
       return;
     }
 
@@ -538,6 +540,7 @@ FinderHighlighter.prototype = {
           );
         }
       }
+      this.updateScrollMarks();
       return;
     }
 
@@ -595,6 +598,87 @@ FinderHighlighter.prototype = {
   },
 
   
+  updateScrollMarks() {
+    
+    if (this.useModal() || !this.highlightAll) {
+      this.removeScrollMarks();
+      return;
+    }
+
+    let marks = new Set(); 
+    let window = this.finder._getWindow();
+    let yStart = window.scrollY;
+
+    
+    if (window && window.scrollMaxY > 0) {
+      let controllers = [this.finder._getSelectionController(window)];
+      let editors = this.editors;
+      if (editors) {
+        
+        controllers.push(...editors.map(editor => editor.selectionController));
+      }
+
+      for (let controller of controllers) {
+        let findSelection = controller.getSelection(
+          Ci.nsISelectionController.SELECTION_FIND
+        );
+
+        let rangeCount = findSelection.rangeCount;
+        let yAdj =
+          window.scrollMaxY /
+          window.document.documentElement.getBoundingClientRect().height;
+        for (let r = 0; r < rangeCount; r++) {
+          let rect = findSelection.getRangeAt(r).getBoundingClientRect();
+          let yPos = Math.round((yStart + rect.y + rect.height / 2) * yAdj); 
+          marks.add(yPos);
+        }
+      }
+    }
+
+    if (marks.size) {
+      
+      
+      window.setScrollMarks(Array.from(marks));
+
+      if (!this._marksListener) {
+        this._marksListener = event => {
+          this.updateScrollMarks();
+        };
+
+        window.addEventListener(
+          "MozScrolledAreaChanged",
+          this._marksListener,
+          true
+        );
+      }
+    } else if (this._marksListener) {
+      
+      this.removeScrollMarks();
+    }
+  },
+
+  removeScrollMarks() {
+    let window;
+    try {
+      window = this.finder._getWindow();
+    } catch (ex) {
+      
+      
+      return;
+    }
+
+    if (this._marksListener) {
+      window.removeEventListener(
+        "MozScrolledAreaChanged",
+        this._marksListener,
+        true
+      );
+      this._marksListener = null;
+    }
+    window.setScrollMarks([]);
+  },
+
+  
 
 
 
@@ -626,6 +710,7 @@ FinderHighlighter.prototype = {
       this.clear(window);
     }
     this._modal = useModalHighlight;
+    this.updateScrollMarks();
   },
 
   
@@ -643,6 +728,8 @@ FinderHighlighter.prototype = {
       }
       this.clear(window);
       this._scheduleRepaintOfMask(window);
+    } else {
+      this.updateScrollMarks();
     }
   },
 
