@@ -450,7 +450,11 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
   getNetworkParentActor() {
-    return new NetworkParentActor(this);
+    if (!this._networkParentActor) {
+      this._networkParentActor = new NetworkParentActor(this);
+    }
+
+    return this._networkParentActor;
   },
 
   
@@ -460,7 +464,11 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
   getBreakpointListActor() {
-    return new BreakpointListActor(this);
+    if (!this._breakpointListActor) {
+      this._breakpointListActor = new BreakpointListActor(this);
+    }
+
+    return this._breakpointListActor;
   },
 
   

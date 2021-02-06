@@ -80,6 +80,16 @@ class WatcherFront extends FrontClassWithSpec(watcherSpec) {
   
 
 
+  async getBreakpointListActor() {
+    if (!this._breakpointListActor) {
+      this._breakpointListActor = await super.getBreakpointListActor();
+    }
+    return this._breakpointListActor;
+  }
+
+  
+
+
   async getBrowsingContextTarget(id) {
     
     for (const front of this.poolChildren()) {
@@ -108,6 +118,16 @@ class WatcherFront extends FrontClassWithSpec(watcherSpec) {
     }
 
     return null;
+  }
+
+  
+
+
+  async getNetworkParentActor() {
+    if (!this._networkParentActor) {
+      this._networkParentActor = await super.getNetworkParentActor();
+    }
+    return this._networkParentActor;
   }
 }
 registerFront(WatcherFront);
