@@ -3777,10 +3777,13 @@ uint64_t QuotaManager::CollectOriginsForEviction(
   AssertIsOnOwningThread();
   MOZ_ASSERT(aLocks.IsEmpty());
 
+  
+  
+
   struct MOZ_STACK_CLASS Helper final {
     static void GetInactiveOriginInfos(
         const nsTArray<NotNull<RefPtr<OriginInfo>>>& aOriginInfos,
-        const nsTArray<NotNull<DirectoryLockImpl*>>& aLocks,
+        const nsTArray<NotNull<const DirectoryLockImpl*>>& aLocks,
         OriginInfosFlatTraversable& aInactiveOriginInfos) {
       for (const auto& originInfo : aOriginInfos) {
         MOZ_ASSERT(originInfo->mGroupInfo->mPersistenceType !=
@@ -3810,74 +3813,86 @@ uint64_t QuotaManager::CollectOriginsForEviction(
 
   
   
-  nsTArray<NotNull<DirectoryLockImpl*>> temporaryStorageLocks;
-  nsTArray<NotNull<DirectoryLockImpl*>> defaultStorageLocks;
-  for (const NotNull<DirectoryLockImpl*>& lock : mDirectoryLocks) {
-    const Nullable<PersistenceType>& persistenceType =
-        lock->NullablePersistenceType();
+  const auto [temporaryStorageLocks, defaultStorageLocks] = [this] {
+    nsTArray<NotNull<const DirectoryLockImpl*>> temporaryStorageLocks;
+    nsTArray<NotNull<const DirectoryLockImpl*>> defaultStorageLocks;
+    for (NotNull<const DirectoryLockImpl*> const lock : mDirectoryLocks) {
+      const Nullable<PersistenceType>& persistenceType =
+          lock->NullablePersistenceType();
 
-    if (persistenceType.IsNull()) {
-      temporaryStorageLocks.AppendElement(lock);
-      defaultStorageLocks.AppendElement(lock);
-    } else if (persistenceType.Value() == PERSISTENCE_TYPE_TEMPORARY) {
-      temporaryStorageLocks.AppendElement(lock);
-    } else if (persistenceType.Value() == PERSISTENCE_TYPE_DEFAULT) {
-      defaultStorageLocks.AppendElement(lock);
-    } else {
-      MOZ_ASSERT(persistenceType.Value() == PERSISTENCE_TYPE_PERSISTENT);
+      if (persistenceType.IsNull()) {
+        temporaryStorageLocks.AppendElement(lock);
+        defaultStorageLocks.AppendElement(lock);
+      } else if (persistenceType.Value() == PERSISTENCE_TYPE_TEMPORARY) {
+        temporaryStorageLocks.AppendElement(lock);
+      } else if (persistenceType.Value() == PERSISTENCE_TYPE_DEFAULT) {
+        defaultStorageLocks.AppendElement(lock);
+      } else {
+        MOZ_ASSERT(persistenceType.Value() == PERSISTENCE_TYPE_PERSISTENT);
 
-      
+        
+      }
     }
-  }
 
-  OriginInfosFlatTraversable inactiveOrigins;
+    return std::pair(std::move(temporaryStorageLocks),
+                     std::move(defaultStorageLocks));
+  }();
 
   
   
   MutexAutoLock lock(mQuotaMutex);
 
-  for (const auto& entry : mGroupInfoPairs) {
-    const auto& pair = entry.GetData();
+  const auto [inactiveOrigins, sizeToBeFreed] =
+      [this, &temporaryStorageLocks = temporaryStorageLocks,
+       &defaultStorageLocks = defaultStorageLocks, aMinSizeToBeFreed] {
+        nsTArray<NotNull<RefPtr<const OriginInfo>>> inactiveOrigins;
+        for (const auto& entry : mGroupInfoPairs) {
+          const auto& pair = entry.GetData();
 
-    MOZ_ASSERT(!entry.GetKey().IsEmpty());
-    MOZ_ASSERT(pair);
+          MOZ_ASSERT(!entry.GetKey().IsEmpty());
+          MOZ_ASSERT(pair);
 
-    RefPtr<GroupInfo> groupInfo =
-        pair->LockedGetGroupInfo(PERSISTENCE_TYPE_TEMPORARY);
-    if (groupInfo) {
-      Helper::GetInactiveOriginInfos(groupInfo->mOriginInfos,
-                                     temporaryStorageLocks, inactiveOrigins);
-    }
+          RefPtr<GroupInfo> groupInfo =
+              pair->LockedGetGroupInfo(PERSISTENCE_TYPE_TEMPORARY);
+          if (groupInfo) {
+            Helper::GetInactiveOriginInfos(groupInfo->mOriginInfos,
+                                           temporaryStorageLocks,
+                                           inactiveOrigins);
+          }
 
-    groupInfo = pair->LockedGetGroupInfo(PERSISTENCE_TYPE_DEFAULT);
-    if (groupInfo) {
-      Helper::GetInactiveOriginInfos(groupInfo->mOriginInfos,
-                                     defaultStorageLocks, inactiveOrigins);
-    }
-  }
+          groupInfo = pair->LockedGetGroupInfo(PERSISTENCE_TYPE_DEFAULT);
+          if (groupInfo) {
+            Helper::GetInactiveOriginInfos(
+                groupInfo->mOriginInfos, defaultStorageLocks, inactiveOrigins);
+          }
+        }
 
 #ifdef DEBUG
-  
-  const bool inactiveOriginsSorted =
-      std::is_sorted(inactiveOrigins.cbegin(), inactiveOrigins.cend(),
-                     [](const auto& lhs, const auto& rhs) {
-                       return lhs->mAccessTime < rhs->mAccessTime;
-                     });
-  MOZ_ASSERT(inactiveOriginsSorted);
+        
+        const bool inactiveOriginsSorted =
+            std::is_sorted(inactiveOrigins.cbegin(), inactiveOrigins.cend(),
+                           [](const auto& lhs, const auto& rhs) {
+                             return lhs->mAccessTime < rhs->mAccessTime;
+                           });
+        MOZ_ASSERT(inactiveOriginsSorted);
 #endif
 
-  
-  
-  uint64_t sizeToBeFreed = 0;
-  for (uint32_t count = inactiveOrigins.Length(), index = 0; index < count;
-       index++) {
-    if (sizeToBeFreed >= aMinSizeToBeFreed) {
-      inactiveOrigins.TruncateLength(index);
-      break;
-    }
+        
+        
+        
+        uint64_t sizeToBeFreed = 0;
+        for (uint32_t count = inactiveOrigins.Length(), index = 0;
+             index < count; index++) {
+          if (sizeToBeFreed >= aMinSizeToBeFreed) {
+            inactiveOrigins.TruncateLength(index);
+            break;
+          }
 
-    sizeToBeFreed += inactiveOrigins[index]->LockedUsage();
-  }
+          sizeToBeFreed += inactiveOrigins[index]->LockedUsage();
+        }
+
+        return std::pair(std::move(inactiveOrigins), sizeToBeFreed);
+      }();
 
   if (sizeToBeFreed >= aMinSizeToBeFreed) {
     
