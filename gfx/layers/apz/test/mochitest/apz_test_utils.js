@@ -893,15 +893,24 @@ function hitTestScrollbar(params) {
     
     if (config.isWebRender) {
       expectedHitInfo |= APZHitResultFlags.APZ_AWARE_LISTENERS;
-      if (params.layerState == LayerState.INACTIVE) {
-        expectedHitInfo |= APZHitResultFlags.INACTIVE_SCROLLFRAME;
-      }
     } else {
       expectedHitInfo |= APZHitResultFlags.IRREGULAR_AREA;
     }
     
-    if (params.layerState == LayerState.ACTIVE) {
+    if (params.layerState == LayerState.ACTIVE || config.isWebRender) {
       expectedHitInfo |= APZHitResultFlags.SCROLLBAR_THUMB;
+    }
+  }
+
+  var expectedScrollId = params.expectedScrollId;
+  if (config.isWebRender) {
+    expectedScrollId = config.utils.getViewId(params.element);
+    if (params.layerState == LayerState.ACTIVE) {
+      is(
+        expectedScrollId,
+        params.expectedScrollId,
+        "Expected scrollId for active scrollframe should match"
+      );
     }
   }
 
@@ -926,7 +935,7 @@ function hitTestScrollbar(params) {
     checkHitResult(
       hitTest(verticalScrollbarPoint),
       expectedHitInfo | APZHitResultFlags.SCROLLBAR_VERTICAL,
-      params.expectedScrollId,
+      expectedScrollId,
       params.expectedLayersId,
       scrollframeMsg + " - vertical scrollbar"
     );
@@ -946,7 +955,7 @@ function hitTestScrollbar(params) {
     checkHitResult(
       hitTest(horizontalScrollbarPoint),
       expectedHitInfo,
-      params.expectedScrollId,
+      expectedScrollId,
       params.expectedLayersId,
       scrollframeMsg + " - horizontal scrollbar"
     );
