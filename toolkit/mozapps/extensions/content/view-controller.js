@@ -1,0 +1,213 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+const { AddonManager } = ChromeUtils.import(
+  "resource://gre/modules/AddonManager.jsm"
+);
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "AMTelemetry",
+  "resource://gre/modules/AddonManager.jsm"
+);
+
+window.addEventListener("unload", shutdown);
+
+window.promiseInitialized = new Promise(resolve => {
+  window.addEventListener("load", () => initialize(resolve), { once: true });
+});
+
+async function initialize(resolvePromiseInitialized) {
+  Services.obs.addObserver(sendEMPong, "EM-ping");
+  Services.obs.notifyObservers(window, "EM-loaded");
+
+  await gViewController.initialize().then(resolvePromiseInitialized);
+
+  
+  
+  if (gViewController.initialViewSelected) {
+    return;
+  }
+
+  if (history.state) {
+    
+    gViewController.updateState(history.state);
+  } else if (!gViewController.currentViewId) {
+    
+    gViewController.loadInitialView(
+      document.querySelector("categories-box").initialViewId
+    );
+  }
+}
+
+function shutdown() {
+  Services.obs.removeObserver(sendEMPong, "EM-ping");
+}
+
+function sendEMPong(aSubject, aTopic, aData) {
+  Services.obs.notifyObservers(window, "EM-pong");
+}
+
+async function recordViewTelemetry(param) {
+  let type;
+  let addon;
+
+  if (
+    param in AddonManager.addonTypes ||
+    ["recent", "available"].includes(param)
+  ) {
+    type = param;
+  } else if (param) {
+    let id = param.replace("/preferences", "");
+    addon = await AddonManager.getAddonByID(id);
+  }
+
+  let { currentViewId } = gViewController;
+  let viewType = gViewController.parseViewId(currentViewId)?.type;
+  AMTelemetry.recordViewEvent({
+    view: viewType || "other",
+    addon,
+    type,
+  });
+}
+
+
+async function loadView(aViewId) {
+  
+  
+  await window.promiseInitialized;
+
+  if (!gViewController.initialViewSelected) {
+    
+    
+
+    gViewController.loadInitialView(aViewId);
+  } else {
+    gViewController.loadView(aViewId);
+  }
+}
+
+var gViewController = {
+  currentViewId: "",
+  get defaultViewId() {
+    if (!isDiscoverEnabled()) {
+      return "addons://list/extension";
+    }
+    return "addons://discover/";
+  },
+  initialViewSelected: false,
+  isLoading: true,
+  
+  
+  
+  
+  
+  nextHistoryEntryId: Math.floor(Math.random() * 2 ** 32),
+
+  async initialize() {
+    await initializeView({
+      loadViewFn: async view => {
+        let viewId = view.startsWith("addons://") ? view : `addons://${view}`;
+        await this.loadView(viewId);
+      },
+      replaceWithDefaultViewFn: async () => {
+        await this.replaceView(this.defaultViewId);
+      },
+    });
+
+    window.addEventListener("popstate", e => {
+      this.updateState(e.state);
+    });
+  },
+
+  updateState(state) {
+    this.loadViewInternal(state.view, state.previousView, state);
+  },
+
+  parseViewId(aViewId) {
+    var matchRegex = /^addons:\/\/([^\/]+)\/(.*)$/;
+    var [, viewType, viewParam] = aViewId.match(matchRegex) || [];
+    return { type: viewType, param: decodeURIComponent(viewParam) };
+  },
+
+  loadView(aViewId) {
+    if (aViewId == this.currentViewId) {
+      return;
+    }
+
+    var state = {
+      view: aViewId,
+      previousView: this.currentViewId,
+      historyEntryId: ++this.nextHistoryEntryId,
+    };
+    history.pushState(state, "");
+    this.loadViewInternal(aViewId, this.currentViewId, state);
+  },
+
+  
+  
+  replaceView(aViewId) {
+    if (aViewId == this.currentViewId) {
+      return;
+    }
+
+    var state = {
+      view: aViewId,
+      previousView: null,
+      historyEntryId: ++this.nextHistoryEntryId,
+    };
+    history.replaceState(state, "");
+    this.loadViewInternal(aViewId, null, state);
+  },
+
+  loadInitialView(aViewId) {
+    let state = {
+      view: aViewId,
+      previousView: null,
+      historyEntryId: ++this.nextHistoryEntryId,
+    };
+    history.replaceState(state, "");
+    this.loadViewInternal(aViewId, null, state);
+  },
+
+  loadViewInternal(aViewId, aPreviousView, aState) {
+    const view = this.parseViewId(aViewId);
+    const viewTypes = ["shortcuts", "list", "detail", "updates", "discover"];
+
+    if (!view.type || !viewTypes.includes(view.type)) {
+      throw Components.Exception("Invalid view: " + view.type);
+    }
+
+    if (aViewId != aPreviousView) {
+      hideView().catch(err => Cu.reportError(err));
+    }
+
+    this.currentViewId = aViewId;
+    this.isLoading = true;
+
+    recordViewTelemetry(view.param);
+
+    let promiseLoad;
+    if (aViewId != aPreviousView) {
+      promiseLoad = showView(view.type, view.param, aState).then(() => {
+        this.isLoading = false;
+
+        var event = document.createEvent("Events");
+        event.initEvent("ViewChanged", true, true);
+        document.dispatchEvent(event);
+      });
+    }
+
+    this.initialViewSelected = true;
+
+    return promiseLoad;
+  },
+};

@@ -18,7 +18,7 @@ async function loadShortcutsView() {
   
   
   let win = await loadInitialView("theme");
-  let categoryUtils = new CategoryUtilities(win.managerWindow);
+  let categoryUtils = new CategoryUtilities(win);
 
   is(
     categoryUtils.getSelectedViewId(),
@@ -87,10 +87,23 @@ add_task(async function testUpdatingCommands() {
   }
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let win = await loadShortcutsView();
+
+  
   await checkShortcut("commandOne", "7", { shiftKey: true, altKey: true });
   await checkShortcut("commandTwo", "4", { altKey: true });
 
-  let win = await loadShortcutsView();
   let doc = win.document;
 
   let card = doc.querySelector(`.card[addon-id="${extension.id}"]`);

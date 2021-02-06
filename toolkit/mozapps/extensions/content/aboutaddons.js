@@ -1388,8 +1388,7 @@ class AddonPageHeader extends HTMLElement {
     this.heading.hidden = viewType === "detail";
     this.backButton.hidden = viewType !== "detail" && viewType !== "shortcuts";
 
-    let { contentWindow } = getBrowserElement();
-    this.backButton.disabled = !contentWindow.history.state?.previousView;
+    this.backButton.disabled = !history.state?.previousView;
 
     if (viewType !== "detail") {
       document.l10n.setAttributes(this.heading, `${viewType}-heading`);
@@ -1763,12 +1762,6 @@ class CategoriesBox extends customElements.get("button-group") {
     this.promiseRendered = new Promise(resolve => {
       this._resolveRendered = resolve;
     });
-    
-    
-    
-    this.promiseInitialized = new Promise(resolve => {
-      this._resolveInitialized = resolve;
-    });
   }
 
   async initialize() {
@@ -1811,7 +1804,6 @@ class CategoriesBox extends customElements.get("button-group") {
 
     this._resolveRendered();
     await hiddenUpdated;
-    this._resolveInitialized();
   }
 
   get initialViewId() {
@@ -2436,11 +2428,27 @@ class InlineOptionsBrowser extends HTMLElement {
 
       mm.sendAsyncMessage("Extension:InitBrowser", browserOptions);
 
-      
-      browser.loadURI(optionsURL, {
-        triggeringPrincipal:
-          Services.scriptSecurityManager.getSystemPrincipal(),
-      });
+      if (browser.isConnectedAndReady) {
+        this.loadURI(optionsURL);
+      } else {
+        
+        
+        
+        
+        promiseEvent("DOMContentLoaded", document).then(() => {
+          this.loadURI(optionsURL);
+        });
+      }
+    });
+  }
+
+  loadURI(uri) {
+    if (!this.browser || !this.browser.isConnectedAndReady) {
+      throw new Error("Fail to loadURI");
+    }
+
+    this.browser.loadURI(uri, {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
   }
 }
@@ -4723,7 +4731,7 @@ var ScrollOffsets = {
 
 
 
-function initialize(opts) {
+async function initializeView(opts) {
   mainEl = document.getElementById("main");
   addonPageHeader = document.getElementById("page-header");
   categoriesBox = document.querySelector("categories-box");
@@ -4731,9 +4739,6 @@ function initialize(opts) {
   loadViewFn = opts.loadViewFn;
   replaceWithDefaultViewFn = opts.replaceWithDefaultViewFn;
 
-  if (opts.shouldLoadInitialView) {
-    opts.loadInitialViewFn(categoriesBox.initialViewId);
-  }
   categoriesBox.initialize();
 
   AddonManagerListenerHandler.startup();
@@ -4755,7 +4760,7 @@ function initialize(opts) {
 
 
 
-async function show(type, param, { historyEntryId }) {
+async function showView(type, param, { historyEntryId }) {
   let container = document.createElement("div");
   container.setAttribute("current-view", type);
   addonPageHeader.setViewInfo({ type, param });
@@ -4804,7 +4809,10 @@ async function show(type, param, { historyEntryId }) {
   });
 }
 
-function hide() {
+async function hideView() {
+  if (!mainEl) {
+    return;
+  }
   ScrollOffsets.save();
   ScrollOffsets.setView(null);
   mainEl.textContent = "";

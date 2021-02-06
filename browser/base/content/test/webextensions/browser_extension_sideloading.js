@@ -39,11 +39,9 @@ function promiseEvent(eventEmitter, event) {
 }
 
 function getAddonElement(managerWindow, addonId) {
-  const { contentDocument: doc } = managerWindow.document.getElementById(
-    "html-view-browser"
-  );
   return BrowserTestUtils.waitForCondition(
-    () => doc.querySelector(`addon-card[addon-id="${addonId}"]`),
+    () =>
+      managerWindow.document.querySelector(`addon-card[addon-id="${addonId}"]`),
     `Found entry for sideload extension addon "${addonId}" in HTML about:addons`
   );
 }
@@ -59,7 +57,7 @@ function assertSideloadedAddonElementState(addonElement, checked) {
   is(enableBtn.type, "checkbox", "It's a checkbox");
 }
 
-function clickEnableExtension(managerWindow, addonElement) {
+function clickEnableExtension(addonElement) {
   addonElement.querySelector('[action="toggle-disabled"]').click();
 }
 
@@ -227,7 +225,7 @@ add_task(async function test_sideloading() {
 
   
   popupPromise = promisePopupNotificationShown("addon-webext-permissions");
-  clickEnableExtension(win, addonElement);
+  clickEnableExtension(addonElement);
   panel = await popupPromise;
   checkNotification(panel, DEFAULT_ICON_URL, [
     ["webextPerms.hostDescription.allUrls"],

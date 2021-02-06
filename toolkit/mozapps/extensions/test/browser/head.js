@@ -295,21 +295,28 @@ function check_all_in_list(aManager, aIds, aIgnoreExtras) {
   }
 }
 
+
 function get_addon_element(aManager, aId) {
-  const win = aManager.getHtmlBrowser().contentWindow;
-  return getAddonCard(win, aId);
+  return getAddonCard(aManager, aId);
 }
 
 function getAddonCard(win, id) {
   return win.document.querySelector(`addon-card[addon-id="${id}"]`);
 }
 
-function wait_for_view_load(
+async function wait_for_view_load(
   aManagerWindow,
   aCallback,
   aForceWait,
   aLongerTimeout
 ) {
+  
+  
+  
+  
+  
+  await Promise.resolve();
+
   let p = new Promise(resolve => {
     requestLongerTimeout(aLongerTimeout ? aLongerTimeout : 2);
 
@@ -331,23 +338,11 @@ function wait_for_view_load(
 }
 
 function wait_for_manager_load(aManagerWindow, aCallback) {
-  let p = new Promise(resolve => {
-    if (!aManagerWindow.gIsInitializing) {
-      resolve(aManagerWindow);
-      return;
-    }
-
-    info("Waiting for initialization");
-    aManagerWindow.document.addEventListener(
-      "Initialized",
-      function() {
-        resolve(aManagerWindow);
-      },
-      { once: true }
-    );
-  });
-
-  return log_callback(p, aCallback);
+  info("Waiting for initialization");
+  return log_callback(
+    aManagerWindow.promiseInitialized.then(() => aManagerWindow),
+    aCallback
+  );
 }
 
 function open_manager(
@@ -537,22 +532,14 @@ async function install_addon(path, cb, pathPrefix = TESTROOT) {
 }
 
 function CategoryUtilities(aManagerWindow) {
-  this.window = aManagerWindow.getHtmlBrowser().contentWindow;
-  this.managerWindow = aManagerWindow;
-
+  this.window = aManagerWindow;
   this.window.addEventListener("unload", () => (this.window = null), {
     once: true,
   });
-  this.managerWindow.addEventListener(
-    "unload",
-    () => (this.managerWindow = null),
-    { once: true }
-  );
 }
 
 CategoryUtilities.prototype = {
   window: null,
-  managerWindow: null,
 
   get _categoriesBox() {
     return this.window.document.querySelector("categories-box");
@@ -571,7 +558,7 @@ CategoryUtilities.prototype = {
       "Should not get selected category when manager window is not loaded"
     );
     let viewId = this.getSelectedViewId();
-    let view = this.managerWindow.gViewController.parseViewId(viewId);
+    let view = this.window.gViewController.parseViewId(viewId);
     return view.type == "list" ? view.param : view.type;
   },
 
@@ -628,7 +615,7 @@ CategoryUtilities.prototype = {
     EventUtils.synthesizeMouseAtCenter(categoryButton, {}, this.window);
 
     
-    return wait_for_view_load(this.managerWindow);
+    return wait_for_view_load(this.window);
   },
 
   openType(categoryType) {
@@ -1631,27 +1618,18 @@ async function loadInitialView(type, opts) {
   let loadCallbackDone = Promise.resolve();
 
   if (opts && opts.loadCallback) {
-    
-    
-    loadCallback = managerWindow => {
-      loadCallbackDone = managerWindow
-        .promiseHtmlBrowserLoaded()
-        .then(async browser => {
-          let win = browser.contentWindow;
-          win.managerWindow = managerWindow;
-          
-          await opts.loadCallback(win);
-        });
+    loadCallback = win => {
+      loadCallbackDone = (async () => {
+        
+        await opts.loadCallback(win);
+      })();
     };
   }
-  let managerWindow = await open_manager(null, null, loadCallback);
 
-  let browser = managerWindow.document.getElementById("html-view-browser");
-  let win = browser.contentWindow;
+  let win = await open_manager(null, null, loadCallback);
   if (!opts || !opts.withAnimations) {
     win.document.body.setAttribute("skip-animations", "");
   }
-  win.managerWindow = managerWindow;
 
   
   await loadCallbackDone;
@@ -1660,19 +1638,19 @@ async function loadInitialView(type, opts) {
 }
 
 function waitForViewLoad(win) {
-  return wait_for_view_load(win.managerWindow, undefined, true);
+  return wait_for_view_load(win, undefined, true);
 }
 
 function closeView(win) {
-  return close_manager(win.managerWindow);
+  return close_manager(win);
 }
 
 function switchView(win, type) {
-  return new CategoryUtilities(win.managerWindow).openType(type);
+  return new CategoryUtilities(win).openType(type);
 }
 
 function isCategoryVisible(win, type) {
-  return new CategoryUtilities(win.managerWindow).isTypeVisible(type);
+  return new CategoryUtilities(win).isTypeVisible(type);
 }
 
 function mockPromptService() {

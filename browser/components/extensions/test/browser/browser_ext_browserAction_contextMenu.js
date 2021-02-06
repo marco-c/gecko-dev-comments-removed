@@ -645,8 +645,13 @@ add_task(async function browseraction_contextmenu_report_extension() {
       "Got about:addons tab selected"
     );
 
-    await BrowserTestUtils.browserLoaded(browser);
-
+    
+    
+    
+    
+    if (browser.contentDocument?.readyState != "complete") {
+      await BrowserTestUtils.browserLoaded(browser);
+    }
     await testReportDialog();
 
     
