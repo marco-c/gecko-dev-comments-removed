@@ -208,6 +208,8 @@ struct CompilationInput {
   
   
   
+  
+  
   Scope* enclosingScope = nullptr;
 
   explicit CompilationInput(const JS::ReadOnlyCompileOptions& options)
