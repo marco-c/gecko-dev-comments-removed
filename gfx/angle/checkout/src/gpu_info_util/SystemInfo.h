@@ -60,12 +60,16 @@ struct SystemInfo
 
     
     
-    int activeGPUIndex = -1;
+    
+    int activeGPUIndex = 0;
 
     bool isOptimus       = false;
     bool isAMDSwitchable = false;
     
     bool isMacSwitchable = false;
+    
+    
+    bool isiOSAppOnMac = false;
 
     
     std::string machineManufacturer;
@@ -83,8 +87,13 @@ struct SystemInfo
 bool GetSystemInfo(SystemInfo *info);
 
 
+bool GetSystemInfoVulkan(SystemInfo *info);
+
+
 constexpr VendorID kVendorID_AMD      = 0x1002;
 constexpr VendorID kVendorID_ARM      = 0x13B5;
+constexpr VendorID kVendorID_Broadcom = 0x14E4;
+constexpr VendorID kVendorID_GOOGLE   = 0x1AE0;
 constexpr VendorID kVendorID_ImgTec   = 0x1010;
 constexpr VendorID kVendorID_Intel    = 0x8086;
 constexpr VendorID kVendorID_NVIDIA   = 0x10DE;
@@ -97,19 +106,46 @@ constexpr VendorID kVendorID_VeriSilicon = 0x10002;
 constexpr VendorID kVendorID_Kazan       = 0x10003;
 
 
+constexpr DeviceID kDeviceID_Swiftshader  = 0xC0DE;
+constexpr DeviceID kDeviceID_Adreno540    = 0x5040001;
+constexpr DeviceID kDeviceID_UHD630Mobile = 0x3E9B;
+
+
 bool IsAMD(VendorID vendorId);
 bool IsARM(VendorID vendorId);
+bool IsBroadcom(VendorID vendorId);
 bool IsImgTec(VendorID vendorId);
 bool IsIntel(VendorID vendorId);
 bool IsKazan(VendorID vendorId);
 bool IsNVIDIA(VendorID vendorId);
 bool IsQualcomm(VendorID vendorId);
+bool IsGoogle(VendorID vendorId);
+bool IsSwiftshader(VendorID vendorId);
 bool IsVeriSilicon(VendorID vendorId);
 bool IsVMWare(VendorID vendorId);
 bool IsVivante(VendorID vendorId);
 
 
+
+
+void GetDualGPUInfo(SystemInfo *info);
+
+
 void PrintSystemInfo(const SystemInfo &info);
+
+VersionInfo ParseNvidiaDriverVersion(uint32_t version);
+
+#if defined(ANGLE_PLATFORM_MACOS) || defined(ANGLE_PLATFORM_MACCATALYST)
+
+uint64_t GetGpuIDFromDisplayID(uint32_t displayID);
+
+
+uint64_t GetGpuIDFromOpenGLDisplayMask(uint32_t displayMask);
+
+
+VendorID GetVendorIDFromMetalDeviceRegistryID(uint64_t registryID);
+#endif
+
 }  
 
 #endif  

@@ -12,7 +12,7 @@
 
 #include "compiler/translator/ImmutableString.h"
 #include "compiler/translator/SymbolTable.h"
-#include "compiler/translator/tree_util/BuiltIn_autogen.h"
+#include "compiler/translator/tree_util/BuiltIn.h"
 #include "compiler/translator/tree_util/FindSymbolNode.h"
 #include "compiler/translator/tree_util/IntermNode_util.h"
 #include "compiler/translator/tree_util/RunAtTheEndOfShader.h"
@@ -20,12 +20,12 @@
 namespace sh
 {
 
-void ClampFragDepth(TIntermBlock *root, TSymbolTable *symbolTable)
+bool ClampFragDepth(TCompiler *compiler, TIntermBlock *root, TSymbolTable *symbolTable)
 {
     
     if (!FindSymbolNode(root, ImmutableString("gl_FragDepth")))
     {
-        return;
+        return true;
     }
 
     TIntermSymbol *fragDepthNode = new TIntermSymbol(BuiltInVariable::gl_FragDepth());
@@ -48,7 +48,7 @@ void ClampFragDepth(TIntermBlock *root, TSymbolTable *symbolTable)
     
     TIntermBinary *assignFragDepth = new TIntermBinary(EOpAssign, fragDepthNode, clampedFragDepth);
 
-    RunAtTheEndOfShader(root, assignFragDepth, symbolTable);
+    return RunAtTheEndOfShader(compiler, root, assignFragDepth, symbolTable);
 }
 
 }  

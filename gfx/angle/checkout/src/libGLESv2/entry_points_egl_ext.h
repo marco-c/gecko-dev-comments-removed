@@ -136,6 +136,12 @@ ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_GetSyncValuesCHROMIUM(EGLDisplay dpy,
                                                               EGLuint64KHR *sbc);
 
 
+ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_GetMscRateANGLE(EGLDisplay dpy,
+                                                        EGLSurface surface,
+                                                        EGLint *numerator,
+                                                        EGLint *denominator);
+
+
 ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_SwapBuffersWithDamageKHR(EGLDisplay dpy,
                                                                  EGLSurface surface,
                                                                  EGLint *rects,
@@ -215,7 +221,27 @@ ANGLE_EXPORT EGLClientBuffer EGLAPIENTRY
 EGL_GetNativeClientBufferANDROID(const struct AHardwareBuffer *buffer);
 
 
+ANGLE_EXPORT EGLClientBuffer EGLAPIENTRY
+EGL_CreateNativeClientBufferANDROID(const EGLint *attrib_list);
+
+
 ANGLE_EXPORT EGLint EGLAPIENTRY EGL_DupNativeFenceFDANDROID(EGLDisplay dpy, EGLSyncKHR sync);
+
+
+ANGLE_EXPORT EGLBoolean EGLAPIENTRY
+EGL_SwapBuffersWithFrameTokenANGLE(EGLDisplay dpy,
+                                   EGLSurface surface,
+                                   EGLFrameTokenANGLE frametoken);
+
+
+ANGLE_EXPORT void EGLAPIENTRY EGL_ReleaseHighPowerGPUANGLE(EGLDisplay dpy, EGLContext ctx);
+
+ANGLE_EXPORT void EGLAPIENTRY EGL_ReacquireHighPowerGPUANGLE(EGLDisplay dpy, EGLContext ctx);
+
+ANGLE_EXPORT void EGLAPIENTRY EGL_HandleGPUSwitchANGLE(EGLDisplay dpy);
+
+
+ANGLE_EXPORT EGLBoolean EGLAPIENTRY EGL_SignalSyncKHR(EGLDisplay dpy, EGLSync sync, EGLenum mode);
 
 }  
 

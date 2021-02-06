@@ -21,13 +21,13 @@ class MemoryBuffer final : NonCopyable
 {
   public:
     MemoryBuffer() = default;
-    MemoryBuffer(size_t size) { resize(size); }
     ~MemoryBuffer();
 
     MemoryBuffer(MemoryBuffer &&other);
     MemoryBuffer &operator=(MemoryBuffer &&other);
 
-    bool resize(size_t size);
+    ANGLE_NO_DISCARD bool resize(size_t size);
+    void clear() { (void)resize(0); }
     size_t size() const { return mSize; }
     bool empty() const { return mSize == 0; }
 
@@ -62,8 +62,12 @@ class ScratchBuffer final : NonCopyable
     
     
     
+    ScratchBuffer();
     ScratchBuffer(uint32_t lifetime);
     ~ScratchBuffer();
+
+    ScratchBuffer(ScratchBuffer &&other);
+    ScratchBuffer &operator=(ScratchBuffer &&other);
 
     
     bool get(size_t requestedSize, MemoryBuffer **memoryBufferOut);
@@ -79,7 +83,7 @@ class ScratchBuffer final : NonCopyable
   private:
     bool getImpl(size_t requestedSize, MemoryBuffer **memoryBufferOut, Optional<uint8_t> initValue);
 
-    const uint32_t mLifetime;
+    uint32_t mLifetime;
     uint32_t mResetCounter;
     MemoryBuffer mScratchMemory;
 };

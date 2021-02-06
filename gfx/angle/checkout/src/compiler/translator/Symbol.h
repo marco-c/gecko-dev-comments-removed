@@ -234,7 +234,8 @@ class TFunction : public TSymbol
     bool isMain() const;
     bool isImageFunction() const;
     bool isAtomicCounterFunction() const;
-    bool hasSamplerInStructParams() const;
+    bool hasSamplerInStructOrArrayParams() const;
+    bool hasSamplerInStructOrArrayOfArrayParams() const;
 
     
     constexpr TFunction(const TSymbolUniqueId &id,

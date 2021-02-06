@@ -53,7 +53,8 @@
 #endif
 
 
-#if !defined(ANGLE_STD_ASYNC_WORKERS)
+
+#if !defined(ANGLE_STD_ASYNC_WORKERS) && !defined(ANGLE_ENABLE_WINDOWS_UWP)
 #    define ANGLE_STD_ASYNC_WORKERS ANGLE_ENABLED
 #endif  
 

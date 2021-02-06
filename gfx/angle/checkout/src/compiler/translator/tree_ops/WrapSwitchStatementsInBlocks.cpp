@@ -116,11 +116,11 @@ bool WrapSwitchStatementsInBlocksTraverser::visitSwitch(Visit, TIntermSwitch *no
 }  
 
 
-void WrapSwitchStatementsInBlocks(TIntermBlock *root)
+bool WrapSwitchStatementsInBlocks(TCompiler *compiler, TIntermBlock *root)
 {
     WrapSwitchStatementsInBlocksTraverser traverser;
     root->traverse(&traverser);
-    traverser.updateTree();
+    return traverser.updateTree(compiler, root);
 }
 
 }  

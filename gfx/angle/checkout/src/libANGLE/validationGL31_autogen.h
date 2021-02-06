@@ -17,14 +17,13 @@ namespace gl
 {
 class Context;
 
-bool ValidateGetActiveUniformName(Context *context,
-                                  GLuint program,
+bool ValidateGetActiveUniformName(const Context *context,
+                                  ShaderProgramID programPacked,
                                   GLuint uniformIndex,
                                   GLsizei bufSize,
-                                  GLsizei *length,
-                                  GLchar *uniformName);
-bool ValidatePrimitiveRestartIndex(Context *context, GLuint index);
-bool ValidateTexBuffer(Context *context, GLenum target, GLenum internalformat, GLuint buffer);
+                                  const GLsizei *length,
+                                  const GLchar *uniformName);
+bool ValidatePrimitiveRestartIndex(const Context *context, GLuint index);
 }  
 
 #endif  

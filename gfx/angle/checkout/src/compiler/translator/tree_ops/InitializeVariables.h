@@ -14,6 +14,7 @@
 
 namespace sh
 {
+class TCompiler;
 class TSymbolTable;
 
 typedef std::vector<sh::ShaderVariable> InitVariableList;
@@ -29,11 +30,12 @@ TIntermSequence *CreateInitCode(const TIntermTyped *initializedSymbol,
                                 TSymbolTable *symbolTable);
 
 
-void InitializeUninitializedLocals(TIntermBlock *root,
-                                   int shaderVersion,
-                                   bool canUseLoopsToInitialize,
-                                   bool highPrecisionSupported,
-                                   TSymbolTable *symbolTable);
+ANGLE_NO_DISCARD bool InitializeUninitializedLocals(TCompiler *compiler,
+                                                    TIntermBlock *root,
+                                                    int shaderVersion,
+                                                    bool canUseLoopsToInitialize,
+                                                    bool highPrecisionSupported,
+                                                    TSymbolTable *symbolTable);
 
 
 
@@ -43,13 +45,14 @@ void InitializeUninitializedLocals(TIntermBlock *root,
 
 
 
-void InitializeVariables(TIntermBlock *root,
-                         const InitVariableList &vars,
-                         TSymbolTable *symbolTable,
-                         int shaderVersion,
-                         const TExtensionBehavior &extensionBehavior,
-                         bool canUseLoopsToInitialize,
-                         bool highPrecisionSupported);
+ANGLE_NO_DISCARD bool InitializeVariables(TCompiler *compiler,
+                                          TIntermBlock *root,
+                                          const InitVariableList &vars,
+                                          TSymbolTable *symbolTable,
+                                          int shaderVersion,
+                                          const TExtensionBehavior &extensionBehavior,
+                                          bool canUseLoopsToInitialize,
+                                          bool highPrecisionSupported);
 
 }  
 

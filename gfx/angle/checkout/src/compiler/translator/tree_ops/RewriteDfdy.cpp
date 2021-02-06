@@ -9,6 +9,7 @@
 #include "compiler/translator/tree_ops/RewriteDfdy.h"
 
 #include "common/angleutils.h"
+#include "compiler/translator/StaticType.h"
 #include "compiler/translator/SymbolTable.h"
 #include "compiler/translator/tree_util/IntermNode_util.h"
 #include "compiler/translator/tree_util/IntermTraverse.h"
@@ -22,33 +23,136 @@ namespace
 class Traverser : public TIntermTraverser
 {
   public:
-    static void Apply(TIntermNode *root,
-                      const TSymbolTable &symbolTable,
-                      TIntermBinary *viewportYScale);
+    ANGLE_NO_DISCARD static bool Apply(TCompiler *compiler,
+                                       TIntermNode *root,
+                                       const TSymbolTable &symbolTable,
+                                       TIntermBinary *flipXY,
+                                       TIntermTyped *fragRotation);
 
   private:
-    Traverser(TIntermBinary *viewportYScale, TSymbolTable *symbolTable);
+    Traverser(TIntermBinary *flipXY, TIntermTyped *fragRotation, TSymbolTable *symbolTable);
     bool visitUnary(Visit visit, TIntermUnary *node) override;
 
-    TIntermBinary *mViewportYScale = nullptr;
+    bool visitUnaryWithRotation(Visit visit, TIntermUnary *node);
+    bool visitUnaryWithoutRotation(Visit visit, TIntermUnary *node);
+
+    TIntermBinary *mFlipXY      = nullptr;
+    TIntermTyped *mFragRotation = nullptr;
 };
 
-Traverser::Traverser(TIntermBinary *viewportYScale, TSymbolTable *symbolTable)
-    : TIntermTraverser(true, false, false, symbolTable), mViewportYScale(viewportYScale)
+Traverser::Traverser(TIntermBinary *flipXY, TIntermTyped *fragRotation, TSymbolTable *symbolTable)
+    : TIntermTraverser(true, false, false, symbolTable),
+      mFlipXY(flipXY),
+      mFragRotation(fragRotation)
 {}
 
 
-void Traverser::Apply(TIntermNode *root,
+bool Traverser::Apply(TCompiler *compiler,
+                      TIntermNode *root,
                       const TSymbolTable &symbolTable,
-                      TIntermBinary *viewportYScale)
+                      TIntermBinary *flipXY,
+                      TIntermTyped *fragRotation)
 {
     TSymbolTable *pSymbolTable = const_cast<TSymbolTable *>(&symbolTable);
-    Traverser traverser(viewportYScale, pSymbolTable);
+    Traverser traverser(flipXY, fragRotation, pSymbolTable);
     root->traverse(&traverser);
-    traverser.updateTree();
+    return traverser.updateTree(compiler, root);
 }
 
 bool Traverser::visitUnary(Visit visit, TIntermUnary *node)
+{
+    if (mFragRotation)
+    {
+        return visitUnaryWithRotation(visit, node);
+    }
+    return visitUnaryWithoutRotation(visit, node);
+}
+
+bool Traverser::visitUnaryWithRotation(Visit visit, TIntermUnary *node)
+{
+    
+    if ((node->getOp() != EOpDFdx) && (node->getOp() != EOpDFdy))
+    {
+        return true;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    TIntermBinary *halfRotationMat = nullptr;
+    if (node->getOp() == EOpDFdx)
+    {
+        halfRotationMat =
+            new TIntermBinary(EOpIndexDirect, mFragRotation->deepCopy(), CreateIndexNode(0));
+    }
+    else
+    {
+        halfRotationMat =
+            new TIntermBinary(EOpIndexDirect, mFragRotation->deepCopy(), CreateIndexNode(1));
+    }
+
+    
+    TIntermBinary *rotatedFlipXY = new TIntermBinary(EOpMul, mFlipXY->deepCopy(), halfRotationMat);
+    const TType *vec2Type        = StaticType::GetBasic<EbtFloat, 2>();
+    TIntermSymbol *tmpRotFlipXY  = new TIntermSymbol(CreateTempVariable(mSymbolTable, vec2Type));
+    TIntermSequence *tmpDecl     = new TIntermSequence;
+    tmpDecl->push_back(CreateTempInitDeclarationNode(&tmpRotFlipXY->variable(), rotatedFlipXY));
+    insertStatementsInParentBlock(*tmpDecl);
+
+    
+    TVector<int> swizzleOffsetX = {0};
+    TVector<int> swizzleOffsetY = {1};
+    TIntermSwizzle *multiplierX = new TIntermSwizzle(tmpRotFlipXY, swizzleOffsetX);
+    TIntermSwizzle *multiplierY = new TIntermSwizzle(tmpRotFlipXY->deepCopy(), swizzleOffsetY);
+
+    
+    TIntermTyped *operand = node->getOperand();
+    TIntermUnary *dFdx    = new TIntermUnary(EOpDFdx, operand->deepCopy(), node->getFunction());
+    TIntermUnary *dFdy    = new TIntermUnary(EOpDFdy, operand->deepCopy(), node->getFunction());
+    size_t objectSize     = node->getType().getObjectSize();
+    TOperator multiplyOp  = (objectSize == 1) ? EOpMul : EOpVectorTimesScalar;
+    TIntermBinary *rotatedFlippedDfdx = new TIntermBinary(multiplyOp, dFdx, multiplierX);
+    TIntermBinary *rotatedFlippedDfdy = new TIntermBinary(multiplyOp, dFdy, multiplierY);
+
+    
+    TIntermBinary *correctedResult =
+        new TIntermBinary(EOpAdd, rotatedFlippedDfdx, rotatedFlippedDfdy);
+
+    
+    queueReplacement(correctedResult, OriginalNode::IS_DROPPED);
+
+    return true;
+}
+
+bool Traverser::visitUnaryWithoutRotation(Visit visit, TIntermUnary *node)
 {
     
     if (node->getOp() != EOpDFdy)
@@ -62,9 +166,11 @@ bool Traverser::visitUnary(Visit visit, TIntermUnary *node)
     size_t objectSize    = node->getType().getObjectSize();
     TOperator multiplyOp = (objectSize == 1) ? EOpMul : EOpVectorTimesScalar;
 
+    TIntermBinary *flipY =
+        new TIntermBinary(EOpIndexDirect, mFlipXY->deepCopy(), CreateIndexNode(1));
     
     
-    TIntermBinary *correctedDfdy = new TIntermBinary(multiplyOp, newDfdy, mViewportYScale);
+    TIntermBinary *correctedDfdy = new TIntermBinary(multiplyOp, newDfdy, flipY);
 
     
     queueReplacement(correctedDfdy, OriginalNode::IS_DROPPED);
@@ -74,16 +180,18 @@ bool Traverser::visitUnary(Visit visit, TIntermUnary *node)
 
 }  
 
-void RewriteDfdy(TIntermNode *root,
+bool RewriteDfdy(TCompiler *compiler,
+                 TIntermNode *root,
                  const TSymbolTable &symbolTable,
                  int shaderVersion,
-                 TIntermBinary *viewportYScale)
+                 TIntermBinary *flipXY,
+                 TIntermTyped *fragRotation)
 {
     
     if (shaderVersion < 300)
-        return;
+        return true;
 
-    Traverser::Apply(root, symbolTable, viewportYScale);
+    return Traverser::Apply(compiler, root, symbolTable, flipXY, fragRotation);
 }
 
 }  

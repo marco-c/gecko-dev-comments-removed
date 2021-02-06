@@ -147,7 +147,10 @@ bool SplitSequenceOperatorTraverser::visitTernary(Visit visit, TIntermTernary *n
 
 }  
 
-void SplitSequenceOperator(TIntermNode *root, int patternsToSplitMask, TSymbolTable *symbolTable)
+bool SplitSequenceOperator(TCompiler *compiler,
+                           TIntermNode *root,
+                           int patternsToSplitMask,
+                           TSymbolTable *symbolTable)
 {
     SplitSequenceOperatorTraverser traverser(patternsToSplitMask, symbolTable);
     
@@ -156,8 +159,15 @@ void SplitSequenceOperator(TIntermNode *root, int patternsToSplitMask, TSymbolTa
         traverser.nextIteration();
         root->traverse(&traverser);
         if (traverser.foundExpressionToSplit())
-            traverser.updateTree();
+        {
+            if (!traverser.updateTree(compiler, root))
+            {
+                return false;
+            }
+        }
     } while (traverser.foundExpressionToSplit());
+
+    return true;
 }
 
 }  

@@ -34,18 +34,25 @@ void RenderbufferD3D::onDestroy(const gl::Context *context)
 
 angle::Result RenderbufferD3D::setStorage(const gl::Context *context,
                                           GLenum internalformat,
-                                          size_t width,
-                                          size_t height)
+                                          GLsizei width,
+                                          GLsizei height)
 {
-    return setStorageMultisample(context, 0, internalformat, width, height);
+    return setStorageMultisample(context, 0, internalformat, width, height,
+                                 gl::MultisamplingMode::Regular);
 }
 
 angle::Result RenderbufferD3D::setStorageMultisample(const gl::Context *context,
-                                                     size_t samples,
+                                                     GLsizei samples,
                                                      GLenum internalformat,
-                                                     size_t width,
-                                                     size_t height)
+                                                     GLsizei width,
+                                                     GLsizei height,
+                                                     gl::MultisamplingMode mode)
 {
+    
+    
+    
+    
+
     
     
     
@@ -61,12 +68,12 @@ angle::Result RenderbufferD3D::setStorageMultisample(const gl::Context *context,
     
     
     const gl::TextureCaps &formatCaps = mRenderer->getNativeTextureCaps().get(creationFormat);
-    ANGLE_CHECK_GL_ALLOC(GetImplAs<ContextD3D>(context), samples <= formatCaps.getMaxSamples());
+    ANGLE_CHECK_GL_ALLOC(GetImplAs<ContextD3D>(context),
+                         static_cast<uint32_t>(samples) <= formatCaps.getMaxSamples());
 
     RenderTargetD3D *newRT = nullptr;
-    ANGLE_TRY(mRenderer->createRenderTarget(context, static_cast<int>(width),
-                                            static_cast<int>(height), creationFormat,
-                                            static_cast<GLsizei>(samples), &newRT));
+    ANGLE_TRY(
+        mRenderer->createRenderTarget(context, width, height, creationFormat, samples, &newRT));
 
     SafeDelete(mRenderTarget);
     mImage        = nullptr;
@@ -101,6 +108,7 @@ angle::Result RenderbufferD3D::getRenderTarget(const gl::Context *context,
 angle::Result RenderbufferD3D::getAttachmentRenderTarget(const gl::Context *context,
                                                          GLenum binding,
                                                          const gl::ImageIndex &imageIndex,
+                                                         GLsizei samples,
                                                          FramebufferAttachmentRenderTarget **rtOut)
 {
     return getRenderTarget(context, reinterpret_cast<RenderTargetD3D **>(rtOut));

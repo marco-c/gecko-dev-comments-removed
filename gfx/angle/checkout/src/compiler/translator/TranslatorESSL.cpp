@@ -9,7 +9,6 @@
 #include "angle_gl.h"
 #include "compiler/translator/BuiltInFunctionEmulatorGLSL.h"
 #include "compiler/translator/OutputESSL.h"
-#include "compiler/translator/tree_ops/EmulatePrecision.h"
 #include "compiler/translator/tree_ops/RecordConstantPrecision.h"
 
 namespace sh
@@ -28,7 +27,7 @@ void TranslatorESSL::initBuiltInFunctionEmulator(BuiltInFunctionEmulator *emu,
     }
 }
 
-void TranslatorESSL::translate(TIntermBlock *root,
+bool TranslatorESSL::translate(TIntermBlock *root,
                                ShCompileOptions compileOptions,
                                PerformanceDiagnostics * )
 {
@@ -47,18 +46,14 @@ void TranslatorESSL::translate(TIntermBlock *root,
     
     writePragma(compileOptions);
 
-    bool precisionEmulation =
-        getResources().WEBGL_debug_shader_precision && getPragma().debugShaderPrecision;
+    bool precisionEmulation = false;
+    if (!emulatePrecisionIfNeeded(root, sink, &precisionEmulation, SH_ESSL_OUTPUT))
+        return false;
 
-    if (precisionEmulation)
+    if (!RecordConstantPrecision(this, root, &getSymbolTable()))
     {
-        EmulatePrecision emulatePrecision(&getSymbolTable());
-        root->traverse(&emulatePrecision);
-        emulatePrecision.updateTree();
-        emulatePrecision.writeEmulationHelpers(sink, shaderVer, SH_ESSL_OUTPUT);
+        return false;
     }
-
-    RecordConstantPrecision(root, &getSymbolTable());
 
     
     if (!getBuiltInFunctionEmulator().isOutputEmpty())
@@ -84,6 +79,11 @@ void TranslatorESSL::translate(TIntermBlock *root,
     
     getArrayBoundsClamper().OutputClampingFunctionDefinition(sink);
 
+    if (getShaderType() == GL_FRAGMENT_SHADER)
+    {
+        EmitEarlyFragmentTestsGLSL(*this, sink);
+    }
+
     if (getShaderType() == GL_COMPUTE_SHADER)
     {
         EmitWorkGroupSizeGLSL(*this, sink);
@@ -102,6 +102,8 @@ void TranslatorESSL::translate(TIntermBlock *root,
                            compileOptions);
 
     root->traverse(&outputESSL);
+
+    return true;
 }
 
 bool TranslatorESSL::shouldFlattenPragmaStdglInvariantAll()
@@ -142,7 +144,12 @@ void TranslatorESSL::writeExtensionBehavior(ShCompileOptions compileOptions)
             }
             else if (isMultiview)
             {
-                EmitMultiviewGLSL(*this, compileOptions, iter->second, sink);
+                
+                if ((iter->first != TExtension::OVR_multiview) ||
+                    !IsExtensionEnabled(extBehavior, TExtension::OVR_multiview2))
+                {
+                    EmitMultiviewGLSL(*this, compileOptions, iter->first, iter->second, sink);
+                }
             }
             else if (iter->first == TExtension::EXT_geometry_shader)
             {
@@ -170,6 +177,12 @@ void TranslatorESSL::writeExtensionBehavior(ShCompileOptions compileOptions)
             {
                 
                 ASSERT((compileOptions & SH_EMULATE_GL_BASE_VERTEX_BASE_INSTANCE) != 0);
+                continue;
+            }
+            else if (iter->first == TExtension::WEBGL_video_texture)
+            {
+                
+                
                 continue;
             }
             else

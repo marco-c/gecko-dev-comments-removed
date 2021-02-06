@@ -92,7 +92,6 @@
     void getPixelMapusv(GLenum map, GLushort *values);                                             \
     void getPolygonStipple(GLubyte *mask);                                                         \
     void getTexGendv(GLenum coord, GLenum pname, GLdouble *params);                                \
-    void getTexImage(GLenum target, GLint level, GLenum format, GLenum type, void *pixels);        \
     void indexMask(GLuint mask);                                                                   \
     void indexd(GLdouble c);                                                                       \
     void indexdv(const GLdouble *c);                                                               \
@@ -103,7 +102,7 @@
     void indexs(GLshort c);                                                                        \
     void indexsv(const GLshort *c);                                                                \
     void initNames();                                                                              \
-    GLboolean isList(GLuint list);                                                                 \
+    GLboolean isList(GLuint list) const;                                                           \
     void lightModeli(GLenum pname, GLint param);                                                   \
     void lightModeliv(GLenum pname, const GLint *params);                                          \
     void lighti(GLenum light, GLenum pname, GLint param);                                          \

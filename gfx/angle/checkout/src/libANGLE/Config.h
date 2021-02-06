@@ -43,6 +43,7 @@ struct Config
     EGLint alphaMaskSize;          
     EGLBoolean bindToTextureRGB;   
     EGLBoolean bindToTextureRGBA;  
+    EGLenum bindToTextureTarget;   
     EGLenum colorBufferType;       
     EGLenum configCaveat;          
     EGLint configID;               
@@ -70,6 +71,12 @@ struct Config
     EGLint optimalOrientation;     
     EGLenum colorComponentType;    
     EGLBoolean recordable;         
+    EGLBoolean framebufferTarget;  
+                                   
+                                   
+    EGLBoolean yInverted;  
+                           
+                           
 };
 
 class ConfigSet

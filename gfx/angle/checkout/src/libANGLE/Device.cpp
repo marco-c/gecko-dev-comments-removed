@@ -14,6 +14,7 @@
 #include <EGL/eglext.h>
 #include <platform/Platform.h>
 
+#include "anglebase/no_destructor.h"
 #include "common/debug.h"
 #include "common/platform.h"
 #include "libANGLE/renderer/DeviceImpl.h"
@@ -39,8 +40,8 @@ static std::string GenerateExtensionsString(const T &extensions)
 typedef std::set<egl::Device *> DeviceSet;
 static DeviceSet *GetDeviceSet()
 {
-    static DeviceSet devices;
-    return &devices;
+    static angle::base::NoDestructor<DeviceSet> devices;
+    return devices.get();
 }
 
 
@@ -100,11 +101,12 @@ EGLLabelKHR Device::getLabel() const
     return mLabel;
 }
 
-Error Device::getDevice(EGLAttrib *value)
+Error Device::getAttribute(EGLint attribute, EGLAttrib *value)
 {
-    void *nativeDevice = nullptr;
-    egl::Error error   = getImplementation()->getDevice(&nativeDevice);
-    *value             = reinterpret_cast<EGLAttrib>(nativeDevice);
+    void *nativeAttribute = nullptr;
+    egl::Error error =
+        getImplementation()->getAttribute(getOwningDisplay(), attribute, &nativeAttribute);
+    *value = reinterpret_cast<EGLAttrib>(nativeAttribute);
     return error;
 }
 

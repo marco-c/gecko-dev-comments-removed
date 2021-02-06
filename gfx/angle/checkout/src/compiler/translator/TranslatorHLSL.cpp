@@ -10,9 +10,9 @@
 #include "compiler/translator/tree_ops/AddDefaultReturnStatements.h"
 #include "compiler/translator/tree_ops/ArrayReturnValueToOutParameter.h"
 #include "compiler/translator/tree_ops/BreakVariableAliasingInInnerLoops.h"
-#include "compiler/translator/tree_ops/EmulatePrecision.h"
 #include "compiler/translator/tree_ops/ExpandIntegerPowExpressions.h"
 #include "compiler/translator/tree_ops/PruneEmptyCases.h"
+#include "compiler/translator/tree_ops/RecordUniformBlocksTranslatedToStructuredBuffers.h"
 #include "compiler/translator/tree_ops/RemoveDynamicIndexing.h"
 #include "compiler/translator/tree_ops/RewriteAtomicFunctionExpressions.h"
 #include "compiler/translator/tree_ops/RewriteElseBlocks.h"
@@ -36,7 +36,7 @@ TranslatorHLSL::TranslatorHLSL(sh::GLenum type, ShShaderSpec spec, ShShaderOutpu
     : TCompiler(type, spec, output)
 {}
 
-void TranslatorHLSL::translate(TIntermBlock *root,
+bool TranslatorHLSL::translate(TIntermBlock *root,
                                ShCompileOptions compileOptions,
                                PerformanceDiagnostics *perfDiagnostics)
 {
@@ -45,111 +45,176 @@ void TranslatorHLSL::translate(TIntermBlock *root,
     int maxDualSourceDrawBuffers =
         resources.EXT_blend_func_extended ? resources.MaxDualSourceDrawBuffers : 0;
 
-    sh::AddDefaultReturnStatements(root);
+    if (!sh::AddDefaultReturnStatements(this, root))
+    {
+        return false;
+    }
 
     
     
     
-    SimplifyLoopConditions(root,
-                           IntermNodePatternMatcher::kExpressionReturningArray |
-                               IntermNodePatternMatcher::kUnfoldedShortCircuitExpression |
-                               IntermNodePatternMatcher::kDynamicIndexingOfVectorOrMatrixInLValue,
-                           &getSymbolTable());
+    if (!SimplifyLoopConditions(
+            this, root,
+            IntermNodePatternMatcher::kExpressionReturningArray |
+                IntermNodePatternMatcher::kUnfoldedShortCircuitExpression |
+                IntermNodePatternMatcher::kDynamicIndexingOfVectorOrMatrixInLValue,
+            &getSymbolTable()))
+    {
+        return false;
+    }
 
-    SplitSequenceOperator(root,
-                          IntermNodePatternMatcher::kExpressionReturningArray |
-                              IntermNodePatternMatcher::kUnfoldedShortCircuitExpression |
-                              IntermNodePatternMatcher::kDynamicIndexingOfVectorOrMatrixInLValue,
-                          &getSymbolTable());
-
-    
-    UnfoldShortCircuitToIf(root, &getSymbolTable());
-
-    SeparateArrayConstructorStatements(root);
-
-    SeparateExpressionsReturningArrays(root, &getSymbolTable());
-
-    
-    SeparateArrayInitialization(root);
+    if (!SplitSequenceOperator(
+            this, root,
+            IntermNodePatternMatcher::kExpressionReturningArray |
+                IntermNodePatternMatcher::kUnfoldedShortCircuitExpression |
+                IntermNodePatternMatcher::kDynamicIndexingOfVectorOrMatrixInLValue,
+            &getSymbolTable()))
+    {
+        return false;
+    }
 
     
+    if (!UnfoldShortCircuitToIf(this, root, &getSymbolTable()))
+    {
+        return false;
+    }
+
+    if (!SeparateArrayConstructorStatements(this, root))
+    {
+        return false;
+    }
+
+    if (!SeparateExpressionsReturningArrays(this, root, &getSymbolTable()))
+    {
+        return false;
+    }
+
     
-    ArrayReturnValueToOutParameter(root, &getSymbolTable());
+    if (!SeparateArrayInitialization(this, root))
+    {
+        return false;
+    }
+
+    
+    
+    if (!ArrayReturnValueToOutParameter(this, root, &getSymbolTable()))
+    {
+        return false;
+    }
 
     if (!shouldRunLoopAndIndexingValidation(compileOptions))
     {
         
-        RemoveDynamicIndexing(root, &getSymbolTable(), perfDiagnostics);
+        if (!RemoveDynamicIndexingOfNonSSBOVectorOrMatrix(this, root, &getSymbolTable(),
+                                                          perfDiagnostics))
+        {
+            return false;
+        }
     }
 
     
     
     if (getOutputType() == SH_HLSL_3_0_OUTPUT && getShaderType() == GL_VERTEX_SHADER)
     {
-        sh::RewriteElseBlocks(root, &getSymbolTable());
+        if (!sh::RewriteElseBlocks(this, root, &getSymbolTable()))
+        {
+            return false;
+        }
     }
 
     
     
     
     
-    sh::BreakVariableAliasingInInnerLoops(root);
-
-    
-    
-    
-    
-    WrapSwitchStatementsInBlocks(root);
-
-    bool precisionEmulation =
-        getResources().WEBGL_debug_shader_precision && getPragma().debugShaderPrecision;
-
-    if (precisionEmulation)
+    if (!sh::BreakVariableAliasingInInnerLoops(this, root))
     {
-        EmulatePrecision emulatePrecision(&getSymbolTable());
-        root->traverse(&emulatePrecision);
-        emulatePrecision.updateTree();
-        emulatePrecision.writeEmulationHelpers(getInfoSink().obj, getShaderVersion(),
-                                               getOutputType());
+        return false;
     }
+
+    
+    
+    
+    
+    if (!WrapSwitchStatementsInBlocks(this, root))
+    {
+        return false;
+    }
+
+    bool precisionEmulation = false;
+    if (!emulatePrecisionIfNeeded(root, getInfoSink().obj, &precisionEmulation, getOutputType()))
+        return false;
 
     if ((compileOptions & SH_EXPAND_SELECT_HLSL_INTEGER_POW_EXPRESSIONS) != 0)
     {
-        sh::ExpandIntegerPowExpressions(root, &getSymbolTable());
+        if (!sh::ExpandIntegerPowExpressions(this, root, &getSymbolTable()))
+        {
+            return false;
+        }
     }
 
     if ((compileOptions & SH_REWRITE_TEXELFETCHOFFSET_TO_TEXELFETCH) != 0)
     {
-        sh::RewriteTexelFetchOffset(root, getSymbolTable(), getShaderVersion());
+        if (!sh::RewriteTexelFetchOffset(this, root, getSymbolTable(), getShaderVersion()))
+        {
+            return false;
+        }
     }
 
     if (((compileOptions & SH_REWRITE_INTEGER_UNARY_MINUS_OPERATOR) != 0) &&
         getShaderType() == GL_VERTEX_SHADER)
     {
-        sh::RewriteUnaryMinusOperatorInt(root);
+        if (!sh::RewriteUnaryMinusOperatorInt(this, root))
+        {
+            return false;
+        }
     }
 
     if (getShaderVersion() >= 310)
     {
         
         
-        sh::RewriteExpressionsWithShaderStorageBlock(root, &getSymbolTable());
-        sh::RewriteAtomicFunctionExpressions(root, &getSymbolTable(), getShaderVersion());
+        if (!sh::RewriteExpressionsWithShaderStorageBlock(this, root, &getSymbolTable()))
+        {
+            return false;
+        }
+        if (!sh::RewriteAtomicFunctionExpressions(this, root, &getSymbolTable(),
+                                                  getShaderVersion()))
+        {
+            return false;
+        }
+    }
+
+    mUniformBlocksTranslatedToStructuredBuffers.clear();
+    
+    
+    
+    if (getShaderVersion() == 300 &&
+        (compileOptions & SH_ALLOW_TRANSLATE_UNIFORM_BLOCK_TO_STRUCTUREDBUFFER) != 0)
+    {
+        if (!sh::RecordUniformBlocksTranslatedToStructuredBuffers(
+                root, mUniformBlocksTranslatedToStructuredBuffers))
+        {
+            return false;
+        }
     }
 
     sh::OutputHLSL outputHLSL(
-        getShaderType(), getShaderVersion(), getExtensionBehavior(), getSourcePath(),
-        getOutputType(), numRenderTargets, maxDualSourceDrawBuffers, getUniforms(), compileOptions,
-        getComputeShaderLocalSize(), &getSymbolTable(), perfDiagnostics, mShaderStorageBlocks);
+        getShaderType(), getShaderSpec(), getShaderVersion(), getExtensionBehavior(),
+        getSourcePath(), getOutputType(), numRenderTargets, maxDualSourceDrawBuffers, getUniforms(),
+        compileOptions, getComputeShaderLocalSize(), &getSymbolTable(), perfDiagnostics,
+        mUniformBlocksTranslatedToStructuredBuffers, mShaderStorageBlocks);
 
     outputHLSL.output(root, getInfoSink().obj);
 
-    mShaderStorageBlockRegisterMap = outputHLSL.getShaderStorageBlockRegisterMap();
-    mUniformBlockRegisterMap       = outputHLSL.getUniformBlockRegisterMap();
-    mUniformRegisterMap            = outputHLSL.getUniformRegisterMap();
-    mReadonlyImage2DRegisterIndex  = outputHLSL.getReadonlyImage2DRegisterIndex();
-    mImage2DRegisterIndex          = outputHLSL.getImage2DRegisterIndex();
-    mUsedImage2DFunctionNames      = outputHLSL.getUsedImage2DFunctionNames();
+    mShaderStorageBlockRegisterMap      = outputHLSL.getShaderStorageBlockRegisterMap();
+    mUniformBlockRegisterMap            = outputHLSL.getUniformBlockRegisterMap();
+    mUniformBlockUseStructuredBufferMap = outputHLSL.getUniformBlockUseStructuredBufferMap();
+    mUniformRegisterMap                 = outputHLSL.getUniformRegisterMap();
+    mReadonlyImage2DRegisterIndex       = outputHLSL.getReadonlyImage2DRegisterIndex();
+    mImage2DRegisterIndex               = outputHLSL.getImage2DRegisterIndex();
+    mUsedImage2DFunctionNames           = outputHLSL.getUsedImage2DFunctionNames();
+
+    return true;
 }
 
 bool TranslatorHLSL::shouldFlattenPragmaStdglInvariantAll()
@@ -199,6 +264,14 @@ unsigned int TranslatorHLSL::getImage2DRegisterIndex() const
 const std::set<std::string> *TranslatorHLSL::getUsedImage2DFunctionNames() const
 {
     return &mUsedImage2DFunctionNames;
+}
+
+bool TranslatorHLSL::shouldUniformBlockUseStructuredBuffer(
+    const std::string &uniformBlockName) const
+{
+    auto uniformBlockIter = mUniformBlockUseStructuredBufferMap.find(uniformBlockName);
+    return uniformBlockIter != mUniformBlockUseStructuredBufferMap.end() &&
+           uniformBlockIter->second;
 }
 
 }  

@@ -33,13 +33,15 @@ BufferState::BufferState()
       mMapLength(0),
       mBindingCount(0),
       mTransformFeedbackIndexedBindingCount(0),
-      mTransformFeedbackGenericBindingCount(0)
+      mTransformFeedbackGenericBindingCount(0),
+      mImmutable(false),
+      mStorageExtUsageFlags(0)
 {}
 
 BufferState::~BufferState() {}
 
-Buffer::Buffer(rx::GLImplFactory *factory, GLuint id)
-    : RefCountObject(id),
+Buffer::Buffer(rx::GLImplFactory *factory, BufferID id)
+    : RefCountObject(factory->generateSerial(), id),
       mImpl(factory->createBuffer(mState)),
       mImplObserver(this, kImplementationSubjectIndex)
 {
@@ -68,13 +70,46 @@ const std::string &Buffer::getLabel() const
     return mState.mLabel;
 }
 
+angle::Result Buffer::bufferStorage(Context *context,
+                                    BufferBinding target,
+                                    GLsizeiptr size,
+                                    const void *data,
+                                    GLbitfield flags)
+{
+    return bufferDataImpl(context, target, data, size, BufferUsage::InvalidEnum, flags);
+}
+
 angle::Result Buffer::bufferData(Context *context,
                                  BufferBinding target,
                                  const void *data,
                                  GLsizeiptr size,
                                  BufferUsage usage)
 {
+    GLbitfield flags = (GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_DYNAMIC_STORAGE_BIT_EXT);
+    return bufferDataImpl(context, target, data, size, usage, flags);
+}
+
+angle::Result Buffer::bufferDataImpl(Context *context,
+                                     BufferBinding target,
+                                     const void *data,
+                                     GLsizeiptr size,
+                                     BufferUsage usage,
+                                     GLbitfield flags)
+{
     const void *dataForImpl = data;
+
+    if (mState.isMapped())
+    {
+        
+        
+        
+        
+        
+        
+        
+        GLboolean dontCare = GL_FALSE;
+        ANGLE_TRY(unmap(context, &dontCare));
+    }
 
     
     
@@ -87,11 +122,24 @@ angle::Result Buffer::bufferData(Context *context,
         dataForImpl = scratchBuffer->data();
     }
 
-    ANGLE_TRY(mImpl->setData(context, target, dataForImpl, size, usage));
+    if (mImpl->setDataWithUsageFlags(context, target, dataForImpl, size, usage, flags) ==
+        angle::Result::Stop)
+    {
+        
+        mIndexRangeCache.clear();
+        mState.mSize = 0;
+
+        
+        onStateChange(angle::SubjectMessage::SubjectChanged);
+
+        return angle::Result::Stop;
+    }
 
     mIndexRangeCache.clear();
-    mState.mUsage = usage;
-    mState.mSize  = size;
+    mState.mUsage                = usage;
+    mState.mSize                 = size;
+    mState.mImmutable            = (usage == BufferUsage::InvalidEnum);
+    mState.mStorageExtUsageFlags = flags;
 
     
     onStateChange(angle::SubjectMessage::SubjectChanged);
@@ -210,20 +258,14 @@ angle::Result Buffer::unmap(const Context *context, GLboolean *result)
     return angle::Result::Continue;
 }
 
-void Buffer::onTransformFeedback()
+void Buffer::onDataChanged()
 {
     mIndexRangeCache.clear();
 
     
     onStateChange(angle::SubjectMessage::ContentsChanged);
-}
 
-void Buffer::onPixelPack()
-{
-    mIndexRangeCache.clear();
-
-    
-    onStateChange(angle::SubjectMessage::ContentsChanged);
+    mImpl->onDataChanged();
 }
 
 angle::Result Buffer::getIndexRange(const gl::Context *context,
@@ -272,6 +314,14 @@ void Buffer::onTFBindingChanged(const Context *context, bool bound, bool indexed
     {
         mState.mTransformFeedbackGenericBindingCount += bound ? 1 : -1;
     }
+}
+
+angle::Result Buffer::getSubData(const gl::Context *context,
+                                 GLintptr offset,
+                                 GLsizeiptr size,
+                                 void *outData)
+{
+    return mImpl->getSubData(context, offset, size, outData);
 }
 
 void Buffer::onSubjectStateChange(angle::SubjectIndex index, angle::SubjectMessage message)

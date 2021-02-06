@@ -20,6 +20,8 @@ namespace
 constexpr const ImmutableString kSpecifiedMultipleTimes(" specified multiple times");
 constexpr const ImmutableString kInvariantMultipleTimes(
     "The invariant qualifier specified multiple times.");
+constexpr const ImmutableString kPreciseMultipleTimes(
+    "The precise qualifier specified multiple times.");
 constexpr const ImmutableString kPrecisionMultipleTimes(
     "The precision qualifier specified multiple times.");
 constexpr const ImmutableString kLayoutMultipleTimes(
@@ -91,6 +93,7 @@ bool HasRepeatingQualifiers(const TTypeQualifierBuilder::QualifierSequence &qual
                             ImmutableString *errorMessage)
 {
     bool invariantFound     = false;
+    bool preciseFound       = false;
     bool precisionFound     = false;
     bool layoutFound        = false;
     bool interpolationFound = false;
@@ -112,6 +115,16 @@ bool HasRepeatingQualifiers(const TTypeQualifierBuilder::QualifierSequence &qual
                     return true;
                 }
                 invariantFound = true;
+                break;
+            }
+            case QtPrecise:
+            {
+                if (preciseFound)
+                {
+                    *errorMessage = kPreciseMultipleTimes;
+                    return true;
+                }
+                preciseFound = true;
                 break;
             }
             case QtPrecision:
@@ -231,9 +244,19 @@ bool HasRepeatingQualifiers(const TTypeQualifierBuilder::QualifierSequence &qual
 
 
 
+
+
+
+
 bool AreQualifiersInOrder(const TTypeQualifierBuilder::QualifierSequence &qualifiers,
+                          int shaderVersion,
                           ImmutableString *errorMessage)
 {
+    if (shaderVersion >= 310)
+    {
+        return true;
+    }
+
     bool foundInterpolation = false;
     bool foundStorage       = false;
     bool foundPrecision     = false;
@@ -290,6 +313,12 @@ bool AreQualifiersInOrder(const TTypeQualifierBuilder::QualifierSequence &qualif
                 break;
             case QtPrecision:
                 foundPrecision = true;
+                break;
+            case QtPrecise:
+                
+                
+                
+                UNREACHABLE();
                 break;
             default:
                 UNREACHABLE();
@@ -374,6 +403,26 @@ bool JoinVariableStorageQualifier(TQualifier *joinedQualifier, TQualifier storag
             }
             break;
         }
+        case EvqNoPerspective:
+        {
+            switch (storageQualifier)
+            {
+                case EvqCentroid:
+                    *joinedQualifier = EvqNoPerspective;
+                    break;
+                case EvqVertexOut:
+                case EvqGeometryOut:
+                    *joinedQualifier = EvqNoPerspectiveOut;
+                    break;
+                case EvqFragmentIn:
+                case EvqGeometryIn:
+                    *joinedQualifier = EvqNoPerspectiveIn;
+                    break;
+                default:
+                    return false;
+            }
+            break;
+        }
         case EvqCentroid:
         {
             switch (storageQualifier)
@@ -385,6 +434,23 @@ bool JoinVariableStorageQualifier(TQualifier *joinedQualifier, TQualifier storag
                 case EvqFragmentIn:
                 case EvqGeometryIn:
                     *joinedQualifier = EvqCentroidIn;
+                    break;
+                default:
+                    return false;
+            }
+            break;
+        }
+        case EvqSample:
+        {
+            switch (storageQualifier)
+            {
+                case EvqVertexOut:
+                case EvqGeometryOut:
+                    *joinedQualifier = EvqSampleOut;
+                    break;
+                case EvqFragmentIn:
+                case EvqGeometryIn:
+                    *joinedQualifier = EvqSampleIn;
                     break;
                 default:
                     return false;
@@ -468,6 +534,10 @@ TTypeQualifier GetVariableTypeQualifierFromSortedSequence(
                 isQualifierValid        = true;
                 typeQualifier.invariant = true;
                 break;
+            case QtPrecise:
+                isQualifierValid      = true;
+                typeQualifier.precise = true;
+                break;
             case QtInterpolation:
             {
                 switch (typeQualifier.qualifier)
@@ -535,6 +605,7 @@ TTypeQualifier GetParameterTypeQualifierFromSortedSequence(
         switch (qualifier->getType())
         {
             case QtInvariant:
+            case QtPrecise:
             case QtInterpolation:
             case QtLayout:
                 break;
@@ -603,6 +674,10 @@ TLayoutQualifier JoinLayoutQualifiers(TLayoutQualifier leftQualifier,
     if (rightQualifier.yuv != false)
     {
         joinedQualifier.yuv = rightQualifier.yuv;
+    }
+    if (rightQualifier.earlyFragmentTests != false)
+    {
+        joinedQualifier.earlyFragmentTests = rightQualifier.earlyFragmentTests;
     }
     if (rightQualifier.binding != -1)
     {
@@ -701,14 +776,19 @@ unsigned int TInvariantQualifierWrapper::getRank() const
     return 0u;
 }
 
-unsigned int TInterpolationQualifierWrapper::getRank() const
+unsigned int TPreciseQualifierWrapper::getRank() const
 {
     return 1u;
 }
 
-unsigned int TLayoutQualifierWrapper::getRank() const
+unsigned int TInterpolationQualifierWrapper::getRank() const
 {
     return 2u;
+}
+
+unsigned int TLayoutQualifierWrapper::getRank() const
+{
+    return 3u;
 }
 
 unsigned int TStorageQualifierWrapper::getRank() const
@@ -717,22 +797,22 @@ unsigned int TStorageQualifierWrapper::getRank() const
     
     if (mStorageQualifier == EvqCentroid)
     {
-        return 3u;
+        return 4u;
     }
     else
     {
-        return 4u;
+        return 5u;
     }
 }
 
 unsigned int TMemoryQualifierWrapper::getRank() const
 {
-    return 4u;
+    return 5u;
 }
 
 unsigned int TPrecisionQualifierWrapper::getRank() const
 {
-    return 5u;
+    return 6u;
 }
 
 TTypeQualifier::TTypeQualifier(TQualifier scope, const TSourceLoc &loc)
@@ -741,6 +821,7 @@ TTypeQualifier::TTypeQualifier(TQualifier scope, const TSourceLoc &loc)
       precision(EbpUndefined),
       qualifier(scope),
       invariant(false),
+      precise(false),
       line(loc)
 {
     ASSERT(IsScopeQualifier(qualifier));
@@ -769,7 +850,8 @@ bool TTypeQualifierBuilder::checkSequenceIsValid(TDiagnostics *diagnostics) cons
         return false;
     }
 
-    if (!areQualifierChecksRelaxed && !AreQualifiersInOrder(mQualifiers, &errorMessage))
+    if (!areQualifierChecksRelaxed &&
+        !AreQualifiersInOrder(mQualifiers, mShaderVersion, &errorMessage))
     {
         diagnostics->error(mQualifiers[0]->getLine(), errorMessage.data(), "qualifier sequence");
         return false;

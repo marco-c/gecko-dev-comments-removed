@@ -49,26 +49,16 @@ std::string ArrayIndexString(const std::vector<unsigned int> &indices)
 
 size_t FormatStringIntoVector(const char *fmt, va_list vararg, std::vector<char> &outBuffer)
 {
-    
-    
     va_list varargCopy;
     va_copy(varargCopy, vararg);
 
-    
-    int len = vsnprintf(&(outBuffer.front()), outBuffer.size(), fmt, varargCopy);
+    int len = vsnprintf(nullptr, 0, fmt, vararg);
+    ASSERT(len >= 0);
+
+    outBuffer.resize(len + 1, 0);
+
+    len = vsnprintf(outBuffer.data(), outBuffer.size(), fmt, varargCopy);
     va_end(varargCopy);
-
-    if (len < 0 || static_cast<size_t>(len) >= outBuffer.size())
-    {
-        
-        len = vsnprintf(nullptr, 0, fmt, vararg);
-        outBuffer.resize(len + 1);
-
-        
-        va_copy(varargCopy, vararg);
-        len = vsnprintf(&(outBuffer.front()), outBuffer.size(), fmt, varargCopy);
-        va_end(varargCopy);
-    }
     ASSERT(len >= 0);
     return static_cast<size_t>(len);
 }

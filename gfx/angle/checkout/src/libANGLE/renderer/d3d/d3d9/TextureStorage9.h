@@ -88,8 +88,13 @@ class TextureStorage9_2D : public TextureStorage9
                                   int level,
                                   bool dirty,
                                   IDirect3DSurface9 **outSurface) override;
+    angle::Result findRenderTarget(const gl::Context *context,
+                                   const gl::ImageIndex &index,
+                                   GLsizei samples,
+                                   RenderTargetD3D **outRT) const override;
     angle::Result getRenderTarget(const gl::Context *context,
                                   const gl::ImageIndex &index,
+                                  GLsizei samples,
                                   RenderTargetD3D **outRT) override;
     angle::Result getBaseTexture(const gl::Context *context,
                                  IDirect3DBaseTexture9 **outTexture) override;
@@ -114,8 +119,13 @@ class TextureStorage9_EGLImage final : public TextureStorage9
                                   int level,
                                   bool dirty,
                                   IDirect3DSurface9 **outSurface) override;
+    angle::Result findRenderTarget(const gl::Context *context,
+                                   const gl::ImageIndex &index,
+                                   GLsizei samples,
+                                   RenderTargetD3D **outRT) const override;
     angle::Result getRenderTarget(const gl::Context *context,
                                   const gl::ImageIndex &index,
+                                  GLsizei samples,
                                   RenderTargetD3D **outRT) override;
     angle::Result getBaseTexture(const gl::Context *context,
                                  IDirect3DBaseTexture9 **outTexture) override;
@@ -144,8 +154,13 @@ class TextureStorage9_Cube : public TextureStorage9
                                   int level,
                                   bool dirty,
                                   IDirect3DSurface9 **outSurface) override;
+    angle::Result findRenderTarget(const gl::Context *context,
+                                   const gl::ImageIndex &index,
+                                   GLsizei samples,
+                                   RenderTargetD3D **outRT) const override;
     angle::Result getRenderTarget(const gl::Context *context,
                                   const gl::ImageIndex &index,
+                                  GLsizei samples,
                                   RenderTargetD3D **outRT) override;
     angle::Result getBaseTexture(const gl::Context *context,
                                  IDirect3DBaseTexture9 **outTexture) override;

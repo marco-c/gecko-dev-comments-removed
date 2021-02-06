@@ -83,6 +83,11 @@ Error ValidateCreatePbufferFromClientBuffer(Display *display,
                                             Config *config,
                                             const AttributeMap &attributes);
 
+Error ValidateCreatePixmapSurface(Display *display,
+                                  Config *config,
+                                  EGLNativePixmapType pixmap,
+                                  const AttributeMap &attributes);
+
 Error ValidateMakeCurrent(Display *display, Surface *draw, Surface *read, gl::Context *context);
 
 Error ValidateCreateImage(const Display *display,
@@ -174,6 +179,10 @@ Error ValidateStreamPostD3DTextureANGLE(const Display *display,
                                         void *texture,
                                         const AttributeMap &attribs);
 
+Error ValidateGetMscRateANGLE(const Display *display,
+                              const Surface *surface,
+                              const EGLint *numerator,
+                              const EGLint *denominator);
 Error ValidateGetSyncValuesCHROMIUM(const Display *display,
                                     const Surface *surface,
                                     const EGLuint64KHR *ust,
@@ -233,11 +242,9 @@ Error ValidateChooseConfig(const Display *display,
 Error ValidateGetConfigs(const Display *display, EGLint configSize, EGLint *numConfig);
 
 
-Error ValidateCompatibleConfigs(const Display *display,
-                                const Config *config1,
-                                const Surface *surface,
-                                const Config *config2,
-                                EGLint surfaceType);
+Error ValidateCompatibleSurface(const Display *display,
+                                gl::Context *context,
+                                const Surface *surface);
 
 Error ValidateGetPlatformDisplay(EGLenum platform,
                                  void *native_display,
@@ -330,7 +337,18 @@ Error ValidateQueryDisplayAttribANGLE(const Display *display, const EGLint attri
 Error ValidateGetNativeClientBufferANDROID(const struct AHardwareBuffer *buffer);
 
 
+Error ValidateCreateNativeClientBufferANDROID(const egl::AttributeMap &attribMap);
+
+
 Error ValidateDupNativeFenceFDANDROID(const Display *display, const Sync *sync);
+
+
+Error ValidateSwapBuffersWithFrameTokenANGLE(const Display *display,
+                                             const Surface *surface,
+                                             EGLFrameTokenANGLE frametoken);
+
+
+Error ValidateSignalSyncKHR(const Display *display, const Sync *sync, EGLint mode);
 
 }  
 

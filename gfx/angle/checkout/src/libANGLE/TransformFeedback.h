@@ -57,10 +57,10 @@ class TransformFeedbackState final : angle::NonCopyable
     std::vector<OffsetBindingPointer<Buffer>> mIndexedBuffers;
 };
 
-class TransformFeedback final : public RefCountObject, public LabeledObject
+class TransformFeedback final : public RefCountObject<TransformFeedbackID>, public LabeledObject
 {
   public:
-    TransformFeedback(rx::GLImplFactory *implFactory, GLuint id, const Caps &caps);
+    TransformFeedback(rx::GLImplFactory *implFactory, TransformFeedbackID id, const Caps &caps);
     ~TransformFeedback() override;
     void onDestroy(const Context *context) override;
 
@@ -85,7 +85,7 @@ class TransformFeedback final : public RefCountObject, public LabeledObject
     
     void onVerticesDrawn(const Context *context, GLsizei count, GLsizei primcount);
 
-    bool hasBoundProgram(GLuint program) const;
+    bool hasBoundProgram(ShaderProgramID program) const;
 
     angle::Result bindIndexedBuffer(const Context *context,
                                     size_t index,
@@ -94,6 +94,7 @@ class TransformFeedback final : public RefCountObject, public LabeledObject
                                     size_t size);
     const OffsetBindingPointer<Buffer> &getIndexedBuffer(size_t index) const;
     size_t getIndexedBufferCount() const;
+    const std::vector<OffsetBindingPointer<Buffer>> &getIndexedBuffers() const;
 
     GLsizeiptr getVerticesDrawn() const { return mState.getVerticesDrawn(); }
     GLsizeiptr getPrimitivesDrawn() const { return mState.getPrimitivesDrawn(); }
@@ -101,7 +102,7 @@ class TransformFeedback final : public RefCountObject, public LabeledObject
     
     bool buffersBoundForOtherUse() const;
 
-    angle::Result detachBuffer(const Context *context, GLuint bufferName);
+    angle::Result detachBuffer(const Context *context, BufferID bufferID);
 
     rx::TransformFeedbackImpl *getImplementation() const;
 

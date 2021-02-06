@@ -20,6 +20,10 @@
 #    include "compiler/translator/TranslatorVulkan.h"
 #endif  
 
+#ifdef ANGLE_ENABLE_METAL
+#    include "compiler/translator/TranslatorMetal.h"
+#endif  
+
 #include "compiler/translator/util.h"
 
 namespace sh
@@ -57,6 +61,13 @@ TCompiler *ConstructCompiler(sh::GLenum type, ShShaderSpec spec, ShShaderOutput 
     if (IsOutputVulkan(output))
     {
         return new TranslatorVulkan(type, spec);
+    }
+#endif  
+
+#ifdef ANGLE_ENABLE_METAL
+    if (IsOutputMetal(output))
+    {
+        return new TranslatorMetal(type, spec);
     }
 #endif  
 

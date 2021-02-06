@@ -43,6 +43,7 @@ struct Format final : private angle::NonCopyable
                             bool isBlock,
                             bool isFixed,
                             bool isScaled,
+                            bool isSRGB,
                             gl::VertexAttribType vertexAttribType);
 
     static const Format &Get(FormatID id) { return gFormatInfoTable[static_cast<int>(id)]; }
@@ -57,6 +58,7 @@ struct Format final : private angle::NonCopyable
     constexpr bool isSnorm() const;
     constexpr bool isUnorm() const;
     constexpr bool isFloat() const;
+    constexpr bool isVertexTypeHalfFloat() const;
 
     constexpr bool isInt() const { return isSint() || isUint(); }
     constexpr bool isNorm() const { return isSnorm() || isUnorm(); }
@@ -103,6 +105,7 @@ struct Format final : private angle::NonCopyable
     bool isBlock;
     bool isFixed;
     bool isScaled;
+    bool isSRGB;
 
     
     gl::VertexAttribType vertexAttribType;
@@ -141,6 +144,7 @@ constexpr Format::Format(FormatID id,
                          bool isBlock,
                          bool isFixed,
                          bool isScaled,
+                         bool isSRGB,
                          gl::VertexAttribType vertexAttribType)
     : id(id),
       glInternalFormat(glFormat),
@@ -169,6 +173,7 @@ constexpr Format::Format(FormatID id,
       isBlock(isBlock),
       isFixed(isFixed),
       isScaled(isScaled),
+      isSRGB(isSRGB),
       vertexAttribType(vertexAttribType)
 {}
 
@@ -207,6 +212,11 @@ constexpr bool Format::isUnorm() const
 constexpr bool Format::isFloat() const
 {
     return componentType == GL_FLOAT;
+}
+
+constexpr bool Format::isVertexTypeHalfFloat() const
+{
+    return vertexAttribType == gl::VertexAttribType::HalfFloat;
 }
 
 }  

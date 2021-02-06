@@ -119,7 +119,7 @@ GLboolean ConvertToGLBoolean(ParamType param)
 
 
 template <typename QueryT>
-void CastStateValues(Context *context,
+void CastStateValues(const Context *context,
                      GLenum nativeType,
                      GLenum pname,
                      unsigned int numParams,

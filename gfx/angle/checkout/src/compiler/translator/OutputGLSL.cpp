@@ -75,8 +75,25 @@ void TOutputGLSL::visitSymbol(TIntermSymbol *node)
     }
 }
 
-ImmutableString TOutputGLSL::translateTextureFunction(const ImmutableString &name)
+ImmutableString TOutputGLSL::translateTextureFunction(const ImmutableString &name,
+                                                      const ShCompileOptions &option)
 {
+    
+    if (name == "textureVideoWEBGL")
+    {
+        if (option & SH_TAKE_VIDEO_TEXTURE_AS_EXTERNAL_OES)
+        {
+            
+            UNIMPLEMENTED();
+            return ImmutableString("");
+        }
+        else
+        {
+            
+            return ImmutableString("texture2D");
+        }
+    }
+
     static const char *simpleRename[]       = {"texture2DLodEXT",
                                          "texture2DLod",
                                          "texture2DProjLodEXT",
@@ -100,7 +117,8 @@ ImmutableString TOutputGLSL::translateTextureFunction(const ImmutableString &nam
         "textureCubeLodEXT", "textureLod", "texture2DGradEXT", "textureGrad",
         "texture2DProjGradEXT", "textureProjGrad", "textureCubeGradEXT", "textureGrad", "texture3D",
         "texture", "texture3DProj", "textureProj", "texture3DLod", "textureLod", "texture3DProjLod",
-        "textureProjLod", nullptr, nullptr};
+        "textureProjLod", "shadow2DEXT", "texture", "shadow2DProjEXT", "textureProj", nullptr,
+        nullptr};
     const char **mapping =
         (sh::IsGLSL130OrNewer(getShaderOutput())) ? legacyToCoreRename : simpleRename;
 

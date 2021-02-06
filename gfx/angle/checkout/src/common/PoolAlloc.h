@@ -138,6 +138,11 @@ class PoolAllocator : angle::NonCopyable
     
     
     
+    void initialize(int pageSize, int alignment);
+
+    
+    
+    
     
     void push();
 

@@ -10,6 +10,7 @@
 
 #include "BreakVariableAliasingInInnerLoops.h"
 
+#include "compiler/translator/Compiler.h"
 #include "compiler/translator/tree_util/IntermNode_util.h"
 #include "compiler/translator/tree_util/IntermTraverse.h"
 
@@ -38,7 +39,7 @@ class AliasingBreaker : public TIntermTraverser
     AliasingBreaker() : TIntermTraverser(true, false, true) {}
 
   protected:
-    bool visitBinary(Visit visit, TIntermBinary *binary)
+    bool visitBinary(Visit visit, TIntermBinary *binary) override
     {
         if (visit != PreVisit)
         {
@@ -77,7 +78,7 @@ class AliasingBreaker : public TIntermTraverser
         return true;
     }
 
-    bool visitLoop(Visit visit, TIntermLoop *loop)
+    bool visitLoop(Visit visit, TIntermLoop *loop) override
     {
         if (visit == PreVisit)
         {
@@ -98,10 +99,12 @@ class AliasingBreaker : public TIntermTraverser
 
 }  
 
-void BreakVariableAliasingInInnerLoops(TIntermNode *root)
+bool BreakVariableAliasingInInnerLoops(TCompiler *compiler, TIntermNode *root)
 {
     AliasingBreaker breaker;
     root->traverse(&breaker);
+
+    return compiler->validateAST(root);
 }
 
 }  

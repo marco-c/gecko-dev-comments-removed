@@ -62,7 +62,7 @@ class HLSLBlockEncoder : public BlockLayoutEncoder
 
 
 
-unsigned int HLSLVariableRegisterCount(const Uniform &variable, ShShaderOutput outputType);
+unsigned int HLSLVariableRegisterCount(const ShaderVariable &variable, ShShaderOutput outputType);
 }  
 
 #endif  

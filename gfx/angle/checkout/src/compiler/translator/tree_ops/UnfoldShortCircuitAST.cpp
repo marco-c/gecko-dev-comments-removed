@@ -64,11 +64,11 @@ bool UnfoldShortCircuitASTTraverser::visitBinary(Visit visit, TIntermBinary *nod
 
 }  
 
-void UnfoldShortCircuitAST(TIntermBlock *root)
+bool UnfoldShortCircuitAST(TCompiler *compiler, TIntermBlock *root)
 {
     UnfoldShortCircuitASTTraverser traverser;
     root->traverse(&traverser);
-    traverser.updateTree();
+    return traverser.updateTree(compiler, root);
 }
 
 }  

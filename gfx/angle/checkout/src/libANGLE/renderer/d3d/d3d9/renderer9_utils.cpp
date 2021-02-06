@@ -17,7 +17,7 @@
 #include "libANGLE/renderer/d3d/d3d9/formatutils9.h"
 #include "libANGLE/renderer/driver_utils.h"
 #include "platform/FeaturesD3D.h"
-#include "platform/Platform.h"
+#include "platform/PlatformMethods.h"
 
 #include "third_party/systeminfo/SystemInfo.h"
 
@@ -459,6 +459,7 @@ static gl::TextureCaps GenerateTextureFormatCaps(GLenum internalFormat,
                                         D3DRTYPE_TEXTURE, d3dFormatInfo.renderFormat));
         }
         textureCaps.renderbuffer = textureCaps.textureAttachment;
+        textureCaps.blendable    = textureCaps.renderbuffer;
 
         textureCaps.sampleCounts.insert(1);
         for (unsigned int i = D3DMULTISAMPLE_2_SAMPLES; i <= D3DMULTISAMPLE_16_SAMPLES; i++)
@@ -650,13 +651,13 @@ void GenerateCaps(IDirect3D9 *d3d9,
 
     
     extensions->setTextureExtensionSupport(*textureCapsMap);
-    extensions->elementIndexUint  = deviceCaps.MaxVertexIndex >= (1 << 16);
-    extensions->getProgramBinary  = true;
-    extensions->rgb8rgba8         = true;
-    extensions->readFormatBGRA    = true;
-    extensions->pixelBufferObject = false;
-    extensions->mapBuffer         = false;
-    extensions->mapBufferRange    = false;
+    extensions->elementIndexUintOES = deviceCaps.MaxVertexIndex >= (1 << 16);
+    extensions->getProgramBinaryOES = true;
+    extensions->rgb8rgba8OES        = true;
+    extensions->readFormatBGRA      = true;
+    extensions->pixelBufferObjectNV = false;
+    extensions->mapBufferOES        = false;
+    extensions->mapBufferRange      = false;
 
     
     
@@ -669,10 +670,11 @@ void GenerateCaps(IDirect3D9 *d3d9,
     if (SUCCEEDED(d3d9->GetAdapterIdentifier(adapter, 0, &adapterId)))
     {
         
-        extensions->textureNPOT = !(deviceCaps.TextureCaps & D3DPTEXTURECAPS_POW2) &&
-                                  !(deviceCaps.TextureCaps & D3DPTEXTURECAPS_CUBEMAP_POW2) &&
-                                  !(deviceCaps.TextureCaps & D3DPTEXTURECAPS_NONPOW2CONDITIONAL) &&
-                                  !(!isWindowsVistaOrGreater() && IsAMD(adapterId.VendorId));
+        extensions->textureNPOTOES =
+            !(deviceCaps.TextureCaps & D3DPTEXTURECAPS_POW2) &&
+            !(deviceCaps.TextureCaps & D3DPTEXTURECAPS_CUBEMAP_POW2) &&
+            !(deviceCaps.TextureCaps & D3DPTEXTURECAPS_NONPOW2CONDITIONAL) &&
+            !(!isWindowsVistaOrGreater() && IsAMD(adapterId.VendorId));
 
         
         if (IsAMD(adapterId.VendorId))
@@ -683,7 +685,7 @@ void GenerateCaps(IDirect3D9 *d3d9,
     }
     else
     {
-        extensions->textureNPOT = false;
+        extensions->textureNPOTOES = false;
     }
 
     extensions->drawBuffers    = false;
@@ -703,7 +705,7 @@ void GenerateCaps(IDirect3D9 *d3d9,
 
     
     IDirect3DQuery9 *eventQuery = nullptr;
-    extensions->fence =
+    extensions->fenceNV =
         SUCCEEDED(device->CreateQuery(D3DQUERYTYPE_EVENT, &eventQuery)) && eventQuery;
     SafeRelease(eventQuery);
 
@@ -727,24 +729,25 @@ void GenerateCaps(IDirect3D9 *d3d9,
     
     extensions->instancedArraysEXT  = false;
     extensions->packReverseRowOrder = true;
-    extensions->standardDerivatives =
+    extensions->standardDerivativesOES =
         (deviceCaps.PS20Caps.Caps & D3DPS20CAPS_GRADIENTINSTRUCTIONS) != 0;
     extensions->shaderTextureLOD       = true;
     extensions->fragDepth              = true;
     extensions->textureUsage           = true;
     extensions->translatedShaderSource = true;
-    extensions->fboRenderMipmap        = false;
+    extensions->fboRenderMipmapOES     = false;
     extensions->discardFramebuffer     = false;  
                                                  
-    extensions->colorBufferFloat   = false;
-    extensions->debugMarker        = true;
-    extensions->eglImage           = true;
-    extensions->eglImageExternal   = true;
-    extensions->unpackSubimage     = true;
-    extensions->packSubimage       = true;
-    extensions->syncQuery          = extensions->fence;
-    extensions->copyTexture        = true;
-    extensions->textureBorderClamp = true;
+    extensions->colorBufferFloat      = false;
+    extensions->debugMarker           = true;
+    extensions->eglImageOES           = true;
+    extensions->eglImageExternalOES   = true;
+    extensions->unpackSubimage        = true;
+    extensions->packSubimage          = true;
+    extensions->syncQuery             = extensions->fenceNV;
+    extensions->copyTexture           = true;
+    extensions->textureBorderClampOES = true;
+    extensions->webglVideoTexture     = true;
 
     
     
@@ -805,16 +808,16 @@ void MakeValidSize(bool isImage,
 
 void InitializeFeatures(angle::FeaturesD3D *features)
 {
-    features->mrtPerfWorkaround.enabled                           = true;
-    features->setDataFasterThanImageUpload.enabled                = false;
-    features->setDataFasterThanImageUploadOn128bitFormats.enabled = false;
-    features->useInstancedPointSpriteEmulation.enabled            = false;
+    ANGLE_FEATURE_CONDITION(features, mrtPerfWorkaround, true);
+    ANGLE_FEATURE_CONDITION(features, setDataFasterThanImageUpload, false);
+    ANGLE_FEATURE_CONDITION(features, setDataFasterThanImageUploadOn128bitFormats, false);
+    ANGLE_FEATURE_CONDITION(features, useInstancedPointSpriteEmulation, false);
 
     
-    features->expandIntegerPowExpressions.enabled = true;
+    ANGLE_FEATURE_CONDITION(features, expandIntegerPowExpressions, true);
 
     
-    features->allowClearForRobustResourceInit.enabled = false;
+    ANGLE_FEATURE_CONDITION(features, allowClearForRobustResourceInit, true);
 
     
     auto *platform = ANGLEPlatformCurrent();

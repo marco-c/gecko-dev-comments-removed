@@ -35,7 +35,8 @@ class MemoryProgramCache final : angle::NonCopyable
     
     bool get(const Context *context,
              const egl::BlobCache::Key &programHash,
-             egl::BlobCache::Value *programOut);
+             egl::BlobCache::Value *programOut,
+             size_t *programSizeOut);
 
     
     bool getAt(size_t index,
@@ -46,16 +47,18 @@ class MemoryProgramCache final : angle::NonCopyable
     void remove(const egl::BlobCache::Key &programHash);
 
     
-    void putProgram(const egl::BlobCache::Key &programHash,
-                    const Context *context,
-                    const Program *program);
+    angle::Result putProgram(const egl::BlobCache::Key &programHash,
+                             const Context *context,
+                             const Program *program);
 
     
-    void updateProgram(const Context *context, const Program *program);
+    angle::Result updateProgram(const Context *context, const Program *program);
 
     
     
-    void putBinary(const egl::BlobCache::Key &programHash, const uint8_t *binary, size_t length);
+    ANGLE_NO_DISCARD bool putBinary(const egl::BlobCache::Key &programHash,
+                                    const uint8_t *binary,
+                                    size_t length);
 
     
     

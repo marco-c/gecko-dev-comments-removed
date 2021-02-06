@@ -15,6 +15,17 @@
 namespace gl
 {
 
+bool ValidateTexBufferBase(const Context *context,
+                           TextureType target,
+                           GLenum internalformat,
+                           BufferID bufferPacked);
+bool ValidateTexBufferRangeBase(const Context *context,
+                                TextureType target,
+                                GLenum internalformat,
+                                BufferID bufferPacked,
+                                GLintptr offset,
+                                GLsizeiptr size);
+
 }  
 
 #endif  

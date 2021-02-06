@@ -9,6 +9,8 @@
 #include "libANGLE/Compiler.h"
 
 #include "common/debug.h"
+#include "libANGLE/Context.h"
+#include "libANGLE/Display.h"
 #include "libANGLE/State.h"
 #include "libANGLE/renderer/CompilerImpl.h"
 #include "libANGLE/renderer/GLImplFactory.h"
@@ -30,8 +32,7 @@ ShShaderSpec SelectShaderSpec(GLint majorVersion,
     
     if (clientType == EGL_OPENGL_API)
     {
-        ASSERT(majorVersion == 3 && minorVersion == 3);
-        return SH_GL3_3_SPEC;
+        return SH_GL_COMPATIBILITY_SPEC;
     }
 
     if (majorVersion >= 3)
@@ -57,7 +58,7 @@ ShShaderSpec SelectShaderSpec(GLint majorVersion,
 
 }  
 
-Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state)
+Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state, egl::Display *display)
     : mImplementation(implFactory->createCompiler()),
       mSpec(SelectShaderSpec(state.getClientMajorVersion(),
                              state.getClientMinorVersion(),
@@ -66,17 +67,21 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state)
       mOutputType(mImplementation->getTranslatorOutputType()),
       mResources()
 {
+    
     ASSERT(state.getClientMajorVersion() == 1 || state.getClientMajorVersion() == 2 ||
-           state.getClientMajorVersion() == 3);
+           state.getClientMajorVersion() == 3 || state.getClientMajorVersion() == 4);
 
     const gl::Caps &caps             = state.getCaps();
     const gl::Extensions &extensions = state.getExtensions();
 
-    if (gActiveCompilers == 0)
     {
-        sh::Initialize();
+        std::lock_guard<std::mutex> lock(display->getDisplayGlobalMutex());
+        if (gActiveCompilers == 0)
+        {
+            sh::Initialize();
+        }
+        ++gActiveCompilers;
     }
-    ++gActiveCompilers;
 
     sh::InitBuiltInResources(&mResources);
     mResources.MaxVertexAttribs             = caps.maxVertexAttributes;
@@ -87,20 +92,27 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state)
     mResources.MaxTextureImageUnits         = caps.maxShaderTextureImageUnits[ShaderType::Fragment];
     mResources.MaxFragmentUniformVectors    = caps.maxFragmentUniformVectors;
     mResources.MaxDrawBuffers               = caps.maxDrawBuffers;
-    mResources.OES_standard_derivatives     = extensions.standardDerivatives;
+    mResources.OES_standard_derivatives     = extensions.standardDerivativesOES;
     mResources.EXT_draw_buffers             = extensions.drawBuffers;
     mResources.EXT_shader_texture_lod       = extensions.shaderTextureLOD;
-    mResources.OES_EGL_image_external       = extensions.eglImageExternal;
-    mResources.OES_EGL_image_external_essl3 = extensions.eglImageExternalEssl3;
-    mResources.NV_EGL_stream_consumer_external = extensions.eglStreamConsumerExternal;
-    mResources.ARB_texture_rectangle           = extensions.textureRectangle;
+    mResources.EXT_shader_non_constant_global_initializers =
+        extensions.shaderNonConstGlobalInitializersEXT;
+    mResources.OES_EGL_image_external                = extensions.eglImageExternalOES;
+    mResources.OES_EGL_image_external_essl3          = extensions.eglImageExternalEssl3OES;
+    mResources.NV_EGL_stream_consumer_external       = extensions.eglStreamConsumerExternalNV;
+    mResources.NV_shader_noperspective_interpolation = extensions.noperspectiveInterpolationNV;
+    mResources.ARB_texture_rectangle                 = extensions.textureRectangle;
+    mResources.EXT_gpu_shader5                       = extensions.gpuShader5EXT;
     mResources.OES_texture_storage_multisample_2d_array =
-        extensions.textureStorageMultisample2DArray;
+        extensions.textureStorageMultisample2DArrayOES;
     mResources.OES_texture_3D                  = extensions.texture3DOES;
     mResources.ANGLE_texture_multisample       = extensions.textureMultisample;
     mResources.ANGLE_multi_draw                = extensions.multiDraw;
     mResources.ANGLE_base_vertex_base_instance = extensions.baseVertexBaseInstance;
-
+    mResources.APPLE_clip_distance             = extensions.clipDistanceAPPLE;
+    
+    mResources.OES_shader_multisample_interpolation = extensions.multisampleInterpolationOES;
+    mResources.OES_shader_image_atomic              = extensions.shaderImageAtomicOES;
     
     mResources.FragmentPrecisionHigh = 1;
     mResources.EXT_frag_depth        = extensions.fragDepth;
@@ -113,6 +125,24 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state)
     mResources.MaxViewsOVR    = extensions.maxViews;
 
     
+    mResources.EXT_multisampled_render_to_texture  = extensions.multisampledRenderToTexture;
+    mResources.EXT_multisampled_render_to_texture2 = extensions.multisampledRenderToTexture2;
+
+    
+    mResources.WEBGL_video_texture = extensions.webglVideoTexture;
+
+    
+    mResources.OES_texture_cube_map_array = extensions.textureCubeMapArrayOES;
+    mResources.EXT_texture_cube_map_array = extensions.textureCubeMapArrayEXT;
+
+    
+    mResources.EXT_shadow_samplers = extensions.shadowSamplersEXT;
+
+    
+    mResources.OES_texture_buffer = extensions.textureBufferOES;
+    mResources.EXT_texture_buffer = extensions.textureBufferEXT;
+
+    
     mResources.MaxVertexOutputVectors  = caps.maxVertexOutputComponents / 4;
     mResources.MaxFragmentInputVectors = caps.maxFragmentInputComponents / 4;
     mResources.MinProgramTexelOffset   = caps.minProgramTexelOffset;
@@ -121,6 +151,9 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state)
     
     mResources.EXT_blend_func_extended  = extensions.blendFuncExtended;
     mResources.MaxDualSourceDrawBuffers = extensions.maxDualSourceDrawBuffers;
+
+    
+    mResources.MaxClipDistances = caps.maxClipDistances;
 
     
     mResources.MaxProgramTextureGatherOffset    = caps.maxProgramTextureGatherOffset;
@@ -184,10 +217,16 @@ Compiler::Compiler(rx::GLImplFactory *implFactory, const State &state)
     mResources.MaxGeometryShaderStorageBlocks = caps.maxShaderStorageBlocks[ShaderType::Geometry];
     mResources.MaxGeometryShaderInvocations   = caps.maxGeometryShaderInvocations;
     mResources.MaxGeometryImageUniforms       = caps.maxShaderImageUniforms[ShaderType::Geometry];
+
+    
+    mResources.SubPixelBits = static_cast<int>(caps.subPixelBits);
 }
 
-Compiler::~Compiler()
+Compiler::~Compiler() = default;
+
+void Compiler::onDestroy(const Context *context)
 {
+    std::lock_guard<std::mutex> lock(context->getDisplay()->getDisplayGlobalMutex());
     for (auto &pool : mPools)
     {
         for (ShCompilerInstance &instance : pool)

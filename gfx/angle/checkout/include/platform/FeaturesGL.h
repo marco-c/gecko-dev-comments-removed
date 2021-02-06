@@ -26,16 +26,16 @@ struct FeaturesGL : FeatureSetBase
     
     
     
-    Feature avoid1BitAlphaTextureFormats = {
-        "avoid_1_bit_alpha_texture_formats", FeatureCategory::OpenGLWorkarounds,
-        "Issue on Intel and AMD drivers with 1-bit alpha framebuffer formats", &members};
+    Feature avoid1BitAlphaTextureFormats = {"avoid_1_bit_alpha_texture_formats",
+                                            FeatureCategory::OpenGLWorkarounds,
+                                            "Issue with 1-bit alpha framebuffer formats", &members};
 
     
     
     
-    Feature rgba4IsNotSupportedForColorRendering = {
-        "rgba4_is_not_supported_for_color_rendering", FeatureCategory::OpenGLWorkarounds,
-        "Issue on older Intel drivers, GL_RGBA4 is not color renderable", &members};
+    Feature rgba4IsNotSupportedForColorRendering = {"rgba4_is_not_supported_for_color_rendering",
+                                                    FeatureCategory::OpenGLWorkarounds,
+                                                    "GL_RGBA4 is not color renderable", &members};
 
     
     
@@ -43,8 +43,7 @@ struct FeaturesGL : FeatureSetBase
     
     Feature doesSRGBClearsOnLinearFramebufferAttachments = {
         "does_srgb_clears_on_linear_framebuffer_attachments", FeatureCategory::OpenGLWorkarounds,
-        "Issue clearing framebuffers with linear attachments on Intel or AMD "
-        "drivers when GL_FRAMEBUFFER_SRGB is enabled",
+        "Issue clearing framebuffers with linear attachments when GL_FRAMEBUFFER_SRGB is enabled",
         &members};
 
     
@@ -56,15 +55,22 @@ struct FeaturesGL : FeatureSetBase
     
     Feature doWhileGLSLCausesGPUHang = {
         "do_while_glsl_causes_gpu_hang", FeatureCategory::OpenGLWorkarounds,
-        "On Mac, some GLSL constructs involving do-while loops cause GPU hangs", &members};
+        "Some GLSL constructs involving do-while loops cause GPU hangs", &members,
+        "http://crbug.com/644669"};
+
+    
+    
+    
+    Feature addBaseVertexToVertexID = {
+        "vertex_id_does_not_include_base_vertex", FeatureCategory::OpenGLWorkarounds,
+        "gl_VertexID in GLSL vertex shader doesn't include base vertex value", &members};
 
     
     
     
     Feature finishDoesNotCauseQueriesToBeAvailable = {
         "finish_does_not_cause_queries_to_be_available", FeatureCategory::OpenGLWorkarounds,
-        "On some NVIDIA drivers, glFinish doesn't cause all queries to report available result",
-        &members};
+        "glFinish doesn't cause all queries to report available result", &members};
 
     
     
@@ -72,8 +78,10 @@ struct FeaturesGL : FeatureSetBase
     
     Feature alwaysCallUseProgramAfterLink = {
         "always_call_use_program_after_link", FeatureCategory::OpenGLWorkarounds,
-        "Always call useProgram after a successful link to avoid a driver bug", &members};
+        "Always call useProgram after a successful link to avoid a driver bug", &members,
+        "http://crbug.com/110263"};
 
+    
     
     Feature unpackOverlappingRowsSeparatelyUnpackBuffer = {
         "unpack_overlapping_rows_separately_unpack_buffer", FeatureCategory::OpenGLWorkarounds,
@@ -87,6 +95,7 @@ struct FeaturesGL : FeatureSetBase
         &members};
 
     
+    
     Feature initializeCurrentVertexAttributes = {
         "initialize_current_vertex_attributes", FeatureCategory::OpenGLWorkarounds,
         "During initialization, assign the current vertex attributes to the spec-mandated defaults",
@@ -94,15 +103,15 @@ struct FeaturesGL : FeatureSetBase
 
     
     
-    Feature emulateAbsIntFunction = {
-        "emulate_abs_int_function", FeatureCategory::OpenGLWorkarounds,
-        "On Intel Mac, abs(i) where i is an integer returns unexpected result", &members};
+    Feature emulateAbsIntFunction = {"emulate_abs_int_function", FeatureCategory::OpenGLWorkarounds,
+                                     "abs(i) where i is an integer returns unexpected result",
+                                     &members, "http://crbug.com/642227"};
 
     
     
     Feature addAndTrueToLoopCondition = {
         "add_and_true_to_loop_condition", FeatureCategory::OpenGLWorkarounds,
-        "On Intel Mac, calculation of loop conditions in for and while loop has bug", &members};
+        "Calculation of loop conditions in for and while loop has bug", &members};
 
     
     
@@ -119,20 +128,20 @@ struct FeaturesGL : FeatureSetBase
     Feature unpackLastRowSeparatelyForPaddingInclusion = {
         "unpack_last_row_separately_for_padding_inclusion", FeatureCategory::OpenGLWorkarounds,
         "When uploading textures from an unpack buffer, some drivers count an extra row padding",
-        &members};
+        &members, "http://anglebug.com/1512"};
 
     
     Feature packLastRowSeparatelyForPaddingInclusion = {
         "pack_last_row_separately_for_padding_inclusion", FeatureCategory::OpenGLWorkarounds,
         "When uploading textures from an pack buffer, some drivers count an extra row padding",
-        &members};
+        &members, "http://anglebug.com/1512"};
 
     
     
     
-    Feature emulateIsnanFloat = {
-        "emulate_isnan_float", FeatureCategory::OpenGLWorkarounds,
-        "On some Intel drivers, using isnan() on highp float will get wrong answer", &members};
+    Feature emulateIsnanFloat = {"emulate_isnan_float", FeatureCategory::OpenGLWorkarounds,
+                                 "Using isnan() on highp float will get wrong answer", &members,
+                                 "http://crbug.com/650547"};
 
     
     
@@ -140,9 +149,7 @@ struct FeaturesGL : FeatureSetBase
     
     Feature useUnusedBlocksWithStandardOrSharedLayout = {
         "use_unused_blocks_with_standard_or_shared_layout", FeatureCategory::OpenGLWorkarounds,
-        "On Mac with OpenGL version 4.1 and Linux AMD, unused std140 or shared uniform blocks "
-        "will be treated as inactive",
-        &members};
+        "Unused std140 or shared uniform blocks will be treated as inactive", &members};
 
     
     Feature removeInvariantAndCentroidForESSL3 = {
@@ -154,14 +161,13 @@ struct FeaturesGL : FeatureSetBase
     
     Feature rewriteFloatUnaryMinusOperator = {
         "rewrite_float_unary_minus_operator", FeatureCategory::OpenGLWorkarounds,
-        "On Intel Mac OSX 10.11 driver, using '-<float>' will get wrong answer", &members,
-        "http://crbug.com/308366"};
+        "Using '-<float>' will get wrong answer", &members, "http://crbug.com/308366"};
 
     
     
     Feature emulateAtan2Float = {"emulate_atan_2_float", FeatureCategory::OpenGLWorkarounds,
-                                 "On NVIDIA drivers, atan(y, x) may return a wrong answer",
-                                 &members, "http://crbug.com/672380"};
+                                 "atan(y, x) may return a wrong answer", &members,
+                                 "http://crbug.com/672380"};
 
     
     
@@ -169,9 +175,8 @@ struct FeaturesGL : FeatureSetBase
     
     Feature reapplyUBOBindingsAfterUsingBinaryProgram = {
         "reapply_ubo_bindings_after_using_binary_program", FeatureCategory::OpenGLWorkarounds,
-        "Some AMD OpenGL drivers and Android devices forget about UBO bindings "
-        "when using program binaries",
-        &members, "http://anglebug.com/1637"};
+        "Some drivers forget about UBO bindings when using program binaries", &members,
+        "http://anglebug.com/1637"};
 
     
     
@@ -179,88 +184,84 @@ struct FeaturesGL : FeatureSetBase
     
     Feature emulateMaxVertexAttribStride = {
         "emulate_max_vertex_attrib_stride", FeatureCategory::OpenGLWorkarounds,
-        "Some AMD OpenGL >= 4.4 drivers return 0 when MAX_VERTEX_ATTRIB_STRIED queried", &members,
+        "Some drivers return 0 when MAX_VERTEX_ATTRIB_STRIED queried", &members,
         "http://anglebug.com/1936"};
 
     
     
     Feature dontInitializeUninitializedLocals = {
         "dont_initialize_uninitialized_locals", FeatureCategory::OpenGLWorkarounds,
-        "On Mac initializing uninitialized locals caused odd behavior in a few WebGL 2 tests",
-        &members, "http://anglebug.com/2041"};
+        "Initializing uninitialized locals caused odd behavior in a few WebGL 2 tests", &members,
+        "http://anglebug.com/2046"};
 
     
     
     Feature clampPointSize = {
         "clamp_point_size", FeatureCategory::OpenGLWorkarounds,
-        "On some NVIDIA drivers the point size range reported from the API is "
-        "inconsistent with the actual behavior",
+        "The point size range reported from the API is inconsistent with the actual behavior",
         &members};
 
     
     
     
-    Feature rewriteVectorScalarArithmetic = {
-        "rewrite_vector_scalar_arithmetic", FeatureCategory::OpenGLWorkarounds,
-        "On some NVIDIA drivers certain types of GLSL arithmetic ops mixing "
-        "vectors and scalars may be executed incorrectly",
-        &members, "http://crbug.com/772651"};
+    Feature rewriteVectorScalarArithmetic = {"rewrite_vector_scalar_arithmetic",
+                                             FeatureCategory::OpenGLWorkarounds,
+                                             "Certain types of GLSL arithmetic ops mixing vectors "
+                                             "and scalars may be executed incorrectly",
+                                             &members, "http://crbug.com/772651"};
 
     
     Feature dontUseLoopsToInitializeVariables = {
         "dont_use_loops_to_initialize_variables", FeatureCategory::OpenGLWorkarounds,
-        "On some Android devices for loops used to initialize variables hit "
-        "native GLSL compiler bugs",
+        "For loops used to initialize variables hit native GLSL compiler bugs", &members,
+        "http://crbug.com/809422"};
+
+    
+    
+    Feature clampFragDepth = {
+        "clamp_frag_depth", FeatureCategory::OpenGLWorkarounds,
+        "gl_FragDepth is not clamped correctly when rendering to a floating point depth buffer",
         &members};
 
     
     
-    Feature clampFragDepth = {"clamp_frag_depth", FeatureCategory::OpenGLWorkarounds,
-                              "On some NVIDIA drivers gl_FragDepth is not clamped correctly when "
-                              "rendering to a floating point depth buffer",
-                              &members};
+    
+    Feature rewriteRepeatedAssignToSwizzled = {"rewrite_repeated_assign_to_swizzled",
+                                               FeatureCategory::OpenGLWorkarounds,
+                                               "Repeated assignment to swizzled values inside a "
+                                               "GLSL user-defined function have incorrect results",
+                                               &members};
 
-    
-    
-    
-    Feature rewriteRepeatedAssignToSwizzled = {
-        "rewrite_repeated_assign_to_swizzled", FeatureCategory::OpenGLWorkarounds,
-        "On some NVIDIA drivers < v397.31, repeated assignment to swizzled "
-        "values inside a GLSL user-defined function have incorrect results",
-        &members};
     
     
     
     
     Feature disableBlendFuncExtended = {
         "disable_blend_func_extended", FeatureCategory::OpenGLWorkarounds,
-        "On some AMD and Intel GL drivers ARB_blend_func_extended does not pass the tests",
-        &members, "http://anglebug.com/1085"};
+        "ARB_blend_func_extended does not pass the tests", &members, "http://anglebug.com/1085"};
 
     
     
     
     Feature unsizedsRGBReadPixelsDoesntTransform = {
         "unsized_srgb_read_pixels_doesnt_transform", FeatureCategory::OpenGLWorkarounds,
-        "Qualcomm drivers returns raw sRGB values instead of linearized values "
-        "when calling glReadPixels on unsized sRGB texture formats",
+        "Drivers returning raw sRGB values instead of linearized values when calling glReadPixels "
+        "on unsized sRGB texture formats",
         &members, "http://crbug.com/565179"};
 
     
     
     Feature queryCounterBitsGeneratesErrors = {
         "query_counter_bits_generates_errors", FeatureCategory::OpenGLWorkarounds,
-        "Older Qualcomm drivers generate errors when querying the number of bits in timer queries",
-        &members, "http://anglebug.com/3027"};
+        "Drivers generate errors when querying the number of bits in timer queries", &members,
+        "http://anglebug.com/3027"};
 
     
     
     
     Feature dontRelinkProgramsInParallel = {
         "dont_relink_programs_in_parallel", FeatureCategory::OpenGLWorkarounds,
-        "On some Intel Windows OpenGL drivers and Android, relinking a program "
-        "in parallel is buggy",
-        &members, "http://anglebug.com/3045"};
+        "Relinking a program in parallel is buggy", &members, "http://anglebug.com/3045"};
 
     
     
@@ -274,15 +275,15 @@ struct FeaturesGL : FeatureSetBase
     Feature limitMaxTextureSizeTo4096 = {"max_texture_size_limit_4096",
                                          FeatureCategory::OpenGLWorkarounds,
                                          "Limit max texture size to 4096 to avoid frequent "
-                                         "out-of-memory errors on Android or Intel Linux",
+                                         "out-of-memory errors",
                                          &members, "http://crbug.com/927470"};
 
     
     
     Feature limitMaxMSAASamplesTo4 = {
         "max_msaa_sample_count_4", FeatureCategory::OpenGLWorkarounds,
-        "Various rendering bugs have been observed when using higher MSAA counts on Android",
-        &members, "http://crbug.com/797243"};
+        "Various rendering bugs have been observed when using higher MSAA counts", &members,
+        "http://crbug.com/797243"};
 
     
     
@@ -320,8 +321,7 @@ struct FeaturesGL : FeatureSetBase
     
     Feature limitMax3dArrayTextureSizeTo1024 = {
         "max_3d_array_texture_size_1024", FeatureCategory::OpenGLWorkarounds,
-        "Limit max 3d texture size and max array texture layers to 1024 to avoid system hang on "
-        "older Intel Linux",
+        "Limit max 3d texture size and max array texture layers to 1024 to avoid system hang",
         &members, "http://crbug.com/927470"};
 
     
@@ -331,6 +331,180 @@ struct FeaturesGL : FeatureSetBase
         "adjust_src_dst_region_for_blitframebuffer", FeatureCategory::OpenGLWorkarounds,
         "Many platforms have issues with blitFramebuffer when the parameters are large.", &members,
         "http://crbug.com/830046"};
+
+    
+    
+    Feature clipSrcRegionBlitFramebuffer = {
+        "clip_src_region_for_blitframebuffer", FeatureCategory::OpenGLWorkarounds,
+        "Issues with blitFramebuffer when the parameters don't match the framebuffer size.",
+        &members, "http://crbug.com/830046"};
+
+    
+    Feature resettingTexturesGeneratesErrors = {
+        "reset_texture_generates_errors", FeatureCategory::OpenGLWorkarounds,
+        "Calling glTexImage2D with zero size generates errors.", &members,
+        "http://anglebug.com/3859"};
+
+    
+    Feature rgbDXT1TexturesSampleZeroAlpha = {
+        "rgb_dxt1_textures_sample_zero_alpha", FeatureCategory::OpenGLWorkarounds,
+        "Sampling BLACK texels from RGB DXT1 textures returns transparent black on Mac.", &members,
+        "http://anglebug.com/3729"};
+
+    
+    Feature unfoldShortCircuits = {
+        "unfold_short_circuits", FeatureCategory::OpenGLWorkarounds,
+        "Mac incorrectly executes both sides of && and || expressions when they should "
+        "short-circuit.",
+        &members, "http://anglebug.com/482"};
+
+    Feature emulatePrimitiveRestartFixedIndex = {
+        "emulate_primitive_restart_fixed_index", FeatureCategory::OpenGLWorkarounds,
+        "When GL_PRIMITIVE_RESTART_FIXED_INDEX is not available, emulate it with "
+        "GL_PRIMITIVE_RESTART and glPrimitiveRestartIndex.",
+        &members, "http://anglebug.com/3997"};
+
+    Feature setPrimitiveRestartFixedIndexForDrawArrays = {
+        "set_primitive_restart_fixed_index_for_draw_arrays", FeatureCategory::OpenGLWorkarounds,
+        "Some drivers discard vertex data in DrawArrays calls when the fixed primitive restart "
+        "index is within the number of primitives being drawn.",
+        &members, "http://anglebug.com/3997"};
+
+    
+    Feature removeDynamicIndexingOfSwizzledVector = {
+        "remove_dynamic_indexing_of_swizzled_vector", FeatureCategory::OpenGLWorkarounds,
+        "Dynamic indexing of swizzled l-values doesn't work correctly on various platforms.",
+        &members, "http://crbug.com/709351"};
+
+    
+    Feature preAddTexelFetchOffsets = {
+        "pre_add_texel_fetch_offsets", FeatureCategory::OpenGLWorkarounds,
+        "Intel Mac drivers mistakenly consider the parameter position of nagative vaule as invalid "
+        "even if the sum of position and offset is in range, so we need to add workarounds by "
+        "rewriting texelFetchOffset(sampler, position, lod, offset) into texelFetch(sampler, "
+        "position + offset, lod).",
+        &members, "http://crbug.com/642605"};
+
+    
+    
+    Feature regenerateStructNames = {
+        "regenerate_struct_names", FeatureCategory::OpenGLWorkarounds,
+        "All Mac drivers do not handle struct scopes correctly. This workaround overwrites a struct"
+        "name with a unique prefix.",
+        &members, "http://crbug.com/403957"};
+
+    
+    
+    Feature readPixelsUsingImplementationColorReadFormatForNorm16 = {
+        "read_pixels_using_implementation_color_read_format", FeatureCategory::OpenGLWorkarounds,
+        "Quite some OpenGL ES drivers don't implement readPixels for RGBA/UNSIGNED_SHORT from "
+        "EXT_texture_norm16 correctly",
+        &members, "http://anglebug.com/4214"};
+
+    
+    
+    
+    
+    Feature flushBeforeDeleteTextureIfCopiedTo = {
+        "flush_before_delete_texture_if_copied_to", FeatureCategory::OpenGLWorkarounds,
+        "Some drivers track CopyTex{Sub}Image texture dependencies incorrectly. Flush"
+        " before glDeleteTextures in this case",
+        &members, "http://anglebug.com/4267"};
+
+    
+    
+    Feature rewriteRowMajorMatrices = {
+        "rewrite_row_major_matrices", FeatureCategory::OpenGLWorkarounds,
+        "Rewrite row major matrices in shaders as column major as a driver bug workaround",
+        &members, "http://anglebug.com/2273"};
+
+    
+    
+    
+    
+    Feature avoidDXT1sRGBTextureFormat = {
+        "avoid_dxt1_srgb_texture_format", FeatureCategory::OpenGLWorkarounds,
+        "Replaces DXT1 sRGB with DXT1 sRGB Alpha as a driver bug workaround.", &members};
+
+    
+    
+    Feature disableDrawBuffersIndexed = {"disable_draw_buffers_indexed",
+                                         FeatureCategory::OpenGLWorkarounds,
+                                         "Disable OES_draw_buffers_indexed extension.", &members};
+
+    
+    Feature disableSemaphoreFd = {"disable_semaphore_fd", FeatureCategory::OpenGLWorkarounds,
+                                  "Disable GL_EXT_semaphore_fd extension", &members,
+                                  "https://crbug.com/1046462"};
+
+    
+    Feature disableTimestampQueries = {
+        "disable_timestamp_queries", FeatureCategory::OpenGLWorkarounds,
+        "Disable GL_EXT_disjoint_timer_query extension", &members, "https://crbug.com/811661"};
+
+    
+    
+    Feature encodeAndDecodeSRGBForGenerateMipmap = {
+        "decode_encode_srgb_for_generatemipmap", FeatureCategory::OpenGLWorkarounds,
+        "Decode and encode before generateMipmap for srgb format textures.", &members,
+        "http://anglebug.com/4646"};
+
+    Feature emulateCopyTexImage2DFromRenderbuffers = {
+        "emulate_copyteximage2d_from_renderbuffers", FeatureCategory::OpenGLWorkarounds,
+        "CopyTexImage2D spuriously returns errors on iOS when copying from renderbuffers.",
+        &members, "https://anglebug.com/4674"};
+
+    Feature disableGPUSwitchingSupport = {
+        "disable_gpu_switching_support", FeatureCategory::OpenGLWorkarounds,
+        "Disable GPU switching support (use only the low-power GPU) on older MacBook Pros.",
+        &members, "https://crbug.com/1091824"};
+
+    
+    Feature disableNativeParallelCompile = {
+        "disable_native_parallel_compile", FeatureCategory::OpenGLWorkarounds,
+        "Do not use native KHR_parallel_shader_compile even when available.", &members,
+        "http://crbug.com/1094869"};
+
+    Feature emulatePackSkipRowsAndPackSkipPixels = {
+        "emulate_pack_skip_rows_and_pack_skip_pixels", FeatureCategory::OpenGLWorkarounds,
+        "GL_PACK_SKIP_ROWS and GL_PACK_SKIP_PIXELS are ignored in Apple's OpenGL driver.", &members,
+        "https://anglebug.com/4849"};
+
+    
+    Feature clampMscRate = {
+        "clamp_msc_rate", FeatureCategory::OpenGLWorkarounds,
+        "Some drivers return bogus values for GetMscRate, so we clamp it to 30Hz", &members,
+        "https://crbug.com/1042393"};
+
+    
+    
+    Feature bindTransformFeedbackBufferBeforeBindBufferRange = {
+        "bind_transform_feedback_buffer_before_bind_buffer_range",
+        FeatureCategory::OpenGLWorkarounds,
+        "Bind transform feedback buffers to the generic binding point before calling "
+        "glBindBufferBase or glBindBufferRange.",
+        &members, "https://anglebug.com/5140"};
+
+    
+    
+    Feature disableSyncControlSupport = {
+        "disable_sync_control_support", FeatureCategory::OpenGLWorkarounds,
+        "Speculative fix for issues on Linux/Wayland where exposing GLX_OML_sync_control renders "
+        "Chrome unusable",
+        &members, "https://crbug.com/1137851"};
+
+    
+    
+    Feature keepBufferShadowCopy = {
+        "keep_buffer_shadow_copy", FeatureCategory::OpenGLWorkarounds,
+        "Maintain a shadow copy of buffer data when the GL API does not permit reading data back.",
+        &members};
+
+    
+    Feature setZeroLevelBeforeGenerateMipmap = {
+        "set_zero_level_before_generating_mipmap", FeatureCategory::OpenGLWorkarounds,
+        "glGenerateMipmap fails if the zero texture level is not set on some Mac drivers.",
+        &members};
 };
 
 inline FeaturesGL::FeaturesGL()  = default;

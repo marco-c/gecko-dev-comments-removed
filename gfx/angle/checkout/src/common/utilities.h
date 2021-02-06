@@ -38,6 +38,7 @@ size_t VariableExternalSize(GLenum type);
 int VariableRowCount(GLenum type);
 int VariableColumnCount(GLenum type);
 bool IsSamplerType(GLenum type);
+bool IsSamplerCubeType(GLenum type);
 bool IsImageType(GLenum type);
 bool IsImage2DType(GLenum type);
 bool IsAtomicCounterType(GLenum type);
@@ -49,6 +50,7 @@ int MatrixRegisterCount(GLenum type, bool isRowMajorMatrix);
 int MatrixComponentCount(GLenum type, bool isRowMajorMatrix);
 int VariableSortOrder(GLenum type);
 GLenum VariableBoolVectorType(GLenum type);
+std::string GetGLSLTypeString(GLenum type);
 
 int AllocateFirstFreeBits(unsigned int *bits, unsigned int allocationSize, unsigned int bitsSize);
 
@@ -60,10 +62,9 @@ int AllocateFirstFreeBits(unsigned int *bits, unsigned int allocationSize, unsig
 std::string ParseResourceName(const std::string &name, std::vector<unsigned int> *outSubscripts);
 
 
+std::string StripLastArrayIndex(const std::string &name);
 
-const sh::ShaderVariable *FindShaderVarField(const sh::ShaderVariable &var,
-                                             const std::string &fullName,
-                                             GLuint *fieldIndexOut);
+bool SamplerNameContainsNonZeroArrayElement(const std::string &name);
 
 
 
@@ -90,6 +91,7 @@ static_assert(GetPrimitiveRestartIndexFromType<uint32_t>() == 0xFFFFFFFF,
               "verify restart index for uint8_t values");
 
 bool IsTriangleMode(PrimitiveMode drawMode);
+bool IsPolygonMode(PrimitiveMode mode);
 
 namespace priv
 {
@@ -214,6 +216,28 @@ enum class PipelineType
 };
 
 PipelineType GetPipelineType(ShaderType shaderType);
+
+
+const char *GetDebugMessageSourceString(GLenum source);
+const char *GetDebugMessageTypeString(GLenum type);
+const char *GetDebugMessageSeverityString(GLenum severity);
+
+
+
+
+
+
+
+
+
+
+enum class SrgbOverride
+{
+    Default = 0,
+    SRGB,
+    Linear
+};
+
 }  
 
 namespace egl
@@ -241,7 +265,7 @@ EGLenum GLComponentTypeToEGLColorComponentType(GLenum glComponentType);
 EGLClientBuffer GLObjectHandleToEGLClientBuffer(GLuint handle);
 }  
 
-#if !defined(ANGLE_ENABLE_WINDOWS_STORE)
+#if !defined(ANGLE_ENABLE_WINDOWS_UWP)
 std::string getTempPath();
 void writeFile(const char *path, const void *data, size_t size);
 #endif
@@ -249,5 +273,14 @@ void writeFile(const char *path, const void *data, size_t size);
 #if defined(ANGLE_PLATFORM_WINDOWS)
 void ScheduleYield();
 #endif
+
+
+
+
+template <typename E>
+constexpr typename std::underlying_type<E>::type ToUnderlying(E e) noexcept
+{
+    return static_cast<typename std::underlying_type<E>::type>(e);
+}
 
 #endif  

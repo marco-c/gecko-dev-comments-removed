@@ -18,11 +18,6 @@ namespace
 {
 constexpr const ImmutableString kHashedNamePrefix("webgl_");
 
-
-
-
-constexpr const ImmutableString kUnhashedNamePrefix("_u");
-
 ImmutableString HashName(const ImmutableString &name, ShHashFunction64 hashFunction)
 {
     ASSERT(!name.empty());
@@ -41,12 +36,30 @@ ImmutableString HashName(const ImmutableString &name, ShHashFunction64 hashFunct
     return hashedName;
 }
 
+void AddToNameMapIfNotMapped(const ImmutableString &name,
+                             const ImmutableString &hashedName,
+                             NameMap *nameMap)
+{
+    if (nameMap)
+    {
+        NameMap::const_iterator it = nameMap->find(name.data());
+        if (it != nameMap->end())
+        {
+            
+            return;
+        }
+        (*nameMap)[name.data()] = hashedName.data();
+    }
+}
+
 }  
 
 ImmutableString HashName(const ImmutableString &name,
                          ShHashFunction64 hashFunction,
                          NameMap *nameMap)
 {
+    const ImmutableString kUnhashedNamePrefix(kUserDefinedNamePrefix);
+
     if (hashFunction == nullptr)
     {
         if (name.length() + kUnhashedNamePrefix.length() > kESSLMaxIdentifierLength)
@@ -56,24 +69,45 @@ ImmutableString HashName(const ImmutableString &name,
             
             return name;
         }
-        ImmutableStringBuilder prefixedName(kUnhashedNamePrefix.length() + name.length());
-        prefixedName << kUnhashedNamePrefix << name;
-        return prefixedName;
-    }
-    if (nameMap)
-    {
-        NameMap::const_iterator it = nameMap->find(name.data());
-        if (it != nameMap->end())
+        if (name == "gl_ClipDistance")
         {
             
-            return ImmutableString(it->second);
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            return name;
         }
+        ImmutableStringBuilder prefixedName(kUnhashedNamePrefix.length() + name.length());
+        prefixedName << kUnhashedNamePrefix << name;
+        ImmutableString res = prefixedName;
+        AddToNameMapIfNotMapped(name, res, nameMap);
+        return res;
     }
+
+    
     ImmutableString hashedName = HashName(name, hashFunction);
-    if (nameMap)
-    {
-        (*nameMap)[name.data()] = hashedName.data();
-    }
+    AddToNameMapIfNotMapped(name, hashedName, nameMap);
     return hashedName;
 }
 

@@ -9,7 +9,7 @@
 #include "compiler/translator/tree_ops/ClampPointSize.h"
 
 #include "compiler/translator/SymbolTable.h"
-#include "compiler/translator/tree_util/BuiltIn_autogen.h"
+#include "compiler/translator/tree_util/BuiltIn.h"
 #include "compiler/translator/tree_util/FindSymbolNode.h"
 #include "compiler/translator/tree_util/IntermNode_util.h"
 #include "compiler/translator/tree_util/RunAtTheEndOfShader.h"
@@ -17,12 +17,15 @@
 namespace sh
 {
 
-void ClampPointSize(TIntermBlock *root, float maxPointSize, TSymbolTable *symbolTable)
+bool ClampPointSize(TCompiler *compiler,
+                    TIntermBlock *root,
+                    float maxPointSize,
+                    TSymbolTable *symbolTable)
 {
     
     if (!FindSymbolNode(root, ImmutableString("gl_PointSize")))
     {
-        return;
+        return true;
     }
 
     TIntermSymbol *pointSizeNode = new TIntermSymbol(BuiltInVariable::gl_PointSize());
@@ -42,7 +45,7 @@ void ClampPointSize(TIntermBlock *root, float maxPointSize, TSymbolTable *symbol
     
     TIntermBinary *assignPointSize = new TIntermBinary(EOpAssign, pointSizeNode, clampedPointSize);
 
-    RunAtTheEndOfShader(root, assignPointSize, symbolTable);
+    return RunAtTheEndOfShader(compiler, root, assignPointSize, symbolTable);
 }
 
 }  

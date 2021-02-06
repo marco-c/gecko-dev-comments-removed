@@ -9,6 +9,7 @@
 #include "system_utils.h"
 
 #include <array>
+#include <iostream>
 
 #include <dlfcn.h>
 #include <sys/stat.h>
@@ -18,56 +19,6 @@
 
 namespace angle
 {
-
-namespace
-{
-struct ScopedPipe
-{
-    ~ScopedPipe()
-    {
-        closeEndPoint(0);
-        closeEndPoint(1);
-    }
-    void closeEndPoint(int index)
-    {
-        if (fds[index] >= 0)
-        {
-            close(fds[index]);
-            fds[index] = -1;
-        }
-    }
-    int fds[2] = {
-        -1,
-        -1,
-    };
-};
-
-void ReadEntireFile(int fd, std::string *out)
-{
-    out->clear();
-
-    while (true)
-    {
-        char buffer[256];
-        ssize_t bytesRead = read(fd, buffer, sizeof(buffer));
-
-        
-        if (bytesRead < 0 && errno == EINTR)
-        {
-            continue;
-        }
-
-        
-        if (bytesRead <= 0)
-        {
-            break;
-        }
-
-        out->append(buffer, bytesRead);
-    }
-}
-}  
-
 Optional<std::string> GetCWD()
 {
     std::array<char, 4096> pathBuf;
@@ -100,129 +51,28 @@ std::string GetEnvironmentVar(const char *variableName)
     return (value == nullptr ? std::string() : std::string(value));
 }
 
-const char *GetPathSeparator()
+const char *GetPathSeparatorForEnvironmentVar()
 {
     return ":";
 }
 
-bool RunApp(const std::vector<const char *> &args,
-            std::string *stdoutOut,
-            std::string *stderrOut,
-            int *exitCodeOut)
+std::string GetHelperExecutableDir()
 {
-    if (args.size() == 0 || args.back() != nullptr)
+    std::string directory;
+    static int placeholderSymbol = 0;
+    Dl_info dlInfo;
+    if (dladdr(&placeholderSymbol, &dlInfo) != 0)
     {
-        return false;
+        std::string moduleName = dlInfo.dli_fname;
+        directory              = moduleName.substr(0, moduleName.find_last_of('/') + 1);
     }
-
-    ScopedPipe stdoutPipe;
-    ScopedPipe stderrPipe;
-
-    
-    if (stdoutOut && pipe(stdoutPipe.fds) != 0)
-    {
-        return false;
-    }
-    if (stderrOut && pipe(stderrPipe.fds) != 0)
-    {
-        return false;
-    }
-
-    pid_t pid = fork();
-    if (pid < 0)
-    {
-        return false;
-    }
-
-    if (pid == 0)
-    {
-        
-
-        
-        if (stdoutOut)
-        {
-            if (dup2(stdoutPipe.fds[1], STDOUT_FILENO) < 0)
-            {
-                _exit(errno);
-            }
-        }
-        if (stderrOut)
-        {
-            if (dup2(stderrPipe.fds[1], STDERR_FILENO) < 0)
-            {
-                _exit(errno);
-            }
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        execv(args[0], const_cast<char *const *>(args.data()));
-        _exit(errno);
-    }
-
-    
-
-    
-    stdoutPipe.closeEndPoint(1);
-    stderrPipe.closeEndPoint(1);
-
-    
-    if (stdoutOut)
-    {
-        ReadEntireFile(stdoutPipe.fds[0], stdoutOut);
-    }
-    if (stderrOut)
-    {
-        ReadEntireFile(stderrPipe.fds[0], stderrOut);
-    }
-
-    
-    int status = 0;
-    do
-    {
-        pid_t changedPid = waitpid(pid, &status, 0);
-        if (changedPid < 0 && errno == EINTR)
-        {
-            continue;
-        }
-        if (changedPid < 0)
-        {
-            return false;
-        }
-    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-
-    
-    if (exitCodeOut)
-    {
-        *exitCodeOut = WEXITSTATUS(status);
-    }
-
-    return true;
+    return directory;
 }
 
 class PosixLibrary : public Library
 {
   public:
-    PosixLibrary(const char *libraryName)
-    {
-        char buffer[1000];
-        int ret = snprintf(buffer, 1000, "%s.%s", libraryName, GetSharedLibraryExtension());
-        if (ret > 0 && ret < 1000)
-        {
-            mModule = dlopen(buffer, RTLD_NOW);
-        }
-    }
+    PosixLibrary(const std::string &fullPath) : mModule(dlopen(fullPath.c_str(), RTLD_NOW)) {}
 
     ~PosixLibrary() override
     {
@@ -250,6 +100,18 @@ class PosixLibrary : public Library
 
 Library *OpenSharedLibrary(const char *libraryName, SearchType searchType)
 {
+    std::string directory;
+    if (searchType == SearchType::ApplicationDir)
+    {
+        directory = GetHelperExecutableDir();
+    }
+
+    std::string fullPath = directory + libraryName + "." + GetSharedLibraryExtension();
+    return new PosixLibrary(fullPath);
+}
+
+Library *OpenSharedLibraryWithExtension(const char *libraryName)
+{
     return new PosixLibrary(libraryName);
 }
 
@@ -272,5 +134,15 @@ void BreakDebugger()
     
     
     abort();
+}
+
+const char *GetExecutableExtension()
+{
+    return "";
+}
+
+char GetPathSeparator()
+{
+    return '/';
 }
 }  

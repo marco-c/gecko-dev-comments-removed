@@ -43,4 +43,26 @@ bool TOutputESSL::writeVariablePrecision(TPrecision precision)
     return true;
 }
 
+ImmutableString TOutputESSL::translateTextureFunction(const ImmutableString &name,
+                                                      const ShCompileOptions &option)
+{
+    
+    if (name == "textureVideoWEBGL")
+    {
+        if (option & SH_TAKE_VIDEO_TEXTURE_AS_EXTERNAL_OES)
+        {
+            
+            UNIMPLEMENTED();
+            return ImmutableString("");
+        }
+        else
+        {
+            
+            return ImmutableString("texture2D");
+        }
+    }
+
+    return name;
+}
+
 }  

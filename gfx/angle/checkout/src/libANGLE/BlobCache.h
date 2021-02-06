@@ -102,7 +102,8 @@ class BlobCache final : angle::NonCopyable
     
     ANGLE_NO_DISCARD bool get(angle::ScratchBuffer *scratchBuffer,
                               const BlobCache::Key &key,
-                              BlobCache::Value *valueOut);
+                              BlobCache::Value *valueOut,
+                              size_t *bufferSizeOut);
 
     
     ANGLE_NO_DISCARD bool getAt(size_t index,

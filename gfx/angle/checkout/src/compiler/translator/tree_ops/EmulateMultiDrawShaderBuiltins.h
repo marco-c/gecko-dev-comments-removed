@@ -19,28 +19,28 @@
 #include <GLSLANG/ShaderLang.h>
 #include <vector>
 
+#include "common/angleutils.h"
 #include "compiler/translator/HashNames.h"
 
 namespace sh
 {
-struct Uniform;
+struct ShaderVariable;
+class TCompiler;
 class TIntermBlock;
 class TSymbolTable;
 
-void EmulateGLDrawID(TIntermBlock *root,
-                     TSymbolTable *symbolTable,
-                     std::vector<sh::Uniform> *uniforms,
-                     bool shouldCollect);
+ANGLE_NO_DISCARD bool EmulateGLDrawID(TCompiler *compiler,
+                                      TIntermBlock *root,
+                                      TSymbolTable *symbolTable,
+                                      std::vector<sh::ShaderVariable> *uniforms,
+                                      bool shouldCollect);
 
-void EmulateGLBaseVertex(TIntermBlock *root,
-                         TSymbolTable *symbolTable,
-                         std::vector<sh::Uniform> *uniforms,
-                         bool shouldCollect);
-
-void EmulateGLBaseInstance(TIntermBlock *root,
-                           TSymbolTable *symbolTable,
-                           std::vector<sh::Uniform> *uniforms,
-                           bool shouldCollect);
+ANGLE_NO_DISCARD bool EmulateGLBaseVertexBaseInstance(TCompiler *compiler,
+                                                      TIntermBlock *root,
+                                                      TSymbolTable *symbolTable,
+                                                      std::vector<sh::ShaderVariable> *uniforms,
+                                                      bool shouldCollect,
+                                                      bool addBaseVertexToVertexID);
 
 }  
 

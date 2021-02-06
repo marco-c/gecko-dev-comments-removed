@@ -21,12 +21,11 @@
 
 namespace gl
 {
-
 class Buffer;
+class Context;
 struct Box;
 struct Extents;
 struct PixelUnpackState;
-
 }  
 
 namespace rx
@@ -47,6 +46,7 @@ class PixelTransfer11
     
     angle::Result copyBufferToTexture(const gl::Context *context,
                                       const gl::PixelUnpackState &unpack,
+                                      gl::Buffer *unpackBuffer,
                                       unsigned int offset,
                                       RenderTargetD3D *destRenderTarget,
                                       GLenum destinationFormat,

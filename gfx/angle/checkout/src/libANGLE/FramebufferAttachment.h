@@ -15,6 +15,7 @@
 #include "libANGLE/Error.h"
 #include "libANGLE/ImageIndex.h"
 #include "libANGLE/Observer.h"
+#include "libANGLE/angletypes.h"
 #include "libANGLE/formatutils.h"
 #include "libANGLE/renderer/FramebufferAttachmentObjectImpl.h"
 
@@ -43,12 +44,6 @@ class FramebufferAttachmentObject;
 class Renderbuffer;
 class Texture;
 
-enum class InitState
-{
-    MayNeedInit,
-    Initialized,
-};
-
 
 
 
@@ -64,14 +59,15 @@ class FramebufferAttachment final
                           GLenum type,
                           GLenum binding,
                           const ImageIndex &textureIndex,
-                          FramebufferAttachmentObject *resource);
+                          FramebufferAttachmentObject *resource,
+                          rx::Serial framebufferSerial);
 
     FramebufferAttachment(FramebufferAttachment &&other);
     FramebufferAttachment &operator=(FramebufferAttachment &&other);
 
     ~FramebufferAttachment();
 
-    void detach(const Context *context);
+    void detach(const Context *context, rx::Serial framebufferSerial);
     void attach(const Context *context,
                 GLenum type,
                 GLenum binding,
@@ -79,7 +75,9 @@ class FramebufferAttachment final
                 FramebufferAttachmentObject *resource,
                 GLsizei numViews,
                 GLuint baseViewIndex,
-                bool isMultiview);
+                bool isMultiview,
+                GLsizei samples,
+                rx::Serial framebufferSerial);
 
     
     GLuint getRedSize() const;
@@ -91,9 +89,9 @@ class FramebufferAttachment final
     GLenum getComponentType() const;
     GLenum getColorEncoding() const;
 
-    bool isTextureWithId(GLuint textureId) const
+    bool isTextureWithId(TextureID textureId) const
     {
-        return mType == GL_TEXTURE && id() == textureId;
+        return mType == GL_TEXTURE && id() == textureId.value;
     }
     bool isRenderbufferWithId(GLuint renderbufferId) const
     {
@@ -115,12 +113,17 @@ class FramebufferAttachment final
     bool isMultiview() const;
     GLint getBaseViewIndex() const;
 
+    GLsizei getRenderToTextureSamples() const { return mRenderToTextureSamples; }
+
     
     
     
     Extents getSize() const;
     Format getFormat() const;
     GLsizei getSamples() const;
+    
+    
+    GLsizei getResourceSamples() const;
     GLenum type() const { return mType; }
     bool isAttached() const { return mType != GL_NONE; }
     bool isRenderable(const Context *context) const;
@@ -135,12 +138,12 @@ class FramebufferAttachment final
 
     
     template <typename T>
-    angle::Result getRenderTarget(const Context *context, T **rtOut) const
+    angle::Result getRenderTarget(const Context *context, GLsizei samples, T **rtOut) const
     {
         static_assert(std::is_base_of<rx::FramebufferAttachmentRenderTarget, T>(),
                       "Invalid RenderTarget class.");
         return getRenderTargetImpl(
-            context, reinterpret_cast<rx::FramebufferAttachmentRenderTarget **>(rtOut));
+            context, samples, reinterpret_cast<rx::FramebufferAttachmentRenderTarget **>(rtOut));
     }
 
     bool operator==(const FramebufferAttachment &other) const;
@@ -148,9 +151,11 @@ class FramebufferAttachment final
 
     static const GLsizei kDefaultNumViews;
     static const GLint kDefaultBaseViewIndex;
+    static const GLint kDefaultRenderToTextureSamples;
 
   private:
     angle::Result getRenderTargetImpl(const Context *context,
+                                      GLsizei samples,
                                       rx::FramebufferAttachmentRenderTarget **rtOut) const;
 
     
@@ -181,10 +186,11 @@ class FramebufferAttachment final
     GLsizei mNumViews;
     bool mIsMultiview;
     GLint mBaseViewIndex;
+    GLsizei mRenderToTextureSamples;
 };
 
 
-class FramebufferAttachmentObject : public angle::Subject
+class FramebufferAttachmentObject : public angle::Subject, public angle::ObserverInterface
 {
   public:
     FramebufferAttachmentObject();
@@ -197,9 +203,9 @@ class FramebufferAttachmentObject : public angle::Subject
                               GLenum binding,
                               const ImageIndex &imageIndex) const                          = 0;
 
-    virtual void onAttach(const Context *context) = 0;
-    virtual void onDetach(const Context *context) = 0;
-    virtual GLuint getId() const                  = 0;
+    virtual void onAttach(const Context *context, rx::Serial framebufferSerial) = 0;
+    virtual void onDetach(const Context *context, rx::Serial framebufferSerial) = 0;
+    virtual GLuint getId() const                                                = 0;
 
     
     virtual InitState initState(const ImageIndex &imageIndex) const              = 0;
@@ -208,6 +214,7 @@ class FramebufferAttachmentObject : public angle::Subject
     angle::Result getAttachmentRenderTarget(const Context *context,
                                             GLenum binding,
                                             const ImageIndex &imageIndex,
+                                            GLsizei samples,
                                             rx::FramebufferAttachmentRenderTarget **rtOut) const;
 
     angle::Result initializeContents(const Context *context, const ImageIndex &imageIndex);
@@ -236,17 +243,24 @@ inline Format FramebufferAttachment::getFormat() const
 
 inline GLsizei FramebufferAttachment::getSamples() const
 {
+    return (mRenderToTextureSamples != kDefaultRenderToTextureSamples) ? getRenderToTextureSamples()
+                                                                       : getResourceSamples();
+}
+
+inline GLsizei FramebufferAttachment::getResourceSamples() const
+{
     ASSERT(mResource);
     return mResource->getAttachmentSamples(mTarget.textureIndex());
 }
 
 inline angle::Result FramebufferAttachment::getRenderTargetImpl(
     const Context *context,
+    GLsizei samples,
     rx::FramebufferAttachmentRenderTarget **rtOut) const
 {
     ASSERT(mResource);
     return mResource->getAttachmentRenderTarget(context, mTarget.binding(), mTarget.textureIndex(),
-                                                rtOut);
+                                                samples, rtOut);
 }
 
 inline bool FramebufferAttachment::isRenderable(const Context *context) const

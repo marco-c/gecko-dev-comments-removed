@@ -40,6 +40,21 @@ CompositorTiming FromEGLenum<CompositorTiming>(EGLenum from);
 EGLenum ToEGLenum(CompositorTiming from);
 std::ostream &operator<<(std::ostream &os, CompositorTiming value);
 
+enum class ContextPriority : uint8_t
+{
+    Low    = 0,
+    Medium = 1,
+    High   = 2,
+
+    InvalidEnum = 3,
+    EnumCount   = 3,
+};
+
+template <>
+ContextPriority FromEGLenum<ContextPriority>(EGLenum from);
+EGLenum ToEGLenum(ContextPriority from);
+std::ostream &operator<<(std::ostream &os, ContextPriority value);
+
 enum class MessageType : uint8_t
 {
     Critical = 0,

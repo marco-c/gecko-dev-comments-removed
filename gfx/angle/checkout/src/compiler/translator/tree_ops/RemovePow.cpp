@@ -86,7 +86,7 @@ bool RemovePowTraverser::visitAggregate(Visit visit, TIntermAggregate *node)
 
 }  
 
-void RemovePow(TIntermNode *root, TSymbolTable *symbolTable)
+bool RemovePow(TCompiler *compiler, TIntermNode *root, TSymbolTable *symbolTable)
 {
     RemovePowTraverser traverser(symbolTable);
     
@@ -94,8 +94,13 @@ void RemovePow(TIntermNode *root, TSymbolTable *symbolTable)
     {
         traverser.nextIteration();
         root->traverse(&traverser);
-        traverser.updateTree();
+        if (!traverser.updateTree(compiler, root))
+        {
+            return false;
+        }
     } while (traverser.needAnotherIteration());
+
+    return true;
 }
 
 }  

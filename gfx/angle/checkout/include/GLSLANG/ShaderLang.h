@@ -26,7 +26,7 @@
 
 
 
-#define ANGLE_SH_VERSION 209
+#define ANGLE_SH_VERSION 239
 
 enum ShShaderSpec
 {
@@ -39,7 +39,8 @@ enum ShShaderSpec
     SH_GLES3_1_SPEC,
     SH_WEBGL3_SPEC,
 
-    SH_GL3_3_SPEC,
+    SH_GL_CORE_SPEC,
+    SH_GL_COMPATIBILITY_SPEC,
 };
 
 enum ShShaderOutput
@@ -68,6 +69,10 @@ enum ShShaderOutput
 
     
     SH_GLSL_VULKAN_OUTPUT = 0x8B4B,
+
+    
+    
+    SH_GLSL_METAL_OUTPUT = 0x8B4C,
 };
 
 
@@ -116,6 +121,7 @@ const ShCompileOptions SH_EMULATE_ABS_INT_FUNCTION = UINT64_C(1) << 8;
 
 
 const ShCompileOptions SH_ENFORCE_PACKING_RESTRICTIONS = UINT64_C(1) << 9;
+
 
 
 
@@ -287,6 +293,55 @@ const ShCompileOptions SH_FORCE_ATOMIC_VALUE_RESOLUTION = UINT64_C(1) << 42;
 const ShCompileOptions SH_EMULATE_GL_BASE_VERTEX_BASE_INSTANCE = UINT64_C(1) << 43;
 
 
+
+
+const ShCompileOptions SH_EMULATE_SEAMFUL_CUBE_MAP_SAMPLING = UINT64_C(1) << 44;
+
+
+const ShCompileOptions SH_TAKE_VIDEO_TEXTURE_AS_EXTERNAL_OES = UINT64_C(1) << 45;
+
+
+const ShCompileOptions SH_VALIDATE_AST = UINT64_C(1) << 46;
+
+
+
+const ShCompileOptions SH_USE_OLD_REWRITE_STRUCT_SAMPLERS = UINT64_C(1) << 47;
+
+
+
+
+const ShCompileOptions SH_ADD_BASE_VERTEX_TO_VERTEX_ID = UINT64_C(1) << 48;
+
+
+const ShCompileOptions SH_REMOVE_DYNAMIC_INDEXING_OF_SWIZZLED_VECTOR = UINT64_C(1) << 49;
+
+
+const ShCompileOptions SH_ALLOW_TRANSLATE_UNIFORM_BLOCK_TO_STRUCTUREDBUFFER = UINT64_C(1) << 50;
+
+
+
+
+const ShCompileOptions SH_ADD_BRESENHAM_LINE_RASTER_EMULATION = UINT64_C(1) << 51;
+
+
+
+
+const ShCompileOptions SH_DISABLE_ARB_TEXTURE_RECTANGLE = UINT64_C(1) << 52;
+
+
+
+const ShCompileOptions SH_REWRITE_ROW_MAJOR_MATRICES = UINT64_C(1) << 53;
+
+
+const ShCompileOptions SH_IGNORE_PRECISION_QUALIFIERS = UINT64_C(1) << 54;
+
+
+const ShCompileOptions SH_EARLY_FRAGMENT_TESTS_OPTIMIZATION = UINT64_C(1) << 55;
+
+
+const ShCompileOptions SH_ADD_PRE_ROTATION = UINT64_C(1) << 56;
+
+
 enum ShArrayIndexClampingStrategy
 {
     
@@ -330,16 +385,30 @@ struct ShBuiltInResources
     int WEBGL_debug_shader_precision;
     int EXT_shader_framebuffer_fetch;
     int NV_shader_framebuffer_fetch;
+    int NV_shader_noperspective_interpolation;
     int ARM_shader_framebuffer_fetch;
     int OVR_multiview;
     int OVR_multiview2;
+    int EXT_multisampled_render_to_texture;
+    int EXT_multisampled_render_to_texture2;
     int EXT_YUV_target;
     int EXT_geometry_shader;
+    int EXT_gpu_shader5;
+    int EXT_shader_non_constant_global_initializers;
     int OES_texture_storage_multisample_2d_array;
     int OES_texture_3D;
     int ANGLE_texture_multisample;
     int ANGLE_multi_draw;
     int ANGLE_base_vertex_base_instance;
+    int WEBGL_video_texture;
+    int APPLE_clip_distance;
+    int OES_texture_cube_map_array;
+    int EXT_texture_cube_map_array;
+    int EXT_shadow_samplers;
+    int OES_shader_multisample_interpolation;
+    int OES_shader_image_atomic;
+    int OES_texture_buffer;
+    int EXT_texture_buffer;
 
     
     
@@ -478,6 +547,12 @@ struct ShBuiltInResources
     int MaxGeometryShaderStorageBlocks;
     int MaxGeometryShaderInvocations;
     int MaxGeometryImageUniforms;
+
+    
+    int SubPixelBits;
+
+    
+    int MaxClipDistances;
 };
 
 
@@ -594,12 +669,12 @@ const std::map<std::string, std::string> *GetNameHashingMap(const ShHandle handl
 
 
 
-const std::vector<sh::Uniform> *GetUniforms(const ShHandle handle);
-const std::vector<sh::Varying> *GetVaryings(const ShHandle handle);
-const std::vector<sh::Varying> *GetInputVaryings(const ShHandle handle);
-const std::vector<sh::Varying> *GetOutputVaryings(const ShHandle handle);
-const std::vector<sh::Attribute> *GetAttributes(const ShHandle handle);
-const std::vector<sh::OutputVariable> *GetOutputVariables(const ShHandle handle);
+const std::vector<sh::ShaderVariable> *GetUniforms(const ShHandle handle);
+const std::vector<sh::ShaderVariable> *GetVaryings(const ShHandle handle);
+const std::vector<sh::ShaderVariable> *GetInputVaryings(const ShHandle handle);
+const std::vector<sh::ShaderVariable> *GetOutputVaryings(const ShHandle handle);
+const std::vector<sh::ShaderVariable> *GetAttributes(const ShHandle handle);
+const std::vector<sh::ShaderVariable> *GetOutputVariables(const ShHandle handle);
 const std::vector<sh::InterfaceBlock> *GetInterfaceBlocks(const ShHandle handle);
 const std::vector<sh::InterfaceBlock> *GetUniformBlocks(const ShHandle handle);
 const std::vector<sh::InterfaceBlock> *GetShaderStorageBlocks(const ShHandle handle);
@@ -607,6 +682,8 @@ sh::WorkGroupSize GetComputeShaderLocalGroupSize(const ShHandle handle);
 
 
 int GetVertexShaderNumViews(const ShHandle handle);
+
+bool HasEarlyFragmentTestsOptimization(const ShHandle handle);
 
 
 
@@ -640,6 +717,9 @@ bool GetUniformBlockRegister(const ShHandle handle,
                              const std::string &uniformBlockName,
                              unsigned int *indexOut);
 
+bool ShouldUniformBlockUseStructuredBuffer(const ShHandle handle,
+                                           const std::string &uniformBlockName);
+
 
 
 const std::map<std::string, unsigned int> *GetUniformRegisterMap(const ShHandle handle);
@@ -664,6 +744,7 @@ GLenum GetGeometryShaderInputPrimitiveType(const ShHandle handle);
 GLenum GetGeometryShaderOutputPrimitiveType(const ShHandle handle);
 int GetGeometryShaderInvocations(const ShHandle handle);
 int GetGeometryShaderMaxVertices(const ShHandle handle);
+unsigned int GetShaderSharedMemorySize(const ShHandle handle);
 
 
 
@@ -678,8 +759,55 @@ inline bool IsWebGLBasedSpec(ShShaderSpec spec)
 
 inline bool IsDesktopGLSpec(ShShaderSpec spec)
 {
-    return spec == SH_GL3_3_SPEC;
+    return spec == SH_GL_CORE_SPEC || spec == SH_GL_COMPATIBILITY_SPEC;
 }
+
+
+
+
+extern const char kUserDefinedNamePrefix[];
+
+namespace vk
+{
+
+
+enum class SpecializationConstantId : uint32_t
+{
+    LineRasterEmulation = 0,
+    SurfaceRotation     = 1,
+
+    InvalidEnum = 2,
+    EnumCount   = InvalidEnum,
+};
+
+
+extern const char kDefaultUniformsNameVS[];
+extern const char kDefaultUniformsNameTCS[];
+extern const char kDefaultUniformsNameTES[];
+extern const char kDefaultUniformsNameGS[];
+extern const char kDefaultUniformsNameFS[];
+extern const char kDefaultUniformsNameCS[];
+
+
+extern const char kDriverUniformsBlockName[];
+extern const char kDriverUniformsVarName[];
+
+
+extern const char kAtomicCountersBlockName[];
+
+
+extern const char kLineRasterEmulationPosition[];
+
+}  
+
+namespace mtl
+{
+
+extern const char kCoverageMaskEnabledConstName[];
+
+
+extern const char kRasterizerDiscardEnabledConstName[];
+}  
 }  
 
 #endif  

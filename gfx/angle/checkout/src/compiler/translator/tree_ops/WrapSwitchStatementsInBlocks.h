@@ -9,13 +9,16 @@
 #ifndef COMPILER_TRANSLATOR_TREEOPS_WRAPSWITCHSTATEMENTSINBLOCKS_H_
 #define COMPILER_TRANSLATOR_TREEOPS_WRAPSWITCHSTATEMENTSINBLOCKS_H_
 
+#include "common/angleutils.h"
+
 namespace sh
 {
 
+class TCompiler;
 class TIntermBlock;
 
 
-void WrapSwitchStatementsInBlocks(TIntermBlock *root);
+ANGLE_NO_DISCARD bool WrapSwitchStatementsInBlocks(TCompiler *compiler, TIntermBlock *root);
 
 }  
 

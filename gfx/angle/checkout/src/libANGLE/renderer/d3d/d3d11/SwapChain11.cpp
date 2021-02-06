@@ -204,7 +204,7 @@ EGLint SwapChain11::resetOffscreenColorBuffer(DisplayD3D *displayD3D,
 
     const d3d11::Format &backbufferFormatInfo =
         d3d11::Format::Get(mOffscreenRenderTargetFormat, mRenderer->getRenderer11DeviceCaps());
-    D3D11_TEXTURE2D_DESC offscreenTextureDesc = {0};
+    D3D11_TEXTURE2D_DESC offscreenTextureDesc = {};
 
     
     
@@ -338,7 +338,7 @@ EGLint SwapChain11::resetOffscreenColorBuffer(DisplayD3D *displayD3D,
 
     if (previousOffscreenTexture.valid())
     {
-        D3D11_BOX sourceBox = {0};
+        D3D11_BOX sourceBox = {};
         sourceBox.left      = 0;
         sourceBox.right     = std::min(previousWidth, backbufferWidth);
         sourceBox.top       = std::max(previousHeight - backbufferHeight, 0);
@@ -385,7 +385,7 @@ EGLint SwapChain11::resetOffscreenDepthBuffer(DisplayD3D *displayD3D,
         
         if (mOffscreenTexture.valid() && getD3DSamples() > 1)
         {
-            D3D11_TEXTURE2D_DESC offscreenTextureDesc = {0};
+            D3D11_TEXTURE2D_DESC offscreenTextureDesc = {};
             mOffscreenTexture.getDesc(&offscreenTextureDesc);
             depthStencilTextureDesc.SampleDesc.Quality = offscreenTextureDesc.SampleDesc.Quality;
         }

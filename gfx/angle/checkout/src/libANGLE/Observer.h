@@ -51,6 +51,9 @@ enum class SubjectMessage
     
     SubjectMapped,
     SubjectUnmapped,
+
+    
+    SurfaceChanged,
 };
 
 

@@ -35,9 +35,9 @@ struct FeaturesD3D : FeatureSetBase
     
     
     
-    Feature mrtPerfWorkaround = {
-        "mrt_perf_workaround", FeatureCategory::D3DWorkarounds,
-        "Some NVIDIA D3D11 drivers have a bug where they ignore null render targets", &members};
+    Feature mrtPerfWorkaround = {"mrt_perf_workaround", FeatureCategory::D3DWorkarounds,
+                                 "Some drivers have a bug where they ignore null render targets",
+                                 &members};
 
     Feature setDataFasterThanImageUpload = {"set_data_faster_than_image_upload",
                                             FeatureCategory::D3DWorkarounds,
@@ -54,9 +54,9 @@ struct FeaturesD3D : FeatureSetBase
     
     
     
-    Feature zeroMaxLodWorkaround = {
-        "zero_max_lod", FeatureCategory::D3DWorkarounds,
-        "D3D11 is missing an option to disable mipmaps on a mipmapped texture", &members};
+    Feature zeroMaxLodWorkaround = {"zero_max_lod", FeatureCategory::D3DWorkarounds,
+                                    "Missing an option to disable mipmaps on a mipmapped texture",
+                                    &members};
 
     
     
@@ -72,8 +72,8 @@ struct FeaturesD3D : FeatureSetBase
     
     Feature depthStencilBlitExtraCopy = {
         "depth_stencil_blit_extra_copy", FeatureCategory::D3DWorkarounds,
-        "Bug in NVIDIA D3D11 Driver version <=347.88 and >368.81 triggers a TDR when using "
-        "CopySubresourceRegion from a staging texture to a depth/stencil",
+        "Bug in some drivers triggers a TDR when using CopySubresourceRegion from a staging "
+        "texture to a depth/stencil",
         &members, "http://anglebug.com/1452"};
 
     
@@ -88,7 +88,7 @@ struct FeaturesD3D : FeatureSetBase
     
     Feature flushAfterEndingTransformFeedback = {
         "flush_after_ending_transform_feedback", FeatureCategory::D3DWorkarounds,
-        "NVIDIA drivers sometimes write out-of-order results to StreamOut buffers when transform "
+        "Some drivers sometimes write out-of-order results to StreamOut buffers when transform "
         "feedback is used to repeatedly write to the same buffer positions",
         &members};
 
@@ -96,7 +96,7 @@ struct FeaturesD3D : FeatureSetBase
     
     Feature getDimensionsIgnoresBaseLevel = {
         "get_dimensions_ignores_base_level", FeatureCategory::D3DWorkarounds,
-        "Some NVIDIA drivers do not take into account the base level of the "
+        "Some drivers do not take into account the base level of the "
         "texture in the results of the HLSL GetDimensions builtin",
         &members};
 
@@ -108,8 +108,8 @@ struct FeaturesD3D : FeatureSetBase
     
     Feature preAddTexelFetchOffsets = {
         "pre_add_texel_fetch_offsets", FeatureCategory::D3DWorkarounds,
-        "On some Intel drivers, HLSL's function texture.Load returns 0 when the parameter Location "
-        "is negative, even if the sum of Offset and Location is in range",
+        "HLSL's function texture.Load returns 0 when the parameter Location is negative, even if "
+        "the sum of Offset and Location is in range",
         &members};
 
     
@@ -117,8 +117,7 @@ struct FeaturesD3D : FeatureSetBase
     
     Feature emulateTinyStencilTextures = {
         "emulate_tiny_stencil_textures", FeatureCategory::D3DWorkarounds,
-        "On some AMD drivers, 1x1 and 2x2 mips of depth/stencil textures aren't sampled correctly",
-        &members};
+        "1x1 and 2x2 mips of depth/stencil textures aren't sampled correctly", &members};
 
     
     
@@ -126,7 +125,7 @@ struct FeaturesD3D : FeatureSetBase
     
     
     Feature disableB5G6R5Support = {"disable_b5g6r5_support", FeatureCategory::D3DWorkarounds,
-                                    "On Intel and AMD drivers, textures with the format "
+                                    "Textures with the format "
                                     "DXGI_FORMAT_B5G6R5_UNORM have incorrect data",
                                     &members};
 
@@ -135,43 +134,41 @@ struct FeaturesD3D : FeatureSetBase
     
     Feature rewriteUnaryMinusOperator = {
         "rewrite_unary_minus_operator", FeatureCategory::D3DWorkarounds,
-        "On some Intel drivers, evaluating unary minus operator on integer may "
-        "get wrong answer in vertex shaders",
+        "Evaluating unary minus operator on integer may get wrong answer in vertex shaders",
         &members};
 
     
     
     
     
-    Feature emulateIsnanFloat = {
-        "emulate_isnan_float", FeatureCategory::D3DWorkarounds,
-        "On some Intel drivers, using isnan() on highp float will get wrong answer", &members,
-        "https://crbug.com/650547"};
+    Feature emulateIsnanFloat = {"emulate_isnan_float", FeatureCategory::D3DWorkarounds,
+                                 "Using isnan() on highp float will get wrong answer", &members,
+                                 "https://crbug.com/650547"};
 
     
     
     
     Feature callClearTwice = {"call_clear_twice", FeatureCategory::D3DWorkarounds,
-                              "On some Intel drivers, using clear() may not take effect", &members,
+                              "Using clear() may not take effect", &members,
                               "https://crbug.com/655534"};
 
     
     
-    Feature emulateClearViewAfterDualSourceBlending = {"emulate_clear_view_after_dual_source_blending",
-                              FeatureCategory::D3DWorkarounds,
-                              "On Sandybridge, calling ClearView after using dual source blending causes "
-                              "the hardware to hang", &members,
-                              "https://bugzilla.mozilla.org/show_bug.cgi?id=1633628"};
+    Feature emulateClearViewAfterDualSourceBlending = {
+        "emulate_clear_view_after_dual_source_blending", FeatureCategory::D3DWorkarounds,
+        "On Sandybridge, calling ClearView after using dual source blending causes "
+        "the hardware to hang",
+        &members, "https://bugzilla.mozilla.org/show_bug.cgi?id=1633628"};
 
     
     
     
     
-    Feature useSystemMemoryForConstantBuffers = {
-        "use_system_memory_for_constant_buffers", FeatureCategory::D3DWorkarounds,
-        "On some Intel drivers, copying from staging storage to constant buffer "
-        "storage does not work",
-        &members, "https://crbug.com/593024"};
+    Feature useSystemMemoryForConstantBuffers = {"use_system_memory_for_constant_buffers",
+                                                 FeatureCategory::D3DWorkarounds,
+                                                 "Copying from staging storage to constant buffer "
+                                                 "storage does not work",
+                                                 &members, "https://crbug.com/593024"};
 
     
     
@@ -191,10 +188,9 @@ struct FeaturesD3D : FeatureSetBase
     
     
     
-    Feature addDummyTextureNoRenderTarget = {
-        "add_dummy_texture_no_render_target", FeatureCategory::D3DWorkarounds,
-        "On D3D ntel drivers <4815 when rendering with no render target, two "
-        "bugs lead to incorrect behavior",
+    Feature addMockTextureNoRenderTarget = {
+        "add_mock_texture_no_render_target", FeatureCategory::D3DWorkarounds,
+        "On some drivers when rendering with no render target, two bugs lead to incorrect behavior",
         &members, "http://anglebug.com/2152"};
 
     
@@ -202,9 +198,7 @@ struct FeaturesD3D : FeatureSetBase
     
     Feature skipVSConstantRegisterZero = {
         "skip_vs_constant_register_zero", FeatureCategory::D3DWorkarounds,
-        "On NVIDIA D3D driver v388.59 in specific cases the driver doesn't "
-        "handle constant register zero correctly",
-        &members};
+        "In specific cases the driver doesn't handle constant register zero correctly", &members};
 
     
     
@@ -213,8 +207,8 @@ struct FeaturesD3D : FeatureSetBase
     
     Feature forceAtomicValueResolution = {
         "force_atomic_value_resolution", FeatureCategory::D3DWorkarounds,
-        "On an NVIDIA D3D driver, the return value from RWByteAddressBuffer.InterlockedAdd does "
-        "not resolve when used in the .yzw components of a RWByteAddressBuffer.Store operation",
+        "On some drivers the return value from RWByteAddressBuffer.InterlockedAdd does not resolve "
+        "when used in the .yzw components of a RWByteAddressBuffer.Store operation",
         &members, "http://anglebug.com/3246"};
 
     
@@ -225,9 +219,16 @@ struct FeaturesD3D : FeatureSetBase
         "Some drivers corrupt texture data when clearing for robust resource initialization.",
         &members, "http://crbug.com/941620"};
 
-    Feature allowES3OnFL10_0 = {
-        "allowES3OnFL10_0", FeatureCategory::D3DWorkarounds,
-        "Allow ES3 on 10.0 devices", &members};
+    
+    
+    Feature allowTranslateUniformBlockToStructuredBuffer = {
+        "allow_translate_uniform_block_to_structured_buffer", FeatureCategory::D3DWorkarounds,
+        "There is a slow fxc compile performance issue with dynamic uniform indexing if "
+        "translating a uniform block with a large array member to cbuffer.",
+        &members, "http://anglebug.com/3682"};
+
+    Feature allowES3OnFL10_0 = {"allowES3OnFL10_0", FeatureCategory::D3DWorkarounds,
+                                "Allow ES3 on 10.0 devices", &members};
 };
 
 inline FeaturesD3D::FeaturesD3D()  = default;

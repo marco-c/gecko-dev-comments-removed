@@ -44,7 +44,7 @@ class ShaderStorageBlockOutputHLSL : public TIntermTraverser
                                  ResourcesHLSL *resourcesHLSL,
                                  const std::vector<InterfaceBlock> &shaderStorageBlocks);
 
-    ~ShaderStorageBlockOutputHLSL();
+    ~ShaderStorageBlockOutputHLSL() override;
 
     
     

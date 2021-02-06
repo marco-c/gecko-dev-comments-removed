@@ -28,7 +28,9 @@ enum InterpolationType
 {
     INTERPOLATION_SMOOTH,
     INTERPOLATION_CENTROID,
-    INTERPOLATION_FLAT
+    INTERPOLATION_SAMPLE,
+    INTERPOLATION_FLAT,
+    INTERPOLATION_NOPERSPECTIVE
 };
 
 
@@ -52,6 +54,7 @@ enum class BlockType
 
     
     
+    
     BLOCK_IN
 };
 
@@ -67,6 +70,8 @@ struct ShaderVariable
     ~ShaderVariable();
     ShaderVariable(const ShaderVariable &other);
     ShaderVariable &operator=(const ShaderVariable &other);
+    bool operator==(const ShaderVariable &other) const;
+    bool operator!=(const ShaderVariable &other) const { return !operator==(other); }
 
     bool isArrayOfArrays() const { return arraySizes.size() >= 2u; }
     bool isArray() const { return !arraySizes.empty(); }
@@ -97,6 +102,8 @@ struct ShaderVariable
     
     unsigned int getBasicTypeElementCount() const;
 
+    unsigned int getExternalSize() const;
+
     bool isStruct() const { return !fields.empty(); }
 
     
@@ -113,6 +120,10 @@ struct ShaderVariable
     bool findInfoByMappedName(const std::string &mappedFullName,
                               const ShaderVariable **leafVar,
                               std::string *originalFullName) const;
+
+    
+    
+    const sh::ShaderVariable *findField(const std::string &fullName, uint32_t *fieldIndexOut) const;
 
     bool isBuiltIn() const;
     bool isEmulatedBuiltIn() const;
@@ -136,7 +147,7 @@ struct ShaderVariable
         return hasParentArrayIndex() ? flattenedOffsetInParentArrays : 0;
     }
 
-    void setParentArrayIndex(int index) { flattenedOffsetInParentArrays = index; }
+    void setParentArrayIndex(int indexIn) { flattenedOffsetInParentArrays = indexIn; }
 
     bool hasParentArrayIndex() const { return flattenedOffsetInParentArrays != -1; }
 
@@ -152,41 +163,16 @@ struct ShaderVariable
     
     bool isRowMajorLayout;
 
-  protected:
-    bool isSameVariableAtLinkTime(const ShaderVariable &other,
-                                  bool matchPrecision,
-                                  bool matchName) const;
-
-    bool operator==(const ShaderVariable &other) const;
-    bool operator!=(const ShaderVariable &other) const { return !operator==(other); }
-
-    int flattenedOffsetInParentArrays;
-};
-
-
-
-struct VariableWithLocation : public ShaderVariable
-{
-    VariableWithLocation();
-    ~VariableWithLocation();
-    VariableWithLocation(const VariableWithLocation &other);
-    VariableWithLocation &operator=(const VariableWithLocation &other);
-    bool operator==(const VariableWithLocation &other) const;
-    bool operator!=(const VariableWithLocation &other) const { return !operator==(other); }
-
+    
     int location;
-};
 
-struct Uniform : public VariableWithLocation
-{
-    Uniform();
-    ~Uniform();
-    Uniform(const Uniform &other);
-    Uniform &operator=(const Uniform &other);
-    bool operator==(const Uniform &other) const;
-    bool operator!=(const Uniform &other) const { return !operator==(other); }
-
+    
     int binding;
+    
+    
+    
+    
+    bool isSameUniformAtLinkTime(const ShaderVariable &other) const;
     GLenum imageUnitFormat;
     int offset;
     bool readonly;
@@ -194,72 +180,45 @@ struct Uniform : public VariableWithLocation
 
     
     
-    
-    
-    bool isSameUniformAtLinkTime(const Uniform &other) const;
-};
-
-struct Attribute : public VariableWithLocation
-{
-    Attribute();
-    ~Attribute();
-    Attribute(const Attribute &other);
-    Attribute &operator=(const Attribute &other);
-    bool operator==(const Attribute &other) const;
-    bool operator!=(const Attribute &other) const { return !operator==(other); }
-};
-
-struct OutputVariable : public VariableWithLocation
-{
-    OutputVariable();
-    ~OutputVariable();
-    OutputVariable(const OutputVariable &other);
-    OutputVariable &operator=(const OutputVariable &other);
-    bool operator==(const OutputVariable &other) const;
-    bool operator!=(const OutputVariable &other) const { return !operator==(other); }
-
-    
     int index;
-};
-
-struct InterfaceBlockField : public ShaderVariable
-{
-    InterfaceBlockField();
-    ~InterfaceBlockField();
-    InterfaceBlockField(const InterfaceBlockField &other);
-    InterfaceBlockField &operator=(const InterfaceBlockField &other);
-    bool operator==(const InterfaceBlockField &other) const;
-    bool operator!=(const InterfaceBlockField &other) const { return !operator==(other); }
-
-    
-    
-    
-    
-    bool isSameInterfaceBlockFieldAtLinkTime(const InterfaceBlockField &other) const;
-};
-
-struct Varying : public VariableWithLocation
-{
-    Varying();
-    ~Varying();
-    Varying(const Varying &other);
-    Varying &operator=(const Varying &other);
-    bool operator==(const Varying &other) const;
-    bool operator!=(const Varying &other) const { return !operator==(other); }
 
     
     
     
     
     
-    bool isSameVaryingAtLinkTime(const Varying &other, int shaderVersion) const;
+    bool isSameInterfaceBlockFieldAtLinkTime(const ShaderVariable &other) const;
 
     
-    bool isSameVaryingAtLinkTime(const Varying &other) const;
-
     InterpolationType interpolation;
     bool isInvariant;
+    
+    
+    
+    
+    
+    bool isSameVaryingAtLinkTime(const ShaderVariable &other, int shaderVersion) const;
+    
+    bool isSameVaryingAtLinkTime(const ShaderVariable &other) const;
+
+    
+    bool texelFetchStaticUse;
+
+  protected:
+    bool isSameVariableAtLinkTime(const ShaderVariable &other,
+                                  bool matchPrecision,
+                                  bool matchName) const;
+
+    int flattenedOffsetInParentArrays;
 };
+
+
+
+using Uniform             = ShaderVariable;
+using Attribute           = ShaderVariable;
+using OutputVariable      = ShaderVariable;
+using InterfaceBlockField = ShaderVariable;
+using Varying             = ShaderVariable;
 
 struct InterfaceBlock
 {
@@ -294,7 +253,7 @@ struct InterfaceBlock
     bool staticUse;
     bool active;
     BlockType blockType;
-    std::vector<InterfaceBlockField> fields;
+    std::vector<ShaderVariable> fields;
 };
 
 struct WorkGroupSize

@@ -12,20 +12,24 @@
 
 #include <vector>
 
+#include "common/angleutils.h"
+
 namespace sh
 {
-struct OutputVariable;
+struct ShaderVariable;
+class TCompiler;
 class TIntermBlock;
 class TSymbolTable;
 
 
 
 
-void EmulateGLFragColorBroadcast(TIntermBlock *root,
-                                 int maxDrawBuffers,
-                                 std::vector<OutputVariable> *outputVariables,
-                                 TSymbolTable *symbolTable,
-                                 int shaderVersion);
+ANGLE_NO_DISCARD bool EmulateGLFragColorBroadcast(TCompiler *compiler,
+                                                  TIntermBlock *root,
+                                                  int maxDrawBuffers,
+                                                  std::vector<ShaderVariable> *outputVariables,
+                                                  TSymbolTable *symbolTable,
+                                                  int shaderVersion);
 }  
 
 #endif  

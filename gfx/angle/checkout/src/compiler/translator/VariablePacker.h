@@ -24,8 +24,8 @@ int GetTypePackingRows(sh::GLenum type);
 
 
 
-template <typename T>
-bool CheckVariablesInPackingLimits(unsigned int maxVectors, const std::vector<T> &variables);
+bool CheckVariablesInPackingLimits(unsigned int maxVectors,
+                                   const std::vector<ShaderVariable> &variables);
 
 }  
 

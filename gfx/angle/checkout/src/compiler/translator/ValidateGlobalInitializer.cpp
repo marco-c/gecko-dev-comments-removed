@@ -19,7 +19,9 @@ const int kMaxAllowedTraversalDepth = 256;
 class ValidateGlobalInitializerTraverser : public TIntermTraverser
 {
   public:
-    ValidateGlobalInitializerTraverser(int shaderVersion);
+    ValidateGlobalInitializerTraverser(int shaderVersion,
+                                       bool isWebGL,
+                                       bool hasExtNonConstGlobalInitializers);
 
     void visitSymbol(TIntermSymbol *node) override;
     void visitConstantUnion(TIntermConstantUnion *node) override;
@@ -31,7 +33,24 @@ class ValidateGlobalInitializerTraverser : public TIntermTraverser
     bool issueWarning() const { return mIssueWarning; }
 
   private:
+    ANGLE_INLINE void onNonConstInitializerVisit(bool accept)
+    {
+        if (accept)
+        {
+            if (!mExtNonConstGlobalInitializers)
+            {
+                mIssueWarning = true;
+            }
+        }
+        else
+        {
+            mIsValid = false;
+        }
+    }
+
     int mShaderVersion;
+    bool mIsWebGL;
+    bool mExtNonConstGlobalInitializers;
     bool mIsValid;
     bool mIssueWarning;
 };
@@ -50,14 +69,8 @@ void ValidateGlobalInitializerTraverser::visitSymbol(TIntermSymbol *node)
             
             
             
-            if (mShaderVersion >= 300)
-            {
-                mIsValid = false;
-            }
-            else
-            {
-                mIssueWarning = true;
-            }
+            onNonConstInitializerVisit(mExtNonConstGlobalInitializers ||
+                                       ((mShaderVersion < 300) && mIsWebGL));
             break;
         default:
             mIsValid = false;
@@ -73,14 +86,8 @@ void ValidateGlobalInitializerTraverser::visitConstantUnion(TIntermConstantUnion
         case EvqConst:
             break;
         case EvqTemporary:
-            if (mShaderVersion >= 300)
-            {
-                mIsValid = false;
-            }
-            else
-            {
-                mIssueWarning = true;
-            }
+            onNonConstInitializerVisit(mExtNonConstGlobalInitializers ||
+                                       ((mShaderVersion < 300) && mIsWebGL));
             break;
         default:
             UNREACHABLE();
@@ -95,7 +102,7 @@ bool ValidateGlobalInitializerTraverser::visitAggregate(Visit visit, TIntermAggr
     
     if (node->isFunctionCall())
     {
-        mIsValid = false;
+        onNonConstInitializerVisit(mExtNonConstGlobalInitializers);
     }
     return true;
 }
@@ -104,7 +111,7 @@ bool ValidateGlobalInitializerTraverser::visitBinary(Visit visit, TIntermBinary 
 {
     if (node->isAssignment())
     {
-        mIsValid = false;
+        onNonConstInitializerVisit(mExtNonConstGlobalInitializers);
     }
     return true;
 }
@@ -113,14 +120,19 @@ bool ValidateGlobalInitializerTraverser::visitUnary(Visit visit, TIntermUnary *n
 {
     if (node->isAssignment())
     {
-        mIsValid = false;
+        onNonConstInitializerVisit(mExtNonConstGlobalInitializers);
     }
     return true;
 }
 
-ValidateGlobalInitializerTraverser::ValidateGlobalInitializerTraverser(int shaderVersion)
+ValidateGlobalInitializerTraverser::ValidateGlobalInitializerTraverser(
+    int shaderVersion,
+    bool isWebGL,
+    bool hasExtNonConstGlobalInitializers)
     : TIntermTraverser(true, false, false, nullptr),
       mShaderVersion(shaderVersion),
+      mIsWebGL(isWebGL),
+      mExtNonConstGlobalInitializers(hasExtNonConstGlobalInitializers),
       mIsValid(true),
       mIssueWarning(false)
 {
@@ -129,9 +141,14 @@ ValidateGlobalInitializerTraverser::ValidateGlobalInitializerTraverser(int shade
 
 }  
 
-bool ValidateGlobalInitializer(TIntermTyped *initializer, int shaderVersion, bool *warning)
+bool ValidateGlobalInitializer(TIntermTyped *initializer,
+                               int shaderVersion,
+                               bool isWebGL,
+                               bool hasExtNonConstGlobalInitializers,
+                               bool *warning)
 {
-    ValidateGlobalInitializerTraverser validate(shaderVersion);
+    ValidateGlobalInitializerTraverser validate(shaderVersion, isWebGL,
+                                                hasExtNonConstGlobalInitializers);
     initializer->traverse(&validate);
     ASSERT(warning != nullptr);
     *warning = validate.issueWarning();

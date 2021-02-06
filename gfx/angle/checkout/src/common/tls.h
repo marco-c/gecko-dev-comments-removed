@@ -9,12 +9,18 @@
 #ifndef COMMON_TLS_H_
 #define COMMON_TLS_H_
 
+#include "common/angleutils.h"
 #include "common/platform.h"
+
+namespace gl
+{
+class Context;
+}
 
 #ifdef ANGLE_PLATFORM_WINDOWS
 
 
-#    ifdef ANGLE_ENABLE_WINDOWS_STORE
+#    ifdef ANGLE_ENABLE_WINDOWS_UWP
 #        ifndef TLS_OUT_OF_INDEXES
 #            define TLS_OUT_OF_INDEXES static_cast<DWORD>(0xFFFFFFFF)
 #        endif

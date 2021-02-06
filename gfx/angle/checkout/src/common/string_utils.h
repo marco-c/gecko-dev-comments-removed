@@ -70,16 +70,40 @@ bool BeginsWith(const std::string &str, const std::string &prefix, const size_t 
 
 
 
+bool EndsWith(const std::string &str, const std::string &suffix);
+
+
+
 
 bool EndsWith(const std::string &str, const char *suffix);
+
+
+
+
+bool EndsWith(const char *str, const char *suffix);
 
 
 void ToLower(std::string *str);
 
 
+void ToUpper(std::string *str);
+
+
 bool ReplaceSubstring(std::string *str,
                       const std::string &substring,
                       const std::string &replacement);
+
+
+std::vector<std::string> GetStringsFromEnvironmentVarOrAndroidProperty(const char *varName,
+                                                                       const char *propertyName,
+                                                                       const char *separator);
+
+
+
+std::vector<std::string> GetCachedStringsFromEnvironmentVarOrAndroidProperty(
+    const char *varName,
+    const char *propertyName,
+    const char *separator);
 
 }  
 

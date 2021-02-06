@@ -13,7 +13,11 @@ namespace sh
 class TIntermTyped;
 
 
-bool ValidateGlobalInitializer(TIntermTyped *initializer, int shaderVersion, bool *warning);
+bool ValidateGlobalInitializer(TIntermTyped *initializer,
+                               int shaderVersion,
+                               bool isWebGL,
+                               bool hasExtNonConstGlobalInitializers,
+                               bool *warning);
 
 }  
 

@@ -177,7 +177,7 @@ void UnfoldShortCircuitTraverser::nextIteration()
 
 }  
 
-void UnfoldShortCircuitToIf(TIntermNode *root, TSymbolTable *symbolTable)
+bool UnfoldShortCircuitToIf(TCompiler *compiler, TIntermNode *root, TSymbolTable *symbolTable)
 {
     UnfoldShortCircuitTraverser traverser(symbolTable);
     
@@ -186,8 +186,15 @@ void UnfoldShortCircuitToIf(TIntermNode *root, TSymbolTable *symbolTable)
         traverser.nextIteration();
         root->traverse(&traverser);
         if (traverser.foundShortCircuit())
-            traverser.updateTree();
+        {
+            if (!traverser.updateTree(compiler, root))
+            {
+                return false;
+            }
+        }
     } while (traverser.foundShortCircuit());
+
+    return true;
 }
 
 }  

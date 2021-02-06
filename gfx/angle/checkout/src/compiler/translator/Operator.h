@@ -7,10 +7,12 @@
 #ifndef COMPILER_TRANSLATOR_OPERATOR_H_
 #define COMPILER_TRANSLATOR_OPERATOR_H_
 
+#include <cstdint>
 
 
 
-enum TOperator
+
+enum TOperator : uint8_t
 {
     EOpNull,  
 
@@ -139,6 +141,7 @@ enum TOperator
     EOpSmoothstep,
     EOpIsnan,
     EOpIsinf,
+    EOpFma,
 
     EOpFloatBitsToInt,
     EOpFloatBitsToUint,
@@ -253,7 +256,12 @@ enum TOperator
 
     
     EOpEmitVertex,
-    EOpEndPrimitive
+    EOpEndPrimitive,
+
+    
+    EOpFTransform,
+    EOpPackDouble2x32,
+    EOpUnpackDouble2x32,
 };
 
 

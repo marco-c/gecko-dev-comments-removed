@@ -57,6 +57,8 @@ class SurfaceImpl : public FramebufferAttachmentObjectImpl
     virtual egl::Error unMakeCurrent(const gl::Context *context);
     virtual egl::Error swap(const gl::Context *context) = 0;
     virtual egl::Error swapWithDamage(const gl::Context *context, EGLint *rects, EGLint n_rects);
+    virtual egl::Error swapWithFrameToken(const gl::Context *context,
+                                          EGLFrameTokenANGLE frameToken);
     virtual egl::Error postSubBuffer(const gl::Context *context,
                                      EGLint x,
                                      EGLint y,
@@ -69,6 +71,7 @@ class SurfaceImpl : public FramebufferAttachmentObjectImpl
                                     EGLint buffer)                                            = 0;
     virtual egl::Error releaseTexImage(const gl::Context *context, EGLint buffer)             = 0;
     virtual egl::Error getSyncValues(EGLuint64KHR *ust, EGLuint64KHR *msc, EGLuint64KHR *sbc) = 0;
+    virtual egl::Error getMscRate(EGLint *numerator, EGLint *denominator)                     = 0;
     virtual void setSwapInterval(EGLint interval)                                             = 0;
     virtual void setFixedWidth(EGLint width);
     virtual void setFixedHeight(EGLint height);
@@ -76,6 +79,15 @@ class SurfaceImpl : public FramebufferAttachmentObjectImpl
     
     virtual EGLint getWidth() const  = 0;
     virtual EGLint getHeight() const = 0;
+    
+    
+    
+    
+    
+    
+    
+    virtual egl::Error getUserWidth(const egl::Display *display, EGLint *value) const;
+    virtual egl::Error getUserHeight(const egl::Display *display, EGLint *value) const;
 
     virtual EGLint isPostSubBufferSupported() const = 0;
     virtual EGLint getSwapBehavior() const          = 0;
