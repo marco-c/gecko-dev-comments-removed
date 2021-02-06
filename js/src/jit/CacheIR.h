@@ -336,6 +336,7 @@ class CallFlags {
     return isConstructing_;
   }
   bool isSameRealm() const { return isSameRealm_; }
+  void setIsSameRealm() { isSameRealm_ = true; }
 
   bool needsUninitializedThis() const { return needsUninitializedThis_; }
   void setNeedsUninitializedThis() { needsUninitializedThis_ = true; }
@@ -1159,7 +1160,7 @@ class MOZ_RAII CacheIRReader {
       default:
         
         
-        MOZ_ASSERT(!isConstructing && !isSameRealm);
+        MOZ_ASSERT(!isConstructing);
         return CallFlags(format);
     }
   }
