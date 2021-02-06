@@ -21,7 +21,10 @@ namespace widget {
 RefPtr<CompositorWidget> CompositorWidget::CreateLocal(
     const CompositorWidgetInitData& aInitData,
     const layers::CompositorOptions& aOptions, nsIWidget* aWidget) {
-  MOZ_ASSERT(aWidget);
+  
+  
+  
+  MOZ_RELEASE_ASSERT(aWidget);
 #  ifdef MOZ_WIDGET_ANDROID
   return new AndroidCompositorWidget(aOptions,
                                      static_cast<nsBaseWidget*>(aWidget));
