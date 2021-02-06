@@ -6,7 +6,7 @@ use bindings::WrCompositor;
 use gleam::{gl, gl::GLenum, gl::Gl};
 use std::cell::{Cell, UnsafeCell};
 use std::collections::{hash_map::HashMap, VecDeque};
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Range};
 use std::os::raw::c_void;
 use std::ptr;
 use std::rc::Rc;
@@ -171,8 +171,16 @@ impl SwTile {
         }
     }
 
+    
+    
     fn origin(&self, surface: &SwSurface) -> DeviceIntPoint {
         DeviceIntPoint::new(self.x * surface.tile_size.width, self.y * surface.tile_size.height)
+    }
+
+    
+    
+    fn local_bounds(&self, surface: &SwSurface) -> DeviceIntRect {
+        self.valid_rect.translate(self.origin(surface).to_vector())
     }
 
     
@@ -185,8 +193,7 @@ impl SwTile {
         transform: &CompositorSurfaceTransform,
         clip_rect: &DeviceIntRect,
     ) -> Option<DeviceIntRect> {
-        let origin = self.origin(surface);
-        let bounds = self.valid_rect.translate(origin.to_vector());
+        let bounds = self.local_bounds(surface);
         let device_rect = transform.outer_transformed_rect(&bounds.to_f32())?.round_out().to_i32();
         device_rect.intersection(clip_rect)
     }
@@ -214,7 +221,7 @@ impl SwTile {
         clip_rect: &DeviceIntRect,
     ) -> Option<(DeviceIntRect, DeviceIntRect, bool)> {
         
-        let valid = self.valid_rect.translate(self.origin(surface).to_vector());
+        let valid = self.local_bounds(surface);
         
         let dest_rect = transform.outer_transformed_rect(&valid.to_f32())?.round_out().to_i32();
         if !dest_rect.intersects(clip_rect) {
@@ -252,6 +259,28 @@ impl SwSurface {
             external_image: None,
             composite_surface: None,
         }
+    }
+
+    
+    
+    fn local_bounds(&self) -> DeviceIntRect {
+        let mut bounds = DeviceIntRect::zero();
+        for tile in &self.tiles {
+            bounds = bounds.union(&tile.local_bounds(self));
+        }
+        bounds
+    }
+
+    
+    
+    fn device_bounds(
+        &self,
+        transform: &CompositorSurfaceTransform,
+        clip_rect: &DeviceIntRect,
+    ) -> Option<DeviceIntRect> {
+        let bounds = self.local_bounds();
+        let device_rect = transform.outer_transformed_rect(&bounds.to_f32())?.round_out().to_i32();
+        device_rect.intersection(clip_rect)
     }
 }
 
@@ -933,6 +962,14 @@ impl SwCompositeThread {
 }
 
 
+type FrameSurface = (
+    NativeSurfaceId,
+    CompositorSurfaceTransform,
+    DeviceIntRect,
+    ImageRendering,
+);
+
+
 
 pub struct SwCompositor {
     gl: swgl::Context,
@@ -940,21 +977,11 @@ pub struct SwCompositor {
     compositor: WrCompositor,
     use_native_compositor: bool,
     surfaces: HashMap<NativeSurfaceId, SwSurface>,
-    frame_surfaces: Vec<(
-        NativeSurfaceId,
-        CompositorSurfaceTransform,
-        DeviceIntRect,
-        ImageRendering,
-    )>,
+    frame_surfaces: Vec<FrameSurface>,
     
     
     
-    late_surfaces: Vec<(
-        NativeSurfaceId,
-        CompositorSurfaceTransform,
-        DeviceIntRect,
-        ImageRendering,
-    )>,
+    late_surfaces: Vec<FrameSurface>,
     cur_tile: NativeTileId,
     draw_tile: Option<DrawTileHelper>,
     
@@ -1028,6 +1055,97 @@ impl SwCompositor {
     fn deinit_surface(&self, surface: &SwSurface) {
         for tile in &surface.tiles {
             self.deinit_tile(tile);
+        }
+    }
+
+    
+    
+    
+    
+    
+    fn occlude_surfaces(&mut self) {
+        
+        fn includes(outer: &Range<i32>, inner: &Range<i32>) -> bool {
+            outer.start <= inner.start && outer.end >= inner.end
+        }
+
+        
+        
+        
+        fn overlaps(outer: &Range<i32>, inner: &Range<i32>) -> Option<Range<i32>> {
+            if outer.start <= inner.start && outer.end >= inner.start {
+                Some(outer.end..inner.end.max(outer.end))
+            } else if outer.start <= inner.end && outer.end >= inner.end {
+                Some(inner.start..outer.start.max(inner.start))
+            } else {
+                None
+            }
+        }
+
+        fn set_x_range(rect: &mut DeviceIntRect, range: &Range<i32>) {
+            rect.origin.x = range.start;
+            rect.size.width = range.end - range.start;
+        }
+
+        fn set_y_range(rect: &mut DeviceIntRect, range: &Range<i32>) {
+            rect.origin.y = range.start;
+            rect.size.height = range.end - range.start;
+        }
+
+        fn union(base: Range<i32>, extra: Range<i32>) -> Range<i32> {
+            base.start.min(extra.start)..base.end.max(extra.end)
+        }
+
+        
+        
+        
+        for &mut (ref id, ref transform, ref mut clip_rect, _) in &mut self.frame_surfaces {
+            if let Some(surface) = self.surfaces.get(id) {
+                
+                *clip_rect = surface.device_bounds(transform, clip_rect).unwrap_or_default();
+            }
+        }
+
+        
+        
+        for occlude_index in 0..self.frame_surfaces.len() {
+            let (ref occlude_id, _, ref occlude_rect, _) = self.frame_surfaces[occlude_index];
+            match self.surfaces.get(occlude_id) {
+                Some(occluder) if occluder.is_opaque && !occlude_rect.is_empty() => {}
+                _ => continue,
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let (mut occlude_x, mut occlude_y) = (occlude_rect.x_range(), occlude_rect.y_range());
+            for &mut (ref id, _, ref mut clip_rect, _) in self.frame_surfaces[..occlude_index].iter_mut().rev() {
+                if let Some(surface) = self.surfaces.get(id) {
+                    let (clip_x, clip_y) = (clip_rect.x_range(), clip_rect.y_range());
+                    if includes(&occlude_x, &clip_x) {
+                        if let Some(visible) = overlaps(&occlude_y, &clip_y) {
+                            set_y_range(clip_rect, &visible);
+                            if surface.is_opaque && occlude_x == clip_x {
+                                occlude_y = union(occlude_y, visible);
+                            }
+                        }
+                    } else if includes(&occlude_y, &clip_y) {
+                        if let Some(visible) = overlaps(&occlude_x, &clip_x) {
+                            set_x_range(clip_rect, &visible);
+                            if surface.is_opaque && occlude_y == clip_y {
+                                occlude_x = union(occlude_x, visible);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1656,15 +1774,22 @@ impl Compositor for SwCompositor {
 
         self.compositor.start_compositing(dirty_rects, &opaque_rects);
 
-        if dirty_rects.len() == 1 {
+        if let Some(dirty_rect) = dirty_rects
+            .iter()
+            .fold(DeviceIntRect::zero(), |acc, dirty_rect| acc.union(dirty_rect))
+            .to_non_empty()
+        {
             
-            
-            for &mut (ref _id, ref _transform, ref mut clip_rect, _filter) in &mut self.frame_surfaces {
-                *clip_rect = clip_rect.intersection(&dirty_rects[0]).unwrap_or_default();
+            for &mut (_, _, ref mut clip_rect, _) in &mut self.frame_surfaces {
+                *clip_rect = clip_rect.intersection(&dirty_rect).unwrap_or_default();
             }
-            self.frame_surfaces
-                .retain(|&(_, _, clip_rect, _)| !clip_rect.is_empty());
         }
+
+        self.occlude_surfaces();
+
+        
+        self.frame_surfaces
+            .retain(|&(_, _, clip_rect, _)| !clip_rect.is_empty());
 
         if let Some(ref composite_thread) = self.composite_thread {
             
