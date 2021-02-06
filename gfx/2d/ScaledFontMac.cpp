@@ -18,6 +18,7 @@
 #ifdef MOZ_WIDGET_UIKIT
 #  include <CoreFoundation/CoreFoundation.h>
 #endif
+#include "gfxPlatform.h"  
 #include "nsCocoaFeatures.h"
 #include "mozilla/gfx/Logging.h"
 
@@ -372,6 +373,17 @@ bool UnscaledFontMac::GetFontDescriptor(FontDescriptorOutput aCb,
                                         void* aBaton) {
   if (mIsDataFont) {
     return false;
+  }
+
+  
+  
+  if (gfxPlatform::GetPlatform()->HasVariationFontSupport() &&
+      !nsCocoaFeatures::OnCatalinaOrLater()) {
+    CFDataRef data = CGFontCopyTableForTag(mFont, 0x66766172);  
+    if (data) {
+      CFRelease(data);
+      return false;
+    }
   }
 
   AutoRelease<CFStringRef> psname(CGFontCopyPostScriptName(mFont));
