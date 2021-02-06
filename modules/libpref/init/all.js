@@ -654,17 +654,8 @@ pref("gfx.webrender.debug.obscure-images", false);
 pref("gfx.webrender.debug.glyph-flashing", false);
 pref("gfx.webrender.debug.capture-profiler", false);
 pref("gfx.webrender.debug.profiler-ui", "Default");
-
-
-
-
-#ifdef XP_WIN
-pref("gfx.webrender.debug.batched-texture-uploads", true);
-pref("gfx.webrender.debug.draw-calls-for-texture-copy", true);
-#else
 pref("gfx.webrender.debug.batched-texture-uploads", false);
 pref("gfx.webrender.debug.draw-calls-for-texture-copy", false);
-#endif
 
 
 pref("accessibility.warn_on_browsewithcaret", true);
