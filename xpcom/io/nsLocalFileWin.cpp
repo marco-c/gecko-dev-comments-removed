@@ -239,6 +239,10 @@ class nsDriveEnumerator : public nsSimpleEnumerator,
 
 
 
+
+
+
+
 static nsresult ConvertWinError(DWORD aWinErr) {
   nsresult rv;
 
