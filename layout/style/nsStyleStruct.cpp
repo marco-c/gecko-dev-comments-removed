@@ -119,6 +119,21 @@ void StyleComputedUrl::ResolveImage(Document& aDocument,
 
   data.flags |= StyleLoadDataFlags::TRIED_TO_RESOLVE_IMAGE;
 
+  nsIURI* docURI = aDocument.GetDocumentURI();
+  if (HasRef()) {
+    bool isEqualExceptRef = false;
+    nsIURI* imageURI = GetURI();
+    if (!imageURI) {
+      return;
+    }
+
+    if (NS_SUCCEEDED(imageURI->EqualsExceptRef(docURI, &isEqualExceptRef)) &&
+        isEqualExceptRef) {
+      
+      return;
+    }
+  }
+
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -667,7 +682,8 @@ already_AddRefed<nsIURI> nsStyleList::GetListStyleImageURI() const {
     return nullptr;
   }
 
-  return do_AddRef(mListStyleImage.AsUrl().GetURI());
+  nsCOMPtr<nsIURI> uri = mListStyleImage.AsUrl().GetURI();
+  return uri.forget();
 }
 
 
