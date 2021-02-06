@@ -29,13 +29,28 @@ async function getRedirectedCookies(location, cookie) {
     try {
       const iframe = document.createElement('iframe');
       iframe.style = 'display: none';
-      iframe.src = `${location}`;
+      iframe.src = location;
 
       iframe.addEventListener('load', (e) => {
         const win = e.target.contentWindow;
-        const iframeCookies = win.getCookies();
-        win.expireCookie(cookie);
-        resolve(iframeCookies);
+        let iframeCookie;
+        
+        win.postMessage('getCookies', '*');
+
+        
+        
+        window.addEventListener('message', (e) => {
+          if (typeof e.data == 'object' && 'cookies' in e.data) {
+            iframeCookie = e.data.cookies;
+            e.source.postMessage({'expireCookie': cookie}, '*');
+          }
+
+          
+          
+          if (e.data == 'expired') {
+            resolve(iframeCookie);
+          }
+        });
       }, {once: true});
 
       document.documentElement.appendChild(iframe);
