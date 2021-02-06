@@ -788,15 +788,17 @@ struct DIGroup {
          item->GetPerFrameKey(), bounds.x, bounds.y, bounds.XMost(),
          bounds.YMost());
 
+      if (item->HasHitTestInfo()) {
+        
+        
+        
+        
+        
+        
+        mHitInfo += item->GetHitTestInfo().Info();
+      }
+
       if (item->GetType() == DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
-        
-        
-        
-        
-        
-        
-        mHitInfo +=
-            static_cast<nsDisplayCompositorHitTestInfo*>(item)->HitTestFlags();
         continue;
       }
 
@@ -1231,8 +1233,7 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
       {
         auto spaceAndClipChain = mClipManager.SwitchItem(item);
         wr::SpaceAndClipChainHelper saccHelper(aBuilder, spaceAndClipChain);
-        mHitTestInfoManager.SwitchItem(item->AsPaintedDisplayItem(), aBuilder,
-                                       aDisplayListBuilder);
+        mHitTestInfoManager.SwitchItem(item, aBuilder, aDisplayListBuilder);
 
         sIndent++;
         
@@ -1653,14 +1654,14 @@ void WebRenderCommandBuilder::CreateWebRenderCommands(
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc,
     nsDisplayListBuilder* aDisplayListBuilder) {
-  auto* item = aItem->AsPaintedDisplayItem();
-  MOZ_RELEASE_ASSERT(item, "Tried to paint item that cannot be painted");
-
-  mHitTestInfoManager.SwitchItem(item, aBuilder, aDisplayListBuilder);
-  if (item->GetType() == DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
+  mHitTestInfoManager.SwitchItem(aItem, aBuilder, aDisplayListBuilder);
+  if (aItem->GetType() == DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
     
     return;
   }
+
+  auto* item = aItem->AsPaintedDisplayItem();
+  MOZ_RELEASE_ASSERT(item, "Tried to paint item that cannot be painted");
 
   if (aBuilder.ReuseItem(item)) {
     

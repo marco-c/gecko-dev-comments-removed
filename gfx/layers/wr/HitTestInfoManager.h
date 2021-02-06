@@ -43,7 +43,7 @@ class HitTestInfoManager {
 
 
 
-  void SwitchItem(nsPaintedDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
+  void SwitchItem(nsDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
                   nsDisplayListBuilder* aDisplayListBuilder);
 
  private:
