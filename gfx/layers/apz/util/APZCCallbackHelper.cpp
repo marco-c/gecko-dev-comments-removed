@@ -264,8 +264,11 @@ static void SetDisplayPortMargins(PresShell* aPresShell, nsIContent* aContent,
            ToString(aDisplayPortMargins).c_str(), viewID));
     }
   }
-  DisplayPortUtils::SetDisplayPortMargins(aContent, aPresShell,
-                                          aDisplayPortMargins, 0);
+  DisplayPortUtils::SetDisplayPortMargins(
+      aContent, aPresShell, aDisplayPortMargins,
+      hadDisplayPort ? DisplayPortUtils::ClearMinimalDisplayPortProperty::No
+                     : DisplayPortUtils::ClearMinimalDisplayPortProperty::Yes,
+      0);
   if (!hadDisplayPort) {
     DisplayPortUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
         aContent->GetPrimaryFrame());
@@ -441,7 +444,8 @@ void APZCCallbackHelper::InitializeRootDisplayport(PresShell* aPresShell) {
     
     
     DisplayPortUtils::SetDisplayPortMargins(
-        content, aPresShell, DisplayPortMargins::Empty(content), 0);
+        content, aPresShell, DisplayPortMargins::Empty(content),
+        DisplayPortUtils::ClearMinimalDisplayPortProperty::Yes, 0);
     DisplayPortUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
         content->GetPrimaryFrame());
   }

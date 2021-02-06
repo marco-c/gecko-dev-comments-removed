@@ -230,10 +230,13 @@ class DisplayPortUtils {
 
 
 
+  enum class ClearMinimalDisplayPortProperty { No, Yes };
+
   static bool SetDisplayPortMargins(
       nsIContent* aContent, PresShell* aPresShell,
-      const DisplayPortMargins& aMargins, uint32_t aPriority = 0,
-      RepaintMode aRepaintMode = RepaintMode::Repaint);
+      const DisplayPortMargins& aMargins,
+      ClearMinimalDisplayPortProperty aClearMinimalDisplayPortProperty,
+      uint32_t aPriority = 0, RepaintMode aRepaintMode = RepaintMode::Repaint);
 
   
 
