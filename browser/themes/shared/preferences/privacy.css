@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* Permissions */
 
 #trackingGroup {
   --section-highlight-background-color: rgba(69, 161, 255, 0.2);
@@ -71,12 +71,12 @@
 }
 
 .fpi-warning-icon {
-  
-
+  /* The target size for this icon is 14px, but to be consistent with the
+     other icons and alignment in the page we use a 20px size with 3px padding */
   width: 20px;
   height: 20px;
   padding: 3px;
-  margin-inline-end: 10px; 
+  margin-inline-end: 10px; /* Aligns text with other sections */
   margin-block-start: 3px;
 }
 
@@ -112,9 +112,9 @@
   list-style-image: url(chrome://browser/skin/notification-icons/midi.svg);
 }
 
+/* Content Blocking */
 
-
-
+/* Override styling that sets descriptions as grey */
 #trackingGroup description.indent,
 #trackingGroup .indent > description {
   color: inherit;
@@ -205,15 +205,15 @@
 .content-blocking-warning.reload-tabs:not([hidden]) {
   display: flex;
   flex-wrap: wrap;
-  
+  /* Match .indent's horizontal padding: */
   padding-inline: 28px;
 }
 
 .content-blocking-reload-desc-container {
-  
-
-
-
+  /* 345px is enough for (almost) twice the size of the default English
+   * string at default font sizes. If this and the button do not fit
+   * on one line, the button will get wrapped to the next line and this
+   * item will stretch to fill all available space. */
   flex: 1 1 345px;
   display: flex;
 }
@@ -283,9 +283,9 @@
   margin-top: 18px;
 }
 
-
-
-
+/* Apply display: block to the containers of all the category information, as
+ * without this the flex-wrapped blocks inside don't stretch vertically to
+ * enclose their content. */
 .content-blocking-category > .indent {
   display: block;
 }
@@ -398,15 +398,10 @@
 }
 
 #deleteOnCloseNote {
-  margin-bottom: 0 !important; 
+  margin-bottom: 0 !important; /* Overrides .info-panel margin-bottom. */
   margin-inline-end: 32px;
 }
 
 #submitHealthReportBox {
   display: -moz-inline-box;
-}
-
-
-#httpsOnlyBox[hidehttpsonly] {
-  display: none;
 }

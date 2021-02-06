@@ -5,10 +5,6 @@ const browserContainersGroupDisabled = !SpecialPowers.getBoolPref(
   "privacy.userContext.ui.enabled"
 );
 
-const httpsOnlyVisible = SpecialPowers.getBoolPref(
-  "browser.preferences.exposeHTTPSOnly"
-);
-
 function test() {
   waitForExplicitFinish();
   open_preferences(runTest);
@@ -33,12 +29,6 @@ function checkElements(expectedPane) {
         element,
         "Disabled browserContainersGroup should be hidden"
       );
-      continue;
-    }
-
-    
-    if (element.id == "httpsOnlyBox" && !httpsOnlyVisible) {
-      is_element_hidden(element, "Disabled httpsOnlyBox should be hidden");
       continue;
     }
 
