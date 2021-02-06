@@ -35,6 +35,10 @@
 #include "nsFrameSelection.h"
 #include "mozilla/LookAndFeel.h"
 
+#ifdef ACCESSIBILITY
+#  include "nsAccessibilityService.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::image;
@@ -212,6 +216,19 @@ void nsTableCellFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
 
   if (!aOldComputedStyle)  
     return;
+
+#ifdef ACCESSIBILITY
+  if (nsAccessibilityService* accService = GetAccService()) {
+    if (StyleBorder()->GetComputedBorder() !=
+        aOldComputedStyle->StyleBorder()->GetComputedBorder()) {
+      
+      
+      
+      
+      accService->TableLayoutGuessMaybeChanged(PresShell(), mContent);
+    }
+  }
+#endif
 
   nsTableFrame* tableFrame = GetTableFrame();
   if (tableFrame->IsBorderCollapse() &&

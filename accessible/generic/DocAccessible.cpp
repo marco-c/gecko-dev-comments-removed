@@ -1554,6 +1554,13 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     
     
     
+    if (acc->IsTable() || acc->IsTableRow() || acc->IsTableCell()) {
+      FireDelayedEvent(nsIAccessibleEvent::EVENT_TABLE_STYLING_CHANGED, acc);
+    }
+
+    
+    
+    
     insert = true;
   } else {
     

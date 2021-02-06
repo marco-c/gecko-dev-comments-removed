@@ -23,7 +23,6 @@
 class nsImageFrame;
 class nsIArray;
 class nsIPersistentProperties;
-class nsPluginFrame;
 class nsITreeView;
 
 namespace mozilla {
@@ -116,9 +115,6 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
   Accessible* GetRootDocumentAccessible(mozilla::PresShell* aPresShell,
                                         bool aCanCreate);
-  already_AddRefed<Accessible> CreatePluginAccessible(nsPluginFrame* aFrame,
-                                                      nsIContent* aContent,
-                                                      Accessible* aContext);
 
   
 
@@ -176,6 +172,12 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
 
   void ContentRemoved(mozilla::PresShell* aPresShell, nsIContent* aChild);
+
+  
+
+
+  void TableLayoutGuessMaybeChanged(mozilla::PresShell* aPresShell,
+                                    nsIContent* aContent);
 
   void UpdateText(mozilla::PresShell* aPresShell, nsIContent* aContent);
 
@@ -502,6 +504,7 @@ static const char kEventTypeNames[][40] = {
     "announcement",                     
     "live region added",                
     "live region removed",              
+    "table styling changed",            
 };
 
 #endif

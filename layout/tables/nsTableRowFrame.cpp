@@ -26,6 +26,10 @@
 #include "nsIFrameInlines.h"
 #include <algorithm>
 
+#ifdef ACCESSIBILITY
+#  include "nsAccessibilityService.h"
+#endif
+
 using namespace mozilla;
 
 namespace mozilla {
@@ -173,6 +177,24 @@ void nsTableRowFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
 
   if (!aOldComputedStyle)  
     return;
+
+#ifdef ACCESSIBILITY
+  if (nsAccessibilityService* accService = GetAccService()) {
+    
+    
+    
+    
+    
+    
+    if (StyleBackground()->BackgroundColor(this) !=
+        aOldComputedStyle->StyleBackground()->BackgroundColor(
+            aOldComputedStyle)) {
+      
+      
+      accService->TableLayoutGuessMaybeChanged(PresShell(), mContent);
+    }
+  }
+#endif
 
   nsTableFrame* tableFrame = GetTableFrame();
   if (tableFrame->IsBorderCollapse() &&

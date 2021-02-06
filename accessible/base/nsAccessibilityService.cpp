@@ -62,7 +62,6 @@
 #include "nsIObserverService.h"
 #include "nsMenuPopupFrame.h"
 #include "nsLayoutUtils.h"
-#include "nsPluginFrame.h"
 #include "nsTreeBodyFrame.h"
 #include "nsTreeColumns.h"
 #include "nsTreeUtils.h"
@@ -85,10 +84,6 @@
 #  include "XULMenuAccessibleWrap.h"
 #  include "XULTabAccessible.h"
 #  include "XULTreeGridAccessibleWrap.h"
-#endif
-
-#if defined(XP_WIN) || defined(MOZ_ACCESSIBILITY_ATK)
-#  include "nsNPAPIPluginInstance.h"
 #endif
 
 using namespace mozilla;
@@ -398,111 +393,6 @@ Accessible* nsAccessibilityService::GetRootDocumentAccessible(
   return nullptr;
 }
 
-#ifdef XP_WIN
-static StaticAutoPtr<nsTArray<nsCOMPtr<nsIContent> > > sPendingPlugins;
-static StaticAutoPtr<nsTArray<nsCOMPtr<nsITimer> > > sPluginTimers;
-
-class PluginTimerCallBack final : public nsITimerCallback, public nsINamed {
-  ~PluginTimerCallBack() {}
-
- public:
-  explicit PluginTimerCallBack(nsIContent* aContent) : mContent(aContent) {}
-
-  NS_DECL_ISUPPORTS
-
-  NS_IMETHOD Notify(nsITimer* aTimer) final {
-    if (!mContent->IsInUncomposedDoc()) return NS_OK;
-
-    PresShell* presShell = mContent->OwnerDoc()->GetPresShell();
-    if (presShell) {
-      DocAccessible* doc = presShell->GetDocAccessible();
-      if (doc) {
-        
-        
-        
-        doc->RecreateAccessible(mContent);
-        sPluginTimers->RemoveElement(aTimer);
-        return NS_OK;
-      }
-    }
-
-    
-    
-    sPendingPlugins->RemoveElement(mContent);
-    sPluginTimers->RemoveElement(aTimer);
-    return NS_OK;
-  }
-
-  NS_IMETHOD GetName(nsACString& aName) final {
-    aName.AssignLiteral("PluginTimerCallBack");
-    return NS_OK;
-  }
-
- private:
-  nsCOMPtr<nsIContent> mContent;
-};
-
-NS_IMPL_ISUPPORTS(PluginTimerCallBack, nsITimerCallback, nsINamed)
-#endif
-
-already_AddRefed<Accessible> nsAccessibilityService::CreatePluginAccessible(
-    nsPluginFrame* aFrame, nsIContent* aContent, Accessible* aContext) {
-  
-  
-  if (aFrame->GetRect().IsEmpty()) return nullptr;
-
-#if defined(XP_WIN) || defined(MOZ_ACCESSIBILITY_ATK)
-  RefPtr<nsNPAPIPluginInstance> pluginInstance = aFrame->GetPluginInstance();
-  if (pluginInstance) {
-#  ifdef XP_WIN
-    if (!sPendingPlugins->Contains(aContent) &&
-        (Preferences::GetBool("accessibility.delay_plugins") ||
-         Compatibility::IsJAWS() || Compatibility::IsWE())) {
-      RefPtr<PluginTimerCallBack> cb = new PluginTimerCallBack(aContent);
-      nsCOMPtr<nsITimer> timer;
-      NS_NewTimerWithCallback(
-          getter_AddRefs(timer), cb,
-          Preferences::GetUint("accessibility.delay_plugin_time"),
-          nsITimer::TYPE_ONE_SHOT);
-      sPluginTimers->AppendElement(timer);
-      sPendingPlugins->AppendElement(aContent);
-      return nullptr;
-    }
-
-    
-    
-    
-    sPendingPlugins->RemoveElement(aContent);
-
-    
-    HWND pluginPort = nullptr;
-    aFrame->GetPluginPort(&pluginPort);
-
-    RefPtr<Accessible> accessible = new HTMLWin32ObjectOwnerAccessible(
-        aContent, aContext->Document(), pluginPort);
-    return accessible.forget();
-
-#  elif MOZ_ACCESSIBILITY_ATK
-    if (!AtkSocketAccessible::gCanEmbed) return nullptr;
-
-    
-    
-    nsCString plugId;
-    nsresult rv = pluginInstance->GetValueFromPlugin(
-        NPPVpluginNativeAccessibleAtkPlugId, &plugId);
-    if (NS_SUCCEEDED(rv) && !plugId.IsEmpty()) {
-      RefPtr<AtkSocketAccessible> socketAccessible =
-          new AtkSocketAccessible(aContent, aContext->Document(), plugId);
-
-      return socketAccessible.forget();
-    }
-#  endif
-  }
-#endif
-
-  return nullptr;
-}
-
 void nsAccessibilityService::DeckPanelSwitched(PresShell* aPresShell,
                                                nsIContent* aDeckNode,
                                                nsIFrame* aPrevBoxFrame,
@@ -606,6 +496,16 @@ void nsAccessibilityService::ContentRemoved(PresShell* aPresShell,
     logging::Stack();
   }
 #endif
+}
+
+void nsAccessibilityService::TableLayoutGuessMaybeChanged(
+    PresShell* aPresShell, nsIContent* aContent) {
+  if (DocAccessible* document = GetDocAccessible(aPresShell)) {
+    if (Accessible* accessible = document->GetAccessible(aContent)) {
+      document->FireDelayedEvent(
+          nsIAccessibleEvent::EVENT_TABLE_STYLING_CHANGED, accessible);
+    }
+  }
 }
 
 void nsAccessibilityService::UpdateText(PresShell* aPresShell,
@@ -1306,11 +1206,6 @@ bool nsAccessibilityService::Init() {
   CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::Accessibility,
                                      "Active"_ns);
 
-#ifdef XP_WIN
-  sPendingPlugins = new nsTArray<nsCOMPtr<nsIContent> >;
-  sPluginTimers = new nsTArray<nsCOMPtr<nsITimer> >;
-#endif
-
   
   if (XRE_IsParentProcess()) PlatformInit();
 
@@ -1343,16 +1238,6 @@ void nsAccessibilityService::Shutdown() {
   DocManager::Shutdown();
 
   SelectionManager::Shutdown();
-
-#ifdef XP_WIN
-  sPendingPlugins = nullptr;
-
-  uint32_t timerCount = sPluginTimers->Length();
-  for (uint32_t i = 0; i < timerCount; i++)
-    sPluginTimers->ElementAt(i)->Cancel();
-
-  sPluginTimers = nullptr;
-#endif
 
   if (XRE_IsParentProcess()) PlatformShutdown();
 
@@ -1510,11 +1395,6 @@ nsAccessibilityService::CreateAccessibleByFrameType(nsIFrame* aFrame,
     case eOuterDocType:
       newAcc = new OuterDocAccessible(aContent, document);
       break;
-    case ePluginType: {
-      nsPluginFrame* pluginFrame = do_QueryFrame(aFrame);
-      newAcc = CreatePluginAccessible(pluginFrame, aContent, aContext);
-      break;
-    }
     case eTextLeafType:
       newAcc = new TextLeafAccessibleWrap(aContent, document);
       break;
