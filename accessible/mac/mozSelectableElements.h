@@ -122,4 +122,7 @@
 
 - (void)handleAccessibleEvent:(uint32_t)eventType;
 
+
+- (void)moxPerformPress;
+
 @end

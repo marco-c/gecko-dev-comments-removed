@@ -317,6 +317,7 @@ using namespace mozilla::a11y;
 - (void)handleAccessibleEvent:(uint32_t)eventType {
   switch (eventType) {
     case nsIAccessibleEvent::EVENT_FOCUS:
+      [self invalidateState];
       
       mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
       [parent moxPostNotification:
@@ -325,6 +326,13 @@ using namespace mozilla::a11y;
   }
 
   [super handleAccessibleEvent:eventType];
+}
+
+- (void)moxPerformPress {
+  [super moxPerformPress];
+  
+  
+  [self moxPostNotification:@"AXMenuItemSelected"];
 }
 
 @end
