@@ -2246,9 +2246,6 @@ ScopeStencil::createSpecificScopeData<FunctionScope>(
     return nullptr;
   }
 
-  
-  data->canonicalFunction = gcOutput.functions[functionIndex()];
-
   return data;
 }
 
@@ -2263,9 +2260,6 @@ ScopeStencil::createSpecificScopeData<ModuleScope>(
   if (!data) {
     return nullptr;
   }
-
-  
-  data->module = gcOutput.module;
 
   return data;
 }

@@ -3858,8 +3858,7 @@ bool JSScript::fullyInitFromStencil(
   });
 
   
-  js::frontend::ScriptStencil& scriptStencil = stencil.scriptData[scriptIndex];
-  MOZ_ASSERT(scriptStencil.gcThingsLength <= INDEX_LIMIT);
+  MOZ_ASSERT(stencil.scriptData[scriptIndex].gcThingsLength <= INDEX_LIMIT);
 
   
   
@@ -3894,8 +3893,9 @@ bool JSScript::fullyInitFromStencil(
   rollbackGuard.release();
 
   
-  if (scriptStencil.isFunction()) {
+  if (script->isFunction()) {
     JSFunction* fun = gcOutput.functions[scriptIndex];
+    script->bodyScope()->as<FunctionScope>().initCanonicalFunction(fun);
     if (fun->isIncomplete()) {
       fun->initScript(script);
     } else {
