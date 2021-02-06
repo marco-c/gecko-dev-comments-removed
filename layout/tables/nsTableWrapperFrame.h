@@ -191,10 +191,6 @@ class nsTableWrapperFrame : public nsContainerFrame {
                                ClassID aID = kClassID);
   virtual ~nsTableWrapperFrame();
 
-  void InitChildReflowInput(nsPresContext& aPresContext,
-                            const ReflowInput& aOuterRS,
-                            ReflowInput& aReflowInput);
-
   
   
   

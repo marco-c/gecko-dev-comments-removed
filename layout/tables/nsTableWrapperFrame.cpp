@@ -224,39 +224,6 @@ ComputedStyle* nsTableWrapperFrame::GetParentComputedStyle(
   return (*aProviderFrame = InnerTableFrame())->Style();
 }
 
-
-
-void nsTableWrapperFrame::InitChildReflowInput(nsPresContext& aPresContext,
-                                               const ReflowInput& aOuterRI,
-                                               ReflowInput& aReflowInput) {
-  Maybe<LogicalMargin> collapseBorder;
-  Maybe<LogicalMargin> collapsePadding;
-  Maybe<LogicalSize> cbSize;
-  if (aReflowInput.mFrame == InnerTableFrame()) {
-    WritingMode wm = aReflowInput.GetWritingMode();
-    if (InnerTableFrame()->IsBorderCollapse()) {
-      collapseBorder.emplace(InnerTableFrame()->GetIncludedOuterBCBorder(wm));
-      collapsePadding.emplace(wm);
-    }
-    
-    
-    
-    
-    if (!HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-      if (LogicalSize* cb = GetProperty(GridItemCBSizeProperty())) {
-        cbSize.emplace(*cb);
-        *cbSize -= aOuterRI.ComputedLogicalMargin(wm).Size(wm);
-      }
-    }
-    if (!cbSize) {
-      
-      
-      cbSize.emplace(aOuterRI.mContainingBlockSize);
-    }
-  }
-  aReflowInput.Init(&aPresContext, cbSize, collapseBorder, collapsePadding);
-}
-
 static nsSize GetContainingBlockSize(const ReflowInput& aOuterRI) {
   nsSize size(0, 0);
   const ReflowInput* containRS = aOuterRI.mCBReflowInput;
@@ -622,22 +589,44 @@ void nsTableWrapperFrame::OuterBeginReflowChild(nsPresContext* aPresContext,
                                                 const ReflowInput& aOuterRI,
                                                 Maybe<ReflowInput>& aChildRI,
                                                 nscoord aAvailISize) {
-  
-  
   WritingMode wm = aChildFrame->GetWritingMode();
-  LogicalSize outerSize = aOuterRI.AvailableSize(wm);
-  nscoord availBSize = outerSize.BSize(wm);
-  if (NS_UNCONSTRAINEDSIZE != availBSize) {
-    if (mCaptionFrames.FirstChild() == aChildFrame) {
-      availBSize = NS_UNCONSTRAINEDSIZE;
+
+  
+  
+  if (mCaptionFrames.FirstChild() == aChildFrame) {
+    const LogicalSize availSize(wm, aAvailISize, NS_UNCONSTRAINEDSIZE);
+    aChildRI.emplace(aPresContext, aOuterRI, aChildFrame, availSize);
+  } else {
+    MOZ_ASSERT(InnerTableFrame() == aChildFrame);
+
+    const LogicalSize availSize(wm, aAvailISize, aOuterRI.AvailableBSize());
+    aChildRI.emplace(aPresContext, aOuterRI, aChildFrame, availSize, Nothing(),
+                     ReflowInput::InitFlag::CallerWillInit);
+
+    Maybe<LogicalMargin> collapseBorder;
+    Maybe<LogicalMargin> collapsePadding;
+    Maybe<LogicalSize> cbSize;
+    if (InnerTableFrame()->IsBorderCollapse()) {
+      collapseBorder.emplace(InnerTableFrame()->GetIncludedOuterBCBorder(wm));
+      collapsePadding.emplace(wm);
     }
+    
+    
+    
+    
+    if (!HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+      if (LogicalSize* cb = GetProperty(GridItemCBSizeProperty())) {
+        cbSize.emplace(*cb);
+        *cbSize -= aOuterRI.ComputedLogicalMargin(wm).Size(wm);
+      }
+    }
+    if (!cbSize) {
+      
+      
+      cbSize.emplace(aOuterRI.mContainingBlockSize);
+    }
+    aChildRI->Init(aPresContext, cbSize, collapseBorder, collapsePadding);
   }
-  LogicalSize availSize(wm, aAvailISize, availBSize);
-  
-  
-  aChildRI.emplace(aPresContext, aOuterRI, aChildFrame, availSize, Nothing(),
-                   ReflowInput::InitFlag::CallerWillInit);
-  InitChildReflowInput(*aPresContext, aOuterRI, *aChildRI);
 
   
   if (aChildRI->mFlags.mIsTopOfPage &&
