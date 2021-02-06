@@ -62,49 +62,23 @@ const MozRefCountType DEAD = 0xffffdead;
 
 
 
+#ifdef MOZ_REFCOUNTED_LEAK_CHECKING
 class RefCountLogger {
  public:
-  
-  
-  
-  template <class T>
-  static void logAddRef(const T* aPointer, MozRefCountType aRefCount) {
-#ifdef MOZ_REFCOUNTED_LEAK_CHECKING
-    const void* pointer = aPointer;
-    const char* typeName = aPointer->typeName();
-    uint32_t typeSize = aPointer->typeSize();
-    NS_LogAddRef(const_cast<void*>(pointer), aRefCount, typeName, typeSize);
-#endif
+  static void logAddRef(const void* aPointer, MozRefCountType aRefCount,
+                        const char* aTypeName, uint32_t aInstanceSize) {
+    MOZ_ASSERT(aRefCount != DEAD);
+    NS_LogAddRef(const_cast<void*>(aPointer), aRefCount, aTypeName,
+                 aInstanceSize);
   }
 
-  
-  
-  
-  
-  class MOZ_STACK_CLASS ReleaseLogger final {
-   public:
-    template <class T>
-    explicit ReleaseLogger(const T* aPointer)
-#ifdef MOZ_REFCOUNTED_LEAK_CHECKING
-        : mPointer(aPointer),
-          mTypeName(aPointer->typeName())
-#endif
-    {
-    }
-
-    void logRelease(MozRefCountType aRefCount) {
-#ifdef MOZ_REFCOUNTED_LEAK_CHECKING
-      MOZ_ASSERT(aRefCount != DEAD);
-      NS_LogRelease(const_cast<void*>(mPointer), aRefCount, mTypeName);
-#endif
-    }
-
-#ifdef MOZ_REFCOUNTED_LEAK_CHECKING
-    const void* mPointer;
-    const char* mTypeName;
-#endif
-  };
+  static void logRelease(const void* aPointer, MozRefCountType aRefCount,
+                         const char* aTypeName) {
+    MOZ_ASSERT(aRefCount != DEAD);
+    NS_LogRelease(const_cast<void*>(aPointer), aRefCount, aTypeName);
+  }
 };
+#endif
 
 
 enum RefCountAtomicity { AtomicRefCount, NonAtomicRefCount };
@@ -191,26 +165,6 @@ class RC<T, AtomicRefCount> {
     return mValue.load(std::memory_order_acquire);
   }
 
-  T IncrementIfNonzero() {
-    
-    
-    
-    
-    
-    T prev = mValue.load(std::memory_order_relaxed);
-    while (prev != 0) {
-      MOZ_ASSERT(prev != detail::DEAD,
-                 "Cannot IncrementIfNonzero if marked as dead!");
-      
-      if (mValue.compare_exchange_weak(prev, prev + 1,
-                                       std::memory_order_acquire,
-                                       std::memory_order_relaxed)) {
-        return prev + 1;
-      }
-    }
-    return 0;
-  }
-
  private:
   std::atomic<T> mValue;
 };
@@ -228,18 +182,30 @@ class RefCounted {
   void AddRef() const {
     
     MOZ_ASSERT(int32_t(mRefCnt) >= 0);
+#ifndef MOZ_REFCOUNTED_LEAK_CHECKING
+    ++mRefCnt;
+#else
+    const char* type = static_cast<const T*>(this)->typeName();
+    uint32_t size = static_cast<const T*>(this)->typeSize();
+    const void* ptr = static_cast<const T*>(this);
     MozRefCountType cnt = ++mRefCnt;
-    detail::RefCountLogger::logAddRef(static_cast<const T*>(this), cnt);
+    detail::RefCountLogger::logAddRef(ptr, cnt, type, size);
+#endif
   }
 
   void Release() const {
     
     MOZ_ASSERT(int32_t(mRefCnt) > 0);
-    detail::RefCountLogger::ReleaseLogger logger(static_cast<const T*>(this));
+#ifndef MOZ_REFCOUNTED_LEAK_CHECKING
+    MozRefCountType cnt = --mRefCnt;
+#else
+    const char* type = static_cast<const T*>(this)->typeName();
+    const void* ptr = static_cast<const T*>(this);
     MozRefCountType cnt = --mRefCnt;
     
     
-    logger.logRelease(cnt);
+    detail::RefCountLogger::logRelease(ptr, cnt, type);
+#endif
     if (0 == cnt) {
       
       

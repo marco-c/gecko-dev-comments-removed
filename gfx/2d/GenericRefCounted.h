@@ -60,18 +60,30 @@ class GenericRefCounted : public GenericRefCountedBase {
   virtual void AddRef() override {
     
     MOZ_ASSERT(int32_t(refCnt) >= 0);
+#ifndef MOZ_REFCOUNTED_LEAK_CHECKING
+    ++refCnt;
+#else
+    const char* type = typeName();
+    uint32_t size = typeSize();
+    const void* ptr = this;
     MozRefCountType cnt = ++refCnt;
-    detail::RefCountLogger::logAddRef(this, cnt);
+    detail::RefCountLogger::logAddRef(ptr, cnt, type, size);
+#endif
   }
 
   virtual void Release() override {
     
     MOZ_ASSERT(int32_t(refCnt) > 0);
-    detail::RefCountLogger::ReleaseLogger logger{this};
+#ifndef MOZ_REFCOUNTED_LEAK_CHECKING
+    MozRefCountType cnt = --refCnt;
+#else
+    const char* type = typeName();
+    const void* ptr = this;
     MozRefCountType cnt = --refCnt;
     
     
-    logger.logRelease(cnt);
+    detail::RefCountLogger::logRelease(ptr, cnt, type);
+#endif
     if (0 == cnt) {
       
       
