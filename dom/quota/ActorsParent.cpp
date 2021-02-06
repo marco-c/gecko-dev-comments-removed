@@ -5879,7 +5879,7 @@ QuotaManager::CreateLocalStorageArchiveConnectionFromWebAppsStore() {
           "PRAGMA journal_mode = DELETE;"_ns));
 
       
-      
+      QM_TRY(lsArchiveTmpConnection->Close());
     }
 
     
