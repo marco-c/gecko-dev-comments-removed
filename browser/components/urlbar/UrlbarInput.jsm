@@ -2931,7 +2931,9 @@ class UrlbarInput {
 
     
     
-    let allowAutofill =
+    const allowAutofill =
+      (!UrlbarPrefs.get("keepPanelOpenDuringImeComposition") ||
+        compositionState !== UrlbarUtils.COMPOSITION.COMPOSING) &&
       !!event.data &&
       !UrlbarUtils.isPasteEvent(event) &&
       this._maybeAutofillOnInput(value);
