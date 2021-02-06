@@ -47,6 +47,20 @@ add_task(async function test_search() {
     Assert.greater(this.rows.length, prefArray.length - 50);
 
     
+    await EventUtils.sendMouseEvent(
+      { type: "click" },
+      this.showOnlyModifiedCheckbox
+    );
+    Assert.ok(this.rows.every(r => r.hasClass("has-user-value")));
+
+    
+    await EventUtils.sendMouseEvent(
+      { type: "click" },
+      this.showOnlyModifiedCheckbox
+    );
+    Assert.ok(!this.rows.every(r => r.hasClass("has-user-value")));
+
+    
     EventUtils.sendKey("escape");
     Assert.equal(this.rows.length, 0);
 
