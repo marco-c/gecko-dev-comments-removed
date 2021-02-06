@@ -228,8 +228,7 @@ CompositorBridgeParent::LayerTreeState::LayerTreeState()
       mParent(nullptr),
       mLayerManager(nullptr),
       mContentCompositorBridgeParent(nullptr),
-      mLayerTree(nullptr),
-      mUpdatedPluginDataAvailable(false) {}
+      mLayerTree(nullptr) {}
 
 CompositorBridgeParent::LayerTreeState::~LayerTreeState() {
   if (mController) {
@@ -349,12 +348,6 @@ CompositorBridgeParent::CompositorBridgeParent(
       mCompositorScheduler(nullptr),
       mAnimationStorage(nullptr),
       mPaintTime(TimeDuration::Forever())
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-      ,
-      mLastPluginUpdateLayerTreeId{0},
-      mDeferPluginWindows(false),
-      mPluginWindowsHidden(false)
-#endif
 {
 }
 
@@ -585,8 +578,7 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvResumeAsync() {
 
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvMakeSnapshot(
     const SurfaceDescriptor& aInSnapshot, const gfx::IntRect& aRect) {
-  RefPtr<DrawTarget> target =
-      GetDrawTargetForDescriptor(aInSnapshot, gfx::BackendType::CAIRO);
+  RefPtr<DrawTarget> target = GetDrawTargetForDescriptor(aInSnapshot);
   MOZ_ASSERT(target);
   if (!target) {
     
@@ -815,19 +807,7 @@ void CompositorBridgeParent::NotifyShadowTreeTransaction(
     bool aScheduleComposite, uint32_t aPaintSequenceNumber,
     bool aIsRepeatTransaction, bool aHitTestUpdate) {
   if (!aIsRepeatTransaction && mLayerManager && mLayerManager->GetRoot()) {
-    
-    
-    bool pluginsUpdatedFlag = true;
-    AutoResolveRefLayers resolve(mCompositionManager, this, nullptr,
-                                 &pluginsUpdatedFlag);
-
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-    
-    if (!pluginsUpdatedFlag) {
-      mWaitForPluginsUntil = TimeStamp();
-      mHaveBlockedForPlugins = false;
-    }
-#endif
+    AutoResolveRefLayers resolve(mCompositionManager, this, nullptr);
 
     if (mApzUpdater) {
       mApzUpdater->UpdateFocusState(mRootLayerTreeID, aId, aFocusTarget);
@@ -904,41 +884,7 @@ void CompositorBridgeParent::CompositeToTarget(VsyncId aId, DrawTarget* aTarget,
     return;
   }
 
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  if (!mWaitForPluginsUntil.IsNull() && mWaitForPluginsUntil > start) {
-    mHaveBlockedForPlugins = true;
-    ScheduleComposition();
-    return;
-  }
-#endif
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  bool hasRemoteContent = false;
-  bool updatePluginsFlag = true;
-  AutoResolveRefLayers resolve(mCompositionManager, this, &hasRemoteContent,
-                               &updatePluginsFlag);
-
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  
-  
-  if (!hasRemoteContent && gfxVars::BrowserTabsRemoteAutostart() &&
-      mCachedPluginData.Length()) {
-    Unused << SendHideAllPlugins(GetWidget()->GetWidgetKey());
-    mCachedPluginData.Clear();
-  }
-#endif
+  AutoResolveRefLayers resolve(mCompositionManager, this);
 
   nsCString none;
   if (aTarget) {
@@ -967,14 +913,6 @@ void CompositorBridgeParent::CompositeToTarget(VsyncId aId, DrawTarget* aTarget,
 
   if (requestNextFrame) {
     ScheduleComposition();
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-    
-    
-    if (!mPluginWindowsHidden && mCachedPluginData.Length()) {
-      mWaitForPluginsUntil =
-          mCompositorScheduler->GetLastComposeTime().Time() + (mVsyncRate * 2);
-    }
-#endif
   }
 
   RenderTraceLayers(mLayerManager->GetRoot(), "0000");
@@ -1029,24 +967,6 @@ void CompositorBridgeParent::CompositeToTarget(VsyncId aId, DrawTarget* aTarget,
 
   mozilla::Telemetry::AccumulateTimeDelta(mozilla::Telemetry::COMPOSITE_TIME,
                                           start);
-}
-
-mozilla::ipc::IPCResult CompositorBridgeParent::RecvRemotePluginsReady() {
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  mWaitForPluginsUntil = TimeStamp();
-  if (mHaveBlockedForPlugins) {
-    mHaveBlockedForPlugins = false;
-    ForceComposeToTarget(nullptr);
-  } else {
-    ScheduleComposition();
-  }
-  return IPC_OK();
-#else
-  MOZ_ASSERT_UNREACHABLE(
-      "CompositorBridgeParent::RecvRemotePluginsReady calls "
-      "unexpected on this platform.");
-  return IPC_FAIL_NO_REASON(this);
-#endif
 }
 
 void CompositorBridgeParent::ForceComposeToTarget(DrawTarget* aTarget,
@@ -2566,189 +2486,6 @@ void CompositorBridgeParent::NotifyWebRenderDisableNativeCompositor() {
   if (mWrBridge) {
     mWrBridge->DisableNativeCompositor();
   }
-}
-
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-
-
-
-#  define PLUGINS_LOG(...)
-
-bool CompositorBridgeParent::UpdatePluginWindowState(LayersId aId) {
-  MonitorAutoLock lock(*sIndirectLayerTreesLock);
-  CompositorBridgeParent::LayerTreeState& lts = sIndirectLayerTrees[aId];
-  if (!lts.mParent) {
-    PLUGINS_LOG("[%" PRIu64 "] layer tree compositor parent pointer is null",
-                aId);
-    return false;
-  }
-
-  
-  if (!lts.mUpdatedPluginDataAvailable) {
-    PLUGINS_LOG("[%" PRIu64 "] no plugin data", aId);
-    return false;
-  }
-
-  
-  
-  
-  bool pluginMetricsChanged = false;
-
-  
-  if (mLastPluginUpdateLayerTreeId == aId) {
-    
-    if (!mCachedPluginData.Length() && !lts.mPluginData.Length()) {
-      PLUGINS_LOG("[%" PRIu64 "] no data, no changes", aId);
-      return false;
-    }
-
-    if (mCachedPluginData.Length() == lts.mPluginData.Length()) {
-      
-      for (uint32_t idx = 0; idx < lts.mPluginData.Length(); idx++) {
-        if (!(mCachedPluginData[idx] == lts.mPluginData[idx])) {
-          pluginMetricsChanged = true;
-          break;
-        }
-      }
-    } else {
-      
-      pluginMetricsChanged = true;
-    }
-  } else {
-    
-    pluginMetricsChanged = true;
-  }
-
-  
-  if (mDeferPluginWindows) {
-    PLUGINS_LOG("[%" PRIu64 "] suppressing", aId);
-    return false;
-  }
-
-  
-  
-  if (mPluginWindowsHidden) {
-    PLUGINS_LOG("[%" PRIu64 "] re-showing", aId);
-    mPluginWindowsHidden = false;
-    pluginMetricsChanged = true;
-  }
-
-  if (!lts.mPluginData.Length()) {
-    
-    if (!mCachedPluginData.Length()) {
-      PLUGINS_LOG("[%" PRIu64 "] nothing to hide", aId);
-      return false;
-    }
-
-    uintptr_t parentWidget = GetWidget()->GetWidgetKey();
-
-    
-    
-    
-    
-    mPluginsLayerOffset = nsIntPoint(0, 0);
-    mPluginsLayerVisibleRegion.SetEmpty();
-    Unused << lts.mParent->SendHideAllPlugins(parentWidget);
-    lts.mUpdatedPluginDataAvailable = false;
-    PLUGINS_LOG("[%" PRIu64 "] hide all", aId);
-  } else {
-    
-    
-    
-    LayerTransactionParent* layerTree = lts.mLayerTree;
-    Layer* contentRoot = layerTree->GetRoot();
-    if (contentRoot) {
-      nsIntPoint offset;
-      nsIntRegion visibleRegion;
-      if (contentRoot->GetVisibleRegionRelativeToRootLayer(visibleRegion,
-                                                           &offset)) {
-        
-        
-        if (!pluginMetricsChanged &&
-            mPluginsLayerVisibleRegion == visibleRegion &&
-            mPluginsLayerOffset == offset) {
-          PLUGINS_LOG("[%" PRIu64 "] no change", aId);
-          return false;
-        }
-        mPluginsLayerOffset = offset;
-        mPluginsLayerVisibleRegion = visibleRegion;
-        Unused << lts.mParent->SendUpdatePluginConfigurations(
-            LayoutDeviceIntPoint::FromUnknownPoint(offset),
-            LayoutDeviceIntRegion::FromUnknownRegion(visibleRegion),
-            lts.mPluginData);
-        lts.mUpdatedPluginDataAvailable = false;
-        PLUGINS_LOG("[%" PRIu64 "] updated", aId);
-      } else {
-        PLUGINS_LOG("[%" PRIu64 "] no visibility data", aId);
-        return false;
-      }
-    } else {
-      PLUGINS_LOG("[%" PRIu64 "] no content root", aId);
-      return false;
-    }
-  }
-
-  mLastPluginUpdateLayerTreeId = aId;
-  mCachedPluginData = lts.mPluginData.Clone();
-  return true;
-}
-
-void CompositorBridgeParent::ScheduleShowAllPluginWindows() {
-  MOZ_ASSERT(CompositorThread());
-  CompositorThread()->Dispatch(
-      NewRunnableMethod("layers::CompositorBridgeParent::ShowAllPluginWindows",
-                        this, &CompositorBridgeParent::ShowAllPluginWindows));
-}
-
-void CompositorBridgeParent::ShowAllPluginWindows() {
-  MOZ_ASSERT(!NS_IsMainThread());
-  mDeferPluginWindows = false;
-  ScheduleComposition();
-}
-
-void CompositorBridgeParent::ScheduleHideAllPluginWindows() {
-  MOZ_ASSERT(CompositorThread());
-  CompositorThread()->Dispatch(
-      NewRunnableMethod("layers::CompositorBridgeParent::HideAllPluginWindows",
-                        this, &CompositorBridgeParent::HideAllPluginWindows));
-}
-
-void CompositorBridgeParent::HideAllPluginWindows() {
-  MOZ_ASSERT(!NS_IsMainThread());
-  
-  
-  if (!mCachedPluginData.Length() || mDeferPluginWindows) {
-    return;
-  }
-
-  uintptr_t parentWidget = GetWidget()->GetWidgetKey();
-
-  mDeferPluginWindows = true;
-  mPluginWindowsHidden = true;
-
-#  if defined(XP_WIN)
-  
-  mWaitForPluginsUntil = TimeStamp::Now() + mVsyncRate;
-  Unused << SendCaptureAllPlugins(parentWidget);
-#  else
-  Unused << SendHideAllPlugins(parentWidget);
-  ScheduleComposition();
-#  endif
-}
-#endif  
-
-mozilla::ipc::IPCResult CompositorBridgeParent::RecvAllPluginsCaptured() {
-#if defined(XP_WIN)
-  mWaitForPluginsUntil = TimeStamp();
-  mHaveBlockedForPlugins = false;
-  ForceComposeToTarget(nullptr);
-  Unused << SendHideAllPlugins(GetWidget()->GetWidgetKey());
-  return IPC_OK();
-#else
-  MOZ_ASSERT_UNREACHABLE(
-      "CompositorBridgeParent::RecvAllPluginsCaptured calls unexpected.");
-  return IPC_FAIL_NO_REASON(this);
-#endif
 }
 
 int32_t RecordContentFrameTime(
