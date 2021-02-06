@@ -46,6 +46,7 @@
 #include "mozilla/dom/FormDataEvent.h"
 #include "mozilla/dom/SubmitEvent.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_prompts.h"
 #include "nsIFormSubmitObserver.h"
 #include "nsIObserverService.h"
@@ -505,9 +506,19 @@ void HTMLFormElement::UnbindFromTree(bool aNullParent) {
   ForgetCurrentSubmission();
 }
 
+static bool CanSubmit(WidgetEvent& aEvent) {
+  
+  
+  
+  
+  return !StaticPrefs::dom_forms_submit_trusted_event_only() ||
+         aEvent.IsTrusted();
+}
+
 void HTMLFormElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   aVisitor.mWantsWillHandleEvent = true;
-  if (aVisitor.mEvent->mOriginalTarget == static_cast<nsIContent*>(this)) {
+  if (aVisitor.mEvent->mOriginalTarget == static_cast<nsIContent*>(this) &&
+      CanSubmit(*aVisitor.mEvent)) {
     uint32_t msg = aVisitor.mEvent->mMessage;
     if (msg == eFormSubmit) {
       if (mGeneratingSubmit) {
@@ -544,7 +555,8 @@ void HTMLFormElement::WillHandleEvent(EventChainPostVisitor& aVisitor) {
 }
 
 nsresult HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
-  if (aVisitor.mEvent->mOriginalTarget == static_cast<nsIContent*>(this)) {
+  if (aVisitor.mEvent->mOriginalTarget == static_cast<nsIContent*>(this) &&
+      CanSubmit(*aVisitor.mEvent)) {
     EventMessage msg = aVisitor.mEvent->mMessage;
     if (msg == eFormSubmit) {
       
