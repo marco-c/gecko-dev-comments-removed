@@ -19,7 +19,6 @@ import org.mozilla.gecko.util.GeckoBundle;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -2255,7 +2254,7 @@ public class WebExtension {
 
         @AnyThread
         @Nullable
-        default GeckoResult<WebExtension.Download> onDownload(@NonNull WebExtension source, @NonNull DownloadRequest request) {
+        default GeckoResult<WebExtension.DownloadInitData> onDownload(@NonNull WebExtension source, @NonNull DownloadRequest request) {
             return null;
         }
     }
@@ -2299,7 +2298,7 @@ public class WebExtension {
 
 
 
-        public final @NonNull int id;
+        public final int id;
 
         
 
@@ -2311,7 +2310,7 @@ public class WebExtension {
 
          void setDelegate(final Delegate delegate) { }
 
-         GeckoResult<Void> update(final DownloadInfo data) {
+         GeckoResult<Void> update(final Info data) {
             return null;
         }
 
@@ -2342,55 +2341,101 @@ public class WebExtension {
             }
         }
 
-         interface DownloadInfo {
-            @IntDef(flag = true, value = { IN_PROGRESS, INTERRUPTED, COMPLETE })
-             @interface DownloadStatusFlags {};
+        
+
+
+        @IntDef({STATE_IN_PROGRESS, STATE_INTERRUPTED, STATE_COMPLETE})
+        public @interface DownloadState {}
+
+        
+
+
+        public static final int STATE_IN_PROGRESS = 0;
+
+        
+
+
+        public static final int STATE_INTERRUPTED = 1;
+
+        
+
+
+        public static final int STATE_COMPLETE = 2;
+
+        
+
+
+        @IntDef({
+                INTERRUPT_REASON_NO_INTERRUPT,
+                INTERRUPT_REASON_FILE_FAILED,
+                INTERRUPT_REASON_FILE_ACCESS_DENIED,
+                INTERRUPT_REASON_FILE_NO_SPACE,
+                INTERRUPT_REASON_FILE_NAME_TOO_LONG,
+                INTERRUPT_REASON_FILE_TOO_LARGE,
+                INTERRUPT_REASON_FILE_VIRUS_INFECTED,
+                INTERRUPT_REASON_FILE_TRANSIENT_ERROR,
+                INTERRUPT_REASON_FILE_BLOCKED,
+                INTERRUPT_REASON_FILE_SECURITY_CHECK_FAILED,
+                INTERRUPT_REASON_FILE_TOO_SHORT,
+                INTERRUPT_REASON_NETWORK_FAILED,
+                INTERRUPT_REASON_NETWORK_TIMEOUT,
+                INTERRUPT_REASON_NETWORK_DISCONNECTED,
+                INTERRUPT_REASON_NETWORK_SERVER_DOWN,
+                INTERRUPT_REASON_NETWORK_INVALID_REQUEST,
+                INTERRUPT_REASON_SERVER_FAILED,
+                INTERRUPT_REASON_SERVER_NO_RANGE,
+                INTERRUPT_REASON_SERVER_BAD_CONTENT,
+                INTERRUPT_REASON_SERVER_UNAUTHORIZED,
+                INTERRUPT_REASON_SERVER_CERT_PROBLEM,
+                INTERRUPT_REASON_SERVER_FORBIDDEN,
+                INTERRUPT_REASON_USER_CANCELED,
+                INTERRUPT_REASON_USER_SHUTDOWN,
+                INTERRUPT_REASON_CRASH
+        })
+        public @interface DownloadInterruptReason {}
+
+        
+        public static final int INTERRUPT_REASON_NO_INTERRUPT = 0;
+        public static final int INTERRUPT_REASON_FILE_FAILED = 1;
+        public static final int INTERRUPT_REASON_FILE_ACCESS_DENIED = 2;
+        public static final int INTERRUPT_REASON_FILE_NO_SPACE = 3;
+        public static final int INTERRUPT_REASON_FILE_NAME_TOO_LONG = 4;
+        public static final int INTERRUPT_REASON_FILE_TOO_LARGE = 5;
+        public static final int INTERRUPT_REASON_FILE_VIRUS_INFECTED = 6;
+        public static final int INTERRUPT_REASON_FILE_TRANSIENT_ERROR = 7;
+        public static final int INTERRUPT_REASON_FILE_BLOCKED = 8;
+        public static final int INTERRUPT_REASON_FILE_SECURITY_CHECK_FAILED = 9;
+        public static final int INTERRUPT_REASON_FILE_TOO_SHORT = 10;
+        
+        public static final int INTERRUPT_REASON_NETWORK_FAILED = 11;
+        public static final int INTERRUPT_REASON_NETWORK_TIMEOUT = 12;
+        public static final int INTERRUPT_REASON_NETWORK_DISCONNECTED = 13;
+        public static final int INTERRUPT_REASON_NETWORK_SERVER_DOWN = 14;
+        public static final int INTERRUPT_REASON_NETWORK_INVALID_REQUEST = 15;
+        
+        public static final int INTERRUPT_REASON_SERVER_FAILED = 16;
+        public static final int INTERRUPT_REASON_SERVER_NO_RANGE = 17;
+        public static final int INTERRUPT_REASON_SERVER_BAD_CONTENT = 18;
+        public static final int INTERRUPT_REASON_SERVER_UNAUTHORIZED = 19;
+        public static final int INTERRUPT_REASON_SERVER_CERT_PROBLEM = 20;
+        public static final int INTERRUPT_REASON_SERVER_FORBIDDEN = 21;
+        
+        public static final int INTERRUPT_REASON_USER_CANCELED = 22;
+        public static final int INTERRUPT_REASON_USER_SHUTDOWN = 23;
+        
+        public static final int INTERRUPT_REASON_CRASH = 24;
+
+        
+
+
+
+        public interface Info {
 
             
 
 
-             static final int IN_PROGRESS = 0;
 
-            
-
-
-             static final int INTERRUPTED = 1;
-
-            
-
-
-             static final int COMPLETE = 1 << 1;
-
-            
-
-
-
-
-            default boolean paused() {
-                return false;
-            }
-
-            
-
-
-
-
-            default Date estimatedEndTime() {
-                return null;
-            }
-
-            
-
-
-
-            default boolean canResume() {
-                return false;
-            }
-
-            
-
-
-
+            @UiThread
             default long bytesReceived() {
                 return 0;
             }
@@ -2399,24 +2444,8 @@ public class WebExtension {
 
 
 
-
-            default long totalBytes() {
-                return 0;
-            }
-
-            
-
-
-
-
-            default Date endTime() {
-                return null;
-            }
-
-            
-
-
-            default boolean fileExists() {
+            @UiThread
+            default boolean canResume() {
                 return false;
             }
 
@@ -2424,9 +2453,144 @@ public class WebExtension {
 
 
 
-            default @DownloadStatusFlags int status() {
-                return 0;
+            @Nullable
+            @UiThread
+            default Long endTime() {
+                return null;
             }
+
+            
+
+
+            @Nullable
+            @UiThread
+            default @DownloadInterruptReason Integer error() {
+                return null;
+            }
+
+            
+
+
+
+            @Nullable
+            @UiThread
+            default Long estimatedEndTime() {
+                return null;
+            }
+
+            
+
+
+            @UiThread
+            default boolean fileExists() {
+                return false;
+            }
+
+            
+
+
+            @NonNull
+            @UiThread
+            default String filename() {
+                return "";
+            }
+
+            
+
+
+
+            @UiThread
+            default long fileSize() {
+                return -1;
+            }
+
+            
+
+
+            @NonNull
+            @UiThread
+            default String mime() {
+                return "";
+            }
+
+            
+
+
+
+
+            @UiThread
+            default boolean paused() {
+                return false;
+            }
+
+            
+
+
+            @NonNull
+            @UiThread
+            default String referrer() {
+                return "";
+            }
+
+            
+
+
+            @UiThread
+            default long startTime() {
+                return -1;
+            }
+
+            
+
+
+
+            @UiThread
+            default @DownloadState int state() {
+                return STATE_IN_PROGRESS;
+            }
+
+            
+
+
+
+
+            @UiThread
+            default long totalBytes() {
+                return -1;
+            }
+        }
+
+        @NonNull
+        @UiThread
+         static GeckoBundle downloadInfoToBundle(final @NonNull Info data) {
+            GeckoBundle dataBundle = new GeckoBundle();
+
+            dataBundle.putLong("bytesReceived", data.bytesReceived());
+            dataBundle.putBoolean("canResume", data.canResume());
+            dataBundle.putBoolean("exists", data.fileExists());
+            dataBundle.putString("filename", data.filename());
+            dataBundle.putLong("fileSize", data.fileSize());
+            dataBundle.putString("mime", data.mime());
+            dataBundle.putBoolean("paused", data.paused());
+            dataBundle.putString("referrer", data.referrer());
+            dataBundle.putString("startTime", String.valueOf(data.startTime()));
+            dataBundle.putInt("state", data.state());
+            dataBundle.putLong("totalBytes", data.totalBytes());
+
+            Long endTime = data.endTime();
+            if (endTime != null) {
+                dataBundle.putString("endTime", endTime.toString());
+            }
+            Integer error = data.error();
+            if (error != null) {
+                dataBundle.putInt("error", error);
+            }
+            Long estimatedEndTime = data.estimatedEndTime();
+            if (estimatedEndTime != null) {
+                dataBundle.putString("estimatedEndTime", estimatedEndTime.toString());
+            }
+
+            return dataBundle;
         }
     }
 
@@ -2605,6 +2769,19 @@ public class WebExtension {
              DownloadRequest build() {
                 return new DownloadRequest(this);
             }
+        }
+    }
+
+    
+
+
+    public static class DownloadInitData {
+        @NonNull public final WebExtension.Download download;
+        @NonNull public final Download.Info initData;
+
+        public DownloadInitData(final Download download, final Download.Info initData) {
+            this.download = download;
+            this.initData = initData;
         }
     }
 }
