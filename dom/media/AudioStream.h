@@ -21,10 +21,6 @@
 #  include "nsThreadUtils.h"
 #  include "WavDumper.h"
 
-#  if defined(XP_WIN)
-#    include "mozilla/audio/AudioNotificationReceiver.h"
-#  endif
-
 namespace soundtouch {
 class MOZ_EXPORT SoundTouch;
 }
@@ -174,9 +170,6 @@ class AudioBufferWriter : private AudioBufferCursor {
 
 
 class AudioStream final
-#  if defined(XP_WIN)
-    : public audio::DeviceChangeListener
-#  endif
 {
   virtual ~AudioStream();
 
@@ -238,11 +231,6 @@ class AudioStream final
 
   
   void Resume();
-
-#  if defined(XP_WIN)
-  
-  void ResetDefaultDevice() override;
-#  endif
 
   
   
