@@ -48,6 +48,11 @@ class PanelActionBase {
     this.tabContext.on("tab-select", (evt, tab) => {
       this.updateOnChange(tab);
     });
+
+    
+    
+    
+    this.activeTabForPreload = null;
   }
 
   onShutdown() {
@@ -157,6 +162,77 @@ class PanelActionBase {
     }
   }
 
+  
+
+
+
+
+
+
+
+  getPopupUrl(tab) {
+    if (!this.isShownForTab(tab)) {
+      return undefined;
+    }
+    let popupUrl = this.getProperty(tab, "popup");
+    return popupUrl;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  setActiveTabForPreload(tab = null) {
+    let oldTab = this.activeTabForPreload;
+    if (oldTab === tab) {
+      return;
+    }
+    this.activeTabForPreload = tab;
+    if (tab) {
+      this.extension.tabManager.addActiveTabPermission(tab);
+    }
+    if (oldTab) {
+      this.extension.tabManager.revokeActiveTabPermission(oldTab);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  triggerClickOrPopup(tab, clickInfo = undefined) {
+    if (!this.isShownForTab(tab)) {
+      return null;
+    }
+
+    
+    
+    this.setActiveTabForPreload(null);
+    this.extension.tabManager.addActiveTabPermission(tab);
+
+    let popupUrl = this.getProperty(tab, "popup");
+    
+    
+    
+    if (!popupUrl) {
+      this.dispatchClick(tab, clickInfo);
+    }
+    return popupUrl;
+  }
+
   api(context) {
     let { extension } = context;
     return {
@@ -235,6 +311,28 @@ class PanelActionBase {
 
   getTargetFromDetails({ tabId, windowId }) {
     return null;
+  }
+
+  
+
+
+
+
+
+
+
+
+  dispatchClick(tab, clickInfo) {}
+
+  
+
+
+
+
+
+
+  isShownForTab(tab) {
+    return false;
   }
 }
 
@@ -462,6 +560,10 @@ class BrowserActionBase extends PanelActionBase {
     }
     values.badgeDefaultColor = result;
     return result;
+  }
+
+  isShownForTab(tab) {
+    return this.getProperty(tab, "enabled");
   }
 
   api(context) {
