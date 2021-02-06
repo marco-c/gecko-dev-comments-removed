@@ -263,10 +263,12 @@ using namespace mozilla::a11y;
   
   AccessibleOrProxy parentAcc = [parent geckoAccessible];
   if (!parentAcc.IsNull()) {
-    mozAccessible* directGrandparent =
-        GetNativeFromGeckoAccessible(parentAcc.Parent());
-    if ([directGrandparent isKindOfClass:[MOXWebAreaAccessible class]]) {
-      return [parent moxIgnoreWithParent:directGrandparent];
+    AccessibleOrProxy grandparentAcc = parentAcc.Parent();
+    if (mozAccessible* directGrandparent =
+            GetNativeFromGeckoAccessible(grandparentAcc)) {
+      if ([directGrandparent isKindOfClass:[MOXWebAreaAccessible class]]) {
+        return [parent moxIgnoreWithParent:directGrandparent];
+      }
     }
   }
 
