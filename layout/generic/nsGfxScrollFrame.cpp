@@ -2606,12 +2606,26 @@ static void RemoveDisplayPortCallback(nsITimer* aTimer, void* aClosure) {
   
   
   
-  DisplayPortUtils::RemoveDisplayPort(helper->mOuter->GetContent());
+
+  nsIContent* content = helper->mOuter->GetContent();
+
+  if (ScrollFrameHelper::ShouldActivateAllScrollFrames()) {
+    
+    
+    MOZ_ASSERT(!content->GetProperty(nsGkAtoms::MinimalDisplayPort));
+    content->SetProperty(nsGkAtoms::MinimalDisplayPort,
+                         reinterpret_cast<void*>(true));
+  } else {
+    content->RemoveProperty(nsGkAtoms::MinimalDisplayPort);
+    DisplayPortUtils::RemoveDisplayPort(content);
+    
+    
+    helper->mScrollableByAPZ = false;
+  }
+
   DisplayPortUtils::ExpireDisplayPortOnAsyncScrollableAncestor(helper->mOuter);
+
   helper->mOuter->SchedulePaint();
-  
-  
-  helper->mScrollableByAPZ = false;
 }
 
 void ScrollFrameHelper::MarkEverScrolled() {
@@ -2664,6 +2678,10 @@ bool ScrollFrameHelper::AllowDisplayPortExpiration() {
     return false;
   }
   if (mIsRoot && mOuter->PresContext()->IsRoot()) {
+    return false;
+  }
+  if (ShouldActivateAllScrollFrames() &&
+      mOuter->GetContent()->GetProperty(nsGkAtoms::MinimalDisplayPort)) {
     return false;
   }
   return true;
