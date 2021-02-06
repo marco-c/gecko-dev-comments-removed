@@ -417,10 +417,6 @@ class FunctionBox : public SuspendableContext {
   bool isStandalone : 1;
 
   
-  
-  bool hasNonSyntacticEnclosingScopeForStandalone : 1;
-
-  
 
   FunctionBox(JSContext* cx, SourceExtent extent, CompilationStencil& stencil,
               CompilationState& compilationState, Directives directives,

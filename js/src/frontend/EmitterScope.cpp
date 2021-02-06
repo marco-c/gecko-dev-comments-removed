@@ -492,7 +492,9 @@ bool EmitterScope::enterFunction(BytecodeEmitter* bce, FunctionBox* funbox) {
   } else if (funbox->isStandalone) {
     
     
-    if (funbox->hasNonSyntacticEnclosingScopeForStandalone) {
+    if (bce->stencil.input.target ==
+        CompilationInput::CompilationTarget::
+            StandaloneFunctionInNonSyntacticScope) {
       fallbackFreeNameLocation_ = Some(NameLocation::Dynamic());
     } else {
       fallbackFreeNameLocation_ = Some(NameLocation::Global(BindingKind::Var));
