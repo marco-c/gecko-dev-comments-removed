@@ -225,7 +225,16 @@ function waitForSelectedLocation(dbg, line, column) {
   });
 }
 
-function waitForSelectedSource(dbg, url) {
+
+
+
+
+
+
+
+
+
+function waitForSelectedSource(dbg, sourceOrUrl) {
   const {
     getSelectedSourceWithContent,
     hasSymbols,
@@ -240,13 +249,18 @@ function waitForSelectedSource(dbg, url) {
         return false;
       }
 
-      if (!url) {
-        return true;
-      }
-
-      const newSource = findSource(dbg, url, { silent: true });
-      if (newSource.id != source.id) {
-        return false;
+      if (sourceOrUrl) {
+        
+        
+        if (typeof sourceOrUrl == "string") {
+          if (!source.url.includes(sourceOrUrl)) {
+            return false;
+          }
+        } else {
+          if (source.id != sourceOrUrl.id) {
+            return false;
+          }
+        }
       }
 
       return hasSymbols(source) && getBreakableLines(source.id);

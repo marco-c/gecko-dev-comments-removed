@@ -33,7 +33,7 @@ add_task(async function() {
   const selected = waitForDispatch(dbg, "SET_SELECTED_LOCATION");
   await clickElement(dbg, "sourceNode", 5);
   await selected;
-  await waitForSelectedSource(dbg);
+  await waitForSelectedSource(dbg, "nested-source.js");
 
   
   await waitForElementWithSelector(dbg, ".sources-list .focused");
@@ -45,7 +45,6 @@ add_task(async function() {
   ok(fourthNode.classList.contains("focused"), "4th node is focused");
   ok(selectedSource.includes("nested-source.js"), "nested-source is selected");
   await assertNodeIsFocused(dbg, 5);
-  await waitForSelectedSource(dbg, "nested-source");
 
   
   SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
