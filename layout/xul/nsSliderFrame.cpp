@@ -32,6 +32,7 @@
 #include "nsContentUtils.h"
 #include "nsLayoutUtils.h"
 #include "nsDisplayList.h"
+#include "nsDeviceContext.h"
 #include "nsRefreshDriver.h"     
 #include "mozilla/Assertions.h"  
 #include "mozilla/DisplayPortUtils.h"
@@ -302,6 +303,14 @@ void nsDisplaySliderMarks::PaintMarks(nsDisplayListBuilder* aDisplayListBuilder,
 
   nsPoint refPoint = aDisplayListBuilder->ToReferenceFrame(mFrame);
 
+  
+  
+  
+  float increasePixels = sliderFrame->PresContext()
+                             ->DeviceContext()
+                             ->GetDesktopToDeviceScale()
+                             .scale;
+
   nsTArray<uint32_t>& marks = window->GetScrollMarks();
   for (uint32_t m = 0; m < marks.Length(); m++) {
     uint32_t markValue = marks[m];
@@ -319,17 +328,15 @@ void nsDisplaySliderMarks::PaintMarks(nsDisplayListBuilder* aDisplayListBuilder,
     markRect.y +=
         (nscoord)((double)markValue / (maxPos - minPos) * sliderRect.height);
 
-    
-    
     if (drawTarget) {
       Rect devPixelRect =
           NSRectToSnappedRect(markRect, appUnitsPerDevPixel, *drawTarget);
-      devPixelRect.Inflate(0, 2);
+      devPixelRect.Inflate(0, increasePixels);
       drawTarget->FillRect(devPixelRect, ColorPattern(fillColor));
     } else {
       LayoutDeviceIntRect dRect = LayoutDeviceIntRect::FromAppUnitsToNearest(
           markRect, appUnitsPerDevPixel);
-      dRect.Inflate(0, 2);
+      dRect.Inflate(0, increasePixels);
       wr::LayoutRect layoutRect = wr::ToLayoutRect(dRect);
       aBuilder->PushRect(layoutRect, layoutRect, BackfaceIsHidden(),
                          wr::ToColorF(fillColor));
