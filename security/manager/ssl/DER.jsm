@@ -29,6 +29,11 @@
 
 
 
+
+
+
+
+
 const UNIVERSAL = 0 << 6;
 const CONSTRUCTED = 1 << 5;
 const CONTEXT_SPECIFIC = 2 << 6;
@@ -94,10 +99,6 @@ class DERDecoder {
     }
     if (bytes.length > 65539) {
       throw new Error(ERROR_UNSUPPORTED_LENGTH);
-    }
-    
-    if (bytes.some(b => !Number.isInteger(b) || b < 0 || b > 255)) {
-      throw new Error(ERROR_INVALID_INPUT);
     }
     this._bytes = bytes;
     this._cursor = 0;
@@ -189,10 +190,11 @@ class DERDecoder {
     if (length < 0) {
       throw new Error(ERROR_INVALID_LENGTH);
     }
-    let bytes = [];
-    for (let i = 0; i < length; i++) {
-      bytes.push(this.readByte());
+    if (this._cursor + length > this._bytes.length) {
+      throw new Error(ERROR_DATA_TRUNCATED);
     }
+    let bytes = this._bytes.slice(this._cursor, this._cursor + length);
+    this._cursor += length;
     return bytes;
   }
 
