@@ -14,7 +14,6 @@
 #ifndef mozilla_dom_EventSource_h
 #define mozilla_dom_EventSource_h
 
-#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "nsDeque.h"
@@ -91,11 +90,16 @@ class EventSource final : public DOMEventTargetHelper {
 
   
   
-  RefPtr<EventSourceImpl> mESImpl;
+  EventSourceImpl* mImpl;
   nsString mOriginalURL;
-  Atomic<uint32_t> mReadyState;
-  const bool mWithCredentials;
-  const bool mIsMainThread;
+  uint16_t mReadyState;
+  bool mWithCredentials;
+  bool mIsMainThread;
+  
+  bool mKeepingAlive;
+
+  void UpdateMustKeepAlive();
+  void UpdateDontKeepAlive();
 };
 
 }  
