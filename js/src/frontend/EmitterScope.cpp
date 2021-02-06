@@ -49,7 +49,8 @@ bool EmitterScope::checkEnvironmentChainLength(BytecodeEmitter* bce) {
   if (EmitterScope* emitterScope = enclosing(&bce)) {
     hops = emitterScope->environmentChainLength_;
   } else if (bce->stencil.input.enclosingScope) {
-    hops = bce->stencil.input.enclosingScope->environmentChainLength();
+    hops =
+        bce->compilationState.scopeContext.enclosingScopeEnvironmentChainLength;
   } else {
     
     

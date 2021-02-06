@@ -78,6 +78,8 @@ struct ScopeContext {
   
   mozilla::Maybe<EnclosingLexicalBindingCache> enclosingLexicalBindingCache_;
 
+  uint32_t enclosingScopeEnvironmentChainLength = 0;
+
   
   
   
