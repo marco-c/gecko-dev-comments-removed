@@ -191,7 +191,7 @@ ImgDrawResult ImageResource::GetImageContainerImpl(
       
       container = RefPtr<layers::ImageContainer>(entry->mContainer);
       break;
-    } else if (!entry->mContainer) {
+    } else if (entry->mContainer.IsDead()) {
       
       mImageContainers.RemoveElementAt(i);
     }
