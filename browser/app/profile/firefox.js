@@ -1344,7 +1344,11 @@ pref("browser.menu.showCharacterEncoding", "chrome://browser/locale/browser.prop
 
 pref("prompts.defaultModalType", 3);
 
-pref("browser.topsites.useRemoteSetting", false);
+#ifdef NIGHTLY_BUILD
+  pref("browser.topsites.useRemoteSetting", true);
+#else
+  pref("browser.topsites.useRemoteSetting", false);
+#endif
 
 
 
