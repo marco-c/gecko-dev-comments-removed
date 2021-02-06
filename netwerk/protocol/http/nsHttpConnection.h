@@ -73,13 +73,6 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   nsHttpConnection();
 
-  void SetFastOpen(bool aFastOpen);
-  
-  
-  
-  nsAHttpTransaction* CloseConnectionFastOpenTakesTooLongOrError(
-      bool aCloseocketTransport);
-
   
   
 
@@ -165,12 +158,8 @@ class nsHttpConnection final : public HttpConnectionBase,
   
   bool NoTraffic() {
     return mTrafficStamp &&
-           (mTrafficCount == (mTotalBytesWritten + mTotalBytesRead)) &&
-           !mFastOpen;
+           (mTrafficCount == (mTotalBytesWritten + mTotalBytesRead));
   }
-
-  void SetFastOpenStatus(uint8_t tfoStatus);
-  uint8_t GetFastOpenStatus() { return mFastOpenStatus; }
 
   
   
@@ -338,14 +327,6 @@ class nsHttpConnection final : public HttpConnectionBase,
   bool mEarlyDataNegotiated;  
   nsCString mEarlyNegotiatedALPN;
   bool mDid0RTTSpdy;
-
-  bool mFastOpen;
-  uint8_t mFastOpenStatus;
-
-  bool mForceSendDuringFastOpenPending;
-  bool mReceivedSocketWouldBlockDuringFastOpen;
-  bool mCheckNetworkStallsWithTFO;
-  PRIntervalTime mLastRequestBytesSentTime;
 
  private:
   bool mThroughCaptivePortal;

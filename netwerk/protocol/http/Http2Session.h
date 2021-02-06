@@ -269,7 +269,6 @@ class Http2Session final : public ASpdySession,
                                             uint32_t*, bool*) final;
   [[nodiscard]] bool Do0RTT() final { return true; }
   [[nodiscard]] nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) final;
-  void SetFastOpenStatus(uint8_t aStatus) final;
 
   
   void Received421(nsHttpConnectionInfo* ci);
@@ -571,9 +570,6 @@ class Http2Session final : public ASpdySession,
   
   RefPtr<nsHttpTransaction> mFirstHttpTransaction;
   bool mTlsHandshakeFinished;
-
-  bool mCheckNetworkStallsWithTFO;
-  PRIntervalTime mLastRequestBytesSentTime;
 
   bool mPeerFailedHandshake;
 

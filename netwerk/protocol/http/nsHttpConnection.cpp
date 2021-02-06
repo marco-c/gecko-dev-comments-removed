@@ -40,7 +40,6 @@
 #include "sslt.h"
 #include "NSSErrorsService.h"
 #include "TunnelUtils.h"
-#include "TCPFastOpenLayer.h"
 
 namespace mozilla {
 namespace net {
@@ -95,13 +94,7 @@ nsHttpConnection::nsHttpConnection()
       mWaitingFor0RTTResponse(false),
       mContentBytesWritten0RTT(0),
       mEarlyDataNegotiated(false),
-      mDid0RTTSpdy(false),
-      mFastOpen(false),
-      mFastOpenStatus(TFO_NOT_SET),
-      mForceSendDuringFastOpenPending(false),
-      mReceivedSocketWouldBlockDuringFastOpen(false),
-      mCheckNetworkStallsWithTFO(false),
-      mLastRequestBytesSentTime(0) {
+      mDid0RTTSpdy(false) {
   LOG(("Creating nsHttpConnection @%p\n", this));
 
   
@@ -163,18 +156,6 @@ nsHttpConnection::~nsHttpConnection() {
   if (mForceSendTimer) {
     mForceSendTimer->Cancel();
     mForceSendTimer = nullptr;
-  }
-
-  if ((mFastOpenStatus != TFO_FAILED) && (mFastOpenStatus != TFO_HTTP) &&
-      (((mFastOpenStatus > TFO_DISABLED_CONNECT) &&
-        (mFastOpenStatus < TFO_BACKUP_CONN)) ||
-       gHttpHandler->UseFastOpen())) {
-    
-    
-    
-    
-    
-    Telemetry::Accumulate(Telemetry::TCP_FAST_OPEN_3, mFastOpenStatus);
   }
 }
 
@@ -536,9 +517,6 @@ bool nsHttpConnection::EnsureNPNComplete(nsresult& aOut0RTTWriteHandshakeValue,
            "bytes during 0RTT",
            this, aOut0RTTBytesWritten));
       mContentBytesWritten0RTT += aOut0RTTBytesWritten;
-      if (mSocketOutCondition == NS_BASE_STREAM_WOULD_BLOCK) {
-        mReceivedSocketWouldBlockDuringFastOpen = true;
-      }
     }
 
     rv = ssl->DriveHandshake();
@@ -610,9 +588,6 @@ bool nsHttpConnection::EnsureNPNComplete(nsresult& aOut0RTTWriteHandshakeValue,
       if (mTransaction->QueryNullTransaction() &&
           (mBootstrappedTimings.secureConnectionStart.IsNull() ||
            mBootstrappedTimings.tcpConnectEnd.IsNull())) {
-        
-        
-        
         mBootstrappedTimings.secureConnectionStart =
             mTransaction->QueryNullTransaction()->GetSecureConnectionStart();
         mBootstrappedTimings.tcpConnectEnd =
@@ -655,9 +630,6 @@ npnComplete:
   if (mTransaction->QueryNullTransaction() &&
       (mBootstrappedTimings.secureConnectionStart.IsNull() ||
        mBootstrappedTimings.tcpConnectEnd.IsNull())) {
-    
-    
-    
     mBootstrappedTimings.secureConnectionStart =
         mTransaction->QueryNullTransaction()->GetSecureConnectionStart();
     mBootstrappedTimings.tcpConnectEnd =
@@ -717,10 +689,7 @@ nsresult nsHttpConnection::Activate(nsAHttpTransaction* trans, uint32_t caps,
         caps));
 
   if (!mExperienced && !trans->IsNullTransaction()) {
-    
-    
-    
-    if (!mFastOpen && mNPNComplete) {
+    if (mNPNComplete) {
       mExperienced = true;
     }
     if (mBootstrappedTimingsSet) {
@@ -748,21 +717,6 @@ nsresult nsHttpConnection::Activate(nsAHttpTransaction* trans, uint32_t caps,
   NS_ENSURE_ARG_POINTER(trans);
   NS_ENSURE_TRUE(!mTransaction, NS_ERROR_IN_PROGRESS);
 
-  
-  
-  if (mNPNComplete && (mFastOpenStatus == TFO_DATA_SENT) &&
-      gHttpHandler
-          ->CheckIfConnectionIsStalledOnlyIfIdleForThisAmountOfSeconds() &&
-      IdleTime() >=
-          gHttpHandler
-              ->CheckIfConnectionIsStalledOnlyIfIdleForThisAmountOfSeconds()) {
-    
-    
-    mCheckNetworkStallsWithTFO = true;
-    
-    
-    mLastRequestBytesSentTime = 0;
-  }
   
   mLastWriteTime = mLastReadTime = PR_IntervalNow();
 
@@ -1512,20 +1466,6 @@ uint32_t nsHttpConnection::ReadTimeoutTick(PRIntervalTime now) {
     nextTickAfter = std::max(nextTickAfter, 1U);
   }
 
-  
-  if (mCheckNetworkStallsWithTFO && mLastRequestBytesSentTime) {
-    PRIntervalTime initialResponseDelta = now - mLastRequestBytesSentTime;
-    if (initialResponseDelta >= gHttpHandler->FastOpenStallsTimeout()) {
-      gHttpHandler->IncrementFastOpenStallsCounter();
-      mCheckNetworkStallsWithTFO = false;
-    } else {
-      uint32_t next =
-          PR_IntervalToSeconds(gHttpHandler->FastOpenStallsTimeout()) -
-          PR_IntervalToSeconds(initialResponseDelta);
-      nextTickAfter = std::min(nextTickAfter, next);
-    }
-  }
-
   if (!mNPNComplete) {
     
     
@@ -1610,12 +1550,8 @@ nsresult nsHttpConnection::PushBack(const char* data, uint32_t length) {
 
 class HttpConnectionForceIO : public Runnable {
  public:
-  HttpConnectionForceIO(nsHttpConnection* aConn, bool doRecv,
-                        bool isFastOpenForce)
-      : Runnable("net::HttpConnectionForceIO"),
-        mConn(aConn),
-        mDoRecv(doRecv),
-        mIsFastOpenForce(isFastOpenForce) {}
+  HttpConnectionForceIO(nsHttpConnection* aConn, bool doRecv)
+      : Runnable("net::HttpConnectionForceIO"), mConn(aConn), mDoRecv(doRecv) {}
 
   NS_IMETHOD Run() override {
     MOZ_ASSERT(OnSocketThread(), "not on socket thread");
@@ -1625,18 +1561,8 @@ class HttpConnectionForceIO : public Runnable {
       return mConn->OnInputStreamReady(mConn->mSocketIn);
     }
 
-    
-    
-    
-    if (mIsFastOpenForce && !mConn->mWaitingFor0RTTResponse) {
-      
-      
-      return NS_OK;
-    }
-    if (!mIsFastOpenForce) {
-      MOZ_ASSERT(mConn->mForceSendPending);
-      mConn->mForceSendPending = false;
-    }
+    MOZ_ASSERT(mConn->mForceSendPending);
+    mConn->mForceSendPending = false;
 
     if (!mConn->mSocketOut) {
       return NS_OK;
@@ -1647,7 +1573,6 @@ class HttpConnectionForceIO : public Runnable {
  private:
   RefPtr<nsHttpConnection> mConn;
   bool mDoRecv;
-  bool mIsFastOpenForce;
 };
 
 nsresult nsHttpConnection::ResumeSend() {
@@ -1656,21 +1581,7 @@ nsresult nsHttpConnection::ResumeSend() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
   if (mSocketOut) {
-    nsresult rv = mSocketOut->AsyncWait(this, 0, 0, nullptr);
-    LOG(
-        ("nsHttpConnection::ResumeSend [this=%p] "
-         "mWaitingFor0RTTResponse=%d mForceSendDuringFastOpenPending=%d "
-         "mReceivedSocketWouldBlockDuringFastOpen=%d\n",
-         this, mWaitingFor0RTTResponse, mForceSendDuringFastOpenPending,
-         mReceivedSocketWouldBlockDuringFastOpen));
-    if (mWaitingFor0RTTResponse && !mForceSendDuringFastOpenPending &&
-        !mReceivedSocketWouldBlockDuringFastOpen && NS_SUCCEEDED(rv)) {
-      
-      
-      mForceSendDuringFastOpenPending = true;
-      NS_DispatchToCurrentThread(new HttpConnectionForceIO(this, false, true));
-    }
-    return rv;
+    return mSocketOut->AsyncWait(this, 0, 0, nullptr);
   }
 
   MOZ_ASSERT_UNREACHABLE("no socket output stream");
@@ -1681,14 +1592,6 @@ nsresult nsHttpConnection::ResumeRecv() {
   LOG(("nsHttpConnection::ResumeRecv [this=%p]\n", this));
 
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-
-  if (mFastOpen) {
-    LOG(
-        ("nsHttpConnection::ResumeRecv - do not waiting for read during "
-         "fast open! [this=%p]\n",
-         this));
-    return NS_OK;
-  }
 
   
   
@@ -1714,7 +1617,7 @@ void nsHttpConnection::ForceSendIO(nsITimer* aTimer, void* aClosure) {
   nsHttpConnection* self = static_cast<nsHttpConnection*>(aClosure);
   MOZ_ASSERT(aTimer == self->mForceSendTimer);
   self->mForceSendTimer = nullptr;
-  NS_DispatchToCurrentThread(new HttpConnectionForceIO(self, false, false));
+  NS_DispatchToCurrentThread(new HttpConnectionForceIO(self, false));
 }
 
 nsresult nsHttpConnection::MaybeForceSendIO() {
@@ -1742,8 +1645,7 @@ nsresult nsHttpConnection::ForceRecv() {
   LOG(("nsHttpConnection::ForceRecv [this=%p]\n", this));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  return NS_DispatchToCurrentThread(
-      new HttpConnectionForceIO(this, true, false));
+  return NS_DispatchToCurrentThread(new HttpConnectionForceIO(this, true));
 }
 
 
@@ -1907,8 +1809,6 @@ nsresult nsHttpConnection::OnSocketWritable() {
   const uint32_t maxWriteAttempts = 128;
   uint32_t writeAttempts = 0;
 
-  mForceSendDuringFastOpenPending = false;
-
   if (mTransactionCaps & NS_HTTP_CONNECT_ONLY) {
     if (!mCompletedProxyConnect && !mProxyConnectStream) {
       
@@ -1986,7 +1886,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
       transactionBytes = 0;
     }
 
-    if (!again && (mFastOpen || mWaitingFor0RTTResponse)) {
+    if (!again && mWaitingFor0RTTResponse) {
       
       rv = mSocketOut->AsyncWait(this, 0, 0, nullptr);
     }
@@ -1995,7 +1895,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
       
       if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
         rv = NS_OK;
-        if (mFastOpen || mWaitingFor0RTTResponse) {
+        if (mWaitingFor0RTTResponse) {
           
           rv = mSocketOut->AsyncWait(this, 0, 0, nullptr);
         }
@@ -2016,7 +1916,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
     } else if (!transactionBytes) {
       rv = NS_OK;
 
-      if (mWaitingFor0RTTResponse || mFastOpen) {
+      if (mWaitingFor0RTTResponse) {
         
         rv = mSocketOut->AsyncWait(this, 0, 0, nullptr);
       } else if (mTransaction) {  
@@ -2029,9 +1929,6 @@ nsresult nsHttpConnection::OnSocketWritable() {
         
         mTransaction->OnTransportStatus(mSocketTransport,
                                         NS_NET_STATUS_WAITING_FOR, 0);
-        if (mCheckNetworkStallsWithTFO) {
-          mLastRequestBytesSentTime = PR_IntervalNow();
-        }
 
         rv = ResumeRecv();  
       }
@@ -2070,8 +1967,6 @@ nsresult nsHttpConnection::OnWriteSegment(char* buf, uint32_t count,
     mSocketInCondition = NS_BASE_STREAM_CLOSED;
   else
     mSocketInCondition = NS_OK;  
-
-  mCheckNetworkStallsWithTFO = false;
 
   return mSocketInCondition;
 }
@@ -2568,94 +2463,6 @@ void nsHttpConnection::CheckForTraffic(bool check) {
   }
 }
 
-nsAHttpTransaction*
-nsHttpConnection::CloseConnectionFastOpenTakesTooLongOrError(
-    bool aCloseSocketTransport) {
-  MOZ_ASSERT(!mCurrentBytesRead);
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-
-  mFastOpenStatus = TFO_FAILED;
-  RefPtr<nsAHttpTransaction> trans;
-
-  DontReuse();
-
-  if (mUsingSpdyVersion != SpdyVersion::NONE) {
-    
-    
-    
-    mUsingSpdyVersion = SpdyVersion::NONE;
-    if (mSpdySession) {
-      mTransaction->SetFastOpenStatus(TFO_FAILED);
-      Unused << mSpdySession->Finish0RTT(true, true);
-    }
-    mSpdySession = nullptr;
-  } else {
-    
-    
-    if (NS_SUCCEEDED(mTransaction->RestartOnFastOpenError())) {
-      trans = mTransaction;
-    }
-    mTransaction->SetConnection(nullptr);
-  }
-
-  {
-    MutexAutoLock lock(mCallbacksLock);
-    mCallbacks = nullptr;
-  }
-
-  if (mSocketIn) {
-    mSocketIn->AsyncWait(nullptr, 0, 0, nullptr);
-  }
-
-  mTransaction = nullptr;
-  if (!aCloseSocketTransport) {
-    if (mSocketOut) {
-      mSocketOut->AsyncWait(nullptr, 0, 0, nullptr);
-    }
-    mSocketTransport->SetEventSink(nullptr, nullptr);
-    mSocketTransport->SetSecurityCallbacks(nullptr);
-    mSocketTransport = nullptr;
-  }
-  Close(NS_ERROR_NET_RESET);
-  return trans;
-}
-
-void nsHttpConnection::SetFastOpen(bool aFastOpen) {
-  mFastOpen = aFastOpen;
-  if (!mFastOpen && mTransaction && !mTransaction->IsNullTransaction()) {
-    mExperienced = true;
-
-    nsHttpTransaction* hTrans = mTransaction->QueryHttpTransaction();
-    if (hTrans) {
-      SetUrgentStartPreferred(hTrans->ClassOfService() &
-                              nsIClassOfService::UrgentStart);
-    }
-  }
-}
-
-void nsHttpConnection::SetFastOpenStatus(uint8_t tfoStatus) {
-  mFastOpenStatus = tfoStatus;
-  if ((mFastOpenStatus >= TFO_FAILED_CONNECTION_REFUSED) &&
-      (mFastOpenStatus <=
-       TFO_FAILED_BACKUP_CONNECTION_TFO_DATA_COOKIE_NOT_ACCEPTED) &&
-      mSocketTransport) {
-    nsresult firstRetryError;
-    if (NS_SUCCEEDED(mSocketTransport->GetFirstRetryError(&firstRetryError)) &&
-        (NS_FAILED(firstRetryError))) {
-      if ((mFastOpenStatus >= TFO_FAILED_BACKUP_CONNECTION_TFO_NOT_TRIED) &&
-          (mFastOpenStatus <=
-           TFO_FAILED_BACKUP_CONNECTION_TFO_DATA_COOKIE_NOT_ACCEPTED)) {
-        mFastOpenStatus = TFO_FAILED_BACKUP_CONNECTION_NO_TFO_FAILED_TOO;
-      } else {
-        
-        
-        
-        mFastOpenStatus = tfoStatus + 7;
-      }
-    }
-  }
-}
-
 void nsHttpConnection::SetEvent(nsresult aStatus) {
   switch (aStatus) {
     case NS_NET_STATUS_RESOLVING_HOST:
@@ -2671,10 +2478,7 @@ void nsHttpConnection::SetEvent(nsresult aStatus) {
       TimeStamp tnow = TimeStamp::Now();
       mBootstrappedTimings.tcpConnectEnd = tnow;
       mBootstrappedTimings.connectEnd = tnow;
-      if ((mFastOpenStatus != TFO_DATA_SENT) &&
-          !mBootstrappedTimings.secureConnectionStart.IsNull()) {
-        mBootstrappedTimings.secureConnectionStart = tnow;
-      }
+      mBootstrappedTimings.secureConnectionStart = tnow;
       break;
     }
     case NS_NET_STATUS_TLS_HANDSHAKE_STARTING:

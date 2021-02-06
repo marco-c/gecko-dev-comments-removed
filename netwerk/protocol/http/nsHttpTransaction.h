@@ -139,13 +139,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   void Refused0RTT();
 
-  [[nodiscard]] nsresult RestartOnFastOpenError() override;
-
   uint64_t TopLevelOuterContentWindowId() override {
     return mTopLevelOuterContentWindowId;
   }
-
-  void SetFastOpenStatus(uint8_t aStatus) override;
 
   void SetHttpTrailers(nsCString& aTrailers);
 
@@ -494,8 +490,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
     EARLY_ACCEPTED,
     EARLY_425
   } mEarlyDataDisposition;
-
-  uint8_t mFastOpenStatus;
 
   
   RefPtr<SpdyConnectTransaction> mH2WSTransaction;

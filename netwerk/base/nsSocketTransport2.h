@@ -449,8 +449,6 @@ class nsSocketTransport final : public nsASocketHandler,
   int32_t mKeepaliveRetryIntervalS;
   int32_t mKeepaliveProbeCount;
 
-  nsresult mFirstRetryError;
-
   bool mDoNotRetryToConnect;
 
   

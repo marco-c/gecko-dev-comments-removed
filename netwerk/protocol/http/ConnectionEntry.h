@@ -130,9 +130,6 @@ class ConnectionEntry {
   
   bool mUsedForConnection : 1;
 
-  
-  bool mUseFastOpen : 1;
-
   bool mDoNotDestroy : 1;
 
   bool IsHttp3() const { return mConnInfo->IsHttp3(); }

@@ -38,7 +38,6 @@
 #include "sslt.h"
 #include "NSSErrorsService.h"
 #include "TunnelUtils.h"
-#include "TCPFastOpenLayer.h"
 #include "Http3Session.h"
 
 namespace mozilla {
