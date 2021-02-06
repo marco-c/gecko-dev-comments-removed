@@ -18,6 +18,10 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
+});
+
 const SEARCH_ENGINE_TOPIC = "browser-search-engine-modified";
 
 
@@ -194,6 +198,41 @@ class SearchUtils {
       isPrivate
       ? Services.search.defaultPrivateEngine
       : Services.search.defaultEngine;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  getSearchModeScalarKey(searchMode) {
+    let scalarKey;
+    if (searchMode.engineName) {
+      let engine = Services.search.getEngineByName(searchMode.engineName);
+      let resultDomain = engine.getResultDomain();
+      
+      
+      if (!engine.isAppProvided) {
+        scalarKey = "other";
+      } else if (resultDomain.includes("amazon.")) {
+        
+        scalarKey = "Amazon";
+      } else if (resultDomain.endsWith("wikipedia.org")) {
+        
+        scalarKey = "Wikipedia";
+      } else {
+        scalarKey = searchMode.engineName;
+      }
+    } else if (searchMode.source) {
+      scalarKey = UrlbarUtils.getResultSourceName(searchMode.source) || "other";
+    }
+
+    return scalarKey;
   }
 
   async _initInternal() {

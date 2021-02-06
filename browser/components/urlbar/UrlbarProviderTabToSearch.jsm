@@ -103,7 +103,10 @@ function initializeDynamicResult() {
 class ProviderTabToSearch extends UrlbarProvider {
   constructor() {
     super();
-    this.onboardingEnginesShown = new Set();
+    this.enginesShown = {
+      onboarding: new Set(),
+      regular: new Set(),
+    };
   }
 
   
@@ -258,16 +261,54 @@ class ProviderTabToSearch extends UrlbarProvider {
 
 
   onEngagement(isPrivate, state) {
-    if (!this.onboardingEnginesShown.size) {
+    if (!this.enginesShown.regular.size && !this.enginesShown.onboarding.size) {
       return;
     }
 
-    Services.telemetry.keyedScalarAdd(
-      "urlbar.tips",
-      "tabtosearch_onboard-shown",
-      this.onboardingEnginesShown.size
-    );
-    this.onboardingEnginesShown.clear();
+    try {
+      
+      for (let engine of this.enginesShown.regular) {
+        let scalarKey = UrlbarSearchUtils.getSearchModeScalarKey({
+          engineName: engine,
+        });
+        Services.telemetry.keyedScalarAdd(
+          "urlbar.tabtosearch.impressions",
+          scalarKey,
+          1
+        );
+      }
+      for (let engine of this.enginesShown.onboarding) {
+        let scalarKey = UrlbarSearchUtils.getSearchModeScalarKey({
+          engineName: engine,
+        });
+        Services.telemetry.keyedScalarAdd(
+          "urlbar.tabtosearch.impressions_onboarding",
+          scalarKey,
+          1
+        );
+      }
+
+      
+      
+      Services.telemetry.keyedScalarAdd(
+        "urlbar.tips",
+        "tabtosearch_onboard-shown",
+        this.enginesShown.onboarding.size
+      );
+    } catch (ex) {
+      
+      
+      
+      
+      Cu.reportError(`Exception while recording TabToSearch telemetry: ${ex})`);
+    } finally {
+      
+      
+      
+      
+      this.enginesShown.regular.clear();
+      this.enginesShown.onboarding.clear();
+    }
   }
 
   

@@ -115,6 +115,9 @@ add_task(async function setup() {
   
   await PlacesUtils.history.clear();
 
+  Services.telemetry.clearScalars();
+  Services.telemetry.clearEvents();
+
   
   
   await SpecialPowers.pushPrefEnv({
@@ -525,6 +528,7 @@ add_task(async function test_tabtosearch_onboard() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: engineDomain.slice(0, 4),
+    fireInputEvent: true,
   });
   let tabToSearchResult = (
     await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1)

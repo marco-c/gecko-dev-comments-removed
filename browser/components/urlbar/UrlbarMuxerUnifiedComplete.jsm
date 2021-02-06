@@ -560,7 +560,11 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       
       
       if (result.payload.dynamicType) {
-        UrlbarProviderTabToSearch.onboardingEnginesShown.add(
+        UrlbarProviderTabToSearch.enginesShown.onboarding.add(
+          result.payload.engine
+        );
+      } else {
+        UrlbarProviderTabToSearch.enginesShown.regular.add(
           result.payload.engine
         );
       }
