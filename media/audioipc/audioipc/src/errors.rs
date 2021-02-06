@@ -3,10 +3,6 @@
 
 
 
-use bincode;
-use cubeb;
-use std;
-
 error_chain! {
     // Maybe replace with chain_err to improve the error info.
     foreign_links {
