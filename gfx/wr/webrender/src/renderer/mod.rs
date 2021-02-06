@@ -2489,6 +2489,7 @@ impl Renderer {
         &mut self,
         draw_target: DrawTarget,
         uses_scissor: bool,
+        source: &RenderTask,
         backdrop: &RenderTask,
         readback: &RenderTask,
     ) {
@@ -2505,17 +2506,14 @@ impl Renderer {
 
         
         
-        let readback_origin = match readback.kind {
-            RenderTaskKind::Readback(ref info) => info.readback_origin,
-            _ => unreachable!(),
-        };
-
-        
-        
         
         let (readback_rect, readback_layer) = readback.get_target_rect();
         let (backdrop_rect, _) = backdrop.get_target_rect();
-        let (backdrop_screen_origin, _) = match backdrop.kind {
+        let (backdrop_screen_origin, backdrop_scale) = match backdrop.kind {
+            RenderTaskKind::Picture(ref task_info) => (task_info.content_origin, task_info.device_pixel_scale),
+            _ => panic!("bug: composite on non-picture?"),
+        };
+        let (source_screen_origin, source_scale) = match source.kind {
             RenderTaskKind::Picture(ref task_info) => (task_info.content_origin, task_info.device_pixel_scale),
             _ => panic!("bug: composite on non-picture?"),
         };
@@ -2530,24 +2528,28 @@ impl Renderer {
             false,
         );
 
-        let src_origin = readback_origin +
-            backdrop_rect.origin.to_f32().to_vector() -
-            backdrop_screen_origin.to_vector();
+        let source_in_backdrop_space = source_screen_origin * (backdrop_scale.0 / source_scale.0);
 
-        let src = DeviceIntRect::new(
-            src_origin.to_i32(),
+        let mut src = DeviceIntRect::new(
+            (source_in_backdrop_space + (backdrop_rect.origin.to_f32() - backdrop_screen_origin)).to_i32(),
             readback_rect.size,
         );
+        let mut dest = readback_rect.to_i32();
+        let device_to_framebuffer = Scale::new(1i32);
 
         
-        debug_assert!(!draw_target.is_default());
-        let device_to_framebuffer = Scale::new(1i32);
+        
+        if draw_target.is_default() {
+            src.origin.y = draw_target.dimensions().height as i32 - src.size.height - src.origin.y;
+            dest.origin.y += dest.size.height;
+            dest.size.height = -dest.size.height;
+        }
 
         self.device.blit_render_target(
             draw_target.into(),
             src * device_to_framebuffer,
             cache_draw_target,
-            readback_rect * device_to_framebuffer,
+            dest * device_to_framebuffer,
             TextureFilter::Linear,
         );
 
@@ -2897,13 +2899,14 @@ impl Renderer {
                 }
 
                 
-                if let BatchKind::Brush(BrushBatchKind::MixBlend { task_id, backdrop_id }) = batch.key.kind {
+                if let BatchKind::Brush(BrushBatchKind::MixBlend { task_id, source_id, backdrop_id }) = batch.key.kind {
                     
                     
                     debug_assert_eq!(batch.instances.len(), 1);
                     self.handle_readback_composite(
                         draw_target,
                         uses_scissor,
+                        &render_tasks[source_id],
                         &render_tasks[task_id],
                         &render_tasks[backdrop_id],
                     );
