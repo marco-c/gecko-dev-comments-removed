@@ -9328,8 +9328,12 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
   
   MOZ_ASSERT(ParentIsWrapperAnonBox(aParentFrame) == aParentIsWrapperAnonBox);
 
+  
+  
+  
   if (!aParentIsWrapperAnonBox && aState.mHasRenderedLegend &&
-      aParentFrame->GetContent()->IsHTMLElement(nsGkAtoms::fieldset)) {
+      aParentFrame->GetContent()->IsHTMLElement(nsGkAtoms::fieldset) &&
+      !aParentFrame->IsTableColGroupFrame()) {
     DebugOnly<bool> found = false;
     for (FCItemIterator iter(aItems); !iter.IsDone(); iter.Next()) {
       if (iter.item().mIsRenderedLegend) {
