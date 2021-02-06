@@ -269,7 +269,6 @@ const startupPhases = {
     {
       
       path: "ProfD:extensions",
-      ignoreIfUnused: true, 
       condition: WIN,
       stat: 1,
     },
@@ -446,13 +445,6 @@ const startupPhases = {
       ignoreIfUnused: true,
       stat: 1,
       close: 1,
-    },
-    {
-      
-      path: "ProfD:extensions",
-      ignoreIfUnused: true,
-      condition: WIN,
-      stat: 1,
     },
   ],
 
