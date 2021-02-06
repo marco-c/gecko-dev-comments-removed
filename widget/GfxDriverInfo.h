@@ -235,6 +235,8 @@ enum DriverVendor : uint8_t {
   MesaSoftPipe,
   MesaSWRast,
   
+  MesaR600,
+  
   MesaNouveau,
   
   MesaUnknown,
