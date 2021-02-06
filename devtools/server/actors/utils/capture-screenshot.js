@@ -23,7 +23,19 @@ const MAX_IMAGE_HEIGHT = 10000;
 
 
 function simulateCameraFlash(browsingContext) {
-  const node = browsingContext.topFrameElement;
+  
+  
+  const node =
+    browsingContext.topFrameElement ||
+    browsingContext.topChromeWindow.document.documentElement;
+
+  if (!node) {
+    console.error(
+      "Can't find an element to play the camera flash animation on for the following browsing context:",
+      browsingContext
+    );
+    return;
+  }
 
   
   if (node.ownerGlobal.matchMedia("(prefers-reduced-motion)").matches) {

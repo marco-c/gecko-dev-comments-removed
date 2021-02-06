@@ -133,7 +133,8 @@ class BrowserConsoleManager {
     
     
     
-    DevToolsServer.registerActors({ root: true, target: true });
+    
+    DevToolsServer.registerAllActors();
 
     DevToolsServer.allowChromeProcess = true;
 

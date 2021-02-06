@@ -41,16 +41,6 @@ async function captureAndSaveScreenshot(targetFront, window, args = {}) {
     return [{ text: getFormattedHelpData() }];
   }
 
-  if (targetFront.isParentProcess) {
-    return [
-      {
-        text:
-          "Taking screenshot from ParentProcess target isn't supported yet (See Bug 1474006)",
-        level: "warn",
-      },
-    ];
-  }
-
   
   
   const supportsContentScreenshot = targetFront.hasActor("screenshotContent");

@@ -550,11 +550,10 @@ exports.ToolboxButtons = [
     description: l10n("toolbox.buttons.screenshot"),
     isTargetSupported: targetFront => {
       return (
-        !targetFront.isParentProcess &&
         
         
-        (targetFront.hasActor("screenshotContent") ||
-          targetFront.hasActor("screenshot"))
+        targetFront.hasActor("screenshotContent") ||
+        targetFront.hasActor("screenshot")
       );
     },
     async onClick(event, toolbox) {
