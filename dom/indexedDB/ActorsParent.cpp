@@ -850,7 +850,7 @@ CreateStorageConnection(nsIFile& aDBFile, nsIFile& aFMDirectory,
             
             
             
-            if (aValue != NS_ERROR_FILE_CORRUPTED || aName.IsVoid()) {
+            if (!IsDatabaseCorruptionError(aValue) || aName.IsVoid()) {
               return Err(aValue);
             }
 
