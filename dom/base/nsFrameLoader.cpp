@@ -2059,6 +2059,12 @@ void nsFrameLoader::SetOwnerContent(Element* aContent) {
   }
   mOwnerContent = aContent;
 
+  if (mSessionStoreListener && mOwnerContent) {
+    
+    
+    mSessionStoreListener->SetOwnerContent(mOwnerContent);
+  }
+
   if (RefPtr<BrowsingContext> browsingContext = GetExtantBrowsingContext()) {
     browsingContext->SetEmbedderElement(mOwnerContent);
   }
