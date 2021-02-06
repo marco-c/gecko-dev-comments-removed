@@ -7947,32 +7947,7 @@ CSSSize nsLayoutUtils::CalculateRootCompositionSize(
   rootCompositionSize.width -= margins.LeftRight();
   rootCompositionSize.height -= margins.TopBottom();
 
-  CSSSize result =
-      rootCompositionSize / aMetrics.DisplayportPixelsPerCSSPixel();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (rootPresShell) {
-    if (BrowserChild* bc = BrowserChild::GetFrom(rootPresShell)) {
-      if (const auto& visibleRect =
-              bc->GetTopLevelViewportVisibleRectInSelfCoords()) {
-        CSSSize cssVisibleRect =
-            visibleRect->Size() / rootPresContext->CSSToDevPixelScale();
-        result = Min(result, cssVisibleRect);
-      }
-    }
-  }
-
-  return result;
+  return rootCompositionSize / aMetrics.DisplayportPixelsPerCSSPixel();
 }
 
 
