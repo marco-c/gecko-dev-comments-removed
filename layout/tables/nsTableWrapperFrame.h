@@ -227,11 +227,19 @@ class nsTableWrapperFrame : public nsContainerFrame {
                           mozilla::WritingMode aWM);
 
   
-  void OuterBeginReflowChild(nsPresContext* aPresContext, nsIFrame* aChildFrame,
-                             const ReflowInput& aOuterRI,
-                             mozilla::Maybe<ReflowInput>& aChildRI,
-                             nscoord aAvailISize);
+  
+  void CreateReflowInputForInnerTable(nsPresContext* aPresContext,
+                                      nsTableFrame* aTableFrame,
+                                      const ReflowInput& aOuterRI,
+                                      Maybe<ReflowInput>& aChildRI,
+                                      const nscoord aAvailISize) const;
+  void CreateReflowInputForCaption(nsPresContext* aPresContext,
+                                   nsIFrame* aCaptionFrame,
+                                   const ReflowInput& aOuterRI,
+                                   Maybe<ReflowInput>& aChildRI,
+                                   const nscoord aAvailISize) const;
 
+  
   void OuterDoReflowChild(nsPresContext* aPresContext, nsIFrame* aChildFrame,
                           const ReflowInput& aChildRI, ReflowOutput& aMetrics,
                           nsReflowStatus& aStatus);
