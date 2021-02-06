@@ -1226,6 +1226,8 @@ class AsyncPanZoomController {
  private:
   friend class AutoApplyAsyncTestAttributes;
 
+  bool SuppressAsyncScrollOffset() const;
+
   
 
 

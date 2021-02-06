@@ -101,7 +101,8 @@ struct FrameMetrics {
         mCompositionSizeWithoutDynamicToolbar(),
         mIsRootContent(false),
         mIsScrollInfoLayer(false),
-        mHasNonZeroDisplayPortMargins(false) {}
+        mHasNonZeroDisplayPortMargins(false),
+        mMinimalDisplayPort(false) {}
 
   
 
@@ -129,6 +130,7 @@ struct FrameMetrics {
            mIsScrollInfoLayer == aOther.mIsScrollInfoLayer &&
            mHasNonZeroDisplayPortMargins ==
                aOther.mHasNonZeroDisplayPortMargins &&
+           mMinimalDisplayPort == aOther.mMinimalDisplayPort &&
            mFixedLayerMargins == aOther.mFixedLayerMargins &&
            mCompositionSizeWithoutDynamicToolbar ==
                aOther.mCompositionSizeWithoutDynamicToolbar;
@@ -421,6 +423,11 @@ struct FrameMetrics {
     return mHasNonZeroDisplayPortMargins;
   }
 
+  void SetMinimalDisplayPort(bool aMinimalDisplayPort) {
+    mMinimalDisplayPort = aMinimalDisplayPort;
+  }
+  bool IsMinimalDisplayPort() const { return mMinimalDisplayPort; }
+
   void SetVisualDestination(const CSSPoint& aVisualDestination) {
     mVisualDestination = aVisualDestination;
   }
@@ -628,6 +635,12 @@ struct FrameMetrics {
 
   
   bool mHasNonZeroDisplayPortMargins : 1;
+
+  
+  
+  
+  
+  bool mMinimalDisplayPort : 1;
 
   
   
