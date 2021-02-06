@@ -195,6 +195,38 @@ class DNSListener {
   }
 }
 
+async function waitForConfirmation(expectedResponseIP, confirmationShouldFail) {
+  
+  let count = 100;
+  while (count > 0) {
+    if (count == 50 || count == 10) {
+      
+      
+      
+      await new Promise(resolve => do_timeout(100 * (100 / count), resolve));
+    }
+    let [, inRecord] = await new DNSListener(
+      `ip${count}.example.org`,
+      undefined,
+      false
+    );
+    inRecord.QueryInterface(Ci.nsIDNSAddrRecord);
+    let responseIP = inRecord.getNextAddrAsString();
+    Assert.ok(true, responseIP);
+    if (responseIP == expectedResponseIP) {
+      break;
+    }
+    count--;
+  }
+
+  if (confirmationShouldFail) {
+    Assert.equal(count, 0, "Confirmation did not finish after 100 iterations");
+    return;
+  }
+
+  Assert.greater(count, 0, "Finished confirmation before 100 iterations");
+}
+
 add_task(async function test0_nodeExecute() {
   
   
@@ -1673,45 +1705,70 @@ add_task(async function test_redirect_post() {
 
 
 
-add_task(async function test_resolve_not_confirmed() {
+
+add_task(async function test_resolve_not_confirmed_wait_for_confirmation() {
   dns.clearCache(true);
+  Services.prefs.setBoolPref("network.trr.wait-for-confirmation", true);
+  Services.prefs.setIntPref("network.trr.mode", 2); 
+  Services.prefs.setCharPref(
+    "network.trr.confirmationNS",
+    "confirm.example.com"
+  );
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=7.7.7.7&slowConfirm=true`
+  );
+
+  await new DNSListener("example.org", "127.0.0.1");
+  await new Promise(resolve => do_timeout(1000, resolve));
+  await waitForConfirmation("7.7.7.7");
+
+  Services.prefs.setCharPref("network.trr.confirmationNS", "skip");
+  Services.prefs.clearUserPref("network.trr.wait-for-confirmation");
+});
+
+
+
+add_task(async function test_resolve_confirmation_pending() {
+  dns.clearCache(true);
+  Services.prefs.setBoolPref("network.trr.wait-for-confirmation", false);
+  Services.prefs.setIntPref("network.trr.mode", 2); 
+  Services.prefs.setCharPref(
+    "network.trr.confirmationNS",
+    "confirm.example.com"
+  );
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/doh?responseIP=7.7.7.7&slowConfirm=true`
+  );
+
+  
+  await new DNSListener("example.org", "7.7.7.7");
+
+  Services.prefs.setCharPref("network.trr.confirmationNS", "skip");
+  Services.prefs.clearUserPref("network.trr.wait-for-confirmation");
+});
+
+
+add_task(async function test_resolve_confirm_failed() {
+  dns.clearCache(true);
+  Services.prefs.setBoolPref("network.trr.wait-for-confirmation", true);
   Services.prefs.setIntPref("network.trr.mode", 2); 
   Services.prefs.setCharPref(
     "network.trr.uri",
-    `https://foo.example.com:${h2Port}/doh?responseIP=7.7.7.7`
+    `https://foo.example.com:${h2Port}/404`
   );
   Services.prefs.setCharPref(
     "network.trr.confirmationNS",
     "confirm.example.com"
   );
 
+  await waitForConfirmation("7.7.7.7", true);
+
   await new DNSListener("example.org", "127.0.0.1");
 
-  
-  let count = 100;
-  while (count > 0) {
-    if (count == 50 || count == 10) {
-      
-      
-      
-      await new Promise(resolve => do_timeout(100 * (100 / count), resolve));
-    }
-    let [, inRecord] = await new DNSListener(
-      `ip${count}.example.org`,
-      undefined,
-      false
-    );
-    inRecord.QueryInterface(Ci.nsIDNSAddrRecord);
-    let responseIP = inRecord.getNextAddrAsString();
-    if (responseIP == "7.7.7.7") {
-      break;
-    }
-    count--;
-  }
-
-  Assert.greater(count, 0, "Finished confirmation before 100 iterations");
-
   Services.prefs.setCharPref("network.trr.confirmationNS", "skip");
+  Services.prefs.clearUserPref("network.trr.wait-for-confirmation");
 });
 
 
