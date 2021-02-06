@@ -1831,8 +1831,9 @@ HttpBaseChannel::SetAllowSTS(bool value) {
     
     
     nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
-    uint32_t trrMode = 0;
-    if (dns && NS_SUCCEEDED(dns->GetCurrentTrrMode(&trrMode)) && trrMode == 3) {
+    nsIDNSService::ResolverMode trrMode = nsIDNSService::MODE_NATIVEONLY;
+    if (dns && NS_SUCCEEDED(dns->GetCurrentTrrMode(&trrMode)) &&
+        trrMode == nsIDNSService::MODE_TRRONLY) {
       SetTRRMode(nsIRequest::TRR_FIRST_MODE);
     }
   }
@@ -4171,14 +4172,22 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
 
   
   nsCOMPtr<nsITimedChannel> newTimedChannel(do_QueryInterface(newChannel));
+  bool sameOriginWithOriginalUri = SameOriginWithOriginalUri(newURI);
   if (config.timedChannel && newTimedChannel) {
     newTimedChannel->SetAllRedirectsSameOrigin(
         config.timedChannel->allRedirectsSameOrigin() &&
-        SameOriginWithOriginalUri(newURI));
+        sameOriginWithOriginalUri);
   }
 
   newChannel->SetLoadGroup(mLoadGroup);
   newChannel->SetNotificationCallbacks(mCallbacks);
+  
+  if (sameOriginWithOriginalUri) {
+    newChannel->SetContentDisposition(mContentDispositionHint);
+    if (mContentDispositionFilename) {
+      newChannel->SetContentDispositionFilename(*mContentDispositionFilename);
+    }
+  }
 
   if (!httpChannel) return NS_OK;  
 
