@@ -396,6 +396,9 @@ void DocAccessible::Shutdown() {
 
   RemoveEventListeners();
 
+  
+  
+  const bool isChild = !!mParent;
   if (mParent) {
     DocAccessible* parentDocument = mParent->Document();
     if (parentDocument) parentDocument->RemoveChildDocument(this);
@@ -403,6 +406,9 @@ void DocAccessible::Shutdown() {
     mParent->RemoveChild(this);
     MOZ_ASSERT(!mParent, "Parent has to be null!");
   }
+
+  mPresShell->SetDocAccessible(nullptr);
+  mPresShell = nullptr;  
 
   
   
@@ -424,9 +430,6 @@ void DocAccessible::Shutdown() {
     mVirtualCursor = nullptr;
   }
 
-  mPresShell->SetDocAccessible(nullptr);
-  mPresShell = nullptr;  
-
   mDependentIDsHashes.Clear();
   mNodeToAccessibleMap.Clear();
 
@@ -446,7 +449,13 @@ void DocAccessible::Shutdown() {
 
   HyperTextAccessibleWrap::Shutdown();
 
-  GetAccService()->NotifyOfDocumentShutdown(this, mDocumentNode);
+  MOZ_ASSERT(GetAccService());
+  GetAccService()->NotifyOfDocumentShutdown(
+      this, mDocumentNode,
+      
+      
+      
+       !isChild);
   mDocumentNode = nullptr;
 }
 
