@@ -477,11 +477,16 @@ class QuotaManager final : public BackgroundThreadObject {
 
   void Shutdown();
 
+  
+  
+  
+  enum class ShouldUpdateLockIdTableFlag { No, Yes };
+
   RefPtr<DirectoryLockImpl> CreateDirectoryLock(
       const Nullable<PersistenceType>& aPersistenceType,
       const nsACString& aGroup, const OriginScope& aOriginScope,
       const Nullable<Client::Type>& aClientType, bool aExclusive,
-      bool aInternal);
+      bool aInternal, ShouldUpdateLockIdTableFlag aShouldUpdateLockIdTableFlag);
 
   RefPtr<DirectoryLockImpl> CreateDirectoryLockForEviction(
       PersistenceType aPersistenceType, const GroupAndOrigin& aGroupAndOrigin);
