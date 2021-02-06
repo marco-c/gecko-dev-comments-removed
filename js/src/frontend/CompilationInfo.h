@@ -116,6 +116,10 @@ struct ScopeContext {
 #ifdef DEBUG
   
   bool hasNonSyntacticScopeOnChain = false;
+
+  
+  
+  bool hasFunctionNeedsHomeObjectOnChain = false;
 #endif
 
   explicit ScopeContext(JSContext* cx) : effectiveScope(cx) {}

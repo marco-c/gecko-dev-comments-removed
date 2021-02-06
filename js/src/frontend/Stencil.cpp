@@ -183,6 +183,23 @@ void ScopeContext::cacheEnclosingScope(Scope* enclosingScope) {
 #ifdef DEBUG
   hasNonSyntacticScopeOnChain =
       enclosingScope->hasOnChain(ScopeKind::NonSyntactic);
+
+  
+  
+  
+  
+  for (ScopeIter si(enclosingScope); si; si++) {
+    if (si.kind() == ScopeKind::Function) {
+      JSFunction* fun = si.scope()->as<FunctionScope>().canonicalFunction();
+      if (fun->isArrow()) {
+        continue;
+      }
+      if (fun->allowSuperProperty() && fun->baseScript()->needsHomeObject()) {
+        hasFunctionNeedsHomeObjectOnChain = true;
+      }
+      break;
+    }
+  }
 #endif
 }
 
