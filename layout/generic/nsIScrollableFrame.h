@@ -385,6 +385,13 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
+  virtual bool IsScrollingActiveNotMinimalDisplayPort(
+      nsDisplayListBuilder* aBuilder) = 0;
+
+  
+
+
+
   virtual bool IsMaybeAsynchronouslyScrolled() = 0;
 
   

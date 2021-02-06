@@ -183,6 +183,11 @@ class DisplayPortUtils {
   
 
 
+  static bool HasNonMinimalDisplayPort(nsIContent* aContent);
+
+  
+
+
 
   static bool IsMissingDisplayPortBaseRect(nsIContent* aContent);
 
