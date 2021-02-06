@@ -5,6 +5,8 @@
 use inherent::inherent;
 
 
+
+
 #[derive(Clone, Debug)]
 pub struct PingType {
     pub(crate) name: String,

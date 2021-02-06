@@ -29,7 +29,7 @@
 use std::{
     mem,
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc,
     },
     thread::{self, JoinHandle},
@@ -108,6 +108,9 @@ struct DispatchGuard {
     queue_preinit: Arc<AtomicBool>,
 
     
+    overflow_count: Arc<AtomicUsize>,
+
+    
     block_sender: Sender<Blocked>,
 
     
@@ -132,10 +135,20 @@ impl DispatchGuard {
 
     fn send(&self, task: Command) -> Result<(), DispatchError> {
         if self.queue_preinit.load(Ordering::SeqCst) {
-            match self.preinit_sender.try_send(task) {
-                Ok(()) => Ok(()),
-                Err(TrySendError::Full(_)) => Err(DispatchError::QueueFull),
-                Err(TrySendError::Disconnected(_)) => Err(DispatchError::SendError),
+            match self
+                .preinit_sender
+                .try_send(task)
+                .map_err(DispatchError::from)
+            {
+                Err(err @ DispatchError::QueueFull) => {
+                    
+                    
+                    
+                    
+                    self.overflow_count.fetch_add(1, Ordering::SeqCst);
+                    Err(err)
+                }
+                err => err,
             }
         } else {
             self.sender.send(task)?;
@@ -145,11 +158,20 @@ impl DispatchGuard {
 
     fn block_on_queue(&self) {
         let (tx, rx) = crossbeam_channel::bounded(0);
-        self.launch(move || {
+
+        
+        
+        
+        
+
+        let task = Command::Task(Box::new(move || {
             tx.send(())
-                .expect("(worker) Can't send message on single-use channel")
-        })
-        .expect("Failed to launch the blocking task");
+                .expect("(worker) Can't send message on single-use channel");
+        }));
+        self.sender
+            .send(task)
+            .expect("Failed to launch the blocking task");
+
         rx.recv()
             .expect("Failed to receive message on single-use channel");
     }
@@ -166,7 +188,7 @@ impl DispatchGuard {
         Ok(())
     }
 
-    fn flush_init(&mut self) -> Result<(), DispatchError> {
+    fn flush_init(&mut self) -> Result<usize, DispatchError> {
         
         let old_val = self.queue_preinit.swap(false, Ordering::SeqCst);
         if !old_val {
@@ -187,7 +209,12 @@ impl DispatchGuard {
         
         
         swap_receiver.recv()?;
-        Ok(())
+        let overflow_count = self.overflow_count.load(Ordering::SeqCst);
+        if overflow_count > 0 {
+            Ok(overflow_count + global::GLOBAL_DISPATCHER_LIMIT)
+        } else {
+            Ok(0)
+        }
     }
 }
 
@@ -218,6 +245,7 @@ impl Dispatcher {
         let (sender, mut unbounded_receiver) = unbounded();
 
         let queue_preinit = Arc::new(AtomicBool::new(true));
+        let overflow_count = Arc::new(AtomicUsize::new(0));
 
         let worker = thread::Builder::new()
             .name("glean.dispatcher".into())
@@ -282,6 +310,7 @@ impl Dispatcher {
 
         let guard = DispatchGuard {
             queue_preinit,
+            overflow_count,
             block_sender,
             preinit_sender,
             sender,
@@ -317,7 +346,7 @@ impl Dispatcher {
     
     
     
-    pub fn flush_init(&mut self) -> Result<(), DispatchError> {
+    pub fn flush_init(&mut self) -> Result<usize, DispatchError> {
         self.guard().flush_init()
     }
 }

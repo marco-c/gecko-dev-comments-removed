@@ -7,7 +7,7 @@ use std::sync::RwLock;
 
 use super::{DispatchError, DispatchGuard, Dispatcher};
 
-const GLOBAL_DISPATCHER_LIMIT: usize = 100;
+pub const GLOBAL_DISPATCHER_LIMIT: usize = 100;
 static GLOBAL_DISPATCHER: Lazy<RwLock<Option<Dispatcher>>> =
     Lazy::new(|| RwLock::new(Some(Dispatcher::new(GLOBAL_DISPATCHER_LIMIT))));
 
@@ -55,7 +55,12 @@ pub fn block_on_queue() {
 
 
 
-pub fn flush_init() -> Result<(), DispatchError> {
+
+
+
+
+
+pub fn flush_init() -> Result<usize, DispatchError> {
     guard().flush_init()
 }
 

@@ -3,7 +3,7 @@
 
 
 use crate::private::PingType;
-use crate::private::{BooleanMetric, CounterMetric};
+use crate::private::{BooleanMetric, CounterMetric, EventMetric};
 use std::path::PathBuf;
 
 use super::*;
@@ -171,15 +171,143 @@ fn test_experiments_recording_before_glean_inits() {
 }
 
 #[test]
-#[ignore] 
-fn test_sending_of_foreground_background_pings() {
-    todo!()
+fn sending_of_foreground_background_pings() {
+    let _lock = lock_test();
+
+    let click: EventMetric<traits::NoExtraKeys> = private::EventMetric::new(CommonMetricData {
+        name: "click".into(),
+        category: "ui".into(),
+        send_in_pings: vec!["events".into()],
+        lifetime: Lifetime::Ping,
+        disabled: false,
+        ..Default::default()
+    });
+
+    
+    
+    let (s, r) = crossbeam_channel::bounded::<String>(3);
+
+    #[derive(Debug)]
+    pub struct FakeUploader {
+        sender: crossbeam_channel::Sender<String>,
+    }
+    impl net::PingUploader for FakeUploader {
+        fn upload(
+            &self,
+            url: String,
+            _body: Vec<u8>,
+            _headers: Vec<(String, String)>,
+        ) -> net::UploadResult {
+            self.sender.send(url).unwrap();
+            net::UploadResult::HttpStatus(200)
+        }
+    }
+
+    
+    let dir = tempfile::tempdir().unwrap();
+    let tmpname = dir.path().display().to_string();
+
+    let cfg = Configuration {
+        data_path: tmpname,
+        application_id: GLOBAL_APPLICATION_ID.into(),
+        upload_enabled: true,
+        max_events: None,
+        delay_ping_lifetime_io: false,
+        channel: Some("testing".into()),
+        server_endpoint: Some("invalid-test-host".into()),
+        uploader: Some(Box::new(FakeUploader { sender: s })),
+    };
+
+    let _t = new_glean(Some(cfg), true);
+    crate::block_on_dispatcher();
+
+    
+    handle_client_active();
+
+    
+    let url = r.recv().unwrap();
+    assert!(url.contains("baseline"));
+
+    
+    click.record(None);
+
+    
+    handle_client_inactive();
+
+    
+    let mut expected_pings = vec!["baseline", "events"];
+    for _ in 0..2 {
+        let url = r.recv().unwrap();
+        
+        expected_pings.retain(|&name| !url.contains(name));
+    }
+    
+    assert_eq!(0, expected_pings.len());
+
+    
+    handle_client_active();
+
+    
+    let url = r.recv().unwrap();
+    assert!(url.contains("baseline"));
 }
 
 #[test]
-#[ignore] 
-fn test_sending_of_startup_baseline_ping() {
-    todo!()
+fn sending_of_startup_baseline_ping() {
+    let _lock = lock_test();
+
+    
+    
+    let data_dir = new_glean(None, true);
+
+    crate::block_on_dispatcher();
+
+    with_glean_mut(|glean| glean.set_dirty_flag(true));
+
+    
+    let (s, r) = crossbeam_channel::bounded::<String>(1);
+
+    
+    
+    #[derive(Debug)]
+    pub struct FakeUploader {
+        sender: crossbeam_channel::Sender<String>,
+    }
+    impl net::PingUploader for FakeUploader {
+        fn upload(
+            &self,
+            url: String,
+            _body: Vec<u8>,
+            _headers: Vec<(String, String)>,
+        ) -> net::UploadResult {
+            self.sender.send(url).unwrap();
+            net::UploadResult::HttpStatus(200)
+        }
+    }
+
+    
+    let tmpname = data_dir.path().display().to_string();
+
+    
+    
+    test_reset_glean(
+        Configuration {
+            data_path: tmpname,
+            application_id: GLOBAL_APPLICATION_ID.into(),
+            upload_enabled: true,
+            max_events: None,
+            delay_ping_lifetime_io: false,
+            channel: Some("testing".into()),
+            server_endpoint: Some("invalid-test-host".into()),
+            uploader: Some(Box::new(FakeUploader { sender: s })),
+        },
+        ClientInfoMetrics::unknown(),
+        false,
+    );
+
+    
+    let url = r.recv().unwrap();
+    assert_eq!(url.contains("baseline"), true);
 }
 
 #[test]
@@ -395,12 +523,6 @@ fn core_metrics_should_be_cleared_and_restored_when_disabling_and_enabling_uploa
     assert!(core_metrics::internal_metrics::os_version
         .test_get_value(None)
         .is_some());
-}
-
-#[test]
-#[ignore] 
-fn overflowing_the_task_queue_records_telemetry() {
-    todo!()
 }
 
 #[test]
