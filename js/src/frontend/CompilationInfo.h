@@ -41,6 +41,8 @@ class JSONPrinter;
 
 namespace frontend {
 
+struct CompilationInput;
+
 
 
 struct ScopeContext {
@@ -66,8 +68,6 @@ struct ScopeContext {
   
   uint32_t enclosingThisEnvironmentHops = 0;
 
-  
-  
   
   ScopeKind enclosingScopeKind = ScopeKind::Global;
 
@@ -99,21 +99,16 @@ struct ScopeContext {
   bool hasNonSyntacticScopeOnChain = false;
 #endif
 
-  explicit ScopeContext(JSContext* cx, InheritThis inheritThis,
-                        Scope* enclosingScope, JSObject* enclosingEnv = nullptr)
-      : effectiveScope(cx,
-                       determineEffectiveScope(enclosingScope, enclosingEnv)) {
-    if (inheritThis == InheritThis::Yes) {
-      computeThisBinding(effectiveScope);
-      computeThisEnvironment(enclosingScope);
-    }
-    computeInScope(enclosingScope);
-  }
+  explicit ScopeContext(JSContext* cx) : effectiveScope(cx) {}
+
+  bool init(JSContext* cx, CompilationInput& input, InheritThis inheritThis,
+            JSObject* enclosingEnv);
 
  private:
   void computeThisBinding(Scope* scope);
   void computeThisEnvironment(Scope* enclosingScope);
   void computeInScope(Scope* enclosingScope);
+  void cacheEnclosingScope(Scope* enclosingScope);
 
   static Scope* determineEffectiveScope(Scope* scope, JSObject* environment);
 };
@@ -320,9 +315,12 @@ struct MOZ_RAII CompilationState {
 
   CompilationState(JSContext* cx, LifoAllocScope& frontendAllocScope,
                    const JS::ReadOnlyCompileOptions& options,
-                   CompilationStencil& stencil,
-                   InheritThis inheritThis = InheritThis::No,
-                   JSObject* enclosingEnv = nullptr);
+                   CompilationStencil& stencil);
+
+  bool init(JSContext* cx, InheritThis inheritThis = InheritThis::No,
+            JSObject* enclosingEnv = nullptr) {
+    return scopeContext.init(cx, input, inheritThis, enclosingEnv);
+  }
 
   bool finish(JSContext* cx, CompilationStencil& stencil);
 
