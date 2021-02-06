@@ -22,6 +22,7 @@
 #include "mozilla/Casting.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Services.h"
+#include "mozilla/SyncRunnable.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Unused.h"
 #include "mozpkix/Result.h"
@@ -33,6 +34,7 @@
 #include "nsNSSCertHelper.h"
 #include "nsNSSCertificate.h"
 #include "nsNSSCertificateDB.h"
+#include "nsNetCID.h"
 #include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
@@ -110,7 +112,7 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(
 
 static Result FindRootsWithSubject(UniqueSECMODModule& rootsModule,
                                    SECItem subject,
-                                    Vector<Vector<uint8_t>>& roots) {
+                                    nsTArray<nsTArray<uint8_t>>& roots) {
   MOZ_ASSERT(rootsModule);
   for (int slotIndex = 0; slotIndex < rootsModule->slotCount; slotIndex++) {
     CERTCertificateList* rawResults = nullptr;
@@ -124,14 +126,10 @@ static Result FindRootsWithSubject(UniqueSECMODModule& rootsModule,
     }
     UniqueCERTCertificateList results(rawResults);
     for (int certIndex = 0; certIndex < results->len; certIndex++) {
-      Vector<uint8_t> root;
-      if (!root.append(results->certs[certIndex].data,
-                       results->certs[certIndex].len)) {
-        return Result::FATAL_ERROR_NO_MEMORY;
-      }
-      if (!roots.append(std::move(root))) {
-        return Result::FATAL_ERROR_NO_MEMORY;
-      }
+      nsTArray<uint8_t> root;
+      root.AppendElements(results->certs[certIndex].data,
+                          results->certs[certIndex].len);
+      roots.AppendElement(std::move(root));
     }
   }
   return Success;
@@ -184,7 +182,7 @@ static bool ShouldSkipSelfSignedNonTrustAnchor(TrustDomain& trustDomain,
 
 static Result CheckCandidates(TrustDomain& trustDomain,
                               TrustDomain::IssuerChecker& checker,
-                              Vector<Input>& candidates,
+                              nsTArray<Input>& candidates,
                               Input* nameConstraintsInputPtr, bool& keepGoing) {
   for (Input candidate : candidates) {
     if (ShouldSkipSelfSignedNonTrustAnchor(trustDomain, candidate)) {
@@ -223,15 +221,13 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
 
   
   
-  Vector<Input> geckoRootCandidates;
-  Vector<Input> geckoIntermediateCandidates;
+  nsTArray<Input> geckoRootCandidates;
+  nsTArray<Input> geckoIntermediateCandidates;
 
   if (!mCertStorage) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
   nsTArray<uint8_t> subject;
-  
-  
   subject.AppendElements(encodedIssuerName.UnsafeGetData(),
                          encodedIssuerName.GetLength());
   nsTArray<nsTArray<uint8_t>> certs;
@@ -246,14 +242,12 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
       continue;  
     }
     
-    if (!geckoIntermediateCandidates.append(certDER)) {
-      return Result::FATAL_ERROR_NO_MEMORY;
-    }
+    geckoIntermediateCandidates.AppendElement(std::move(certDER));
   }
 
   
   
-  Vector<Vector<uint8_t>> builtInRoots;
+  nsTArray<nsTArray<uint8_t>> builtInRoots;
   if (mBuiltInRootsModule) {
     Result rv = FindRootsWithSubject(mBuiltInRootsModule, encodedIssuerNameItem,
                                      builtInRoots);
@@ -262,13 +256,11 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
     }
     for (const auto& root : builtInRoots) {
       Input rootInput;
-      rv = rootInput.Init(root.begin(), root.length());
+      rv = rootInput.Init(root.Elements(), root.Length());
       if (rv != Success) {
         continue;  
       }
-      if (!geckoRootCandidates.append(rootInput)) {
-        return Result::FATAL_ERROR_NO_MEMORY;
-      }
+      geckoRootCandidates.AppendElement(rootInput);
     }
   } else {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
@@ -287,9 +279,7 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
     if (!InputsAreEqual(encodedIssuerName, root.GetSubject())) {
       continue;
     }
-    if (!geckoRootCandidates.append(thirdPartyRootInput)) {
-      return Result::FATAL_ERROR_NO_MEMORY;
-    }
+    geckoRootCandidates.AppendElement(thirdPartyRootInput);
   }
 
   for (const auto& thirdPartyIntermediateInput :
@@ -306,9 +296,7 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
     if (!InputsAreEqual(encodedIssuerName, intermediate.GetSubject())) {
       continue;
     }
-    if (!geckoIntermediateCandidates.append(thirdPartyIntermediateInput)) {
-      return Result::FATAL_ERROR_NO_MEMORY;
-    }
+    geckoIntermediateCandidates.AppendElement(thirdPartyIntermediateInput);
   }
 
   if (mExtraCertificates.isSome()) {
@@ -331,16 +319,12 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
       }
       
       
-      if (!geckoIntermediateCandidates.append(certInput)) {
-        return Result::FATAL_ERROR_NO_MEMORY;
-      }
+      geckoIntermediateCandidates.AppendElement(certInput);
     }
   }
 
   
-  if (!geckoRootCandidates.appendAll(std::move(geckoIntermediateCandidates))) {
-    return Result::FATAL_ERROR_NO_MEMORY;
-  }
+  geckoRootCandidates.AppendElements(std::move(geckoIntermediateCandidates));
 
   bool keepGoing = true;
   Result result = CheckCandidates(*this, checker, geckoRootCandidates,
@@ -355,35 +339,61 @@ Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
   
   
   
-  UniqueCERTCertList candidates(CERT_CreateSubjectCertList(
-      nullptr, CERT_GetDefaultCertDB(), &encodedIssuerNameItem, 0, false));
-  Vector<Input> nssRootCandidates;
-  Vector<Input> nssIntermediateCandidates;
-  if (candidates) {
-    for (CERTCertListNode* n = CERT_LIST_HEAD(candidates);
-         !CERT_LIST_END(n, candidates); n = CERT_LIST_NEXT(n)) {
-      Input certDER;
-      Result rv = certDER.Init(n->cert->derCert.data, n->cert->derCert.len);
-      if (rv != Success) {
-        continue;  
-      }
-      if (n->cert->isRoot) {
-        if (!nssRootCandidates.append(certDER)) {
-          return Result::FATAL_ERROR_NO_MEMORY;
+  nsTArray<nsTArray<uint8_t>> nssRootCandidates;
+  nsTArray<nsTArray<uint8_t>> nssIntermediateCandidates;
+  RefPtr<Runnable> getCandidatesTask =
+      NS_NewRunnableFunction("NSSCertDBTrustDomain::FindIssuer", [&]() {
+        
+        
+        
+        
+        UniqueCERTCertList candidates(
+            CERT_CreateSubjectCertList(nullptr, CERT_GetDefaultCertDB(),
+                                       &encodedIssuerNameItem, 0, false));
+        if (candidates) {
+          for (CERTCertListNode* n = CERT_LIST_HEAD(candidates);
+               !CERT_LIST_END(n, candidates); n = CERT_LIST_NEXT(n)) {
+            nsTArray<uint8_t> candidate;
+            candidate.AppendElements(n->cert->derCert.data,
+                                     n->cert->derCert.len);
+            if (n->cert->isRoot) {
+              nssRootCandidates.AppendElement(std::move(candidate));
+            } else {
+              nssIntermediateCandidates.AppendElement(std::move(candidate));
+            }
+          }
         }
-      } else {
-        if (!nssIntermediateCandidates.append(certDER)) {
-          return Result::FATAL_ERROR_NO_MEMORY;
-        }
-      }
-    }
+      });
+  nsCOMPtr<nsIEventTarget> socketThread(
+      do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID));
+  if (!socketThread) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
-  if (!nssRootCandidates.appendAll(std::move(nssIntermediateCandidates))) {
-    return Result::FATAL_ERROR_NO_MEMORY;
+  rv = SyncRunnable::DispatchToThread(socketThread, getCandidatesTask);
+  if (NS_FAILED(rv)) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  }
+  nsTArray<Input> nssCandidates;
+  for (const auto& rootCandidate : nssRootCandidates) {
+    Input certDER;
+    Result rv = certDER.Init(rootCandidate.Elements(), rootCandidate.Length());
+    if (rv != Success) {
+      continue;  
+    }
+    nssCandidates.AppendElement(std::move(certDER));
+  }
+  for (const auto& intermediateCandidate : nssIntermediateCandidates) {
+    Input certDER;
+    Result rv = certDER.Init(intermediateCandidate.Elements(),
+                             intermediateCandidate.Length());
+    if (rv != Success) {
+      continue;  
+    }
+    nssCandidates.AppendElement(std::move(certDER));
   }
 
-  return CheckCandidates(*this, checker, nssRootCandidates,
-                         nameConstraintsInputPtr, keepGoing);
+  return CheckCandidates(*this, checker, nssCandidates, nameConstraintsInputPtr,
+                         keepGoing);
 }
 
 Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
@@ -445,57 +455,79 @@ Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  SECItem candidateCertDERSECItem = UnsafeMapInputToSECItem(candidateCertDER);
-  UniqueCERTCertificate candidateCert(CERT_NewTempCertificate(
-      CERT_GetDefaultCertDB(), &candidateCertDERSECItem, nullptr, false, true));
-  if (!candidateCert) {
-    return MapPRErrorCodeToResult(PR_GetError());
+  Result result = Result::FATAL_ERROR_LIBRARY_FAILURE;
+  RefPtr<Runnable> getTrustTask =
+      NS_NewRunnableFunction("NSSCertDBTrustDomain::GetCertTrust", [&]() {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        SECItem candidateCertDERSECItem =
+            UnsafeMapInputToSECItem(candidateCertDER);
+        UniqueCERTCertificate candidateCert(CERT_NewTempCertificate(
+            CERT_GetDefaultCertDB(), &candidateCertDERSECItem, nullptr, false,
+            true));
+        if (!candidateCert) {
+          result = MapPRErrorCodeToResult(PR_GetError());
+          return;
+        }
+        
+        
+        
+        
+        
+        CERTCertTrust trust;
+        if (CERT_GetCertTrust(candidateCert.get(), &trust) == SECSuccess) {
+          uint32_t flags = SEC_GET_TRUST_FLAGS(&trust, mCertDBTrustType);
+
+          
+          
+          
+          
+          
+          uint32_t relevantTrustBit = endEntityOrCA == EndEntityOrCA::MustBeCA
+                                          ? CERTDB_TRUSTED_CA
+                                          : CERTDB_TRUSTED;
+          if (((flags & (relevantTrustBit | CERTDB_TERMINAL_RECORD))) ==
+              CERTDB_TERMINAL_RECORD) {
+            trustLevel = TrustLevel::ActivelyDistrusted;
+            result = Success;
+            return;
+          }
+
+          
+          if (flags & CERTDB_TRUSTED_CA) {
+            if (policy.IsAnyPolicy()) {
+              trustLevel = TrustLevel::TrustAnchor;
+              result = Success;
+              return;
+            }
+            if (CertIsAuthoritativeForEVPolicy(candidateCert, policy)) {
+              trustLevel = TrustLevel::TrustAnchor;
+              result = Success;
+              return;
+            }
+          }
+        }
+        trustLevel = TrustLevel::InheritsTrust;
+        result = Success;
+      });
+  nsCOMPtr<nsIEventTarget> socketThread(
+      do_GetService(NS_SOCKETTRANSPORTSERVICE_CONTRACTID));
+  if (!socketThread) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
-  
-  
-  
-  
-  
-  CERTCertTrust trust;
-  if (CERT_GetCertTrust(candidateCert.get(), &trust) == SECSuccess) {
-    uint32_t flags = SEC_GET_TRUST_FLAGS(&trust, mCertDBTrustType);
-
-    
-    
-    
-    
-    
-    uint32_t relevantTrustBit = endEntityOrCA == EndEntityOrCA::MustBeCA
-                                    ? CERTDB_TRUSTED_CA
-                                    : CERTDB_TRUSTED;
-    if (((flags & (relevantTrustBit | CERTDB_TERMINAL_RECORD))) ==
-        CERTDB_TERMINAL_RECORD) {
-      trustLevel = TrustLevel::ActivelyDistrusted;
-      return Success;
-    }
-
-    
-    if (flags & CERTDB_TRUSTED_CA) {
-      if (policy.IsAnyPolicy()) {
-        trustLevel = TrustLevel::TrustAnchor;
-        return Success;
-      }
-      if (CertIsAuthoritativeForEVPolicy(candidateCert, policy)) {
-        trustLevel = TrustLevel::TrustAnchor;
-        return Success;
-      }
-    }
+  nsresult rv = SyncRunnable::DispatchToThread(socketThread, getTrustTask);
+  if (NS_FAILED(rv)) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
-
-  trustLevel = TrustLevel::InheritsTrust;
-  return Success;
+  return result;
 }
 
 Result NSSCertDBTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
