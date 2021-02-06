@@ -984,6 +984,8 @@ pub struct Capabilities {
     
     pub requires_batched_texture_uploads: bool,
     
+    pub supports_r8_texture_upload: bool,
+    
     
     pub uses_native_clip_mask: bool,
     
@@ -1653,6 +1655,17 @@ impl Device {
         
         let requires_batched_texture_uploads = is_mali_g;
 
+        
+        
+        
+        let supports_r8_texture_upload = if cfg!(target_os = "linux")
+            && renderer_name.starts_with("AMD Radeon RX")
+        {
+            false
+        } else {
+            true
+        };
+
         Device {
             gl,
             base_gl: None,
@@ -1680,6 +1693,7 @@ impl Device {
                 supports_render_target_partial_update,
                 supports_shader_storage_object,
                 requires_batched_texture_uploads,
+                supports_r8_texture_upload,
                 uses_native_clip_mask,
                 renderer_name,
             },
