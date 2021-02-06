@@ -323,6 +323,7 @@ class nsContextMenu {
     this.initOpenItems();
     this.initNavigationItems();
     this.initViewItems();
+    this.initImageItems();
     this.initMiscItems();
     this.initSpellingItems();
     this.initSaveItems();
@@ -498,14 +499,11 @@ class nsContextMenu {
     }
 
     
-    this.showItem("context-saveimage", this.onLoadedImage || this.onCanvas);
     this.showItem("context-savevideo", this.onVideo);
     this.showItem("context-saveaudio", this.onAudio);
     this.showItem("context-video-saveimage", this.onVideo);
     this.setItemAttr("context-savevideo", "disabled", !this.mediaURL);
     this.setItemAttr("context-saveaudio", "disabled", !this.mediaURL);
-    
-    this.showItem("context-sendimage", this.onImage);
     this.showItem("context-sendvideo", this.onVideo);
     this.showItem("context-sendaudio", this.onAudio);
     let mediaIsBlob = this.mediaURL.startsWith("blob:");
@@ -519,6 +517,71 @@ class nsContextMenu {
       "disabled",
       !this.mediaURL || mediaIsBlob
     );
+  }
+
+  initImageItems() {
+    
+    this.showItem(
+      "context-reloadimage",
+      this.onImage && !this.onCompletedImage
+    );
+
+    
+    
+    this.showItem(
+      "context-viewimage",
+      (this.onImage && (!this.inSyntheticDoc || this.inFrame)) || this.onCanvas
+    );
+
+    
+    this.showItem("context-saveimage", this.onLoadedImage || this.onCanvas);
+
+    
+    
+    
+    this.showItem("context-copyimage-contents", this.onImage);
+
+    
+    this.showItem("context-copyimage", this.onImage);
+
+    
+    this.showItem("context-sendimage", this.onImage);
+
+    this.showItem(
+      "context-viewimagedesc",
+      this.onImage && this.imageDescURL !== ""
+    );
+
+    
+    
+    var haveSetDesktopBackground = false;
+
+    if (
+      AppConstants.HAVE_SHELL_SERVICE &&
+      Services.policies.isAllowed("setDesktopBackground")
+    ) {
+      
+      var shell = getShellService();
+      if (shell) {
+        haveSetDesktopBackground = shell.canSetDesktopBackground;
+      }
+    }
+
+    this.showItem(
+      "context-setDesktopBackground",
+      haveSetDesktopBackground && this.onLoadedImage
+    );
+
+    this.showItem(
+      "context-sep-setbackground",
+      haveSetDesktopBackground && this.onLoadedImage
+    );
+
+    if (haveSetDesktopBackground && this.onLoadedImage) {
+      document.getElementById(
+        "context-setDesktopBackground"
+      ).disabled = this.contentData.disableSetDesktopBackground;
+    }
   }
 
   initViewItems() {
@@ -578,45 +641,6 @@ class nsContextMenu {
     this.showItem("context-sep-viewsource", shouldShow);
 
     
-    
-    var haveSetDesktopBackground = false;
-
-    if (
-      AppConstants.HAVE_SHELL_SERVICE &&
-      Services.policies.isAllowed("setDesktopBackground")
-    ) {
-      
-      var shell = getShellService();
-      if (shell) {
-        haveSetDesktopBackground = shell.canSetDesktopBackground;
-      }
-    }
-
-    this.showItem(
-      "context-setDesktopBackground",
-      haveSetDesktopBackground && this.onLoadedImage
-    );
-
-    if (haveSetDesktopBackground && this.onLoadedImage) {
-      document.getElementById(
-        "context-setDesktopBackground"
-      ).disabled = this.contentData.disableSetDesktopBackground;
-    }
-
-    
-    this.showItem(
-      "context-reloadimage",
-      this.onImage && !this.onCompletedImage
-    );
-
-    
-    
-    this.showItem(
-      "context-viewimage",
-      (this.onImage && (!this.inSyntheticDoc || this.inFrame)) || this.onCanvas
-    );
-
-    
     this.showItem(
       "context-viewvideo",
       this.onVideo && (!this.inSyntheticDoc || this.inFrame)
@@ -640,19 +664,6 @@ class nsContextMenu {
         !this.inPDFViewer
     );
     document.getElementById("context-viewbgimage").disabled = !this.hasBGImage;
-
-    this.showItem("context-viewimageinfo", this.onImage);
-    
-    
-    this.setItemAttr(
-      "context-viewimageinfo",
-      "disabled",
-      this.webExtBrowserType === "popup"
-    );
-    this.showItem(
-      "context-viewimagedesc",
-      this.onImage && this.imageDescURL !== ""
-    );
   }
 
   initMiscItems() {
@@ -828,21 +839,10 @@ class nsContextMenu {
       this.onLink && (this.onImage || this.onVideo || this.onAudio)
     );
 
-    
-    
-    
-    this.showItem("context-copyimage-contents", this.onImage);
-
-    
-    this.showItem("context-copyimage", this.onImage);
     this.showItem("context-copyvideourl", this.onVideo);
     this.showItem("context-copyaudiourl", this.onAudio);
     this.setItemAttr("context-copyvideourl", "disabled", !this.mediaURL);
     this.setItemAttr("context-copyaudiourl", "disabled", !this.mediaURL);
-    this.showItem(
-      "context-sep-copyimage",
-      this.onImage || this.onVideo || this.onAudio
-    );
   }
 
   initMediaPlayerItems() {
@@ -1259,16 +1259,6 @@ class nsContextMenu {
       this.contentData.docLocation,
       null,
       null,
-      null,
-      this.browser
-    );
-  }
-
-  viewImageInfo() {
-    BrowserPageInfo(
-      this.contentData.docLocation,
-      "mediaTab",
-      this.imageInfo,
       null,
       this.browser
     );
