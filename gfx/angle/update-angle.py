@@ -348,7 +348,8 @@ checkout_dir.mkdir(exist_ok=True)
 
 
 
-RE_TARGET_NAME = re.compile('//(.*):(.+)')
+RE_TARGET_NAME = re.compile("//(.*):(.+)")
+
 
 def export_target(target_full_name) -> Set[str]:
     
@@ -471,7 +472,7 @@ def export_target(target_full_name) -> Set[str]:
     dep_libs: Set[str] = set()
     for dep_full_name in set(flat["dep_libs"]):
         assert dep_full_name.startswith("//"), dep_name
-        (_, dep_name) = dep_full_name.split(':')
+        (_, dep_name) = dep_full_name.split(":")
         dep_libs.add(dep_name)
 
     dep_dirs = set(dep_libs)
