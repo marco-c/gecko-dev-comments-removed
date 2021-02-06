@@ -99,20 +99,6 @@ function promiseFocus(window) {
 }
 
 
-function checkOpenWindows(aWindowID) {
-  let found = false;
-  for (let win of Services.wm.getEnumerator(aWindowID)) {
-    if (!win.closed) {
-      found = true;
-      win.close();
-    }
-  }
-  if (found) {
-    ok(false, "Found unexpected " + aWindowID + " window still open");
-  }
-}
-
-
 
 var gCatMan = Services.catMan;
 
@@ -154,11 +140,6 @@ registerCleanupFunction(function() {
       Services.prefs.setCharPref(pref.name, pref.value);
     }
   }
-
-  
-  checkOpenWindows("Addons:Manager");
-  checkOpenWindows("Addons:Compatibility");
-  checkOpenWindows("Addons:Install");
 
   return AddonManager.getAllInstalls().then(aInstalls => {
     for (let install of aInstalls) {
