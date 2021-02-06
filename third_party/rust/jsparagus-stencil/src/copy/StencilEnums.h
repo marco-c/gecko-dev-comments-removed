@@ -187,27 +187,22 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   IsFieldInitializer = 1 << 20,
 
   
-  HasRest = 1 << 21,
+  
+  UseMemberInitializers = 1 << 21,
+
+  
+  HasRest = 1 << 22,
 
   
   
   
-  NeedsFunctionEnvironmentObjects = 1 << 22,
+  NeedsFunctionEnvironmentObjects = 1 << 23,
 
   
   
   
   
-  FunctionHasExtraBodyVarScope = 1 << 23,
-
-  
-  
-  
-  
-  
-  
-  
-  ShouldDeclareArguments = 1 << 24,
+  FunctionHasExtraBodyVarScope = 1 << 24,
 
   
   
@@ -216,33 +211,42 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ArgumentsHasVarBinding = 1 << 25,
+  ShouldDeclareArguments = 1 << 25,
 
   
   
   
   
   
-  AlwaysNeedsArgsObj = 1 << 26,
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ArgumentsHasVarBinding = 1 << 26,
 
   
   
   
-  HasMappedArgsObj = 1 << 27,
+  
+  
+  AlwaysNeedsArgsObj = 1 << 27,
+
+  
+  
+  
+  HasMappedArgsObj = 1 << 28,
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {
@@ -276,6 +280,9 @@ enum class MutableScriptFlagsEnum : uint32_t {
   SpewEnabled = 1 << 15,
 
   
+  NeedsFinalWarmUpCount = 1 << 16,
+
+  
   
   
 
@@ -283,34 +290,41 @@ enum class MutableScriptFlagsEnum : uint32_t {
   
   
   
-  BaselineDisabled = 1 << 16,
-  IonDisabled = 1 << 17,
+  BaselineDisabled = 1 << 17,
+  IonDisabled = 1 << 18,
 
   
-  FailedBoundsCheck = 1 << 18,
+  FailedBoundsCheck = 1 << 19,
 
   
-  FailedShapeGuard = 1 << 19,
+  FailedShapeGuard = 1 << 20,
 
   
-  HadLICMInvalidation = 1 << 20,
-
-  
-  
-  HadOverflowBailout = 1 << 21,
+  HadLICMInvalidation = 1 << 21,
 
   
   
-  Uninlineable = 1 << 22,
+  HadEagerTruncationBailout = 1 << 22,
 
   
-  InvalidatedIdempotentCache = 1 << 23,
+  
+  Uninlineable = 1 << 23,
 
   
-  FailedLexicalCheck = 1 << 24,
+  InvalidatedIdempotentCache = 1 << 24,
 
   
-  HadSpeculativePhiBailout = 1 << 25,
+  FailedLexicalCheck = 1 << 25,
+
+  
+  HadSpeculativePhiBailout = 1 << 26,
+
+  
+  HadUnboxFoldingBailout = 1 << 27,
+
+  
+  
+  IsInlinableLargeFunction = 1 << 28,
 };
 
 }  
