@@ -746,13 +746,19 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   mTextHash.Clear();
 
   
-  for (auto iter = mContentInsertions.ConstIter(); !iter.Done(); iter.Next()) {
+  
+  
+  
+  
+  
+  
+  auto contentInsertions = std::move(mContentInsertions);
+  for (auto iter = contentInsertions.ConstIter(); !iter.Done(); iter.Next()) {
     mDocument->ProcessContentInserted(iter.Key(), iter.UserData());
     if (!mDocument) {
       return;
     }
   }
-  mContentInsertions.Clear();
 
   
   
