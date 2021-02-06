@@ -6609,6 +6609,10 @@ nsresult nsHttpChannel::BeginConnect() {
     Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC, false);
   }
 
+  if (mConnectionInfo->UsingConnect()) {
+    StoreUseHTTPSSVC(false);
+  }
+
   
   
   if (!mConnectionInfo->IsHttp3() &&
@@ -6782,7 +6786,7 @@ nsresult nsHttpChannel::MaybeStartDNSPrefetch() {
     
     if (LoadUseHTTPSSVC() ||
         (gHttpHandler->UseHTTPSRRForSpeculativeConnection() &&
-         !mHTTPSSVCRecord)) {
+         !mHTTPSSVCRecord && !mConnectionInfo->UsingConnect())) {
       MOZ_ASSERT(!mHTTPSSVCRecord);
 
       OriginAttributes originAttributes;
