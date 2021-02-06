@@ -15,20 +15,32 @@ import type {
 } from "./types";
 
 import { clientCommands } from "./commands";
+import { hasSourceActor, getSourceActor } from "../../selectors";
+import { stringToSourceActorId } from "../../reducers/source-actors";
+
+type Dependencies = {
+  store: any,
+};
+
+let store: any;
+
+
+
+
+
+
+
+
+
+
+export function setupCreate(dependencies: Dependencies): void {
+  store = dependencies.store;
+}
 
 export function prepareSourcePayload(
   threadFront: ThreadFront,
   source: SourcePayload
 ): GeneratedSourceData {
-  
-  
-  
-  
-  clientCommands.registerSourceActor(
-    source.actor,
-    makeSourceId(source, threadFront.actor)
-  );
-
   source = { ...source };
 
   
@@ -45,17 +57,22 @@ export function prepareSourcePayload(
   return { thread: threadFront.actor, source };
 }
 
-export function createFrame(
+export async function createFrame(
   thread: ThreadId,
   frame: FrameFront,
   index: number = 0
-): ?Frame {
+): Promise<?Frame> {
   if (!frame) {
     return null;
   }
 
+  
+  const source = await waitForSourceActorToBeRegisteredInStore(
+    frame.where.actor
+  );
+
   const location = {
-    sourceId: clientCommands.getSourceForActor(frame.where.actor),
+    sourceId: makeSourceId(source, thread),
     line: frame.where.line,
     column: frame.where.column,
   };
@@ -75,6 +92,37 @@ export function createFrame(
   };
 }
 
+
+
+
+
+
+
+async function waitForSourceActorToBeRegisteredInStore(
+  sourceActorIdString: string
+): Promise<any> {
+  const sourceActorId = stringToSourceActorId(sourceActorIdString);
+  if (!hasSourceActor(store.getState(), sourceActorId)) {
+    await new Promise(resolve => {
+      const unsubscribe = store.subscribe(check);
+      let currentState = null;
+      function check() {
+        const previousState = currentState;
+        currentState = store.getState().sourceActors.values;
+        
+        if (previousState == currentState) {
+          return;
+        }
+        if (hasSourceActor(store.getState(), sourceActorId)) {
+          unsubscribe();
+          resolve();
+        }
+      }
+    });
+  }
+  return getSourceActor(store.getState(), sourceActorId);
+}
+
 export function makeSourceId(source: SourcePayload, threadActorId: ThreadId) {
   
   
@@ -87,11 +135,12 @@ export function makeSourceId(source: SourcePayload, threadActorId: ThreadId) {
   return `source-${source.actor}`;
 }
 
-export function createPause(thread: string, packet: PausedPacket): any {
+export async function createPause(thread: string, packet: PausedPacket): any {
+  const frame = await createFrame(thread, packet.frame);
   return {
     ...packet,
     thread,
-    frame: createFrame(thread, packet.frame),
+    frame,
   };
 }
 
