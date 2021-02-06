@@ -240,9 +240,9 @@ class nsTableWrapperFrame : public nsContainerFrame {
                                    const nscoord aAvailISize) const;
 
   
-  void OuterDoReflowChild(nsPresContext* aPresContext, nsIFrame* aChildFrame,
-                          const ReflowInput& aChildRI, ReflowOutput& aMetrics,
-                          nsReflowStatus& aStatus);
+  void ReflowChild(nsPresContext* aPresContext, nsIFrame* aChildFrame,
+                   const ReflowInput& aChildRI, ReflowOutput& aMetrics,
+                   nsReflowStatus& aStatus);
 
   
   void UpdateOverflowAreas(ReflowOutput& aMet);
