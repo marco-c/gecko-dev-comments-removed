@@ -12,9 +12,9 @@ use serde::{Deserialize, Serialize};
 
 
 
-pub use glean_core::{
-    metrics::DistributionData, metrics::MemoryUnit, metrics::RecordedEvent, metrics::TimeUnit,
-    CommonMetricData, ErrorType, Lifetime,
+pub use glean::{
+    traits, CommonMetricData, DistributionData, ErrorType, Lifetime, MemoryUnit, RecordedEvent,
+    TimeUnit, TimerId,
 };
 
 mod boolean;
