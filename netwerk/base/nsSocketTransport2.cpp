@@ -37,7 +37,6 @@
 #include "nsICancelable.h"
 #include "NetworkDataCountLayer.h"
 #include "QuicSocketControl.h"
-#include "TCPFastOpenLayer.h"
 #include <algorithm>
 #include "sslexp.h"
 #include "mozilla/net/SSLTokensCache.h"
@@ -552,31 +551,13 @@ nsSocketOutputStream::Write(const char* buf, uint32_t count,
   
 
   PRFileDesc* fd = nullptr;
-  bool fastOpenInProgress;
   {
     MutexAutoLock lock(mTransport->mLock);
 
     if (NS_FAILED(mCondition)) return mCondition;
 
-    fd = mTransport->GetFD_LockedAlsoDuringFastOpen();
+    fd = mTransport->GetFD_Locked();
     if (!fd) return NS_BASE_STREAM_WOULD_BLOCK;
-
-    fastOpenInProgress = mTransport->FastOpenInProgress();
-  }
-
-  if (fastOpenInProgress) {
-    
-    
-    
-    uint32_t availableSpace = TCPFastOpenGetBufferSizeLeft(fd);
-    count = (count > availableSpace) ? availableSpace : count;
-    if (!count) {
-      {
-        MutexAutoLock lock(mTransport->mLock);
-        mTransport->ReleaseFD_Locked(fd);
-      }
-      return NS_BASE_STREAM_WOULD_BLOCK;
-    }
   }
 
   SOCKET_LOG(("  calling PR_Write [count=%u]\n", count));
@@ -611,11 +592,7 @@ nsSocketOutputStream::Write(const char* buf, uint32_t count,
 
   
   
-  
-  
-  
-  
-  if ((n > 0) && !fastOpenInProgress) {
+  if ((n > 0)) {
     mTransport->SendStatus(NS_NET_STATUS_SENDING_TO);
   }
 
@@ -720,7 +697,6 @@ nsSocketTransport::nsSocketTransport()
       mFD(this),
       mFDref(0),
       mFDconnected(false),
-      mFDFastOpenInProgress(false),
       mSocketTransportService(gSocketTransportService),
       mInput(this),
       mOutput(this),
@@ -731,9 +707,6 @@ nsSocketTransport::nsSocketTransport()
       mKeepaliveIdleTimeS(-1),
       mKeepaliveRetryIntervalS(-1),
       mKeepaliveProbeCount(-1),
-      mFastOpenCallback(nullptr),
-      mFastOpenLayerHasBufferedData(false),
-      mFastOpenStatus(TFO_NOT_SET),
       mFirstRetryError(NS_OK),
       mDoNotRetryToConnect(false),
       mUsingQuic(false) {
@@ -964,15 +937,6 @@ void nsSocketTransport::SendStatus(nsresult status) {
     switch (status) {
       case NS_NET_STATUS_SENDING_TO:
         progress = mOutput.ByteCount();
-        
-        
-        
-        
-        
-        
-        if (progress == 0) {
-          return;
-        }
         break;
       case NS_NET_STATUS_RECEIVING_FROM:
         progress = mInput.ByteCount();
@@ -1578,18 +1542,6 @@ nsresult nsSocketTransport::InitiateSocket() {
     connectStarted = PR_IntervalNow();
   }
 
-  bool tfo = false;
-  if (!mProxyTransparent && mFastOpenCallback &&
-      mFastOpenCallback->FastOpenEnabled()) {
-    if (NS_SUCCEEDED(AttachTCPFastOpenIOLayer(fd))) {
-      tfo = true;
-      SOCKET_LOG(
-          ("nsSocketTransport::InitiateSocket TCP Fast Open "
-           "started [this=%p]\n",
-           this));
-    }
-  }
-
   if (Telemetry::CanRecordPrereleaseData() ||
       Telemetry::CanRecordReleaseData()) {
     if (NS_FAILED(AttachNetworkDataCountLayer(fd))) {
@@ -1605,67 +1557,6 @@ nsresult nsSocketTransport::InitiateSocket() {
   PRErrorCode code = PR_GetError();
   if (status == PR_SUCCESS) {
     PR_SetFDInheritable(fd, false);
-  }
-  if ((status == PR_SUCCESS) && tfo) {
-    {
-      MutexAutoLock lock(mLock);
-      mFDFastOpenInProgress = true;
-    }
-    SOCKET_LOG(("Using TCP Fast Open."));
-    rv = mFastOpenCallback->StartFastOpen();
-    if (NS_FAILED(rv)) {
-      if (NS_SUCCEEDED(mCondition)) {
-        mCondition = rv;
-      }
-      mFastOpenCallback = nullptr;
-      MutexAutoLock lock(mLock);
-      mFDFastOpenInProgress = false;
-      return rv;
-    }
-    status = PR_FAILURE;
-    connectCalled = false;
-    bool fastOpenNotSupported = false;
-    TCPFastOpenFinish(fd, code, fastOpenNotSupported, mFastOpenStatus);
-
-    
-    if (mFastOpenStatus == TFO_DATA_SENT) {
-      SendStatus(NS_NET_STATUS_SENDING_TO);
-    }
-
-    
-    
-    
-    
-    mFastOpenLayerHasBufferedData = TCPFastOpenGetCurrentBufferSize(fd);
-
-    MOZ_ASSERT((mFastOpenStatus == TFO_NOT_TRIED) ||
-               (mFastOpenStatus == TFO_DISABLED) ||
-               (mFastOpenStatus == TFO_DATA_SENT) ||
-               (mFastOpenStatus == TFO_TRIED));
-    mFastOpenCallback->SetFastOpenStatus(mFastOpenStatus);
-    SOCKET_LOG(
-        ("called StartFastOpen - code=%d; fastOpen is %s "
-         "supported.\n",
-         code, fastOpenNotSupported ? "not" : ""));
-    SOCKET_LOG(("TFO status %d\n", mFastOpenStatus));
-
-    if (fastOpenNotSupported) {
-      
-      
-      
-      
-      
-      
-      
-      mFastOpenCallback->FastOpenNotSupported();
-      
-      
-      
-      
-      connectCalled = true;
-    }
-  } else {
-    mFastOpenCallback = nullptr;
   }
 
   if (gSocketTransportService->IsTelemetryEnabledAndNotSleepPhase() &&
@@ -1794,13 +1685,7 @@ bool nsSocketTransport::RecoverFromError() {
 
   
   
-  
-  if ((!mFDFastOpenInProgress ||
-       ((mCondition != NS_ERROR_CONNECTION_REFUSED) &&
-        (mCondition != NS_ERROR_NET_TIMEOUT) &&
-        (mCondition != NS_BASE_STREAM_CLOSED) &&
-        (mCondition != NS_ERROR_PROXY_CONNECTION_REFUSED))) &&
-      mState == STATE_CONNECTING && mDNSRecord) {
+  if (mState == STATE_CONNECTING && mDNSRecord) {
     mDNSRecord->ReportUnusable(SocketPort());
   }
 
@@ -1810,8 +1695,7 @@ bool nsSocketTransport::RecoverFromError() {
       mCondition != NS_ERROR_PROXY_CONNECTION_REFUSED &&
       mCondition != NS_ERROR_NET_TIMEOUT &&
       mCondition != NS_ERROR_UNKNOWN_HOST &&
-      mCondition != NS_ERROR_UNKNOWN_PROXY_HOST &&
-      !(mFDFastOpenInProgress && (mCondition == NS_ERROR_FAILURE))) {
+      mCondition != NS_ERROR_UNKNOWN_PROXY_HOST) {
     SOCKET_LOG(("  not a recoverable error %" PRIx32,
                 static_cast<uint32_t>(mCondition)));
     return false;
@@ -1829,101 +1713,78 @@ bool nsSocketTransport::RecoverFromError() {
 #endif
 
   bool tryAgain = false;
-  if (mFDFastOpenInProgress &&
-      ((mCondition == NS_ERROR_CONNECTION_REFUSED) ||
-       (mCondition == NS_ERROR_NET_TIMEOUT) ||
-#if defined(_WIN64) && defined(WIN95)
-       
-       
-       
-       (mCondition == NS_ERROR_FAILURE) ||
-#endif
-       (mCondition == NS_ERROR_PROXY_CONNECTION_REFUSED))) {
-    
-    
-    tryAgain = true;
-    
-    
-    
-    if (mFastOpenCallback) {
-      mFastOpenCallback->SetFastOpenConnected(mCondition, true);
-    }
-    mFastOpenCallback = nullptr;
 
-  } else {
-    
-    if (NS_SUCCEEDED(mFirstRetryError)) {
-      mFirstRetryError = mCondition;
-    }
-    if ((mState == STATE_CONNECTING) && mDNSRecord) {
-      if (mNetAddr.raw.family == AF_INET) {
-        if (mSocketTransportService->IsTelemetryEnabledAndNotSleepPhase()) {
-          Telemetry::Accumulate(Telemetry::IPV4_AND_IPV6_ADDRESS_CONNECTIVITY,
-                                UNSUCCESSFUL_CONNECTING_TO_IPV4_ADDRESS);
-        }
-      } else if (mNetAddr.raw.family == AF_INET6) {
-        if (mSocketTransportService->IsTelemetryEnabledAndNotSleepPhase()) {
-          Telemetry::Accumulate(Telemetry::IPV4_AND_IPV6_ADDRESS_CONNECTIVITY,
-                                UNSUCCESSFUL_CONNECTING_TO_IPV6_ADDRESS);
-        }
+  
+  if (NS_SUCCEEDED(mFirstRetryError)) {
+    mFirstRetryError = mCondition;
+  }
+  if ((mState == STATE_CONNECTING) && mDNSRecord) {
+    if (mNetAddr.raw.family == AF_INET) {
+      if (mSocketTransportService->IsTelemetryEnabledAndNotSleepPhase()) {
+        Telemetry::Accumulate(Telemetry::IPV4_AND_IPV6_ADDRESS_CONNECTIVITY,
+                              UNSUCCESSFUL_CONNECTING_TO_IPV4_ADDRESS);
+      }
+    } else if (mNetAddr.raw.family == AF_INET6) {
+      if (mSocketTransportService->IsTelemetryEnabledAndNotSleepPhase()) {
+        Telemetry::Accumulate(Telemetry::IPV4_AND_IPV6_ADDRESS_CONNECTIVITY,
+                              UNSUCCESSFUL_CONNECTING_TO_IPV6_ADDRESS);
       }
     }
+  }
 
-    if (mConnectionFlags & RETRY_WITH_DIFFERENT_IP_FAMILY &&
-        mCondition == NS_ERROR_UNKNOWN_HOST && mState == STATE_RESOLVING &&
-        !mProxyTransparentResolvesHost) {
-      SOCKET_LOG(("  trying lookup again with opposite ip family\n"));
+  if (mConnectionFlags & RETRY_WITH_DIFFERENT_IP_FAMILY &&
+      mCondition == NS_ERROR_UNKNOWN_HOST && mState == STATE_RESOLVING &&
+      !mProxyTransparentResolvesHost) {
+    SOCKET_LOG(("  trying lookup again with opposite ip family\n"));
+    mConnectionFlags ^= (DISABLE_IPV6 | DISABLE_IPV4);
+    mConnectionFlags &= ~RETRY_WITH_DIFFERENT_IP_FAMILY;
+    
+    
+    mResetFamilyPreference = true;
+    tryAgain = true;
+  }
+
+  
+  if (mState == STATE_CONNECTING && mDNSRecord) {
+    nsresult rv = mDNSRecord->GetNextAddr(SocketPort(), &mNetAddr);
+    mDNSRecord->IsTRR(&mResolvedByTRR);
+    if (NS_SUCCEEDED(rv)) {
+      SOCKET_LOG(("  trying again with next ip address\n"));
+      tryAgain = true;
+    } else if (mConnectionFlags & RETRY_WITH_DIFFERENT_IP_FAMILY) {
+      SOCKET_LOG(("  failed to connect, trying with opposite ip family\n"));
+      
+      
+      mState = STATE_CLOSED;
       mConnectionFlags ^= (DISABLE_IPV6 | DISABLE_IPV4);
       mConnectionFlags &= ~RETRY_WITH_DIFFERENT_IP_FAMILY;
       
       
       mResetFamilyPreference = true;
       tryAgain = true;
-    }
+    } else if (!(mConnectionFlags & DISABLE_TRR)) {
+      bool trrEnabled;
+      mDNSRecord->IsTRR(&trrEnabled);
 
-    
-    if (mState == STATE_CONNECTING && mDNSRecord) {
-      nsresult rv = mDNSRecord->GetNextAddr(SocketPort(), &mNetAddr);
-      mDNSRecord->IsTRR(&mResolvedByTRR);
-      if (NS_SUCCEEDED(rv)) {
-        SOCKET_LOG(("  trying again with next ip address\n"));
-        tryAgain = true;
-      } else if (mConnectionFlags & RETRY_WITH_DIFFERENT_IP_FAMILY) {
-        SOCKET_LOG(("  failed to connect, trying with opposite ip family\n"));
+      
+      
+      if (!StaticPrefs::network_trr_fallback_on_zero_response() &&
+          ((mNetAddr.raw.family == AF_INET && mNetAddr.inet.ip == 0) ||
+           (mNetAddr.raw.family == AF_INET6 && mNetAddr.inet6.ip.u64[0] == 0 &&
+            mNetAddr.inet6.ip.u64[1] == 0))) {
+        SOCKET_LOG(("  TRR returned 0.0.0.0 and there are no other IPs"));
+      } else if (trrEnabled) {
+        uint32_t trrMode = 0;
+        mDNSRecord->GetEffectiveTRRMode(&trrMode);
         
-        
-        mState = STATE_CLOSED;
-        mConnectionFlags ^= (DISABLE_IPV6 | DISABLE_IPV4);
-        mConnectionFlags &= ~RETRY_WITH_DIFFERENT_IP_FAMILY;
-        
-        
-        mResetFamilyPreference = true;
-        tryAgain = true;
-      } else if (!(mConnectionFlags & DISABLE_TRR)) {
-        bool trrEnabled;
-        mDNSRecord->IsTRR(&trrEnabled);
-
-        
-        
-        if (!StaticPrefs::network_trr_fallback_on_zero_response() &&
-            ((mNetAddr.raw.family == AF_INET && mNetAddr.inet.ip == 0) ||
-             (mNetAddr.raw.family == AF_INET6 &&
-              mNetAddr.inet6.ip.u64[0] == 0 &&
-              mNetAddr.inet6.ip.u64[1] == 0))) {
-          SOCKET_LOG(("  TRR returned 0.0.0.0 and there are no other IPs"));
-        } else if (trrEnabled) {
-          uint32_t trrMode = 0;
-          mDNSRecord->GetEffectiveTRRMode(&trrMode);
+        if (trrMode != 3) {
           
-          if (trrMode != 3) {
-            
-            
-            
-            SOCKET_LOG(("  failed to connect with TRR enabled, try w/o\n"));
-            mState = STATE_CLOSED;
-            mConnectionFlags |= DISABLE_TRR | BYPASS_CACHE | REFRESH_CACHE;
-            tryAgain = true;
-          }
+          
+          
+          SOCKET_LOG(("  failed to connect with TRR enabled, try w/o\n"));
+          mState = STATE_CLOSED;
+          mConnectionFlags |= DISABLE_TRR | BYPASS_CACHE | REFRESH_CACHE;
+          tryAgain = true;
         }
       }
     }
@@ -2001,14 +1862,6 @@ void nsSocketTransport::OnSocketConnected() {
   
   mNetAddrIsSet = true;
 
-  if (mFDFastOpenInProgress && mFastOpenCallback) {
-    
-    
-    
-    mFastOpenCallback->SetFastOpenConnected(NS_OK, false);
-  }
-  mFastOpenCallback = nullptr;
-
   
   
   {
@@ -2017,7 +1870,6 @@ void nsSocketTransport::OnSocketConnected() {
     NS_ASSERTION(mFDref == 1, "wrong socket ref count");
     SetSocketName(mFD);
     mFDconnected = true;
-    mFDFastOpenInProgress = false;
     mPollTimeout = mTimeouts[TIMEOUT_READ_WRITE];
   }
 
@@ -2056,26 +1908,6 @@ PRFileDesc* nsSocketTransport::GetFD_Locked() {
   if (mFD.IsInitialized()) mFDref++;
 
   return mFD;
-}
-
-PRFileDesc* nsSocketTransport::GetFD_LockedAlsoDuringFastOpen() {
-  mLock.AssertCurrentThreadOwns();
-
-  
-  if (!mFDconnected && !mFDFastOpenInProgress) {
-    return nullptr;
-  }
-
-  if (mFD.IsInitialized()) {
-    mFDref++;
-  }
-
-  return mFD;
-}
-
-bool nsSocketTransport::FastOpenInProgress() {
-  mLock.AssertCurrentThreadOwns();
-  return mFDFastOpenInProgress;
 }
 
 class ThunkPRClose : public Runnable {
@@ -2279,23 +2111,6 @@ void nsSocketTransport::OnSocketReady(PRFileDesc* fd, int16_t outFlags) {
     return;
   }
 
-  if ((mState == STATE_TRANSFERRING) && mFastOpenLayerHasBufferedData) {
-    
-    
-    
-    mFastOpenLayerHasBufferedData = TCPFastOpenFlushBuffer(fd);
-    if (mFastOpenLayerHasBufferedData) {
-      return;
-    }
-    SendStatus(NS_NET_STATUS_SENDING_TO);
-
-    
-    
-    
-    
-    mFastOpenLayerHasBufferedData = false;
-  }
-
   if (mState == STATE_TRANSFERRING) {
     
     if ((mPollFlags & PR_POLL_WRITE) && (outFlags & ~PR_POLL_READ)) {
@@ -2329,25 +2144,6 @@ void nsSocketTransport::OnSocketReady(PRFileDesc* fd, int16_t outFlags) {
     }
 
     PRStatus status = PR_ConnectContinue(fd, outFlags);
-
-#if defined(_WIN64) && defined(WIN95)
-#  ifndef TCP_FASTOPEN
-#    define TCP_FASTOPEN 15
-#  endif
-
-    if (mFDFastOpenInProgress && mFastOpenCallback &&
-        (mFastOpenStatus == TFO_DATA_SENT)) {
-      PROsfd osfd = PR_FileDesc2NativeHandle(fd);
-      BOOL option = 0;
-      int len = sizeof(option);
-      PRInt32 rv = getsockopt((SOCKET)osfd, IPPROTO_TCP, TCP_FASTOPEN,
-                              (char*)&option, &len);
-      if (!rv && !option) {
-        
-        mFastOpenCallback->SetFastOpenStatus(TFO_DATA_COOKIE_NOT_ACCEPTED);
-      }
-    }
-#endif
 
     if (gSocketTransportService->IsTelemetryEnabledAndNotSleepPhase() &&
         connectStarted) {
@@ -2447,24 +2243,11 @@ void nsSocketTransport::OnSocketDetached(PRFileDesc* fd) {
     }
   }
 
-  mFastOpenLayerHasBufferedData = false;
-
   
   if (!gIOService->IsNetTearingDown() && RecoverFromError())
     mCondition = NS_OK;
   else {
     mState = STATE_CLOSED;
-
-    
-    
-    
-    
-    
-    
-    if (mFDFastOpenInProgress && mFastOpenCallback) {
-      mFastOpenCallback->SetFastOpenConnected(mCondition, false);
-    }
-    mFastOpenCallback = nullptr;
 
     
     if (mDNSRequest) {
@@ -2478,18 +2261,6 @@ void nsSocketTransport::OnSocketDetached(PRFileDesc* fd) {
     mInput.OnSocketReady(mCondition);
     mOutput.OnSocketReady(mCondition);
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(!(mFDFastOpenInProgress && mFastOpenCallback));
 
   
   
@@ -2515,7 +2286,6 @@ void nsSocketTransport::OnSocketDetached(PRFileDesc* fd) {
       
       
       mFDconnected = false;
-      mFDFastOpenInProgress = false;
     }
 
     
@@ -2648,11 +2418,6 @@ nsSocketTransport::Close(nsresult reason) {
 
   mDoNotRetryToConnect = true;
 
-  if (mFDFastOpenInProgress && mFastOpenCallback) {
-    mFastOpenCallback->SetFastOpenConnected(reason, false);
-  }
-  mFastOpenCallback = nullptr;
-
   mInput.CloseWithStatus(reason);
   mOutput.CloseWithStatus(reason);
   return NS_OK;
@@ -2716,14 +2481,8 @@ NS_IMETHODIMP
 nsSocketTransport::IsAlive(bool* result) {
   *result = false;
 
-  
-  if (mFDFastOpenInProgress) {
-    *result = true;
-    return NS_OK;
-  }
-
   nsresult conditionWhileLocked = NS_OK;
-  PRFileDescAutoLock fd(this, false, &conditionWhileLocked);
+  PRFileDescAutoLock fd(this, &conditionWhileLocked);
   if (NS_FAILED(conditionWhileLocked) || !fd.IsInitialized()) {
     return NS_OK;
   }
@@ -2931,7 +2690,7 @@ nsSocketTransport::GetQoSBits(uint8_t* aQoSBits) {
 
 NS_IMETHODIMP
 nsSocketTransport::GetRecvBufferSize(uint32_t* aSize) {
-  PRFileDescAutoLock fd(this, false);
+  PRFileDescAutoLock fd(this);
   if (!fd.IsInitialized()) return NS_ERROR_NOT_CONNECTED;
 
   nsresult rv = NS_OK;
@@ -2947,7 +2706,7 @@ nsSocketTransport::GetRecvBufferSize(uint32_t* aSize) {
 
 NS_IMETHODIMP
 nsSocketTransport::GetSendBufferSize(uint32_t* aSize) {
-  PRFileDescAutoLock fd(this, false);
+  PRFileDescAutoLock fd(this);
   if (!fd.IsInitialized()) return NS_ERROR_NOT_CONNECTED;
 
   nsresult rv = NS_OK;
@@ -2963,7 +2722,7 @@ nsSocketTransport::GetSendBufferSize(uint32_t* aSize) {
 
 NS_IMETHODIMP
 nsSocketTransport::SetRecvBufferSize(uint32_t aSize) {
-  PRFileDescAutoLock fd(this, false);
+  PRFileDescAutoLock fd(this);
   if (!fd.IsInitialized()) return NS_ERROR_NOT_CONNECTED;
 
   nsresult rv = NS_OK;
@@ -2977,7 +2736,7 @@ nsSocketTransport::SetRecvBufferSize(uint32_t aSize) {
 
 NS_IMETHODIMP
 nsSocketTransport::SetSendBufferSize(uint32_t aSize) {
-  PRFileDescAutoLock fd(this, false);
+  PRFileDescAutoLock fd(this);
   if (!fd.IsInitialized()) return NS_ERROR_NOT_CONNECTED;
 
   nsresult rv = NS_OK;
@@ -3122,7 +2881,7 @@ nsresult nsSocketTransport::SetKeepaliveEnabledInternal(bool aEnable) {
   MOZ_ASSERT(mKeepaliveProbeCount > 0 &&
              mKeepaliveProbeCount <= kMaxTCPKeepCount);
 
-  PRFileDescAutoLock fd(this, true);
+  PRFileDescAutoLock fd(this);
   if (NS_WARN_IF(!fd.IsInitialized())) {
     return NS_ERROR_NOT_INITIALIZED;
   }
@@ -3270,7 +3029,7 @@ nsSocketTransport::SetKeepaliveVals(int32_t aIdleTime, int32_t aRetryInterval) {
        this, mKeepaliveEnabled ? "enabled" : "disabled", mKeepaliveIdleTimeS,
        mKeepaliveRetryIntervalS, mKeepaliveProbeCount));
 
-  PRFileDescAutoLock fd(this, true);
+  PRFileDescAutoLock fd(this);
   if (NS_WARN_IF(!fd.IsInitialized())) {
     return NS_ERROR_NULL_POINTER;
   }
@@ -3568,12 +3327,6 @@ void nsSocketTransport::SendPRBlockingTelemetry(
   } else {
     Telemetry::Accumulate(aIDNormal, PR_IntervalToMilliseconds(now - aStart));
   }
-}
-
-NS_IMETHODIMP
-nsSocketTransport::SetFastOpenCallback(TCPFastOpen* aFastOpen) {
-  mFastOpenCallback = aFastOpen;
-  return NS_OK;
 }
 
 NS_IMETHODIMP

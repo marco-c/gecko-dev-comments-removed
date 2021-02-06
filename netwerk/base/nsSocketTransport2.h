@@ -21,7 +21,6 @@
 #include "nsIDNSListener.h"
 #include "nsIDNSRecord.h"
 #include "nsIClassInfo.h"
-#include "TCPFastOpen.h"
 #include "mozilla/net/DNS.h"
 #include "nsASocketHandler.h"
 #include "mozilla/Telemetry.h"
@@ -201,7 +200,6 @@ class nsSocketTransport final : public nsASocketHandler,
   class MOZ_STACK_CLASS PRFileDescAutoLock {
    public:
     explicit PRFileDescAutoLock(nsSocketTransport* aSocketTransport,
-                                bool aAlsoDuringFastOpen,
                                 nsresult* aConditionWhileLocked = nullptr)
         : mSocketTransport(aSocketTransport), mFd(nullptr) {
       MOZ_ASSERT(aSocketTransport);
@@ -212,11 +210,7 @@ class nsSocketTransport final : public nsASocketHandler,
           return;
         }
       }
-      if (!aAlsoDuringFastOpen) {
-        mFd = mSocketTransport->GetFD_Locked();
-      } else {
-        mFd = mSocketTransport->GetFD_LockedAlsoDuringFastOpen();
-      }
+      mFd = mSocketTransport->GetFD_Locked();
     }
     ~PRFileDescAutoLock() {
       MutexAutoLock lock(mSocketTransport->mLock);
@@ -369,11 +363,8 @@ class nsSocketTransport final : public nsASocketHandler,
 
   Mutex mLock;  
   LockedPRFileDesc mFD;
-  nsrefcnt mFDref;             
-  bool mFDconnected;           
-  bool mFDFastOpenInProgress;  
-                               
-                               
+  nsrefcnt mFDref;    
+  bool mFDconnected;  
 
   
   
@@ -404,9 +395,7 @@ class nsSocketTransport final : public nsASocketHandler,
   
   
   PRFileDesc* GetFD_Locked();
-  PRFileDesc* GetFD_LockedAlsoDuringFastOpen();
   void ReleaseFD_Locked(PRFileDesc* fd);
-  bool FastOpenInProgress();
 
   
   
@@ -460,10 +449,6 @@ class nsSocketTransport final : public nsASocketHandler,
   int32_t mKeepaliveRetryIntervalS;
   int32_t mKeepaliveProbeCount;
 
-  
-  TCPFastOpen* mFastOpenCallback;
-  bool mFastOpenLayerHasBufferedData;
-  uint8_t mFastOpenStatus;
   nsresult mFirstRetryError;
 
   bool mDoNotRetryToConnect;
