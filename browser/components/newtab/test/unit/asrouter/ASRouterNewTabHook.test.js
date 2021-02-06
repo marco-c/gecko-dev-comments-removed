@@ -8,7 +8,10 @@ describe("ASRouterNewTabHook", () => {
     sandbox = sinon.createSandbox();
     initParams = {
       router: {
-        init: sandbox.stub().resolves(),
+        init: sandbox.stub().callsFake(() => {
+          
+          initParams.router.initialized = true;
+        }),
         uninit: sandbox.stub(),
       },
       messageHandler: {

@@ -53,12 +53,11 @@ class ASRouterNewTabHookInstance {
     }
   }
 
-  
-
-
   destroy() {
-    this.disconnect();
-    this._router.uninit();
+    if (this._router?.initialized) {
+      this.disconnect();
+      this._router.uninit();
+    }
   }
 
   
@@ -78,7 +77,6 @@ class ASRouterNewTabHookInstance {
   }
 
   
-
 
 
   disconnect() {
