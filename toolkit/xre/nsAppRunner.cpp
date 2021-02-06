@@ -2234,20 +2234,18 @@ nsresult LaunchChild(bool aBlankCommandLine) {
   rv = lf->GetNativePath(exePath);
   if (NS_FAILED(rv)) return rv;
 
-#      if defined(XP_UNIX)
-  if (execv(exePath.get(), gRestartArgv) == -1) return NS_ERROR_FAILURE;
-#      else
-  PRProcess* process =
-      PR_CreateProcess(exePath.get(), gRestartArgv, nullptr, nullptr);
-  if (!process) return NS_ERROR_FAILURE;
+  if (PR_FAILURE ==
+      PR_CreateProcessDetached(exePath.get(), gRestartArgv, nullptr, nullptr)) {
+    return NS_ERROR_FAILURE;
+  }
 
-  int32_t exitCode;
-  PRStatus failed = PR_WaitProcess(process, &exitCode);
-  if (failed || exitCode) return NS_ERROR_FAILURE;
-#      endif  
-#    endif    
-#  endif      
-#endif        
+  
+  
+  
+
+#    endif  
+#  endif    
+#endif      
 
   return NS_ERROR_LAUNCHED_CHILD_PROCESS;
 }
