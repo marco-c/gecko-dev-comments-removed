@@ -3083,28 +3083,6 @@ struct ContainerTracker {
   bool mCreatedContainer = false;
 };
 
-
-
-
-
-
-static void AddHitTestInfo(nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
-                           nsDisplayItem* aContainer, nsIFrame* aFrame,
-                           mozilla::UniquePtr<HitTestInfo>&& aHitTestInfo) {
-  nsDisplayHitTestInfoBase* hitTestItem;
-
-  if (aContainer) {
-    MOZ_ASSERT(aContainer->IsHitTestItem());
-    hitTestItem = static_cast<nsDisplayHitTestInfoBase*>(aContainer);
-    hitTestItem->SetHitTestInfo(std::move(aHitTestInfo));
-  } else {
-    
-    
-    aList->AppendNewToBottom<nsDisplayCompositorHitTestInfo>(
-        aBuilder, aFrame, std::move(aHitTestInfo));
-  }
-}
-
 void nsIFrame::BuildDisplayListForStackingContext(
     nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
     bool* aCreatedContainerItem) {
@@ -3442,24 +3420,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
     }
 
     aBuilder->AdjustWindowDraggingRegion(this);
-
-    if (gfxVars::UseWebRender()) {
-      aBuilder->BuildCompositorHitTestInfoIfNeeded(this, set.BorderBackground(),
-                                                   true);
-    } else {
-      CompositorHitTestInfo info = aBuilder->BuildCompositorHitTestInfo()
-                                       ? GetCompositorHitTestInfo(aBuilder)
-                                       : CompositorHitTestInvisibleToHit;
-
-      if (info != CompositorHitTestInvisibleToHit) {
-        
-        hitTestInfo = mozilla::MakeUnique<HitTestInfo>(aBuilder, this, info);
-
-        
-        aBuilder->SetCompositorHitTestInfo(hitTestInfo->mArea,
-                                           hitTestInfo->mFlags);
-      }
-    }
+    aBuilder->BuildCompositorHitTestInfoIfNeeded(this, set.BorderBackground(),
+                                                 true);
 
     MarkAbsoluteFramesForDisplayList(aBuilder);
     aBuilder->Check();
@@ -3832,13 +3794,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
   if (aCreatedContainerItem) {
     *aCreatedContainerItem = ct.mCreatedContainer;
-  }
-
-  if (hitTestInfo) {
-    
-    MOZ_ASSERT(!gfxVars::UseWebRender());
-    AddHitTestInfo(aBuilder, &resultList, ct.mContainer, this,
-                   std::move(hitTestInfo));
   }
 
   aList->AppendToTop(&resultList);
