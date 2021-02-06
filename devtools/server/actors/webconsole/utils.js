@@ -5,17 +5,6 @@
 "use strict";
 
 const { Cu } = require("chrome");
-
-
-if (!isWorker) {
-  loader.lazyRequireGetter(
-    this,
-    "captureScreenshot",
-    "devtools/server/actors/utils/capture-screenshot",
-    true
-  );
-}
-
 const CONSOLE_WORKER_IDS = (exports.CONSOLE_WORKER_IDS = [
   "SharedWorker",
   "ServiceWorker",
@@ -579,13 +568,8 @@ WebConsoleCommands._registerOriginal("screenshot", function(owner, args = {}) {
   owner.helperResult = (async () => {
     
     
-    const value = await captureScreenshot(args, owner.window.document);
     return {
       type: "screenshotOutput",
-      value,
-      
-      
-      
       args,
     };
   })();

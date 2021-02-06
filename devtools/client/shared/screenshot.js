@@ -15,6 +15,103 @@ loader.lazyImporter(this, "FileUtils", "resource://gre/modules/FileUtils.jsm");
 const STRINGS_URI = "devtools/shared/locales/screenshot.properties";
 const L10N = new LocalizationHelper(STRINGS_URI);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function captureAndSaveScreenshot(targetFront, window, args = {}) {
+  if (args.help) {
+    
+    return [{ text: getFormattedHelpData() }];
+  }
+
+  if (targetFront.isParentProcess) {
+    return [
+      {
+        text:
+          "Taking screenshot from ParentProcess target isn't supported yet (See Bug 1474006)",
+        level: "warn",
+      },
+    ];
+  }
+
+  
+  
+  const supportsContentScreenshot = targetFront.hasActor("screenshotContent");
+
+  let captureResponse;
+  if (supportsContentScreenshot) {
+    if (args.delay > 0) {
+      await new Promise(res => setTimeout(res, args.delay * 1000));
+    }
+
+    const screenshotContentFront = await targetFront.getFront(
+      "screenshot-content"
+    );
+
+    
+    
+    const {
+      rect,
+      windowDpr,
+      messages,
+      error,
+    } = await screenshotContentFront.prepareCapture(args);
+
+    if (error) {
+      return messages;
+    }
+
+    if (rect) {
+      args.rect = rect;
+    }
+
+    if (!args.dpr) {
+      args.dpr = windowDpr;
+    }
+
+    args.browsingContextID = targetFront.browsingContextID;
+
+    
+    
+    const rootFront = targetFront.client.mainRoot;
+    const parentProcessScreenshotFront = await rootFront.getFront("screenshot");
+    captureResponse = await parentProcessScreenshotFront.capture(args);
+    messages.push(...(captureResponse.messages || []));
+
+    
+    
+    
+    screenshotContentFront.captureDone();
+  } else {
+    const screenshotFront = await targetFront.getFront("screenshot");
+    captureResponse = await screenshotFront.capture(args);
+  }
+
+  if (captureResponse.error) {
+    return captureResponse.messages || [];
+  }
+
+  const saveMessages = await saveScreenshot(window, args, captureResponse);
+  return (captureResponse.messages || []).concat(saveMessages);
+}
+
 const screenshotDescription = L10N.getStr("screenshotDesc");
 const screenshotGroupOptions = L10N.getStr("screenshotGroupOptions");
 const screenshotCommandParams = [
@@ -116,10 +213,12 @@ function getFormattedHelpData() {
 
 
 function saveScreenshot(window, args = {}, value) {
+  
+  
+  
   if (args.help) {
-    const message = getFormattedHelpData();
     
-    return [message];
+    return [{ text: getFormattedHelpData() }];
   }
 
   
@@ -211,10 +310,10 @@ function saveToClipboard(base64URI) {
       null,
       Services.clipboard.kGlobalClipboard
     );
-    return L10N.getStr("screenshotCopied");
+    return { text: L10N.getStr("screenshotCopied") };
   } catch (ex) {
     console.error(ex);
-    return L10N.getStr("screenshotErrorCopying");
+    return { level: "error", text: L10N.getStr("screenshotErrorCopying") };
   }
 }
 
@@ -263,11 +362,14 @@ async function saveToFile(image) {
     list.add(download);
     
     await download.start();
-    return L10N.getFormatStr("screenshotSavedToFile", filename);
+    return { text: L10N.getFormatStr("screenshotSavedToFile", filename) };
   } catch (ex) {
     console.error(ex);
-    return L10N.getFormatStr("screenshotErrorSavingToFile", filename);
+    return {
+      level: "error",
+      text: L10N.getFormatStr("screenshotErrorSavingToFile", filename),
+    };
   }
 }
 
-module.exports = saveScreenshot;
+module.exports = { captureAndSaveScreenshot, saveScreenshot };

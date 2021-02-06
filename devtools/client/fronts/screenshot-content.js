@@ -1,0 +1,25 @@
+
+
+
+
+"use strict";
+
+const {
+  screenshotContentSpec,
+} = require("devtools/shared/specs/screenshot-content");
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
+
+class ScreenshotContentFront extends FrontClassWithSpec(screenshotContentSpec) {
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
+
+    
+    this.formAttributeName = "screenshotContentActor";
+  }
+}
+
+exports.ScreenshotContentFront = ScreenshotContentFront;
+registerFront(ScreenshotContentFront);

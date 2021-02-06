@@ -3,11 +3,8 @@
 
 
 "use strict";
-const { Cc, Ci } = require("chrome");
-const Services = require("Services");
-const { LocalizationHelper } = require("devtools/shared/l10n");
 
-loader.lazyRequireGetter(this, "getRect", "devtools/shared/layout/utils", true);
+const { LocalizationHelper } = require("devtools/shared/l10n");
 
 const CONTAINER_FLASHING_DURATION = 500;
 const STRINGS_URI = "devtools/shared/locales/screenshot.properties";
@@ -25,8 +22,8 @@ const MAX_IMAGE_HEIGHT = 10000;
 
 
 
-function simulateCameraFlash(document) {
-  const node = document.documentElement;
+function simulateCameraFlash(browsingContext) {
+  const node = browsingContext.topFrameElement;
 
   
   if (node.ownerGlobal.matchMedia("(prefers-reduced-motion)").matches) {
@@ -42,135 +39,123 @@ function simulateCameraFlash(document) {
 
 
 
-function captureScreenshot(args, document) {
-  if (args.help) {
-    return null;
-  }
-  if (args.delay > 0) {
-    return new Promise((resolve, reject) => {
-      document.defaultView.setTimeout(() => {
-        createScreenshotDataURL(document, args).then(resolve, reject);
-      }, args.delay * 1000);
-    });
-  }
-  return createScreenshotDataURL(document, args);
-}
-
-exports.captureScreenshot = captureScreenshot;
 
 
 
 
 
-function createScreenshotDataURL(document, args) {
-  let window = document.defaultView;
-  let left = 0;
-  let top = 0;
-  let width;
-  let height;
-  const currentX = window.scrollX;
-  const currentY = window.scrollY;
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function captureScreenshot(args, browsingContext) {
+  const messages = [];
 
   let filename = getFilename(args.filename);
 
   if (args.fullpage) {
-    
-    
-    window.scrollTo(0, 0);
-    width = window.innerWidth + window.scrollMaxX - window.scrollMinX;
-    height = window.innerHeight + window.scrollMaxY - window.scrollMinY;
     filename = filename.replace(".png", "-fullpage.png");
-  } else if (args.rawNode) {
-    window = args.rawNode.ownerGlobal;
-    ({ top, left, width, height } = getRect(window, args.rawNode, window));
-  } else if (args.selector) {
-    const node = window.document.querySelector(args.selector);
-    if (!node) {
-      logWarningInPage(
-        L10N.getFormatStr("screenshotNoSelectorMatchWarning", args.selector),
-        window
-      );
-      return Promise.resolve({ data: null });
-    }
-    ({ top, left, width, height } = getRect(window, node, window));
-  } else {
-    left = window.scrollX;
-    top = window.scrollY;
-    width = window.innerWidth;
-    height = window.innerHeight;
   }
 
-  
-  if (args.fullpage) {
-    const winUtils = window.windowUtils;
-    const scrollbarHeight = {};
-    const scrollbarWidth = {};
-    winUtils.getScrollbarSize(false, scrollbarWidth, scrollbarHeight);
-    width -= scrollbarWidth.value;
-    height -= scrollbarHeight.value;
-  }
+  let { left, top, width, height } = args.rect || {};
 
   
-  if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
+  if (width && (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT)) {
     width = Math.min(width, MAX_IMAGE_WIDTH);
     height = Math.min(height, MAX_IMAGE_HEIGHT);
-    logWarningInPage(
-      L10N.getFormatStr("screenshotTruncationWarning", width, height),
-      window
+    messages.push({
+      level: "warn",
+      text: L10N.getFormatStr("screenshotTruncationWarning", width, height),
+    });
+  }
+
+  let rect = null;
+  if (args.rect) {
+    rect = new globalThis.DOMRect(
+      Math.round(left),
+      Math.round(top),
+      Math.round(width),
+      Math.round(height)
     );
   }
 
-  const ratio = args.dpr ? args.dpr : window.devicePixelRatio;
+  const ratio = args.dpr ? args.dpr : 1;
 
+  const document = browsingContext.topChromeWindow.document;
   const canvas = document.createElementNS(
     "http://www.w3.org/1999/xhtml",
     "canvas"
   );
-  const ctx = canvas.getContext("2d");
 
-  const drawToCanvas = actualRatio => {
+  const drawToCanvas = async actualRatio => {
     
     
     
     try {
-      canvas.width = width * actualRatio;
-      canvas.height = height * actualRatio;
-      ctx.scale(actualRatio, actualRatio);
-      ctx.drawWindow(window, left, top, width, height, "#fff");
+      const snapshot = await browsingContext.currentWindowGlobal.drawSnapshot(
+        rect,
+        actualRatio,
+        "rgb(255,255,255)"
+      );
+
+      canvas.width = snapshot.width;
+      canvas.height = snapshot.height;
+      width = snapshot.width;
+      height = snapshot.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(snapshot, 0, 0);
+
+      
+      
+      
+      snapshot.close();
+
       return canvas.toDataURL("image/png", "");
     } catch (e) {
       return null;
     }
   };
 
-  let data = drawToCanvas(ratio);
+  let data = await drawToCanvas(ratio);
   if (!data && ratio > 1.0) {
     
     
-    logWarningInPage(L10N.getStr("screenshotDPRDecreasedWarning"), window);
-    data = drawToCanvas(1.0);
+    messages.push({
+      level: "warn",
+      text: L10N.getStr("screenshotDPRDecreasedWarning"),
+    });
+    data = await drawToCanvas(1.0);
   }
   if (!data) {
-    logErrorInPage(L10N.getStr("screenshotRenderingError"), window);
-  }
-
-  
-  if (args.fullpage) {
-    window.scrollTo(currentX, currentY);
+    messages.push({
+      level: "error",
+      text: L10N.getStr("screenshotRenderingError"),
+    });
   }
 
   if (data) {
-    simulateCameraFlash(document);
+    simulateCameraFlash(browsingContext);
   }
 
-  return Promise.resolve({
-    destinations: [],
+  return {
     data,
     height,
     width,
     filename,
-  });
+    messages,
+  };
 }
+
+exports.captureScreenshot = captureScreenshot;
 
 
 
@@ -183,44 +168,17 @@ function getFilename(defaultName) {
   }
 
   const date = new Date();
-  let dateString =
-    date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate();
-  dateString = dateString
-    .split("-")
-    .map(function(part) {
-      if (part.length == 1) {
-        part = "0" + part;
-      }
-      return part;
-    })
-    .join("-");
+  const monthString = (date.getMonth() + 1).toString().padStart(2, "0");
+  const dayString = (date.getDate() + 1).toString().padStart(2, "0");
+  const dateString = `${date.getFullYear()}-${monthString}-${dayString}`;
 
   const timeString = date
     .toTimeString()
     .replace(/:/g, ".")
     .split(" ")[0];
+
   return (
     L10N.getFormatStr("screenshotGeneratedFilename", dateString, timeString) +
     ".png"
   );
 }
-
-function logInPage(text, flags, window) {
-  const scriptError = Cc["@mozilla.org/scripterror;1"].createInstance(
-    Ci.nsIScriptError
-  );
-  scriptError.initWithWindowID(
-    text,
-    null,
-    null,
-    0,
-    0,
-    flags,
-    "screenshot",
-    window.windowGlobalChild.innerWindowId
-  );
-  Services.console.logMessage(scriptError);
-}
-
-const logErrorInPage = (text, window) => logInPage(text, 0, window);
-const logWarningInPage = (text, window) => logInPage(text, 1, window);
