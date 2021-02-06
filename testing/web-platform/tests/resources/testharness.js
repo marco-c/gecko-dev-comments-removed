@@ -1187,7 +1187,7 @@
             let stack = null;
             try {
                 if (settings.debug) {
-                    console.debug("ASSERT", name, tests.current_test.name, args);
+                    console.debug("ASSERT", name, tests.current_test && tests.current_test.name, args);
                 }
                 if (tests.output) {
                     tests.set_assert(name, ...args);
@@ -2865,7 +2865,7 @@
         this.wait_for_finish = true;
         this.file_is_test = true;
         
-        async_test();
+        tests.current_test = async_test();
     };
 
     Tests.prototype.set_status = function(status, message, stack)
