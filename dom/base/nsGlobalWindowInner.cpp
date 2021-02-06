@@ -7534,6 +7534,22 @@ ContentMediaController* nsGlobalWindowInner::GetContentMediaController() {
   return mContentMediaController;
 }
 
+void nsGlobalWindowInner::SetScrollMarks(
+    const nsTArray<uint32_t>& aScrollMarks) {
+  mScrollMarks.Assign(aScrollMarks);
+
+  
+  if (mDoc) {
+    PresShell* presShell = mDoc->GetPresShell();
+    if (presShell) {
+      nsIScrollableFrame* sf = presShell->GetRootScrollFrameAsScrollable();
+      if (sf) {
+        sf->InvalidateVerticalScrollbar();
+      }
+    }
+  }
+}
+
 
 already_AddRefed<nsGlobalWindowInner> nsGlobalWindowInner::Create(
     nsGlobalWindowOuter* aOuterWindow, bool aIsChrome,
