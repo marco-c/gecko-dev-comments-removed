@@ -10,15 +10,18 @@
 #include "mozilla/AlreadyAddRefed.h"  
 #include "mozilla/Assertions.h"       
 #include "mozilla/Attributes.h"
-#include "mozilla/RefPtr.h"  
+#include "mozilla/HashTable.h"  
+#include "mozilla/Maybe.h"      
+#include "mozilla/RefPtr.h"     
 #include "mozilla/Span.h"
 
 #include "builtin/ModuleObject.h"
 #include "ds/LifoAlloc.h"
-#include "frontend/ParserAtom.h"
+#include "frontend/ParserAtom.h"  
 #include "frontend/ScriptIndex.h"  
 #include "frontend/SharedContext.h"
 #include "frontend/Stencil.h"
+#include "frontend/TaggedParserAtomIndexHasher.h"  
 #include "frontend/UsedNameTracker.h"
 #include "js/GCVector.h"
 #include "js/HashTable.h"
@@ -61,6 +64,20 @@ struct ScopeContext {
   
   mozilla::Maybe<MemberInitializers> memberInitializers = {};
 
+  enum class EnclosingLexicalBindingKind {
+    Let,
+    Const,
+    CatchParameter,
+  };
+
+  using EnclosingLexicalBindingCache =
+      mozilla::HashMap<TaggedParserAtomIndex, EnclosingLexicalBindingKind,
+                       TaggedParserAtomIndexHasher>;
+
+  
+  
+  mozilla::Maybe<EnclosingLexicalBindingCache> enclosingLexicalBindingCache_;
+
   
   
   
@@ -101,8 +118,12 @@ struct ScopeContext {
 
   explicit ScopeContext(JSContext* cx) : effectiveScope(cx) {}
 
-  bool init(JSContext* cx, CompilationInput& input, InheritThis inheritThis,
+  bool init(JSContext* cx, CompilationInput& input,
+            ParserAtomsTable& parserAtoms, InheritThis inheritThis,
             JSObject* enclosingEnv);
+
+  mozilla::Maybe<EnclosingLexicalBindingKind>
+  lookupLexicalBindingInEnclosingScope(TaggedParserAtomIndex name);
 
  private:
   void computeThisBinding(Scope* scope);
@@ -111,6 +132,14 @@ struct ScopeContext {
   void cacheEnclosingScope(Scope* enclosingScope);
 
   static Scope* determineEffectiveScope(Scope* scope, JSObject* environment);
+
+  bool cacheEnclosingScopeBindingForEval(JSContext* cx, CompilationInput& input,
+                                         ParserAtomsTable& parserAtoms);
+
+  bool addToEnclosingLexicalBindingCache(JSContext* cx, CompilationInput& input,
+                                         ParserAtomsTable& parserAtoms,
+                                         JSAtom* name,
+                                         EnclosingLexicalBindingKind kind);
 };
 
 struct CompilationAtomCache {
@@ -319,7 +348,7 @@ struct MOZ_RAII CompilationState {
 
   bool init(JSContext* cx, InheritThis inheritThis = InheritThis::No,
             JSObject* enclosingEnv = nullptr) {
-    return scopeContext.init(cx, input, inheritThis, enclosingEnv);
+    return scopeContext.init(cx, input, parserAtoms, inheritThis, enclosingEnv);
   }
 
   bool finish(JSContext* cx, CompilationStencil& stencil);

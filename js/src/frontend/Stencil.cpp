@@ -25,6 +25,7 @@
 #include "js/Transcoding.h"  
 #include "js/Value.h"        
 #include "js/WasmModule.h"   
+#include "vm/BindingKind.h"  
 #include "vm/EnvironmentObject.h"
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/JSContext.h"              
@@ -35,7 +36,7 @@
 #include "vm/ObjectGroup.h"   
 #include "vm/Printer.h"       
 #include "vm/RegExpObject.h"  
-#include "vm/Scope.h"         
+#include "vm/Scope.h"  
 #include "vm/ScopeKind.h"     
 #include "vm/StencilEnums.h"  
 #include "vm/StringType.h"    
@@ -50,7 +51,8 @@ using namespace js;
 using namespace js::frontend;
 
 bool ScopeContext::init(JSContext* cx, CompilationInput& input,
-                        InheritThis inheritThis, JSObject* enclosingEnv) {
+                        ParserAtomsTable& parserAtoms, InheritThis inheritThis,
+                        JSObject* enclosingEnv) {
   Scope* maybeNonDefaultEnclosingScope = input.maybeNonDefaultEnclosingScope();
 
   effectiveScope =
@@ -63,6 +65,12 @@ bool ScopeContext::init(JSContext* cx, CompilationInput& input,
   computeInScope(maybeNonDefaultEnclosingScope);
 
   cacheEnclosingScope(input.enclosingScope);
+
+  if (input.target == CompilationInput::CompilationTarget::Eval) {
+    if (!cacheEnclosingScopeBindingForEval(cx, input, parserAtoms)) {
+      return false;
+    }
+  }
 
   return true;
 }
@@ -200,6 +208,94 @@ Scope* ScopeContext::determineEffectiveScope(Scope* scope,
   }
 
   return scope;
+}
+
+bool ScopeContext::cacheEnclosingScopeBindingForEval(
+    JSContext* cx, CompilationInput& input, ParserAtomsTable& parserAtoms) {
+  enclosingLexicalBindingCache_.emplace();
+
+  js::Scope* varScope =
+      EvalScope::nearestVarScopeForDirectEval(input.enclosingScope);
+  MOZ_ASSERT(varScope);
+  for (ScopeIter si(input.enclosingScope); si; si++) {
+    for (js::BindingIter bi(si.scope()); bi; bi++) {
+      switch (bi.kind()) {
+        case BindingKind::Let: {
+          
+          
+          bool annexB35Allowance = si.kind() == ScopeKind::SimpleCatch;
+          if (!annexB35Allowance) {
+            auto kind = ScopeKindIsCatch(si.kind())
+                            ? EnclosingLexicalBindingKind::CatchParameter
+                            : EnclosingLexicalBindingKind::Let;
+            if (!addToEnclosingLexicalBindingCache(cx, input, parserAtoms,
+                                                   bi.name(), kind)) {
+              return false;
+            }
+          }
+          break;
+        }
+
+        case BindingKind::Const:
+          if (!addToEnclosingLexicalBindingCache(
+                  cx, input, parserAtoms, bi.name(),
+                  EnclosingLexicalBindingKind::Const)) {
+            return false;
+          }
+          break;
+
+        case BindingKind::Import:
+        case BindingKind::FormalParameter:
+        case BindingKind::Var:
+        case BindingKind::NamedLambdaCallee:
+          break;
+      }
+    }
+
+    if (si.scope() == varScope) {
+      break;
+    }
+  }
+
+  return true;
+}
+
+bool ScopeContext::addToEnclosingLexicalBindingCache(
+    JSContext* cx, CompilationInput& input, ParserAtomsTable& parserAtoms,
+    JSAtom* name, EnclosingLexicalBindingKind kind) {
+  auto parserName = parserAtoms.internJSAtom(cx, input.atomCache, name);
+  if (!parserName) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto p = enclosingLexicalBindingCache_->lookupForAdd(parserName);
+  if (!p) {
+    if (!enclosingLexicalBindingCache_->add(p, parserName, kind)) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+  }
+
+  return true;
+}
+
+mozilla::Maybe<ScopeContext::EnclosingLexicalBindingKind>
+ScopeContext::lookupLexicalBindingInEnclosingScope(TaggedParserAtomIndex name) {
+  auto p = enclosingLexicalBindingCache_->lookup(name);
+  if (!p) {
+    return mozilla::Nothing();
+  }
+
+  return mozilla::Some(p->value());
 }
 
 bool CompilationInput::initScriptSource(JSContext* cx) {

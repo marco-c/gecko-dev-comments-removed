@@ -6,8 +6,9 @@
 
 #include "frontend/ParseContext-inl.h"
 
-#include "frontend/Parser.h"          
-#include "js/friend/ErrorMessages.h"  
+#include "frontend/CompilationInfo.h"  
+#include "frontend/Parser.h"           
+#include "js/friend/ErrorMessages.h"   
 #include "vm/EnvironmentObject-inl.h"
 
 using mozilla::Maybe;
@@ -424,62 +425,24 @@ bool ParseContext::isVarRedeclaredInEval(TaggedParserAtomIndex name,
                                          ParserBase* parser,
                                          DeclarationKind kind,
                                          Maybe<DeclarationKind>* out) {
-  MOZ_ASSERT(out);
-  MOZ_ASSERT(DeclarationKindIsVar(kind));
-  MOZ_ASSERT(sc()->isEvalContext());
-
-  
-  const ParserAtom* atom =
-      parser->getCompilationState().parserAtoms.getParserAtom(name);
-  JSAtom* nameAtom =
-      atom->toJSAtom(sc()->cx_, name, sc()->stencil().input.atomCache);
-  if (!nameAtom) {
-    return false;
+  auto maybeKind = parser->getCompilationState()
+                       .scopeContext.lookupLexicalBindingInEnclosingScope(name);
+  if (!maybeKind) {
+    *out = Nothing();
+    return true;
   }
 
-  
-  
-  js::Scope* enclosingScope = sc()->stencil().input.enclosingScope;
-  js::Scope* varScope = EvalScope::nearestVarScopeForDirectEval(enclosingScope);
-  MOZ_ASSERT(varScope);
-  for (ScopeIter si(enclosingScope); si; si++) {
-    for (js::BindingIter bi(si.scope()); bi; bi++) {
-      if (bi.name() != nameAtom) {
-        continue;
-      }
-
-      switch (bi.kind()) {
-        case BindingKind::Let: {
-          
-          
-          bool annexB35Allowance = si.kind() == ScopeKind::SimpleCatch;
-          if (!annexB35Allowance) {
-            *out = Some(ScopeKindIsCatch(si.kind())
-                            ? DeclarationKind::CatchParameter
-                            : DeclarationKind::Let);
-            return true;
-          }
-          break;
-        }
-
-        case BindingKind::Const:
-          *out = Some(DeclarationKind::Const);
-          return true;
-
-        case BindingKind::Import:
-        case BindingKind::FormalParameter:
-        case BindingKind::Var:
-        case BindingKind::NamedLambdaCallee:
-          break;
-      }
-    }
-
-    if (si.scope() == varScope) {
+  switch (*maybeKind) {
+    case ScopeContext::EnclosingLexicalBindingKind::Let:
+      *out = Some(DeclarationKind::Let);
       break;
-    }
+    case ScopeContext::EnclosingLexicalBindingKind::Const:
+      *out = Some(DeclarationKind::Const);
+      break;
+    case ScopeContext::EnclosingLexicalBindingKind::CatchParameter:
+      *out = Some(DeclarationKind::CatchParameter);
+      break;
   }
-
-  *out = Nothing();
   return true;
 }
 
