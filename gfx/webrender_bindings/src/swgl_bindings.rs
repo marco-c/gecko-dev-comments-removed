@@ -2,7 +2,7 @@
 
 
 
-use bindings::{GeckoProfilerThreadListener, WrCompositor};
+use bindings::WrCompositor;
 use gleam::{gl, gl::GLenum, gl::Gl};
 use std::cell::{Cell, UnsafeCell};
 use std::collections::{hash_map::HashMap, VecDeque};
@@ -16,7 +16,7 @@ use std::thread;
 use webrender::{
     api::units::*, api::ColorDepth, api::ExternalImageId, api::ImageRendering, api::YuvColorSpace, Compositor,
     CompositorCapabilities, CompositorSurfaceTransform, NativeSurfaceId, NativeSurfaceInfo, NativeTileId,
-    ThreadListener,
+    host_utils::{thread_started, thread_stopped}
 };
 
 #[no_mangle]
@@ -730,15 +730,14 @@ impl SwCompositeThread {
             
             .stack_size(32 * 1024)
             .spawn(move || {
-                let thread_listener = GeckoProfilerThreadListener::new();
-                thread_listener.thread_started(thread_name);
+                thread_started(thread_name);
                 
                 
                 
                 while let Some((job, band)) = info.take_job(true) {
                     info.process_job(job, band);
                 }
-                thread_listener.thread_stopped(thread_name);
+                thread_stopped();
             })
             .expect("Failed creating SwComposite thread");
         result
