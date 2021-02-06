@@ -600,7 +600,7 @@ FinderHighlighter.prototype = {
   
   updateScrollMarks() {
     
-    if (this.useModal() || !this.highlightAll) {
+    if (this.useModal() || !this._highlightAll) {
       this.removeScrollMarks();
       return;
     }
