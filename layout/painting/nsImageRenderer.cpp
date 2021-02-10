@@ -1,10 +1,10 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* utility code for drawing images as CSS borders, backgrounds, and shapes. */
+
+
+
+
+
+
 
 #include "nsImageRenderer.h"
 
@@ -73,8 +73,8 @@ bool nsImageRenderer::PrepareImage() {
   if (isImageRequest) {
     request = mImage->GetImageRequest();
     if (!request) {
-      // request could be null here if the StyleImage refused
-      // to load a same-document URL, or the url was invalid, for example.
+      
+      
       mPrepareResult = ImgDrawResult::BAD_IMAGE;
       return false;
     }
@@ -83,17 +83,17 @@ bool nsImageRenderer::PrepareImage() {
   if (!mImage->IsComplete()) {
     MOZ_DIAGNOSTIC_ASSERT(isImageRequest);
 
-    // Make sure the image is actually decoding.
+    
     bool frameComplete =
         request->StartDecodingWithResult(imgIContainer::FLAG_ASYNC_NOTIFY);
 
-    // Boost the loading priority since we know we want to draw the image.
+    
     if (mFlags & nsImageRenderer::FLAG_PAINTING_TO_WINDOW) {
       request->BoostPriority(imgIRequest::CATEGORY_DISPLAY);
     }
 
-    // Check again to see if we finished.
-    // We cannot prepare the image for rendering if it is not fully loaded.
+    
+    
     if (!frameComplete && !mImage->IsComplete()) {
       uint32_t imageStatus = 0;
       request->GetImageStatus(&imageStatus);
@@ -102,9 +102,9 @@ bool nsImageRenderer::PrepareImage() {
         return false;
       }
 
-      // Special case: If not errored, and we requested a sync decode, and the
-      // image has loaded, push on through because the Draw() will do a sync
-      // decode then.
+      
+      
+      
       const bool syncDecodeWillComplete =
           (mFlags & FLAG_SYNC_DECODE_IMAGES) &&
           (imageStatus & imgIRequest::STATUS_LOAD_COMPLETE);
@@ -132,12 +132,12 @@ bool nsImageRenderer::PrepareImage() {
     } else {
       auto croprect = mImage->ComputeActualCropRect();
       if (!croprect || croprect->mRect.IsEmpty()) {
-        // The cropped image has zero size
+        
         mPrepareResult = ImgDrawResult::BAD_IMAGE;
         return false;
       }
       if (croprect->mIsEntireImage) {
-        // The cropped image is identical to the source image
+        
         mImageContainer.swap(srcImage);
       } else {
         nsCOMPtr<imgIContainer> subImage =
@@ -150,18 +150,18 @@ bool nsImageRenderer::PrepareImage() {
     mGradientData = &*mImage->AsGradient();
     mPrepareResult = ImgDrawResult::SUCCESS;
   } else if (mImage->IsElement()) {
-    dom::Element* paintElement =  // may be null
+    dom::Element* paintElement =  
         SVGObserverUtils::GetAndObserveBackgroundImage(
             mForFrame->FirstContinuation(), mImage->AsElement().AsAtom());
-    // If the referenced element is an <img>, <canvas>, or <video> element,
-    // prefer SurfaceFromElement as it's more reliable.
+    
+    
     mImageElementSurface = nsLayoutUtils::SurfaceFromElement(paintElement);
 
     if (!mImageElementSurface.GetSourceSurface()) {
       nsIFrame* paintServerFrame =
           paintElement ? paintElement->GetPrimaryFrame() : nullptr;
-      // If there's no referenced frame, or the referenced frame is
-      // non-displayable SVG, then we have nothing valid to paint.
+      
+      
       if (!paintServerFrame ||
           (paintServerFrame->IsFrameOfType(nsIFrame::eSVG) &&
            !static_cast<SVGPaintServerFrame*>(
@@ -176,8 +176,8 @@ bool nsImageRenderer::PrepareImage() {
 
     mPrepareResult = ImgDrawResult::SUCCESS;
   } else if (mImage->IsCrossFade()) {
-    // See bug 546052 - cross-fade implementation still being worked
-    // on.
+    
+    
     mPrepareResult = ImgDrawResult::BAD_IMAGE;
     return false;
   } else {
@@ -208,8 +208,8 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
             nsPresContext::CSSPixelsToAppUnits(imageIntSize.height));
       }
 
-      // If we know the aspect ratio and one of the dimensions,
-      // we can compute the other missing width or height.
+      
+      
       if (!haveHeight && haveWidth && result.mRatio) {
         nscoord intrinsicHeight =
             result.mRatio.Inverted().ApplyTo(imageIntSize.width);
@@ -222,18 +222,18 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
       break;
     }
     case StyleImage::Tag::Element: {
-      // XXX element() should have the width/height of the referenced element,
-      //     and that element's ratio, if it matches.  If it doesn't match, it
-      //     should have no width/height or ratio.  See element() in CSS images:
-      //     <http://dev.w3.org/csswg/css-images-4/#element-notation>.
-      //     Make sure to change nsStyleImageLayers::Size::DependsOnFrameSize
-      //     when fixing this!
+      
+      
+      
+      
+      
+      
       if (mPaintServerFrame) {
-        // SVG images have no intrinsic size
+        
         if (!mPaintServerFrame->IsFrameOfType(nsIFrame::eSVG)) {
-          // The intrinsic image size for a generic nsIFrame paint server is
-          // the union of the border-box rects of all of its continuations,
-          // rounded to device pixels.
+          
+          
+          
           int32_t appUnitsPerDevPixel =
               mForFrame->PresContext()->AppUnitsPerDevPixel();
           result.SetSize(IntSizeToAppUnits(
@@ -253,10 +253,10 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
     }
     case StyleImage::Tag::ImageSet:
       MOZ_FALLTHROUGH_ASSERT("image-set should be resolved already");
-    // Bug 546052 cross-fade not yet implemented.
+    
     case StyleImage::Tag::CrossFade:
-    // Per <http://dev.w3.org/csswg/css3-images/#gradients>, gradients have no
-    // intrinsic dimensions.
+    
+    
     case StyleImage::Tag::Gradient:
     case StyleImage::Tag::None:
       break;
@@ -265,11 +265,11 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
   return result;
 }
 
-/* static */
+
 nsSize nsImageRenderer::ComputeConcreteSize(
     const CSSSizeOrRatio& aSpecifiedSize, const CSSSizeOrRatio& aIntrinsicSize,
     const nsSize& aDefaultSize) {
-  // The specified size is fully specified, just use that
+  
   if (aSpecifiedSize.IsConcrete()) {
     return aSpecifiedSize.ComputeConcreteSize();
   }
@@ -277,7 +277,7 @@ nsSize nsImageRenderer::ComputeConcreteSize(
   MOZ_ASSERT(!aSpecifiedSize.mHasWidth || !aSpecifiedSize.mHasHeight);
 
   if (!aSpecifiedSize.mHasWidth && !aSpecifiedSize.mHasHeight) {
-    // no specified size, try using the intrinsic size
+    
     if (aIntrinsicSize.CanComputeConcreteSize()) {
       return aIntrinsicSize.ComputeConcreteSize();
     }
@@ -289,13 +289,13 @@ nsSize nsImageRenderer::ComputeConcreteSize(
       return nsSize(aDefaultSize.width, aIntrinsicSize.mHeight);
     }
 
-    // couldn't use the intrinsic size either, revert to using the default size
+    
     return ComputeConstrainedSize(aDefaultSize, aIntrinsicSize.mRatio, CONTAIN);
   }
 
   MOZ_ASSERT(aSpecifiedSize.mHasWidth || aSpecifiedSize.mHasHeight);
 
-  // The specified height is partial, try to compute the missing part.
+  
   if (aSpecifiedSize.mHasWidth) {
     nscoord height;
     if (aIntrinsicSize.HasRatio()) {
@@ -320,7 +320,7 @@ nsSize nsImageRenderer::ComputeConcreteSize(
   return nsSize(width, aSpecifiedSize.mHeight);
 }
 
-/* static */
+
 nsSize nsImageRenderer::ComputeConstrainedSize(
     const nsSize& aConstrainingSize, const AspectRatio& aIntrinsicRatio,
     FitType aFitType) {
@@ -328,38 +328,38 @@ nsSize nsImageRenderer::ComputeConstrainedSize(
     return aConstrainingSize;
   }
 
-  // Suppose we're doing a "contain" fit. If the image's aspect ratio has a
-  // "fatter" shape than the constraint area, then we need to use the
-  // constraint area's full width, and we need to use the aspect ratio to
-  // produce a height. On the other hand, if the aspect ratio is "skinnier", we
-  // use the constraint area's full height, and we use the aspect ratio to
-  // produce a width. (If instead we're doing a "cover" fit, then it can easily
-  // be seen that we should do precisely the opposite.)
-  //
-  // We check if the image's aspect ratio is "fatter" than the constraint area
-  // by simply applying the aspect ratio to the constraint area's height, to
-  // produce a "hypothetical width", and we check whether that
-  // aspect-ratio-provided "hypothetical width" is wider than the constraint
-  // area's actual width. If it is, then the aspect ratio is fatter than the
-  // constraint area.
-  //
-  // This is equivalent to the more descriptive alternative:
-  //
-  //   AspectRatio::FromSize(aConstrainingSize) < aIntrinsicRatio
-  //
-  // But gracefully handling the case where one of the two dimensions from
-  // aConstrainingSize is zero. This is easy to prove since:
-  //
-  //   aConstrainingSize.width / aConstrainingSize.height < aIntrinsicRatio
-  //
-  // Is trivially equivalent to:
-  //
-  //   aIntrinsicRatio.width < aIntrinsicRatio * aConstrainingSize.height
-  //
-  // For the cases where height is not zero.
-  //
-  // We use float math here to avoid losing precision for very large backgrounds
-  // since we use saturating nscoord math otherwise.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const float constraintWidth = float(aConstrainingSize.width);
   const float hypotheticalWidth =
       aIntrinsicRatio.ApplyToFloat(aConstrainingSize.height);
@@ -368,8 +368,8 @@ nsSize nsImageRenderer::ComputeConstrainedSize(
   if ((aFitType == CONTAIN) == (constraintWidth < hypotheticalWidth)) {
     size.width = aConstrainingSize.width;
     size.height = aIntrinsicRatio.Inverted().ApplyTo(aConstrainingSize.width);
-    // If we're reducing the size by less than one css pixel, then just use the
-    // constraining size.
+    
+    
     if (aFitType == CONTAIN &&
         aConstrainingSize.height - size.height < AppUnitsPerCSSPixel()) {
       size.height = aConstrainingSize.height;
@@ -385,25 +385,25 @@ nsSize nsImageRenderer::ComputeConstrainedSize(
   return size;
 }
 
-/**
- * mSize is the image's "preferred" size for this particular rendering, while
- * the drawn (aka concrete) size is the actual rendered size after accounting
- * for background-size etc..  The preferred size is most often the image's
- * intrinsic dimensions.  But for images with incomplete intrinsic dimensions,
- * the preferred size varies, depending on the specified and default sizes, see
- * nsImageRenderer::Compute*Size.
- *
- * This distinction is necessary because the components of a vector image are
- * specified with respect to its preferred size for a rendering situation, not
- * to its actual rendered size.  For example, consider a 4px wide background
- * vector image with no height which contains a left-aligned
- * 2px wide black rectangle with height 100%.  If the background-size width is
- * auto (or 4px), the vector image will render 4px wide, and the black rectangle
- * will be 2px wide.  If the background-size width is 8px, the vector image will
- * render 8px wide, and the black rectangle will be 4px wide -- *not* 2px wide.
- * In both cases mSize.width will be 4px; but in the first case the returned
- * width will be 4px, while in the second case the returned width will be 8px.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void nsImageRenderer::SetPreferredSize(const CSSSizeOrRatio& aIntrinsicSize,
                                        const nsSize& aDefaultSize) {
   mSize.width =
@@ -412,8 +412,8 @@ void nsImageRenderer::SetPreferredSize(const CSSSizeOrRatio& aIntrinsicSize,
       aIntrinsicSize.mHasHeight ? aIntrinsicSize.mHeight : aDefaultSize.height;
 }
 
-// Convert from nsImageRenderer flags to the flags we want to use for drawing in
-// the imgIContainer namespace.
+
+
 static uint32_t ConvertImageRendererToDrawFlags(uint32_t aImageRendererFlags) {
   uint32_t drawFlags = imgIContainer::FLAG_NONE;
   if (aImageRendererFlags & nsImageRenderer::FLAG_SYNC_DECODE_IMAGES) {
@@ -509,8 +509,8 @@ ImgDrawResult nsImageRenderer::Draw(nsPresContext* aPresContext,
     }
     case StyleImage::Tag::ImageSet:
       MOZ_FALLTHROUGH_ASSERT("image-set should be resolved already");
-    // See bug 546052 - cross-fade implementation still being worked
-    // on.
+    
+    
     case StyleImage::Tag::CrossFade:
     case StyleImage::Tag::None:
       break;
@@ -632,9 +632,10 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItems(
           LayoutDeviceRect::FromAppUnits(aFill, appUnitsPerDevPixel));
 
       if (mExtendMode == ExtendMode::CLAMP) {
-        // The image is not repeating. Just push as a regular image.
+        
         aBuilder.PushImage(dest, clip, !aItem->BackfaceIsHidden(), rendering,
-                           key.value());
+                           key.value(), true,
+                           wr::ColorF{1.0f, 1.0f, 1.0f, aOpacity});
       } else {
         nsPoint firstTilePos = nsLayoutUtils::GetBackgroundFirstTilePos(
             aDest.TopLeft(), aFill.TopLeft(), aRepeatSize);
@@ -665,7 +666,8 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItems(
 
         aBuilder.PushRepeatingImage(fill, clip, !aItem->BackfaceIsHidden(),
                                     stretchSize, wr::ToLayoutSize(gapSize),
-                                    rendering, key.value());
+                                    rendering, key.value(), true,
+                                    wr::ColorF{1.0f, 1.0f, 1.0f, aOpacity});
       }
       break;
     }
@@ -684,12 +686,12 @@ already_AddRefed<gfxDrawable> nsImageRenderer::DrawableForElement(
   NS_ASSERTION(mType == StyleImage::Tag::Element,
                "DrawableForElement only makes sense if backed by an element");
   if (mPaintServerFrame) {
-    // XXX(seth): In order to not pass FLAG_SYNC_DECODE_IMAGES here,
-    // DrawableFromPaintServer would have to return a ImgDrawResult indicating
-    // whether any images could not be painted because they weren't fully
-    // decoded. Even always passing FLAG_SYNC_DECODE_IMAGES won't eliminate all
-    // problems, as it won't help if there are image which haven't finished
-    // loading, but it's better than nothing.
+    
+    
+    
+    
+    
+    
     int32_t appUnitsPerDevPixel =
         mForFrame->PresContext()->AppUnitsPerDevPixel();
     nsRect destRect = aImageRect - aImageRect.TopLeft();
@@ -699,7 +701,7 @@ already_AddRefed<gfxDrawable> nsImageRenderer::DrawableForElement(
     RefPtr<gfxDrawable> drawable;
 
     SurfaceFormat format = aContext.GetDrawTarget()->GetFormat();
-    // Don't allow creating images that are too big
+    
     if (aContext.GetDrawTarget()->CanCreateSimilarDrawTarget(imageSize,
                                                              format)) {
       drawable = SVGIntegrationUtils::DrawableFromPaintServer(
@@ -767,14 +769,14 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItemsForLayer(
                                     aAnchor, aRepeatSize, srcRect, aOpacity);
 }
 
-/**
- * Compute the size and position of the master copy of the image. I.e., a single
- * tile used to fill the dest rect.
- * aFill The destination rect to be filled
- * aHFill and aVFill are the repeat patterns for the component -
- * StyleBorderImageRepeat - i.e., how a tiling unit is used to fill aFill
- * aUnitSize The size of the source rect in dest coords.
- */
+
+
+
+
+
+
+
+
 static nsRect ComputeTile(nsRect& aFill, StyleBorderImageRepeat aHFill,
                           StyleBorderImageRepeat aVFill,
                           const nsSize& aUnitSize, nsSize& aRepeatSize) {
@@ -842,16 +844,16 @@ static nsRect ComputeTile(nsRect& aFill, StyleBorderImageRepeat aHFill,
   return tile;
 }
 
-/**
- * Returns true if the given set of arguments will require the tiles which fill
- * the dest rect to be scaled from the source tile. See comment on ComputeTile
- * for argument descriptions.
- */
+
+
+
+
+
 static bool RequiresScaling(const nsRect& aFill, StyleBorderImageRepeat aHFill,
                             StyleBorderImageRepeat aVFill,
                             const nsSize& aUnitSize) {
-  // If we have no tiling in either direction, we can skip the intermediate
-  // scaling step.
+  
+  
   return (aHFill != StyleBorderImageRepeat::Stretch ||
           aVFill != StyleBorderImageRepeat::Stretch) &&
          (aUnitSize.width != aFill.width || aUnitSize.height != aFill.height);
@@ -881,21 +883,21 @@ ImgDrawResult nsImageRenderer::DrawBorderImageComponent(
   if (isRequestBacked || mType == StyleImage::Tag::Element) {
     nsCOMPtr<imgIContainer> subImage;
 
-    // To draw one portion of an image into a border component, we stretch that
-    // portion to match the size of that border component and then draw onto.
-    // However, preserveAspectRatio attribute of a SVG image may break this
-    // rule. To get correct rendering result, we add
-    // FLAG_FORCE_PRESERVEASPECTRATIO_NONE flag here, to tell mImage to ignore
-    // preserveAspectRatio attribute, and always do non-uniform stretch.
+    
+    
+    
+    
+    
+    
     uint32_t drawFlags = ConvertImageRendererToDrawFlags(mFlags) |
                          imgIContainer::FLAG_FORCE_PRESERVEASPECTRATIO_NONE;
-    // For those SVG image sources which don't have fixed aspect ratio (i.e.
-    // without viewport size and viewBox), we should scale the source uniformly
-    // after the viewport size is decided by "Default Sizing Algorithm".
+    
+    
+    
     if (!aHasIntrinsicRatio) {
       drawFlags = drawFlags | imgIContainer::FLAG_FORCE_UNIFORM_SCALING;
     }
-    // Retrieve or create the subimage we'll draw.
+    
     nsIntRect srcRect(aSrc.x, aSrc.y, aSrc.width, aSrc.height);
     if (isRequestBacked) {
       CachedBorderImageData* cachedData =
@@ -910,13 +912,13 @@ ImgDrawResult nsImageRenderer::DrawBorderImageComponent(
         cachedData->SetSubImage(aIndex, subImage);
       }
     } else {
-      // This path, for eStyleImageType_Element, is currently slower than it
-      // needs to be because we don't cache anything. (In particular, if we have
-      // to draw to a temporary surface inside ClippedImage, we don't cache that
-      // temporary surface since we immediately throw the ClippedImage we create
-      // here away.) However, if we did cache, we'd need to know when to
-      // invalidate that cache, and it's not clear that it's worth the trouble
-      // since using border-image with -moz-element is rare.
+      
+      
+      
+      
+      
+      
+      
 
       RefPtr<gfxDrawable> drawable =
           DrawableForElement(nsRect(nsPoint(), mSize), aRenderingContext);
@@ -939,7 +941,7 @@ ImgDrawResult nsImageRenderer::DrawBorderImageComponent(
       ImgDrawResult result = nsLayoutUtils::DrawSingleImage(
           aRenderingContext, aPresContext, subImage, samplingFilter, aFill,
           aDirtyRect,
-          /* no SVGImageContext */ Nothing(), drawFlags);
+           Nothing(), drawFlags);
 
       if (!mImage->IsComplete()) {
         result &= ImgDrawResult::SUCCESS_NOT_COMPLETE;
@@ -992,20 +994,20 @@ ImgDrawResult nsImageRenderer::DrawShapeImage(nsPresContext* aPresContext,
     uint32_t drawFlags =
         ConvertImageRendererToDrawFlags(mFlags) | imgIContainer::FRAME_FIRST;
     nsRect dest(nsPoint(0, 0), mSize);
-    // We have a tricky situation in our choice of SamplingFilter. Shape
-    // images define a float area based on the alpha values in the rendered
-    // pixels. When multiple device pixels are used for one css pixel, the
-    // sampling can change crisp edges into aliased edges. For visual pixels,
-    // that's usually the right choice. For defining a float area, it can
-    // cause problems. If a style is using a shape-image-threshold value that
-    // is less than the alpha of the edge pixels, any filtering may smear the
-    // alpha into adjacent pixels and expand the float area in a confusing
-    // way. Since the alpha threshold can be set precisely in CSS, and since a
-    // web author may be counting on that threshold to define a precise float
-    // area from an image, it is least confusing to have the rendered pixels
-    // have unfiltered alpha. We use SamplingFilter::POINT to ensure that each
-    // rendered pixel has an alpha that precisely matches the alpha of the
-    // closest pixel in the image.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     return nsLayoutUtils::DrawSingleImage(
         aRenderingContext, aPresContext, mImageContainer, SamplingFilter::POINT,
         dest, dest, Nothing(), drawFlags, nullptr, nullptr);
@@ -1020,7 +1022,7 @@ ImgDrawResult nsImageRenderer::DrawShapeImage(nsPresContext* aPresContext,
     return ImgDrawResult::SUCCESS;
   }
 
-  // Unsupported image type.
+  
   return ImgDrawResult::BAD_IMAGE;
 }
 
@@ -1047,8 +1049,8 @@ bool nsImageRenderer::IsImageContainerAvailable(layers::LayerManager* aManager,
 
 void nsImageRenderer::PurgeCacheForViewportChange(
     const Maybe<nsSize>& aSVGViewportSize, const bool aHasIntrinsicRatio) {
-  // Check if we should flush the cached data - only vector images need to do
-  // the check since they might not have fixed ratio.
+  
+  
   if (mImageContainer &&
       mImageContainer->GetType() == imgIContainer::TYPE_VECTOR) {
     if (auto* cachedData =
