@@ -117,13 +117,6 @@ class BufferSize {
   explicit BufferSize(size_t size) : size_(size) {}
 
   size_t get() const { return size_; }
-
-  
-  
-  uint32_t deprecatedGetUint32() const {
-    MOZ_ASSERT(size_ <= INT32_MAX);
-    return size_;
-  }
 };
 
 class ArrayBufferObjectMaybeShared : public NativeObject {
