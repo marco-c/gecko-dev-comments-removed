@@ -108,6 +108,13 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
           MOZ_ASSERT(ratio >= 0.0 && ratio < 1.0);
           mPD->mShrinkToFitRatio = std::min(mPD->mShrinkToFitRatio, ratio);
         }
+
+        
+        
+        
+        
+        frame->ClearOverflowRects();
+        kidReflowOutput.mOverflowAreas = aReflowOutput.mOverflowAreas;
       }
     }
 
