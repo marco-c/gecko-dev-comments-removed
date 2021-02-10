@@ -1390,10 +1390,12 @@ nsresult nsFrameSelection::TakeFocus(nsIContent& aNewFocus,
           mBatching;  
       mBatching.mCounter = 1;
 
+      RefPtr<Selection> selection = mDomSelections[index];
+
       if (aFocusMode == FocusMode::kMultiRangeSelection) {
         
         
-        mDomSelections[index]->RemoveCollapsedRanges();
+        selection->RemoveCollapsedRanges();
 
         ErrorResult error;
         RefPtr<nsRange> newRange = nsRange::Create(
@@ -1402,14 +1404,12 @@ nsresult nsFrameSelection::TakeFocus(nsIContent& aNewFocus,
           return error.StealNSResult();
         }
         MOZ_ASSERT(newRange);
-        const RefPtr<Selection> selection{mDomSelections[index]};
         selection->AddRangeAndSelectFramesAndNotifyListeners(*newRange,
                                                              IgnoreErrors());
       } else {
         bool oldDesiredPosSet =
             mDesiredCaretPos.mIsSet;  
                                       
-        RefPtr<Selection> selection = mDomSelections[index];
         selection->CollapseInLimiter(&aNewFocus, aContentOffset);
         mDesiredCaretPos.mIsSet =
             oldDesiredPosSet;  
@@ -1418,7 +1418,7 @@ nsresult nsFrameSelection::TakeFocus(nsIContent& aNewFocus,
       mBatching = saveBatching;
 
       if (aContentEndOffset != aContentOffset) {
-        mDomSelections[index]->Extend(&aNewFocus, aContentEndOffset);
+        selection->Extend(&aNewFocus, aContentEndOffset);
       }
 
       
@@ -1487,16 +1487,16 @@ nsresult nsFrameSelection::TakeFocus(nsIContent& aNewFocus,
           }
         }
       } else {
+        RefPtr<Selection> selection = mDomSelections[index];
         
         
         
-        if (mDomSelections[index]->GetDirection() == eDirNext &&
-            aContentEndOffset > aContentOffset)  
-        {
-          mDomSelections[index]->Extend(
-              &aNewFocus, aContentEndOffset);  
-        } else
-          mDomSelections[index]->Extend(&aNewFocus, aContentOffset);
+        uint32_t offset =
+            (selection->GetDirection() == eDirNext &&
+             aContentEndOffset > aContentOffset)  
+                ? aContentEndOffset  
+                : aContentOffset;
+        selection->Extend(&aNewFocus, offset);
       }
       break;
     }
