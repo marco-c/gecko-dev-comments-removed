@@ -185,6 +185,11 @@ class APZScrollHandoffTester : public APZCTreeManagerTester {
   }
 };
 
+class APZScrollHandoffTesterLayersOnly : public APZScrollHandoffTester {
+ public:
+  APZScrollHandoffTesterLayersOnly() { mLayersOnly = true; }
+};
+
 #ifndef MOZ_WIDGET_ANDROID  
 
 
@@ -273,11 +278,10 @@ TEST_F(APZScrollHandoffTester, LayerStructureChangesWhileEventsArePending) {
 #ifndef MOZ_WIDGET_ANDROID  
 
 
-TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1073250) {
+TEST_F(APZScrollHandoffTesterLayersOnly, StuckInOverscroll_Bug1073250) {
   
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
-  SCOPED_GFX_VAR(UseWebRender, bool, false);
 
   CreateScrollHandoffLayerTree1();
 
@@ -318,11 +322,10 @@ TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1073250) {
 
 
 
-TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1231228) {
+TEST_F(APZScrollHandoffTesterLayersOnly, StuckInOverscroll_Bug1231228) {
   
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
-  SCOPED_GFX_VAR(UseWebRender, bool, false);
 
   CreateScrollHandoffLayerTree1();
 
@@ -395,10 +398,9 @@ TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1240202a) {
 #endif
 
 #ifndef MOZ_WIDGET_ANDROID  
-TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1240202b) {
+TEST_F(APZScrollHandoffTesterLayersOnly, StuckInOverscroll_Bug1240202b) {
   
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
-  SCOPED_GFX_VAR(UseWebRender, bool, false);
 
   CreateScrollHandoffLayerTree1();
 
@@ -468,8 +470,7 @@ TEST_F(APZScrollHandoffTester, OpposingConstrainedAxes_Bug1201098) {
 
 
 
-TEST_F(APZScrollHandoffTester, PartialFlingHandoff) {
-  SCOPED_GFX_VAR(UseWebRender, bool, false);
+TEST_F(APZScrollHandoffTesterLayersOnly, PartialFlingHandoff) {
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
 
   CreateScrollHandoffLayerTree1();
@@ -563,10 +564,9 @@ TEST_F(APZScrollHandoffTester, ScrollgrabFling) {
   childApzc->AssertStateIsReset();
 }
 
-TEST_F(APZScrollHandoffTester, ScrollgrabFlingAcceleration1) {
+TEST_F(APZScrollHandoffTesterLayersOnly, ScrollgrabFlingAcceleration1) {
   SCOPED_GFX_PREF_BOOL("apz.allow_immediate_handoff", true);
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
-  SCOPED_GFX_VAR(UseWebRender, bool, false);
   CreateScrollgrabLayerTree(true );
 
   
@@ -577,10 +577,9 @@ TEST_F(APZScrollHandoffTester, ScrollgrabFlingAcceleration1) {
   TestFlingAcceleration();
 }
 
-TEST_F(APZScrollHandoffTester, ScrollgrabFlingAcceleration2) {
+TEST_F(APZScrollHandoffTesterLayersOnly, ScrollgrabFlingAcceleration2) {
   SCOPED_GFX_PREF_BOOL("apz.allow_immediate_handoff", true);
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
-  SCOPED_GFX_VAR(UseWebRender, bool, false);
   CreateScrollgrabLayerTree(false );
   TestFlingAcceleration();
 }

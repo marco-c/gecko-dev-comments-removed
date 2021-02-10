@@ -129,10 +129,13 @@ class APZHitTestingTester : public APZCTreeManagerTester {
   }
 };
 
+class APZHitTestingTesterLayersOnly : public APZHitTestingTester {
+ public:
+  APZHitTestingTesterLayersOnly() { mLayersOnly = true; }
+};
 
-TEST_F(APZHitTestingTester, HitTesting1) {
-  SCOPED_GFX_VAR(UseWebRender, bool, false);
 
+TEST_F(APZHitTestingTesterLayersOnly, HitTesting1) {
   CreateHitTesting1LayerTree();
   ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
 
@@ -208,8 +211,7 @@ TEST_F(APZHitTestingTester, HitTesting1) {
 }
 
 
-TEST_F(APZHitTestingTester, HitTesting2) {
-  SCOPED_GFX_VAR(UseWebRender, bool, false);
+TEST_F(APZHitTestingTesterLayersOnly, HitTesting2) {
   
   SCOPED_GFX_PREF_FLOAT("apz.velocity_bias", 0.0);
 
@@ -343,9 +345,7 @@ TEST_F(APZHitTestingTester, HitTesting2) {
             transformToGecko.TransformPoint(ParentLayerPoint(25, 25)));
 }
 
-TEST_F(APZHitTestingTester, HitTesting3) {
-  SCOPED_GFX_VAR(UseWebRender, bool, false);
-
+TEST_F(APZHitTestingTesterLayersOnly, HitTesting3) {
   const char* layerTreeSyntax = "c(t)";
   
   nsIntRegion layerVisibleRegions[] = {nsIntRegion(IntRect(0, 0, 200, 200)),
@@ -367,9 +367,7 @@ TEST_F(APZHitTestingTester, HitTesting3) {
   EXPECT_EQ(ApzcOf(layers[1]), hit.get());
 }
 
-TEST_F(APZHitTestingTester, ComplexMultiLayerTree) {
-  SCOPED_GFX_VAR(UseWebRender, bool, false);
-
+TEST_F(APZHitTestingTesterLayersOnly, ComplexMultiLayerTree) {
   CreateComplexMultiLayerTree();
   ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
   UpdateHitTestingTree();
