@@ -3957,8 +3957,7 @@ class MToBigInt : public MUnaryInstruction, public ToBigIntPolicy::Data {
     setMovable();
 
     
-    if (!def->definitelyType(
-            {MIRType::Boolean, MIRType::String, MIRType::BigInt})) {
+    if (!def->definitelyType({MIRType::Boolean, MIRType::BigInt})) {
       setGuard();
     }
   }
@@ -3983,13 +3982,8 @@ class MToInt64 : public MUnaryInstruction, public ToInt64Policy::Data {
     setMovable();
 
     
-    
-    
-    if (def->mightBeType(MIRType::Object) ||
-        def->mightBeType(MIRType::Undefined) ||
-        def->mightBeType(MIRType::Null) || def->mightBeType(MIRType::Double) ||
-        def->mightBeType(MIRType::Float32) ||
-        def->mightBeType(MIRType::Int32) || def->mightBeType(MIRType::Symbol)) {
+    if (!def->definitelyType(
+            {MIRType::Boolean, MIRType::BigInt, MIRType::Int64})) {
       setGuard();
     }
   }
