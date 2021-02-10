@@ -39,7 +39,13 @@ namespace baseprofiler {
 int profiler_current_process_id() { return getpid(); }
 
 int profiler_current_thread_id() {
-  return static_cast<int>(static_cast<pid_t>(syscall(SYS_thread_selfid)));
+  uint64_t tid;
+  pthread_threadid_np(nullptr, &tid);
+  
+  
+  
+  
+  return static_cast<int>(tid);
 }
 
 static int64_t MicrosecondsSince1970() {
