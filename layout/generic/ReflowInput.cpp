@@ -2407,7 +2407,7 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
   
   
   
-  bool needMarginProp = ComputeMargin(aCBWM, aPercentBasis);
+  bool needMarginProp = ComputeMargin(aCBWM, aPercentBasis, aFrameType);
   
   
   
@@ -2490,11 +2490,7 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
   }
   SetComputedLogicalBorderPadding(wm, border + ComputedLogicalPadding(wm));
 
-  if (aFrameType == LayoutFrameType::Table) {
-    
-    
-    SetComputedLogicalMargin(wm, LogicalMargin(wm));
-  } else if (aFrameType == LayoutFrameType::Scrollbar) {
+  if (aFrameType == LayoutFrameType::Scrollbar) {
     
     
     
@@ -2737,9 +2733,17 @@ nscoord ReflowInput::CalcLineHeight(nsIContent* aContent,
 }
 
 bool SizeComputationInput::ComputeMargin(WritingMode aCBWM,
-                                         nscoord aPercentBasis) {
+                                         nscoord aPercentBasis,
+                                         LayoutFrameType aFrameType) {
   
   if (SVGUtils::IsInSVGTextSubtree(mFrame)) {
+    return false;
+  }
+
+  if (aFrameType == LayoutFrameType::Table) {
+    
+    
+    SetComputedLogicalMargin(mWritingMode, LogicalMargin(mWritingMode));
     return false;
   }
 

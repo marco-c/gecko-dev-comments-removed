@@ -161,7 +161,8 @@ struct SizeComputationInput {
 
 
 
-  bool ComputeMargin(mozilla::WritingMode aCBWM, nscoord aPercentBasis);
+  bool ComputeMargin(mozilla::WritingMode aCBWM, nscoord aPercentBasis,
+                     mozilla::LayoutFrameType aFrameType);
 
   
 
