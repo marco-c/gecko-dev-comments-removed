@@ -130,12 +130,18 @@ ShortcutKeyData ShortcutKeys::sInputHandlers[] = {
     {u"keypress", u"VK_END",  nullptr, u"shift,control",  u"cmd_selectBottom"},    
 #endif 
 
+    
+
+
+#if defined(XP_WIN) || defined(USE_EMACS_KEY_BINDINGS)
+    {u"keypress", u"VK_INSERT", nullptr, u"control", u"cmd_copy"},   
+    {u"keypress", u"VK_INSERT", nullptr, u"shift",   u"cmd_paste"},  
+#endif  
+
 
 #if defined(USE_EMACS_KEY_BINDINGS)
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",         u"cmd_cutOrDelete"},               
     {u"keypress", u"VK_DELETE",    nullptr, u"control",       u"cmd_copyOrDelete"},              
-    {u"keypress", u"VK_INSERT",    nullptr, u"control",       u"cmd_copy"},                      
-    {u"keypress", u"VK_INSERT",    nullptr, u"shift",         u"cmd_paste"},                     
     {u"keypress", u"VK_BACK",      nullptr, u"control",       u"cmd_deleteWordBackward"},        
 #endif 
 #if defined(MOZ_WIDGET_ANDROID)
@@ -147,8 +153,6 @@ ShortcutKeyData ShortcutKeys::sInputHandlers[] = {
 #if defined(XP_WIN)
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cutOrDelete"},              
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_deleteWordForward"},        
-    {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},                     
-    {u"keypress", u"VK_INSERT",    nullptr, u"shift",          u"cmd_paste"},                    
     {u"keypress", u"VK_BACK",      nullptr, u"alt",            u"cmd_undo"},                     
     {u"keypress", u"VK_BACK",      nullptr, u"alt,shift",      u"cmd_redo"},                     
     {u"keypress", u"VK_BACK",      nullptr, u"control",        u"cmd_deleteWordBackward"},       
@@ -298,12 +302,18 @@ ShortcutKeyData ShortcutKeys::sTextAreaHandlers[] = {
     {u"keypress", u"VK_END",       nullptr, u"shift,control",  u"cmd_selectBottom"},             
 #endif  
 
+    
+
+
+#if defined(XP_WIN) || defined(USE_EMACS_KEY_BINDINGS)
+    {u"keypress", u"VK_INSERT", nullptr, u"control", u"cmd_copy"},   
+    {u"keypress", u"VK_INSERT", nullptr, u"shift",   u"cmd_paste"},  
+#endif  
+
 
 #if defined(USE_EMACS_KEY_BINDINGS)
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cutOrDelete"},              
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_copyOrDelete"},             
-    {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},                     
-    {u"keypress", u"VK_INSERT",    nullptr, u"shift",          u"cmd_paste"},                    
     {u"keypress", u"VK_BACK",      nullptr, u"control",        u"cmd_deleteWordBackward"},       
 #endif  
 #if defined(MOZ_WIDGET_ANDROID)
@@ -315,8 +325,6 @@ ShortcutKeyData ShortcutKeys::sTextAreaHandlers[] = {
 #if defined(XP_WIN)
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cutOrDelete"},              
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_deleteWordForward"},        
-    {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},                     
-    {u"keypress", u"VK_INSERT",    nullptr, u"shift",          u"cmd_paste"},                    
     {u"keypress", u"VK_BACK",      nullptr, u"alt",            u"cmd_undo"},                     
     {u"keypress", u"VK_BACK",      nullptr, u"alt,shift",      u"cmd_redo"},                     
     {u"keypress", u"VK_BACK",      nullptr, u"control",        u"cmd_deleteWordBackward"},       
@@ -490,11 +498,18 @@ ShortcutKeyData ShortcutKeys::sBrowserHandlers[] = {
     {u"keypress", u"VK_END",  nullptr, u"shift,control", u"cmd_selectBottom"},     
 #endif  
 
+    
+
+
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) ||\
+    defined(USE_EMACS_KEY_BINDINGS)
+    {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},  
+#endif  
+
 
 #if defined(USE_EMACS_KEY_BINDINGS)
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cut"},                      
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_copy"},                     
-    {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},                     
 #endif  
 #if defined(MOZ_WIDGET_ANDROID)
     {u"keypress", u"VK_BACK",      nullptr, u"alt",            u"cmd_deleteToBeginningOfLine"},  
@@ -505,12 +520,10 @@ ShortcutKeyData ShortcutKeys::sBrowserHandlers[] = {
 #if defined(MOZ_WIDGET_GTK)
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cut"},                      
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_copy"},                     
-    {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},                     
 #endif  
 #if defined(XP_WIN)
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cut"},                      
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_deleteWordForward"},        
-    {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},                     
 #endif  
 
     {u"keypress", nullptr, u" ", u"shift",       u"cmd_scrollPageUp"},    
@@ -632,11 +645,18 @@ ShortcutKeyData ShortcutKeys::sEditorHandlers[] = {
     {u"keypress", u"VK_END",  nullptr, u"shift,control", u"cmd_selectBottom"},     
 #endif  
 
+    
+
+
+#if defined(XP_WIN) || defined(USE_EMACS_KEY_BINDINGS)
+    {u"keypress", u"VK_INSERT", nullptr, u"control", u"cmd_copy"},   
+    {u"keypress", u"VK_INSERT", nullptr, u"shift",   u"cmd_paste"},  
+#endif  
+
+
 #if defined(USE_EMACS_KEY_BINDINGS)
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cutOrDelete"},              
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_copyOrDelete"},             
-    {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},                     
-    {u"keypress", u"VK_INSERT",    nullptr, u"shift",          u"cmd_paste"},                    
     {u"keypress", u"VK_BACK",      nullptr, u"control",        u"cmd_deleteWordBackward"},       
 #endif  
 #if defined(MOZ_WIDGET_ANDROID)
@@ -648,8 +668,6 @@ ShortcutKeyData ShortcutKeys::sEditorHandlers[] = {
 #if defined(XP_WIN)
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cutOrDelete"},              
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_deleteWordForward"},        
-    {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},                     
-    {u"keypress", u"VK_INSERT",    nullptr, u"shift",          u"cmd_paste"},                    
     {u"keypress", u"VK_BACK",      nullptr, u"alt",            u"cmd_undo"},                     
     {u"keypress", u"VK_BACK",      nullptr, u"alt,shift",      u"cmd_redo"},                     
     {u"keypress", u"VK_BACK",      nullptr, u"control",        u"cmd_deleteWordBackward"},       
