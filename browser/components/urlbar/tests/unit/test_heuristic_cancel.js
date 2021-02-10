@@ -10,6 +10,10 @@
 
 const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  UrlbarProviderAutofill: "resource:///modules/UrlbarProviderAutofill.jsm",
+});
+
 
 
 
@@ -54,7 +58,11 @@ add_task(async function setup() {
   Services.prefs.setBoolPref("browser.urlbar.suggest.searches", false);
 });
 
-add_task(async function() {
+
+
+
+
+add_task(async function timerIsCancelled() {
   let context = createContext("m", { isPrivate: false });
   await PlacesTestUtils.promiseAsyncUpdates();
   info("Manually set up query and then overwrite it.");
@@ -93,7 +101,6 @@ add_task(async function() {
   let queryRecieved, queryCancelled;
   const controllerListener = {
     onQueryResults(queryContext) {
-      console.trace(`finished query. context: ${JSON.stringify(queryContext)}`);
       Assert.equal(
         queryContext,
         secondContext,
@@ -133,4 +140,97 @@ add_task(async function() {
   Assert.ok(queryCancelled, "At least one query was cancelled.");
   Assert.ok(queryRecieved, "At least one query finished.");
   controller.removeQueryListener(controllerListener);
+});
+
+
+
+
+
+add_task(async function autofillIsCleared() {
+  
+
+
+
+
+
+
+
+  await PlacesTestUtils.addVisits("http://example.com");
+
+  let firstContext = createContext("e", {
+    providers: ["Autofill", "HeuristicFallback"],
+  });
+  let secondContext = createContext("em", {
+    providers: ["Autofill", "HeuristicFallback"],
+  });
+
+  info("Sanity check: The first query autofills and the second does not.");
+  await check_results({
+    firstContext,
+    autofilled: "example.com",
+    completed: "http://example.com/",
+    matches: [
+      makeVisitResult(firstContext, {
+        uri: "http://example.com/",
+        title: "example.com",
+        heuristic: true,
+      }),
+    ],
+  });
+
+  await check_results({
+    secondContext,
+    matches: [
+      makeSearchResult(secondContext, {
+        engineName: (await Services.search.getDefault()).name,
+        providerName: "HeuristicFallback",
+        heuristic: true,
+      }),
+    ],
+  });
+
+  
+  firstContext = createContext("e", {
+    providers: ["Autofill", "HeuristicFallback"],
+  });
+  secondContext = createContext("em", {
+    providers: ["Autofill", "HeuristicFallback"],
+  });
+
+  
+  let controller = UrlbarTestUtils.newMockController();
+  let queryRecieved, queryCancelled;
+  const controllerListener = {
+    onQueryResults(queryContext) {
+      Assert.equal(
+        queryContext,
+        secondContext,
+        "Only the second query should finish."
+      );
+      queryRecieved = true;
+    },
+    onQueryCancelled(queryContext) {
+      Assert.equal(
+        queryContext,
+        firstContext,
+        "The first query should be cancelled."
+      );
+      Assert.ok(
+        !UrlbarProviderAutofill._autofillData,
+        "The first result should not have populated autofill data."
+      );
+      Assert.ok(!queryCancelled, "No more than one query should be cancelled.");
+      queryCancelled = true;
+    },
+  };
+  controller.addQueryListener(controllerListener);
+
+  
+  controller.startQuery(firstContext);
+  await controller.startQuery(secondContext);
+
+  Assert.ok(queryCancelled, "At least one query was cancelled.");
+  Assert.ok(queryRecieved, "At least one query finished.");
+  controller.removeQueryListener(controllerListener);
+  await cleanupPlaces();
 });
