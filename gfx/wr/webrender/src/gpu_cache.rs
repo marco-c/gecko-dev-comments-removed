@@ -648,6 +648,9 @@ impl Texture {
 
 #[must_use]
 pub struct GpuDataRequest<'a> {
+    
+    
+    #[allow(dead_code)]
     handle: &'a mut GpuCacheHandle,
     frame_stamp: FrameStamp,
     start_index: usize,

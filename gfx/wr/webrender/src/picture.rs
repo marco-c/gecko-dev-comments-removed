@@ -2257,8 +2257,6 @@ pub struct TileCacheInstance {
     
     map_local_to_surface: SpaceMapper<LayoutPixel, PicturePixel>,
     
-    map_child_pic_to_surface: SpaceMapper<PicturePixel, PicturePixel>,
-    
     
     opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
     
@@ -2359,10 +2357,6 @@ impl TileCacheInstance {
             spatial_node_index: params.spatial_node_index,
             tiles: FastHashMap::default(),
             map_local_to_surface: SpaceMapper::new(
-                ROOT_SPATIAL_NODE_INDEX,
-                PictureRect::zero(),
-            ),
-            map_child_pic_to_surface: SpaceMapper::new(
                 ROOT_SPATIAL_NODE_INDEX,
                 PictureRect::zero(),
             ),
@@ -2506,11 +2500,6 @@ impl TileCacheInstance {
             self.spatial_node_index,
             pic_rect,
         );
-        self.map_child_pic_to_surface = SpaceMapper::new(
-            self.spatial_node_index,
-            pic_rect,
-        );
-
         let pic_to_world_mapper = SpaceMapper::new_with_target(
             ROOT_SPATIAL_NODE_INDEX,
             self.spatial_node_index,
