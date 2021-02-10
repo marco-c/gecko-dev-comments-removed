@@ -355,9 +355,8 @@ bool MDefinition::mightBeMagicType() const {
 bool MDefinition::definitelyType(std::initializer_list<MIRType> types) const {
 #ifdef DEBUG
   
-  
   auto isSpecializedNonMagic = [](MIRType type) {
-    return type <= MIRType::Object && type != MIRType::Int64;
+    return type <= MIRType::Object;
   };
 #endif
 
