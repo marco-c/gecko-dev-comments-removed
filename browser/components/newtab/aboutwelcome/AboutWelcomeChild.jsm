@@ -306,18 +306,13 @@ class AboutWelcomeChild extends JSWindowActorChild {
 
 
   AWGetExperimentData() {
-    let experimentData;
-    try {
+    
+    
+    let experimentData = ExperimentAPI.getExperiment({
+      featureId: "aboutwelcome",
       
-      
-      experimentData = ExperimentAPI.getExperiment({
-        featureId: "aboutwelcome",
-        
-        sendExposurePing: false,
-      });
-    } catch (e) {
-      Cu.reportError(e);
-    }
+      sendExposurePing: false,
+    });
 
     if (experimentData?.slug) {
       log.debug(
