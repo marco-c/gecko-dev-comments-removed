@@ -267,6 +267,14 @@ class nsTableFrame : public nsContainerFrame {
 
 
 
+  void GetCollapsedBorderPadding(
+      mozilla::Maybe<mozilla::LogicalMargin>& aBorder,
+      mozilla::Maybe<mozilla::LogicalMargin>& aPadding) const;
+
+  
+
+
+
   nsMargin GetDeflationForBackground(nsPresContext* aPresContext) const;
 
   

@@ -2663,6 +2663,17 @@ static LogicalMargin GetSeparateModelBorderPadding(
   return borderPadding;
 }
 
+void nsTableFrame::GetCollapsedBorderPadding(
+    Maybe<LogicalMargin>& aBorder, Maybe<LogicalMargin>& aPadding) const {
+  if (IsBorderCollapse()) {
+    
+    
+    const auto wm = GetWritingMode();
+    aBorder.emplace(GetIncludedOuterBCBorder(wm));
+    aPadding.emplace(wm);
+  }
+}
+
 LogicalMargin nsTableFrame::GetChildAreaOffset(
     const WritingMode aWM, const ReflowInput* aReflowInput) const {
   return IsBorderCollapse()

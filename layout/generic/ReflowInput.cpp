@@ -118,11 +118,12 @@ SizeComputationInput::SizeComputationInput(nsIFrame* aFrame,
 
 SizeComputationInput::SizeComputationInput(
     nsIFrame* aFrame, gfxContext* aRenderingContext,
-    WritingMode aContainingBlockWritingMode, nscoord aContainingBlockISize)
+    WritingMode aContainingBlockWritingMode, nscoord aContainingBlockISize,
+    const Maybe<LogicalMargin>& aBorder, const Maybe<LogicalMargin>& aPadding)
     : SizeComputationInput(aFrame, aRenderingContext) {
   MOZ_ASSERT(!mFrame->IsTableColFrame());
   InitOffsets(aContainingBlockWritingMode, aContainingBlockISize,
-              mFrame->Type());
+              mFrame->Type(), {}, aBorder, aPadding);
 }
 
 
@@ -2490,18 +2491,6 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
   SetComputedLogicalBorderPadding(wm, border + ComputedLogicalPadding(wm));
 
   if (aFrameType == LayoutFrameType::Table) {
-    nsTableFrame* tableFrame = static_cast<nsTableFrame*>(mFrame);
-
-    if (tableFrame->IsBorderCollapse()) {
-      
-      
-      
-      
-      SetComputedLogicalPadding(wm, LogicalMargin(wm));
-      SetComputedLogicalBorderPadding(wm,
-                                      tableFrame->GetIncludedOuterBCBorder(wm));
-    }
-
     
     
     SetComputedLogicalMargin(wm, LogicalMargin(wm));
