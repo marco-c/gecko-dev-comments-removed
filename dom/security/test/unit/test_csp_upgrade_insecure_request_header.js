@@ -91,6 +91,8 @@ function run_next_test() {
 }
 
 function run_test() {
+  do_get_profile();
+
   
   httpserver = new HttpServer();
   httpserver.registerPathHandler(testpath, serverHandler);
