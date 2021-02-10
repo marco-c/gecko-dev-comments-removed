@@ -169,21 +169,17 @@ ShortcutKeyData ShortcutKeys::sInputHandlers[] = {
     {u"keypress", u"VK_BACK", nullptr, u"alt,shift", u"cmd_redo"},                     
 #endif  
 
+    
 
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) || \
-    defined(MOZ_WIDGET_ANDROID) || defined(USE_EMACS_KEY_BINDINGS)
-    {u"keypress", nullptr, u"c", u"accel",       u"cmd_copy"},                     
-    {u"keypress", nullptr, u"x", u"accel",       u"cmd_cut"},                      
-    {u"keypress", nullptr, u"v", u"accel",       u"cmd_paste"},                    
-    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},                     
-    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},                     
-#endif
+
+    {u"keypress", nullptr, u"c", u"accel",       u"cmd_copy"},   
+    {u"keypress", nullptr, u"x", u"accel",       u"cmd_cut"},    
+    {u"keypress", nullptr, u"v", u"accel",       u"cmd_paste"},  
+    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},   
+    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},   
+
+
 #if defined(MOZ_WIDGET_COCOA)
-    {u"keypress", nullptr, u"c", u"accel",       u"cmd_copy"},                     
-    {u"keypress", nullptr, u"x", u"accel",       u"cmd_cut"},                      
-    {u"keypress", nullptr, u"v", u"accel",       u"cmd_paste"},                    
-    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},                     
-    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},                     
     {u"keypress", nullptr, u"a", u"accel",       u"cmd_selectAll"},                
 #endif  
 #if defined(USE_EMACS_KEY_BINDINGS)
@@ -205,8 +201,6 @@ ShortcutKeyData ShortcutKeys::sInputHandlers[] = {
 #if defined(MOZ_WIDGET_GTK)
     {u"keypress", nullptr, u"a", u"alt",         u"cmd_selectAll"},                
     {u"keypress", nullptr, u"y", u"accel",       u"cmd_redo"},                     
-    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},                     
-    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},                     
 #endif  
 #if defined(XP_WIN)
     {u"keypress", nullptr, u"a", u"accel",       u"cmd_selectAll"},                
@@ -353,21 +347,17 @@ ShortcutKeyData ShortcutKeys::sTextAreaHandlers[] = {
     {u"keypress", u"VK_BACK", nullptr, u"alt,shift", u"cmd_redo"},                     
 #endif  
 
+    
 
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) || \
-    defined(MOZ_WIDGET_ANDROID) || defined(USE_EMACS_KEY_BINDINGS)
-    {u"keypress", nullptr, u"c", u"accel",       u"cmd_copy"},                     
-    {u"keypress", nullptr, u"x", u"accel",       u"cmd_cut"},                      
-    {u"keypress", nullptr, u"v", u"accel",       u"cmd_paste"},                    
-    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},                     
-    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},                     
-#endif
+
+    {u"keypress", nullptr, u"c", u"accel",       u"cmd_copy"},   
+    {u"keypress", nullptr, u"x", u"accel",       u"cmd_cut"},    
+    {u"keypress", nullptr, u"v", u"accel",       u"cmd_paste"},  
+    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},   
+    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},   
+
+
 #if defined(MOZ_WIDGET_COCOA)
-    {u"keypress", nullptr, u"c", u"accel",       u"cmd_copy"},                     
-    {u"keypress", nullptr, u"x", u"accel",       u"cmd_cut"},                      
-    {u"keypress", nullptr, u"v", u"accel",       u"cmd_paste"},                    
-    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},                     
-    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},                     
     {u"keypress", nullptr, u"a", u"accel",       u"cmd_selectAll"},                
 #endif  
 #if defined(USE_EMACS_KEY_BINDINGS)
@@ -391,8 +381,6 @@ ShortcutKeyData ShortcutKeys::sTextAreaHandlers[] = {
 #if defined(MOZ_WIDGET_GTK)
     {u"keypress", nullptr, u"a", u"alt",         u"cmd_selectAll"},                
     {u"keypress", nullptr, u"y", u"accel",       u"cmd_redo"},                     
-    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},                     
-    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},                     
 #endif  
 #if defined(XP_WIN)
     {u"keypress", nullptr, u"a", u"accel",       u"cmd_selectAll"},                
@@ -555,14 +543,18 @@ ShortcutKeyData ShortcutKeys::sBrowserHandlers[] = {
     {u"keypress", u"VK_BACK", nullptr, u"control", u"cmd_deleteWordBackward"},       
 #endif  
 
+    
+
+
+    {u"keypress", nullptr, u"c", u"accel",       u"cmd_copy"},   
+    {u"keypress", nullptr, u"x", u"accel",       u"cmd_cut"},    
+    {u"keypress", nullptr, u"v", u"accel",       u"cmd_paste"},  
+    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},   
+    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},   
+
 
     {u"keypress", nullptr, u" ", u"shift",       u"cmd_scrollPageUp"},    
     {u"keypress", nullptr, u" ", nullptr,        u"cmd_scrollPageDown"},  
-    {u"keypress", nullptr, u"x", u"accel",       u"cmd_cut"},             
-    {u"keypress", nullptr, u"c", u"accel",       u"cmd_copy"},            
-    {u"keypress", nullptr, u"v", u"accel",       u"cmd_paste"},           
-    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},            
-    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},            
     {u"keypress", nullptr, u"a", u"accel",       u"cmd_selectAll"},       
 #if defined(USE_EMACS_KEY_BINDINGS)
     {u"keypress", nullptr, u"a", u"alt",         u"cmd_selectAll"},       
@@ -713,27 +705,25 @@ ShortcutKeyData ShortcutKeys::sEditorHandlers[] = {
     {u"keypress", u"VK_BACK", nullptr, u"alt,shift", u"cmd_redo"},                     
 #endif  
 
+    
+
+
+    {u"keypress", nullptr, u"c", u"accel",       u"cmd_copy"},               
+    {u"keypress", nullptr, u"x", u"accel",       u"cmd_cut"},                
+    {u"keypress", nullptr, u"v", u"accel",       u"cmd_paste"},              
+    {u"keypress", nullptr, u"v", u"accel,shift", u"cmd_pasteNoFormatting"},  
+    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},               
+    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},               
+
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) || \
     defined(MOZ_WIDGET_ANDROID) || defined(USE_EMACS_KEY_BINDINGS)
     {u"keypress", nullptr, u" ", u"shift",           u"cmd_scrollPageUp"},             
     {u"keypress", nullptr, u" ", nullptr,            u"cmd_scrollPageDown"},           
-    {u"keypress", nullptr, u"z", u"accel",           u"cmd_undo"},                     
-    {u"keypress", nullptr, u"z", u"accel,shift",     u"cmd_redo"},                     
-    {u"keypress", nullptr, u"x", u"accel",           u"cmd_cut"},                      
-    {u"keypress", nullptr, u"c", u"accel",           u"cmd_copy"},                     
-    {u"keypress", nullptr, u"v", u"accel",           u"cmd_paste"},                    
-    {u"keypress", nullptr, u"v", u"accel,shift",     u"cmd_pasteNoFormatting"},        
 #endif
 #if defined(MOZ_WIDGET_COCOA)
     {u"keypress", nullptr, u" ", u"shift",           u"cmd_scrollPageUp"},             
     {u"keypress", nullptr, u" ", nullptr,            u"cmd_scrollPageDown"},           
-    {u"keypress", nullptr, u"z", u"accel",           u"cmd_undo"},                     
-    {u"keypress", nullptr, u"z", u"accel,shift",     u"cmd_redo"},                     
-    {u"keypress", nullptr, u"x", u"accel",           u"cmd_cut"},                      
-    {u"keypress", nullptr, u"c", u"accel",           u"cmd_copy"},                     
-    {u"keypress", nullptr, u"v", u"accel",           u"cmd_paste"},                    
-    {u"keypress", nullptr, u"v", u"accel,shift",     u"cmd_pasteNoFormatting"},        
     {u"keypress", nullptr, u"a", u"accel",           u"cmd_selectAll"},                
     {u"keypress", nullptr, u"v", u"accel,alt,shift", u"cmd_pasteNoFormatting"},        
 #endif  
@@ -748,10 +738,6 @@ ShortcutKeyData ShortcutKeys::sEditorHandlers[] = {
     {u"keypress", nullptr, u"f", u"control",         u"cmd_charNext"},                 
     {u"keypress", nullptr, u"p", u"control",         u"cmd_linePrevious"},             
     {u"keypress", nullptr, u"n", u"control",         u"cmd_lineNext"},                 
-    {u"keypress", nullptr, u"x", u"control",         u"cmd_cut"},                      
-    {u"keypress", nullptr, u"c", u"control",         u"cmd_copy"},                     
-    {u"keypress", nullptr, u"v", u"control",         u"cmd_paste"},                    
-    {u"keypress", nullptr, u"z", u"control",         u"cmd_undo"},                     
     {u"keypress", nullptr, u"y", u"accel",           u"cmd_redo"},                     
     {u"keypress", nullptr, u"a", u"alt",             u"cmd_selectAll"},                
 #endif  
@@ -759,8 +745,6 @@ ShortcutKeyData ShortcutKeys::sEditorHandlers[] = {
     {u"keypress", nullptr, u"a", u"accel",           u"cmd_selectAll"},                
 #endif  
 #if defined(MOZ_WIDGET_GTK)
-    {u"keypress", nullptr, u"z", u"accel",           u"cmd_undo"},                     
-    {u"keypress", nullptr, u"z", u"accel,shift",     u"cmd_redo"},                     
     {u"keypress", nullptr, u"y", u"accel",           u"cmd_redo"},                     
     {u"keypress", nullptr, u"a", u"alt",             u"cmd_selectAll"},                
 #endif  
