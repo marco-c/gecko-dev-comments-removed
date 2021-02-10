@@ -20,14 +20,14 @@ function getIdentityMode(aWindow = window) {
 
 function getConnectionState() {
   
-  document.getElementById("identity-box").click();
+  document.getElementById("identity-icon-box").click();
   gIdentityHandler.refreshIdentityPopup();
   return document.getElementById("identity-popup").getAttribute("connection");
 }
 
 function getSecurityConnectionBG() {
   
-  document.getElementById("identity-box").click();
+  document.getElementById("identity-icon-box").click();
   gIdentityHandler.refreshIdentityPopup();
   return gBrowser.ownerGlobal
     .getComputedStyle(
@@ -40,7 +40,7 @@ function getSecurityConnectionBG() {
 
 function getReaderModeURL() {
   
-  document.getElementById("identity-box").click();
+  document.getElementById("identity-icon-box").click();
   gIdentityHandler.refreshIdentityPopup();
   return document.getElementById("identity-popup-mainView-panel-header-span")
     .innerHTML;

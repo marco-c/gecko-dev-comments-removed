@@ -552,8 +552,8 @@ async function stopSharing(
     1,
     aFrameBC
   );
-  aWindow.gIdentityHandler._identityBox.click();
-  let popup = aWindow.gIdentityHandler._identityPopup;
+  aWindow.gPermissionPanel._identityPermissionBox.click();
+  let popup = aWindow.gPermissionPanel._permissionPopup;
   
   
   
@@ -561,12 +561,12 @@ async function stopSharing(
   let shownEvent = BrowserTestUtils.waitForEvent(popup, "popupshown");
   await Promise.race([hiddenEvent, shownEvent]);
   let doc = aWindow.document;
-  let permissions = doc.getElementById("identity-popup-permission-list");
+  let permissions = doc.getElementById("permission-popup-permission-list");
   let cancelButton = permissions.querySelector(
-    ".identity-popup-permission-icon." +
+    ".permission-popup-permission-icon." +
       aType +
       "-icon ~ " +
-      ".identity-popup-permission-remove-button"
+      ".permission-popup-permission-remove-button"
   );
   let observerPromise1 = expectObserverCalled(
     "getUserMedia:revoke",
@@ -773,7 +773,7 @@ async function checkSharingUI(
 
   let doc = aWin.document;
   
-  let identityBox = doc.getElementById("identity-box");
+  let permissionBox = doc.getElementById("identity-permission-box");
   let webrtcSharingIcon = doc.getElementById("webrtc-sharing-icon");
   ok(webrtcSharingIcon.hasAttribute("sharing"), "sharing attribute is set");
   let sharing = webrtcSharingIcon.getAttribute("sharing");
@@ -797,15 +797,15 @@ async function checkSharingUI(
   );
 
   
-  identityBox.click();
-  let popup = aWin.gIdentityHandler._identityPopup;
+  permissionBox.click();
+  let popup = aWin.gPermissionPanel._permissionPopup;
   
   
   
   let hiddenEvent = BrowserTestUtils.waitForEvent(popup, "popuphidden");
   let shownEvent = BrowserTestUtils.waitForEvent(popup, "popupshown");
   await Promise.race([hiddenEvent, shownEvent]);
-  let permissions = doc.getElementById("identity-popup-permission-list");
+  let permissions = doc.getElementById("permission-popup-permission-list");
   for (let id of ["microphone", "camera", "screen"]) {
     let convertId = idToConvert => {
       if (idToConvert == "camera") {
@@ -818,22 +818,22 @@ async function checkSharingUI(
     };
     let expected = aExpected[convertId(id)];
     is(
-      !!aWin.gIdentityHandler._sharingState.webRTC[id],
+      !!aWin.gPermissionPanel._sharingState.webRTC[id],
       !!expected,
       "sharing state for " + id + " as expected"
     );
     let icon = permissions.querySelectorAll(
-      ".identity-popup-permission-icon." + id + "-icon"
+      ".permission-popup-permission-icon." + id + "-icon"
     );
     if (expected) {
-      is(icon.length, 1, "should show " + id + " icon in control center panel");
+      is(icon.length, 1, "should show " + id + " icon in permission panel");
       is(
         icon[0].classList.contains("in-use"),
         expected && !isPaused(expected),
         "icon should have the in-use class, unless paused"
       );
     } else if (!icon.length) {
-      ok(true, "should not show " + id + " icon in the control center panel");
+      ok(true, "should not show " + id + " icon in the permission panel");
     } else {
       
       ok(
@@ -843,9 +843,9 @@ async function checkSharingUI(
       is(icon.length, 1, "should not show more than 1 " + id + " icon");
     }
   }
-  aWin.gIdentityHandler._identityPopup.hidePopup();
+  aWin.gPermissionPanel._permissionPopup.hidePopup();
   await TestUtils.waitForCondition(
-    () => identityPopupHidden(aWin),
+    () => permissionPopupHidden(aWin),
     "identity popup should be hidden"
   );
 
@@ -967,8 +967,8 @@ async function disableObserverVerification() {
   }
 }
 
-function identityPopupHidden(win = window) {
-  let popup = win.gIdentityHandler._identityPopup;
+function permissionPopupHidden(win = window) {
+  let popup = win.gPermissionPanel._permissionPopup;
   return !popup || popup.state == "closed";
 }
 
@@ -981,8 +981,8 @@ async function runTests(tests, options = {}) {
     "should start the test without any prior popup notification"
   );
   ok(
-    identityPopupHidden(),
-    "should start the test with the control center hidden"
+    permissionPopupHidden(),
+    "should start the test with the permission panel hidden"
   );
 
   

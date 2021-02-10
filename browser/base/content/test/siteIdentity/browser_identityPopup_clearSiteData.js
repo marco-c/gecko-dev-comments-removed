@@ -56,7 +56,7 @@ async function testClearing(
       true,
       event => event.target == gIdentityHandler._identityPopup
     );
-    gIdentityHandler._identityBox.click();
+    gIdentityHandler._identityIconBox.click();
     await promisePanelOpen;
 
     let clearFooter = document.getElementById(
@@ -139,7 +139,7 @@ async function testClearing(
       gIdentityHandler._identityPopup,
       "popupshown"
     );
-    gIdentityHandler._identityBox.click();
+    gIdentityHandler._identityIconBox.click();
     await promisePanelOpen;
 
     
