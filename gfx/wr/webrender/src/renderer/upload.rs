@@ -17,6 +17,7 @@
 
 
 use std::mem;
+use std::collections::VecDeque;
 use euclid::Transform3D;
 use time::precise_time_ns;
 use malloc_size_of::MallocSizeOfOps;
@@ -582,9 +583,8 @@ pub struct UploadTexturePool {
     
     
     
-    
-    frames: [[Vec<Texture>; 3]; 3],
-    current_frame: usize,
+    textures: [VecDeque<(Texture, u64)>; 3],
+    current_frame: u64,
 
     
     
@@ -597,11 +597,7 @@ pub struct UploadTexturePool {
 impl UploadTexturePool {
     pub fn new() -> Self {
         UploadTexturePool {
-            frames: [
-                [Vec::new(), Vec::new(), Vec::new()],
-                [Vec::new(), Vec::new(), Vec::new()],
-                [Vec::new(), Vec::new(), Vec::new()],
-            ],
+            textures: [VecDeque::new(), VecDeque::new(), VecDeque::new()],
             current_frame: 0,
             temporary_buffers: Vec::new(),
         }
@@ -617,7 +613,7 @@ impl UploadTexturePool {
     }
 
     pub fn begin_frame(&mut self) {
-        self.current_frame = (self.current_frame + 1) % self.frames.len();
+        self.current_frame += 1;
     }
 
     
@@ -625,31 +621,41 @@ impl UploadTexturePool {
     
     pub fn get_texture(&mut self, device: &mut Device, format: ImageFormat) -> Texture {
 
+        
+        
+        
+        
         let format_idx = self.format_index(format);
-        self.frames[self.current_frame][format_idx].pop().unwrap_or_else(||{
-            device.create_texture(
-                ImageBufferKind::Texture2D,
-                format,
-                BATCH_UPLOAD_TEXTURE_SIZE.width,
-                BATCH_UPLOAD_TEXTURE_SIZE.height,
-                TextureFilter::Nearest,
-                
-                
-                
-                Some(RenderTargetInfo { has_depth: false }),
-                1,
-            )
-        })
+        let can_reuse = self.textures[format_idx].get(0)
+            .map(|tex| self.current_frame - tex.1 > 2)
+            .unwrap_or(false);
+
+        if can_reuse {
+            return self.textures[format_idx].pop_front().unwrap().0;
+        }
+
+        
+
+        device.create_texture(
+            ImageBufferKind::Texture2D,
+            format,
+            BATCH_UPLOAD_TEXTURE_SIZE.width,
+            BATCH_UPLOAD_TEXTURE_SIZE.height,
+            TextureFilter::Nearest,
+            
+            
+            
+            Some(RenderTargetInfo { has_depth: false }),
+            1,
+        )
     }
 
     
     
     
-    
-    
     pub fn return_texture(&mut self, texture: Texture) {
         let format_idx = self.format_index(texture.get_format());
-        self.frames[self.current_frame][format_idx].push(texture);
+        self.textures[format_idx].push_back((texture, self.current_frame));
     }
 
     
@@ -671,11 +677,9 @@ impl UploadTexturePool {
 
     
     pub fn delete_textures(&mut self, device: &mut Device) {
-        for frame in &mut self.frames {
-            for format in frame {
-                while let Some(texture) = format.pop() {
-                    device.delete_texture(texture)
-                }
+        for format in &mut self.textures {
+            while let Some(texture) = format.pop_back() {
+                device.delete_texture(texture.0)
             }
         }
         self.temporary_buffers.clear();
@@ -686,11 +690,9 @@ impl UploadTexturePool {
             report.upload_staging_memory += unsafe { (size_op_funs.size_of_op)(buf.as_ptr() as *const _) };
         }
 
-        for frame in &self.frames {
-            for format in frame {
-                for texture in format {
-                    report.upload_staging_textures += texture.size_in_bytes();
-                }
+        for format in &self.textures {
+            for texture in format {
+                report.upload_staging_textures += texture.0.size_in_bytes();
             }
         }
     }
