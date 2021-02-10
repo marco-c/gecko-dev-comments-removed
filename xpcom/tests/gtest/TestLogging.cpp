@@ -5,6 +5,7 @@
 
 
 #include "mozilla/Logging.h"
+#include "mozilla/Sprintf.h"
 #include "gtest/gtest.h"
 
 namespace mozilla::detail {
