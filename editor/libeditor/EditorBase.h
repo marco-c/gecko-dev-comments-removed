@@ -2255,7 +2255,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  nsresult ClearSelection();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult ClearSelection();
 
   
 

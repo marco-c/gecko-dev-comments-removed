@@ -543,7 +543,7 @@ nsresult TextEditor::ReplaceTextAsAction(
   
   
   ErrorResult error;
-  SelectionRefPtr()->RemoveAllRanges(error);
+  MOZ_KnownLive(SelectionRefPtr())->RemoveAllRanges(error);
   if (error.Failed()) {
     NS_WARNING("Selection::RemoveAllRanges() failed");
     return error.StealNSResult();

@@ -2802,7 +2802,7 @@ bool TextControlState::SetValueWithTextEditor(
     
     
     IgnoredErrorResult ignoredError;
-    selection->RemoveAllRanges(ignoredError);
+    MOZ_KnownLive(selection)->RemoveAllRanges(ignoredError);
     NS_WARNING_ASSERTION(!ignoredError.Failed(),
                          "Selection::RemoveAllRanges() failed, but ignored");
   }

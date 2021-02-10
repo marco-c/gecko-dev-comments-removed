@@ -545,7 +545,8 @@ mozInlineSpellChecker::Init(nsIEditor* aEditor) {
 
 
 
-nsresult mozInlineSpellChecker::Cleanup(bool aDestroyingFrames) {
+MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+mozInlineSpellChecker::Cleanup(bool aDestroyingFrames) {
   mNumWordsInSpellSelection = 0;
   RefPtr<Selection> spellCheckSelection = GetSpellCheckSelection();
   nsresult rv = NS_OK;
