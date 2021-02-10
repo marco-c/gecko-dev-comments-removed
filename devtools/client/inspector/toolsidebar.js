@@ -282,7 +282,7 @@ ToolSidebar.prototype = {
 
 
   show: function(id) {
-    this._tabbox.hidden = false;
+    this._tabbox.removeAttribute("hidden");
 
     
     if (id) {
@@ -296,7 +296,7 @@ ToolSidebar.prototype = {
 
 
   hide: function() {
-    this._tabbox.hidden = true;
+    this._tabbox.setAttribute("hidden", "true");
 
     this.emit("hide");
   },
