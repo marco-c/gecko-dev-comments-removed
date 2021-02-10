@@ -43,10 +43,10 @@ add_task(async function() {
   );
 
   
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  await EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
-  clickOnSidebarTab(document, "response");
+  await clickOnSidebarTab(document, "response");
   await wait;
 
   
@@ -78,7 +78,7 @@ add_task(async function() {
   is(filteredFrames.length, 2, "There should be two frames");
 
   
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[1]);
+  await EventUtils.sendMouseEvent({ type: "mousedown" }, requests[1]);
   
   await waitUntil(
     () =>

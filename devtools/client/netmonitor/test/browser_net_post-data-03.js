@@ -26,7 +26,7 @@ add_task(async function() {
   
   let wait = waitForDOM(document, "#headers-panel .accordion-item", 3);
   store.dispatch(Actions.toggleNetworkDetails());
-  clickOnSidebarTab(document, "headers");
+  await clickOnSidebarTab(document, "headers");
   await wait;
 
   let tabpanel = document.querySelector("#headers-panel");
@@ -72,7 +72,7 @@ add_task(async function() {
 
   
   wait = waitForDOM(document, "#request-panel .accordion-item", 2);
-  clickOnSidebarTab(document, "request");
+  await clickOnSidebarTab(document, "request");
   await wait;
 
   tabpanel = document.querySelector("#request-panel");

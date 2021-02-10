@@ -57,7 +57,7 @@ async function spawnTest() {
 
   
   rerendered = WaterfallView.once(EVENTS.UI_WATERFALL_RENDERED);
-  EventUtils.sendMouseEvent({ type: "mouseup" }, WaterfallView.detailsSplitter);
+  await EventUtils.sendMouseEvent({ type: "mouseup" }, WaterfallView.detailsSplitter);
   await rerendered;
 
   let afterResizeBarsCount = $$(".waterfall-marker-bar").length;

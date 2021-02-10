@@ -14,6 +14,9 @@
 
 
 this.AccessibilityUtils = (function() {
+  
+  const GET_ACCESSIBLE_TIMEOUT = 1000;
+
   const FORCE_DISABLE_ACCESSIBILITY_PREF = "accessibility.force_disabled";
 
   
@@ -437,39 +440,13 @@ this.AccessibilityUtils = (function() {
 
 
 
-  function forceRefreshDriverTick(node) {
-    const wins = [];
-    let bc = BrowsingContext.getFromWindow(node.ownerDocument.defaultView); 
-    while (bc) {
-      wins.push(bc.associatedWindow);
-      bc = bc.embedderWindowGlobal?.browsingContext;
-    }
-
-    let win = wins.pop();
-    while (win) {
-      
-      
-      
-      win.windowUtils.advanceTimeAndRefresh(100);
-      win.windowUtils.advanceTimeAndRefresh(100);
-      
-      win.windowUtils.restoreNormalRefresh();
-      win = wins.pop();
-    }
-  }
-
-  
 
 
 
 
 
 
-
-
-
-
-  function getAccessible(node) {
+  async function getAccessible(node) {
     const accessibilityService = Cc[
       "@mozilla.org/accessibilityService;1"
     ].getService(Ci.nsIAccessibilityService);
@@ -483,9 +460,28 @@ this.AccessibilityUtils = (function() {
       return acc;
     }
 
-    
-    forceRefreshDriverTick(node);
-    return accessibilityService.getAccessibleFor(node);
+    let resolver, timeoutID;
+    const accPromise = new Promise(resolve => {
+      resolver = resolve;
+    });
+
+    const observe = subject => {
+      acc = accessibilityService.getAccessibleFor(node);
+      if (acc) {
+        clearTimeout(timeoutID);
+        SpecialPowers.Services.obs.removeObserver(observe, "accessible-event");
+        resolver(acc);
+      }
+    };
+    SpecialPowers.Services.obs.addObserver(observe, "accessible-event");
+
+    timeoutID = setTimeout(() => {
+      
+      SpecialPowers.Services.obs.removeObserver(observe, "accessible-event");
+      resolver(accessibilityService.getAccessibleFor(node));
+    }, GET_ACCESSIBLE_TIMEOUT);
+
+    return accPromise;
   }
 
   function runIfA11YChecks(task) {
@@ -502,8 +498,8 @@ this.AccessibilityUtils = (function() {
 
 
   const AccessibilityUtils = {
-    assertCanBeClicked(node) {
-      const acc = getAccessible(node);
+    async assertCanBeClicked(node) {
+      const acc = await getAccessible(node);
       if (!acc) {
         if (gEnv.mustHaveAccessibleRule) {
           a11yFail("Node is not accessible via accessibility API", {

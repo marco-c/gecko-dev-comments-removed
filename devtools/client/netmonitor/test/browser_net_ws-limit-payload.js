@@ -42,10 +42,10 @@ add_task(async function() {
   );
 
   
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  await EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
-  clickOnSidebarTab(document, "response");
+  await clickOnSidebarTab(document, "response");
   await wait;
 
   
@@ -58,7 +58,7 @@ add_task(async function() {
 
   
   await waitForTick();
-  EventUtils.sendMouseEvent({ type: "mousedown" }, frames[0]);
+  await EventUtils.sendMouseEvent({ type: "mousedown" }, frames[0]);
 
   await waitForDOM(document, "#messages-view .truncated-data-message");
 

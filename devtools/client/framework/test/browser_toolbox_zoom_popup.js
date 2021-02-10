@@ -136,7 +136,7 @@ async function getButtonAndMenuInfo(toolbox, menuButton) {
     
     nonNegativeTabIndexRule: false,
   });
-  EventUtils.sendMouseEvent(
+  await EventUtils.sendMouseEvent(
     {
       type: "click",
       screenX: 1,

@@ -41,10 +41,10 @@ add_task(async function() {
   );
 
   
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  await EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
-  clickOnSidebarTab(document, "response");
+  await clickOnSidebarTab(document, "response");
   await wait;
 
   
@@ -72,7 +72,7 @@ add_task(async function() {
     "#messages-view .message-list-table .message-list-item",
     2
   );
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[1]);
+  await EventUtils.sendMouseEvent({ type: "mousedown" }, requests[1]);
   await wait;
   const secondRequestFrames = document.querySelectorAll(
     "#messages-view .message-list-table .message-list-item"

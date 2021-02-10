@@ -32,10 +32,10 @@ add_task(async function() {
   const requests = document.querySelectorAll(".request-list-item");
 
   
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  await EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
-  clickOnSidebarTab(document, "response");
+  await clickOnSidebarTab(document, "response");
 
   const wait = waitForDOM(
     document,
