@@ -595,24 +595,6 @@ class MDefinition : public MNode {
   BailoutKind bailoutKind() const { return bailoutKind_; }
   void setBailoutKind(BailoutKind kind) { bailoutKind_ = kind; }
 
-  jsbytecode* profilerLeavePc() const {
-    
-    if (trackedTree()->isOutermostCaller()) {
-      return trackedPc();
-    }
-
-    
-    InlineScriptTree* curTree = trackedTree();
-    InlineScriptTree* callerTree = curTree->caller();
-    while (!callerTree->isOutermostCaller()) {
-      curTree = callerTree;
-      callerTree = curTree->caller();
-    }
-
-    
-    return curTree->callerPc();
-  }
-
   
   
   
