@@ -166,6 +166,7 @@ class LIRGeneratorShared {
   
   
   inline LAllocation useAny(MDefinition* mir);
+  inline LAllocation useAnyAtStart(MDefinition* mir);
   inline LAllocation useAnyOrConstant(MDefinition* mir);
   
   
