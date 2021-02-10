@@ -263,6 +263,23 @@ ShortcutKeyData ShortcutKeys::sTextAreaHandlers[] = {
     {u"keypress", u"VK_RIGHT", nullptr, u"shift,alt", u"cmd_selectEndLine"},    
 #endif 
 
+    
+
+
+#if defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID) ||\
+    defined(USE_EMACS_KEY_BINDINGS)
+    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,      u"cmd_movePageUp"},      
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,      u"cmd_movePageDown"},    
+    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",     u"cmd_selectPageUp"},    
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",     u"cmd_selectPageDown"},  
+#endif  
+#if defined(MOZ_WIDGET_ANDROID)
+    {u"keypress", u"VK_PAGE_UP",   nullptr, u"alt",       u"cmd_moveTop"},         
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"alt",       u"cmd_moveBottom"},      
+    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift,alt", u"cmd_selectTop"},       
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift,alt", u"cmd_selectBottom"},    
+#endif  
+
 
 #if defined(USE_EMACS_KEY_BINDINGS)
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cutOrDelete"},              
@@ -277,21 +294,9 @@ ShortcutKeyData ShortcutKeys::sTextAreaHandlers[] = {
     {u"keypress", u"VK_END",       nullptr, u"control",        u"cmd_moveBottom"},               
     {u"keypress", u"VK_HOME",      nullptr, u"shift,control",  u"cmd_selectTop"},                
     {u"keypress", u"VK_END",       nullptr, u"shift,control",  u"cmd_selectBottom"},             
-    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,           u"cmd_movePageUp"},               
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_movePageDown"},             
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",          u"cmd_selectPageUp"},             
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",          u"cmd_selectPageDown"},           
     {u"keypress", u"VK_BACK",      nullptr, u"control",        u"cmd_deleteWordBackward"},       
 #endif  
 #if defined(MOZ_WIDGET_ANDROID)
-    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,           u"cmd_movePageUp"},               
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_movePageDown"},             
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",          u"cmd_selectPageUp"},             
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",          u"cmd_selectPageDown"},           
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"alt",            u"cmd_moveTop"},                  
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"alt",            u"cmd_moveBottom"},               
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift,alt",      u"cmd_selectTop"},                
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift,alt",      u"cmd_selectBottom"},             
     {u"keypress", u"VK_HOME",      nullptr, nullptr,           u"cmd_beginLine"},                
     {u"keypress", u"VK_END",       nullptr, nullptr,           u"cmd_endLine"},                  
     {u"keypress", u"VK_HOME",      nullptr, u"shift",          u"cmd_selectBeginLine"},          
@@ -314,10 +319,6 @@ ShortcutKeyData ShortcutKeys::sTextAreaHandlers[] = {
     {u"keypress", u"VK_END",       nullptr, u"shift,control",  u"cmd_selectBottom"},             
     {u"keypress", u"VK_HOME",      nullptr, u"control",        u"cmd_moveTop"},                  
     {u"keypress", u"VK_END",       nullptr, u"control",        u"cmd_moveBottom"},               
-    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,           u"cmd_movePageUp"},               
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_movePageDown"},             
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",          u"cmd_selectPageUp"},             
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",          u"cmd_selectPageDown"},           
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cutOrDelete"},              
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_deleteWordForward"},        
     {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},                     
@@ -455,18 +456,33 @@ ShortcutKeyData ShortcutKeys::sBrowserHandlers[] = {
     {u"keypress", u"VK_RIGHT", nullptr, u"shift,alt", u"cmd_selectEndLine"},    
 #endif  
 
+    
+
 
 #if defined(MOZ_WIDGET_COCOA)
-    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,           u"cmd_scrollPageUp"},             
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_scrollPageDown"},           
+    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,      u"cmd_scrollPageUp"},    
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,      u"cmd_scrollPageDown"},  
+#endif  
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) ||\
+    defined(MOZ_WIDGET_ANDROID) || defined(USE_EMACS_KEY_BINDINGS)
+    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,      u"cmd_movePageUp"},      
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,      u"cmd_movePageDown"},    
+    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",     u"cmd_selectPageUp"},    
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",     u"cmd_selectPageDown"},  
+#endif  
+#if defined(MOZ_WIDGET_ANDROID)
+    {u"keypress", u"VK_PAGE_UP",   nullptr, u"alt",       u"cmd_moveTop"},         
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"alt",       u"cmd_moveBottom"},      
+    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift,alt", u"cmd_selectTop"},       
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift,alt", u"cmd_selectBottom"},    
+#endif  
+
+
+#if defined(MOZ_WIDGET_COCOA)
     {u"keypress", u"VK_HOME",      nullptr, nullptr,           u"cmd_scrollTop"},                
     {u"keypress", u"VK_END",       nullptr, nullptr,           u"cmd_scrollBottom"},             
 #endif  
 #if defined(USE_EMACS_KEY_BINDINGS)
-    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,           u"cmd_movePageUp"},               
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_movePageDown"},             
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",          u"cmd_selectPageUp"},             
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",          u"cmd_selectPageDown"},           
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cut"},                      
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_copy"},                     
     {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},                     
@@ -480,14 +496,6 @@ ShortcutKeyData ShortcutKeys::sBrowserHandlers[] = {
     {u"keypress", u"VK_END",       nullptr, u"shift",          u"cmd_selectEndLine"},            
 #endif  
 #if defined(MOZ_WIDGET_ANDROID)
-    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,           u"cmd_movePageUp"},               
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_movePageDown"},             
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",          u"cmd_selectPageUp"},             
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",          u"cmd_selectPageDown"},           
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"alt",            u"cmd_moveTop"},                  
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"alt",            u"cmd_moveBottom"},               
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift,alt",      u"cmd_selectTop"},                
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift,alt",      u"cmd_selectBottom"},             
     {u"keypress", u"VK_HOME",      nullptr, nullptr,           u"cmd_beginLine"},                
     {u"keypress", u"VK_END",       nullptr, nullptr,           u"cmd_endLine"},                  
     {u"keypress", u"VK_HOME",      nullptr, u"shift",          u"cmd_selectBeginLine"},          
@@ -502,10 +510,6 @@ ShortcutKeyData ShortcutKeys::sBrowserHandlers[] = {
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_deleteWordForward"},        
 #endif  
 #if defined(MOZ_WIDGET_GTK)
-    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,           u"cmd_movePageUp"},               
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_movePageDown"},             
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",          u"cmd_selectPageUp"},             
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",          u"cmd_selectPageDown"},           
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cut"},                      
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_copy"},                     
     {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},                     
@@ -519,10 +523,6 @@ ShortcutKeyData ShortcutKeys::sBrowserHandlers[] = {
     {u"keypress", u"VK_END",       nullptr, u"shift,control",  u"cmd_selectBottom"},             
 #endif  
 #if defined(XP_WIN)
-    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,           u"cmd_movePageUp"},               
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_movePageDown"},             
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",          u"cmd_selectPageUp"},             
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",          u"cmd_selectPageDown"},           
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cut"},                      
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_deleteWordForward"},        
     {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},                     
@@ -623,6 +623,23 @@ ShortcutKeyData ShortcutKeys::sEditorHandlers[] = {
     {u"keypress", u"VK_RIGHT", nullptr, u"shift,alt", u"cmd_selectEndLine"},    
 #endif  
 
+    
+
+
+#if defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID) ||\
+    defined(USE_EMACS_KEY_BINDINGS)
+    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,      u"cmd_movePageUp"},      
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,      u"cmd_movePageDown"},    
+    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",     u"cmd_selectPageUp"},    
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",     u"cmd_selectPageDown"},  
+#endif  
+#if defined(MOZ_WIDGET_ANDROID)
+    {u"keypress", u"VK_PAGE_UP",   nullptr, u"alt",       u"cmd_moveTop"},         
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"alt",       u"cmd_moveBottom"},      
+    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift,alt", u"cmd_selectTop"},       
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift,alt", u"cmd_selectBottom"},    
+#endif  
+
 
 #if defined(USE_EMACS_KEY_BINDINGS)
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cutOrDelete"},              
@@ -638,20 +655,8 @@ ShortcutKeyData ShortcutKeys::sEditorHandlers[] = {
     {u"keypress", u"VK_END",       nullptr, u"shift,control",  u"cmd_selectBottom"},             
     {u"keypress", u"VK_HOME",      nullptr, u"control",        u"cmd_moveTop"},                  
     {u"keypress", u"VK_END",       nullptr, u"control",        u"cmd_moveBottom"},               
-    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,           u"cmd_movePageUp"},               
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_movePageDown"},             
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",          u"cmd_selectPageUp"},             
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",          u"cmd_selectPageDown"},           
 #endif  
 #if defined(MOZ_WIDGET_ANDROID)
-    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,           u"cmd_movePageUp"},               
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_movePageDown"},             
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",          u"cmd_selectPageUp"},             
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",          u"cmd_selectPageDown"},           
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"alt",            u"cmd_moveTop"},                  
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"alt",            u"cmd_moveBottom"},               
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift,alt",      u"cmd_selectTop"},                
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift,alt",      u"cmd_selectBottom"},             
     {u"keypress", u"VK_HOME",      nullptr, nullptr,           u"cmd_beginLine"},                
     {u"keypress", u"VK_END",       nullptr, nullptr,           u"cmd_endLine"},                  
     {u"keypress", u"VK_HOME",      nullptr, u"shift",          u"cmd_selectBeginLine"},          
@@ -681,10 +686,6 @@ ShortcutKeyData ShortcutKeys::sEditorHandlers[] = {
     {u"keypress", u"VK_END",       nullptr, nullptr,           u"cmd_endLine"},                  
     {u"keypress", u"VK_HOME",      nullptr, u"shift",          u"cmd_selectBeginLine"},          
     {u"keypress", u"VK_END",       nullptr, u"shift",          u"cmd_selectEndLine"},            
-    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,           u"cmd_movePageUp"},               
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_movePageDown"},             
-    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",          u"cmd_selectPageUp"},             
-    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",          u"cmd_selectPageDown"},           
 #endif  
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) || \
