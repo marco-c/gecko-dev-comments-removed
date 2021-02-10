@@ -1795,8 +1795,7 @@ class MOZ_STACK_CLASS ModuleValidatorShared {
                       TaggedParserAtomIndex name) {
     
     gc::AutoSuppressGC suppress(cx_);
-    if (UniqueChars bytes =
-            ParserAtomToPrintableString(cx_, parserAtoms_, name)) {
+    if (UniqueChars bytes = parserAtoms_.toPrintableString(cx_, name)) {
       failfOffset(offset, fmt, bytes.get());
     }
     return false;

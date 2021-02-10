@@ -475,10 +475,6 @@ class alignas(alignof(uint32_t)) ParserAtom {
 #endif
 };
 
-UniqueChars ParserAtomToPrintableString(JSContext* cx,
-                                        ParserAtomsTable& parserAtoms,
-                                        TaggedParserAtomIndex atomIndex);
-
 
 
 
@@ -854,6 +850,8 @@ class ParserAtomsTable {
   bool toNumber(JSContext* cx, TaggedParserAtomIndex index,
                 double* result) const;
   UniqueChars toNewUTF8CharsZ(JSContext* cx, TaggedParserAtomIndex index) const;
+  UniqueChars toPrintableString(JSContext* cx,
+                                TaggedParserAtomIndex index) const;
 };
 
 
