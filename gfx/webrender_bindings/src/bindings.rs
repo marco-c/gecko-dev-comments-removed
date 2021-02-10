@@ -38,7 +38,8 @@ use webrender::{
     CompositorCapabilities, CompositorConfig, CompositorSurfaceTransform, DebugFlags, Device, NativeSurfaceId,
     NativeSurfaceInfo, NativeTileId, PartialPresentCompositor, PipelineInfo, ProfilerHooks, RecordedFrameHandle,
     Renderer, RendererOptions, RendererStats, SceneBuilderHooks, ShaderPrecacheFlags, Shaders, SharedShaders,
-    TextureCacheConfig, UploadMethod, ONE_TIME_USAGE_HINT, host_utils::{thread_started, thread_stopped}
+    TextureCacheConfig, UploadMethod, ONE_TIME_USAGE_HINT, host_utils::{thread_started, thread_stopped},
+    MappableCompositor, MappedTileInfo,
 };
 use wr_malloc_size_of::MallocSizeOfOps;
 
@@ -1384,31 +1385,12 @@ impl Compositor for WrCompositor {
     }
 }
 
-pub struct WrPartialPresentCompositor(*mut c_void);
-
-impl PartialPresentCompositor for WrPartialPresentCompositor {
-    fn set_buffer_damage_region(&mut self, rects: &[DeviceIntRect]) {
-        unsafe {
-            wr_partial_present_compositor_set_buffer_damage_region(self.0, rects.as_ptr(), rects.len());
-        }
-    }
-}
-
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct MappedTileInfo {
-    pub data: *mut c_void,
-    pub stride: i32,
-}
-
-
-impl WrCompositor {
+impl MappableCompositor for WrCompositor {
     
     
     
     
-    pub fn map_tile(
+    fn map_tile(
         &mut self,
         id: NativeTileId,
         dirty_rect: DeviceIntRect,
@@ -1439,9 +1421,19 @@ impl WrCompositor {
 
     
     
-    pub fn unmap_tile(&mut self) {
+    fn unmap_tile(&mut self) {
         unsafe {
             wr_compositor_unmap_tile(self.0);
+        }
+    }
+}
+
+pub struct WrPartialPresentCompositor(*mut c_void);
+
+impl PartialPresentCompositor for WrPartialPresentCompositor {
+    fn set_buffer_damage_region(&mut self, rects: &[DeviceIntRect]) {
+        unsafe {
+            wr_partial_present_compositor_set_buffer_damage_region(self.0, rects.as_ptr(), rects.len());
         }
     }
 }
@@ -1554,7 +1546,7 @@ pub extern "C" fn wr_window_new(
             compositor: Box::new(SwCompositor::new(
                 sw_gl.unwrap(),
                 native_gl,
-                WrCompositor(compositor),
+                Box::new(WrCompositor(compositor)),
                 use_native_compositor,
             )),
         }

@@ -14,7 +14,7 @@ use crate::prim_store::DeferredResolve;
 use crate::resource_cache::{ImageRequest, ResourceCache};
 use crate::util::Preallocator;
 use crate::tile_cache::PictureCacheDebugInfo;
-use std::{ops, u64};
+use std::{ops, u64, os::raw::c_void};
 
 
 
@@ -1055,6 +1055,32 @@ pub trait Compositor {
     
     
     fn get_capabilities(&self) -> CompositorCapabilities;
+}
+
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct MappedTileInfo {
+    pub data: *mut c_void,
+    pub stride: i32,
+}
+
+
+pub trait MappableCompositor: Compositor {
+    
+    
+    
+    
+    fn map_tile(
+        &mut self,
+        id: NativeTileId,
+        dirty_rect: DeviceIntRect,
+        valid_rect: DeviceIntRect,
+    ) -> Option<MappedTileInfo>;
+
+    
+    
+    fn unmap_tile(&mut self);
 }
 
 
