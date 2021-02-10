@@ -10,7 +10,6 @@
 #include "mozilla/dom/TCPSocketBinding.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/DOMEventTargetHelper.h"
-#include "nsIProxyInfo.h"
 #include "nsITransport.h"
 #include "nsIStreamListener.h"
 #include "nsIAsyncInputStream.h"
@@ -18,7 +17,6 @@
 #include "nsIObserver.h"
 #include "nsWeakReference.h"
 #include "nsITCPSocketCallback.h"
-#include "nsIProtocolProxyCallback.h"
 #include "js/RootingAPI.h"
 
 class nsISocketTransport;
@@ -71,8 +69,7 @@ class TCPSocket final : public DOMEventTargetHelper,
                         public nsIInputStreamCallback,
                         public nsIObserver,
                         public nsSupportsWeakReference,
-                        public nsITCPSocketCallback,
-                        public nsIProtocolProxyCallback {
+                        public nsITCPSocketCallback {
  public:
   TCPSocket(nsIGlobalObject* aGlobal, const nsAString& aHost, uint16_t aPort,
             bool aSsl, bool aUseArrayBuffers);
@@ -86,7 +83,6 @@ class TCPSocket final : public DOMEventTargetHelper,
   NS_DECL_NSIINPUTSTREAMCALLBACK
   NS_DECL_NSIOBSERVER
   NS_DECL_NSITCPSOCKETCALLBACK
-  NS_DECL_NSIPROTOCOLPROXYCALLBACK
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
@@ -124,7 +120,8 @@ class TCPSocket final : public DOMEventTargetHelper,
   
   
   static already_AddRefed<TCPSocket> CreateAcceptedSocket(
-      nsIGlobalObject* aGlobal, TCPSocketChild* aBridge, bool aUseArrayBuffers);
+      nsIGlobalObject* aGlobal, TCPSocketChild* aSocketBridge,
+      bool aUseArrayBuffers);
 
   
   void SetSocketBridgeParent(TCPSocketParent* aBridgeParent);
@@ -137,7 +134,7 @@ class TCPSocket final : public DOMEventTargetHelper,
   IMPL_EVENT_HANDLER(error);
   IMPL_EVENT_HANDLER(close);
 
-  nsresult Init(nsIProxyInfo* aProxyInfo);
+  nsresult Init();
 
   
   void NotifyCopyComplete(nsresult aStatus);
@@ -150,7 +147,7 @@ class TCPSocket final : public DOMEventTargetHelper,
   ~TCPSocket();
 
   
-  void InitWithSocketChild(TCPSocketChild* aSocketBridge);
+  void InitWithSocketChild(TCPSocketChild* aBridge);
   
   nsresult InitWithTransport(nsISocketTransport* aTransport);
   
@@ -173,8 +170,6 @@ class TCPSocket final : public DOMEventTargetHelper,
   
   void CloseHelper(bool waitForUnsentData);
 
-  nsresult ResolveProxy();
-
   TCPReadyState mReadyState;
   
   bool mUseArrayBuffers;
@@ -192,8 +187,6 @@ class TCPSocket final : public DOMEventTargetHelper,
   nsCOMPtr<nsISocketTransport> mTransport;
   nsCOMPtr<nsIInputStream> mSocketInputStream;
   nsCOMPtr<nsIOutputStream> mSocketOutputStream;
-
-  nsCOMPtr<nsICancelable> mProxyRequest;
 
   
   nsCOMPtr<nsIInputStreamPump> mInputStreamPump;
