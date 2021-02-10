@@ -12,7 +12,7 @@
 
 #include "frontend/FullParseHandler.h"
 #include "frontend/ParseContext.h"
-#include "frontend/Parser.h"  
+#include "frontend/Parser.h"      
 #include "frontend/ParserAtom.h"  
 #include "frontend/SharedContext.h"
 #include "vm/BigIntType.h"
@@ -350,12 +350,8 @@ void LabeledStatement::dumpImpl(ParserBase* parser, GenericPrinter& out,
   const char* name = parseNodeNames[getKindAsIndex()];
   out.printf("(%s ", name);
   DumpCharsNoNewline(parser, label(), out);
-  out.printf(" ");
-  indent += strlen(name) + 3;
-  if (parser) {
-    const auto* labelAtom = parser->parserAtoms().getParserAtom(label());
-    indent += labelAtom->length();
-  }
+  indent += strlen(name) + 2;
+  IndentNewLine(out, indent);
   DumpParseTree(parser, statement(), out, indent);
   out.printf(")");
 }
