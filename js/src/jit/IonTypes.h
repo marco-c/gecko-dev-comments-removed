@@ -907,21 +907,6 @@ static constexpr ABIFunctionType MakeABIFunctionType(
   return ABIFunctionType(detail::MakeABIFunctionType(ret, args));
 }
 
-enum class BarrierKind : uint32_t {
-  
-  NoBarrier,
-
-  
-  
-  TypeTagOnly,
-
-  
-  
-  TypeSet
-};
-
-enum ReprotectCode { Reprotect = true, DontReprotect = false };
-
 
 enum class RoundingMode { Down, Up, NearestTiesToEven, TowardsZero };
 
