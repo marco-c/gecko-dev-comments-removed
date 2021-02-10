@@ -4838,18 +4838,23 @@ bool nsDisplayOutline::CreateWebRenderCommands(
   return true;
 }
 
+bool nsDisplayOutline::HasRadius() const {
+  const auto& radius =
+      StaticPrefs::layout_css_outline_follows_border_radius_enabled()
+          ? mFrame->StyleBorder()->mBorderRadius
+          : mFrame->StyleOutline()->mOutlineRadius;
+  return !nsLayoutUtils::HasNonZeroCorner(radius);
+}
+
 bool nsDisplayOutline::IsInvisibleInRect(const nsRect& aRect) const {
   const nsStyleOutline* outline = mFrame->StyleOutline();
   nsRect borderBox(ToReferenceFrame(), mFrame->GetSize());
-  if (borderBox.Contains(aRect) &&
-      !nsLayoutUtils::HasNonZeroCorner(outline->mOutlineRadius)) {
-    if (outline->mOutlineOffset._0 >= 0.0f) {
-      
-      
-      return true;
-    }
+  if (borderBox.Contains(aRect) && !HasRadius() &&
+      outline->mOutlineOffset.ToCSSPixels() >= 0.0f) {
+    
+    
+    return true;
   }
-
   return false;
 }
 

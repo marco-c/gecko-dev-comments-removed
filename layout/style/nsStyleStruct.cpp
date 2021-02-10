@@ -497,6 +497,9 @@ nsChangeHint nsStyleBorder::CalcDifference(
     }
   }
 
+  
+  
+  
   if (mBorderRadius != aNewData.mBorderRadius) {
     return nsChangeHint_RepaintFrame;
   }
