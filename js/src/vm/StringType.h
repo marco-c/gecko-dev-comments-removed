@@ -49,7 +49,6 @@ namespace js {
 namespace frontend {
 
 class ParserAtom;
-class ParserAtomEntry;
 class TaggedParserAtomIndex;
 class WellKnownParserAtoms_ROM;
 struct CompilationAtomCache;
@@ -1262,7 +1261,7 @@ class LittleEndianChars {
 class StaticStrings {
   
   
-  friend class js::frontend::ParserAtomEntry;
+  friend class js::frontend::ParserAtom;
   friend class js::frontend::TaggedParserAtomIndex;
   friend class js::frontend::WellKnownParserAtoms_ROM;
   friend struct js::frontend::CompilationAtomCache;
