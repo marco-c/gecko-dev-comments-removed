@@ -2,9 +2,11 @@
 
 
 
-#if defined(XP_WIN)
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
 
 #  include "ShortcutKeys.h"
+
+
 
 
 
@@ -27,7 +29,8 @@ namespace mozilla {
 ShortcutKeyData ShortcutKeys::sInputHandlers[] = {
 #  include "ShortcutKeyDefinitionsForInputCommon.h"
 
-    
+
+#  if defined(XP_WIN)
     {u"keypress", u"VK_HOME",      nullptr, nullptr,           u"cmd_beginLine"},           
     {u"keypress", u"VK_END",       nullptr, nullptr,           u"cmd_endLine"},             
     {u"keypress", u"VK_HOME",      nullptr, u"shift",          u"cmd_selectBeginLine"},     
@@ -51,8 +54,18 @@ ShortcutKeyData ShortcutKeys::sInputHandlers[] = {
     {u"keypress", u"VK_BACK",      nullptr, u"alt",            u"cmd_undo"},                
     {u"keypress", u"VK_BACK",      nullptr, u"alt,shift",      u"cmd_redo"},                
     {u"keypress", u"VK_BACK",      nullptr, u"control",        u"cmd_deleteWordBackward"},  
-    {u"keypress", nullptr,         u"a",    u"accel",          u"cmd_selectAll"},           
-    {u"keypress", nullptr,         u"y",    u"accel",          u"cmd_redo"},                
+#  endif  
+
+#  if defined(MOZ_WIDGET_GTK)
+    {u"keypress", nullptr, u"a", u"alt",         u"cmd_selectAll"},  
+    {u"keypress", nullptr, u"y", u"accel",       u"cmd_redo"},       
+    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},       
+    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},       
+#  endif  
+#  if defined(XP_WIN)
+    {u"keypress", nullptr, u"a", u"accel",       u"cmd_selectAll"},  
+    {u"keypress", nullptr, u"y", u"accel",       u"cmd_redo"},       
+#  endif  
     
 
     {nullptr, nullptr, nullptr, nullptr, nullptr}};
@@ -60,7 +73,8 @@ ShortcutKeyData ShortcutKeys::sInputHandlers[] = {
 ShortcutKeyData ShortcutKeys::sTextAreaHandlers[] = {
 #  include "ShortcutKeyDefinitionsForTextAreaCommon.h"
 
-    
+
+#  if defined(XP_WIN)
     {u"keypress", u"VK_HOME",      nullptr, nullptr,           u"cmd_beginLine"},           
     {u"keypress", u"VK_END",       nullptr, nullptr,           u"cmd_endLine"},             
     {u"keypress", u"VK_HOME",      nullptr, u"shift",          u"cmd_selectBeginLine"},     
@@ -88,8 +102,18 @@ ShortcutKeyData ShortcutKeys::sTextAreaHandlers[] = {
     {u"keypress", u"VK_BACK",      nullptr, u"alt",            u"cmd_undo"},                
     {u"keypress", u"VK_BACK",      nullptr, u"alt,shift",      u"cmd_redo"},                
     {u"keypress", u"VK_BACK",      nullptr, u"control",        u"cmd_deleteWordBackward"},  
-    {u"keypress", nullptr,         u"a",    u"accel",          u"cmd_selectAll"},           
-    {u"keypress", nullptr,         u"y",    u"accel",          u"cmd_redo"},                
+#  endif  
+
+#  if defined(MOZ_WIDGET_GTK)
+    {u"keypress", nullptr, u"a", u"alt",         u"cmd_selectAll"},  
+    {u"keypress", nullptr, u"y", u"accel",       u"cmd_redo"},       
+    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},       
+    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},       
+#  endif  
+#  if defined(XP_WIN)
+    {u"keypress", nullptr, u"a", u"accel",       u"cmd_selectAll"},  
+    {u"keypress", nullptr, u"y", u"accel",       u"cmd_redo"},       
+#  endif  
     
 
     {nullptr, nullptr, nullptr, nullptr, nullptr}};
@@ -97,7 +121,37 @@ ShortcutKeyData ShortcutKeys::sTextAreaHandlers[] = {
 ShortcutKeyData ShortcutKeys::sBrowserHandlers[] = {
 #  include "ShortcutKeyDefinitionsForBrowserCommon.h"
 
-    
+
+#  if defined(MOZ_WIDGET_GTK)
+    {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,           u"cmd_movePageUp"},         
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_movePageDown"},       
+    {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",          u"cmd_selectPageUp"},       
+    {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",          u"cmd_selectPageDown"},     
+    {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cut"},                
+    {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_copy"},               
+    {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},               
+    {u"keypress", u"VK_HOME",      nullptr, nullptr,           u"cmd_beginLine"},          
+    {u"keypress", u"VK_END",       nullptr, nullptr,           u"cmd_endLine"},            
+    {u"keypress", u"VK_HOME",      nullptr, u"shift",          u"cmd_selectBeginLine"},    
+    {u"keypress", u"VK_END",       nullptr, u"shift",          u"cmd_selectEndLine"},      
+    {u"keypress", u"VK_HOME",      nullptr, u"control",        u"cmd_moveTop"},            
+    {u"keypress", u"VK_END",       nullptr, u"control",        u"cmd_moveBottom"},         
+    {u"keypress", u"VK_HOME",      nullptr, u"shift,control",  u"cmd_selectTop"},          
+    {u"keypress", u"VK_END",       nullptr, u"shift,control",  u"cmd_selectBottom"},       
+    {u"keypress", u"VK_LEFT",      nullptr, u"shift",          u"cmd_selectLeft"},         
+    {u"keypress", u"VK_RIGHT",     nullptr, u"shift",          u"cmd_selectRight"},        
+    {u"keypress", u"VK_LEFT",      nullptr, u"control",        u"cmd_moveLeft2"},          
+    {u"keypress", u"VK_RIGHT",     nullptr, u"control",        u"cmd_moveRight2"},         
+    {u"keypress", u"VK_LEFT",      nullptr, u"control,shift",  u"cmd_selectLeft2"},        
+    {u"keypress", u"VK_RIGHT",     nullptr, u"control,shift",  u"cmd_selectRight2"},       
+    {u"keypress", u"VK_UP",        nullptr, u"shift",          u"cmd_selectUp"},           
+    {u"keypress", u"VK_DOWN",      nullptr, u"shift",          u"cmd_selectDown"},         
+    {u"keypress", u"VK_UP",        nullptr, u"control",        u"cmd_moveUp2"},            
+    {u"keypress", u"VK_DOWN",      nullptr, u"control",        u"cmd_moveDown2"},          
+    {u"keypress", u"VK_UP",        nullptr, u"control,shift",  u"cmd_selectUp2"},          
+    {u"keypress", u"VK_DOWN",      nullptr, u"control,shift",  u"cmd_selectDown2"},        
+#  endif  
+#  if defined(XP_WIN)
     {u"keypress", u"VK_PAGE_UP",   nullptr, nullptr,           u"cmd_movePageUp"},         
     {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_movePageDown"},       
     {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",          u"cmd_selectPageUp"},       
@@ -125,7 +179,14 @@ ShortcutKeyData ShortcutKeys::sBrowserHandlers[] = {
     {u"keypress", u"VK_DOWN",      nullptr, u"shift",          u"cmd_selectDown"},         
     {u"keypress", u"VK_HOME",      nullptr, u"shift",          u"cmd_selectBeginLine"},    
     {u"keypress", u"VK_END",       nullptr, u"shift",          u"cmd_selectEndLine"},      
-    {u"keypress", nullptr,         u"y",    u"accel",          u"cmd_redo"},               
+#  endif  
+
+#  if defined(MOZ_WIDGET_GTK)
+    {u"keypress", nullptr, u"a", u"alt",   u"cmd_selectAll"},  
+#  endif  
+#  if defined(XP_WIN)
+    {u"keypress", nullptr, u"y", u"accel", u"cmd_redo"},       
+#  endif  
     
 
     {nullptr, nullptr, nullptr, nullptr, nullptr}};
@@ -133,8 +194,8 @@ ShortcutKeyData ShortcutKeys::sBrowserHandlers[] = {
 ShortcutKeyData ShortcutKeys::sEditorHandlers[] = {
 #  include "ShortcutKeyDefinitionsForEditorCommon.h"
 
-    
-    {u"keypress", nullptr,         u"a",    u"accel",          u"cmd_selectAll"},           
+
+#  if defined(XP_WIN)
     {u"keypress", u"VK_DELETE",    nullptr, u"shift",          u"cmd_cutOrDelete"},         
     {u"keypress", u"VK_DELETE",    nullptr, u"control",        u"cmd_deleteWordForward"},   
     {u"keypress", u"VK_INSERT",    nullptr, u"control",        u"cmd_copy"},                
@@ -162,7 +223,18 @@ ShortcutKeyData ShortcutKeys::sEditorHandlers[] = {
     {u"keypress", u"VK_PAGE_DOWN", nullptr, nullptr,           u"cmd_movePageDown"},        
     {u"keypress", u"VK_PAGE_UP",   nullptr, u"shift",          u"cmd_selectPageUp"},        
     {u"keypress", u"VK_PAGE_DOWN", nullptr, u"shift",          u"cmd_selectPageDown"},      
-    {u"keypress", nullptr,         u"y",    u"accel",          u"cmd_redo"},                
+#  endif  
+
+#  if defined(MOZ_WIDGET_GTK)
+    {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},       
+    {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},       
+    {u"keypress", nullptr, u"y", u"accel",       u"cmd_redo"},       
+    {u"keypress", nullptr, u"a", u"alt",         u"cmd_selectAll"},  
+#  endif  
+#  if defined(XP_WIN)
+    {u"keypress", nullptr, u"a", u"accel",       u"cmd_selectAll"},  
+    {u"keypress", nullptr, u"y", u"accel",       u"cmd_redo"},       
+#  endif  
     
 
     {nullptr, nullptr, nullptr, nullptr, nullptr}};
