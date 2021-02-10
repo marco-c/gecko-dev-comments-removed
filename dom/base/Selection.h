@@ -331,7 +331,8 @@ class Selection final : public nsSupportsWeakReference,
   MOZ_CAN_RUN_SCRIPT void ExtendJS(nsINode& aContainer, uint32_t aOffset,
                                    mozilla::ErrorResult& aRv);
 
-  void SelectAllChildrenJS(nsINode& aNode, mozilla::ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void SelectAllChildrenJS(nsINode& aNode,
+                                              mozilla::ErrorResult& aRv);
 
   
 
@@ -512,8 +513,8 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void SelectAllChildren(nsINode& aNode, mozilla::ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void SelectAllChildren(nsINode& aNode,
+                                            mozilla::ErrorResult& aRv);
 
   
 
