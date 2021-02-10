@@ -299,7 +299,7 @@ extern JS_FRIEND_API js::Scalar::Type JS_GetArrayBufferViewType(JSObject* obj);
 
 
 
-extern JS_FRIEND_API uint32_t JS_GetTypedArrayLength(JSObject* obj);
+extern JS_FRIEND_API size_t JS_GetTypedArrayLength(JSObject* obj);
 
 
 
