@@ -316,7 +316,8 @@ class nsLayoutUtils {
   
 
 
-  static mozilla::CSSIntCoord UnthemedScrollbarSize(mozilla::StyleScrollbarWidth);
+  static mozilla::CSSIntCoord UnthemedScrollbarSize(
+      mozilla::StyleScrollbarWidth);
 
   
 
@@ -2543,7 +2544,10 @@ class nsLayoutUtils {
 
 
 
-  static CSSSize CalculateRootCompositionSize(
+
+
+
+  static CSSSize CalculateBoundingCompositionSize(
       const nsIFrame* aFrame, bool aIsRootContentDocRootScrollFrame,
       const FrameMetrics& aMetrics);
 

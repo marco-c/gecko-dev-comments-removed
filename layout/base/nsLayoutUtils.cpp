@@ -2790,8 +2790,8 @@ FrameMetrics nsLayoutUtils::CalculateBasicFrameMetrics(
                                      presContext->AppUnitsPerDevPixel()) *
       compBoundsScale);
 
-  metrics.SetRootCompositionSize(
-      nsLayoutUtils::CalculateRootCompositionSize(frame, false, metrics));
+  metrics.SetBoundingCompositionSize(
+      nsLayoutUtils::CalculateBoundingCompositionSize(frame, false, metrics));
 
   metrics.SetLayoutViewport(
       CSSRect::FromAppUnits(nsRect(aScrollFrame->GetScrollPosition(),
@@ -7890,7 +7890,7 @@ nsSize nsLayoutUtils::CalculateCompositionSizeForFrame(
 }
 
 
-CSSSize nsLayoutUtils::CalculateRootCompositionSize(
+CSSSize nsLayoutUtils::CalculateBoundingCompositionSize(
     const nsIFrame* aFrame, bool aIsRootContentDocRootScrollFrame,
     const FrameMetrics& aMetrics) {
   if (aIsRootContentDocRootScrollFrame) {
@@ -7950,13 +7950,6 @@ CSSSize nsLayoutUtils::CalculateRootCompositionSize(
   CSSSize result =
       rootCompositionSize / aMetrics.DisplayportPixelsPerCSSPixel();
 
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -8566,9 +8559,10 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
 
   metrics.SetCompositionBounds(frameBounds);
 
-  metrics.SetRootCompositionSize(nsLayoutUtils::CalculateRootCompositionSize(
-      aScrollFrame ? aScrollFrame : aForFrame, isRootContentDocRootScrollFrame,
-      metrics));
+  metrics.SetBoundingCompositionSize(
+      nsLayoutUtils::CalculateBoundingCompositionSize(
+          aScrollFrame ? aScrollFrame : aForFrame,
+          isRootContentDocRootScrollFrame, metrics));
 
   if (StaticPrefs::apz_printtree() || StaticPrefs::apz_test_logging_enabled()) {
     if (const nsIContent* content =
