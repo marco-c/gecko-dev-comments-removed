@@ -7,50 +7,81 @@
 #ifndef DOM_QUOTA_DIRECTORYLOCK_H_
 #define DOM_QUOTA_DIRECTORYLOCK_H_
 
+#include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/quota/Client.h"
 #include "mozilla/dom/quota/PersistenceType.h"
 
 namespace mozilla::dom::quota {
 
+class ClientDirectoryLock;
 struct GroupAndOrigin;
 class OpenDirectoryListener;
 
-class NS_NO_VTABLE RefCountedObject {
+
+
+
+class NS_NO_VTABLE DirectoryLock {
  public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
-};
 
-class DirectoryLock : public RefCountedObject {
-  friend class DirectoryLockImpl;
+  virtual int64_t Id() const = 0;
 
- public:
-  int64_t Id() const;
+  virtual void Acquire(RefPtr<OpenDirectoryListener> aOpenListener) = 0;
+
+  virtual void AcquireImmediately() = 0;
 
   
-  PersistenceType GetPersistenceType() const;
+  virtual RefPtr<ClientDirectoryLock> Specialize(
+      PersistenceType aPersistenceType, const GroupAndOrigin& aGroupAndOrigin,
+      Client::Type aClientType) const = 0;
 
-  quota::GroupAndOrigin GroupAndOrigin() const;
-
-  const nsACString& Origin() const;
-
-  Client::Type ClientType() const;
-
-  void Acquire(RefPtr<OpenDirectoryListener> aOpenListener);
-
-  RefPtr<DirectoryLock> Specialize(PersistenceType aPersistenceType,
-                                   const quota::GroupAndOrigin& aGroupAndOrigin,
-                                   Client::Type aClientType) const;
-
-  void Log() const;
-
- private:
-  DirectoryLock() = default;
-
-  ~DirectoryLock() = default;
+  virtual void Log() const = 0;
 };
 
-class NS_NO_VTABLE OpenDirectoryListener : public RefCountedObject {
+
+class NS_NO_VTABLE OriginDirectoryLock : public DirectoryLock {
  public:
+  
+  virtual PersistenceType GetPersistenceType() const = 0;
+
+  virtual quota::GroupAndOrigin GroupAndOrigin() const = 0;
+
+  virtual const nsACString& Origin() const = 0;
+};
+
+
+
+class NS_NO_VTABLE ClientDirectoryLock : public OriginDirectoryLock {
+ public:
+  virtual Client::Type ClientType() const = 0;
+};
+
+
+
+
+
+
+
+
+
+
+
+class UniversalDirectoryLock : public DirectoryLock {
+ public:
+  
+  virtual const Nullable<PersistenceType>& NullablePersistenceType() const = 0;
+
+  
+  virtual const OriginScope& GetOriginScope() const = 0;
+
+  
+  virtual const Nullable<Client::Type>& NullableClientType() const = 0;
+};
+
+class NS_NO_VTABLE OpenDirectoryListener {
+ public:
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
   virtual void DirectoryLockAcquired(DirectoryLock* aLock) = 0;
 
   virtual void DirectoryLockFailed() = 0;
