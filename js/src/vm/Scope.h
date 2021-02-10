@@ -269,6 +269,7 @@ class AbstractTrailingNamesArray {
   
   
   void* ptr() { return data_; }
+  const void* ptr() const { return data_; }
 
  public:
   
@@ -282,9 +283,14 @@ class AbstractTrailingNamesArray {
   }
 
   BindingNameT* start() { return reinterpret_cast<BindingNameT*>(ptr()); }
+  const BindingNameT* start() const {
+    return reinterpret_cast<const BindingNameT*>(ptr());
+  }
 
   BindingNameT& get(size_t i) { return start()[i]; }
+  const BindingNameT& get(size_t i) const { return start()[i]; }
   BindingNameT& operator[](size_t i) { return get(i); }
+  const BindingNameT& operator[](size_t i) const { return get(i); }
 };
 
 
