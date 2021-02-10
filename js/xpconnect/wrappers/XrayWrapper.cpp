@@ -930,13 +930,23 @@ bool JSXrayTraits::enumerateNames(JSContext* cx, HandleObject wrapper,
       return true;
     }
     if (IsTypedArrayKey(key)) {
-      uint32_t length = JS_GetTypedArrayLength(target);
+      size_t length = JS_GetTypedArrayLength(target);
       
       
+
+      
+      
+      
+      static_assert(JSID_INT_MAX >= INT32_MAX);
+      if (length > INT32_MAX) {
+        JS_ReportOutOfMemory(cx);
+        return false;
+      }
+
       if (!props.reserve(length)) {
         return false;
       }
-      for (int32_t i = 0; i <= int32_t(length - 1); ++i) {
+      for (int32_t i = 0; i < int32_t(length); ++i) {
         props.infallibleAppend(INT_TO_JSID(i));
       }
     } else if (key == JSProto_Function) {
