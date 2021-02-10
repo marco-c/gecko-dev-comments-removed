@@ -196,8 +196,8 @@ class RegExpStencil {
   
   
   RegExpObject* createRegExpAndEnsureAtom(
-      JSContext* cx, CompilationAtomCache& atomCache,
-      BaseCompilationStencil& stencil) const;
+      JSContext* cx, ParserAtomsTable& parserAtoms,
+      CompilationAtomCache& atomCache) const;
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump();

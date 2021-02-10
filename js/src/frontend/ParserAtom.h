@@ -454,12 +454,12 @@ class alignas(alignof(uint32_t)) ParserAtom {
     length_ = length;
   }
 
- public:
   
   
   JSAtom* toJSAtom(JSContext* cx, TaggedParserAtomIndex index,
                    CompilationAtomCache& atomCache) const;
 
+ public:
   
   JSAtom* instantiate(JSContext* cx, TaggedParserAtomIndex index,
                       CompilationAtomCache& atomCache) const;
@@ -853,6 +853,8 @@ class ParserAtomsTable {
   UniqueChars toPrintableString(JSContext* cx,
                                 TaggedParserAtomIndex index) const;
   UniqueChars toQuotedString(JSContext* cx, TaggedParserAtomIndex index) const;
+  JSAtom* toJSAtom(JSContext* cx, TaggedParserAtomIndex index,
+                   CompilationAtomCache& atomCache) const;
 
  public:
 #if defined(DEBUG) || defined(JS_JITSPEW)
