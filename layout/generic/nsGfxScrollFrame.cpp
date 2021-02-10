@@ -4720,7 +4720,7 @@ void ScrollFrameHelper::ScrollBy(nsIntPoint aDelta, ScrollUnit aUnit,
         ScrollPositionUpdate::NewPureRelativeScroll(aOrigin, aMode, delta));
 
     nsIContent* content = mOuter->GetContent();
-    if (!DisplayPortUtils::HasNonMinimalDisplayPort(content)) {
+    if (!DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(content)) {
       if (MOZ_LOG_TEST(sDisplayportLog, LogLevel::Debug)) {
         mozilla::layers::ScrollableLayerGuid::ViewID viewID =
             mozilla::layers::ScrollableLayerGuid::NULL_SCROLL_ID;
@@ -7829,7 +7829,7 @@ void ScrollFrameHelper::ApzSmoothScrollTo(const nsPoint& aDestination,
       ScrollPositionUpdate::NewSmoothScroll(aOrigin, aDestination));
 
   nsIContent* content = mOuter->GetContent();
-  if (!DisplayPortUtils::HasNonMinimalDisplayPort(content)) {
+  if (!DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(content)) {
     
     
     

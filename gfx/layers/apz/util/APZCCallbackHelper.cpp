@@ -619,7 +619,7 @@ static bool PrepareForSetTargetAPZCNotification(
   if (!guidIsValid) {
     return false;
   }
-  if (DisplayPortUtils::HasNonMinimalDisplayPort(dpElement)) {
+  if (DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(dpElement)) {
     
     
     
