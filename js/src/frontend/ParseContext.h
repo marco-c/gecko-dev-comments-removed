@@ -501,6 +501,14 @@ class ParseContext : public Nestable<ParseContext> {
     return sc_->isModuleContext() && sc_->isTopLevelContext();
   }
 
+  
+  
+  
+  bool isOutermostOfCurrentCompile() const {
+    MOZ_ASSERT(!!enclosing() == !!scriptId());
+    return (scriptId() == 0);
+  }
+
   void setSuperScopeNeedsHomeObject() {
     MOZ_ASSERT(sc_->allowSuperProperty());
     superScopeNeedsHomeObject_ = true;

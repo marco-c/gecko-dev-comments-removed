@@ -843,6 +843,8 @@ bool PerHandlerParser<ParseHandler>::
   }
 
   if (handler_.canSkipLazyClosedOverBindings()) {
+    MOZ_ASSERT(pc_->isOutermostOfCurrentCompile());
+
     
     
     uint32_t slotCount = scope.declaredCount();
@@ -2742,6 +2744,8 @@ bool Parser<FullParseHandler, Unit>::skipLazyInnerFunction(
   
   
 
+  MOZ_ASSERT(pc_->isOutermostOfCurrentCompile());
+
   RootedFunction fun(cx_, handler_.nextLazyInnerFunction());
 
   
@@ -2764,6 +2768,15 @@ bool Parser<FullParseHandler, Unit>::skipLazyInnerFunction(
   ScriptStencil& script = funbox->functionStencil();
   funbox->initFromLazyFunctionToSkip(fun);
   funbox->copyFunctionFields(script);
+
+  
+  
+  if (funbox->isClassConstructor()) {
+    auto classStmt =
+        pc_->template findInnermostStatement<ParseContext::ClassStatement>();
+    MOZ_ASSERT(!classStmt->constructorBox);
+    classStmt->constructorBox = funbox;
+  }
 
   MOZ_ASSERT_IF(pc_->isFunctionBox(),
                 pc_->functionBox()->index() < funbox->index());
@@ -3216,8 +3229,11 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneLazyFunction(
       syntaxKind = FunctionSyntaxKind::ClassConstructor;
     }
   } else if (fun->isMethod()) {
-    if (fun->isFieldInitializer()) {
+    if (fun->isSyntheticFunction()) {
+      MOZ_ASSERT(!fun->isClassConstructor());
       syntaxKind = FunctionSyntaxKind::FieldInitializer;
+      MOZ_ASSERT_UNREACHABLE(
+          "Lazy parsing of class field initializers not supported (yet)");
     } else {
       syntaxKind = FunctionSyntaxKind::Method;
     }
@@ -3278,10 +3294,31 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneLazyFunction(
 
   YieldHandling yieldHandling = GetYieldHandling(generatorKind);
 
-  if (!functionFormalParametersAndBody(InAllowed, yieldHandling, &funNode,
-                                       syntaxKind)) {
-    MOZ_ASSERT(directives == newDirectives);
-    return null();
+  if (funbox->isSyntheticFunction()) {
+    
+    
+    MOZ_ASSERT(funbox->isClassConstructor());
+    MOZ_ASSERT(funbox->extent().toStringStart == funbox->extent().sourceStart);
+
+    HasHeritage hasHeritage = funbox->isDerivedClassConstructor()
+                                  ? HasHeritage::Yes
+                                  : HasHeritage::No;
+    TokenPos synthesizedBodyPos(funbox->extent().toStringStart,
+                                funbox->extent().toStringEnd);
+
+    
+    tokenStream.consumeKnownToken(TokenKind::Class);
+
+    if (!this->synthesizeConstructorBody(synthesizedBodyPos, hasHeritage,
+                                         funNode, funbox)) {
+      return null();
+    }
+  } else {
+    if (!functionFormalParametersAndBody(InAllowed, yieldHandling, &funNode,
+                                         syntaxKind)) {
+      MOZ_ASSERT(directives == newDirectives);
+      return null();
+    }
   }
 
   if (!CheckParseTree(cx_, alloc_, funNode)) {
@@ -7462,12 +7499,7 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
     uint32_t classStartOffset, uint32_t classEndOffset,
     const ClassInitializedMembers& classInitializedMembers,
     ListNodeType& classMembers) {
-  
-  
-  
-  size_t numMemberInitializers = classInitializedMembers.privateMethods +
-                                 classInitializedMembers.instanceFields;
-  if (classStmt.constructorBox == nullptr && numMemberInitializers) {
+  if (classStmt.constructorBox == nullptr) {
     MOZ_ASSERT(!options().selfHostingMode);
     
     
@@ -7488,8 +7520,6 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
     if (!synthesizedCtor) {
       return false;
     }
-
-    MOZ_ASSERT(classStmt.constructorBox != nullptr);
 
     
     
@@ -7513,19 +7543,22 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
     }
   }
 
-  if (FunctionBox* ctorbox = classStmt.constructorBox) {
-    
-    
-    ctorbox->setCtorToStringEnd(classEndOffset);
+  MOZ_ASSERT(classStmt.constructorBox);
+  FunctionBox* ctorbox = classStmt.constructorBox;
 
-    if (numMemberInitializers) {
-      
-      MemberInitializers initializers(numMemberInitializers);
-      ctorbox->setMemberInitializers(initializers);
+  
+  
+  ctorbox->setCtorToStringEnd(classEndOffset);
 
-      
-      ctorbox->setCtorFunctionHasThisBinding();
-    }
+  size_t numMemberInitializers = classInitializedMembers.privateMethods +
+                                 classInitializedMembers.instanceFields;
+  if (numMemberInitializers) {
+    
+    MemberInitializers initializers(numMemberInitializers);
+    ctorbox->setMemberInitializers(initializers);
+
+    
+    ctorbox->setCtorFunctionHasThisBinding();
   }
 
   return true;
@@ -7743,10 +7776,6 @@ typename ParseHandler::FunctionNodeType
 GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
     TaggedParserAtomIndex className, TokenPos synthesizedBodyPos,
     HasHeritage hasHeritage) {
-  if (!abortIfSyntaxParser()) {
-    return null();
-  }
-
   FunctionSyntaxKind functionSyntaxKind =
       hasHeritage == HasHeritage::Yes
           ? FunctionSyntaxKind::DerivedClassConstructor
@@ -7765,6 +7794,24 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
   }
 
   
+  
+  
+  pc_->sc()->setHasInnerFunctions();
+
+  
+  
+  
+  if (handler_.canSkipLazyInnerFunctions()) {
+    if (!skipLazyInnerFunction(funNode, synthesizedBodyPos.begin,
+                               functionSyntaxKind,
+                                false)) {
+      return null();
+    }
+
+    return funNode;
+  }
+
+  
   Directives directives(true);
   FunctionBox* funbox = newFunctionBox(
       funNode, className, flags, synthesizedBodyPos.begin, directives,
@@ -7776,10 +7823,35 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
   setFunctionEndFromCurrentToken(funbox);
 
   
+  
+  
+  funbox->setSyntheticFunction();
+
+  
+  ParseContext* outerpc = pc_;
   SourceParseContext funpc(this, funbox,  nullptr);
   if (!funpc.init()) {
     return null();
   }
+
+  if (!synthesizeConstructorBody(synthesizedBodyPos, hasHeritage, funNode,
+                                 funbox)) {
+    return null();
+  }
+
+  if (!leaveInnerFunction(outerpc)) {
+    return null();
+  }
+
+  return funNode;
+}
+
+template <class ParseHandler, typename Unit>
+typename ParseHandler::FunctionNodeType
+GeneralParser<ParseHandler, Unit>::synthesizeConstructorBody(
+    TokenPos synthesizedBodyPos, HasHeritage hasHeritage,
+    FunctionNodeType funNode, FunctionBox* funbox) {
+  MOZ_ASSERT(funbox->isClassConstructor());
 
   
   ListNodeType argsbody =
@@ -7891,10 +7963,6 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
   if (!finishFunction()) {
     return null();
   }
-
-  
-  
-  
 
   return funNode;
 }
@@ -8036,7 +8104,7 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
     return null();
   }
   funbox->initWithEnclosingParseContext(pc_, flags, syntaxKind);
-  MOZ_ASSERT(funbox->isFieldInitializer());
+  MOZ_ASSERT(funbox->isSyntheticFunction());
 
   
   

@@ -184,65 +184,72 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   IsDerivedClassConstructor = 1 << 19,
 
   
-  IsFieldInitializer = 1 << 20,
-
-  
-  HasRest = 1 << 21,
-
   
   
   
-  NeedsFunctionEnvironmentObjects = 1 << 22,
+  IsSyntheticFunction = 1 << 20,
 
   
   
+  UseMemberInitializers = 1 << 21,
+
   
-  
-  FunctionHasExtraBodyVarScope = 1 << 23,
+  HasRest = 1 << 22,
 
   
   
   
-  
-  
-  
-  
-  ShouldDeclareArguments = 1 << 24,
+  NeedsFunctionEnvironmentObjects = 1 << 23,
 
   
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ArgumentsHasVarBinding = 1 << 25,
+  FunctionHasExtraBodyVarScope = 1 << 24,
 
   
   
   
   
   
-  AlwaysNeedsArgsObj = 1 << 26,
+  
+  
+  ShouldDeclareArguments = 1 << 25,
 
   
   
   
-  HasMappedArgsObj = 1 << 27,
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ArgumentsHasVarBinding = 1 << 26,
+
+  
+  
+  
+  
+  
+  AlwaysNeedsArgsObj = 1 << 27,
+
+  
+  
+  
+  HasMappedArgsObj = 1 << 28,
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {

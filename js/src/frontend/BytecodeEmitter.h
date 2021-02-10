@@ -135,6 +135,11 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   }
 
   
+  
+  
+  const bool suppressBreakpointsAndSourceNotes = false;
+
+  
   bool hasTryFinally = false;
 
   enum EmitterMode {
@@ -334,10 +339,10 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   bool skipLocationSrcNotes() const {
-    return inPrologue() || (emitterMode == EmitterMode::SelfHosting);
+    return inPrologue() || suppressBreakpointsAndSourceNotes;
   }
   bool skipBreakpointSrcNotes() const {
-    return inPrologue() || (emitterMode == EmitterMode::SelfHosting);
+    return inPrologue() || suppressBreakpointsAndSourceNotes;
   }
 
   
