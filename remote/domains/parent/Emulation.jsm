@@ -69,7 +69,8 @@ class Emulation extends Domain {
     const { tab } = this.session.target;
     const { linkedBrowser: browser } = tab;
 
-    await this.executeInChild("_setDPPXOverride", deviceScaleFactor);
+    const { browsingContext } = this.session.target;
+    browsingContext.overrideDPPX = deviceScaleFactor;
 
     
     const { layoutViewport } = await this.session.execute(

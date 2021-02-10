@@ -104,13 +104,14 @@ const ResponsiveActor = protocol.ActorClassWithSpec(responsiveSpec, {
       this._previousDPPXOverride = this.getDPPXOverride();
     }
 
-    this.docShell.contentViewer.overrideDPPX = dppx;
+    
+    this.docShell.browsingContext.overrideDPPX = dppx;
 
     return true;
   },
 
   getDPPXOverride() {
-    return this.docShell.contentViewer.overrideDPPX;
+    return this.docShell.browsingContext.overrideDPPX;
   },
 
   clearDPPXOverride() {

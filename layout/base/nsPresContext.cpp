@@ -773,6 +773,7 @@ void nsPresContext::RecomputeBrowsingContextDependentData() {
   }
   SetFullZoom(browsingContext->FullZoom());
   SetTextZoom(browsingContext->TextZoom());
+  SetOverrideDPPX(browsingContext->OverrideDPPX());
   if (doc == mDocument) {
     
     auto* top = browsingContext->Top();
