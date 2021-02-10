@@ -4,11 +4,11 @@
     <script src="/resources/testharness.js"></script>
     <script src="/resources/testharnessreport.js"></script>
     <title>Reporting and enforcing policies can be different</title>
-    
+    <!-- CSP headers
+Content-Security-Policy: img-src 'none'; style-src *; script-src 'self' 'unsafe-inline'
 
-
-
-
+Content-Security-Policy-Report-Only: img-src *; style-src 'none'; script-src 'self' 'unsafe-inline'; report-uri /reporting/resources/report.py?op=put&reportID={{$id}}
+-->
 </head>
 <body>
     <script>

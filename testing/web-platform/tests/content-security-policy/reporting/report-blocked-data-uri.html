@@ -4,9 +4,9 @@
     <script src="/resources/testharness.js"></script>
     <script src="/resources/testharnessreport.js"></script>
     <title>Data-uri images are reported correctly</title>
-    
-
-
+    <!-- CSP headers
+Content-Security-Policy: img-src 'none'; report-uri /reporting/resources/report.py?op=put&reportID={{$id}}
+-->
 </head>
 <body>
     <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">

@@ -4,9 +4,9 @@
     <script src="/resources/testharness.js"></script>
     <script src="/resources/testharnessreport.js"></script>
     <title>Violation report is sent from inline javascript.</title>
-    
-
-
+    <!-- CSP headers
+         Content-Security-Policy: img-src 'none'; report-uri /reporting/resources/report.py?op=put&reportID={{$id}}
+         -->
 </head>
 <body>
     <script>

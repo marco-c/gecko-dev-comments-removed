@@ -3,9 +3,9 @@
 <head>
     <script nonce='abc' src="/resources/testharness.js"></script>
     <script nonce='abc' src="/resources/testharnessreport.js"></script>
-    
-
-
+    <!-- CSP headers
+Content-Security-Policy-Report-Only: script-src 'unsafe-inline' 'nonce-abc'; report-uri /reporting/resources/report.py?op=put&reportID={{$id}}
+-->
 </head>
 <body>
     <script nonce='abc'>
