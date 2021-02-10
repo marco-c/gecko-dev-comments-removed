@@ -410,7 +410,7 @@ class alignas(alignof(uint32_t)) ParserAtom {
   bool equalsSeq(HashNumber hash, InflatedChar16Sequence<CharT> seq) const;
 
   
-  JSAtom* instantiate(JSContext* cx, TaggedParserAtomIndex index,
+  JSAtom* instantiate(JSContext* cx, ParserAtomIndex index,
                       CompilationAtomCache& atomCache) const;
 
  private:
@@ -461,11 +461,6 @@ class alignas(alignof(uint32_t)) ParserAtom {
 
   bool isIndex(uint32_t* indexp) const;
   bool isPrivateName() const;
-
-  
-  
-  JSAtom* toJSAtom(JSContext* cx, TaggedParserAtomIndex index,
-                   CompilationAtomCache& atomCache) const;
 
   
   bool toNumber(JSContext* cx, double* result) const;
