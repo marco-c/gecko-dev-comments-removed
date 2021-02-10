@@ -182,7 +182,7 @@ struct CompilationAtomCache {
   void releaseBuffer(AtomCacheVector& atoms);
 
   void trace(JSTracer* trc);
-} JS_HAZ_GC_POINTER;
+};
 
 
 struct CompilationInput {
@@ -312,7 +312,7 @@ struct CompilationInput {
   }
 
   void trace(JSTracer* trc);
-} JS_HAZ_GC_POINTER;
+};
 
 struct MOZ_RAII CompilationState {
   
@@ -712,7 +712,7 @@ struct CompilationGCOutput {
   CompilationGCOutput() = default;
 
   void trace(JSTracer* trc);
-} JS_HAZ_GC_POINTER;
+};
 
 
 
