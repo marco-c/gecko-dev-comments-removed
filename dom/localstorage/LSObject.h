@@ -116,13 +116,6 @@ class LSObject final : public Storage {
 
 
 
-  static already_AddRefed<nsISerialEventTarget> GetSyncLoopEventTarget();
-
-  
-
-
-
-
 
 
 
