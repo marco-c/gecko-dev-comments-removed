@@ -13,7 +13,9 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
-
+const { ExperimentAPI } = ChromeUtils.import(
+  "resource://messaging-system/experiments/ExperimentAPI.jsm"
+);
 const { PrivateBrowsingUtils } = ChromeUtils.import(
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
@@ -25,12 +27,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-XPCOMUtils.defineLazyGetter(this, "awExperimentFeature", () => {
-  const { ExperimentFeature } = ChromeUtils.import(
-    "resource://messaging-system/experiments/ExperimentAPI.jsm"
-  );
-  return new ExperimentFeature("aboutwelcome");
-});
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "isAboutWelcomePrefEnabled",
+  "browser.aboutwelcome.enabled",
+  false
+);
 
 class AboutNewTabChild extends JSWindowActorChild {
   handleEvent(event) {
@@ -38,7 +40,9 @@ class AboutNewTabChild extends JSWindowActorChild {
       
       
       if (
-        awExperimentFeature.isEnabled({ defaultValue: true }) &&
+        isAboutWelcomePrefEnabled &&
+        
+        ExperimentAPI.isFeatureEnabled("aboutwelcome", true) &&
         this.contentWindow.location.pathname.includes("welcome")
       ) {
         return;

@@ -4,42 +4,12 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = ["ExperimentAPI", "ExperimentFeature"];
 
 
 
 
 
-
-
-const MANIFEST = {
-  aboutwelcome: {
-    description: "The about:welcome page",
-    enabledFallbackPref: "browser.aboutwelcome.enabled",
-    variables: {
-      value: {
-        type: "json",
-        fallbackPref: "browser.aboutwelcome.overrideContent",
-      },
-    },
-  },
-  newtab: {
-    description: "The about:newtab page",
-    variables: {
-      value: {
-        type: "json",
-        fallbackPref: "browser.newtab.experiments.value",
-      },
-    },
-  },
-  "password-autocomplete": {
-    description: "A special autocomplete UI for password fields.",
-  },
-};
-
-function isBooleanValueDefined(value) {
-  return typeof value === "boolean";
-}
+const EXPORTED_SYMBOLS = ["ExperimentAPI"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
@@ -65,17 +35,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   COLLECTION_ID_PREF,
   COLLECTION_ID_FALLBACK
 );
-
-function parseJSON(value) {
-  if (value) {
-    try {
-      return JSON.parse(value);
-    } catch (e) {
-      Cu.reportError(e);
-    }
-  }
-  return null;
-}
 
 const ExperimentAPI = {
   
@@ -196,6 +155,32 @@ const ExperimentAPI = {
 
 
 
+  isFeatureEnabled(featureId, defaultValue, { sendExposurePing = true } = {}) {
+    const branch = this.activateBranch({ featureId, sendExposurePing });
+    if (branch?.feature.enabled !== undefined) {
+      return branch.feature.enabled;
+    }
+    return defaultValue;
+  },
+
+  
+
+
+
+
+
+  getFeatureValue(options) {
+    return this.activateBranch(options)?.feature.value;
+  },
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -304,116 +289,6 @@ const ExperimentAPI = {
     return true;
   },
 };
-
-class ExperimentFeature {
-  static MANIFEST = MANIFEST;
-  constructor(featureId, manifest) {
-    this.featureId = featureId;
-    this.defaultPrefValues = {};
-    this.manifest = manifest || ExperimentFeature.MANIFEST[featureId];
-    if (!this.manifest) {
-      Cu.reportError(
-        `No manifest entry for ${featureId}. Please add one to toolkit/components/messaging-system/experiments/ExperimentAPI.jsm`
-      );
-    }
-    const variables = this.manifest?.variables || {};
-
-    
-    if (!variables.enabled) {
-      variables.enabled = {
-        type: "boolean",
-        fallbackPref: this.manifest?.enabledFallbackPref,
-      };
-    }
-
-    Object.keys(variables).forEach(key => {
-      const { type, fallbackPref } = variables[key];
-      if (fallbackPref) {
-        XPCOMUtils.defineLazyPreferenceGetter(
-          this.defaultPrefValues,
-          key,
-          fallbackPref,
-          null,
-          () => {
-            ExperimentAPI._store._emitFeatureUpdate(
-              this.featureId,
-              "pref-updated"
-            );
-          },
-          type === "json" ? parseJSON : val => val
-        );
-      }
-    });
-  }
-
-  
-
-
-
-
-
-  isEnabled({ sendExposurePing, defaultValue = null } = {}) {
-    const branch = ExperimentAPI.activateBranch({
-      featureId: this.featureId,
-      sendExposurePing,
-    });
-
-    
-    if (isBooleanValueDefined(branch?.feature.enabled)) {
-      return branch.feature.enabled;
-    }
-
-    
-    if (isBooleanValueDefined(this.defaultPrefValues.enabled)) {
-      return this.defaultPrefValues.enabled;
-    }
-
-    
-    return defaultValue;
-  }
-
-  
-
-
-
-
-
-  getValue({ sendExposurePing, defaultValue = null } = {}) {
-    const branch = ExperimentAPI.activateBranch({
-      featureId: this.featureId,
-      sendExposurePing,
-    });
-    if (branch?.feature?.value) {
-      return branch.feature.value;
-    }
-
-    return this.defaultPrefValues.value || defaultValue;
-  }
-
-  onUpdate(callback) {
-    ExperimentAPI._store._onFeatureUpdate(this.featureId, callback);
-  }
-
-  off(callback) {
-    ExperimentAPI._store._offFeatureUpdate(this.featureId, callback);
-  }
-
-  debug() {
-    return {
-      enabled: this.isEnabled(),
-      value: this.getValue(),
-      experiment: ExperimentAPI.getExperimentMetaData({
-        featureId: this.featureId,
-      }),
-      fallbackPrefs:
-        this.defaultPrefValues &&
-        Object.keys(this.defaultPrefValues).map(prefName => [
-          prefName,
-          this.defaultPrefValues[prefName],
-        ]),
-    };
-  }
-}
 
 XPCOMUtils.defineLazyGetter(ExperimentAPI, "_store", function() {
   return IS_MAIN_PROCESS ? ExperimentManager.store : new ExperimentStore();
