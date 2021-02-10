@@ -45,6 +45,9 @@ class JSONPrinter;
 namespace frontend {
 
 struct CompilationInput;
+struct CompilationStencil;
+struct CompilationGCOutput;
+class ScriptStencilIterable;
 
 
 
@@ -311,8 +314,6 @@ struct CompilationInput {
   void trace(JSTracer* trc);
 } JS_HAZ_GC_POINTER;
 
-struct CompilationStencil;
-
 struct MOZ_RAII CompilationState {
   
   
@@ -523,121 +524,6 @@ struct BaseCompilationStencil {
 };
 
 
-struct CompilationGCOutput {
-  
-  
-  JSScript* script = nullptr;
-
-  
-  ModuleObject* module = nullptr;
-
-  
-  
-  
-  
-  JS::GCVector<JSFunction*, 0, js::SystemAllocPolicy> functions;
-
-  
-  
-  JS::GCVector<js::Scope*, 0, js::SystemAllocPolicy> scopes;
-
-  
-  ScriptSourceObject* sourceObject = nullptr;
-
-  CompilationGCOutput() = default;
-
-  void trace(JSTracer* trc);
-} JS_HAZ_GC_POINTER;
-
-class ScriptStencilIterable {
- public:
-  class ScriptAndFunction {
-   public:
-    const ScriptStencil& script;
-    const ScriptStencilExtra* scriptExtra;
-    JSFunction* function;
-    ScriptIndex index;
-
-    ScriptAndFunction() = delete;
-    ScriptAndFunction(const ScriptStencil& script,
-                      const ScriptStencilExtra* scriptExtra,
-                      JSFunction* function, ScriptIndex index)
-        : script(script),
-          scriptExtra(scriptExtra),
-          function(function),
-          index(index) {}
-  };
-
-  class Iterator {
-    size_t index_ = 0;
-    const BaseCompilationStencil& stencil_;
-    CompilationGCOutput& gcOutput_;
-
-    Iterator(const BaseCompilationStencil& stencil,
-             CompilationGCOutput& gcOutput, size_t index)
-        : index_(index), stencil_(stencil), gcOutput_(gcOutput) {
-      MOZ_ASSERT(index == stencil.scriptData.size());
-    }
-
-   public:
-    explicit Iterator(const BaseCompilationStencil& stencil,
-                      CompilationGCOutput& gcOutput)
-        : stencil_(stencil), gcOutput_(gcOutput) {
-      skipTopLevelNonFunction();
-    }
-
-    Iterator operator++() {
-      next();
-      assertFunction();
-      return *this;
-    }
-
-    void next() {
-      MOZ_ASSERT(index_ < stencil_.scriptData.size());
-      index_++;
-    }
-
-    void assertFunction() {
-      if (index_ < stencil_.scriptData.size()) {
-        MOZ_ASSERT(stencil_.scriptData[index_].isFunction());
-      }
-    }
-
-    void skipTopLevelNonFunction() {
-      MOZ_ASSERT(index_ == 0);
-      if (stencil_.scriptData.size()) {
-        if (!stencil_.scriptData[0].isFunction()) {
-          next();
-          assertFunction();
-        }
-      }
-    }
-
-    bool operator!=(const Iterator& other) const {
-      return index_ != other.index_;
-    }
-
-    inline ScriptAndFunction operator*();
-
-    static Iterator end(const BaseCompilationStencil& stencil,
-                        CompilationGCOutput& gcOutput) {
-      return Iterator(stencil, gcOutput, stencil.scriptData.size());
-    }
-  };
-
-  const BaseCompilationStencil& stencil_;
-  CompilationGCOutput& gcOutput_;
-
-  explicit ScriptStencilIterable(const BaseCompilationStencil& stencil,
-                                 CompilationGCOutput& gcOutput)
-      : stencil_(stencil), gcOutput_(gcOutput) {}
-
-  Iterator begin() const { return Iterator(stencil_, gcOutput_); }
-
-  Iterator end() const { return Iterator::end(stencil_, gcOutput_); }
-};
-
-
 struct CompilationStencil : public BaseCompilationStencil {
   static constexpr ScriptIndex TopLevelIndex = ScriptIndex(0);
 
@@ -716,10 +602,8 @@ struct CompilationStencil : public BaseCompilationStencil {
   CompilationStencil& operator=(const CompilationStencil&) = delete;
   CompilationStencil& operator=(CompilationStencil&&) = delete;
 
-  static ScriptStencilIterable functionScriptStencils(
-      const BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput) {
-    return ScriptStencilIterable(stencil, gcOutput);
-  }
+  static inline ScriptStencilIterable functionScriptStencils(
+      const BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput);
 
   void setFunctionKey(BaseScript* lazy) {
     functionKey = toFunctionKey(lazy->extent());
@@ -747,18 +631,6 @@ inline const CompilationStencil& BaseCompilationStencil::asCompilationStencil()
              "cast from BaseCompilationStencil to CompilationStencil is "
              "allowed only for initial stencil");
   return *static_cast<const CompilationStencil*>(this);
-}
-
-inline ScriptStencilIterable::ScriptAndFunction
-ScriptStencilIterable::Iterator::operator*() {
-  ScriptIndex index = ScriptIndex(index_);
-  const ScriptStencil& script = stencil_.scriptData[index];
-  const ScriptStencilExtra* scriptExtra = nullptr;
-  if (stencil_.isInitialStencil()) {
-    scriptExtra = &stencil_.asCompilationStencil().scriptExtra[index];
-  }
-  return ScriptAndFunction(script, scriptExtra, gcOutput_.functions[index],
-                           index);
 }
 
 
@@ -800,6 +672,138 @@ struct CompilationStencilSet : public CompilationStencil {
                                         const JS::TranscodeRange& range,
                                         bool* succeededOut);
 };
+
+
+struct CompilationGCOutput {
+  
+  
+  JSScript* script = nullptr;
+
+  
+  ModuleObject* module = nullptr;
+
+  
+  
+  
+  
+  JS::GCVector<JSFunction*, 0, js::SystemAllocPolicy> functions;
+
+  
+  
+  JS::GCVector<js::Scope*, 0, js::SystemAllocPolicy> scopes;
+
+  
+  ScriptSourceObject* sourceObject = nullptr;
+
+  CompilationGCOutput() = default;
+
+  void trace(JSTracer* trc);
+} JS_HAZ_GC_POINTER;
+
+
+
+
+class ScriptStencilIterable {
+ public:
+  class ScriptAndFunction {
+   public:
+    const ScriptStencil& script;
+    const ScriptStencilExtra* scriptExtra;
+    JSFunction* function;
+    ScriptIndex index;
+
+    ScriptAndFunction() = delete;
+    ScriptAndFunction(const ScriptStencil& script,
+                      const ScriptStencilExtra* scriptExtra,
+                      JSFunction* function, ScriptIndex index)
+        : script(script),
+          scriptExtra(scriptExtra),
+          function(function),
+          index(index) {}
+  };
+
+  class Iterator {
+    size_t index_ = 0;
+    const BaseCompilationStencil& stencil_;
+    CompilationGCOutput& gcOutput_;
+
+    Iterator(const BaseCompilationStencil& stencil,
+             CompilationGCOutput& gcOutput, size_t index)
+        : index_(index), stencil_(stencil), gcOutput_(gcOutput) {
+      MOZ_ASSERT(index == stencil.scriptData.size());
+    }
+
+   public:
+    explicit Iterator(const BaseCompilationStencil& stencil,
+                      CompilationGCOutput& gcOutput)
+        : stencil_(stencil), gcOutput_(gcOutput) {
+      skipTopLevelNonFunction();
+    }
+
+    Iterator operator++() {
+      next();
+      assertFunction();
+      return *this;
+    }
+
+    void next() {
+      MOZ_ASSERT(index_ < stencil_.scriptData.size());
+      index_++;
+    }
+
+    void assertFunction() {
+      if (index_ < stencil_.scriptData.size()) {
+        MOZ_ASSERT(stencil_.scriptData[index_].isFunction());
+      }
+    }
+
+    void skipTopLevelNonFunction() {
+      MOZ_ASSERT(index_ == 0);
+      if (stencil_.scriptData.size()) {
+        if (!stencil_.scriptData[0].isFunction()) {
+          next();
+          assertFunction();
+        }
+      }
+    }
+
+    bool operator!=(const Iterator& other) const {
+      return index_ != other.index_;
+    }
+
+    ScriptAndFunction operator*() {
+      ScriptIndex index = ScriptIndex(index_);
+      const ScriptStencil& script = stencil_.scriptData[index];
+      const ScriptStencilExtra* scriptExtra = nullptr;
+      if (stencil_.isInitialStencil()) {
+        scriptExtra = &stencil_.asCompilationStencil().scriptExtra[index];
+      }
+      return ScriptAndFunction(script, scriptExtra, gcOutput_.functions[index],
+                               index);
+    }
+
+    static Iterator end(const BaseCompilationStencil& stencil,
+                        CompilationGCOutput& gcOutput) {
+      return Iterator(stencil, gcOutput, stencil.scriptData.size());
+    }
+  };
+
+  const BaseCompilationStencil& stencil_;
+  CompilationGCOutput& gcOutput_;
+
+  explicit ScriptStencilIterable(const BaseCompilationStencil& stencil,
+                                 CompilationGCOutput& gcOutput)
+      : stencil_(stencil), gcOutput_(gcOutput) {}
+
+  Iterator begin() const { return Iterator(stencil_, gcOutput_); }
+
+  Iterator end() const { return Iterator::end(stencil_, gcOutput_); }
+};
+
+inline ScriptStencilIterable CompilationStencil::functionScriptStencils(
+    const BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput) {
+  return ScriptStencilIterable(stencil, gcOutput);
+}
 
 }  
 }  
