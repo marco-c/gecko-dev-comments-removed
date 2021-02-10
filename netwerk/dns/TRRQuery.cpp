@@ -217,24 +217,8 @@ AHostResolver::LookupStatus TRRQuery::CompleteLookup(
     mFirstTRR.swap(newRRSet);  
     MOZ_ASSERT(mFirstTRR && !newRRSet);
 
-    if (StaticPrefs::network_trr_wait_for_A_and_AAAA()) {
-      LOG(("CompleteLookup: waiting for all responses!\n"));
-      return LOOKUP_OK;
-    }
-
-    if (pendingARequest && !StaticPrefs::network_trr_early_AAAA()) {
-      
-      
-      LOG(("CompleteLookup: avoiding early use of TRR AAAA!\n"));
-      return LOOKUP_OK;
-    }
-
-    
-    
-    newRRSet = mFirstTRR;
-
-    
-    rec->mResolving++;
+    LOG(("CompleteLookup: waiting for all responses!\n"));
+    return LOOKUP_OK;
   } else {
     
     
