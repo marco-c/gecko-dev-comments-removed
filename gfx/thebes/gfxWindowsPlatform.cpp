@@ -381,20 +381,6 @@ void gfxWindowsPlatform::InitAcceleration() {
 
 void gfxWindowsPlatform::InitWebRenderConfig() {
   gfxPlatform::InitWebRenderConfig();
-  if (XRE_IsParentProcess()) {
-    bool prev =
-        Preferences::GetBool("sanity-test.webrender.force-disabled", false);
-    bool current = Preferences::GetBool("gfx.webrender.force-disabled", false);
-    
-    
-    
-    bool doRetest = !prev && current;
-    if (doRetest) {
-      Preferences::SetBool("layers.mlgpu.sanity-test-failed", false);
-    }
-    
-    InitializeAdvancedLayersConfig();
-  }
 
   if (gfxVars::UseWebRender()) {
     UpdateBackendPrefs();
@@ -444,13 +430,11 @@ bool gfxWindowsPlatform::HandleDeviceReset() {
   gfxAlphaBoxBlur::ShutdownBlurCache();
 
   gfxConfig::Reset(Feature::D3D11_COMPOSITING);
-  gfxConfig::Reset(Feature::ADVANCED_LAYERS);
   gfxConfig::Reset(Feature::D3D11_HW_ANGLE);
   gfxConfig::Reset(Feature::DIRECT2D);
 
   InitializeConfig();
   
-  InitializeAdvancedLayersConfig();
   if (mInitializedDevices) {
     InitGPUProcessSupport();
     InitializeDevices();
@@ -1358,44 +1342,6 @@ void gfxWindowsPlatform::InitializeD3D11Config() {
       !gfxPlatform::IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_DIRECT3D_11_LAYERS,
                                         &message, failureId)) {
     d3d11.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
-  }
-}
-
-
-void gfxWindowsPlatform::InitializeAdvancedLayersConfig() {
-  
-  if (!gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
-    return;
-  }
-
-  FeatureState& al = gfxConfig::GetFeature(Feature::ADVANCED_LAYERS);
-  al.SetDefaultFromPref(StaticPrefs::GetPrefName_layers_mlgpu_enabled(),
-                        true ,
-                        StaticPrefs::GetPrefDefault_layers_mlgpu_enabled());
-
-  
-  
-  if (al.IsEnabled() && !IsWin8OrLater()) {
-    if (StaticPrefs::layers_mlgpu_enable_on_windows7_AtStartup()) {
-      al.UserEnable("Enabled for Windows 7 via user-preference");
-    } else {
-      al.Disable(FeatureStatus::Disabled,
-                 "Advanced Layers is disabled on Windows 7 by default",
-                 "FEATURE_FAILURE_DISABLED_ON_WIN7"_ns);
-    }
-  }
-
-  nsCString message, failureId;
-  if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_ADVANCED_LAYERS, &message,
-                           failureId)) {
-    al.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
-  } else if (gfxVars::UseWebRender()) {
-    al.Disable(FeatureStatus::Blocked,
-               "Blocked from fallback candidate by WebRender usage",
-               "FEATURE_BLOCKED_BY_WEBRENDER_USAGE"_ns);
-  } else if (Preferences::GetBool("layers.mlgpu.sanity-test-failed", false)) {
-    al.Disable(FeatureStatus::Broken, "Failed to render sanity test",
-               "FEATURE_FAILURE_FAILED_TO_RENDER"_ns);
   }
 }
 

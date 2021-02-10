@@ -255,14 +255,12 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
   virtual bool DeallocPCompositorWidgetParent(
       PCompositorWidgetParent* aActor) = 0;
 
-  virtual mozilla::ipc::IPCResult RecvRemotePluginsReady() = 0;
   virtual mozilla::ipc::IPCResult RecvAdoptChild(const LayersId& id) = 0;
   virtual mozilla::ipc::IPCResult RecvFlushRenderingAsync() = 0;
   virtual mozilla::ipc::IPCResult RecvForcePresent() = 0;
   virtual mozilla::ipc::IPCResult RecvNotifyRegionInvalidated(
       const nsIntRegion& region) = 0;
   virtual mozilla::ipc::IPCResult RecvRequestNotifyAfterRemotePaint() = 0;
-  virtual mozilla::ipc::IPCResult RecvAllPluginsCaptured() = 0;
   virtual mozilla::ipc::IPCResult RecvBeginRecording(
       const TimeStamp& aRecordingStart, BeginRecordingResolver&& aResolve) = 0;
   virtual mozilla::ipc::IPCResult RecvEndRecordingToDisk(
@@ -386,7 +384,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
     return IPC_OK();
   };
 
-  mozilla::ipc::IPCResult RecvAllPluginsCaptured() override;
   mozilla::ipc::IPCResult RecvBeginRecording(
       const TimeStamp& aRecordingStart,
       BeginRecordingResolver&& aResolve) override;
@@ -564,8 +561,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
     ContentCompositorBridgeParent* mContentCompositorBridgeParent;
     TargetConfig mTargetConfig;
     LayerTransactionParent* mLayerTree;
-    nsTArray<PluginWindowData> mPluginData;
-    bool mUpdatedPluginDataAvailable;
 
     CompositorController* GetCompositorController() const;
     MetricsSharingController* CrossProcessSharingController() const;
@@ -604,32 +599,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
 
   static GeckoContentController* GetGeckoContentControllerForRoot(
       LayersId aContentLayersId);
-
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  
-
-
-
-  bool UpdatePluginWindowState(LayersId aId);
-
-  
-
-
-
-  void ScheduleShowAllPluginWindows() override;
-  void ScheduleHideAllPluginWindows() override;
-  void ShowAllPluginWindows();
-  void HideAllPluginWindows();
-#else
-  void ScheduleShowAllPluginWindows() override {}
-  void ScheduleHideAllPluginWindows() override {}
-#endif
-
-  
-
-
-
-  mozilla::ipc::IPCResult RecvRemotePluginsReady() override;
 
   
 
@@ -776,8 +745,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   void CompositeToTarget(VsyncId aId, gfx::DrawTarget* aTarget,
                          const gfx::IntRect* aRect = nullptr) override;
 
-  bool InitializeAdvancedLayers(const nsTArray<LayersBackend>& aBackendHints,
-                                TextureFactoryIdentifier* aOutIdentifier);
   RefPtr<Compositor> NewCompositor(
       const nsTArray<LayersBackend>& aBackendHints);
 
@@ -869,24 +836,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   RefPtr<CompositorAnimationStorage> mAnimationStorage;
 
   TimeDuration mPaintTime;
-
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  
-  LayersId mLastPluginUpdateLayerTreeId;
-  nsIntPoint mPluginsLayerOffset;
-  nsIntRegion mPluginsLayerVisibleRegion;
-  nsTArray<PluginWindowData> mCachedPluginData;
-  
-  TimeStamp mWaitForPluginsUntil;
-  
-  bool mHaveBlockedForPlugins = false;
-  
-  
-  bool mDeferPluginWindows;
-  
-  
-  bool mPluginWindowsHidden;
-#endif
 
   DISALLOW_EVIL_CONSTRUCTORS(CompositorBridgeParent);
 };
