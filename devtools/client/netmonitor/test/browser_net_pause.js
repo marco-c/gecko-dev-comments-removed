@@ -35,20 +35,20 @@ add_task(async function() {
   });
 
   
-  await EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
+  EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
   await performPausedRequest(tab, monitor, toolbox);
   ok(noRequest, "There should be no activity when paused.");
   assertRequestCount(store, 1);
 
   
   
-  await EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
+  EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
   await performRequestAndWait(tab, monitor);
   assertRequestCount(store, 2);
 
   
   
-  await EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
+  EventUtils.sendMouseEvent({ type: "click" }, pauseButton);
   const networkEvents = waitForNetworkEvents(monitor, 1);
   tab.linkedBrowser.reload();
   await networkEvents;

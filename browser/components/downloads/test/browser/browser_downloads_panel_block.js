@@ -22,7 +22,7 @@ add_task(async function mainTest() {
 
     
     let viewPromise = promiseViewShown(DownloadsBlockedSubview.subview);
-    await EventUtils.sendMouseEvent({ type: "click" }, item);
+    EventUtils.sendMouseEvent({ type: "click" }, item);
     await viewPromise;
 
     
@@ -39,7 +39,7 @@ add_task(async function mainTest() {
 
     
     viewPromise = promiseViewShown(DownloadsBlockedSubview.subview);
-    await EventUtils.sendMouseEvent({ type: "click" }, item);
+    EventUtils.sendMouseEvent({ type: "click" }, item);
     await viewPromise;
 
     
@@ -64,7 +64,7 @@ add_task(async function mainTest() {
     await openPanel();
 
     viewPromise = promiseViewShown(DownloadsBlockedSubview.subview);
-    await EventUtils.sendMouseEvent({ type: "click" }, item);
+    EventUtils.sendMouseEvent({ type: "click" }, item);
     await viewPromise;
 
     

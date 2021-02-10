@@ -59,7 +59,7 @@ add_task(async function() {
     
     mustHaveAccessibleRule: false,
   });
-  await EventUtils.sendMouseEvent(
+  EventUtils.sendMouseEvent(
     { type: "click" },
     document.querySelector(".search-panel-content .treeRow .treeIcon")
   );

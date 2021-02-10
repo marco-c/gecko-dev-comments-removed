@@ -22,7 +22,7 @@ add_task(async function() {
 
   
   const xhrRequest = document.querySelectorAll(".request-list-item")[0];
-  await EventUtils.sendMouseEvent({ type: "mousedown" }, xhrRequest);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, xhrRequest);
 
   
   const { getSelectedRequest } = windowRequire(
@@ -31,7 +31,7 @@ add_task(async function() {
   const original = getSelectedRequest(store.getState());
 
   
-  await EventUtils.sendMouseEvent({ type: "contextmenu" }, xhrRequest);
+  EventUtils.sendMouseEvent({ type: "contextmenu" }, xhrRequest);
   getContextMenuItem(monitor, "request-list-context-resend").click();
 
   
@@ -43,7 +43,7 @@ add_task(async function() {
 
   
   const clonedRequest = document.querySelectorAll(".request-list-item")[1];
-  await EventUtils.sendMouseEvent({ type: "mousedown" }, clonedRequest);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, clonedRequest);
   const cloned = getSelectedRequest(store.getState());
 
   

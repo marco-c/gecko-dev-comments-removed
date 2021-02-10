@@ -164,7 +164,7 @@ add_task(async function() {
       continue;
     }
 
-    await EventUtils.sendMouseEvent(
+    EventUtils.sendMouseEvent(
       { type: "mousedown" },
       document.querySelectorAll(
         ".request-list-item .requests-list-initiator-lastframe"
@@ -187,7 +187,7 @@ add_task(async function() {
   validateRequests(EXPECTED_REQUESTS, monitor);
 
   
-  await EventUtils.sendMouseEvent(
+  EventUtils.sendMouseEvent(
     { type: "click" },
     document.querySelector("#requests-list-initiator-button")
   );
