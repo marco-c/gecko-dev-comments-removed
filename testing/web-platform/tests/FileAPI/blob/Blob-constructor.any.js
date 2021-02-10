@@ -1,22 +1,14 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<title>Blob constructor</title>
-<link rel=help href="http://dev.w3.org/2006/webapi/FileAPI/#constructorBlob">
-<link rel=help href="https://heycam.github.io/webidl/#es-union">
-<link rel=help href="https://heycam.github.io/webidl/#es-dictionary">
-<link rel=help href="https://heycam.github.io/webidl/#es-sequence">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="../support/Blob.js"></script>
-<div id="log"></div>
-<script>
+
+
+'use strict';
+
 test(function() {
-  assert_true("Blob" in window, "window should have a Blob property.");
+  assert_true("Blob" in globalThis, "globalThis should have a Blob property.");
   assert_equals(Blob.length, 0, "Blob.length should be 0.");
   assert_true(Blob instanceof Function, "Blob should be a function.");
 }, "Blob interface object");
 
-// Step 1.
+
 test(function() {
   var blob = new Blob();
   assert_true(blob instanceof Blob);
@@ -41,7 +33,7 @@ test(function() {
   assert_equals(blob.type, "");
 }, "Blob constructor with undefined as first argument");
 
-// blobParts argument (WebIDL).
+
 test(function() {
   var args = [
     null,
@@ -55,8 +47,6 @@ test(function() {
     new RegExp(),
     {},
     { 0: "FAIL", length: 1 },
-    document.createElement("div"),
-    window,
   ];
   args.forEach(function(arg) {
     assert_throws_js(TypeError, function() {
@@ -130,19 +120,6 @@ test(function() {
 }, "The length getter should be invoked and any exceptions should be propagated.");
 
 test(function() {
-  var element = document.createElement("div");
-  element.appendChild(document.createElement("div"));
-  element.appendChild(document.createElement("p"));
-  var list = element.children;
-  Object.defineProperty(list, "length", {
-    get: function() { throw test_error; }
-  });
-  assert_throws_exactly(test_error, function() {
-    new Blob(list);
-  });
-}, "A platform object that supports indexed properties should be treated as a sequence for the blobParts argument (overwritten 'length'.)");
-
-test(function() {
   assert_throws_exactly(test_error, function() {
     var obj = {
       [Symbol.iterator]: Array.prototype[Symbol.iterator],
@@ -211,7 +188,7 @@ test(function() {
   ]);
 }, "Getters and value conversions should happen in order until an exception is thrown.");
 
-// XXX should add tests edge cases of ToLength(length)
+
 
 test(function() {
   assert_throws_exactly(test_error, function() {
@@ -272,7 +249,7 @@ test_blob(function() {
 });
 
 test_blob(function() {
-  // https://www.w3.org/Bugs/Public/show_bug.cgi?id=17652
+  
   return new Blob([
     null,
     undefined,
@@ -322,10 +299,10 @@ test_blob(function() {
 });
 test_blob(function() {
   return new Blob([
-    // 0x535 3415053534150
-    // 0x535 = 0b010100110101 -> Sign = +, Exponent = 1333 - 1023 = 310
-    // 0x13415053534150 * 2**(-52)
-    // ==> 0x13415053534150 * 2**258 = 2510297372767036725005267563121821874921913208671273727396467555337665343087229079989707079680
+    
+    
+    
+    
     new Float64Array([2510297372767036725005267563121821874921913208671273727396467555337665343087229079989707079680])
   ]);
 }, {
@@ -334,25 +311,7 @@ test_blob(function() {
   desc: "Passing a Float64Array as element of the blobParts array should work."
 });
 
-test_blob(function() {
-  var select = document.createElement("select");
-  select.appendChild(document.createElement("option"));
-  return new Blob(select);
-}, {
-  expected: "[object HTMLOptionElement]",
-  type: "",
-  desc: "Passing an platform object that supports indexed properties as the blobParts array should work (select)."
-});
 
-test_blob(function() {
-  var elm = document.createElement("div");
-  elm.setAttribute("foo", "bar");
-  return new Blob(elm.attributes);
-}, {
-  expected: "[object Attr]",
-  type: "",
-  desc: "Passing an platform object that supports indexed properties as the blobParts array should work (attributes)."
-});
 
 var t_ports = async_test("Passing a FrozenArray as the blobParts array should work (FrozenArray<MessagePort>).");
 t_ports.step(function() {
@@ -470,7 +429,7 @@ test(function() {
 });
 
 var type_tests = [
-  // blobParts, type, expected type
+  
   [[], '', ''],
   [[], 'a', 'a'],
   [[], 'A', 'a'],
@@ -478,17 +437,17 @@ var type_tests = [
   [[], 'TEXT/HTML', 'text/html'],
   [[], 'text/plain;charset=utf-8', 'text/plain;charset=utf-8'],
   [[], '\u00E5', ''],
-  [[], '\uD801\uDC7E', ''], // U+1047E
+  [[], '\uD801\uDC7E', ''], 
   [[], ' image/gif ', ' image/gif '],
   [[], '\timage/gif\t', ''],
   [[], 'image/gif;\u007f', ''],
-  [[], '\u0130mage/gif', ''], // uppercase i with dot
-  [[], '\u0131mage/gif', ''], // lowercase dotless i
+  [[], '\u0130mage/gif', ''], 
+  [[], '\u0131mage/gif', ''], 
   [[], 'image/gif\u0000', ''],
-  // check that type isn't changed based on sniffing
-  [[0x3C, 0x48, 0x54, 0x4D, 0x4C, 0x3E], 'unknown/unknown', 'unknown/unknown'], // "<HTML>"
+  
+  [[0x3C, 0x48, 0x54, 0x4D, 0x4C, 0x3E], 'unknown/unknown', 'unknown/unknown'], 
   [[0x00, 0xFF], 'text/plain', 'text/plain'],
-  [[0x47, 0x49, 0x46, 0x38, 0x39, 0x61], 'image/png', 'image/png'], // "GIF89a"
+  [[0x47, 0x49, 0x46, 0x38, 0x39, 0x61], 'image/png', 'image/png'], 
 ];
 
 type_tests.forEach(function(t) {
@@ -498,4 +457,3 @@ type_tests.forEach(function(t) {
     assert_equals(b.type, t[2]);
   }, "Blob with type " + format_value(t[1]));
 });
-</script>

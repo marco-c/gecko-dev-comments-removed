@@ -1,13 +1,7 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<title>Blob slice</title>
-<link rel=help href="https://w3c.github.io/FileAPI/#slice-method-algo">
-<link rel=author title="Saurabh Anand" href="mailto:saurabhanandiit@gmail.com">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="../support/Blob.js"></script>
-<div id="log"></div>
-<script>
+
+
+'use strict';
+
 test_blob(function() {
   var blobTemp = new Blob(["PASS"]);
   return blobTemp.slice();
@@ -80,7 +74,7 @@ test(function() {
        {start: 7, end:   4, contents: ""}]
     ],
 
-    // Test 3 strings
+    
     [
       ["foo", "bar", "baz"],
       [{start:  0, end:  9, contents: "foobarbaz"},
@@ -93,7 +87,7 @@ test(function() {
        {start: 10, end: 15, contents: ""}]
     ],
 
-    // Test string, Blob, string
+    
     [
       ["foo", blob1, "baz"],
       [{start:  0, end:  3, contents: "foo"},
@@ -102,7 +96,7 @@ test(function() {
        {start: 10, end: 12, contents: "eb"}]
     ],
 
-    // Test blob, string, blob
+    
     [
       [blob1, "foo", blob1],
       [{start:  0, end:  8, contents: "squiggle"},
@@ -113,7 +107,7 @@ test(function() {
        {start: 40, end: 60, contents: ""}]
     ],
 
-    // Test blobs all the way down
+    
     [
       [blob2, blob1, blob2],
       [{start: 0,  end:  5, contents: "steak"},
@@ -123,7 +117,7 @@ test(function() {
        {start:  6, end: 10, contents: "quig"}]
     ],
 
-    // Test an ArrayBufferView
+    
     [
       [int8View, blob1, "foo"],
       [{start:  0, end:  8, contents: "ABCDEFGH"},
@@ -132,7 +126,7 @@ test(function() {
        {start:  4, end: 12, contents: "EFGHIJKL"}]
     ],
 
-    // Test a partial ArrayBufferView
+    
     [
       [new Uint8Array(arrayBuffer, 3, 5), blob1, "foo"],
       [{start:  0, end:  8, contents: "DEFGHsqu"},
@@ -140,7 +134,7 @@ test(function() {
        {start:  4, end: 12, contents: "Hsquiggl"}]
     ],
 
-    // Test type coercion of a number
+    
     [
       [3, int8View, "foo"],
       [{start:  0, end:  8, contents: "3ABCDEFG"},
@@ -235,4 +229,3 @@ validTypes.forEach(function(type) {
     desc: "Valid contentType (" + format_value(type) + ")"
   });
 });
-</script>
