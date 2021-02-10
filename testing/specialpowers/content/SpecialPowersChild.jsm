@@ -2095,6 +2095,11 @@ class SpecialPowersChild extends JSWindowActorChild {
     });
   }
 
+  
+
+
+
+
   doCommand(window, cmd, param) {
     switch (cmd) {
       case "cmd_align":
