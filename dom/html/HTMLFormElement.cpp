@@ -663,8 +663,7 @@ nsresult HTMLFormElement::DoSubmit(Event* aEvent) {
   nsresult rv = BuildSubmission(getter_Transfers(submission), aEvent);
 
   
-  if (StaticPrefs::dom_formdata_event_enabled() &&
-      rv == NS_ERROR_NOT_AVAILABLE) {
+  if (rv == NS_ERROR_NOT_AVAILABLE) {
     return NS_OK;
   }
 
@@ -739,7 +738,7 @@ nsresult HTMLFormElement::BuildSubmission(HTMLFormSubmission** aFormSubmission,
 
   
   
-  if (StaticPrefs::dom_formdata_event_enabled() && !GetComposedDoc()) {
+  if (!GetComposedDoc()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -1008,8 +1007,7 @@ nsresult HTMLFormElement::NotifySubmitObservers(nsIURI* aActionURL,
 
 nsresult HTMLFormElement::ConstructEntryList(FormData* aFormData) {
   MOZ_ASSERT(aFormData, "Must have FormData!");
-  bool isFormDataEventEnabled = StaticPrefs::dom_formdata_event_enabled();
-  if (isFormDataEventEnabled && mIsConstructingEntryList) {
+  if (mIsConstructingEntryList) {
     
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
@@ -1032,18 +1030,16 @@ nsresult HTMLFormElement::ConstructEntryList(FormData* aFormData) {
     sortedControls[i]->SubmitNamesValues(aFormData);
   }
 
-  if (isFormDataEventEnabled) {
-    FormDataEventInit init;
-    init.mBubbles = true;
-    init.mCancelable = false;
-    init.mFormData = aFormData;
-    RefPtr<FormDataEvent> event =
-        FormDataEvent::Constructor(this, u"formdata"_ns, init);
-    event->SetTrusted(true);
+  FormDataEventInit init;
+  init.mBubbles = true;
+  init.mCancelable = false;
+  init.mFormData = aFormData;
+  RefPtr<FormDataEvent> event =
+      FormDataEvent::Constructor(this, u"formdata"_ns, init);
+  event->SetTrusted(true);
 
-    EventDispatcher::DispatchDOMEvent(ToSupports(this), nullptr, event, nullptr,
-                                      nullptr);
-  }
+  EventDispatcher::DispatchDOMEvent(ToSupports(this), nullptr, event, nullptr,
+                                    nullptr);
 
   return NS_OK;
 }
