@@ -6484,8 +6484,9 @@ bool CodeGenerator::generateBody() {
 
       if (iter->mirRaw()) {
         
-        if (iter->mirRaw()->trackedTree()) {
-          if (!addNativeToBytecodeEntry(iter->mirRaw()->trackedSite())) {
+        const BytecodeSite* site = iter->mirRaw()->trackedSite();
+        if (site && site->tree()) {
+          if (!addNativeToBytecodeEntry(site)) {
             return false;
           }
         }
