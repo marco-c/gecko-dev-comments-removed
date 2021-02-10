@@ -1003,13 +1003,13 @@ LogicalSize nsContainerFrame::ComputeAutoSize(
     AutoMaybeDisableFontInflation an(this);
 
     WritingMode tableWM = GetParent()->GetWritingMode();
-    uint8_t captionSide = StyleTableBorder()->mCaptionSide;
+    StyleCaptionSide captionSide = StyleTableBorder()->mCaptionSide;
 
     if (aWM.IsOrthogonalTo(tableWM)) {
-      if (captionSide == NS_STYLE_CAPTION_SIDE_TOP ||
-          captionSide == NS_STYLE_CAPTION_SIDE_TOP_OUTSIDE ||
-          captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM ||
-          captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM_OUTSIDE) {
+      if (captionSide == StyleCaptionSide::Top ||
+          captionSide == StyleCaptionSide::TopOutside ||
+          captionSide == StyleCaptionSide::Bottom ||
+          captionSide == StyleCaptionSide::BottomOutside) {
         
         
         result.ISize(aWM) = GetMinISize(aRenderingContext);
@@ -1025,11 +1025,11 @@ LogicalSize nsContainerFrame::ComputeAutoSize(
         }
       }
     } else {
-      if (captionSide == NS_STYLE_CAPTION_SIDE_LEFT ||
-          captionSide == NS_STYLE_CAPTION_SIDE_RIGHT) {
+      if (captionSide == StyleCaptionSide::Left ||
+          captionSide == StyleCaptionSide::Right) {
         result.ISize(aWM) = GetMinISize(aRenderingContext);
-      } else if (captionSide == NS_STYLE_CAPTION_SIDE_TOP ||
-                 captionSide == NS_STYLE_CAPTION_SIDE_BOTTOM) {
+      } else if (captionSide == StyleCaptionSide::Top ||
+                 captionSide == StyleCaptionSide::Bottom) {
         
         
         

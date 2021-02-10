@@ -191,26 +191,33 @@ class nsTableWrapperFrame : public nsContainerFrame {
                                ClassID aID = kClassID);
   virtual ~nsTableWrapperFrame();
 
+  using MaybeCaptionSide = Maybe<mozilla::StyleCaptionSide>;
+
   
   
   
-  uint8_t GetCaptionSide() const;
+  
+  MaybeCaptionSide GetCaptionSide() const;
 
   bool HasSideCaption() const {
-    uint8_t captionSide = GetCaptionSide();
-    return captionSide == NS_STYLE_CAPTION_SIDE_LEFT ||
-           captionSide == NS_STYLE_CAPTION_SIDE_RIGHT;
+    auto captionSide = GetCaptionSide();
+    return captionSide && IsSideCaption(*captionSide);
+  }
+
+  static bool IsSideCaption(const mozilla::StyleCaptionSide aCaptionSide) {
+    return aCaptionSide == mozilla::StyleCaptionSide::Left ||
+           aCaptionSide == mozilla::StyleCaptionSide::Right;
   }
 
   mozilla::StyleVerticalAlignKeyword GetCaptionVerticalAlign() const;
 
-  nscoord ComputeFinalBSize(uint8_t aCaptionSide,
+  nscoord ComputeFinalBSize(const MaybeCaptionSide&,
                             const mozilla::LogicalSize& aInnerSize,
                             const mozilla::LogicalSize& aCaptionSize,
                             const mozilla::LogicalMargin& aCaptionMargin,
                             const mozilla::WritingMode aWM) const;
 
-  nsresult GetCaptionOrigin(uint32_t aCaptionSide,
+  nsresult GetCaptionOrigin(mozilla::StyleCaptionSide,
                             const mozilla::LogicalSize& aContainBlockSize,
                             const mozilla::LogicalSize& aInnerSize,
                             const mozilla::LogicalSize& aCaptionSize,
@@ -218,7 +225,7 @@ class nsTableWrapperFrame : public nsContainerFrame {
                             mozilla::LogicalPoint& aOrigin,
                             mozilla::WritingMode aWM);
 
-  nsresult GetInnerOrigin(uint32_t aCaptionSide,
+  nsresult GetInnerOrigin(const MaybeCaptionSide&,
                           const mozilla::LogicalSize& aContainBlockSize,
                           const mozilla::LogicalSize& aCaptionSize,
                           const mozilla::LogicalMargin& aCaptionMargin,
