@@ -12,19 +12,7 @@ var LayoutUtils = {
 
 
 
-
-
   getElementBoundingScreenRect(aElement) {
-    return this.getElementBoundingRect(aElement, true);
-  },
-
-  
-
-
-
-
-
-  getElementBoundingRect(aElement, aInScreenCoords) {
     let rect = aElement.getBoundingClientRect();
     let win = aElement.ownerGlobal;
 
@@ -51,36 +39,11 @@ var LayoutUtils = {
       parentFrame = win.frameElement;
     }
 
-    rect = {
-      left: x,
-      top: y,
-      width: rect.width,
-      height: rect.height,
-    };
-    rect = win.windowUtils.transformRectLayoutToVisual(
-      rect.left,
-      rect.top,
+    return aElement.ownerGlobal.windowUtils.toScreenRect(
+      x,
+      y,
       rect.width,
       rect.height
     );
-
-    if (aInScreenCoords) {
-      rect = {
-        left: rect.left + win.mozInnerScreenX,
-        top: rect.top + win.mozInnerScreenY,
-        width: rect.width,
-        height: rect.height,
-      };
-    }
-
-    let fullZoom = win.windowUtils.fullZoom;
-    rect = {
-      left: rect.left * fullZoom,
-      top: rect.top * fullZoom,
-      width: rect.width * fullZoom,
-      height: rect.height * fullZoom,
-    };
-
-    return rect;
   },
 };
