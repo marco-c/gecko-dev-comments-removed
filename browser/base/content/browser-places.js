@@ -2311,6 +2311,9 @@ var BookmarkingUI = {
   },
 
   handlePlacesEvents(aEvents) {
+    let isStarUpdateNeeded = false;
+    let affectsOtherBookmarksFolder = false;
+
     for (let ev of aEvents) {
       switch (ev.type) {
         case "bookmark-added":
@@ -2320,7 +2323,7 @@ var BookmarkingUI = {
               
               if (!this._itemGuids.has(ev.guid)) {
                 this._itemGuids.add(ev.guid);
-                this._updateStar();
+                isStarUpdateNeeded = true;
               }
             }
           }
@@ -2331,17 +2334,26 @@ var BookmarkingUI = {
             this._itemGuids.delete(ev.guid);
             
             if (this._itemGuids.size == 0) {
-              this._updateStar();
+              isStarUpdateNeeded = true;
             }
           }
           break;
       }
 
       if (ev.parentGuid === PlacesUtils.bookmarks.unfiledGuid) {
-        this.maybeShowOtherBookmarksFolder();
+        affectsOtherBookmarksFolder = true;
       }
-      this.updateEmptyToolbarMessage();
     }
+
+    if (isStarUpdateNeeded) {
+      this._updateStar();
+    }
+
+    if (affectsOtherBookmarksFolder) {
+      this.maybeShowOtherBookmarksFolder();
+    }
+
+    this.updateEmptyToolbarMessage();
   },
 
   onItemChanged(
@@ -2434,11 +2446,10 @@ var BookmarkingUI = {
       SHOW_OTHER_BOOKMARKS &&
       placement?.area == CustomizableUI.AREA_BOOKMARKS
     ) {
-      let result = PlacesUtils.getFolderContents(unfiledGuid);
-      let node = result.root;
-
       
       if (!otherBookmarks) {
+        const result = PlacesUtils.getFolderContents(unfiledGuid);
+        const node = result.root;
         this.buildOtherBookmarksFolder(node);
       }
 
