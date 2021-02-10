@@ -570,9 +570,6 @@ class MDefinition : public MNode {
 #endif
 
   
-  virtual bool neverHoist() const { return false; }
-
-  
   
   
   

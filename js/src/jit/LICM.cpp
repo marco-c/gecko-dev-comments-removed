@@ -106,7 +106,7 @@ static bool HasOperandInLoop(MInstruction* ins, bool hasCalls) {
 
 
 static bool IsHoistableIgnoringDependency(MInstruction* ins, bool hasCalls) {
-  return ins->isMovable() && !ins->isEffectful() && !ins->neverHoist() &&
+  return ins->isMovable() && !ins->isEffectful() &&
          !HasOperandInLoop(ins, hasCalls);
 }
 
