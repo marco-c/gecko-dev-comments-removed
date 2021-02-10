@@ -336,6 +336,8 @@ with modules["NETWORK"]:
     errors["NS_ERROR_NET_HTTP2_SENT_GOAWAY"] = FAILURE(83)
     
     errors["NS_ERROR_NET_HTTP3_PROTOCOL_ERROR"] = FAILURE(84)
+    
+    errors["NS_ERROR_NET_TIMEOUT_EXTERNAL"] = FAILURE(85)
 
     
     

@@ -15,6 +15,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Tuple.h"
 #include "mozilla/UniquePtr.h"
+#include "NSSErrorsService.h"
 
 class nsICacheEntry;
 
@@ -381,6 +382,13 @@ nsresult HttpProxyResponseToErrorCode(uint32_t aStatusCode);
 
 Tuple<nsCString, bool> SelectAlpnFromAlpnList(
     const nsTArray<nsCString>& aAlpnList, bool aNoHttp2, bool aNoHttp3);
+
+static inline bool AllowedErrorForHTTPSRRFallback(nsresult aError) {
+  return psm::IsNSSErrorCode(-1 * NS_ERROR_GET_CODE(aError)) ||
+         aError == NS_ERROR_NET_RESET ||
+         aError == NS_ERROR_CONNECTION_REFUSED ||
+         aError == NS_ERROR_UNKNOWN_HOST || aError == NS_ERROR_NET_TIMEOUT;
+}
 
 }  
 }  

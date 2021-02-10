@@ -2552,6 +2552,10 @@ nsSocketTransport::GetPeerAddr(NetAddr* addr) {
   
   
 
+  if (NS_FAILED(mCondition)) {
+    return mCondition;
+  }
+
   if (!mNetAddrIsSet) {
     SOCKET_LOG(
         ("nsSocketTransport::GetPeerAddr [this=%p state=%d] "
@@ -2570,6 +2574,10 @@ nsSocketTransport::GetSelfAddr(NetAddr* addr) {
   
   
   
+
+  if (NS_FAILED(mCondition)) {
+    return mCondition;
+  }
 
   if (!mSelfAddrIsSet) {
     SOCKET_LOG(
