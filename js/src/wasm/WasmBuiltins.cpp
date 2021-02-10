@@ -1478,7 +1478,6 @@ struct BuiltinThunks {
   CodeRangeVector codeRanges;
   TypedNativeToCodeRangeMap typedNativeToCodeRange;
   SymbolicAddressToCodeRangeArray symbolicAddressToCodeRange;
-  uint32_t provisionalJitEntryOffset;
 
   BuiltinThunks() : codeBase(nullptr), codeSize(0) {}
 
@@ -1558,29 +1557,6 @@ bool wasm::EnsureBuiltinThunksInitialized() {
     }
   }
 
-  
-  
-  
-  
-  
-
-#ifdef DEBUG
-  
-  
-  JitContext jitContext(&tempAlloc);
-  bool oldFlag = jitContext.setIsCompilingWasm(false);
-#endif
-
-  Offsets provisionalJitEntryOffsets;
-  if (!GenerateProvisionalJitEntryStub(masm, &provisionalJitEntryOffsets)) {
-    return false;
-  }
-  thunks->provisionalJitEntryOffset = provisionalJitEntryOffsets.begin;
-
-#ifdef DEBUG
-  jitContext.setIsCompilingWasm(oldFlag);
-#endif
-
   masm.finish();
   if (masm.oom()) {
     return false;
@@ -1640,13 +1616,6 @@ void* wasm::SymbolicAddressTarget(SymbolicAddress sym) {
   const BuiltinThunks& thunks = *builtinThunks;
   uint32_t codeRangeIndex = thunks.symbolicAddressToCodeRange[sym];
   return thunks.codeBase + thunks.codeRanges[codeRangeIndex].begin();
-}
-
-void* wasm::ProvisionalJitEntryStub() {
-  MOZ_ASSERT(builtinThunks);
-
-  const BuiltinThunks& thunks = *builtinThunks;
-  return thunks.codeBase + thunks.provisionalJitEntryOffset;
 }
 
 static Maybe<ABIFunctionType> ToBuiltinABIFunctionType(

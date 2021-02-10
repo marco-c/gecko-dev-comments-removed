@@ -1983,12 +1983,8 @@ bool WasmInstanceObject::getExportedFunction(
     
     if (funcExport.canHaveJitEntry()) {
       if (!funcExport.hasEagerStubs()) {
-        if (!EnsureBuiltinThunksInitialized()) {
-          return false;
-        }
-        void* provisionalJitEntryStub = ProvisionalJitEntryStub();
-        MOZ_ASSERT(provisionalJitEntryStub);
-        instance.code().setJitEntryIfNull(funcIndex, provisionalJitEntryStub);
+        void* interpStub = cx->runtime()->jitRuntime()->interpreterStub().value;
+        instance.code().setJitEntryIfNull(funcIndex, interpStub);
       }
       fun->setWasmJitEntry(instance.code().getAddressOfJitEntry(funcIndex));
     } else {
