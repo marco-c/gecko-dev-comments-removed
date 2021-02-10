@@ -46,6 +46,10 @@ class RenderTextureHostWrapper final : public RenderTextureHostSWGL {
                 PlaneInfo& aPlaneInfo) override;
   void UnmapPlanes() override;
 
+  
+  
+  size_t Bytes() override { return 0; }
+
  private:
   ~RenderTextureHostWrapper() override;
 
