@@ -107,8 +107,23 @@ function stringForRange(macDoc, range) {
     return "";
   }
 
-  return macDoc.getParameterizedAttributeValue(
+  let str = macDoc.getParameterizedAttributeValue(
     "AXStringForTextMarkerRange",
     range
   );
+
+  let attrStr = macDoc.getParameterizedAttributeValue(
+    "AXAttributedStringForTextMarkerRange",
+    range
+  );
+
+  
+  
+  is(
+    attrStr.map(({ string }) => string).join(""),
+    str,
+    "attributed text matches non-attributed text"
+  );
+
+  return str;
 }

@@ -4,6 +4,8 @@
 
 
 
+
+
 #include "xpcAccessibleMacInterface.h"
 
 #include "nsCocoaUtils.h"
@@ -256,6 +258,35 @@ nsresult xpcAccessibleMacInterface::NSObjectToJsValue(id aObj, JSContext* aCx,
       JS_SetUCProperty(aCx, obj, strKey.get(), strKey.Length(), value);
     }
     aResult.setObject(*obj);
+  } else if ([aObj isKindOfClass:[NSAttributedString class]]) {
+    NSAttributedString* attrStr = (NSAttributedString*)aObj;
+    __block NSMutableArray* attrRunArray = [[NSMutableArray alloc] init];
+
+    [attrStr
+        enumerateAttributesInRange:NSMakeRange(0, [attrStr length])
+                           options:NSAttributedStringEnumerationLongestEffectiveRangeNotRequired
+                        usingBlock:^(NSDictionary* attributes, NSRange range, BOOL* stop) {
+                          NSString* str = [[attrStr string] substringWithRange:range];
+                          if (!str || !attributes) {
+                            return;
+                          }
+
+                          NSMutableDictionary* attrRun = [attributes mutableCopy];
+                          attrRun[@"string"] = str;
+
+                          [attrRunArray addObject:attrRun];
+                        }];
+
+    
+    
+    
+    return NSObjectToJsValue(attrRunArray, aCx, aResult);
+  } else if (CFGetTypeID(aObj) == CGColorGetTypeID()) {
+    const CGFloat* components = CGColorGetComponents((CGColorRef)aObj);
+    NSString* hexString =
+        [NSString stringWithFormat:@"#%02x%02x%02x", (int)(components[0] * 0xff),
+                                   (int)(components[1] * 0xff), (int)(components[2] * 0xff)];
+    return NSObjectToJsValue(hexString, aCx, aResult);
   } else if ([aObj respondsToSelector:@selector(isAccessibilityElement)]) {
     
     

@@ -93,6 +93,11 @@ class GeckoTextMarkerRange final {
   
 
 
+  NSAttributedString* AttributedText() const;
+
+  
+
+
   int32_t Length() const;
 
   
