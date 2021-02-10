@@ -18,9 +18,7 @@ const { ContentProcessDomain } = ChromeUtils.import(
 const { ExecutionContext } = ChromeUtils.import(
   "chrome://remote/content/domains/content/runtime/ExecutionContext.jsm"
 );
-const { executeSoon } = ChromeUtils.import(
-  "chrome://remote/content/shared/Sync.jsm"
-);
+const { executeSoon } = ChromeUtils.import("chrome://remote/content/Sync.jsm");
 
 
 addDebuggerToGlobal(Cu.getGlobalForObject(this));
