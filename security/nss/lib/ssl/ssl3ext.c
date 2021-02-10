@@ -837,9 +837,6 @@ ssl_SendEmptyExtension(const sslSocket *ss, TLSExtensionData *xtnData,
 static unsigned int
 ssl_CalculatePaddingExtLen(const sslSocket *ss, unsigned int clientHelloLength)
 {
-    unsigned int recordLength = 1  +
-                                3  +
-                                clientHelloLength;
     unsigned int extensionLen;
 
     
@@ -853,11 +850,11 @@ ssl_CalculatePaddingExtLen(const sslSocket *ss, unsigned int clientHelloLength)
 
 
 
-    if (recordLength < 256 || recordLength >= 512) {
+    if (clientHelloLength < 256 || clientHelloLength >= 512) {
         return 0;
     }
 
-    extensionLen = 512 - recordLength;
+    extensionLen = 512 - clientHelloLength;
     
 
 

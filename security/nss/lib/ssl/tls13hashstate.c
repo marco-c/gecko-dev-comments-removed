@@ -132,6 +132,7 @@ tls13_MakeHrrCookie(sslSocket *ss, const sslNamedGroupDef *selectedGroup,
 
 
 
+
 SECStatus
 tls13_HandleHrrCookie(sslSocket *ss,
                       unsigned char *cookie, unsigned int cookieLen,
@@ -142,7 +143,7 @@ tls13_HandleHrrCookie(sslSocket *ss,
                       HpkeAeadId *previousEchAeadId,
                       SECItem *previousEchConfigId,
                       HpkeContext **previousEchHpkeCtx,
-                      PRBool recoverHashState)
+                      PRBool recoverState)
 {
     SECStatus rv;
     unsigned char plaintext[1024];
@@ -217,18 +218,11 @@ tls13_HandleHrrCookie(sslSocket *ss,
     }
 
     
-    PORT_Assert(ss->xtnData.applicationToken.len == 0);
     rv = sslRead_ReadNumber(&reader, 2, &appTokenLen);
     if (rv != SECSuccess) {
         FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
         return SECFailure;
     }
-    if (SECITEM_AllocItem(NULL, &ss->xtnData.applicationToken,
-                          appTokenLen) == NULL) {
-        FATAL_ERROR(ss, PORT_GetError(), internal_error);
-        return SECFailure;
-    }
-    ss->xtnData.applicationToken.len = appTokenLen;
     sslReadBuffer appTokenReader = { 0 };
     rv = sslRead_Read(&reader, appTokenLen, &appTokenReader);
     if (rv != SECSuccess) {
@@ -236,10 +230,18 @@ tls13_HandleHrrCookie(sslSocket *ss,
         return SECFailure;
     }
     PORT_Assert(appTokenReader.len == appTokenLen);
-    PORT_Memcpy(ss->xtnData.applicationToken.data, appTokenReader.buf, appTokenLen);
 
-    
-    if (recoverHashState) {
+    if (recoverState) {
+        PORT_Assert(ss->xtnData.applicationToken.len == 0);
+        if (SECITEM_AllocItem(NULL, &ss->xtnData.applicationToken,
+                              appTokenLen) == NULL) {
+            FATAL_ERROR(ss, PORT_GetError(), internal_error);
+            return SECFailure;
+        }
+        PORT_Memcpy(ss->xtnData.applicationToken.data, appTokenReader.buf, appTokenLen);
+        ss->xtnData.applicationToken.len = appTokenLen;
+
+        
         unsigned int hashLen = SSL_READER_REMAINING(&reader);
         if (hashLen != tls13_GetHashSize(ss)) {
             FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
@@ -279,7 +281,7 @@ tls13_HandleHrrCookie(sslSocket *ss,
                                    echHpkeBuf.len };
         hpkeContext = PK11_HPKE_ImportContext(&hpkeItem, NULL);
         if (!hpkeContext) {
-            FATAL_ERROR(ss, PORT_GetError(), internal_error);
+            FATAL_ERROR(ss, PORT_GetError(), illegal_parameter);
             return SECFailure;
         }
     }
