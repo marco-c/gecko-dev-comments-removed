@@ -43,8 +43,8 @@ class HitTestInfoManager {
 
 
 
-  void SwitchItem(nsPaintedDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
-                  nsDisplayListBuilder* aDisplayListBuilder);
+  void ProcessItem(nsDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
+                   nsDisplayListBuilder* aDisplayListBuilder);
 
  private:
   bool Update(const nsRect& aArea, const gfx::CompositorHitTestInfo& aFlags,
