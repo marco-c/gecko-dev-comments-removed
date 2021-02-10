@@ -32,6 +32,8 @@ MOCHITEST_MANIFESTS += [
 
 MOCHITEST_CHROME_MANIFESTS += ["test/chrome.ini"]
 
+TEST_DIRS += ["test/gtest"]
+
 XPIDL_SOURCES += [
     "nsIEventListenerService.idl",
 ]
@@ -68,6 +70,7 @@ EXPORTS.mozilla.dom += [
     "BeforeUnloadEvent.h",
     "Clipboard.h",
     "ClipboardEvent.h",
+    "ClipboardItem.h",
     "CommandEvent.h",
     "CompositionEvent.h",
     "ConstructibleEventTarget.h",
@@ -113,6 +116,7 @@ UNIFIED_SOURCES += [
     "BeforeUnloadEvent.cpp",
     "Clipboard.cpp",
     "ClipboardEvent.cpp",
+    "ClipboardItem.cpp",
     "CommandEvent.cpp",
     "CompositionEvent.cpp",
     "ConstructibleEventTarget.cpp",

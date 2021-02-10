@@ -35,9 +35,11 @@ ShortcutKeys::~ShortcutKeys() {
 nsresult ShortcutKeys::Observe(nsISupports* aSubject, const char* aTopic,
                                const char16_t* aData) {
   
-  sInstance = nullptr;
+  ShortcutKeys::Shutdown();
   return NS_OK;
 }
+
+void ShortcutKeys::Shutdown() { sInstance = nullptr; }
 
 
 KeyEventHandler* ShortcutKeys::GetHandlers(HandlerType aType) {
