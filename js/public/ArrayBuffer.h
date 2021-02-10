@@ -207,7 +207,7 @@ extern JS_PUBLIC_API JSObject* GetObjectAsArrayBuffer(JSObject* obj,
 
 
 
-extern JS_PUBLIC_API uint32_t GetArrayBufferByteLength(JSObject* obj);
+extern JS_PUBLIC_API size_t GetArrayBufferByteLength(JSObject* obj);
 
 
 

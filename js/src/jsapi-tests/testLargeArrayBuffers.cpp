@@ -29,6 +29,8 @@ BEGIN_TEST(testLargeArrayBuffers) {
 
   
   {
+    CHECK_EQUAL(JS::GetArrayBufferByteLength(buffer), nbytes);
+
     JS::GetArrayBufferLengthAndData(buffer, &length, &isShared, &data);
     CHECK_EQUAL(length, nbytes);
 
