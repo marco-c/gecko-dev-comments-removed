@@ -43,7 +43,7 @@ impl RemoteAgent {
         unsafe { self.inner.Listen(&*url as &nsAString) }
             .to_result()
             .map_err(|err| {
-                // TODO(ato): https://bugzil.la/1600139
+                
                 match err {
                     NS_ERROR_ILLEGAL_VALUE => RemoteAgentError::LoopbackRestricted,
                     nsresult => RemoteAgentError::from(nsresult),
@@ -67,7 +67,7 @@ impl RemoteAgent {
 
 impl Drop for RemoteAgent {
     fn drop(&mut self) {
-        // it should always be safe to call nsIRemoteAgent.close()
+        
         if let Err(e) = self.close() {
             error!("unable to close remote agent listener: {}", e);
         }
