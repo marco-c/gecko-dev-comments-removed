@@ -27,6 +27,329 @@ ChromeUtils.defineModuleGetter(
 
 
 
+class ImportRowProcessor {
+  uniqueLoginIdentifiers = new Set();
+  originToRows = new Map();
+  summary = [];
+
+  
+
+
+
+
+
+
+  checkNonUniqueGuidError(loginData) {
+    if (loginData.guid) {
+      if (this.uniqueLoginIdentifiers.has(loginData.guid)) {
+        this.addLoginToSummary({ ...loginData }, "error");
+        return true;
+      }
+      this.uniqueLoginIdentifiers.add(loginData.guid);
+    }
+    return false;
+  }
+
+  
+
+
+
+
+
+
+  checkMissingMandatoryFieldsError(loginData) {
+    loginData.origin = LoginHelper.getLoginOrigin(loginData.origin);
+    if (!loginData.origin) {
+      this.addLoginToSummary({ ...loginData }, "error_invalid_origin");
+      return true;
+    }
+    if (!loginData.password) {
+      this.addLoginToSummary({ ...loginData }, "error_invalid_password");
+      return true;
+    }
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+
+  async checkExistingEntry(loginData) {
+    if (loginData.guid) {
+      
+      
+      
+      
+      let existingLogins = await Services.logins.searchLoginsAsync({
+        guid: loginData.guid,
+        origin: loginData.origin, 
+      });
+
+      if (existingLogins.length) {
+        log.debug("maybeImportLogins: Found existing login with GUID");
+        
+        let existingLogin = existingLogins[0].QueryInterface(
+          Ci.nsILoginMetaInfo
+        );
+
+        if (
+          loginData.username !== existingLogin.username ||
+          loginData.password !== existingLogin.password ||
+          loginData.httpRealm !== existingLogin.httpRealm ||
+          loginData.formActionOrigin !== existingLogin.formActionOrigin ||
+          `${loginData.timeCreated}` !== `${existingLogin.timeCreated}` ||
+          `${loginData.timePasswordChanged}` !==
+            `${existingLogin.timePasswordChanged}`
+        ) {
+          
+          
+          let propBag = LoginHelper.newPropertyBag(loginData);
+          this.addLoginToSummary({ ...existingLogin }, "modified", propBag);
+          return true;
+        }
+        this.addLoginToSummary({ ...existingLogin }, "no_change");
+        return true;
+      }
+    }
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+  checkConflictingOriginWithPreviousRows(login) {
+    let rowsPerOrigin = this.originToRows.get(login.origin);
+    if (rowsPerOrigin) {
+      if (
+        rowsPerOrigin.some(r =>
+          login.matches(r.login, false )
+        )
+      ) {
+        this.addLoginToSummary(login, "no_change");
+        return true;
+      }
+      for (let row of rowsPerOrigin) {
+        let newLogin = row.login;
+        if (login.username == newLogin.username) {
+          this.addLoginToSummary(login, "no_change");
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+
+  checkConflictingWithExistingLogins(login) {
+    
+    
+    let existingLogins = Services.logins.findLogins(
+      login.origin,
+      login.formActionOrigin,
+      login.httpRealm
+    );
+    
+    
+    if (
+      existingLogins.some(l => login.matches(l, false ))
+    ) {
+      this.addLoginToSummary(login, "no_change");
+      return true;
+    }
+    
+    
+    let foundMatchingLogin = false;
+    for (let existingLogin of existingLogins) {
+      if (login.username == existingLogin.username) {
+        foundMatchingLogin = true;
+        existingLogin.QueryInterface(Ci.nsILoginMetaInfo);
+        if (
+          (login.password != existingLogin.password) &
+          (login.timePasswordChanged > existingLogin.timePasswordChanged)
+        ) {
+          
+          
+          let propBag = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
+            Ci.nsIWritablePropertyBag
+          );
+          propBag.setProperty("password", login.password);
+          propBag.setProperty("timePasswordChanged", login.timePasswordChanged);
+          this.addLoginToSummary({ ...existingLogin }, "modified", propBag);
+          return true;
+        }
+      }
+    }
+    
+    if (foundMatchingLogin) {
+      this.addLoginToSummary(login, "no_change");
+      return true;
+    }
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+
+  checkLoginValuesError(login, loginData) {
+    try {
+      
+      
+      LoginHelper.checkLoginValues(login);
+    } catch (e) {
+      this.addLoginToSummary({ ...loginData }, "error");
+      Cu.reportError(e);
+      return true;
+    }
+    return false;
+  }
+
+  
+
+
+
+
+
+  createNewLogin(loginData) {
+    let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(
+      Ci.nsILoginInfo
+    );
+    login.init(
+      loginData.origin,
+      loginData.formActionOrigin,
+      loginData.httpRealm,
+      loginData.username,
+      loginData.password,
+      loginData.usernameElement || "",
+      loginData.passwordElement || ""
+    );
+
+    login.QueryInterface(Ci.nsILoginMetaInfo);
+    login.timeCreated = loginData.timeCreated;
+    login.timeLastUsed = loginData.timeLastUsed || loginData.timeCreated;
+    login.timePasswordChanged =
+      loginData.timePasswordChanged || loginData.timeCreated;
+    login.timesUsed = loginData.timesUsed || 1;
+    login.guid = loginData.guid || null;
+    return login;
+  }
+
+  
+
+
+
+
+  cleanupActionAndRealmFields(loginData) {
+    loginData.formActionOrigin =
+      LoginHelper.getLoginOrigin(loginData.formActionOrigin, true) ||
+      (typeof loginData.httpRealm == "string" ? null : "");
+
+    loginData.httpRealm =
+      typeof loginData.httpRealm == "string" ? loginData.httpRealm : null;
+  }
+
+  
+
+
+
+
+
+
+
+
+  addLoginToSummary(login, result, propBag) {
+    let rows = this.originToRows.get(login.origin) || [];
+    if (rows.length === 0) {
+      this.originToRows.set(login.origin, rows);
+    }
+    const newSummaryRow = { result, login, propBag };
+    rows.push(newSummaryRow);
+    this.summary.push(newSummaryRow);
+  }
+
+  
+
+
+
+
+  markLastTimePasswordChangedAsModified() {
+    const originUserToRowMap = new Map();
+    for (let currentRow of this.summary) {
+      if (
+        currentRow.result === "added" ||
+        currentRow.result === "modified" ||
+        currentRow.result === "no_change"
+      ) {
+        const originAndUser =
+          currentRow.login.origin + currentRow.login.username;
+        let lastTimeChangedRow = originUserToRowMap.get(originAndUser);
+        if (lastTimeChangedRow) {
+          if (
+            (currentRow.login.password != lastTimeChangedRow.login.password) &
+            (currentRow.login.timePasswordChanged >
+              lastTimeChangedRow.login.timePasswordChanged)
+          ) {
+            lastTimeChangedRow.result = "no_change";
+            currentRow.result = "added";
+            originUserToRowMap.set(originAndUser, currentRow);
+          }
+        } else {
+          originUserToRowMap.set(originAndUser, currentRow);
+        }
+      }
+    }
+  }
+
+  
+
+
+
+
+
+  async processLoginsAndBuildSummary() {
+    this.markLastTimePasswordChangedAsModified();
+    for (let summaryRow of this.summary) {
+      try {
+        if (summaryRow.result === "added") {
+          summaryRow.login = await Services.logins.addLogin(summaryRow.login);
+        } else if (summaryRow.result === "modified") {
+          Services.logins.modifyLogin(summaryRow.login, summaryRow.propBag);
+        }
+      } catch (e) {
+        Cu.reportError(e);
+        summaryRow.result = "error";
+      }
+    }
+    return this.summary;
+  }
+}
+
+
+
+
 this.LoginHelper = {
   debug: null,
   enabled: null,
@@ -972,200 +1295,33 @@ this.LoginHelper = {
 
 
   async maybeImportLogins(loginDatas) {
-    let summary = [];
-    let loginsToAdd = [];
-    let loginMap = new Map();
+    const processor = new ImportRowProcessor();
     for (let rawLoginData of loginDatas) {
       
       let loginData = ChromeUtils.shallowClone(rawLoginData);
-      loginData.origin = this.getLoginOrigin(loginData.origin);
-      if (!loginData.origin) {
-        summary.push({
-          result: "error_invalid_origin",
-          login: { ...loginData },
-        });
+      if (processor.checkNonUniqueGuidError(loginData)) {
         continue;
       }
-
-      if (!loginData.password) {
-        summary.push({
-          result: "error_invalid_password",
-          login: { ...loginData },
-        });
+      if (processor.checkMissingMandatoryFieldsError(loginData)) {
         continue;
       }
-
-      loginData.formActionOrigin =
-        this.getLoginOrigin(loginData.formActionOrigin, true) ||
-        (typeof loginData.httpRealm == "string" ? null : "");
-
-      loginData.httpRealm =
-        typeof loginData.httpRealm == "string" ? loginData.httpRealm : null;
-
-      if (loginData.guid) {
-        
-        
-        
-        
-        let existingLogins = await Services.logins.searchLoginsAsync({
-          guid: loginData.guid,
-          origin: loginData.origin, 
-        });
-
-        if (existingLogins.length) {
-          log.debug("maybeImportLogins: Found existing login with GUID");
-          
-          let existingLogin = existingLogins[0].QueryInterface(
-            Ci.nsILoginMetaInfo
-          );
-
-          
-          
-          let propBag = this.newPropertyBag(loginData);
-          if (
-            loginData.username !== existingLogin.username ||
-            loginData.password !== existingLogin.password ||
-            loginData.httpRealm !== existingLogin.httpRealm ||
-            loginData.formActionOrigin !== existingLogin.formActionOrigin ||
-            `${loginData.timeCreated}` !== `${existingLogin.timeCreated}` ||
-            `${loginData.timePasswordChanged}` !==
-              `${existingLogin.timePasswordChanged}`
-          ) {
-            summary.push({ result: "modified", login: { ...existingLogin } });
-            Services.logins.modifyLogin(existingLogin, propBag);
-            
-          } else {
-            summary.push({ result: "no_change", login: { ...existingLogin } });
-          }
-          continue;
-        }
-      }
-
-      
-      let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(
-        Ci.nsILoginInfo
-      );
-      login.init(
-        loginData.origin,
-        loginData.formActionOrigin,
-        loginData.httpRealm,
-        loginData.username,
-        loginData.password,
-        loginData.usernameElement || "",
-        loginData.passwordElement || ""
-      );
-
-      login.QueryInterface(Ci.nsILoginMetaInfo);
-      login.timeCreated = loginData.timeCreated;
-      login.timeLastUsed = loginData.timeLastUsed || loginData.timeCreated;
-      login.timePasswordChanged =
-        loginData.timePasswordChanged || loginData.timeCreated;
-      login.timesUsed = loginData.timesUsed || 1;
-      login.guid = loginData.guid || null;
-
-      try {
-        
-        
-        this.checkLoginValues(login);
-      } catch (e) {
-        summary.push({
-          result: "error",
-          login: { ...loginData },
-        });
-        Cu.reportError(e);
+      processor.cleanupActionAndRealmFields(loginData);
+      if (await processor.checkExistingEntry(loginData)) {
         continue;
       }
-
-      
-      
-      
-      let newLogins = loginMap.get(login.origin) || [];
-      if (!newLogins) {
-        loginMap.set(login.origin, newLogins);
-      } else {
-        if (newLogins.some(l => login.matches(l, false ))) {
-          summary.push({ result: "no_change", login });
-          continue;
-        }
-        let foundMatchingNewLogin = false;
-        for (let newLogin of newLogins) {
-          if (login.username == newLogin.username) {
-            foundMatchingNewLogin = true;
-            newLogin.QueryInterface(Ci.nsILoginMetaInfo);
-            if (
-              (login.password != newLogin.password) &
-              (login.timePasswordChanged > newLogin.timePasswordChanged)
-            ) {
-              
-              
-              newLogin.password = login.password;
-              newLogin.timePasswordChanged = login.timePasswordChanged;
-            }
-          }
-        }
-
-        if (foundMatchingNewLogin) {
-          summary.push({ result: "no_change", login });
-          continue;
-        }
-      }
-
-      
-      
-      let existingLogins = Services.logins.findLogins(
-        login.origin,
-        login.formActionOrigin,
-        login.httpRealm
-      );
-      
-      
-      if (
-        existingLogins.some(l => login.matches(l, false ))
-      ) {
-        summary.push({ result: "no_change", login });
+      let login = processor.createNewLogin(loginData);
+      if (processor.checkLoginValuesError(login, loginData)) {
         continue;
       }
-      
-      
-      let foundMatchingLogin = false;
-      for (let existingLogin of existingLogins) {
-        if (login.username == existingLogin.username) {
-          foundMatchingLogin = true;
-          existingLogin.QueryInterface(Ci.nsILoginMetaInfo);
-          if (
-            (login.password != existingLogin.password) &
-            (login.timePasswordChanged > existingLogin.timePasswordChanged)
-          ) {
-            
-            
-            let propBag = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
-              Ci.nsIWritablePropertyBag
-            );
-            propBag.setProperty("password", login.password);
-            propBag.setProperty(
-              "timePasswordChanged",
-              login.timePasswordChanged
-            );
-            summary.push({ result: "modified", login: { ...existingLogin } });
-            Services.logins.modifyLogin(existingLogin, propBag);
-          }
-        }
-      }
-      
-      if (foundMatchingLogin) {
-        summary.push({ result: "no_change", login: { login } });
+      if (processor.checkConflictingOriginWithPreviousRows(login)) {
         continue;
       }
-      newLogins.push(login);
-      loginsToAdd.push(login);
+      if (processor.checkConflictingWithExistingLogins(login)) {
+        continue;
+      }
+      processor.addLoginToSummary(login, "added");
     }
-    if (loginsToAdd.length) {
-      let addedLogins = await Services.logins.addLogins(loginsToAdd);
-      for (let addedLogin of addedLogins) {
-        summary.push({ result: "added", login: { ...addedLogin } });
-      }
-    }
-    return summary;
+    return processor.processLoginsAndBuildSummary();
   },
 
   
@@ -1188,7 +1344,6 @@ this.LoginHelper = {
         obj[i] = login[i];
       }
     }
-
     return obj;
   },
 
@@ -1225,8 +1380,12 @@ this.LoginHelper = {
   
 
 
-  vanillaObjectsToLogins(logins) {
-    return logins.map(this.vanillaObjectToLogin);
+  vanillaObjectsToLogins(vanillaObjects) {
+    const logins = [];
+    for (const vanillaObject of vanillaObjects) {
+      logins.push(this.vanillaObjectToLogin(vanillaObject));
+    }
+    return logins;
   },
 
   
