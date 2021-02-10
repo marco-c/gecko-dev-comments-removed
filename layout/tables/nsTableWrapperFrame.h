@@ -267,14 +267,11 @@ class nsTableWrapperFrame : public nsContainerFrame {
 
 
 
-
-
   nscoord ChildShrinkWrapISize(
       gfxContext* aRenderingContext, nsIFrame* aChildFrame,
       mozilla::WritingMode aWM, mozilla::LogicalSize aCBSize,
       nscoord aAvailableISize,
-      const mozilla::StyleSizeOverrides& aSizeOverrides,
-      nscoord* aMarginResult = nullptr) const;
+      const mozilla::StyleSizeOverrides& aSizeOverrides) const;
 
  private:
   nsFrameList mCaptionFrames;
