@@ -92,36 +92,3 @@ add_task(async function() {
       .then(visible => !visible)
   );
 });
-
-
-
-
-
-
-
-
-
-
-
-
-async function checkEyeDropperColorAt(
-  testActorFront,
-  inspectorActorID,
-  x,
-  y,
-  expectedColor,
-  assertionDescription
-) {
-  info(`Move mouse to ${x},${y}`);
-  await testActorFront.synthesizeMouse({
-    selector: ":root",
-    x,
-    y,
-    options: { type: "mousemove" },
-  });
-
-  const colorValue = await testActorFront.getEyeDropperColorValue(
-    inspectorActorID
-  );
-  is(colorValue, expectedColor, assertionDescription);
-}
