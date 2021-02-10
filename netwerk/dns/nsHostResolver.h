@@ -119,6 +119,7 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
     TRR_SERVER_RESPONSE_ERR = 27,  
     TRR_RCODE_FAIL = 28,           
     TRR_NO_CONNECTIVITY = 29,      
+    TRR_NXDOMAIN = 30,             
   };
 
   
