@@ -566,7 +566,8 @@ nsresult nsTableWrapperFrame::GetInnerOrigin(
 void nsTableWrapperFrame::CreateReflowInputForInnerTable(
     nsPresContext* aPresContext, nsTableFrame* aTableFrame,
     const ReflowInput& aOuterRI, Maybe<ReflowInput>& aChildRI,
-    const nscoord aAvailISize) const {
+    const nscoord aAvailISize,
+    const Maybe<LogicalSize>& aContainingBlockSize) const {
   MOZ_ASSERT(InnerTableFrame() == aTableFrame);
 
   const WritingMode wm = aTableFrame->GetWritingMode();
@@ -578,21 +579,22 @@ void nsTableWrapperFrame::CreateReflowInputForInnerTable(
   Maybe<LogicalMargin> collapsePadding;
   aTableFrame->GetCollapsedBorderPadding(collapseBorder, collapsePadding);
 
-  Maybe<LogicalSize> cbSize;
+  
+  
+  Maybe<LogicalSize> cbSize = aContainingBlockSize
+                                  ? aContainingBlockSize
+                                  : Some(aOuterRI.mContainingBlockSize);
+
   
   
   
   
-  if (!HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
-    if (LogicalSize* cb = GetProperty(GridItemCBSizeProperty())) {
-      cbSize.emplace(*cb);
-      *cbSize -= aOuterRI.ComputedLogicalMargin(wm).Size(wm);
+  if (IsGridItem()) {
+    const LogicalMargin margin = aOuterRI.ComputedLogicalMargin(wm);
+    cbSize->ISize(wm) -= margin.IStartEnd(wm);
+    if (cbSize->BSize(wm) != NS_UNCONSTRAINEDSIZE) {
+      cbSize->BSize(wm) -= margin.BStartEnd(wm);
     }
-  }
-  if (!cbSize) {
-    
-    
-    cbSize.emplace(aOuterRI.mContainingBlockSize);
   }
   aChildRI->Init(aPresContext, cbSize, collapseBorder, collapsePadding);
 }
@@ -766,7 +768,8 @@ void nsTableWrapperFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    LogicalSize* cbSize = GetProperty(GridItemCBSizeProperty());
+    Maybe<LogicalSize> cbSize =
+        IsGridItem() ? Some(aOuterRI.mContainingBlockSize) : Nothing();
     if (NS_UNCONSTRAINEDSIZE != aOuterRI.AvailableBSize() || cbSize) {
       nscoord captionBSize = 0;
       nscoord captionISize = 0;
@@ -790,12 +793,15 @@ void nsTableWrapperFrame::Reflow(nsPresContext* aPresContext,
         
         LogicalSize oldCBSize = *cbSize;
         cbSize->ISize(wm) = std::max(0, cbSize->ISize(wm) - captionISize);
-        cbSize->BSize(wm) = std::max(0, cbSize->BSize(wm) - captionBSize);
+        if (cbSize->BSize(wm) != NS_UNCONSTRAINEDSIZE) {
+          cbSize->BSize(wm) = std::max(0, cbSize->BSize(wm) - captionBSize);
+        }
         if (oldCBSize != *cbSize) {
           
           innerRI.reset();
           CreateReflowInputForInnerTable(aPresContext, InnerTableFrame(),
-                                         aOuterRI, innerRI, contentBoxISize);
+                                         aOuterRI, innerRI, contentBoxISize,
+                                         cbSize);
         }
       }
     }

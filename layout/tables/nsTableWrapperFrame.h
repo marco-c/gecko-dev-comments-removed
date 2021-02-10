@@ -179,12 +179,6 @@ class nsTableWrapperFrame : public nsContainerFrame {
     return map->GetEffectiveRowSpan(aRowIdx, aColIdx);
   }
 
-  
-
-
-  NS_DECLARE_FRAME_PROPERTY_DELETABLE(GridItemCBSizeProperty,
-                                      mozilla::LogicalSize);
-
  protected:
   explicit nsTableWrapperFrame(ComputedStyle* aStyle,
                                nsPresContext* aPresContext,
@@ -235,11 +229,12 @@ class nsTableWrapperFrame : public nsContainerFrame {
 
   
   
-  void CreateReflowInputForInnerTable(nsPresContext* aPresContext,
-                                      nsTableFrame* aTableFrame,
-                                      const ReflowInput& aOuterRI,
-                                      Maybe<ReflowInput>& aChildRI,
-                                      const nscoord aAvailISize) const;
+  void CreateReflowInputForInnerTable(
+      nsPresContext* aPresContext, nsTableFrame* aTableFrame,
+      const ReflowInput& aOuterRI, Maybe<ReflowInput>& aChildRI,
+      const nscoord aAvailISize,
+      const mozilla::Maybe<mozilla::LogicalSize>& aContainingBlockSize =
+          mozilla::Nothing()) const;
   void CreateReflowInputForCaption(nsPresContext* aPresContext,
                                    nsIFrame* aCaptionFrame,
                                    const ReflowInput& aOuterRI,
