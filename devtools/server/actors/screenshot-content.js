@@ -11,7 +11,12 @@ const {
 const { LocalizationHelper } = require("devtools/shared/l10n");
 const STRINGS_URI = "devtools/shared/locales/screenshot.properties";
 const L10N = new LocalizationHelper(STRINGS_URI);
-loader.lazyRequireGetter(this, "getRect", "devtools/shared/layout/utils", true);
+loader.lazyRequireGetter(
+  this,
+  ["getCurrentZoom", "getRect"],
+  "devtools/shared/layout/utils",
+  true
+);
 
 exports.ScreenshotContentActor = ActorClassWithSpec(screenshotContentSpec, {
   initialize: function(conn, targetActor) {
@@ -46,11 +51,13 @@ exports.ScreenshotContentActor = ActorClassWithSpec(screenshotContentSpec, {
 
 
 
+
   prepareCapture({ fullpage, selector, nodeActorID }) {
     this._lastScrollPosition = null;
 
     const { window } = this.targetActor;
     const windowDpr = window.devicePixelRatio;
+    const windowZoom = getCurrentZoom(window);
     const messages = [];
 
     
@@ -60,6 +67,7 @@ exports.ScreenshotContentActor = ActorClassWithSpec(screenshotContentSpec, {
         rect: null,
         messages,
         windowDpr,
+        windowZoom,
       };
     }
 
@@ -127,6 +135,7 @@ exports.ScreenshotContentActor = ActorClassWithSpec(screenshotContentSpec, {
 
     return {
       windowDpr,
+      windowZoom,
       rect: { left, top, width, height },
       messages,
     };

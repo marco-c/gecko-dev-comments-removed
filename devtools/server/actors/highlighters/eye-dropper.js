@@ -138,6 +138,10 @@ class EyeDropper {
 
 
 
+
+
+
+
   show(node, options = {}) {
     if (this.highlighterEnv.isXUL) {
       return false;
@@ -152,7 +156,7 @@ class EyeDropper {
     
     
     
-    this.prepareImageCapture();
+    this.prepareImageCapture(options.screenshot);
 
     
     const { pageListenerTarget } = this.highlighterEnv;
@@ -216,22 +220,41 @@ class EyeDropper {
     this.win.document.setSuppressedEventListener(null);
   }
 
-  prepareImageCapture() {
-    
-    const imageData = getWindowAsImageData(this.win);
+  
+
+
+
+
+
+
+
+  async prepareImageCapture(screenshot) {
+    let imgData;
+    if (screenshot) {
+      
+      
+      imgData = this.win.document.createElement("img");
+      const onImgLoaded = new Promise(resolve =>
+        imgData.addEventListener("load", resolve, { once: true })
+      );
+      imgData.src = screenshot;
+      await onImgLoaded;
+    } else {
+      imgData = getWindowAsImageData(this.win);
+    }
 
     
     
     
-    this.win.createImageBitmap(imageData).then(image => {
-      this.pageImage = image;
-      
-      this.draw();
+    const image = await this.win.createImageBitmap(imgData);
 
-      
-      
-      this.getElement("root").setAttribute("drawn", "true");
-    });
+    this.pageImage = image;
+    
+    this.draw();
+
+    
+    
+    this.getElement("root").setAttribute("drawn", "true");
   }
 
   

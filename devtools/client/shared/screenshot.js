@@ -35,64 +35,19 @@ const L10N = new LocalizationHelper(STRINGS_URI);
 
 
 
+
+
+
+
+
+
 async function captureAndSaveScreenshot(targetFront, window, args = {}) {
   if (args.help) {
     
     return [{ text: getFormattedHelpData() }];
   }
 
-  
-  
-  const supportsContentScreenshot = targetFront.hasActor("screenshotContent");
-
-  let captureResponse;
-  if (supportsContentScreenshot) {
-    if (args.delay > 0) {
-      await new Promise(res => setTimeout(res, args.delay * 1000));
-    }
-
-    const screenshotContentFront = await targetFront.getFront(
-      "screenshot-content"
-    );
-
-    
-    
-    const {
-      rect,
-      windowDpr,
-      messages,
-      error,
-    } = await screenshotContentFront.prepareCapture(args);
-
-    if (error) {
-      return messages;
-    }
-
-    if (rect) {
-      args.rect = rect;
-    }
-
-    if (!args.dpr) {
-      args.dpr = windowDpr;
-    }
-
-    args.browsingContextID = targetFront.browsingContextID;
-
-    
-    
-    const rootFront = targetFront.client.mainRoot;
-    const parentProcessScreenshotFront = await rootFront.getFront("screenshot");
-    captureResponse = await parentProcessScreenshotFront.capture(args);
-    messages.push(...(captureResponse.messages || []));
-
-    
-    
-    
-    screenshotContentFront.captureDone();
-  } else {
-    const screenshotFront = await targetFront.getFront("screenshot");
-    captureResponse = await screenshotFront.capture(args);
-  }
+  const captureResponse = await captureScreenshot(targetFront, args);
 
   if (captureResponse.error) {
     return captureResponse.messages || [];
@@ -100,6 +55,72 @@ async function captureAndSaveScreenshot(targetFront, window, args = {}) {
 
   const saveMessages = await saveScreenshot(window, args, captureResponse);
   return (captureResponse.messages || []).concat(saveMessages);
+}
+
+
+
+
+
+
+async function captureScreenshot(targetFront, args) {
+  
+  
+  const supportsContentScreenshot = targetFront.hasActor("screenshotContent");
+  if (!supportsContentScreenshot) {
+    const screenshotFront = await targetFront.getFront("screenshot");
+    return screenshotFront.capture(args);
+  }
+
+  if (args.delay > 0) {
+    await new Promise(res => setTimeout(res, args.delay * 1000));
+  }
+
+  const screenshotContentFront = await targetFront.getFront(
+    "screenshot-content"
+  );
+
+  
+  
+  const {
+    rect,
+    windowDpr,
+    windowZoom,
+    messages,
+    error,
+  } = await screenshotContentFront.prepareCapture(args);
+
+  if (error) {
+    return { error, messages };
+  }
+
+  if (rect) {
+    args.rect = rect;
+  }
+
+  args.dpr ||= windowDpr;
+
+  args.snapshotScale = args.dpr * windowZoom;
+  if (args.ignoreDprForFileScale) {
+    args.fileScale = windowZoom;
+  }
+
+  args.browsingContextID = targetFront.browsingContextID;
+
+  
+  
+  const rootFront = targetFront.client.mainRoot;
+  const parentProcessScreenshotFront = await rootFront.getFront("screenshot");
+  const captureResponse = await parentProcessScreenshotFront.capture(args);
+
+  
+  
+  
+  screenshotContentFront.captureDone();
+
+  return {
+    ...captureResponse,
+    messages: (messages || []).concat(captureResponse.messages || []),
+  };
 }
 
 const screenshotDescription = L10N.getStr("screenshotDesc");
@@ -362,4 +383,8 @@ async function saveToFile(image) {
   }
 }
 
-module.exports = { captureAndSaveScreenshot, saveScreenshot };
+module.exports = {
+  captureAndSaveScreenshot,
+  captureScreenshot,
+  saveScreenshot,
+};

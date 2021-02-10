@@ -69,6 +69,10 @@ function simulateCameraFlash(browsingContext) {
 
 
 
+
+
+
+
 async function captureScreenshot(args, browsingContext) {
   const messages = [];
 
@@ -100,8 +104,6 @@ async function captureScreenshot(args, browsingContext) {
     );
   }
 
-  const ratio = args.dpr ? args.dpr : 1;
-
   const document = browsingContext.topChromeWindow.document;
   const canvas = document.createElementNS(
     "http://www.w3.org/1999/xhtml",
@@ -119,12 +121,15 @@ async function captureScreenshot(args, browsingContext) {
         "rgb(255,255,255)"
       );
 
-      canvas.width = snapshot.width;
-      canvas.height = snapshot.height;
-      width = snapshot.width;
-      height = snapshot.height;
+      const fileScale = args.fileScale || actualRatio;
+      const renderingWidth = (snapshot.width / actualRatio) * fileScale;
+      const renderingHeight = (snapshot.height / actualRatio) * fileScale;
+      canvas.width = renderingWidth;
+      canvas.height = renderingHeight;
+      width = renderingWidth;
+      height = renderingHeight;
       const ctx = canvas.getContext("2d");
-      ctx.drawImage(snapshot, 0, 0);
+      ctx.drawImage(snapshot, 0, 0, renderingWidth, renderingHeight);
 
       
       
@@ -137,6 +142,7 @@ async function captureScreenshot(args, browsingContext) {
     }
   };
 
+  const ratio = args.snapshotScale;
   let data = await drawToCanvas(ratio);
   if (!data && ratio > 1.0) {
     
@@ -154,7 +160,7 @@ async function captureScreenshot(args, browsingContext) {
     });
   }
 
-  if (data) {
+  if (data && args.disableFlash !== true) {
     simulateCameraFlash(browsingContext);
   }
 
