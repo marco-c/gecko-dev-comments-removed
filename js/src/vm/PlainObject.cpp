@@ -11,14 +11,13 @@
 #include "vm/PlainObject-inl.h"
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Maybe.h"       
 
 #include "jspubtd.h"  
 
-#include "gc/AllocKind.h"   
-#include "vm/JSContext.h"   
-#include "vm/JSFunction.h"  
-#include "vm/JSObject.h"    
+#include "gc/AllocKind.h"    
+#include "vm/JSContext.h"    
+#include "vm/JSFunction.h"   
+#include "vm/JSObject.h"     
 #include "vm/ObjectGroup.h"  
 #include "vm/TaggedProto.h"  
 
@@ -27,15 +26,7 @@
 using JS::Handle;
 using JS::Rooted;
 
-using js::GenericObject;
-using js::GuessObjectGCKind;
-using js::NewObjectGCKind;
-using js::NewObjectKind;
-using js::NewObjectWithGroup;
-using js::ObjectGroup;
 using js::PlainObject;
-using js::TaggedProto;
-using js::TenuredObject;
 
 PlainObject* js::CreateThisForFunction(JSContext* cx,
                                        Handle<JSFunction*> callee,
