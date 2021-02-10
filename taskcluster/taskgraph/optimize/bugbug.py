@@ -182,8 +182,18 @@ class BugBugPushSchedules(OptimizationStrategy):
 
             config_groups = data.get("config_groups", defaultdict(list))
 
+            
+            
+            
+            
+            
+            parts = task.label.split("-")
+            label_without_chunk_number = "-".join(
+                parts[:-1] if parts[-1].isdigit() else parts
+            )
+
             if not any(
-                fnmatch(task.label, config)
+                fnmatch(label_without_chunk_number, config)
                 for group in selected_groups
                 for config in config_groups[group]
             ):
