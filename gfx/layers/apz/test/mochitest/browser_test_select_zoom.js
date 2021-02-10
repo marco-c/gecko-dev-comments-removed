@@ -6,19 +6,9 @@
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/base/content/test/forms/head.js",
+  new URL("helper_browser_test_utils.js", gTestPath).href,
   this
 );
-
-function openSelectPopup(selectPopup, selector = "select", win = window) {
-  let popupShownPromise = BrowserTestUtils.waitForEvent(
-    selectPopup,
-    "popupshown"
-  );
-
-  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true }, win);
-  return popupShownPromise;
-}
 
 add_task(async function setup_pref() {
   await SpecialPowers.pushPrefEnv({
