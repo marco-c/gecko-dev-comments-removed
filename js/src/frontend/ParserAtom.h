@@ -389,6 +389,47 @@ class alignas(alignof(uint32_t)) ParserAtom {
   bool hasLatin1Chars() const { return !(flags_ & HasTwoByteCharsFlag); }
   bool hasTwoByteChars() const { return flags_ & HasTwoByteCharsFlag; }
 
+  bool isAscii() const {
+    if (hasTwoByteChars()) {
+      return false;
+    }
+    for (Latin1Char ch : latin1Range()) {
+      if (!mozilla::IsAscii(ch)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  HashNumber hash() const { return hash_; }
+  uint32_t length() const { return length_; }
+
+  bool isUsedByStencil() const { return flags_ & UsedByStencilFlag; }
+  void markUsedByStencil() const {
+    if (!isWellKnownOrStatic()) {
+      
+      
+      const_cast<ParserAtom*>(this)->flags_ |= UsedByStencilFlag;
+    }
+  }
+
+  template <typename CharT>
+  bool equalsSeq(HashNumber hash, InflatedChar16Sequence<CharT> seq) const;
+
+  
+  JSAtom* instantiate(JSContext* cx, TaggedParserAtomIndex index,
+                      CompilationAtomCache& atomCache) const;
+
+ private:
+  bool isWellKnownOrStatic() const { return flags_ & WellKnownOrStaticFlag; }
+
+  constexpr void setWellKnownOrStatic() { flags_ |= WellKnownOrStaticFlag; }
+
+  constexpr void setHashAndLength(HashNumber hash, uint32_t length) {
+    hash_ = hash;
+    length_ = length;
+  }
+
   template <typename CharT>
   const CharT* chars() const {
     MOZ_ASSERT(sizeof(CharT) == (hasTwoByteChars() ? 2 : 1));
@@ -420,59 +461,14 @@ class alignas(alignof(uint32_t)) ParserAtom {
     return twoByteChars()[index];
   }
 
- private:
   bool isIndex(uint32_t* indexp) const;
   bool isPrivateName() const;
-
- public:
-  bool isAscii() const {
-    if (hasTwoByteChars()) {
-      return false;
-    }
-    for (Latin1Char ch : latin1Range()) {
-      if (!mozilla::IsAscii(ch)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  HashNumber hash() const { return hash_; }
-  uint32_t length() const { return length_; }
-
-  bool isUsedByStencil() const { return flags_ & UsedByStencilFlag; }
-  void markUsedByStencil() const {
-    if (!isWellKnownOrStatic()) {
-      
-      
-      const_cast<ParserAtom*>(this)->flags_ |= UsedByStencilFlag;
-    }
-  }
-
-  template <typename CharT>
-  bool equalsSeq(HashNumber hash, InflatedChar16Sequence<CharT> seq) const;
-
- private:
-  bool isWellKnownOrStatic() const { return flags_ & WellKnownOrStaticFlag; }
-
-  constexpr void setWellKnownOrStatic() { flags_ |= WellKnownOrStaticFlag; }
-
-  constexpr void setHashAndLength(HashNumber hash, uint32_t length) {
-    hash_ = hash;
-    length_ = length;
-  }
 
   
   
   JSAtom* toJSAtom(JSContext* cx, TaggedParserAtomIndex index,
                    CompilationAtomCache& atomCache) const;
 
- public:
-  
-  JSAtom* instantiate(JSContext* cx, TaggedParserAtomIndex index,
-                      CompilationAtomCache& atomCache) const;
-
- private:
   
   bool toNumber(JSContext* cx, double* result) const;
 
@@ -839,8 +835,6 @@ class ParserAtomsTable {
   const ParserAtom* getParserAtom(TaggedParserAtomIndex index) const;
 
  public:
-  void markUsedByStencil(TaggedParserAtomIndex index) const;
-
   const ParserAtomVector& entries() const { return entries_; }
 
   
@@ -852,6 +846,7 @@ class ParserAtomsTable {
   uint32_t length(TaggedParserAtomIndex index) const;
 
   
+  void markUsedByStencil(TaggedParserAtomIndex index) const;
   bool toNumber(JSContext* cx, TaggedParserAtomIndex index,
                 double* result) const;
   UniqueChars toNewUTF8CharsZ(JSContext* cx, TaggedParserAtomIndex index) const;
