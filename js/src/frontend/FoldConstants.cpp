@@ -7,6 +7,7 @@
 #include "frontend/FoldConstants.h"
 
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/Maybe.h"  
 #include "mozilla/Range.h"
 
 #include "jslibmath.h"
@@ -20,6 +21,7 @@
 #include "js/Conversions.h"
 #include "js/friend/StackLimits.h"  
 #include "js/Vector.h"
+#include "util/StringBuffer.h"  
 #include "vm/StringType.h"
 
 using namespace js;
@@ -1209,17 +1211,15 @@ static bool FoldAdd(FoldInfo info, ParseNode** nodePtr) {
       break;
     }
 
-    Vector<const ParserAtom*, 8> accum(info.cx);
     do {
       
       MOZ_ASSERT((*current)->isKind(ParseNodeKind::StringExpr));
 
-      accum.clear();
-      const auto* atom =
-          info.parserAtoms.getParserAtom((*current)->as<NameNode>().atom());
-      if (!accum.append(atom)) {
-        return false;
-      }
+      
+      
+      mozilla::Maybe<StringBuffer> accum;
+      TaggedParserAtomIndex firstAtom;
+      firstAtom = (*current)->as<NameNode>().atom();
 
       do {
         
@@ -1232,10 +1232,14 @@ static bool FoldAdd(FoldInfo info, ParseNode** nodePtr) {
           break;
         }
 
+        if (!accum) {
+          accum.emplace(info.cx);
+          if (!accum->append(info.parserAtoms, firstAtom)) {
+            return false;
+          }
+        }
         
-        const auto* nextAtom =
-            info.parserAtoms.getParserAtom((*next)->as<NameNode>().atom());
-        if (!accum.append(nextAtom)) {
+        if (!accum->append(info.parserAtoms, (*next)->as<NameNode>().atom())) {
           return false;
         }
 
@@ -1246,10 +1250,8 @@ static bool FoldAdd(FoldInfo info, ParseNode** nodePtr) {
       } while (*next);
 
       
-      if (accum.length() > 1) {
-        
-        auto combination = info.parserAtoms.concatAtoms(
-            info.cx, mozilla::Range(accum.begin(), accum.length()));
+      if (accum) {
+        auto combination = accum->finishParserAtom(info.parserAtoms);
         if (!combination) {
           return false;
         }
