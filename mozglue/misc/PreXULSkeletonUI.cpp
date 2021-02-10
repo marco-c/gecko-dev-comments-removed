@@ -1153,6 +1153,21 @@ DWORD WINAPI AnimateSkeletonUI(void* aUnused) {
   
   
   
+  if (InterlockedIncrement(&sAnimationControlFlag) != 1) {
+    return 0;
+  }
+  
+  
+  
+  
+  ::Sleep(2000);
+  if (InterlockedDecrement(&sAnimationControlFlag) != 0) {
+    return 0;
+  }
+
+  
+  
+  
   
   
   
