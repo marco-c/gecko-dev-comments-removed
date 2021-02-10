@@ -1,11 +1,11 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
   --white: #ffffff;
 
-  
+  /* Shared variables */
   --line-height: 1.5em;
 }
 
@@ -26,11 +26,11 @@ p {
   display: flex;
   flex-shrink: 0;
   padding: 0 0 50px 0;
-  
+  /* Compensate for the optional scrollbar. */
   margin-right: calc(100% - 100vw);
 }
 
-.wrapper {
+.wrapper:not([hidden]) {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -141,13 +141,9 @@ button {
   cursor: pointer;
 }
 
-
+/* Remove light gray outline when clicking on the button */
 button::-moz-focus-inner {
   border: 0;
-}
-
-[hidden="true"] {
-  display: none;
 }
 
 footer {

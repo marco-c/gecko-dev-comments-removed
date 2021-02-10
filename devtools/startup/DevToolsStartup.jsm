@@ -479,14 +479,12 @@ DevToolsStartup.prototype = {
 
   removeDevToolsMenus(window) {
     
-    window.document
-      .getElementById("webDeveloperMenu")
-      .setAttribute("hidden", "true");
+    window.document.getElementById("webDeveloperMenu").hidden = true;
     
     PanelMultiView.getViewNode(
       window.document,
       "appMenu-developer-button"
-    ).setAttribute("hidden", "true");
+    ).hidden = true;
   },
 
   onFirstWindowReady(window) {
