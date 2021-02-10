@@ -5,8 +5,6 @@ import inspect
 import os
 import re
 
-import six
-
 MYPY = False
 if MYPY:
     
@@ -19,7 +17,7 @@ def collapse(text):
     return inspect.cleandoc(str(text)).replace("\n", " ")
 
 
-class Rule(six.with_metaclass(abc.ABCMeta)):
+class Rule(metaclass=abc.ABCMeta):
     @abc.abstractproperty
     def name(self):
         
@@ -367,7 +365,7 @@ class TentativeDirectoryName(Rule):
     to_fix = "rename directory to be called 'tentative'"
 
 
-class Regexp(six.with_metaclass(abc.ABCMeta)):
+class Regexp(metaclass=abc.ABCMeta):
     @abc.abstractproperty
     def pattern(self):
         
