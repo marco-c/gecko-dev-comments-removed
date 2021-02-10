@@ -12819,6 +12819,11 @@ void Document::ScheduleSVGUseElementShadowTreeUpdate(
     SVGUseElement& aUseElement) {
   MOZ_ASSERT(aUseElement.IsInComposedDoc());
 
+  if (MOZ_UNLIKELY(mIsStaticDocument)) {
+    
+    return;
+  }
+
   mSVGUseElementsNeedingShadowTreeUpdate.PutEntry(&aUseElement);
 
   if (PresShell* presShell = GetPresShell()) {
