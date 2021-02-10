@@ -109,7 +109,7 @@ add_task(async function() {
       
       nonNegativeTabIndexRule: false,
     });
-    await EventUtils.sendMouseEvent({ type: "click" }, button);
+    EventUtils.sendMouseEvent({ type: "click" }, button);
     AccessibilityUtils.resetEnv();
     await onPopupShown;
 

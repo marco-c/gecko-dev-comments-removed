@@ -21,7 +21,7 @@ add_task(async function() {
 
   
   const imgRequest = document.querySelectorAll(".request-list-item")[0];
-  await EventUtils.sendMouseEvent({ type: "mousedown" }, imgRequest);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, imgRequest);
 
   
   const { getSelectedRequest } = windowRequire(
@@ -30,7 +30,7 @@ add_task(async function() {
   const origReq = getSelectedRequest(store.getState());
 
   
-  await EventUtils.sendMouseEvent({ type: "contextmenu" }, imgRequest);
+  EventUtils.sendMouseEvent({ type: "contextmenu" }, imgRequest);
   getContextMenuItem(monitor, "request-list-context-resend-only").click();
 
   await performRequests(monitor, tab, 1);

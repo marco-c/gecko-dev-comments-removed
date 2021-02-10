@@ -117,7 +117,7 @@ async function addTestTab(url) {
   const enableButton = doc.getElementById("accessibility-enable-button");
   
   if (enableButton) {
-    await EventUtils.sendMouseEvent({ type: "click" }, enableButton, win);
+    EventUtils.sendMouseEvent({ type: "click" }, enableButton, win);
   }
 
   await waitUntilState(
@@ -517,7 +517,7 @@ async function selectProperty(doc, id) {
   let node;
 
   await focusAccessibleProperties(doc);
-  await BrowserTestUtils.waitForCondition(async () => {
+  await BrowserTestUtils.waitForCondition(() => {
     node = doc.getElementById(`${id}`);
     if (node) {
       if (selected) {
@@ -529,7 +529,7 @@ async function selectProperty(doc, id) {
         
         nonNegativeTabIndexRule: false,
       });
-      await EventUtils.sendMouseEvent({ type: "click" }, node, win);
+      EventUtils.sendMouseEvent({ type: "click" }, node, win);
       AccessibilityUtils.resetEnv();
       selected = true;
     } else {
@@ -548,13 +548,13 @@ async function selectProperty(doc, id) {
 
 
 
-async function selectRow(doc, rowNumber) {
+function selectRow(doc, rowNumber) {
   info(`Selecting row ${rowNumber}.`);
   AccessibilityUtils.setEnv({
     
     nonNegativeTabIndexRule: false,
   });
-  await EventUtils.sendMouseEvent(
+  EventUtils.sendMouseEvent(
     { type: "click" },
     doc.querySelectorAll(".treeRow")[rowNumber],
     doc.defaultView
@@ -580,7 +580,7 @@ async function toggleRow(doc, rowNumber) {
     
     mustHaveAccessibleRule: false,
   });
-  await EventUtils.sendMouseEvent({ type: "click" }, twisty, win);
+  EventUtils.sendMouseEvent({ type: "click" }, twisty, win);
   AccessibilityUtils.resetEnv();
   await BrowserTestUtils.waitForCondition(
     () =>

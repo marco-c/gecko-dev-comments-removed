@@ -30,7 +30,7 @@ add_task(async function() {
   assertSingleRequestState();
 
   
-  await EventUtils.sendMouseEvent({ type: "click" }, clearButton);
+  EventUtils.sendMouseEvent({ type: "click" }, clearButton);
   assertNoRequestState();
 
   
@@ -50,7 +50,7 @@ add_task(async function() {
   );
 
   
-  await EventUtils.sendMouseEvent({ type: "click" }, clearButton);
+  EventUtils.sendMouseEvent({ type: "click" }, clearButton);
 
   assertNoRequestState();
   ok(

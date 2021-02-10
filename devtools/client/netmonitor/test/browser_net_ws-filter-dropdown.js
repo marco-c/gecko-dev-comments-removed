@@ -41,10 +41,10 @@ add_task(async function() {
   );
 
   
-  await EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
-  await clickOnSidebarTab(document, "response");
+  clickOnSidebarTab(document, "response");
   await wait;
 
   
@@ -56,7 +56,7 @@ add_task(async function() {
   is(frames.length, 4, "There should be four frames");
 
   
-  await EventUtils.sendMouseEvent(
+  EventUtils.sendMouseEvent(
     { type: "click" },
     document.querySelector("#frame-filter-menu")
   );
@@ -111,7 +111,7 @@ add_task(async function() {
     "#messages-view .message-list-table .message-list-item",
     3
   );
-  await EventUtils.sendMouseEvent({ type: "mousedown" }, requests[1]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[1]);
   await wait;
   const secondRequestFrames = document.querySelectorAll(
     "#messages-view .message-list-table .message-list-item"
