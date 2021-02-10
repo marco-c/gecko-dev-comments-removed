@@ -3,7 +3,11 @@
 
 
 
-Array.prototype[Symbol.iterator] = function*() { yield 1; yield 2; };
+
+
+Array.prototype[Symbol.iterator] = function*() {
+    throw new Error("unexpected call");
+};
 
 class Base {
     constructor(a, b) {
@@ -13,7 +17,7 @@ class Base {
 };
 class Derived extends Base {};
 
-new Derived();
+new Derived(1, 2);
 
 if (typeof reportCompare === 'function')
     reportCompare(0,0,"OK");

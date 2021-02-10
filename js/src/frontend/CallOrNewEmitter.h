@@ -131,7 +131,17 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
     
     
     
-    SingleSpread
+    SingleSpread,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    PassthroughRest,
   };
 
  private:
@@ -150,6 +160,9 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
   mozilla::Maybe<PropOpEmitter> poe_;
   mozilla::Maybe<ElemOpEmitter> eoe_;
 
+  
+  
+  
   
   
   
@@ -224,6 +237,9 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
     WantSpreadOperand,
 
     
+    SpreadIteration,
+
+    
     Arguments,
 
     
@@ -264,6 +280,10 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
     return argumentsKind_ == ArgumentsKind::SingleSpread;
   }
 
+  MOZ_MUST_USE bool isPassthroughRest() const {
+    return argumentsKind_ == ArgumentsKind::PassthroughRest;
+  }
+
  public:
   MOZ_MUST_USE bool emitNameCallee(TaggedParserAtomIndex name);
   MOZ_MUST_USE PropOpEmitter& prepareForPropCallee(bool isSuperProp);
@@ -284,6 +304,7 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
   
   MOZ_MUST_USE bool wantSpreadOperand();
   MOZ_MUST_USE bool emitSpreadArgumentsTest();
+  MOZ_MUST_USE bool wantSpreadIteration();
 
   
   

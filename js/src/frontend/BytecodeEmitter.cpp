@@ -7885,9 +7885,11 @@ bool BytecodeEmitter::emitArguments(ListNode* argsList, bool isCall,
       
       return false;
     }
-    if (!emitArray(argsList->head(), argc)) {
-      
-      return false;
+    if (cone.wantSpreadIteration()) {
+      if (!emitArray(argsList->head(), argc)) {
+        
+        return false;
+      }
     }
   }
 
@@ -8044,11 +8046,18 @@ bool BytecodeEmitter::emitCallOrNew(
   bool isOptimizableSpread =
       isSpread && argc == 1 &&
       isOptimizableSpreadArgument(argsList->head()->as<UnaryNode>().kid());
-  CallOrNewEmitter cone(this, op,
-                        isOptimizableSpread
-                            ? CallOrNewEmitter::ArgumentsKind::SingleSpread
-                            : CallOrNewEmitter::ArgumentsKind::Other,
-                        valueUsage);
+  bool isDefaultDerivedClassConstructor =
+      sc->isFunctionBox() && sc->asFunctionBox()->isDerivedClassConstructor() &&
+      sc->asFunctionBox()->isSyntheticFunction();
+  MOZ_ASSERT_IF(isDefaultDerivedClassConstructor, isOptimizableSpread);
+  CallOrNewEmitter cone(
+      this, op,
+      isOptimizableSpread
+          ? isDefaultDerivedClassConstructor
+                ? CallOrNewEmitter::ArgumentsKind::PassthroughRest
+                : CallOrNewEmitter::ArgumentsKind::SingleSpread
+          : CallOrNewEmitter::ArgumentsKind::Other,
+      valueUsage);
 
   if (!emitCalleeAndThis(calleeNode, callNode, cone)) {
     
