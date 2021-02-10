@@ -517,6 +517,8 @@ class QuotaManager final : public BackgroundThreadObject {
   nsresult UpgradeFromPersistentStorageDirectoryToDefaultStorageDirectory(
       nsIFile* aPersistentStorageDir);
 
+  nsresult MaybeUpgradeToDefaultStorageDirectory(nsIFile& aStorageFile);
+
   template <typename Helper>
   nsresult UpgradeStorage(const int32_t aOldVersion, const int32_t aNewVersion,
                           mozIStorageConnection* aConnection);
@@ -531,17 +533,19 @@ class QuotaManager final : public BackgroundThreadObject {
 
   nsresult UpgradeStorageFrom2_2To2_3(mozIStorageConnection* aConnection);
 
-  nsresult MaybeRemoveLocalStorageData();
+  nsresult MaybeCreateOrUpgradeStorage(mozIStorageConnection& aConnection);
+
+  nsresult MaybeRemoveLocalStorageDataAndArchive();
 
   nsresult MaybeRemoveLocalStorageDirectories();
 
   Result<nsCOMPtr<mozIStorageConnection>, nsresult>
-  CreateLocalStorageArchiveConnectionFromWebAppsStore();
+  CreateLocalStorageArchiveConnectionFromWebAppsStore() const;
 
   
   
   Result<std::pair<nsCOMPtr<mozIStorageConnection>, bool>, nsresult>
-  CreateLocalStorageArchiveConnection();
+  CreateLocalStorageArchiveConnection() const;
 
   nsresult RecreateLocalStorageArchive(
       nsCOMPtr<mozIStorageConnection>& aConnection);
@@ -551,6 +555,8 @@ class QuotaManager final : public BackgroundThreadObject {
 
   nsresult UpgradeLocalStorageArchiveFromLessThan4To4(
       nsCOMPtr<mozIStorageConnection>& aConnection);
+
+  nsresult MaybeInitializeOrUpgradeLocalStorageArchive();
 
   
 
