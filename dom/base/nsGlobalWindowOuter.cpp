@@ -5117,8 +5117,10 @@ nsresult nsGlobalWindowOuter::Focus(CallerType aCallerType) {
   FORWARD_TO_INNER(Focus, (aCallerType), NS_ERROR_UNEXPECTED);
 }
 
-void nsGlobalWindowOuter::BlurOuter(CallerType aCallerType) {
-  if (!GetBrowsingContext()->CanBlurCheck(aCallerType)) {
+void nsGlobalWindowOuter::BlurOuter() {
+  
+  
+  if (!CanSetProperty("dom.disable_window_flip")) {
     return;
   }
 
