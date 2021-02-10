@@ -566,36 +566,7 @@ exports.ToolboxButtons = [
         args.clipboard = true;
       }
 
-      const messages = await captureAndSaveScreenshot(
-        toolbox.target,
-        toolbox.win,
-        args
-      );
-      const notificationBox = toolbox.getNotificationBox();
-      const priorityMap = {
-        error: notificationBox.PRIORITY_CRITICAL_HIGH,
-        warn: notificationBox.PRIORITY_WARNING_HIGH,
-      };
-      for (const { text, level } of messages) {
-        
-        
-        
-        
-        
-        if (
-          !toolbox.target.isParentProcess &&
-          level !== "warn" &&
-          level !== "error"
-        ) {
-          continue;
-        }
-        notificationBox.appendNotification(
-          text,
-          null,
-          null,
-          priorityMap[level] || notificationBox.PRIORITY_INFO_MEDIUM
-        );
-      }
+      await captureAndSaveScreenshot(toolbox.target, toolbox.win, args);
     },
   },
   createHighlightButton("RulersHighlighter", "rulers"),
