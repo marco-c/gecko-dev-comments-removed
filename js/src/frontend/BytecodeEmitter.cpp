@@ -1536,9 +1536,11 @@ restart:
     case ParseNodeKind::ClassMemberList:      
     case ParseNodeKind::ImportSpecList:       
     case ParseNodeKind::ImportSpec:           
+    case ParseNodeKind::ImportNamespaceSpec:  
     case ParseNodeKind::ExportBatchSpecStmt:  
     case ParseNodeKind::ExportSpecList:       
     case ParseNodeKind::ExportSpec:           
+    case ParseNodeKind::ExportNamespaceSpec:  
     case ParseNodeKind::CallSiteObj:       
     case ParseNodeKind::PosHolder:         
     case ParseNodeKind::SuperBase:         
@@ -7907,7 +7909,7 @@ bool BytecodeEmitter::emitOptionalCall(CallNode* callNode, OptionalEmitter& oe,
 
   ParseNode* calleeNode = callNode->left();
   ListNode* argsList = &callNode->right()->as<ListNode>();
-  bool isSpread = JOF_OPTYPE(callNode->callOp()) == JOF_BYTE;
+  bool isSpread = IsSpreadOp(callNode->callOp());
   JSOp op = callNode->callOp();
   uint32_t argc = argsList->count();
   bool isOptimizableSpread =
@@ -7963,7 +7965,7 @@ bool BytecodeEmitter::emitCallOrNew(
                 callNode->isKind(ParseNodeKind::TaggedTemplateExpr);
   ParseNode* calleeNode = callNode->left();
   ListNode* argsList = &callNode->right()->as<ListNode>();
-  bool isSpread = JOF_OPTYPE(callNode->callOp()) == JOF_BYTE;
+  bool isSpread = IsSpreadOp(callNode->callOp());
 
   if (calleeNode->isKind(ParseNodeKind::Name) &&
       emitterMode == BytecodeEmitter::SelfHosting && !isSpread) {
