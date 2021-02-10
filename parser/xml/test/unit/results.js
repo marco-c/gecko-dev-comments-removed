@@ -1000,8 +1000,14 @@ var vectors = [
       "<html><head><template>allowed</template></head><body></body></html>",
   },
   {
+    
     data: '<template><img src="x" onerror="alert(1)"></template>',
     sanitized:
       "<html><head><template><img></template></head><body></body></html>",
+  },
+  {
+    
+    data: "<svg><template></template></svg>",
+    sanitized: "<html><head></head><body></body></html>",
   },
 ];
