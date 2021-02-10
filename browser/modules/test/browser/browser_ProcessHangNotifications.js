@@ -117,6 +117,11 @@ TestHangReport.prototype = {
   get scriptBrowser() {
     return this._browser;
   },
+
+  
+  get scriptFileName() {
+    return "chrome://browser/content/browser.js";
+  },
 };
 
 
@@ -512,4 +517,51 @@ add_task(async function terminateClosedWindow() {
     TEST_ACTION_TERMGLOBAL,
     "When closing window, should have terminated global for add-on hang."
   );
+});
+
+
+
+
+
+add_task(async function permitUnload() {
+  let testWin = await BrowserTestUtils.openNewBrowserWindow();
+  let testTab = testWin.gBrowser.selectedTab;
+
+  
+  BrowserTestUtils.addTab(testWin.gBrowser, "about:blank");
+
+  
+  
+  let otherTab = BrowserTestUtils.addTab(testWin.gBrowser, "about:blank");
+  let permitUnloadCount = 0;
+  for (let tab of [testTab, otherTab]) {
+    let browser = tab.linkedBrowser;
+    
+    Object.defineProperty(browser, "hasBeforeUnload", { value: true });
+    
+    browser.asyncPermitUnload = () => {
+      permitUnloadCount++;
+      return Promise.resolve({ permitUnload: true });
+    };
+  }
+
+  
+  let testBrowser = testTab.linkedBrowser;
+  let pausedHang = new TestHangReport(SLOW_SCRIPT, testBrowser);
+  Services.obs.notifyObservers(pausedHang, "process-hang-report");
+  ProcessHangMonitor.waitLonger(testWin);
+  ok(
+    ProcessHangMonitor.findPausedReport(testWin.gBrowser.selectedBrowser),
+    "There should be a paused report for the browser we're about to remove."
+  );
+
+  BrowserTestUtils.removeTab(otherTab);
+  BrowserTestUtils.removeTab(testWin.gBrowser.getTabForBrowser(testBrowser));
+  is(
+    permitUnloadCount,
+    1,
+    "Should have called asyncPermitUnload once (not for the hung tab)."
+  );
+
+  await BrowserTestUtils.closeWindow(testWin);
 });

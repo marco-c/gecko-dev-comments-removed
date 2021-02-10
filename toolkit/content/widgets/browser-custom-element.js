@@ -49,6 +49,25 @@
     "dom.beforeunload_timeout_ms"
   );
 
+  Object.defineProperty(LazyModules, "ProcessHangMonitor", {
+    configurable: true,
+    get() {
+      
+      
+      
+      
+      const kURL = "resource:///modules/ProcessHangMonitor.jsm";
+      if (Cu.isModuleLoaded(kURL)) {
+        let { ProcessHangMonitor } = ChromeUtils.import(kURL);
+        Object.defineProperty(LazyModules, "ProcessHangMonitor", {
+          value: ProcessHangMonitor,
+        });
+        return ProcessHangMonitor;
+      }
+      return null;
+    },
+  });
+
   const elementsToDestroyOnUnload = new Set();
 
   window.addEventListener(
@@ -1658,6 +1677,15 @@
     permitUnload(action) {
       if (this.isRemoteBrowser) {
         if (!this.hasBeforeUnload) {
+          return { permitUnload: true };
+        }
+
+        
+        let { ProcessHangMonitor } = LazyModules;
+        if (
+          ProcessHangMonitor?.findActiveReport(this) ||
+          ProcessHangMonitor?.findPausedReport(this)
+        ) {
           return { permitUnload: true };
         }
 
