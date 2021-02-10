@@ -3829,6 +3829,8 @@ class nsIFrame : public nsQueryFrame {
     
 
     bool mHasSelectableFrame = false;
+    
+    bool mIgnoredBrFrame = false;
 
     FrameSearchResult PeekOffsetNoAmount(bool aForward) {
       return mFrame->PeekOffsetNoAmount(aForward, &mOffset);
