@@ -39,7 +39,7 @@ var RecentlyClosedTabsAndWindowsMenuUtils = {
     aWindow,
     aTagName,
     aPrefixRestoreAll = false,
-    aRestoreAllLabel = "menuRestoreAllTabs.label"
+    aRestoreAllLabel = "appmenu-reopen-all-tabs"
   ) {
     let doc = aWindow.document;
     let fragment = doc.createDocumentFragment();
@@ -87,7 +87,7 @@ var RecentlyClosedTabsAndWindowsMenuUtils = {
     aWindow,
     aTagName,
     aPrefixRestoreAll = false,
-    aRestoreAllLabel = "menuRestoreAllWindows.label"
+    aRestoreAllLabel = "appmenu-reopen-all-windows"
   ) {
     let closedWindowData = SessionStore.getClosedWindowData(false);
     let doc = aWindow.document;
@@ -145,6 +145,14 @@ var RecentlyClosedTabsAndWindowsMenuUtils = {
     if (ancestorPanel) {
       ancestorPanel.hidePopup();
     }
+  },
+
+  get strings() {
+    delete this.strings;
+    return (this.strings = new Localization(
+      ["branding/brand.ftl", "browser/menubar.ftl", "browser/appmenu.ftl"],
+      true
+    ));
   },
 };
 
@@ -221,12 +229,6 @@ function createEntry(
       RecentlyClosedTabsAndWindowsMenuUtils._undoCloseMiddleClick
     );
   }
-  if (aIndex == 0) {
-    element.setAttribute(
-      "key",
-      "key_undoClose" + (aIsWindowsFragment ? "Window" : "Tab")
-    );
-  }
 
   aFragment.appendChild(element);
 }
@@ -260,10 +262,16 @@ function createRestoreAllEntry(
 ) {
   let restoreAllElements = aDocument.createXULElement(aTagName);
   restoreAllElements.classList.add("restoreallitem");
+
+  
+  
   restoreAllElements.setAttribute(
     "label",
-    navigatorBundle.GetStringFromName(aRestoreAllLabel)
+    RecentlyClosedTabsAndWindowsMenuUtils.strings.formatValueSync(
+      aRestoreAllLabel
+    )
   );
+
   restoreAllElements.setAttribute(
     "oncommand",
     "for (var i = 0; i < " +
