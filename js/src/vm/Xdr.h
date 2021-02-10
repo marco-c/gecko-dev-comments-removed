@@ -171,49 +171,6 @@ class XDRBuffer<XDR_DECODE> : public XDRBufferBase {
   const JS::TranscodeRange buffer_;
 };
 
-class XDRCoderBase;
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MOZ_RAII AutoXDRTree {
- public:
-  
-  
-  
-  
-  
-  using Key = uint64_t;
-
-  AutoXDRTree(XDRCoderBase* xdr, Key key);
-  ~AutoXDRTree();
-
-  
-  static constexpr Key noKey = 0;
-
-  
-  static constexpr Key noSubTree = Key(1) << 32;
-
-  
-  static constexpr Key topLevel = Key(2) << 32;
-
- private:
-  friend class XDRIncrementalEncoder;
-
-  Key key_;
-  AutoXDRTree* parent_;
-  XDRCoderBase* xdr_;
-};
-
 template <typename CharT>
 using XDRTranscodeString =
     mozilla::MaybeOneOf<const CharT*, js::UniquePtr<CharT[], JS::FreePolicy>>;
@@ -233,15 +190,6 @@ class XDRCoderBase {
   }
 
  public:
-  virtual AutoXDRTree::Key getTopLevelTreeKey() const {
-    return AutoXDRTree::noKey;
-  }
-  virtual AutoXDRTree::Key getTreeKey(JSFunction* fun) const {
-    return AutoXDRTree::noKey;
-  }
-  virtual void createOrReplaceSubTree(AutoXDRTree* child){};
-  virtual void endSubTree(){};
-
 #ifdef DEBUG
   
   JS::TranscodeResult resultCode() const { return resultCode_; }
