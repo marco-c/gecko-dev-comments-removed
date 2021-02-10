@@ -57,8 +57,6 @@ class XDRBufferBase {
  protected:
   JSContext* const context_;
   size_t cursor_;
-
-  friend class XDRIncrementalStencilEncoder;
 };
 
 template <XDRMode mode>
@@ -174,7 +172,6 @@ class XDRBuffer<XDR_DECODE> : public XDRBufferBase {
 };
 
 class XDRCoderBase;
-class XDRIncrementalEncoder;
 
 
 
@@ -693,121 +690,6 @@ class XDRIncrementalEncoderBase : public XDREncoder {
   }
 
   virtual void trace(JSTracer* trc) {}
-};
-
-class XDRIncrementalEncoder : public XDRIncrementalEncoderBase {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  struct Slice {
-    size_t sliceBegin;
-    size_t sliceLength;
-    AutoXDRTree::Key child;
-  };
-
-  using SlicesNode = Vector<Slice, 1, SystemAllocPolicy>;
-  using SlicesTree =
-      HashMap<AutoXDRTree::Key, SlicesNode, DefaultHasher<AutoXDRTree::Key>,
-              SystemAllocPolicy>;
-
-  
-  JS::TranscodeBuffer header_;
-  XDRBuffer<XDR_ENCODE> headerBuf_;
-
-  
-  JS::TranscodeBuffer atoms_;
-  XDRBuffer<XDR_ENCODE> atomBuf_;
-
-  uint32_t natoms_ = 0;
-
-  
-  AutoXDRTree* scope_;
-  
-  SlicesNode* node_;
-  
-  SlicesTree tree_;
-  
-  XDRAtomMap atomMap_;
-  bool oom_;
-
-  class DepthFirstSliceIterator;
-
- public:
-  explicit XDRIncrementalEncoder(JSContext* cx)
-      : XDRIncrementalEncoderBase(cx),
-        headerBuf_(cx, header_, 0),
-        atomBuf_(cx, atoms_, 0),
-        scope_(nullptr),
-        node_(nullptr),
-        atomMap_(cx),
-        oom_(false) {}
-
-  virtual ~XDRIncrementalEncoder() = default;
-
-  uint32_t& natoms() override { return natoms_; }
-
-  
-  void switchToAtomBuf() override { switchToBuffer(&atomBuf_); }
-
-  
-  void switchToHeaderBuf() override { switchToBuffer(&headerBuf_); }
-
-  bool hasAtomMap() const override { return true; }
-  XDRAtomMap& atomMap() override { return atomMap_; }
-
-  AutoXDRTree::Key getTopLevelTreeKey() const override;
-  AutoXDRTree::Key getTreeKey(JSFunction* fun) const override;
-
-  void createOrReplaceSubTree(AutoXDRTree* child) override;
-  void endSubTree() override;
-
-  
-  
-  XDRResult linearize(JS::TranscodeBuffer& buffer,
-                      js::ScriptSource* ss) override;
-
-  void trace(JSTracer* trc) override;
 };
 
 class XDRIncrementalStencilEncoder : public XDRIncrementalEncoderBase {

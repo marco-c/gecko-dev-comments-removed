@@ -1023,12 +1023,6 @@ class ScriptSource {
   
   
   
-  bool xdrEncodeTopLevel(JSContext* cx, HandleScript script);
-
-  
-  
-  
-  
   
   bool xdrEncodeInitialStencil(
       JSContext* cx, frontend::CompilationStencil& stencil,
@@ -1044,15 +1038,6 @@ class ScriptSource {
                          UniquePtr<XDRIncrementalEncoderBase>& xdrEncoder);
 
   void setIncrementalEncoder(XDRIncrementalEncoderBase* xdrEncoder);
-
-  
-  
-  
-  
-  
-  
-  bool xdrEncodeFunction(JSContext* cx, HandleFunction fun,
-                         HandleScriptSourceObject sourceObject);
 
   
   

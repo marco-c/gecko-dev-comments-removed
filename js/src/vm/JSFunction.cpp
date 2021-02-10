@@ -1569,20 +1569,9 @@ bool DelazifyCanonicalScriptedFunctionImpl(JSContext* cx, HandleFunction fun,
     }
 
     if (ss->hasEncoder()) {
-      
-      
-      bool useStencilXDR = !js::UseOffThreadParseGlobal();
-      if (useStencilXDR) {
-        if (!ss->xdrEncodeFunctionStencil(cx, stencil.get())) {
-          return false;
-        }
-      } else {
-        
-        RootedScriptSourceObject sourceObject(
-            cx, fun->nonLazyScript()->sourceObject());
-        if (!ss->xdrEncodeFunction(cx, fun, sourceObject)) {
-          return false;
-        }
+      MOZ_ASSERT(!js::UseOffThreadParseGlobal());
+      if (!ss->xdrEncodeFunctionStencil(cx, stencil.get())) {
+        return false;
       }
     }
   }
