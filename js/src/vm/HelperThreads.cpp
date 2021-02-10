@@ -585,9 +585,6 @@ void ParseTask::trace(JSTracer* trc) {
   if (stencil_) {
     stencil_->trace(trc);
   }
-  if (stencilSet_) {
-    stencilSet_->trace(trc);
-  }
   gcOutput_.trace(trc);
   gcOutputForDelazification_.trace(trc);
 }
@@ -695,17 +692,12 @@ void ScriptParseTask<Unit>::parse(JSContext* cx) {
 }
 
 bool ParseTask::instantiateStencils(JSContext* cx) {
-  if (!stencil_ && !stencilSet_) {
+  if (!stencil_) {
     return false;
   }
 
-  bool result;
-  if (stencil_) {
-    result = frontend::InstantiateStencils(cx, *stencil_, gcOutput_);
-  } else {
-    result = frontend::InstantiateStencils(cx, *stencilSet_, gcOutput_,
-                                           gcOutputForDelazification_);
-  }
+  bool result = frontend::InstantiateStencils(cx, *stencil_, gcOutput_,
+                                              &gcOutputForDelazification_);
 
   
   
@@ -778,29 +770,29 @@ void ScriptDecodeTask::parse(JSContext* cx) {
 
   if (options.useStencilXDR) {
     
-    Rooted<UniquePtr<frontend::CompilationStencilSet>> stencilSet(
-        cx, js_new<frontend::CompilationStencilSet>(cx, options));
-    if (!stencilSet) {
+    Rooted<UniquePtr<frontend::CompilationStencil>> stencil(
+        cx, js_new<frontend::CompilationStencil>(cx, options));
+    if (!stencil) {
       ReportOutOfMemory(cx);
       return;
     }
 
-    XDRStencilDecoder decoder(cx, &stencilSet.get()->input.options, range);
-    if (!stencilSet.get()->input.initForGlobal(cx)) {
+    XDRStencilDecoder decoder(cx, &stencil.get()->input.options, range);
+    if (!stencil.get()->input.initForGlobal(cx)) {
       return;
     }
 
-    XDRResult res = decoder.codeStencils(*stencilSet);
+    XDRResult res = decoder.codeStencils(*stencil);
     if (!res.isOk()) {
       return;
     }
 
-    stencilSet_ = std::move(stencilSet.get());
+    stencil_ = std::move(stencil.get());
 
-    if (stencilSet_) {
-      if (!frontend::PrepareForInstantiate(cx, *stencilSet_, gcOutput_,
-                                           gcOutputForDelazification_)) {
-        stencilSet_ = nullptr;
+    if (stencil_) {
+      if (!frontend::PrepareForInstantiate(cx, *stencil_, gcOutput_,
+                                           &gcOutputForDelazification_)) {
+        stencil_ = nullptr;
       }
     }
 
@@ -2078,7 +2070,7 @@ JSScript* GlobalHelperThreadState::finishSingleParseTask(
       DebugAPI::onNewScript(cx, script);
     }
   } else {
-    MOZ_ASSERT(parseTask->stencil_.get() || parseTask->stencilSet_.get());
+    MOZ_ASSERT(parseTask->stencil_.get());
 
     if (!parseTask->instantiateStencils(cx)) {
       return nullptr;
@@ -2096,14 +2088,8 @@ JSScript* GlobalHelperThreadState::finishSingleParseTask(
 
     if (parseTask->stencil_.get()) {
       auto* stencil = parseTask->stencil_.get();
-      if (!stencil->input.source()->xdrEncodeInitialStencil(cx, *stencil,
-                                                            xdrEncoder)) {
-        return nullptr;
-      }
-    } else {
-      auto* stencilSet = parseTask->stencilSet_.get();
-      if (!stencilSet->input.source()->xdrEncodeStencils(cx, *stencilSet,
-                                                         xdrEncoder)) {
+      if (!stencil->input.source()->xdrEncodeStencils(cx, *stencil,
+                                                      xdrEncoder)) {
         return nullptr;
       }
     }

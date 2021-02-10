@@ -48,6 +48,7 @@ namespace frontend {
 struct CompilationInput;
 struct CompilationStencil;
 struct CompilationGCOutput;
+struct StencilDelazificationSet;
 class ScriptStencilIterable;
 
 
@@ -177,7 +178,6 @@ struct CompilationAtomCache {
   bool hasAtomAt(ParserAtomIndex index) const;
   bool setAtomAt(JSContext* cx, ParserAtomIndex index, JSAtom* atom);
   bool allocate(JSContext* cx, size_t length);
-  bool extendIfNecessary(JSContext* cx, size_t length);
 
   void stealBuffer(AtomCacheVector& atoms);
   void releaseBuffer(AtomCacheVector& atoms);
@@ -562,6 +562,10 @@ struct CompilationStencil : public BaseCompilationStencil {
 
   
   
+  UniquePtr<StencilDelazificationSet> delazificationSet;
+
+  
+  
   bool preparationIsPerformed = false;
 
   
@@ -570,24 +574,23 @@ struct CompilationStencil : public BaseCompilationStencil {
   CompilationStencil(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
       : alloc(LifoAllocChunkSize), input(options) {}
 
-  static MOZ_MUST_USE bool prepareInputAndStencilForInstantiate(
-      JSContext* cx, CompilationInput& input, BaseCompilationStencil& stencil);
-  static MOZ_MUST_USE bool prepareGCOutputForInstantiate(
-      JSContext* cx, BaseCompilationStencil& stencil,
-      CompilationGCOutput& gcOutput);
-
-  static MOZ_MUST_USE bool prepareForInstantiate(JSContext* cx,
-                                                 CompilationStencil& stencil,
-                                                 CompilationGCOutput& gcOutput);
-  static MOZ_MUST_USE bool instantiateStencils(JSContext* cx,
-                                               CompilationStencil& stencil,
-                                               CompilationGCOutput& gcOutput);
-  static MOZ_MUST_USE bool instantiateStencilsAfterPreparation(
+  static MOZ_MUST_USE bool instantiateBaseStencilAfterPreparation(
       JSContext* cx, CompilationInput& input,
       const BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput);
 
+  static MOZ_MUST_USE bool prepareForInstantiate(
+      JSContext* cx, CompilationStencil& stencil, CompilationGCOutput& gcOutput,
+      CompilationGCOutput* gcOutputForDelazification = nullptr);
+
+  static MOZ_MUST_USE bool instantiateStencils(
+      JSContext* cx, CompilationStencil& stencil, CompilationGCOutput& gcOutput,
+      CompilationGCOutput* gcOutputForDelazification = nullptr);
+
   MOZ_MUST_USE bool serializeStencils(JSContext* cx, JS::TranscodeBuffer& buf,
                                       bool* succeededOut = nullptr);
+  MOZ_MUST_USE bool deserializeStencils(JSContext* cx,
+                                        const JS::TranscodeRange& range,
+                                        bool* succeededOut = nullptr);
 
   
   
@@ -650,42 +653,16 @@ inline const CompilationStencil& BaseCompilationStencil::asCompilationStencil()
 
 
 
-struct CompilationStencilSet : public CompilationStencil {
- private:
+
+struct StencilDelazificationSet {
   using ScriptIndexVector = Vector<ScriptIndex, 0, js::SystemAllocPolicy>;
 
-  MOZ_MUST_USE bool buildDelazificationIndices(JSContext* cx);
-
- public:
   Vector<BaseCompilationStencil, 0, js::SystemAllocPolicy> delazifications;
   ScriptIndexVector delazificationIndices;
   CompilationAtomCache::AtomCacheVector delazificationAtomCache;
 
-  CompilationStencilSet(JSContext* cx,
-                        const JS::ReadOnlyCompileOptions& options)
-      : CompilationStencil(cx, options) {}
-
-  
-  CompilationStencilSet(CompilationStencilSet&& other) = default;
-
-  
-  CompilationStencilSet(const CompilationStencilSet&) = delete;
-  CompilationStencilSet& operator=(const CompilationStencilSet&) = delete;
-  CompilationStencilSet& operator=(CompilationStencilSet&&) = delete;
-
-  MOZ_MUST_USE bool prepareForInstantiate(
-      JSContext* cx, CompilationGCOutput& gcOutput,
-      CompilationGCOutput& gcOutputForDelazification);
-  MOZ_MUST_USE bool instantiateStencils(
-      JSContext* cx, CompilationGCOutput& gcOutput,
-      CompilationGCOutput& gcOutputForDelazification);
-  MOZ_MUST_USE bool instantiateStencilsAfterPreparation(
-      JSContext* cx, CompilationGCOutput& gcOutput,
-      CompilationGCOutput& gcOutputForDelazification);
-
-  MOZ_MUST_USE bool deserializeStencils(JSContext* cx,
-                                        const JS::TranscodeRange& range,
-                                        bool* succeededOut);
+  MOZ_MUST_USE bool buildDelazificationIndices(
+      JSContext* cx, const CompilationStencil& stencil);
 };
 
 

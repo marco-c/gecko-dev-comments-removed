@@ -18,7 +18,7 @@
 #include "jstypes.h"  
 
 #include "frontend/CompilationStencil.h"  
-#include "frontend/ParseContext.h"  
+#include "frontend/ParseContext.h"        
 #include "frontend/SharedContext.h"  
 #include "js/CompileOptions.h"  
 #include "js/RootingAPI.h"      
@@ -72,20 +72,13 @@ extern UniquePtr<CompilationStencil> CompileGlobalScriptToStencil(
 
 
 
-extern bool PrepareForInstantiate(JSContext* cx, CompilationStencil& stencil,
-                                  CompilationGCOutput& gcOutput);
 extern bool PrepareForInstantiate(
-    JSContext* cx, CompilationStencilSet& stencilSet,
-    CompilationGCOutput& gcOutput,
-    CompilationGCOutput& gcOutputForDelazification);
+    JSContext* cx, CompilationStencil& stencil, CompilationGCOutput& gcOutput,
+    CompilationGCOutput* gcOutputForDelazification = nullptr);
 
-extern bool InstantiateStencils(JSContext* cx, CompilationStencil& stencil,
-                                CompilationGCOutput& gcOutput);
-
-extern bool InstantiateStencils(JSContext* cx,
-                                CompilationStencilSet& stencilSet,
-                                CompilationGCOutput& gcOutput,
-                                CompilationGCOutput& gcOutputForDelazification);
+extern bool InstantiateStencils(
+    JSContext* cx, CompilationStencil& stencil, CompilationGCOutput& gcOutput,
+    CompilationGCOutput* gcOutputForDelazification = nullptr);
 
 extern JSScript* CompileGlobalScript(JSContext* cx,
                                      const JS::ReadOnlyCompileOptions& options,
