@@ -148,7 +148,8 @@ struct WebPConfig {
   int use_delta_palette;  
   int use_sharp_yuv;      
 
-  uint32_t pad[2];        
+  int qmin;               
+  int qmax;               
 };
 
 
@@ -289,6 +290,11 @@ typedef enum WebPEncodingError {
 
 
 #define WEBP_MAX_DIMENSION 16383
+
+
+
+
+
 
 
 struct WebPPicture {

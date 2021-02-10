@@ -31,7 +31,7 @@ extern "C" {
 
 
 #define ENC_MAJ_VERSION 1
-#define ENC_MIN_VERSION 1
+#define ENC_MIN_VERSION 2
 #define ENC_REV_VERSION 0
 
 enum { MAX_LF_LEVELS = 64,       
@@ -507,7 +507,7 @@ int WebPPictureAllocYUVA(WebPPicture* const picture, int width, int height);
 
 
 
-void WebPCleanupTransparentAreaLossless(WebPPicture* const pic);
+void WebPReplaceTransparentPixels(WebPPicture* const pic, uint32_t color);
 
 
 

@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "src/webp/types.h"
+#include "src/webp/encode.h"
 #include "src/webp/format_constants.h"
 
 #ifdef __cplusplus
@@ -221,11 +222,16 @@ enum VP8LLZ77Type {
 
 
 
-VP8LBackwardRefs* VP8LGetBackwardReferences(
+
+
+
+
+
+WebPEncodingError VP8LGetBackwardReferences(
     int width, int height, const uint32_t* const argb, int quality,
-    int low_effort, int lz77_types_to_try, int* const cache_bits,
-    const VP8LHashChain* const hash_chain, VP8LBackwardRefs* const refs_tmp1,
-    VP8LBackwardRefs* const refs_tmp2);
+    int low_effort, int lz77_types_to_try, int cache_bits_max, int do_no_cache,
+    const VP8LHashChain* const hash_chain, VP8LBackwardRefs* const refs,
+    int* const cache_bits_best);
 
 #ifdef __cplusplus
 }

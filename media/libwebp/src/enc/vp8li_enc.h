@@ -71,7 +71,7 @@ typedef struct {
   uint32_t palette_[MAX_PALETTE_SIZE];
 
   
-  struct VP8LBackwardRefs refs_[3];  
+  struct VP8LBackwardRefs refs_[4];  
   VP8LHashChain hash_chain_;         
                                      
 } VP8LEncoder;

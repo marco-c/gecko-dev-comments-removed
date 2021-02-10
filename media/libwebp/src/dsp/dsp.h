@@ -51,9 +51,7 @@ extern "C" {
 # define __has_builtin(x) 0
 #endif
 
-
-#if !defined(EMSCRIPTEN)
-
+#if !defined(HAVE_CONFIG_H)
 #if defined(_MSC_VER) && _MSC_VER > 1310 && \
     (defined(_M_X64) || defined(_M_IX86))
 #define WEBP_MSC_SSE2
@@ -62,6 +60,7 @@ extern "C" {
 #if defined(_MSC_VER) && _MSC_VER >= 1500 && \
     (defined(_M_X64) || defined(_M_IX86))
 #define WEBP_MSC_SSE41
+#endif
 #endif
 
 
@@ -75,6 +74,9 @@ extern "C" {
 #if defined(__SSE4_1__) || defined(WEBP_MSC_SSE41) || defined(WEBP_HAVE_SSE41)
 #define WEBP_USE_SSE41
 #endif
+
+#undef WEBP_MSC_SSE41
+#undef WEBP_MSC_SSE2
 
 
 
@@ -109,8 +111,6 @@ extern "C" {
 #if defined(__mips_msa) && defined(__mips_isa_rev) && (__mips_isa_rev >= 5)
 #define WEBP_USE_MSA
 #endif
-
-#endif  
 
 #ifndef WEBP_DSP_OMIT_C_CODE
 #define WEBP_DSP_OMIT_C_CODE 1
@@ -191,6 +191,12 @@ extern "C" {
 #define WEBP_UBSAN_IGNORE_UNSIGNED_OVERFLOW \
   __attribute__((no_sanitize("unsigned-integer-overflow")))
 #endif
+#endif
+
+
+
+#if !defined(WEBP_OFFSET_PTR)
+#define WEBP_OFFSET_PTR(ptr, off) (((ptr) == NULL) ? NULL : ((ptr) + (off)))
 #endif
 
 
@@ -632,6 +638,8 @@ extern void (*WebPPackRGB)(const uint8_t* r, const uint8_t* g, const uint8_t* b,
 extern int (*WebPHasAlpha8b)(const uint8_t* src, int length);
 
 extern int (*WebPHasAlpha32b)(const uint8_t* src, int length);
+
+extern void (*WebPAlphaReplace)(uint32_t* src, int length, uint32_t color);
 
 
 void WebPInitAlphaProcessing(void);
