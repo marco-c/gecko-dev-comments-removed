@@ -5388,7 +5388,7 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
       
       return false;
     }
-    if (!emitJump(JSOp::IfNe, &loopInfo.breaks)) {
+    if (!emitJump(JSOp::JumpIfTrue, &loopInfo.breaks)) {
       
       return false;
     }
@@ -6775,7 +6775,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     
     return false;
   }
-  if (!emitJump(JSOp::IfNe, &loopInfo.breaks)) {
+  if (!emitJump(JSOp::JumpIfTrue, &loopInfo.breaks)) {
     
     return false;
   }
