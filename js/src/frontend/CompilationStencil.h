@@ -28,6 +28,7 @@
 #include "js/RealmOptions.h"
 #include "js/SourceText.h"
 #include "js/Transcoding.h"
+#include "js/UniquePtr.h"  
 #include "js/Vector.h"
 #include "js/WasmModule.h"
 #include "vm/GlobalObject.h"  
@@ -549,7 +550,7 @@ struct CompilationStencil : public BaseCompilationStencil {
   CompilationInput input;
 
   
-  mozilla::Maybe<StencilModuleMetadata> moduleMetadata;
+  UniquePtr<StencilModuleMetadata> moduleMetadata;
 
   
   
