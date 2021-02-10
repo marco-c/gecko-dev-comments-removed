@@ -4,6 +4,7 @@
 
 use api::{ColorF, YuvColorSpace, YuvFormat, ImageRendering, ExternalImageId, ImageBufferKind};
 use api::units::*;
+use api::ColorDepth;
 use crate::batch::{resolve_image};
 use euclid::Transform3D;
 use crate::gpu_cache::GpuCache;
@@ -1066,6 +1067,22 @@ pub struct MappedTileInfo {
 }
 
 
+#[repr(C)]
+pub struct SWGLCompositeSurfaceInfo {
+    
+    
+    pub yuv_planes: u32,
+    
+    pub textures: [u32; 3],
+    
+    pub color_space: YuvColorSpace,
+    
+    pub color_depth: ColorDepth,
+    
+    pub size: DeviceIntSize,
+}
+
+
 pub trait MappableCompositor: Compositor {
     
     
@@ -1081,6 +1098,14 @@ pub trait MappableCompositor: Compositor {
     
     
     fn unmap_tile(&mut self);
+
+    fn lock_composite_surface(
+        &mut self,
+        ctx: *mut c_void,
+        external_image_id: ExternalImageId,
+        composite_info: *mut SWGLCompositeSurfaceInfo,
+    ) -> bool;
+    fn unlock_composite_surface(&mut self, ctx: *mut c_void, external_image_id: ExternalImageId);
 }
 
 

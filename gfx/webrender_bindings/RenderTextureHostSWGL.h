@@ -56,7 +56,7 @@ class RenderTextureHostSWGL : public RenderTextureHost {
   
   
   bool LockSWGLCompositeSurface(void* aContext,
-                                wr::WrSWGLCompositeSurfaceInfo* aInfo);
+                                wr::SWGLCompositeSurfaceInfo* aInfo);
 
   size_t Bytes() override {
     size_t bytes = 0;
