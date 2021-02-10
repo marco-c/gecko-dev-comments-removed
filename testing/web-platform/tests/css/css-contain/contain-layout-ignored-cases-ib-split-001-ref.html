@@ -2,11 +2,8 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>CSS Test: 'contain: layout' should have no effect on non-atomic inline
-         (including its block part, if there's a block-in-inline split)</title>
+  <title>CSS Reftest Reference</title>
   <link rel="author" title="Daniel Holbert" href="mailto:dholbert@mozilla.com">
-  <link rel="help" href="https://drafts.csswg.org/css-contain/#containment-layout">
-  <link rel="match" href="contain-layout-ignored-cases-ib-split-001-ref.html">
   <style>
     .abspos-box {
       position: absolute;
@@ -56,17 +53,19 @@
   </style>
 </head>
 <body>
-  
-
-
-
+  <!-- The expectation here is that 'abspos-box' elements will all interact in
+       the same top-level stacking context. That means the box ordering should
+       be (back to front): darkmagenta/magenta/darkkhaki/khaki/darkcyan/cyan,
+       with the boxes stacked (visually) from top-left to bottom-right. -->
 
   <div class="abspos-box outside-span-midground"></div>
 
-  <span style="contain: layout">
+  <!-- Note: this file is identical to the testcase,
+       except for the lack of "contain: layout" on this span. -->
+  <span>
     <div class="abspos-box before-IB-background"></div>
     <div class="abspos-box before-IB-foreground"></div>
-    
+    <!-- This unstyled div crates the IB split: -->
     <div>
       <div class="abspos-box inside-IB-midground"></div>
     </div>

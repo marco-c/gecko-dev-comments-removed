@@ -46,42 +46,42 @@
   </style>
 </head>
 <body>
-  
+  <!-- NOTE: In all cases below, the expectation is that the size-contained
+       element should be sized as if it had no contents (while honoring
+       whatever sizing properties are provided). -->
 
-
-
-  
+  <!--CSS Test: A size-contained scrollable block with no specified size.-->
   <div class="contain"><div class="innerContents">inner</div></div>
   <br>
 
-  
+  <!--CSS Test: A size-contained scrollable block with specified min-height -->
   <div class="contain minHeight"><div class="innerContents">inner</div></div>
   <br>
 
-  
+  <!--CSS Test: A size-contained scrollable block with specified height -->
   <div class="contain height"><div class="innerContents">inner</div></div>
   <br>
 
-  
+  <!--CSS Test: A size-contained scrollable block with specified max-width -->
   <div class="contain maxWidth"><div class="innerContents">inner</div></div>
   <br>
 
-  
+  <!--CSS Test: A size-contained scrollable block with specified width -->
   <div class="contain width"><div class="innerContents">inner</div></div>
   <br>
 
-  
+  <!--CSS Test: A size-contained floated scrollable block with auto size -->
   <div class="contain floatLBasic"><div class="innerContents">inner</div></div>
   <br>
 
-  
-
+  <!--CSS Test: A size-contained floated scrollable block with
+      specified width -->
   <div class="contain floatLWidth"><div class="innerContents">inner</div></div>
   <br>
 
-  
-
-
+  <!--CSS Test: A size-contained scrollable block in a
+      baseline-aligning flex container: should size as if it's empty, but
+      still baseline-align using its contents' baseline -->
   <div class="flexBaselineCheck">
     outside before
     <div class="contain">

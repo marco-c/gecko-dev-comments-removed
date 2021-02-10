@@ -41,13 +41,13 @@
   </style>
 </head>
 <body>
-  
+  <!--CSS Test: Elements with contain:layout that do not produce scrollable overflow should paint as if containment were not applied. -->
   <div class="outer">
     <div class="inner-sm contain float"></div>
   </div>
   <br>
 
-  
+  <!--CSS Test: Layout-contained elements that overflow their container and have children who overflow should produce the same amount of scrollable overflow as if there were no children. -->
   <div class="outer auto">
     <div class="inner-lg contain">
       <div class="inner-lg pass float"></div>
@@ -56,7 +56,7 @@
   </div>
   <br>
 
-  
+  <!--CSS Test: Layout-contained elements that do not overflow their container, but have children who overflow, should not allow their children to affect the scrollable overflow regions of their parent. -->
   <div class="outer auto">
     <div class="inner-sm contain border">
       <div class="inner-lg float">

@@ -56,17 +56,17 @@
   </style>
 </head>
 <body>
-  
-
-
-
+  <!-- The expectation here is that 'abspos-box' elements will all interact in
+       the same top-level stacking context. That means the box ordering should
+       be (back to front): darkmagenta/magenta/darkkhaki/khaki/darkcyan/cyan,
+       with the boxes stacked (visually) from top-left to bottom-right. -->
 
   <div class="abspos-box outside-span-midground"></div>
 
   <span style="contain: paint">
     <div class="abspos-box before-IB-background"></div>
     <div class="abspos-box before-IB-foreground"></div>
-    
+    <!-- This unstyled div crates the IB split: -->
     <div>
       <div class="abspos-box inside-IB-midground"></div>
     </div>

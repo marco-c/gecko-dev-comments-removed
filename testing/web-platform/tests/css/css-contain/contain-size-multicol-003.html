@@ -37,8 +37,8 @@
   </style>
 </head>
 <body>
-  
-
+  <!-- This test verifies that contain:size doesn't interfere with the
+       determination of a multicol element's baseline. -->
   <div class="flexBaselineCheck">
     outside before
     <div class="contain">
@@ -48,7 +48,7 @@
   </div>
   <br>
 
-  
+  <!--The following tests are used to ensure column-gaps and column-widths continue to contribute to the minimum and maximum width of a size-contained multicol element. Each should render as if it had no contents.-->
 
   <div class="contain min col-width"><div class="innerContents">inner</div></div>
   <br>
