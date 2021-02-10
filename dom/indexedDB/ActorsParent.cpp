@@ -515,16 +515,6 @@ uint32_t HashName(const nsAString& aName) {
                          });
 }
 
-Result<Ok, nsresult> AssertExists(const nsCOMPtr<nsIFile>& aDirectory) {
-#ifdef DEBUG
-  IDB_TRY_INSPECT(const bool& exists, MOZ_TO_RESULT_INVOKE(aDirectory, Exists));
-
-  MOZ_ASSERT(exists);
-#endif
-
-  return Ok{};
-};
-
 nsresult ClampResultCode(nsresult aResultCode) {
   if (NS_SUCCEEDED(aResultCode) ||
       NS_ERROR_GET_MODULE(aResultCode) == NS_ERROR_MODULE_DOM_INDEXEDDB) {
@@ -12694,23 +12684,32 @@ nsresult QuotaClient::UpgradeStorageFrom2_1To2_2(nsIFile* aDirectory) {
 
   IDB_TRY(CollectEachFile(
       *aDirectory, [](const nsCOMPtr<nsIFile>& file) -> Result<Ok, nsresult> {
-        IDB_TRY_INSPECT(const auto& leafName, MOZ_TO_RESULT_INVOKE_TYPED(
-                                                  nsString, file, GetLeafName));
+        IDB_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*file));
 
-        IDB_TRY_INSPECT(const bool& isDirectory,
-                        MOZ_TO_RESULT_INVOKE(file, IsDirectory));
+        switch (dirEntryKind) {
+          case nsIFileKind::ExistsAsDirectory:
+            break;
 
-        if (isDirectory) {
-          return Ok{};
-        }
+          case nsIFileKind::ExistsAsFile: {
+            IDB_TRY_INSPECT(
+                const auto& leafName,
+                MOZ_TO_RESULT_INVOKE_TYPED(nsString, file, GetLeafName));
 
-        
-        
-        
-        if (StringEndsWith(leafName, u".tmp"_ns)) {
-          IDB_WARNING("Deleting unknown temporary file!");
+            
+            
+            
+            if (StringEndsWith(leafName, u".tmp"_ns)) {
+              IDB_WARNING("Deleting unknown temporary file!");
 
-          IDB_TRY(file->Remove(false));
+              IDB_TRY(file->Remove(false));
+            }
+
+            break;
+          }
+
+          case nsIFileKind::DoesNotExist:
+            
+            break;
         }
 
         return Ok{};
@@ -13116,55 +13115,64 @@ QuotaClient::GetDatabaseFilenames(nsIFile& aDirectory,
       [&result](const nsCOMPtr<nsIFile>& file) -> Result<Ok, nsresult> {
         IDB_TRY_INSPECT(const auto& leafName, MOZ_TO_RESULT_INVOKE_TYPED(
                                                   nsString, file, GetLeafName));
-        IDB_TRY_INSPECT(const auto& isDirectory,
-                        MOZ_TO_RESULT_INVOKE(file, IsDirectory));
 
-        if (isDirectory) {
-          result.subdirsToProcess.AppendElement(leafName);
-          return Ok{};
-        }
+        IDB_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*file));
 
-        if constexpr (ObsoleteFilenames == ObsoleteFilenamesHandling::Include) {
-          if (StringBeginsWith(leafName, kIdbDeletionMarkerFilePrefix)) {
-            result.obsoleteFilenames.PutEntry(
-                Substring(leafName, kIdbDeletionMarkerFilePrefix.Length()));
-            return Ok{};
+        switch (dirEntryKind) {
+          case nsIFileKind::ExistsAsDirectory:
+            result.subdirsToProcess.AppendElement(leafName);
+            break;
+
+          case nsIFileKind::ExistsAsFile: {
+            if constexpr (ObsoleteFilenames ==
+                          ObsoleteFilenamesHandling::Include) {
+              if (StringBeginsWith(leafName, kIdbDeletionMarkerFilePrefix)) {
+                result.obsoleteFilenames.PutEntry(
+                    Substring(leafName, kIdbDeletionMarkerFilePrefix.Length()));
+                break;
+              }
+            }
+
+            
+            
+            
+            if (QuotaManager::IsOSMetadata(leafName)) {
+              break;
+            }
+
+            
+            if (QuotaManager::IsDotFile(leafName)) {
+              break;
+            }
+
+            
+            
+            
+            if (StringEndsWith(leafName, kSQLiteJournalSuffix) ||
+                StringEndsWith(leafName, kSQLiteSHMSuffix)) {
+              break;
+            }
+
+            
+            
+            if (StringEndsWith(leafName, kSQLiteWALSuffix)) {
+              break;
+            }
+
+            nsDependentSubstring leafNameBase;
+            if (!GetFilenameBase(leafName, kSQLiteSuffix, leafNameBase)) {
+              UNKNOWN_FILE_WARNING(leafName);
+              break;
+            }
+
+            result.databaseFilenames.PutEntry(leafNameBase);
+            break;
           }
-        }
 
-        
-        
-        
-        if (QuotaManager::IsOSMetadata(leafName)) {
-          return Ok{};
+          case nsIFileKind::DoesNotExist:
+            
+            break;
         }
-
-        
-        if (QuotaManager::IsDotFile(leafName)) {
-          return Ok{};
-        }
-
-        
-        
-        
-        if (StringEndsWith(leafName, kSQLiteJournalSuffix) ||
-            StringEndsWith(leafName, kSQLiteSHMSuffix)) {
-          return Ok{};
-        }
-
-        
-        
-        if (StringEndsWith(leafName, kSQLiteWALSuffix)) {
-          return Ok{};
-        }
-
-        nsDependentSubstring leafNameBase;
-        if (!GetFilenameBase(leafName, kSQLiteSuffix, leafNameBase)) {
-          UNKNOWN_FILE_WARNING(leafName);
-          return Ok{};
-        }
-
-        result.databaseFilenames.PutEntry(leafNameBase);
 
         return Ok{};
       }));
@@ -13567,118 +13575,126 @@ nsresult Maintenance::DirectoryWork() {
             return Err(NS_ERROR_ABORT);
           }
 
-          
-          
-          IDB_TRY(AssertExists(originDir));
+          IDB_TRY_INSPECT(const auto& dirEntryKind,
+                          GetDirEntryKind(*originDir));
 
-          {
-            IDB_TRY_INSPECT(const bool& isDirectory,
-                            MOZ_TO_RESULT_INVOKE(originDir, IsDirectory));
+          switch (dirEntryKind) {
+            case nsIFileKind::ExistsAsFile:
+              break;
 
-            if (!isDirectory) {
-              return Ok{};
-            }
-          }
-
-          
-          
-          
-
-          IDB_TRY_INSPECT(
-              const auto& metadata,
-              quotaManager->GetDirectoryMetadataWithQuotaInfo2WithRestore(
-                  originDir, persistent),
+            case nsIFileKind::ExistsAsDirectory: {
               
-              Ok{});
+              
+              
 
-          
-          
-          if (OriginAttributes::IsPrivateBrowsing(
-                  metadata.mQuotaInfo.mOrigin)) {
-            return Ok{};
-          }
+              IDB_TRY_INSPECT(
+                  const auto& metadata,
+                  quotaManager->GetDirectoryMetadataWithQuotaInfo2WithRestore(
+                      originDir, persistent),
+                  
+                  Ok{});
 
-          if (persistent) {
-            
-            
-            
-            
-            
+              
+              
+              if (OriginAttributes::IsPrivateBrowsing(
+                      metadata.mQuotaInfo.mOrigin)) {
+                return Ok{};
+              }
 
-            IDB_TRY_UNWRAP(
-                const DebugOnly<bool> created,
-                quotaManager
-                    ->EnsurePersistentOriginIsInitialized(metadata.mQuotaInfo)
-                    .map([](const auto& res) { return res.second; }),
+              if (persistent) {
                 
-                Ok{});
-
-            
-            
-            
-            MOZ_ASSERT(!created);
-          }
-
-          IDB_TRY_INSPECT(const auto& idbDir,
-                          CloneFileAndAppend(*originDir, idbDirName));
-
-          IDB_TRY_INSPECT(const bool& exists,
-                          MOZ_TO_RESULT_INVOKE(idbDir, Exists));
-
-          if (!exists) {
-            return Ok{};
-          }
-
-          IDB_TRY_INSPECT(const bool& isDirectory,
-                          MOZ_TO_RESULT_INVOKE(idbDir, IsDirectory));
-
-          IDB_TRY(OkIf(isDirectory), Ok{});
-
-          nsTArray<nsString> databasePaths;
-
-          
-          IDB_TRY(CollectEachFile(
-              *idbDir,
-              [this, &databasePaths](
-                  const nsCOMPtr<nsIFile>& idbDirFile) -> Result<Ok, nsresult> {
-                if (NS_WARN_IF(
-                        QuotaClient::IsShuttingDownOnNonBackgroundThread()) ||
-                    IsAborted()) {
-                  return Err(NS_ERROR_ABORT);
-                }
+                
+                
+                
+                
 
                 IDB_TRY_UNWRAP(
-                    auto idbFilePath,
-                    MOZ_TO_RESULT_INVOKE_TYPED(nsString, idbDirFile, GetPath));
-
-                if (!StringEndsWith(idbFilePath, kSQLiteSuffix)) {
-                  return Ok{};
-                }
-
-                
-                
-                
-                IDB_TRY(AssertExists(idbDirFile));
-
-                IDB_TRY_INSPECT(const bool& isDirectory,
-                                MOZ_TO_RESULT_INVOKE(idbDirFile, IsDirectory));
-
-                if (isDirectory) {
-                  return Ok{};
-                }
+                    const DebugOnly<bool> created,
+                    quotaManager
+                        ->EnsurePersistentOriginIsInitialized(
+                            metadata.mQuotaInfo)
+                        .map([](const auto& res) { return res.second; }),
+                    
+                    Ok{});
 
                 
+                
+                
+                MOZ_ASSERT(!created);
+              }
 
-                MOZ_ASSERT(!databasePaths.Contains(idbFilePath));
+              IDB_TRY_INSPECT(const auto& idbDir,
+                              CloneFileAndAppend(*originDir, idbDirName));
 
-                databasePaths.AppendElement(std::move(idbFilePath));
+              IDB_TRY_INSPECT(const bool& exists,
+                              MOZ_TO_RESULT_INVOKE(idbDir, Exists));
 
+              if (!exists) {
                 return Ok{};
-              }));
+              }
 
-          if (!databasePaths.IsEmpty()) {
-            mDirectoryInfos.EmplaceBack(persistenceType, metadata.mQuotaInfo,
-                                        std::move(databasePaths));
+              IDB_TRY_INSPECT(const bool& isDirectory,
+                              MOZ_TO_RESULT_INVOKE(idbDir, IsDirectory));
+
+              IDB_TRY(OkIf(isDirectory), Ok{});
+
+              nsTArray<nsString> databasePaths;
+
+              
+              IDB_TRY(CollectEachFile(
+                  *idbDir,
+                  [this, &databasePaths](const nsCOMPtr<nsIFile>& idbDirFile)
+                      -> Result<Ok, nsresult> {
+                    if (NS_WARN_IF(QuotaClient::
+                                       IsShuttingDownOnNonBackgroundThread()) ||
+                        IsAborted()) {
+                      return Err(NS_ERROR_ABORT);
+                    }
+
+                    IDB_TRY_UNWRAP(auto idbFilePath,
+                                   MOZ_TO_RESULT_INVOKE_TYPED(
+                                       nsString, idbDirFile, GetPath));
+
+                    if (!StringEndsWith(idbFilePath, kSQLiteSuffix)) {
+                      return Ok{};
+                    }
+
+                    IDB_TRY_INSPECT(const auto& dirEntryKind,
+                                    GetDirEntryKind(*idbDirFile));
+
+                    switch (dirEntryKind) {
+                      case nsIFileKind::ExistsAsDirectory:
+                        break;
+
+                      case nsIFileKind::ExistsAsFile:
+                        
+
+                        MOZ_ASSERT(!databasePaths.Contains(idbFilePath));
+
+                        databasePaths.AppendElement(std::move(idbFilePath));
+                        break;
+
+                      case nsIFileKind::DoesNotExist:
+                        
+                        
+                        break;
+                    }
+
+                    return Ok{};
+                  }));
+
+              if (!databasePaths.IsEmpty()) {
+                mDirectoryInfos.EmplaceBack(persistenceType,
+                                            metadata.mQuotaInfo,
+                                            std::move(databasePaths));
+              }
+
+              break;
+            }
+
+            case nsIFileKind::DoesNotExist:
+              
+              break;
           }
 
           return Ok{};
