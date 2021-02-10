@@ -49,27 +49,27 @@ const CLOSE_DELAY = 750;
 
 
 
-function EyeDropper(highlighterEnv) {
-  EventEmitter.decorate(this);
+class EyeDropper {
+  constructor(highlighterEnv) {
+    EventEmitter.decorate(this);
 
-  this.highlighterEnv = highlighterEnv;
-  this.markup = new CanvasFrameAnonymousContentHelper(
-    this.highlighterEnv,
-    this._buildMarkup.bind(this)
-  );
-  this.isReady = this.markup.initialize();
+    this.highlighterEnv = highlighterEnv;
+    this.markup = new CanvasFrameAnonymousContentHelper(
+      this.highlighterEnv,
+      this._buildMarkup.bind(this)
+    );
+    this.isReady = this.markup.initialize();
 
-  
-  this.format = Services.prefs.getCharPref(FORMAT_PREF);
-  this.eyeDropperZoomLevel = Services.prefs.getIntPref(ZOOM_LEVEL_PREF);
-}
+    
+    this.format = Services.prefs.getCharPref(FORMAT_PREF);
+    this.eyeDropperZoomLevel = Services.prefs.getIntPref(ZOOM_LEVEL_PREF);
+  }
 
-EyeDropper.prototype = {
-  ID_CLASS_PREFIX: "eye-dropper-",
+  ID_CLASS_PREFIX = "eye-dropper-";
 
   get win() {
     return this.highlighterEnv.window;
-  },
+  }
 
   _buildMarkup() {
     
@@ -121,16 +121,16 @@ EyeDropper.prototype = {
     });
 
     return container;
-  },
+  }
 
   destroy() {
     this.hide();
     this.markup.destroy();
-  },
+  }
 
   getElement(id) {
     return this.markup.getElement(this.ID_CLASS_PREFIX + id);
-  },
+  }
 
   
 
@@ -186,7 +186,7 @@ EyeDropper.prototype = {
     this.win.document.setSuppressedEventListener(this);
 
     return true;
-  },
+  }
 
   
 
@@ -214,7 +214,7 @@ EyeDropper.prototype = {
     this.emit("hidden");
 
     this.win.document.setSuppressedEventListener(null);
-  },
+  }
 
   prepareImageCapture() {
     
@@ -232,7 +232,7 @@ EyeDropper.prototype = {
       
       this.getElement("root").setAttribute("drawn", "true");
     });
-  },
+  }
 
   
 
@@ -246,21 +246,21 @@ EyeDropper.prototype = {
     cellsWide += cellsWide % 2;
 
     return cellsWide;
-  },
+  }
 
   
 
 
   get cellSize() {
     return this.magnifiedArea.width / this.cellsWide;
-  },
+  }
 
   
 
 
   get centerCell() {
     return Math.floor(this.cellsWide / 2);
-  },
+  }
 
   
 
@@ -269,7 +269,7 @@ EyeDropper.prototype = {
     const pos = this.centerCell * this.cellSize + this.cellSize / 2;
     const rgb = this.ctx.getImageData(pos, pos, 1, 1).data;
     return rgb;
-  },
+  }
 
   draw() {
     
@@ -305,7 +305,7 @@ EyeDropper.prototype = {
     this.getElement("color-value").setTextContent(
       toColorString(rgb, this.format)
     );
-  },
+  }
 
   
 
@@ -327,7 +327,7 @@ EyeDropper.prototype = {
       this.ctx.lineTo(width, i - 0.5);
       this.ctx.stroke();
     }
-  },
+  }
 
   
 
@@ -347,7 +347,7 @@ EyeDropper.prototype = {
 
     this.ctx.strokeStyle = "rgba(255, 255, 255, 1)";
     this.ctx.strokeRect(pos - 0.5, pos - 0.5, this.cellSize, this.cellSize);
-  },
+  }
 
   handleEvent(e) {
     switch (e.type) {
@@ -385,7 +385,7 @@ EyeDropper.prototype = {
         this.show();
         break;
     }
-  },
+  }
 
   moveTo(x, y) {
     const root = this.getElement("root");
@@ -407,7 +407,7 @@ EyeDropper.prototype = {
     } else if (x >= this.win.innerWidth - MAGNIFIER_WIDTH) {
       root.setAttribute("left", "");
     }
-  },
+  }
 
   
 
@@ -421,7 +421,7 @@ EyeDropper.prototype = {
 
     this.emit("selected", toColorString(this.centerColor, this.format));
     onColorSelected.then(() => this.hide(), console.error);
-  },
+  }
 
   
 
@@ -489,7 +489,7 @@ EyeDropper.prototype = {
 
       e.preventDefault();
     }
-  },
+  }
 
   
 
@@ -511,8 +511,8 @@ EyeDropper.prototype = {
     return new Promise(resolve => {
       this._copyTimeout = setTimeout(resolve, CLOSE_DELAY);
     });
-  },
-};
+  }
+}
 
 exports.EyeDropper = EyeDropper;
 
