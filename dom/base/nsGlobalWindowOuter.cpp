@@ -5040,6 +5040,7 @@ void nsGlobalWindowOuter::PromptOuter(const nsAString& aMessage,
 }
 
 void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType,
+                                     bool aFromOtherProcess,
                                      uint64_t aActionId) {
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (!fm) {
@@ -5047,6 +5048,16 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType,
   }
 
   auto [canFocus, isActive] = GetBrowsingContext()->CanFocusCheck(aCallerType);
+  if (aFromOtherProcess) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(XRE_IsContentProcess(),
+               "Parent should not trust other processes.");
+    canFocus = true;
+  }
 
   nsCOMPtr<nsIBaseWindow> treeOwnerAsWin = GetTreeOwnerWindow();
   if (treeOwnerAsWin && (canFocus || isActive)) {
