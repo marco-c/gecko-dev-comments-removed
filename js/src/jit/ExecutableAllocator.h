@@ -29,8 +29,6 @@
 #define jit_ExecutableAllocator_h
 
 #include "mozilla/EnumeratedArray.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/XorShift128PlusRNG.h"
 
 #include <limits>
 #include <stddef.h>  
@@ -51,7 +49,6 @@ namespace jit {
 enum class CodeKind : uint8_t { Ion, Baseline, RegExp, Other, Count };
 
 class ExecutableAllocator;
-class JitRuntime;
 
 
 class ExecutablePool {
