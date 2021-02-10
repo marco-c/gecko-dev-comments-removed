@@ -517,6 +517,7 @@ function String_substring(start, end) {
     
     return SubstringKernel(str, from | 0, (to - from) | 0);
 }
+_SetIsInlinableLargeFunction(String_substring);
 
 
 
@@ -554,6 +555,7 @@ function String_substr(start, length) {
     
     return SubstringKernel(str, intStart | 0, resultLength | 0);
 }
+_SetIsInlinableLargeFunction(String_substr);
 
 
 
@@ -627,6 +629,7 @@ function String_slice(start, end) {
     
     return SubstringKernel(str, from | 0, span | 0);
 }
+_SetIsInlinableLargeFunction(String_slice);
 
 
 
