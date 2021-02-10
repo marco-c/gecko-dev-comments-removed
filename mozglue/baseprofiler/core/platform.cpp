@@ -1669,7 +1669,8 @@ static void DoNativeBacktrace(PSLockRef aLock,
 
 static inline void DoSharedSample(
     PSLockRef aLock, bool aIsSynchronous, RegisteredThread& aRegisteredThread,
-    const Registers& aRegs, uint64_t aSamplePos, ProfileBuffer& aBuffer,
+    const Registers& aRegs, uint64_t aSamplePos, uint64_t aBufferRangeStart,
+    ProfileBuffer& aBuffer,
     StackCaptureOptions aCaptureOptions = StackCaptureOptions::Full) {
   
 
@@ -1678,7 +1679,7 @@ static inline void DoSharedSample(
 
   MOZ_RELEASE_ASSERT(ActivePS::Exists(aLock));
 
-  ProfileBufferCollector collector(aBuffer, aSamplePos);
+  ProfileBufferCollector collector(aBuffer, aSamplePos, aBufferRangeStart);
   NativeStack nativeStack;
 #if defined(HAVE_NATIVE_UNWIND)
   if (ActivePS::FeatureStackWalk(aLock) &&
@@ -1711,14 +1712,16 @@ static void DoSyncSample(PSLockRef aLock, RegisteredThread& aRegisteredThread,
   MOZ_ASSERT(aCaptureOptions != StackCaptureOptions::NoStack,
              "DoSyncSample should not be called when no capture is needed");
 
-  uint64_t samplePos =
+  const uint64_t bufferRangeStart = aBuffer.BufferRangeStart();
+
+  const uint64_t samplePos =
       aBuffer.AddThreadIdEntry(aRegisteredThread.Info()->ThreadId());
 
   TimeDuration delta = aNow - CorePS::ProcessStartTime();
   aBuffer.AddEntry(ProfileBufferEntry::Time(delta.ToMilliseconds()));
 
   DoSharedSample(aLock,  true, aRegisteredThread, aRegs,
-                 samplePos, aBuffer, aCaptureOptions);
+                 samplePos, bufferRangeStart, aBuffer, aCaptureOptions);
 }
 
 
@@ -1728,11 +1731,12 @@ static void DoPeriodicSample(PSLockRef aLock,
                              RegisteredThread& aRegisteredThread,
                              ProfiledThreadData& aProfiledThreadData,
                              const Registers& aRegs, uint64_t aSamplePos,
+                             uint64_t aBufferRangeStart,
                              ProfileBuffer& aBuffer) {
   
 
   DoSharedSample(aLock,  false, aRegisteredThread, aRegs,
-                 aSamplePos, aBuffer);
+                 aSamplePos, aBufferRangeStart, aBuffer);
 }
 
 
@@ -2355,8 +2359,12 @@ void SamplerThread::Run() {
 
             
             
+            const uint64_t bufferRangeStart = buffer.BufferRangeStart();
+
             
-            uint64_t samplePos =
+            
+            
+            const uint64_t samplePos =
                 buffer.AddThreadIdEntry(registeredThread->Info()->ThreadId());
             profiledThreadData->LastSample() = Some(samplePos);
 
@@ -2369,7 +2377,8 @@ void SamplerThread::Run() {
                 lock, *registeredThread, now,
                 [&](const Registers& aRegs, const TimeStamp& aNow) {
                   DoPeriodicSample(lock, *registeredThread, *profiledThreadData,
-                                   aRegs, samplePos, localProfileBuffer);
+                                   aRegs, samplePos, bufferRangeStart,
+                                   localProfileBuffer);
                 });
 
             
