@@ -552,9 +552,13 @@ ShortcutKeyData ShortcutKeys::sBrowserHandlers[] = {
     {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},   
     {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},   
 
+    
 
-    {u"keypress", nullptr, u" ", u"shift",       u"cmd_scrollPageUp"},    
-    {u"keypress", nullptr, u" ", nullptr,        u"cmd_scrollPageDown"},  
+
+    {u"keypress", nullptr, u" ", nullptr,  u"cmd_scrollPageDown"},  
+    {u"keypress", nullptr, u" ", u"shift", u"cmd_scrollPageUp"},    
+
+
     {u"keypress", nullptr, u"a", u"accel",       u"cmd_selectAll"},       
 #if defined(USE_EMACS_KEY_BINDINGS)
     {u"keypress", nullptr, u"a", u"alt",         u"cmd_selectAll"},       
@@ -715,15 +719,14 @@ ShortcutKeyData ShortcutKeys::sEditorHandlers[] = {
     {u"keypress", nullptr, u"z", u"accel",       u"cmd_undo"},               
     {u"keypress", nullptr, u"z", u"accel,shift", u"cmd_redo"},               
 
+    
 
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) || \
-    defined(MOZ_WIDGET_ANDROID) || defined(USE_EMACS_KEY_BINDINGS)
-    {u"keypress", nullptr, u" ", u"shift",           u"cmd_scrollPageUp"},             
-    {u"keypress", nullptr, u" ", nullptr,            u"cmd_scrollPageDown"},           
-#endif
+
+    {u"keypress", nullptr, u" ", nullptr,  u"cmd_scrollPageDown"},  
+    {u"keypress", nullptr, u" ", u"shift", u"cmd_scrollPageUp"},    
+
+
 #if defined(MOZ_WIDGET_COCOA)
-    {u"keypress", nullptr, u" ", u"shift",           u"cmd_scrollPageUp"},             
-    {u"keypress", nullptr, u" ", nullptr,            u"cmd_scrollPageDown"},           
     {u"keypress", nullptr, u"a", u"accel",           u"cmd_selectAll"},                
     {u"keypress", nullptr, u"v", u"accel,alt,shift", u"cmd_pasteNoFormatting"},        
 #endif  
