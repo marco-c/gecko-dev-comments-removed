@@ -4067,6 +4067,8 @@ pub struct SurfaceInfo {
     pub device_pixel_scale: DevicePixelScale,
     
     pub scale_factors: (f32, f32),
+    
+    pub device_rect: Option<DeviceRect>,
 }
 
 impl SurfaceInfo {
@@ -4105,7 +4107,12 @@ impl SurfaceInfo {
             inflation_factor,
             device_pixel_scale,
             scale_factors,
+            device_rect: None,
         }
+    }
+
+    pub fn get_device_rect(&self) -> DeviceRect {
+        self.device_rect.expect("bug: queried before surface was initialized")
     }
 }
 
@@ -5061,6 +5068,7 @@ impl PicturePrimitive {
                 frame_state.init_surface_tiled(
                     surface_index,
                     surface_tasks,
+                    device_clip_rect,
                 );
             }
             Some(ref mut raster_config) => {
@@ -5268,6 +5276,7 @@ impl PicturePrimitive {
                             blur_render_task_id,
                             picture_task_id,
                             parent_surface_index,
+                            device_rect,
                         );
                     }
                     PictureCompositeMode::Filter(Filter::DropShadows(ref shadows)) => {
@@ -5365,6 +5374,7 @@ impl PicturePrimitive {
                             blur_render_task_id,
                             picture_task_id,
                             parent_surface_index,
+                            device_rect,
                         );
                     }
                     PictureCompositeMode::MixBlend(..) if !frame_context.fb_config.gpu_supports_advanced_blend => {
@@ -5384,12 +5394,75 @@ impl PicturePrimitive {
                             device_pixel_scale,
                         );
 
-                        let readback_task_id = frame_state.rg_builder.add().init(
-                            RenderTask::new_dynamic(
-                                clipped.size.to_i32(),
-                                RenderTaskKind::new_readback(),
-                            )
+                        let parent_surface = &frame_state.surfaces[parent_surface_index.0];
+                        let parent_raster_spatial_node_index = parent_surface.raster_spatial_node_index;
+                        let parent_device_pixel_scale = parent_surface.device_pixel_scale;
+
+                        
+                        
+                        
+                        
+                        
+                        let map_pic_to_parent = SpaceMapper::new_with_target(
+                            parent_raster_spatial_node_index,
+                            self.spatial_node_index,
+                            RasterRect::max_rect(),         
+                            frame_context.spatial_tree,
                         );
+                        let pic_in_raster_space = map_pic_to_parent
+                            .map(&pic_rect)
+                            .expect("bug: unable to map mix-blend content into parent");
+
+                        
+                        
+                        let backdrop_rect = raster_rect_to_device_pixels(
+                            pic_in_raster_space,
+                            parent_device_pixel_scale,
+                        );
+
+                        let parent_surface_rect = parent_surface.get_device_rect();
+
+                        
+                        
+                        
+                        
+                        
+
+                        let readback_task_id = match backdrop_rect.intersection(&parent_surface_rect) {
+                            Some(available_rect) => {
+                                
+                                
+                                
+                                
+                                let backdrop_uv = calculate_uv_rect_kind(
+                                    &pic_rect,
+                                    &map_pic_to_parent.get_transform(),
+                                    &available_rect,
+                                    parent_device_pixel_scale,
+                                );
+
+                                frame_state.rg_builder.add().init(
+                                    RenderTask::new_dynamic(
+                                        available_rect.size.to_i32(),
+                                        RenderTaskKind::new_readback(
+                                            Some(available_rect.origin),
+                                            backdrop_uv,
+                                        ),
+                                    )
+                                )
+                            }
+                            None => {
+                                frame_state.rg_builder.add().init(
+                                    RenderTask::new_dynamic(
+                                        DeviceIntSize::new(16, 16),
+                                        RenderTaskKind::new_readback(
+                                            None,
+                                            UvRectKind::Rect,
+                                        ),
+                                    )
+                                )
+                            }
+                        };
 
                         frame_state.add_child_render_task(
                             parent_surface_index,
@@ -5422,6 +5495,7 @@ impl PicturePrimitive {
                             raster_config.surface_index,
                             render_task_id,
                             parent_surface_index,
+                            clipped,
                         );
                     }
                     PictureCompositeMode::Filter(..) => {
@@ -5466,6 +5540,7 @@ impl PicturePrimitive {
                             raster_config.surface_index,
                             render_task_id,
                             parent_surface_index,
+                            clipped,
                         );
                     }
                     PictureCompositeMode::ComponentTransferFilter(..) => {
@@ -5509,6 +5584,7 @@ impl PicturePrimitive {
                             raster_config.surface_index,
                             render_task_id,
                             parent_surface_index,
+                            clipped,
                         );
                     }
                     PictureCompositeMode::MixBlend(..) |
@@ -5553,6 +5629,7 @@ impl PicturePrimitive {
                             raster_config.surface_index,
                             render_task_id,
                             parent_surface_index,
+                            clipped,
                         );
                     }
                     PictureCompositeMode::SvgFilter(ref primitives, ref filter_datas) => {
@@ -5608,9 +5685,17 @@ impl PicturePrimitive {
                             filter_task_id,
                             picture_task_id,
                             parent_surface_index,
+                            clipped,
                         );
                     }
                 }
+
+                
+                
+                
+                frame_state
+                    .surfaces[raster_config.surface_index.0]
+                    .device_pixel_scale = device_pixel_scale;
             }
             None => {}
         };
