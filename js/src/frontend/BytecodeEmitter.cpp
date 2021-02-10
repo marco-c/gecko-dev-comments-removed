@@ -1784,7 +1784,7 @@ bool BytecodeEmitter::emitTDZCheckIfNeeded(TaggedParserAtomIndex name,
 
   
   
-  if (compilationState.parserAtoms.getParserAtom(name)->isPrivateName()) {
+  if (compilationState.parserAtoms.isPrivateName(name)) {
     return true;
   }
 
