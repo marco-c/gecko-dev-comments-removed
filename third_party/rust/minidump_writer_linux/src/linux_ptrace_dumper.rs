@@ -25,9 +25,9 @@ pub struct LinuxPtraceDumper {
     pub mappings: Vec<MappingInfo>,
 }
 
-#[cfg(target_arch = "x86")]
+#[cfg(target_pointer_width = "32")]
 pub const AT_SYSINFO_EHDR: u32 = 33;
-#[cfg(target_arch = "x86_64")]
+#[cfg(target_pointer_width = "64")]
 pub const AT_SYSINFO_EHDR: u64 = 33;
 
 impl Drop for LinuxPtraceDumper {
@@ -59,6 +59,15 @@ impl LinuxPtraceDumper {
         self.enumerate_mappings()?;
         Ok(())
     }
+
+    pub fn late_init(&mut self) -> Result<()> {
+        #[cfg(target_os = "android")]
+        {
+            late_process_mappings(self.pid, &mut self.mappings)?;
+        }
+        Ok(())
+    }
+
     
     
     
@@ -94,7 +103,8 @@ impl LinuxPtraceDumper {
                 Err(_) => continue,
             }
         }
-        if cfg!(any(target_arch = "x86", target_arch = "x86_64")) {
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+        {
             
             
             
@@ -211,8 +221,17 @@ impl LinuxPtraceDumper {
         
         
         
-        let entry_point_loc = *self.auxv.get(&libc::AT_ENTRY).unwrap_or(&0);
+        let at_entry;
+        #[cfg(target_arch = "arm")]
+        {
+            at_entry = 9;
+        }
+        #[cfg(not(target_arch = "arm"))]
+        {
+            at_entry = libc::AT_ENTRY;
+        }
 
+(??)
         let maps_path = path::PathBuf::from(format!("/proc/{}/maps", self.pid));
         let maps_file = std::fs::File::open(maps_path)?;
 
