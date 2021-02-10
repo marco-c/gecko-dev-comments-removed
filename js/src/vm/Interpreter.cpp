@@ -389,9 +389,6 @@ bool js::RunScript(JSContext* cx, RunState& state) {
       mozilla::TimeDuration delta = ReallyNow() - startTime;
       cx->realm()->timers.executionTime += delta;
       cx->setIsMeasuringExecutionTime(false);
-
-      
-      
     }
   });
 
