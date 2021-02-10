@@ -4,11 +4,11 @@
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
 
-// SVG 1.1 (Second Edition)
-// https://www.w3.org/TR/SVG/
+
+
 <% data.new_style_struct("InheritedSVG", inherited=True, gecko_name="SVG") %>
 
-// Section 10 - Text
+
 
 ${helpers.single_keyword(
     "dominant-baseline",
@@ -29,7 +29,7 @@ ${helpers.single_keyword(
     gecko_enum_prefix="StyleTextAnchor",
 )}
 
-// Section 11 - Painting: Filling, Stroking and Marker Symbols
+
 ${helpers.single_keyword(
     "color-interpolation",
     "srgb auto linearrgb",
@@ -72,7 +72,6 @@ ${helpers.predefined_type(
     "FillRule",
     "Default::default()",
     engines="gecko",
-    needs_context=False,
     animation_value_type="discrete",
     spec="https://www.w3.org/TR/SVG11/painting.html#FillRuleProperty",
 )}
@@ -159,13 +158,12 @@ ${helpers.predefined_type(
     spec="https://www.w3.org/TR/SVG2/painting.html#StrokeDashing",
 )}
 
-// Section 14 - Clipping, Masking and Compositing
+
 ${helpers.predefined_type(
     "clip-rule",
     "FillRule",
     "Default::default()",
     engines="gecko",
-    needs_context=False,
     animation_value_type="discrete",
     spec="https://www.w3.org/TR/SVG11/masking.html#ClipRuleProperty",
 )}

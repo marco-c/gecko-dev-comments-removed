@@ -56,7 +56,7 @@ ${helpers.predefined_type(
     extra_prefixes="moz:layout.css.prefixes.columns",
 )}
 
-// https://drafts.csswg.org/css-multicol-1/#crc
+
 ${helpers.predefined_type(
     "column-rule-color",
     "Color",
@@ -84,7 +84,6 @@ ${helpers.predefined_type(
     "BorderStyle",
     "computed::BorderStyle::None",
     engines="gecko",
-    needs_context=False,
     initial_specified_value="specified::BorderStyle::None",
     extra_prefixes="moz:layout.css.prefixes.columns",
     animation_value_type="discrete",
