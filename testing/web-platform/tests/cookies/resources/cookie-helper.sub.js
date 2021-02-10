@@ -37,6 +37,12 @@ function redirectTo(origin, url) {
 
 
 
+function navigateTo(origin, url) {
+  return origin + "/cookies/resources/navigate.html?location=" + encodeURIComponent(url);
+}
+
+
+
 function assert_dom_cookie(name, value, present) {
   var re = new RegExp("(?:^|; )" + name + "=" + value + "(?:$|;)");
   assert_equals(re.test(document.cookie), present, "`" + name + "=" + value + "` in `document.cookie`");
