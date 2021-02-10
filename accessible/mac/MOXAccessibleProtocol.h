@@ -60,6 +60,11 @@
 
 - (BOOL)moxIsLiveRegion;
 
+
+- (id<MOXAccessible> _Nullable)moxFindAncestor:
+    (BOOL (^_Nonnull)(id<MOXAccessible> _Nonnull moxAcc,
+                      BOOL* _Nonnull stop))findBlock;
+
 @optional
 
 #pragma mark - AttributeGetters
