@@ -145,13 +145,6 @@ void SharedSurfacesParent::AddSameProcess(const wr::ExternalImageId& aId,
 }
 
 
-void SharedSurfacesParent::RemoveSameProcess(const wr::ExternalImageId& aId) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(NS_IsMainThread());
-  Release(aId,  true);
-}
-
-
 void SharedSurfacesParent::DestroyProcess(base::ProcessId aPid) {
   StaticMutexAutoLock lock(sMutex);
   if (!sInstance) {

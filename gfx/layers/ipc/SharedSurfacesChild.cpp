@@ -416,16 +416,7 @@ void SharedSurfacesChild::Unshare(const wr::ExternalImageId& aId,
     return;
   }
 
-  if (manager->OtherPid() == base::GetCurrentProcId()) {
-    
-    
-    
-    
-    
-    if (manager->OwnsExternalImageId(aId)) {
-      SharedSurfacesParent::RemoveSameProcess(aId);
-    }
-  } else if (manager->OwnsExternalImageId(aId)) {
+  if (manager->OwnsExternalImageId(aId)) {
     
     
     
