@@ -663,36 +663,21 @@ bool WellKnownParserAtoms::initSingle(JSContext* cx, const ParserAtom** name,
   return true;
 }
 
-bool WellKnownParserAtoms::initTinyStringAlias(JSContext* cx,
-                                               const ParserAtom** name,
-                                               const char* str) {
-  MOZ_ASSERT(name != nullptr);
-
-  unsigned int len = strlen(str);
-
-  
-  MOZ_ASSERT(len <= MaxWellKnownLength);
-  MOZ_ASSERT(FindSmallestEncoding(JS::UTF8Chars(str, len)) ==
-             JS::SmallestEncoding::ASCII);
-
-  
-  
-  auto tiny = lookupTiny(str, len);
-  MOZ_ASSERT(tiny, "Tiny common name was not found");
-
-  
-  *name = tiny;
-  return true;
-}
-
 bool WellKnownParserAtoms::init(JSContext* cx) {
   
   
-#define COMMON_NAME_INIT_(_, NAME, TEXT)         \
-  if (!initTinyStringAlias(cx, &(NAME), TEXT)) { \
-    return false;                                \
-  }
-  FOR_EACH_TINY_PROPERTYNAME(COMMON_NAME_INIT_)
+
+  empty = &rom_.emptyAtom;
+
+#define COMMON_NAME_INIT_(_, NAME, TEXT) \
+  (NAME) = &rom_.length1Table[static_cast<size_t>((TEXT)[0])];
+  FOR_EACH_LENGTH1_PROPERTYNAME(COMMON_NAME_INIT_)
+#undef COMMON_NAME_INIT_
+
+#define COMMON_NAME_INIT_(_, NAME, TEXT)                                \
+  (NAME) = &rom_.length2Table[StaticStrings::getLength2Index((TEXT)[0], \
+                                                             (TEXT)[1])];
+  FOR_EACH_LENGTH2_PROPERTYNAME(COMMON_NAME_INIT_)
 #undef COMMON_NAME_INIT_
 
   
