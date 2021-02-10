@@ -9,8 +9,6 @@
 
 
 
-#include "mozilla/Attributes.h"
-
 namespace js {
 namespace jit {
 
