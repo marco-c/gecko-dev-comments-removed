@@ -469,9 +469,11 @@ class alignas(alignof(uint32_t)) ParserAtom {
   JSAtom* instantiate(JSContext* cx, TaggedParserAtomIndex index,
                       CompilationAtomCache& atomCache) const;
 
+ private:
   
   bool toNumber(JSContext* cx, double* result) const;
 
+ public:
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump() const;
   void dumpCharsNoQuote(js::GenericPrinter& out) const;
@@ -851,6 +853,10 @@ class ParserAtomsTable {
 
   
   bool isPrivateName(TaggedParserAtomIndex index) const;
+
+  
+  bool toNumber(JSContext* cx, TaggedParserAtomIndex index,
+                double* result) const;
 };
 
 
