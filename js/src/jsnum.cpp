@@ -1120,26 +1120,6 @@ static bool ComputePrecisionInRange(JSContext* cx, int minPrecision,
   return false;
 }
 
-static bool DToStrResult(JSContext* cx, double d, JSDToStrMode mode,
-                         int precision, const CallArgs& args) {
-  if (!EnsureDtoaState(cx)) {
-    return false;
-  }
-
-  char buf[DTOSTR_VARIABLE_BUFFER_SIZE(MAX_PRECISION + 1)];
-  char* numStr = js_dtostr(cx->dtoaState, buf, sizeof buf, mode, precision, d);
-  if (!numStr) {
-    JS_ReportOutOfMemory(cx);
-    return false;
-  }
-  JSString* str = NewStringCopyZ<CanGC>(cx, numStr);
-  if (!str) {
-    return false;
-  }
-  args.rval().setString(str);
-  return true;
-}
-
 static constexpr size_t DoubleToStrResultBufSize = 128;
 
 template <typename Op>
@@ -1165,10 +1145,6 @@ template <typename Op>
   args.rval().setString(str);
   return true;
 }
-
-
-
-
 
 
 static bool num_toFixed(JSContext* cx, unsigned argc, Value* vp) {
@@ -1200,8 +1176,6 @@ static bool num_toFixed(JSContext* cx, unsigned argc, Value* vp) {
     args.rval().setString(cx->names().NaN);
     return true;
   }
-
-  
   if (mozilla::IsInfinite(d)) {
     if (d > 0) {
       args.rval().setString(cx->names().Infinity);
@@ -1213,7 +1187,37 @@ static bool num_toFixed(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  return DToStrResult(cx, d, DTOSTR_FIXED, precision, args);
+  if (d <= -1e21 || d >= 1e+21) {
+    JSString* s = NumberToString<CanGC>(cx, d);
+    if (!s) {
+      return false;
+    }
+
+    args.rval().setString(s);
+    return true;
+  }
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static_assert(1 + 21 + 1 + MAX_PRECISION + 1 <= DoubleToStrResultBufSize);
+
+  
+  
+  using DToSConverter = double_conversion::DoubleToStringConverter;
+  static_assert(DToSConverter::kMaxFixedDigitsAfterPoint >= MAX_PRECISION);
+
+  return DoubleToStrResult(cx, args, [&](auto& converter, auto& builder) {
+    return converter.ToFixed(d, precision, &builder);
+  });
 }
 
 
