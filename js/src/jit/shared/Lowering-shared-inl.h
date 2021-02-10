@@ -328,20 +328,29 @@ void LIRGeneratorShared::defineReturn(LInstruction* lir, MDefinition* mir) {
   add(lir);
 }
 
-
-
+#ifdef DEBUG
 
 
 static inline bool IsCompatibleLIRCoercion(MIRType to, MIRType from) {
   if (to == from) {
     return true;
   }
+  
+  
   if ((to == MIRType::Int32 || to == MIRType::Boolean) &&
       (from == MIRType::Int32 || from == MIRType::Boolean)) {
     return true;
   }
+#  ifndef JS_64BIT
+  
+  if ((to == MIRType::Int32 || to == MIRType::IntPtr) &&
+      (from == MIRType::IntPtr || from == MIRType::Int32)) {
+    return true;
+  }
+#  endif
   return false;
 }
+#endif
 
 void LIRGeneratorShared::redefine(MDefinition* def, MDefinition* as) {
   MOZ_ASSERT(IsCompatibleLIRCoercion(def->type(), as->type()));
