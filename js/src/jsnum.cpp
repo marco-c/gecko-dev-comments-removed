@@ -1140,6 +1140,32 @@ static bool DToStrResult(JSContext* cx, double d, JSDToStrMode mode,
   return true;
 }
 
+static constexpr size_t DoubleToStrResultBufSize = 128;
+
+template <typename Op>
+[[nodiscard]] static bool DoubleToStrResult(JSContext* cx, const CallArgs& args,
+                                            Op op) {
+  char buf[DoubleToStrResultBufSize];
+
+  const auto& converter =
+      double_conversion::DoubleToStringConverter::EcmaScriptConverter();
+  double_conversion::StringBuilder builder(buf, sizeof(buf));
+
+  bool ok = op(converter, builder);
+  MOZ_RELEASE_ASSERT(ok);
+
+  const char* numStr = builder.Finalize();
+  MOZ_ASSERT(numStr == buf);
+
+  JSString* str = NewStringCopyZ<CanGC>(cx, numStr);
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
+  return true;
+}
+
 
 
 
@@ -1202,9 +1228,7 @@ static bool num_toExponential(JSContext* cx, unsigned argc, Value* vp) {
 
   
   double prec = 0;
-  JSDToStrMode mode = DTOSTR_STANDARD_EXPONENTIAL;
   if (args.hasDefined(0)) {
-    mode = DTOSTR_EXPONENTIAL;
     if (!ToInteger(cx, args[0], &prec)) {
       return false;
     }
@@ -1218,8 +1242,6 @@ static bool num_toExponential(JSContext* cx, unsigned argc, Value* vp) {
     args.rval().setString(cx->names().NaN);
     return true;
   }
-
-  
   if (mozilla::IsInfinite(d)) {
     if (d > 0) {
       args.rval().setString(cx->names().Infinity);
@@ -1232,13 +1254,23 @@ static bool num_toExponential(JSContext* cx, unsigned argc, Value* vp) {
 
   
   int precision = 0;
-  if (mode == DTOSTR_EXPONENTIAL) {
-    if (!ComputePrecisionInRange(cx, 0, MAX_PRECISION, prec, &precision)) {
-      return false;
-    }
+  if (!ComputePrecisionInRange(cx, 0, MAX_PRECISION, prec, &precision)) {
+    return false;
   }
 
-  return DToStrResult(cx, d, mode, precision + 1, args);
+  
+
+  
+  
+  
+  
+  
+  static_assert(MAX_PRECISION + 8 + 1 <= DoubleToStrResultBufSize);
+
+  return DoubleToStrResult(cx, args, [&](auto& converter, auto& builder) {
+    int requestedDigits = args.hasDefined(0) ? precision : -1;
+    return converter.ToExponential(d, requestedDigits, &builder);
+  });
 }
 
 
