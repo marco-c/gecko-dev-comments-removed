@@ -2638,12 +2638,6 @@ class Document : public nsINode,
 
   bool IsVisible() const { return mVisible; }
 
-  
-
-
-
-  bool IsVisibleConsideringAncestors() const;
-
   void SetSuppressedEventListener(EventListener* aListener);
 
   EventListener* GetSuppressedEventListener() {

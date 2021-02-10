@@ -437,7 +437,7 @@ void DocManager::RemoveListeners(Document* aDocument) {
 DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument) {
   
   
-  if (!aDocument->IsVisibleConsideringAncestors() ||
+  if (!nsCoreUtils::IsDocumentVisibleConsideringInProcessAncestors(aDocument) ||
       aDocument->IsResourceDoc() || aDocument->IsStaticDocument() ||
       !aDocument->IsActive()) {
     return nullptr;

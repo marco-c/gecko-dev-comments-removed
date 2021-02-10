@@ -323,6 +323,13 @@ class nsCoreUtils {
   static void DispatchAccEvent(RefPtr<nsIAccessibleEvent> aEvent);
 
   static bool IsDisplayContents(nsIContent* aContent);
+
+  
+
+
+
+  static bool IsDocumentVisibleConsideringInProcessAncestors(
+      const Document* aDocument);
 };
 
 #endif
