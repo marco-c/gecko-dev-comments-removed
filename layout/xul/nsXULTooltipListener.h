@@ -72,7 +72,6 @@ class nsXULTooltipListener final : public nsIDOMEventListener {
   nsWeakPtr mSourceNode;
   nsWeakPtr mTargetNode;
   nsWeakPtr mCurrentTooltip;
-  nsWeakPtr mPreviousMouseMoveTarget;
 
   
   nsCOMPtr<nsITimer> mTooltipTimer;

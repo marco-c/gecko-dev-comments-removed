@@ -144,26 +144,16 @@ void nsXULTooltipListener::MouseMove(Event* aEvent) {
   
   if (mMouseScreenX == newMouseX && mMouseScreenY == newMouseY) return;
 
+  
+  
   nsCOMPtr<nsIContent> currentTooltip = do_QueryReferent(mCurrentTooltip);
-  nsCOMPtr<EventTarget> eventTarget = aEvent->GetComposedTarget();
-  nsCOMPtr<nsIContent> content = do_QueryInterface(eventTarget);
 
-  bool isSameTarget = true;
-  nsCOMPtr<nsIContent> tempContent = do_QueryReferent(mPreviousMouseMoveTarget);
-  if (tempContent && tempContent != content) {
-    isSameTarget = false;
-  }
-
-  
-  
-  
-  if ((currentTooltip && isSameTarget) &&
+  if ((currentTooltip) &&
       (abs(mMouseScreenX - newMouseX) <= kTooltipMouseMoveTolerance) &&
       (abs(mMouseScreenY - newMouseY) <= kTooltipMouseMoveTolerance))
     return;
   mMouseScreenX = newMouseX;
   mMouseScreenY = newMouseY;
-  mPreviousMouseMoveTarget = do_GetWeakReference(content);
 
   nsCOMPtr<nsIContent> sourceContent =
       do_QueryInterface(aEvent->GetCurrentTarget());
@@ -181,17 +171,13 @@ void nsXULTooltipListener::MouseMove(Event* aEvent) {
   
   
   
-  if (!isSameTarget) {
-    HideTooltip();
-    mTooltipShownOnce = false;
-  }
+  if (!currentTooltip && !mTooltipShownOnce) {
+    nsCOMPtr<EventTarget> eventTarget = aEvent->GetComposedTarget();
+    nsCOMPtr<nsIContent> content = do_QueryInterface(eventTarget);
+    if (content && !content->GetContainingShadow()) {
+      eventTarget = aEvent->GetTarget();
+    }
 
-  
-  
-  
-  
-  
-  if ((!currentTooltip && !mTooltipShownOnce) || !isSameTarget) {
     
     
     
@@ -230,13 +216,11 @@ void nsXULTooltipListener::MouseMove(Event* aEvent) {
 #ifdef MOZ_XUL
   if (mIsSourceTree) return;
 #endif
+
+  HideTooltip();
   
-  if (currentTooltip) {
-    HideTooltip();
-    
-    
-    mTooltipShownOnce = true;
-  }
+  
+  mTooltipShownOnce = true;
 }
 
 NS_IMETHODIMP
