@@ -6,7 +6,16 @@
 const CONTENT_PROMPT_PREF = "prompts.contentPromptSubDialog";
 const TEST_ROOT_CHROME = getRootDirectory(gTestPath);
 const TEST_DIALOG_PATH = TEST_ROOT_CHROME + "subdialog.xhtml";
-const TEST_URL = "data:text/html,<body onload='alert(1)'>";
+
+const TEST_DATA_URI = "data:text/html,<body onload='alert(1)'>";
+const TEST_ORIGIN = "http://example.com";
+const TEST_PAGE =
+  TEST_ROOT_CHROME.replace("chrome://mochitests/content", TEST_ORIGIN) +
+  "test_page.html";
+
+var commonDialogsBundle = Services.strings.createBundle(
+  "chrome://global/locale/commonDialogs.properties"
+);
 
 
 add_task(async function setup() {
@@ -50,27 +59,66 @@ add_task(async function test_tabdialog_content_prompts() {
 
 
 
-add_task(async function test_tabdialog_show_title() {
+add_task(async function test_tabdialog_null_principal_title() {
   let dialogShown = BrowserTestUtils.waitForEvent(
     gBrowser,
     "DOMWillOpenModalDialog"
   );
 
-  await BrowserTestUtils.withNewTab(TEST_URL, async function(browser) {
+  await BrowserTestUtils.withNewTab(TEST_DATA_URI, async function(browser) {
     info("Waiting for dialog to open.");
     await dialogShown;
-
-    info("Check the title is visible.");
-    let dialogBox = gBrowser.getTabDialogBox(browser);
-    let contentPromptManager = dialogBox.getContentDialogManager();
-    let dialog = contentPromptManager._dialogs[0];
-
-    info("Waiting for dialog frame to be ready.");
-    await dialog._dialogReady;
-
-    let dialogDoc = dialog._frame.contentWindow.document;
-    let infoTitle = dialogDoc.querySelector("#infoTitle");
-
-    ok(BrowserTestUtils.is_visible(infoTitle), "Title text is visible");
+    await checkOriginText(browser, "ScriptDlgNullPrincipalHeading");
   });
 });
+
+
+
+
+add_task(async function test_tabdialog_page_title() {
+  let dialogShown = BrowserTestUtils.waitForEvent(
+    gBrowser,
+    "DOMWillOpenModalDialog"
+  );
+
+  await BrowserTestUtils.withNewTab(TEST_PAGE, async function(browser) {
+    info("Waiting for dialog to open.");
+    await dialogShown;
+    await checkOriginText(browser, "ScriptDlgHeading", TEST_ORIGIN);
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+async function checkOriginText(browser, stringKey, origin = null) {
+  info("Check the title is visible.");
+  let dialogBox = gBrowser.getTabDialogBox(browser);
+  let contentPromptManager = dialogBox.getContentDialogManager();
+  let dialog = contentPromptManager._dialogs[0];
+
+  info("Waiting for dialog frame to be ready.");
+  await dialog._dialogReady;
+
+  let dialogDoc = dialog._frame.contentWindow.document;
+  let infoTitle = dialogDoc.querySelector("#infoTitle");
+  ok(BrowserTestUtils.is_visible(infoTitle), "Title text is visible");
+
+  info("Check the displayed origin text is correct.");
+  let titleText;
+
+  if (origin) {
+    titleText = commonDialogsBundle.formatStringFromName(stringKey, [origin]);
+  } else {
+    titleText = commonDialogsBundle.GetStringFromName(stringKey);
+  }
+
+  is(infoTitle.textContent, titleText, "Origin header is correct.");
+}
