@@ -1115,6 +1115,8 @@ nsresult Http3Session::WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
   return NS_OK;
 }
 
+const uint32_t HTTP3_TELEMETRY_APP_NECKO = 23;
+
 void Http3Session::Close(nsresult aReason) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
@@ -1126,8 +1128,8 @@ void Http3Session::Close(nsresult aReason) {
     mError = aReason;
     
     
-    Telemetry::Accumulate(Telemetry::HTTP3_CONNECTTION_CLOSE_CODE, "closing"_ns,
-                          37);
+    Telemetry::Accumulate(Telemetry::HTTP3_CONNECTION_CLOSE_CODE, "app_closing"_ns,
+                          HTTP3_TELEMETRY_APP_NECKO);
     CloseInternal(true);
   }
 
@@ -1607,56 +1609,104 @@ void Http3Session::SetSecInfo() {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+const uint32_t HTTP3_TELEMETRY_TRANSPORT_END = 16;
+const uint32_t HTTP3_TELEMETRY_TRANSPORT_UNKNOWN = 17;
+const uint32_t HTTP3_TELEMETRY_TRANSPORT_CRYPTO = 18;
+
+const uint32_t HTTP3_TELEMETRY_CRYPTO_ERROR = 19;
+
+const uint32_t HTTP3_TELEMETRY_CRYPTO_ALERT = 20;
+
+uint64_t GetTransportErrorCodeForTelemetry(uint64_t error) {
+  if (error <= HTTP3_TELEMETRY_TRANSPORT_END) {
+    return error;
+  }
+  if (error < 0x100) {
+    return HTTP3_TELEMETRY_TRANSPORT_UNKNOWN;
+  }
+  return HTTP3_TELEMETRY_TRANSPORT_CRYPTO;
+}
+
+
+
+
+
+const uint32_t HTTP3_TELEMETRY_APP_UNKNOWN_1 = 0;
+const uint32_t HTTP3_TELEMETRY_APP_START = 1;
+
+const uint32_t HTTP3_TELEMETRY_APP_UNKNOWN_2 = 18;
+
+
+
+const uint32_t HTTP3_TELEMETRY_APP_QPACK_START = 19;
+
+const uint32_t HTTP3_TELEMETRY_APP_UNKNOWN_3 = 22;
+
+uint64_t GetAppErrorCodeForTelemetry(uint64_t error) {
+      if (error < 0x100) {
+          return HTTP3_TELEMETRY_APP_UNKNOWN_1;
+      }
+      if (error <= 0x110) {
+        return error - 0x100 + HTTP3_TELEMETRY_APP_START;
+      }
+      if (error < 0x200) {
+        return HTTP3_TELEMETRY_APP_UNKNOWN_2;
+      }
+      if (error <= 0x202) {
+        return error - 0x200 + HTTP3_TELEMETRY_APP_QPACK_START;
+      }
+      return HTTP3_TELEMETRY_APP_UNKNOWN_3;
+}
+
 void Http3Session::CloseConnectionTelemetry(CloseError& aError, bool aClosing) {
   uint64_t value = 0;
+  nsCString key = EmptyCString();
 
   switch (aError.tag) {
-    case CloseError::Tag::QuicTransportError:
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (aError.quic_transport_error._0 <= 12) {
-        value = aError.quic_transport_error._0;
-      } else if (aError.quic_transport_error._0 < 0x100) {
-        value = 13;
-      } else {
-        value = 14;
-      }
+    case CloseError::Tag::TransportInternalError:
+      key = "transport_internal"_ns;
+      value = aError.transport_internal_error._0;
       break;
-    case CloseError::Tag::Http3AppError:
-      if (aError.http3_app_error._0 <= 0x110) {
-        
-        
-        
-        value = (aError.http3_app_error._0 - 0x100) + 15;
-      } else if (aError.http3_app_error._0 < 0x200) {
-        
-        
-        value = 32;  
-      } else if (aError.http3_app_error._0 < 0x203) {
-        
-        
-        
-        value = aError.http3_app_error._0 - 0x200 + 33;
-      } else {
-        value = 36;
-      }
+    case CloseError::Tag::TransportError:
+      key = "transport"_ns;
+      value = GetTransportErrorCodeForTelemetry(aError.transport_error._0);
+      break;
+    case CloseError::Tag::CryptoError:
+      key = "transport"_ns;
+      value = HTTP3_TELEMETRY_CRYPTO_ERROR;
+      break;
+    case CloseError::Tag::CryptoAlert:
+      key = "transport"_ns;
+      value = HTTP3_TELEMETRY_CRYPTO_ALERT;
+      break;
+    case CloseError::Tag::PeerAppError:
+      key = "peer_app"_ns;
+      value = GetAppErrorCodeForTelemetry(aError.peer_app_error._0);
+      break;
+    case CloseError::Tag::PeerError:
+      key = "peer_transport"_ns;
+      value = GetTransportErrorCodeForTelemetry(aError.peer_error._0);
+      break;
+    case CloseError::Tag::AppError:
+      key = "app"_ns;
+      value = GetAppErrorCodeForTelemetry(aError.app_error._0);
+      break;
   }
 
-  
-  
-  
-  
-  
-  Telemetry::Accumulate(Telemetry::HTTP3_CONNECTTION_CLOSE_CODE,
-                        aClosing ? "closing"_ns : "closed"_ns, value);
+  key.Append(aClosing ? "_closing"_ns : "_closed"_ns);
+
+  Telemetry::Accumulate(Telemetry::HTTP3_CONNECTION_CLOSE_CODE,
+                        key, value);
 
   Http3Stats stats;
   mHttp3Connection->GetStats(&stats);
