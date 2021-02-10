@@ -3130,7 +3130,8 @@ nsresult Selection::NotifySelectionListeners() {
   
   if (mSelectionType == SelectionType::eNormal &&
       calledByJSRestorer.SavedValue()) {
-    mStyledRanges.MaybeFocusCommonEditingHost(GetPresShell());
+    RefPtr<PresShell> presShell = GetPresShell();
+    mStyledRanges.MaybeFocusCommonEditingHost(presShell);
   }
 
   RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
