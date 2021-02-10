@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, PrimitiveFlags, RasterSpace, QualitySettings};
+use api::{ColorF, PrimitiveFlags, QualitySettings};
 use api::units::*;
 use crate::clip::{ClipChainId, ClipNodeKind, ClipStore, ClipInstance};
 use crate::frame_builder::FrameBuilderConfig;
@@ -412,7 +412,6 @@ fn create_tile_cache(
         Picture3DContext::Out,
         true,
         PrimitiveFlags::IS_BACKFACE_VISIBLE,
-        RasterSpace::Screen,
         prim_list,
         scroll_root,
         PictureOptions::default(),

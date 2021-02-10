@@ -2,7 +2,7 @@
 
 
 
-use api::{NormalBorder, PremultipliedColorF, Shadow};
+use api::{NormalBorder, PremultipliedColorF, Shadow, RasterSpace};
 use api::units::*;
 use crate::border::create_border_segments;
 use crate::border::NormalBorderAu;
@@ -174,7 +174,12 @@ impl InternablePrimitive for NormalBorderPrim {
 }
 
 impl CreateShadow for NormalBorderPrim {
-    fn create_shadow(&self, shadow: &Shadow) -> Self {
+    fn create_shadow(
+        &self,
+        shadow: &Shadow,
+        _: bool,
+        _: RasterSpace,
+    ) -> Self {
         let border = self.border.with_color(shadow.color.into());
         NormalBorderPrim {
             border,

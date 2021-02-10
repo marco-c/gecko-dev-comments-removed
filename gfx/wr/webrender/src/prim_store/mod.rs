@@ -2,7 +2,7 @@
 
 
 
-use api::{BorderRadius, ClipMode, ColorF, ColorU};
+use api::{BorderRadius, ClipMode, ColorF, ColorU, RasterSpace};
 use api::{ImageRendering, RepeatMode, PrimitiveFlags};
 use api::{PremultipliedColorF, PropertyBinding, Shadow};
 use api::{PrimitiveKeyKind};
@@ -906,6 +906,8 @@ impl CreateShadow for PrimitiveKeyKind {
     fn create_shadow(
         &self,
         shadow: &Shadow,
+        _: bool,
+        _: RasterSpace,
     ) -> PrimitiveKeyKind {
         match *self {
             PrimitiveKeyKind::Rectangle { .. } => {

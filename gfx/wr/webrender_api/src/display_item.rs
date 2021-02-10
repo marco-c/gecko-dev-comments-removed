@@ -11,6 +11,7 @@ use crate::{PipelineId, PropertyBinding};
 use crate::color::ColorF;
 use crate::image::{ColorDepth, ImageKey};
 use crate::units::*;
+use std::hash::{Hash, Hasher};
 
 
 
@@ -821,7 +822,7 @@ pub enum TransformStyle {
 
 
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, MallocSizeOf, Serialize, PeekPoke)]
 #[repr(u8)]
 pub enum RasterSpace {
     
@@ -840,6 +841,23 @@ impl RasterSpace {
         match self {
             RasterSpace::Local(scale) => Some(scale),
             RasterSpace::Screen => None,
+        }
+    }
+}
+
+impl Eq for RasterSpace {}
+
+impl Hash for RasterSpace {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            RasterSpace::Screen => {
+                0.hash(state);
+            }
+            RasterSpace::Local(scale) => {
+                
+                1.hash(state);
+                scale.to_bits().hash(state);
+            }
         }
     }
 }
