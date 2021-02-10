@@ -10,11 +10,7 @@
 
 
 async function loadChromiumResources() {
-  const chromiumResources = [
-    '/gen/media/capture/mojom/image_capture.mojom.js'
-  ];
-  await loadMojoResources(chromiumResources);
-  await loadScript('/resources/chromium/mock-imagecapture.js');
+  await import('/resources/chromium/mock-imagecapture.js');
 }
 
 async function initialize_image_capture_tests() {

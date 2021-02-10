@@ -9,14 +9,9 @@
 
 
 async function loadChromiumResources() {
-  const chromiumResources = [
-  '/gen/services/device/public/mojom/nfc.mojom.js',
-  ];
-
-  await loadMojoResources(chromiumResources);
   await loadScript('/resources/testdriver.js');
   await loadScript('/resources/testdriver-vendor.js');
-  await loadScript('/resources/chromium/nfc-mock.js');
+  await import('/resources/chromium/nfc-mock.js');
 }
 
 async function initialize_nfc_tests() {

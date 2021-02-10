@@ -1,9 +1,10 @@
-'use strict';
+import {ReportingMode, Sensor, SensorClientRemote, SensorReceiver, SensorRemote, SensorType} from '/gen/services/device/public/mojom/sensor.mojom.m.js';
+import {SensorCreationResult, SensorInitParams_READ_BUFFER_SIZE_FOR_TESTS, SensorProvider, SensorProviderReceiver} from '/gen/services/device/public/mojom/sensor_provider.mojom.m.js';
 
 
 
 
-class RingBuffer {
+self.RingBuffer = class {
   constructor(data) {
     this.bufferPosition_ = 0;
     
@@ -28,9 +29,9 @@ class RingBuffer {
   [Symbol.iterator]() {
     return this;
   }
-}
+};
 
-var GenericSensorTest = (() => {
+self.GenericSensorTest = (() => {
   
   const DEFAULT_FREQUENCY = 5;
 
@@ -56,11 +57,8 @@ var GenericSensorTest = (() => {
       }
       this.buffer_ = new Float64Array(rv.buffer);
       this.buffer_.fill(0);
-      this.binding_ = new mojo.Binding(device.mojom.Sensor, this,
-                                       sensorRequest);
-      this.binding_.setConnectionErrorHandler(() => {
-        this.reset();
-      });
+      this.receiver_ = new SensorReceiver(this);
+      this.receiver_.$.bindHandle(sensorRequest.handle);
     }
 
     
@@ -120,7 +118,7 @@ var GenericSensorTest = (() => {
       this.notifyOnReadingChange_ = true;
       this.readingData_ = null;
       this.buffer_.fill(0);
-      this.binding_.close();
+      this.receiver_.$.close();
     }
 
     
@@ -166,7 +164,7 @@ var GenericSensorTest = (() => {
         
         this.buffer_[1] = this.timestamp_++;
 
-        if (this.reportingMode_ === device.mojom.ReportingMode.ON_CHANGE &&
+        if (this.reportingMode_ === ReportingMode.ON_CHANGE &&
             this.notifyOnReadingChange_) {
           this.client_.sensorReadingChanged();
         }
@@ -197,9 +195,9 @@ var GenericSensorTest = (() => {
   class MockSensorProvider {
     constructor() {
       this.readingSizeInBytes_ =
-          device.mojom.SensorInitParams.READ_BUFFER_SIZE_FOR_TESTS;
-      this.sharedBufferSizeInBytes_ = this.readingSizeInBytes_ *
-              (device.mojom.SensorType.MAX_VALUE + 1);
+          Number(SensorInitParams_READ_BUFFER_SIZE_FOR_TESTS);
+      this.sharedBufferSizeInBytes_ =
+          this.readingSizeInBytes_ * (SensorType.MAX_VALUE + 1);
       const rv = Mojo.createSharedBuffer(this.sharedBufferSizeInBytes_);
       if (rv.result != Mojo.RESULT_OK) {
         throw new Error("MockSensorProvider: Failed to map shared buffer");
@@ -212,28 +210,26 @@ var GenericSensorTest = (() => {
       this.maxFrequency_ = 60;
       this.minFrequency_ = 1;
       this.mojomSensorType_ = new Map([
-        ['Accelerometer', device.mojom.SensorType.ACCELEROMETER],
-        ['LinearAccelerationSensor',
-            device.mojom.SensorType.LINEAR_ACCELERATION],
-        ['GravitySensor',
-            device.mojom.SensorType.GRAVITY],
-        ['AmbientLightSensor', device.mojom.SensorType.AMBIENT_LIGHT],
-        ['Gyroscope', device.mojom.SensorType.GYROSCOPE],
-        ['Magnetometer', device.mojom.SensorType.MAGNETOMETER],
+        ['Accelerometer', SensorType.ACCELEROMETER],
+        ['LinearAccelerationSensor', SensorType.LINEAR_ACCELERATION],
+        ['GravitySensor', SensorType.GRAVITY],
+        ['AmbientLightSensor', SensorType.AMBIENT_LIGHT],
+        ['Gyroscope', SensorType.GYROSCOPE],
+        ['Magnetometer', SensorType.MAGNETOMETER],
         ['AbsoluteOrientationSensor',
-            device.mojom.SensorType.ABSOLUTE_ORIENTATION_QUATERNION],
+            SensorType.ABSOLUTE_ORIENTATION_QUATERNION],
         ['AbsoluteOrientationEulerAngles',
-            device.mojom.SensorType.ABSOLUTE_ORIENTATION_EULER_ANGLES],
+            SensorType.ABSOLUTE_ORIENTATION_EULER_ANGLES],
         ['RelativeOrientationSensor',
-            device.mojom.SensorType.RELATIVE_ORIENTATION_QUATERNION],
+            SensorType.RELATIVE_ORIENTATION_QUATERNION],
         ['RelativeOrientationEulerAngles',
-            device.mojom.SensorType.RELATIVE_ORIENTATION_EULER_ANGLES],
-        ['ProximitySensor', device.mojom.SensorType.PROXIMITY]
+            SensorType.RELATIVE_ORIENTATION_EULER_ANGLES],
+        ['ProximitySensor', SensorType.PROXIMITY]
       ]);
-      this.binding_ = new mojo.Binding(device.mojom.SensorProvider, this);
+      this.receiver_ = new SensorProviderReceiver(this);
 
       this.interceptor_ =
-          new MojoInterfaceInterceptor(device.mojom.SensorProvider.name);
+          new MojoInterfaceInterceptor(SensorProvider.$interfaceName);
       this.interceptor_.oninterfacerequest = e => {
         this.bindToPipe(e.handle);
       };
@@ -243,25 +239,24 @@ var GenericSensorTest = (() => {
     
     async getSensor(type) {
       if (this.getSensorShouldFail_.get(type)) {
-        return {result: device.mojom.SensorCreationResult.ERROR_NOT_AVAILABLE,
+        return {result: SensorCreationResult.ERROR_NOT_AVAILABLE,
                 initParams: null};
       }
       if (this.permissionsDenied_.get(type)) {
-        return {result: device.mojom.SensorCreationResult.ERROR_NOT_ALLOWED,
+        return {result: SensorCreationResult.ERROR_NOT_ALLOWED,
                 initParams: null};
       }
 
       const offset = type * this.readingSizeInBytes_;
-      const reportingMode = device.mojom.ReportingMode.ON_CHANGE;
+      const reportingMode = ReportingMode.ON_CHANGE;
 
-      const sensorPtr = new device.mojom.SensorPtr();
+      const sensor = new SensorRemote();
       if (!this.activeSensors_.has(type)) {
         const mockSensor = new MockSensor(
-            mojo.makeRequest(sensorPtr), this.sharedBufferHandle_, offset,
-            this.readingSizeInBytes_, reportingMode);
+            sensor.$.bindNewPipeAndPassReceiver(), this.sharedBufferHandle_,
+            offset, this.readingSizeInBytes_, reportingMode);
         this.activeSensors_.set(type, mockSensor);
-        this.activeSensors_.get(type).client_ =
-            new device.mojom.SensorClientPtr();
+        this.activeSensors_.get(type).client_ = new SensorClientRemote();
       }
 
       const rv = this.sharedBufferHandle_.duplicateBufferHandle();
@@ -272,8 +267,7 @@ var GenericSensorTest = (() => {
       const defaultConfig = { frequency: DEFAULT_FREQUENCY };
       
       
-      if (type == device.mojom.SensorType.AMBIENT_LIGHT ||
-          type == device.mojom.SensorType.MAGNETOMETER) {
+      if (type == SensorType.AMBIENT_LIGHT || type == SensorType.MAGNETOMETER) {
         this.maxFrequency_ = Math.min(10, this.maxFrequency_);
       }
 
@@ -283,23 +277,24 @@ var GenericSensorTest = (() => {
       
       
       
-      if (type == device.mojom.SensorType.AMBIENT_LIGHT) {
+      if (type == SensorType.AMBIENT_LIGHT) {
         this.activeSensors_.get(type).setSensorReading([
           [window.performance.now() * 100],
           [(window.performance.now() + 50) * 100]
         ]);
       }
 
-      const initParams = new device.mojom.SensorInitParams({
-        sensor: sensorPtr,
-        clientReceiver: mojo.makeRequest(this.activeSensors_.get(type).client_),
+      const client = this.activeSensors_.get(type).client_;
+      const initParams = {
+        sensor,
+        clientReceiver: client.$.bindNewPipeAndPassReceiver(),
         memory: rv.handle,
-        bufferOffset: offset,
+        bufferOffset: BigInt(offset),
         mode: reportingMode,
         defaultConfiguration: defaultConfig,
         minimumFrequency: this.minFrequency_,
         maximumFrequency: this.maxFrequency_
-      });
+      };
 
       if (this.resolveFuncs_.has(type)) {
         for (let resolveFunc of this.resolveFuncs_.get(type)) {
@@ -308,16 +303,12 @@ var GenericSensorTest = (() => {
         this.resolveFuncs_.delete(type);
       }
 
-      return {result: device.mojom.SensorCreationResult.SUCCESS,
-              initParams: initParams};
+      return {result: SensorCreationResult.SUCCESS, initParams};
     }
 
     
     bindToPipe(pipe) {
-      this.binding_.bind(pipe);
-      this.binding_.setConnectionErrorHandler(() => {
-        this.reset();
-      });
+      this.receiver_.$.bindHandle(pipe);
     }
 
     
@@ -333,7 +324,7 @@ var GenericSensorTest = (() => {
       this.permissionsDenied_.clear();
       this.maxFrequency_ = 60;
       this.minFrequency_ = 1;
-      this.binding_.close();
+      this.receiver_.$.close();
       this.interceptor_.stop();
     }
 
