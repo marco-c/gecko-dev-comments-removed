@@ -9163,6 +9163,39 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   return NS_OK;
 }
 
+static bool NavigationShouldTakeFocus(nsDocShell* aDocShell,
+                                      nsDocShellLoadState* aLoadState) {
+  const auto& sourceBC = aLoadState->SourceBrowsingContext();
+  if (!sourceBC || !sourceBC->IsActive()) {
+    
+    
+    return false;
+  }
+  auto* bc = aDocShell->GetBrowsingContext();
+  if (sourceBC.get() == bc) {
+    
+    return false;
+  }
+  auto* fm = nsFocusManager::GetFocusManager();
+  if (fm && bc->IsActive() && fm->IsInActiveWindow(bc)) {
+    
+    
+    
+    return false;
+  }
+  if (auto* doc = aDocShell->GetExtantDocument()) {
+    if (doc->IsInitialDocument()) {
+      
+      
+      
+      return false;
+    }
+  }
+  
+  
+  return !Preferences::GetBool("browser.tabs.loadDivertedInBackground", false);
+}
+
 nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
                                   Maybe<uint32_t> aCacheKey) {
   MOZ_ASSERT(aLoadState, "need a load state!");
@@ -9177,13 +9210,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  
-  
-  const bool shouldTakeFocus =
-      aLoadState->SourceBrowsingContext() &&
-      aLoadState->SourceBrowsingContext()->IsActive() &&
-      !mBrowsingContext->IsActive() &&
-      !Preferences::GetBool("browser.tabs.loadDivertedInBackground", false);
+  const bool shouldTakeFocus = NavigationShouldTakeFocus(this, aLoadState);
 
   mOriginalUriString.Truncate();
 

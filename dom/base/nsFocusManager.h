@@ -115,6 +115,11 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
+  bool IsInActiveWindow(mozilla::dom::BrowsingContext*) const;
+
+  
+
+
   nsPIDOMWindowOuter* GetActiveWindow() const { return mActiveWindow; }
 
   
@@ -335,13 +340,13 @@ class nsFocusManager final : public nsIFocusManager,
 
 
   bool IsSameOrAncestor(nsPIDOMWindowOuter* aPossibleAncestor,
-                        nsPIDOMWindowOuter* aWindow);
+                        nsPIDOMWindowOuter* aWindow) const;
   bool IsSameOrAncestor(nsPIDOMWindowOuter* aPossibleAncestor,
-                        mozilla::dom::BrowsingContext* aContext);
+                        mozilla::dom::BrowsingContext* aContext) const;
   bool IsSameOrAncestor(mozilla::dom::BrowsingContext* aPossibleAncestor,
-                        nsPIDOMWindowOuter* aWindow);
+                        nsPIDOMWindowOuter* aWindow) const;
   bool IsSameOrAncestor(mozilla::dom::BrowsingContext* aPossibleAncestor,
-                        mozilla::dom::BrowsingContext* aContext);
+                        mozilla::dom::BrowsingContext* aContext) const;
 
   
 
