@@ -1305,8 +1305,6 @@ static bool num_toPrecision(JSContext* cx, unsigned argc, Value* vp) {
     args.rval().setString(cx->names().NaN);
     return true;
   }
-
-  
   if (mozilla::IsInfinite(d)) {
     if (d > 0) {
       args.rval().setString(cx->names().Infinity);
@@ -1323,7 +1321,18 @@ static bool num_toPrecision(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  return DToStrResult(cx, d, DTOSTR_PRECISION, precision, args);
+  
+
+  
+  
+  
+  
+  
+  static_assert(MAX_PRECISION + 7 + 1 <= DoubleToStrResultBufSize);
+
+  return DoubleToStrResult(cx, args, [&](auto& converter, auto& builder) {
+    return converter.ToPrecision(d, precision, &builder);
+  });
 }
 
 static const JSFunctionSpec number_methods[] = {
