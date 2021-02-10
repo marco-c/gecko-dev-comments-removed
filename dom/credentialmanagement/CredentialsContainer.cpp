@@ -7,6 +7,8 @@
 #include "mozilla/dom/CredentialsContainer.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebAuthnManager.h"
+#include "mozilla/dom/WindowGlobalChild.h"
+#include "mozilla/dom/WindowContext.h"
 #include "nsContentUtils.h"
 #include "nsFocusManager.h"
 #include "nsIDocShell.h"
@@ -60,32 +62,18 @@ static bool IsSameOriginWithAncestors(nsPIDOMWindowInner* aParent) {
   
   MOZ_ASSERT(aParent);
 
-  if (aParent->IsTopInnerWindow()) {
-    
-    return true;
-  }
+  WindowGlobalChild* wgc = aParent->GetWindowGlobalChild();
 
   
   
-  nsINode* node =
-      nsContentUtils::GetCrossDocParentNode(aParent->GetExtantDoc());
-  if (NS_WARN_IF(!node)) {
-    
-    return false;
-  }
-
-  
-  
-  do {
-    nsresult rv =
-        nsContentUtils::CheckSameOrigin(aParent->GetExtantDoc(), node);
-    if (NS_FAILED(rv)) {
+  for (WindowContext* parentContext =
+           wgc->WindowContext()->GetParentWindowContext();
+       parentContext; parentContext = parentContext->GetParentWindowContext()) {
+    if (!wgc->IsSameOriginWith(parentContext)) {
       
       return false;
     }
-
-    node = nsContentUtils::GetCrossDocParentNode(node);
-  } while (node);
+  }
 
   return true;
 }
