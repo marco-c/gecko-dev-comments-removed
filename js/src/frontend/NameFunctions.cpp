@@ -30,7 +30,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
   static const size_t MaxParents = 100;
 
   ParserAtomsTable& parserAtoms_;
-  const ParserAtom* prefix_;
+  TaggedParserAtomIndex prefix_;
 
   
   size_t nparents_;
@@ -62,7 +62,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
   bool appendPropertyReference(TaggedParserAtomIndex name) {
     const auto* atom = parserAtoms_.getParserAtom(name);
     if (IsIdentifier(atom)) {
-      return buf_.append('.') && buf_.append(atom);
+      return buf_.append('.') && buf_.append(parserAtoms_, name);
     }
 
     
@@ -105,8 +105,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
       case ParseNodeKind::Name:
       case ParseNodeKind::PrivateName: {
         *foundName = true;
-        const auto* name = parserAtoms_.getParserAtom(n->as<NameNode>().atom());
-        return buf_.append(name);
+        return buf_.append(parserAtoms_, n->as<NameNode>().atom());
       }
 
       case ParseNodeKind::ThisExpr:
@@ -239,8 +238,8 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
         *retId = funbox->displayAtom();
         return true;
       }
-      if (!buf_.append(prefix_) || !buf_.append('/') ||
-          !buf_.append(parserAtoms_.getParserAtom(funbox->displayAtom()))) {
+      if (!buf_.append(parserAtoms_, prefix_) || !buf_.append('/') ||
+          !buf_.append(parserAtoms_, funbox->displayAtom())) {
         return false;
       }
       *retId = buf_.finishParserAtom(parserAtoms_);
@@ -249,7 +248,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
 
     
     if (prefix_) {
-      if (!buf_.append(prefix_) || !buf_.append('/')) {
+      if (!buf_.append(parserAtoms_, prefix_) || !buf_.append('/')) {
         return false;
       }
     }
@@ -343,7 +342,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
 
  public:
   MOZ_MUST_USE bool visitFunction(FunctionNode* pn) {
-    const ParserAtom* savedPrefix = prefix_;
+    TaggedParserAtomIndex savedPrefix = prefix_;
     TaggedParserAtomIndex newPrefix;
     if (!resolveFun(pn, &newPrefix)) {
       return false;
@@ -354,7 +353,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
     
     
     if (!isDirectCall(nparents_ - 2, pn)) {
-      prefix_ = parserAtoms_.getParserAtom(newPrefix);
+      prefix_ = newPrefix;
     }
 
     bool ok = Base::visitFunction(pn);
@@ -446,7 +445,6 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
   explicit NameResolver(JSContext* cx, ParserAtomsTable& parserAtoms)
       : ParseNodeVisitor(cx),
         parserAtoms_(parserAtoms),
-        prefix_(nullptr),
         nparents_(0),
         buf_(cx) {}
 

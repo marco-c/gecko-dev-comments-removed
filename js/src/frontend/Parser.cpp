@@ -7421,8 +7421,7 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
       
       
       StringBuffer storedMethodName(cx_);
-      if (!storedMethodName.append(
-              this->parserAtoms().getParserAtom(propAtom))) {
+      if (!storedMethodName.append(this->parserAtoms(), propAtom)) {
         return false;
       }
       switch (atype) {
