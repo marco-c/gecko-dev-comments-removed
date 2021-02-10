@@ -584,6 +584,9 @@ pub struct UploadTexturePool {
     
     
     textures: [VecDeque<(Texture, u64)>; 3],
+    
+    
+    delay_texture_deallocation: [u64; 3],
     current_frame: u64,
 
     
@@ -592,14 +595,19 @@ pub struct UploadTexturePool {
     
     
     temporary_buffers: Vec<Vec<mem::MaybeUninit<u8>>>,
+    used_temporary_buffers: usize,
+    delay_buffer_deallocation: u64,
 }
 
 impl UploadTexturePool {
     pub fn new() -> Self {
         UploadTexturePool {
             textures: [VecDeque::new(), VecDeque::new(), VecDeque::new()],
+            delay_texture_deallocation: [0; 3],
             current_frame: 0,
             temporary_buffers: Vec::new(),
+            used_temporary_buffers: 0,
+            delay_buffer_deallocation: 0,
         }
     }
 
@@ -664,6 +672,7 @@ impl UploadTexturePool {
     
     
     pub fn get_temporary_buffer(&mut self) -> Vec<mem::MaybeUninit<u8>> {
+        self.used_temporary_buffers += 1;
         self.temporary_buffers.pop().unwrap_or_else(|| {
             vec![mem::MaybeUninit::new(0); BATCH_UPLOAD_TEXTURE_SIZE.area() as usize * 4]
         })
@@ -683,6 +692,56 @@ impl UploadTexturePool {
             }
         }
         self.temporary_buffers.clear();
+    }
+
+    
+    pub fn end_frame(&mut self, device: &mut Device) {
+        for format_idx in 0..self.textures.len() {
+            
+            
+            
+
+            let mut num_reusable_textures = 0;
+            for texture in &self.textures[format_idx] {
+                if self.current_frame - texture.1 > 2 {
+                    num_reusable_textures += 1;
+                }
+            }
+
+            if num_reusable_textures < 8 {
+                
+                self.delay_texture_deallocation[format_idx] = self.current_frame + 120;
+            }
+
+            
+            let to_remove = if self.current_frame > self.delay_texture_deallocation[format_idx] {
+                num_reusable_textures.min(4)
+            } else {
+                0
+            };
+
+            for _ in 0..to_remove {
+                let texture = self.textures[format_idx].pop_front().unwrap().0;
+                device.delete_texture(texture);
+            }
+        }
+
+        
+        let unused_buffers = self.temporary_buffers.len() - self.used_temporary_buffers;
+        if unused_buffers < 8 {
+            self.delay_buffer_deallocation = self.current_frame + 120;
+        }
+        let to_remove = if self.current_frame > self.delay_buffer_deallocation  {
+            unused_buffers.min(4)
+        } else {
+            0
+        };
+        for _ in 0..to_remove {
+            
+            
+            self.temporary_buffers.pop();
+        }
+        self.used_temporary_buffers = 0;
     }
 
     pub fn report_memory_to(&self, report: &mut MemoryReport, size_op_funs: &MallocSizeOfOps) {
