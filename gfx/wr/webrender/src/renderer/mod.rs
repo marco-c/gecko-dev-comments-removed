@@ -5105,6 +5105,8 @@ impl Renderer {
         
         self.gpu_cache_texture.report_memory_to(&mut report, self.size_of_ops.as_ref().unwrap());
 
+        self.staging_texture_pool.report_memory_to(&mut report, self.size_of_ops.as_ref().unwrap());
+
         
         for (_id, doc) in &self.active_documents {
             report.render_tasks += self.size_of(doc.frame.render_tasks.tasks.as_ptr());
