@@ -449,18 +449,23 @@ struct SharedDataContainer {
 };
 
 
+
+
+using StencilAsmJSContainer =
+    HashMap<ScriptIndex, RefPtr<const JS::WasmModule>,
+            mozilla::DefaultHasher<ScriptIndex>, js::SystemAllocPolicy>;
+
+
 struct BaseCompilationStencil {
   
   
-  mozilla::Span<RegExpStencil> regExpData;
-  mozilla::Span<BigIntStencil> bigIntData;
-  mozilla::Span<ObjLiteralStencil> objLiteralData;
+  using FunctionKey = uint32_t;
+  static constexpr FunctionKey NullFunctionKey = 0;
 
   
   
   
   mozilla::Span<ScriptStencil> scriptData;
-  SharedDataContainer sharedData;
   mozilla::Span<TaggedScriptThingIndex> gcThingData;
 
   
@@ -470,18 +475,24 @@ struct BaseCompilationStencil {
 
   
   
+  mozilla::Span<RegExpStencil> regExpData;
+  mozilla::Span<BigIntStencil> bigIntData;
+  mozilla::Span<ObjLiteralStencil> objLiteralData;
+
+  
+  
+  SharedDataContainer sharedData;
+
+  
+  
   
   ParserAtomSpan parserAtomData;
 
   
   
-  
-  
-  using FunctionKey = uint32_t;
-
-  static constexpr FunctionKey NullFunctionKey = 0;
-
   FunctionKey functionKey = NullFunctionKey;
+
+  
 
   BaseCompilationStencil() = default;
 
@@ -527,42 +538,32 @@ struct BaseCompilationStencil {
 struct CompilationStencil : public BaseCompilationStencil {
   static constexpr ScriptIndex TopLevelIndex = ScriptIndex(0);
 
+  static constexpr size_t LifoAllocChunkSize = 512;
+
   
   
   LifoAlloc alloc;
 
   
-  static constexpr size_t LifoAllocChunkSize = 512;
-
-  CompilationInput input;
-
   
-  mozilla::Span<ScriptStencilExtra> scriptExtra;
+  CompilationInput input;
 
   
   mozilla::Maybe<StencilModuleMetadata> moduleMetadata;
 
   
-  HashMap<ScriptIndex, RefPtr<const JS::WasmModule>,
-          mozilla::DefaultHasher<ScriptIndex>, js::SystemAllocPolicy>
-      asmJS;
+  
+  mozilla::Span<ScriptStencilExtra> scriptExtra;
+
+  
+  
+  StencilAsmJSContainer asmJS;
 
   
   
   bool preparationIsPerformed = false;
 
   
-  
-  
-  struct RewindToken {
-    
-    size_t scriptDataLength = 0;
-
-    size_t asmJSCount = 0;
-  };
-
-  RewindToken getRewindToken(CompilationState& state);
-  void rewind(CompilationState& state, const RewindToken& pos);
 
   
   CompilationStencil(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
@@ -608,6 +609,19 @@ struct CompilationStencil : public BaseCompilationStencil {
   void setFunctionKey(BaseScript* lazy) {
     functionKey = toFunctionKey(lazy->extent());
   }
+
+  
+  
+  
+  struct RewindToken {
+    
+    size_t scriptDataLength = 0;
+
+    size_t asmJSCount = 0;
+  };
+
+  RewindToken getRewindToken(CompilationState& state);
+  void rewind(CompilationState& state, const RewindToken& pos);
 
   void trace(JSTracer* trc);
 
