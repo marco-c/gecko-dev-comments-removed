@@ -65,6 +65,17 @@ static inline void InsertSortedList(InlineForwardList<T>& list, T* value) {
   }
 }
 
+static bool CanMergeTypesInBundle(LDefinition::Type a, LDefinition::Type b) {
+  
+  if (a == b) {
+    return true;
+  }
+
+  
+  
+  return StackSlotAllocator::width(a) == StackSlotAllocator::width(b);
+}
+
 
 
 
@@ -956,9 +967,8 @@ bool BacktrackingAllocator::tryMergeBundles(LiveBundle* bundle0,
   VirtualRegister& reg0 = vregs[bundle0->firstRange()->vreg()];
   VirtualRegister& reg1 = vregs[bundle1->firstRange()->vreg()];
 
-  if (!reg0.isCompatible(reg1)) {
-    return true;
-  }
+  MOZ_ASSERT(CanMergeTypesInBundle(reg0.type(), reg1.type()));
+  MOZ_ASSERT(reg0.isCompatible(reg1));
 
   
   
@@ -1074,6 +1084,11 @@ bool BacktrackingAllocator::tryMergeReusedRegister(VirtualRegister& def,
 
   if (def.rangeFor(inputOf(def.ins()))) {
     MOZ_ASSERT(def.isTemp());
+    def.setMustCopyInput();
+    return true;
+  }
+
+  if (!CanMergeTypesInBundle(def.type(), input.type())) {
     def.setMustCopyInput();
     return true;
   }
