@@ -17,7 +17,7 @@
 #include "jstypes.h"  
 
 #include "frontend/BytecodeCompilation.h"  
-#include "frontend/CompilationInfo.h"  
+#include "frontend/CompilationStencil.h"  
 #include "frontend/FullParseHandler.h"  
 #include "frontend/ParseContext.h"      
 #include "frontend/Parser.h"            

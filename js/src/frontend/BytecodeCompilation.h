@@ -17,7 +17,7 @@
 
 #include "jstypes.h"  
 
-#include "frontend/CompilationInfo.h"  
+#include "frontend/CompilationStencil.h"  
 #include "frontend/ParseContext.h"  
 #include "frontend/SharedContext.h"  
 #include "js/CompileOptions.h"  

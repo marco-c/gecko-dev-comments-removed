@@ -19,9 +19,9 @@
 
 #include "builtin/ModuleObject.h"
 #include "debugger/DebugAPI.h"
-#include "frontend/CompilationInfo.h"  
-#include "frontend/ParserAtom.h"       
-#include "js/BuildId.h"                
+#include "frontend/CompilationStencil.h"  
+#include "frontend/ParserAtom.h"          
+#include "js/BuildId.h"                   
 #include "vm/JSContext.h"
 #include "vm/JSScript.h"
 #include "vm/SharedStencil.h"  

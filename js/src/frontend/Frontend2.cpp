@@ -17,9 +17,9 @@
 
 #include "jsapi.h"
 
-#include "frontend/AbstractScopePtr.h"  
-#include "frontend/BytecodeSection.h"   
-#include "frontend/CompilationInfo.h"   
+#include "frontend/AbstractScopePtr.h"    
+#include "frontend/BytecodeSection.h"     
+#include "frontend/CompilationStencil.h"  
 #include "frontend/Parser.h"  
 #include "frontend/ParserAtom.h"   
 #include "frontend/ScriptIndex.h"  

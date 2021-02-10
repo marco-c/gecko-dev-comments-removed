@@ -15,7 +15,7 @@
 #include "frontend/AbstractScopePtr.h"     
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/BytecodeSection.h"      
-#include "frontend/CompilationInfo.h"  
+#include "frontend/CompilationStencil.h"  
 #include "frontend/SharedContext.h"
 #include "gc/AllocKind.h"    
 #include "gc/Rooting.h"      

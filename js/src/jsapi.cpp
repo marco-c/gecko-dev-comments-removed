@@ -42,7 +42,7 @@
 #include "builtin/Symbol.h"
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/BytecodeCompiler.h"
-#include "frontend/CompilationInfo.h"  
+#include "frontend/CompilationStencil.h"  
 #include "gc/FreeOp.h"
 #include "gc/Marking.h"
 #include "gc/Policy.h"

@@ -34,7 +34,7 @@
 
 #include "frontend/BytecodeCompiler.h"
 #include "frontend/BytecodeEmitter.h"
-#include "frontend/CompilationInfo.h"  
+#include "frontend/CompilationStencil.h"  
 #include "frontend/SharedContext.h"
 #include "frontend/SourceNotes.h"  
 #include "frontend/StencilXdr.h"  

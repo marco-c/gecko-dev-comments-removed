@@ -13,9 +13,9 @@
 #include <new>
 
 #include "builtin/ModuleObject.h"
-#include "frontend/CompilationInfo.h"  
-#include "frontend/Parser.h"           
-#include "frontend/ScriptIndex.h"      
+#include "frontend/CompilationStencil.h"  
+#include "frontend/Parser.h"              
+#include "frontend/ScriptIndex.h"         
 #include "frontend/SharedContext.h"
 #include "frontend/Stencil.h"
 #include "gc/Allocator.h"

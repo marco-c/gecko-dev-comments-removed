@@ -4,8 +4,8 @@
 
 
 
-#ifndef frontend_CompilationInfo_h
-#define frontend_CompilationInfo_h
+#ifndef frontend_CompilationStencil_h
+#define frontend_CompilationStencil_h
 
 #include "mozilla/AlreadyAddRefed.h"  
 #include "mozilla/Assertions.h"       

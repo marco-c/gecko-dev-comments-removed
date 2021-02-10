@@ -43,7 +43,7 @@
 #include "builtin/String.h"
 #include "builtin/WeakMapObject.h"
 #include "frontend/BytecodeCompilation.h"  
-#include "frontend/CompilationInfo.h"      
+#include "frontend/CompilationStencil.h"   
 #include "gc/Marking.h"
 #include "gc/Policy.h"
 #include "jit/AtomicOperations.h"

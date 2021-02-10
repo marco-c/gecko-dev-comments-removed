@@ -6,9 +6,9 @@
 
 #include "frontend/ParseContext-inl.h"
 
-#include "frontend/CompilationInfo.h"  
-#include "frontend/Parser.h"           
-#include "js/friend/ErrorMessages.h"   
+#include "frontend/CompilationStencil.h"  
+#include "frontend/Parser.h"              
+#include "js/friend/ErrorMessages.h"      
 #include "vm/EnvironmentObject-inl.h"
 
 using mozilla::Maybe;

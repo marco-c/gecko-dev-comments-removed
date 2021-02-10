@@ -10,7 +10,7 @@
 #include "mozilla/ReverseIterator.h"  
 
 #include "frontend/AbstractScopePtr.h"  
-#include "frontend/CompilationInfo.h"
+#include "frontend/CompilationStencil.h"
 #include "frontend/SharedContext.h"  
 #include "vm/BytecodeUtil.h"         
 #include "vm/GlobalObject.h"

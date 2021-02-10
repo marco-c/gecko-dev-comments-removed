@@ -19,8 +19,8 @@
 
 #include "frontend/AbstractScopePtr.h"  
 #include "frontend/BytecodeOffset.h"    
-#include "frontend/CompilationInfo.h"  
-#include "frontend/JumpList.h"         
+#include "frontend/CompilationStencil.h"  
+#include "frontend/JumpList.h"            
 #include "frontend/NameCollections.h"  
 #include "frontend/ObjLiteral.h"       
 #include "frontend/ParseNode.h"        

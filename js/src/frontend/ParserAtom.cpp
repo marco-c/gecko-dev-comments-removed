@@ -12,7 +12,7 @@
 #include "jsnum.h"  
 
 #include "frontend/BytecodeCompiler.h"  
-#include "frontend/CompilationInfo.h"
+#include "frontend/CompilationStencil.h"
 #include "frontend/NameCollections.h"
 #include "frontend/StencilXdr.h"  
 #include "util/StringBuffer.h"    
