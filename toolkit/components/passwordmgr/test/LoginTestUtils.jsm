@@ -504,22 +504,24 @@ LoginTestUtils.masterPassword = {
       oldPW = this.masterPassword;
       newPW = "";
     }
-
-    
-    
-    
-    let pk11db = Cc["@mozilla.org/security/pk11tokendb;1"].getService(
-      Ci.nsIPK11TokenDB
-    );
-    let token = pk11db.getInternalKeyToken();
-    if (token.needsUserInit) {
-      dump("MP initialized to " + newPW + "\n");
-      token.initPassword(newPW);
-    } else {
-      token.checkPassword(oldPW);
-      dump("MP change from " + oldPW + " to " + newPW + "\n");
-      token.changePassword(oldPW, newPW);
-      token.logoutSimple();
+    try {
+      let pk11db = Cc["@mozilla.org/security/pk11tokendb;1"].getService(
+        Ci.nsIPK11TokenDB
+      );
+      let token = pk11db.getInternalKeyToken();
+      if (token.needsUserInit) {
+        dump("MP initialized to " + newPW + "\n");
+        token.initPassword(newPW);
+      } else {
+        token.checkPassword(oldPW);
+        dump("MP change from " + oldPW + " to " + newPW + "\n");
+        token.changePassword(oldPW, newPW);
+        token.logoutSimple();
+      }
+    } catch (e) {
+      dump(
+        "Tried to enable an already enabled primary password or disable an already disabled primary password!"
+      );
     }
   },
 
