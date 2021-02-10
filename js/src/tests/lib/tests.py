@@ -98,11 +98,12 @@ def valid_jitflags():
     return JITFLAGS.keys()
 
 
-def get_environment_overlay(js_shell):
+def get_environment_overlay(js_shell, gc_zeal):
     """
     Build a dict of additional environment variables that must be set to run
     tests successfully.
     """
+
     
     env = {
         
@@ -112,6 +113,7 @@ def get_environment_overlay(js_shell):
         
         "XRE_NO_WINDOWS_CRASH_DIALOG": "1",
     }
+
     
     
     
@@ -121,6 +123,10 @@ def get_environment_overlay(js_shell):
         env["DYLD_LIBRARY_PATH"] = os.path.dirname(js_shell)
     elif sys.platform.startswith("win"):
         env["PATH"] = os.path.dirname(js_shell)
+
+    if gc_zeal:
+        env["JS_GC_ZEAL"] = gc_zeal
+
     return env
 
 
