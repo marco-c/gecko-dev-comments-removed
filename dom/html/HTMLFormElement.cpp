@@ -578,6 +578,11 @@ nsresult HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
             
             mPendingSubmission = nullptr;
           }
+          if (!aVisitor.mEvent->IsTrusted()) {
+            
+            OwnerDoc()->WarnOnceAbout(
+                DeprecatedOperations::eFormSubmissionUntrustedEvent);
+          }
           DoSubmit(aVisitor.mDOMEvent);
           break;
         }
