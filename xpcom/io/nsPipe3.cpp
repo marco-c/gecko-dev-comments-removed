@@ -188,6 +188,13 @@ class nsPipeInputStream final : public nsIAsyncInputStream,
   
   nsresult Status(const ReentrantMonitorAutoEnter& ev) const;
 
+  
+  
+  
+  nsresult InputStatus(const ReentrantMonitorAutoEnter&) const {
+    return mInputStatus;
+  }
+
  private:
   virtual ~nsPipeInputStream();
 
@@ -967,7 +974,10 @@ nsresult nsPipe::CloneInputStream(nsPipeInputStream* aOriginal,
                                   nsIInputStream** aCloneOut) {
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
   RefPtr<nsPipeInputStream> ref = new nsPipeInputStream(*aOriginal);
-  mInputList.AppendElement(ref);
+  
+  if (NS_SUCCEEDED(ref->InputStatus(mon))) {
+    mInputList.AppendElement(ref);
+  }
   nsCOMPtr<nsIAsyncInputStream> upcast = std::move(ref);
   upcast.forget(aCloneOut);
   return NS_OK;
