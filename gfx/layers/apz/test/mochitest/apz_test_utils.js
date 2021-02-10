@@ -736,12 +736,36 @@ async function injectScript(aScript, aWindow = window) {
 
 
 
+
+
 function getHitTestConfig() {
   if (!("hitTestConfig" in window)) {
     var utils = SpecialPowers.getDOMWindowUtils(window);
     var isWebRender = utils.layerManagerType == "WebRender";
     var isWindows = getPlatform() == "windows";
-    window.hitTestConfig = { utils, isWebRender, isWindows };
+    let activateAllScrollFrames = false;
+    if (isWebRender) {
+      activateAllScrollFrames =
+        SpecialPowers.getBoolPref("apz.wr.activate_all_scroll_frames") ||
+        (SpecialPowers.getBoolPref(
+          "apz.wr.activate_all_scroll_frames_when_fission"
+        ) &&
+          SpecialPowers.getBoolPref("fission.autostart"));
+    } else {
+      activateAllScrollFrames =
+        SpecialPowers.getBoolPref("apz.nonwr.activate_all_scroll_frames") ||
+        (SpecialPowers.getBoolPref(
+          "apz.nonwr.activate_all_scroll_frames_when_fission"
+        ) &&
+          SpecialPowers.getBoolPref("fission.autostart"));
+    }
+
+    window.hitTestConfig = {
+      utils,
+      isWebRender,
+      isWindows,
+      activateAllScrollFrames,
+    };
   }
   return window.hitTestConfig;
 }
@@ -893,17 +917,26 @@ function hitTestScrollbar(params) {
     
     if (config.isWebRender) {
       expectedHitInfo |= APZHitResultFlags.APZ_AWARE_LISTENERS;
+      if (
+        !config.activateAllScrollFrames &&
+        params.layerState == LayerState.INACTIVE
+      ) {
+        expectedHitInfo |= APZHitResultFlags.INACTIVE_SCROLLFRAME;
+      }
     } else {
       expectedHitInfo |= APZHitResultFlags.IRREGULAR_AREA;
     }
     
-    if (params.layerState == LayerState.ACTIVE || config.isWebRender) {
+    if (
+      params.layerState == LayerState.ACTIVE ||
+      config.activateAllScrollFrames
+    ) {
       expectedHitInfo |= APZHitResultFlags.SCROLLBAR_THUMB;
     }
   }
 
   var expectedScrollId = params.expectedScrollId;
-  if (config.isWebRender) {
+  if (config.activateAllScrollFrames) {
     expectedScrollId = config.utils.getViewId(params.element);
     if (params.layerState == LayerState.ACTIVE) {
       is(
