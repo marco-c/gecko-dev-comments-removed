@@ -2148,11 +2148,22 @@ void BrowsingContext::Focus(CallerType aCallerType, ErrorResult& aError) {
   }
 }
 
-void BrowsingContext::Blur(ErrorResult& aError) {
+bool BrowsingContext::CanBlurCheck(CallerType aCallerType) {
+  
+  
+  return aCallerType == CallerType::System ||
+         !Preferences::GetBool("dom.disable_window_flip", true);
+}
+
+void BrowsingContext::Blur(CallerType aCallerType, ErrorResult& aError) {
+  if (!CanBlurCheck(aCallerType)) {
+    return;
+  }
+
   if (ContentChild* cc = ContentChild::GetSingleton()) {
-    cc->SendWindowBlur(this);
+    cc->SendWindowBlur(this, aCallerType);
   } else if (ContentParent* cp = Canonical()->GetContentParent()) {
-    Unused << cp->SendWindowBlur(this);
+    Unused << cp->SendWindowBlur(this, aCallerType);
   }
 }
 
