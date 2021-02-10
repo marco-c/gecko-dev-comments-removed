@@ -350,7 +350,6 @@ static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_STARTUP_ENTRIES =
 
 #  define PROFILER_DEFAULT_INTERVAL 1  /* millisecond */
 #  define PROFILER_MAX_INTERVAL 5000   /* milliseconds */
-#  define PROFILER_DEFAULT_ACTIVE_BROWSING_CONTEXT_ID 0
 
 
 
