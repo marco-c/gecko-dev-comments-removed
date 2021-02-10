@@ -133,6 +133,10 @@ self.addEventListener('fetch', function(event) {
             }
           }
 
+          if (params['clone']) {
+            response = response.clone();
+          }
+
           
           if (params['cache']) {
             var cacheName = "cached-fetches-" + performance.now() + "-" +
