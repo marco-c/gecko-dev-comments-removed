@@ -1618,47 +1618,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
- \
-    MACRO(ClassConstructor, class_constructor, NULL, 13, 0, 1, JOF_CLASS_CTOR) \
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(DerivedConstructor, derived_constructor, NULL, 13, 1, 1, JOF_CLASS_CTOR) \
-    
-
-
-
-
-
-
-
-
-
  \
     MACRO(BuiltinObject, builtin_object, NULL, 2, 0, 1, JOF_UINT8) \
     
@@ -3579,6 +3538,8 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(228)                                   \
+  MACRO(229)                                   \
   MACRO(230)                                   \
   MACRO(231)                                   \
   MACRO(232)                                   \

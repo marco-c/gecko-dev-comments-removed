@@ -10357,78 +10357,71 @@ bool BytecodeEmitter::emitClass(
 
   
   
-  if (constructor) {
+
+  
+  
+  Maybe<LexicalScopeEmitter> lse;
+  FunctionNode* ctor;
+  if (constructor->is<LexicalScopeNode>()) {
+    LexicalScopeNode* constructorScope = &constructor->as<LexicalScopeNode>();
+
+    
+    MOZ_ASSERT(!constructorScope->isEmptyScope());
+    MOZ_ASSERT(constructorScope->scopeBindings()->slotInfo.length == 1);
+    MOZ_ASSERT(constructorScope->scopeBindings()->trailingNames[0].name() ==
+               TaggedParserAtomIndex::WellKnown::dotInitializers());
+
+    auto needsInitializer = [](ParseNode* propdef) {
+      return NeedsFieldInitializer(propdef, false) ||
+             NeedsMethodInitializer(propdef, false);
+    };
+
     
     
-    Maybe<LexicalScopeEmitter> lse;
-    FunctionNode* ctor;
-    if (constructor->is<LexicalScopeNode>()) {
-      LexicalScopeNode* constructorScope = &constructor->as<LexicalScopeNode>();
-
-      
-      MOZ_ASSERT(!constructorScope->isEmptyScope());
-      MOZ_ASSERT(constructorScope->scopeBindings()->slotInfo.length == 1);
-      MOZ_ASSERT(constructorScope->scopeBindings()->trailingNames[0].name() ==
-                 TaggedParserAtomIndex::WellKnown::dotInitializers());
-
-      auto needsInitializer = [](ParseNode* propdef) {
-        return NeedsFieldInitializer(propdef, false) ||
-               NeedsMethodInitializer(propdef, false);
-      };
-
-      
-      
-      bool needsInitializers =
-          std::any_of(classMembers->contents().begin(),
-                      classMembers->contents().end(), needsInitializer);
-      if (needsInitializers) {
-        lse.emplace(this);
-        if (!lse->emitScope(ScopeKind::Lexical,
-                            constructorScope->scopeBindings())) {
-          return false;
-        }
-
-        
-        if (!emitCreateMemberInitializers(ce, classMembers,
-                                          FieldPlacement::Instance)) {
-          return false;
-        }
+    bool needsInitializers =
+        std::any_of(classMembers->contents().begin(),
+                    classMembers->contents().end(), needsInitializer);
+    if (needsInitializers) {
+      lse.emplace(this);
+      if (!lse->emitScope(ScopeKind::Lexical,
+                          constructorScope->scopeBindings())) {
+        return false;
       }
 
-      ctor = &constructorScope->scopeBody()->as<ClassMethod>().method();
-    } else {
       
-      MOZ_ASSERT(emitterMode == BytecodeEmitter::SelfHosting);
-      ctor = &constructor->as<ClassMethod>().method();
-    }
-
-    bool needsHomeObject = ctor->funbox()->needsHomeObject();
-    
-    if (nameKind == ClassNameKind::InferredName) {
-      if (!setFunName(ctor->funbox(), nameForAnonymousClass)) {
+      if (!emitCreateMemberInitializers(ce, classMembers,
+                                        FieldPlacement::Instance)) {
         return false;
       }
     }
-    if (!emitFunction(ctor, isDerived)) {
-      
-      return false;
-    }
-    if (lse.isSome()) {
-      if (!lse->emitEnd()) {
-        return false;
-      }
-      lse.reset();
-    }
-    if (!ce.emitInitConstructor(needsHomeObject)) {
-      
-      return false;
-    }
+
+    ctor = &constructorScope->scopeBody()->as<ClassMethod>().method();
   } else {
-    if (!ce.emitInitDefaultConstructor(classNode->pn_pos.begin,
-                                       classNode->pn_pos.end)) {
-      
+    
+    MOZ_ASSERT(emitterMode == BytecodeEmitter::SelfHosting);
+    ctor = &constructor->as<ClassMethod>().method();
+  }
+
+  bool needsHomeObject = ctor->funbox()->needsHomeObject();
+  
+  if (nameKind == ClassNameKind::InferredName) {
+    if (!setFunName(ctor->funbox(), nameForAnonymousClass)) {
       return false;
     }
+  }
+  if (!emitFunction(ctor, isDerived)) {
+    
+    return false;
+  }
+  if (lse.isSome()) {
+    if (!lse->emitEnd()) {
+      return false;
+    }
+    lse.reset();
+  }
+  if (!ce.emitInitConstructor(needsHomeObject)) {
+    
+    return false;
   }
 
   if (!emitCreateFieldKeys(classMembers, FieldPlacement::Instance)) {

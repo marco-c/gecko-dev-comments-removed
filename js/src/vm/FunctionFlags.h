@@ -117,10 +117,6 @@ class FunctionFlags {
     MUTABLE_FLAGS = RESOLVED_NAME | RESOLVED_LENGTH,
 
     
-    
-    
-    
-    
     STABLE_ACROSS_CLONES =
         CONSTRUCTOR | LAMBDA | SELF_HOSTED | FUNCTION_KIND_MASK
   };

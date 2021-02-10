@@ -34,8 +34,7 @@ enum {
   JOF_BIGINT = 20,      
   JOF_ICINDEX = 21,     
   JOF_LOOPHEAD = 22,    
-  JOF_CLASS_CTOR = 23,  
-  JOF_TWO_UINT8 = 24,   
+  JOF_TWO_UINT8 = 23,   
   JOF_TYPEMASK = 0xFF,  
 
   JOF_NAME = 1 << 8,        

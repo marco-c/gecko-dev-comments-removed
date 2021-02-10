@@ -4495,20 +4495,11 @@ static JSScript* CopyScriptImpl(JSContext* cx, HandleScript src,
   
   JS::AssertObjectIsNotGray(sourceObject);
 
-  
-  
-  SourceExtent extent = maybeClassExtent ? *maybeClassExtent : src->extent();
+  SourceExtent extent = src->extent();
 
   ImmutableScriptFlags flags = src->immutableFlags();
   flags.setFlag(JSScript::ImmutableFlags::HasNonSyntacticScope,
                 scopes[0]->hasOnChain(ScopeKind::NonSyntactic));
-
-  
-  
-  
-  if (maybeClassExtent) {
-    flags.clearFlag(JSScript::ImmutableFlags::SelfHosted);
-  }
 
   
   MOZ_ASSERT_IF(functionOrGlobal->is<JSFunction>(),
@@ -4576,10 +4567,9 @@ JSScript* js::CloneGlobalScript(JSContext* cx, HandleScript src) {
   return dst;
 }
 
-JSScript* js::CloneScriptIntoFunction(JSContext* cx, HandleScope enclosingScope,
-                                      HandleFunction fun, HandleScript src,
-                                      Handle<ScriptSourceObject*> sourceObject,
-                                      SourceExtent* maybeClassExtent) {
+JSScript* js::CloneScriptIntoFunction(
+    JSContext* cx, HandleScope enclosingScope, HandleFunction fun,
+    HandleScript src, Handle<ScriptSourceObject*> sourceObject) {
   MOZ_ASSERT(src->realm() != cx->realm(),
              "js::CloneScriptIntoFunction should only be used for for realm "
              "mismatches. Otherwise just share the script directly.");
@@ -4617,8 +4607,7 @@ JSScript* js::CloneScriptIntoFunction(JSContext* cx, HandleScope enclosingScope,
 
   
   const FunctionFlags preservedFlags = fun->flags();
-  RootedScript dst(cx, CopyScriptImpl(cx, src, fun, sourceObject, &scopes,
-                                      maybeClassExtent));
+  RootedScript dst(cx, CopyScriptImpl(cx, src, fun, sourceObject, &scopes));
   if (!dst) {
     fun->setFlags(preservedFlags);
     return nullptr;

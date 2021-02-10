@@ -533,16 +533,6 @@ class MOZ_RAII AutoSaveLocalStrictMode {
 
 
 
-
-
-
-
-
-
-
-
-
-
 class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
  public:
   enum class Kind {
@@ -783,18 +773,6 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
   
   
   MOZ_MUST_USE bool emitInitConstructor(bool needsHomeObject);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  MOZ_MUST_USE bool emitInitDefaultConstructor(uint32_t classStart,
-                                               uint32_t classEnd);
 
   MOZ_MUST_USE bool prepareForMemberInitializers(size_t numInitializers,
                                                  bool isStatic);
