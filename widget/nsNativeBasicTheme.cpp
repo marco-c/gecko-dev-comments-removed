@@ -479,12 +479,13 @@ static already_AddRefed<Path> GetFocusStrokePath(
   return MakePathForRoundedRect(*aDrawTarget, focusRect.ToUnknownRect(), radii);
 }
 
+static const CSSCoord kInnerFocusOutlineWidth = 2.0f;
+
 void nsNativeBasicTheme::PaintRoundedFocusRect(DrawTarget* aDrawTarget,
                                                const LayoutDeviceRect& aRect,
                                                DPIRatio aDpiRatio,
                                                CSSCoord aRadius,
-                                               CSSCoord aOffset,
-                                               bool aInnerOnly) {
+                                               CSSCoord aOffset) {
   
   
   auto [innerColor, middleColor, outerColor] = ComputeFocusRectColors();
@@ -499,7 +500,7 @@ void nsNativeBasicTheme::PaintRoundedFocusRect(DrawTarget* aDrawTarget,
   
   
   LayoutDeviceCoord offset = aOffset * aDpiRatio;
-  LayoutDeviceCoord strokeWidth = CSSCoord(2.0f) * aDpiRatio;
+  LayoutDeviceCoord strokeWidth = kInnerFocusOutlineWidth * aDpiRatio;
   focusRect.Inflate(strokeWidth);
 
   LayoutDeviceCoord strokeRadius = aRadius * aDpiRatio;
@@ -507,10 +508,6 @@ void nsNativeBasicTheme::PaintRoundedFocusRect(DrawTarget* aDrawTarget,
                                                 strokeRadius, strokeWidth);
   aDrawTarget->Stroke(roundedRect, ColorPattern(ToDeviceColor(innerColor)),
                       StrokeOptions(strokeWidth));
-
-  if (aInnerOnly) {
-    return;
-  }
 
   offset = CSSCoord(1.0f) * aDpiRatio;
   strokeRadius += offset;
@@ -1276,9 +1273,7 @@ nsNativeBasicTheme::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
       PaintButton(aFrame, dt, devPxRect, eventState, dpiRatio);
       break;
     case StyleAppearance::FocusOutline:
-      
-      PaintRoundedFocusRect(dt, devPxRect, dpiRatio, 0.0f, 0.0f,
-                             true);
+      PaintAutoStyleOutline(aFrame, dt, devPxRect, dpiRatio);
       break;
     default:
       
@@ -1290,6 +1285,42 @@ nsNativeBasicTheme::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
   }
 
   return NS_OK;
+}
+
+void nsNativeBasicTheme::PaintAutoStyleOutline(nsIFrame* aFrame,
+                                               DrawTarget* aDt,
+                                               const LayoutDeviceRect& aRect,
+                                               DPIRatio aDpiRatio) {
+  auto [innerColor, middleColor, outerColor] = ComputeFocusRectColors();
+  Unused << middleColor;
+  Unused << outerColor;
+
+  const LayoutDeviceCoord width = kInnerFocusOutlineWidth * aDpiRatio;
+  const LayoutDeviceCoord halfWidth = width * 0.5f;
+
+  LayoutDeviceRect rect(aRect);
+  
+  
+  rect.Inflate(halfWidth);
+
+  nscoord cssRadii[8];
+  if (!aFrame->GetBorderRadii(cssRadii)) {
+    return aDt->StrokeRect(rect.ToUnknownRect(),
+                           ColorPattern(ToDeviceColor(innerColor)),
+                           StrokeOptions(width));
+  }
+
+  RectCornerRadii innerRadii;
+  nsCSSRendering::ComputePixelRadii(
+      cssRadii, aFrame->PresContext()->AppUnitsPerDevPixel(), &innerRadii);
+
+  RectCornerRadii outerRadii;
+  Float borderSizes[4] = {halfWidth, halfWidth, halfWidth, halfWidth};
+  nsCSSBorderRenderer::ComputeOuterRadii(innerRadii, borderSizes, &outerRadii);
+  RefPtr<Path> path =
+      MakePathForRoundedRect(*aDt, rect.ToUnknownRect(), outerRadii);
+  aDt->Stroke(path, ColorPattern(ToDeviceColor(innerColor)),
+              StrokeOptions(width));
 }
 
 
