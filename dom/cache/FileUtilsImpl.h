@@ -38,46 +38,56 @@ nsresult BodyTraverseFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBodyDir,
       aBodyDir,
       [&isEmpty, &aQuotaInfo, aTrackQuota, &aHandleFileFunc,
        aCanRemoveFiles](const nsCOMPtr<nsIFile>& file) -> Result<Ok, nsresult> {
-        CACHE_TRY_INSPECT(const bool& isDir,
-                          MOZ_TO_RESULT_INVOKE(file, IsDirectory));
+        CACHE_TRY_INSPECT(const auto& dirEntryKind,
+                          quota::GetDirEntryKind(*file));
 
-        
-        CACHE_TRY(OkIf(!isDir), Ok{}, ([&aQuotaInfo, &file](const auto&) {
-                    DebugOnly<nsresult> result = RemoveNsIFileRecursively(
-                        aQuotaInfo, *file,  false);
-                    MOZ_ASSERT(NS_SUCCEEDED(result));
-                  }));
-
-        nsAutoCString leafName;
-        CACHE_TRY(file->GetNativeLeafName(leafName));
-
-        
-        
-        if (StringEndsWith(leafName, ".tmp"_ns)) {
-          if (aCanRemoveFiles) {
-            DebugOnly<nsresult> result =
-                RemoveNsIFile(aQuotaInfo, *file, aTrackQuota);
+        switch (dirEntryKind) {
+          case quota::nsIFileKind::ExistsAsDirectory: {
+            
+            DebugOnly<nsresult> result = RemoveNsIFileRecursively(
+                aQuotaInfo, *file,  false);
             MOZ_ASSERT(NS_SUCCEEDED(result));
-            return Ok{};
+            break;
           }
-        } else {
-          CACHE_TRY(OkIf(StringEndsWith(leafName, ".final"_ns)), Ok{},
-                    ([&aQuotaInfo, &file](const auto&) {
-                      
-                      
-                      DebugOnly<nsresult> result = RemoveNsIFile(
-                          aQuotaInfo, *file,  false);
-                      MOZ_ASSERT(NS_SUCCEEDED(result));
-                    }));
-        }
 
-        CACHE_TRY_INSPECT(const bool& fileDeleted,
-                          aHandleFileFunc(*file, leafName));
-        if (fileDeleted) {
-          return Ok{};
-        }
+          case quota::nsIFileKind::ExistsAsFile: {
+            nsAutoCString leafName;
+            CACHE_TRY(file->GetNativeLeafName(leafName));
 
-        isEmpty.EnsureFlipped();
+            
+            
+            if (StringEndsWith(leafName, ".tmp"_ns)) {
+              if (aCanRemoveFiles) {
+                DebugOnly<nsresult> result =
+                    RemoveNsIFile(aQuotaInfo, *file, aTrackQuota);
+                MOZ_ASSERT(NS_SUCCEEDED(result));
+                return Ok{};
+              }
+            } else {
+              CACHE_TRY(OkIf(StringEndsWith(leafName, ".final"_ns)), Ok{},
+                        ([&aQuotaInfo, &file](const auto&) {
+                          
+                          
+                          DebugOnly<nsresult> result = RemoveNsIFile(
+                              aQuotaInfo, *file,  false);
+                          MOZ_ASSERT(NS_SUCCEEDED(result));
+                        }));
+            }
+
+            CACHE_TRY_INSPECT(const bool& fileDeleted,
+                              aHandleFileFunc(*file, leafName));
+            if (fileDeleted) {
+              return Ok{};
+            }
+
+            isEmpty.EnsureFlipped();
+            break;
+          }
+
+          case quota::nsIFileKind::DoesNotExist:
+            
+            break;
+        }
 
         return Ok{};
       }));
