@@ -676,43 +676,30 @@ class SameOriginCheckerImpl final : public nsIChannelEventSink,
 
 }  
 
-AutoSuppressEventHandlingAndSuspend::AutoSuppressEventHandlingAndSuspend(
-    BrowsingContextGroup* aGroup) {
-  for (const auto& bc : aGroup->Toplevels()) {
-    SuppressBrowsingContext(bc);
+void AutoSuppressEventHandlingAndSuspend::SuppressDocument(Document* aDoc) {
+  
+  
+  
+  
+  
+  
+  
+  aDoc->SuppressEventHandling();
+  if (nsCOMPtr<nsPIDOMWindowInner> win = aDoc->GetInnerWindow()) {
+    win->Suspend();
+    mWindows.AppendElement(win);
   }
 }
 
-void AutoSuppressEventHandlingAndSuspend::SuppressBrowsingContext(
-    BrowsingContext* aBC) {
-  if (nsCOMPtr<nsPIDOMWindowOuter> win = aBC->GetDOMWindow()) {
-    if (RefPtr<Document> doc = win->GetExtantDoc()) {
-      mDocuments.AppendElement(doc);
-      mWindows.AppendElement(win->GetCurrentInnerWindow());
-      
-      
-      
-      
-      
-      
-      
-      doc->SuppressEventHandling();
-      win->GetCurrentInnerWindow()->Suspend();
-    }
-  }
-
-  for (const auto& bc : aBC->Children()) {
-    SuppressBrowsingContext(bc);
-  }
+void AutoSuppressEventHandlingAndSuspend::UnsuppressDocument(Document* aDoc) {
+  aDoc->UnsuppressEventHandlingAndFireEvents(true);
 }
 
 AutoSuppressEventHandlingAndSuspend::~AutoSuppressEventHandlingAndSuspend() {
   for (const auto& win : mWindows) {
     win->Resume();
   }
-  for (const auto& doc : mDocuments) {
-    doc->UnsuppressEventHandlingAndFireEvents(true);
-  }
+  UnsuppressDocuments();
 }
 
 

@@ -7,6 +7,8 @@
 #ifndef dom_base_AutoSuppressEventHandlingAndSuspend_h
 #define dom_base_AutoSuppressEventHandlingAndSuspend_h
 
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/Document.h"
 #include "nsCOMPtr.h"
 #include "nsPIDOMWindow.h"
@@ -14,8 +16,6 @@
 
 namespace mozilla::dom {
 
-class BrowsingContext;
-class BrowsingContextGroup;
 
 
 
@@ -23,17 +23,22 @@ class BrowsingContextGroup;
 
 
 
-
-
-class MOZ_RAII AutoSuppressEventHandlingAndSuspend {
+class MOZ_RAII AutoSuppressEventHandlingAndSuspend
+    : private AutoWalkBrowsingContextGroup {
  public:
-  explicit AutoSuppressEventHandlingAndSuspend(BrowsingContextGroup* aGroup);
+  explicit AutoSuppressEventHandlingAndSuspend(BrowsingContextGroup* aGroup) {
+    if (aGroup) {
+      SuppressBrowsingContextGroup(aGroup);
+    }
+  }
+
   ~AutoSuppressEventHandlingAndSuspend();
 
- private:
-  void SuppressBrowsingContext(BrowsingContext* aBC);
+ protected:
+  void SuppressDocument(Document* aDocument) override;
+  void UnsuppressDocument(Document* aDocument) override;
 
-  AutoTArray<RefPtr<Document>, 16> mDocuments;
+ private:
   AutoTArray<nsCOMPtr<nsPIDOMWindowInner>, 16> mWindows;
 };
 }  
