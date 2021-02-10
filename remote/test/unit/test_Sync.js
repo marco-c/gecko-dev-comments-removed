@@ -4,7 +4,9 @@
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const { PollPromise } = ChromeUtils.import("chrome://remote/content/Sync.jsm");
+const { PollPromise } = ChromeUtils.import(
+  "chrome://remote/content/shared/Sync.jsm"
+);
 
 
 
@@ -105,7 +107,7 @@ add_test(function test_executeSoon_callback() {
   
   
   let sync = {};
-  ChromeUtils.import("chrome://remote/content/Sync.jsm", sync);
+  ChromeUtils.import("chrome://remote/content/shared/Sync.jsm", sync);
 
   for (let func of ["foo", null, true, [], {}]) {
     Assert.throws(() => sync.executeSoon(func), /TypeError/);
