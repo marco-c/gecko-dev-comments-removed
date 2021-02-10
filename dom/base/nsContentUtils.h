@@ -2497,6 +2497,11 @@ class nsContentUtils {
 
 
   static bool IsPDFJS(nsIPrincipal* aPrincipal);
+  
+
+
+
+  static bool IsPDFJS(JSContext*, JSObject*);
 
   
 
