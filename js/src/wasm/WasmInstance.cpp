@@ -1712,10 +1712,14 @@ static bool GetInterpEntry(JSContext* cx, Instance& instance,
   
   
   if (!funcExport->hasEagerStubs() && funcExport->canHaveJitEntry()) {
+    if (!EnsureBuiltinThunksInitialized()) {
+      return false;
+    }
     JSFunction& callee = args.callee().as<JSFunction>();
-    void* interpStub = cx->runtime()->jitRuntime()->interpreterStub().value;
+    void* provisionalJitEntryStub = ProvisionalJitEntryStub();
+    MOZ_ASSERT(provisionalJitEntryStub);
     MOZ_ASSERT(callee.isWasmWithJitEntry());
-    MOZ_ASSERT(*callee.wasmJitEntry() != interpStub);
+    MOZ_ASSERT(*callee.wasmJitEntry() != provisionalJitEntryStub);
   }
 #endif
 

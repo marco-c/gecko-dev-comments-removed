@@ -50,6 +50,7 @@
 #include "vm/StringType.h"
 #include "vm/Warnings.h"  
 #include "wasm/WasmBaselineCompile.h"
+#include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCompile.h"
 #include "wasm/WasmCraneliftCompile.h"
 #include "wasm/WasmInstance.h"
@@ -1983,8 +1984,12 @@ bool WasmInstanceObject::getExportedFunction(
     
     if (funcExport.canHaveJitEntry()) {
       if (!funcExport.hasEagerStubs()) {
-        void* interpStub = cx->runtime()->jitRuntime()->interpreterStub().value;
-        instance.code().setJitEntryIfNull(funcIndex, interpStub);
+        if (!EnsureBuiltinThunksInitialized()) {
+          return false;
+        }
+        void* provisionalJitEntryStub = ProvisionalJitEntryStub();
+        MOZ_ASSERT(provisionalJitEntryStub);
+        instance.code().setJitEntryIfNull(funcIndex, provisionalJitEntryStub);
       }
       fun->setWasmJitEntry(instance.code().getAddressOfJitEntry(funcIndex));
     } else {
