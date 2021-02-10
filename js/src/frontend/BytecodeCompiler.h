@@ -110,7 +110,6 @@ struct CompilationGCOutput;
 class ErrorReporter;
 class FunctionBox;
 class ParseNode;
-class ParserAtom;
 
 
 ModuleObject* CompileModule(JSContext* cx,
@@ -187,10 +186,8 @@ MOZ_MUST_USE JSFunction* CompileStandaloneFunctionInNonSyntacticScope(
 
 
 bool IsIdentifier(JSLinearString* str);
-bool IsIdentifier(const ParserAtom* atom);
 
 bool IsIdentifierNameOrPrivateName(JSLinearString* str);
-bool IsIdentifierNameOrPrivateName(const ParserAtom* atom);
 
 
 

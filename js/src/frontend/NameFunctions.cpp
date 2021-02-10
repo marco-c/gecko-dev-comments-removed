@@ -60,8 +60,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
 
 
   bool appendPropertyReference(TaggedParserAtomIndex name) {
-    const auto* atom = parserAtoms_.getParserAtom(name);
-    if (IsIdentifier(atom)) {
+    if (parserAtoms_.isIdentifier(name)) {
       return buf_.append('.') && buf_.append(parserAtoms_, name);
     }
 
