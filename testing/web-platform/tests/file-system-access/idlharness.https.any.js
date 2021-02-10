@@ -5,7 +5,7 @@
 'use strict';
 
 idl_test(
-  ['native-file-system'],
+  ['file-system-access'],
   ['storage', 'permissions', 'streams', 'html', 'dom'],
   idl_array => {
     idl_array.add_objects({

@@ -18,7 +18,7 @@
     await new Promise(resolve => step_timeout(resolve, 100));
 
     await window.test_driver.bless(
-      'show a directory picker.<br />Please select native-file-system/resources/data/');
+      'show a directory picker.<br />Please select file-system-access/resources/data/');
     const dir = await self.showDirectoryPicker();
     assert_true(dir instanceof FileSystemHandle);
     assert_true(dir instanceof FileSystemDirectoryHandle);

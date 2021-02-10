@@ -18,7 +18,7 @@
     await new Promise(resolve => step_timeout(resolve, 100));
 
     await window.test_driver.bless(
-      'show a file picker.<br />Please select native-file-system/resources/data/testfile.txt');
+      'show a file picker.<br />Please select file-system-access/resources/data/testfile.txt');
     const files = await self.showOpenFilePicker({
       multiple: false, types: [
         { description: 'Text files', accept: { ' text/plain ': ['.txt'] } },
@@ -40,7 +40,7 @@
 
   promise_test(async t => {
     await window.test_driver.bless(
-      'show a file picker.<br />Please select native-file-system/resources/data/testfile.txt');
+      'show a file picker.<br />Please select file-system-access/resources/data/testfile.txt');
     const files = await self.showOpenFilePicker({
       multiple: false,
       startIn: null,
