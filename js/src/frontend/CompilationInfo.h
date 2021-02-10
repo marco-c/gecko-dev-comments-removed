@@ -17,7 +17,7 @@
 
 #include "builtin/ModuleObject.h"
 #include "ds/LifoAlloc.h"
-#include "frontend/ParserAtom.h"  
+#include "frontend/ParserAtom.h"   
 #include "frontend/ScriptIndex.h"  
 #include "frontend/SharedContext.h"
 #include "frontend/Stencil.h"
@@ -486,9 +486,6 @@ struct BaseCompilationStencil {
 
   
   BaseCompilationStencil(BaseCompilationStencil&& other) = default;
-
-  const ParserAtom* getParserAtomAt(JSContext* cx,
-                                    TaggedParserAtomIndex taggedIndex) const;
 
   bool prepareStorageFor(JSContext* cx, CompilationState& compilationState) {
     
