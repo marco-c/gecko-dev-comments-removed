@@ -1,10 +1,12 @@
 use super::{CommonThreadInfo, Pid};
+use crate::errors::ThreadInfoError;
 use crate::minidump_cpu::imp::{MD_CONTEXT_ARM_FULL, MD_CONTEXT_ARM_GPR_COUNT};
 use crate::minidump_cpu::RawContextCPU;
 use crate::Result;
 use libc;
 use nix::sys::ptrace;
 
+type Result<T> = std::result::Result<T, ThreadInfoError>;
 
 
 

@@ -4,10 +4,12 @@
 
 
 
-use crate::Result;
+use crate::errors::AuxvReaderError;
 use byteorder::{NativeEndian, ReadBytesExt};
 use std::fs::File;
 use std::io::{BufReader, Read};
+
+pub type Result<T> = std::result::Result<T, AuxvReaderError>;
 
 
 #[cfg(target_pointer_width = "32")]
@@ -67,23 +69,23 @@ impl Iterator for ProcfsAuxvIter {
                 Ok(n) => {
                     if n == 0 {
                         
-                        return Some(Err("ProcfsAuxvError::InvalidFormat".into()));
+                        return Some(Err(AuxvReaderError::InvalidFormat));
                     }
 
                     read_bytes += n;
                 }
-                Err(x) => return Some(Err(Box::new(x))),
+                Err(x) => return Some(Err(x.into())),
             }
         }
 
         let mut reader = &self.buf[..];
         let aux_key = match read_long(&mut reader) {
             Ok(x) => x,
-            Err(x) => return Some(Err(Box::new(x))),
+            Err(x) => return Some(Err(x.into())),
         };
         let aux_val = match read_long(&mut reader) {
             Ok(x) => x,
-            Err(x) => return Some(Err(Box::new(x))),
+            Err(x) => return Some(Err(x.into())),
         };
 
         let at_null;

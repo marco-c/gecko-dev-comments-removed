@@ -1,8 +1,10 @@
+use crate::errors::CpuInfoError;
 use crate::minidump_format::*;
-use crate::Result;
 use std::convert::TryInto;
 use std::io::{BufRead, BufReader};
 use std::path;
+
+type Result<T> = std::result::Result<T, CpuInfoError>;
 
 struct CpuInfoEntry {
     info_name: &'static str,
@@ -89,7 +91,7 @@ pub fn write_cpu_information(sys_info: &mut MDRawSystemInfo) -> Result<()> {
     }
     
     if !cpu_info_table.iter().all(|x| x.found == true) {
-        return Err("Not all entries in /proc/cpuinfo found".into());
+        return Err(CpuInfoError::NotAllProcEntriesFound);
     }
     
     

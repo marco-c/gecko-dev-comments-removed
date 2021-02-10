@@ -4,11 +4,11 @@ use minidump_writer_linux::app_memory::AppMemory;
 #[cfg(not(any(target_arch = "mips", target_arch = "arm")))]
 use minidump_writer_linux::crash_context::fpstate_t;
 use minidump_writer_linux::crash_context::CrashContext;
+use minidump_writer_linux::errors::*;
 use minidump_writer_linux::linux_ptrace_dumper::LinuxPtraceDumper;
 use minidump_writer_linux::maps_reader::{MappingEntry, MappingInfo, SystemMappingInfo};
 use minidump_writer_linux::minidump_writer::MinidumpWriter;
 use minidump_writer_linux::thread_info::Pid;
-use minidump_writer_linux::Result;
 use nix::errno::Errno;
 use nix::sys::signal::Signal;
 use std::convert::TryInto;
@@ -627,12 +627,12 @@ fn test_write_early_abort_helper(context: Context) {
         .read_line(&mut buf)
         .expect("Couldn't read address provided by child");
     let mut output = buf.split_whitespace();
-    let memory_addr = usize::from_str_radix(output.next().unwrap().trim_start_matches("0x"), 16)
+    
+    
+    let _ = usize::from_str_radix(output.next().unwrap().trim_start_matches("0x"), 16)
         .expect("unable to parse mmap_addr");
-
-    
-    
-    let memory_size = usize::MAX;
+    let memory_addr = 0;
+    let memory_size = usize::from_str(output.next().unwrap()).expect("unable to parse memory_size");
 
     let app_memory = AppMemory {
         ptr: memory_addr,
@@ -646,9 +646,10 @@ fn test_write_early_abort_helper(context: Context) {
     }
 
     
-    tmp.set_app_memory(vec![app_memory])
-        .dump(&mut tmpfile)
-        .expect_err("Could not write minidump");
+    match tmp.set_app_memory(vec![app_memory]).dump(&mut tmpfile) {
+        Err(WriterError::SectionAppMemoryError(_)) => (),
+        _ => panic!("Wrong kind of error returned"),
+    }
 
     child.kill().expect("Failed to kill process");
     
