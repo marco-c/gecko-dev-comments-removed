@@ -483,7 +483,8 @@ void nsNativeBasicTheme::PaintRoundedFocusRect(DrawTarget* aDrawTarget,
                                                const LayoutDeviceRect& aRect,
                                                DPIRatio aDpiRatio,
                                                CSSCoord aRadius,
-                                               CSSCoord aOffset) {
+                                               CSSCoord aOffset,
+                                               bool aInnerOnly) {
   
   
   auto [innerColor, middleColor, outerColor] = ComputeFocusRectColors();
@@ -506,6 +507,10 @@ void nsNativeBasicTheme::PaintRoundedFocusRect(DrawTarget* aDrawTarget,
                                                 strokeRadius, strokeWidth);
   aDrawTarget->Stroke(roundedRect, ColorPattern(ToDeviceColor(innerColor)),
                       StrokeOptions(strokeWidth));
+
+  if (aInnerOnly) {
+    return;
+  }
 
   offset = CSSCoord(1.0f) * aDpiRatio;
   strokeRadius += offset;
@@ -1272,7 +1277,8 @@ nsNativeBasicTheme::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
       break;
     case StyleAppearance::FocusOutline:
       
-      PaintRoundedFocusRect(dt, devPxRect, dpiRatio, 0.0f, 0.0f);
+      PaintRoundedFocusRect(dt, devPxRect, dpiRatio, 0.0f, 0.0f,
+                             true);
       break;
     default:
       
@@ -1360,7 +1366,7 @@ bool nsNativeBasicTheme::GetWidgetOverflow(nsDeviceContext* aContext,
   switch (aAppearance) {
     case StyleAppearance::FocusOutline:
       
-      overflow.SizeTo(5, 5, 5, 5);
+      overflow.SizeTo(2, 2, 2, 2);
       break;
     case StyleAppearance::Radio:
     case StyleAppearance::Checkbox:
