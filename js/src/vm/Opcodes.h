@@ -2286,7 +2286,7 @@
 
 
  \
-    MACRO(IfEq, if_eq, NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
+    MACRO(JumpIfFalse, jump_if_false, NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
     
 
 
