@@ -1445,6 +1445,10 @@ void MacroAssembler::bitmaskInt32x4(FloatRegister src, Register dest) {
   vmovmskps(src, dest);
 }
 
+void MacroAssembler::bitmaskInt64x2(FloatRegister src, Register dest) {
+  vmovmskpd(src, dest);
+}
+
 
 
 void MacroAssembler::swizzleInt8x16(FloatRegister rhs, FloatRegister lhsDest,
@@ -1583,6 +1587,120 @@ void MacroAssembler::mulInt64x2(FloatRegister rhs, FloatRegister lhsDest,
   vpaddq(Operand(temp2), lhsDest, lhsDest);  
                                              
                                              
+}
+
+
+
+
+
+
+void MacroAssembler::extMulLowInt8x16(FloatRegister rhs,
+                                      FloatRegister lhsDest) {
+  ScratchSimd128Scope scratch(*this);
+  widenLowInt8x16(rhs, scratch);
+  widenLowInt8x16(lhsDest, lhsDest);
+  mulInt16x8(scratch, lhsDest);
+}
+
+void MacroAssembler::extMulHighInt8x16(FloatRegister rhs,
+                                       FloatRegister lhsDest) {
+  ScratchSimd128Scope scratch(*this);
+  widenHighInt8x16(rhs, scratch);
+  widenHighInt8x16(lhsDest, lhsDest);
+  mulInt16x8(scratch, lhsDest);
+}
+
+void MacroAssembler::unsignedExtMulLowInt8x16(FloatRegister rhs,
+                                              FloatRegister lhsDest) {
+  ScratchSimd128Scope scratch(*this);
+  unsignedWidenLowInt8x16(rhs, scratch);
+  unsignedWidenLowInt8x16(lhsDest, lhsDest);
+  mulInt16x8(scratch, lhsDest);
+}
+
+void MacroAssembler::unsignedExtMulHighInt8x16(FloatRegister rhs,
+                                               FloatRegister lhsDest) {
+  ScratchSimd128Scope scratch(*this);
+  unsignedWidenHighInt8x16(rhs, scratch);
+  unsignedWidenHighInt8x16(lhsDest, lhsDest);
+  mulInt16x8(scratch, lhsDest);
+}
+
+void MacroAssembler::extMulLowInt16x8(FloatRegister rhs,
+                                      FloatRegister lhsDest) {
+  ScratchSimd128Scope scratch(*this);
+  vmovdqa(lhsDest, scratch);
+  vpmullw(Operand(rhs), lhsDest, lhsDest);
+  vpmulhw(Operand(rhs), scratch, scratch);
+  vpunpcklwd(scratch, lhsDest, lhsDest);
+}
+
+void MacroAssembler::extMulHighInt16x8(FloatRegister rhs,
+                                       FloatRegister lhsDest) {
+  ScratchSimd128Scope scratch(*this);
+  vmovdqa(lhsDest, scratch);
+  vpmullw(Operand(rhs), lhsDest, lhsDest);
+  vpmulhw(Operand(rhs), scratch, scratch);
+  vpunpckhwd(scratch, lhsDest, lhsDest);
+}
+
+void MacroAssembler::unsignedExtMulLowInt16x8(FloatRegister rhs,
+                                              FloatRegister lhsDest) {
+  ScratchSimd128Scope scratch(*this);
+  vmovdqa(lhsDest, scratch);
+  vpmullw(Operand(rhs), lhsDest, lhsDest);
+  vpmulhuw(Operand(rhs), scratch, scratch);
+  vpunpcklwd(scratch, lhsDest, lhsDest);
+}
+
+void MacroAssembler::unsignedExtMulHighInt16x8(FloatRegister rhs,
+                                               FloatRegister lhsDest) {
+  ScratchSimd128Scope scratch(*this);
+  vmovdqa(lhsDest, scratch);
+  vpmullw(Operand(rhs), lhsDest, lhsDest);
+  vpmulhuw(Operand(rhs), scratch, scratch);
+  vpunpckhwd(scratch, lhsDest, lhsDest);
+}
+
+void MacroAssembler::extMulLowInt32x4(FloatRegister rhs,
+                                      FloatRegister lhsDest) {
+  ScratchSimd128Scope scratch(*this);
+  vpshufd(ComputeShuffleMask(0, 0, 1, 0), lhsDest, scratch);
+  vpshufd(ComputeShuffleMask(0, 0, 1, 0), rhs, lhsDest);
+  vpmuldq(scratch, lhsDest, lhsDest);
+}
+
+void MacroAssembler::extMulHighInt32x4(FloatRegister rhs,
+                                       FloatRegister lhsDest) {
+  ScratchSimd128Scope scratch(*this);
+  vpshufd(ComputeShuffleMask(2, 0, 3, 0), lhsDest, scratch);
+  vpshufd(ComputeShuffleMask(2, 0, 3, 0), rhs, lhsDest);
+  vpmuldq(scratch, lhsDest, lhsDest);
+}
+
+void MacroAssembler::unsignedExtMulLowInt32x4(FloatRegister rhs,
+                                              FloatRegister lhsDest) {
+  ScratchSimd128Scope scratch(*this);
+  vpshufd(ComputeShuffleMask(0, 0, 1, 0), lhsDest, scratch);
+  vpshufd(ComputeShuffleMask(0, 0, 1, 0), rhs, lhsDest);
+  vpmuludq(Operand(scratch), lhsDest, lhsDest);
+}
+
+void MacroAssembler::unsignedExtMulHighInt32x4(FloatRegister rhs,
+                                               FloatRegister lhsDest) {
+  ScratchSimd128Scope scratch(*this);
+  vpshufd(ComputeShuffleMask(2, 0, 3, 0), lhsDest, scratch);
+  vpshufd(ComputeShuffleMask(2, 0, 3, 0), rhs, lhsDest);
+  vpmuludq(Operand(scratch), lhsDest, lhsDest);
+}
+
+void MacroAssembler::q15MulrSatInt16x8(FloatRegister rhs,
+                                       FloatRegister lhsDest) {
+  ScratchSimd128Scope scratch(*this);
+  vpmulhrsw(Operand(rhs), lhsDest, lhsDest);
+  vmovdqa(lhsDest, scratch);
+  vpcmpeqwSimd128(SimdConstant::SplatX8(0x8000), scratch);
+  vpxor(scratch, lhsDest, lhsDest);
 }
 
 
@@ -2464,6 +2582,16 @@ void MacroAssembler::unsignedConvertInt32x4ToFloat32x4(FloatRegister src,
   MacroAssemblerX86Shared::unsignedConvertInt32x4ToFloat32x4(src, dest);
 }
 
+void MacroAssembler::convertInt32x4ToFloat64x2(FloatRegister src,
+                                               FloatRegister dest) {
+  vcvtdq2pd(src, dest);
+}
+
+void MacroAssembler::unsignedConvertInt32x4ToFloat64x2(FloatRegister src,
+                                                       FloatRegister dest) {
+  MacroAssemblerX86Shared::unsignedConvertInt32x4ToFloat64x2(src, dest);
+}
+
 
 
 void MacroAssembler::truncSatFloat32x4ToInt32x4(FloatRegister src,
@@ -2475,6 +2603,30 @@ void MacroAssembler::unsignedTruncSatFloat32x4ToInt32x4(FloatRegister src,
                                                         FloatRegister dest,
                                                         FloatRegister temp) {
   MacroAssemblerX86Shared::unsignedTruncSatFloat32x4ToInt32x4(src, temp, dest);
+}
+
+void MacroAssembler::truncSatFloat64x2ToInt32x4(FloatRegister src,
+                                                FloatRegister dest,
+                                                FloatRegister temp) {
+  MacroAssemblerX86Shared::truncSatFloat64x2ToInt32x4(src, temp, dest);
+}
+
+void MacroAssembler::unsignedTruncSatFloat64x2ToInt32x4(FloatRegister src,
+                                                        FloatRegister dest,
+                                                        FloatRegister temp) {
+  MacroAssemblerX86Shared::unsignedTruncSatFloat64x2ToInt32x4(src, temp, dest);
+}
+
+
+
+void MacroAssembler::convertFloat64x2ToFloat32x4(FloatRegister src,
+                                                 FloatRegister dest) {
+  vcvtpd2ps(src, dest);
+}
+
+void MacroAssembler::convertFloat32x4ToFloat64x2(FloatRegister src,
+                                                 FloatRegister dest) {
+  vcvtps2pd(src, dest);
 }
 
 
@@ -2570,6 +2722,17 @@ void MacroAssembler::widenLowInt32x4(FloatRegister src, FloatRegister dest) {
 void MacroAssembler::unsignedWidenLowInt32x4(FloatRegister src,
                                              FloatRegister dest) {
   vpmovzxdq(Operand(src), dest);
+}
+
+void MacroAssembler::widenHighInt32x4(FloatRegister src, FloatRegister dest) {
+  vpshufd(ComputeShuffleMask(2, 3, 2, 3), src, dest);
+  vpmovsxdq(Operand(dest), dest);
+}
+
+void MacroAssembler::unsignedWidenHighInt32x4(FloatRegister src,
+                                              FloatRegister dest) {
+  vpshufd(ComputeShuffleMask(2, 3, 2, 3), src, dest);
+  vpmovzxdq(Operand(dest), dest);
 }
 
 

@@ -2352,9 +2352,21 @@ class AssemblerX86Shared : public AssemblerShared {
     MOZ_ASSERT(HasSSE2());
     masm.vcvttps2dq_rr(src.encoding(), dest.encoding());
   }
+  void vcvttpd2dq(FloatRegister src, FloatRegister dest) {
+    masm.vcvttpd2dq_rr(src.encoding(), dest.encoding());
+  }
   void vcvtdq2ps(FloatRegister src, FloatRegister dest) {
     MOZ_ASSERT(HasSSE2());
     masm.vcvtdq2ps_rr(src.encoding(), dest.encoding());
+  }
+  void vcvtdq2pd(FloatRegister src, FloatRegister dest) {
+    masm.vcvtdq2pd_rr(src.encoding(), dest.encoding());
+  }
+  void vcvtps2pd(FloatRegister src, FloatRegister dest) {
+    masm.vcvtps2pd_rr(src.encoding(), dest.encoding());
+  }
+  void vcvtpd2ps(FloatRegister src, FloatRegister dest) {
+    masm.vcvtpd2ps_rr(src.encoding(), dest.encoding());
   }
   void vmovmskpd(FloatRegister src, Register dest) {
     MOZ_ASSERT(HasSSE2());
@@ -2931,6 +2943,10 @@ class AssemblerX86Shared : public AssemblerShared {
         MOZ_CRASH("unexpected operand kind");
     }
   }
+  void vpmuldq(FloatRegister src1, FloatRegister src0, FloatRegister dest) {
+    MOZ_ASSERT(HasSSE41());
+    masm.vpmuldq_rr(src1.encoding(), src0.encoding(), dest.encoding());
+  }
   void vpmuludq(FloatRegister src1, FloatRegister src0, FloatRegister dest) {
     MOZ_ASSERT(HasSSE2());
     masm.vpmuludq_rr(src1.encoding(), src0.encoding(), dest.encoding());
@@ -2958,6 +2974,48 @@ class AssemblerX86Shared : public AssemblerShared {
       case Operand::MEM_REG_DISP:
         masm.vpmullw_mr(src1.disp(), src1.base(), src0.encoding(),
                         dest.encoding());
+        break;
+      default:
+        MOZ_CRASH("unexpected operand kind");
+    }
+  }
+  void vpmulhw(const Operand& src1, FloatRegister src0, FloatRegister dest) {
+    MOZ_ASSERT(HasSSE2());
+    switch (src1.kind()) {
+      case Operand::FPREG:
+        masm.vpmulhw_rr(src1.fpu(), src0.encoding(), dest.encoding());
+        break;
+      case Operand::MEM_REG_DISP:
+        masm.vpmulhw_mr(src1.disp(), src1.base(), src0.encoding(),
+                        dest.encoding());
+        break;
+      default:
+        MOZ_CRASH("unexpected operand kind");
+    }
+  }
+  void vpmulhuw(const Operand& src1, FloatRegister src0, FloatRegister dest) {
+    MOZ_ASSERT(HasSSE2());
+    switch (src1.kind()) {
+      case Operand::FPREG:
+        masm.vpmulhuw_rr(src1.fpu(), src0.encoding(), dest.encoding());
+        break;
+      case Operand::MEM_REG_DISP:
+        masm.vpmulhuw_mr(src1.disp(), src1.base(), src0.encoding(),
+                         dest.encoding());
+        break;
+      default:
+        MOZ_CRASH("unexpected operand kind");
+    }
+  }
+  void vpmulhrsw(const Operand& src1, FloatRegister src0, FloatRegister dest) {
+    MOZ_ASSERT(HasSSE2());
+    switch (src1.kind()) {
+      case Operand::FPREG:
+        masm.vpmulhrsw_rr(src1.fpu(), src0.encoding(), dest.encoding());
+        break;
+      case Operand::MEM_REG_DISP:
+        masm.vpmulhrsw_mr(src1.disp(), src1.base(), src0.encoding(),
+                          dest.encoding());
         break;
       default:
         MOZ_CRASH("unexpected operand kind");
