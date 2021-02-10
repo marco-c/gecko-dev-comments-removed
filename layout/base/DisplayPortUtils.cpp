@@ -635,6 +635,32 @@ bool DisplayPortUtils::HasNonMinimalDisplayPort(nsIContent* aContent) {
          !aContent->GetProperty(nsGkAtoms::MinimalDisplayPort);
 }
 
+bool DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(nsIContent* aContent) {
+  if (!HasDisplayPort(aContent)) {
+    return false;
+  }
+  if (aContent->GetProperty(nsGkAtoms::MinimalDisplayPort)) {
+    return false;
+  }
+
+  DisplayPortMarginsPropertyData* currentData =
+      static_cast<DisplayPortMarginsPropertyData*>(
+          aContent->GetProperty(nsGkAtoms::DisplayPortMargins));
+
+  if (!currentData) {
+    
+    
+    
+    return true;
+  }
+
+  if (currentData->mMargins.mMargins != ScreenMargin()) {
+    return true;
+  }
+
+  return false;
+}
+
 
 bool DisplayPortUtils::GetDisplayPortForVisibilityTesting(nsIContent* aContent,
                                                           nsRect* aResult) {
@@ -948,7 +974,7 @@ bool DisplayPortUtils::MaybeCreateDisplayPort(nsDisplayListBuilder* aBuilder,
     return false;
   }
 
-  bool haveDisplayPort = HasNonMinimalDisplayPort(content);
+  bool haveDisplayPort = HasNonMinimalNonZeroDisplayPort(content);
 
   
   
