@@ -1511,6 +1511,7 @@ restart:
     case ParseNodeKind::ForIn:                
     case ParseNodeKind::ForOf:                
     case ParseNodeKind::ForHead:              
+    case ParseNodeKind::DefaultConstructor:   
     case ParseNodeKind::ClassMethod:          
     case ParseNodeKind::ClassField:           
     case ParseNodeKind::ClassNames:           
@@ -8676,8 +8677,8 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
     if (propdef->is<LexicalScopeNode>()) {
       
       
-      MOZ_ASSERT(propdef->as<LexicalScopeNode>().scopeBody()->isKind(
-          ParseNodeKind::ClassMethod));
+      MOZ_ASSERT(
+          propdef->as<LexicalScopeNode>().scopeBody()->is<ClassMethod>());
       continue;
     }
 
