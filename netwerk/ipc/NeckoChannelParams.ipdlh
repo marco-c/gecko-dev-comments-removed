@@ -543,5 +543,29 @@ struct SpeculativeConnectionOverriderArgs {
   bool allow1918;
 };
 
+
+
+
+
+struct GIOChannelOpenArgs
+{
+  URIParams                 uri;
+  uint64_t                  startPos;
+  nsCString                 entityID;
+  IPCStream?                uploadStream;
+  LoadInfoArgs?             loadInfo;
+  uint32_t                  loadFlags;
+};
+
+struct GIOChannelConnectArgs
+{
+  uint32_t channelId;
+};
+
+union GIOChannelCreationArgs
+{
+  GIOChannelOpenArgs;      
+  GIOChannelConnectArgs;   
+};
 } 
 } 
