@@ -947,6 +947,10 @@ pref("print.save_print_settings", true);
 
 
 
+pref("print.more-settings.open", false);
+
+
+
 
 
 
