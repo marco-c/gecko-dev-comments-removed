@@ -553,7 +553,7 @@ class ScriptSource {
   
   
   
-  UniquePtr<XDRIncrementalEncoderBase> xdrEncoder_ = nullptr;
+  UniquePtr<XDRIncrementalStencilEncoder> xdrEncoder_ = nullptr;
 
   
   
@@ -1026,7 +1026,7 @@ class ScriptSource {
   
   bool xdrEncodeInitialStencil(
       JSContext* cx, frontend::CompilationStencil& stencil,
-      UniquePtr<XDRIncrementalEncoderBase>& xdrEncoder);
+      UniquePtr<XDRIncrementalStencilEncoder>& xdrEncoder);
 
   
   
@@ -1035,9 +1035,9 @@ class ScriptSource {
   
   bool xdrEncodeStencils(JSContext* cx,
                          frontend::CompilationStencilSet& stencilSet,
-                         UniquePtr<XDRIncrementalEncoderBase>& xdrEncoder);
+                         UniquePtr<XDRIncrementalStencilEncoder>& xdrEncoder);
 
-  void setIncrementalEncoder(XDRIncrementalEncoderBase* xdrEncoder);
+  void setIncrementalEncoder(XDRIncrementalStencilEncoder* xdrEncoder);
 
   
   
@@ -1049,7 +1049,7 @@ class ScriptSource {
   
   bool xdrEncodeFunctionStencilWith(
       JSContext* cx, frontend::BaseCompilationStencil& stencil,
-      UniquePtr<XDRIncrementalEncoderBase>& xdrEncoder);
+      UniquePtr<XDRIncrementalStencilEncoder>& xdrEncoder);
 
  public:
   

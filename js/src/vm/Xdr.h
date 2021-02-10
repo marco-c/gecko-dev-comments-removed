@@ -604,38 +604,24 @@ class XDROffThreadDecoder : public XDRDecoder {
   }
 };
 
-class XDRIncrementalEncoderBase : public XDREncoder {
- protected:
+class XDRIncrementalStencilEncoder : public XDREncoder {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   JS::TranscodeBuffer slices_;
-
- public:
-  explicit XDRIncrementalEncoderBase(JSContext* cx)
-      : XDREncoder(cx, slices_, 0) {}
-
-  void switchToBuffer(XDRBuffer<XDR_ENCODE>* target) { buf = target; }
-
-  virtual XDRResult linearize(JS::TranscodeBuffer& buffer,
-                              js::ScriptSource* ss) {
-    MOZ_CRASH("cannot linearize.");
-  }
-};
-
-class XDRIncrementalStencilEncoder : public XDRIncrementalEncoderBase {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
   
   
@@ -645,7 +631,7 @@ class XDRIncrementalStencilEncoder : public XDRIncrementalEncoderBase {
 
  public:
   explicit XDRIncrementalStencilEncoder(JSContext* cx)
-      : XDRIncrementalEncoderBase(cx), encodedFunctions_(cx) {}
+      : XDREncoder(cx, slices_, 0), encodedFunctions_(cx) {}
 
   virtual ~XDRIncrementalStencilEncoder() = default;
 
@@ -654,10 +640,12 @@ class XDRIncrementalStencilEncoder : public XDRIncrementalEncoderBase {
 
   bool isForStencil() const override { return true; }
 
-  XDRResult linearize(JS::TranscodeBuffer& buffer,
-                      js::ScriptSource* ss) override;
+  XDRResult linearize(JS::TranscodeBuffer& buffer, js::ScriptSource* ss);
 
   XDRResult codeStencils(frontend::CompilationStencilSet& stencilSet);
+
+ private:
+  void switchToBuffer(XDRBuffer<XDR_ENCODE>* target) { buf = target; }
 };
 
 template <XDRMode mode>
