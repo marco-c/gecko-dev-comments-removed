@@ -446,6 +446,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             getSettings().mForceUserScalable.set(flag);
             return this;
         }
+
+        
+
+
+
+
+
+
+        public @NonNull Builder allowInsecureConnections(final @HttpsOnlyMode int level) {
+            getSettings().setAllowInsecureConnections(level);
+            return this;
+        }
     }
 
     private GeckoRuntime mRuntime;
@@ -494,6 +506,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             "browser.ui.zoom.force-user-scalable", false);
      final Pref<Boolean> mAutofillLogins = new Pref<Boolean>(
         "signon.autofillForms", true);
+     final Pref<Boolean> mHttpsOnly = new Pref<Boolean>(
+        "dom.security.https_only_mode", false);
+     final Pref<Boolean> mHttpsOnlyPrivateMode = new Pref<Boolean>(
+        "dom.security.https_only_mode_pbm", false);
 
      int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -1133,6 +1149,62 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     public @NonNull GeckoRuntimeSettings setLoginAutofillEnabled(
             final boolean enabled) {
         mAutofillLogins.commit(enabled);
+        return this;
+    }
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({ALLOW_ALL,
+             HTTPS_ONLY_PRIVATE,
+             HTTPS_ONLY})
+     @interface HttpsOnlyMode {}
+
+    
+    public static final int ALLOW_ALL = 0;
+    
+    public static final int HTTPS_ONLY_PRIVATE = 1;
+    
+    public static final int HTTPS_ONLY = 2;
+
+    
+
+
+
+
+    public @HttpsOnlyMode int getAllowInsecureConnections() {
+        boolean httpsOnly = mHttpsOnly.get();
+        boolean httpsOnlyPrivate = mHttpsOnlyPrivateMode.get();
+        if (httpsOnly) {
+            return HTTPS_ONLY;
+        } else if (httpsOnlyPrivate) {
+            return HTTPS_ONLY_PRIVATE;
+        }
+        return ALLOW_ALL;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setAllowInsecureConnections(final @HttpsOnlyMode int level) {
+        switch (level) {
+            case ALLOW_ALL:
+                mHttpsOnly.commit(false);
+                mHttpsOnlyPrivateMode.commit(false);
+                break;
+            case HTTPS_ONLY_PRIVATE:
+                mHttpsOnly.commit(false);
+                mHttpsOnlyPrivateMode.commit(true);
+                break;
+            case HTTPS_ONLY:
+                mHttpsOnly.commit(true);
+                mHttpsOnlyPrivateMode.commit(false);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid setting for setAllowInsecureConnections");
+        }
         return this;
     }
 
