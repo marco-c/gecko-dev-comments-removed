@@ -776,14 +776,19 @@ class TestRunnerManager(threading.Thread):
             
             self.logger.warning("Forcibly terminating runner process")
             self.test_runner_proc.terminate()
+            self.logger.debug("After terminating runner process")
 
             
             
             
             
             
+            self.logger.debug("Recreating command queue")
+            self.command_queue.cancel_join_thread()
             self.command_queue.close()
             self.command_queue = mp.Queue()
+            self.logger.debug("Recreating remote queue")
+            self.remote_queue.cancel_join_thread()
             self.remote_queue.close()
             self.remote_queue = mp.Queue()
         else:
