@@ -183,7 +183,7 @@ addAccessibleTask(
 
     
     testRoleAndSubRole(accDoc, "textbox_multiline", "AXTextArea");
-    testRoleAndSubRole(accDoc, "textbox_singleline", "AXTextArea");
+    testRoleAndSubRole(accDoc, "textbox_singleline", "AXTextField");
     testRoleAndSubRole(accDoc, "textArea", "AXTextArea");
     testRoleAndSubRole(accDoc, "textInput", "AXTextField");
 
