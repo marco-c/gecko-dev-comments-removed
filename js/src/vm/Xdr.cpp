@@ -379,7 +379,7 @@ XDRResult XDRState<mode>::codeScript(MutableHandleScript scriptp) {
 template <XDRMode mode>
 static XDRResult XDRStencilHeader(
     XDRState<mode>* xdr, const JS::ReadOnlyCompileOptions* maybeOptions,
-    ScriptSourceHolder& source, uint32_t* pNumChunks) {
+    RefPtr<ScriptSource>& source, uint32_t* pNumChunks) {
   
   
 
@@ -412,9 +412,8 @@ XDRResult XDRState<mode>::codeStencil(frontend::CompilationStencil& stencil) {
   
   
   if (mode == XDR_DECODE) {
-    ScriptSourceHolder holder;
-    MOZ_TRY(XDRStencilHeader(this, &stencil.input.options, holder, &nchunks()));
-    stencil.input.setSource(holder.get());
+    MOZ_TRY(XDRStencilHeader(this, &stencil.input.options, stencil.source,
+                             &nchunks()));
   }
 
   MOZ_TRY(XDRParserAtomTable(this, stencil));
@@ -460,9 +459,9 @@ XDRResult XDRIncrementalStencilEncoder::linearize(JS::TranscodeBuffer& buffer,
   {
     switchToBuffer(&outputBuf);
 
-    ScriptSourceHolder holder(ss);
+    RefPtr<ScriptSource> source(ss);
     uint32_t nchunks = 1 + encodedFunctions_.count();
-    MOZ_TRY(XDRStencilHeader(this, nullptr, holder, &nchunks));
+    MOZ_TRY(XDRStencilHeader(this, nullptr, source, &nchunks));
 
     switchToBuffer(&mainBuf);
   }

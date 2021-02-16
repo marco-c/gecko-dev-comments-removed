@@ -204,7 +204,7 @@ struct CompilationInput {
 
   BaseScript* lazy = nullptr;
 
-  RefPtr<ScriptSource> source_;
+  RefPtr<ScriptSource> source;
 
   
   
@@ -300,15 +300,6 @@ struct CompilationInput {
       return enclosingScope;
     }
     return nullptr;
-  }
-
-  ScriptSource* source() { return source_.get(); }
-  void setSource(ScriptSource* ss) { source_ = do_AddRef(ss); }
-
-  template <typename Unit>
-  [[nodiscard]] bool assignSource(JSContext* cx,
-                                  JS::SourceText<Unit>& sourceBuffer) {
-    return source()->assignSource(cx, options, sourceBuffer);
   }
 
   void trace(JSTracer* trc);
@@ -546,6 +537,11 @@ struct CompilationStencil : public BaseCompilationStencil {
   CompilationInput& input;
 
   
+  
+  
+  RefPtr<ScriptSource> source;
+
+  
   UniquePtr<StencilModuleMetadata> moduleMetadata;
 
   
@@ -568,7 +564,7 @@ struct CompilationStencil : public BaseCompilationStencil {
 
   
   explicit CompilationStencil(CompilationInput& input)
-      : alloc(LifoAllocChunkSize), input(input) {}
+      : alloc(LifoAllocChunkSize), input(input), source(input.source) {}
 
   [[nodiscard]] static bool instantiateBaseStencilAfterPreparation(
       JSContext* cx, CompilationInput& input,
