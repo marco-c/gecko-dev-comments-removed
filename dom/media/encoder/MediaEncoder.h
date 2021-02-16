@@ -96,6 +96,10 @@ class DriftCompensator;
 
 
 
+
+
+
+
 class MediaEncoder {
  private:
   class AudioTrackListener;
@@ -150,6 +154,11 @@ class MediaEncoder {
   void RemoveMediaStreamTrack(dom::MediaStreamTrack* aTrack);
 
   
+
+
+
+
+
 
 
 
