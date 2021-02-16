@@ -49,6 +49,9 @@ class VP8TrackEncoder : public VideoTrackEncoder {
 
  private:
   
+  nsresult InitInternal(int32_t aWidth, int32_t aHeight);
+
+  
   EncodeOperation GetNextEncodeOperation(TimeDuration aTimeElapsed,
                                          TimeDuration aProcessedDuration);
 
@@ -63,8 +66,7 @@ class VP8TrackEncoder : public VideoTrackEncoder {
   nsresult PrepareRawFrame(VideoChunk& aChunk);
 
   
-  nsresult Reconfigure(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
-                       int32_t aDisplayHeight);
+  nsresult Reconfigure(int32_t aWidth, int32_t aHeight);
 
   
   void Destroy();
