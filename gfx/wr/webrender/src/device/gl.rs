@@ -989,9 +989,6 @@ pub struct Capabilities {
     
     pub uses_native_clip_mask: bool,
     
-    
-    pub uses_native_antialiasing: bool,
-    
     pub renderer_name: String,
 }
 
@@ -1654,10 +1651,6 @@ impl Device {
         
         let uses_native_clip_mask = is_software_webrender;
 
-        
-        
-        let uses_native_antialiasing = is_software_webrender;
-
         let mut requires_batched_texture_uploads = None;
         if is_software_webrender {
             
@@ -1708,7 +1701,6 @@ impl Device {
                 requires_batched_texture_uploads,
                 supports_r8_texture_upload,
                 uses_native_clip_mask,
-                uses_native_antialiasing,
                 renderer_name,
             },
 

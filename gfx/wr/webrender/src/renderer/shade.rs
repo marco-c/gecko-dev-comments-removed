@@ -1071,12 +1071,6 @@ impl Shaders {
                 &mut self.ps_split_composite
             }
             BatchKind::Brush(brush_kind) => {
-                
-                
-                
-                if device.get_capabilities().uses_native_antialiasing {
-                    features.remove(BatchFeatures::ANTIALIASING);
-                }
                 let brush_shader = match brush_kind {
                     BrushBatchKind::Solid => {
                         &mut self.brush_solid
