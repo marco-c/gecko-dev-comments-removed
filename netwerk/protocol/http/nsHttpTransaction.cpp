@@ -1113,11 +1113,10 @@ void nsHttpTransaction::OnPush(Http2PushedStreamWrapper* aStream) {
     return;
   }
 
-  auto entry = mIDToStreamMap.LookupForAdd(stream->StreamID());
-  MOZ_ASSERT(!entry);
-  if (!entry) {
-    entry.OrInsert([&stream]() { return stream; });
-  }
+  mIDToStreamMap.WithEntryHandle(stream->StreamID(), [&](auto&& entry) {
+    MOZ_ASSERT(!entry);
+    entry.OrInsert(stream);
+  });
 
   if (NS_FAILED(mOnPushCallback(stream->StreamID(), stream->GetResourceUrl(),
                                 stream->GetRequestString(), this))) {
@@ -1630,9 +1629,11 @@ void nsHttpTransaction::Close(nsresult reason) {
     
     
     if (!mHaveAllHeaders) {
-      char data = '\n';
+      char data[] = "\n\n";
       uint32_t unused = 0;
-      Unused << ParseHead(&data, 1, &unused);
+      
+      
+      Unused << ParseHead(data, mLineBuf.IsEmpty() ? 1 : 2, &unused);
 
       if (mResponseHead->Version() == HttpVersion::v0_9) {
         
