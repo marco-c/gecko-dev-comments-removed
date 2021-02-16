@@ -206,7 +206,6 @@ evaluate.sandbox = function(
 
 
 
-
 evaluate.fromJSON = function(obj, seenEls = undefined, win = undefined) {
   switch (typeof obj) {
     case "boolean":
@@ -233,18 +232,6 @@ evaluate.fromJSON = function(obj, seenEls = undefined, win = undefined) {
           return element.resolveElement(obj, win);
         }
         throw new TypeError("seenEls is not an instance of ReferenceStore");
-
-        
-      } else if (WebElement.isReference(obj)) {
-        const webEl = WebElement.fromJSON(obj);
-        if (seenEls instanceof element.Store) {
-          
-          return seenEls.get(webEl, win);
-        } else if (!seenEls) {
-          
-          return webEl;
-        }
-        throw new TypeError("seenEls is not an instance of Store");
       }
 
       
@@ -317,31 +304,18 @@ evaluate.toJSON = function(obj, seenEls) {
     
   } else if (WebElement.isReference(obj)) {
     
-    if (seenEls instanceof element.ReferenceStore) {
-      return seenEls.get(WebElement.fromJSON(obj));
-    }
-
-    return obj;
+    return seenEls.get(WebElement.fromJSON(obj));
 
     
   } else if (WebElement.isReference(obj.webElRef)) {
     
-    if (seenEls instanceof element.ReferenceStore) {
-      return obj;
-    }
-
-    
-    return WebElement.fromJSON(obj.webElRef);
+    return obj;
 
     
   } else if (element.isElement(obj)) {
     
     if (seenEls instanceof element.ReferenceStore) {
       throw new TypeError(`ReferenceStore can't be used with Element`);
-
-      
-    } else if (seenEls instanceof element.Store) {
-      return seenEls.add(obj);
     }
 
     
