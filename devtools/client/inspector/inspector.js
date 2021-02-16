@@ -201,7 +201,9 @@ Inspector.prototype = {
     
     
     
-    this._onFirstMarkupLoaded = this.once("markuploaded");
+    this._onMarkupViewInitialized = new Promise(
+      r => (this._resolveMarkupViewInitialized = r)
+    );
 
     
     
@@ -396,7 +398,7 @@ Inspector.prototype = {
     
     this.setupSidebar();
 
-    await this._onFirstMarkupLoaded;
+    await this._onMarkupViewInitialized;
     this.isReady = true;
 
     
@@ -1391,6 +1393,14 @@ Inspector.prototype = {
         histogram.add(delay);
       }
       delete this._newRootStart;
+    }
+
+    
+    
+    if (this._resolveMarkupViewInitialized) {
+      this._resolveMarkupViewInitialized();
+      
+      delete this._resolveMarkupViewInitialized;
     }
   },
 
