@@ -423,9 +423,10 @@ nsGIOService::GetAppForURIScheme(const nsACString& aURIScheme,
   
   
   
-  
   if (GetShouldUseFlatpakPortal()) {
-    return NS_ERROR_FAILURE;
+    nsFlatpakHandlerApp* mozApp = new nsFlatpakHandlerApp();
+    NS_ADDREF(*aApp = mozApp);
+    return NS_OK;
   }
 
   GAppInfo* app_info = g_app_info_get_default_for_uri_scheme(
