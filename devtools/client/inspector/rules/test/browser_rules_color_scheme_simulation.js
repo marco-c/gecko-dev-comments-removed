@@ -68,7 +68,6 @@ add_task(async function() {
   const iframeEl = await getNodeFrontInFrame("html", "iframe", inspector);
   await selectNode(iframeEl, inspector);
 
-  
   ok(
     iframeHasDarkSchemeStyling(),
     "The simulation is also applied on the remote iframe"
