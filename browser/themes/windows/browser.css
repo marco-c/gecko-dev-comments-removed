@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @namespace html url("http://www.w3.org/1999/xhtml");
 
@@ -76,7 +76,7 @@
 }
 
 #menubar-items {
-  -moz-box-orient: vertical; 
+  -moz-box-orient: vertical; /* for flex hack */
 }
 
 #main-menubar > menu {
@@ -89,10 +89,10 @@
   color: -moz-menuhovertext;
 }
 
-
-
-
-
+/* Use a different color only on Windows 8 and higher in inactive windows.
+ * On Win 7, the menubar fog disappears for inactive windows, and renders gray
+ * illegible.
+ */
 @media (-moz-windows-default-theme) {
   @media not (-moz-os-version: windows-win7) {
     #toolbar-menubar:not(:-moz-lwtheme):-moz-window-inactive {
@@ -103,8 +103,8 @@
 
 @media not (-moz-os-version: windows-win7) {
   @media not (-moz-os-version: windows-win8) {
-    
-
+    /* On Windows 10, when temporarily showing the menu bar, make it at least as
+     * tall as the tab bar such that the window controls don't appear to move up. */
     :root[tabsintitlebar] #toolbar-menubar[autohide="true"] {
       height: calc(var(--tab-min-height) - var(--tabs-navbar-shadow-size));
     }
@@ -119,7 +119,7 @@
   padding-top: var(--space-above-tabbar);
 }
 
-
+/* Add 4px extra margin on top of the tabs toolbar on Windows 7. */
 @media (-moz-os-version: windows-win7) {
   :root[sizemode="normal"][chromehidden~="menubar"] #TabsToolbar > .toolbar-items,
   :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar > .toolbar-items {
@@ -139,10 +139,10 @@
   color: var(--toolbar-color);
 }
 
-
-
-
-
+/*
+ * Windows 7 draws the chrome background color as the tab background
+ * instead of in the tabs toolbar.
+ */
 @media (-moz-os-version: windows-win7) {
   @media (-moz-windows-default-theme) {
     #navigator-toolbox:not(:-moz-lwtheme) {
@@ -153,28 +153,28 @@
       color: hsl(240,9%,98%);
     }
 
-    
+    /* Always show full-height tab separators on tabs with borders. */
     .tabbrowser-tab:not(:-moz-lwtheme)::before,
     .tabbrowser-tab:not(:-moz-lwtheme)::after {
       border-image: none !important;
     }
 
-    
-
+    /* Show border on tabs with background colors and
+     * show the tabs toolbar background color inside tabs. */
     .tabbrowser-tab:not(:-moz-lwtheme) {
       background-color: hsl(235,33%,19%) !important;
       border-top: 1px solid var(--tabs-border-color);
       background-clip: padding-box;
     }
 
-    
-
+    /* The top border on top of the tab background is replaced
+     * by the slightly transparent outside tabs-border-color. */
     .tab-background:not(:-moz-lwtheme) {
       border-top-style: none !important;
     }
 
-    
-
+    /* The border at the end of the tab strip is replaced
+     * by the slightly transparent outside tabs-border-color. */
     .tabbrowser-tab[last-visible-tab]:not(:-moz-lwtheme) {
       border-inline-end: 1px solid var(--tabs-border-color);
     }
@@ -187,9 +187,9 @@
 
 @media (-moz-windows-compositor: 0),
        (-moz-windows-default-theme: 0) {
-  
-
-
+  /* Please keep the menu text colors in this media block in sync with
+   * compacttheme.css, minus the :not(:-moz-lwtheme) condition - see Bug 1165718.
+   */
   :root[tabsintitlebar]:not([inFullscreen], :-moz-lwtheme) {
     color: CaptionText;
   }
@@ -200,12 +200,12 @@
 }
 
 @media (-moz-windows-classic) {
-  
-
-
-
-
-
+  /**
+   * In the classic themes, the titlebar has a horizontal gradient, which is
+   * problematic for reading the text of background tabs when they're in the
+   * titlebar. We side-step this issue by layering our own background underneath
+   * the tabs.
+   */
   :root[tabsintitlebar]:not([sizemode=fullscreen]) #TabsToolbar:not(:-moz-lwtheme) {
     background-image: linear-gradient(transparent, ActiveCaption);
     background-size: auto 200%;
@@ -215,7 +215,7 @@
     background-image: linear-gradient(transparent, InactiveCaption);
   }
 
-  
+  /* Add a window top border for webextension themes */
   :root[tabsintitlebar][sizemode="normal"] #navigator-toolbox:-moz-lwtheme {
     background-image: linear-gradient(to bottom,
           ThreeDLightShadow 0, ThreeDLightShadow 1px,
@@ -229,7 +229,7 @@
 }
 
 #nav-bar:not([tabs-hidden="true"]) {
-  
+  /* This is needed for some toolbar button animations. Gross :( */
   position: relative;
 }
 
@@ -251,7 +251,7 @@
   background-color: -moz-dialog;
 }
 
-
+/* Titlebar */
 
 :root[tabsintitlebar][sizemode="normal"] #titlebar {
   appearance: auto;
@@ -264,13 +264,13 @@
 }
 
 @media (-moz-windows-compositor: 0) {
-  
-
-
-
-
-
-
+  /**
+   * Anytime we're not using the compositor on Windows, the -moz-window-titlebar
+   * and -moz-window-titlebar-maximized values for -moz-appearance override
+   * backgrounds supplied by lwthemes. We make the #titlebar itself hidden, but
+   * it's children visible in order to hide the background but keep the margin and
+   * padding that comes from those -moz-window-titlebar rules.
+   */
   :root:not([inDOMFullscreen]) #titlebar:-moz-lwtheme {
     visibility: hidden;
   }
@@ -287,18 +287,18 @@
 }
 
 .titlebar-buttonbox {
-  
-
-
-
-
+  /* For all Windows configurations except for Windows Aero and Windows Aero Basic,
+   * the default -moz-default-appearance of -moz-window-button-box and
+   * -moz-window-button-box-maximized adds unwanted margins to the button box. We
+   * special case Windows Aero and Windows Aero Basic in browser-aero.css.
+   */
   appearance: none;
-  
-
-
-
-
-
+  /* The button box must appear on top of the navigator-toolbox in order for
+   * click and hover mouse events to work properly for the button in the restored
+   * window state. Otherwise, elements in the navigator-toolbox, like the menubar,
+   * can swallow those events. It will also place the buttons above the fog on
+   * Windows 7 with Aero Glass.
+   */
   z-index: 1;
 }
 
@@ -308,13 +308,13 @@
 
 @media (-moz-os-version: windows-win7),
        (-moz-os-version: windows-win8) {
-  
+  /* Preserve window control buttons position at the top of the button box. */
   .titlebar-buttonbox-container {
     -moz-box-align: start;
   }
 }
 
-
+/* Window control buttons */
 
 .titlebar-min {
   appearance: auto;
@@ -348,7 +348,7 @@
   display: none;
 }
 
-
+/* Bookmark menus */
 
 menu.bookmark-item,
 menuitem.bookmark-item {
@@ -379,7 +379,7 @@ menuitem.bookmark-item {
 %include ../shared/toolbarbutton-icons.inc.css
 %include ../shared/menupanel.inc.css
 
-
+/* Fullscreen window controls */
 
 #minimize-button,
 #restore-button,
@@ -448,10 +448,10 @@ menuitem.bookmark-item {
     appearance: none;
     border-style: none;
     margin: 0;
-    
+    /* Important to ensure this applies even on toolbar[brighttext] */
     list-style-image: url("chrome://global/skin/icons/windowControls.png") !important;
-    
-
+    /* Also override background color to a avoid hover background styling
+     * leaking through around the image. */
     background-color: transparent !important;
     padding: 0;
     -moz-context-properties: unset;
@@ -505,16 +505,16 @@ menuitem.bookmark-item {
     -moz-image-region: rect(32px, 49px, 48px, 32px);
   }
 
-  
-
-
+  /* Normally there's no need to mirror these buttons for RTL,
+     but both have curves at their bottom right/left, and without
+     mirroring them their curves would appear in the wrong spot. */
   #minimize-button > .toolbarbutton-icon:-moz-locale-dir(rtl),
   #close-button > .toolbarbutton-icon:-moz-locale-dir(rtl) {
     transform: scaleX(-1);
   }
 }
 
-
+/* Address bar */
 
 %include ../shared/urlbar-searchbar.inc.css
 
@@ -545,7 +545,7 @@ menuitem.bookmark-item {
 %include ../shared/notification-icons.inc.css
 %include ../shared/addon-notification.inc.css
 
-
+/* Address bar results view */
 
 %include ../shared/urlbarView.inc.css
 
@@ -571,7 +571,7 @@ menuitem.bookmark-item {
   }
 }
 
-
+/* Autocomplete */
 
 %include ../shared/autocomplete.inc.css
 
@@ -579,11 +579,11 @@ menuitem.bookmark-item {
   border-top: 1px solid ThreeDShadow;
 }
 
-
+/* Bookmarking panel */
 
 %include ../shared/places/editBookmarkPanel.inc.css
 
-
+/* Content area */
 
 %include ../shared/sidebar.inc.css
 
@@ -591,7 +591,7 @@ menuitem.bookmark-item {
   --sidebar-border-color: ThreeDLightShadow;
 }
 
-
+/* Tabstrip */
 
 #TabsToolbar {
   min-height: 0;
@@ -601,21 +601,23 @@ menuitem.bookmark-item {
 %include ../shared/tabs.inc.css
 
 @media (-moz-windows-default-theme: 0) {
-  
+  /* For high contrast themes. */
   #tabbrowser-tabpanels,
   :root[privatebrowsingmode=temporary] #tabbrowser-tabpanels {
     background-color: -moz-default-background-color;
   }
 }
 
-
+@supports not -moz-bool-pref("browser.proton.tabs.enabled") {
+/* tabbrowser-tab focus ring */
 .keyboard-focused-tab > .tab-stack > .tab-content,
 .tabbrowser-tab:focus:not([aria-activedescendant]) > .tab-stack > .tab-content {
   outline: 1px dotted;
   outline-offset: -6px;
 }
+} /*** END !proton ***/
 
-
+/* All tabs menupopup */
 
 .alltabs-item[selected="true"] {
   font-weight: bold;
@@ -627,11 +629,11 @@ toolbarbutton.bookmark-item[dragover="true"][open="true"] {
   color: HighlightText !important;
 }
 
-
+/* Translation infobar */
 
 %include ../shared/translation/infobar.inc.css
 
-
+/* Bookmarks roots menu-items */
 
 #bookmarksToolbarFolderMenu,
 #BMB_bookmarksToolbar,
@@ -640,7 +642,7 @@ toolbarbutton.bookmark-item[dragover="true"][open="true"] {
   -moz-image-region: auto;
 }
 
-
+/* Status panel */
 
 #statuspanel-label {
   margin: 0;
@@ -670,32 +672,32 @@ toolbarbutton.bookmark-item[dragover="true"][open="true"] {
 #statuspanel:not([mirror]) > #statuspanel-inner > #statuspanel-label:-moz-locale-dir(ltr),
 #statuspanel[mirror] > #statuspanel-inner > #statuspanel-label:-moz-locale-dir(rtl) {
   border-right-style: solid;
-  
-
-
+  /* disabled for triggering grayscale AA (bug 659213)
+  border-top-right-radius: .3em;
+  */
   margin-right: 1em;
 }
 
 #statuspanel:not([mirror]) > #statuspanel-inner > #statuspanel-label:-moz-locale-dir(rtl),
 #statuspanel[mirror] > #statuspanel-inner > #statuspanel-label:-moz-locale-dir(ltr) {
   border-left-style: solid;
-  
-
-
+  /* disabled for triggering grayscale AA (bug 659213)
+  border-top-left-radius: .3em;
+  */
   margin-left: 1em;
 }
 
 %include ../shared/fullscreen/warning.inc.css
 %include ../shared/ctrlTab.inc.css
 
-
+/* Customization mode */
 
 %include ../shared/customizableui/customizeMode.inc.css
 
+/* End customization mode */
 
-
-
-
+/* Prevent window controls from overlapping the nav bar's shadow on the tab
+ * bar. */
 #TabsToolbar > .titlebar-buttonbox-container {
   margin-bottom: var(--tabs-navbar-shadow-size);
 }
@@ -710,22 +712,22 @@ toolbarbutton.bookmark-item[dragover="true"][open="true"] {
   margin-inline-start: 12px;
 }
 
-
+/* End private browsing and accessibility indicators */
 
 %include ../shared/UITour.inc.css
 
 #UITourTooltipButtons {
-  
-
-
-
+  /**
+   * Override the --arrowpanel-padding so the background extends
+   * to the sides and bottom of the panel.
+   */
   margin-inline: -10px;
   margin-bottom: -10px;
 }
 
 %include ../shared/contextmenu.inc.css
 
-
+/* Make menu items larger when opened through touch. */
 #widget-overflow[touchmode] .toolbarbutton-1,
 panel[touchmode] .PanelUI-subView .subviewbutton,
 menupopup[touchmode] menu,
@@ -781,8 +783,8 @@ panel[touchmode] .PanelUI-subView #appMenu-zoom-controls > .subviewbutton-iconic
 
 #ContentSelectDropdown > menupopup > menucaption > .menu-iconic-text,
 #ContentSelectDropdown > menupopup > menuitem > .menu-iconic-text {
-  
-
+  /* Padding should follow the 4/12 ratio, where 12px is the default font-size
+     with 4px being the preferred padding size. */
   padding-block: .3333em;
 }
 
@@ -801,7 +803,7 @@ panel[touchmode] .PanelUI-subView #appMenu-zoom-controls > .subviewbutton-iconic
 
 #ContentSelectDropdown > .isOpenedViaTouch > menucaption > .menu-iconic-text,
 #ContentSelectDropdown > .isOpenedViaTouch > menuitem > .menu-iconic-text {
-  
-
+  /* Touch padding should follow the 11/12 ratio, where 12px is the default
+     font-size with 11px being the preferred padding size. */
   padding-block: .9167em;
 }

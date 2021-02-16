@@ -1,7 +1,7 @@
 %if 0
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 %endif
 
 @namespace html url("http://www.w3.org/1999/xhtml");
@@ -50,7 +50,7 @@
 }
 
 #menubar-items {
-  -moz-box-orient: vertical; 
+  -moz-box-orient: vertical; /* for flex hack */
 }
 
 #navigator-toolbox {
@@ -73,16 +73,16 @@
 
 #nav-bar:not([tabs-hidden="true"]) {
   box-shadow: 0 calc(-1 * var(--tabs-navbar-shadow-size)) 0 var(--tabs-border-color);
-  
+  /* This is needed for some toolbar button animations. Gross :( */
   position: relative;
 }
 
 #browser-bottombox {
-  
+  /* opaque for layers optimization */
   background-color: -moz-Dialog;
 }
 
-
+/* Bookmark menus */
 menu.bookmark-item,
 menuitem.bookmark-item {
   min-width: 0;
@@ -97,7 +97,7 @@ menuitem.bookmark-item {
   padding-inline-start: 0;
 }
 
-
+/* Bookmark drag and drop styles */
 .bookmark-item[dragover-into="true"] {
   background: Highlight !important;
   color: HighlightText !important;
@@ -117,7 +117,7 @@ menuitem.bookmark-item {
 %include ../shared/toolbarbutton-icons.inc.css
 %include ../shared/menupanel.inc.css
 
-
+/* Fullscreen window controls */
 
 #minimize-button,
 #restore-button,
@@ -170,7 +170,7 @@ menuitem.bookmark-item {
   background-color: #ff0039;
 }
 
-
+/* Address bar */
 
 %include ../shared/urlbar-searchbar.inc.css
 
@@ -194,7 +194,7 @@ menuitem.bookmark-item {
 %include ../shared/notification-icons.inc.css
 %include ../shared/addon-notification.inc.css
 
-
+/* Address bar results view */
 
 %include ../shared/urlbarView.inc.css
 
@@ -203,11 +203,11 @@ menuitem.bookmark-item {
   --urlbar-popup-action-color: -moz-nativehyperlinktext;
 }
 
-
+/* Translation infobar */
 
 %include ../shared/translation/infobar.inc.css
 
-
+/* AutoComplete */
 
 %include ../shared/autocomplete.inc.css
 
@@ -215,11 +215,11 @@ menuitem.bookmark-item {
   border-top: 1px solid ThreeDShadow;
 }
 
-
+/* Bookmarking panel */
 
 %include ../shared/places/editBookmarkPanel.inc.css
 
-
+/* Content area */
 
 %include ../shared/sidebar.inc.css
 
@@ -235,12 +235,12 @@ menuitem.bookmark-item {
   border-style: none solid;
 }
 
-
+/* Tabstrip */
 
 %include ../shared/tabs.inc.css
 
 #tabbrowser-tabs {
-  
+  /* override the global style to allow the selected tab to be above the nav-bar */
   z-index: auto;
 }
 
@@ -264,11 +264,13 @@ menuitem.bookmark-item {
   }
 }
 
+@supports not -moz-bool-pref("browser.proton.tabs.enabled") {
 .keyboard-focused-tab > .tab-stack > .tab-content,
 .tabbrowser-tab:focus:not([aria-activedescendant]) > .tab-stack > .tab-content {
   outline: 1px dotted;
   outline-offset: -6px;
 }
+} /*** END !proton ***/
 
 #context_reloadTab {
   list-style-image: url("moz-icon://stock/gtk-refresh?size=menu");
@@ -290,13 +292,13 @@ menuitem.bookmark-item {
   list-style-image: url("moz-icon://stock/gtk-close?size=menu");
 }
 
-
+/* All tabs menupopup */
 
 .alltabs-item[selected="true"] {
   font-weight: bold;
 }
 
-
+/* Status panel */
 
 #statuspanel-label {
   margin: 0;
@@ -333,22 +335,22 @@ menuitem.bookmark-item {
 %include ../shared/fullscreen/warning.inc.css
 %include ../shared/ctrlTab.inc.css
 
-
+/* Customization mode */
 
 %include ../shared/customizableui/customizeMode.inc.css
 
-
+/* End customization mode */
 
 %include ../shared/UITour.inc.css
 
 #UITourHighlight {
-  
-
-  
+  /* Below are some fixes for people without an X compositor on Linux.
+     This is why we can't have nice things: */
+  /* Animations don't repaint properly without an X compositor. */
   animation-name: none !important;
-  
-
-
+  /* Opacity rounds to 0 or 1 on Linux without an X compositor, making the
+     background color not visible. Anti-aliasing is not available either. Make a
+     thicker outline and cancel border-radius for that case. */
      outline: 4px solid rgb(0,200,215);
      border-radius: 0 !important;
 }
@@ -361,10 +363,10 @@ menuitem.bookmark-item {
   margin-inline-end: -4px;
 }
 
-
-
-
-
+/**
+ * Override the --arrowpanel-padding so the background extends
+ * to the sides and bottom of the panel.
+ */
 #UITourTooltipButtons {
   margin-inline-start: -10px;
   margin-bottom: -10px;
@@ -373,7 +375,7 @@ menuitem.bookmark-item {
 %include ../shared/contextmenu.inc.css
 
 #context-navigation > .menuitem-iconic > .menu-iconic-left {
-  
+  /* override toolkit/themes/linux/global/menu.css */
   padding-inline-end: 0 !important;
   margin-inline-end: 0 !important;
 }
@@ -383,13 +385,13 @@ menuitem.bookmark-item {
   border-radius: inherit;
 }
 
-
+/* We draw to titlebar when Gkt+ CSD is available */
 @media (-moz-gtk-csd-available) {
-  
-
-
-
-
+  /* Some Gtk+ themes use non-rectangular toplevel windows. To fully support
+   * such themes we need to make toplevel window transparent.
+   * It may cause performanance issues so let's put it under a preference
+   * and enable it for desktop environment which do that by default.
+   * See nsWindow::TopLevelWindowUseARGBVisual() for details. */
   @media (-moz-gtk-csd-transparent-background) {
     :root[tabsintitlebar][sizemode="normal"]:not(:-moz-lwtheme) {
       background-color: transparent;
@@ -413,8 +415,8 @@ menuitem.bookmark-item {
     visibility: visible;
   }
 
-  
-
+  /* When temporarily showing the menu bar, make it at least as tall as the tab
+   * bar such that the window controls don't appear to move up. */
   :root[tabsintitlebar] #toolbar-menubar[autohide="true"] {
     height: var(--tab-min-height);
   }
@@ -422,31 +424,31 @@ menuitem.bookmark-item {
     height: calc(var(--tab-min-height) + var(--space-above-tabbar));
   }
 
-  
+  /* Add extra space to titlebar for dragging */
   :root[sizemode="normal"][chromehidden~="menubar"] #TabsToolbar > .toolbar-items,
   :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar > .toolbar-items {
     padding-top: var(--space-above-tabbar);
   }
 
-  
-
+  /* Make #TabsToolbar transparent as we style underlying #titlebar with
+   * -moz-window-titlebar (Gtk+ theme). */
   :root[tabsintitlebar][sizemode="normal"]:not([inFullscreen]) #TabsToolbar,
   :root[tabsintitlebar][sizemode="maximized"] #TabsToolbar,
   :root[tabsintitlebar] #toolbar-menubar {
     appearance: none;
   }
 
-  
-
-
-
+  /* The button box must appear on top of the navigator-toolbox in order for
+   * click and hover mouse events to work properly for the button in the restored
+   * window state. Otherwise, elements in the navigator-toolbox, like the menubar,
+   * can swallow those events. */
   .titlebar-buttonbox {
     z-index: 1;
     -moz-box-align: center;
   }
 
-  
-
+  /* Render titlebar command buttons according to system config.
+   * Use full scale icons here as the Gtk+ does. */
   @media (-moz-gtk-csd-minimize-button) {
     .titlebar-min {
       appearance: auto;
