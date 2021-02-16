@@ -35,6 +35,9 @@ class IconLoaderListenerCocoa {
 
 class IconLoaderHelperCocoa final : public mozilla::widget::IconLoader::Helper {
  public:
+  
+  
+  
   IconLoaderHelperCocoa(mozilla::widget::IconLoaderListenerCocoa* aLoadListener,
                         uint32_t aIconHeight, uint32_t aIconWidth, CGFloat aScaleFactor = 0.0f);
 
@@ -60,7 +63,12 @@ class IconLoaderHelperCocoa final : public mozilla::widget::IconLoader::Helper {
   ~IconLoaderHelperCocoa();
 
  private:
-  RefPtr<mozilla::widget::IconLoaderListenerCocoa> mLoadListener;
+  
+  
+  
+  
+  IconLoaderListenerCocoa* mLoadListener;
+
   uint32_t mIconHeight;
   uint32_t mIconWidth;
   CGFloat mScaleFactor;
