@@ -96,8 +96,8 @@ nsresult ChildDNSService::AsyncResolveInternal(
   if (XRE_IsParentProcess() && nsIOService::UseSocketProcess()) {
     resolveDNSInSocketProcess = true;
     if (type != nsIDNSService::RESOLVE_TYPE_DEFAULT &&
-        (mTRRServiceParent->Mode() != MODE_TRRFIRST &&
-         mTRRServiceParent->Mode() != MODE_TRRONLY)) {
+        (mTRRServiceParent->Mode() != nsIDNSService::MODE_TRRFIRST &&
+         mTRRServiceParent->Mode() != nsIDNSService::MODE_TRRONLY)) {
       return NS_ERROR_UNKNOWN_HOST;
     }
   }
@@ -136,16 +136,12 @@ nsresult ChildDNSService::AsyncResolveInternal(
     nsCString key;
     GetDNSRecordHashKey(hostname, DNSResolverInfo::URL(aResolver), type,
                         aOriginAttributes, flags, originalListenerAddr, key);
-    auto entry = mPendingRequests.LookupForAdd(key);
-    if (entry) {
-      entry.Data()->AppendElement(sender);
-    } else {
-      entry.OrInsert([&]() {
-        auto* hashEntry = new nsTArray<RefPtr<DNSRequestSender>>();
-        hashEntry->AppendElement(sender);
-        return hashEntry;
-      });
-    }
+    mPendingRequests.WithEntryHandle(key, [&](auto&& entry) {
+      entry
+          .OrInsertWith(
+              [] { return MakeUnique<nsTArray<RefPtr<DNSRequestSender>>>(); })
+          ->AppendElement(sender);
+    });
   }
 
   sender->StartRequest();
@@ -312,7 +308,7 @@ ChildDNSService::GetCurrentTrrURI(nsACString& aURI) {
 }
 
 NS_IMETHODIMP
-ChildDNSService::GetCurrentTrrMode(uint32_t* aMode) {
+ChildDNSService::GetCurrentTrrMode(nsIDNSService::ResolverMode* aMode) {
   if (!mTRRServiceParent) {
     return NS_ERROR_NOT_AVAILABLE;
   }

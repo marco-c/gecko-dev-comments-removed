@@ -29,6 +29,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/LoadContext.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Telemetry.h"
@@ -488,80 +489,89 @@ RefPtr<GenericErrorResultPromise> ServiceWorkerManager::StartControllingClient(
     bool aControlClientHandle) {
   MOZ_DIAGNOSTIC_ASSERT(aRegistrationInfo->GetActive());
 
-  RefPtr<GenericErrorResultPromise> promise;
-  RefPtr<ServiceWorkerManager> self(this);
-
-  const ServiceWorkerDescriptor& active =
-      aRegistrationInfo->GetActive()->Descriptor();
-
-  auto entry = mControlledClients.LookupForAdd(aClientInfo.Id());
-  if (entry) {
-    RefPtr<ServiceWorkerRegistrationInfo> old =
-        std::move(entry.Data()->mRegistrationInfo);
-
-    if (aControlClientHandle) {
-      promise = entry.Data()->mClientHandle->Control(active);
-    } else {
-      promise = GenericErrorResultPromise::CreateAndResolve(false, __func__);
-    }
-
-    entry.Data()->mRegistrationInfo = aRegistrationInfo;
-
-    if (old != aRegistrationInfo) {
-      StopControllingRegistration(old);
-      aRegistrationInfo->StartControllingClient();
-    }
-
-    Telemetry::Accumulate(Telemetry::SERVICE_WORKER_CONTROLLED_DOCUMENTS, 1);
-
-    
-    
-    return promise->Then(
-        GetMainThreadSerialEventTarget(), __func__,
-        [](bool) {
-          
-          return GenericErrorResultPromise::CreateAndResolve(true, __func__);
-        },
-        [self, aClientInfo](const CopyableErrorResult& aRv) {
-          
-          self->StopControllingClient(aClientInfo);
-          return GenericErrorResultPromise::CreateAndReject(aRv, __func__);
-        });
-  }
-
-  RefPtr<ClientHandle> clientHandle = ClientManager::CreateHandle(
-      aClientInfo, GetMainThreadSerialEventTarget());
-
-  if (aControlClientHandle) {
-    promise = clientHandle->Control(active);
-  } else {
-    promise = GenericErrorResultPromise::CreateAndResolve(false, __func__);
-  }
-
-  aRegistrationInfo->StartControllingClient();
-
-  entry.OrInsert([&] {
-    return new ControlledClientData(clientHandle, aRegistrationInfo);
-  });
-
-  clientHandle->OnDetach()->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [self, aClientInfo] { self->StopControllingClient(aClientInfo); });
-
-  Telemetry::Accumulate(Telemetry::SERVICE_WORKER_CONTROLLED_DOCUMENTS, 1);
-
   
   
-  return promise->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [](bool) {
+  
+  return mControlledClients.WithEntryHandle(
+      aClientInfo.Id(),
+      [&](decltype(mControlledClients)::EntryHandle&& entry)
+          -> RefPtr<GenericErrorResultPromise> {
+        const RefPtr<ServiceWorkerManager> self = this;
+
+        const ServiceWorkerDescriptor& active =
+            aRegistrationInfo->GetActive()->Descriptor();
+
+        if (entry) {
+          const RefPtr<ServiceWorkerRegistrationInfo> old =
+              std::move(entry.Data()->mRegistrationInfo);
+
+          const RefPtr<GenericErrorResultPromise> promise =
+              aControlClientHandle
+                  ? entry.Data()->mClientHandle->Control(active)
+                  : GenericErrorResultPromise::CreateAndResolve(false,
+                                                                __func__);
+
+          entry.Data()->mRegistrationInfo = aRegistrationInfo;
+
+          if (old != aRegistrationInfo) {
+            StopControllingRegistration(old);
+            aRegistrationInfo->StartControllingClient();
+          }
+
+          Telemetry::Accumulate(Telemetry::SERVICE_WORKER_CONTROLLED_DOCUMENTS,
+                                1);
+
+          
+          
+          return promise->Then(
+              GetMainThreadSerialEventTarget(), __func__,
+              [](bool) {
+                
+                return GenericErrorResultPromise::CreateAndResolve(true,
+                                                                   __func__);
+              },
+              [self, aClientInfo](const CopyableErrorResult& aRv) {
+                
+                self->StopControllingClient(aClientInfo);
+                return GenericErrorResultPromise::CreateAndReject(aRv,
+                                                                  __func__);
+              });
+        }
+
+        RefPtr<ClientHandle> clientHandle = ClientManager::CreateHandle(
+            aClientInfo, GetMainThreadSerialEventTarget());
+
+        const RefPtr<GenericErrorResultPromise> promise =
+            aControlClientHandle
+                ? clientHandle->Control(active)
+                : GenericErrorResultPromise::CreateAndResolve(false, __func__);
+
+        aRegistrationInfo->StartControllingClient();
+
+        entry.Insert(
+            MakeUnique<ControlledClientData>(clientHandle, aRegistrationInfo));
+
+        clientHandle->OnDetach()->Then(
+            GetMainThreadSerialEventTarget(), __func__,
+            [self, aClientInfo] { self->StopControllingClient(aClientInfo); });
+
+        Telemetry::Accumulate(Telemetry::SERVICE_WORKER_CONTROLLED_DOCUMENTS,
+                              1);
+
         
-        return GenericErrorResultPromise::CreateAndResolve(true, __func__);
-      },
-      [self, aClientInfo](const CopyableErrorResult& aRv) {
         
-        self->StopControllingClient(aClientInfo);
-        return GenericErrorResultPromise::CreateAndReject(aRv, __func__);
+        return promise->Then(
+            GetMainThreadSerialEventTarget(), __func__,
+            [](bool) {
+              
+              return GenericErrorResultPromise::CreateAndResolve(true,
+                                                                 __func__);
+            },
+            [self, aClientInfo](const CopyableErrorResult& aRv) {
+              
+              self->StopControllingClient(aClientInfo);
+              return GenericErrorResultPromise::CreateAndReject(aRv, __func__);
+            });
       });
 }
 
@@ -1583,11 +1593,13 @@ ServiceWorkerManager::GetOrCreateJobQueue(const nsACString& aKey,
     mRegistrationInfos.Put(aKey, data);
   }
 
-  RefPtr<ServiceWorkerJobQueue> queue =
-      data->mJobQueues.LookupForAdd(aScope).OrInsert(
-          []() { return new ServiceWorkerJobQueue(); });
-
-  return queue.forget();
+  return data->mJobQueues
+      .WithEntryHandle(aScope,
+                       [](auto&& entry) {
+                         return entry.OrInsertWith(
+                             [] { return new ServiceWorkerJobQueue(); });
+                       })
+      .forget();
 }
 
 
@@ -1897,8 +1909,13 @@ void ServiceWorkerManager::AddScopeAndRegistration(
 
   MOZ_ASSERT(!scopeKey.IsEmpty());
 
-  const auto& data = swm->mRegistrationInfos.LookupForAdd(scopeKey).OrInsert(
-      []() { return new RegistrationDataPerPrincipal(); });
+  auto* const data =
+      swm->mRegistrationInfos.WithEntryHandle(scopeKey, [](auto&& entry) {
+        return entry
+            .OrInsertWith(
+                [] { return MakeUnique<RegistrationDataPerPrincipal>(); })
+            .get();
+      });
 
   data->mScopeContainer.InsertScope(aScope);
   data->mInfos.Put(aScope, RefPtr{aInfo});

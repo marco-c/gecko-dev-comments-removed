@@ -318,6 +318,7 @@ class MOZ_NON_MEMMOVABLE Heap : public js::HeapBase<T, Heap<T>> {
 
 
   explicit Heap(const Heap<T>& other) { init(other.ptr); }
+  Heap(Heap<T>&& other) { init(other.ptr); }
 
   Heap& operator=(Heap<T>&& other) {
     set(other.unbarrieredGet());

@@ -74,6 +74,7 @@ class nsBaseHashtableET : public KeyClass {
   typedef typename KeyClass::KeyTypePointer KeyTypePointer;
 
   explicit nsBaseHashtableET(KeyTypePointer aKey);
+  nsBaseHashtableET(KeyTypePointer aKey, const DataType& aData);
   nsBaseHashtableET(KeyTypePointer aKey, DataType&& aData);
   nsBaseHashtableET(nsBaseHashtableET<KeyClass, DataType>&& aToMove);
   ~nsBaseHashtableET() = default;
@@ -210,7 +211,7 @@ class nsBaseHashtable
 
   void Put(KeyType aKey, const UserDataType& aData) {
     WithEntryHandle(aKey, [&aData](auto entryHandle) {
-      entryHandle.InsertOrUpdate(aData);
+      entryHandle.InsertOrUpdate(Converter::Wrap(aData));
     });
   }
 
@@ -220,7 +221,7 @@ class nsBaseHashtable
       if (!maybeEntryHandle) {
         return false;
       }
-      maybeEntryHandle->InsertOrUpdate(aData);
+      maybeEntryHandle->InsertOrUpdate(Converter::Wrap(aData));
       return true;
     });
   }
@@ -232,7 +233,7 @@ class nsBaseHashtable
 
   void Put(KeyType aKey, UserDataType&& aData) {
     WithEntryHandle(aKey, [&aData](auto entryHandle) {
-      entryHandle.InsertOrUpdate(std::move(aData));
+      entryHandle.InsertOrUpdate(Converter::Wrap(std::move(aData)));
     });
   }
 
@@ -242,7 +243,7 @@ class nsBaseHashtable
       if (!maybeEntryHandle) {
         return false;
       }
-      maybeEntryHandle->InsertOrUpdate(std::move(aData));
+      maybeEntryHandle->InsertOrUpdate(Converter::Wrap(std::move(aData)));
       return true;
     });
   }
@@ -382,67 +383,6 @@ class nsBaseHashtable
     return LookupResult(this->GetEntry(aKey), *this);
   }
 
-  struct EntryPtr {
-   private:
-    EntryType* mEntry;
-    bool mExistingEntry;
-    nsBaseHashtable& mTable;
-    
-#ifdef DEBUG
-    uint32_t mTableGeneration;
-    bool mDidInitNewEntry;
-#endif
-
-   public:
-    EntryPtr(nsBaseHashtable& aTable, EntryType* aEntry, bool aExistingEntry)
-        : mEntry(aEntry),
-          mExistingEntry(aExistingEntry),
-          mTable(aTable)
-#ifdef DEBUG
-          ,
-          mTableGeneration(aTable.GetGeneration()),
-          mDidInitNewEntry(false)
-#endif
-    {
-    }
-    ~EntryPtr() {
-      MOZ_ASSERT(mExistingEntry || mDidInitNewEntry || !mEntry,
-                 "Forgot to call OrInsert() or OrRemove() on a new entry");
-    }
-
-    
-    explicit operator bool() const {
-      MOZ_ASSERT(mTableGeneration == mTable.GetGeneration());
-      return mExistingEntry;
-    }
-
-    template <class F>
-    DataType& OrInsert(F func) {
-      MOZ_ASSERT(mTableGeneration == mTable.GetGeneration());
-      MOZ_ASSERT(mEntry);
-      if (!mExistingEntry) {
-        mEntry->mData = Converter::Wrap(func());
-#ifdef DEBUG
-        mDidInitNewEntry = true;
-#endif
-      }
-      return mEntry->mData;
-    }
-
-    void OrRemove() {
-      MOZ_ASSERT(mTableGeneration == mTable.GetGeneration());
-      MOZ_ASSERT(mEntry);
-      mTable.RemoveEntry(mEntry);
-      mEntry = nullptr;
-    }
-
-    [[nodiscard]] DataType& Data() {
-      MOZ_ASSERT(mTableGeneration == mTable.GetGeneration());
-      MOZ_ASSERT(mEntry);
-      return mEntry->mData;
-    }
-  };
-
   
 
 
@@ -460,25 +400,6 @@ class nsBaseHashtable
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] EntryPtr LookupForAdd(KeyType aKey) {
-    auto count = Count();
-    EntryType* ent = this->PutEntry(aKey);
-    return EntryPtr(*this, ent, count == Count());
-  }
-
- protected:
-  
 
 
 
@@ -503,27 +424,72 @@ class nsBaseHashtable
 
     using Base::Entry;
 
+    
+
+
+
+
+
+
+
     template <typename U>
-    void Insert(U&& aData) {
-      Base::InsertInternal(Converter::Wrap(std::forward<U>(aData)));
+    DataType& Insert(U&& aData) {
+      Base::InsertInternal(std::forward<U>(aData));
+      return Data();
     }
+
+    
+
+
+
+
+
+
 
     template <typename U>
     DataType& OrInsert(U&& aData) {
       if (!HasEntry()) {
-        Insert(std::forward<U>(aData));
+        return Insert(std::forward<U>(aData));
       }
       return Data();
     }
 
     
+
+
+
+
+
+
+
+    template <typename F>
+    DataType& OrInsertWith(F&& aFunc) {
+      if (!HasEntry()) {
+        return Insert(std::forward<F>(aFunc)());
+      }
+      return Data();
+    }
+
     
 
+
+
+
+
+
     template <typename U>
-    void Update(U&& aData) {
-      MOZ_ASSERT(HasEntry());
-      Data() = Converter::Wrap(std::forward<U>(aData));
+    DataType& Update(U&& aData) {
+      MOZ_RELEASE_ASSERT(HasEntry());
+      Data() = std::forward<U>(aData);
+      return Data();
     }
+
+    
+
+
+
+
+
 
     template <typename U>
     void OrUpdate(U&& aData) {
@@ -531,6 +497,28 @@ class nsBaseHashtable
         Update(std::forward<U>(aData));
       }
     }
+
+    
+
+
+
+
+
+
+    template <typename F>
+    void OrUpdateWith(F&& aFunc) {
+      if (HasEntry()) {
+        Update(std::forward<F>(aFunc)());
+      }
+    }
+
+    
+
+
+
+
+
+
 
     template <typename U>
     DataType& InsertOrUpdate(U&& aData) {
@@ -546,6 +534,11 @@ class nsBaseHashtable
 
     using Base::OrRemove;
 
+    
+
+
+
+
     DataType& Data() { return Entry()->mData; }
 
    private:
@@ -554,13 +547,38 @@ class nsBaseHashtable
     explicit EntryHandle(Base&& aBase) : Base(std::move(aBase)) {}
   };
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   template <class F>
   auto WithEntryHandle(KeyType aKey, F&& aFunc)
       -> std::invoke_result_t<F, EntryHandle&&> {
-    return Base::WithEntryHandle(aKey, [&aFunc](auto entryHandle) {
-      return std::forward<F>(aFunc)(EntryHandle{std::move(entryHandle)});
-    });
+    return Base::WithEntryHandle(
+        aKey, [&aFunc](auto entryHandle) -> decltype(auto) {
+          return std::forward<F>(aFunc)(EntryHandle{std::move(entryHandle)});
+        });
   }
+
+  
+
+
+
+
+
+
+
 
   template <class F>
   auto WithEntryHandle(KeyType aKey, const fallible_t& aFallible, F&& aFunc)
@@ -661,6 +679,11 @@ class nsBaseHashtable
 template <class KeyClass, class DataType>
 nsBaseHashtableET<KeyClass, DataType>::nsBaseHashtableET(KeyTypePointer aKey)
     : KeyClass(aKey), mData() {}
+
+template <class KeyClass, class DataType>
+nsBaseHashtableET<KeyClass, DataType>::nsBaseHashtableET(KeyTypePointer aKey,
+                                                         const DataType& aData)
+    : KeyClass(aKey), mData(aData) {}
 
 template <class KeyClass, class DataType>
 nsBaseHashtableET<KeyClass, DataType>::nsBaseHashtableET(KeyTypePointer aKey,

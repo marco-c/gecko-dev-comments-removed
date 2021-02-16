@@ -1591,16 +1591,17 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
       aFamilyName = ToCharPtr(canonical);
 
       
-      auto faceList = faces.LookupForAdd(keyName);
-      if (!faceList) {
-        faceList.OrInsert([]() { return new FaceInitArray; });
-        FontVisibility visibility =
-            aAppFont ? FontVisibility::Base : GetVisibilityForFamily(keyName);
-        families.AppendElement(fontlist::Family::InitData(
-            keyName, aFamilyName, fontlist::Family::kNoIndex, visibility,
-             aAppFont,  false));
-      }
-      faceListPtr = faceList.Data().get();
+      faceListPtr = faces.WithEntryHandle(keyName, [&](auto&& faceList) {
+        if (!faceList) {
+          faceList.Insert(MakeUnique<FaceInitArray>());
+          FontVisibility visibility =
+              aAppFont ? FontVisibility::Base : GetVisibilityForFamily(keyName);
+          families.AppendElement(fontlist::Family::InitData(
+              keyName, aFamilyName, fontlist::Family::kNoIndex, visibility,
+               aAppFont,  false));
+        }
+        return faceList.Data().get();
+      });
     }
 
     char* s = (char*)FcNameUnparse(aPattern);
@@ -1649,17 +1650,18 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
       keyName = otherFamilyName;
       ToLowerCase(keyName);
 
-      auto faceList = faces.LookupForAdd(keyName);
-      if (!faceList) {
-        faceList.OrInsert([]() { return new FaceInitArray; });
-        FontVisibility visibility =
-            aAppFont ? FontVisibility::Base : GetVisibilityForFamily(keyName);
-        families.AppendElement(fontlist::Family::InitData(
-            keyName, otherFamilyName, fontlist::Family::kNoIndex, visibility,
-             aAppFont,  false));
-      }
-      faceList.Data()->AppendElement(fontlist::Face::InitData{
-          descriptor, 0, false, weight, stretch, style});
+      faces.WithEntryHandle(keyName, [&](auto&& faceList) {
+        if (!faceList) {
+          faceList.Insert(MakeUnique<FaceInitArray>());
+          FontVisibility visibility =
+              aAppFont ? FontVisibility::Base : GetVisibilityForFamily(keyName);
+          families.AppendElement(fontlist::Family::InitData(
+              keyName, otherFamilyName, fontlist::Family::kNoIndex, visibility,
+               aAppFont,  false));
+        }
+        faceList.Data()->AppendElement(fontlist::Face::InitData{
+            descriptor, 0, false, weight, stretch, style});
+      });
 
       n++;
       if (n == int(cIndex)) {

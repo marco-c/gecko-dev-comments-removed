@@ -2607,21 +2607,21 @@ nsPrefBranch::AddObserverImpl(const nsACString& aDomain, nsIObserver* aObserver,
     pCallback = new PrefCallback(prefName, aObserver, this);
   }
 
-  auto p = mObservers.LookupForAdd(pCallback);
-  if (p) {
-    NS_WARNING("Ignoring duplicate observer.");
-    delete pCallback;
-    return NS_OK;
-  }
+  mObservers.WithEntryHandle(pCallback, [&](auto&& p) {
+    if (p) {
+      NS_WARNING("Ignoring duplicate observer.");
+      delete pCallback;
+    } else {
+      p.Insert(UniquePtr<PrefCallback>{pCallback});
 
-  p.OrInsert([&pCallback]() { return pCallback; });
-
-  
-  
-  
-  Preferences::RegisterCallback(NotifyObserver, prefName, pCallback,
-                                Preferences::PrefixMatch,
-                                 false);
+      
+      
+      
+      Preferences::RegisterCallback(NotifyObserver, prefName, pCallback,
+                                    Preferences::PrefixMatch,
+                                     false);
+    }
+  });
 
   return NS_OK;
 }
