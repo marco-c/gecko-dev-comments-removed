@@ -305,6 +305,13 @@ struct CompilationInput {
   void trace(JSTracer* trc);
 };
 
+
+
+
+using StencilAsmJSContainer =
+    HashMap<ScriptIndex, RefPtr<const JS::WasmModule>,
+            mozilla::DefaultHasher<ScriptIndex>, js::SystemAllocPolicy>;
+
 struct MOZ_RAII CompilationState {
   
   
@@ -331,6 +338,10 @@ struct MOZ_RAII CompilationState {
   Vector<TaggedScriptThingIndex, 0, js::SystemAllocPolicy> gcThingData;
 
   
+  
+  StencilAsmJSContainer asmJS;
+
+  
   ParserAtomsTable parserAtoms;
 
   
@@ -340,6 +351,8 @@ struct MOZ_RAII CompilationState {
   
   size_t nonLazyFunctionCount = 0;
 
+  
+
   CompilationState(JSContext* cx, LifoAllocScope& frontendAllocScope,
                    CompilationInput& input, CompilationStencil& stencil);
 
@@ -347,6 +360,19 @@ struct MOZ_RAII CompilationState {
             JSObject* enclosingEnv = nullptr) {
     return scopeContext.init(cx, input, parserAtoms, inheritThis, enclosingEnv);
   }
+
+  
+  
+  
+  struct RewindToken {
+    
+    size_t scriptDataLength = 0;
+
+    size_t asmJSCount = 0;
+  };
+
+  RewindToken getRewindToken();
+  void rewind(const RewindToken& pos);
 
   bool finish(JSContext* cx, CompilationStencil& stencil);
 
@@ -437,13 +463,6 @@ struct SharedDataContainer {
   void dumpFields(js::JSONPrinter& json) const;
 #endif
 };
-
-
-
-
-using StencilAsmJSContainer =
-    HashMap<ScriptIndex, RefPtr<const JS::WasmModule>,
-            mozilla::DefaultHasher<ScriptIndex>, js::SystemAllocPolicy>;
 
 
 struct BaseCompilationStencil {
@@ -594,19 +613,6 @@ struct CompilationStencil : public BaseCompilationStencil {
   void setFunctionKey(BaseScript* lazy) {
     functionKey = toFunctionKey(lazy->extent());
   }
-
-  
-  
-  
-  struct RewindToken {
-    
-    size_t scriptDataLength = 0;
-
-    size_t asmJSCount = 0;
-  };
-
-  RewindToken getRewindToken(CompilationState& state);
-  void rewind(CompilationState& state, const RewindToken& pos);
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump() const;

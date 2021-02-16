@@ -2943,8 +2943,8 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
   Directives newDirectives = directives;
 
   Position start(tokenStream);
-  CompilationStencil::RewindToken startObj =
-      this->stencil_.getRewindToken(this->compilationState_);
+  CompilationState::RewindToken startObj =
+      this->compilationState_.getRewindToken();
 
   
   
@@ -2970,7 +2970,7 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
 
     
     tokenStream.rewind(start);
-    this->stencil_.rewind(this->compilationState_, startObj);
+    this->compilationState_.rewind(startObj);
 
     
     
@@ -3021,8 +3021,8 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
     }
 
     UsedNameTracker::RewindToken token = usedNames_.getRewindToken();
-    CompilationStencil::RewindToken startObj =
-        this->stencil_.getRewindToken(this->compilationState_);
+    CompilationState::RewindToken startObj =
+        this->compilationState_.getRewindToken();
 
     
     
@@ -3060,7 +3060,7 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
         
         syntaxParser->clearAbortedSyntaxParse();
         usedNames_.rewind(token);
-        this->stencil_.rewind(this->compilationState_, startObj);
+        this->compilationState_.rewind(startObj);
         MOZ_ASSERT_IF(!syntaxParser->cx_->isHelperThreadContext(),
                       !syntaxParser->cx_->isExceptionPending());
         break;
