@@ -47,25 +47,16 @@ class EbmlComposer {
 
   void ExtractBuffer(nsTArray<nsTArray<uint8_t>>* aDestBufs,
                      uint32_t aFlag = 0);
-  
-
-
-  bool WritingCluster() const { return !mCurrentCluster.IsEmpty(); }
 
  private:
   
-  void FinishCluster();
   
-  
-  
-  nsTArray<nsTArray<uint8_t>> mCurrentCluster;
-  
-  uint64_t mCurrentClusterLengthLoc = 0;
+  bool mHasWrittenCluster = false;
   
   uint64_t mCurrentClusterTimecode = 0;
 
   
-  nsTArray<nsTArray<uint8_t>> mFinishedClusters;
+  nsTArray<nsTArray<uint8_t>> mBuffer;
 
   
   bool mMetadataFinished = false;

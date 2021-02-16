@@ -31,7 +31,7 @@ class WebMVP8TrackEncoder : public VP8TrackEncoder {
  public:
   explicit WebMVP8TrackEncoder(TrackRate aTrackRate = 90000)
       : VP8TrackEncoder(nullptr, aTrackRate, mEncodedVideoQueue,
-                        TimeDuration::Forever(), FrameDroppingMode::DISALLOW) {}
+                        FrameDroppingMode::DISALLOW) {}
 
   bool TestVP8Creation(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
                        int32_t aDisplayHeight) {
@@ -88,7 +88,7 @@ class TestWebMWriter : public WebMWriter {
   bool HaveValidCluster() {
     nsTArray<nsTArray<uint8_t>> encodedBuf;
     GetContainerData(&encodedBuf, 0);
-    return (encodedBuf.Length() > 0) ? true : false;
+    return !encodedBuf.IsEmpty();
   }
 
   
@@ -152,22 +152,18 @@ TEST(WebMWriter, Cluster)
 
   
   writer.AppendDummyFrame(EncodedFrame::VP8_I_FRAME, FIXED_DURATION);
-  
-  EXPECT_FALSE(writer.HaveValidCluster());
+  EXPECT_TRUE(writer.HaveValidCluster());
 
   
   writer.AppendDummyFrame(EncodedFrame::VP8_I_FRAME, FIXED_DURATION);
-  
   EXPECT_TRUE(writer.HaveValidCluster());
 
   
   writer.AppendDummyFrame(EncodedFrame::VP8_P_FRAME, FIXED_DURATION);
-  
-  EXPECT_FALSE(writer.HaveValidCluster());
+  EXPECT_TRUE(writer.HaveValidCluster());
 
   
   writer.AppendDummyFrame(EncodedFrame::VP8_I_FRAME, FIXED_DURATION);
-  
   EXPECT_TRUE(writer.HaveValidCluster());
 }
 
@@ -186,6 +182,8 @@ TEST(WebMWriter, FLUSH_NEEDED)
   int32_t displayHeight = 352;
   GetVP8Metadata(width, height, displayWidth, displayHeight, trackRate, meta);
   writer.SetMetadata(meta);
+  
+  EXPECT_TRUE(writer.HaveValidCluster());
 
   
   writer.AppendDummyFrame(EncodedFrame::VP8_I_FRAME, FIXED_DURATION);
@@ -195,26 +193,23 @@ TEST(WebMWriter, FLUSH_NEEDED)
   
   EXPECT_TRUE(writer.HaveValidCluster());
   
-  
   EXPECT_FALSE(writer.HaveValidCluster());
 
   nsTArray<nsTArray<uint8_t>> encodedBuf;
   
   writer.GetContainerData(&encodedBuf, ContainerWriter::FLUSH_NEEDED);
-  EXPECT_TRUE(encodedBuf.Length() > 0);
+  EXPECT_TRUE(encodedBuf.IsEmpty());
   encodedBuf.Clear();
 
   
   writer.AppendDummyFrame(EncodedFrame::VP8_P_FRAME, FIXED_DURATION);
   
-  
-  EXPECT_FALSE(writer.HaveValidCluster());
+  EXPECT_TRUE(writer.HaveValidCluster());
 
   
   writer.AppendDummyFrame(EncodedFrame::VP8_I_FRAME, FIXED_DURATION);
   
-  
-  EXPECT_FALSE(writer.HaveValidCluster());
+  EXPECT_TRUE(writer.HaveValidCluster());
 
   
   writer.AppendDummyFrame(EncodedFrame::VP8_I_FRAME, FIXED_DURATION);
