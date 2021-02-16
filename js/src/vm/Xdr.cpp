@@ -513,6 +513,11 @@ XDRResult XDRStencilDecoder::codeStencils(
       MOZ_TRY(codeFunctionStencil(delazification));
     }
 
+    
+    if (!delazificationSet->buildDelazificationIndices(cx(), stencil)) {
+      return fail(JS::TranscodeResult_Throw);
+    }
+
     stencil.delazificationSet = std::move(delazificationSet);
   }
 

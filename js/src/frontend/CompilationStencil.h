@@ -605,10 +605,6 @@ struct CompilationStencil : public BaseCompilationStencil {
   UniquePtr<StencilDelazificationSet> delazificationSet;
 
   
-  
-  bool preparationIsPerformed = false;
-
-  
 
   
   explicit CompilationStencil(CompilationInput& input)
@@ -682,6 +678,15 @@ struct StencilDelazificationSet {
   Vector<BaseCompilationStencil, 0, js::SystemAllocPolicy> delazifications;
   Vector<ScriptIndex, 0, js::SystemAllocPolicy> delazificationIndices;
 
+  size_t maxScriptDataLength = 0;
+  size_t maxScopeDataLength = 0;
+  size_t maxParserAtomDataLength = 0;
+
+  bool hasDelazificationIndices() {
+    MOZ_ASSERT(!delazifications.empty());
+    return !delazificationIndices.empty();
+  }
+
   [[nodiscard]] bool buildDelazificationIndices(
       JSContext* cx, const CompilationStencil& stencil);
 
@@ -731,6 +736,22 @@ struct CompilationGCOutput {
   ScriptSourceObject* sourceObject = nullptr;
 
   CompilationGCOutput() = default;
+
+  
+  
+  
+  [[nodiscard]] bool ensureReserved(JSContext* cx, size_t scriptDataLength,
+                                    size_t scopeDataLength) {
+    if (!functions.reserve(scriptDataLength)) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+    if (!scopes.reserve(scopeDataLength)) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+    return true;
+  }
 
   
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
