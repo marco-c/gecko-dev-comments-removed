@@ -9325,6 +9325,7 @@ var gDialogBox = {
       dialog.style.width = "0";
       document.documentElement.removeAttribute("window-modal-open");
       dialog.removeEventListener("dialogopen", this);
+      this._updateMenuAndCommandState(true );
       this._dialog = null;
     }
     return args;
@@ -9352,6 +9353,9 @@ var gDialogBox = {
     
     
     parentElement.showModal();
+
+    
+    this._updateMenuAndCommandState(false );
 
     
     let template = document.getElementById("window-modal-dialog-template")
@@ -9383,6 +9387,54 @@ var gDialogBox = {
       args
     );
     return closedPromise;
+  },
+
+  _nonUpdatableElements: new Set([
+    
+    "key_browserConsole",
+    "key_browserToolbox",
+
+    
+    "key_undo",
+    "key_redo",
+
+    "key_cut",
+    "key_copy",
+    "key_paste",
+    "key_delete",
+    "key_selectAll",
+  ]),
+
+  _updateMenuAndCommandState(shouldBeEnabled) {
+    let editorCommands = document.getElementById("editMenuCommands");
+    
+    
+    
+    
+    for (let element of document.querySelectorAll(
+      "menubar > menu, command, key:not([command])"
+    )) {
+      if (
+        editorCommands?.contains(element) ||
+        (element.id && this._nonUpdatableElements.has(element.id))
+      ) {
+        continue;
+      }
+      if (element.nodeName == "key" && element.command) {
+        continue;
+      }
+      if (!shouldBeEnabled) {
+        if (element.getAttribute("disabled") != "true") {
+          element.setAttribute("disabled", true);
+        } else {
+          element.setAttribute("wasdisabled", true);
+        }
+      } else if (element.getAttribute("wasdisabled") != "true") {
+        element.removeAttribute("disabled");
+      } else {
+        element.removeAttribute("wasdisabled");
+      }
+    }
   },
 };
 
