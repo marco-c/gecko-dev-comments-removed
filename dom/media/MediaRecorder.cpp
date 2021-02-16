@@ -567,16 +567,6 @@ void SelectBitrates(uint32_t aBitsPerSecond, uint8_t aNumVideoTracks,
 
 
 
-
-
-
-
-
-
-
-
-
-
 class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
                                public DOMMediaStream::TrackListener {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Session)
