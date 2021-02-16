@@ -529,52 +529,6 @@ async function awaitNoTip(searchString, win = window) {
 
 
 
-async function promiseAlertDialogOpen(buttonAction, uris, func) {
-  let win = await BrowserTestUtils.domWindowOpened(null, async aWindow => {
-    
-    
-    
-    await BrowserTestUtils.waitForEvent(aWindow, "load");
-
-    return uris.includes(aWindow.document.documentURI);
-  });
-
-  if (func) {
-    await func(win);
-    return win;
-  }
-
-  let dialog = win.document.querySelector("dialog");
-  dialog.getButton(buttonAction).click();
-
-  return win;
-}
-
-
-
-
-
-
-
-
-
-
-
-async function promiseAlertDialog(buttonAction, uris, func) {
-  let win = await promiseAlertDialogOpen(buttonAction, uris, func);
-  return BrowserTestUtils.windowClosed(win);
-}
-
-
-
-
-
-
-
-
-
-
-
 
 async function checkTip(win, expectedTip, closeView = true) {
   if (!expectedTip) {
