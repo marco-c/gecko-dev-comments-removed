@@ -45,6 +45,10 @@ class IconLoader : public imgINotificationObserver {
     virtual ~Helper() = default;
   };
 
+  
+  
+  
+  
   IconLoader(Helper* aHelper, const nsIntRect& aImageRegionRect);
 
  public:
@@ -71,7 +75,12 @@ class IconLoader : public imgINotificationObserver {
   RefPtr<imgRequestProxy> mIconRequest;
   nsIntRect mImageRegionRect;
   bool mLoadedIcon;
-  RefPtr<Helper> mHelper;
+
+  
+  
+  
+  
+  Helper* mHelper;
 };
 
 }  
