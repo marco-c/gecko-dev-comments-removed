@@ -204,12 +204,13 @@ class MediaEncoder {
   
 
 
-  void NotifyInitialized();
+  void UpdateInitialized();
 
   
 
 
-  void NotifyStarted();
+
+  void UpdateStarted();
 
   
 
