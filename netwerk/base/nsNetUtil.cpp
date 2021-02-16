@@ -1765,6 +1765,13 @@ nsresult NS_NewURI(nsIURI** aURI, const nsACString& aSpec,
     return NS_ERROR_MALFORMED_URI;
   }
 
+  nsCOMPtr<nsIIOService> ioService = do_GetIOService();
+  if (!ioService) {
+    
+    
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   nsAutoCString scheme;
   nsresult rv = net_ExtractURLScheme(aSpec, scheme);
   if (NS_FAILED(rv)) {
