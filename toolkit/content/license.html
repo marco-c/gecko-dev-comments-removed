@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this file,
+   - You can obtain one at http://mozilla.org/MPL/2.0/.  -->
 
 <html lang="en">
   <head>
@@ -216,7 +216,7 @@ The following licenses are specific to code used by the
 #includesubst @APP_LICENSE_PRODUCT_NAME@
 product.
 
-
+<!-- Index of product-specific licenses for non-Firefox apps. -->
 #includesubst @APP_LICENSE_LIST_BLOCK@
 #endif
 
@@ -2135,7 +2135,7 @@ executables of your software products.
 
     <p>This license applies to various files in the Mozilla codebase,
     including those in the directory <code>gfx/skia/</code>.</p>
-
+<!-- This is the wrong directory, what was intended? -->
 
 <pre>
  Copyright 2009, The Android Open Source Project
@@ -3934,7 +3934,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     <p>This license applies to <code>mfbt/Span.h</code> and
     <code>mfbt/tests/gtest/TestSpan.cpp</code>.</p>
-    
+    <!-- https://github.com/Microsoft/GSL/blob/3819df6e378ffccf0e29465afe99c3b324c2aa70/LICENSE -->
 <pre>
 Copyright (c) 2015 Microsoft Corporation. All rights reserved.
 
@@ -5573,41 +5573,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 </pre>
 
-
-    <hr>
-
-    <h1><a id="pbkdf2-sha256"></a>pbkdf2_sha256 License</h1>
-
-    <p>This license applies to the code
-    <code>mozglue/android/pbkdf2_sha256.c</code> and
-    <code>mozglue/android/pbkdf2_sha256.h</code>.
-    </p>
-
-<pre>
-Copyright 2005,2007,2009 Colin Percival
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGE.
-</pre>
 
     <hr>
 
@@ -7612,7 +7577,7 @@ following terms:
 #ifndef APP_LICENSE_LIST_BLOCK
 #error
 #endif
-
+<!-- List of product-specific licenses for non-Firefox apps. -->
 #includesubst @APP_LICENSE_BODY_BLOCK@
 #endif
 
