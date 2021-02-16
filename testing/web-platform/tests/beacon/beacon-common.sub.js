@@ -1,111 +1,172 @@
-'use strict';
+"use strict";
 
-const EMPTY = 'empty';
-const SMALL = 'small';
-const LARGE = 'large';
-const MAX = 'max';
-const TOOLARGE = 'toolarge';
 
-const STRING = 'string';
-const ARRAYBUFFER = 'arraybuffer';
-const FORM = 'form';
-const BLOB = 'blob';
-
-function getContentType(type) {
-  switch (type) {
-    case STRING:
-      return 'text/plain;charset=UTF-8';
-    case ARRAYBUFFER:
-      return null;
-    case FORM:
-      return 'multipart/form-data';
-    case BLOB:
-      return null;
-    default:
-      throw Error(`invalid type: ${type}`);
-  }
-}
+var smallPayloadSize = 10;
+var mediumPayloadSize = 10000;
+var largePayloadSize = 50000;
+var maxPayloadSize = 65536; 
 
 
 
 
+var smallPayload = smallPayloadSize + ":" + Array(smallPayloadSize).fill('*').join("");
+var mediumPayload = mediumPayloadSize + ":" + Array(mediumPayloadSize).fill('*').join("");
+var largePayload = largePayloadSize + ":" + Array(largePayloadSize).fill('*').join("");
 
-function makePayload(sizeString, type, contentType) {
-  let size = 0;
-  switch (sizeString) {
-    case EMPTY:
-      size = 0;
-      break;
-    case SMALL:
-      size = 10;
-      break;
-    case LARGE:
-      size = 10 * 1000;
-      break;
-    case MAX:
-      if (type === FORM) {
-        throw Error('Not supported');
-      }
-      size = 65536;
-      break;
-    case TOOLARGE:
-      size = 65537;
-      break;
-    default:
-      throw Error('invalid size');
-  }
-
-  let data = '';
-  if (size > 0) {
-    const prefix = String(size) + ':';
-    data = prefix + Array(size - prefix.length).fill('*').join('');
-  }
-
-  switch (type) {
-    case STRING:
-      return data;
-    case ARRAYBUFFER:
-      return new TextEncoder().encode(data).buffer;
-    case FORM:
-      const formData = new FormData();
-      if (size > 0) {
-        formData.append('payload', data);
-      }
-      return formData;
-    case BLOB:
-      const options = contentType ? {type: contentType} : undefined;
-      const blob = new Blob([data], options);
-      return blob;
-    default:
-      throw Error('invalid type');
-  }
-}
-
-function parallelPromiseTest(func, description) {
-  async_test((t) => {
-    Promise.resolve(func(t)).then(() => t.done()).catch(t.step_func((e) => {
-      throw e;
-    }));
-  }, description);
-}
+var maxPayload = (maxPayloadSize - 6) + ":" + Array(maxPayloadSize - 6).fill('*').join("")
 
 
-async function waitForResult(id, expectedError = null) {
-  const url = `/beacon/resources/beacon.py?cmd=stat&id=${id}`;
-  for (let i = 0; i < 30; ++i) {
-    const response = await fetch(url);
-    const text = await response.text();
-    const results = JSON.parse(text);
 
-    if (results.length === 0) {
-      await new Promise(resolve => step_timeout(resolve, 100));
-      continue;
+
+var noDataTest = { name: "NoData" };
+var nullDataTest = { name: "NullData", data: null };
+var undefinedDataTest = { name: "UndefinedData", data: undefined };
+var smallStringTest = { name: "SmallString", data: smallPayload };
+var mediumStringTest = { name: "MediumString", data: mediumPayload };
+var largeStringTest = { name: "LargeString", data: largePayload };
+var maxStringTest = { name: "MaxString", data: maxPayload };
+var emptyBlobTest = { name: "EmptyBlob", data: new Blob() };
+var smallBlobTest = { name: "SmallBlob", data: new Blob([smallPayload]) };
+var mediumBlobTest = { name: "MediumBlob", data: new Blob([mediumPayload]) };
+var largeBlobTest = { name: "LargeBlob", data: new Blob([largePayload]) };
+var maxBlobTest = { name: "MaxBlob", data: new Blob([maxPayload]) };
+var emptyBufferSourceTest = { name: "EmptyBufferSource", data: new Uint8Array() };
+var smallBufferSourceTest = { name: "SmallBufferSource", data: CreateArrayBufferFromPayload(smallPayload) };
+var mediumBufferSourceTest = { name: "MediumBufferSource", data: CreateArrayBufferFromPayload(mediumPayload) };
+var largeBufferSourceTest = { name: "LargeBufferSource", data: CreateArrayBufferFromPayload(largePayload) };
+var maxBufferSourceTest = { name: "MaxBufferSource", data: CreateArrayBufferFromPayload(maxPayload) };
+var emptyFormDataTest = { name: "EmptyFormData", data: CreateEmptyFormDataPayload() };
+var smallFormDataTest = { name: "SmallFormData", data: CreateFormDataFromPayload(smallPayload) };
+var mediumFormDataTest = { name: "MediumFormData", data: CreateFormDataFromPayload(mediumPayload) };
+var largeFormDataTest = { name: "LargeFormData", data: CreateFormDataFromPayload(largePayload) };
+var smallSafeContentTypeEncodedTest = { name: "SmallSafeContentTypeEncoded", data: new Blob([smallPayload], { type: 'application/x-www-form-urlencoded' }) };
+var smallSafeContentTypeFormTest = { name: "SmallSafeContentTypeForm", data: new FormData() };
+var smallSafeContentTypeTextTest = { name: "SmallSafeContentTypeText", data: new Blob([smallPayload], { type: 'text/plain' }) };
+var smallCORSContentTypeTextTest = { name: "SmallCORSContentTypeText", data: new Blob([smallPayload], { type: 'text/html' }) };
+
+
+
+
+
+var stringTests = [noDataTest, nullDataTest, undefinedDataTest, smallStringTest, mediumStringTest, largeStringTest];
+var stringMaxTest = [maxStringTest];
+var blobTests = [emptyBlobTest, smallBlobTest, mediumBlobTest, largeBlobTest];
+var blobMaxTest = [maxBlobTest];
+var bufferSourceTests = [emptyBufferSourceTest, smallBufferSourceTest, mediumBufferSourceTest, largeBufferSourceTest];
+var bufferSourceMaxTest = [maxBufferSourceTest];
+var formDataTests = [emptyFormDataTest, smallFormDataTest, mediumFormDataTest, largeFormDataTest];
+var formDataMaxTest = [largeFormDataTest];
+var contentTypeTests = [smallSafeContentTypeEncodedTest,smallSafeContentTypeFormTest,smallSafeContentTypeTextTest,smallCORSContentTypeTextTest];
+var allTests = [].concat(stringTests, stringMaxTest, blobTests, blobMaxTest, bufferSourceTests, bufferSourceMaxTest, formDataTests, formDataMaxTest, contentTypeTests);
+
+
+
+
+var sampleTests = [noDataTest, nullDataTest, undefinedDataTest, smallStringTest, smallBlobTest, smallBufferSourceTest, smallFormDataTest, smallSafeContentTypeEncodedTest, smallSafeContentTypeFormTest, smallSafeContentTypeTextTest];
+
+var preflightTests = [smallCORSContentTypeTextTest];
+
+
+function CreateArrayBufferFromPayload(payload) {
+    var length = payload.length;
+    var buffer = new Uint8Array(length);
+
+    for (var i = 0; i < length; i++) {
+        buffer[i] = payload.charCodeAt(i);
     }
-    assert_equals(results.length, 1, `bad response: '${text}'`);
-    const result = results[0];
-    
-    assert_equals(result.error, expectedError, 'error recorded in stash');
-    return result;
-  }
-  assert_true(false, 'timeout');
+
+    return buffer;
+}
+
+
+function CreateEmptyFormDataPayload() {
+    if (self.document === undefined) {
+        return null;
+    }
+
+    return new FormData();
+}
+
+
+function CreateFormDataFromPayload(payload) {
+    if (self.document === undefined) {
+        return null;
+    }
+
+    var formData = new FormData();
+    formData.append("payload", payload);
+    return formData;
+}
+
+
+
+
+
+
+
+function runTests(testCases, suffix = '', buildUrl = self.buildUrl, sendData = self.sendData) {
+    for (const testCase of testCases) {
+        const id = token();
+        promise_test((test) => {
+            const url = buildUrl(id);
+            assert_true(sendData(url, testCase.data), 'sendBeacon should succeed');
+            return waitForResult(id);
+        }, `Verify 'navigator.sendbeacon()' successfully sends for variant: ${testCase.name}${suffix}`);
+    };
+}
+
+function buildUrl(id) {
+    const baseUrl = "http://{{host}}:{{ports[http][0]}}";
+    return `${baseUrl}/beacon/resources/beacon.py?cmd=store&id=${id}`;
+}
+
+
+
+
+
+
+
+function sendData(url, payload) {
+    return self.navigator.sendBeacon(url, payload);
+}
+
+
+async function waitForResult(id) {
+    const url = `resources/beacon.py?cmd=stat&id=${id}`;
+    for (let i = 0; i < 30; ++i) {
+        const response = await fetch(url);
+        const text = await response.text();
+        const results = JSON.parse(text);
+
+        if (results.length === 0) {
+          await new Promise(resolve => step_timeout(resolve, 100));
+          continue;
+        }
+        assert_equals(results.length, 1, `bad response: '${text}'`);;
+        
+        assert_equals(results[0].error, null, "'sendbeacon' data must not fail validation");
+        return;
+    }
+    assert_true(false, 'timeout');
+}
+
+
+
+
+function runSendInIframeAndNavigateTests() {
+    var iframe = document.createElement("iframe");
+    iframe.id = "iframe";
+    iframe.onload = function() {
+        
+        iframe.onload = null;
+        function sendData(url, payload) {
+            return iframe.contentWindow.navigator.sendBeacon(url, payload);
+        }
+        runTests(sampleTests, '-NAVIGATE', self.buildUrl, sendData);
+        
+        iframe.contentWindow.location = "http://{{host}}:{{ports[http][0]}}/";
+    };
+
+    iframe.srcdoc = '<html></html>';
+    document.body.appendChild(iframe);
 }

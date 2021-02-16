@@ -5,20 +5,6 @@
 
 
 
-
-const get_mismatched_component = function(p1, p2, epsilon = FLOAT_EPSILON) {
-  for (const v of ['x', 'y', 'z', 'w']) {
-    if (Math.abs(p1[v] - p2[v]) > epsilon) {
-      return v;
-    }
-  }
-
-  return null;
-}
-
-
-
-
 const assert_point_approx_equals = function(p1, p2, epsilon = FLOAT_EPSILON, prefix = "") {
   if (p1 == null && p2 == null) {
     return;
@@ -27,7 +13,13 @@ const assert_point_approx_equals = function(p1, p2, epsilon = FLOAT_EPSILON, pre
   assert_not_equals(p1, null, prefix + "p1 must be non-null");
   assert_not_equals(p2, null, prefix + "p2 must be non-null");
 
-  const mismatched_component = get_mismatched_component(p1, p2, epsilon);
+  let mismatched_component = null;
+  for (const v of ['x', 'y', 'z', 'w']) {
+    if (Math.abs(p1[v] - p2[v]) > epsilon) {
+      mismatched_component = v;
+      break;
+    }
+  }
 
   if (mismatched_component !== null) {
     let error_message = prefix + ' Point comparison failed.\n';
@@ -38,30 +30,6 @@ const assert_point_approx_equals = function(p1, p2, epsilon = FLOAT_EPSILON, pre
   }
 };
 
-const assert_orientation_approx_equals = function(q1, q2, epsilon = FLOAT_EPSILON, prefix = "") {
-  if (q1 == null && q2 == null) {
-    return;
-  }
-
-  assert_not_equals(q1, null, prefix + "q1 must be non-null");
-  assert_not_equals(q2, null, prefix + "q2 must be non-null");
-
-  const q2_flipped = flip_quaternion(q2);
-
-  const mismatched_component = get_mismatched_component(q1, q2, epsilon);
-  const mismatched_component_flipped = get_mismatched_component(q1, q2_flipped, epsilon);
-
-  if (mismatched_component !== null && mismatched_component_flipped !== null) {
-    
-    
-    let error_message = prefix + ' Orientation comparison failed.\n';
-    error_message += ` p1: {x: ${q1.x}, y: ${q1.y}, z: ${q1.z}, w: ${q1.w}}\n`;
-    error_message += ` p2: {x: ${q2.x}, y: ${q2.y}, z: ${q2.z}, w: ${q2.w}}\n`;
-    error_message += ` Difference in component ${mismatched_component} exceeded the given epsilon.\n`;
-    assert_approx_equals(q2[mismatched_component], q1[mismatched_component], epsilon, error_message);
-  }
-}
-
 
 
 
@@ -70,7 +38,13 @@ const assert_point_significantly_not_equals = function(p1, p2, epsilon = FLOAT_E
   assert_not_equals(p1, null, prefix + "p1 must be non-null");
   assert_not_equals(p2, null, prefix + "p2 must be non-null");
 
-  let mismatched_component = get_mismatched_component(p1, p2, epsilon);
+  let mismatched_component = null;
+  for (const v of ['x', 'y', 'z', 'w']) {
+    if (Math.abs(p1[v] - p2[v]) > epsilon) {
+      mismatched_component = v;
+      break;
+    }
+  }
 
   if (mismatched_component === null) {
     let error_message = prefix + ' Point comparison failed.\n';
@@ -93,7 +67,7 @@ const assert_transform_approx_equals = function(t1, t2, epsilon = FLOAT_EPSILON,
   assert_not_equals(t2, null, prefix + "t2 must be non-null");
 
   assert_point_approx_equals(t1.position, t2.position, epsilon, prefix + "positions must be equal");
-  assert_orientation_approx_equals(t1.orientation, t2.orientation, epsilon, prefix + "orientations must be equal");
+  assert_point_approx_equals(t1.orientation, t2.orientation, epsilon, prefix + "orientations must be equal");
 };
 
 
