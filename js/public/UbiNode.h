@@ -294,7 +294,7 @@ class BaseStackFrame {
   
   
   
-  virtual MOZ_MUST_USE bool constructSavedFrameStack(
+  [[nodiscard]] virtual bool constructSavedFrameStack(
       JSContext* cx, MutableHandleObject outSavedFrameStack) const = 0;
 
   

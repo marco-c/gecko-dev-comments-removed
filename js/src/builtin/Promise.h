@@ -84,7 +84,7 @@ enum class UnhandledRejectionBehavior { Ignore, Report };
 
 
 
-extern MOZ_MUST_USE bool ReactToUnwrappedPromise(
+[[nodiscard]] extern bool ReactToUnwrappedPromise(
     JSContext* cx, JS::Handle<PromiseObject*> unwrappedPromise,
     JS::Handle<JSObject*> onFulfilled_, JS::Handle<JSObject*> onRejected_,
     UnhandledRejectionBehavior behavior);
@@ -178,9 +178,9 @@ struct PromiseReactionRecordBuilder {
   
   
   
-  virtual MOZ_MUST_USE bool then(JSContext* cx, JS::Handle<JSObject*> resolve,
-                                 JS::Handle<JSObject*> reject,
-                                 JS::Handle<JSObject*> result) = 0;
+  [[nodiscard]] virtual bool then(JSContext* cx, JS::Handle<JSObject*> resolve,
+                                  JS::Handle<JSObject*> reject,
+                                  JS::Handle<JSObject*> result) = 0;
 
   
   
@@ -188,7 +188,7 @@ struct PromiseReactionRecordBuilder {
   
   
   
-  virtual MOZ_MUST_USE bool direct(
+  [[nodiscard]] virtual bool direct(
       JSContext* cx, JS::Handle<PromiseObject*> unwrappedPromise) = 0;
 
   
@@ -197,7 +197,7 @@ struct PromiseReactionRecordBuilder {
   
   
   
-  virtual MOZ_MUST_USE bool asyncFunction(
+  [[nodiscard]] virtual bool asyncFunction(
       JSContext* cx,
       JS::Handle<AsyncFunctionGeneratorObject*> unwrappedGenerator) = 0;
 
@@ -207,7 +207,7 @@ struct PromiseReactionRecordBuilder {
   
   
   
-  virtual MOZ_MUST_USE bool asyncGenerator(
+  [[nodiscard]] virtual bool asyncGenerator(
       JSContext* cx, JS::Handle<AsyncGeneratorObject*> unwrappedGenerator) = 0;
 };
 

@@ -1,12 +1,12 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * JS bytecode descriptors, disassemblers, and (expression) decompilers.
- */
+
+
+
+
+
+
+
+
 
 #include "vm/BytecodeUtil-inl.h"
 
@@ -29,13 +29,13 @@
 #include "jstypes.h"
 
 #include "frontend/BytecodeCompiler.h"
-#include "frontend/SourceNotes.h"  // SrcNote, SrcNoteType, SrcNoteIterator
+#include "frontend/SourceNotes.h"  
 #include "gc/PublicIterators.h"
-#include "jit/IonScript.h"  // IonBlockCounts
+#include "jit/IonScript.h"  
 #include "js/CharacterEncoding.h"
 #include "js/experimental/CodeCoverage.h"
-#include "js/friend/DumpFunctions.h"  // js::DumpPC, js::DumpScript
-#include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
+#include "js/friend/DumpFunctions.h"  
+#include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"
 #include "js/Symbol.h"
 #include "util/DifferentialTesting.h"
@@ -43,11 +43,11 @@
 #include "util/StringBuffer.h"
 #include "util/Text.h"
 #include "vm/BuiltinObjectKind.h"
-#include "vm/BytecodeIterator.h"  // for AllBytecodesIterable
+#include "vm/BytecodeIterator.h"  
 #include "vm/BytecodeLocation.h"
 #include "vm/CodeCoverage.h"
 #include "vm/EnvironmentObject.h"
-#include "vm/FrameIter.h"  // js::{,Script}FrameIter
+#include "vm/FrameIter.h"  
 #include "vm/JSAtom.h"
 #include "vm/JSContext.h"
 #include "vm/JSFunction.h"
@@ -57,7 +57,7 @@
 #include "vm/Printer.h"
 #include "vm/Realm.h"
 #include "vm/Shape.h"
-#include "vm/ToSource.h"  // js::ValueToSource
+#include "vm/ToSource.h"  
 
 #include "gc/GC-inl.h"
 #include "vm/BytecodeIterator-inl.h"
@@ -71,9 +71,9 @@ using namespace js;
 
 using js::frontend::IsIdentifier;
 
-/*
- * Index limit must stay within 32 bits.
- */
+
+
+
 static_assert(sizeof(uint32_t) * CHAR_BIT >= INDEX_LIMIT_LOG2 + 1);
 
 const JSCodeSpec js::CodeSpecTable[] = {
@@ -83,35 +83,35 @@ const JSCodeSpec js::CodeSpecTable[] = {
 #undef MAKE_CODESPEC
 };
 
-/*
- * Each element of the array is either a source literal associated with JS
- * bytecode or null.
- */
+
+
+
+
 static const char* const CodeToken[] = {
 #define TOKEN(op, op_snake, token, ...) token,
     FOR_EACH_OPCODE(TOKEN)
 #undef TOKEN
 };
 
-/*
- * Array of JS bytecode names used by PC count JSON, DEBUG-only Disassemble
- * and JIT debug spew.
- */
+
+
+
+
 const char* const js::CodeNameTable[] = {
 #define OPNAME(op, ...) #op,
     FOR_EACH_OPCODE(OPNAME)
 #undef OPNAME
 };
 
-/************************************************************************/
+
 
 static bool DecompileArgumentFromStack(JSContext* cx, int formalIndex,
                                        UniqueChars* res);
 
-/* static */ const char PCCounts::numExecName[] = "interp";
+ const char PCCounts::numExecName[] = "interp";
 
-static MOZ_MUST_USE bool DumpIonScriptCounts(Sprinter* sp, HandleScript script,
-                                             jit::IonScriptCounts* ionCounts) {
+[[nodiscard]] static bool DumpIonScriptCounts(Sprinter* sp, HandleScript script,
+                                              jit::IonScriptCounts* ionCounts) {
   if (!sp->jsprintf("IonScript [%zu blocks]:\n", ionCounts->numBlocks())) {
     return false;
   }
@@ -146,11 +146,11 @@ static MOZ_MUST_USE bool DumpIonScriptCounts(Sprinter* sp, HandleScript script,
   return true;
 }
 
-static MOZ_MUST_USE bool DumpPCCounts(JSContext* cx, HandleScript script,
-                                      Sprinter* sp) {
+[[nodiscard]] static bool DumpPCCounts(JSContext* cx, HandleScript script,
+                                       Sprinter* sp) {
   MOZ_ASSERT(script->hasScriptCounts());
 
-  // Ensure the Disassemble1 call below does not discard the script counts.
+  
   gc::AutoSuppressGC suppress(cx);
 
 #ifdef DEBUG
@@ -227,29 +227,29 @@ bool js::DumpRealmPCCounts(JSContext* cx) {
   return true;
 }
 
-/////////////////////////////////////////////////////////////////////
-// Bytecode Parser
-/////////////////////////////////////////////////////////////////////
 
-// Stores the information about the stack slot, where the value comes from.
-// Elements of BytecodeParser::Bytecode.{offsetStack,offsetStackAfter} arrays.
+
+
+
+
+
 class OffsetAndDefIndex {
-  // The offset of the PC that pushed the value for this slot.
+  
   uint32_t offset_;
 
-  // The index in `ndefs` for the PC (0-origin)
+  
   uint8_t defIndex_;
 
   enum : uint8_t {
     Normal = 0,
 
-    // Ignored this value in the expression decompilation.
-    // Used by JSOp::NopDestructuring.  See BytecodeParser::simulateOp.
+    
+    
     Ignored,
 
-    // The value in this slot comes from 2 or more paths.
-    // offset_ and defIndex_ holds the information for the path that
-    // reaches here first.
+    
+    
+    
     Merged,
   } type_;
 
@@ -282,7 +282,7 @@ class OffsetAndDefIndex {
     type_ = Normal;
   }
 
-  // Keep offset_ and defIndex_ values for stack dump.
+  
   void setMerged() { type_ = Merged; }
   void setIgnored() { type_ = Ignored; }
 
@@ -319,28 +319,28 @@ class BytecodeParser {
           stackDepthAfter(0),
           offsetStackAfter(nullptr),
           jumpOrigins(alloc)
-#endif /* defined(DEBUG) || defined(JS_JITSPEW) */
+#endif 
     {
     }
 
-    // Whether this instruction has been analyzed to get its output defines
-    // and stack.
+    
+    
     bool parsed;
 
-    // Stack depth before this opcode.
+    
     uint32_t stackDepth;
 
-    // Pointer to array of |stackDepth| offsets.  An element at position N
-    // in the array is the offset of the opcode that defined the
-    // corresponding stack slot.  The top of the stack is at position
-    // |stackDepth - 1|.
+    
+    
+    
+    
     OffsetAndDefIndex* offsetStack;
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
-    // stack depth after this opcode.
+    
     uint32_t stackDepthAfter;
 
-    // Pointer to array of |stackDepthAfter| offsets.
+    
     OffsetAndDefIndex* offsetStackAfter;
 
     struct JumpInfo {
@@ -350,10 +350,10 @@ class BytecodeParser {
       JumpInfo(uint32_t from_, JumpKind kind_) : from(from_), kind(kind_) {}
     };
 
-    // A list of offsets of the bytecode that jumps to this bytecode,
-    // exclusing previous bytecode.
+    
+    
     Vector<JumpInfo, 0, LifoAllocPolicy<Fallible>> jumpOrigins;
-#endif /* defined(DEBUG) || defined(JS_JITSPEW) */
+#endif 
 
     bool captureOffsetStack(LifoAlloc& alloc, const OffsetAndDefIndex* stack,
                             uint32_t depth) {
@@ -390,13 +390,13 @@ class BytecodeParser {
     bool addJump(uint32_t from, JumpKind kind) {
       return jumpOrigins.append(JumpInfo(from, kind));
     }
-#endif /* defined(DEBUG) || defined(JS_JITSPEW) */
+#endif 
 
-    // When control-flow merges, intersect the stacks, marking slots that
-    // are defined by different offsets and/or defIndices merged.
-    // This is sufficient for forward control-flow.  It doesn't grok loops
-    // -- for that you would have to iterate to a fixed point -- but there
-    // shouldn't be operands on the stack at a loop back-edge anyway.
+    
+    
+    
+    
+    
     void mergeOffsetStack(const OffsetAndDefIndex* stack, uint32_t depth) {
       MOZ_ASSERT(depth == stackDepth);
       for (uint32_t n = 0; n < stackDepth; n++) {
@@ -420,9 +420,9 @@ class BytecodeParser {
   Bytecode** codeArray_;
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
-  // Dedicated mode for stack dump.
-  // Capture stack after each opcode, and also enable special handling for
-  // some opcodes to make stack transition clearer.
+  
+  
+  
   bool isStackDump;
 #endif
 
@@ -446,9 +446,9 @@ class BytecodeParser {
 #endif
 
   uint32_t stackDepthAtPC(uint32_t offset) const {
-    // Sometimes the code generator in debug mode asks about the stack depth
-    // of unreachable code (bug 932180 comment 22).  Assume that unreachable
-    // code has no operands on the stack.
+    
+    
+    
     return getCode(offset).stackDepth;
   }
   uint32_t stackDepthAtPC(const jsbytecode* pc) const {
@@ -512,7 +512,7 @@ class BytecodeParser {
   }
 
   void setStackDump() { isStackDump = true; }
-#endif /* defined(DEBUG) || defined(JS_JITSPEW) */
+#endif 
 
  private:
   LifoAlloc& alloc() { return alloc_; }
@@ -552,7 +552,7 @@ class BytecodeParser {
                       JumpKind kind);
 };
 
-}  // anonymous namespace
+}  
 
 uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
                                     OffsetAndDefIndex* offsetStack,
@@ -567,11 +567,11 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
 
 #ifdef DEBUG
   if (isStackDump) {
-    // Opcodes that modifies the object but keeps it on the stack while
-    // initialization should be listed here instead of switch below.
-    // For error message, they shouldn't be shown as the original object
-    // after adding properties.
-    // For stack dump, keeping the input is better.
+    
+    
+    
+    
+    
     switch (op) {
       case JSOp::InitHiddenProp:
       case JSOp::InitHiddenPropGetter:
@@ -581,7 +581,7 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
       case JSOp::InitPropGetter:
       case JSOp::InitPropSetter:
       case JSOp::SetFunName:
-        // Keep the second value.
+        
         MOZ_ASSERT(nuses == 2);
         MOZ_ASSERT(ndefs == 1);
         goto end;
@@ -593,7 +593,7 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
       case JSOp::InitHiddenElemGetter:
       case JSOp::InitHiddenElemSetter:
       case JSOp::InitLockedElem:
-        // Keep the third value.
+        
         MOZ_ASSERT(nuses == 3);
         MOZ_ASSERT(ndefs == 1);
         goto end;
@@ -602,11 +602,11 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
         break;
     }
   }
-#endif /* DEBUG */
+#endif 
 
-  // Mark the current offset as defining its values on the offset stack,
-  // unless it just reshuffles the stack.  In that case we want to preserve
-  // the opcode that generated the original value.
+  
+  
+  
   switch (op) {
     default:
       for (uint32_t n = 0; n != ndefs; ++n) {
@@ -615,12 +615,12 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
       break;
 
     case JSOp::NopDestructuring:
-      // Poison the last offset to not obfuscate the error message.
+      
       offsetStack[stackDepth - 1].setIgnored();
       break;
 
     case JSOp::Case:
-      // Keep the switch value.
+      
       MOZ_ASSERT(ndefs == 1);
       break;
 
@@ -693,19 +693,19 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
     case JSOp::InitAliasedLexical:
     case JSOp::CheckLexical:
     case JSOp::CheckAliasedLexical:
-      // Keep the top value.
+      
       MOZ_ASSERT(nuses == 1);
       MOZ_ASSERT(ndefs == 1);
       break;
 
     case JSOp::InitHomeObject:
-      // Pop the top value, keep the other value.
+      
       MOZ_ASSERT(nuses == 2);
       MOZ_ASSERT(ndefs == 1);
       break;
 
     case JSOp::CheckResumeKind:
-      // Pop the top two values, keep the other value.
+      
       MOZ_ASSERT(nuses == 3);
       MOZ_ASSERT(ndefs == 1);
       break;
@@ -716,7 +716,7 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
     case JSOp::StrictSetGName:
     case JSOp::StrictSetName:
     case JSOp::StrictSetProp:
-      // Keep the top value, removing other 1 value.
+      
       MOZ_ASSERT(nuses == 2);
       MOZ_ASSERT(ndefs == 1);
       offsetStack[stackDepth] = offsetStack[stackDepth + 1];
@@ -724,7 +724,7 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
 
     case JSOp::SetPropSuper:
     case JSOp::StrictSetPropSuper:
-      // Keep the top value, removing other 2 values.
+      
       MOZ_ASSERT(nuses == 3);
       MOZ_ASSERT(ndefs == 1);
       offsetStack[stackDepth] = offsetStack[stackDepth + 2];
@@ -732,7 +732,7 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
 
     case JSOp::SetElemSuper:
     case JSOp::StrictSetElemSuper:
-      // Keep the top value, removing other 3 values.
+      
       MOZ_ASSERT(nuses == 4);
       MOZ_ASSERT(ndefs == 1);
       offsetStack[stackDepth] = offsetStack[stackDepth + 3];
@@ -742,14 +742,14 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
     case JSOp::IsNoIter:
     case JSOp::MoreIter:
     case JSOp::OptimizeSpreadCall:
-      // Keep the top value and push one more value.
+      
       MOZ_ASSERT(nuses == 1);
       MOZ_ASSERT(ndefs == 2);
       offsetStack[stackDepth + 1].set(offset, 1);
       break;
 
     case JSOp::CheckPrivateField:
-      // Keep the top two values, and push one new value.
+      
       MOZ_ASSERT(nuses == 2);
       MOZ_ASSERT(ndefs == 3);
       offsetStack[stackDepth + 2].set(offset, 2);
@@ -758,7 +758,7 @@ uint32_t BytecodeParser::simulateOp(JSOp op, uint32_t offset,
 
 #ifdef DEBUG
 end:
-#endif /* DEBUG */
+#endif 
 
   stackDepth += ndefs;
   return stackDepth;
@@ -799,9 +799,9 @@ bool BytecodeParser::addJump(uint32_t offset, uint32_t stackDepth,
     }
   }
 
-  // If this is a backedge, assert we parsed the target JSOp::LoopHead.
+  
   MOZ_ASSERT_IF(offset < currentOffset, codeArray_[offset]->parsed);
-#endif /* DEBUG */
+#endif 
 
   return true;
 }
@@ -819,14 +819,14 @@ bool BytecodeParser::parse() {
 
   mozilla::PodZero(codeArray_, length);
 
-  // Fill in stack depth and definitions at initial bytecode.
+  
   Bytecode* startcode = alloc().new_<Bytecode>(alloc());
   if (!startcode) {
     reportOOM();
     return false;
   }
 
-  // Fill in stack depth and definitions at initial bytecode.
+  
   OffsetAndDefIndex* offsetStack =
       alloc().newArray<OffsetAndDefIndex>(maximumStackDepth());
   if (maximumStackDepth() && !offsetStack) {
@@ -842,20 +842,20 @@ bool BytecodeParser::parse() {
     Bytecode* code = maybeCode(offset);
     jsbytecode* pc = script_->offsetToPC(offset);
 
-    // Next bytecode to analyze.
+    
     nextOffset = offset + GetBytecodeLength(pc);
 
     MOZ_ASSERT(*pc < JSOP_LIMIT);
     JSOp op = JSOp(*pc);
 
     if (!code) {
-      // Haven't found a path by which this bytecode is reachable.
+      
       continue;
     }
 
-    // On a jump target, we reload the offsetStack saved for the current
-    // bytecode, as it contains either the original offset stack, or the
-    // merged offset stack.
+    
+    
+    
     if (BytecodeIsJumpTarget(op)) {
       for (uint32_t n = 0; n < code->stackDepth; ++n) {
         offsetStack[n] = code->offsetStack[n];
@@ -863,7 +863,7 @@ bool BytecodeParser::parse() {
     }
 
     if (code->parsed) {
-      // No need to reparse.
+      
       continue;
     }
 
@@ -878,7 +878,7 @@ bool BytecodeParser::parse() {
         return false;
       }
     }
-#endif /* DEBUG */
+#endif 
 
     switch (op) {
       case JSOp::TableSwitch: {
@@ -909,11 +909,11 @@ bool BytecodeParser::parse() {
       }
 
       case JSOp::Try: {
-        // Everything between a try and corresponding catch or finally is
-        // conditional. Note that there is no problem with code which is skipped
-        // by a thrown exception but is not caught by a later handler in the
-        // same function: no more code will execute, and it does not matter what
-        // is defined.
+        
+        
+        
+        
+        
         for (const TryNote& tn : script_->trynotes()) {
           if (tn.start == offset + JSOpLength_Try) {
             uint32_t catchOffset = tn.start + tn.length;
@@ -937,9 +937,9 @@ bool BytecodeParser::parse() {
         break;
     }
 
-    // Check basic jump opcodes, which may or may not have a fallthrough.
+    
     if (IsJumpOpcode(op)) {
-      // Case instructions do not push the lvalue back when branching.
+      
       uint32_t newStackDepth = stackDepth;
       if (op == JSOp::Case) {
         newStackDepth--;
@@ -952,7 +952,7 @@ bool BytecodeParser::parse() {
       }
     }
 
-    // Handle any fallthrough from this opcode.
+    
     if (BytecodeFallsThrough(op)) {
       if (!recordBytecode(nextOffset, offsetStack, stackDepth)) {
         return false;
@@ -986,12 +986,12 @@ static unsigned Disassemble1(JSContext* cx, HandleScript script, jsbytecode* pc,
                              unsigned loc, bool lines,
                              const BytecodeParser* parser, Sprinter* sp);
 
-/*
- * If pc != nullptr, include a prefix indicating whether the PC is at the
- * current line. If showAll is true, include the source note type and the
- * entry stack depth.
- */
-static MOZ_MUST_USE bool DisassembleAtPC(
+
+
+
+
+
+[[nodiscard]] static bool DisassembleAtPC(
     JSContext* cx, JSScript* scriptArg, bool lines, const jsbytecode* pc,
     bool showAll, Sprinter* sp,
     DisassembleSkeptically skeptically = DisassembleSkeptically::No) {
@@ -1382,9 +1382,9 @@ static unsigned Disassemble1(JSContext* cx, HandleScript script, jsbytecode* pc,
 
         const OffsetAndDefIndex& offsetAndDefIndex =
             parser->offsetForStackOperandAfterPC(script->pcToOffset(pc), i);
-        // This will decompile the stack for the same PC many times.
-        // We'll avoid optimizing it since this is a testing function
-        // and it won't be worth managing cached expression here.
+        
+        
+        
         if (!DecompileAtPCForStackDump(cx, script, offsetAndDefIndex, sp)) {
           return false;
         }
@@ -1530,7 +1530,7 @@ static unsigned Disassemble1(JSContext* cx, HandleScript script, jsbytecode* pc,
         return 0;
       }
 
-      // Display stack dump before diplaying the offsets for each case.
+      
       if (!dumpStack()) {
         return 0;
       }
@@ -1648,40 +1648,40 @@ unsigned js::Disassemble1(JSContext* cx, JS::Handle<JSScript*> script,
   return Disassemble1(cx, script, pc, loc, lines, nullptr, sp);
 }
 
-#endif /* defined(DEBUG) || defined(JS_JITSPEW) */
+#endif 
 
 namespace {
-/*
- * The expression decompiler is invoked by error handling code to produce a
- * string representation of the erroring expression. As it's only a debugging
- * tool, it only supports basic expressions. For anything complicated, it simply
- * puts "(intermediate value)" into the error result.
- *
- * Here's the basic algorithm:
- *
- * 1. Find the stack location of the value whose expression we wish to
- * decompile. The error handler can explicitly pass this as an
- * argument. Otherwise, we search backwards down the stack for the offending
- * value.
- *
- * 2. Instantiate and run a BytecodeParser for the current frame. This creates a
- * stack of pcs parallel to the interpreter stack; given an interpreter stack
- * location, the corresponding pc stack location contains the opcode that pushed
- * the value in the interpreter. Now, with the result of step 1, we have the
- * opcode responsible for pushing the value we want to decompile.
- *
- * 3. Pass the opcode to decompilePC. decompilePC is the main decompiler
- * routine, responsible for a string representation of the expression that
- * generated a certain stack location. decompilePC looks at one opcode and
- * returns the JS source equivalent of that opcode.
- *
- * 4. Expressions can, of course, contain subexpressions. For example, the
- * literals "4" and "5" are subexpressions of the addition operator in "4 +
- * 5". If we need to decompile a subexpression, we call decompilePC (step 2)
- * recursively on the operands' pcs. The result is a depth-first traversal of
- * the expression tree.
- *
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct ExpressionDecompiler {
   JSContext* cx;
   RootedScript script;
@@ -1689,9 +1689,9 @@ struct ExpressionDecompiler {
   Sprinter sprinter;
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
-  // Dedicated mode for stack dump.
-  // Generates an expression for stack dump, including internal state,
-  // and also disables special handling for self-hosted code.
+  
+  
+  
   bool isStackDump;
 #endif
 
@@ -1735,7 +1735,7 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
     MOZ_ASSERT(defIndex == 0);
     MOZ_ASSERT(CodeSpec(op).ndefs == 1);
 
-    // Handle simple cases of binary and unary operators.
+    
     switch (CodeSpec(op).nuses) {
       case 2: {
         const SrcNote* sn = GetSrcNote(cx, script, pc);
@@ -1765,28 +1765,28 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
     case JSOp::GetArg: {
       unsigned slot = GET_ARGNO(pc);
 
-      // For self-hosted scripts that are called from non-self-hosted code,
-      // decompiling the parameter name in the self-hosted script is
-      // unhelpful. Decompile the argument name instead.
+      
+      
+      
       if (script->selfHosted()
 #ifdef DEBUG
-          // For stack dump, argument name is not necessary.
+          
           && !isStackDump
-#endif /* DEBUG */
+#endif 
       ) {
         UniqueChars result;
         if (!DecompileArgumentFromStack(cx, slot, &result)) {
           return false;
         }
 
-        // Note that decompiling the argument in the parent frame might
-        // not succeed.
+        
+        
         if (result) {
           return write(result.get());
         }
 
-        // If it fails, do not return parameter name and let the caller
-        // fallback.
+        
+        
         return write("(intermediate value)");
       }
 
@@ -1827,10 +1827,10 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
     }
     case JSOp::SetElem:
     case JSOp::StrictSetElem:
-      // NOTE: We don't show the right hand side of the operation because
-      // it's used in error messages like: "a[0] is not readable".
-      //
-      // We could though.
+      
+      
+      
+      
       return decompilePCForStackOperand(pc, -3) && write("[") &&
              decompilePCForStackOperand(pc, -2) && write("]");
 
@@ -1873,8 +1873,8 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
     case JSOp::Undefined:
       return write(js_undefined_str);
     case JSOp::GlobalThis:
-      // |this| could convert to a very long object initialiser, so cite it by
-      // its keyword name.
+      
+      
       return write(js_this_str);
     case JSOp::NewTarget:
       return write("new.target");
@@ -1953,7 +1953,7 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
       }
       MOZ_ASSERT(defIndex == 1);
 #ifdef DEBUG
-      // INDEX won't be be exposed to error message.
+      
       if (isStackDump) {
         return write("INDEX");
       }
@@ -1972,7 +1972,7 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
 
     case JSOp::BigInt:
 #if defined(DEBUG) || defined(JS_JITSPEW)
-      // BigInt::dump() only available in this configuration.
+      
       script->getBigInt(pc)->dump(sprinter);
       return !sprinter.hadOutOfMemory();
 #else
@@ -1990,7 +1990,7 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
 
 #ifdef DEBUG
   if (isStackDump) {
-    // Special decompilation for stack dump.
+    
     switch (op) {
       case JSOp::Arguments:
         return write("arguments");
@@ -2045,12 +2045,12 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
         return write("HOLE");
 
       case JSOp::IsGenClosing:
-        // For stack dump, defIndex == 0 is not used.
+        
         MOZ_ASSERT(defIndex == 1);
         return write("ISGENCLOSING");
 
       case JSOp::IsNoIter:
-        // For stack dump, defIndex == 0 is not used.
+        
         MOZ_ASSERT(defIndex == 1);
         return write("ISNOITER");
 
@@ -2068,7 +2068,7 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
         return write("ASYNCITER");
 
       case JSOp::MoreIter:
-        // For stack dump, defIndex == 0 is not used.
+        
         MOZ_ASSERT(defIndex == 1);
         return write("MOREITER");
 
@@ -2081,7 +2081,7 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
         return write("OBJ");
 
       case JSOp::OptimizeSpreadCall:
-        // For stack dump, defIndex == 0 is not used.
+        
         MOZ_ASSERT(defIndex == 1);
         return write("OPTIMIZED");
 
@@ -2107,9 +2107,9 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
       case JSOp::InitialYield:
       case JSOp::Await:
       case JSOp::Yield:
-        // Printing "yield SOMETHING" is confusing since the operand doesn't
-        // match to the syntax, since the stack operand for "yield 10" is
-        // the result object, not 10.
+        
+        
+        
         if (defIndex == 0) {
           return write("RVAL");
         }
@@ -2134,7 +2134,7 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
     }
     return write("<unknown>");
   }
-#endif /* DEBUG */
+#endif 
 
   return write("(intermediate value)");
 }
@@ -2165,7 +2165,7 @@ bool ExpressionDecompiler::decompilePC(
 
       return true;
     }
-#endif /* DEBUG */
+#endif 
     return write("(intermediate value)");
   }
 
@@ -2205,7 +2205,7 @@ JSAtom* ExpressionDecompiler::getArg(unsigned slot) {
         return fi.name();
       }
 
-      // Destructured arguments have no single binding name.
+      
       static const char destructuredParam[] = "(destructured parameter)";
       return Atomize(cx, destructuredParam, strlen(destructuredParam));
     }
@@ -2225,13 +2225,13 @@ UniqueChars ExpressionDecompiler::getOutput() {
   return res;
 }
 
-}  // anonymous namespace
+}  
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
 static bool DecompileAtPCForStackDump(
     JSContext* cx, HandleScript script,
     const OffsetAndDefIndex& offsetAndDefIndex, Sprinter* sp) {
-  // The expression decompiler asserts the script is in the current realm.
+  
   AutoRealm ar(cx, script);
 
   LifoAllocScope allocScope(&cx->tempLifoAlloc());
@@ -2258,7 +2258,7 @@ static bool DecompileAtPCForStackDump(
 
   return sp->put(result.get());
 }
-#endif /* defined(DEBUG) || defined(JS_JITSPEW) */
+#endif 
 
 static bool FindStartPC(JSContext* cx, const FrameIter& iter,
                         const BytecodeParser& parser, int spindex,
@@ -2275,17 +2275,17 @@ static bool FindStartPC(JSContext* cx, const FrameIter& iter,
   if (spindex == JSDVG_SEARCH_STACK) {
     size_t index = iter.numFrameSlots();
 
-    // The decompiler may be called from inside functions that are not
-    // called from script, but via the C++ API directly, such as
-    // Invoke. In that case, the youngest script frame may have a
-    // completely unrelated pc and stack depth, so we give up.
+    
+    
+    
+    
     if (index < size_t(parser.stackDepthAtPC(current))) {
       return true;
     }
 
-    // We search from fp->sp to base to find the most recently calculated
-    // value matching v under assumption that it is the value that caused
-    // the exception.
+    
+    
+    
     int stackHits = 0;
     Value s;
     do {
@@ -2295,9 +2295,9 @@ static bool FindStartPC(JSContext* cx, const FrameIter& iter,
       s = iter.frameSlotValue(--index);
     } while (s != v || stackHits++ != skipStackHits);
 
-    // If the current PC has fewer values on the stack than the index we are
-    // looking for, the blamed value must be one pushed by the current
-    // bytecode (e.g. JSOp::MoreIter), so restore *valuepc.
+    
+    
+    
     if (index < size_t(parser.stackDepthAtPC(current))) {
       *valuepc = parser.pcForStackOperand(current, index, defIndex);
     } else {
@@ -2318,11 +2318,11 @@ static bool DecompileExpressionFromStack(JSContext* cx, int spindex,
 
   *res = nullptr;
 
-  /*
-   * Give up if we need deterministic behavior for differential testing.
-   * IonMonkey doesn't use InterpreterFrames and this ensures we get the same
-   * error messages.
-   */
+  
+
+
+
+
   if (js::SupportDifferentialTesting()) {
     return true;
   }
@@ -2338,10 +2338,10 @@ static bool DecompileExpressionFromStack(JSContext* cx, int spindex,
     return true;
   }
 
-  /*
-   * FIXME: Fall back if iter.isIon(), since the stack snapshot may be for the
-   * previous pc (see bug 831120).
-   */
+  
+
+
+
   if (frameIter.isIon()) {
     return true;
   }
@@ -2351,7 +2351,7 @@ static bool DecompileExpressionFromStack(JSContext* cx, int spindex,
 
   MOZ_ASSERT(script->containsPC(valuepc));
 
-  // Give up if in prologue.
+  
   if (valuepc < script->main()) {
     return true;
   }
@@ -2399,7 +2399,7 @@ UniqueChars js::DecompileValueGenerator(JSContext* cx, int spindex,
   if (!fallback) {
     if (v.isUndefined()) {
       return DuplicateString(
-          cx, js_undefined_str);  // Prevent users from seeing "(void 0)"
+          cx, js_undefined_str);  
     }
     fallback = ValueToSource(cx, v);
     if (!fallback) {
@@ -2416,23 +2416,23 @@ static bool DecompileArgumentFromStack(JSContext* cx, int formalIndex,
 
   *res = nullptr;
 
-  /* See note in DecompileExpressionFromStack. */
+  
   if (js::SupportDifferentialTesting()) {
     return true;
   }
 
-  /*
-   * Settle on the nearest script frame, which should be the builtin that
-   * called the intrinsic.
-   */
+  
+
+
+
   FrameIter frameIter(cx);
   MOZ_ASSERT(!frameIter.done());
   MOZ_ASSERT(frameIter.script()->selfHosted());
 
-  /*
-   * Get the second-to-top frame, the non-self-hosted caller of the builtin
-   * that called the intrinsic.
-   */
+  
+
+
+
   ++frameIter;
   if (frameIter.done() || !frameIter.hasScript() ||
       frameIter.script()->selfHosted() || frameIter.realm() != cx->realm()) {
@@ -2448,7 +2448,7 @@ static bool DecompileArgumentFromStack(JSContext* cx, int formalIndex,
     return true;
   }
 
-  /* Don't handle getters, setters or calls from fun.call/fun.apply. */
+  
   JSOp op = JSOp(*current);
   if (op != JSOp::Call && op != JSOp::CallIgnoresRv && op != JSOp::New) {
     return true;
@@ -2496,7 +2496,7 @@ JSString* js::DecompileArgument(JSContext* cx, int formalIndex, HandleValue v) {
     }
   }
   if (v.isUndefined()) {
-    return cx->names().undefined;  // Prevent users from seeing "(void 0)"
+    return cx->names().undefined;  
   }
 
   return ValueToSource(cx, v);
@@ -2504,8 +2504,8 @@ JSString* js::DecompileArgument(JSContext* cx, int formalIndex, HandleValue v) {
 
 extern bool js::IsValidBytecodeOffset(JSContext* cx, JSScript* script,
                                       size_t offset) {
-  // This could be faster (by following jump instructions if the target
-  // is <= offset).
+  
+  
   for (BytecodeRange r(cx, script); !r.empty(); r.popFront()) {
     size_t here = r.frontOffset();
     if (here >= offset) {
@@ -2515,29 +2515,29 @@ extern bool js::IsValidBytecodeOffset(JSContext* cx, JSScript* script,
   return false;
 }
 
-/*
- * There are three possible PCCount profiling states:
- *
- * 1. None: Neither scripts nor the runtime have count information.
- * 2. Profile: Active scripts have count information, the runtime does not.
- * 3. Query: Scripts do not have count information, the runtime does.
- *
- * When starting to profile scripts, counting begins immediately, with all JIT
- * code discarded and recompiled with counts as necessary. Active interpreter
- * frames will not begin profiling until they begin executing another script
- * (via a call or return).
- *
- * The below API functions manage transitions to new states, according
- * to the table below.
- *
- *                                  Old State
- *                          -------------------------
- * Function                 None      Profile   Query
- * --------
- * StartPCCountProfiling    Profile   Profile   Profile
- * StopPCCountProfiling     None      Query     Query
- * PurgePCCounts            None      None      None
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static void ReleaseScriptCounts(JSRuntime* rt) {
   MOZ_ASSERT(rt->scriptAndCountsVector);
@@ -2613,8 +2613,8 @@ JS_FRIEND_API size_t js::GetPCCountScriptCount(JSContext* cx) {
   return rt->scriptAndCountsVector->length();
 }
 
-static MOZ_MUST_USE bool JSONStringProperty(Sprinter& sp, JSONPrinter& json,
-                                            const char* name, JSString* str) {
+[[nodiscard]] static bool JSONStringProperty(Sprinter& sp, JSONPrinter& json,
+                                             const char* name, JSString* str) {
   json.beginStringProperty(name);
   if (!JSONQuoteString(&sp, str)) {
     return false;
@@ -2733,8 +2733,8 @@ static bool GetPCCountJSON(JSContext* cx, const ScriptAndCounts& sac,
     size_t offset = script->pcToOffset(pc);
     JSOp op = JSOp(*pc);
 
-    // If the current instruction is a jump target,
-    // then update the number of hits.
+    
+    
     if (const PCCounts* counts = sac.maybeGetPCCounts(pc)) {
       hits = counts->numExec();
     }
@@ -2750,8 +2750,8 @@ static bool GetPCCountJSON(JSContext* cx, const ScriptAndCounts& sac,
       if (!ed.init()) {
         return false;
       }
-      // defIndex passed here is not used.
-      if (!ed.decompilePC(pc, /* defIndex = */ 0)) {
+      
+      if (!ed.decompilePC(pc,  0)) {
         return false;
       }
       UniqueChars text = ed.getOutput();
@@ -2778,8 +2778,8 @@ static bool GetPCCountJSON(JSContext* cx, const ScriptAndCounts& sac,
 
     json.endObject();
 
-    // If the current instruction has thrown,
-    // then decrement the hit counts with the number of throws.
+    
+    
     if (const PCCounts* counts = sac.maybeGetThrowCounts(pc)) {
       hits -= counts->numExec();
     }
@@ -2887,14 +2887,14 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
                              GenericPrinter& out) {
   AutoRealmUnchecked ar(cx, realm);
 
-  // Collect the list of scripts which are part of the current realm.
+  
 
   MOZ_RELEASE_ASSERT(
       coverage::IsLCovEnabled(),
       "Coverage must be enabled for process before generating LCov info");
 
-  // Hold the scripts that we have already flushed, to avoid flushing them
-  // twice.
+  
+  
   using JSScriptSet = GCHashSet<JSScript*>;
   Rooted<JSScriptSet> scriptsDone(cx, JSScriptSet(cx));
 
@@ -2912,13 +2912,13 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
     return true;
   }
 
-  // Ensure the LCovRealm exists to collect info into.
+  
   coverage::LCovRealm* lcovRealm = realm->lcovRealm();
   if (!lcovRealm) {
     return false;
   }
 
-  // Collect code coverage info for one realm.
+  
   do {
     RootedScript script(cx, queue.popCopy());
     RootedFunction fun(cx);
@@ -2942,10 +2942,10 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
       continue;
     }
 
-    // Iterate from the last to the first object in order to have
-    // the functions them visited in the opposite order when popping
-    // elements from the stack of remaining scripts, such that the
-    // functions are more-less listed with increasing line numbers.
+    
+    
+    
+    
     auto gcthings = script->gcthings();
     for (JS::GCCellPtr gcThing : mozilla::Reversed(gcthings)) {
       if (!gcThing.is<JSObject>()) {
@@ -2958,13 +2958,13 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
       }
       fun = &obj->as<JSFunction>();
 
-      // Ignore asm.js functions
+      
       if (!fun->isInterpreted()) {
         continue;
       }
 
-      // Queue the script in the list of script associated to the
-      // current source.
+      
+      
       JSScript* childScript = JSFunction::getOrCreateScript(cx, fun);
       if (!childScript || !queue.append(childScript)) {
         return false;

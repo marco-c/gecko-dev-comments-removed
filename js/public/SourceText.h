@@ -138,9 +138,9 @@ class SourceText final {
 
 
 
-  MOZ_IS_CLASS_INIT MOZ_MUST_USE bool init(JSContext* cx, const Unit* units,
-                                           size_t unitsLength,
-                                           SourceOwnership ownership) {
+  [[nodiscard]] MOZ_IS_CLASS_INIT bool init(JSContext* cx, const Unit* units,
+                                            size_t unitsLength,
+                                            SourceOwnership ownership) {
     MOZ_ASSERT_IF(units == nullptr, unitsLength == 0);
 
     
@@ -182,9 +182,9 @@ class SourceText final {
   template <typename Char,
             typename = std::enable_if_t<std::is_same_v<Char, CharT> &&
                                         !std::is_same_v<Char, Unit>>>
-  MOZ_IS_CLASS_INIT MOZ_MUST_USE bool init(JSContext* cx, const Char* chars,
-                                           size_t charsLength,
-                                           SourceOwnership ownership) {
+  [[nodiscard]] MOZ_IS_CLASS_INIT bool init(JSContext* cx, const Char* chars,
+                                            size_t charsLength,
+                                            SourceOwnership ownership) {
     return init(cx, reinterpret_cast<const Unit*>(chars), charsLength,
                 ownership);
   }

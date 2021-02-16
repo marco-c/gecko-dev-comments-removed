@@ -94,8 +94,8 @@ class PluralRulesObject : public NativeObject {
 
 
 
-extern MOZ_MUST_USE bool intl_SelectPluralRule(JSContext* cx, unsigned argc,
-                                               JS::Value* vp);
+[[nodiscard]] extern bool intl_SelectPluralRule(JSContext* cx, unsigned argc,
+                                                JS::Value* vp);
 
 
 
@@ -107,8 +107,8 @@ extern MOZ_MUST_USE bool intl_SelectPluralRule(JSContext* cx, unsigned argc,
 
 
 
-extern MOZ_MUST_USE bool intl_GetPluralCategories(JSContext* cx, unsigned argc,
-                                                  JS::Value* vp);
+[[nodiscard]] extern bool intl_GetPluralCategories(JSContext* cx, unsigned argc,
+                                                   JS::Value* vp);
 
 }  
 

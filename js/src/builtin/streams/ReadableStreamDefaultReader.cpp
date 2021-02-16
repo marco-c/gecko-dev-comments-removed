@@ -115,9 +115,9 @@ bool ReadableStreamDefaultReader::constructor(JSContext* cx, unsigned argc,
 
 
 
-static MOZ_MUST_USE bool ReadableStreamDefaultReader_closed(JSContext* cx,
-                                                            unsigned argc,
-                                                            Value* vp) {
+[[nodiscard]] static bool ReadableStreamDefaultReader_closed(JSContext* cx,
+                                                             unsigned argc,
+                                                             Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -142,9 +142,9 @@ static MOZ_MUST_USE bool ReadableStreamDefaultReader_closed(JSContext* cx,
 
 
 
-static MOZ_MUST_USE bool ReadableStreamDefaultReader_cancel(JSContext* cx,
-                                                            unsigned argc,
-                                                            Value* vp) {
+[[nodiscard]] static bool ReadableStreamDefaultReader_cancel(JSContext* cx,
+                                                             unsigned argc,
+                                                             Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -177,9 +177,9 @@ static MOZ_MUST_USE bool ReadableStreamDefaultReader_cancel(JSContext* cx,
 
 
 
-static MOZ_MUST_USE bool ReadableStreamDefaultReader_read(JSContext* cx,
-                                                          unsigned argc,
-                                                          Value* vp) {
+[[nodiscard]] static bool ReadableStreamDefaultReader_read(JSContext* cx,
+                                                           unsigned argc,
+                                                           Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   

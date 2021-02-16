@@ -24,7 +24,7 @@ namespace js {
 class GlobalObject;
 class StringBuffer;
 
-extern MOZ_MUST_USE bool InitRuntimeNumberState(JSRuntime* rt);
+[[nodiscard]] extern bool InitRuntimeNumberState(JSRuntime* rt);
 
 
 extern void FinishRuntimeNumberState(JSRuntime* rt);
@@ -66,7 +66,7 @@ extern bool IsInteger(double d);
 
 
 
-extern MOZ_MUST_USE bool JS_FASTCALL
+[[nodiscard]] extern bool JS_FASTCALL
 NumberValueToStringBuffer(JSContext* cx, const Value& v, StringBuffer& sb);
 
 extern JSLinearString* IndexToString(JSContext* cx, uint32_t index);
@@ -134,7 +134,7 @@ enum class IntegerSeparatorHandling : bool { None, SkipUnderscore };
 
 
 template <typename CharT>
-extern MOZ_MUST_USE bool GetPrefixInteger(
+[[nodiscard]] extern bool GetPrefixInteger(
     JSContext* cx, const CharT* start, const CharT* end, int base,
     IntegerSeparatorHandling separatorHandling, const CharT** endp, double* dp);
 
@@ -153,7 +153,7 @@ inline const unsigned char* ToRawChars(const mozilla::Utf8Unit* units) {
 
 
 template <typename CharT>
-extern MOZ_MUST_USE bool GetFullInteger(
+[[nodiscard]] extern bool GetFullInteger(
     JSContext* cx, const CharT* start, const CharT* end, int base,
     IntegerSeparatorHandling separatorHandling, double* dp) {
   decltype(ToRawChars(start)) realEnd;
@@ -172,8 +172,8 @@ extern MOZ_MUST_USE bool GetFullInteger(
 
 
 template <typename CharT>
-extern MOZ_MUST_USE bool GetDecimalInteger(JSContext* cx, const CharT* start,
-                                           const CharT* end, double* dp);
+[[nodiscard]] extern bool GetDecimalInteger(JSContext* cx, const CharT* start,
+                                            const CharT* end, double* dp);
 
 
 
@@ -181,30 +181,31 @@ extern MOZ_MUST_USE bool GetDecimalInteger(JSContext* cx, const CharT* start,
 
 
 template <typename CharT>
-extern MOZ_MUST_USE bool GetDecimalNonInteger(JSContext* cx, const CharT* start,
-                                              const CharT* end, double* dp);
+[[nodiscard]] extern bool GetDecimalNonInteger(JSContext* cx,
+                                               const CharT* start,
+                                               const CharT* end, double* dp);
 
 template <typename CharT>
 bool CharsToNumber(JSContext* cx, const CharT* chars, size_t length,
                    double* result);
 
-extern MOZ_MUST_USE bool StringToNumber(JSContext* cx, JSString* str,
-                                        double* result);
+[[nodiscard]] extern bool StringToNumber(JSContext* cx, JSString* str,
+                                         double* result);
 
-extern MOZ_MUST_USE bool StringToNumberPure(JSContext* cx, JSString* str,
-                                            double* result);
-
-
-
-
-
-
-extern MOZ_MUST_USE bool MaybeStringToNumber(JSLinearString* str,
+[[nodiscard]] extern bool StringToNumberPure(JSContext* cx, JSString* str,
                                              double* result);
 
 
-MOZ_ALWAYS_INLINE MOZ_MUST_USE bool ToNumber(JSContext* cx,
-                                             JS::MutableHandleValue vp) {
+
+
+
+
+[[nodiscard]] extern bool MaybeStringToNumber(JSLinearString* str,
+                                              double* result);
+
+
+[[nodiscard]] MOZ_ALWAYS_INLINE bool ToNumber(JSContext* cx,
+                                              JS::MutableHandleValue vp) {
   if (vp.isNumber()) {
     return true;
   }
@@ -222,8 +223,8 @@ MOZ_ALWAYS_INLINE MOZ_MUST_USE bool ToNumber(JSContext* cx,
 bool ToNumericSlow(JSContext* cx, JS::MutableHandleValue vp);
 
 
-MOZ_ALWAYS_INLINE MOZ_MUST_USE bool ToNumeric(JSContext* cx,
-                                              JS::MutableHandleValue vp) {
+[[nodiscard]] MOZ_ALWAYS_INLINE bool ToNumeric(JSContext* cx,
+                                               JS::MutableHandleValue vp) {
   if (vp.isNumeric()) {
     return true;
   }
@@ -232,8 +233,8 @@ MOZ_ALWAYS_INLINE MOZ_MUST_USE bool ToNumeric(JSContext* cx,
 
 bool ToInt32OrBigIntSlow(JSContext* cx, JS::MutableHandleValue vp);
 
-MOZ_ALWAYS_INLINE MOZ_MUST_USE bool ToInt32OrBigInt(JSContext* cx,
-                                                    JS::MutableHandleValue vp) {
+[[nodiscard]] MOZ_ALWAYS_INLINE bool ToInt32OrBigInt(
+    JSContext* cx, JS::MutableHandleValue vp) {
   if (vp.isInt32()) {
     return true;
   }
@@ -255,9 +256,9 @@ MOZ_ALWAYS_INLINE MOZ_MUST_USE bool ToInt32OrBigInt(JSContext* cx,
 
 
 template <typename CharT>
-extern MOZ_MUST_USE bool js_strtod(JSContext* cx, const CharT* begin,
-                                   const CharT* end, const CharT** dEnd,
-                                   double* d);
+[[nodiscard]] extern bool js_strtod(JSContext* cx, const CharT* begin,
+                                    const CharT* end, const CharT** dEnd,
+                                    double* d);
 
 namespace js {
 
@@ -266,8 +267,8 @@ namespace js {
 
 
 template <typename CharT>
-extern MOZ_MUST_USE bool FullStringToDouble(JSContext* cx, const CharT* begin,
-                                            const CharT* end, double* d) {
+[[nodiscard]] extern bool FullStringToDouble(JSContext* cx, const CharT* begin,
+                                             const CharT* end, double* d) {
   decltype(ToRawChars(begin)) realEnd;
   if (js_strtod(cx, ToRawChars(begin), ToRawChars(end), &realEnd, d)) {
     MOZ_ASSERT(end == static_cast<const void*>(realEnd));
@@ -276,11 +277,11 @@ extern MOZ_MUST_USE bool FullStringToDouble(JSContext* cx, const CharT* begin,
   return false;
 }
 
-extern MOZ_MUST_USE bool ThisNumberValueForToLocaleString(JSContext* cx,
-                                                          unsigned argc,
-                                                          Value* vp);
+[[nodiscard]] extern bool ThisNumberValueForToLocaleString(JSContext* cx,
+                                                           unsigned argc,
+                                                           Value* vp);
 
-extern MOZ_MUST_USE bool num_valueOf(JSContext* cx, unsigned argc, Value* vp);
+[[nodiscard]] extern bool num_valueOf(JSContext* cx, unsigned argc, Value* vp);
 
 
 
@@ -314,8 +315,8 @@ static MOZ_ALWAYS_INLINE bool IsDefinitelyIndex(const Value& v,
 
 
 
-static MOZ_MUST_USE inline bool ToInteger(JSContext* cx, HandleValue v,
-                                          double* dp) {
+[[nodiscard]] static inline bool ToInteger(JSContext* cx, HandleValue v,
+                                           double* dp) {
   if (v.isInt32()) {
     *dp = v.toInt32();
     return true;
@@ -343,13 +344,13 @@ static MOZ_MUST_USE inline bool ToInteger(JSContext* cx, HandleValue v,
 
 
 
-extern MOZ_MUST_USE bool ToIndexSlow(JSContext* cx, JS::HandleValue v,
-                                     const unsigned errorNumber,
-                                     uint64_t* index);
+[[nodiscard]] extern bool ToIndexSlow(JSContext* cx, JS::HandleValue v,
+                                      const unsigned errorNumber,
+                                      uint64_t* index);
 
-static MOZ_MUST_USE inline bool ToIndex(JSContext* cx, JS::HandleValue v,
-                                        const unsigned errorNumber,
-                                        uint64_t* index) {
+[[nodiscard]] static inline bool ToIndex(JSContext* cx, JS::HandleValue v,
+                                         const unsigned errorNumber,
+                                         uint64_t* index) {
   if (v.isInt32()) {
     int32_t i = v.toInt32();
     if (i >= 0) {
@@ -360,8 +361,8 @@ static MOZ_MUST_USE inline bool ToIndex(JSContext* cx, JS::HandleValue v,
   return ToIndexSlow(cx, v, errorNumber, index);
 }
 
-static MOZ_MUST_USE inline bool ToIndex(JSContext* cx, JS::HandleValue v,
-                                        uint64_t* index) {
+[[nodiscard]] static inline bool ToIndex(JSContext* cx, JS::HandleValue v,
+                                         uint64_t* index) {
   return ToIndex(cx, v, JSMSG_BAD_INDEX, index);
 }
 

@@ -85,8 +85,8 @@ class DisplayNamesObject : public NativeObject {
 
 
 
-extern MOZ_MUST_USE bool intl_ComputeDisplayName(JSContext* cx, unsigned argc,
-                                                 Value* vp);
+[[nodiscard]] extern bool intl_ComputeDisplayName(JSContext* cx, unsigned argc,
+                                                  Value* vp);
 
 }  
 

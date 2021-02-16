@@ -28,8 +28,8 @@ namespace wasm {
 
 
 
-extern MOZ_MUST_USE bool TextToBinary(const char16_t* text, size_t textLen,
-                                      Bytes* bytes, UniqueChars* error);
+[[nodiscard]] extern bool TextToBinary(const char16_t* text, size_t textLen,
+                                       Bytes* bytes, UniqueChars* error);
 
 
 

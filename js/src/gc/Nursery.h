@@ -306,7 +306,7 @@ class Nursery {
   
   
   
-  MOZ_ALWAYS_INLINE MOZ_MUST_USE static bool getForwardedPointer(
+  [[nodiscard]] MOZ_ALWAYS_INLINE static bool getForwardedPointer(
       js::gc::Cell** ref);
 
   

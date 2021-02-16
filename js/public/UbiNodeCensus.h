@@ -109,14 +109,14 @@ struct CountType {
 
   
   
-  virtual MOZ_MUST_USE bool count(CountBase& count,
-                                  mozilla::MallocSizeOf mallocSizeOf,
-                                  const Node& node) = 0;
+  [[nodiscard]] virtual bool count(CountBase& count,
+                                   mozilla::MallocSizeOf mallocSizeOf,
+                                   const Node& node) = 0;
 
   
   
-  virtual MOZ_MUST_USE bool report(JSContext* cx, CountBase& count,
-                                   MutableHandleValue report) = 0;
+  [[nodiscard]] virtual bool report(JSContext* cx, CountBase& count,
+                                    MutableHandleValue report) = 0;
 };
 
 using CountTypePtr = js::UniquePtr<CountType>;

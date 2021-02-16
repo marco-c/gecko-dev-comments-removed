@@ -107,7 +107,7 @@ const JSClass ByteStreamChunk::class_ = {
 
 
 
-static MOZ_MUST_USE ReadableByteStreamController*
+[[nodiscard]] static ReadableByteStreamController*
 CreateReadableByteStreamController(JSContext* cx,
                                    Handle<ReadableStream*> stream,
                                    HandleValue underlyingByteSource,
@@ -390,13 +390,13 @@ JS_STREAMS_CLASS_SPEC(ReadableByteStreamController, 0, SlotCount,
 
 
 
-static MOZ_MUST_USE bool ReadableByteStreamControllerHandleQueueDrain(
+[[nodiscard]] static bool ReadableByteStreamControllerHandleQueueDrain(
     JSContext* cx, Handle<ReadableStreamController*> unwrappedController);
 
 
 
 
-static MOZ_MUST_USE PromiseObject* ReadableByteStreamControllerPullSteps(
+[[nodiscard]] static PromiseObject* ReadableByteStreamControllerPullSteps(
     JSContext* cx, Handle<ReadableByteStreamController*> unwrappedController) {
   
   Rooted<ReadableStream*> unwrappedStream(cx, unwrappedController->stream());
@@ -607,7 +607,7 @@ static MOZ_MUST_USE PromiseObject* ReadableByteStreamControllerPullSteps(
 
 
 
-static MOZ_MUST_USE bool ReadableByteStreamControllerInvalidateBYOBRequest(
+[[nodiscard]] static bool ReadableByteStreamControllerInvalidateBYOBRequest(
     JSContext* cx, Handle<ReadableByteStreamController*> unwrappedController);
 
 
@@ -709,7 +709,7 @@ static MOZ_MUST_USE bool ReadableByteStreamControllerInvalidateBYOBRequest(
 
 
 
-static MOZ_MUST_USE bool ReadableByteStreamControllerHandleQueueDrain(
+[[nodiscard]] static bool ReadableByteStreamControllerHandleQueueDrain(
     JSContext* cx, Handle<ReadableStreamController*> unwrappedController) {
   MOZ_ASSERT(unwrappedController->is<ReadableByteStreamController>());
 
@@ -746,7 +746,7 @@ enum BYOBRequestSlots {
 
 
 
-static MOZ_MUST_USE bool ReadableByteStreamControllerInvalidateBYOBRequest(
+[[nodiscard]] static bool ReadableByteStreamControllerInvalidateBYOBRequest(
     JSContext* cx, Handle<ReadableByteStreamController*> unwrappedController) {
   
   RootedValue unwrappedBYOBRequestVal(cx, unwrappedController->byobRequest());

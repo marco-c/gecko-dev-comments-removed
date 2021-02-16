@@ -24,10 +24,10 @@ namespace js {
 
 class PropertyName;
 
-extern MOZ_MUST_USE PromiseObject* PromiseRejectedWithPendingError(
+[[nodiscard]] extern PromiseObject* PromiseRejectedWithPendingError(
     JSContext* cx);
 
-inline MOZ_MUST_USE bool ReturnPromiseRejectedWithPendingError(
+[[nodiscard]] inline bool ReturnPromiseRejectedWithPendingError(
     JSContext* cx, const JS::CallArgs& args) {
   PromiseObject* promise = PromiseRejectedWithPendingError(cx);
   if (!promise) {
@@ -49,7 +49,7 @@ inline MOZ_MUST_USE bool ReturnPromiseRejectedWithPendingError(
 
 
 
-extern MOZ_MUST_USE bool CreateAlgorithmFromUnderlyingMethod(
+[[nodiscard]] extern bool CreateAlgorithmFromUnderlyingMethod(
     JSContext* cx, JS::Handle<JS::Value> underlyingObject,
     const char* methodNameForErrorMessage, JS::Handle<PropertyName*> methodName,
     JS::MutableHandle<JS::Value> method);
@@ -58,22 +58,22 @@ extern MOZ_MUST_USE bool CreateAlgorithmFromUnderlyingMethod(
 
 
 
-extern MOZ_MUST_USE bool InvokeOrNoop(JSContext* cx, JS::Handle<JS::Value> O,
-                                      JS::Handle<PropertyName*> P,
-                                      JS::Handle<JS::Value> arg,
-                                      JS::MutableHandle<JS::Value> rval);
+[[nodiscard]] extern bool InvokeOrNoop(JSContext* cx, JS::Handle<JS::Value> O,
+                                       JS::Handle<PropertyName*> P,
+                                       JS::Handle<JS::Value> arg,
+                                       JS::MutableHandle<JS::Value> rval);
 
 
 
 
-extern MOZ_MUST_USE bool ValidateAndNormalizeHighWaterMark(
+[[nodiscard]] extern bool ValidateAndNormalizeHighWaterMark(
     JSContext* cx, JS::Handle<JS::Value> highWaterMarkVal,
     double* highWaterMark);
 
 
 
 
-extern MOZ_MUST_USE bool MakeSizeAlgorithmFromSizeFunction(
+[[nodiscard]] extern bool MakeSizeAlgorithmFromSizeFunction(
     JSContext* cx, JS::Handle<JS::Value> size);
 
 template <class T>

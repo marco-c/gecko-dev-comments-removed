@@ -77,7 +77,7 @@ using JS::Value;
 
 
 
-static MOZ_MUST_USE ReadableStream* CreateReadableStream(
+[[nodiscard]] static ReadableStream* CreateReadableStream(
     JSContext* cx, SourceAlgorithms sourceAlgorithms,
     Handle<Value> underlyingSource,
     Handle<Value> pullMethod = UndefinedHandleValue,

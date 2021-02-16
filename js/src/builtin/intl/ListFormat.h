@@ -62,8 +62,8 @@ class ListFormatObject : public NativeObject {
 
 
 
-extern MOZ_MUST_USE bool intl_FormatList(JSContext* cx, unsigned argc,
-                                         Value* vp);
+[[nodiscard]] extern bool intl_FormatList(JSContext* cx, unsigned argc,
+                                          Value* vp);
 
 }  
 

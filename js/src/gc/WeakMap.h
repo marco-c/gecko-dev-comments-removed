@@ -118,7 +118,7 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   static bool markZoneIteratively(JS::Zone* zone, GCMarker* marker);
 
   
-  static MOZ_MUST_USE bool findSweepGroupEdgesForZone(JS::Zone* zone);
+  [[nodiscard]] static bool findSweepGroupEdgesForZone(JS::Zone* zone);
 
   
   

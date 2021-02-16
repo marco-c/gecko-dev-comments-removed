@@ -58,8 +58,8 @@ class ErrorReportMixin : public StrictModeGetter {
   
   
   
-  virtual MOZ_MUST_USE bool computeErrorMetadata(ErrorMetadata* err,
-                                                 const ErrorOffset& offset) = 0;
+  [[nodiscard]] virtual bool computeErrorMetadata(
+      ErrorMetadata* err, const ErrorOffset& offset) = 0;
 
   
   

@@ -258,9 +258,9 @@ bool WritableStreamDefaultWriter::constructor(JSContext* cx, unsigned argc,
 
 
 
-static MOZ_MUST_USE bool WritableStreamDefaultWriter_closed(JSContext* cx,
-                                                            unsigned argc,
-                                                            Value* vp) {
+[[nodiscard]] static bool WritableStreamDefaultWriter_closed(JSContext* cx,
+                                                             unsigned argc,
+                                                             Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -285,9 +285,9 @@ static MOZ_MUST_USE bool WritableStreamDefaultWriter_closed(JSContext* cx,
 
 
 
-static MOZ_MUST_USE bool WritableStreamDefaultWriter_desiredSize(JSContext* cx,
-                                                                 unsigned argc,
-                                                                 Value* vp) {
+[[nodiscard]] static bool WritableStreamDefaultWriter_desiredSize(JSContext* cx,
+                                                                  unsigned argc,
+                                                                  Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -322,9 +322,9 @@ static MOZ_MUST_USE bool WritableStreamDefaultWriter_desiredSize(JSContext* cx,
 
 
 
-static MOZ_MUST_USE bool WritableStreamDefaultWriter_ready(JSContext* cx,
-                                                           unsigned argc,
-                                                           Value* vp) {
+[[nodiscard]] static bool WritableStreamDefaultWriter_ready(JSContext* cx,
+                                                            unsigned argc,
+                                                            Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -349,9 +349,9 @@ static MOZ_MUST_USE bool WritableStreamDefaultWriter_ready(JSContext* cx,
 
 
 
-static MOZ_MUST_USE bool WritableStreamDefaultWriter_abort(JSContext* cx,
-                                                           unsigned argc,
-                                                           Value* vp) {
+[[nodiscard]] static bool WritableStreamDefaultWriter_abort(JSContext* cx,
+                                                            unsigned argc,
+                                                            Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -386,9 +386,9 @@ static MOZ_MUST_USE bool WritableStreamDefaultWriter_abort(JSContext* cx,
 
 
 
-static MOZ_MUST_USE bool WritableStreamDefaultWriter_close(JSContext* cx,
-                                                           unsigned argc,
-                                                           Value* vp) {
+[[nodiscard]] static bool WritableStreamDefaultWriter_close(JSContext* cx,
+                                                            unsigned argc,
+                                                            Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -436,9 +436,9 @@ static MOZ_MUST_USE bool WritableStreamDefaultWriter_close(JSContext* cx,
 
 
 
-static MOZ_MUST_USE bool WritableStreamDefaultWriter_releaseLock(JSContext* cx,
-                                                                 unsigned argc,
-                                                                 Value* vp) {
+[[nodiscard]] static bool WritableStreamDefaultWriter_releaseLock(JSContext* cx,
+                                                                  unsigned argc,
+                                                                  Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -481,9 +481,9 @@ static MOZ_MUST_USE bool WritableStreamDefaultWriter_releaseLock(JSContext* cx,
 
 
 
-static MOZ_MUST_USE bool WritableStreamDefaultWriter_write(JSContext* cx,
-                                                           unsigned argc,
-                                                           Value* vp) {
+[[nodiscard]] static bool WritableStreamDefaultWriter_write(JSContext* cx,
+                                                            unsigned argc,
+                                                            Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   

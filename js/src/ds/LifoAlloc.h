@@ -408,8 +408,8 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk> {
   
   
   
-  static inline MOZ_MUST_USE bool allocSizeWithRedZone(size_t amount,
-                                                       size_t* size);
+  [[nodiscard]] static inline bool allocSizeWithRedZone(size_t amount,
+                                                        size_t* size);
 
   
   
@@ -471,7 +471,7 @@ class BumpChunk : public SingleLinkedListElement<BumpChunk> {
 static constexpr size_t BumpChunkReservedSpace =
     AlignBytes(sizeof(BumpChunk), LIFO_ALLOC_ALIGN);
 
- inline MOZ_MUST_USE bool BumpChunk::allocSizeWithRedZone(
+[[nodiscard]]  inline bool BumpChunk::allocSizeWithRedZone(
     size_t amount, size_t* size) {
   constexpr size_t SpaceBefore = BumpChunkReservedSpace;
   static_assert((SpaceBefore % LIFO_ALLOC_ALIGN) == 0,
@@ -698,8 +698,7 @@ class LifoAlloc {
   
   
   
-  MOZ_ALWAYS_INLINE
-  MOZ_MUST_USE bool ensureUnusedApproximate(size_t n) {
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool ensureUnusedApproximate(size_t n) {
     AutoFallibleScope fallibleAllocator(this);
     size_t total = 0;
     if (!chunks_.empty()) {

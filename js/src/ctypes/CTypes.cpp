@@ -4111,9 +4111,9 @@ static void BuildTypeSource(JSContext* cx, JSObject* typeObj_, bool makeShort,
 
 
 
-static MOZ_MUST_USE bool BuildDataSource(JSContext* cx, HandleObject typeObj,
-                                         void* data, bool isImplicit,
-                                         AutoString& result) {
+[[nodiscard]] static bool BuildDataSource(JSContext* cx, HandleObject typeObj,
+                                          void* data, bool isImplicit,
+                                          AutoString& result) {
   TypeCode type = CType::GetTypeCode(typeObj);
   switch (type) {
     case TYPE_bool:

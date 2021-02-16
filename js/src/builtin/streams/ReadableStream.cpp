@@ -219,8 +219,8 @@ bool ReadableStream::constructor(JSContext* cx, unsigned argc, JS::Value* vp) {
 
 
 
-static MOZ_MUST_USE bool ReadableStream_locked(JSContext* cx, unsigned argc,
-                                               JS::Value* vp) {
+[[nodiscard]] static bool ReadableStream_locked(JSContext* cx, unsigned argc,
+                                                JS::Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -238,8 +238,8 @@ static MOZ_MUST_USE bool ReadableStream_locked(JSContext* cx, unsigned argc,
 
 
 
-static MOZ_MUST_USE bool ReadableStream_cancel(JSContext* cx, unsigned argc,
-                                               JS::Value* vp) {
+[[nodiscard]] static bool ReadableStream_cancel(JSContext* cx, unsigned argc,
+                                                JS::Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -276,8 +276,8 @@ static MOZ_MUST_USE bool ReadableStream_cancel(JSContext* cx, unsigned argc,
 
 
 
-static MOZ_MUST_USE bool ReadableStream_getReader(JSContext* cx, unsigned argc,
-                                                  JS::Value* vp) {
+[[nodiscard]] static bool ReadableStream_getReader(JSContext* cx, unsigned argc,
+                                                   JS::Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   

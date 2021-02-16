@@ -33,7 +33,7 @@ class ListObject : public NativeObject {
  public:
   static const JSClass class_;
 
-  inline static MOZ_MUST_USE ListObject* create(JSContext* cx);
+  [[nodiscard]] inline static ListObject* create(JSContext* cx);
 
   uint32_t length() const { return getDenseInitializedLength(); }
 
@@ -49,7 +49,7 @@ class ListObject : public NativeObject {
   
 
 
-  inline MOZ_MUST_USE bool append(JSContext* cx, HandleValue value);
+  [[nodiscard]] inline bool append(JSContext* cx, HandleValue value);
 
   
 
@@ -60,8 +60,8 @@ class ListObject : public NativeObject {
 
 
 
-  inline MOZ_MUST_USE bool appendValueAndSize(JSContext* cx, HandleValue value,
-                                              double size);
+  [[nodiscard]] inline bool appendValueAndSize(JSContext* cx, HandleValue value,
+                                               double size);
 
   
 

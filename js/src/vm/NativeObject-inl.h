@@ -746,7 +746,7 @@ static MOZ_ALWAYS_INLINE bool LookupOwnPropertyInline(
 
 
 
-static inline MOZ_MUST_USE bool NativeLookupOwnPropertyNoResolve(
+[[nodiscard]] static inline bool NativeLookupOwnPropertyNoResolve(
     JSContext* cx, HandleNativeObject obj, HandleId id,
     MutableHandle<PropertyResult> result) {
   

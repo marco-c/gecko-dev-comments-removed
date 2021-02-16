@@ -322,10 +322,10 @@ class JS_PUBLIC_API DominatorTree {
 
   
   
-  static MOZ_MUST_USE bool doTraversal(JSContext* cx, AutoCheckCannotGC& noGC,
-                                       const Node& root,
-                                       JS::ubi::Vector<Node>& postOrder,
-                                       PredecessorSets& predecessorSets) {
+  [[nodiscard]] static bool doTraversal(JSContext* cx, AutoCheckCannotGC& noGC,
+                                        const Node& root,
+                                        JS::ubi::Vector<Node>& postOrder,
+                                        PredecessorSets& predecessorSets) {
     uint32_t nodeCount = 0;
     auto onNode = [&](const Node& node) {
       nodeCount++;
@@ -354,7 +354,7 @@ class JS_PUBLIC_API DominatorTree {
 
   
   
-  static MOZ_MUST_USE bool mapNodesToTheirIndices(
+  [[nodiscard]] static bool mapNodesToTheirIndices(
       JS::ubi::Vector<Node>& postOrder, NodeToIndexMap& map) {
     MOZ_ASSERT(map.empty());
     MOZ_ASSERT(postOrder.length() < UINT32_MAX);
@@ -370,7 +370,7 @@ class JS_PUBLIC_API DominatorTree {
 
   
   
-  static MOZ_MUST_USE bool convertPredecessorSetsToVectors(
+  [[nodiscard]] static bool convertPredecessorSetsToVectors(
       const Node& root, JS::ubi::Vector<Node>& postOrder,
       PredecessorSets& predecessorSets, NodeToIndexMap& nodeToPostOrderIndex,
       JS::ubi::Vector<JS::ubi::Vector<uint32_t>>& predecessorVectors) {
@@ -410,8 +410,8 @@ class JS_PUBLIC_API DominatorTree {
 
   
   
-  static MOZ_MUST_USE bool initializeDominators(JS::ubi::Vector<uint32_t>& doms,
-                                                uint32_t length) {
+  [[nodiscard]] static bool initializeDominators(
+      JS::ubi::Vector<uint32_t>& doms, uint32_t length) {
     MOZ_ASSERT(doms.length() == 0);
     if (!doms.growByUninitialized(length)) {
       return false;

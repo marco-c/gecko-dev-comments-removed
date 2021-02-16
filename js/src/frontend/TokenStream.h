@@ -1526,22 +1526,22 @@ using CharBuffer = Vector<char16_t, 32>;
 
 
 
-extern MOZ_MUST_USE bool AppendCodePointToCharBuffer(CharBuffer& charBuffer,
-                                                     uint32_t codePoint);
+[[nodiscard]] extern bool AppendCodePointToCharBuffer(CharBuffer& charBuffer,
+                                                      uint32_t codePoint);
 
 
 
 
 
 
-extern MOZ_MUST_USE bool FillCharBufferFromSourceNormalizingAsciiLineBreaks(
+[[nodiscard]] extern bool FillCharBufferFromSourceNormalizingAsciiLineBreaks(
     CharBuffer& charBuffer, const char16_t* cur, const char16_t* end);
 
 
 
 
 
-extern MOZ_MUST_USE bool FillCharBufferFromSourceNormalizingAsciiLineBreaks(
+[[nodiscard]] extern bool FillCharBufferFromSourceNormalizingAsciiLineBreaks(
     CharBuffer& charBuffer, const mozilla::Utf8Unit* cur,
     const mozilla::Utf8Unit* end);
 
@@ -1571,7 +1571,7 @@ class TokenStreamCharsShared {
 
 
 
-  static constexpr MOZ_ALWAYS_INLINE MOZ_MUST_USE bool isAsciiCodePoint(
+  [[nodiscard]] static constexpr MOZ_ALWAYS_INLINE bool isAsciiCodePoint(
       int32_t unit) {
     return mozilla::IsAscii(static_cast<char32_t>(unit));
   }
@@ -2718,7 +2718,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
   
   
   
-  MOZ_ALWAYS_INLINE MOZ_MUST_USE bool peekTokenSameLine(
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool peekTokenSameLine(
       TokenKind* ttp, Modifier modifier = SlashIsDiv) {
     TokenStreamAnyChars& anyChars = anyCharsAccess();
     const Token& curr = anyChars.currentToken();

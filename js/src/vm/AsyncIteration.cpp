@@ -314,7 +314,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
 
 
-static MOZ_MUST_USE bool AsyncGeneratorReturned(
+[[nodiscard]] static bool AsyncGeneratorReturned(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue value) {
   
@@ -329,7 +329,7 @@ static MOZ_MUST_USE bool AsyncGeneratorReturned(
 
 
 
-static MOZ_MUST_USE bool AsyncGeneratorThrown(
+[[nodiscard]] static bool AsyncGeneratorThrown(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj) {
   
   asyncGenObj->setCompleted();
@@ -352,7 +352,7 @@ static MOZ_MUST_USE bool AsyncGeneratorThrown(
 
 
 
-static MOZ_MUST_USE bool AsyncGeneratorYield(
+[[nodiscard]] static bool AsyncGeneratorYield(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue value) {
   

@@ -662,7 +662,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-  static MOZ_MUST_USE bool addAllocationsTracking(
+  [[nodiscard]] static bool addAllocationsTracking(
       JSContext* cx, Handle<GlobalObject*> debuggee);
 
   
@@ -866,17 +866,17 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   template <typename F>
   void forEachWeakMap(const F& f);
 
-  static MOZ_MUST_USE bool getHookImpl(JSContext* cx, const CallArgs& args,
-                                       Debugger& dbg, Hook which);
-  static MOZ_MUST_USE bool setHookImpl(JSContext* cx, const CallArgs& args,
-                                       Debugger& dbg, Hook which);
+  [[nodiscard]] static bool getHookImpl(JSContext* cx, const CallArgs& args,
+                                        Debugger& dbg, Hook which);
+  [[nodiscard]] static bool setHookImpl(JSContext* cx, const CallArgs& args,
+                                        Debugger& dbg, Hook which);
 
-  static MOZ_MUST_USE bool getGarbageCollectionHook(JSContext* cx,
-                                                    const CallArgs& args,
-                                                    Debugger& dbg);
-  static MOZ_MUST_USE bool setGarbageCollectionHook(JSContext* cx,
-                                                    const CallArgs& args,
-                                                    Debugger& dbg);
+  [[nodiscard]] static bool getGarbageCollectionHook(JSContext* cx,
+                                                     const CallArgs& args,
+                                                     Debugger& dbg);
+  [[nodiscard]] static bool setGarbageCollectionHook(JSContext* cx,
+                                                     const CallArgs& args,
+                                                     Debugger& dbg);
 
   static bool isCompilableUnit(JSContext* cx, unsigned argc, Value* vp);
   static bool recordReplayProcessKind(JSContext* cx, unsigned argc, Value* vp);
@@ -940,12 +940,12 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
   using DebuggerFrameVector = GCVector<DebuggerFrame*>;
-  static MOZ_MUST_USE bool getDebuggerFrames(
+  [[nodiscard]] static bool getDebuggerFrames(
       AbstractFramePtr frame, MutableHandle<DebuggerFrameVector> frames);
 
  public:
   
-  static MOZ_MUST_USE bool ensureExecutionObservabilityOfScript(
+  [[nodiscard]] static bool ensureExecutionObservabilityOfScript(
       JSContext* cx, JSScript* script);
 
   
@@ -964,9 +964,9 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   IsObserving observesNativeCalls() const;
 
  private:
-  static MOZ_MUST_USE bool ensureExecutionObservabilityOfFrame(
+  [[nodiscard]] static bool ensureExecutionObservabilityOfFrame(
       JSContext* cx, AbstractFramePtr frame);
-  static MOZ_MUST_USE bool ensureExecutionObservabilityOfRealm(
+  [[nodiscard]] static bool ensureExecutionObservabilityOfRealm(
       JSContext* cx, JS::Realm* realm);
 
   static bool hookObservesAllExecution(Hook which);
@@ -990,7 +990,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
                                 FireHookFun fireHook);
   template <
       typename HookIsEnabledFun , typename FireHookFun >
-  static MOZ_MUST_USE bool dispatchResumptionHook(
+  [[nodiscard]] static bool dispatchResumptionHook(
       JSContext* cx, AbstractFramePtr frame, HookIsEnabledFun hookIsEnabled,
       FireHookFun fireHook);
 
@@ -1088,10 +1088,10 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
   inline Breakpoint* firstBreakpoint() const;
 
-  static MOZ_MUST_USE bool replaceFrameGuts(JSContext* cx,
-                                            AbstractFramePtr from,
-                                            AbstractFramePtr to,
-                                            ScriptFrameIter& iter);
+  [[nodiscard]] static bool replaceFrameGuts(JSContext* cx,
+                                             AbstractFramePtr from,
+                                             AbstractFramePtr to,
+                                             ScriptFrameIter& iter);
 
  public:
   Debugger(JSContext* cx, NativeObject* dbg);

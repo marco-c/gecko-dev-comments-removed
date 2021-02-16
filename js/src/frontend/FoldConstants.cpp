@@ -44,7 +44,7 @@ struct FoldInfo {
 
 
 
-inline MOZ_MUST_USE bool TryReplaceNode(ParseNode** pnp, ParseNode* pn) {
+[[nodiscard]] inline bool TryReplaceNode(ParseNode** pnp, ParseNode* pn) {
   
   
   if (!pn) {
@@ -163,10 +163,12 @@ restart:
     case ParseNodeKind::ImportDecl:
     case ParseNodeKind::ImportSpecList:
     case ParseNodeKind::ImportSpec:
+    case ParseNodeKind::ImportNamespaceSpec:
     case ParseNodeKind::ExportFromStmt:
     case ParseNodeKind::ExportDefaultStmt:
     case ParseNodeKind::ExportSpecList:
     case ParseNodeKind::ExportSpec:
+    case ParseNodeKind::ExportNamespaceSpec:
     case ParseNodeKind::ExportStmt:
     case ParseNodeKind::ExportBatchSpecStmt:
     case ParseNodeKind::CallImportExpr:

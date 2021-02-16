@@ -78,28 +78,7 @@ class DateTimeFormatObject : public NativeObject {
 
 
 
-extern MOZ_MUST_USE bool intl_DateTimeFormat(JSContext* cx, unsigned argc,
-                                             JS::Value* vp);
-
-
-
-
-
-
-
-
-
-extern MOZ_MUST_USE bool intl_availableCalendars(JSContext* cx, unsigned argc,
-                                                 JS::Value* vp);
-
-
-
-
-
-
-
-
-extern MOZ_MUST_USE bool intl_defaultCalendar(JSContext* cx, unsigned argc,
+[[nodiscard]] extern bool intl_DateTimeFormat(JSContext* cx, unsigned argc,
                                               JS::Value* vp);
 
 
@@ -110,9 +89,7 @@ extern MOZ_MUST_USE bool intl_defaultCalendar(JSContext* cx, unsigned argc,
 
 
 
-
-
-extern MOZ_MUST_USE bool intl_IsValidTimeZoneName(JSContext* cx, unsigned argc,
+[[nodiscard]] extern bool intl_availableCalendars(JSContext* cx, unsigned argc,
                                                   JS::Value* vp);
 
 
@@ -121,7 +98,21 @@ extern MOZ_MUST_USE bool intl_IsValidTimeZoneName(JSContext* cx, unsigned argc,
 
 
 
-extern MOZ_MUST_USE bool intl_canonicalizeTimeZone(JSContext* cx, unsigned argc,
+
+[[nodiscard]] extern bool intl_defaultCalendar(JSContext* cx, unsigned argc,
+                                               JS::Value* vp);
+
+
+
+
+
+
+
+
+
+
+
+[[nodiscard]] extern bool intl_IsValidTimeZoneName(JSContext* cx, unsigned argc,
                                                    JS::Value* vp);
 
 
@@ -129,15 +120,8 @@ extern MOZ_MUST_USE bool intl_canonicalizeTimeZone(JSContext* cx, unsigned argc,
 
 
 
-extern MOZ_MUST_USE bool intl_defaultTimeZone(JSContext* cx, unsigned argc,
-                                              JS::Value* vp);
 
-
-
-
-
-
-extern MOZ_MUST_USE bool intl_defaultTimeZoneOffset(JSContext* cx,
+[[nodiscard]] extern bool intl_canonicalizeTimeZone(JSContext* cx,
                                                     unsigned argc,
                                                     JS::Value* vp);
 
@@ -146,19 +130,25 @@ extern MOZ_MUST_USE bool intl_defaultTimeZoneOffset(JSContext* cx,
 
 
 
-
-extern MOZ_MUST_USE bool intl_isDefaultTimeZone(JSContext* cx, unsigned argc,
-                                                JS::Value* vp);
-
+[[nodiscard]] extern bool intl_defaultTimeZone(JSContext* cx, unsigned argc,
+                                               JS::Value* vp);
 
 
 
 
 
 
+[[nodiscard]] extern bool intl_defaultTimeZoneOffset(JSContext* cx,
+                                                     unsigned argc,
+                                                     JS::Value* vp);
 
 
-extern MOZ_MUST_USE bool intl_patternForSkeleton(JSContext* cx, unsigned argc,
+
+
+
+
+
+[[nodiscard]] extern bool intl_isDefaultTimeZone(JSContext* cx, unsigned argc,
                                                  JS::Value* vp);
 
 
@@ -169,6 +159,8 @@ extern MOZ_MUST_USE bool intl_patternForSkeleton(JSContext* cx, unsigned argc,
 
 
 
+[[nodiscard]] extern bool intl_patternForSkeleton(JSContext* cx, unsigned argc,
+                                                  JS::Value* vp);
 
 
 
@@ -192,7 +184,37 @@ extern MOZ_MUST_USE bool intl_patternForSkeleton(JSContext* cx, unsigned argc,
 
 
 
-extern MOZ_MUST_USE bool intl_patternForStyle(JSContext* cx, unsigned argc,
+
+
+
+
+
+
+
+
+
+[[nodiscard]] extern bool intl_patternForStyle(JSContext* cx, unsigned argc,
+                                               JS::Value* vp);
+
+
+
+
+
+
+
+[[nodiscard]] extern bool intl_skeletonForPattern(JSContext* cx, unsigned argc,
+                                                  JS::Value* vp);
+
+
+
+
+
+
+
+
+
+
+[[nodiscard]] extern bool intl_FormatDateTime(JSContext* cx, unsigned argc,
                                               JS::Value* vp);
 
 
@@ -201,32 +223,11 @@ extern MOZ_MUST_USE bool intl_patternForStyle(JSContext* cx, unsigned argc,
 
 
 
-extern MOZ_MUST_USE bool intl_skeletonForPattern(JSContext* cx, unsigned argc,
-                                                 JS::Value* vp);
 
 
 
-
-
-
-
-
-
-
-extern MOZ_MUST_USE bool intl_FormatDateTime(JSContext* cx, unsigned argc,
-                                             JS::Value* vp);
-
-
-
-
-
-
-
-
-
-
-extern MOZ_MUST_USE bool intl_FormatDateTimeRange(JSContext* cx, unsigned argc,
-                                                  JS::Value* vp);
+[[nodiscard]] extern bool intl_FormatDateTimeRange(JSContext* cx, unsigned argc,
+                                                   JS::Value* vp);
 
 }  
 

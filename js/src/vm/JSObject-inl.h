@@ -207,8 +207,8 @@ class MOZ_RAII AutoSuppressAllocationMetadataBuilder {
 
 
 template <typename T>
-static MOZ_ALWAYS_INLINE MOZ_MUST_USE T* SetNewObjectMetadata(JSContext* cx,
-                                                              T* obj) {
+[[nodiscard]] static MOZ_ALWAYS_INLINE T* SetNewObjectMetadata(JSContext* cx,
+                                                               T* obj) {
   MOZ_ASSERT(!cx->realm()->hasObjectPendingMetadata());
 
   

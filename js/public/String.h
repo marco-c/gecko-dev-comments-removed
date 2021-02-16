@@ -193,9 +193,9 @@ MOZ_ALWAYS_INLINE void LossyCopyLinearStringChars(char* dest, JSLinearString* s,
 
 
 
-inline MOZ_MUST_USE bool CopyStringChars(JSContext* cx, char16_t* dest,
-                                         JSString* s, size_t len,
-                                         size_t start = 0) {
+[[nodiscard]] inline bool CopyStringChars(JSContext* cx, char16_t* dest,
+                                          JSString* s, size_t len,
+                                          size_t start = 0) {
   JSLinearString* linear = StringToLinearString(cx, s);
   if (!linear) {
     return false;
@@ -212,9 +212,9 @@ inline MOZ_MUST_USE bool CopyStringChars(JSContext* cx, char16_t* dest,
 
 
 
-inline MOZ_MUST_USE bool LossyCopyStringChars(JSContext* cx, char* dest,
-                                              JSString* s, size_t len,
-                                              size_t start = 0) {
+[[nodiscard]] inline bool LossyCopyStringChars(JSContext* cx, char* dest,
+                                               JSString* s, size_t len,
+                                               size_t start = 0) {
   JSLinearString* linear = StringToLinearString(cx, s);
   if (!linear) {
     return false;

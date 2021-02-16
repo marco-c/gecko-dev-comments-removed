@@ -76,8 +76,8 @@ class NumberFormatObject : public NativeObject {
 
 
 
-extern MOZ_MUST_USE bool intl_NumberFormat(JSContext* cx, unsigned argc,
-                                           Value* vp);
+[[nodiscard]] extern bool intl_NumberFormat(JSContext* cx, unsigned argc,
+                                            Value* vp);
 
 
 
@@ -86,8 +86,8 @@ extern MOZ_MUST_USE bool intl_NumberFormat(JSContext* cx, unsigned argc,
 
 
 
-extern MOZ_MUST_USE bool intl_numberingSystem(JSContext* cx, unsigned argc,
-                                              Value* vp);
+[[nodiscard]] extern bool intl_numberingSystem(JSContext* cx, unsigned argc,
+                                               Value* vp);
 
 
 
@@ -98,8 +98,8 @@ extern MOZ_MUST_USE bool intl_numberingSystem(JSContext* cx, unsigned argc,
 
 
 
-extern MOZ_MUST_USE bool intl_FormatNumber(JSContext* cx, unsigned argc,
-                                           Value* vp);
+[[nodiscard]] extern bool intl_FormatNumber(JSContext* cx, unsigned argc,
+                                            Value* vp);
 
 #if DEBUG || MOZ_SYSTEM_ICU
 
@@ -107,9 +107,9 @@ extern MOZ_MUST_USE bool intl_FormatNumber(JSContext* cx, unsigned argc,
 
 
 
-extern MOZ_MUST_USE bool intl_availableMeasurementUnits(JSContext* cx,
-                                                        unsigned argc,
-                                                        Value* vp);
+[[nodiscard]] extern bool intl_availableMeasurementUnits(JSContext* cx,
+                                                         unsigned argc,
+                                                         Value* vp);
 #endif
 
 namespace intl {

@@ -35,7 +35,7 @@ namespace js {
 
 
 
-inline MOZ_MUST_USE WritableStreamDefaultWriter* UnwrapWriterFromStream(
+[[nodiscard]] inline WritableStreamDefaultWriter* UnwrapWriterFromStream(
     JSContext* cx, JS::Handle<WritableStream*> unwrappedStream) {
   MOZ_ASSERT(unwrappedStream->hasWriter());
   return UnwrapInternalSlot<WritableStreamDefaultWriter>(

@@ -18,13 +18,13 @@ namespace js {
 
 
 
-extern MOZ_MUST_USE bool IndirectEval(JSContext* cx, unsigned argc, Value* vp);
+[[nodiscard]] extern bool IndirectEval(JSContext* cx, unsigned argc, Value* vp);
 
 
 
 
-extern MOZ_MUST_USE bool DirectEval(JSContext* cx, HandleValue v,
-                                    MutableHandleValue vp);
+[[nodiscard]] extern bool DirectEval(JSContext* cx, HandleValue v,
+                                     MutableHandleValue vp);
 
 
 extern bool IsAnyBuiltinEval(JSFunction* fun);

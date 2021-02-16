@@ -2041,12 +2041,12 @@ extern JS_PUBLIC_API JSString* JS_AtomizeAndPinUCString(JSContext* cx,
 extern JS_PUBLIC_API bool JS_CompareStrings(JSContext* cx, JSString* str1,
                                             JSString* str2, int32_t* result);
 
-extern JS_PUBLIC_API MOZ_MUST_USE bool JS_StringEqualsAscii(
+[[nodiscard]] extern JS_PUBLIC_API bool JS_StringEqualsAscii(
     JSContext* cx, JSString* str, const char* asciiBytes, bool* match);
 
 
 
-extern JS_PUBLIC_API MOZ_MUST_USE bool JS_StringEqualsAscii(
+[[nodiscard]] extern JS_PUBLIC_API bool JS_StringEqualsAscii(
     JSContext* cx, JSString* str, const char* asciiBytes, size_t length,
     bool* match);
 
@@ -2798,7 +2798,7 @@ namespace JS {
 
 
 
-extern JS_PUBLIC_API MOZ_MUST_USE bool DisableWasmHugeMemory();
+[[nodiscard]] extern JS_PUBLIC_API bool DisableWasmHugeMemory();
 
 
 
