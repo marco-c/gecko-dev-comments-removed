@@ -4808,12 +4808,3 @@ async function showView(type, param, { historyEntryId }) {
     });
   });
 }
-
-async function hideView() {
-  if (!mainEl) {
-    return;
-  }
-  ScrollOffsets.save();
-  ScrollOffsets.setView(null);
-  mainEl.textContent = "";
-}
