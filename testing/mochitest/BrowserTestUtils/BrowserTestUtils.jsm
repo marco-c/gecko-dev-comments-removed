@@ -1402,6 +1402,32 @@ var BrowserTestUtils = {
 
 
 
+
+
+  waitForMutationCondition(target, options, checkFn) {
+    if (checkFn()) {
+      return Promise.resolve();
+    }
+    return new Promise(resolve => {
+      let obs = new target.ownerGlobal.MutationObserver(function() {
+        if (checkFn()) {
+          obs.disconnect();
+          resolve();
+        }
+      });
+      obs.observe(target, options);
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
   waitForErrorPage(browser) {
     return this.waitForContentEvent(
       browser,
@@ -2234,24 +2260,29 @@ var BrowserTestUtils = {
   async promiseAlertDialogOpen(
     buttonAction,
     uri = "chrome://global/content/commonDialog.xhtml",
-    func
+    func = null
   ) {
-    let win = await this.domWindowOpened(null, async win => {
+    let win;
+    if (uri == "chrome://global/content/commonDialog.xhtml") {
+      [win] = await TestUtils.topicObserved("common-dialog-loaded");
+    } else {
       
       
       
-      await this.waitForEvent(win, "load");
-
-      return win.document.documentURI === uri;
-    });
+      win = await this.domWindowOpenedAndLoaded(null, async win => {
+        return win.document.documentURI === uri;
+      });
+    }
 
     if (func) {
       await func(win);
       return win;
     }
 
-    let dialog = win.document.querySelector("dialog");
-    dialog.getButton(buttonAction).click();
+    if (buttonAction) {
+      let dialog = win.document.querySelector("dialog");
+      dialog.getButton(buttonAction).click();
+    }
 
     return win;
   },
@@ -2275,7 +2306,15 @@ var BrowserTestUtils = {
     func
   ) {
     let win = await this.promiseAlertDialogOpen(buttonAction, uri, func);
-    return this.windowClosed(win);
+    if (!win.docShell.browsingContext.embedderElement) {
+      return this.windowClosed(win);
+    }
+    let container = win.top.document.getElementById("window-modal-dialog");
+    return this.waitForMutationCondition(
+      container,
+      { childList: true, attributes: true },
+      () => !container.hasChildNodes() && !container.open
+    );
   },
 
   
