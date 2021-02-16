@@ -1905,9 +1905,10 @@ class JSScript : public js::BaseScript {
   
   
   static JSScript* fromStencil(JSContext* cx,
+                               js::frontend::CompilationInput& input,
                                const js::frontend::CompilationStencil& stencil,
                                js::frontend::CompilationGCOutput& gcOutput,
-                               const js::frontend::ScriptIndex scriptIndex);
+                               js::frontend::ScriptIndex scriptIndex);
 
 #ifdef DEBUG
  private:

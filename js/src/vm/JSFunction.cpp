@@ -1549,8 +1549,8 @@ bool DelazifyCanonicalScriptedFunctionImpl(JSContext* cx, HandleFunction fun,
     stencil.setFunctionKey(lazy);
     input.get().initFromLazy(lazy);
 
-    if (!frontend::CompileLazyFunctionToStencil(cx, stencil, lazy, units.get(),
-                                                sourceLength)) {
+    if (!frontend::CompileLazyFunctionToStencil(cx, input.get(), stencil,
+                                                units.get(), sourceLength)) {
       
       
       MOZ_ASSERT(fun->baseScript() == lazy);
@@ -1558,7 +1558,7 @@ bool DelazifyCanonicalScriptedFunctionImpl(JSContext* cx, HandleFunction fun,
       return false;
     }
 
-    if (!frontend::InstantiateStencilsForDelazify(cx, stencil)) {
+    if (!frontend::InstantiateStencilsForDelazify(cx, input.get(), stencil)) {
       
       
       MOZ_ASSERT(fun->baseScript() == lazy);

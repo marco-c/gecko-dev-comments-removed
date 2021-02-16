@@ -533,10 +533,6 @@ struct CompilationStencil : public BaseCompilationStencil {
 
   
   
-  CompilationInput& input;
-
-  
-  
   
   RefPtr<ScriptSource> source;
 
@@ -563,18 +559,20 @@ struct CompilationStencil : public BaseCompilationStencil {
 
   
   explicit CompilationStencil(CompilationInput& input)
-      : alloc(LifoAllocChunkSize), input(input), source(input.source) {}
+      : alloc(LifoAllocChunkSize), source(input.source) {}
 
   [[nodiscard]] static bool instantiateBaseStencilAfterPreparation(
       JSContext* cx, CompilationInput& input,
       const BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput);
 
   [[nodiscard]] static bool prepareForInstantiate(
-      JSContext* cx, CompilationStencil& stencil, CompilationGCOutput& gcOutput,
+      JSContext* cx, CompilationInput& input, CompilationStencil& stencil,
+      CompilationGCOutput& gcOutput,
       CompilationGCOutput* gcOutputForDelazification = nullptr);
 
   [[nodiscard]] static bool instantiateStencils(
-      JSContext* cx, CompilationStencil& stencil, CompilationGCOutput& gcOutput,
+      JSContext* cx, CompilationInput& input, CompilationStencil& stencil,
+      CompilationGCOutput& gcOutput,
       CompilationGCOutput* gcOutputForDelazification = nullptr);
 
   [[nodiscard]] bool serializeStencils(JSContext* cx, CompilationInput& input,

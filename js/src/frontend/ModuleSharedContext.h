@@ -12,6 +12,7 @@
 
 #include "builtin/ModuleObject.h"    
 #include "frontend/SharedContext.h"  
+#include "js/CompileOptions.h"       
 #include "js/RootingAPI.h"           
 #include "vm/Scope.h"                
 #include "vm/StencilEnums.h"         
@@ -29,8 +30,9 @@ class MOZ_STACK_CLASS ModuleSharedContext : public SuspendableContext {
   ModuleScope::ParserData* bindings;
   ModuleBuilder& builder;
 
-  ModuleSharedContext(JSContext* cx, CompilationStencil& stencil,
-                      ModuleBuilder& builder, SourceExtent extent);
+  ModuleSharedContext(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+                      CompilationStencil& stencil, ModuleBuilder& builder,
+                      SourceExtent extent);
 };
 
 inline ModuleSharedContext* SharedContext::asModuleContext() {
