@@ -4,6 +4,9 @@
 
 
 
+with Files("**"):
+    BUG_COMPONENT = ("Core", "Privacy: Anti-Tracking")
+
 TEST_DIRS += ["tests"]
 
 UNIFIED_SOURCES += [
