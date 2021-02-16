@@ -677,7 +677,12 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   
   
-  bool mIsScrollParent : 1;
+  
+  
+  
+  
+  
+  bool mIsParentToActiveScrollFrames : 1;
 
   
   
