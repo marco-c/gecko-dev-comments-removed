@@ -152,8 +152,8 @@ void SVGUtils::ScheduleReflowSVG(nsIFrame* aFrame) {
   
   
   
-  NS_ASSERTION(!OuterSVGIsCallingReflowSVG(aFrame),
-               "Do not call under ISVGDisplayableFrame::ReflowSVG!");
+  MOZ_ASSERT(!OuterSVGIsCallingReflowSVG(aFrame),
+             "Do not call under ISVGDisplayableFrame::ReflowSVG!");
 
   
   

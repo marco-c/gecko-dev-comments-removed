@@ -271,12 +271,6 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
 
 
-  void NotifyGlyphMetricsChange();
-
-  
-
-
-
   void ScheduleReflowSVG();
 
   
@@ -382,6 +376,12 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
 
   void DoReflow();
+
+  
+
+
+
+  void NotifyGlyphMetricsChange();
 
   
 
