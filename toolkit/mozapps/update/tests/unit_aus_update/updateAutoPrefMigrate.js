@@ -3,7 +3,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/osfile.jsm", this);
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 
 

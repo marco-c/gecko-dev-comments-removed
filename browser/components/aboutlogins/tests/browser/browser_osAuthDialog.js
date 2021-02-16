@@ -1,8 +1,6 @@
 
 
 
-ChromeUtils.import("resource://testing-common/OSKeyStoreTestUtils.jsm", this);
-
 add_task(async function test() {
   info(
     `updatechannel: ${UpdateUtils.getUpdateChannel(false)}; platform: ${

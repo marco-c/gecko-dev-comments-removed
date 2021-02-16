@@ -1,9 +1,9 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm", this);
-ChromeUtils.import("resource://gre/modules/osfile.jsm", this);
-ChromeUtils.import("resource://gre/modules/Preferences.jsm", this);
+const { Preferences } = ChromeUtils.import(
+  "resource://gre/modules/Preferences.jsm"
+);
 
 const Paths = SessionFile.Paths;
 const PREF_UPGRADE = "browser.sessionstore.upgradeBackup.latestBuildID";

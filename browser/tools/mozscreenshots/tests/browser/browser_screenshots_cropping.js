@@ -6,7 +6,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Geometry.jsm", this);
+const { Rect } = ChromeUtils.import("resource://gre/modules/Geometry.jsm");
 
 async function draw(window, src) {
   const { document, Image } = window;

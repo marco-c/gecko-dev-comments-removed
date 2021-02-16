@@ -3,7 +3,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm", this);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 const PR_WRONLY = 0x2;

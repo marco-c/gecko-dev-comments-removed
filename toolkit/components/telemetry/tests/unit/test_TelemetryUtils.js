@@ -1,10 +1,18 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/ObjectUtils.jsm", this);
-ChromeUtils.import("resource://gre/modules/Preferences.jsm", this);
-ChromeUtils.import("resource://gre/modules/TelemetryUtils.jsm", this);
-ChromeUtils.import("resource://gre/modules/UpdateUtils.jsm", this);
+const { ObjectUtils } = ChromeUtils.import(
+  "resource://gre/modules/ObjectUtils.jsm"
+);
+const { Preferences } = ChromeUtils.import(
+  "resource://gre/modules/Preferences.jsm"
+);
+const { TelemetryUtils } = ChromeUtils.import(
+  "resource://gre/modules/TelemetryUtils.jsm"
+);
+const { UpdateUtils } = ChromeUtils.import(
+  "resource://gre/modules/UpdateUtils.jsm"
+);
 
 add_task(async function testUpdateChannelOverride() {
   if (Preferences.has(TelemetryUtils.Preferences.OverrideUpdateChannel)) {

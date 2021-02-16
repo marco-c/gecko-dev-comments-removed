@@ -15,12 +15,18 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/Services.jsm", this);
-ChromeUtils.import("resource://gre/modules/TelemetryController.jsm", this);
-ChromeUtils.import("resource://gre/modules/TelemetrySession.jsm", this);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { TelemetryController } = ChromeUtils.import(
+  "resource://gre/modules/TelemetryController.jsm"
+);
+const { TelemetrySession } = ChromeUtils.import(
+  "resource://gre/modules/TelemetrySession.jsm"
+);
 
 
-ChromeUtils.import("resource://testing-common/AppInfo.jsm", this);
+const { getAppInfo, updateAppInfo } = ChromeUtils.import(
+  "resource://testing-common/AppInfo.jsm"
+);
 updateAppInfo();
 
 

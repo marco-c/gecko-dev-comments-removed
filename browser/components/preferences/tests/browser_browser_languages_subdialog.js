@@ -1,7 +1,9 @@
 
 
 
-ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm", this);
+const { AddonTestUtils } = ChromeUtils.import(
+  "resource://testing-common/AddonTestUtils.jsm"
+);
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 AddonTestUtils.initMochitest(this);

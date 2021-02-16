@@ -2,7 +2,9 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm", this);
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 
 const UCT_URI = "chrome://mozapps/content/downloads/unknownContentType.xhtml";
 const LOAD_URI =

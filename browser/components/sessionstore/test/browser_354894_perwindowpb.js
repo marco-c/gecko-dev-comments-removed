@@ -24,14 +24,18 @@
 
 
 
-ChromeUtils.import("resource:///modules/sessionstore/SessionStartup.jsm", this);
+const { SessionStartup } = ChromeUtils.import(
+  "resource:///modules/sessionstore/SessionStartup.jsm"
+);
 
 
 
 
 
 
-ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
+const { PromiseTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
 PromiseTestUtils.allowMatchingRejectionsGlobally(/getTopWindow/);
 
 

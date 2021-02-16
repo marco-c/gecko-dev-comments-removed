@@ -2,7 +2,6 @@
 
 
 
-ChromeUtils.import("resource://testing-common/OSKeyStoreTestUtils.jsm", this);
 const OS_REAUTH_PREF = "signon.management.page.os-auth.enabled";
 
 async function openRemoveAllDialog(browser) {

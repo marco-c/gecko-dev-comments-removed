@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Promise.jsm", this);
+const { Promise } = ChromeUtils.import("resource://gre/modules/Promise.jsm");
 const { PermissionTestUtils } = ChromeUtils.import(
   "resource://testing-common/PermissionTestUtils.jsm"
 );

@@ -1,8 +1,6 @@
 
 
 
-ChromeUtils.import("resource://testing-common/OSKeyStoreTestUtils.jsm", this);
-
 EXPECTED_BREACH = {
   AddedDate: "2018-12-20T23:56:26Z",
   BreachDate: "2018-12-16",

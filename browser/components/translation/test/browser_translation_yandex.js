@@ -11,7 +11,9 @@
 
 
 
-ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
+const { PromiseTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
 PromiseTestUtils.allowMatchingRejectionsGlobally(/NS_ERROR_ILLEGAL_VALUE/);
 
 const kEnginePref = "browser.translation.engine";

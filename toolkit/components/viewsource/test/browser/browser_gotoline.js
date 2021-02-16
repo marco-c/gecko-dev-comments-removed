@@ -2,7 +2,9 @@
 
 
 
-ChromeUtils.import("resource://testing-common/ContentTaskUtils.jsm", this);
+const { ContentTaskUtils } = ChromeUtils.import(
+  "resource://testing-common/ContentTaskUtils.jsm"
+);
 
 var content = "line 1\nline 2\nline 3";
 

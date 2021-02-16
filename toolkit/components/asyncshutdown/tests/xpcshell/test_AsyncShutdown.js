@@ -2,7 +2,9 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm", this);
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 
 add_task(async function test_no_condition() {
   for (let kind of [

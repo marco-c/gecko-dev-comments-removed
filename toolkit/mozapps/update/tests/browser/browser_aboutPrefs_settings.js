@@ -3,8 +3,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/osfile.jsm", this);
-
 
 
 async function changeAndVerifyPref(tab, newConfigValue) {

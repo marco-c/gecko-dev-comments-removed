@@ -4,7 +4,6 @@
 
 "use strict";
 
-
 let CustomizableUIBSPass = ChromeUtils.import(
   "resource:///modules/CustomizableUI.jsm",
   null

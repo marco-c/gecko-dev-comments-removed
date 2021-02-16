@@ -1,8 +1,6 @@
 
 
 
-ChromeUtils.import("resource://testing-common/LoginTestUtils.jsm", this);
-
 function waitForLoginCountToReach(browser, loginCount) {
   return SpecialPowers.spawn(
     browser,

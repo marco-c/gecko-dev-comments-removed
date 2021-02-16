@@ -4,7 +4,9 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/TelemetryEnvironment.jsm", this);
+const { TelemetryEnvironment } = ChromeUtils.import(
+  "resource://gre/modules/TelemetryEnvironment.jsm"
+);
 
 
 

@@ -2,7 +2,9 @@
 
 
 
-ChromeUtils.import("resource://testing-common/ContentTaskUtils.jsm", this);
+const { ContentTaskUtils } = ChromeUtils.import(
+  "resource://testing-common/ContentTaskUtils.jsm"
+);
 
 const MESSAGE_CHILD_TEST_DONE = "ChildTest:Done";
 

@@ -1,6 +1,8 @@
 
 
-ChromeUtils.import("resource://testing-common/MockRegistrar.jsm", this);
+const { MockRegistrar } = ChromeUtils.import(
+  "resource://testing-common/MockRegistrar.jsm"
+);
 
 
 var idleService = {

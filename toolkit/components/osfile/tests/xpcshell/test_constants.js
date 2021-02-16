@@ -2,7 +2,6 @@
 
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 
 
 add_task(async function check_definition() {

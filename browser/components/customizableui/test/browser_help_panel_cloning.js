@@ -5,11 +5,6 @@
 
 
 
-ChromeUtils.import(
-  "resource://testing-common/CustomizableUITestUtils.jsm",
-  this
-);
-
 let gAppMenuStrings = new Localization(
   ["branding/brand.ftl", "browser/appmenu.ftl"],
   true

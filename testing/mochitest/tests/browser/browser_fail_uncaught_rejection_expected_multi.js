@@ -1,7 +1,9 @@
 setExpectedFailuresForSelfTest(1);
 
 
-ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
+const { PromiseTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
 PromiseTestUtils.expectUncaughtRejection(/Promise rejection./);
 
 function test() {

@@ -2,9 +2,8 @@
 
 "use strict";
 
-ChromeUtils.import(
-  "resource://testing-common/CustomizableUITestUtils.jsm",
-  this
+const { CustomizableUITestUtils } = ChromeUtils.import(
+  "resource://testing-common/CustomizableUITestUtils.jsm"
 );
 let gCUITestUtils = new CustomizableUITestUtils(window);
 

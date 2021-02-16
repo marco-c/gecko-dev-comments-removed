@@ -1,7 +1,9 @@
 
 
 
-ChromeUtils.import("resource://testing-common/AppInfo.jsm", this);
+const { getAppInfo, updateAppInfo } = ChromeUtils.import(
+  "resource://testing-common/AppInfo.jsm"
+);
 updateAppInfo({
   name: "Url Formatter Test",
   ID: "urlformattertest@test.mozilla.org",

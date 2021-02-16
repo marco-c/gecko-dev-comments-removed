@@ -11,7 +11,9 @@
 
 
 if (!gMultiProcessBrowser) {
-  ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", this);
+  const { PromiseTestUtils } = ChromeUtils.import(
+    "resource://testing-common/PromiseTestUtils.jsm"
+  );
   PromiseTestUtils.expectUncaughtRejection(/NetworkError/);
   PromiseTestUtils.expectUncaughtRejection(/NetworkError/);
 }
