@@ -8,12 +8,15 @@
 const { GeckoViewChildModule } = ChromeUtils.import(
   "resource://gre/modules/GeckoViewChildModule.jsm"
 );
+
+
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/Timer.jsm", this);
 const { Services } = ChromeUtils.import(
   "resource://gre/modules/Services.jsm",
   this
 );
+
 
 ChromeUtils.defineModuleGetter(
   this,
