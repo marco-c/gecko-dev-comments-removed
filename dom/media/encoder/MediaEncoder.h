@@ -246,6 +246,12 @@ class MediaEncoder {
 
   RefPtr<BlobPromise> RequestData();
 
+  
+  
+  MediaEventSource<RefPtr<dom::BlobImpl>>& DataAvailableEvent() {
+    return mDataAvailableEvent;
+  }
+
  protected:
   ~MediaEncoder();
 
@@ -283,6 +289,24 @@ class MediaEncoder {
 
 
   void MaybeCreateMutableBlobStorage();
+
+  
+
+
+  void OnEncodedAudioPushed(const RefPtr<EncodedFrame>& aFrame);
+
+  
+
+
+  void OnEncodedVideoPushed(const RefPtr<EncodedFrame>& aFrame);
+
+  
+
+
+
+
+
+  void MaybeExtractOrGatherBlob();
 
   
   
@@ -324,8 +348,12 @@ class MediaEncoder {
  private:
   nsTArray<RefPtr<MediaEncoderListener>> mListeners;
 
+  MediaEventListener mAudioPushListener;
   MediaEventListener mAudioFinishListener;
+  MediaEventListener mVideoPushListener;
   MediaEventListener mVideoFinishListener;
+
+  MediaEventProducer<RefPtr<dom::BlobImpl>> mDataAvailableEvent;
 
   
   
@@ -352,7 +380,19 @@ class MediaEncoder {
   
   RefPtr<BlobPromise> mBlobPromise;
   
-  TimeStamp mLastBlobTimeStamp;
+  
+  
+  media::TimeUnit mLastBlobTime;
+  
+  
+  
+  media::TimeUnit mLastExtractTime;
+  
+  
+  media::TimeUnit mMuxedAudioEndTime;
+  
+  
+  media::TimeUnit mMuxedVideoEndTime;
 
   TimeStamp mStartTime;
   bool mInitialized;
