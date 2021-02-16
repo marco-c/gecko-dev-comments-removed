@@ -640,11 +640,8 @@ inline const CompilationStencil& BaseCompilationStencil::asCompilationStencil()
 
 
 struct StencilDelazificationSet {
-  using ScriptIndexVector = Vector<ScriptIndex, 0, js::SystemAllocPolicy>;
-
   Vector<BaseCompilationStencil, 0, js::SystemAllocPolicy> delazifications;
-  ScriptIndexVector delazificationIndices;
-  CompilationAtomCache::AtomCacheVector delazificationAtomCache;
+  Vector<ScriptIndex, 0, js::SystemAllocPolicy> delazificationIndices;
 
   [[nodiscard]] bool buildDelazificationIndices(
       JSContext* cx, const CompilationStencil& stencil);
