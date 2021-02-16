@@ -7,10 +7,8 @@
 #ifndef frontend_BytecodeCompilation_h
 #define frontend_BytecodeCompilation_h
 
-#include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
-#include "mozilla/Maybe.h"       
-#include "mozilla/Utf8.h"        
+#include "mozilla/Maybe.h"  
+#include "mozilla/Utf8.h"   
 
 #include <stddef.h>  
 #include <stdint.h>  

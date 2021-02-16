@@ -7,10 +7,9 @@
 #ifndef debugger_Frame_h
 #define debugger_Frame_h
 
-#include "mozilla/Attributes.h"  
-#include "mozilla/Maybe.h"       
-#include "mozilla/Range.h"       
-#include "mozilla/Result.h"      
+#include "mozilla/Maybe.h"   
+#include "mozilla/Range.h"   
+#include "mozilla/Result.h"  
 
 #include <stddef.h>  
 

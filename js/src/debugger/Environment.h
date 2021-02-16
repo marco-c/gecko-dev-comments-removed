@@ -8,7 +8,6 @@
 #define debugger_Environment_h
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 #include "mozilla/Maybe.h"       
 
 #include "jstypes.h"            
