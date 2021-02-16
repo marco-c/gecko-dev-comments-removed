@@ -283,6 +283,7 @@ function switchPerformancePanel() {
       
       
       
+      
       return target.isLocalTab;
     };
   } else {

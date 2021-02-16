@@ -2411,11 +2411,7 @@ pref("devtools.browserconsole.input.editorWidth", 0);
 pref("devtools.webconsole.input.editorOnboarding", true);
 
 
-#if defined(NIGHTLY_BUILD)
-  pref("devtools.performance.new-panel-enabled", true);
-#else
-  pref("devtools.performance.new-panel-enabled", false);
-#endif
+pref("devtools.performance.new-panel-enabled", false);
 
 
 pref("devtools.webconsole.groupWarningMessages", true);
