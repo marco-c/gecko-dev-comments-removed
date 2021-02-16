@@ -1243,7 +1243,10 @@ class MockRuntime {
       result = result.concat(partial_result);
     }
 
-    return result.sort((lhs, rhs) => lhs.distance - rhs.distance);
+    return result.sort((lhs, rhs) => lhs.distance - rhs.distance).map((hitTest) => {
+      delete hitTest.distance;
+      return hitTest;
+    });
   }
 
   
@@ -1337,6 +1340,7 @@ class MockRuntime {
           z_axis = neg(sub(direction, mul(cos_direction_and_y_axis, y_axis))); 
         }
 
+        z_axis = normalize(z_axis);
         const x_axis = normalize(cross(y_axis, z_axis));
 
         

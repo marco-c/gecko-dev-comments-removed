@@ -18,6 +18,12 @@ let normalize_quaternion = function(input) {
 }
 
 
+
+let flip_quaternion = function(input) {
+  return {x : -input.x, y : -input.y, z : -input.z, w : -input.w};
+}
+
+
 let conjugate_quaternion = function(input) {
   return {x : -input.x, y : -input.y, z : -input.z, w : input.w};
 }
