@@ -439,16 +439,6 @@ class VideoTrackEncoder : public TrackEncoder {
   
 
 
-  int mDisplayWidth;
-
-  
-
-
-  int mDisplayHeight;
-
-  
-
-
 
 
   VideoChunk mLastChunk;

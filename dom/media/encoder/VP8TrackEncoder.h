@@ -17,6 +17,8 @@ typedef struct vpx_codec_ctx vpx_codec_ctx_t;
 typedef struct vpx_codec_enc_cfg vpx_codec_enc_cfg_t;
 typedef struct vpx_image vpx_image_t;
 
+class VP8Metadata;
+
 
 
 
@@ -63,6 +65,9 @@ class VP8TrackEncoder : public VideoTrackEncoder {
 
   
   void Destroy();
+
+  
+  RefPtr<VP8Metadata> mMetadata;
 
   
   TrackTime mEncodedTimestamp = 0;
