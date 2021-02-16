@@ -328,8 +328,18 @@ class MozbuildObject(ProcessExecutionMixin):
                     *args, **kwargs
                 )
 
+        
+        
+        logger = logging.getLogger("moz.configure.reduced")
+        
+        logger.propagate = False
         sandbox = ReducedConfigureSandbox(
-            {}, environ=env, argv=["mach", "--help"], stdout=out, stderr=out
+            {},
+            environ=env,
+            argv=["mach", "--help"],
+            stdout=out,
+            stderr=out,
+            logger=logger,
         )
         base_dir = os.path.join(topsrcdir, "build", "moz.configure")
         try:
