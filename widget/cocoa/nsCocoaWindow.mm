@@ -801,7 +801,7 @@ void nsCocoaWindow::Show(bool bState) {
       bool parentIsSheet = false;
       if (NS_SUCCEEDED(piParentWidget->GetIsSheet(&parentIsSheet)) && parentIsSheet) {
         piParentWidget->GetSheetWindowParent(&topNonSheetWindow);
-        [NSApp endSheet:nativeParentWindow];
+        [nativeParentWindow.sheetParent endSheet:nativeParentWindow];
       }
 
       nsCOMPtr<nsIWidget> sheetShown;
@@ -813,14 +813,23 @@ void nsCocoaWindow::Show(bool bState) {
         if (![mWindow isVisible]) {
           mSheetNeedsShow = false;
           mSheetWindowParent = topNonSheetWindow;
-          
-          NSWindow* contextInfo = parentIsSheet ? nil : mSheetWindowParent;
+          NSWindow* sheet = mWindow;
+          NSWindow* nonSheetParent = parentIsSheet ? nil : mSheetWindowParent;
           [TopLevelWindowData deactivateInWindow:mSheetWindowParent];
-          [NSApp beginSheet:mWindow
-              modalForWindow:mSheetWindowParent
-               modalDelegate:mDelegate
-              didEndSelector:@selector(didEndSheet:returnCode:contextInfo:)
-                 contextInfo:contextInfo];
+          [mSheetWindowParent beginSheet:sheet
+                       completionHandler:^(NSModalResponse returnCode) {
+                         
+                         
+                         
+                         
+                         
+                         
+                         [TopLevelWindowData deactivateInWindow:sheet];
+                         [sheet orderOut:nil];
+                         if (nonSheetParent) {
+                           [TopLevelWindowData activateInWindow:nonSheetParent];
+                         }
+                       }];
           [TopLevelWindowData activateInWindow:mWindow];
           SendSetZLevelEvent();
         }
@@ -909,7 +918,7 @@ void nsCocoaWindow::Show(bool bState) {
         NSWindow* sheetParent = mSheetWindowParent;
 
         
-        [NSApp endSheet:mWindow];
+        [mSheetWindowParent endSheet:mWindow];
 
         [TopLevelWindowData deactivateInWindow:mWindow];
 
@@ -926,7 +935,7 @@ void nsCocoaWindow::Show(bool bState) {
                    NS_SUCCEEDED(piParentWidget->GetIsSheet(&parentIsSheet)) && parentIsSheet) {
           
           
-          NSWindow* contextInfo = sheetParent;
+          NSWindow* nonSheetGrandparent = sheetParent;
           nsIWidget* grandparentWidget = nil;
           if (NS_SUCCEEDED(piParentWidget->GetRealParent(&grandparentWidget)) &&
               grandparentWidget) {
@@ -935,17 +944,26 @@ void nsCocoaWindow::Show(bool bState) {
             if (piGrandparentWidget &&
                 NS_SUCCEEDED(piGrandparentWidget->GetIsSheet(&grandparentIsSheet)) &&
                 grandparentIsSheet) {
-              contextInfo = nil;
+              nonSheetGrandparent = nil;
             }
           }
           
           
           
-          [NSApp beginSheet:nativeParentWindow
-              modalForWindow:sheetParent
-               modalDelegate:[nativeParentWindow delegate]
-              didEndSelector:@selector(didEndSheet:returnCode:contextInfo:)
-                 contextInfo:contextInfo];
+          [nativeParentWindow beginSheet:sheetParent
+                       completionHandler:^(NSModalResponse returnCode) {
+                         
+                         
+                         
+                         
+                         
+                         
+                         [TopLevelWindowData deactivateInWindow:sheetParent];
+                         [sheetParent orderOut:nil];
+                         if (nonSheetGrandparent) {
+                           [TopLevelWindowData activateInWindow:nonSheetGrandparent];
+                         }
+                       }];
         } else {
           
           
@@ -2475,14 +2493,6 @@ void nsCocoaWindow::SetDrawsTitle(bool aDrawTitle) {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-void nsCocoaWindow::SetUseBrightTitlebarForeground(bool aBrightForeground) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  [mWindow setUseBrightTitlebarForeground:aBrightForeground];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
 nsresult nsCocoaWindow::SetNonClientMargins(LayoutDeviceIntMargin& margins) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
 
@@ -2927,23 +2937,6 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   return rect;
 }
 
-- (void)didEndSheet:(NSWindow*)sheet returnCode:(int)returnCode contextInfo:(void*)contextInfo {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  
-  
-  
-  
-  
-  
-  
-  [TopLevelWindowData deactivateInWindow:sheet];
-  [sheet orderOut:self];
-  if (contextInfo) [TopLevelWindowData activateInWindow:(NSWindow*)contextInfo];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
 - (void)windowDidChangeBackingProperties:(NSNotification*)aNotification {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -3162,7 +3155,6 @@ static NSMutableSet* gSwizzledFrameViewClasses = nil;
   mDirtyRect = NSZeroRect;
   mBeingShown = NO;
   mDrawTitle = NO;
-  mBrightTitlebarForeground = NO;
   mUseMenuStyle = NO;
   mTouchBar = nil;
   mIsAnimationSuppressed = NO;
@@ -3342,15 +3334,6 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 
 - (BOOL)wantsTitleDrawn {
   return mDrawTitle;
-}
-
-- (void)setUseBrightTitlebarForeground:(BOOL)aBrightForeground {
-  mBrightTitlebarForeground = aBrightForeground;
-  [[self standardWindowButton:NSWindowFullScreenButton] setNeedsDisplay:YES];
-}
-
-- (BOOL)useBrightTitlebarForeground {
-  return mBrightTitlebarForeground;
 }
 
 - (NSView*)trackingAreaView {
