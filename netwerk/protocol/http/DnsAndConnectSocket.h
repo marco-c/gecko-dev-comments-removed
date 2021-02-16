@@ -7,6 +7,7 @@
 #define DnsAndConnectSocket_h__
 
 #include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
 #include "nsAHttpConnection.h"
 #include "nsHttpConnection.h"
 #include "nsHttpTransaction.h"
@@ -50,19 +51,10 @@ class DnsAndConnectSocket final : public nsIOutputStreamCallback,
                       uint32_t caps, bool speculative, bool isFromPredictor,
                       bool urgentStart);
 
-  [[nodiscard]] nsresult SetupStreams(nsISocketTransport**,
-                                      nsIAsyncInputStream**,
-                                      nsIAsyncOutputStream**, bool isBackup);
   [[nodiscard]] nsresult SetupPrimaryStreams();
-  [[nodiscard]] nsresult SetupBackupStreams();
-  void SetupBackupTimer();
-  void CancelBackupTimer();
   void Abandon();
   double Duration(TimeStamp epoch);
-  nsISocketTransport* SocketTransport() { return mSocketTransport; }
-  nsISocketTransport* BackupTransport() { return mBackupTransport; }
-
-  nsAHttpTransaction* Transaction() { return mTransaction; }
+  void CloseTransports(nsresult error);
 
   bool IsSpeculative() { return mSpeculative; }
 
@@ -83,7 +75,27 @@ class DnsAndConnectSocket final : public nsIOutputStreamCallback,
   void Unclaim();
 
  private:
+  struct SocketTransport {
+    nsCOMPtr<nsISocketTransport> mSocketTransport;
+    nsCOMPtr<nsIAsyncOutputStream> mStreamOut;
+    nsCOMPtr<nsIAsyncInputStream> mStreamIn;
+    TimeStamp mSynStarted;
+    bool mConnectedOK = false;
+    void Abandon();
+    nsresult SetupConn(nsAHttpTransaction* transaction, ConnectionEntry* ent,
+                       HttpConnectionBase** connection);
+  };
+
+  [[nodiscard]] nsresult SetupBackupStreams();
+  [[nodiscard]] nsresult SetupStreams(bool isBackup);
   nsresult SetupConn(nsIAsyncOutputStream* out);
+  void SetupBackupTimer();
+  void CancelBackupTimer();
+
+  bool IsPrimary(nsITransport* trans);
+  bool IsPrimary(nsIAsyncOutputStream* out);
+  bool IsBackup(nsITransport* trans);
+  bool IsBackup(nsIAsyncOutputStream* out);
 
   
   
@@ -92,10 +104,9 @@ class DnsAndConnectSocket final : public nsIOutputStreamCallback,
       bool removeWhenFound);
 
   RefPtr<nsAHttpTransaction> mTransaction;
-  bool mDispatchedMTransaction;
-  nsCOMPtr<nsISocketTransport> mSocketTransport;
-  nsCOMPtr<nsIAsyncOutputStream> mStreamOut;
-  nsCOMPtr<nsIAsyncInputStream> mStreamIn;
+  bool mDispatchedMTransaction = false;
+
+  SocketTransport mPrimaryTransport;
   uint32_t mCaps;
 
   
@@ -116,31 +127,24 @@ class DnsAndConnectSocket final : public nsIOutputStreamCallback,
   
   bool mIsFromPredictor;
 
-  bool mAllow1918;
-
-  TimeStamp mPrimarySynStarted;
-  TimeStamp mBackupSynStarted;
+  bool mAllow1918 = true;
 
   
   
-  bool mHasConnected;
+  bool mHasConnected = false;
 
-  bool mPrimaryConnectedOK;
-  bool mBackupConnectedOK;
-  bool mBackupConnStatsSet;
+  bool mBackupConnStatsSet = false;
 
   
   
   
   
-  bool mFreeToUse;
-  nsresult mPrimaryStreamStatus;
+  bool mFreeToUse = true;
+  nsresult mPrimaryStreamStatus = NS_OK;
 
   RefPtr<ConnectionEntry> mEnt;
   nsCOMPtr<nsITimer> mSynTimer;
-  nsCOMPtr<nsISocketTransport> mBackupTransport;
-  nsCOMPtr<nsIAsyncOutputStream> mBackupStreamOut;
-  nsCOMPtr<nsIAsyncInputStream> mBackupStreamIn;
+  SocketTransport mBackupTransport;
 
   bool mIsHttp3;
 };
