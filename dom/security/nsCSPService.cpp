@@ -173,10 +173,30 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
 
   if (csp) {
     
-    rv = csp->ShouldLoad(contentType, cspEventListener, aContentLocation,
-                         nullptr,  
-                         !isPreload && aLoadInfo->GetSendCSPViolationEvents(),
-                         cspNonce, parserCreatedScript, aDecision);
+    
+    
+    
+    
+    nsCOMPtr<nsIURI> originalURI = nullptr;
+    ExtContentPolicyType extType =
+        nsContentUtils::InternalContentPolicyTypeToExternal(contentType);
+    if (extType == ExtContentPolicy::TYPE_SUBDOCUMENT &&
+        !aLoadInfo->GetOriginalFrameSrcLoad() &&
+        mozilla::StaticPrefs::
+            security_csp_truncate_blocked_uri_for_frame_navigations()) {
+      nsAutoCString prePathStr;
+      nsresult rv = aContentLocation->GetPrePath(prePathStr);
+      NS_ENSURE_SUCCESS(rv, rv);
+      rv = NS_NewURI(getter_AddRefs(originalURI), prePathStr);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    
+    rv = csp->ShouldLoad(
+        contentType, cspEventListener, aContentLocation,
+        originalURI,  
+        !isPreload && aLoadInfo->GetSendCSPViolationEvents(), cspNonce,
+        parserCreatedScript, aDecision);
 
     if (NS_CP_REJECTED(*aDecision)) {
       NS_SetRequestBlockingReason(

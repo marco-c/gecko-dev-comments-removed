@@ -26,6 +26,12 @@ Services.prefs.setIntPref(
 );
 
 
+Services.prefs.setBoolPref(
+  "security.csp.truncate_blocked_uri_for_frame_navigations",
+  false
+);
+
+
 
 ExtensionTestUtils.mockAppInfo();
 
@@ -830,6 +836,8 @@ function computeBaseURLs(tests, expectedSources, forbiddenSources = {}) {
 
   function* iterSources(test, sources) {
     for (let [source, attrs] of Object.entries(sources)) {
+      
+      
       if (Object.keys(attrs).every(attr => attrs[attr] === test[attr])) {
         yield `${BASE_URL}/${test.src}?source=${source}`;
       }
@@ -1082,6 +1090,9 @@ const TESTS = [
   },
   
   {
+    
+    
+    
     element: ["iframe", {}],
     src: "iframe.html",
   },
