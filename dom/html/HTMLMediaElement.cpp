@@ -5381,6 +5381,9 @@ void HTMLMediaElement::SeekCompleted() {
   if (mTextTrackManager) {
     mTextTrackManager->DidSeek();
   }
+  
+  
+  
   FireTimeUpdate(TimeupdateType::eMandatory);
   DispatchAsyncEvent(u"seeked"_ns);
   
