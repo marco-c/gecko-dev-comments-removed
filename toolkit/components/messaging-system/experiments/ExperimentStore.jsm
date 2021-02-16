@@ -48,20 +48,6 @@ const SYNC_ACCESS_FEATURES = ["newtab", "aboutwelcome"];
 
 class ExperimentStore extends SharedDataMap {
   constructor(sharedDataKey, options = { isParent: IS_MAIN_PROCESS }) {
-    if (!options.path) {
-      
-      
-      Object.defineProperty(options, "path", {
-        get: () => {
-          try {
-            const profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
-            return PathUtils.join(profileDir, `${sharedDataKey}.json`);
-          } catch (e) {
-            return null;
-          }
-        },
-      });
-    }
     super(sharedDataKey || DEFAULT_STORE_ID, options);
   }
 
@@ -140,13 +126,6 @@ class ExperimentStore extends SharedDataMap {
 
   _offFeatureUpdate(featureId, callback) {
     this.off(`featureUpdate:${featureId}`, callback);
-  }
-
-  
-
-
-  _emitExperimentExposure(experimentData) {
-    this.emit("exposure", experimentData);
   }
 
   

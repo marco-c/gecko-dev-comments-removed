@@ -5,6 +5,17 @@ const SYNC_DATA_PREF = "messaging-system.syncdatastore.data";
 const { ExperimentFakes } = ChromeUtils.import(
   "resource://testing-common/MSTestUtils.jsm"
 );
+const { ExperimentStore } = ChromeUtils.import(
+  "resource://messaging-system/experiments/ExperimentStore.jsm"
+);
+
+add_task(async function test_sharedDataMap_key() {
+  const store = new ExperimentStore();
+
+  
+  
+  Assert.ok(store._sharedDataKey, "Make sure it's defined");
+});
 
 add_task(async function test_usageBeforeInitialization() {
   const store = ExperimentFakes.store();
@@ -92,32 +103,6 @@ add_task(async function test_getExperimentForGroup() {
   );
 });
 
-add_task(async function test_recordExposureEvent() {
-  const manager = ExperimentFakes.manager();
-  const experiment = ExperimentFakes.experiment("foo");
-  const experimentData = {
-    experimentSlug: experiment.slug,
-    branchSlug: experiment.branch.slug,
-    featureId: experiment.branch.feature.featureId,
-  };
-  await manager.onStartup();
-
-  let exposureEvEmit = new Promise(resolve =>
-    manager.store.on("exposure", (ev, data) => resolve(data))
-  );
-
-  manager.store.addExperiment(experiment);
-  manager.store._emitExperimentExposure(experimentData);
-
-  let result = await exposureEvEmit;
-
-  Assert.deepEqual(
-    result,
-    experimentData,
-    "should return the same data as sent"
-  );
-});
-
 add_task(async function test_hasExperimentForFeature() {
   const store = ExperimentFakes.store();
 
@@ -169,34 +154,6 @@ add_task(async function test_hasExperimentForFeature() {
     store.hasExperimentForFeature("purple"),
     false,
     "should return false if there is a non-active experiment with the given groups"
-  );
-});
-
-add_task(async function test_hasExperimentForFeature_no_exposure() {
-  const sandbox = sinon.createSandbox();
-  const store = ExperimentFakes.store();
-
-  await store.init();
-  const emitSpy = sandbox.spy(store, "emit");
-
-  store.addExperiment(
-    ExperimentFakes.experiment("foo", {
-      branch: {
-        slug: "variant",
-        feature: { featureId: "green", enabled: true },
-      },
-    })
-  );
-
-  Assert.equal(
-    store.hasExperimentForFeature("green"),
-    true,
-    "should return true if there is an experiment with any of the given groups"
-  );
-
-  Assert.ok(
-    emitSpy.neverCalledWith("exposure"),
-    "should not emit an exposure event when checking hasExperimentForFeature"
   );
 });
 
