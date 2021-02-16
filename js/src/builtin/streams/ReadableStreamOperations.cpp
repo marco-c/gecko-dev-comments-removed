@@ -9,7 +9,6 @@
 #include "builtin/streams/ReadableStreamOperations.h"
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 
 #include "builtin/Array.h"                
 #include "builtin/Promise.h"              

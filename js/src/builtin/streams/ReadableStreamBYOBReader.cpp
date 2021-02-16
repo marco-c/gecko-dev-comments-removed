@@ -12,8 +12,6 @@
 
 
 
-#include "mozilla/Attributes.h"  
-
 #include "jsapi.h"  
 
 #include "builtin/streams/ReadableStream.h"  

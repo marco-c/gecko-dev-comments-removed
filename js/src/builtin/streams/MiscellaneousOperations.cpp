@@ -9,7 +9,6 @@
 #include "builtin/streams/MiscellaneousOperations.h"
 
 #include "mozilla/Assertions.h"     
-#include "mozilla/Attributes.h"     
 #include "mozilla/FloatingPoint.h"  
 
 #include "jsapi.h"  

@@ -9,8 +9,6 @@
 #ifndef builtin_streams_WritableStreamDefaultControllerOperations_h
 #define builtin_streams_WritableStreamDefaultControllerOperations_h
 
-#include "mozilla/Attributes.h"  
-
 #include "jstypes.h"        
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       

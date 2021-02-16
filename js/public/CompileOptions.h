@@ -52,7 +52,6 @@
 #ifndef js_CompileOptions_h
 #define js_CompileOptions_h
 
-#include "mozilla/Attributes.h"       
 #include "mozilla/MemoryReporting.h"  
 
 #include <stddef.h>  

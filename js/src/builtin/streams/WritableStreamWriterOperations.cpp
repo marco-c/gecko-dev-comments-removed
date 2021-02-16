@@ -9,7 +9,6 @@
 #include "builtin/streams/WritableStreamWriterOperations.h"
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 
 #include "jsapi.h"  
 

@@ -8,7 +8,6 @@
 #define vm_PromiseObject_h
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 
 #include <stdint.h>  
 

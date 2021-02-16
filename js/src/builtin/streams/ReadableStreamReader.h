@@ -9,8 +9,6 @@
 #ifndef builtin_streams_ReadableStreamReader_h
 #define builtin_streams_ReadableStreamReader_h
 
-#include "mozilla/Attributes.h"  
-
 #include "jstypes.h"          
 #include "js/Class.h"         
 #include "js/RootingAPI.h"    

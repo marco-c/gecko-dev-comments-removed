@@ -7,7 +7,6 @@
 
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 
 #include "jsapi.h"        
 #include "jsfriendapi.h"  

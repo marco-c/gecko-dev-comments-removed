@@ -10,7 +10,6 @@
 #define builtin_streams_ReadableStream_h
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 
 #include <stdint.h>  
 

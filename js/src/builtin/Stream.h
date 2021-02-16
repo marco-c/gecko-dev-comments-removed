@@ -7,8 +7,6 @@
 #ifndef builtin_Stream_h
 #define builtin_Stream_h
 
-#include "mozilla/Attributes.h"  
-
 #include "jstypes.h"        
 #include "js/RootingAPI.h"  
 

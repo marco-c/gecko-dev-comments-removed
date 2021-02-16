@@ -12,7 +12,6 @@
 #include "builtin/streams/WritableStreamDefaultWriter.h"
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 
 #include "builtin/streams/WritableStream.h"  
 #include "js/RootingAPI.h"                   

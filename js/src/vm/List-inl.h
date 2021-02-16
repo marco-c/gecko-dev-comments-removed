@@ -10,7 +10,6 @@
 #include "vm/List.h"
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 
 #include <stdint.h>  
 

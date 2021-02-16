@@ -9,7 +9,6 @@
 #include "builtin/streams/WritableStreamOperations.h"
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 
 #include <stdint.h>  
 

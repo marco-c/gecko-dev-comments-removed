@@ -12,8 +12,6 @@
 #ifndef builtin_HandlerFunction_inl_h
 #define builtin_HandlerFunction_inl_h
 
-#include "mozilla/Attributes.h"  
-
 #include <stddef.h>  
 
 #include "gc/AllocKind.h"    

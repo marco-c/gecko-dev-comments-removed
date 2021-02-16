@@ -9,8 +9,6 @@
 
 #include "js/Promise.h"
 
-#include "mozilla/Attributes.h"  
-
 #include "jsapi.h"    
 #include "jstypes.h"  
 

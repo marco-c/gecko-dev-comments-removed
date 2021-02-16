@@ -9,7 +9,6 @@
 #define js_MemoryFunctions_h
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 
 #include <stddef.h>  
 

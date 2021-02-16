@@ -8,7 +8,7 @@
 #define frontend_ObjectEmitter_h
 
 #include "mozilla/Attributes.h"  
-#include "mozilla/Maybe.h"  
+#include "mozilla/Maybe.h"       
 
 #include <stddef.h>  
 #include <stdint.h>  

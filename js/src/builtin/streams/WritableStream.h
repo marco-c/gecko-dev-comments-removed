@@ -10,7 +10,6 @@
 #define builtin_streams_WritableStream_h
 
 #include "mozilla/Assertions.h"      
-#include "mozilla/Attributes.h"      
 #include "mozilla/Casting.h"         
 #include "mozilla/MathAlgorithms.h"  
 

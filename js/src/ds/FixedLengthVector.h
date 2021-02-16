@@ -8,7 +8,6 @@
 #define ds_FixedLengthVector_h
 
 #include "mozilla/Assertions.h"             
-#include "mozilla/Attributes.h"             
 #include "mozilla/OperatorNewExtensions.h"  
 
 #include <stddef.h>  

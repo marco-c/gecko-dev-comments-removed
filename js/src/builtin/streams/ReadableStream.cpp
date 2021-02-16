@@ -8,8 +8,6 @@
 
 #include "builtin/streams/ReadableStream.h"
 
-#include "mozilla/Attributes.h"  
-
 #include "jsapi.h"    
 #include "jspubtd.h"  
 

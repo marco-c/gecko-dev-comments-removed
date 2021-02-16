@@ -12,7 +12,6 @@
 #include "builtin/streams/PipeToState.h"
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 
 #include "jstypes.h"  
 

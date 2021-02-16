@@ -10,7 +10,6 @@
 #include "builtin/streams/ReadableStreamReader.h"
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 
 #include "jsfriendapi.h"  
 

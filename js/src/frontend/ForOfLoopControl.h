@@ -7,8 +7,7 @@
 #ifndef frontend_ForOfLoopControl_h
 #define frontend_ForOfLoopControl_h
 
-#include "mozilla/Attributes.h"  
-#include "mozilla/Maybe.h"       
+#include "mozilla/Maybe.h"  
 
 #include <stdint.h>  
 

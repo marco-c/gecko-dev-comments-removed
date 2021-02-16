@@ -12,7 +12,6 @@
 #include "builtin/streams/MiscellaneousOperations.h"
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"  
 
 #include "js/Promise.h"        
 #include "js/RootingAPI.h"     

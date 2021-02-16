@@ -13,8 +13,8 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
-#include "mozilla/Maybe.h"  
-#include "mozilla/Range.h"  
+#include "mozilla/Maybe.h"       
+#include "mozilla/Range.h"       
 
 #include <stddef.h>  
 #include <stdint.h>  
