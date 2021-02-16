@@ -719,13 +719,9 @@ class nsContextMenu {
 
     
     if (this.inFrame) {
-      if (
-        BrowserUtils.mimeTypeIsTextBased(this.target.ownerDocument.contentType)
-      ) {
-        this.viewFrameSourceElement.removeAttribute("hidden");
-      } else {
-        this.viewFrameSourceElement.setAttribute("hidden", "true");
-      }
+      this.viewFrameSourceElement.hidden = !BrowserUtils.mimeTypeIsTextBased(
+        this.target.ownerDocument.contentType
+      );
     }
 
     
