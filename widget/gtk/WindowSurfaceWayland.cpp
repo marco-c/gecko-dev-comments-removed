@@ -1014,8 +1014,7 @@ bool WindowSurfaceWayland::FlushPendingCommitsLocked() {
   wl_surface* waylandSurface = moz_container_wayland_surface_lock(container);
   if (!waylandSurface) {
     LOGWAYLAND(
-        ("    moz_container_wayland_surface_lock() failed, delay commit.\n",
-         (void*)this));
+        ("    moz_container_wayland_surface_lock() failed, delay commit.\n"));
 
     
     
