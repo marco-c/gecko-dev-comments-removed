@@ -1423,6 +1423,21 @@ void MacroAssembler::allTrueInt32x4(FloatRegister src, Register dest) {
   movzbl(dest, dest);
 }
 
+void MacroAssembler::allTrueInt64x2(FloatRegister src, Register dest) {
+  ScratchSimd128Scope xtmp(*this);
+  
+  vpxor(xtmp, xtmp, xtmp);
+  
+  
+  vpcmpeqq(Operand(src), xtmp, xtmp);
+  
+  vpmovmskb(xtmp, dest);
+  
+  testl(dest, dest);
+  setCC(Zero, dest);
+  movzbl(dest, dest);
+}
+
 
 
 void MacroAssembler::bitmaskInt8x16(FloatRegister src, Register dest) {
@@ -2257,6 +2272,13 @@ void MacroAssembler::unsignedCompareInt32x4(Assembler::Condition cond,
                                             FloatRegister temp2) {
   MacroAssemblerX86Shared::unsignedCompareInt32x4(lhsDest, Operand(rhs), cond,
                                                   lhsDest, temp1, temp2);
+}
+
+void MacroAssembler::compareInt64x2(Assembler::Condition cond,
+                                    FloatRegister rhs, FloatRegister lhsDest) {
+  MOZ_ASSERT(cond == Assembler::Condition::Equal ||
+             cond == Assembler::Condition::NotEqual);
+  MacroAssemblerX86Shared::compareInt64x2(lhsDest, Operand(rhs), cond, lhsDest);
 }
 
 void MacroAssembler::compareFloat32x4(Assembler::Condition cond,
