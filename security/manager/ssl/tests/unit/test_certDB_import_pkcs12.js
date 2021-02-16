@@ -31,6 +31,7 @@ let gTestcases = [
     successExpected: false,
     errorCode: Ci.nsIX509CertDB.ERROR_BAD_PASSWORD,
     checkCertExist: true,
+    certCommonName: CERT_COMMON_NAME,
   },
   
   {
@@ -40,6 +41,7 @@ let gTestcases = [
     successExpected: false,
     errorCode: Ci.nsIX509CertDB.ERROR_DECODE_ERROR,
     checkCertExist: true,
+    certCommonName: CERT_COMMON_NAME,
   },
   
   
@@ -52,6 +54,7 @@ let gTestcases = [
     successExpected: true,
     errorCode: Ci.nsIX509CertDB.Success,
     checkCertExist: true,
+    certCommonName: CERT_COMMON_NAME,
   },
   
   {
@@ -61,6 +64,7 @@ let gTestcases = [
     successExpected: true,
     errorCode: Ci.nsIX509CertDB.Success,
     checkCertExist: false,
+    certCommonName: CERT_COMMON_NAME,
   },
   
   {
@@ -70,6 +74,17 @@ let gTestcases = [
     successExpected: true,
     errorCode: Ci.nsIX509CertDB.Success,
     checkCertExist: false,
+    certCommonName: CERT_COMMON_NAME,
+  },
+  
+  {
+    name: "import PKCS12 file using AES",
+    filename: "test_certDB_import/encrypted_with_aes.p12",
+    passwordToUse: "password",
+    successExpected: true,
+    errorCode: Ci.nsIX509CertDB.Success,
+    checkCertExist: true,
+    certCommonName: "John Doe",
   },
 ];
 
@@ -91,7 +106,7 @@ function runOneTestcase(testcase) {
   info(`running ${testcase.name}`);
   if (testcase.checkCertExist) {
     ok(
-      !doesCertExist(CERT_COMMON_NAME),
+      !doesCertExist(testcase.certCommonName),
       "cert should not be in the database before import"
     );
   }
@@ -104,7 +119,7 @@ function runOneTestcase(testcase) {
   let errorCode = gCertDB.importPKCS12File(certFile, testcase.passwordToUse);
   equal(errorCode, testcase.errorCode, `verifying error code`);
   equal(
-    doesCertExist(CERT_COMMON_NAME),
+    doesCertExist(testcase.certCommonName),
     testcase.successExpected,
     `cert should${testcase.successExpected ? "" : " not"} be found now`
   );
