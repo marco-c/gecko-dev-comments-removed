@@ -1,0 +1,31 @@
+
+
+
+
+
+#ifndef mozilla_widget_NativeMenuSupport_h
+#define mozilla_widget_NativeMenuSupport_h
+
+class nsIWidget;
+
+namespace mozilla {
+
+namespace dom {
+class Element;
+}
+
+namespace widget {
+
+class NativeMenuSupport final {
+ public:
+  
+  
+  
+  static void CreateNativeMenuBar(nsIWidget* aParent,
+                                  dom::Element* aMenuBarElement);
+};
+
+}  
+}  
+
+#endif  

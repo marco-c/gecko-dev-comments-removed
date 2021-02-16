@@ -12,7 +12,6 @@
 #include "nsMenuBaseX.h"
 #include "nsMenuGroupOwnerX.h"
 #include "nsChangeObserver.h"
-#include "nsINativeMenuService.h"
 #include "nsString.h"
 
 class nsMenuBarX;
@@ -33,19 +32,6 @@ class Element;
 }
 - (id)initWithApplicationMenu:(nsMenuBarX*)aApplicationMenu;
 @end
-
-
-class nsNativeMenuServiceX : public nsINativeMenuService {
- public:
-  NS_DECL_ISUPPORTS
-
-  nsNativeMenuServiceX() {}
-
-  NS_IMETHOD CreateNativeMenuBar(nsIWidget* aParent, mozilla::dom::Element* aMenuBarNode) override;
-
- protected:
-  virtual ~nsNativeMenuServiceX() {}
-};
 
 
 
