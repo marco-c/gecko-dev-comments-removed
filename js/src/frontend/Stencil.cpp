@@ -17,16 +17,17 @@
 #include "frontend/BytecodeSection.h"      
 #include "frontend/CompilationStencil.h"  
 #include "frontend/SharedContext.h"
-#include "gc/AllocKind.h"    
-#include "gc/Rooting.h"      
-#include "gc/Tracer.h"       
-#include "js/CallArgs.h"     
-#include "js/GCAPI.h"        
-#include "js/RootingAPI.h"   
-#include "js/Transcoding.h"  
-#include "js/Value.h"        
-#include "js/WasmModule.h"   
-#include "vm/BindingKind.h"  
+#include "gc/AllocKind.h"               
+#include "gc/Rooting.h"                 
+#include "gc/Tracer.h"                  
+#include "js/CallArgs.h"                
+#include "js/experimental/JSStencil.h"  
+#include "js/GCAPI.h"                   
+#include "js/RootingAPI.h"              
+#include "js/Transcoding.h"             
+#include "js/Value.h"                   
+#include "js/WasmModule.h"              
+#include "vm/BindingKind.h"             
 #include "vm/EnvironmentObject.h"
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/JSContext.h"              
@@ -2830,4 +2831,80 @@ void CompilationState::rewind(const CompilationState::RewindToken& pos) {
     MOZ_ASSERT(asmJS.count() == pos.asmJSCount);
   }
   scriptData.shrinkTo(pos.scriptDataLength);
+}
+
+void JS::StencilAddRef(JS::Stencil* stencil) { stencil->refCount++; }
+void JS::StencilRelease(JS::Stencil* stencil) {
+  MOZ_RELEASE_ASSERT(stencil->refCount > 0);
+  stencil->refCount--;
+  if (stencil->refCount == 0) {
+    js_delete(stencil);
+  }
+}
+
+already_AddRefed<JS::Stencil> JS::CompileGlobalScriptToStencil(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<mozilla::Utf8Unit>& srcBuf) {
+  ScopeKind scopeKind =
+      options.nonSyntacticScope ? ScopeKind::NonSyntactic : ScopeKind::Global;
+
+  Rooted<CompilationInput> input(cx, CompilationInput(options));
+  auto stencil = js::frontend::CompileGlobalScriptToStencil(cx, input.get(),
+                                                            srcBuf, scopeKind);
+  if (!stencil) {
+    return nullptr;
+  }
+
+  
+  return do_AddRef(stencil.release());
+}
+
+JSScript* JS::InstantiateGlobalStencil(
+    JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+    RefPtr<JS::Stencil> stencil) {
+  Rooted<CompilationInput> input(cx, CompilationInput(options));
+  Rooted<CompilationGCOutput> gcOutput(cx);
+  if (!InstantiateStencils(cx, input.get(), *stencil, gcOutput.get())) {
+    return nullptr;
+  }
+
+  return gcOutput.get().script;
+}
+
+JS::TranscodeResult JS::EncodeStencil(JSContext* cx,
+                                      const JS::ReadOnlyCompileOptions& options,
+                                      RefPtr<JS::Stencil> stencil,
+                                      TranscodeBuffer& buffer) {
+  Rooted<CompilationInput> input(cx, CompilationInput(options));
+  XDRIncrementalStencilEncoder encoder(cx);
+  XDRResult res = encoder.codeStencil(input.get(), *stencil);
+  if (res.isErr()) {
+    return res.unwrapErr();
+  }
+  res = encoder.linearize(buffer, stencil->source.get());
+  if (res.isErr()) {
+    return res.unwrapErr();
+  }
+  return TranscodeResult_Ok;
+}
+
+JS::TranscodeResult JS::DecodeStencil(JSContext* cx,
+                                      const JS::ReadOnlyCompileOptions& options,
+                                      const JS::TranscodeRange& range,
+                                      RefPtr<JS::Stencil>& stencilOut) {
+  Rooted<CompilationInput> input(cx, CompilationInput(options));
+  if (!input.get().initForGlobal(cx)) {
+    return TranscodeResult_Throw;
+  }
+  UniquePtr<JS::Stencil> stencil(MakeUnique<CompilationStencil>(input.get()));
+  if (!stencil) {
+    return TranscodeResult_Throw;
+  }
+  XDRStencilDecoder decoder(cx, &options, range);
+  XDRResult res = decoder.codeStencils(input.get(), *stencil);
+  if (res.isErr()) {
+    return res.unwrapErr();
+  }
+  stencilOut = do_AddRef(stencil.release());
+  return TranscodeResult_Ok;
 }

@@ -9,7 +9,8 @@
 
 #include "mozilla/AlreadyAddRefed.h"  
 #include "mozilla/Assertions.h"       
-#include "mozilla/Attributes.h"
+#include "mozilla/Atomics.h"          
+#include "mozilla/Attributes.h"       
 #include "mozilla/HashTable.h"        
 #include "mozilla/Maybe.h"            
 #include "mozilla/MemoryReporting.h"  
@@ -579,6 +580,16 @@ struct CompilationStencil : public BaseCompilationStencil {
   static constexpr ScriptIndex TopLevelIndex = ScriptIndex(0);
 
   static constexpr size_t LifoAllocChunkSize = 512;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  mutable mozilla::Atomic<uintptr_t> refCount{0};
 
   
   
