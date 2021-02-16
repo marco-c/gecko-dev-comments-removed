@@ -184,6 +184,24 @@ class nsSyncSection : public nsMediaEventRunner {
   nsCOMPtr<nsIRunnable> mRunnable;
 };
 
+
+
+
+
+
+class nsTimeupdateRunner : public nsMediaEventRunner {
+ public:
+  nsTimeupdateRunner(HTMLMediaElement* aElement, bool aIsMandatory)
+      : nsMediaEventRunner(u"nsTimeupdateRunner"_ns, aElement,
+                           u"timeupdate"_ns),
+        mIsMandatory(aIsMandatory) {}
+  NS_IMETHOD Run() override;
+
+ private:
+  bool ShouldDispatchTimeupdate() const;
+  bool mIsMandatory;
+};
+
 }  
 }  
 
