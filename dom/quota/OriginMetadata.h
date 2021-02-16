@@ -1,0 +1,33 @@
+
+
+
+
+
+
+#ifndef DOM_QUOTA_ORIGINMETADATA_H_
+#define DOM_QUOTA_ORIGINMETADATA_H_
+
+#include <utility>
+#include "nsString.h"
+
+namespace mozilla::dom::quota {
+
+struct OriginMetadata {
+  nsCString mSuffix;
+  nsCString mGroup;
+  nsCString mOrigin;
+
+  
+  
+  
+  OriginMetadata() = default;
+
+  OriginMetadata(nsCString aSuffix, nsCString aGroup, nsCString aOrigin)
+      : mSuffix{std::move(aSuffix)},
+        mGroup{std::move(aGroup)},
+        mOrigin{std::move(aOrigin)} {}
+};
+
+}  
+
+#endif  
