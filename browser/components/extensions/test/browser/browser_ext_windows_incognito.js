@@ -15,7 +15,22 @@ add_task(async function test_window_incognito() {
       permissions: ["http://mochi.test/"],
     },
     background() {
+      let lastFocusedWindowId = null;
+      
+      browser.windows.onFocusChanged.addListener(function listener(
+        eventWindowId
+      ) {
+        lastFocusedWindowId = eventWindowId;
+        browser.windows.onFocusChanged.removeListener(listener);
+      });
+
       browser.test.onMessage.addListener(async pbw => {
+        browser.test.assertEq(
+          browser.windows.WINDOW_ID_NONE,
+          lastFocusedWindowId,
+          "Focus on private window sends the event, but doesn't reveal windowId (without permissions)"
+        );
+
         await browser.test.assertRejects(
           browser.windows.get(pbw.windowId),
           /Invalid window ID/,
@@ -59,9 +74,13 @@ add_task(async function test_window_incognito() {
     },
   });
 
+  await extension.startup();
+
+  
+  
+  
   let winData = await getIncognitoWindow(url);
 
-  await extension.startup();
   extension.sendMessage(winData.details);
   await extension.awaitFinish("pass");
   await BrowserTestUtils.closeWindow(winData.win);
