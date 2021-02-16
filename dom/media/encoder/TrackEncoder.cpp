@@ -549,16 +549,8 @@ void VideoTrackEncoder::Cancel() {
 void VideoTrackEncoder::NotifyEndOfStream() {
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
 
-  if (!mCanceled && !mInitialized) {
-    
-    Init(mOutgoingBuffer, mCurrentTime, 0);
-    if (!mInitialized) {
-      
-      
-      
-      Init(DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT, DEFAULT_FRAME_WIDTH,
-           DEFAULT_FRAME_HEIGHT, DEFAULT_FRAME_RATE);
-    }
+  if (mCanceled) {
+    return;
   }
 
   if (mEndOfStream) {
@@ -594,12 +586,25 @@ void VideoTrackEncoder::NotifyEndOfStream() {
           mLastChunk.mTimeStamp);
       mOutgoingBuffer.ExtendLastFrameBy(duration.value());
     }
+
+    if (!mInitialized) {
+      
+      Init(mOutgoingBuffer, currentTime, 0);
+    }
   }
 
   mIncomingBuffer.Clear();
   mLastChunk.SetNull(0);
 
-  if (mInitialized && !mCanceled) {
+  if (NS_WARN_IF(!mInitialized)) {
+    
+    
+    
+    Init(DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT, DEFAULT_FRAME_WIDTH,
+         DEFAULT_FRAME_HEIGHT, DEFAULT_FRAME_RATE);
+  }
+
+  if (mInitialized) {
     OnDataAvailable();
   }
 }
