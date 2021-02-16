@@ -95,6 +95,10 @@ class TaggedParserAtomIndex {
   static constexpr uint32_t IndexLimit = Bit(IndexBit);
   static constexpr uint32_t SmallIndexLimit = Bit(SmallIndexBit);
 
+  static constexpr size_t Length1StaticLimit = 128U;
+  static constexpr size_t Length2StaticLimit =
+      StaticStrings::NUM_LENGTH2_ENTRIES;
+
  private:
   explicit TaggedParserAtomIndex(uint32_t data) : data_(data) {}
 
@@ -310,7 +314,6 @@ class TrivialTaggedParserAtomIndex {
 class alignas(alignof(uint32_t)) ParserAtom {
   friend class ParserAtomsTable;
   friend class WellKnownParserAtoms;
-  friend class WellKnownParserAtoms_ROM;
 
   static const uint16_t MAX_LATIN1_CHAR = 0xff;
 
@@ -456,29 +459,6 @@ class alignas(alignof(uint32_t)) ParserAtom {
 
 
 
-template <size_t Length>
-class StaticParserAtom : public ParserAtom {
-  alignas(alignof(ParserAtom)) char storage_[Length] = {};
-
- public:
-  constexpr StaticParserAtom() = default;
-
-  constexpr char* storage() {
-    static_assert(offsetof(StaticParserAtom, storage_) == sizeof(ParserAtom),
-                  "StaticParserAtom storage should follow ParserAtom");
-    return storage_;
-  }
-};
-
-template <>
-class StaticParserAtom<0> : public ParserAtom {
- public:
-  constexpr StaticParserAtom() = default;
-};
-
-
-
-
 
 
 class ParserAtomLookup {
@@ -512,113 +492,34 @@ struct WellKnownAtomInfoHasher {
   }
 };
 
+using ParserAtomVector = Vector<ParserAtom*, 0, js::SystemAllocPolicy>;
+using ParserAtomSpan = mozilla::Span<ParserAtom*>;
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class WellKnownParserAtoms_ROM {
+class WellKnownParserAtoms {
+ public:
   
   
-  using CharTraits = std::char_traits<char>;
-  using Char16Traits = std::char_traits<char16_t>;
+  using EntryMap = HashMap<const WellKnownAtomInfo*, TaggedParserAtomIndex,
+                           WellKnownAtomInfoHasher, js::SystemAllocPolicy>;
+  EntryMap wellKnownMap_;
+
+  bool initSingle(JSContext* cx, const WellKnownAtomInfo& info,
+                  TaggedParserAtomIndex index);
 
  public:
-  static constexpr size_t ASCII_STATIC_LIMIT = 128U;
-  static constexpr size_t NUM_LENGTH2_ENTRIES =
-      StaticStrings::NUM_LENGTH2_ENTRIES;
+  bool init(JSContext* cx);
 
-  StaticParserAtom<0> emptyAtom;
-  StaticParserAtom<1> length1Table[ASCII_STATIC_LIMIT];
-  StaticParserAtom<2> length2Table[NUM_LENGTH2_ENTRIES];
-
-#define PROPERTYNAME_FIELD_(_, NAME, TEXT) \
-  StaticParserAtom<CharTraits::length(TEXT)> NAME;
-  FOR_EACH_NONTINY_COMMON_PROPERTYNAME(PROPERTYNAME_FIELD_)
-#undef PROPERTYNAME_FIELD_
-
-#define PROPERTYNAME_FIELD_(NAME, _) \
-  StaticParserAtom<CharTraits::length(#NAME)> NAME;
-  JS_FOR_EACH_PROTOTYPE(PROPERTYNAME_FIELD_)
-#undef PROPERTYNAME_FIELD_
-
- public:
-  constexpr WellKnownParserAtoms_ROM() {
-    
-    emptyAtom.setHashAndLength(mozilla::HashString(u""), 0);
-    emptyAtom.setWellKnownOrStatic();
-
-    
-    for (size_t i = 0; i < ASCII_STATIC_LIMIT; ++i) {
-      init(length1Table[i], i);
-    }
-
-    
-    for (size_t i = 0; i < NUM_LENGTH2_ENTRIES; ++i) {
-      init(length2Table[i], i);
-    }
-
-    
-#define PROPERTYNAME_FIELD_(_, NAME, TEXT) init(NAME, NAME.storage(), u"" TEXT);
-    FOR_EACH_NONTINY_COMMON_PROPERTYNAME(PROPERTYNAME_FIELD_)
-#undef PROPERTYNAME_FIELD_
-
-    
-#define PROPERTYNAME_FIELD_(NAME, _) init(NAME, NAME.storage(), u"" #NAME);
-    JS_FOR_EACH_PROTOTYPE(PROPERTYNAME_FIELD_)
-#undef PROPERTYNAME_FIELD_
-  }
-
- private:
   
-  static constexpr void init(StaticParserAtom<1>& entry, size_t i) {
-    size_t len = 1;
-    char16_t buf[] = {static_cast<char16_t>(i),
-                       0};
-    entry.setHashAndLength(mozilla::HashString(buf), len);
-    entry.setWellKnownOrStatic();
-    entry.storage()[0] = buf[0];
-  }
+  static constexpr size_t MaxWellKnownLength = 32;
 
-  static constexpr void init(StaticParserAtom<2>& entry, size_t i) {
-    size_t len = 2;
-    char16_t buf[] = {StaticStrings::firstCharOfLength2(i),
-                      StaticStrings::secondCharOfLength2(i),
-                       0};
-    entry.setHashAndLength(mozilla::HashString(buf), len);
-    entry.setWellKnownOrStatic();
-    entry.storage()[0] = buf[0];
-    entry.storage()[1] = buf[1];
-  }
+  template <typename CharT>
+  TaggedParserAtomIndex lookupChar16Seq(
+      const SpecificParserAtomLookup<CharT>& lookup) const;
 
-  static constexpr void init(ParserAtom& entry, char* storage,
-                             const char16_t* text) {
-    size_t len = Char16Traits::length(text);
-    entry.setHashAndLength(mozilla::HashString(text), len);
-    entry.setWellKnownOrStatic();
-    for (size_t i = 0; i < len; ++i) {
-      storage[i] = text[i];
-    }
-  }
-
- public:
   template <typename CharsT>
   TaggedParserAtomIndex lookupTinyIndex(CharsT chars, size_t length) const {
     static_assert(std::is_same_v<CharsT, const Latin1Char*> ||
@@ -633,7 +534,7 @@ class WellKnownParserAtoms_ROM {
         return TaggedParserAtomIndex::WellKnown::empty();
 
       case 1: {
-        if (char16_t(chars[0]) < ASCII_STATIC_LIMIT) {
+        if (char16_t(chars[0]) < TaggedParserAtomIndex::Length1StaticLimit) {
           return TaggedParserAtomIndex(Length1StaticParserString(chars[0]));
         }
         break;
@@ -651,67 +552,6 @@ class WellKnownParserAtoms_ROM {
     
     return TaggedParserAtomIndex::null();
   }
-};
-
-using ParserAtomVector = Vector<ParserAtom*, 0, js::SystemAllocPolicy>;
-using ParserAtomSpan = mozilla::Span<ParserAtom*>;
-
-
-
-
-
-
-
-
-
-
-
-
-class WellKnownParserAtoms {
- public:
-  
-  
-#define PROPERTYNAME_FIELD_(_, NAME, _2) const ParserAtom* NAME{};
-  FOR_EACH_COMMON_PROPERTYNAME(PROPERTYNAME_FIELD_)
-#undef PROPERTYNAME_FIELD_
-
-#define PROPERTYNAME_FIELD_(NAME, _) const ParserAtom* NAME{};
-  JS_FOR_EACH_PROTOTYPE(PROPERTYNAME_FIELD_)
-#undef PROPERTYNAME_FIELD_
-
- public:
-  
-  
-  
-  
-  static constexpr WellKnownParserAtoms_ROM rom_ = {};
-
-  
-  
-  using EntryMap = HashMap<const WellKnownAtomInfo*, TaggedParserAtomIndex,
-                           WellKnownAtomInfoHasher, js::SystemAllocPolicy>;
-  EntryMap wellKnownMap_;
-
-  bool initSingle(JSContext* cx, const ParserAtom** name,
-                  const WellKnownAtomInfo& info, const ParserAtom& romEntry,
-                  TaggedParserAtomIndex index);
-
- public:
-  bool init(JSContext* cx);
-
-  
-  static constexpr size_t MaxWellKnownLength = 32;
-
-  template <typename CharT>
-  TaggedParserAtomIndex lookupChar16Seq(
-      const SpecificParserAtomLookup<CharT>& lookup) const;
-
-  template <typename CharsT>
-  TaggedParserAtomIndex lookupTinyIndex(CharsT chars, size_t length) const {
-    return rom_.lookupTinyIndex(chars, length);
-  }
-
-  const ParserAtom* getWellKnown(WellKnownAtomId atomId) const;
 };
 
 bool InstantiateMarkedAtoms(JSContext* cx, const ParserAtomSpan& entries,
