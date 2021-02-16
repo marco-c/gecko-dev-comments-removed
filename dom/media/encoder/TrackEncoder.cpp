@@ -29,9 +29,6 @@ static const int AUDIO_INIT_FAILED_DURATION = 10;
 
 static const int VIDEO_INIT_FAILED_DURATION = 30;
 
-
-static const unsigned int DEFAULT_KEYFRAME_INTERVAL_MS = 1000;
-
 TrackEncoder::TrackEncoder(TrackRate aTrackRate)
     : mEncodingComplete(false),
       mInitialized(false),
@@ -303,7 +300,6 @@ VideoTrackEncoder::VideoTrackEncoder(RefPtr<DriftCompensator> aDriftCompensator,
       mEncodedTicks(0),
       mVideoBitrate(0),
       mFrameDroppingMode(aFrameDroppingMode),
-      mKeyFrameInterval(DEFAULT_KEYFRAME_INTERVAL_MS),
       mEnabled(true) {
   mLastChunk.mDuration = 0;
 }
@@ -744,15 +740,6 @@ size_t VideoTrackEncoder::SizeOfExcludingThis(
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
   return mIncomingBuffer.SizeOfExcludingThis(aMallocSizeOf) +
          mOutgoingBuffer.SizeOfExcludingThis(aMallocSizeOf);
-}
-
-void VideoTrackEncoder::SetKeyFrameInterval(uint32_t aKeyFrameInterval) {
-  MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
-  if (aKeyFrameInterval == 0) {
-    mKeyFrameInterval = DEFAULT_KEYFRAME_INTERVAL_MS;
-    return;
-  }
-  mKeyFrameInterval = std::min(aKeyFrameInterval, DEFAULT_KEYFRAME_INTERVAL_MS);
 }
 
 }  

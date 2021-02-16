@@ -408,7 +408,7 @@ class VideoTrackEncoder : public TrackEncoder {
   
 
 
-  void SetKeyFrameInterval(uint32_t aKeyFrameInterval);
+  virtual void SetKeyFrameInterval(Maybe<TimeDuration> aKeyFrameInterval) = 0;
 
  protected:
   
@@ -482,11 +482,6 @@ class VideoTrackEncoder : public TrackEncoder {
 
 
   FrameDroppingMode mFrameDroppingMode;
-
-  
-
-
-  uint32_t mKeyFrameInterval;
 
   
 

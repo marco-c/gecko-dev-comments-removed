@@ -1111,8 +1111,7 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
     
     
     
-    mEncoder->SetVideoKeyFrameInterval(
-        std::max(TimeDuration::FromSeconds(1), mTimeslice).ToMilliseconds());
+    mEncoder->SetVideoKeyFrameInterval(Some(mTimeslice));
 
     
     

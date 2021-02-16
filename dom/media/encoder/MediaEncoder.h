@@ -217,7 +217,7 @@ class MediaEncoder {
   
 
 
-  void SetVideoKeyFrameInterval(uint32_t aVideoKeyFrameInterval);
+  void SetVideoKeyFrameInterval(Maybe<TimeDuration> aVideoKeyFrameInterval);
 
  protected:
   ~MediaEncoder();
