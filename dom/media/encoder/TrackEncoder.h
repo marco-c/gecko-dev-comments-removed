@@ -411,11 +411,6 @@ class VideoTrackEncoder : public TrackEncoder {
 
   void AdvanceCurrentTime(const TimeStamp& aTime);
 
-  
-
-
-  virtual void SetKeyFrameInterval(Maybe<TimeDuration> aKeyFrameInterval) = 0;
-
  protected:
   
 

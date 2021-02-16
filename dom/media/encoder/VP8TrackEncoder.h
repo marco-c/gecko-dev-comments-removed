@@ -36,13 +36,12 @@ class VP8TrackEncoder : public VideoTrackEncoder {
   VP8TrackEncoder(RefPtr<DriftCompensator> aDriftCompensator,
                   TrackRate aTrackRate,
                   MediaQueue<EncodedFrame>& aEncodedDataQueue,
+                  TimeDuration aKeyFrameInterval,
                   FrameDroppingMode aFrameDroppingMode,
                   Maybe<float> aKeyFrameIntervalFactor = Nothing());
   virtual ~VP8TrackEncoder();
 
   already_AddRefed<TrackMetadataBase> GetMetadata() final;
-
-  void SetKeyFrameInterval(Maybe<TimeDuration> aKeyFrameInterval) final;
 
  protected:
   nsresult Init(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
@@ -125,7 +124,7 @@ class VP8TrackEncoder : public VideoTrackEncoder {
 
 
 
-  TimeDuration mKeyFrameInterval;
+  const TimeDuration mKeyFrameInterval;
 
   
 
