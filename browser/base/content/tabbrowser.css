@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .tab-close-button[pinned],
 #tabbrowser-tabs[closebuttons="activetab"] > #tabbrowser-arrowscrollbox > .tabbrowser-tab > .tab-stack > .tab-content > .tab-close-button:not([selected="true"]),
@@ -15,6 +15,16 @@
 .tab-icon-sound[pinned],
 .tab-sharing-icon-overlay,
 .tab-icon-overlay {
+  display: none;
+}
+
+.tab-icon-sound:not([activemedia-blocked]) > .tab-icon-sound-blocked-label,
+.tab-icon-sound[muted][activemedia-blocked] > .tab-icon-sound-blocked-label,
+.tab-icon-sound[activemedia-blocked] > .tab-icon-sound-playing-label,
+.tab-icon-sound[muted] > .tab-icon-sound-playing-label,
+.tab-icon-sound[pictureinpicture] > .tab-icon-sound-playing-label,
+.tab-icon-sound:not([pictureinpicture]) > .tab-icon-sound-pip-label,
+.tab-icon-sound:not([muted]) > .tab-icon-sound-muted-label {
   display: none;
 }
 
@@ -55,7 +65,7 @@ tabpanels {
   background-color: transparent;
 }
 
-
+/* Apply crisp rendering for favicons at exactly 2dppx resolution */
 @media (resolution: 2dppx) {
   .tab-icon-image {
     image-rendering: -moz-crisp-edges;
