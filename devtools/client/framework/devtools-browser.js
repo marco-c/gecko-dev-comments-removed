@@ -128,12 +128,11 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
 
     function toggleMenuItem(id, isEnabled) {
       const cmd = doc.getElementById(id);
+      cmd.hidden = !isEnabled;
       if (isEnabled) {
         cmd.removeAttribute("disabled");
-        cmd.removeAttribute("hidden");
       } else {
         cmd.setAttribute("disabled", "true");
-        cmd.setAttribute("hidden", "true");
       }
     }
 
@@ -647,14 +646,7 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     const menu = win.document.getElementById("menu_devToolbox");
 
     
-    const isAboutDevtoolsToolbox = gDevToolsBrowser._isAboutDevtoolsToolbox(
-      win
-    );
-    if (isAboutDevtoolsToolbox) {
-      menu.setAttribute("hidden", "true");
-    } else {
-      menu.removeAttribute("hidden");
-    }
+    menu.hidden = gDevToolsBrowser._isAboutDevtoolsToolbox(win);
 
     
     const hasToolbox = gDevToolsBrowser.hasToolboxOpened(win);
