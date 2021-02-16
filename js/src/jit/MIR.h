@@ -7337,16 +7337,16 @@ class MGetNextEntryForIterator
 };
 
 
-class MArrayBufferByteLengthInt32 : public MUnaryInstruction,
-                                    public SingleObjectPolicy::Data {
-  explicit MArrayBufferByteLengthInt32(MDefinition* obj)
+class MArrayBufferByteLength : public MUnaryInstruction,
+                               public SingleObjectPolicy::Data {
+  explicit MArrayBufferByteLength(MDefinition* obj)
       : MUnaryInstruction(classOpcode, obj) {
-    setResultType(MIRType::Int32);
+    setResultType(MIRType::IntPtr);
     setMovable();
   }
 
  public:
-  INSTRUCTION_HEADER(ArrayBufferByteLengthInt32)
+  INSTRUCTION_HEADER(ArrayBufferByteLength)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, object))
 
