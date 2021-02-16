@@ -95,3 +95,21 @@ selectNode = async function(node, inspector, reason) {
   await _selectNode(node, inspector, reason);
   await onUpdate;
 };
+
+
+
+
+
+
+
+
+
+
+
+async function waitForElementTextContent(element, expectedText) {
+  await waitFor(
+    () => element.textContent === expectedText,
+    `Couldn't get "${expectedText}" as the text content of the given element`
+  );
+  ok(true, `Found the expected text (${expectedText}) for the given element`);
+}
