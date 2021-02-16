@@ -2,8 +2,20 @@
 
 
 
+let engine;
+
+add_task(async function setup() {
+  engine = await SearchTestUtils.promiseNewSearchEngine(
+    getRootDirectory(gTestPath) + "testEngine.xml"
+  );
+  const current = await Services.search.getDefault();
+  await Services.search.setDefault(engine);
+  registerCleanupFunction(async () => {
+    await Services.search.setDefault(current);
+  });
+});
+
 add_task(async function test() {
-  let engine = await promiseNewEngine("testEngine.xml");
   let histogramKey = "other-" + engine.name + ".contextmenu";
   let numSearchesBefore = 0;
 

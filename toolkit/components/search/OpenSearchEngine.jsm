@@ -9,17 +9,10 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AppConstants: "resource://gre/modules/AppConstants.jsm",
   EngineURL: "resource://gre/modules/SearchEngine.jsm",
-  OS: "resource://gre/modules/osfile.jsm",
   SearchEngine: "resource://gre/modules/SearchEngine.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
-});
-
-XPCOMUtils.defineLazyServiceGetters(this, {
-  gChromeReg: ["@mozilla.org/chrome/chrome-registry;1", "nsIChromeRegistry"],
-  gEnvironment: ["@mozilla.org/process/environment;1", "nsIEnvironment"],
 });
 
 XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
@@ -72,67 +65,11 @@ class OpenSearchEngine extends SearchEngine {
   
   _data = null;
 
-  
-
-
-
-
-
-
-
-
-
-
-  constructor(options = {}) {
-    let file;
-    let uri;
-    let shortName;
-    if ("fileURI" in options && options.fileURI instanceof Ci.nsIFile) {
-      file = options.fileURI;
-      shortName = file.leafName;
-    } else if ("uri" in options) {
-      let optionsURI = options.uri;
-      if (typeof optionsURI == "string") {
-        optionsURI = SearchUtils.makeURI(optionsURI);
-      }
-      
-      if (!optionsURI || !(optionsURI instanceof Ci.nsIURI)) {
-        throw new Components.Exception(
-          "options.uri isn't a string nor an nsIURI",
-          Cr.NS_ERROR_INVALID_ARG
-        );
-      }
-      switch (optionsURI.scheme) {
-        case "https":
-        case "http":
-        case "ftp":
-        case "data":
-        case "file":
-        case "resource":
-        case "chrome":
-          uri = optionsURI;
-          break;
-        default:
-          throw Components.Exception(
-            "Invalid URI passed to SearchEngine constructor",
-            Cr.NS_ERROR_INVALID_ARG
-          );
-      }
-      if (
-        gEnvironment.get("XPCSHELL_TEST_PROFILE_DIR") &&
-        uri.scheme == "resource"
-      ) {
-        shortName = uri.fileName;
-      }
-    }
-
-    if (shortName && shortName.endsWith(".xml")) {
-      shortName = shortName.slice(0, -4);
-    }
-
+  constructor() {
     super({
       isAppProvided: false,
-      loadPath: OpenSearchEngine.getAnonymizedLoadPath(shortName, file, uri),
+      
+      loadPath: "[opensearch]loading",
     });
   }
 
@@ -145,18 +82,23 @@ class OpenSearchEngine extends SearchEngine {
 
 
 
-  _initFromURIAndLoad(uri, callback) {
+  _install(uri, callback) {
     let loadURI = uri instanceof Ci.nsIURI ? uri : SearchUtils.makeURI(uri);
-    ENSURE_WARN(
-      loadURI,
-      "Must have URI when calling _initFromURIAndLoad!",
-      Cr.NS_ERROR_UNEXPECTED
-    );
+    if (!loadURI) {
+      throw Components.Exception(
+        loadURI,
+        "Must have URI when calling _install!",
+        Cr.NS_ERROR_UNEXPECTED
+      );
+    }
+    if (!/^(?:https?|ftp)$/i.test(loadURI.scheme)) {
+      throw Components.Exception(
+        "Invalid URI passed to SearchEngine constructor",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
 
-    logConsole.debug(
-      "_initFromURIAndLoad: Downloading engine from:",
-      loadURI.spec
-    );
+    logConsole.debug("_install: Downloading engine from:", loadURI.spec);
 
     var chan = SearchUtils.makeChannel(loadURI);
 
@@ -174,53 +116,6 @@ class OpenSearchEngine extends SearchEngine {
     );
     chan.notificationCallbacks = listener;
     chan.asyncOpen(listener);
-  }
-
-  
-
-
-
-
-
-
-  async _initFromFile(file) {
-    if (!file || !(await OS.File.exists(file.path))) {
-      throw Components.Exception(
-        "File must exist before calling initFromFile!",
-        Cr.NS_ERROR_UNEXPECTED
-      );
-    }
-
-    let fileURI = Services.io.newFileURI(file);
-    await this._retrieveSearchXMLData(fileURI.spec);
-
-    
-    this._initFromData();
-  }
-
-  
-
-
-
-
-
-
-
-  _retrieveSearchXMLData(url) {
-    return new Promise(resolve => {
-      let request = new XMLHttpRequest();
-      request.overrideMimeType("text/xml");
-      request.onload = event => {
-        let responseXML = event.target.responseXML;
-        this._data = responseXML.documentElement;
-        resolve();
-      };
-      request.onerror = function(event) {
-        resolve();
-      };
-      request.open("GET", url, true);
-      request.send();
-    });
   }
 
   
@@ -291,7 +186,6 @@ class OpenSearchEngine extends SearchEngine {
 
       this._loadPath = OpenSearchEngine.getAnonymizedLoadPath(
         SearchUtils.sanitizeName(this.name),
-        null,
         this._uri
       );
       if (this._extensionID) {
@@ -499,124 +393,9 @@ class OpenSearchEngine extends SearchEngine {
   }
 
   
-
-
-
-
-
-
-
-  static getDir(key, iface) {
-    return Services.dirsvc.get(key, iface || Ci.nsIFile);
-  }
-
   
-  
-  static getAnonymizedLoadPath(shortName, file, uri) {
-    
-
-
-
-
-
-
-
-    const NS_XPCOM_CURRENT_PROCESS_DIR = "XCurProcD";
-    const NS_APP_USER_PROFILE_50_DIR = "ProfD";
-    const XRE_APP_DISTRIBUTION_DIR = "XREAppDist";
-
-    const knownDirs = {
-      app: NS_XPCOM_CURRENT_PROCESS_DIR,
-      profile: NS_APP_USER_PROFILE_50_DIR,
-      distribution: XRE_APP_DISTRIBUTION_DIR,
-    };
-
-    let leafName = shortName;
-    if (!leafName) {
-      return "null";
-    }
-    leafName += ".xml";
-
-    let prefix = "",
-      suffix = "";
-    if (!file) {
-      if (uri.schemeIs("resource")) {
-        uri = SearchUtils.makeURI(
-          Services.io
-            .getProtocolHandler("resource")
-            .QueryInterface(Ci.nsISubstitutingProtocolHandler)
-            .resolveURI(uri)
-        );
-      }
-      let scheme = uri.scheme;
-      let packageName = "";
-      if (scheme == "chrome") {
-        packageName = uri.hostPort;
-        uri = gChromeReg.convertChromeURL(uri);
-      }
-
-      if (AppConstants.platform == "android") {
-        
-        
-        
-        
-        let appPath = Services.io
-          .getProtocolHandler("resource")
-          .QueryInterface(Ci.nsIResProtocolHandler)
-          .getSubstitution("android");
-        if (appPath) {
-          appPath = appPath.spec;
-          let spec = uri.spec;
-          if (spec.includes(appPath)) {
-            let appURI = Services.io.newFileURI(
-              OpenSearchEngine.getDir(knownDirs.app)
-            );
-            uri = Services.io.newURI(spec.replace(appPath, appURI.spec));
-          }
-        }
-      }
-
-      if (uri instanceof Ci.nsINestedURI) {
-        prefix = "jar:";
-        suffix = "!" + packageName + "/" + leafName;
-        uri = uri.innermostURI;
-      }
-      if (uri instanceof Ci.nsIFileURL) {
-        file = uri.file;
-      } else {
-        let path = "[" + scheme + "]";
-        if (/^(?:https?|ftp)$/.test(scheme)) {
-          path += uri.host;
-        }
-        return path + "/" + leafName;
-      }
-    }
-
-    let id;
-    let enginePath = file.path;
-
-    for (let key in knownDirs) {
-      let path;
-      try {
-        path = this.getDir(knownDirs[key]).path;
-      } catch (e) {
-        
-        continue;
-      }
-      if (enginePath.startsWith(path)) {
-        id =
-          "[" + key + "]" + enginePath.slice(path.length).replace(/\\/g, "/");
-        break;
-      }
-    }
-
-    
-    
-    if (!id) {
-      id = "[other]/" + file.leafName;
-    }
-
-    return prefix + id + suffix;
+  static getAnonymizedLoadPath(shortName, uri) {
+    return `[${uri.scheme}]${uri.host}/${shortName}.xml`;
   }
 }
 

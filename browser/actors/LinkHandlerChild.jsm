@@ -146,6 +146,8 @@ class LinkHandlerChild extends JSWindowActorChild {
             let type = link.type && link.type.toLowerCase();
             type = type.replace(/^\s+|\s*(?:;.*)?$/g, "");
 
+            
+            
             let re = /^(?:https?|ftp):/i;
             if (
               type == "application/opensearchdescription+xml" &&

@@ -384,9 +384,6 @@ class EngineURL {
     switch (templateURI.scheme) {
       case "http":
       case "https":
-        
-        
-        
         this.template = template;
         break;
       default:

@@ -46,10 +46,16 @@ var SearchTestUtils = Object.freeze({
 
 
   async promiseNewSearchEngine(url) {
+    
+    url = url.replace("chrome://mochitests/content", "https://example.com");
     let engine = await Services.search.addOpenSearchEngine(url, "");
-    gTestScope.registerCleanupFunction(async () =>
-      Services.search.removeEngine(engine)
-    );
+    gTestScope.registerCleanupFunction(async () => {
+      try {
+        await Services.search.removeEngine(engine);
+      } catch (ex) {
+        
+      }
+    });
     return engine;
   },
 
