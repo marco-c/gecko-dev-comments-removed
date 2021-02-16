@@ -429,16 +429,6 @@ class VideoTrackEncoder : public TrackEncoder {
   
 
 
-  int mFrameWidth;
-
-  
-
-
-  int mFrameHeight;
-
-  
-
-
 
 
   VideoChunk mLastChunk;
