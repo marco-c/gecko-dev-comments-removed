@@ -17,7 +17,7 @@ span { display: block; height: 300px }
 </head>
 <body>
 
-
+<!-- tests with a fixed-height container -->
 <div><div style="max-height: calc(50px)"><span></span></div></div>
 <div><div style="max-height: calc(50%)"><span></span></div></div>
 <div><div style="max-height: calc(25px + 50%)"><span></span></div></div>
@@ -25,7 +25,7 @@ span { display: block; height: 300px }
 <div><div style="max-height: calc(40px + 10% - 20% / 2)"><span></span></div></div>
 <div><div style="max-height: calc(40px - 10%)"><span></span></div></div>
 
-
+<!-- tests with an auto-height container -->
 <div><div><div style="max-height: calc(50px)"><span></span></div></div></div>
 <div><div><div style="max-height: calc(50%)"><span></span></div></div></div>
 <div><div><div style="max-height: calc(25px + 50%)"><span></span></div></div></div>

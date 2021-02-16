@@ -17,7 +17,7 @@ body > div > div > div > div { height: 10px }
 </head>
 <body>
 
-
+<!-- tests with a fixed-height container -->
 <div><div style="min-height: calc(50px)"></div></div>
 <div><div style="min-height: calc(50%)"></div></div>
 <div><div style="min-height: calc(25px + 50%)"></div></div>
@@ -25,7 +25,7 @@ body > div > div > div > div { height: 10px }
 <div><div style="min-height: calc(40px + 10% - 20% / 2)"></div></div>
 <div><div style="min-height: calc(40px - 10%)"></div></div>
 
-
+<!-- tests with an auto-height container -->
 <div><div><div style="min-height: calc(50px)"><div></div></div></div></div>
 <div><div><div style="min-height: calc(50%)"><div></div></div></div></div>
 <div><div><div style="min-height: calc(25px + 50%)"><div></div></div></div></div>

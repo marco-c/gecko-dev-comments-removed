@@ -15,7 +15,7 @@ div.space { height: 100px }
 </head>
 <body>
 
-
+<!-- tests with a fixed-height container -->
 <div><div style="top: calc(50px)"></div></div>
 <div><div style="top: calc(50%)"></div></div>
 <div><div style="top: calc(25px + 50%)"></div></div>
@@ -23,7 +23,7 @@ div.space { height: 100px }
 <div><div style="top: calc(40px + 10% - 20% / 2)"></div></div>
 <div><div style="top: calc(40px - 10%)"></div></div>
 
-
+<!-- tests with an auto-top container -->
 <div><div><div style="top: calc(50px)"></div><div class="space"></div></div></div>
 <div><div><div style="top: calc(50%)"></div><div class="space"></div></div></div>
 <div><div><div style="top: calc(25px + 50%)"></div><div class="space"></div></div></div>
