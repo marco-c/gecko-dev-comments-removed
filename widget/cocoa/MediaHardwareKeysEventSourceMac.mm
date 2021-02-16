@@ -138,7 +138,7 @@ CGEventRef MediaHardwareKeysEventSourceMac::EventTapCallback(CGEventTapProxy pro
   }
 
   
-  if ([nsEvent type] != NSSystemDefined ||
+  if ([nsEvent type] != NSEventTypeSystemDefined ||
       [nsEvent subtype] != kSystemDefinedEventMediaKeysSubtype) {
     return event;
   }
