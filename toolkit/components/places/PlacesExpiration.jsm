@@ -399,24 +399,6 @@ const EXPIRATION_QUERIES = {
   },
 };
 
-
-
-
-
-
-
-
-
-
-
-function notify(observers, notification, args = []) {
-  for (let observer of observers) {
-    try {
-      observer[notification](...args);
-    } catch (ex) {}
-  }
-}
-
 function nsPlacesExpiration() {
   
   this.wrappedJSObject = this;
@@ -611,8 +593,6 @@ nsPlacesExpiration.prototype = {
     let mostRecentExpiredVisit = row.getResultByName(
       "most_recent_expired_visit"
     );
-    let reason = Ci.nsINavHistoryObserver.REASON_EXPIRED;
-    let observers = PlacesUtils.history.getObservers();
 
     if (mostRecentExpiredVisit) {
       let days = parseInt(
@@ -626,25 +606,16 @@ nsPlacesExpiration.prototype = {
     }
 
     
-    if (wholeEntry) {
-      notify(observers, "onDeleteURI", [uri, guid, reason]);
-      PlacesObservers.notifyListeners([
-        new PlacesVisitRemoved({
-          url: uri.spec,
-          pageGuid: guid,
-          reason: PlacesVisitRemoved.REASON_EXPIRED,
-          isRemovedFromStore: true,
-        }),
-      ]);
-    } else {
-      notify(observers, "onDeleteVisits", [
-        uri,
-        visitDate > 0,
-        guid,
-        reason,
-        0,
-      ]);
-    }
+    const isRemovedFromStore = !!wholeEntry;
+    PlacesObservers.notifyListeners([
+      new PlacesVisitRemoved({
+        url: uri.spec,
+        pageGuid: guid,
+        reason: PlacesVisitRemoved.REASON_EXPIRED,
+        isRemovedFromStore,
+        isPartialVisistsRemoval: !isRemovedFromStore && visitDate > 0,
+      }),
+    ]);
   },
 
   _shuttingDown: false,
