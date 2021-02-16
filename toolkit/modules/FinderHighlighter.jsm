@@ -612,8 +612,8 @@ FinderHighlighter.prototype = {
     let window = this.finder._getWindow();
     let yStart = window.scrollY;
 
-    
-    if (window && window.scrollMaxY > 0) {
+    let hasRanges = false;
+    if (window) {
       let controllers = [this.finder._getSelectionController(window)];
       let editors = this.editors;
       if (editors) {
@@ -627,18 +627,25 @@ FinderHighlighter.prototype = {
         );
 
         let rangeCount = findSelection.rangeCount;
-        let yAdj =
-          window.scrollMaxY /
-          window.document.documentElement.getBoundingClientRect().height;
-        for (let r = 0; r < rangeCount; r++) {
-          let rect = findSelection.getRangeAt(r).getBoundingClientRect();
-          let yPos = Math.round((yStart + rect.y + rect.height / 2) * yAdj); 
-          marks.add(yPos);
+        if (rangeCount > 0) {
+          hasRanges = true;
+        }
+
+        
+        if (window.scrollMaxY > 0) {
+          let yAdj =
+            window.scrollMaxY /
+            window.document.documentElement.getBoundingClientRect().height;
+          for (let r = 0; r < rangeCount; r++) {
+            let rect = findSelection.getRangeAt(r).getBoundingClientRect();
+            let yPos = Math.round((yStart + rect.y + rect.height / 2) * yAdj); 
+            marks.add(yPos);
+          }
         }
       }
     }
 
-    if (marks.size) {
+    if (hasRanges) {
       
       
       this.setScrollMarks(window, Array.from(marks));
@@ -653,6 +660,7 @@ FinderHighlighter.prototype = {
           this._marksListener,
           true
         );
+        window.addEventListener("resize", this._marksListener);
       }
     } else if (this._marksListener) {
       
@@ -676,6 +684,7 @@ FinderHighlighter.prototype = {
         this._marksListener,
         true
       );
+      window.removeEventListener("resize", this._marksListener);
       this._marksListener = null;
     }
     this.setScrollMarks(window, []);
