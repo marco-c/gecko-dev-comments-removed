@@ -4264,10 +4264,6 @@ void MacroAssembler::loadArgumentsObjectElement(Register obj, Register index,
   loadPrivate(Address(obj, ArgumentsObject::getDataSlotOffset()), temp);
 
   
-  branchPtr(Assembler::NotEqual,
-            Address(temp, offsetof(ArgumentsData, rareData)), ImmWord(0), fail);
-
-  
   BaseValueIndex argValue(temp, index, ArgumentsData::offsetOfArgs());
   branchTestMagic(Assembler::Equal, argValue, fail);
   loadValue(argValue, output);

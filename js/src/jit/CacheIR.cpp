@@ -2149,11 +2149,6 @@ AttachDecision GetPropIRGenerator::tryAttachArgumentsObjectArg(
   }
 
   
-  if (args->isAnyElementDeleted()) {
-    return AttachDecision::NoAction;
-  }
-
-  
   if (args->argIsForwarded(index)) {
     return AttachDecision::NoAction;
   }
