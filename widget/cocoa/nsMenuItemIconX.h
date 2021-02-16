@@ -21,10 +21,12 @@ class nsMenuObjectX;
 
 #import <Cocoa/Cocoa.h>
 
-class nsMenuItemIconX : public mozilla::widget::IconLoaderListenerCocoa {
+class nsMenuItemIconX : public mozilla::widget::IconLoader::Listener {
  public:
   nsMenuItemIconX(nsMenuObjectX* aMenuItem, nsIContent* aContent,
                   NSMenuItem* aNativeMenuItem);
+
+  NS_INLINE_DECL_REFCOUNTING(nsMenuItemIconX)
 
  private:
   virtual ~nsMenuItemIconX();
@@ -45,7 +47,7 @@ class nsMenuItemIconX : public mozilla::widget::IconLoaderListenerCocoa {
 
   
   
-  nsresult OnComplete();
+  nsresult OnComplete(imgIContainer* aImage, const nsIntRect& aRect) override;
 
  protected:
   nsCOMPtr<nsIContent> mContent;
@@ -57,7 +59,6 @@ class nsMenuItemIconX : public mozilla::widget::IconLoaderListenerCocoa {
   
   
   RefPtr<mozilla::widget::IconLoader> mIconLoader;
-  RefPtr<mozilla::widget::IconLoaderHelperCocoa> mIconLoaderHelper;
 };
 
 #endif  
