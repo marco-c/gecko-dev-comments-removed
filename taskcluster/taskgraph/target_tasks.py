@@ -862,6 +862,10 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             return False
 
         
+        if "windows7" in platform:
+            return False
+
+        
         if "android" not in platform:
             
             if "browsertime" in try_name:
