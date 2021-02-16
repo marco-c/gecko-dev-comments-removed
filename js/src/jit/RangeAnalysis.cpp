@@ -3223,6 +3223,15 @@ bool RangeAnalysis::truncate() {
         return false;
       }
 
+      
+      
+      
+      
+      
+      if (kind == TruncateKind::TruncateAfterBailouts) {
+        iter->setBailoutKind(BailoutKind::EagerTruncation);
+      }
+
       iter->truncate();
 
       
