@@ -54,9 +54,9 @@ class Muxer {
   nsresult Mux();
 
   
-  MediaQueue<EncodedFrame> mEncodedAudioFrames;
+  MediaQueue<EncodedFrame> mEncodedAudioQueue;
   
-  MediaQueue<EncodedFrame> mEncodedVideoFrames;
+  MediaQueue<EncodedFrame> mEncodedVideoQueue;
   
   UniquePtr<ContainerWriter> mWriter;
   
