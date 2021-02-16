@@ -57,10 +57,6 @@ void nsTouchBarInputIcon::Destroy() {
     mIconLoader->Destroy();
     mIconLoader = nullptr;
   }
-  if (mIconLoaderHelper) {
-    mIconLoaderHelper->Destroy();
-    mIconLoaderHelper = nullptr;
-  }
 
   mButton = nil;
   mShareScrubber = nil;
@@ -82,20 +78,16 @@ nsresult nsTouchBarInputIcon::SetupIcon(nsCOMPtr<nsIURI> aIconURI) {
   }
 
   if (!mIconLoader) {
-    
-    
-    mIconLoaderHelper = new IconLoaderHelperCocoa(this, kIconSize, kIconSize, kHiDPIScalingFactor);
-    mIconLoader = new IconLoader(mIconLoaderHelper, mImageRegionRect);
-    if (!mIconLoader) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
+    mIconLoader = new IconLoader(this, mImageRegionRect);
   }
 
   if (!mSetIcon) {
     
-    [mButton setImage:mIconLoaderHelper->GetNativeIconImage()];
-    [mShareScrubber setButtonImage:mIconLoaderHelper->GetNativeIconImage()];
-    [mPopoverItem setCollapsedRepresentationImage:mIconLoaderHelper->GetNativeIconImage()];
+    NSSize iconSize = NSMakeSize(kIconSize, kIconSize);
+    NSImage* placeholder = [MOZIconHelper placeholderIconWithSize:iconSize];
+    [mButton setImage:placeholder];
+    [mShareScrubber setButtonImage:placeholder];
+    [mPopoverItem setCollapsedRepresentationImage:placeholder];
   }
 
   nsresult rv = mIconLoader->LoadIcon(aIconURI, mDocument, true );
@@ -121,17 +113,21 @@ void nsTouchBarInputIcon::ReleaseJSObjects() { mDocument = nil; }
 
 
 
-nsresult nsTouchBarInputIcon::OnComplete() {
-  if (!mIconLoaderHelper) {
-    return NS_ERROR_FAILURE;
-  }
+nsresult nsTouchBarInputIcon::OnComplete(imgIContainer* aImage, const nsIntRect& aRect) {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT
 
-  NSImage* image = mIconLoaderHelper->GetNativeIconImage();
+  
+  
+  NSImage* image = [MOZIconHelper iconImageFromImageContainer:aImage
+                                                     withSize:NSMakeSize(kIconSize, kIconSize)
+                                                      subrect:aRect
+                                                  scaleFactor:kHiDPIScalingFactor];
   [mButton setImage:image];
   [mShareScrubber setButtonImage:image];
   [mPopoverItem setCollapsedRepresentationImage:image];
 
-  mIconLoaderHelper->Destroy();
   mIconLoader->Destroy();
   return NS_OK;
+
+  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT
 }

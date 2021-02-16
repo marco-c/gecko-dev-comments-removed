@@ -26,10 +26,12 @@ namespace mozilla::dom {
 class Document;
 }
 
-class nsTouchBarInputIcon : public mozilla::widget::IconLoaderListenerCocoa {
+class nsTouchBarInputIcon : public mozilla::widget::IconLoader::Listener {
  public:
   explicit nsTouchBarInputIcon(RefPtr<Document> aDocument,
                                TouchBarInput* aInput, NSTouchBarItem* aItem);
+
+  NS_INLINE_DECL_REFCOUNTING(nsTouchBarInputIcon)
 
  private:
   virtual ~nsTouchBarInputIcon();
@@ -41,7 +43,7 @@ class nsTouchBarInputIcon : public mozilla::widget::IconLoaderListenerCocoa {
 
   
   
-  nsresult OnComplete();
+  nsresult OnComplete(imgIContainer* aImage, const nsIntRect& aRect) override;
 
   
   
@@ -65,7 +67,6 @@ class nsTouchBarInputIcon : public mozilla::widget::IconLoaderListenerCocoa {
   
   
   RefPtr<mozilla::widget::IconLoader> mIconLoader;
-  RefPtr<mozilla::widget::IconLoaderHelperCocoa> mIconLoaderHelper;
 };
 
 #endif  
