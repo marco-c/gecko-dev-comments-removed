@@ -11,6 +11,7 @@
 #include "MediaEventSource.h"
 #include "SeekTarget.h"
 #include "MediaDecoderOwner.h"
+#include "MediaElementEventRunners.h"
 #include "MediaPlaybackDelayPolicy.h"
 #include "MediaPromiseDefs.h"
 #include "TelemetryProbesReporter.h"
@@ -147,8 +148,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   explicit HTMLMediaElement(
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
   void Init();
-
-  void ReportCanPlayTelemetry();
 
   
   
@@ -1279,12 +1278,11 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool CanBeCaptured(StreamCaptureType aCaptureType);
 
-  class nsAsyncEventRunner;
-  class nsNotifyAboutPlayingRunner;
-  class nsResolveOrRejectPendingPlayPromisesRunner;
   using nsGenericHTMLElement::DispatchEvent;
   
   nsresult DispatchEvent(const nsAString& aName);
+
+  already_AddRefed<nsMediaEventRunner> GetEventRunner(const nsAString& aName);
 
   
   
@@ -1469,8 +1467,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   nsCOMPtr<Document> mLoadBlockedDoc;
 
   
-  
-  nsTArray<nsString> mPendingEvents;
+  class EventBlocker;
+  RefPtr<EventBlocker> mEventBlocker;
 
   
   
@@ -1643,10 +1641,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool mSuspendedByInactiveDocOrDocshell = false;
 
   
-  
-  bool mEventDeliveryPaused = false;
-
-  
   bool mIsRunningLoadMethod = false;
 
   
@@ -1775,6 +1769,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void NotifyTextTrackModeChanged();
 
  private:
+  friend class nsAsyncEventRunner;
+  friend class nsNotifyAboutPlayingRunner;
+  friend class nsResolveOrRejectPendingPlayPromisesRunner;
+
   already_AddRefed<PlayPromise> CreatePlayPromise(ErrorResult& aRv) const;
 
   virtual void MaybeBeginCloningVisually(){};
