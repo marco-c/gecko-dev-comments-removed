@@ -1,0 +1,15 @@
+var r = /^b/;
+
+
+var s = "a";
+try {
+    while (true) {
+	s += s;
+    }
+} catch {}
+
+startgc(7,'shrinking');
+
+
+timeout(1);
+assertEq(s.match(r), null);
