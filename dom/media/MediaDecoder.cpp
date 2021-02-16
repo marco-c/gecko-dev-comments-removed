@@ -149,35 +149,6 @@ class MediaMemoryTracker : public nsIMemoryReporter {
   }
 };
 
-
-
-
-
-
-
-
-class MOZ_RAII SeekEventsGuard {
- public:
-  explicit SeekEventsGuard(MediaDecoderOwner* aOwner, bool aIsLoopingBack)
-      : mOwner(aOwner), mIsLoopingBack(aIsLoopingBack) {
-    MOZ_ASSERT(mOwner);
-    if (mIsLoopingBack) {
-      mOwner->SeekStarted();
-    }
-  }
-
-  ~SeekEventsGuard() {
-    MOZ_ASSERT(mOwner);
-    if (mIsLoopingBack) {
-      mOwner->SeekCompleted();
-    }
-  }
-
- private:
-  MediaDecoderOwner* mOwner;
-  bool mIsLoopingBack;
-};
-
 StaticRefPtr<MediaMemoryTracker> MediaMemoryTracker::sUniqueInstance;
 
 RefPtr<MediaMemoryPromise> GetMediaMemorySizes() {
@@ -897,10 +868,17 @@ void MediaDecoder::UpdateTelemetryHelperBasedOnPlayState(
   }
 }
 
-bool MediaDecoder::IsLoopingBack(double aPrevPos, double aCurPos) const {
+MediaDecoder::PositionUpdate MediaDecoder::GetPositionUpdateReason(
+    double aPrevPos, double aCurPos) const {
+  MOZ_ASSERT(NS_IsMainThread());
   
   
-  return mLooping && !mSeekRequest.Exists() && aCurPos < aPrevPos;
+  
+  if (mLooping && !mSeekRequest.Exists() && aCurPos < aPrevPos) {
+    return PositionUpdate::eSeamlessLoopingSeeking;
+  }
+  return aPrevPos != aCurPos ? PositionUpdate::ePeriodicUpdate
+                             : PositionUpdate::eOther;
 }
 
 void MediaDecoder::UpdateLogicalPositionInternal() {
@@ -911,21 +889,46 @@ void MediaDecoder::UpdateLogicalPositionInternal() {
   if (mPlayState == PLAY_STATE_ENDED) {
     currentPosition = std::max(currentPosition, mDuration);
   }
-  bool logicalPositionChanged = mLogicalPosition != currentPosition;
-  SeekEventsGuard guard(GetOwner(),
-                        IsLoopingBack(mLogicalPosition, currentPosition));
-  mLogicalPosition = currentPosition;
-  DDLOG(DDLogCategory::Property, "currentTime", mLogicalPosition);
+
+  const PositionUpdate reason =
+      GetPositionUpdateReason(mLogicalPosition, currentPosition);
+  switch (reason) {
+    case PositionUpdate::ePeriodicUpdate:
+      SetLogicalPosition(currentPosition);
+      
+      
+      
+      GetOwner()->MaybeQueueTimeupdateEvent();
+      break;
+    case PositionUpdate::eSeamlessLoopingSeeking:
+      
+      
+      
+      
+      GetOwner()->SeekStarted();
+      SetLogicalPosition(currentPosition);
+      GetOwner()->SeekCompleted();
+      break;
+    default:
+      MOZ_ASSERT(reason == PositionUpdate::eOther);
+      SetLogicalPosition(currentPosition);
+      break;
+  }
 
   
   
   
   
   Invalidate();
+}
 
-  if (logicalPositionChanged) {
-    FireTimeUpdate();
+void MediaDecoder::SetLogicalPosition(double aNewPosition) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mLogicalPosition == aNewPosition) {
+    return;
   }
+  mLogicalPosition = aNewPosition;
+  DDLOG(DDLogCategory::Property, "currentTime", mLogicalPosition);
 }
 
 void MediaDecoder::DurationChanged() {
@@ -1255,12 +1258,6 @@ void MediaDecoder::NotifyReaderDataArrived() {
 MediaDecoderStateMachine* MediaDecoder::GetStateMachine() const {
   MOZ_ASSERT(NS_IsMainThread());
   return mDecoderStateMachine;
-}
-
-void MediaDecoder::FireTimeUpdate() {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
-  GetOwner()->MaybeQueueTimeupdateEvent();
 }
 
 bool MediaDecoder::CanPlayThrough() {
