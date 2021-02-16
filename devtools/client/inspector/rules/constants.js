@@ -5,9 +5,6 @@
 "use strict";
 
 
-exports.COLOR_SCHEMES = [null, "dark", "light"];
-
-
 
 exports.COMPATIBILITY_TOOLTIP_MESSAGE = {
   default: "css-compatibility-default-message",
