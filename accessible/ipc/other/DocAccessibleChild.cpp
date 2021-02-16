@@ -1537,6 +1537,15 @@ mozilla::ipc::IPCResult DocAccessibleChild::RecvFocusedChild(
   if (result) {
     
     
+    
+    DocAccessible* doc = result->Document();
+    while (doc != mDoc) {
+      doc = doc->ParentDocument();
+      if (!doc) {
+        
+        return IPC_OK();
+      }
+    }
     DocAccessibleChild* resultDoc = result->Document()->IPCDoc();
     
     
