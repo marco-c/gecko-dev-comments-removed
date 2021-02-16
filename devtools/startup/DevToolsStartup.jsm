@@ -313,6 +313,8 @@ XPCOMUtils.defineLazyGetter(this, "ProfilerPopupBackground", function() {
 function DevToolsStartup() {
   this.onEnabledPrefChanged = this.onEnabledPrefChanged.bind(this);
   this.onWindowReady = this.onWindowReady.bind(this);
+  this.addDevToolsItemsToSubview = this.addDevToolsItemsToSubview.bind(this);
+  this.onMoreToolsViewShowing = this.onMoreToolsViewShowing.bind(this);
   this.toggleProfilerKeyShortcuts = this.toggleProfilerKeyShortcuts.bind(this);
 }
 
@@ -387,6 +389,12 @@ DevToolsStartup.prototype = {
       Services.prefs.addObserver(
         DEVTOOLS_ENABLED_PREF,
         this.onEnabledPrefChanged
+      );
+
+      
+      Services.obs.addObserver(
+        this.onMoreToolsViewShowing,
+        "web-developer-tools-view-showing"
       );
       
 
@@ -559,33 +567,12 @@ DevToolsStartup.prototype = {
       shortcutId: "key_toggleToolbox",
       tooltiptext: "developer-button.tooltiptext2",
       onViewShowing: event => {
-        if (Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
-          
-          
-          this.initDevTools("HamburgerMenu");
-        }
-
-        
-        
-        
         const doc = event.target.ownerDocument;
-
-        const menu = doc.getElementById("menuWebDeveloperPopup");
-
-        const itemsToDisplay = [...menu.children];
-        
-        itemsToDisplay.push({
-          localName: "menuseparator",
-          getAttribute: () => {},
-        });
-        itemsToDisplay.push(doc.getElementById("goOfflineMenuitem"));
-
         const developerItems = PanelMultiView.getViewNode(
           doc,
           "PanelUI-developerItems"
         );
-        CustomizableUI.clearSubview(developerItems);
-        CustomizableUI.fillSubviewFromMenuItems(itemsToDisplay, developerItems);
+        this.addDevToolsItemsToSubview(developerItems);
       },
       onInit(anchor) {
         
@@ -613,6 +600,36 @@ DevToolsStartup.prototype = {
     CustomizableWidgets.push(item);
 
     this.developerToggleCreated = true;
+  },
+
+  addDevToolsItemsToSubview(subview) {
+    if (Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
+      
+      
+      this.initDevTools("HamburgerMenu");
+    }
+
+    
+    
+    
+    const doc = subview.ownerDocument;
+
+    const menu = doc.getElementById("menuWebDeveloperPopup");
+
+    const itemsToDisplay = [...menu.children];
+    
+    itemsToDisplay.push({
+      localName: "menuseparator",
+      getAttribute: () => {},
+    });
+    itemsToDisplay.push(doc.getElementById("goOfflineMenuitem"));
+
+    CustomizableUI.clearSubview(subview);
+    CustomizableUI.fillSubviewFromMenuItems(itemsToDisplay, subview);
+  },
+
+  onMoreToolsViewShowing(moreToolsView) {
+    this.addDevToolsItemsToSubview(moreToolsView);
   },
 
   

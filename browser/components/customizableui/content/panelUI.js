@@ -385,6 +385,22 @@ const PanelUI = {
 
 
 
+  showMoreToolsPanel(moreTools) {
+    this.showSubView("appmenu-moreTools", moreTools);
+
+    
+    
+    
+    
+    let view = document.getElementById("appmenu-developer-tools-view");
+    Services.obs.notifyObservers(view, "web-developer-tools-view-showing");
+  },
+
+  
+
+
+
+
 
 
   async showSubView(aViewId, aAnchor, aEvent) {
