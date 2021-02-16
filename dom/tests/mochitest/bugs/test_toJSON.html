@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=760851
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 760851</title>
@@ -26,6 +26,10 @@
   window.performance.onresourcetimingbufferfull = function() {};
 
   function checkAttributesMatch(obj, jsonObj) {
+    // EventCounts isn't going to converted to a JSON string
+    if ('EventCounts' in window && obj instanceof EventCounts) {
+      return;
+    }
     if (typeof(obj) !== "object") {
       throw "Expected obj to be of type \"object\". Test failed.";
     }
