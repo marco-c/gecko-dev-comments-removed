@@ -266,6 +266,10 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       this.onShadowrootattached
     );
 
+    for (const { document } of this.targetActor.windows) {
+      document.shadowRootAttachedEventEnabled = true;
+    }
+
     
     
     this.rootNode = this.document();
@@ -398,6 +402,11 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         "shadowrootattached",
         this.onShadowrootattached
       );
+
+      
+      for (const { document } of this.targetActor.windows) {
+        document.shadowRootAttachedEventEnabled = false;
+      }
 
       this.onFrameLoad = null;
       this.onFrameUnload = null;
@@ -1699,7 +1708,9 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       
       parser = new win.DOMParser();
     }
-    const parsedDOM = parser.parseFromString(value, "text/html");
+
+    const mimeType = rawNode.tagName === "svg" ? "image/svg+xml" : "text/html";
+    const parsedDOM = parser.parseFromString(value, mimeType);
     const parentNode = rawNode.parentNode;
 
     
@@ -1738,8 +1749,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         });
       }
       node.modifyAttributes(finalAttributeModifications);
-      rawNode.replaceChild(parsedDOM.head, rawNode.querySelector("head"));
-      rawNode.replaceChild(parsedDOM.body, rawNode.querySelector("body"));
+
+      rawNode.replaceChildren(...parsedDOM.firstElementChild.childNodes);
     } else {
       
       rawNode.outerHTML = value;
@@ -2489,6 +2500,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       );
       return;
     }
+
+    window.document.shadowRootAttachedEventEnabled = true;
 
     if (isTopLevel) {
       
