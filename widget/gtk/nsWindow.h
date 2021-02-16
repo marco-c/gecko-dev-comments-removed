@@ -406,12 +406,12 @@ class nsWindow final : public nsBaseWidget {
     GTK_DECORATION_CLIENT,  
     GTK_DECORATION_NONE,    
     GTK_DECORATION_UNKNOWN
-  } GtkWindowDecoration;
+  } CSDSupportLevel;
   
 
 
 
-  static GtkWindowDecoration GetSystemGtkWindowDecoration();
+  static CSDSupportLevel GetSystemCSDSupportLevel();
 
   static bool HideTitlebarByDefault();
   static bool GetTopLevelWindowActiveState(nsIFrame* aFrame);
@@ -563,7 +563,7 @@ class nsWindow final : public nsBaseWidget {
 
   
   
-  GtkWindowDecoration mGtkWindowDecoration;
+  CSDSupportLevel mCSDSupportLevel;
   
   bool mDrawToContainer;
   
@@ -712,7 +712,7 @@ class nsWindow final : public nsBaseWidget {
   RefPtr<mozilla::widget::IMContextWrapper> mIMContext;
 
   mozilla::UniquePtr<mozilla::CurrentX11TimeGetter> mCurrentTimeGetter;
-  static GtkWindowDecoration sGtkWindowDecoration;
+  static CSDSupportLevel sCSDSupportLevel;
 
   static bool sTransparentMainWindow;
 };
