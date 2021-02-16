@@ -17,16 +17,10 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
 const PREF_URLBAR_BRANCH = "browser.urlbar.";
-
-
-
-const MATCH_BUCKETS_SUGGESTIONS_FIRST = "suggestion:4,general:Infinity";
-const MATCH_BUCKETS_GENERAL_FIRST = "general:5,suggestion:Infinity";
 
 
 
@@ -104,15 +98,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
-  
-  ["matchBuckets", MATCH_BUCKETS_SUGGESTIONS_FIRST],
-
-  
-  
-  ["matchBucketsSearch", ""],
-
-  
-  
   ["maxCharsForSearchSuggestions", 20],
 
   
@@ -131,6 +116,16 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["restyleSearches", false],
 
   
+  
+  
+  
+  
+  
+  
+  
+  ["resultBuckets", ""],
+
+  
   ["richSuggestions.tail", true],
 
   
@@ -143,8 +138,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["shortcuts.tabs", true],
   ["shortcuts.history", true],
 
-  
-  
   
   ["showSearchSuggestionsFirst", true],
 
@@ -200,11 +193,16 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["update2.emptySearchBehavior", 0],
 ]);
 const PREF_OTHER_DEFAULTS = new Map([
-  ["keyword.enabled", true],
+  ["browser.fixup.dns_first_for_single_words", false],
+  
+  
+  
+  
+  ["browser.proton.urlbar.enabled", false],
   ["browser.search.suggest.enabled", true],
   ["browser.search.suggest.enabled.private", false],
+  ["keyword.enabled", true],
   ["ui.popup.disable_autohide", false],
-  ["browser.fixup.dns_first_for_single_words", false],
 ]);
 
 
@@ -233,20 +231,101 @@ const PREF_TYPES = new Map([
 
 
 
-const DEFAULT_BUCKETS_BEFORE = [
-  [UrlbarUtils.RESULT_GROUP.HEURISTIC, 1],
-  [
-    UrlbarUtils.RESULT_GROUP.EXTENSION,
-    UrlbarUtils.MAXIMUM_ALLOWED_EXTENSION_MATCHES - 1,
-  ],
-];
 
 
 
-const DEFAULT_BUCKETS_AFTER = [
-  [UrlbarUtils.RESULT_GROUP.SUGGESTION, Infinity],
-  [UrlbarUtils.RESULT_GROUP.GENERAL, Infinity],
-];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function makeResultBuckets({ showSearchSuggestionsFirst }) {
+  let rootBucket = {
+    children: [
+      
+      {
+        maxResultCount: 1,
+        children: [
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_EXTENSION },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_SEARCH_TIP },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_OMNIBOX },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_UNIFIED_COMPLETE },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TOKEN_ALIAS_ENGINE },
+          { group: UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK },
+        ],
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.OMNIBOX,
+        maxResultCount: UrlbarUtils.MAX_OMNIBOX_RESULT_COUNT - 1,
+      },
+    ],
+  };
+
+  
+  let mainBucket = {
+    flexChildren: true,
+    children: [
+      
+      {
+        flexChildren: true,
+        children: [
+          {
+            
+            
+            flex: 2,
+            group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          },
+          {
+            flex: 4,
+            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          },
+          {
+            
+            
+            flex: 0,
+            group: UrlbarUtils.RESULT_GROUP.TAIL_SUGGESTION,
+          },
+        ],
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+    ],
+  };
+  if (!showSearchSuggestionsFirst) {
+    mainBucket.children.reverse();
+  }
+  mainBucket.children[0].flex = 2;
+  mainBucket.children[1].flex = 1;
+  rootBucket.children.push(mainBucket);
+
+  return rootBucket;
+}
 
 
 
@@ -299,11 +378,34 @@ class Preferences {
 
 
   set(pref, value) {
-    let { defaultValue, setter } = this._getPrefDescriptor(pref);
+    let { defaultValue, set } = this._getPrefDescriptor(pref);
     if (typeof value != typeof defaultValue) {
       throw new Error(`Invalid value type ${typeof value} for pref ${pref}`);
     }
-    setter(pref, value);
+    set(pref, value);
+  }
+
+  
+
+
+
+
+
+  clear(pref) {
+    let { clear } = this._getPrefDescriptor(pref);
+    clear(pref);
+  }
+
+  
+
+
+
+
+
+
+
+  makeResultBuckets(options) {
+    return makeResultBuckets(options);
   }
 
   
@@ -356,15 +458,12 @@ class Preferences {
 
     
     switch (pref) {
-      case "matchBuckets":
-        this._map.delete("matchBucketsSearch");
-        return;
       case "showSearchSuggestionsFirst":
         this.set(
-          "matchBuckets",
-          this.get(pref)
-            ? MATCH_BUCKETS_SUGGESTIONS_FIRST
-            : MATCH_BUCKETS_GENERAL_FIRST
+          "resultBuckets",
+          JSON.stringify(
+            makeResultBuckets({ showSearchSuggestionsFirst: this.get(pref) })
+          )
         );
         return;
     }
@@ -382,8 +481,8 @@ class Preferences {
 
 
   _readPref(pref) {
-    let { defaultValue, getter } = this._getPrefDescriptor(pref);
-    return getter(pref, defaultValue);
+    let { defaultValue, get } = this._getPrefDescriptor(pref);
+    return get(pref, defaultValue);
   }
 
   
@@ -401,39 +500,6 @@ class Preferences {
 
   _getPrefValue(pref) {
     switch (pref) {
-      case "matchBuckets": {
-        
-        
-        let val = this._readPref(pref);
-        try {
-          val = PlacesUtils.convertMatchBucketsStringToArray(val);
-        } catch (ex) {
-          val = PlacesUtils.convertMatchBucketsStringToArray(
-            PREF_URLBAR_DEFAULTS.get(pref)
-          );
-        }
-        return [...DEFAULT_BUCKETS_BEFORE, ...val, ...DEFAULT_BUCKETS_AFTER];
-      }
-      case "matchBucketsSearch": {
-        
-        
-        let val = this._readPref(pref);
-        if (val) {
-          
-          
-          try {
-            val = PlacesUtils.convertMatchBucketsStringToArray(val);
-            return [
-              ...DEFAULT_BUCKETS_BEFORE,
-              ...val,
-              ...DEFAULT_BUCKETS_AFTER,
-            ];
-          } catch (ex) {
-            
-          }
-        }
-        return this.get("matchBuckets");
-      }
       case "defaultBehavior": {
         let val = 0;
         for (let type of Object.keys(SUGGEST_PREF_TO_BEHAVIOR)) {
@@ -445,6 +511,13 @@ class Preferences {
         }
         return val;
       }
+      case "resultBuckets":
+        try {
+          return JSON.parse(this._readPref(pref));
+        } catch (ex) {}
+        return makeResultBuckets({
+          showSearchSuggestionsFirst: this.get("showSearchSuggestionsFirst"),
+        });
     }
     return this._readPref(pref);
   }
@@ -481,9 +554,10 @@ class Preferences {
     }
     return {
       defaultValue,
-      getter: branch[`get${type}Pref`],
+      get: branch[`get${type}Pref`],
       
-      setter: branch[`set${type == "Float" ? "Char" : type}Pref`],
+      set: branch[`set${type == "Float" ? "Char" : type}Pref`],
+      clear: branch.clearUserPref,
     };
   }
 
@@ -496,7 +570,10 @@ class Preferences {
     let matchBuckets = [];
     let pref = Services.prefs.getCharPref("browser.urlbar.matchBuckets", "");
     try {
-      matchBuckets = PlacesUtils.convertMatchBucketsStringToArray(pref);
+      matchBuckets = pref.split(",").map(v => {
+        let bucket = v.split(":");
+        return [bucket[0].trim().toLowerCase(), Number(bucket[1])];
+      });
     } catch (ex) {}
     let bucketNames = matchBuckets.map(bucket => bucket[0]);
     let suggestionIndex = bucketNames.indexOf("suggestion");
