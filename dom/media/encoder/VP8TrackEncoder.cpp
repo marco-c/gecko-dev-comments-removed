@@ -515,8 +515,8 @@ nsresult VP8TrackEncoder::PrepareRawFrame(VideoChunk& aChunk) {
 
 
 
-#define I_FRAME_RATIO (0.5)
-#define SKIP_FRAME_RATIO (0.75)
+#define I_FRAME_RATIO (0.85)  // Effectively disabled, because perceived quality
+#define SKIP_FRAME_RATIO (0.85)
 
 
 
