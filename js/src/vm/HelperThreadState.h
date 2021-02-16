@@ -525,7 +525,6 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   UniquePtr<frontend::CompilationStencil> stencil_;
 
   frontend::CompilationGCOutput gcOutput_;
-
   frontend::CompilationGCOutput gcOutputForDelazification_;
 
   

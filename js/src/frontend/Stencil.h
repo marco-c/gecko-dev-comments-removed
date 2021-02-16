@@ -7,11 +7,12 @@
 #ifndef frontend_Stencil_h
 #define frontend_Stencil_h
 
-#include "mozilla/Assertions.h"  
-#include "mozilla/Maybe.h"       
-#include "mozilla/Range.h"       
-#include "mozilla/Span.h"        
-#include "mozilla/Variant.h"     
+#include "mozilla/Assertions.h"       
+#include "mozilla/Maybe.h"            
+#include "mozilla/MemoryReporting.h"  
+#include "mozilla/Range.h"            
+#include "mozilla/Span.h"             
+#include "mozilla/Variant.h"          
 
 #include <stddef.h>  
 #include <stdint.h>  
@@ -594,6 +595,16 @@ class StencilModuleMetadata {
 
   bool initModule(JSContext* cx, CompilationAtomCache& atomCache,
                   JS::Handle<ModuleObject*> module) const;
+
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mallocSizeOf(this) +
+           requestedModules.sizeOfExcludingThis(mallocSizeOf) +
+           importEntries.sizeOfExcludingThis(mallocSizeOf) +
+           localExportEntries.sizeOfExcludingThis(mallocSizeOf) +
+           indirectExportEntries.sizeOfExcludingThis(mallocSizeOf) +
+           starExportEntries.sizeOfExcludingThis(mallocSizeOf) +
+           functionDecls.sizeOfExcludingThis(mallocSizeOf);
+  }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump() const;

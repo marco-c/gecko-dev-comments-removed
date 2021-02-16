@@ -10,9 +10,10 @@
 #include "mozilla/AlreadyAddRefed.h"  
 #include "mozilla/Assertions.h"       
 #include "mozilla/Attributes.h"
-#include "mozilla/HashTable.h"  
-#include "mozilla/Maybe.h"      
-#include "mozilla/RefPtr.h"     
+#include "mozilla/HashTable.h"        
+#include "mozilla/Maybe.h"            
+#include "mozilla/MemoryReporting.h"  
+#include "mozilla/RefPtr.h"           
 #include "mozilla/Span.h"
 
 #include "builtin/ModuleObject.h"
@@ -183,6 +184,10 @@ struct CompilationAtomCache {
   void releaseBuffer(AtomCacheVector& atoms);
 
   void trace(JSTracer* trc);
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return atoms_.sizeOfExcludingThis(mallocSizeOf);
+  }
 };
 
 
@@ -303,6 +308,15 @@ struct CompilationInput {
   }
 
   void trace(JSTracer* trc);
+
+  
+  
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return atomCache.sizeOfExcludingThis(mallocSizeOf);
+  }
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
+  }
 };
 
 
@@ -457,6 +471,19 @@ struct SharedDataContainer {
   bool addAndShare(JSContext* cx, ScriptIndex index,
                    js::SharedImmutableScriptData* data);
 
+  
+  
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    if (isVector()) {
+      return asVector()->sizeOfIncludingThis(mallocSizeOf);
+    }
+    if (isMap()) {
+      return asMap()->shallowSizeOfIncludingThis(mallocSizeOf);
+    }
+    MOZ_ASSERT(isSingle());
+    return 0;
+  }
+
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump() const;
   void dump(js::JSONPrinter& json) const;
@@ -530,6 +557,13 @@ struct BaseCompilationStencil {
 
   inline CompilationStencil& asCompilationStencil();
   inline const CompilationStencil& asCompilationStencil() const;
+
+  
+  
+  
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return sharedData.sizeOfExcludingThis(mallocSizeOf);
+  }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump() const;
@@ -614,6 +648,11 @@ struct CompilationStencil : public BaseCompilationStencil {
     functionKey = toFunctionKey(lazy->extent());
   }
 
+  inline size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
+  }
+
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump() const;
   void dump(js::JSONPrinter& json) const;
@@ -645,7 +684,29 @@ struct StencilDelazificationSet {
 
   [[nodiscard]] bool buildDelazificationIndices(
       JSContext* cx, const CompilationStencil& stencil);
+
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mallocSizeOf(this) +
+           delazifications.sizeOfExcludingThis(mallocSizeOf) +
+           delazificationIndices.sizeOfExcludingThis(mallocSizeOf);
+  }
 };
+
+
+
+inline size_t CompilationStencil::sizeOfExcludingThis(
+    mozilla::MallocSizeOf mallocSizeOf) const {
+  size_t moduleMetadataSize =
+      moduleMetadata ? moduleMetadata->sizeOfIncludingThis(mallocSizeOf) : 0;
+  size_t delazificationSetSize =
+      delazificationSet ? delazificationSet->sizeOfIncludingThis(mallocSizeOf)
+                        : 0;
+
+  return alloc.sizeOfExcludingThis(mallocSizeOf) + moduleMetadataSize +
+         asmJS.shallowSizeOfExcludingThis(mallocSizeOf) +
+         delazificationSetSize +
+         BaseCompilationStencil::sizeOfExcludingThis(mallocSizeOf);
+}
 
 
 struct CompilationGCOutput {
@@ -670,6 +731,12 @@ struct CompilationGCOutput {
   ScriptSourceObject* sourceObject = nullptr;
 
   CompilationGCOutput() = default;
+
+  
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return functions.sizeOfExcludingThis(mallocSizeOf) +
+           scopes.sizeOfExcludingThis(mallocSizeOf);
+  }
 
   void trace(JSTracer* trc);
 };
