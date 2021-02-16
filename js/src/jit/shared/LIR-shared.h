@@ -839,13 +839,12 @@ class LArgumentsObjectLength : public LInstructionHelper<1, 1, 0> {
 };
 
 
-class LGuardArgumentsObjectNotOverriddenIterator
-    : public LInstructionHelper<0, 1, 1> {
+class LGuardArgumentsObjectFlags : public LInstructionHelper<0, 1, 1> {
  public:
-  LIR_HEADER(GuardArgumentsObjectNotOverriddenIterator)
+  LIR_HEADER(GuardArgumentsObjectFlags)
 
-  explicit LGuardArgumentsObjectNotOverriddenIterator(
-      const LAllocation& argsObj, const LDefinition& temp)
+  explicit LGuardArgumentsObjectFlags(const LAllocation& argsObj,
+                                      const LDefinition& temp)
       : LInstructionHelper(classOpcode) {
     setOperand(0, argsObj);
     setTemp(0, temp);
@@ -853,6 +852,10 @@ class LGuardArgumentsObjectNotOverriddenIterator
 
   const LAllocation* getArgsObject() { return getOperand(0); }
   const LDefinition* temp() { return this->getTemp(0); }
+
+  MGuardArgumentsObjectFlags* mir() const {
+    return mir_->toGuardArgumentsObjectFlags();
+  }
 };
 
 

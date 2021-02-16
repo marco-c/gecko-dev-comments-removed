@@ -3186,31 +3186,35 @@ class MArgumentsObjectLength : public MUnaryInstruction,
 };
 
 
-class MGuardArgumentsObjectNotOverriddenIterator
-    : public MUnaryInstruction,
-      public SingleObjectPolicy::Data {
-  explicit MGuardArgumentsObjectNotOverriddenIterator(MDefinition* argsObj)
-      : MUnaryInstruction(classOpcode, argsObj) {
+class MGuardArgumentsObjectFlags : public MUnaryInstruction,
+                                   public SingleObjectPolicy::Data {
+  explicit MGuardArgumentsObjectFlags(MDefinition* argsObj, uint32_t flags)
+      : MUnaryInstruction(classOpcode, argsObj), flags_(flags) {
     setResultType(MIRType::Object);
     setMovable();
     setGuard();
   }
 
+  uint8_t flags_;
+
  public:
-  INSTRUCTION_HEADER(GuardArgumentsObjectNotOverriddenIterator)
+  INSTRUCTION_HEADER(GuardArgumentsObjectFlags)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, getArgsObject))
 
+  uint8_t flags() const { return flags_; }
+
   bool congruentTo(const MDefinition* ins) const override {
+    if (!ins->isGuardArgumentsObjectFlags() ||
+        ins->toGuardArgumentsObjectFlags()->flags() != flags()) {
+      return false;
+    }
     return congruentIfOperandsEqual(ins);
   }
 
   AliasSet getAliasSet() const override {
     
-    
-    
-    return AliasSet::Load(AliasSet::ObjectFields | AliasSet::FixedSlot |
-                          AliasSet::DynamicSlot);
+    return AliasSet::Load(AliasSet::FixedSlot);
   }
 };
 
