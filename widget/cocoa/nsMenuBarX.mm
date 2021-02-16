@@ -418,37 +418,6 @@ nsresult nsMenuBarX::Paint() {
 }
 
 
-
-
-
-
-
-
-char nsMenuBarX::GetLocalizedAccelKey(const char* shortcutID) {
-  if (!sLastGeckoMenuBarPainted) return 0;
-
-  nsCOMPtr<mozilla::dom::Document> doc = sLastGeckoMenuBarPainted->mContent->OwnerDoc();
-  if (!doc) return 0;
-
-  NS_ConvertASCIItoUTF16 shortcutIDStr(shortcutID);
-  nsCOMPtr<Element> shortcutContent = doc->GetElementById(shortcutIDStr);
-  if (!shortcutContent) return 0;
-
-  nsAutoString key;
-  shortcutContent->GetAttr(kNameSpaceID_None, nsGkAtoms::key, key);
-  NS_LossyConvertUTF16toASCII keyASC(key.get());
-  const char* keyASCPtr = keyASC.get();
-  if (!keyASCPtr) return 0;
-  
-  
-  if (strlen(keyASCPtr) != sizeof(char)) return 0;
-  
-  char retval = tolower(keyASCPtr[0]);
-
-  return retval;
-}
-
-
 void nsMenuBarX::ResetNativeApplicationMenu() {
   [sApplicationMenu removeAllItems];
   [sApplicationMenu release];
