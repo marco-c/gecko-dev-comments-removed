@@ -17,27 +17,27 @@ namespace mozilla {
 
 
 
-static const int MAX_SUPPORTED_AUDIO_CHANNELS = 8;
+constexpr int MAX_SUPPORTED_AUDIO_CHANNELS = 8;
 
 
 
-static const int MAX_CHANNELS = 2;
+constexpr int MAX_CHANNELS = 2;
 
 
-static const int MAX_DATA_BYTES = 4096;
-
-
-
-
-static const int kOpusSamplingRate = 48000;
-
-
-static const int kFrameDurationMs = 20;
+constexpr int MAX_DATA_BYTES = 4096;
 
 
 
-static const int kOpusSupportedInputSamplingRates[] = {8000, 12000, 16000,
-                                                       24000, 48000};
+
+constexpr int kOpusSamplingRate = 48000;
+
+
+constexpr int kFrameDurationMs = 20;
+
+
+
+constexpr int kOpusSupportedInputSamplingRates[] = {8000, 12000, 16000, 24000,
+                                                    48000};
 
 namespace {
 
@@ -62,7 +62,7 @@ static void SerializeOpusIdHeader(uint8_t aChannelCount, uint16_t aPreskip,
                                   uint32_t aInputSampleRate,
                                   nsTArray<uint8_t>* aOutput) {
   
-  static const uint8_t magic[] = "OpusHead";
+  constexpr uint8_t magic[] = "OpusHead";
   aOutput->AppendElements(magic, sizeof(magic) - 1);
 
   
@@ -91,7 +91,7 @@ static void SerializeOpusCommentHeader(const nsCString& aVendor,
                                        const nsTArray<nsCString>& aComments,
                                        nsTArray<uint8_t>* aOutput) {
   
-  static const uint8_t magic[] = "OpusTags";
+  constexpr uint8_t magic[] = "OpusTags";
   aOutput->AppendElements(magic, sizeof(magic) - 1);
 
   
