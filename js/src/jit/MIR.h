@@ -3710,6 +3710,25 @@ class MNonNegativeIntPtrToInt32 : public MUnaryInstruction,
 };
 
 
+class MIntPtrToDouble : public MUnaryInstruction, public NoTypePolicy::Data {
+  explicit MIntPtrToDouble(MDefinition* def)
+      : MUnaryInstruction(classOpcode, def) {
+    MOZ_ASSERT(def->type() == MIRType::IntPtr);
+    setResultType(MIRType::Double);
+    setMovable();
+  }
+
+ public:
+  INSTRUCTION_HEADER(IntPtrToDouble)
+  TRIVIAL_NEW_WRAPPERS
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+};
+
+
 
 class MAdjustDataViewLength : public MUnaryInstruction,
                               public NoTypePolicy::Data {
