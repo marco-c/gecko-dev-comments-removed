@@ -662,9 +662,7 @@ WindowBackBuffer* WindowSurfaceWayland::GetWaylandBuffer() {
 
 already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::LockWaylandBuffer() {
   
-  LayoutDeviceIntRegion region;
-  region.And(mLockedScreenRect, mWindow->GetMozContainerSize());
-  mWLBufferRect = LayoutDeviceIntRect(region.GetBounds());
+  mWLBufferRect = mWindow->GetMozContainerSize();
 
   LOGWAYLAND(
       ("WindowSurfaceWayland::LockWaylandBuffer [%p] Requesting buffer %d x "
@@ -751,7 +749,7 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
   
   mBufferCommitAllowed = false;
 
-  LayoutDeviceIntRect lockedScreenRect = mWindow->GetBounds();
+  LayoutDeviceIntRect lockedScreenRect = mWindow->GetMozContainerSize();
   
   
   
@@ -827,19 +825,13 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
   }
 
   
-  LayoutDeviceIntRect size = mWindow->GetMozContainerSize();
-  mDrawToWaylandBufferDirectly = (size.width >= mLockedScreenRect.width &&
-                                  size.height >= mLockedScreenRect.height);
+  
+  mDrawToWaylandBufferDirectly =
+      mSmoothRendering
+          ? windowRedraw
+          : (windowRedraw || (lockSize.width * 2 > lockedScreenRect.width &&
+                              lockSize.height * 2 > lockedScreenRect.height));
 
-  
-  
-  if (mDrawToWaylandBufferDirectly) {
-    mDrawToWaylandBufferDirectly =
-        mSmoothRendering
-            ? windowRedraw
-            : (windowRedraw || (lockSize.width * 2 > lockedScreenRect.width &&
-                                lockSize.height * 2 > lockedScreenRect.height));
-  }
   if (!mDrawToWaylandBufferDirectly) {
     
     mCanSwitchWaylandBuffer = false;
