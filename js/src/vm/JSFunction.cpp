@@ -1543,13 +1543,14 @@ bool DelazifyCanonicalScriptedFunctionImpl(JSContext* cx, HandleFunction fun,
     JS::CompileOptions options(cx);
     frontend::FillCompileOptionsForLazyFunction(options, lazy);
 
-    Rooted<frontend::CompilationStencil> stencil(
-        cx, frontend::CompilationStencil(cx, options));
-    stencil.get().setFunctionKey(lazy);
-    stencil.get().input.initFromLazy(lazy);
+    Rooted<frontend::CompilationInput> input(
+        cx, frontend::CompilationInput(options));
+    frontend::CompilationStencil stencil(input.get());
+    stencil.setFunctionKey(lazy);
+    input.get().initFromLazy(lazy);
 
-    if (!frontend::CompileLazyFunctionToStencil(cx, stencil.get(), lazy,
-                                                units.get(), sourceLength)) {
+    if (!frontend::CompileLazyFunctionToStencil(cx, stencil, lazy, units.get(),
+                                                sourceLength)) {
       
       
       MOZ_ASSERT(fun->baseScript() == lazy);
@@ -1557,7 +1558,7 @@ bool DelazifyCanonicalScriptedFunctionImpl(JSContext* cx, HandleFunction fun,
       return false;
     }
 
-    if (!frontend::InstantiateStencilsForDelazify(cx, stencil.get())) {
+    if (!frontend::InstantiateStencilsForDelazify(cx, stencil)) {
       
       
       MOZ_ASSERT(fun->baseScript() == lazy);
@@ -1567,7 +1568,7 @@ bool DelazifyCanonicalScriptedFunctionImpl(JSContext* cx, HandleFunction fun,
 
     if (ss->hasEncoder()) {
       MOZ_ASSERT(!js::UseOffThreadParseGlobal());
-      if (!ss->xdrEncodeFunctionStencil(cx, stencil.get())) {
+      if (!ss->xdrEncodeFunctionStencil(cx, stencil)) {
         return false;
       }
     }

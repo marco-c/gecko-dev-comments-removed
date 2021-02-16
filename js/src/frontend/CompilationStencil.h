@@ -496,9 +496,6 @@ struct BaseCompilationStencil {
 
   BaseCompilationStencil() = default;
 
-  
-  BaseCompilationStencil(BaseCompilationStencil&& other) = default;
-
   bool prepareStorageFor(JSContext* cx, CompilationState& compilationState) {
     
     
@@ -546,7 +543,7 @@ struct CompilationStencil : public BaseCompilationStencil {
 
   
   
-  CompilationInput input;
+  CompilationInput& input;
 
   
   UniquePtr<StencilModuleMetadata> moduleMetadata;
@@ -570,8 +567,8 @@ struct CompilationStencil : public BaseCompilationStencil {
   
 
   
-  CompilationStencil(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
-      : alloc(LifoAllocChunkSize), input(options) {}
+  explicit CompilationStencil(CompilationInput& input)
+      : alloc(LifoAllocChunkSize), input(input) {}
 
   [[nodiscard]] static bool instantiateBaseStencilAfterPreparation(
       JSContext* cx, CompilationInput& input,
@@ -592,17 +589,8 @@ struct CompilationStencil : public BaseCompilationStencil {
                                          bool* succeededOut = nullptr);
 
   
-  
-  CompilationStencil(CompilationStencil&& other) noexcept
-      : BaseCompilationStencil(std::move(other)),
-        alloc(LifoAllocChunkSize),
-        input(std::move(other.input)) {
-    
-    alloc.steal(&other.alloc);
-  }
-
-  
   CompilationStencil(const CompilationStencil&) = delete;
+  CompilationStencil(CompilationStencil&&) = delete;
   CompilationStencil& operator=(const CompilationStencil&) = delete;
   CompilationStencil& operator=(CompilationStencil&&) = delete;
 
@@ -625,8 +613,6 @@ struct CompilationStencil : public BaseCompilationStencil {
 
   RewindToken getRewindToken(CompilationState& state);
   void rewind(CompilationState& state, const RewindToken& pos);
-
-  void trace(JSTracer* trc);
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump() const;

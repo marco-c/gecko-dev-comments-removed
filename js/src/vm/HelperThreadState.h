@@ -521,6 +521,7 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
 
   
   
+  UniquePtr<frontend::CompilationInput> stencilInput_;
   UniquePtr<frontend::CompilationStencil> stencil_;
 
   frontend::CompilationGCOutput gcOutput_;
