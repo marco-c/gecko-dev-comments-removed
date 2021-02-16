@@ -231,14 +231,6 @@ class MarionetteBranch extends Branch {
   get recommendedPrefs() {
     return this.get("prefs.recommended", true);
   }
-
-  
-
-
-
-  get useActors() {
-    return this.get("actors.enabled", true);
-  }
 }
 
 

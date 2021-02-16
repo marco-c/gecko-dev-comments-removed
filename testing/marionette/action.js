@@ -408,11 +408,7 @@ action.PointerType.get = function(str) {
 
 
 
-
-
 action.inputStateMap = new Map();
-
-
 
 
 
