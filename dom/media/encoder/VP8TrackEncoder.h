@@ -8,6 +8,7 @@
 
 #include "TrackEncoder.h"
 
+#include "mozilla/RollingMean.h"
 #include "TimeUnits.h"
 #include "vpx/vpx_codec.h"
 
@@ -49,7 +50,7 @@ class VP8TrackEncoder : public VideoTrackEncoder {
  private:
   
   EncodeOperation GetNextEncodeOperation(TimeDuration aTimeElapsed,
-                                         TrackTime aProcessedDuration);
+                                         TimeDuration aProcessedDuration);
 
   
   
@@ -114,6 +115,16 @@ class VP8TrackEncoder : public VideoTrackEncoder {
 
 
   VideoSegment mSourceSegment;
+
+  
+
+
+  RollingMean<TimeDuration, TimeDuration> mMeanFrameDuration{30};
+
+  
+
+
+  RollingMean<TimeDuration, TimeDuration> mMeanFrameEncodeDuration{30};
 
   
   
