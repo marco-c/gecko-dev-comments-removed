@@ -141,7 +141,7 @@ class MediaEncoder {
   
 
 
-  void Stop();
+  void DisconnectTracks();
 
   
 
