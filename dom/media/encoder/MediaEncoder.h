@@ -254,6 +254,11 @@ class MediaEncoder {
   
 
 
+  void MaybeShutdown();
+
+  
+
+
 
   RefPtr<GenericNonExclusivePromise> Shutdown();
 
@@ -277,6 +282,9 @@ class MediaEncoder {
   const RefPtr<EncoderListener> mEncoderListener;
 
   nsTArray<RefPtr<MediaEncoderListener>> mListeners;
+
+  MediaEventListener mAudioFinishListener;
+  MediaEventListener mVideoFinishListener;
 
   
   
