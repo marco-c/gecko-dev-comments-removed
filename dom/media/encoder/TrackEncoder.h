@@ -417,8 +417,8 @@ class VideoTrackEncoder : public TrackEncoder {
 
 
 
-  virtual nsresult Init(int aWidth, int aHeight, int aDisplayWidth,
-                        int aDisplayHeight) = 0;
+  virtual nsresult Init(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
+                        int32_t aDisplayHeight, float aEstimatedFrameRate) = 0;
 
   
 

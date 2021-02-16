@@ -34,7 +34,8 @@ class VP8TrackEncoder : public VideoTrackEncoder {
 
  public:
   VP8TrackEncoder(RefPtr<DriftCompensator> aDriftCompensator,
-                  TrackRate aTrackRate, FrameDroppingMode aFrameDroppingMode);
+                  TrackRate aTrackRate, FrameDroppingMode aFrameDroppingMode,
+                  Maybe<float> aKeyFrameIntervalFactor = Nothing());
   virtual ~VP8TrackEncoder();
 
   already_AddRefed<TrackMetadataBase> GetMetadata() final;
@@ -45,11 +46,12 @@ class VP8TrackEncoder : public VideoTrackEncoder {
 
  protected:
   nsresult Init(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
-                int32_t aDisplayHeight) final;
+                int32_t aDisplayHeight, float aEstimatedFrameRate) final;
 
  private:
   
-  nsresult InitInternal(int32_t aWidth, int32_t aHeight);
+  nsresult InitInternal(int32_t aWidth, int32_t aHeight,
+                        int32_t aMaxKeyFrameDistance);
 
   
   EncodeOperation GetNextEncodeOperation(TimeDuration aTimeElapsed,
@@ -66,10 +68,19 @@ class VP8TrackEncoder : public VideoTrackEncoder {
   nsresult PrepareRawFrame(VideoChunk& aChunk);
 
   
-  nsresult Reconfigure(int32_t aWidth, int32_t aHeight);
+  nsresult Reconfigure(int32_t aWidth, int32_t aHeight,
+                       int32_t aMaxKeyFrameDistance);
 
   
   void Destroy();
+
+  
+  
+  
+  Maybe<int32_t> CalculateMaxKeyFrameDistance(
+      Maybe<float> aEstimatedFrameRate = Nothing()) const;
+
+  void SetMaxKeyFrameDistance(int32_t aMaxKeyFrameDistance);
 
   
   RefPtr<VP8Metadata> mMetadata;
@@ -111,6 +122,26 @@ class VP8TrackEncoder : public VideoTrackEncoder {
 
 
   TimeDuration mKeyFrameInterval;
+
+  
+
+
+
+
+
+
+
+  float mKeyFrameIntervalFactor;
+
+  
+
+
+  media::TimeUnit mLastKeyFrameDistanceUpdate;
+
+  
+
+
+  Maybe<int32_t> mMaxKeyFrameDistance;
 
   
 

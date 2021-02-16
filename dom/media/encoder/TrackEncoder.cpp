@@ -24,6 +24,7 @@ LazyLogModule gTrackEncoderLog("TrackEncoder");
 static const int DEFAULT_CHANNELS = 1;
 static const int DEFAULT_FRAME_WIDTH = 640;
 static const int DEFAULT_FRAME_HEIGHT = 480;
+static const int DEFAULT_FRAME_RATE = 30;
 
 static const int AUDIO_INIT_FAILED_DURATION = 10;
 
@@ -473,7 +474,7 @@ void VideoTrackEncoder::Init(const VideoSegment& aSegment,
     gfx::IntSize imgsize = iter->mFrame.GetImage()->GetSize();
     gfx::IntSize intrinsicSize = iter->mFrame.GetIntrinsicSize();
     nsresult rv = Init(imgsize.width, imgsize.height, intrinsicSize.width,
-                       intrinsicSize.height);
+                       intrinsicSize.height,  30);
 
     if (NS_SUCCEEDED(rv)) {
       TRACK_LOG(LogLevel::Info,
@@ -516,7 +517,7 @@ void VideoTrackEncoder::NotifyEndOfStream() {
     
     
     Init(DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT, DEFAULT_FRAME_WIDTH,
-         DEFAULT_FRAME_HEIGHT);
+         DEFAULT_FRAME_HEIGHT, DEFAULT_FRAME_RATE);
   }
 
   if (mEndOfStream) {
