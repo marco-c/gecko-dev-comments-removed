@@ -7,11 +7,6 @@
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
 
 const Resources = require("devtools/server/actors/resources/index");
-const {
-  WatchedDataHelpers,
-} = require("devtools/server/actors/watcher/WatchedDataHelpers.jsm");
-const { RESOURCES, BREAKPOINTS } = WatchedDataHelpers.SUPPORTED_DATA;
-const { STATES: THREAD_STATES } = require("devtools/server/actors/thread");
 
 module.exports = function(targetType, targetActorSpec, implementation) {
   const proto = {
@@ -30,9 +25,9 @@ module.exports = function(targetType, targetActorSpec, implementation) {
 
 
     async addWatcherDataEntry(type, entries) {
-      if (type == RESOURCES) {
+      if (type == "resources") {
         await this._watchTargetResources(entries);
-      } else if (type == BREAKPOINTS) {
+      } else if (type == "breakpoints") {
         
         
         
@@ -41,30 +36,18 @@ module.exports = function(targetType, targetActorSpec, implementation) {
           this.attach();
         }
 
-        const isTargetCreation =
-          this.threadActor.state == THREAD_STATES.DETACHED;
-        if (isTargetCreation && !this.targetType.endsWith("worker")) {
-          
-          
-          
-          
-          await this.threadActor.attach({ breakpoints: entries });
-        } else {
-          
-          
-          await Promise.all(
-            entries.map(({ location, options }) =>
-              this.threadActor.setBreakpoint(location, options)
-            )
-          );
-        }
+        await Promise.all(
+          entries.map(({ location, options }) =>
+            this.threadActor.setBreakpoint(location, options)
+          )
+        );
       }
     },
 
     removeWatcherDataEntry(type, entries) {
-      if (type == RESOURCES) {
+      if (type == "resources") {
         return this._unwatchTargetResources(entries);
-      } else if (type == BREAKPOINTS) {
+      } else if (type == "breakpoints") {
         for (const { location } of entries) {
           this.threadActor.removeBreakpoint(location);
         }

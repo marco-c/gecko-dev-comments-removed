@@ -136,8 +136,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       
       
       noPauseOnThreadActorAttach: true,
-      
-      supportsThreadActorIsAttached: true,
     };
   },
 
