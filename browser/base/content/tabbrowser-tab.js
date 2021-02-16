@@ -179,7 +179,8 @@
     }
 
     get hidden() {
-      return this.getAttribute("hidden") == "true";
+      
+      return super.hidden;
     }
 
     get muted() {

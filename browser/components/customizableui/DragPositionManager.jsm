@@ -106,7 +106,7 @@ AreaPositionManager.prototype = {
     let isShifted = false;
     for (let child of aContainer.children) {
       
-      if (child.getAttribute("hidden") == "true") {
+      if (child.hidden) {
         continue;
       }
       
@@ -287,7 +287,7 @@ AreaPositionManager.prototype = {
     let rv = aNode;
     do {
       rv = rv[aDirection + "ElementSibling"];
-    } while (rv && rv.getAttribute("hidden") == "true");
+    } while (rv && rv.hidden);
     return rv;
   },
 };
