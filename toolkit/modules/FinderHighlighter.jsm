@@ -181,12 +181,17 @@ function FinderHighlighter(finder, useTop = false) {
   this._useSubFrames = false;
   this._useTop = useTop;
   this._marksListener = null;
+  this._testing = false;
   this.finder = finder;
 }
 
 FinderHighlighter.prototype = {
   get iterator() {
     return this.finder.iterator;
+  },
+
+  enableTesting(enable) {
+    this._testing = enable;
   },
 
   
@@ -511,7 +516,6 @@ FinderHighlighter.prototype = {
       (foundInThisFrame && !foundRange)
     ) {
       this.hide(window);
-      this.updateScrollMarks();
       return;
     }
 
@@ -540,7 +544,6 @@ FinderHighlighter.prototype = {
           );
         }
       }
-      this.updateScrollMarks();
       return;
     }
 
@@ -638,7 +641,7 @@ FinderHighlighter.prototype = {
     if (marks.size) {
       
       
-      window.setScrollMarks(Array.from(marks));
+      this.setScrollMarks(window, Array.from(marks));
 
       if (!this._marksListener) {
         this._marksListener = event => {
@@ -675,7 +678,27 @@ FinderHighlighter.prototype = {
       );
       this._marksListener = null;
     }
-    window.setScrollMarks([]);
+    this.setScrollMarks(window, []);
+  },
+
+  
+
+
+
+
+
+
+  setScrollMarks(window, marks) {
+    window.setScrollMarks(marks);
+
+    
+    if (this._testing) {
+      window.dispatchEvent(
+        new CustomEvent("find-scrollmarks-changed", {
+          detail: Array.from(marks),
+        })
+      );
+    }
   },
 
   
@@ -728,9 +751,9 @@ FinderHighlighter.prototype = {
       }
       this.clear(window);
       this._scheduleRepaintOfMask(window);
-    } else {
-      this.updateScrollMarks();
     }
+
+    this.updateScrollMarks();
   },
 
   
