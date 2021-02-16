@@ -161,6 +161,14 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   };
 
   
+  
+  
+  enum class EventFlag : uint8_t {
+    eNone = 0,
+    eMandatory = 1,
+  };
+
+  
 
 
 
@@ -294,6 +302,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   void DispatchAsyncEvent(const nsAString& aName) final;
+  void DispatchAsyncEvent(RefPtr<nsMediaEventRunner> aRunner);
 
   
   void UpdateReadyState() override {
@@ -452,6 +461,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void MaybeQueueTimeupdateEvent() final {
     FireTimeUpdate(TimeupdateType::ePeriodic);
   }
+
+  const TimeStamp& LastTimeupdateDispatchTime() const;
+  void UpdateLastTimeupdateDispatchTime();
 
   
 
@@ -1282,7 +1294,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   nsresult DispatchEvent(const nsAString& aName);
 
-  already_AddRefed<nsMediaEventRunner> GetEventRunner(const nsAString& aName);
+  already_AddRefed<nsMediaEventRunner> GetEventRunner(
+      const nsAString& aName, EventFlag aFlag = EventFlag::eNone);
 
   
   
@@ -1532,6 +1545,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   TimeStamp mQueueTimeUpdateRunnerTime;
+
+  
+  
+  TimeStamp mLastTimeUpdateDispatchTime;
 
   
   
