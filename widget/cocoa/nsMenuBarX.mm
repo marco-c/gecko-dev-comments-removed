@@ -44,7 +44,6 @@ extern BOOL sTouchBarIsInitialized;
 
 
 static nsIContent* sAboutItemContent = nullptr;
-static nsIContent* sUpdateItemContent = nullptr;
 static nsIContent* sPrefItemContent = nullptr;
 static nsIContent* sQuitItemContent = nullptr;
 
@@ -106,7 +105,6 @@ nsMenuBarX::~nsMenuBarX() {
   
   
   if (sAboutItemContent == mAboutItemContent) sAboutItemContent = nullptr;
-  if (sUpdateItemContent == mUpdateItemContent) sUpdateItemContent = nullptr;
   if (sQuitItemContent == mQuitItemContent) sQuitItemContent = nullptr;
   if (sPrefItemContent == mPrefItemContent) sPrefItemContent = nullptr;
 
@@ -506,10 +504,6 @@ void nsMenuBarX::AquifyMenuBar() {
   RefPtr<mozilla::dom::Document> domDoc = mContent->GetComposedDoc();
   if (domDoc) {
     
-    HideItem(domDoc, u"checkForUpdates"_ns, getter_AddRefs(mUpdateItemContent));
-    if (!sUpdateItemContent) sUpdateItemContent = mUpdateItemContent;
-
-    
     HideItem(domDoc, u"aboutSeparator"_ns, nullptr);
     HideItem(domDoc, u"aboutName"_ns, getter_AddRefs(mAboutItemContent));
     if (!sAboutItemContent) sAboutItemContent = mAboutItemContent;
@@ -655,7 +649,6 @@ nsresult nsMenuBarX::CreateApplicationMenu(nsMenuX* inMenu) {
 
 
 
-
   if (sApplicationMenu) {
     if (!mApplicationMenuDelegate) {
       mApplicationMenuDelegate = [[ApplicationMenuDelegate alloc] initWithApplicationMenu:this];
@@ -670,17 +663,6 @@ nsresult nsMenuBarX::CreateApplicationMenu(nsMenuX* inMenu) {
     
     itemBeingAdded = CreateNativeAppMenuItem(inMenu, u"aboutName"_ns, @selector(menuItemHit:),
                                              eCommand_ID_About, nsMenuBarX::sNativeEventTarget);
-    if (itemBeingAdded) {
-      [sApplicationMenu addItem:itemBeingAdded];
-      [itemBeingAdded release];
-      itemBeingAdded = nil;
-
-      addAboutSeparator = TRUE;
-    }
-
-    
-    itemBeingAdded = CreateNativeAppMenuItem(inMenu, u"checkForUpdates"_ns, @selector(menuItemHit:),
-                                             eCommand_ID_Update, nsMenuBarX::sNativeEventTarget);
     if (itemBeingAdded) {
       [sApplicationMenu addItem:itemBeingAdded];
       [itemBeingAdded release];
@@ -904,11 +886,6 @@ static BOOL gMenuItemsExecuteCommands = YES;
   if (tag == eCommand_ID_About) {
     nsIContent* mostSpecificContent = sAboutItemContent;
     if (menuBar && menuBar->mAboutItemContent) mostSpecificContent = menuBar->mAboutItemContent;
-    nsMenuUtilsX::DispatchCommandTo(mostSpecificContent);
-    return;
-  } else if (tag == eCommand_ID_Update) {
-    nsIContent* mostSpecificContent = sUpdateItemContent;
-    if (menuBar && menuBar->mUpdateItemContent) mostSpecificContent = menuBar->mUpdateItemContent;
     nsMenuUtilsX::DispatchCommandTo(mostSpecificContent);
     return;
   } else if (tag == eCommand_ID_Prefs) {

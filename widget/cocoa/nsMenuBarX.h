@@ -100,7 +100,6 @@ class nsMenuBarX : public nsMenuGroupOwnerX, public nsChangeObserver {
   
   
   nsCOMPtr<nsIContent> mAboutItemContent;
-  nsCOMPtr<nsIContent> mUpdateItemContent;
   nsCOMPtr<nsIContent> mPrefItemContent;
   nsCOMPtr<nsIContent> mQuitItemContent;
 
