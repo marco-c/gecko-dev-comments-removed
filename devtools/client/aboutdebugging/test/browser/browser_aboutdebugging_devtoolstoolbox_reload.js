@@ -17,12 +17,21 @@ const TOOLS = [
   "webconsole",
   "jsdebugger",
   "styleeditor",
-  "performance",
   "memory",
   "netmonitor",
   "storage",
   "accessibility",
 ];
+
+
+if (
+  Services.prefs.getBoolPref(
+    "devtools.performance.new-panel-enabled",
+    false
+  ) === false
+) {
+  TOOLS.push("performance");
+}
 
 
 
@@ -39,6 +48,9 @@ add_task(async function() {
 async function testReloadAboutDevToolsToolbox(toolId) {
   const { document, tab, window } = await openAboutDebugging();
   await selectThisFirefoxPage(document, window.AboutDebugging.store);
+  
+  
+  await pushPref("devtools.toolbox.selectedTool", "options");
   const {
     devtoolsBrowser,
     devtoolsTab,
