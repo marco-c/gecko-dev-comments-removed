@@ -11,7 +11,6 @@
 #include "MediaEventSource.h"
 #include "SeekTarget.h"
 #include "MediaDecoderOwner.h"
-#include "MediaElementEventRunners.h"
 #include "MediaPlaybackDelayPolicy.h"
 #include "MediaPromiseDefs.h"
 #include "TelemetryProbesReporter.h"
@@ -161,14 +160,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   };
 
   
-  
-  
-  enum class EventFlag : uint8_t {
-    eNone = 0,
-    eMandatory = 1,
-  };
-
-  
 
 
 
@@ -302,7 +293,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   void DispatchAsyncEvent(const nsAString& aName) final;
-  void DispatchAsyncEvent(RefPtr<nsMediaEventRunner> aRunner);
 
   
   void UpdateReadyState() override {
@@ -461,9 +451,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void MaybeQueueTimeupdateEvent() final {
     FireTimeUpdate(TimeupdateType::ePeriodic);
   }
-
-  const TimeStamp& LastTimeupdateDispatchTime() const;
-  void UpdateLastTimeupdateDispatchTime();
 
   
 
@@ -1290,12 +1277,12 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool CanBeCaptured(StreamCaptureType aCaptureType);
 
+  class nsAsyncEventRunner;
+  class nsNotifyAboutPlayingRunner;
+  class nsResolveOrRejectPendingPlayPromisesRunner;
   using nsGenericHTMLElement::DispatchEvent;
   
   nsresult DispatchEvent(const nsAString& aName);
-
-  already_AddRefed<nsMediaEventRunner> GetEventRunner(
-      const nsAString& aName, EventFlag aFlag = EventFlag::eNone);
 
   
   
@@ -1480,8 +1467,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   nsCOMPtr<Document> mLoadBlockedDoc;
 
   
-  class EventBlocker;
-  RefPtr<EventBlocker> mEventBlocker;
+  
+  nsTArray<nsString> mPendingEvents;
 
   
   
@@ -1545,10 +1532,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   TimeStamp mQueueTimeUpdateRunnerTime;
-
-  
-  
-  TimeStamp mLastTimeUpdateDispatchTime;
 
   
   
@@ -1656,6 +1639,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   bool mSuspendedByInactiveDocOrDocshell = false;
+
+  
+  
+  bool mEventDeliveryPaused = false;
 
   
   bool mIsRunningLoadMethod = false;
@@ -1786,9 +1773,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void NotifyTextTrackModeChanged();
 
  private:
-  friend class nsMediaEventRunner;
-  friend class nsResolveOrRejectPendingPlayPromisesRunner;
-
   already_AddRefed<PlayPromise> CreatePlayPromise(ErrorResult& aRv) const;
 
   virtual void MaybeBeginCloningVisually(){};

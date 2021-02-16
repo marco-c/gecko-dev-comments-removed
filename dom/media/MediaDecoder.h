@@ -296,6 +296,14 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
+  void FireTimeUpdate();
+
+  
+  
+  bool IsLoopingBack(double aPrevPos, double aCurPos) const;
+
+  
+  
   bool CanPlayThrough();
 
   
@@ -441,8 +449,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   virtual void MetadataLoaded(UniquePtr<MediaInfo> aInfo,
                               UniquePtr<MetadataTags> aTags,
                               MediaDecoderEventVisibility aEventVisibility);
-
-  void SetLogicalPosition(double aNewPosition);
 
   
 
@@ -717,19 +723,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   double GetVideoDecodeSuspendedTimeInSeconds() const;
 
  private:
-  
-
-
-
-
-
-  enum class PositionUpdate {
-    ePeriodicUpdate,
-    eSeamlessLoopingSeeking,
-    eOther,
-  };
-  PositionUpdate GetPositionUpdateReason(double aPrevPos, double aCurPos) const;
-
   
   void NotifyAudibleStateChanged();
 

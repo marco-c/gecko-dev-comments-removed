@@ -129,7 +129,7 @@
 #include <type_traits>
 
 mozilla::LazyLogModule gMediaElementLog("nsMediaElement");
-mozilla::LazyLogModule gMediaElementEventsLog("nsMediaElementEvents");
+static mozilla::LazyLogModule gMediaElementEventsLog("nsMediaElementEvents");
 
 extern mozilla::LazyLogModule gAutoplayPermissionLog;
 #define AUTOPLAY_LOG(msg, ...) \
@@ -200,6 +200,19 @@ static const unsigned short MEDIA_ERR_NETWORK = 2;
 static const unsigned short MEDIA_ERR_DECODE = 3;
 static const unsigned short MEDIA_ERR_SRC_NOT_SUPPORTED = 4;
 
+static void ResolvePromisesWithUndefined(
+    const nsTArray<RefPtr<PlayPromise>>& aPromises) {
+  for (auto& promise : aPromises) {
+    promise->MaybeResolveWithUndefined();
+  }
+}
+
+static void RejectPromises(const nsTArray<RefPtr<PlayPromise>>& aPromises,
+                           nsresult aError) {
+  for (auto& promise : aPromises) {
+    promise->MaybeReject(aError);
+  }
+}
 
 
 
@@ -208,93 +221,166 @@ static const unsigned short MEDIA_ERR_SRC_NOT_SUPPORTED = 4;
 
 
 
-class HTMLMediaElement::EventBlocker final : public nsISupports {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class nsMediaEvent : public Runnable {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
-  NS_DECL_CYCLE_COLLECTION_CLASS(EventBlocker)
+  explicit nsMediaEvent(const char* aName, HTMLMediaElement* aElement)
+      : Runnable(aName),
+        mElement(aElement),
+        mLoadID(mElement->GetCurrentLoadID()) {}
+  ~nsMediaEvent() = default;
 
-  explicit EventBlocker(HTMLMediaElement* aElement) : mElement(aElement) {}
+  NS_IMETHOD Run() override = 0;
 
-  void SetBlockEventDelivery(bool aShouldBlock) {
-    MOZ_ASSERT(NS_IsMainThread());
-    if (mShouldBlockEventDelivery == aShouldBlock) {
-      return;
-    }
-    LOG_EVENT(LogLevel::Debug,
-              ("%p %s event delivery", mElement.get(),
-               mShouldBlockEventDelivery ? "block" : "unblock"));
-    mShouldBlockEventDelivery = aShouldBlock;
-    if (!mShouldBlockEventDelivery) {
-      DispatchPendingMediaEvents();
-    }
-  }
+ protected:
+  bool IsCancelled() { return mElement->GetCurrentLoadID() != mLoadID; }
 
-  void PostponeEvent(nsMediaEventRunner* aRunner) {
-    MOZ_ASSERT(NS_IsMainThread());
-    
-    if (!mElement) {
-      return;
-    }
-    MOZ_ASSERT(mShouldBlockEventDelivery);
-    MOZ_ASSERT(mElement);
-    LOG_EVENT(LogLevel::Debug,
-              ("%p postpone runner %s for %s", mElement.get(),
-               NS_ConvertUTF16toUTF8(aRunner->Name()).get(),
-               NS_ConvertUTF16toUTF8(aRunner->EventName()).get()));
-    mPendingEventRunners.AppendElement(aRunner);
-  }
-
-  void Shutdown() {
-    MOZ_ASSERT(NS_IsMainThread());
-    for (auto& runner : mPendingEventRunners) {
-      runner->Cancel();
-    }
-    mPendingEventRunners.Clear();
-  }
-
-  bool ShouldBlockEventDelivery() const {
-    MOZ_ASSERT(NS_IsMainThread());
-    return mShouldBlockEventDelivery;
-  }
-
-  size_t SizeOfExcludingThis(MallocSizeOf& aMallocSizeOf) const {
-    MOZ_ASSERT(NS_IsMainThread());
-    size_t total = 0;
-    for (const auto& runner : mPendingEventRunners) {
-      total += aMallocSizeOf(runner);
-    }
-    return total;
-  }
-
- private:
-  ~EventBlocker() = default;
-
-  void DispatchPendingMediaEvents() {
-    MOZ_ASSERT(mElement);
-    for (auto& runner : mPendingEventRunners) {
-      LOG_EVENT(LogLevel::Debug,
-                ("%p execute runner %s for %s", mElement.get(),
-                 NS_ConvertUTF16toUTF8(runner->Name()).get(),
-                 NS_ConvertUTF16toUTF8(runner->EventName()).get()));
-      runner->Run();
-    }
-    mPendingEventRunners.Clear();
-  }
-
-  WeakPtr<HTMLMediaElement> mElement;
-  bool mShouldBlockEventDelivery = false;
-  
-  
-  
-  nsTArray<RefPtr<nsMediaEventRunner>> mPendingEventRunners;
+  RefPtr<HTMLMediaElement> mElement;
+  uint32_t mLoadID;
 };
 
-NS_IMPL_CYCLE_COLLECTION(HTMLMediaElement::EventBlocker, mPendingEventRunners)
-NS_IMPL_CYCLE_COLLECTING_ADDREF(HTMLMediaElement::EventBlocker)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(HTMLMediaElement::EventBlocker)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(HTMLMediaElement::EventBlocker)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-NS_INTERFACE_MAP_END
+class HTMLMediaElement::nsAsyncEventRunner : public nsMediaEvent {
+ private:
+  nsString mName;
+
+ public:
+  nsAsyncEventRunner(const nsAString& aName, HTMLMediaElement* aElement)
+      : nsMediaEvent("HTMLMediaElement::nsAsyncEventRunner", aElement),
+        mName(aName) {}
+
+  NS_IMETHOD Run() override {
+    
+    if (IsCancelled()) return NS_OK;
+
+    return mElement->DispatchEvent(mName);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+class HTMLMediaElement::nsResolveOrRejectPendingPlayPromisesRunner
+    : public nsMediaEvent {
+  nsTArray<RefPtr<PlayPromise>> mPromises;
+  nsresult mError;
+
+ public:
+  nsResolveOrRejectPendingPlayPromisesRunner(
+      HTMLMediaElement* aElement, nsTArray<RefPtr<PlayPromise>>&& aPromises,
+      nsresult aError = NS_OK)
+      : nsMediaEvent(
+            "HTMLMediaElement::nsResolveOrRejectPendingPlayPromisesRunner",
+            aElement),
+        mPromises(std::move(aPromises)),
+        mError(aError) {
+    mElement->mPendingPlayPromisesRunners.AppendElement(this);
+  }
+
+  void ResolveOrReject() {
+    if (NS_SUCCEEDED(mError)) {
+      ResolvePromisesWithUndefined(mPromises);
+    } else {
+      RejectPromises(mPromises, mError);
+    }
+  }
+
+  NS_IMETHOD Run() override {
+    if (!IsCancelled()) {
+      ResolveOrReject();
+    }
+
+    mElement->mPendingPlayPromisesRunners.RemoveElement(this);
+    return NS_OK;
+  }
+};
+
+class HTMLMediaElement::nsNotifyAboutPlayingRunner
+    : public nsResolveOrRejectPendingPlayPromisesRunner {
+ public:
+  nsNotifyAboutPlayingRunner(
+      HTMLMediaElement* aElement,
+      nsTArray<RefPtr<PlayPromise>>&& aPendingPlayPromises)
+      : nsResolveOrRejectPendingPlayPromisesRunner(
+            aElement, std::move(aPendingPlayPromises)) {}
+
+  NS_IMETHOD Run() override {
+    if (IsCancelled()) {
+      mElement->mPendingPlayPromisesRunners.RemoveElement(this);
+      return NS_OK;
+    }
+
+    mElement->DispatchEvent(u"playing"_ns);
+    return nsResolveOrRejectPendingPlayPromisesRunner::Run();
+  }
+};
+
+class nsSourceErrorEventRunner : public nsMediaEvent {
+ private:
+  nsCOMPtr<nsIContent> mSource;
+
+ public:
+  nsSourceErrorEventRunner(HTMLMediaElement* aElement, nsIContent* aSource)
+      : nsMediaEvent("dom::nsSourceErrorEventRunner", aElement),
+        mSource(aSource) {}
+
+  NS_IMETHOD Run() override {
+    
+    if (IsCancelled()) return NS_OK;
+    LOG_EVENT(LogLevel::Debug,
+              ("%p Dispatching simple event source error", mElement.get()));
+    return nsContentUtils::DispatchTrustedEvent(mElement->OwnerDoc(), mSource,
+                                                u"error"_ns, CanBubble::eNo,
+                                                Cancelable::eNo);
+  }
+};
 
 
 
@@ -1914,7 +2000,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLMediaElement,
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPendingPlayPromises)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSeekDOMPromise)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSetMediaKeysDOMPromise)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEventBlocker)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLMediaElement,
@@ -1969,9 +2054,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLMediaElement,
   if (tmp->mMediaControlKeyListener) {
     tmp->mMediaControlKeyListener->StopIfNeeded();
   }
-  if (tmp->mEventBlocker) {
-    tmp->mEventBlocker->Shutdown();
-  }
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -1985,9 +2067,11 @@ void HTMLMediaElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
   
   
   
-  if (mEventBlocker) {
+  *aNodeSize +=
+      mPendingEvents.ShallowSizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
+  for (const nsString& event : mPendingEvents) {
     *aNodeSize +=
-        mEventBlocker->SizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
+        event.SizeOfExcludingThisIfUnshared(aSizes.mState.mMallocSizeOf);
   }
 }
 
@@ -2220,8 +2304,7 @@ void HTMLMediaElement::AbortExistingLoads() {
     
     if (!mPaused) {
       mPaused = true;
-      PlayPromise::RejectPromises(TakePendingPlayPromises(),
-                                  NS_ERROR_DOM_MEDIA_ABORT_ERR);
+      RejectPromises(TakePendingPlayPromises(), NS_ERROR_DOM_MEDIA_ABORT_ERR);
     }
     ChangeNetworkState(NETWORK_EMPTY);
     RemoveMediaTracks();
@@ -2262,6 +2345,9 @@ void HTMLMediaElement::AbortExistingLoads() {
 
   mIsRunningSelectResource = false;
 
+  mEventDeliveryPaused = false;
+  mPendingEvents.Clear();
+
   AssertReadyStateIsNothing();
 }
 
@@ -2291,28 +2377,38 @@ void HTMLMediaElement::NoSupportedMediaSourceError(
   RemoveMediaTracks();
   ChangeDelayLoadStatus(false);
   UpdateAudioChannelPlayingState();
-  PlayPromise::RejectPromises(TakePendingPlayPromises(),
-                              NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR);
+  RejectPromises(TakePendingPlayPromises(),
+                 NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR);
 }
 
+typedef void (HTMLMediaElement::*SyncSectionFn)();
 
 
+
+
+class nsSyncSection : public nsMediaEvent {
+ private:
+  nsCOMPtr<nsIRunnable> mRunnable;
+
+ public:
+  nsSyncSection(HTMLMediaElement* aElement, nsIRunnable* aRunnable)
+      : nsMediaEvent("dom::nsSyncSection", aElement), mRunnable(aRunnable) {}
+
+  NS_IMETHOD Run() override {
+    
+    if (IsCancelled()) return NS_OK;
+    mRunnable->Run();
+    return NS_OK;
+  }
+};
 
 void HTMLMediaElement::RunInStableState(nsIRunnable* aRunnable) {
   if (mShuttingDown) {
     return;
   }
 
-  nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction(
-      "HTMLMediaElement::RunInStableState",
-      [self = RefPtr<HTMLMediaElement>(this), loadId = GetCurrentLoadID(),
-       runnable = RefPtr<nsIRunnable>(aRunnable)]() {
-        if (self->GetCurrentLoadID() != loadId) {
-          return;
-        }
-        runnable->Run();
-      });
-  nsContentUtils::RunInStableState(task.forget());
+  nsCOMPtr<nsIRunnable> event = new nsSyncSection(this, aRunnable);
+  nsContentUtils::RunInStableState(event.forget());
 }
 
 void HTMLMediaElement::QueueLoadFromSourceTask() {
@@ -4057,7 +4153,6 @@ HTMLMediaElement::HTMLMediaElement(
       mAbstractMainThread(
           OwnerDoc()->AbstractMainThreadFor(TaskCategory::Other)),
       mShutdownObserver(new ShutdownObserver),
-      mEventBlocker(new EventBlocker(this)),
       mPlayed(new TimeRanges(ToSupports(OwnerDoc()))),
       mTracksCaptured(nullptr, "HTMLMediaElement::mTracksCaptured"),
       mErrorSink(new ErrorSink(this)),
@@ -5390,9 +5485,6 @@ void HTMLMediaElement::SeekCompleted() {
   if (mTextTrackManager) {
     mTextTrackManager->DidSeek();
   }
-  
-  
-  
   FireTimeUpdate(TimeupdateType::eMandatory);
   DispatchAsyncEvent(u"seeked"_ns);
   
@@ -6053,28 +6145,14 @@ void HTMLMediaElement::PrincipalHandleChangedForVideoFrameContainer(
   UpdateSrcStreamVideoPrincipal(aNewPrincipalHandle);
 }
 
-already_AddRefed<nsMediaEventRunner> HTMLMediaElement::GetEventRunner(
-    const nsAString& aName, EventFlag aFlag) {
-  RefPtr<nsMediaEventRunner> runner;
-  if (aName.EqualsLiteral("playing")) {
-    runner = new nsNotifyAboutPlayingRunner(this, TakePendingPlayPromises());
-  } else if (aName.EqualsLiteral("timeupdate")) {
-    runner = new nsTimeupdateRunner(this, aFlag == EventFlag::eMandatory);
-  } else {
-    runner = new nsAsyncEventRunner(aName, this);
-  }
-  return runner.forget();
-}
-
 nsresult HTMLMediaElement::DispatchEvent(const nsAString& aName) {
   LOG_EVENT(LogLevel::Debug, ("%p Dispatching event %s", this,
                               NS_ConvertUTF16toUTF8(aName).get()));
 
-  if (mEventBlocker->ShouldBlockEventDelivery()) {
-    LOG_EVENT(LogLevel::Debug, ("%p postpone event %s", this,
-                                NS_ConvertUTF16toUTF8(aName).get()));
-    RefPtr<nsMediaEventRunner> runner = GetEventRunner(aName);
-    mEventBlocker->PostponeEvent(runner);
+  
+  
+  if (mEventDeliveryPaused) {
+    mPendingEvents.AppendElement(aName);
     return NS_OK;
   }
 
@@ -6084,20 +6162,40 @@ nsresult HTMLMediaElement::DispatchEvent(const nsAString& aName) {
 }
 
 void HTMLMediaElement::DispatchAsyncEvent(const nsAString& aName) {
-  RefPtr<nsMediaEventRunner> runner = GetEventRunner(aName);
-  DispatchAsyncEvent(std::move(runner));
-}
+  LOG_EVENT(LogLevel::Debug,
+            ("%p Queuing event %s", this, NS_ConvertUTF16toUTF8(aName).get()));
+  DDLOG(DDLogCategory::Event, "HTMLMediaElement",
+        nsCString(NS_ConvertUTF16toUTF8(aName)));
 
-void HTMLMediaElement::DispatchAsyncEvent(RefPtr<nsMediaEventRunner> aRunner) {
-  NS_ConvertUTF16toUTF8 eventName(aRunner->EventName());
-  LOG_EVENT(LogLevel::Debug, ("%p Queuing event %s", this, eventName.get()));
-  DDLOG(DDLogCategory::Event, "HTMLMediaElement", nsCString(eventName.get()));
-  if (mEventBlocker->ShouldBlockEventDelivery()) {
-    LOG_EVENT(LogLevel::Debug, ("%p postpone event %s", this, eventName.get()));
-    mEventBlocker->PostponeEvent(aRunner);
+  
+  
+  if (mEventDeliveryPaused) {
+    mPendingEvents.AppendElement(aName);
     return;
   }
-  mMainThreadEventTarget->Dispatch(aRunner.forget());
+
+  nsCOMPtr<nsIRunnable> event;
+
+  if (aName.EqualsLiteral("playing")) {
+    event = new nsNotifyAboutPlayingRunner(this, TakePendingPlayPromises());
+  } else {
+    event = new nsAsyncEventRunner(aName, this);
+  }
+
+  mMainThreadEventTarget->Dispatch(event.forget());
+}
+
+nsresult HTMLMediaElement::DispatchPendingMediaEvents() {
+  NS_ASSERTION(!mEventDeliveryPaused,
+               "Must not be in bfcache when dispatching pending media events");
+
+  uint32_t count = mPendingEvents.Length();
+  for (uint32_t i = 0; i < count; ++i) {
+    DispatchAsyncEvent(mPendingEvents[i]);
+  }
+  mPendingEvents.Clear();
+
+  return NS_OK;
 }
 
 bool HTMLMediaElement::IsPotentiallyPlaying() const {
@@ -6226,7 +6324,7 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aSuspendElement) {
       mDecoder->Suspend();
       mDecoder->SetDelaySeekMode(true);
     }
-    mEventBlocker->SetBlockEventDelivery(true);
+    mEventDeliveryPaused = true;
     
     ClearResumeDelayedMediaPlaybackAgentIfNeeded();
     mMediaControlKeyListener->StopIfNeeded();
@@ -6238,7 +6336,10 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aSuspendElement) {
       }
       mDecoder->SetDelaySeekMode(false);
     }
-    mEventBlocker->SetBlockEventDelivery(false);
+    if (mEventDeliveryPaused) {
+      mEventDeliveryPaused = false;
+      DispatchPendingMediaEvents();
+    }
     
     
     
@@ -6479,16 +6580,6 @@ void HTMLMediaElement::SetRequestHeaders(nsIHttpChannel* aChannel) {
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
-const TimeStamp& HTMLMediaElement::LastTimeupdateDispatchTime() const {
-  MOZ_ASSERT(NS_IsMainThread());
-  return mLastTimeUpdateDispatchTime;
-}
-
-void HTMLMediaElement::UpdateLastTimeupdateDispatchTime() {
-  MOZ_ASSERT(NS_IsMainThread());
-  mLastTimeUpdateDispatchTime = TimeStamp::Now();
-}
-
 bool HTMLMediaElement::ShouldQueueTimeupdateAsyncTask(
     TimeupdateType aType) const {
   NS_ASSERTION(NS_IsMainThread(), "Should be on main thread.");
@@ -6516,11 +6607,7 @@ void HTMLMediaElement::FireTimeUpdate(TimeupdateType aType) {
   NS_ASSERTION(NS_IsMainThread(), "Should be on main thread.");
 
   if (ShouldQueueTimeupdateAsyncTask(aType)) {
-    RefPtr<nsMediaEventRunner> runner =
-        GetEventRunner(u"timeupdate"_ns, aType == TimeupdateType::eMandatory
-                                             ? EventFlag::eMandatory
-                                             : EventFlag::eNone);
-    DispatchAsyncEvent(std::move(runner));
+    DispatchAsyncEvent(u"timeupdate"_ns);
     mQueueTimeUpdateRunnerTime = TimeStamp::Now();
     mLastCurrentTime = CurrentTime();
   }
