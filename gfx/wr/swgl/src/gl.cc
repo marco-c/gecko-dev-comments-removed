@@ -3271,6 +3271,13 @@ static inline vec3 set_lum_sat(vec3 base, vec3 sref, vec3 lref, Float alpha) {
 }
 
 
+enum SWGLClipFlag {
+  SWGL_CLIP_FLAG_MASK = 1 << 0,
+  SWGL_CLIP_FLAG_AA = 1 << 1,
+};
+static int swgl_ClipFlags = 0;
+
+
 static void* swgl_SpanBuf = nullptr;
 
 static uint8_t* swgl_ClipMaskBuf = nullptr;
@@ -3289,17 +3296,63 @@ static ALWAYS_INLINE WideRGBA8 expand_clip_mask(UNUSED uint32_t* buf,
 
 
 template <typename P>
-static ALWAYS_INLINE auto load_clip_mask(P* buf, int span)
-    -> decltype(expand_clip_mask(buf, 0)) {
-  uint8_t* maskBuf = &swgl_ClipMaskBuf[buf - (P*)swgl_SpanBuf];
-  return expand_clip_mask(buf, unpack(load_span<PackedR8>(maskBuf, span)));
+static ALWAYS_INLINE uint8_t* get_clip_mask(P* buf) {
+  return &swgl_ClipMaskBuf[buf - (P*)swgl_SpanBuf];
 }
 
+template <typename P>
+static ALWAYS_INLINE auto load_clip_mask(P* buf, int span)
+    -> decltype(expand_clip_mask(buf, 0)) {
+  return expand_clip_mask(
+      buf, unpack(load_span<PackedR8>(get_clip_mask(buf), span)));
+}
+
+
+
+static ALWAYS_INLINE void override_clip_mask() {
+  blend_key = BlendKey(blend_key - MASK_BLEND_KEY_NONE);
+}
+
+
+static ALWAYS_INLINE void restore_clip_mask() {
+  blend_key = BlendKey(MASK_BLEND_KEY_NONE + blend_key);
+}
+
+
 static const uint8_t* swgl_OpaqueStart = nullptr;
+
 static uint32_t swgl_OpaqueSize = 0;
+
 static Float swgl_LeftAADist = 0.0f;
 static Float swgl_RightAADist = 0.0f;
+
 static Float swgl_AASlope = 0.0f;
+
+
+
+template <typename P>
+static ALWAYS_INLINE int get_aa_opaque_start(P* buf) {
+  return max(int((P*)swgl_OpaqueStart - buf), 0);
+}
+
+
+
+template <typename P>
+static ALWAYS_INLINE int get_aa_opaque_size(P* buf) {
+  return max(int((P*)&swgl_OpaqueStart[swgl_OpaqueSize] - buf), 0);
+}
+
+
+
+static ALWAYS_INLINE void override_aa() {
+  blend_key = BlendKey(blend_key - AA_BLEND_KEY_NONE);
+}
+
+
+
+static ALWAYS_INLINE void restore_aa() {
+  blend_key = BlendKey(AA_BLEND_KEY_NONE + blend_key);
+}
 
 static ALWAYS_INLINE WideRGBA8 blend_pixels(uint32_t* buf, PackedRGBA8 pdst,
                                             WideRGBA8 src, int span = 4) {
@@ -3747,10 +3800,11 @@ struct ClipRect {
           intersect(swgl_ClipMaskBounds);
           
           
-          blend_key = BlendKey(MASK_BLEND_KEY_NONE + blend_key);
+          restore_clip_mask();
         }
         if (swgl_ClipFlags & SWGL_CLIP_FLAG_AA) {
-          blend_key = BlendKey(AA_BLEND_KEY_NONE + blend_key);
+          
+          restore_aa();
         }
       }
     } else {
