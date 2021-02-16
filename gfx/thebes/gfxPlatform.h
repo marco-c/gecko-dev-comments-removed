@@ -530,7 +530,10 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-  static CMSMode GetCMSMode();
+  static CMSMode GetCMSMode() {
+    MOZ_ASSERT(gCMSInitialized);
+    return gCMSMode;
+  }
 
   
 
@@ -558,32 +561,50 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-  static qcms_profile* GetCMSOutputProfile();
+  static qcms_profile* GetCMSOutputProfile() {
+    MOZ_ASSERT(gCMSInitialized);
+    return gCMSOutputProfile;
+  }
 
   
 
 
-  static qcms_profile* GetCMSsRGBProfile();
+  static qcms_profile* GetCMSsRGBProfile() {
+    MOZ_ASSERT(gCMSInitialized);
+    return gCMSsRGBProfile;
+  }
 
   
 
 
-  static qcms_transform* GetCMSRGBTransform();
+  static qcms_transform* GetCMSRGBTransform() {
+    MOZ_ASSERT(gCMSInitialized);
+    return gCMSRGBTransform;
+  }
 
   
 
 
-  static qcms_transform* GetCMSInverseRGBTransform();
+  static qcms_transform* GetCMSInverseRGBTransform() {
+    MOZ_ASSERT(gCMSInitialized);
+    return gCMSInverseRGBTransform;
+  }
 
   
 
 
-  static qcms_transform* GetCMSRGBATransform();
+  static qcms_transform* GetCMSRGBATransform() {
+    MOZ_ASSERT(gCMSInitialized);
+    return gCMSRGBATransform;
+  }
 
   
 
 
-  static qcms_transform* GetCMSBGRATransform();
+  static qcms_transform* GetCMSBGRATransform() {
+    MOZ_ASSERT(gCMSInitialized);
+    return gCMSBGRATransform;
+  }
 
   
 
@@ -952,7 +973,21 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   static void Init();
 
   static void InitOpenGLConfig();
-  static void CreateCMSOutputProfile();
+
+  static bool gCMSInitialized;
+  static CMSMode gCMSMode;
+
+  
+  static qcms_profile* gCMSOutputProfile;
+  static qcms_profile* gCMSsRGBProfile;
+
+  static qcms_transform* gCMSRGBTransform;
+  static qcms_transform* gCMSInverseRGBTransform;
+  static qcms_transform* gCMSRGBATransform;
+  static qcms_transform* gCMSBGRATransform;
+
+  static void InitializeCMS();
+  static void ShutdownCMS();
 
   friend void RecordingPrefChanged(const char* aPrefName, void* aClosure);
 

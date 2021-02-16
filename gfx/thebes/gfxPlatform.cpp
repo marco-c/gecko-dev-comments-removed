@@ -152,6 +152,9 @@ static const uint32_t kDefaultGlyphCacheSize = -1;
 #include "mozilla/gfx/GPUParent.h"
 #include "prsystem.h"
 
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/SourceSurfaceCairo.h"
+
 using namespace mozilla;
 using namespace mozilla::layers;
 using namespace mozilla::gl;
@@ -166,23 +169,17 @@ const ContentDeviceData* gContentDeviceInitData = nullptr;
 
 static Mutex* gGfxPlatformPrefsLock = nullptr;
 
+bool gfxPlatform::gCMSInitialized = false;
+CMSMode gfxPlatform::gCMSMode = CMSMode::Off;
 
-static qcms_profile* gCMSOutputProfile = nullptr;
-static qcms_profile* gCMSsRGBProfile = nullptr;
 
-static bool gCMSRGBTransformFailed = false;
-static qcms_transform* gCMSRGBTransform = nullptr;
-static qcms_transform* gCMSInverseRGBTransform = nullptr;
-static qcms_transform* gCMSRGBATransform = nullptr;
-static qcms_transform* gCMSBGRATransform = nullptr;
+qcms_profile* gfxPlatform::gCMSOutputProfile = nullptr;
+qcms_profile* gfxPlatform::gCMSsRGBProfile = nullptr;
 
-static bool gCMSInitialized = false;
-static CMSMode gCMSMode = CMSMode::Off;
-
-static void ShutdownCMS();
-
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/SourceSurfaceCairo.h"
+qcms_transform* gfxPlatform::gCMSRGBTransform = nullptr;
+qcms_transform* gfxPlatform::gCMSInverseRGBTransform = nullptr;
+qcms_transform* gfxPlatform::gCMSRGBATransform = nullptr;
+qcms_transform* gfxPlatform::gCMSBGRATransform = nullptr;
 
 
 
@@ -1000,13 +997,10 @@ void gfxPlatform::Init() {
   Preferences::RegisterCallbackAndCall(RecordingPrefChanged,
                                        "gfx.2d.recording");
 
-  CreateCMSOutputProfile();
+  
+  
+  InitializeCMS();
 
-  
-  
-  GetCMSRGBTransform();
-  GetCMSRGBATransform();
-  GetCMSBGRATransform();
 
   
   gPlatform->mMemoryPressureObserver =
@@ -2021,22 +2015,6 @@ bool gfxPlatform::OffMainThreadCompositingEnabled() {
   return UsesOffMainThreadCompositing();
 }
 
-CMSMode gfxPlatform::GetCMSMode() {
-  if (!gCMSInitialized) {
-    int32_t mode = StaticPrefs::gfx_color_management_mode();
-    if (mode >= 0 && mode < int32_t(CMSMode::AllCount)) {
-      gCMSMode = CMSMode(mode);
-    }
-
-    bool enableV4 = StaticPrefs::gfx_color_management_enablev4();
-    if (enableV4) {
-      qcms_enable_iccv4();
-    }
-    gCMSInitialized = true;
-  }
-  return gCMSMode;
-}
-
 void gfxPlatform::SetCMSModeOverride(CMSMode aMode) {
   MOZ_ASSERT(gCMSInitialized);
   gCMSMode = aMode;
@@ -2111,121 +2089,82 @@ const mozilla::gfx::ContentDeviceData* gfxPlatform::GetInitContentDeviceData() {
   return gContentDeviceInitData;
 }
 
-void gfxPlatform::CreateCMSOutputProfile() {
+void gfxPlatform::InitializeCMS() {
+  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+  MOZ_DIAGNOSTIC_ASSERT(!gCMSInitialized);
+
+  {
+    int32_t mode = StaticPrefs::gfx_color_management_mode();
+    if (mode >= 0 && mode < int32_t(CMSMode::AllCount)) {
+      gCMSMode = CMSMode(mode);
+    }
+
+    bool enableV4 = StaticPrefs::gfx_color_management_enablev4();
+    if (enableV4) {
+      qcms_enable_iccv4();
+    }
+  }
+
+  gCMSsRGBProfile = qcms_profile_sRGB();
+
+  
+
+
+
+
+
+
+  if (StaticPrefs::gfx_color_management_force_srgb()) {
+    gCMSOutputProfile = gCMSsRGBProfile;
+  }
+
   if (!gCMSOutputProfile) {
-    
-
-
-
-
-
-
-    if (StaticPrefs::gfx_color_management_force_srgb()) {
-      gCMSOutputProfile = GetCMSsRGBProfile();
-    }
-
-    if (!gCMSOutputProfile) {
-      nsTArray<uint8_t> outputProfileData =
-          gfxPlatform::GetPlatform()->GetPlatformCMSOutputProfileData();
-      if (!outputProfileData.IsEmpty()) {
-        gCMSOutputProfile = qcms_profile_from_memory(
-            outputProfileData.Elements(), outputProfileData.Length());
-      }
-    }
-
-    
-
-    if (gCMSOutputProfile && qcms_profile_is_bogus(gCMSOutputProfile)) {
-      NS_ASSERTION(gCMSOutputProfile != GetCMSsRGBProfile(),
-                   "Builtin sRGB profile tagged as bogus!!!");
-      qcms_profile_release(gCMSOutputProfile);
-      gCMSOutputProfile = nullptr;
-    }
-
-    if (!gCMSOutputProfile) {
-      gCMSOutputProfile = GetCMSsRGBProfile();
-    }
-    
-
-    qcms_profile_precache_output_transform(gCMSOutputProfile);
-  }
-}
-
-qcms_profile* gfxPlatform::GetCMSOutputProfile() { return gCMSOutputProfile; }
-
-qcms_profile* gfxPlatform::GetCMSsRGBProfile() {
-  if (!gCMSsRGBProfile) {
-    
-    gCMSsRGBProfile = qcms_profile_sRGB();
-  }
-  return gCMSsRGBProfile;
-}
-
-qcms_transform* gfxPlatform::GetCMSRGBTransform() {
-  if (!gCMSRGBTransform && !gCMSRGBTransformFailed) {
-    qcms_profile *inProfile, *outProfile;
-    outProfile = GetCMSOutputProfile();
-    inProfile = GetCMSsRGBProfile();
-
-    if (!inProfile || !outProfile) return nullptr;
-
-    gCMSRGBTransform =
-        qcms_transform_create(inProfile, QCMS_DATA_RGB_8, outProfile,
-                              QCMS_DATA_RGB_8, QCMS_INTENT_PERCEPTUAL);
-    if (!gCMSRGBTransform) {
-      gCMSRGBTransformFailed = true;
+    nsTArray<uint8_t> outputProfileData =
+        gfxPlatform::GetPlatform()->GetPlatformCMSOutputProfileData();
+    if (!outputProfileData.IsEmpty()) {
+      gCMSOutputProfile = qcms_profile_from_memory(outputProfileData.Elements(),
+                                                   outputProfileData.Length());
     }
   }
 
-  return gCMSRGBTransform;
-}
+  
 
-qcms_transform* gfxPlatform::GetCMSInverseRGBTransform() {
-  if (!gCMSInverseRGBTransform) {
-    qcms_profile *inProfile, *outProfile;
-    inProfile = GetCMSOutputProfile();
-    outProfile = GetCMSsRGBProfile();
-
-    if (!inProfile || !outProfile) return nullptr;
-
-    gCMSInverseRGBTransform =
-        qcms_transform_create(inProfile, QCMS_DATA_RGB_8, outProfile,
-                              QCMS_DATA_RGB_8, QCMS_INTENT_PERCEPTUAL);
+  if (gCMSOutputProfile && qcms_profile_is_bogus(gCMSOutputProfile)) {
+    NS_ASSERTION(gCMSOutputProfile != gCMSsRGBProfile,
+                 "Builtin sRGB profile tagged as bogus!!!");
+    qcms_profile_release(gCMSOutputProfile);
+    gCMSOutputProfile = nullptr;
   }
 
-  return gCMSInverseRGBTransform;
-}
-
-qcms_transform* gfxPlatform::GetCMSRGBATransform() {
-  if (!gCMSRGBATransform) {
-    qcms_profile *inProfile, *outProfile;
-    outProfile = GetCMSOutputProfile();
-    inProfile = GetCMSsRGBProfile();
-
-    if (!inProfile || !outProfile) return nullptr;
-
-    gCMSRGBATransform =
-        qcms_transform_create(inProfile, QCMS_DATA_RGBA_8, outProfile,
-                              QCMS_DATA_RGBA_8, QCMS_INTENT_PERCEPTUAL);
+  if (!gCMSOutputProfile) {
+    gCMSOutputProfile = gCMSsRGBProfile;
   }
 
-  return gCMSRGBATransform;
-}
+  
 
-qcms_transform* gfxPlatform::GetCMSBGRATransform() {
-  if (!gCMSBGRATransform) {
-    qcms_profile *inProfile, *outProfile;
-    outProfile = GetCMSOutputProfile();
-    inProfile = GetCMSsRGBProfile();
+  qcms_profile_precache_output_transform(gCMSOutputProfile);
 
-    if (!inProfile || !outProfile) return nullptr;
+  
+  gCMSRGBTransform = qcms_transform_create(
+      gCMSsRGBProfile, QCMS_DATA_RGB_8, gCMSOutputProfile,
+      QCMS_DATA_RGB_8, QCMS_INTENT_PERCEPTUAL);
 
-    gCMSBGRATransform =
-        qcms_transform_create(inProfile, QCMS_DATA_BGRA_8, outProfile,
-                              QCMS_DATA_BGRA_8, QCMS_INTENT_PERCEPTUAL);
-  }
+  
+  gCMSInverseRGBTransform = qcms_transform_create(
+      gCMSOutputProfile, QCMS_DATA_RGB_8, gCMSsRGBProfile,
+      QCMS_DATA_RGB_8, QCMS_INTENT_PERCEPTUAL);
 
-  return gCMSBGRATransform;
+  
+  gCMSRGBATransform = qcms_transform_create(
+      gCMSsRGBProfile, QCMS_DATA_RGBA_8, gCMSOutputProfile,
+      QCMS_DATA_RGBA_8, QCMS_INTENT_PERCEPTUAL);
+
+  
+  gCMSBGRATransform = qcms_transform_create(
+      gCMSsRGBProfile, QCMS_DATA_BGRA_8, gCMSOutputProfile,
+      QCMS_DATA_BGRA_8, QCMS_INTENT_PERCEPTUAL);
+
+  gCMSInitialized = true;
 }
 
 qcms_transform* gfxPlatform::GetCMSOSRGBATransform() {
@@ -2253,7 +2192,7 @@ qcms_data_type gfxPlatform::GetCMSOSRGBAType() {
 }
 
 
-static void ShutdownCMS() {
+void gfxPlatform::ShutdownCMS() {
   if (gCMSRGBTransform) {
     qcms_transform_release(gCMSRGBTransform);
     gCMSRGBTransform = nullptr;
@@ -2274,7 +2213,9 @@ static void ShutdownCMS() {
     qcms_profile_release(gCMSOutputProfile);
 
     
-    if (gCMSsRGBProfile == gCMSOutputProfile) gCMSsRGBProfile = nullptr;
+    if (gCMSsRGBProfile == gCMSOutputProfile) {
+      gCMSsRGBProfile = nullptr;
+    }
     gCMSOutputProfile = nullptr;
   }
   if (gCMSsRGBProfile) {
