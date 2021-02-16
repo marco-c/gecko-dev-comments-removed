@@ -377,7 +377,11 @@ class VideoTrackEncoder : public TrackEncoder {
 
 
 
-  void Init(const VideoSegment& aSegment, const TimeStamp& aTime);
+
+
+
+  void Init(const VideoSegment& aSegment, const TimeStamp& aTime,
+            size_t aFrameRateDetectionMinChunks);
 
   TrackTime SecondsToMediaTime(double aS) const {
     NS_ASSERTION(0 <= aS && aS <= TRACK_TICKS_MAX / TRACK_RATE_MAX,

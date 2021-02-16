@@ -30,7 +30,7 @@ static const int AUDIO_INIT_FAILED_DURATION = 10;
 
 static const int VIDEO_INIT_FAILED_DURATION = 30;
 static const int FRAMERATE_DETECTION_ROLLING_WINDOW = 3;
-static const int FRAMERATE_DETECTION_MIN_CHUNKS = 5;
+static const size_t FRAMERATE_DETECTION_MIN_CHUNKS = 5;
 static const int FRAMERATE_DETECTION_MAX_DURATION_S = 6;
 
 TrackEncoder::TrackEncoder(TrackRate aTrackRate)
@@ -456,7 +456,8 @@ void VideoTrackEncoder::TakeTrackData(VideoSegment& aSegment) {
 }
 
 void VideoTrackEncoder::Init(const VideoSegment& aSegment,
-                             const TimeStamp& aTime) {
+                             const TimeStamp& aTime,
+                             size_t aFrameRateDetectionMinChunks) {
   MOZ_ASSERT(!mWorkerThread || mWorkerThread->IsCurrentThreadIn());
 
   if (mInitialized) {
@@ -481,9 +482,14 @@ void VideoTrackEncoder::Init(const VideoSegment& aSegment,
       meanDuration.insert(iter->mTimeStamp - previousChunkTime);
       previousChunkTime = iter->mTimeStamp;
     }
-    if (frameCount >= FRAMERATE_DETECTION_MIN_CHUNKS) {
-      
-      framerate = Some(1.0f / meanDuration.mean().ToSeconds());
+    if (frameCount >= aFrameRateDetectionMinChunks) {
+      if (meanDuration.empty()) {
+        
+        framerate = Some(1.0f / (aTime - mStartTime).ToSeconds());
+      } else {
+        
+        framerate = Some(1.0f / meanDuration.mean().ToSeconds());
+      }
     } else if ((aTime - mStartTime).ToSeconds() >
                FRAMERATE_DETECTION_MAX_DURATION_S) {
       
@@ -545,9 +551,14 @@ void VideoTrackEncoder::NotifyEndOfStream() {
 
   if (!mCanceled && !mInitialized) {
     
-    
-    Init(DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT, DEFAULT_FRAME_WIDTH,
-         DEFAULT_FRAME_HEIGHT, DEFAULT_FRAME_RATE);
+    Init(mOutgoingBuffer, mCurrentTime, 0);
+    if (!mInitialized) {
+      
+      
+      
+      Init(DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT, DEFAULT_FRAME_WIDTH,
+           DEFAULT_FRAME_HEIGHT, DEFAULT_FRAME_RATE);
+    }
   }
 
   if (mEndOfStream) {
@@ -759,7 +770,7 @@ void VideoTrackEncoder::AdvanceCurrentTime(const TimeStamp& aTime) {
   }
 
   if (chunkAppended) {
-    Init(mOutgoingBuffer, mCurrentTime);
+    Init(mOutgoingBuffer, mCurrentTime, FRAMERATE_DETECTION_MIN_CHUNKS);
     if (mInitialized) {
       OnDataAvailable();
     }
