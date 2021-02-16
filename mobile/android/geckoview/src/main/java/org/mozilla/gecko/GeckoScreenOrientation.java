@@ -16,7 +16,6 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 
@@ -211,13 +210,6 @@ public class GeckoScreenOrientation {
     
 
 
-    public int getAndroidOrientation() {
-        return screenOrientationToAndroidOrientation(getScreenOrientation());
-    }
-
-    
-
-
 
     public ScreenOrientation getScreenOrientation() {
         return mScreenOrientation;
@@ -337,55 +329,6 @@ public class GeckoScreenOrientation {
         final WindowManager windowManager =
                 (WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE);
         return windowManager.getDefaultDisplay().getRotation();
-    }
-
-    
-
-
-
-
-
-
-
-    public static ScreenOrientation screenOrientationFromArrayString(final String aArray) {
-        List<String> orientations = Arrays.asList(aArray.split(","));
-        if ("".equals(aArray) || orientations.size() == 0) {
-            
-            Log.w(LOGTAG, "screenOrientationFromArrayString: no orientation in string");
-            return ScreenOrientation.DEFAULT;
-        }
-
-        
-        
-        return screenOrientationFromString(orientations.get(0));
-    }
-
-    
-
-
-
-
-
-
-
-    public static ScreenOrientation screenOrientationFromString(final String aStr) {
-        switch (aStr) {
-            case "portrait":
-                return ScreenOrientation.PORTRAIT;
-            case "landscape":
-                return ScreenOrientation.LANDSCAPE;
-            case "portrait-primary":
-                return ScreenOrientation.PORTRAIT_PRIMARY;
-            case "portrait-secondary":
-                return ScreenOrientation.PORTRAIT_SECONDARY;
-            case "landscape-primary":
-                return ScreenOrientation.LANDSCAPE_PRIMARY;
-            case "landscape-secondary":
-                return ScreenOrientation.LANDSCAPE_SECONDARY;
-        }
-
-        Log.w(LOGTAG, "screenOrientationFromString: unknown orientation string: " + aStr);
-        return ScreenOrientation.DEFAULT;
     }
 
     
