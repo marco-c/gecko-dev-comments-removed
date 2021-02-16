@@ -1,0 +1,18 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["MainProcessSession"];
+
+const { Session } = ChromeUtils.import(
+  "chrome://remote/content/cdp/sessions/Session.jsm"
+);
+
+
+
+
+
+
+class MainProcessSession extends Session {}

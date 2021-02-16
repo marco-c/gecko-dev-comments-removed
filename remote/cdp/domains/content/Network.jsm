@@ -1,0 +1,24 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["Network"];
+
+const { ContentProcessDomain } = ChromeUtils.import(
+  "chrome://remote/content/cdp/domains/ContentProcessDomain.jsm"
+);
+
+class Network extends ContentProcessDomain {
+  
+
+  
+
+
+
+
+  _updateLoadFlags(flags) {
+    this.docShell.defaultLoadFlags = flags;
+  }
+}
