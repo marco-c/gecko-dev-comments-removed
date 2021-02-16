@@ -2163,13 +2163,22 @@ bool BaselineCacheIRCompiler::updateArgc(CallFlags flags, Register argcReg,
       masm.unboxObject(allocator.addressOf(masm, slot), scratch);
       masm.loadPtr(Address(scratch, NativeObject::offsetOfElements()), scratch);
       masm.load32(Address(scratch, ObjectElements::offsetOfLength()), scratch);
-    } break;
+      break;
+    }
     case CallFlags::FunApplyMagicArgs: {
       
       Address numActualArgsAddr(BaselineFrameReg,
                                 BaselineFrame::offsetOfNumActualArgs());
       masm.load32(numActualArgsAddr, scratch);
-    } break;
+      break;
+    }
+    case CallFlags::FunApplyArgsObj: {
+      
+      BaselineFrameSlot slot(0);
+      masm.unboxObject(allocator.addressOf(masm, slot), scratch);
+      masm.loadArgumentsObjectLength(scratch, scratch, failure->label());
+      break;
+    }
     default:
       MOZ_CRASH("Unknown arg format");
   }
@@ -2202,6 +2211,9 @@ void BaselineCacheIRCompiler::pushArguments(Register argcReg,
       break;
     case CallFlags::FunApplyMagicArgs:
       pushFunApplyMagicArgs(argcReg, calleeReg, scratch, scratch2, isJitCall);
+      break;
+    case CallFlags::FunApplyArgsObj:
+      pushFunApplyArgsObj(argcReg, calleeReg, scratch, scratch2, isJitCall);
       break;
     case CallFlags::FunApplyArray:
       pushArrayArguments(argcReg, scratch, scratch2, isJitCall,
@@ -2397,6 +2409,62 @@ void BaselineCacheIRCompiler::pushFunApplyMagicArgs(Register argcReg,
   masm.pushValue(Address(endReg, 0));
   masm.jump(&copyStart);
   masm.bind(&copyDone);
+
+  
+  masm.pushValue(Address(BaselineFrameReg, STUB_FRAME_SIZE + sizeof(Value)));
+
+  
+  if (!isJitCall) {
+    masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(calleeReg)));
+  }
+}
+
+void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
+                                                  Register calleeReg,
+                                                  Register scratch,
+                                                  Register scratch2,
+                                                  bool isJitCall) {
+  
+  Register argsReg = scratch;
+  masm.unboxObject(Address(masm.getStackPointer(), STUB_FRAME_SIZE), argsReg);
+
+  
+  
+  if (isJitCall) {
+    masm.alignJitStackBasedOnNArgs(argcReg, false);
+  }
+
+  
+  masm.loadPrivate(Address(argsReg, ArgumentsObject::getDataSlotOffset()),
+                   argsReg);
+
+  
+  
+  Register currReg = scratch2;
+  Address argsStartAddr(argsReg, ArgumentsData::offsetOfArgs());
+  masm.computeEffectiveAddress(argsStartAddr, argsReg);
+  BaseValueIndex argsEndAddr(argsReg, argcReg);
+  masm.computeEffectiveAddress(argsEndAddr, currReg);
+
+  
+  Label done, loop;
+  masm.bind(&loop);
+  masm.branchPtr(Assembler::Equal, currReg, argsReg, &done);
+  masm.subPtr(Imm32(sizeof(Value)), currReg);
+
+  Address currArgAddr(currReg, 0);
+#ifdef DEBUG
+  
+  
+  Label notForwarded;
+  masm.branchTestMagic(Assembler::NotEqual, currArgAddr, &notForwarded);
+  masm.assumeUnreachable("Should have checked for overridden elements");
+  masm.bind(&notForwarded);
+#endif
+  masm.pushValue(currArgAddr);
+
+  masm.jump(&loop);
+  masm.bind(&done);
 
   
   masm.pushValue(Address(BaselineFrameReg, STUB_FRAME_SIZE + sizeof(Value)));
