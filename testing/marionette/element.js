@@ -786,10 +786,17 @@ element.findClosest = function(startNode, selector) {
 
 
 
+
 element.getElementId = function(el) {
-  const id = ContentDOMReference.get(el);
   const webEl = WebElement.from(el);
+
+  const id = ContentDOMReference.get(el);
+  const browsingContext = BrowsingContext.get(id.browsingContextId);
+
   id.webElRef = webEl.toJSON();
+  id.browserId = browsingContext.browserId;
+  id.isTopLevel = !browsingContext.parent;
+
   return id;
 };
 
@@ -816,8 +823,20 @@ element.getElementId = function(el) {
 
 
 element.resolveElement = function(id, win) {
-  
-  if (id.browsingContextId != win?.browsingContext.id) {
+  let sameBrowsingContext;
+  if (id.isTopLevel) {
+    
+    
+    
+    
+    
+    sameBrowsingContext = id.browserId == win?.browsingContext.browserId;
+  } else {
+    
+    sameBrowsingContext = id.browsingContextId == win?.browsingContext.id;
+  }
+
+  if (!sameBrowsingContext) {
     throw new error.NoSuchElementError(
       `Web element reference not seen before: ${JSON.stringify(id.webElRef)}`
     );
