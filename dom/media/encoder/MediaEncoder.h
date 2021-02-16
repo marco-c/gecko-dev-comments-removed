@@ -35,27 +35,10 @@ class VideoStreamTrack;
 }  
 
 class DriftCompensator;
-class MediaEncoder;
-
-class MediaEncoderListener {
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaEncoderListener)
-  
 
 
-  virtual void Started() = 0;
-  
 
 
-  virtual void Error() = 0;
-  
-
-
-  virtual void Shutdown() = 0;
-
- protected:
-  virtual ~MediaEncoderListener() = default;
-};
 
 
 
@@ -207,8 +190,6 @@ class MediaEncoder {
 
   static bool IsWebMEncoderEnabled();
 
-  const nsString& MimeType() const;
-
   
 
 
@@ -219,18 +200,6 @@ class MediaEncoder {
 
 
   void UpdateStarted();
-
-  
-
-
-
-  void RegisterListener(MediaEncoderListener* aListener);
-
-  
-
-
-
-  bool UnregisterListener(MediaEncoderListener* aListener);
 
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
   
@@ -246,6 +215,13 @@ class MediaEncoder {
 
   RefPtr<BlobPromise> RequestData();
 
+  
+  MediaEventSource<void>& StartedEvent() { return mStartedEvent; }
+  
+  
+  MediaEventSource<void>& ErrorEvent() { return mErrorEvent; }
+  
+  MediaEventSource<void>& ShutdownEvent() { return mShutdownEvent; }
   
   
   MediaEventSource<RefPtr<dom::BlobImpl>>& DataAvailableEvent() {
@@ -346,13 +322,14 @@ class MediaEncoder {
   const TimeDuration mTimeslice;
 
  private:
-  nsTArray<RefPtr<MediaEncoderListener>> mListeners;
-
   MediaEventListener mAudioPushListener;
   MediaEventListener mAudioFinishListener;
   MediaEventListener mVideoPushListener;
   MediaEventListener mVideoFinishListener;
 
+  MediaEventProducer<void> mStartedEvent;
+  MediaEventProducer<void> mErrorEvent;
+  MediaEventProducer<void> mShutdownEvent;
   MediaEventProducer<RefPtr<dom::BlobImpl>> mDataAvailableEvent;
 
   

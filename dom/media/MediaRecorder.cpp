@@ -581,42 +581,6 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
                                public DOMMediaStream::TrackListener {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Session)
 
-  class EncoderListener : public MediaEncoderListener {
-   public:
-    EncoderListener(TaskQueue* aEncoderThread, Session* aSession)
-        : mEncoderThread(aEncoderThread), mSession(aSession) {}
-
-    void Forget() {
-      MOZ_ASSERT(mEncoderThread->IsCurrentThreadIn());
-      mSession = nullptr;
-    }
-
-    void Started() override {
-      MOZ_ASSERT(mEncoderThread->IsCurrentThreadIn());
-      if (mSession) {
-        mSession->MediaEncoderStarted();
-      }
-    }
-
-    void Error() override {
-      MOZ_ASSERT(mEncoderThread->IsCurrentThreadIn());
-      if (mSession) {
-        mSession->MediaEncoderError();
-      }
-    }
-
-    void Shutdown() override {
-      MOZ_ASSERT(mEncoderThread->IsCurrentThreadIn());
-      if (mSession) {
-        mSession->MediaEncoderShutdown();
-      }
-    }
-
-   protected:
-    RefPtr<TaskQueue> mEncoderThread;
-    RefPtr<Session> mSession;
-  };
-
   struct TrackTypeComparator {
     enum Type {
       AUDIO,
@@ -782,10 +746,9 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
       if (mRunningState.inspect() == RunningState::Starting) {
         
         
-        mStartFired = true;
-        NS_DispatchToMainThread(
-            NewRunnableMethod("MediaRecorder::Session::Stop", this,
-                              &Session::MediaEncoderStarted));
+        mStartedListener.DisconnectIfExists();
+        NS_DispatchToMainThread(NewRunnableMethod(
+            "MediaRecorder::Session::Stop", this, &Session::OnStarted));
       }
       mRunningState = RunningState::Stopping;
     }
@@ -925,15 +888,14 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
       return;
     }
 
-    mEncoderListener = MakeAndAddRef<EncoderListener>(mEncoderThread, this);
-    rv = mEncoderThread->Dispatch(NewRunnableMethod<RefPtr<EncoderListener>>(
-        "mozilla::MediaEncoder::RegisterListener", mEncoder,
-        &MediaEncoder::RegisterListener, mEncoderListener));
-    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    Unused << rv;
-
+    mStartedListener = mEncoder->StartedEvent().Connect(mMainThread, this,
+                                                        &Session::OnStarted);
     mDataAvailableListener = mEncoder->DataAvailableEvent().Connect(
         mMainThread, this, &Session::OnDataAvailable);
+    mErrorListener =
+        mEncoder->ErrorEvent().Connect(mMainThread, this, &Session::OnError);
+    mShutdownListener = mEncoder->ShutdownEvent().Connect(mMainThread, this,
+                                                          &Session::OnShutdown);
 
     if (mRecorder->mAudioNode) {
       mEncoder->ConnectAudioNode(mRecorder->mAudioNode,
@@ -1048,32 +1010,24 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
         });
   }
 
-  void MediaEncoderStarted() {
-    MOZ_ASSERT(mEncoderThread->IsCurrentThreadIn());
+  void OnStarted() {
+    MOZ_ASSERT(NS_IsMainThread());
+    if (mRunningState.isErr()) {
+      return;
+    }
+    RunningState state = mRunningState.inspect();
+    if (state == RunningState::Starting || state == RunningState::Stopping) {
+      if (state == RunningState::Starting) {
+        
+        
+        
+        
+        mRunningState = RunningState::Running;
 
-    NS_DispatchToMainThread(NewRunnableFrom([self = RefPtr<Session>(this), this,
-                                             mime = mEncoder->MimeType()]() {
-      if (mRunningState.isErr()) {
-        return NS_OK;
+        mRecorder->mMimeType = mEncoder->mMimeType;
       }
-      RunningState state = mRunningState.inspect();
-      if (state == RunningState::Starting || state == RunningState::Stopping) {
-        if (state == RunningState::Starting) {
-          
-          
-          
-          
-          mRunningState = RunningState::Running;
-
-          mRecorder->mMimeType = mMimeType;
-        }
-        if (mStartFired) {
-          return NS_OK;
-        }
-        mRecorder->DispatchSimpleEvent(u"start"_ns);
-      }
-      return NS_OK;
-    }));
+      mRecorder->DispatchSimpleEvent(u"start"_ns);
+    }
   }
 
   void OnDataAvailable(const RefPtr<BlobImpl>& aBlob) {
@@ -1088,26 +1042,14 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
     }
   }
 
-  void MediaEncoderError() {
-    MOZ_ASSERT(mEncoderThread->IsCurrentThreadIn());
-    NS_DispatchToMainThread(NewRunnableMethod<nsresult>(
-        "dom::MediaRecorder::Session::DoSessionEndTask", this,
-        &Session::DoSessionEndTask, NS_ERROR_FAILURE));
+  void OnError() {
+    MOZ_ASSERT(NS_IsMainThread());
+    DoSessionEndTask(NS_ERROR_FAILURE);
   }
 
-  void MediaEncoderShutdown() {
-    MOZ_ASSERT(mEncoderThread->IsCurrentThreadIn());
-    mEncoder->AssertShutdownCalled();
-
-    mMainThread->Dispatch(NewRunnableMethod<nsresult>(
-        "MediaRecorder::Session::MediaEncoderShutdown->DoSessionEndTask", this,
-        &Session::DoSessionEndTask, NS_OK));
-
-    
-    mEncoderListener->Forget();
-    DebugOnly<bool> unregistered =
-        mEncoder->UnregisterListener(mEncoderListener);
-    MOZ_ASSERT(unregistered);
+  void OnShutdown() {
+    MOZ_ASSERT(NS_IsMainThread());
+    DoSessionEndTask(NS_OK);
   }
 
   RefPtr<ShutdownPromise> Shutdown() {
@@ -1128,20 +1070,14 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
     mShutdownPromise = ShutdownPromise::CreateAndResolve(true, __func__);
 
     if (mEncoder) {
-      MOZ_RELEASE_ASSERT(mEncoderListener);
       mShutdownPromise =
           mShutdownPromise
-              ->Then(mEncoderThread, __func__,
-                     [encoder = mEncoder, encoderListener = mEncoderListener] {
-                       
-                       
-                       encoder->UnregisterListener(encoderListener);
-                       encoderListener->Forget();
-                       return ShutdownPromise::CreateAndResolve(true, __func__);
-                     })
               ->Then(mMainThread, __func__,
                      [this, self = RefPtr<Session>(this)] {
+                       mStartedListener.DisconnectIfExists();
                        mDataAvailableListener.DisconnectIfExists();
+                       mErrorListener.DisconnectIfExists();
+                       mShutdownListener.DisconnectIfExists();
                        return mEncoder->Cancel();
                      })
               ->Then(mEncoderThread, __func__, [] {
@@ -1217,9 +1153,13 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
   
   RefPtr<MediaEncoder> mEncoder;
   
-  RefPtr<EncoderListener> mEncoderListener;
+  MediaEventListener mStartedListener;
   
   MediaEventListener mDataAvailableListener;
+  
+  MediaEventListener mErrorListener;
+  
+  MediaEventListener mShutdownListener;
   
   RefPtr<ShutdownPromise> mShutdownPromise;
   
@@ -1234,7 +1174,6 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
   
   
   Result<RunningState, nsresult> mRunningState;
-  bool mStartFired = false;
   
   RefPtr<ShutdownBlocker> mShutdownBlocker;
 };
