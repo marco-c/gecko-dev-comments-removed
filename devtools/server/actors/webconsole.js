@@ -754,8 +754,8 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
             break;
           }
           if (!this.contentProcessListener) {
-            this.contentProcessListener = new ContentProcessListener(
-              this.onConsoleAPICall
+            this.contentProcessListener = new ContentProcessListener(message =>
+              this.onConsoleAPICall(message, { clonedFromContentProcess: true })
             );
           }
           startedListeners.push(event);
@@ -1789,9 +1789,12 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
-  onConsoleAPICall: function(message) {
+
+
+  onConsoleAPICall: function(message, extraProperties = {}) {
     this.emit("consoleAPICall", {
       message: this.prepareConsoleMessageForRemote(message),
+      ...extraProperties,
     });
   },
 

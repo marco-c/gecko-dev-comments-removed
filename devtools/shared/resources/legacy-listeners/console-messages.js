@@ -48,6 +48,12 @@ module.exports = async function({ targetList, targetFront, onAvailable }) {
 
   
   webConsoleFront.on("consoleAPICall", message => {
+    
+    
+    if (message.clonedFromContentProcess) {
+      return;
+    }
+
     message.resourceType = ResourceWatcher.TYPES.CONSOLE_MESSAGE;
     onAvailable([message]);
   });

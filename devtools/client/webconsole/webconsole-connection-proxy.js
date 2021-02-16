@@ -23,17 +23,9 @@ class WebConsoleConnectionProxy {
 
 
 
-
-
-
-  constructor(
-    webConsoleUI,
-    target,
-    needContentProcessMessagesListener = false
-  ) {
+  constructor(webConsoleUI, target) {
     this.webConsoleUI = webConsoleUI;
     this.target = target;
-    this.needContentProcessMessagesListener = needContentProcessMessagesListener;
     this._connecter = null;
 
     this._onTabNavigated = this._onTabNavigated.bind(this);
@@ -65,8 +57,6 @@ class WebConsoleConnectionProxy {
     const connection = (async () => {
       this.client = this.target.client;
       this.webConsoleFront = await this.target.getFront("console");
-
-      await this._attachConsole();
 
       
       
@@ -107,23 +97,6 @@ class WebConsoleConnectionProxy {
 
   getConnectionPromise() {
     return this._connecter;
-  }
-
-  
-
-
-
-
-  _attachConsole() {
-    if (!this.webConsoleFront || !this.needContentProcessMessagesListener) {
-      return null;
-    }
-
-    
-    
-    
-    
-    return this.webConsoleFront.startListeners(["ContentProcessMessages"]);
   }
 
   

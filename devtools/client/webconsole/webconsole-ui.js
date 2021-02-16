@@ -349,6 +349,7 @@ class WebConsoleUI {
         resourceWatcher.TYPES.PLATFORM_MESSAGE,
         resourceWatcher.TYPES.NETWORK_EVENT,
         resourceWatcher.TYPES.NETWORK_EVENT_STACKTRACE,
+        resourceWatcher.TYPES.CLONED_CONTENT_PROCESS_MESSAGE,
       ],
       {
         onAvailable: this._onResourceAvailable,
@@ -433,15 +434,7 @@ class WebConsoleUI {
     
     
     if (targetFront.isTopLevel) {
-      const needContentProcessMessagesListener =
-        targetFront.isParentProcess &&
-        !targetFront.isAddon &&
-        !this.fissionSupport;
-      this.proxy = new WebConsoleConnectionProxy(
-        this,
-        targetFront,
-        needContentProcessMessagesListener
-      );
+      this.proxy = new WebConsoleConnectionProxy(this, targetFront);
       await this.proxy.connect();
       dispatchTargetAvailable();
       return;
