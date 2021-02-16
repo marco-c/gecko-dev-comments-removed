@@ -5690,6 +5690,35 @@ void CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply,
   masm.pushValue(ToValue(apply, LApplyArgsGeneric::ThisIndex));
 }
 
+void CodeGenerator::emitPushArguments(LApplyArgsObj* apply,
+                                      Register extraStackSpace) {
+  
+  MOZ_ASSERT(apply->getArgsObj() == apply->getArgc());
+
+  Register tmpArgc = ToRegister(apply->getTempObject());
+  Register argsObj = ToRegister(apply->getArgsObj());
+
+  
+  Address lengthAddr(argsObj, ArgumentsObject::getInitialLengthSlotOffset());
+  masm.unboxInt32(lengthAddr, tmpArgc);
+  masm.rshift32(Imm32(ArgumentsObject::PACKED_BITS_COUNT), tmpArgc);
+
+  
+  emitAllocateSpaceForApply(tmpArgc, extraStackSpace);
+
+  
+  masm.loadPrivate(Address(argsObj, ArgumentsObject::getDataSlotOffset()),
+                   argsObj);
+  size_t argsSrcOffset = ArgumentsData::offsetOfArgs();
+
+  
+  
+  emitPushArrayAsArguments(tmpArgc, argsObj, extraStackSpace, argsSrcOffset);
+
+  masm.addPtr(Imm32(sizeof(Value)), extraStackSpace);
+  masm.pushValue(ToValue(apply, LApplyArgsObj::ThisIndex));
+}
+
 void CodeGenerator::emitPushArrayAsArguments(Register tmpArgc,
                                              Register srcBaseAndArgc,
                                              Register scratch,
@@ -5814,6 +5843,7 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
   
   Register argcreg = ToRegister(apply->getArgc());
 
+  
   
   
   
@@ -5982,6 +6012,18 @@ void CodeGenerator::visitApplyArgsGeneric(LApplyArgsGeneric* apply) {
 
   
   bailoutCmp32(Assembler::Above, argcreg, Imm32(JIT_ARGS_LENGTH_MAX), snapshot);
+
+  emitApplyGeneric(apply);
+}
+
+void CodeGenerator::visitApplyArgsObj(LApplyArgsObj* apply) {
+  Register argsObj = ToRegister(apply->getArgsObj());
+  Register temp = ToRegister(apply->getTempObject());
+
+  Label bail;
+  masm.loadArgumentsObjectLength(argsObj, temp, &bail);
+  masm.branch32(Assembler::Above, temp, Imm32(JIT_ARGS_LENGTH_MAX), &bail);
+  bailoutFrom(&bail, apply->snapshot());
 
   emitApplyGeneric(apply);
 }
