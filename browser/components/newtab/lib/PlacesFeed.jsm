@@ -49,36 +49,6 @@ class Observer {
 
 
 
-class HistoryObserver extends Observer {
-  constructor(dispatch) {
-    super(dispatch, Ci.nsINavHistoryObserver);
-  }
-
-  
-
-
-
-
-
-  onDeleteURI(uri) {
-    this.dispatch({ type: at.PLACES_LINKS_CHANGED });
-    this.dispatch({
-      type: at.PLACES_LINK_DELETED,
-      data: { url: uri.spec },
-    });
-  }
-
-  
-  onBeginUpdateBatch() {}
-
-  onEndUpdateBatch() {}
-
-  onDeleteVisits() {}
-}
-
-
-
-
 class BookmarksObserver extends Observer {
   constructor(dispatch) {
     super(dispatch, Ci.nsINavBookmarkObserver);
@@ -188,16 +158,12 @@ class PlacesFeed {
   constructor() {
     this.placesChangedTimer = null;
     this.customDispatch = this.customDispatch.bind(this);
-    this.historyObserver = new HistoryObserver(this.customDispatch);
     this.bookmarksObserver = new BookmarksObserver(this.customDispatch);
     this.placesObserver = new PlacesObserver(this.customDispatch);
   }
 
   addObservers() {
     
-    Cc["@mozilla.org/browser/nav-history-service;1"]
-      .getService(Ci.nsINavHistoryService)
-      .addObserver(this.historyObserver, true);
     Cc["@mozilla.org/browser/nav-bookmarks-service;1"]
       .getService(Ci.nsINavBookmarksService)
       .addObserver(this.bookmarksObserver, true);
@@ -243,7 +209,6 @@ class PlacesFeed {
       this.placesChangedTimer.cancel();
       this.placesChangedTimer = null;
     }
-    PlacesUtils.history.removeObserver(this.historyObserver);
     PlacesUtils.bookmarks.removeObserver(this.bookmarksObserver);
     PlacesUtils.observers.removeListener(
       ["bookmark-added", "bookmark-removed", "history-cleared", "page-removed"],
@@ -577,7 +542,6 @@ class PlacesFeed {
 this.PlacesFeed = PlacesFeed;
 
 
-PlacesFeed.HistoryObserver = HistoryObserver;
 PlacesFeed.BookmarksObserver = BookmarksObserver;
 PlacesFeed.PlacesObserver = PlacesObserver;
 

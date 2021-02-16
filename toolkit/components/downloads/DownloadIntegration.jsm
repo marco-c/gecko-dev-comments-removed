@@ -60,11 +60,6 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
-  "PlacesUtils",
-  "resource://gre/modules/PlacesUtils.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
   "Services",
   "resource://gre/modules/Services.jsm"
 );
@@ -1228,7 +1223,6 @@ var DownloadObserver = {
 
 var DownloadHistoryObserver = function(aList) {
   this._list = aList;
-  PlacesUtils.history.addObserver(this);
 
   const placesObserver = new PlacesWeakCallbackWrapper(
     this.handlePlacesEvents.bind(this)
@@ -1244,8 +1238,6 @@ DownloadHistoryObserver.prototype = {
 
 
   _list: null,
-
-  QueryInterface: ChromeUtils.generateQI(["nsINavHistoryObserver"]),
 
   handlePlacesEvents(events) {
     for (const event of events) {
@@ -1265,17 +1257,6 @@ DownloadHistoryObserver.prototype = {
       }
     }
   },
-
-  
-  onDeleteURI: function DL_onDeleteURI(aURI, aGUID) {
-    this._list.removeFinished(download =>
-      aURI.equals(NetUtil.newURI(download.source.url))
-    );
-  },
-
-  onBeginUpdateBatch() {},
-  onEndUpdateBatch() {},
-  onDeleteVisits() {},
 };
 
 
