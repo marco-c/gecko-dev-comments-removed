@@ -1371,6 +1371,15 @@ pref("prompts.tabChromePromptSubDialog", true);
 #endif
 
 
+
+#ifdef NIGHTLY_BUILD
+  pref("prompts.windowPromptSubDialog", true);
+#else
+  pref("prompts.windowPromptSubDialog", false);
+#endif
+
+
+
 pref("browser.newtab.preload", true);
 
 
