@@ -186,6 +186,9 @@ class MediaEncoder {
   
 
 
+
+  RefPtr<GenericNonExclusivePromise> Stop();
+
   
 
 

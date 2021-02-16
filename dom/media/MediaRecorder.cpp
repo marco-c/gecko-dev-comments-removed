@@ -1083,6 +1083,7 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
   
   
   
+  
   void DoSessionEndTask(nsresult rv) {
     MOZ_ASSERT(NS_IsMainThread());
     if (mRunningState.isErr()) {
@@ -1111,7 +1112,9 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
       mRunningState = Err(rv);
     }
 
-    mEncoder->Cancel()
+    (rv == NS_ERROR_ABORT || rv == NS_ERROR_DOM_SECURITY_ERR
+         ? mEncoder->Cancel()
+         : mEncoder->Stop())
         ->Then(mEncoderThread, __func__,
                [this, self = RefPtr<Session>(this)](
                    const GenericNonExclusivePromise::ResolveOrRejectValue&
