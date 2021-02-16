@@ -167,6 +167,9 @@ void LocationBase::SetURI(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
       
       
       
+      
+      
+      
       return;
     }
     aRv.Throw(rv);

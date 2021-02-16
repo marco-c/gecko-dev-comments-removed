@@ -556,9 +556,7 @@ enum class AudioInputType { Unknown, Voice };
 
 
 
-class AudioCallbackDriver : public GraphDriver,
-                            public MixerCallbackReceiver
-{
+class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
   using IterationResult = GraphInterface::IterationResult;
   enum class FallbackDriverState;
   class FallbackWrapper;

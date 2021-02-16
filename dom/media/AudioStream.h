@@ -169,8 +169,7 @@ class AudioBufferWriter : private AudioBufferCursor {
 
 
 
-class AudioStream final
-{
+class AudioStream final {
   virtual ~AudioStream();
 
  public:
