@@ -105,14 +105,19 @@ bool WebGLFBAttachPoint::IsComplete(WebGLContext* webgl,
     
     
     
-    
     const auto attachedMipLevel = MipLevel();
 
     const bool withinValidMipLevels = [&]() {
       const bool ensureInit = false;
       const auto texCompleteness = tex->CalcCompletenessInfo(ensureInit);
-      if (!texCompleteness)  
-        return false;
+      if (!texCompleteness) return false;  
+
+      if (tex->Immutable()) {
+        
+        
+        return attachedMipLevel < tex->ImmutableLevelCount();
+      }
+
       if (!texCompleteness->levels) return false;
 
       const auto baseLevel = tex->BaseMipmapLevel();
