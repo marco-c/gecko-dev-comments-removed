@@ -50,8 +50,8 @@ add_task(async function test_muxer() {
     ),
   ];
 
-  let providerName = registerBasicTestProvider(matches);
-  let context = createContext(undefined, { providers: [providerName] });
+  let provider = registerBasicTestProvider(matches);
+  let context = createContext(undefined, { providers: [provider.name] });
   let controller = UrlbarTestUtils.newMockController();
   
 
@@ -106,9 +106,9 @@ add_task(async function test_preselectedHeuristic_singleProvider() {
   ];
   matches[1].heuristic = true;
 
-  let providerName = registerBasicTestProvider(matches);
+  let provider = registerBasicTestProvider(matches);
   let context = createContext(undefined, {
-    providers: [providerName],
+    providers: [provider.name],
   });
   let controller = UrlbarTestUtils.newMockController();
 
@@ -155,11 +155,11 @@ add_task(async function test_preselectedHeuristic_multiProviders() {
   ];
   matches2[1].heuristic = true;
 
-  let provider1Name = registerBasicTestProvider(matches1);
-  let provider2Name = registerBasicTestProvider(matches2);
+  let provider1 = registerBasicTestProvider(matches1);
+  let provider2 = registerBasicTestProvider(matches2);
 
   let context = createContext(undefined, {
-    providers: [provider1Name, provider2Name],
+    providers: [provider1.name, provider2.name],
   });
   let controller = UrlbarTestUtils.newMockController();
 
@@ -224,10 +224,10 @@ add_task(async function test_suggestions() {
     ),
   ];
 
-  let providerName = registerBasicTestProvider(matches);
+  let provider = registerBasicTestProvider(matches);
 
   let context = createContext(undefined, {
-    providers: [providerName],
+    providers: [provider.name],
   });
   let controller = UrlbarTestUtils.newMockController();
 
@@ -244,3 +244,307 @@ add_task(async function test_suggestions() {
 
   Services.prefs.clearUserPref("browser.urlbar.maxHistoricalSearchSuggestions");
 });
+
+
+
+
+const BAD_HEURISTIC_RESULTS = [
+  
+  Object.assign(
+    new UrlbarResult(
+      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarUtils.RESULT_SOURCE.HISTORY,
+      { url: "http://mozilla.org/heuristic-0" }
+    ),
+    { heuristic: true }
+  ),
+  
+  Object.assign(
+    new UrlbarResult(
+      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarUtils.RESULT_SOURCE.HISTORY,
+      { url: "http://mozilla.org/heuristic-1" }
+    ),
+    { heuristic: true }
+  ),
+  
+  new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarUtils.RESULT_SOURCE.HISTORY,
+    { url: "http://mozilla.org/non-heuristic-0" }
+  ),
+  
+  new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarUtils.RESULT_SOURCE.HISTORY,
+    { url: "http://mozilla.org/non-heuristic-1" }
+  ),
+];
+
+const BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC = BAD_HEURISTIC_RESULTS[0];
+const BAD_HEURISTIC_RESULTS_GENERAL = [
+  BAD_HEURISTIC_RESULTS[2],
+  BAD_HEURISTIC_RESULTS[3],
+];
+
+add_task(async function test_badHeuristicBuckets_multiple_0() {
+  await doBadHeuristicBucketsTest(
+    [
+      
+      {
+        maxResultCount: 2,
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+    ],
+    [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
+  );
+});
+
+add_task(async function test_badHeuristicBuckets_multiple_1() {
+  await doBadHeuristicBucketsTest(
+    [
+      
+      {
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+    ],
+    [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
+  );
+});
+
+add_task(async function test_badHeuristicBuckets_multiple_2() {
+  await doBadHeuristicBucketsTest(
+    [
+      
+      {
+        maxResultCount: 2,
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+    ],
+    [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
+  );
+});
+
+add_task(async function test_badHeuristicBuckets_multiple_3() {
+  await doBadHeuristicBucketsTest(
+    [
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+    ],
+    [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
+  );
+});
+
+add_task(async function test_badHeuristicBuckets_multiple_4() {
+  await doBadHeuristicBucketsTest(
+    [
+      
+      {
+        maxResultCount: 1,
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+      
+      {
+        maxResultCount: 1,
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
+      },
+    ],
+    [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
+  );
+});
+
+add_task(async function test_badHeuristicBuckets_multiple_5() {
+  await doBadHeuristicBucketsTest(
+    [
+      
+      {
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+      
+      {
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
+      },
+    ],
+    [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
+  );
+});
+
+add_task(async function test_badHeuristicBuckets_multiple_6() {
+  await doBadHeuristicBucketsTest(
+    [
+      
+      {
+        maxResultCount: 1,
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+      
+      {
+        maxResultCount: 1,
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+      },
+    ],
+    [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
+  );
+});
+
+add_task(async function test_badHeuristicBuckets_multiple_7() {
+  await doBadHeuristicBucketsTest(
+    [
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+      },
+    ],
+    [BAD_HEURISTIC_RESULTS_FIRST_HEURISTIC, ...BAD_HEURISTIC_RESULTS_GENERAL]
+  );
+});
+
+add_task(async function test_badHeuristicsBuckets_notFirst_0() {
+  await doBadHeuristicBucketsTest(
+    [
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+      
+      {
+        maxResultCount: 1,
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
+      },
+    ],
+    [...BAD_HEURISTIC_RESULTS_GENERAL]
+  );
+});
+
+add_task(async function test_badHeuristicsBuckets_notFirst_1() {
+  await doBadHeuristicBucketsTest(
+    [
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+      
+      {
+        children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
+      },
+    ],
+    [...BAD_HEURISTIC_RESULTS_GENERAL]
+  );
+});
+
+add_task(async function test_badHeuristicsBuckets_notFirst_2() {
+  await doBadHeuristicBucketsTest(
+    [
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+      
+      {
+        maxResultCount: 1,
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+      },
+    ],
+    [...BAD_HEURISTIC_RESULTS_GENERAL]
+  );
+});
+
+add_task(async function test_badHeuristicsBuckets_notFirst_3() {
+  await doBadHeuristicBucketsTest(
+    [
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+      },
+    ],
+    [...BAD_HEURISTIC_RESULTS_GENERAL]
+  );
+});
+
+add_task(async function test_badHeuristicsBuckets_notFirst_4() {
+  await doBadHeuristicBucketsTest(
+    [
+      
+      {
+        maxResultCount: 1,
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+      },
+      
+      {
+        group: UrlbarUtils.RESULT_GROUP.GENERAL,
+      },
+    ],
+    [...BAD_HEURISTIC_RESULTS_GENERAL]
+  );
+});
+
+
+
+
+
+
+
+
+
+
+
+async function doBadHeuristicBucketsTest(resultBuckets, expectedResults) {
+  Services.prefs.setCharPref(
+    "browser.urlbar.resultBuckets",
+    JSON.stringify({ children: resultBuckets })
+  );
+
+  let provider = registerBasicTestProvider(BAD_HEURISTIC_RESULTS);
+  let context = createContext("foo", { providers: [provider.name] });
+  let controller = UrlbarTestUtils.newMockController();
+  await UrlbarProvidersManager.startQuery(context, controller);
+  Assert.deepEqual(context.results, expectedResults);
+
+  Services.prefs.clearUserPref("browser.urlbar.resultBuckets");
+}
