@@ -49,10 +49,11 @@ def executor_kwargs(logger, test_type, server_config, cache_manager, run_info_da
     
     
     capabilities["goog:chromeOptions"]["androidPackage"] = \
-        "org.chromium.webview_shell"
-    capabilities["goog:chromeOptions"]["androidActivity"] = ".WebPlatformTestsActivity"
-    if kwargs.get('device_serial'):
-        capabilities["goog:chromeOptions"]["androidDeviceSerial"] = kwargs['device_serial']
+        kwargs.get("package_name", "org.chromium.webview_shell")
+    capabilities["goog:chromeOptions"]["androidActivity"] = \
+        "org.chromium.webview_shell.WebPlatformTestsActivity"
+    if kwargs.get("device_serial"):
+        capabilities["goog:chromeOptions"]["androidDeviceSerial"] = kwargs["device_serial"]
 
     
     executor_kwargs["pause_after_test"] = False
