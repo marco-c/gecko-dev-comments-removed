@@ -204,7 +204,7 @@ struct CompilationInput {
 
   BaseScript* lazy = nullptr;
 
-  ScriptSourceHolder source_;
+  RefPtr<ScriptSource> source_;
 
   
   
@@ -303,8 +303,7 @@ struct CompilationInput {
   }
 
   ScriptSource* source() { return source_.get(); }
-
-  void setSource(ScriptSource* ss) { return source_.reset(ss); }
+  void setSource(ScriptSource* ss) { source_ = do_AddRef(ss); }
 
   template <typename Unit>
   MOZ_MUST_USE bool assignSource(JSContext* cx,
