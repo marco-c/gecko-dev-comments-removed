@@ -149,6 +149,7 @@ const STATES = {
   
   PAUSED: "paused",
 };
+exports.STATES = STATES;
 
 
 const PAUSE_REASONS = {
@@ -399,7 +400,21 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   },
 
   
+
+
+
+  isAttached() {
+    return !!this.alreadyAttached;
+  },
+
+  
   attach(options) {
+    
+    
+    if (this.alreadyAttached) {
+      return;
+    }
+
     if (this.state === STATES.EXITED) {
       throw {
         error: "exited",
@@ -426,11 +441,13 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       thread: this,
     });
 
-    this.dbg.enable();
     this.reconfigure(options);
 
     
     this._state = STATES.RUNNING;
+
+    this.alreadyAttached = true;
+    this.dbg.enable();
 
     
     

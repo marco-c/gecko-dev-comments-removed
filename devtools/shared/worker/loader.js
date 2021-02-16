@@ -173,7 +173,9 @@ function WorkerDebuggerLoader(options) {
     }
 
     
-    return url.endsWith(".js") ? url : url + ".js";
+    
+    
+    return url.endsWith(".js") || url.endsWith(".jsm") ? url : url + ".js";
   }
 
   
