@@ -113,13 +113,9 @@ interface nsIExternalProtocolService : nsISupports
 
 
 
-
-
-
   void loadURI(in nsIURI aURI,
                [optional] in nsIPrincipal aTriggeringPrincipal,
-               [optional] in BrowsingContext aBrowsingContext,
-               [optional] in bool aWasTriggeredExternally);
+               [optional] in BrowsingContext aBrowsingContext);
 
   
 
