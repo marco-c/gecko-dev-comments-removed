@@ -2720,7 +2720,7 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
     return NS_ERROR_FAILURE;
   }
 
-#ifdef __arm__
+#if defined(__arm__) && not defined(__ARM_FEATURE_CRYPTO)
   unsigned int enabledCiphers = 0;
   std::vector<uint16_t> ciphers(SSL_GetNumImplementedCiphers());
 
@@ -2732,6 +2732,7 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
     return NS_ERROR_FAILURE;
   }
 
+  
   
   
   
