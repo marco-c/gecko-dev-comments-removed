@@ -41,6 +41,7 @@
 #include "mozilla/PublicSSL.h"  
 
 #include "nsISocketTransportService.h"
+#include "nsNetUtil.h"  
 
 #include <string>
 #include <vector>
@@ -285,6 +286,13 @@ static NrIceCtx::Policy toNrIcePolicy(dom::RTCIceTransportPolicy aPolicy) {
   return NrIceCtx::ICE_POLICY_ALL;
 }
 
+
+int16_t gGoodWebrtcPortList[] = {
+    3478,  
+    5349,  
+    0,     
+};
+
 static nsresult addNrIceServer(const nsString& aIceUrl,
                                const dom::RTCIceServer& aIceServer,
                                std::vector<NrIceStunServer>* aStunServersOut,
@@ -352,6 +360,21 @@ static nsresult addNrIceServer(const nsString& aIceUrl,
     path.Mid(host, hostPos, hostLen);
   }
   if (port == -1) port = (isStuns || isTurns) ? 5349 : 3478;
+
+  
+  bool goodPort = false;
+  for (int i = 0; !goodPort && gGoodWebrtcPortList[i]; i++) {
+    if (port == gGoodWebrtcPortList[i]) {
+      goodPort = true;
+    }
+  }
+
+  
+  
+  if (!goodPort) {
+    rv = NS_CheckPortSafety(port, nullptr);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   if (isStuns || isTurns) {
     
