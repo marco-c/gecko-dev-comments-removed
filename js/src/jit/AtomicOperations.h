@@ -164,13 +164,7 @@ class AtomicOperations {
   
   
   
-  
-  
-  
-  
-  
-  
-  static inline bool isLockfreeJS(int32_t n);
+  static constexpr inline bool isLockfreeJS(int32_t n);
 
   
   
@@ -302,7 +296,7 @@ class AtomicOperations {
   }
 };
 
-inline bool AtomicOperations::isLockfreeJS(int32_t size) {
+constexpr inline bool AtomicOperations::isLockfreeJS(int32_t size) {
   
 
   switch (size) {
@@ -314,11 +308,7 @@ inline bool AtomicOperations::isLockfreeJS(int32_t size) {
       
       return true;
     case 8:
-      
-      
-      
-      
-      return false;
+      return true;
     default:
       return false;
   }

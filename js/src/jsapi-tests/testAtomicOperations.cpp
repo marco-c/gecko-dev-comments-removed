@@ -49,15 +49,15 @@ END_TEST(testAtomicLockFree8)
 
 
 BEGIN_REUSABLE_TEST(testAtomicLockFreeJS) {
-  CHECK(jit::AtomicOperations::isLockfreeJS(1) ==
-        true);  
-  CHECK(jit::AtomicOperations::isLockfreeJS(2) == true);   
-  CHECK(jit::AtomicOperations::isLockfreeJS(3) == false);  
-  CHECK(jit::AtomicOperations::isLockfreeJS(4) == true);   
-  CHECK(jit::AtomicOperations::isLockfreeJS(5) == false);  
-  CHECK(jit::AtomicOperations::isLockfreeJS(6) == false);  
-  CHECK(jit::AtomicOperations::isLockfreeJS(7) == false);  
-  CHECK(jit::AtomicOperations::isLockfreeJS(8) == false);  
+  static_assert(jit::AtomicOperations::isLockfreeJS(1) ==
+                true);  
+  static_assert(jit::AtomicOperations::isLockfreeJS(2) == true);   
+  static_assert(jit::AtomicOperations::isLockfreeJS(8) == true);   
+  static_assert(jit::AtomicOperations::isLockfreeJS(3) == false);  
+  static_assert(jit::AtomicOperations::isLockfreeJS(4) == true);   
+  static_assert(jit::AtomicOperations::isLockfreeJS(5) == false);  
+  static_assert(jit::AtomicOperations::isLockfreeJS(6) == false);  
+  static_assert(jit::AtomicOperations::isLockfreeJS(7) == false);  
   return true;
 }
 END_TEST(testAtomicLockFreeJS)
