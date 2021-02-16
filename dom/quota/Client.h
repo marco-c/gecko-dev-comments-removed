@@ -37,10 +37,10 @@ struct Nullable;
 
 namespace mozilla::dom::quota {
 
+struct OriginMetadata;
 class OriginScope;
 class QuotaManager;
 class UsageInfo;
-struct GroupAndOrigin;
 
 
 
@@ -121,15 +121,15 @@ class Client {
   }
 
   virtual Result<UsageInfo, nsresult> InitOrigin(
-      PersistenceType aPersistenceType, const GroupAndOrigin& aGroupAndOrigin,
+      PersistenceType aPersistenceType, const OriginMetadata& aOriginMetadata,
       const AtomicBool& aCanceled) = 0;
 
   virtual nsresult InitOriginWithoutTracking(
-      PersistenceType aPersistenceType, const GroupAndOrigin& aGroupAndOrigin,
+      PersistenceType aPersistenceType, const OriginMetadata& aOriginMetadata,
       const AtomicBool& aCanceled) = 0;
 
   virtual Result<UsageInfo, nsresult> GetUsageForOrigin(
-      PersistenceType aPersistenceType, const GroupAndOrigin& aGroupAndOrigin,
+      PersistenceType aPersistenceType, const OriginMetadata& aOriginMetadata,
       const AtomicBool& aCanceled) = 0;
 
   

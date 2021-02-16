@@ -14,8 +14,8 @@
 namespace mozilla::dom::quota {
 
 class ClientDirectoryLock;
-struct GroupAndOrigin;
 class OpenDirectoryListener;
+struct OriginMetadata;
 
 
 
@@ -32,7 +32,7 @@ class NS_NO_VTABLE DirectoryLock {
 
   
   virtual RefPtr<ClientDirectoryLock> Specialize(
-      PersistenceType aPersistenceType, const GroupAndOrigin& aGroupAndOrigin,
+      PersistenceType aPersistenceType, const OriginMetadata& aOriginMetadata,
       Client::Type aClientType) const = 0;
 
   virtual void Log() const = 0;
@@ -44,7 +44,7 @@ class NS_NO_VTABLE OriginDirectoryLock : public DirectoryLock {
   
   virtual PersistenceType GetPersistenceType() const = 0;
 
-  virtual quota::GroupAndOrigin GroupAndOrigin() const = 0;
+  virtual quota::OriginMetadata OriginMetadata() const = 0;
 
   virtual const nsACString& Origin() const = 0;
 };
