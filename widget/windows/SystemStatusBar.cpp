@@ -133,10 +133,10 @@ nsresult StatusBarEntry::Init() {
 
   mIconLoaderHelper = new IconLoaderHelperWin(this);
   nsIntRect rect;
-  mIconLoader = new IconLoader(mIconLoaderHelper, mMenu, rect);
+  mIconLoader = new IconLoader(mIconLoaderHelper, rect);
 
   if (iconURI) {
-    rv = mIconLoader->LoadIcon(iconURI);
+    rv = mIconLoader->LoadIcon(iconURI, mMenu);
   }
 
   HWND iconWindow;
@@ -181,7 +181,6 @@ nsresult StatusBarEntry::OnComplete() {
   
   
   mIconLoaderHelper->Destroy();
-  mIconLoader->ReleaseJSObjects();
   mIconLoader->Destroy();
   mIconLoader = nullptr;
   mIconLoaderHelper = nullptr;

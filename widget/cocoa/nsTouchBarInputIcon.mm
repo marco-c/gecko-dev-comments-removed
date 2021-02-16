@@ -83,7 +83,7 @@ nsresult nsTouchBarInputIcon::SetupIcon(nsCOMPtr<nsIURI> aIconURI) {
     
     
     mIconLoaderHelper = new IconLoaderHelperCocoa(this, kIconSize, kIconSize, kHiDPIScalingFactor);
-    mIconLoader = new IconLoader(mIconLoaderHelper, mDocument, mImageRegionRect);
+    mIconLoader = new IconLoader(mIconLoaderHelper, mImageRegionRect);
     if (!mIconLoader) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
@@ -96,7 +96,7 @@ nsresult nsTouchBarInputIcon::SetupIcon(nsCOMPtr<nsIURI> aIconURI) {
     [mPopoverItem setCollapsedRepresentationImage:mIconLoaderHelper->GetNativeIconImage()];
   }
 
-  nsresult rv = mIconLoader->LoadIcon(aIconURI, true );
+  nsresult rv = mIconLoader->LoadIcon(aIconURI, mDocument, true );
   if (NS_FAILED(rv)) {
     
     
@@ -113,12 +113,7 @@ nsresult nsTouchBarInputIcon::SetupIcon(nsCOMPtr<nsIURI> aIconURI) {
   NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
 }
 
-void nsTouchBarInputIcon::ReleaseJSObjects() {
-  if (mIconLoader) {
-    mIconLoader->ReleaseJSObjects();
-  }
-  mDocument = nil;
-}
+void nsTouchBarInputIcon::ReleaseJSObjects() { mDocument = nil; }
 
 
 
