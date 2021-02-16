@@ -35,8 +35,10 @@ class IconLoaderListenerWin : public nsISupports {
 
 class IconLoaderHelperWin final : public mozilla::widget::IconLoader::Helper {
  public:
-  explicit IconLoaderHelperWin(
-      mozilla::widget::IconLoaderListenerWin* aLoadListener);
+  
+  
+  
+  explicit IconLoaderHelperWin(IconLoaderListenerWin* aLoadListener);
 
   
   
@@ -61,7 +63,12 @@ class IconLoaderHelperWin final : public mozilla::widget::IconLoader::Helper {
   ~IconLoaderHelperWin();
 
  private:
-  RefPtr<mozilla::widget::IconLoaderListenerWin> mLoadListener;
+  
+  
+  
+  
+  IconLoaderListenerWin* mLoadListener;
+
   HICON mNativeIconImage;
 };
 
