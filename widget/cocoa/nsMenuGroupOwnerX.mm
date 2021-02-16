@@ -160,9 +160,8 @@ nsChangeObserver* nsMenuGroupOwnerX::LookupContentChangeObserver(nsIContent* aCo
   nsChangeObserver* result;
   if (mContentToObserverTable.Get(aContent, &result)) {
     return result;
-  } else {
-    return nullptr;
   }
+  return nullptr;
 }
 
 
@@ -192,9 +191,8 @@ nsMenuItemX* nsMenuGroupOwnerX::GetMenuItemForCommandID(uint32_t inCommandID) {
   nsMenuItemX* result;
   if (mCommandToMenuObjectTable.Get(inCommandID, &result)) {
     return result;
-  } else {
-    return nullptr;
   }
+  return nullptr;
 }
 
 void nsMenuGroupOwnerX::AddMenuItemInfoToSet(MenuItemInfo* info) { [mInfoSet addObject:info]; }
