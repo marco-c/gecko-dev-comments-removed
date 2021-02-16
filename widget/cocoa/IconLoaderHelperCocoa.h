@@ -33,7 +33,7 @@ class IconLoaderListenerCocoa {
 
 
 
-class IconLoaderHelperCocoa final : public mozilla::widget::IconLoader::Helper {
+class IconLoaderHelperCocoa final : public IconLoader::Listener {
  public:
   
   

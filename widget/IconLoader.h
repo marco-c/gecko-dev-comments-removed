@@ -28,12 +28,8 @@ namespace mozilla::widget {
 class IconLoader : public imgINotificationObserver {
  public:
   
-
-
-
-
-
-  class Helper {
+  
+  class Listener {
    public:
     virtual nsresult OnComplete(imgIContainer* aContainer,
                                 const nsIntRect& aRect) = 0;
@@ -43,7 +39,7 @@ class IconLoader : public imgINotificationObserver {
   
   
   
-  IconLoader(Helper* aHelper, const nsIntRect& aImageRegionRect);
+  IconLoader(Listener* aListener, const nsIntRect& aImageRegionRect);
 
  public:
   NS_DECL_ISUPPORTS
@@ -73,7 +69,7 @@ class IconLoader : public imgINotificationObserver {
   
   
   
-  Helper* mHelper;
+  Listener* mListener;
 };
 
 }  

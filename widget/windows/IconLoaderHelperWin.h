@@ -33,7 +33,7 @@ class IconLoaderListenerWin : public nsISupports {
 
 
 
-class IconLoaderHelperWin final : public mozilla::widget::IconLoader::Helper {
+class IconLoaderHelperWin final : public IconLoader::Listener {
  public:
   
   
