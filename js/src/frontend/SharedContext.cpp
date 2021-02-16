@@ -40,19 +40,19 @@ SharedContext::SharedContext(JSContext* cx, Kind kind,
       hasExplicitUseStrict_(false),
       isScriptExtraFieldCopiedToStencil(false) {
   
+  const JS::ReadOnlyCompileOptions& options = stencil.input.options;
+
+  
   if (kind == Kind::FunctionBox) {
     setFlag(ImmutableFlags::IsFunction);
   } else if (kind == Kind::Module) {
-    MOZ_ASSERT(!stencil.input.options.nonSyntacticScope);
+    MOZ_ASSERT(!options.nonSyntacticScope);
     setFlag(ImmutableFlags::IsModule);
   } else if (kind == Kind::Eval) {
     setFlag(ImmutableFlags::IsForEval);
   } else {
     MOZ_ASSERT(kind == Kind::Global);
   }
-
-  
-  const JS::ReadOnlyCompileOptions& options = stencil.input.options;
 
   
   
