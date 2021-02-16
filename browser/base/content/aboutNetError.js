@@ -180,7 +180,9 @@ function disallowCertOverridesIfNeeded() {
   
   
   if (cssClass == "badStsCert" || window != top) {
-    document.getElementById("exceptionDialogButton").hidden = true;
+    document
+      .getElementById("exceptionDialogButton")
+      .setAttribute("hidden", "true");
   }
   if (cssClass == "badStsCert") {
     document.getElementById("badStsCertExplanation").removeAttribute("hidden");

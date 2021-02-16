@@ -420,16 +420,19 @@ class PageAction {
           args: { total: users },
         })
       );
-      footerUsers.hidden = false;
+      footerUsers.removeAttribute("hidden");
     } else {
       
-      footerUsers.hidden = true;
+      footerUsers.setAttribute("hidden", true);
       footerUsers.removeAttribute("value");
     }
 
     
-
-    footerSpacer.hidden = !rating && !users;
+    if (rating || users) {
+      footerSpacer.removeAttribute("hidden");
+    } else {
+      footerSpacer.setAttribute("hidden", true);
+    }
   }
 
   _createElementAndAppend({ type, id }, parent) {

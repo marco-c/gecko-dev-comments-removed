@@ -85,7 +85,7 @@ function nonBrowserWindowStartup() {
 
     
     element = document.getElementById("sep-window-list");
-    element.hidden = true;
+    element.setAttribute("hidden", "true");
 
     
     let dockMenuElement = document.getElementById("menu_mac_dockmenu");
