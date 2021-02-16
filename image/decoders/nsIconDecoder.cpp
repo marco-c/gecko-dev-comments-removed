@@ -58,7 +58,7 @@ LexerTransition<nsIconDecoder::State> nsIconDecoder::ReadHeader(
   
   SurfacePipeFlags pipeFlags = SurfacePipeFlags();
   if (transform) {
-    if (mCMSMode == CMSMode::All) {
+    if (mCMSMode == eCMSMode_All) {
       mTransform = GetCMSsRGBTransform(format);
     }
 

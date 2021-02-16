@@ -56,7 +56,7 @@ AutoInitializeImageLib::AutoInitializeImageLib() {
 
   
   gfxPlatform::GetCMSMode();
-  gfxPlatform::SetCMSModeOverride(CMSMode::All);
+  gfxPlatform::SetCMSModeOverride(eCMSMode_All);
 
   
   

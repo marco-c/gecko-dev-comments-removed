@@ -74,11 +74,11 @@ class SystemFontListEntry;
     }                                             \
   } while (0)
 
-enum class CMSMode : int32_t {
-  Off = 0,         
-  All = 1,         
-  TaggedOnly = 2,  
-  AllCount = 3
+enum eCMSMode {
+  eCMSMode_Off = 0,         
+  eCMSMode_All = 1,         
+  eCMSMode_TaggedOnly = 2,  
+  eCMSMode_AllCount = 3
 };
 
 enum eGfxLog {
@@ -530,12 +530,12 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-  static CMSMode GetCMSMode();
+  static eCMSMode GetCMSMode();
 
   
 
 
-  static void SetCMSModeOverride(CMSMode aMode);
+  static void SetCMSModeOverride(eCMSMode aMode);
 
   
 
@@ -983,6 +983,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   static bool IsDXP016Blocked();
 
   RefPtr<gfxASurface> mScreenReferenceSurface;
+  nsCOMPtr<nsIObserver> mSRGBOverrideObserver;
   RefPtr<mozilla::layers::MemoryPressureObserver> mMemoryPressureObserver;
 
   
