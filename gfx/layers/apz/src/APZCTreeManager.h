@@ -294,6 +294,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   void FindScrollThumbNode(const AsyncDragMetrics& aDragMetrics,
+                           LayersId aLayersId,
                            HitTestingTreeNodeAutoLock& aOutThumbNode);
 
   
