@@ -385,6 +385,12 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
     case ColorID::Highlight:  
       aColor = mTextSelectedBackground;
       break;
+    case ColorID::MozAccentColor:
+      aColor = mAccentColor;
+      break;
+    case ColorID::MozAccentColorForeground:
+      aColor = mAccentColorForeground;
+      break;
     case ColorID::WidgetSelectForeground:
     case ColorID::TextSelectForeground:
     case ColorID::IMESelectedRawTextForeground:
@@ -1297,6 +1303,14 @@ void nsLookAndFeel::EnsureInit() {
       
       
       GrabSelectionColors(style);
+    }
+
+    
+    mAccentColor = mTextSelectedBackground;
+    mAccentColorForeground = mTextSelectedText;
+    if (RelativeLuminanceUtils::Compute(mAccentColor) >
+        RelativeLuminanceUtils::Compute(mAccentColorForeground)) {
+      std::exchange(mAccentColor, mAccentColorForeground);
     }
   }
 

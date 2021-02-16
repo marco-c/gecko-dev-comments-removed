@@ -228,6 +228,14 @@ pub enum SystemColor {
     MozMacTooltip,
 
     
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    MozAccentColor,
+
+    
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    MozAccentColorForeground,
+
+    
     MozWinAccentcolor,
     
     MozWinAccentcolortext,
