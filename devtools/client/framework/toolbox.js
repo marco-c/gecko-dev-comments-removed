@@ -1644,18 +1644,13 @@ Toolbox.prototype = {
     const openedConsolePanel = this.currentToolId === "webconsole";
 
     if (openedConsolePanel) {
-      deck.setAttribute("collapsed", "true");
-      splitter.setAttribute("hidden", "true");
-      webconsolePanel.removeAttribute("collapsed");
+      deck.collapsed = true;
+      splitter.hidden = true;
+      webconsolePanel.collapsed = false;
     } else {
-      deck.removeAttribute("collapsed");
-      if (this.splitConsole) {
-        webconsolePanel.removeAttribute("collapsed");
-        splitter.removeAttribute("hidden");
-      } else {
-        webconsolePanel.setAttribute("collapsed", "true");
-        splitter.setAttribute("hidden", "true");
-      }
+      deck.collapsed = false;
+      splitter.hidden = !this.splitConsole;
+      webconsolePanel.collapsed = !this.splitConsole;
     }
   },
 
@@ -3747,8 +3742,6 @@ Toolbox.prototype = {
       { onAvailable: this._onResourceAvailable }
     );
 
-    this.targetList.destroy();
-
     
     this.toolbarButtons.forEach(button => {
       if (typeof button.teardown == "function") {
@@ -3810,6 +3803,12 @@ Toolbox.prototype = {
             
             
             
+            
+            
+            
+            
+            
+            this.targetList.destroy();
             return this.target.destroy();
           }, console.error)
           .then(() => {
