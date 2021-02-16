@@ -127,7 +127,7 @@ class nsSocketTransport final : public nsASocketHandler,
   
   nsresult Init(const nsTArray<nsCString>& socketTypes, const nsACString& host,
                 uint16_t port, const nsACString& hostRoute, uint16_t portRoute,
-                nsIProxyInfo* proxyInfo);
+                nsIProxyInfo* proxyInfo, nsIDNSRecord* dnsRecord);
 
   
   
@@ -461,6 +461,9 @@ class nsSocketTransport final : public nsASocketHandler,
   
   
   bool mPortRemappingApplied = false;
+
+  bool mExternalDNSResolution = false;
+  bool mRetryDnsIfPossible = false;
 };
 
 }  

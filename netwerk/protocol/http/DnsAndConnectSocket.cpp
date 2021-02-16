@@ -12,6 +12,9 @@
 #include "nsIDNSRecord.h"
 #include "nsIDNSService.h"
 #include "nsQueryObject.h"
+#include "nsURLHelper.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/SyncRunnable.h"
 
 
 #undef LOG
@@ -33,6 +36,7 @@ NS_INTERFACE_MAP_BEGIN(DnsAndConnectSocket)
   NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
   NS_INTERFACE_MAP_ENTRY(nsITimerCallback)
   NS_INTERFACE_MAP_ENTRY(nsINamed)
+  NS_INTERFACE_MAP_ENTRY(nsIDNSListener)
   NS_INTERFACE_MAP_ENTRY_CONCRETE(DnsAndConnectSocket)
 NS_INTERFACE_MAP_END
 
@@ -41,11 +45,13 @@ DnsAndConnectSocket::DnsAndConnectSocket(ConnectionEntry* ent,
                                          uint32_t caps, bool speculative,
                                          bool isFromPredictor, bool urgentStart)
     : mTransaction(trans),
+      mPrimaryTransport(false),
       mCaps(caps),
       mSpeculative(speculative),
       mUrgentStart(urgentStart),
       mIsFromPredictor(isFromPredictor),
-      mEnt(ent) {
+      mEnt(ent),
+      mBackupTransport(true) {
   MOZ_ASSERT(ent && trans, "constructor with null arguments");
   LOG(("Creating DnsAndConnectSocket [this=%p trans=%p ent=%s key=%s]\n", this,
        trans, ent->mConnInfo->Origin(), ent->mConnInfo->HashKey().get()));
@@ -67,9 +73,10 @@ DnsAndConnectSocket::DnsAndConnectSocket(ConnectionEntry* ent,
 }
 
 DnsAndConnectSocket::~DnsAndConnectSocket() {
+  LOG(("Destroying DnsAndConnectSocket [this=%p]\n", this));
   MOZ_ASSERT(!mPrimaryTransport.mSocketTransport);
   MOZ_ASSERT(!mBackupTransport.mSocketTransport);
-  LOG(("Destroying DnsAndConnectSocket [this=%p]\n", this));
+  MOZ_ASSERT(mState == DnsAndSocketState::DONE);
 
   if (mEnt) {
     bool inqueue = mEnt->RemoveDnsAndConnectSocket(this);
@@ -79,27 +86,181 @@ DnsAndConnectSocket::~DnsAndConnectSocket() {
   }
 }
 
-nsresult DnsAndConnectSocket::SetupPrimaryStreams() {
+nsresult DnsAndConnectSocket::Init() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  MOZ_ASSERT(mEnt);
+  MOZ_ASSERT(mState == DnsAndSocketState::INIT);
 
-  nsresult rv = mPrimaryTransport.SetupStreams(this, false);
+  if (mEnt->mConnInfo->GetRoutedHost().IsEmpty()) {
+    mPrimaryTransport.mHost = mEnt->mConnInfo->GetOrigin();
+    mBackupTransport.mHost = mEnt->mConnInfo->GetOrigin();
+  } else {
+    mPrimaryTransport.mHost = mEnt->mConnInfo->GetRoutedHost();
+    mBackupTransport.mHost = mEnt->mConnInfo->GetRoutedHost();
+  }
 
-  LOG(("DnsAndConnectSocket::SetupPrimaryStream [this=%p ent=%s rv=%" PRIx32
-       "]",
-       this, mEnt->mConnInfo->Origin(), static_cast<uint32_t>(rv)));
+  CheckProxyConfig();
 
-  return rv;
+  if (!mSkipDnsResolution) {
+    nsresult rv = SetupDnsFlags();
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  return SetupEvent(SetupEvents::INIT_EVENT);
 }
 
-nsresult DnsAndConnectSocket::SetupBackupStreams() {
-  MOZ_ASSERT(mTransaction);
+void DnsAndConnectSocket::CheckProxyConfig() {
+  const nsHttpConnectionInfo* ci = mEnt->mConnInfo;
 
-  nsresult rv = mBackupTransport.SetupStreams(this, true);
+  if (ci->ProxyInfo()) {
+    nsCOMPtr<nsProxyInfo> proxyInfo = ci->ProxyInfo();
+    nsAutoCString proxyType(proxyInfo->Type());
 
-  LOG(("DnsAndConnectSocket::SetupBackupStream [this=%p ent=%s rv=%" PRIx32 "]",
-       this, mEnt->mConnInfo->Origin(), static_cast<uint32_t>(rv)));
+    bool proxyTransparent = false;
+    if (proxyType.EqualsLiteral("socks") || proxyType.EqualsLiteral("socks4")) {
+      proxyTransparent = true;
+      if (proxyInfo->Flags() & nsIProxyInfo::TRANSPARENT_PROXY_RESOLVES_HOST) {
+        mProxyTransparentResolvesHost = true;
+      }
+    }
 
-  return rv;
+    if (mProxyTransparentResolvesHost) {
+      
+      
+      
+      
+      
+      
+      
+      mPrimaryTransport.mSkipDnsResolution = true;
+      mBackupTransport.mSkipDnsResolution = true;
+      mSkipDnsResolution = true;
+    }
+
+    if (!proxyTransparent && !proxyInfo->Host().IsEmpty()) {
+      mProxyNotTransparent = true;
+      mPrimaryTransport.mHost = proxyInfo->Host();
+      mBackupTransport.mHost = proxyInfo->Host();
+    }
+  }
+}
+
+nsresult DnsAndConnectSocket::SetupDnsFlags() {
+  LOG(("DnsAndConnectSocket::SetupDnsFlags [this=%p] ", this));
+
+  uint32_t dnsFlags = 0;
+  if (mCaps & NS_HTTP_REFRESH_DNS) {
+    dnsFlags = nsIDNSService::RESOLVE_BYPASS_CACHE;
+  }
+  if (mCaps & NS_HTTP_DISABLE_IPV4) {
+    dnsFlags |= nsIDNSService::RESOLVE_DISABLE_IPV4;
+  } else if (mCaps & NS_HTTP_DISABLE_IPV6) {
+    dnsFlags |= nsIDNSService::RESOLVE_DISABLE_IPV6;
+  } else if (mEnt->PreferenceKnown()) {
+    if (mEnt->mPreferIPv6) {
+      dnsFlags |= nsIDNSService::RESOLVE_DISABLE_IPV4;
+    } else if (mEnt->mPreferIPv4) {
+      dnsFlags |= nsIDNSService::RESOLVE_DISABLE_IPV6;
+    }
+    mPrimaryTransport.mRetryWithDifferentIPFamily = true;
+    mBackupTransport.mRetryWithDifferentIPFamily = true;
+  }
+
+  if (mEnt->mConnInfo->HasIPHintAddress()) {
+    nsresult rv;
+    nsCOMPtr<nsIDNSService> dns =
+        do_GetService("@mozilla.org/network/dns-service;1", &rv);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    
+    
+    
+    nsCOMPtr<nsIDNSRecord> record;
+    rv = dns->ResolveNative(
+        mPrimaryTransport.mHost, nsIDNSService::RESOLVE_OFFLINE,
+        mEnt->mConnInfo->GetOriginAttributes(), getter_AddRefs(record));
+    if (NS_FAILED(rv) || !record) {
+      LOG(("Setting Socket to use IP hint address"));
+      dnsFlags |= nsIDNSService::RESOLVE_IP_HINT;
+    }
+  }
+
+  dnsFlags |=
+      nsIDNSService::GetFlagsFromTRRMode(NS_HTTP_TRR_MODE_FROM_FLAGS(mCaps));
+
+  
+  
+  
+  
+  dnsFlags |= nsIDNSService::RESOLVE_IGNORE_SOCKS_DNS;
+
+  NS_ASSERTION(!(dnsFlags & nsIDNSService::RESOLVE_DISABLE_IPV6) ||
+                   !(dnsFlags & nsIDNSService::RESOLVE_DISABLE_IPV4),
+               "Setting both RESOLVE_DISABLE_IPV6 and RESOLVE_DISABLE_IPV4");
+
+  mPrimaryTransport.mDnsFlags = dnsFlags;
+  mBackupTransport.mDnsFlags = dnsFlags;
+  return NS_OK;
+}
+
+nsresult DnsAndConnectSocket::SetupEvent(SetupEvents event) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  LOG(("DnsAndConnectSocket::SetupEvent state=%d event=%d", mState, event));
+  switch (event) {
+    case SetupEvents::INIT_EVENT: {
+      MOZ_ASSERT(mState == DnsAndSocketState::INIT);
+      nsresult rv = mPrimaryTransport.Init(this);
+      if (NS_FAILED(rv)) {
+        mState = DnsAndSocketState::DONE;
+        return rv;
+      }
+      if (mPrimaryTransport.FirstResolving()) {
+        mState = DnsAndSocketState::RESOLVING;
+      } else if (mPrimaryTransport.ConnectingOrRetry()) {
+        mState = DnsAndSocketState::CONNECTING;
+        SetupBackupTimer();
+      } else {
+        MOZ_ASSERT(false);
+        return NS_ERROR_UNEXPECTED;
+      }
+    } break;
+    case SetupEvents::RESOLVED_PRIMARY_EVENT:
+      
+      
+      if (mState == DnsAndSocketState::RESOLVING) {
+        mState = DnsAndSocketState::CONNECTING;
+        SetupBackupTimer();
+      }
+      break;
+    case SetupEvents::PRIMARY_DONE_EVENT:
+      MOZ_ASSERT((mState == DnsAndSocketState::RESOLVING) ||
+                 (mState == DnsAndSocketState::CONNECTING) ||
+                 (mState == DnsAndSocketState::ONE_CONNECTED));
+      CancelBackupTimer();
+      mBackupTransport.CancelDnsResolution();
+      if (mBackupTransport.ConnectingOrRetry()) {
+        mState = DnsAndSocketState::ONE_CONNECTED;
+      } else {
+        mState = DnsAndSocketState::DONE;
+      }
+      break;
+    case SetupEvents::BACKUP_DONE_EVENT:
+      MOZ_ASSERT((mState == DnsAndSocketState::CONNECTING) ||
+                 (mState == DnsAndSocketState::ONE_CONNECTED));
+      if (mPrimaryTransport.ConnectingOrRetry()) {
+        mState = DnsAndSocketState::ONE_CONNECTED;
+      } else {
+        mState = DnsAndSocketState::DONE;
+      }
+      break;
+    case SetupEvents::BACKUP_TIMER_FIRED_EVENT:
+      MOZ_ASSERT(mState == DnsAndSocketState::CONNECTING);
+      mBackupTransport.Init(this);
+  }
+  LOG(("DnsAndConnectSocket::SetupEvent state=%d", mState));
+
+  return NS_OK;
 }
 
 void DnsAndConnectSocket::SetupBackupTimer() {
@@ -109,7 +270,7 @@ void DnsAndConnectSocket::SetupBackupTimer() {
 
   
   
-  if (timeout && !mSpeculative) {
+  if (timeout && !mSpeculative && !mIsHttp3) {
     
     
     
@@ -157,6 +318,8 @@ void DnsAndConnectSocket::Abandon() {
   
   CancelBackupTimer();
 
+  mState = DnsAndSocketState::DONE;
+
   
   if (mEnt) {
     mEnt->mDoNotDestroy = false;
@@ -178,11 +341,12 @@ DnsAndConnectSocket::Notify(nsITimer* timer) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(timer == mSynTimer, "wrong timer");
 
+  MOZ_ASSERT(!mBackupTransport.mDNSRequest);
   MOZ_ASSERT(!mBackupTransport.mSocketTransport);
   MOZ_ASSERT(mSynTimer);
   MOZ_ASSERT(mEnt);
 
-  DebugOnly<nsresult> rv = SetupBackupStreams();
+  DebugOnly<nsresult> rv = SetupEvent(BACKUP_TIMER_FIRED_EVENT);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   
@@ -197,6 +361,50 @@ DnsAndConnectSocket::GetName(nsACString& aName) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+DnsAndConnectSocket::OnLookupComplete(nsICancelable* request, nsIDNSRecord* rec,
+                                      nsresult status) {
+  LOG(("DnsAndConnectSocket::OnLookupComplete: this=%p status %" PRIx32 ".",
+       this, static_cast<uint32_t>(status)));
+
+  RefPtr<DnsAndConnectSocket> deleteProtector(this);
+
+  if (!IsPrimary(request) && !IsBackup(request)) {
+    return NS_OK;
+  }
+
+  if (IsPrimary(request) && NS_SUCCEEDED(status)) {
+    mTransaction->OnTransportStatus(nullptr, NS_NET_STATUS_RESOLVED_HOST, 0);
+  }
+
+  
+  
+  
+  
+  
+  if (mProxyNotTransparent && (status == NS_ERROR_UNKNOWN_HOST)) {
+    status = NS_ERROR_UNKNOWN_PROXY_HOST;
+  }
+
+  nsresult rv;
+  
+  
+  bool isPrimary = IsPrimary(request);
+  if (IsPrimary(request)) {
+    rv = mPrimaryTransport.OnLookupComplete(this, rec, status);
+    if (mPrimaryTransport.ConnectingOrRetry()) {
+      SetupEvent(SetupEvents::RESOLVED_PRIMARY_EVENT);
+    }
+  } else {
+    rv = mBackupTransport.OnLookupComplete(this, rec, status);
+  }
+
+  if (NS_FAILED(rv)) {
+    SetupConn(isPrimary, rv);
+  }
+  return NS_OK;
+}
+
 
 NS_IMETHODIMP
 DnsAndConnectSocket::OnOutputStreamReady(nsIAsyncOutputStream* out) {
@@ -206,33 +414,68 @@ DnsAndConnectSocket::OnOutputStreamReady(nsIAsyncOutputStream* out) {
   MOZ_ASSERT(IsPrimary(out) || IsBackup(out), "stream mismatch");
   MOZ_ASSERT(mEnt);
 
+  RefPtr<DnsAndConnectSocket> deleteProtector(this);
+
   LOG(("DnsAndConnectSocket::OnOutputStreamReady [this=%p ent=%s %s]\n", this,
        mEnt->mConnInfo->Origin(), IsPrimary(out) ? "primary" : "backup"));
+
+  
+  bool isPrimary = IsPrimary(out);
+  nsresult rv = NS_OK;
+  if (isPrimary) {
+    rv = mPrimaryTransport.CheckConnectedResult(this);
+    if (!mPrimaryTransport.DoneConnecting()) {
+      return NS_OK;
+    }
+    MOZ_ASSERT((NS_SUCCEEDED(rv) &&
+                (mPrimaryTransport.mState ==
+                 TransportSetup::TransportSetupState::CONNECTING_DONE) &&
+                mPrimaryTransport.mSocketTransport) ||
+               (NS_FAILED(rv) &&
+                (mPrimaryTransport.mState ==
+                 TransportSetup::TransportSetupState::DONE) &&
+                !mPrimaryTransport.mSocketTransport));
+  } else if (IsBackup(out)) {
+    rv = mBackupTransport.CheckConnectedResult(this);
+    if (!mBackupTransport.DoneConnecting()) {
+      return NS_OK;
+    }
+    MOZ_ASSERT((NS_SUCCEEDED(rv) &&
+                (mBackupTransport.mState ==
+                 TransportSetup::TransportSetupState::CONNECTING_DONE) &&
+                mBackupTransport.mSocketTransport) ||
+               (NS_FAILED(rv) &&
+                (mBackupTransport.mState ==
+                 TransportSetup::TransportSetupState::DONE) &&
+                !mBackupTransport.mSocketTransport));
+  } else {
+    MOZ_ASSERT(false, "unexpected stream");
+    return NS_ERROR_UNEXPECTED;
+  }
 
   mEnt->mDoNotDestroy = true;
   gHttpHandler->ConnMgr()->RecvdConnect();
 
-  CancelBackupTimer();
-
-  nsresult rv = SetupConn(out);
+  rv = SetupConn(isPrimary, rv);
   if (mEnt) {
     mEnt->mDoNotDestroy = false;
   }
   return rv;
 }
 
-nsresult DnsAndConnectSocket::SetupConn(nsIAsyncOutputStream* out) {
+nsresult DnsAndConnectSocket::SetupConn(bool isPrimary, nsresult status) {
   
   RefPtr<HttpConnectionBase> conn;
 
   nsresult rv = NS_OK;
-  if (IsPrimary(out)) {
-    rv = mPrimaryTransport.SetupConn(mTransaction, mEnt, getter_AddRefs(conn));
-  } else if (IsBackup(out)) {
-    rv = mBackupTransport.SetupConn(mTransaction, mEnt, getter_AddRefs(conn));
+  if (isPrimary) {
+    SetupEvent(SetupEvents::PRIMARY_DONE_EVENT);
+    rv = mPrimaryTransport.SetupConn(mTransaction, mEnt, status,
+                                     getter_AddRefs(conn));
   } else {
-    MOZ_ASSERT(false, "unexpected stream");
-    rv = NS_ERROR_UNEXPECTED;
+    SetupEvent(SetupEvents::BACKUP_DONE_EVENT);
+    rv = mBackupTransport.SetupConn(mTransaction, mEnt, status,
+                                    getter_AddRefs(conn));
   }
 
   nsCOMPtr<nsIInterfaceRequestor> callbacks;
@@ -396,6 +639,7 @@ DnsAndConnectSocket::OnTransportStatus(nsITransport* trans, nsresult status,
       
       
       
+      
       mTransaction->OnTransportStatus(trans, status, progress);
     }
   }
@@ -412,8 +656,6 @@ DnsAndConnectSocket::OnTransportStatus(nsITransport* trans, nsresult status,
   if (!IsPrimary(trans)) {
     return NS_OK;
   }
-
-  mPrimaryStreamStatus = status;
 
   
   
@@ -471,34 +713,6 @@ DnsAndConnectSocket::OnTransportStatus(nsITransport* trans, nsresult status,
     }
   }
 
-  switch (status) {
-    case NS_NET_STATUS_CONNECTING_TO:
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (mEnt && !mBackupTransport.mSocketTransport && !mSynTimer &&
-          !mIsHttp3) {
-        SetupBackupTimer();
-      }
-      break;
-
-    case NS_NET_STATUS_CONNECTED_TO:
-      
-      
-      CancelBackupTimer();
-      break;
-
-    default:
-      break;
-  }
-
   return NS_OK;
 }
 
@@ -510,12 +724,20 @@ bool DnsAndConnectSocket::IsPrimary(nsIAsyncOutputStream* out) {
   return out == mPrimaryTransport.mStreamOut;
 }
 
+bool DnsAndConnectSocket::IsPrimary(nsICancelable* dnsRequest) {
+  return dnsRequest == mPrimaryTransport.mDNSRequest;
+}
+
 bool DnsAndConnectSocket::IsBackup(nsITransport* trans) {
   return trans == mBackupTransport.mSocketTransport;
 }
 
 bool DnsAndConnectSocket::IsBackup(nsIAsyncOutputStream* out) {
   return out == mBackupTransport.mStreamOut;
+}
+
+bool DnsAndConnectSocket::IsBackup(nsICancelable* dnsRequest) {
+  return dnsRequest == mBackupTransport.mDNSRequest;
 }
 
 
@@ -560,7 +782,7 @@ bool DnsAndConnectSocket::Claim() {
 
     
     
-    if ((mPrimaryStreamStatus == NS_NET_STATUS_CONNECTING_TO) && mEnt &&
+    if (mPrimaryTransport.ConnectingOrRetry() && mEnt &&
         !mBackupTransport.mSocketTransport && !mSynTimer && !mIsHttp3) {
       SetupBackupTimer();
     }
@@ -590,7 +812,43 @@ void DnsAndConnectSocket::CloseTransports(nsresult error) {
   }
 }
 
+DnsAndConnectSocket::TransportSetup::TransportSetup(bool isBackup)
+    : mState(TransportSetup::TransportSetupState::INIT), mIsBackup(isBackup) {}
+
+nsresult DnsAndConnectSocket::TransportSetup::Init(
+    DnsAndConnectSocket* dnsAndSock) {
+  nsresult rv;
+  mSynStarted = TimeStamp::Now();
+  if (mSkipDnsResolution) {
+    mState = TransportSetup::TransportSetupState::CONNECTING;
+    rv = SetupStreams(dnsAndSock);
+  } else {
+    mState = TransportSetup::TransportSetupState::RESOLVING;
+    rv = ResolveHost(dnsAndSock);
+  }
+  if (NS_FAILED(rv)) {
+    CloseAll();
+    mState = TransportSetup::TransportSetupState::DONE;
+  }
+  return rv;
+}
+
+void DnsAndConnectSocket::TransportSetup::CancelDnsResolution() {
+  if (mDNSRequest) {
+    mDNSRequest->Cancel(NS_ERROR_ABORT);
+    mDNSRequest = nullptr;
+  }
+  if (mState == TransportSetup::TransportSetupState::RESOLVING) {
+    mState = TransportSetup::TransportSetupState::INIT;
+  }
+}
+
 void DnsAndConnectSocket::TransportSetup::Abandon() {
+  CloseAll();
+  mState = TransportSetup::TransportSetupState::DONE;
+}
+
+void DnsAndConnectSocket::TransportSetup::CloseAll() {
   
   if (mSocketTransport) {
     mSocketTransport->SetEventSink(nullptr, nullptr);
@@ -610,10 +868,71 @@ void DnsAndConnectSocket::TransportSetup::Abandon() {
     mStreamIn->AsyncWait(nullptr, 0, 0, nullptr);
     mStreamIn = nullptr;
   }
+
+  if (mDNSRequest) {
+    mDNSRequest->Cancel(NS_ERROR_ABORT);
+    mDNSRequest = nullptr;
+  }
+
+  mConnectedOK = false;
+}
+
+nsresult DnsAndConnectSocket::TransportSetup::CheckConnectedResult(
+    DnsAndConnectSocket* dnsAndSock) {
+  mState = TransportSetup::TransportSetupState::CONNECTING_DONE;
+
+  if (mSkipDnsResolution) {
+    return NS_OK;
+  }
+  bool retryDns = false;
+  mSocketTransport->GetRetryDnsIfPossible(&retryDns);
+  if (!retryDns) {
+    return NS_OK;
+  }
+
+  bool retry = false;
+  if (mRetryWithDifferentIPFamily) {
+    mRetryWithDifferentIPFamily = false;
+    mDnsFlags ^= (nsIDNSService::RESOLVE_DISABLE_IPV6 |
+                  nsIDNSService::RESOLVE_DISABLE_IPV4);
+    mResetFamilyPreference = true;
+    retry = true;
+  } else if (!(mDnsFlags & nsIDNSService::RESOLVE_DISABLE_TRR)) {
+    bool trrEnabled;
+    mDNSRecord->IsTRR(&trrEnabled);
+    if (trrEnabled) {
+      uint32_t trrMode = 0;
+      mDNSRecord->GetEffectiveTRRMode(&trrMode);
+      
+      if (trrMode != 3) {
+        
+        
+        
+        LOG(("  failed to connect with TRR enabled, try w/o\n"));
+        mDnsFlags |= nsIDNSService::RESOLVE_DISABLE_TRR |
+                     nsIDNSService::RESOLVE_BYPASS_CACHE |
+                     nsIDNSService::RESOLVE_REFRESH_CACHE;
+        retry = true;
+      }
+    }
+  }
+
+  if (retry) {
+    CloseAll();
+    mState = TransportSetup::TransportSetupState::RESOLVING;
+    nsresult rv = ResolveHost(dnsAndSock);
+    if (NS_FAILED(rv)) {
+      CloseAll();
+      mState = TransportSetup::TransportSetupState::DONE;
+    }
+    return rv;
+  }
+
+  return NS_OK;
 }
 
 nsresult DnsAndConnectSocket::TransportSetup::SetupConn(
-    nsAHttpTransaction* transaction, ConnectionEntry* ent,
+    nsAHttpTransaction* transaction, ConnectionEntry* ent, nsresult status,
     HttpConnectionBase** connection) {
   RefPtr<HttpConnectionBase> conn;
   if (!ent->mConnInfo->IsHttp3()) {
@@ -640,29 +959,34 @@ nsresult DnsAndConnectSocket::TransportSetup::SetupConn(
   transaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
   nsresult rv = conn->Init(
       ent->mConnInfo, gHttpHandler->ConnMgr()->mMaxRequestDelay,
-      mSocketTransport, mStreamIn, mStreamOut, mConnectedOK, callbacks,
+      mSocketTransport, mStreamIn, mStreamOut, mConnectedOK, status, callbacks,
       PR_MillisecondsToInterval(static_cast<uint32_t>(
           (TimeStamp::Now() - mSynStarted).ToMilliseconds())));
 
   bool resetPreference = false;
-  mSocketTransport->GetResetIPFamilyPreference(&resetPreference);
-  if (resetPreference) {
+  if (mResetFamilyPreference ||
+      (mSocketTransport &&
+       NS_SUCCEEDED(
+           mSocketTransport->GetResetIPFamilyPreference(&resetPreference)) &&
+       resetPreference)) {
     ent->ResetIPFamilyPreference();
   }
 
   NetAddr peeraddr;
-  if (NS_SUCCEEDED(mSocketTransport->GetPeerAddr(&peeraddr))) {
+  if (mSocketTransport &&
+      NS_SUCCEEDED(mSocketTransport->GetPeerAddr(&peeraddr))) {
     ent->RecordIPFamilyPreference(peeraddr.raw.family);
   }
   conn.forget(connection);
   mSocketTransport = nullptr;
   mStreamOut = nullptr;
   mStreamIn = nullptr;
+  mState = TransportSetup::TransportSetupState::DONE;
   return rv;
 }
 
 nsresult DnsAndConnectSocket::TransportSetup::SetupStreams(
-    DnsAndConnectSocket *dnsAndSock, bool isBackup) {
+    DnsAndConnectSocket* dnsAndSock) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
   MOZ_ASSERT(dnsAndSock->mEnt);
@@ -700,7 +1024,8 @@ nsresult DnsAndConnectSocket::TransportSetup::SetupStreams(
   if (routedSTS) {
     rv = routedSTS->CreateRoutedTransport(
         socketTypes, ci->GetOrigin(), ci->OriginPort(), ci->GetRoutedHost(),
-        ci->RoutedPort(), ci->ProxyInfo(), getter_AddRefs(socketTransport));
+        ci->RoutedPort(), ci->ProxyInfo(), mDNSRecord,
+        getter_AddRefs(socketTransport));
   } else {
     if (!ci->GetRoutedHost().IsEmpty()) {
       
@@ -714,7 +1039,8 @@ nsresult DnsAndConnectSocket::TransportSetup::SetupStreams(
     }
 
     rv = sts->CreateTransport(socketTypes, ci->GetOrigin(), ci->OriginPort(),
-                              ci->ProxyInfo(), getter_AddRefs(socketTransport));
+                              ci->ProxyInfo(), mDNSRecord,
+                              getter_AddRefs(socketTransport));
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -750,15 +1076,13 @@ nsresult DnsAndConnectSocket::TransportSetup::SetupStreams(
   if (ci->HasIPHintAddress()) {
     nsCOMPtr<nsIDNSService> dns =
         do_GetService("@mozilla.org/network/dns-service;1", &rv);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
+    NS_ENSURE_SUCCESS(rv, rv);
 
     
     
     
     nsCOMPtr<nsIDNSRecord> record;
-    rv = dns->ResolveNative(ci->GetRoutedHost(), nsIDNSService::RESOLVE_OFFLINE,
+    rv = dns->ResolveNative(mHost, nsIDNSService::RESOLVE_OFFLINE,
                             dnsAndSock->mEnt->mConnInfo->GetOriginAttributes(),
                             getter_AddRefs(record));
     if (NS_FAILED(rv) || !record) {
@@ -785,12 +1109,12 @@ nsresult DnsAndConnectSocket::TransportSetup::SetupStreams(
     
     
     uint16_t fallbackTimeout =
-        isBackup ? gHttpHandler->GetFallbackSynTimeout() : 0;
+        mIsBackup ? gHttpHandler->GetFallbackSynTimeout() : 0;
     if (fallbackTimeout) {
       socketTransport->SetTimeout(nsISocketTransport::TIMEOUT_CONNECT,
                                   fallbackTimeout);
     }
-  } else if (isBackup && gHttpHandler->FastFallbackToIPv4()) {
+  } else if (mIsBackup && gHttpHandler->FastFallbackToIPv4()) {
     
     
     
@@ -842,7 +1166,6 @@ nsresult DnsAndConnectSocket::TransportSetup::SetupStreams(
                                         getter_AddRefs(sin));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mSynStarted = TimeStamp::Now();
   mSocketTransport = socketTransport.forget();
   mStreamIn = do_QueryInterface(sin);
   mStreamOut = do_QueryInterface(sout);
@@ -853,6 +1176,89 @@ nsresult DnsAndConnectSocket::TransportSetup::SetupStreams(
   }
 
   return rv;
+}
+
+nsresult DnsAndConnectSocket::TransportSetup::ResolveHost(
+    DnsAndConnectSocket* dnsAndSock) {
+  LOG(("DnsAndConnectSocket::TransportSetup::ResolveHost [this=%p %s%s]", this,
+       PromiseFlatCString(mHost).get(),
+       (mDnsFlags & nsIDNSService::RESOLVE_BYPASS_CACHE) ? " bypass cache"
+                                                         : ""));
+  nsCOMPtr<nsIDNSService> dns = nullptr;
+  auto initTask = [&dns]() { dns = do_GetService(NS_DNSSERVICE_CID); };
+  if (!NS_IsMainThread()) {
+    
+    RefPtr<nsIThread> mainThread = do_GetMainThread();
+    if (!mainThread) {
+      return NS_ERROR_FAILURE;
+    }
+
+    SyncRunnable::DispatchToThread(
+        mainThread,
+        new SyncRunnable(NS_NewRunnableFunction(
+            "nsSocketTransport::ResolveHost->GetDNSService", initTask)));
+  } else {
+    initTask();
+  }
+  if (!dns) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (!mIsBackup) {
+    dnsAndSock->mTransaction->OnTransportStatus(
+        nullptr, NS_NET_STATUS_RESOLVING_HOST, 0);
+  }
+
+  return dns->AsyncResolveNative(
+      mHost, nsIDNSService::RESOLVE_TYPE_DEFAULT, mDnsFlags, nullptr,
+      dnsAndSock, gSocketTransportService,
+      dnsAndSock->mEnt->mConnInfo->GetOriginAttributes(),
+      getter_AddRefs(mDNSRequest));
+}
+
+nsresult DnsAndConnectSocket::TransportSetup::OnLookupComplete(
+    DnsAndConnectSocket* dnsAndSock, nsIDNSRecord* rec, nsresult status) {
+  mDNSRequest = nullptr;
+  if (NS_SUCCEEDED(status)) {
+    mDNSRecord = do_QueryInterface(rec);
+    MOZ_ASSERT(mDNSRecord);
+
+    nsresult rv = SetupStreams(dnsAndSock);
+    if (NS_SUCCEEDED(rv)) {
+      mState = TransportSetup::TransportSetupState::CONNECTING;
+    } else {
+      CloseAll();
+      mState = TransportSetup::TransportSetupState::DONE;
+    }
+    return rv;
+  }
+
+  
+
+  bool retry = false;
+  if (mDnsFlags & nsIDNSService::RESOLVE_IP_HINT) {
+    mDnsFlags &= ~nsIDNSService::RESOLVE_IP_HINT;
+    retry = true;
+  } else if ((status == NS_ERROR_UNKNOWN_HOST) && mRetryWithDifferentIPFamily) {
+    mRetryWithDifferentIPFamily = false;
+    mDnsFlags ^= (nsIDNSService::RESOLVE_DISABLE_IPV6 |
+                  nsIDNSService::RESOLVE_DISABLE_IPV4);
+    mResetFamilyPreference = true;
+    retry = true;
+  }
+
+  if (retry) {
+    mState = TransportSetup::TransportSetupState::RETRY_RESOLVING;
+    nsresult rv = ResolveHost(dnsAndSock);
+    if (NS_FAILED(rv)) {
+      CloseAll();
+      mState = TransportSetup::TransportSetupState::DONE;
+    }
+    return rv;
+  }
+
+  mState = TransportSetup::TransportSetupState::DONE;
+  return status;
 }
 
 }  

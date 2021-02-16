@@ -5,6 +5,7 @@
 
 #include "nsISupports.idl"
 
+interface nsIDNSRecord;
 interface nsIFile;
 interface nsISocketTransport;
 interface nsIProxyInfo;
@@ -52,10 +53,13 @@ interface nsISocketTransportService : nsISupports
 
 
 
+
+
     nsISocketTransport createTransport(in Array<ACString> aSocketTypes,
                                        in AUTF8String aHost,
                                        in long aPort,
-                                       in nsIProxyInfo aProxyInfo);
+                                       in nsIProxyInfo aProxyInfo,
+                                       in nsIDNSRecord dnsRecord);
 
     
 
@@ -153,5 +157,6 @@ interface nsIRoutedSocketTransportService : nsISocketTransportService
                                              in long aPort, 
                                              in AUTF8String aHostRoute,
                                              in long aPortRoute,
-                                             in nsIProxyInfo aProxyInfo);
+                                             in nsIProxyInfo aProxyInfo,
+                                             in nsIDNSRecord aDnsRecord);
 };
