@@ -861,10 +861,10 @@ static void AnnotateMemoryStatus(AnnotationWriter& aWriter) {
   
   
   
-  const size_t BUFFER_SIZE_BYTES = 10000;
+  const size_t BUFFER_SIZE_BYTES = 4096;
   char buffer[BUFFER_SIZE_BYTES];
-  ssize_t bufferLen = 0;
 
+  size_t bufferLen = 0;
   {
     
     int fd = sys_open("/proc/meminfo", O_RDONLY,  0);
@@ -874,10 +874,25 @@ static void AnnotateMemoryStatus(AnnotationWriter& aWriter) {
     }
     auto Guard = MakeScopeExit([fd]() { mozilla::Unused << sys_close(fd); });
 
-    if ((bufferLen = sys_read(fd, buffer, BUFFER_SIZE_BYTES)) <= 0) {
-      
-      return;
-    }
+    ssize_t bytesRead = 0;
+    do {
+      if ((bytesRead = sys_read(fd, buffer + bufferLen,
+                                BUFFER_SIZE_BYTES - bufferLen)) < 0) {
+        if ((errno == EAGAIN) || (errno == EINTR)) {
+          continue;
+        }
+
+        
+        return;
+      }
+
+      bufferLen += bytesRead;
+
+      if (bufferLen == BUFFER_SIZE_BYTES) {
+        
+        return;
+      }
+    } while (bytesRead != 0);
   }
 
   
