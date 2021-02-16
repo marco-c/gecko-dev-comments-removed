@@ -428,7 +428,7 @@ this.TopSitesFeed = class TopSitesFeed {
         
         
         if (
-          !pinnedSites.find(s => s && s.hostname === shortcut.shortURL) &&
+          !pinnedSites.find(s => s && shortURL(s) === shortcut.shortURL) &&
           !prevInsertedShortcuts.includes(shortcut.shortURL) &&
           nextAvailable > -1 &&
           (await checkHasSearchEngine(shortcut.keyword))
