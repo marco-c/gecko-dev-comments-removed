@@ -165,6 +165,8 @@ browser.Context = class {
     
     this.newSession = true;
 
+    this.seenEls = new element.Store();
+
     
     
     

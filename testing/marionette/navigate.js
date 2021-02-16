@@ -16,6 +16,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   EventDispatcher:
     "chrome://marionette/content/actors/MarionetteEventsParent.jsm",
   Log: "chrome://marionette/content/log.js",
+  MarionettePrefs: "chrome://marionette/content/prefs.js",
   modal: "chrome://marionette/content/modal.js",
   PageLoadStrategy: "chrome://marionette/content/capabilities.js",
   TimedPromise: "chrome://marionette/content/sync.js",
@@ -276,11 +277,19 @@ navigate.waitForNavigationCompleted = async function waitForNavigationCompleted(
     }
   };
 
-  const onNavigation = (eventName, data) => {
-    
-    
-    
-    if (data.browsingContext != browsingContextFn()) {
+  const onNavigation = ({ json }, message) => {
+    let data = MarionettePrefs.useActors ? message : json;
+
+    if (MarionettePrefs.useActors) {
+      
+      
+      
+      if (data.browsingContext != browsingContextFn()) {
+        return;
+      }
+    } else if (
+      data.browsingContext.browserId != browsingContextFn().browserId
+    ) {
       return;
     }
 
@@ -341,7 +350,15 @@ navigate.waitForNavigationCompleted = async function waitForNavigationCompleted(
     "browsing-context-discarded"
   );
 
-  EventDispatcher.on("page-load", onNavigation);
+  if (MarionettePrefs.useActors) {
+    EventDispatcher.on("page-load", onNavigation);
+  } else {
+    driver.mm.addMessageListener(
+      "Marionette:NavigationEvent",
+      onNavigation,
+      true
+    );
+  }
 
   return new TimedPromise(
     async (resolve, reject) => {
@@ -384,6 +401,14 @@ navigate.waitForNavigationCompleted = async function waitForNavigationCompleted(
     driver.dialogObserver?.remove(onDialogOpened);
     unloadTimer?.cancel();
 
-    EventDispatcher.off("page-load", onNavigation);
+    if (MarionettePrefs.useActors) {
+      EventDispatcher.off("page-load", onNavigation);
+    } else {
+      driver.mm.removeMessageListener(
+        "Marionette:NavigationEvent",
+        onNavigation,
+        true
+      );
+    }
   });
 };

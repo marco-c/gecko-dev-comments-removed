@@ -23,6 +23,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   browser: "chrome://marionette/content/browser.js",
   Capabilities: "chrome://marionette/content/capabilities.js",
   capture: "chrome://marionette/content/capture.js",
+  ChromeWebElement: "chrome://marionette/content/element.js",
   clearElementIdCache:
     "chrome://marionette/content/actors/MarionetteCommandsParent.jsm",
   clearActionInputState:
@@ -32,10 +33,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   DebounceCallback: "chrome://marionette/content/sync.js",
   element: "chrome://marionette/content/element.js",
   error: "chrome://marionette/content/error.js",
+  evaluate: "chrome://marionette/content/evaluate.js",
   getMarionetteCommandsActorProxy:
     "chrome://marionette/content/actors/MarionetteCommandsParent.jsm",
   IdlePromise: "chrome://marionette/content/sync.js",
+  interaction: "chrome://marionette/content/interaction.js",
   l10n: "chrome://marionette/content/l10n.js",
+  legacyaction: "chrome://marionette/content/legacyaction.js",
   Log: "chrome://marionette/content/log.js",
   MarionettePrefs: "chrome://marionette/content/prefs.js",
   modal: "chrome://marionette/content/modal.js",
@@ -43,11 +47,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PollPromise: "chrome://marionette/content/sync.js",
   pprint: "chrome://marionette/content/format.js",
   print: "chrome://marionette/content/print.js",
+  proxy: "chrome://marionette/content/proxy.js",
   reftest: "chrome://marionette/content/reftest.js",
   registerCommandsActor:
     "chrome://marionette/content/actors/MarionetteCommandsParent.jsm",
   registerEventsActor:
     "chrome://marionette/content/actors/MarionetteEventsParent.jsm",
+  Sandboxes: "chrome://marionette/content/evaluate.js",
   TimedPromise: "chrome://marionette/content/sync.js",
   Timeouts: "chrome://marionette/content/capabilities.js",
   UnhandledPromptBehavior: "chrome://marionette/content/capabilities.js",
@@ -69,6 +75,7 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 const APP_ID_FIREFOX = "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}";
 const APP_ID_THUNDERBIRD = "{3550f703-e582-4d05-9a08-453d09bdfdc6}";
 
+const FRAME_SCRIPT = "chrome://marionette/content/listener.js";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 const SUPPORTED_STRATEGIES = new Set([
@@ -87,6 +94,7 @@ const SUPPORTED_STRATEGIES = new Set([
 const TIMEOUT_NO_WINDOW_MANAGER = 5000;
 
 const globalMessageManager = Services.mm;
+
 
 
 
@@ -132,7 +140,18 @@ this.GeckoDriver = function(server) {
   
   this.context = Context.Content;
 
+  this.sandboxes = new Sandboxes(() => this.getCurrentWindow());
+  this.legacyactions = new legacyaction.Chain();
+
   this.capabilities = new Capabilities();
+
+  this.mm = globalMessageManager;
+  if (!MarionettePrefs.useActors) {
+    this.listener = proxy.toListener(
+      this.sendAsync.bind(this),
+      () => this.curBrowser
+    );
+  }
 
   
   this.dialog = null;
@@ -262,6 +281,31 @@ GeckoDriver.prototype.QueryInterface = ChromeUtils.generateQI([
   "nsISupportsWeakReference",
 ]);
 
+GeckoDriver.prototype.init = function() {
+  if (MarionettePrefs.useActors) {
+    
+    return;
+  }
+
+  this.mm.addMessageListener("Marionette:ListenersAttached", this);
+  this.mm.addMessageListener("Marionette:Register", this);
+  this.mm.addMessageListener("Marionette:switchedToFrame", this);
+  this.mm.addMessageListener("Marionette:NavigationEvent", this);
+  this.mm.addMessageListener("Marionette:Unloaded", this, true);
+};
+
+GeckoDriver.prototype.uninit = function() {
+  if (MarionettePrefs.useActors) {
+    return;
+  }
+
+  this.mm.removeMessageListener("Marionette:ListenersAttached", this);
+  this.mm.removeMessageListener("Marionette:Register", this);
+  this.mm.removeMessageListener("Marionette:switchedToFrame", this);
+  this.mm.removeMessageListener("Marionette:NavigationEvent", this);
+  this.mm.removeMessageListener("Marionette:Unloaded", this);
+};
+
 
 
 
@@ -285,8 +329,66 @@ GeckoDriver.prototype.handleModalDialog = function(action, dialog, win) {
 
 
 GeckoDriver.prototype._getCurrentURL = async function() {
-  let url = await this.getActor({ top: true }).getCurrentUrl();
+  let url;
+
+  if (MarionettePrefs.useActors) {
+    url = await this.getActor({ top: true }).getCurrentUrl();
+    return new URL(url);
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      const browsingContext = this.getBrowsingContext({ top: true });
+      url = browsingContext.window.location.href;
+      break;
+    case Context.Content:
+      url = await this.listener.getCurrentUrl();
+      break;
+  }
+
   return new URL(url);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GeckoDriver.prototype.sendAsync = function(name, data, commandID) {
+  let payload = evaluate.toJSON(data, this.seenEls);
+
+  if (payload === null) {
+    payload = {};
+  }
+
+  
+  
+  
+  if (commandID) {
+    payload.commandID = commandID;
+  }
+
+  if (this.curBrowser.curFrameId) {
+    let target = `Marionette:${name}`;
+    this.curBrowser.messageManager.sendAsyncMessage(target, payload);
+  } else {
+    throw new error.NoSuchWindowError(
+      "No such content frame; perhaps the listener was not registered?"
+    );
+  }
 };
 
 
@@ -392,6 +494,19 @@ GeckoDriver.prototype.isReftestBrowser = function(element) {
   );
 };
 
+GeckoDriver.prototype.addFrameCloseListener = function(action) {
+  let win = this.getCurrentWindow();
+  this.mozBrowserClose = e => {
+    if (e.target.id == this.oopFrameId) {
+      win.removeEventListener("mozbrowserclose", this.mozBrowserClose, true);
+      throw new error.NoSuchWindowError(
+        "The window closed during action: " + action
+      );
+    }
+  };
+  win.addEventListener("mozbrowserclose", this.mozBrowserClose, true);
+};
+
 
 
 
@@ -407,6 +522,73 @@ GeckoDriver.prototype.addBrowser = function(win) {
 
   this.browsers[winId] = context;
   this.curBrowser = this.browsers[winId];
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+GeckoDriver.prototype.startBrowser = function(window, isNewSession = false) {
+  this.mainFrame = window;
+
+  this.addBrowser(window);
+  this.whenBrowserStarted(window, isNewSession);
+};
+
+
+
+
+
+
+
+
+
+
+GeckoDriver.prototype.whenBrowserStarted = function(window, isNewSession) {
+  
+  if (MarionettePrefs.useActors) {
+    return;
+  }
+
+  let mm = window.messageManager;
+  if (mm) {
+    if (!isNewSession) {
+      
+      
+      
+      
+      
+      
+      
+      
+      if (mm.childCount !== 0) {
+        this.curBrowser.frameRegsPending = 0;
+        for (let i = 0; i < mm.childCount; i++) {
+          if (mm.getChildAt(i).childCount !== 0) {
+            this.curBrowser.frameRegsPending += 1;
+          }
+        }
+      }
+    }
+
+    if (!MarionettePrefs.contentListener || !isNewSession) {
+      
+      
+      
+      mm.loadFrameScript(FRAME_SCRIPT, true);
+      MarionettePrefs.contentListener = true;
+    }
+  } else {
+    logger.error("Unable to load content frame script");
+  }
 };
 
 
@@ -454,6 +636,42 @@ GeckoDriver.prototype.registerBrowser = function(browserElement) {
   ) {
     this.curBrowser.register(browserElement);
   }
+};
+
+GeckoDriver.prototype.registerPromise = function() {
+  const li = "Marionette:Register";
+
+  return new Promise(resolve => {
+    let cb = ({ json, target }) => {
+      this.registerBrowser(target);
+
+      if (this.curBrowser.frameRegsPending > 0) {
+        this.curBrowser.frameRegsPending--;
+      }
+
+      if (this.curBrowser.frameRegsPending === 0) {
+        this.mm.removeMessageListener(li, cb);
+        resolve();
+      }
+
+      return { frameId: json.frameId };
+    };
+    this.mm.addMessageListener(li, cb);
+  });
+};
+
+GeckoDriver.prototype.listeningPromise = function() {
+  const li = "Marionette:ListenersAttached";
+
+  return new Promise(resolve => {
+    let cb = msg => {
+      if (msg.json.frameId === this.curBrowser.curFrameId) {
+        this.mm.removeMessageListener(li, cb);
+        resolve(msg.json.frameId);
+      }
+    };
+    this.mm.addMessageListener(li, cb);
+  });
 };
 
 
@@ -642,18 +860,24 @@ GeckoDriver.prototype.newSession = async function(cmd) {
           "Click to start execution of marionette tests"
         );
       }
-      this.addBrowser(win);
-      this.mainFrame = win;
+      this.startBrowser(win, true);
     }
   };
 
-  registerCommandsActor();
-  registerEventsActor();
+  let registerBrowsers;
+  let browserListening;
+
+  if (MarionettePrefs.useActors) {
+    registerCommandsActor();
+    registerEventsActor();
+  } else {
+    registerBrowsers = this.registerPromise();
+    browserListening = this.listeningPromise();
+  }
 
   if (!MarionettePrefs.contentListener) {
     waitForWindow.call(this);
   } else if (this.appId != APP_ID_FIREFOX && this.curBrowser === null) {
-    
     
     let win = this.getCurrentWindow();
     this.addBrowser(win);
@@ -662,15 +886,20 @@ GeckoDriver.prototype.newSession = async function(cmd) {
     throw new error.WebDriverError("Session already running");
   }
 
-  for (let win of this.windows) {
-    const tabBrowser = browser.getTabBrowser(win);
+  if (MarionettePrefs.useActors) {
+    for (let win of this.windows) {
+      const tabBrowser = browser.getTabBrowser(win);
 
-    if (tabBrowser) {
-      for (const tab of tabBrowser.tabs) {
-        const contentBrowser = browser.getBrowserForTab(tab);
-        this.registerBrowser(contentBrowser);
+      if (tabBrowser) {
+        for (const tab of tabBrowser.tabs) {
+          const contentBrowser = browser.getBrowserForTab(tab);
+          this.registerBrowser(contentBrowser);
+        }
       }
     }
+  } else {
+    await registerBrowsers;
+    await browserListening;
   }
 
   if (this.mainFrame) {
@@ -719,11 +948,14 @@ GeckoDriver.prototype.observe = function(subject, topic, data) {
             `to ${subject.id}`
         );
         this.contentBrowsingContext = subject;
-
-        
-        
-        
-        this.updateIdForBrowser(this.curBrowser.contentBrowser, subject.id);
+        if (MarionettePrefs.useActors) {
+          
+          
+          
+          
+          
+          this.updateIdForBrowser(this.curBrowser.contentBrowser, subject.id);
+        }
       }
       break;
   }
@@ -944,7 +1176,31 @@ GeckoDriver.prototype.execute_ = async function(
     async,
   };
 
-  return this.getActor().executeScript(script, args, opts);
+  if (MarionettePrefs.useActors) {
+    return this.getActor().executeScript(script, args, opts);
+  }
+
+  let res, els;
+
+  switch (this.context) {
+    case Context.Chrome:
+      let sb = this.sandboxes.get(sandboxName, newSandbox);
+      let wargs = evaluate.fromJSON(args, this.curBrowser.seenEls, sb.window);
+      res = await evaluate.sandbox(sb, script, wargs, opts);
+      els = this.curBrowser.seenEls;
+      break;
+
+    case Context.Content:
+      
+      opts.useSandbox = !!sandboxName;
+      res = await this.listener.executeScript(script, args, opts);
+      break;
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
+
+  return evaluate.toJSON(res, els);
 };
 
 
@@ -990,7 +1246,11 @@ GeckoDriver.prototype.navigateTo = async function(cmd) {
   }
 
   
-  this.contentBrowsingContext = browsingContext;
+  if (MarionettePrefs.useActors) {
+    this.contentBrowsingContext = browsingContext;
+  } else {
+    await this.listener.switchToFrame();
+  }
 
   const loadEventExpected = navigate.isLoadEventExpected(
     await this._getCurrentURL(),
@@ -1082,7 +1342,22 @@ GeckoDriver.prototype.getPageSource = async function() {
   assert.open(this.getBrowsingContext());
   await this._handleUserPrompts();
 
-  return this.getActor().getPageSource();
+  if (MarionettePrefs.useActors) {
+    return this.getActor().getPageSource();
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      const win = this.getCurrentWindow();
+      const s = new win.XMLSerializer();
+      return s.serializeToString(win.document);
+
+    case Context.Content:
+      return this.listener.getPageSource();
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -1154,7 +1429,11 @@ GeckoDriver.prototype.refresh = async function() {
   await this._handleUserPrompts();
 
   
-  this.contentBrowsingContext = browsingContext;
+  if (MarionettePrefs.useActors) {
+    this.contentBrowsingContext = browsingContext;
+  } else {
+    await this.listener.switchToFrame();
+  }
 
   await navigate.waitForNavigationCompleted(this, () => {
     navigate.refresh(browsingContext);
@@ -1470,14 +1749,19 @@ GeckoDriver.prototype.setWindowHandle = async function(
   if (!(winProperties.id in this.browsers)) {
     
     
-    this.addBrowser(winProperties.win);
-    this.mainFrame = winProperties.win;
+    let registerBrowsers, browserListening;
+    if (!MarionettePrefs.useActors && winProperties.hasTabBrowser) {
+      registerBrowsers = this.registerPromise();
+      browserListening = this.listeningPromise();
+    }
+
+    this.startBrowser(winProperties.win, false );
 
     this.chromeBrowsingContext = this.mainFrame.browsingContext;
 
     if (!winProperties.hasTabBrowser) {
       this.contentBrowsingContext = null;
-    } else {
+    } else if (MarionettePrefs.useActors) {
       const tabBrowser = browser.getTabBrowser(winProperties.win);
 
       
@@ -1488,6 +1772,10 @@ GeckoDriver.prototype.setWindowHandle = async function(
 
       this.contentBrowsingContext = contentBrowser.browsingContext;
       this.registerBrowser(contentBrowser);
+    } else {
+      await registerBrowsers;
+      const id = await browserListening;
+      this.contentBrowsingContext = BrowsingContext.get(id);
     }
   } else {
     
@@ -1530,7 +1818,12 @@ GeckoDriver.prototype.switchToParentFrame = async function() {
 
   browsingContext = assert.open(browsingContext?.parent);
 
-  this.contentBrowsingContext = browsingContext;
+  if (MarionettePrefs.useActors) {
+    this.contentBrowsingContext = browsingContext;
+    return;
+  }
+
+  await this.listener.switchToParentFrame();
 };
 
 
@@ -1566,11 +1859,66 @@ GeckoDriver.prototype.switchToFrame = async function(cmd) {
     byFrame = WebElement.fromJSON(el);
   }
 
-  const { browsingContext } = await this.getActor({ top }).switchToFrame(
-    byFrame || id
-  );
+  if (MarionettePrefs.useActors) {
+    const { browsingContext } = await this.getActor({ top }).switchToFrame(
+      byFrame || id
+    );
 
-  this.contentBrowsingContext = browsingContext;
+    this.contentBrowsingContext = browsingContext;
+    return;
+  }
+
+  const checkLoad = function(win) {
+    const otherErrorsExpr = /about:.+(error)|(blocked)\?/;
+
+    return new PollPromise(resolve => {
+      if (win.document.readyState == "complete") {
+        resolve();
+      } else if (win.document.readyState == "interactive") {
+        let documentURI = win.document.documentURI;
+        if (documentURI.startsWith("about:certerror")) {
+          throw new error.InsecureCertificateError();
+        } else if (otherErrorsExpr.exec(documentURI)) {
+          throw new error.UnknownError("Reached error page: " + documentURI);
+        }
+      }
+    });
+  };
+
+  if (this.context == Context.Chrome) {
+    const childContexts = this.getBrowsingContext().children;
+
+    let browsingContext;
+    if (id == null && !byFrame) {
+      browsingContext = this.getBrowsingContext({ top: true });
+    } else if (typeof id == "number") {
+      if (id < 0 || id >= childContexts.length) {
+        throw new error.NoSuchFrameError(
+          `Unable to locate frame with index: ${id}`
+        );
+      }
+      browsingContext = childContexts[id];
+    } else {
+      const wantedFrame = this.curBrowser.seenEls.get(byFrame);
+      const context = childContexts.find(context => {
+        return context.embedderElement === wantedFrame;
+      });
+      if (!context) {
+        throw new error.NoSuchFrameError(
+          `Unable to locate frame for element: ${byFrame}`
+        );
+      }
+      browsingContext = context;
+    }
+
+    this.contentBrowsingContext = browsingContext;
+
+    const frameWindow = browsingContext.window;
+    await checkLoad(frameWindow);
+  } else if (this.context == Context.Content) {
+    cmd.commandID = cmd.id;
+    await this.listener.switchToFrame(cmd.parameters);
+  }
 };
 
 GeckoDriver.prototype.getTimeouts = function() {
@@ -1601,7 +1949,21 @@ GeckoDriver.prototype.singleTap = async function(cmd) {
   let { id, x, y } = cmd.parameters;
   let webEl = WebElement.fromUUID(id, this.context);
 
-  await this.getActor().singleTap(webEl, x, y, this.capabilities);
+  if (MarionettePrefs.useActors) {
+    await this.getActor().singleTap(webEl, x, y, this.capabilities);
+    return;
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      throw new error.UnsupportedOperationError(
+        "Command 'singleTap' is not yet available in chrome context"
+      );
+
+    case Context.Content:
+      await this.listener.singleTap(webEl, x, y, this.capabilities);
+      break;
+  }
 };
 
 
@@ -1623,7 +1985,17 @@ GeckoDriver.prototype.performActions = async function(cmd) {
 
   const actions = cmd.parameters.actions;
 
-  await this.getActor().performActions(actions, this.capabilities);
+  if (MarionettePrefs.useActors) {
+    await this.getActor().performActions(actions, this.capabilities);
+    return;
+  }
+
+  assert.content(
+    this.context,
+    "Command 'performActions' is not yet available in chrome context"
+  );
+
+  await this.listener.performActions({ actions }, this.capabilities);
 };
 
 
@@ -1640,7 +2012,16 @@ GeckoDriver.prototype.releaseActions = async function() {
   assert.open(this.getBrowsingContext());
   await this._handleUserPrompts();
 
-  await this.getActor().releaseActions();
+  if (MarionettePrefs.useActors) {
+    await this.getActor().releaseActions();
+    return;
+  }
+
+  assert.content(
+    this.context,
+    "Command 'releaseActions' is not yet available in chrome context"
+  );
+  await this.listener.releaseActions();
 };
 
 
@@ -1677,7 +2058,25 @@ GeckoDriver.prototype.findElement = async function(cmd) {
     all: false,
   };
 
-  return this.getActor().findElement(using, value, opts);
+  if (MarionettePrefs.useActors) {
+    return this.getActor().findElement(using, value, opts);
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      let container = { frame: this.getCurrentWindow() };
+      if (opts.startNode) {
+        opts.startNode = this.curBrowser.seenEls.get(opts.startNode);
+      }
+      let el = await element.find(container, using, value, opts);
+      return this.curBrowser.seenEls.add(el);
+
+    case Context.Content:
+      return this.listener.findElementContent(using, value, opts);
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -1712,7 +2111,25 @@ GeckoDriver.prototype.findElements = async function(cmd) {
     all: true,
   };
 
-  return this.getActor().findElements(using, value, opts);
+  if (MarionettePrefs.useActors) {
+    return this.getActor().findElements(using, value, opts);
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      let container = { frame: this.getCurrentWindow() };
+      if (startNode) {
+        opts.startNode = this.curBrowser.seenEls.get(opts.startNode);
+      }
+      let els = await element.find(container, using, value, opts);
+      return this.curBrowser.seenEls.addAll(els);
+
+    case Context.Content:
+      return this.listener.findElementsContent(using, value, opts);
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -1737,7 +2154,10 @@ GeckoDriver.prototype.getActiveElement = async function() {
   assert.open(this.getBrowsingContext());
   await this._handleUserPrompts();
 
-  return this.getActor().getActiveElement();
+  if (MarionettePrefs.useActors) {
+    return this.getActor().getActiveElement();
+  }
+  return this.listener.getActiveElement();
 };
 
 
@@ -1762,25 +2182,58 @@ GeckoDriver.prototype.clickElement = async function(cmd) {
   let id = assert.string(cmd.parameters.id);
   let webEl = WebElement.fromUUID(id, this.context);
 
-  const actor = this.getActor();
+  if (MarionettePrefs.useActors) {
+    const actor = this.getActor();
 
-  const loadEventExpected = navigate.isLoadEventExpected(
-    await this._getCurrentURL(),
-    {
-      browsingContext,
-      target: await actor.getElementAttribute(webEl, "target"),
-    }
-  );
+    const loadEventExpected = navigate.isLoadEventExpected(
+      await this._getCurrentURL(),
+      {
+        browsingContext,
+        target: await actor.getElementAttribute(webEl, "target"),
+      }
+    );
 
-  await navigate.waitForNavigationCompleted(
-    this,
-    () => actor.clickElement(webEl, this.capabilities),
-    {
-      loadEventExpected,
-      
-      requireBeforeUnload: false,
-    }
-  );
+    await navigate.waitForNavigationCompleted(
+      this,
+      () => actor.clickElement(webEl, this.capabilities),
+      {
+        loadEventExpected,
+        
+        requireBeforeUnload: false,
+      }
+    );
+    return;
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      let el = this.curBrowser.seenEls.get(webEl);
+      await interaction.clickElement(el, this.a11yChecks);
+      break;
+
+    case Context.Content:
+      const loadEventExpected = navigate.isLoadEventExpected(
+        await this._getCurrentURL(),
+        {
+          browsingContext,
+          target: this.listener.getElementAttribute(webEl, "target"),
+        }
+      );
+
+      await navigate.waitForNavigationCompleted(
+        this,
+        () => this.listener.clickElement(webEl, this.capabilities),
+        {
+          loadEventExpected,
+          
+          requireBeforeUnload: false,
+        }
+      );
+      break;
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -1811,7 +2264,21 @@ GeckoDriver.prototype.getElementAttribute = async function(cmd) {
   const name = assert.string(cmd.parameters.name);
   const webEl = WebElement.fromUUID(id, this.context);
 
-  return this.getActor().getElementAttribute(webEl, name);
+  if (MarionettePrefs.useActors) {
+    return this.getActor().getElementAttribute(webEl, name);
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      let el = this.curBrowser.seenEls.get(webEl);
+      return el.getAttribute(name);
+
+    case Context.Content:
+      return this.listener.getElementAttribute(webEl, name);
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -1842,7 +2309,21 @@ GeckoDriver.prototype.getElementProperty = async function(cmd) {
   const name = assert.string(cmd.parameters.name);
   const webEl = WebElement.fromUUID(id, this.context);
 
-  return this.getActor().getElementProperty(webEl, name);
+  if (MarionettePrefs.useActors) {
+    return this.getActor().getElementProperty(webEl, name);
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      let el = this.curBrowser.seenEls.get(webEl);
+      return evaluate.toJSON(el[name], this.curBrowser.seenEls);
+
+    case Context.Content:
+      return this.listener.getElementProperty(webEl, name);
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -1871,7 +2352,24 @@ GeckoDriver.prototype.getElementText = async function(cmd) {
   let id = assert.string(cmd.parameters.id);
   let webEl = WebElement.fromUUID(id, this.context);
 
-  return this.getActor().getElementText(webEl);
+  if (MarionettePrefs.useActors) {
+    return this.getActor().getElementText(webEl);
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      
+      let el = this.curBrowser.seenEls.get(webEl);
+      let lines = [];
+      this.getVisibleText(el, lines);
+      return lines.join("\n");
+
+    case Context.Content:
+      return this.listener.getElementText(webEl);
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -1899,7 +2397,21 @@ GeckoDriver.prototype.getElementTagName = async function(cmd) {
   let id = assert.string(cmd.parameters.id);
   let webEl = WebElement.fromUUID(id, this.context);
 
-  return this.getActor().getElementTagName(webEl);
+  if (MarionettePrefs.useActors) {
+    return this.getActor().getElementTagName(webEl);
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      let el = this.curBrowser.seenEls.get(webEl);
+      return el.tagName.toLowerCase();
+
+    case Context.Content:
+      return this.listener.getElementTagName(webEl);
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -1927,7 +2439,21 @@ GeckoDriver.prototype.isElementDisplayed = async function(cmd) {
   let id = assert.string(cmd.parameters.id);
   let webEl = WebElement.fromUUID(id, this.context);
 
-  return this.getActor().isElementDisplayed(webEl, this.capabilities);
+  if (MarionettePrefs.useActors) {
+    return this.getActor().isElementDisplayed(webEl, this.capabilities);
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      let el = this.curBrowser.seenEls.get(webEl);
+      return interaction.isElementDisplayed(el, this.a11yChecks);
+
+    case Context.Content:
+      return this.listener.isElementDisplayed(webEl, this.capabilities);
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -1958,7 +2484,23 @@ GeckoDriver.prototype.getElementValueOfCssProperty = async function(cmd) {
   let prop = assert.string(cmd.parameters.propertyName);
   let webEl = WebElement.fromUUID(id, this.context);
 
-  return this.getActor().getElementValueOfCssProperty(webEl, prop);
+  if (MarionettePrefs.useActors) {
+    return this.getActor().getElementValueOfCssProperty(webEl, prop);
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      const win = this.getCurrentWindow();
+      const el = this.curBrowser.seenEls.get(webEl);
+      const style = win.document.defaultView.getComputedStyle(el);
+      return style.getPropertyValue(prop);
+
+    case Context.Content:
+      return this.listener.getElementValueOfCssProperty(webEl, prop);
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -1986,7 +2528,22 @@ GeckoDriver.prototype.isElementEnabled = async function(cmd) {
   let id = assert.string(cmd.parameters.id);
   let webEl = WebElement.fromUUID(id, this.context);
 
-  return this.getActor().isElementEnabled(webEl, this.capabilities);
+  if (MarionettePrefs.useActors) {
+    return this.getActor().isElementEnabled(webEl, this.capabilities);
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      
+      let el = this.curBrowser.seenEls.get(webEl);
+      return interaction.isElementEnabled(el, this.a11yChecks);
+
+    case Context.Content:
+      return this.listener.isElementEnabled(webEl, this.capabilities);
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -2014,7 +2571,22 @@ GeckoDriver.prototype.isElementSelected = async function(cmd) {
   let id = assert.string(cmd.parameters.id);
   let webEl = WebElement.fromUUID(id, this.context);
 
-  return this.getActor().isElementSelected(webEl, this.capabilities);
+  if (MarionettePrefs.useActors) {
+    return this.getActor().isElementSelected(webEl, this.capabilities);
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      
+      let el = this.curBrowser.seenEls.get(webEl);
+      return interaction.isElementSelected(el, this.a11yChecks);
+
+    case Context.Content:
+      return this.listener.isElementSelected(webEl, this.capabilities);
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -2034,7 +2606,28 @@ GeckoDriver.prototype.getElementRect = async function(cmd) {
   let id = assert.string(cmd.parameters.id);
   let webEl = WebElement.fromUUID(id, this.context);
 
-  return this.getActor().getElementRect(webEl);
+  if (MarionettePrefs.useActors) {
+    return this.getActor().getElementRect(webEl);
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      const win = this.getCurrentWindow();
+      const el = this.curBrowser.seenEls.get(webEl);
+      const rect = el.getBoundingClientRect();
+      return {
+        x: rect.x + win.pageXOffset,
+        y: rect.y + win.pageYOffset,
+        width: rect.width,
+        height: rect.height,
+      };
+
+    case Context.Content:
+      return this.listener.getElementRect(webEl);
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -2062,7 +2655,26 @@ GeckoDriver.prototype.sendKeysToElement = async function(cmd) {
   let text = assert.string(cmd.parameters.text);
   let webEl = WebElement.fromUUID(id, this.context);
 
-  return this.getActor().sendKeysToElement(webEl, text, this.capabilities);
+  if (MarionettePrefs.useActors) {
+    await this.getActor().sendKeysToElement(webEl, text, this.capabilities);
+    return;
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      let el = this.curBrowser.seenEls.get(webEl);
+      await interaction.sendKeysToElement(el, text, {
+        accessibilityChecks: this.a11yChecks,
+      });
+      break;
+
+    case Context.Content:
+      await this.listener.sendKeysToElement(webEl, text, this.capabilities);
+      break;
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -2087,7 +2699,29 @@ GeckoDriver.prototype.clearElement = async function(cmd) {
   let id = assert.string(cmd.parameters.id);
   let webEl = WebElement.fromUUID(id, this.context);
 
-  await this.getActor().clearElement(webEl);
+  if (MarionettePrefs.useActors) {
+    await this.getActor().clearElement(webEl);
+    return;
+  }
+
+  switch (this.context) {
+    case Context.Chrome:
+      
+      let el = this.curBrowser.seenEls.get(webEl);
+      if (el.nodeName == "input" && el.type == "text") {
+        el.value = "";
+      } else if (el.nodeName == "checkbox") {
+        el.checked = false;
+      }
+      break;
+
+    case Context.Content:
+      await this.listener.clearElement(webEl);
+      break;
+
+    default:
+      throw new TypeError(`Unknown context: ${this.context}`);
+  }
 };
 
 
@@ -2246,12 +2880,15 @@ GeckoDriver.prototype.newWindow = async function(cmd) {
 
   let contentBrowser;
 
-  
-  
-  const onBrowserContentLoaded = waitForLoadEvent(
-    "pageshow",
-    () => contentBrowser?.browsingContext
-  );
+  let onBrowserContentLoaded;
+  if (MarionettePrefs.useActors) {
+    
+    
+    onBrowserContentLoaded = waitForLoadEvent(
+      "pageshow",
+      () => contentBrowser?.browsingContext
+    );
+  }
 
   switch (type) {
     case "window":
@@ -2268,6 +2905,7 @@ GeckoDriver.prototype.newWindow = async function(cmd) {
 
   await onBrowserContentLoaded;
 
+  
   
   
   let windowId = await new PollPromise((resolve, reject) => {
@@ -2364,11 +3002,29 @@ GeckoDriver.prototype.closeChromeWindow = async function() {
 
 
 GeckoDriver.prototype.deleteSession = function() {
-  clearActionInputState();
-  clearElementIdCache();
+  if (MarionettePrefs.useActors) {
+    clearActionInputState();
+    clearElementIdCache();
 
-  unregisterCommandsActor();
-  unregisterEventsActor();
+    unregisterCommandsActor();
+    unregisterEventsActor();
+  } else if (this.curBrowser !== null) {
+    
+    MarionettePrefs.contentListener = false;
+
+    globalMessageManager.broadcastAsyncMessage("Marionette:Session:Delete");
+    globalMessageManager.broadcastAsyncMessage("Marionette:Deregister");
+
+    for (let win of this.windows) {
+      if (win.messageManager) {
+        win.messageManager.removeDelayedFrameScript(FRAME_SCRIPT);
+      } else {
+        logger.error(
+          `Could not remove listener from page ${win.location.href}`
+        );
+      }
+    }
+  }
 
   
   this.mainFrame = null;
@@ -2384,6 +3040,7 @@ GeckoDriver.prototype.deleteSession = function() {
     Services.obs.removeObserver(this, "browsing-context-attached");
   } catch (e) {}
 
+  this.sandboxes.clear();
   allowAllCerts.disable();
 
   this.sessionID = null;
@@ -2438,7 +3095,59 @@ GeckoDriver.prototype.takeScreenshot = async function(cmd) {
   
   full = webEl ? false : full;
 
-  return this.getActor().takeScreenshot(webEl, format, full, scroll);
+  if (MarionettePrefs.useActors) {
+    return this.getActor().takeScreenshot(webEl, format, full, scroll);
+  }
+
+  const win = this.getCurrentWindow();
+
+  let rect;
+  switch (this.context) {
+    case Context.Chrome:
+      if (id) {
+        let el = this.curBrowser.seenEls.get(webEl, win);
+        rect = el.getBoundingClientRect();
+      } else if (full) {
+        const docEl = win.document.documentElement;
+        rect = new DOMRect(0, 0, docEl.scrollWidth, docEl.scrollHeight);
+      } else {
+        
+        rect = new win.DOMRect(
+          win.pageXOffset,
+          win.pageYOffset,
+          win.innerWidth,
+          win.innerHeight
+        );
+      }
+      break;
+
+    case Context.Content:
+      rect = await this.listener.getScreenshotRect({ el: webEl, full, scroll });
+      break;
+  }
+
+  
+  
+  const browsingContext = this.getBrowsingContext({ top: !webEl });
+
+  let canvas = await capture.canvas(
+    win,
+    browsingContext,
+    rect.x,
+    rect.y,
+    rect.width,
+    rect.height
+  );
+
+  switch (format) {
+    case capture.Format.Hash:
+      return capture.toHash(canvas);
+
+    case capture.Format.Base64:
+      return capture.toBase64(canvas);
+  }
+
+  throw new TypeError(`Unknown context: ${this.context}`);
 };
 
 
@@ -2917,6 +3626,42 @@ GeckoDriver.prototype.uninstallAddon = function(cmd) {
 
   return Addon.uninstall(id);
 };
+
+
+
+GeckoDriver.prototype.receiveMessage = function(message) {
+  switch (message.name) {
+    case "Marionette:switchedToFrame":
+      this.contentBrowsingContext = BrowsingContext.get(
+        message.json.browsingContextId
+      );
+      break;
+
+    case "Marionette:Register":
+      this.registerBrowser(message.target);
+      return { frameId: message.json.frameId };
+
+    case "Marionette:ListenersAttached":
+      if (message.json.frameId === this.curBrowser.curFrameId) {
+        const browsingContext = BrowsingContext.get(message.json.frameId);
+
+        
+        
+        
+        if (
+          browsingContext.browserId == this.contentBrowsingContext?.browserId
+        ) {
+          logger.trace(
+            "Detected remoteness change. New browsing context: " +
+              browsingContext.id
+          );
+          this.contentBrowsingContext = browsingContext;
+        }
+      }
+      break;
+  }
+};
+
 
 
 

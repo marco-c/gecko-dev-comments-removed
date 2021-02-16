@@ -83,6 +83,7 @@ class MarionetteCommandsParent extends JSWindowActorParent {
   }
 
   
+  
 
   clearElement(webEl) {
     return this.sendQuery("MarionetteCommandsParent:clearElement", {
