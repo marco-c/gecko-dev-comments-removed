@@ -814,36 +814,43 @@ void gfxSingleFaceMacFontFamily::ReadOtherFamilyNames(gfxPlatformFontList* aPlat
 
 
 
+#if __MAC_OS_X_VERSION_MAX_ALLOWED < 101500
+static const nsLiteralCString kLangFontsDirs[] = {
+    "/Library/Application Support/Apple/Fonts/Language Support"_ns};
+#else
 static const nsLiteralCString kLangFontsDirs[] = {
     "/Library/Application Support/Apple/Fonts/Language Support"_ns,
     "/System/Library/Fonts/Supplemental"_ns};
+#endif
 
 gfxMacPlatformFontList::gfxMacPlatformFontList()
     : gfxPlatformFontList(false), mDefaultFont(nullptr), mUseSizeSensitiveSystemFont(false) {
   CheckFamilyList(kBaseFonts, ArrayLength(kBaseFonts));
 
-#ifdef MOZ_BUNDLED_FONTS
   
   
-  if (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() != 0) {
-    ActivateBundledFonts();
-  }
-#endif
-
-  for (const auto& dir : kLangFontsDirs) {
-    nsresult rv;
-    nsCOMPtr<nsIFile> langFonts(do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv));
-    if (NS_SUCCEEDED(rv)) {
-      rv = langFonts->InitWithNativePath(dir);
-      if (NS_SUCCEEDED(rv)) {
-        ActivateFontsFromDir(langFonts);
-      }
-    }
-  }
-
   
   
   if (XRE_IsParentProcess()) {
+#ifdef MOZ_BUNDLED_FONTS
+    
+    
+    if (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() != 0) {
+      ActivateBundledFonts();
+    }
+#endif
+
+    for (const auto& dir : kLangFontsDirs) {
+      nsresult rv;
+      nsCOMPtr<nsIFile> langFonts(do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv));
+      if (NS_SUCCEEDED(rv)) {
+        rv = langFonts->InitWithNativePath(dir);
+        if (NS_SUCCEEDED(rv)) {
+          ActivateFontsFromDir(langFonts);
+        }
+      }
+    }
+
     ::CFNotificationCenterAddObserver(::CFNotificationCenterGetLocalCenter(), this,
                                       RegisteredFontsChangedNotificationCallback,
                                       kCTFontManagerRegisteredFontsChangedNotification, 0,
