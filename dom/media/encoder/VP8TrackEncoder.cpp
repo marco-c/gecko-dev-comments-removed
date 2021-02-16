@@ -58,6 +58,80 @@ size_t I420Size(int aWidth, int aHeight) {
 
   return yPlaneSize + uvPlaneSize * 2;
 }
+
+nsresult CreateEncoderConfig(int32_t aWidth, int32_t aHeight,
+                             uint32_t aVideoBitrate, TrackRate aTrackRate,
+                             vpx_codec_enc_cfg_t* config) {
+  
+  memset(config, 0, sizeof(vpx_codec_enc_cfg_t));
+  if (vpx_codec_enc_config_default(vpx_codec_vp8_cx(), config, 0)) {
+    VP8LOG(LogLevel::Error, "Failed to get default configuration");
+    return NS_ERROR_FAILURE;
+  }
+
+  config->g_w = aWidth;
+  config->g_h = aHeight;
+  
+  
+
+  
+  config->rc_target_bitrate =
+      (aVideoBitrate != 0 ? aVideoBitrate : DEFAULT_BITRATE_BPS) / 1000;
+
+  
+  config->g_timebase.num = 1;
+  config->g_timebase.den = aTrackRate;
+
+  
+  config->g_error_resilient = 0;
+
+  
+  
+  
+  config->g_lag_in_frames = 0;
+
+  int32_t number_of_cores = PR_GetNumberOfProcessors();
+  if (aWidth * aHeight > 1920 * 1080 && number_of_cores >= 8) {
+    config->g_threads = 4;  
+  } else if (aWidth * aHeight > 1280 * 960 && number_of_cores >= 6) {
+    config->g_threads = 3;  
+  } else if (aWidth * aHeight > 640 * 480 && number_of_cores >= 3) {
+    config->g_threads = 2;  
+  } else {
+    config->g_threads = 1;  
+  }
+
+  
+
+  
+  config->rc_dropframe_thresh = 0;
+  
+  config->rc_end_usage = VPX_VBR;
+  
+  config->g_pass = VPX_RC_ONE_PASS;
+  
+  
+  config->rc_resize_allowed = 0;
+  
+  config->rc_undershoot_pct = 200;
+  
+  config->rc_overshoot_pct = 200;
+  
+  config->rc_buf_initial_sz = 500;
+  
+  config->rc_buf_optimal_sz = 600;
+  
+  config->rc_buf_sz = 1000;
+
+  
+  
+  
+  
+  config->kf_mode = VPX_KF_AUTO;
+  config->kf_max_dist = MAX_KEYFRAME_INTERVAL;
+
+  return NS_OK;
+}
 }  
 
 VP8TrackEncoder::VP8TrackEncoder(RefPtr<DriftCompensator> aDriftCompensator,
@@ -94,8 +168,8 @@ nsresult VP8TrackEncoder::Init(int32_t aWidth, int32_t aHeight,
 
   
   vpx_codec_enc_cfg_t config;
-  nsresult rv = SetConfigurationValues(aWidth, aHeight, aDisplayWidth,
-                                       aDisplayHeight, config);
+  nsresult rv =
+      CreateEncoderConfig(aWidth, aHeight, mVideoBitrate, mTrackRate, &config);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
   vpx_codec_flags_t flags = 0;
@@ -108,6 +182,11 @@ nsresult VP8TrackEncoder::Init(int32_t aWidth, int32_t aHeight,
   vpx_codec_control(&mVPXContext, VP8E_SET_CPUUSED, 15);
   vpx_codec_control(&mVPXContext, VP8E_SET_TOKEN_PARTITIONS,
                     VP8_TWO_TOKENPARTITION);
+
+  mFrameWidth = aWidth;
+  mFrameHeight = aHeight;
+  mDisplayWidth = aDisplayWidth;
+  mDisplayHeight = aDisplayHeight;
 
   SetInitialized();
 
@@ -130,77 +209,17 @@ nsresult VP8TrackEncoder::Reconfigure(int32_t aWidth, int32_t aHeight,
 
   
   vpx_codec_enc_cfg_t config;
-  nsresult rv = SetConfigurationValues(aWidth, aHeight, aDisplayWidth,
-                                       aDisplayHeight, config);
+  nsresult rv =
+      CreateEncoderConfig(aWidth, aHeight, mVideoBitrate, mTrackRate, &config);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
   
   if (vpx_codec_enc_config_set(&mVPXContext, &config) != VPX_CODEC_OK) {
     VP8LOG(LogLevel::Error, "Failed to set new configuration");
     return NS_ERROR_FAILURE;
   }
-  return NS_OK;
-}
 
-nsresult VP8TrackEncoder::SetConfigurationValues(int32_t aWidth,
-                                                 int32_t aHeight,
-                                                 int32_t aDisplayWidth,
-                                                 int32_t aDisplayHeight,
-                                                 vpx_codec_enc_cfg_t& config) {
   mFrameWidth = aWidth;
   mFrameHeight = aHeight;
-  mDisplayWidth = aDisplayWidth;
-  mDisplayHeight = aDisplayHeight;
-
-  
-  memset(&config, 0, sizeof(vpx_codec_enc_cfg_t));
-  if (vpx_codec_enc_config_default(vpx_codec_vp8_cx(), &config, 0)) {
-    VP8LOG(LogLevel::Error, "Failed to get default configuration");
-    return NS_ERROR_FAILURE;
-  }
-
-  config.g_w = mFrameWidth;
-  config.g_h = mFrameHeight;
-  
-  
-
-  
-  config.rc_target_bitrate =
-      (mVideoBitrate != 0 ? mVideoBitrate : DEFAULT_BITRATE_BPS) / 1000;
-
-  
-  config.g_timebase.num = 1;
-  config.g_timebase.den = mTrackRate;
-
-  config.g_error_resilient = 0;
-
-  config.g_lag_in_frames = 0;  
-
-  int32_t number_of_cores = PR_GetNumberOfProcessors();
-  if (mFrameWidth * mFrameHeight > 1280 * 960 && number_of_cores >= 6) {
-    config.g_threads = 3;  
-  } else if (mFrameWidth * mFrameHeight > 640 * 480 && number_of_cores >= 3) {
-    config.g_threads = 2;  
-  } else {
-    config.g_threads = 1;  
-  }
-
-  
-  config.rc_dropframe_thresh = 0;
-  config.rc_end_usage = VPX_VBR;
-  config.g_pass = VPX_RC_ONE_PASS;
-  
-  
-  config.rc_resize_allowed = 0;
-  config.rc_undershoot_pct = 100;
-  config.rc_overshoot_pct = 15;
-  config.rc_buf_initial_sz = 500;
-  config.rc_buf_optimal_sz = 600;
-  config.rc_buf_sz = 1000;
-
-  
-  
-  config.kf_mode = VPX_KF_AUTO;
-  config.kf_max_dist = MAX_KEYFRAME_INTERVAL;
 
   return NS_OK;
 }
@@ -304,15 +323,15 @@ nsresult VP8TrackEncoder::GetEncodedPartitions(
 }
 
 nsresult VP8TrackEncoder::PrepareRawFrame(VideoChunk& aChunk) {
+  gfx::IntSize intrinsicSize = aChunk.mFrame.GetIntrinsicSize();
   RefPtr<Image> img;
   if (aChunk.mFrame.GetForceBlack() || aChunk.IsNull()) {
-    if (!mMuteFrame) {
-      mMuteFrame =
-          VideoFrame::CreateBlackImage(gfx::IntSize(mFrameWidth, mFrameHeight));
+    if (!mMuteFrame || mMuteFrame->GetSize() != intrinsicSize) {
+      mMuteFrame = VideoFrame::CreateBlackImage(intrinsicSize);
     }
     if (!mMuteFrame) {
       VP8LOG(LogLevel::Warning, "Failed to allocate black image of size %dx%d",
-             mFrameWidth, mFrameHeight);
+             intrinsicSize.width, intrinsicSize.height);
       return NS_OK;
     }
     img = mMuteFrame;
@@ -320,13 +339,12 @@ nsresult VP8TrackEncoder::PrepareRawFrame(VideoChunk& aChunk) {
     img = aChunk.mFrame.GetImage();
   }
 
-  if (img->GetSize() != IntSize(mFrameWidth, mFrameHeight)) {
-    VP8LOG(LogLevel::Info, "Dynamic resolution change (was %dx%d, now %dx%d).",
-           mFrameWidth, mFrameHeight, img->GetSize().width,
-           img->GetSize().height);
+  gfx::IntSize imgSize = img->GetSize();
 
-    gfx::IntSize intrinsicSize = aChunk.mFrame.GetIntrinsicSize();
-    gfx::IntSize imgSize = aChunk.mFrame.GetImage()->GetSize();
+  if (imgSize != IntSize(mFrameWidth, mFrameHeight)) {
+    VP8LOG(LogLevel::Info, "Dynamic resolution change (was %dx%d, now %dx%d).",
+           mFrameWidth, mFrameHeight, imgSize.width, imgSize.height);
+
     if (imgSize <= IntSize(mFrameWidth,
                            mFrameHeight) &&  
                                              

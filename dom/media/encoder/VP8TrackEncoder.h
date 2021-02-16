@@ -65,11 +65,6 @@ class VP8TrackEncoder : public VideoTrackEncoder {
   void Destroy();
 
   
-  nsresult SetConfigurationValues(int32_t aWidth, int32_t aHeight,
-                                  int32_t aDisplayWidth, int32_t aDisplayHeight,
-                                  vpx_codec_enc_cfg_t& config);
-
-  
   TrackTime mEncodedTimestamp = 0;
 
   
