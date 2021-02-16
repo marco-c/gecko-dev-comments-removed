@@ -165,9 +165,14 @@ enum CachedBool { eCachedBoolMiss, eCachedTrue, eCachedFalse };
 
 - (void)invalidateLayoutTableCache {
   mozAccessible* parent = (mozAccessible*)[self moxUnignoredParent];
-  MOZ_ASSERT([parent isKindOfClass:[mozTablePartAccessible class]],
-             "Trying to invalidate table cache but cannot find table!");
-  [(mozTablePartAccessible*)parent invalidateLayoutTableCache];
+  if ([parent isKindOfClass:[mozTablePartAccessible class]]) {
+    
+    
+    
+    
+    
+    [(mozTablePartAccessible*)parent invalidateLayoutTableCache];
+  }
 }
 @end
 
