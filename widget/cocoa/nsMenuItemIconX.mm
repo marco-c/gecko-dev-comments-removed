@@ -117,7 +117,9 @@ nsresult nsMenuItemIconX::SetupIcon() {
 }
 
 nsresult nsMenuItemIconX::GetIconURI(nsIURI** aIconURI) {
-  if (!mMenuObject) return NS_ERROR_FAILURE;
+  if (!mMenuObject) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   
@@ -127,10 +129,14 @@ nsresult nsMenuItemIconX::GetIconURI(nsIURI** aIconURI) {
   
   if (mMenuObject->MenuObjectType() == eMenuItemObjectType) {
     nsMenuItemX* menuItem = static_cast<nsMenuItemX*>(mMenuObject);
-    if (menuItem->GetMenuItemType() != eRegularMenuItemType) return NS_ERROR_FAILURE;
+    if (menuItem->GetMenuItemType() != eRegularMenuItemType) {
+      return NS_ERROR_FAILURE;
+    }
   }
 
-  if (!mContent) return NS_ERROR_FAILURE;
+  if (!mContent) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   nsAutoString imageURIString;
@@ -167,7 +173,9 @@ nsresult nsMenuItemIconX::GetIconURI(nsIURI** aIconURI) {
     
     
     rv = NS_NewURI(getter_AddRefs(iconURI), imageURIString);
-    if (NS_FAILED(rv)) return rv;
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
   }
 
   

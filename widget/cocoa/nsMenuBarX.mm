@@ -88,13 +88,21 @@ nsMenuBarX::nsMenuBarX()
 nsMenuBarX::~nsMenuBarX() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  if (nsMenuBarX::sLastGeckoMenuBarPainted == this) nsMenuBarX::sLastGeckoMenuBarPainted = nullptr;
+  if (nsMenuBarX::sLastGeckoMenuBarPainted == this) {
+    nsMenuBarX::sLastGeckoMenuBarPainted = nullptr;
+  }
 
   
   
-  if (sAboutItemContent == mAboutItemContent) sAboutItemContent = nullptr;
-  if (sQuitItemContent == mQuitItemContent) sQuitItemContent = nullptr;
-  if (sPrefItemContent == mPrefItemContent) sPrefItemContent = nullptr;
+  if (sAboutItemContent == mAboutItemContent) {
+    sAboutItemContent = nullptr;
+  }
+  if (sQuitItemContent == mQuitItemContent) {
+    sQuitItemContent = nullptr;
+  }
+  if (sPrefItemContent == mPrefItemContent) {
+    sPrefItemContent = nullptr;
+  }
 
   
   if (mContent) {
@@ -117,7 +125,9 @@ nsMenuBarX::~nsMenuBarX() {
 }
 
 nsresult nsMenuBarX::Create(nsIWidget* aParent, Element* aContent) {
-  if (!aParent) return NS_ERROR_INVALID_ARG;
+  if (!aParent) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
   mParentWindow = aParent;
   mContent = aContent;
@@ -126,7 +136,9 @@ nsresult nsMenuBarX::Create(nsIWidget* aParent, Element* aContent) {
     AquifyMenuBar();
 
     nsresult rv = nsMenuGroupOwnerX::Create(aContent);
-    if (NS_FAILED(rv)) return rv;
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
 
     RegisterForContentChanges(mContent, this);
     ConstructNativeMenus();
@@ -147,10 +159,11 @@ void nsMenuBarX::ConstructNativeMenus() {
       nsMenuX* newMenu = new nsMenuX();
       if (newMenu) {
         nsresult rv = newMenu->Create(this, this, menuContent->AsElement());
-        if (NS_SUCCEEDED(rv))
+        if (NS_SUCCEEDED(rv)) {
           InsertMenuAtIndex(newMenu, GetMenuCount());
-        else
+        } else {
           delete newMenu;
+        }
       }
     }
   }
@@ -241,7 +254,9 @@ nsresult nsMenuBarX::InsertMenuAtIndex(nsMenuX* aMenu, uint32_t aIndex) {
   nsIContent* menuContent = aMenu->Content();
   if (menuContent->GetChildCount() > 0 && !nsMenuUtilsX::NodeIsHiddenOrCollapsed(menuContent)) {
     int insertionIndex = nsMenuUtilsX::CalculateNativeInsertionPoint(this, aMenu);
-    if (MenuContainsAppMenu()) insertionIndex++;
+    if (MenuContainsAppMenu()) {
+      insertionIndex++;
+    }
     [mNativeMenu insertItem:aMenu->NativeMenuItem() atIndex:insertionIndex];
   }
 
@@ -263,7 +278,9 @@ void nsMenuBarX::RemoveMenuAtIndex(uint32_t aIndex) {
   
   NSMenuItem* nativeMenuItem = mMenuArray[aIndex]->NativeMenuItem();
   int nativeMenuItemIndex = [mNativeMenu indexOfItem:nativeMenuItem];
-  if (nativeMenuItemIndex != -1) [mNativeMenu removeItemAtIndex:nativeMenuItemIndex];
+  if (nativeMenuItemIndex != -1) {
+    [mNativeMenu removeItemAtIndex:nativeMenuItemIndex];
+  }
 
   mMenuArray.RemoveElementAt(aIndex);
 
@@ -286,10 +303,11 @@ void nsMenuBarX::ObserveContentInserted(mozilla::dom::Document* aDocument, nsICo
   nsMenuX* newMenu = new nsMenuX();
   if (newMenu) {
     nsresult rv = newMenu->Create(this, this, aChild);
-    if (NS_SUCCEEDED(rv))
+    if (NS_SUCCEEDED(rv)) {
       InsertMenuAtIndex(newMenu, aContainer->ComputeIndexOf(aChild));
-    else
+    } else {
       delete newMenu;
+    }
   }
 }
 
@@ -299,7 +317,9 @@ void nsMenuBarX::ForceUpdateNativeMenuAt(const nsAString& indexString) {
                               length:indexString.Length()];
   NSArray* indexes = [locationString componentsSeparatedByString:@"|"];
   unsigned int indexCount = [indexes count];
-  if (indexCount == 0) return;
+  if (indexCount == 0) {
+    return;
+  }
 
   nsMenuX* currentMenu = NULL;
   int targetIndex = [[indexes objectAtIndex:0] intValue];
@@ -317,7 +337,9 @@ void nsMenuBarX::ForceUpdateNativeMenuAt(const nsAString& indexString) {
     }
   }
 
-  if (!currentMenu) return;
+  if (!currentMenu) {
+    return;
+  }
 
   
   currentMenu->MenuOpened();
@@ -330,7 +352,9 @@ void nsMenuBarX::ForceUpdateNativeMenuAt(const nsAString& indexString) {
     length = currentMenu->GetItemCount();
     for (unsigned int j = 0; j < length; j++) {
       nsMenuObjectX* targetMenu = currentMenu->GetItemAt(j);
-      if (!targetMenu) return;
+      if (!targetMenu) {
+        return;
+      }
       if (!nsMenuUtilsX::NodeIsHiddenOrCollapsed(targetMenu->Content())) {
         visible++;
         if (targetMenu->MenuObjectType() == eSubmenuObjectType && visible == (targetIndex + 1)) {
@@ -351,7 +375,9 @@ void nsMenuBarX::ForceUpdateNativeMenuAt(const nsAString& indexString) {
 
 void nsMenuBarX::ForceNativeMenuReload() {
   
-  while (GetMenuCount() > 0) RemoveMenuAtIndex(0);
+  while (GetMenuCount() > 0) {
+    RemoveMenuAtIndex(0);
+  }
 
   
   ConstructNativeMenus();
@@ -370,7 +396,9 @@ nsMenuX* nsMenuBarX::GetXULHelpMenu() {
   
   for (int32_t i = GetMenuCount() - 1; i >= 0; --i) {
     nsMenuX* aMenu = GetMenuAt(i);
-    if (aMenu && nsMenuX::IsXULHelpMenu(aMenu->Content())) return aMenu;
+    if (aMenu && nsMenuX::IsXULHelpMenu(aMenu->Content())) {
+      return aMenu;
+    }
   }
   return nil;
 }
@@ -383,7 +411,9 @@ void nsMenuBarX::SetSystemHelpMenu() {
   nsMenuX* xulHelpMenu = GetXULHelpMenu();
   if (xulHelpMenu) {
     NSMenu* helpMenu = (NSMenu*)xulHelpMenu->NativeData();
-    if (helpMenu) [NSApp setHelpMenu:helpMenu];
+    if (helpMenu) {
+      [NSApp setHelpMenu:helpMenu];
+    }
   }
 }
 
@@ -463,18 +493,24 @@ void nsMenuBarX::AquifyMenuBar() {
     
     HideItem(domDoc, u"aboutSeparator"_ns, nullptr);
     HideItem(domDoc, u"aboutName"_ns, getter_AddRefs(mAboutItemContent));
-    if (!sAboutItemContent) sAboutItemContent = mAboutItemContent;
+    if (!sAboutItemContent) {
+      sAboutItemContent = mAboutItemContent;
+    }
 
     
     HideItem(domDoc, u"menu_FileQuitSeparator"_ns, nullptr);
     HideItem(domDoc, u"menu_FileQuitItem"_ns, getter_AddRefs(mQuitItemContent));
-    if (!sQuitItemContent) sQuitItemContent = mQuitItemContent;
+    if (!sQuitItemContent) {
+      sQuitItemContent = mQuitItemContent;
+    }
 
     
     
     HideItem(domDoc, u"menu_PrefsSeparator"_ns, nullptr);
     HideItem(domDoc, u"menu_preferences"_ns, getter_AddRefs(mPrefItemContent));
-    if (!sPrefItemContent) sPrefItemContent = mPrefItemContent;
+    if (!sPrefItemContent) {
+      sPrefItemContent = mPrefItemContent;
+    }
 
     
     HideItem(domDoc, u"menu_mac_services"_ns, nullptr);
@@ -541,8 +577,12 @@ NSMenuItem* nsMenuBarX::CreateNativeAppMenuItem(nsMenuX* inMenu, const nsAString
       [NSString stringWithCharacters:reinterpret_cast<const unichar*>(label.get())
                               length:label.Length()];
 
-  if (!labelString) labelString = @"";
-  if (!keyEquiv) keyEquiv = @"";
+  if (!labelString) {
+    labelString = @"";
+  }
+  if (!keyEquiv) {
+    keyEquiv = @"";
+  }
 
   
   NSMenuItem* newMenuItem = [[NSMenuItem alloc] initWithTitle:labelString
@@ -629,7 +669,9 @@ nsresult nsMenuBarX::CreateApplicationMenu(nsMenuX* inMenu) {
     }
 
     
-    if (addAboutSeparator) [sApplicationMenu addItem:[NSMenuItem separatorItem]];
+    if (addAboutSeparator) {
+      [sApplicationMenu addItem:[NSMenuItem separatorItem]];
+    }
 
     
     itemBeingAdded =
@@ -700,7 +742,9 @@ nsresult nsMenuBarX::CreateApplicationMenu(nsMenuX* inMenu) {
     }
 
     
-    if (addHideShowSeparator) [sApplicationMenu addItem:[NSMenuItem separatorItem]];
+    if (addHideShowSeparator) {
+      [sApplicationMenu addItem:[NSMenuItem separatorItem]];
+    }
 
     BOOL addTouchBarSeparator = NO;
 
@@ -722,7 +766,9 @@ nsresult nsMenuBarX::CreateApplicationMenu(nsMenuX* inMenu) {
     }
 
     
-    if (addTouchBarSeparator) [sApplicationMenu addItem:[NSMenuItem separatorItem]];
+    if (addTouchBarSeparator) {
+      [sApplicationMenu addItem:[NSMenuItem separatorItem]];
+    }
 
     
     itemBeingAdded =
@@ -842,12 +888,16 @@ static BOOL gMenuItemsExecuteCommands = YES;
   
   if (tag == eCommand_ID_About) {
     nsIContent* mostSpecificContent = sAboutItemContent;
-    if (menuBar && menuBar->mAboutItemContent) mostSpecificContent = menuBar->mAboutItemContent;
+    if (menuBar && menuBar->mAboutItemContent) {
+      mostSpecificContent = menuBar->mAboutItemContent;
+    }
     nsMenuUtilsX::DispatchCommandTo(mostSpecificContent);
     return;
   } else if (tag == eCommand_ID_Prefs) {
     nsIContent* mostSpecificContent = sPrefItemContent;
-    if (menuBar && menuBar->mPrefItemContent) mostSpecificContent = menuBar->mPrefItemContent;
+    if (menuBar && menuBar->mPrefItemContent) {
+      mostSpecificContent = menuBar->mPrefItemContent;
+    }
     nsMenuUtilsX::DispatchCommandTo(mostSpecificContent);
     return;
   } else if (tag == eCommand_ID_HideApp) {
@@ -864,7 +914,9 @@ static BOOL gMenuItemsExecuteCommands = YES;
     return;
   } else if (tag == eCommand_ID_Quit) {
     nsIContent* mostSpecificContent = sQuitItemContent;
-    if (menuBar && menuBar->mQuitItemContent) mostSpecificContent = menuBar->mQuitItemContent;
+    if (menuBar && menuBar->mQuitItemContent) {
+      mostSpecificContent = menuBar->mQuitItemContent;
+    }
     
     
     
@@ -884,7 +936,9 @@ static BOOL gMenuItemsExecuteCommands = YES;
   
   if (menuGroupOwner) {
     nsMenuItemX* menuItem = menuGroupOwner->GetMenuItemForCommandID(static_cast<uint32_t>(tag));
-    if (menuItem) menuItem->DoCommand();
+    if (menuItem) {
+      menuItem->DoCommand();
+    }
   }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
@@ -901,18 +955,20 @@ static BOOL gMenuItemsExecuteCommands = YES;
 
 - (id)target {
   id realTarget = [super target];
-  if (gMenuItemsExecuteCommands)
+  if (gMenuItemsExecuteCommands) {
     return realTarget;
-  else
+  } else {
     return realTarget ? self : nil;
+  }
 }
 
 - (SEL)action {
   SEL realAction = [super action];
-  if (gMenuItemsExecuteCommands)
+  if (gMenuItemsExecuteCommands) {
     return realAction;
-  else
+  } else {
     return realAction ? @selector(_doNothing:) : NULL;
+  }
 }
 
 - (void)_doNothing:(id)sender {
@@ -957,8 +1013,9 @@ static BOOL gMenuItemsExecuteCommands = YES;
 }
 
 - (void)_overrideClassOfMenuItem:(NSMenuItem*)menuItem {
-  if ([menuItem class] == [NSMenuItem class])
+  if ([menuItem class] == [NSMenuItem class]) {
     object_setClass(menuItem, [GeckoServicesNSMenuItem class]);
+  }
 }
 
 @end

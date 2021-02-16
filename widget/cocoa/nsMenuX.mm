@@ -113,8 +113,9 @@ nsMenuX::nsMenuX()
 
   mMenuDelegate = [[MenuDelegate alloc] initWithGeckoMenu:this];
 
-  if (!nsMenuBarX::sNativeEventTarget)
+  if (!nsMenuBarX::sNativeEventTarget) {
     nsMenuBarX::sNativeEventTarget = [[NativeMenuItemTarget alloc] init];
+  }
 
   MOZ_COUNT_CTOR(nsMenuX);
 
@@ -125,7 +126,9 @@ nsMenuX::~nsMenuX() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   
-  if (mIcon) mIcon->Destroy();
+  if (mIcon) {
+    mIcon->Destroy();
+  }
 
   RemoveAll();
 
@@ -137,7 +140,9 @@ nsMenuX::~nsMenuX() {
   [mNativeMenuItem autorelease];
 
   
-  if (mContent) mMenuGroupOwner->UnregisterForContentChanges(mContent);
+  if (mContent) {
+    mMenuGroupOwner->UnregisterForContentChanges(mContent);
+  }
 
   MOZ_COUNT_DTOR(nsMenuX);
 
@@ -170,8 +175,12 @@ nsresult nsMenuX::Create(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOw
                 parentType == eStandaloneNativeMenuObjectType),
                "Menu parent not a menu bar, menu, or native menu!");
 
-  if (nsMenuUtilsX::NodeIsHiddenOrCollapsed(mContent)) mVisible = false;
-  if (mContent->GetChildCount() == 0) mVisible = false;
+  if (nsMenuUtilsX::NodeIsHiddenOrCollapsed(mContent)) {
+    mVisible = false;
+  }
+  if (mContent->GetChildCount() == 0) {
+    mVisible = false;
+  }
 
   NSString* newCocoaLabelString = nsMenuUtilsX::GetTruncatedCocoaLabel(mLabel);
   mNativeMenuItem = [[NSMenuItem alloc] initWithTitle:newCocoaLabelString
@@ -199,10 +208,14 @@ nsresult nsMenuX::Create(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOw
 nsresult nsMenuX::AddMenuItem(nsMenuItemX* aMenuItem) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
 
-  if (!aMenuItem) return NS_ERROR_INVALID_ARG;
+  if (!aMenuItem) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
   mMenuObjectsArray.AppendElement(aMenuItem);
-  if (nsMenuUtilsX::NodeIsHiddenOrCollapsed(aMenuItem->Content())) return NS_OK;
+  if (nsMenuUtilsX::NodeIsHiddenOrCollapsed(aMenuItem->Content())) {
+    return NS_OK;
+  }
   ++mVisibleItemsCount;
 
   NSMenuItem* newNativeMenuItem = (NSMenuItem*)aMenuItem->NativeData();
@@ -256,7 +269,9 @@ uint32_t nsMenuX::GetItemCount() { return mMenuObjectsArray.Length(); }
 
 
 nsMenuObjectX* nsMenuX::GetItemAt(uint32_t aPos) {
-  if (aPos >= (uint32_t)mMenuObjectsArray.Length()) return NULL;
+  if (aPos >= (uint32_t)mMenuObjectsArray.Length()) {
+    return NULL;
+  }
 
   return mMenuObjectsArray[aPos].get();
 }
@@ -271,10 +286,14 @@ nsresult nsMenuX::GetVisibleItemCount(uint32_t& aCount) {
 
 nsMenuObjectX* nsMenuX::GetVisibleItemAt(uint32_t aPos) {
   uint32_t count = mMenuObjectsArray.Length();
-  if (aPos >= mVisibleItemsCount || aPos >= count) return NULL;
+  if (aPos >= mVisibleItemsCount || aPos >= count) {
+    return NULL;
+  }
 
   
-  if (mVisibleItemsCount == count) return mMenuObjectsArray[aPos].get();
+  if (mVisibleItemsCount == count) {
+    return mMenuObjectsArray[aPos].get();
+  }
 
   
   nsMenuObjectX* item;
@@ -299,10 +318,13 @@ nsresult nsMenuX::RemoveAll() {
   if (mNativeMenu) {
     
     int itemCount = [mNativeMenu numberOfItems];
-    for (int i = 0; i < itemCount; i++)
+    for (int i = 0; i < itemCount; i++) {
       mMenuGroupOwner->UnregisterCommand((uint32_t)[[mNativeMenu itemAtIndex:i] tag]);
+    }
     
-    for (int i = [mNativeMenu numberOfItems] - 1; i >= 0; i--) [mNativeMenu removeItemAtIndex:i];
+    for (int i = [mNativeMenu numberOfItems] - 1; i >= 0; i--) {
+      [mNativeMenu removeItemAtIndex:i];
+    }
   }
 
   mMenuObjectsArray.Clear();
@@ -322,10 +344,14 @@ nsEventStatus nsMenuX::MenuOpened() {
   
   bool keepProcessing = OnOpen();
 
-  if (!mNeedsRebuild || !keepProcessing) return nsEventStatus_eConsumeNoDefault;
+  if (!mNeedsRebuild || !keepProcessing) {
+    return nsEventStatus_eConsumeNoDefault;
+  }
 
   if (!mConstructed || mNeedsRebuild) {
-    if (mNeedsRebuild) RemoveAll();
+    if (mNeedsRebuild) {
+      RemoveAll();
+    }
 
     MenuConstruct();
     mConstructed = true;
@@ -345,9 +371,13 @@ nsEventStatus nsMenuX::MenuOpened() {
 void nsMenuX::MenuClosed() {
   if (mConstructed) {
     
-    if (!OnClose()) return;
+    if (!OnClose()) {
+      return;
+    }
 
-    if (mNeedsRebuild) mConstructed = false;
+    if (mNeedsRebuild) {
+      mConstructed = false;
+    }
 
     if (mContent->IsElement()) {
       mContent->AsElement()->UnsetAttr(kNameSpaceID_None, nsGkAtoms::open, true);
@@ -447,7 +477,9 @@ GeckoNSMenu* nsMenuX::CreateMenuWithGeckoString(nsString& menuTitle) {
 }
 
 void nsMenuX::LoadMenuItem(nsIContent* inMenuItemContent) {
-  if (!inMenuItemContent) return;
+  if (!inMenuItemContent) {
+    return;
+  }
 
   nsAutoString menuitemName;
   if (inMenuItemContent->IsElement()) {
@@ -474,7 +506,9 @@ void nsMenuX::LoadMenuItem(nsIContent* inMenuItemContent) {
 
   
   nsMenuItemX* menuItem = new nsMenuItemX();
-  if (!menuItem) return;
+  if (!menuItem) {
+    return;
+  }
 
   nsresult rv = menuItem->Create(this, menuitemName, itemType, mMenuGroupOwner, inMenuItemContent);
   if (NS_FAILED(rv)) {
@@ -491,10 +525,14 @@ void nsMenuX::LoadMenuItem(nsIContent* inMenuItemContent) {
 
 void nsMenuX::LoadSubMenu(nsIContent* inMenuContent) {
   auto menu = MakeUnique<nsMenuX>();
-  if (!menu) return;
+  if (!menu) {
+    return;
+  }
 
   nsresult rv = menu->Create(this, mMenuGroupOwner, inMenuContent);
-  if (NS_FAILED(rv)) return;
+  if (NS_FAILED(rv)) {
+    return;
+  }
 
   
   
@@ -519,7 +557,9 @@ bool nsMenuX::OnOpen() {
   nsresult rv = NS_OK;
   nsIContent* dispatchTo = popupContent ? popupContent : mContent;
   rv = EventDispatcher::Dispatch(dispatchTo, nullptr, &event, nullptr, &status);
-  if (NS_FAILED(rv) || status == nsEventStatus_eConsumeNoDefault) return false;
+  if (NS_FAILED(rv) || status == nsEventStatus_eConsumeNoDefault) {
+    return false;
+  }
 
   
   
@@ -528,7 +568,9 @@ bool nsMenuX::OnOpen() {
   
   
   GetMenuPopupContent(getter_AddRefs(popupContent));
-  if (!popupContent) return true;
+  if (!popupContent) {
+    return true;
+  }
 
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm) {
@@ -541,7 +583,9 @@ bool nsMenuX::OnOpen() {
 
 
 bool nsMenuX::OnClose() {
-  if (mDestroyHandlerCalled) return true;
+  if (mDestroyHandlerCalled) {
+    return true;
+  }
 
   nsEventStatus status = nsEventStatus_eIgnore;
   WidgetMouseEvent event(true, eXULPopupHiding, nullptr, WidgetMouseEvent::eReal);
@@ -555,7 +599,9 @@ bool nsMenuX::OnClose() {
 
   mDestroyHandlerCalled = true;
 
-  if (NS_FAILED(rv) || status == nsEventStatus_eConsumeNoDefault) return false;
+  if (NS_FAILED(rv) || status == nsEventStatus_eConsumeNoDefault) {
+    return false;
+  }
 
   return true;
 }
@@ -564,7 +610,9 @@ bool nsMenuX::OnClose() {
 
 
 void nsMenuX::GetMenuPopupContent(nsIContent** aResult) {
-  if (!aResult) return;
+  if (!aResult) {
+    return;
+  }
   *aResult = nullptr;
 
   
@@ -590,7 +638,9 @@ bool nsMenuX::IsXULHelpMenu(nsIContent* aMenuContent) {
   if (aMenuContent && aMenuContent->IsElement()) {
     nsAutoString id;
     aMenuContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::id, id);
-    if (id.Equals(u"helpMenu"_ns)) retval = true;
+    if (id.Equals(u"helpMenu"_ns)) {
+      retval = true;
+    }
   }
   return retval;
 }
@@ -604,7 +654,9 @@ void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aCon
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   
-  if (gConstructingMenu || (aAttribute == nsGkAtoms::open)) return;
+  if (gConstructingMenu || (aAttribute == nsGkAtoms::open)) {
+    return;
+  }
 
   nsMenuObjectTypeX parentType = mParent->MenuObjectType();
 
@@ -633,7 +685,9 @@ void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aCon
     bool contentIsHiddenOrCollapsed = nsMenuUtilsX::NodeIsHiddenOrCollapsed(mContent);
 
     
-    if (contentIsHiddenOrCollapsed != mVisible) return;
+    if (contentIsHiddenOrCollapsed != mVisible) {
+      return;
+    }
 
     if (contentIsHiddenOrCollapsed) {
       if (parentType == eMenuBarObjectType || parentType == eSubmenuObjectType ||
@@ -641,7 +695,9 @@ void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aCon
         NSMenu* parentMenu = (NSMenu*)mParent->NativeData();
         
         
-        if ([parentMenu indexOfItem:mNativeMenuItem] != -1) [parentMenu removeItem:mNativeMenuItem];
+        if ([parentMenu indexOfItem:mNativeMenuItem] != -1) {
+          [parentMenu removeItem:mNativeMenuItem];
+        }
         mVisible = false;
       }
     } else {
@@ -652,7 +708,9 @@ void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aCon
           
           
           nsMenuBarX* mb = static_cast<nsMenuBarX*>(mParent);
-          if (mb->MenuContainsAppMenu()) insertionIndex++;
+          if (mb->MenuContainsAppMenu()) {
+            insertionIndex++;
+          }
         }
         NSMenu* parentMenu = (NSMenu*)mParent->NativeData();
         [parentMenu insertItem:mNativeMenuItem atIndex:insertionIndex];
@@ -669,7 +727,9 @@ void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aCon
 
 void nsMenuX::ObserveContentRemoved(dom::Document* aDocument, nsIContent* aContainer,
                                     nsIContent* aChild, nsIContent* aPreviousSibling) {
-  if (gConstructingMenu) return;
+  if (gConstructingMenu) {
+    return;
+  }
 
   SetRebuild(true);
   mMenuGroupOwner->UnregisterForContentChanges(aChild);
@@ -677,7 +737,9 @@ void nsMenuX::ObserveContentRemoved(dom::Document* aDocument, nsIContent* aConta
 
 void nsMenuX::ObserveContentInserted(dom::Document* aDocument, nsIContent* aContainer,
                                      nsIContent* aChild) {
-  if (gConstructingMenu) return;
+  if (gConstructingMenu) {
+    return;
+  }
 
   SetRebuild(true);
 }
@@ -685,7 +747,9 @@ void nsMenuX::ObserveContentInserted(dom::Document* aDocument, nsIContent* aCont
 nsresult nsMenuX::SetupIcon() {
   
   
-  if (!mIcon) return NS_ERROR_OUT_OF_MEMORY;
+  if (!mIcon) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
 
   return mIcon->SetupIcon();
 }
@@ -710,7 +774,9 @@ nsresult nsMenuX::SetupIcon() {
 }
 
 - (void)menu:(NSMenu*)menu willHighlightItem:(NSMenuItem*)item {
-  if (!menu || !item || !mGeckoMenu) return;
+  if (!menu || !item || !mGeckoMenu) {
+    return;
+  }
 
   nsMenuObjectX* target = mGeckoMenu->GetVisibleItemAt((uint32_t)[menu indexOfItem:item]);
   if (target && (target->MenuObjectType() == eMenuItemObjectType)) {
@@ -721,12 +787,16 @@ nsresult nsMenuX::SetupIcon() {
 }
 
 - (void)menuWillOpen:(NSMenu*)menu {
-  if (!mGeckoMenu) return;
+  if (!mGeckoMenu) {
+    return;
+  }
 
   
   
   
-  if (nsMenuX::sIndexingMenuLevel > 0) return;
+  if (nsMenuX::sIndexingMenuLevel > 0) {
+    return;
+  }
 
   nsIRollupListener* rollupListener = nsBaseWidget::GetActiveRollupListener();
   if (rollupListener) {
@@ -741,12 +811,16 @@ nsresult nsMenuX::SetupIcon() {
 }
 
 - (void)menuDidClose:(NSMenu*)menu {
-  if (!mGeckoMenu) return;
+  if (!mGeckoMenu) {
+    return;
+  }
 
   
   
   
-  if (nsMenuX::sIndexingMenuLevel > 0) return;
+  if (nsMenuX::sIndexingMenuLevel > 0) {
+    return;
+  }
 
   mGeckoMenu->MenuClosed();
 }
@@ -798,7 +872,9 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
 - (id)initWithItem:(NSMenuItem*)aItem table:(NSMapTable*)aTable {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
-  if (!gShadowKeyEquivDB) gShadowKeyEquivDB = [[NSMutableDictionary alloc] init];
+  if (!gShadowKeyEquivDB) {
+    gShadowKeyEquivDB = [[NSMutableDictionary alloc] init];
+  }
   self = [super init];
   if (aItem && aTable) {
     mTables = [[NSMutableSet alloc] init];
@@ -816,8 +892,12 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
 - (void)dealloc {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  if (mTables) [mTables release];
-  if (mItem) [mItem release];
+  if (mTables) {
+    [mTables release];
+  }
+  if (mItem) {
+    [mItem release];
+  }
   [super dealloc];
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
@@ -835,7 +915,9 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
 - (int)addTable:(NSMapTable*)aTable {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
 
-  if (aTable) [mTables addObject:[NSValue valueWithPointer:aTable]];
+  if (aTable) {
+    [mTables addObject:[NSValue valueWithPointer:aTable]];
+  }
   return [mTables count];
 
   NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(0);
@@ -846,7 +928,9 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
 
   if (aTable) {
     NSValue* objectToRemove = [mTables member:[NSValue valueWithPointer:aTable]];
-    if (objectToRemove) [mTables removeObject:objectToRemove];
+    if (objectToRemove) {
+      [mTables removeObject:objectToRemove];
+    }
   }
   return [mTables count];
 
@@ -893,7 +977,9 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
     NSValue* key = [NSValue valueWithPointer:aItem];
     KeyEquivDBItem* shadowItem = [gShadowKeyEquivDB objectForKey:key];
     if (shadowItem && [shadowItem hasTable:aTable]) {
-      if (![shadowItem removeTable:aTable]) [gShadowKeyEquivDB removeObjectForKey:key];
+      if (![shadowItem removeTable:aTable]) {
+        [gShadowKeyEquivDB removeObjectForKey:key];
+      }
     }
   }
 
