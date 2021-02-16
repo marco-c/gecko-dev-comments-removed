@@ -79,8 +79,8 @@ nsresult CreateEncoderConfig(int32_t aWidth, int32_t aHeight,
   
 
   
-  config->rc_target_bitrate =
-      (aVideoBitrate != 0 ? aVideoBitrate : DEFAULT_BITRATE_BPS) / 1000;
+  config->rc_target_bitrate = std::max(
+      1U, (aVideoBitrate != 0 ? aVideoBitrate : DEFAULT_BITRATE_BPS) / 1000);
 
   
   config->g_timebase.num = 1;
