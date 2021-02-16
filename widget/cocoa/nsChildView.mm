@@ -998,37 +998,6 @@ nsresult nsChildView::SynthesizeNativeTouchPoint(
   NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
 }
 
-
-
-static NSMenuItem* NativeMenuItemWithLocation(NSMenu* menubar, NSString* locationString) {
-  NSArray* indexes = [locationString componentsSeparatedByString:@"|"];
-  unsigned int indexCount = [indexes count];
-  if (indexCount == 0) return nil;
-
-  NSMenu* currentSubmenu = [NSApp mainMenu];
-  for (unsigned int i = 0; i < indexCount; i++) {
-    int targetIndex;
-    
-    if (i == 0)
-      targetIndex = [[indexes objectAtIndex:i] intValue] + 1;
-    else
-      targetIndex = [[indexes objectAtIndex:i] intValue];
-    int itemCount = [currentSubmenu numberOfItems];
-    if (targetIndex < itemCount) {
-      NSMenuItem* menuItem = [currentSubmenu itemAtIndex:targetIndex];
-      
-      if (i == (indexCount - 1)) return menuItem;
-      
-      if ([menuItem hasSubmenu])
-        currentSubmenu = [menuItem submenu];
-      else
-        return nil;
-    }
-  }
-
-  return nil;
-}
-
 bool nsChildView::SendEventToNativeMenuSystem(NSEvent* aEvent) {
   bool handled = false;
   nsCocoaWindow* widget = GetAppWindowWidget();
@@ -1076,7 +1045,8 @@ nsresult nsChildView::ActivateNativeMenuItemAt(const nsAString& indexString) {
   NSString* locationString =
       [NSString stringWithCharacters:reinterpret_cast<const unichar*>(indexString.BeginReading())
                               length:indexString.Length()];
-  NSMenuItem* item = NativeMenuItemWithLocation([NSApp mainMenu], locationString);
+  NSMenuItem* item =
+      nsMenuUtilsX::NativeMenuItemWithLocation([NSApp mainMenu], locationString, true);
   
   
   if (item && ![item hasSubmenu]) {
@@ -3121,7 +3091,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
                                        modifierFlags:theEvent.modifierFlags
                                            timestamp:theEvent.timestamp
                                         windowNumber:theEvent.windowNumber
-                                             context:theEvent.context
+                                             context:nil
                                          eventNumber:theEvent.eventNumber
                                           clickCount:theEvent.clickCount
                                             pressure:theEvent.pressure];

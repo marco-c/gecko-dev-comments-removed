@@ -1,7 +1,7 @@
-/* -*- Mode: c++; tab-width: 2; indent-tabs-mode: nil; -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #import <Cocoa/Cocoa.h>
 
@@ -64,8 +64,8 @@ NS_IMETHODIMP
 nsStandaloneNativeMenu::MenuWillOpen(bool* aResult) {
   NS_ASSERTION(mMenu != nullptr, "nsStandaloneNativeMenu::OnOpen - mMenu is null!");
 
-  // Force an update on the mMenu by faking an open/close on all of
-  // its submenus.
+  
+  
   UpdateMenu(mMenu);
 
   *aResult = true;
@@ -84,31 +84,6 @@ nsStandaloneNativeMenu::GetNativeMenu(void** aVoidPointer) {
   }
 }
 
-static NSMenuItem* NativeMenuItemWithLocation(NSMenu* currentSubmenu, NSString* locationString) {
-  NSArray* indexes = [locationString componentsSeparatedByString:@"|"];
-  NSUInteger indexCount = [indexes count];
-  if (indexCount == 0) return nil;
-
-  for (NSUInteger i = 0; i < indexCount; i++) {
-    NSInteger targetIndex = [[indexes objectAtIndex:i] integerValue];
-    NSInteger itemCount = [currentSubmenu numberOfItems];
-    if (targetIndex < itemCount) {
-      NSMenuItem* menuItem = [currentSubmenu itemAtIndex:targetIndex];
-
-      // If this is the last index, just return the menu item.
-      if (i == (indexCount - 1)) return menuItem;
-
-      // If this is not the last index, find the submenu and keep going.
-      if ([menuItem hasSubmenu])
-        currentSubmenu = [menuItem submenu];
-      else
-        return nil;
-    }
-  }
-
-  return nil;
-}
-
 NS_IMETHODIMP
 nsStandaloneNativeMenu::ActivateNativeMenuItemAt(const nsAString& indexString) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
@@ -119,15 +94,15 @@ nsStandaloneNativeMenu::ActivateNativeMenuItemAt(const nsAString& indexString) {
       [NSString stringWithCharacters:reinterpret_cast<const unichar*>(indexString.BeginReading())
                               length:indexString.Length()];
   NSMenu* menu = static_cast<NSMenu*>(mMenu->NativeData());
-  NSMenuItem* item = NativeMenuItemWithLocation(menu, locationString);
+  NSMenuItem* item = nsMenuUtilsX::NativeMenuItemWithLocation(menu, locationString, false);
 
-  // We can't perform an action on an item with a submenu, that will raise
-  // an obj-c exception.
+  
+  
   if (item && ![item hasSubmenu]) {
     NSMenu* parent = [item menu];
     if (parent) {
-      // NSLog(@"Performing action for native menu item titled: %@\n",
-      //       [[currentSubmenu itemAtIndex:targetIndex] title]);
+      
+      
       [parent performActionForItemAtIndex:[parent indexOfItem:item]];
       return NS_OK;
     }
@@ -151,7 +126,7 @@ nsStandaloneNativeMenu::ForceUpdateNativeMenuAt(const nsAString& indexString) {
 
   nsMenuX* currentMenu = mMenu;
 
-  // now find the correct submenu
+  
   for (unsigned int i = 1; currentMenu && i < indexCount; i++) {
     int targetIndex = [[indexes objectAtIndex:i] intValue];
     int visible = 0;
@@ -163,7 +138,7 @@ nsStandaloneNativeMenu::ForceUpdateNativeMenuAt(const nsAString& indexString) {
         visible++;
         if (targetMenu->MenuObjectType() == eSubmenuObjectType && visible == (targetIndex + 1)) {
           currentMenu = static_cast<nsMenuX*>(targetMenu);
-          // fake open/close to cause lazy update to happen
+          
           currentMenu->MenuOpened();
           currentMenu->MenuClosed();
           break;

@@ -25,6 +25,15 @@ nsMenuBarX* GetHiddenWindowMenuBar();
 NSMenuItem* GetStandardEditMenuItem();  
 bool NodeIsHiddenOrCollapsed(nsIContent* inContent);
 int CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuObjectX* aChild);
+
+
+
+
+
+
+NSMenuItem* NativeMenuItemWithLocation(NSMenu* aRootMenu, NSString* aLocationString,
+                                       bool aIsMenuBar);
+
 }  
 
 #endif  
