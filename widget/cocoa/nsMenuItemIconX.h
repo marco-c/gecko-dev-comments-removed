@@ -47,7 +47,7 @@ class nsMenuItemIconX : public mozilla::widget::IconLoader::Listener {
 
   
   
-  nsresult OnComplete(imgIContainer* aImage, const nsIntRect& aRect) override;
+  nsresult OnComplete(imgIContainer* aImage) override;
 
  protected:
   nsCOMPtr<nsIContent> mContent;

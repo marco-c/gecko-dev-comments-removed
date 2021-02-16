@@ -77,7 +77,7 @@ nsresult nsTouchBarInputIcon::SetupIcon(nsCOMPtr<nsIURI> aIconURI) {
   }
 
   if (!mIconLoader) {
-    mIconLoader = new IconLoader(this, mImageRegionRect);
+    mIconLoader = new IconLoader(this);
   }
 
   if (!mSetIcon) {
@@ -112,14 +112,14 @@ void nsTouchBarInputIcon::ReleaseJSObjects() { mDocument = nil; }
 
 
 
-nsresult nsTouchBarInputIcon::OnComplete(imgIContainer* aImage, const nsIntRect& aRect) {
+nsresult nsTouchBarInputIcon::OnComplete(imgIContainer* aImage) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT
 
   
   
   NSImage* image = [MOZIconHelper iconImageFromImageContainer:aImage
                                                      withSize:NSMakeSize(kIconSize, kIconSize)
-                                                      subrect:aRect
+                                                      subrect:mImageRegionRect
                                                   scaleFactor:kHiDPIScalingFactor];
   [mButton setImage:image];
   [mShareScrubber setButtonImage:image];

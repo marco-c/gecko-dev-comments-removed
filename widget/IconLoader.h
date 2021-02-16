@@ -31,15 +31,14 @@ class IconLoader : public imgINotificationObserver {
   
   class Listener {
    public:
-    virtual nsresult OnComplete(imgIContainer* aContainer,
-                                const nsIntRect& aRect) = 0;
+    virtual nsresult OnComplete(imgIContainer* aContainer) = 0;
   };
 
   
   
   
   
-  IconLoader(Listener* aListener, const nsIntRect& aImageRegionRect);
+  explicit IconLoader(Listener* aListener);
 
  public:
   NS_DECL_ISUPPORTS
@@ -58,12 +57,8 @@ class IconLoader : public imgINotificationObserver {
   virtual ~IconLoader();
 
  private:
-  nsresult OnFrameComplete(imgIRequest* aRequest);
-
   nsContentPolicyType mContentType;
   RefPtr<imgRequestProxy> mIconRequest;
-  nsIntRect mImageRegionRect;
-  bool mLoadedIcon;
 
   
   

@@ -45,8 +45,15 @@
   aImage->GetWidth(&origWidth);
   aImage->GetHeight(&origHeight);
 
-  bool createSubImage = !(aSubRect.x == 0 && aSubRect.y == 0 && aSubRect.width == origWidth &&
-                          aSubRect.height == origHeight);
+  
+  
+  if (!aSubRect.IsEmpty() && (aSubRect.XMost() > origWidth || aSubRect.YMost() > origHeight)) {
+    return nil;
+  }
+
+  bool createSubImage =
+      !aSubRect.IsEmpty() && !(aSubRect.x == 0 && aSubRect.y == 0 && aSubRect.width == origWidth &&
+                               aSubRect.height == origHeight);
 
   if (createSubImage) {
     
