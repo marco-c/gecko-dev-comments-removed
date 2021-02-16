@@ -167,7 +167,7 @@ bool ExceptionsAvailable(JSContext* cx);
 
 
 [[nodiscard]] bool Eval(JSContext* cx, Handle<TypedArrayObject*> code,
-                        HandleObject importObj,
+                        HandleObject importObj, HandleValue maybeOptions,
                         MutableHandleWasmInstanceObject instanceObj);
 
 

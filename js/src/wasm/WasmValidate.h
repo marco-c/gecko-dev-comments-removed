@@ -953,7 +953,7 @@ void ConvertMemoryPagesToBytes(Limits* memory);
 
 
 [[nodiscard]] bool Validate(JSContext* cx, const ShareableBytes& bytecode,
-                            UniqueChars* error);
+                            const FeatureOptions& options, UniqueChars* error);
 
 }  
 }  

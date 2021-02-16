@@ -345,7 +345,7 @@ struct js::AsmJSMetadata : Metadata, AsmJSMetadataCacheablePod {
   uint32_t toStringStart;
   uint32_t srcStart;
   bool strict;
-  ScriptSourceHolder scriptSource;
+  RefPtr<ScriptSource> source;
 
   uint32_t srcEndBeforeCurly() const { return srcStart + srcLength; }
   uint32_t srcEndAfterCurly() const {
@@ -371,17 +371,11 @@ struct js::AsmJSMetadata : Metadata, AsmJSMetadataCacheablePod {
     MOZ_CRASH("missing asm.js func export");
   }
 
-  bool mutedErrors() const override {
-    return scriptSource.get()->mutedErrors();
-  }
+  bool mutedErrors() const override { return source->mutedErrors(); }
   const char16_t* displayURL() const override {
-    return scriptSource.get()->hasDisplayURL()
-               ? scriptSource.get()->displayURL()
-               : nullptr;
+    return source->hasDisplayURL() ? source->displayURL() : nullptr;
   }
-  ScriptSource* maybeScriptSource() const override {
-    return scriptSource.get();
-  }
+  ScriptSource* maybeScriptSource() const override { return source.get(); }
   bool getFuncName(NameContext ctx, uint32_t funcIndex,
                    UTF8Bytes* name) const override {
     const char* p = asmJSFuncNames[funcIndex].get();
@@ -1942,7 +1936,7 @@ class MOZ_STACK_CLASS ModuleValidator : public ModuleValidatorShared {
     asmJSMetadata_->srcStart = moduleFunctionNode_->body()->pn_pos.begin;
     asmJSMetadata_->strict = parser_.pc_->sc()->strict() &&
                              !parser_.pc_->sc()->hasExplicitUseStrict();
-    asmJSMetadata_->scriptSource.reset(parser_.ss);
+    asmJSMetadata_->source = do_AddRef(parser_.ss);
 
     if (!addStandardLibraryMathInfo()) {
       return false;
@@ -2116,7 +2110,10 @@ class MOZ_STACK_CLASS ModuleValidator : public ModuleValidatorShared {
       }
     }
 
-    SharedCompileArgs args = CompileArgs::build(cx_, std::move(scriptedCaller));
+    
+    FeatureOptions options;
+    SharedCompileArgs args =
+        CompileArgs::build(cx_, std::move(scriptedCaller), options);
     if (!args) {
       return nullptr;
     }
@@ -6897,7 +6894,7 @@ static bool HandleInstantiationFailure(JSContext* cx, CallArgs args,
     return false;
   }
 
-  ScriptSource* source = metadata.scriptSource.get();
+  ScriptSource* source = metadata.maybeScriptSource();
 
   
   
@@ -7188,7 +7185,7 @@ JSString* js::AsmJSModuleToString(JSContext* cx, HandleFunction fun,
       AsmJSModuleFunctionToModule(fun).metadata().asAsmJS();
   uint32_t begin = metadata.toStringStart;
   uint32_t end = metadata.srcEndAfterCurly();
-  ScriptSource* source = metadata.scriptSource.get();
+  ScriptSource* source = metadata.maybeScriptSource();
 
   JSStringBuilder out(cx);
 
@@ -7240,7 +7237,7 @@ JSString* js::AsmJSFunctionToString(JSContext* cx, HandleFunction fun) {
   uint32_t begin = metadata.srcStart + f.startOffsetInModule();
   uint32_t end = metadata.srcStart + f.endOffsetInModule();
 
-  ScriptSource* source = metadata.scriptSource.get();
+  ScriptSource* source = metadata.maybeScriptSource();
   JSStringBuilder out(cx);
 
   if (!out.append("function ")) {

@@ -17,6 +17,10 @@
 
 
 
+
+
+
+
 load(libdir + "codegen-test-common.js");
 
 
@@ -140,7 +144,7 @@ function codegenTestX64_unit_v128(inputs, options = {}) {
 function codegenTestX64_adhoc(module_text, export_name, expected, options = {}) {
     assertEq(hasDisassembler(), true);
 
-    let ins = wasmEvalText(module_text);
+    let ins = wasmEvalText(module_text, {}, options.features);
     if (options.instanceBox)
         options.instanceBox.value = ins;
     let output = wasmDis(ins.exports[export_name], "ion", true);

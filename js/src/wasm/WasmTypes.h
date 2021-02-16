@@ -1095,6 +1095,17 @@ enum class Shareable { False, True };
 
 
 
+
+
+struct FeatureOptions {
+  FeatureOptions() : simdWormhole(false) {}
+
+  
+  bool simdWormhole;
+};
+
+
+
 struct FeatureArgs {
   FeatureArgs()
       : sharedMemory(Shareable::False),
@@ -1110,7 +1121,7 @@ struct FeatureArgs {
   FeatureArgs& operator=(const FeatureArgs&) = default;
   FeatureArgs(FeatureArgs&&) = default;
 
-  static FeatureArgs build(JSContext* cx);
+  static FeatureArgs build(JSContext* cx, const FeatureOptions& options);
 
   FeatureArgs withRefTypes(bool refTypes) const {
     FeatureArgs features = *this;
