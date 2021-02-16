@@ -266,6 +266,7 @@ impl Wrench {
             testing: true,
             max_texture_size: Some(8196), 
             allow_dual_source_blending: !disable_dual_source_blending,
+            allow_advanced_blend_equation: window.is_software(),
             dump_shader_source,
             
             

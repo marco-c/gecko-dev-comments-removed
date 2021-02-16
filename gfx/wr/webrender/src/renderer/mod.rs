@@ -337,6 +337,7 @@ pub enum ShaderColorMode {
     Bitmap = 7,
     ColorBitmap = 8,
     Image = 9,
+    MultiplyDualSource = 10,
 }
 
 impl From<GlyphFormat> for ShaderColorMode {
@@ -623,6 +624,39 @@ pub enum BlendMode {
     SubpixelConstantTextColor(ColorF),
     SubpixelWithBgColor,
     Advanced(MixBlendMode),
+    MultiplyDualSource,
+    Screen,
+    Exclusion,
+}
+
+impl BlendMode {
+    
+    
+    
+    pub fn from_mix_blend_mode(
+        mode: MixBlendMode,
+        advanced_blend: bool,
+        coherent: bool,
+        dual_source: bool,
+    ) -> Option<BlendMode> {
+        
+        
+        
+        Some(match mode {
+            
+            _ if advanced_blend && coherent => BlendMode::Advanced(mode),
+            
+            MixBlendMode::Screen => BlendMode::Screen,
+            
+            MixBlendMode::Exclusion => BlendMode::Exclusion,
+            
+            MixBlendMode::Multiply if dual_source => BlendMode::MultiplyDualSource,
+            
+            _ if advanced_blend => BlendMode::Advanced(mode),
+            
+            _ => return None,
+        })
+    }
 }
 
 #[derive(PartialEq)]
@@ -2928,6 +2962,15 @@ impl Renderer {
                                 self.device.gl().blend_barrier_khr();
                             }
                             self.device.set_blend_mode_advanced(mode);
+                        }
+                        BlendMode::MultiplyDualSource => {
+                            self.device.set_blend_mode_multiply_dual_source();
+                        }
+                        BlendMode::Screen => {
+                            self.device.set_blend_mode_screen();
+                        }
+                        BlendMode::Exclusion => {
+                            self.device.set_blend_mode_exclusion();
                         }
                     }
                     prev_blend_mode = batch.key.blend_mode;
