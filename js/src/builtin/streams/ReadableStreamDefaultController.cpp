@@ -175,7 +175,7 @@ static bool ReadableStreamDefaultController_desiredSize(JSContext* cx,
 
 
 
-MOZ_MUST_USE bool js::CheckReadableStreamControllerCanCloseOrEnqueue(
+[[nodiscard]] bool js::CheckReadableStreamControllerCanCloseOrEnqueue(
     JSContext* cx, Handle<ReadableStreamController*> unwrappedController,
     const char* action) {
   
@@ -314,7 +314,7 @@ JS_STREAMS_CLASS_SPEC(ReadableStreamDefaultController, 0, SlotCount,
 
 
 
-MOZ_MUST_USE JSObject* js::ReadableStreamControllerCancelSteps(
+[[nodiscard]] JSObject* js::ReadableStreamControllerCancelSteps(
     JSContext* cx, Handle<ReadableStreamController*> unwrappedController,
     Handle<Value> reason) {
   AssertSameCompartment(cx, reason);

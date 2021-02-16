@@ -87,8 +87,8 @@ struct PostOrder {
 #endif
 
  private:
-  MOZ_MUST_USE bool fillEdgesFromRange(EdgeVector& edges,
-                                       js::UniquePtr<EdgeRange>& range) {
+  [[nodiscard]] bool fillEdgesFromRange(EdgeVector& edges,
+                                        js::UniquePtr<EdgeRange>& range) {
     MOZ_ASSERT(range);
     for (; !range->empty(); range->popFront()) {
       if (!edges.append(std::move(range->front()))) {
@@ -98,7 +98,7 @@ struct PostOrder {
     return true;
   }
 
-  MOZ_MUST_USE bool pushForTraversing(const Node& node) {
+  [[nodiscard]] bool pushForTraversing(const Node& node) {
     EdgeVector edges;
     auto range = node.edges(cx,  false);
     return range && fillEdgesFromRange(edges, range) &&
@@ -124,7 +124,7 @@ struct PostOrder {
 
   
   
-  MOZ_MUST_USE bool addStart(const Node& node) {
+  [[nodiscard]] bool addStart(const Node& node) {
     if (!seen.put(node)) {
       return false;
     }
@@ -141,7 +141,7 @@ struct PostOrder {
   
   
   template <typename NodeVisitor, typename EdgeVisitor>
-  MOZ_MUST_USE bool traverse(NodeVisitor onNode, EdgeVisitor onEdge) {
+  [[nodiscard]] bool traverse(NodeVisitor onNode, EdgeVisitor onEdge) {
 #ifdef DEBUG
     MOZ_ASSERT(!traversed, "Can only traverse() once!");
     traversed = true;

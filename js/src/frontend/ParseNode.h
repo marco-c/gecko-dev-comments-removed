@@ -145,11 +145,13 @@ class FunctionBox;
   F(ImportDecl, BinaryNode)                                      \
   F(ImportSpecList, ListNode)                                    \
   F(ImportSpec, BinaryNode)                                      \
+  F(ImportNamespaceSpec, UnaryNode)                              \
   F(ExportStmt, UnaryNode)                                       \
   F(ExportFromStmt, BinaryNode)                                  \
   F(ExportDefaultStmt, BinaryNode)                               \
   F(ExportSpecList, ListNode)                                    \
   F(ExportSpec, BinaryNode)                                      \
+  F(ExportNamespaceSpec, UnaryNode)                              \
   F(ExportBatchSpecStmt, NullaryNode)                            \
   F(ForIn, TernaryNode)                                          \
   F(ForOf, TernaryNode)                                          \
@@ -266,6 +268,10 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
   return ParseNodeKind::TypeOfNameExpr <= kind &&
          kind <= ParseNodeKind::TypeOfExpr;
 }
+
+
+
+
 
 
 
@@ -1230,18 +1236,18 @@ class ListNode : public ParseNode {
 #endif
   ;
 
-  MOZ_MUST_USE bool hasTopLevelFunctionDeclarations() const {
+  [[nodiscard]] bool hasTopLevelFunctionDeclarations() const {
     MOZ_ASSERT(isKind(ParseNodeKind::StatementList));
     return xflags & hasTopLevelFunctionDeclarationsBit;
   }
 
-  MOZ_MUST_USE bool emittedTopLevelFunctionDeclarations() const {
+  [[nodiscard]] bool emittedTopLevelFunctionDeclarations() const {
     MOZ_ASSERT(isKind(ParseNodeKind::StatementList));
     MOZ_ASSERT(hasTopLevelFunctionDeclarations());
     return xflags & emittedTopLevelFunctionDeclarationsBit;
   }
 
-  MOZ_MUST_USE bool hasNonConstInitializer() const {
+  [[nodiscard]] bool hasNonConstInitializer() const {
     MOZ_ASSERT(isKind(ParseNodeKind::ArrayExpr) ||
                isKind(ParseNodeKind::ObjectExpr));
     return xflags & hasNonConstInitializerBit;
@@ -1418,7 +1424,7 @@ class ListNode : public ParseNode {
   };
 
 #ifdef DEBUG
-  MOZ_MUST_USE bool contains(ParseNode* target) const {
+  [[nodiscard]] bool contains(ParseNode* target) const {
     MOZ_ASSERT(target);
     for (ParseNode* node : contents()) {
       if (target == node) {

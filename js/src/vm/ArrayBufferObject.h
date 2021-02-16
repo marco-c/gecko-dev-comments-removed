@@ -452,7 +452,7 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
 
 
-  MOZ_MUST_USE bool prepareForAsmJS();
+  [[nodiscard]] bool prepareForAsmJS();
 
   size_t wasmMappedSize() const;
   mozilla::Maybe<uint64_t> wasmMaxSize() const;
@@ -637,9 +637,9 @@ class WasmArrayRawBuffer {
 
   BufferSize byteLength() const { return length_; }
 
-  MOZ_MUST_USE bool growToSizeInPlace(BufferSize oldSize, BufferSize newSize);
+  [[nodiscard]] bool growToSizeInPlace(BufferSize oldSize, BufferSize newSize);
 
-  MOZ_MUST_USE bool extendMappedSize(uint64_t maxSize);
+  [[nodiscard]] bool extendMappedSize(uint64_t maxSize);
 
   
   

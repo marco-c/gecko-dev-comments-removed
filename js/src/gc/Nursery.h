@@ -200,7 +200,7 @@ class Nursery {
   explicit Nursery(gc::GCRuntime* gc);
   ~Nursery();
 
-  MOZ_MUST_USE bool init(AutoLockGCBgAlloc& lock);
+  [[nodiscard]] bool init(AutoLockGCBgAlloc& lock);
 
   
   unsigned allocatedChunkCount() const { return chunks_.length(); }
@@ -320,7 +320,7 @@ class Nursery {
   
   
   
-  MOZ_MUST_USE bool registerMallocedBuffer(void* buffer, size_t nbytes);
+  [[nodiscard]] bool registerMallocedBuffer(void* buffer, size_t nbytes);
 
   
   void removeMallocedBuffer(void* buffer, size_t nbytes) {
@@ -340,13 +340,13 @@ class Nursery {
     mallocedBuffers.remove(buffer);
   }
 
-  MOZ_MUST_USE bool addedUniqueIdToCell(gc::Cell* cell) {
+  [[nodiscard]] bool addedUniqueIdToCell(gc::Cell* cell) {
     MOZ_ASSERT(IsInsideNursery(cell));
     MOZ_ASSERT(isEnabled());
     return cellsWithUid_.append(cell);
   }
 
-  MOZ_MUST_USE bool queueDictionaryModeObjectToSweep(NativeObject* obj);
+  [[nodiscard]] bool queueDictionaryModeObjectToSweep(NativeObject* obj);
 
   size_t sizeOfMallocedBuffers(mozilla::MallocSizeOf mallocSizeOf) const {
     size_t total = 0;
@@ -665,8 +665,8 @@ class Nursery {
 
   
   
-  MOZ_MUST_USE bool allocateNextChunk(unsigned chunkno,
-                                      AutoLockGCBgAlloc& lock);
+  [[nodiscard]] bool allocateNextChunk(unsigned chunkno,
+                                       AutoLockGCBgAlloc& lock);
 
   MOZ_ALWAYS_INLINE uintptr_t currentEnd() const;
 

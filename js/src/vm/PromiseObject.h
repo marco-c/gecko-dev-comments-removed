@@ -187,7 +187,7 @@ class PromiseObject : public NativeObject {
     return resolutionTime() - allocationTime();
   }
 
-  MOZ_MUST_USE bool dependentPromises(
+  [[nodiscard]] bool dependentPromises(
       JSContext* cx, JS::MutableHandle<GCVector<Value>> values);
 
   
@@ -206,7 +206,7 @@ class PromiseObject : public NativeObject {
   
   
   
-  MOZ_MUST_USE bool forEachReactionRecord(
+  [[nodiscard]] bool forEachReactionRecord(
       JSContext* cx, PromiseReactionRecordBuilder& builder);
 
   bool isUnhandled() {

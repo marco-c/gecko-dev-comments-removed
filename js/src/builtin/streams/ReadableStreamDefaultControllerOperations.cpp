@@ -128,7 +128,7 @@ static bool ReadableStreamControllerShouldCallPull(
 
 
 
-MOZ_MUST_USE bool js::ReadableStreamControllerCallPullIfNeeded(
+[[nodiscard]] bool js::ReadableStreamControllerCallPullIfNeeded(
     JSContext* cx, Handle<ReadableStreamController*> unwrappedController) {
   
   
@@ -330,7 +330,7 @@ void js::ReadableStreamControllerClearAlgorithms(
 
 
 
-MOZ_MUST_USE bool js::ReadableStreamDefaultControllerClose(
+[[nodiscard]] bool js::ReadableStreamDefaultControllerClose(
     JSContext* cx,
     Handle<ReadableStreamDefaultController*> unwrappedController) {
   
@@ -363,7 +363,7 @@ MOZ_MUST_USE bool js::ReadableStreamDefaultControllerClose(
 
 
 
-MOZ_MUST_USE bool js::ReadableStreamDefaultControllerEnqueue(
+[[nodiscard]] bool js::ReadableStreamDefaultControllerEnqueue(
     JSContext* cx, Handle<ReadableStreamDefaultController*> unwrappedController,
     Handle<Value> chunk) {
   AssertSameCompartment(cx, chunk);
@@ -446,7 +446,7 @@ MOZ_MUST_USE bool js::ReadableStreamDefaultControllerEnqueue(
 
 
 
-MOZ_MUST_USE bool js::ReadableStreamControllerError(
+[[nodiscard]] bool js::ReadableStreamControllerError(
     JSContext* cx, Handle<ReadableStreamController*> unwrappedController,
     Handle<Value> e) {
   MOZ_ASSERT(!cx->isExceptionPending());
@@ -492,7 +492,7 @@ MOZ_MUST_USE bool js::ReadableStreamControllerError(
 
 
 
-MOZ_MUST_USE double js::ReadableStreamControllerGetDesiredSizeUnchecked(
+[[nodiscard]] double js::ReadableStreamControllerGetDesiredSizeUnchecked(
     ReadableStreamController* controller) {
   
 #if DEBUG
@@ -539,7 +539,7 @@ MOZ_MUST_USE double js::ReadableStreamControllerGetDesiredSizeUnchecked(
 
 
 
-MOZ_MUST_USE bool js::SetUpReadableStreamDefaultController(
+[[nodiscard]] bool js::SetUpReadableStreamDefaultController(
     JSContext* cx, Handle<ReadableStream*> stream,
     SourceAlgorithms sourceAlgorithms, Handle<Value> underlyingSource,
     Handle<Value> pullMethod, Handle<Value> cancelMethod, double highWaterMark,
@@ -637,7 +637,7 @@ MOZ_MUST_USE bool js::SetUpReadableStreamDefaultController(
 
 
 
-MOZ_MUST_USE bool js::SetUpReadableStreamDefaultControllerFromUnderlyingSource(
+[[nodiscard]] bool js::SetUpReadableStreamDefaultControllerFromUnderlyingSource(
     JSContext* cx, Handle<ReadableStream*> stream,
     Handle<Value> underlyingSource, double highWaterMark,
     Handle<Value> sizeAlgorithm) {

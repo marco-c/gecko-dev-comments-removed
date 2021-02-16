@@ -17,7 +17,7 @@ namespace js {
 class PlainObject;
 
 
-MOZ_MUST_USE bool obj_construct(JSContext* cx, unsigned argc, JS::Value* vp);
+[[nodiscard]] bool obj_construct(JSContext* cx, unsigned argc, JS::Value* vp);
 
 PlainObject* ObjectCreateImpl(JSContext* cx, HandleObject proto,
                               NewObjectKind newKind = GenericObject,
@@ -27,34 +27,34 @@ PlainObject* ObjectCreateWithTemplate(JSContext* cx,
                                       Handle<PlainObject*> templateObj);
 
 
-MOZ_MUST_USE bool obj_propertyIsEnumerable(JSContext* cx, unsigned argc,
-                                           Value* vp);
+[[nodiscard]] bool obj_propertyIsEnumerable(JSContext* cx, unsigned argc,
+                                            Value* vp);
 
-MOZ_MUST_USE bool obj_create(JSContext* cx, unsigned argc, JS::Value* vp);
+[[nodiscard]] bool obj_create(JSContext* cx, unsigned argc, JS::Value* vp);
 
-MOZ_MUST_USE bool obj_is(JSContext* cx, unsigned argc, JS::Value* vp);
+[[nodiscard]] bool obj_is(JSContext* cx, unsigned argc, JS::Value* vp);
 
-MOZ_MUST_USE bool obj_toString(JSContext* cx, unsigned argc, JS::Value* vp);
+[[nodiscard]] bool obj_toString(JSContext* cx, unsigned argc, JS::Value* vp);
 
-MOZ_MUST_USE bool obj_setProto(JSContext* cx, unsigned argc, JS::Value* vp);
+[[nodiscard]] bool obj_setProto(JSContext* cx, unsigned argc, JS::Value* vp);
 
 JSString* ObjectClassToString(JSContext* cx, JSObject* obj);
 
-MOZ_MUST_USE bool GetOwnPropertyKeys(JSContext* cx, HandleObject obj,
-                                     unsigned flags,
-                                     JS::MutableHandleValue rval);
+[[nodiscard]] bool GetOwnPropertyKeys(JSContext* cx, HandleObject obj,
+                                      unsigned flags,
+                                      JS::MutableHandleValue rval);
 
 
-MOZ_MUST_USE bool GetOwnPropertyDescriptorToArray(JSContext* cx, unsigned argc,
-                                                  JS::Value* vp);
-
-
-
+[[nodiscard]] bool GetOwnPropertyDescriptorToArray(JSContext* cx, unsigned argc,
+                                                   JS::Value* vp);
 
 
 
-MOZ_MUST_USE bool IdToStringOrSymbol(JSContext* cx, JS::HandleId id,
-                                     JS::MutableHandleValue result);
+
+
+
+[[nodiscard]] bool IdToStringOrSymbol(JSContext* cx, JS::HandleId id,
+                                      JS::MutableHandleValue result);
 
 
 JSString* ObjectToSource(JSContext* cx, JS::HandleObject obj);

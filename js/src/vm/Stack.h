@@ -650,8 +650,8 @@ class InterpreterFrame {
 
   
   
-  MOZ_MUST_USE inline bool saveGeneratorSlots(JSContext* cx, unsigned nslots,
-                                              ArrayObject* dest) const;
+  [[nodiscard]] inline bool saveGeneratorSlots(JSContext* cx, unsigned nslots,
+                                               ArrayObject* dest) const;
 
   
   inline void restoreGeneratorSlots(ArrayObject* src);

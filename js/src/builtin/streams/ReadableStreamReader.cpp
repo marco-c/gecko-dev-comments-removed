@@ -50,7 +50,7 @@ using js::UnwrapStreamFromReader;
 
 
 
-MOZ_MUST_USE JSObject* js::ReadableStreamReaderGenericCancel(
+[[nodiscard]] JSObject* js::ReadableStreamReaderGenericCancel(
     JSContext* cx, Handle<ReadableStreamReader*> unwrappedReader,
     Handle<Value> reason) {
   
@@ -69,7 +69,7 @@ MOZ_MUST_USE JSObject* js::ReadableStreamReaderGenericCancel(
 
 
 
-MOZ_MUST_USE bool js::ReadableStreamReaderGenericInitialize(
+[[nodiscard]] bool js::ReadableStreamReaderGenericInitialize(
     JSContext* cx, Handle<ReadableStreamReader*> reader,
     Handle<ReadableStream*> unwrappedStream, ForAuthorCodeBool forAuthorCode) {
   cx->check(reader);
@@ -150,7 +150,7 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericInitialize(
 
 
 
-MOZ_MUST_USE bool js::ReadableStreamReaderGenericRelease(
+[[nodiscard]] bool js::ReadableStreamReaderGenericRelease(
     JSContext* cx, Handle<ReadableStreamReader*> unwrappedReader) {
   
   Rooted<ReadableStream*> unwrappedStream(
@@ -228,7 +228,7 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericRelease(
 
 
 
-MOZ_MUST_USE PromiseObject* js::ReadableStreamDefaultReaderRead(
+[[nodiscard]] PromiseObject* js::ReadableStreamDefaultReaderRead(
     JSContext* cx, Handle<ReadableStreamDefaultReader*> unwrappedReader) {
   
 

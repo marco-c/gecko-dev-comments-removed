@@ -64,8 +64,7 @@ using JS::Value;
 
 
 
- MOZ_MUST_USE
-WritableStream* WritableStream::create(
+ [[nodiscard]] WritableStream* WritableStream::create(
     JSContext* cx, void* nsISupportsObject_alreadyAddreffed ,
     Handle<JSObject*> proto ) {
   cx->check(proto);
@@ -278,7 +277,7 @@ JSObject* js::WritableStreamClose(JSContext* cx,
 
 
 
-MOZ_MUST_USE PromiseObject* js::WritableStreamAddWriteRequest(
+[[nodiscard]] PromiseObject* js::WritableStreamAddWriteRequest(
     JSContext* cx, Handle<WritableStream*> unwrappedStream) {
   
   MOZ_ASSERT(unwrappedStream->isLocked());
@@ -306,7 +305,7 @@ MOZ_MUST_USE PromiseObject* js::WritableStreamAddWriteRequest(
 
 
 
-MOZ_MUST_USE bool js::WritableStreamDealWithRejection(
+[[nodiscard]] bool js::WritableStreamDealWithRejection(
     JSContext* cx, Handle<WritableStream*> unwrappedStream,
     Handle<Value> error) {
   cx->check(error);
@@ -333,7 +332,7 @@ static bool WritableStreamHasOperationMarkedInFlight(
 
 
 
-MOZ_MUST_USE bool js::WritableStreamStartErroring(
+[[nodiscard]] bool js::WritableStreamStartErroring(
     JSContext* cx, Handle<WritableStream*> unwrappedStream,
     Handle<Value> reason) {
   cx->check(reason);
@@ -459,7 +458,7 @@ static bool AbortRequestPromiseRejectedHandler(JSContext* cx, unsigned argc,
 
 
 
-MOZ_MUST_USE bool js::WritableStreamFinishErroring(
+[[nodiscard]] bool js::WritableStreamFinishErroring(
     JSContext* cx, Handle<WritableStream*> unwrappedStream) {
   
   MOZ_ASSERT(unwrappedStream->erroring());
@@ -589,7 +588,7 @@ MOZ_MUST_USE bool js::WritableStreamFinishErroring(
 
 
 
-MOZ_MUST_USE bool js::WritableStreamFinishInFlightWrite(
+[[nodiscard]] bool js::WritableStreamFinishInFlightWrite(
     JSContext* cx, Handle<WritableStream*> unwrappedStream) {
   
   MOZ_ASSERT(unwrappedStream->haveInFlightWriteRequest());
@@ -611,7 +610,7 @@ MOZ_MUST_USE bool js::WritableStreamFinishInFlightWrite(
 
 
 
-MOZ_MUST_USE bool js::WritableStreamFinishInFlightWriteWithError(
+[[nodiscard]] bool js::WritableStreamFinishInFlightWriteWithError(
     JSContext* cx, Handle<WritableStream*> unwrappedStream,
     Handle<Value> error) {
   cx->check(error);
@@ -639,7 +638,7 @@ MOZ_MUST_USE bool js::WritableStreamFinishInFlightWriteWithError(
 
 
 
-MOZ_MUST_USE bool js::WritableStreamFinishInFlightClose(
+[[nodiscard]] bool js::WritableStreamFinishInFlightClose(
     JSContext* cx, Handle<WritableStream*> unwrappedStream) {
   
   MOZ_ASSERT(unwrappedStream->haveInFlightCloseRequest());
@@ -709,7 +708,7 @@ MOZ_MUST_USE bool js::WritableStreamFinishInFlightClose(
 
 
 
-MOZ_MUST_USE bool js::WritableStreamFinishInFlightCloseWithError(
+[[nodiscard]] bool js::WritableStreamFinishInFlightCloseWithError(
     JSContext* cx, Handle<WritableStream*> unwrappedStream,
     Handle<Value> error) {
   cx->check(error);
@@ -815,7 +814,7 @@ void js::WritableStreamMarkFirstWriteRequestInFlight(
 
 
 
-MOZ_MUST_USE bool js::WritableStreamRejectCloseAndClosedPromiseIfNeeded(
+[[nodiscard]] bool js::WritableStreamRejectCloseAndClosedPromiseIfNeeded(
     JSContext* cx, Handle<WritableStream*> unwrappedStream) {
   
   MOZ_ASSERT(unwrappedStream->errored());
@@ -873,7 +872,7 @@ MOZ_MUST_USE bool js::WritableStreamRejectCloseAndClosedPromiseIfNeeded(
 
 
 
-MOZ_MUST_USE bool js::WritableStreamUpdateBackpressure(
+[[nodiscard]] bool js::WritableStreamUpdateBackpressure(
     JSContext* cx, Handle<WritableStream*> unwrappedStream, bool backpressure) {
   
   MOZ_ASSERT(unwrappedStream->writable());

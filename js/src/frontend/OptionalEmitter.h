@@ -204,13 +204,13 @@ class MOZ_RAII OptionalEmitter {
     Other
   };
 
-  MOZ_MUST_USE bool emitJumpShortCircuit();
-  MOZ_MUST_USE bool emitJumpShortCircuitForCall();
+  [[nodiscard]] bool emitJumpShortCircuit();
+  [[nodiscard]] bool emitJumpShortCircuitForCall();
 
   
   
   
-  MOZ_MUST_USE bool emitOptionalJumpTarget(JSOp op, Kind kind = Kind::Other);
+  [[nodiscard]] bool emitOptionalJumpTarget(JSOp op, Kind kind = Kind::Other);
 };
 
 } 

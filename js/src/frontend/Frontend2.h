@@ -55,10 +55,10 @@ void InitSmoosh();
 
 
 
-MOZ_MUST_USE bool SmooshParseScript(JSContext* cx, const uint8_t* bytes,
-                                    size_t length);
-MOZ_MUST_USE bool SmooshParseModule(JSContext* cx, const uint8_t* bytes,
-                                    size_t length);
+[[nodiscard]] bool SmooshParseScript(JSContext* cx, const uint8_t* bytes,
+                                     size_t length);
+[[nodiscard]] bool SmooshParseModule(JSContext* cx, const uint8_t* bytes,
+                                     size_t length);
 
 }  
 

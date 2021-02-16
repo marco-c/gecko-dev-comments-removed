@@ -318,7 +318,7 @@ class MutableWrappedPtrOperations<PromiseCombinatorElements, Wrapper>
     elements().setElementNeedsWrapping = needsWrapping;
   }
 
-  MOZ_MUST_USE bool pushUndefined(JSContext* cx) {
+  [[nodiscard]] bool pushUndefined(JSContext* cx) {
     
     
     
@@ -342,7 +342,8 @@ class MutableWrappedPtrOperations<PromiseCombinatorElements, Wrapper>
   
   
   
-  MOZ_MUST_USE bool setElement(JSContext* cx, uint32_t index, HandleValue val) {
+  [[nodiscard]] bool setElement(JSContext* cx, uint32_t index,
+                                HandleValue val) {
     
     MOZ_ASSERT(unwrappedArray()->getDenseElement(index).isUndefined());
 
@@ -1126,7 +1127,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-MOZ_MUST_USE static bool EnqueuePromiseReactionJob(
+[[nodiscard]] static bool EnqueuePromiseReactionJob(
     JSContext* cx, HandleObject reactionObj, HandleValue handlerArg_,
     JS::PromiseState targetState) {
   MOZ_ASSERT(targetState == JS::PromiseState::Fulfilled ||
@@ -2670,7 +2671,7 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
                                              Value* vp);
 
 
-MOZ_MUST_USE JSObject* js::GetWaitForAllPromise(
+[[nodiscard]] JSObject* js::GetWaitForAllPromise(
     JSContext* cx, JS::HandleObjectVector promises) {
 #ifdef DEBUG
   for (size_t i = 0, len = promises.length(); i < len; i++) {
@@ -3996,9 +3997,9 @@ static MOZ_MUST_USE JSObject* CommonStaticResolveRejectImpl(
   return promise;
 }
 
-MOZ_MUST_USE JSObject* js::PromiseResolve(JSContext* cx,
-                                          HandleObject constructor,
-                                          HandleValue value) {
+[[nodiscard]] JSObject* js::PromiseResolve(JSContext* cx,
+                                           HandleObject constructor,
+                                           HandleValue value) {
   RootedValue C(cx, ObjectValue(*constructor));
   return CommonStaticResolveRejectImpl(cx, C, value, ResolveMode);
 }
@@ -4286,10 +4287,10 @@ static bool PromiseThenNewPromiseCapability(
 }
 
 
-MOZ_MUST_USE PromiseObject* js::OriginalPromiseThen(JSContext* cx,
-                                                    HandleObject promiseObj,
-                                                    HandleObject onFulfilled,
-                                                    HandleObject onRejected) {
+[[nodiscard]] PromiseObject* js::OriginalPromiseThen(JSContext* cx,
+                                                     HandleObject promiseObj,
+                                                     HandleObject onFulfilled,
+                                                     HandleObject onRejected) {
   cx->check(promiseObj);
   cx->check(onFulfilled);
   cx->check(onRejected);
@@ -4352,7 +4353,7 @@ static MOZ_MUST_USE bool PerformPromiseThenWithReaction(
     JSContext* cx, Handle<PromiseObject*> promise,
     Handle<PromiseReactionRecord*> reaction);
 
-MOZ_MUST_USE bool js::ReactToUnwrappedPromise(
+[[nodiscard]] bool js::ReactToUnwrappedPromise(
     JSContext* cx, Handle<PromiseObject*> unwrappedPromise,
     HandleObject onFulfilled_, HandleObject onRejected_,
     UnhandledRejectionBehavior behavior) {
@@ -4432,7 +4433,7 @@ static bool OriginalPromiseThenBuiltin(JSContext* cx, HandleValue promiseVal,
   return true;
 }
 
-MOZ_MUST_USE bool js::RejectPromiseWithPendingError(
+[[nodiscard]] bool js::RejectPromiseWithPendingError(
     JSContext* cx, Handle<PromiseObject*> promise) {
   cx->check(promise);
 
@@ -4453,7 +4454,7 @@ MOZ_MUST_USE bool js::RejectPromiseWithPendingError(
 
 
 
-MOZ_MUST_USE PromiseObject* js::CreatePromiseObjectForAsync(JSContext* cx) {
+[[nodiscard]] PromiseObject* js::CreatePromiseObjectForAsync(JSContext* cx) {
   
   PromiseObject* promise = CreatePromiseObjectWithoutResolutionFunctions(cx);
   if (!promise) {
@@ -4482,9 +4483,9 @@ static MOZ_MUST_USE PromiseObject* CreatePromiseObjectForAsyncGenerator(
 
 
 
-MOZ_MUST_USE bool js::AsyncFunctionThrown(JSContext* cx,
-                                          Handle<PromiseObject*> resultPromise,
-                                          HandleValue reason) {
+[[nodiscard]] bool js::AsyncFunctionThrown(JSContext* cx,
+                                           Handle<PromiseObject*> resultPromise,
+                                           HandleValue reason) {
   if (resultPromise->state() != JS::PromiseState::Pending) {
     
     
@@ -4501,7 +4502,7 @@ MOZ_MUST_USE bool js::AsyncFunctionThrown(JSContext* cx,
 
 
 
-MOZ_MUST_USE bool js::AsyncFunctionReturned(
+[[nodiscard]] bool js::AsyncFunctionReturned(
     JSContext* cx, Handle<PromiseObject*> resultPromise, HandleValue value) {
   return ResolvePromiseInternal(cx, resultPromise, value);
 }
@@ -4551,7 +4552,7 @@ static MOZ_MUST_USE bool InternalAwait(JSContext* cx, HandleValue value,
 
 
 
-MOZ_MUST_USE JSObject* js::AsyncFunctionAwait(
+[[nodiscard]] JSObject* js::AsyncFunctionAwait(
     JSContext* cx, Handle<AsyncFunctionGeneratorObject*> genObj,
     HandleValue value) {
   auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
@@ -4567,7 +4568,7 @@ MOZ_MUST_USE JSObject* js::AsyncFunctionAwait(
 
 
 
-MOZ_MUST_USE bool js::AsyncGeneratorAwait(
+[[nodiscard]] bool js::AsyncGeneratorAwait(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue value) {
   auto extra = [&](Handle<PromiseReactionRecord*> reaction) {
@@ -4792,7 +4793,7 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
     HandleValue valueOrException = UndefinedHandleValue, bool done = false);
 
 
-MOZ_MUST_USE bool js::AsyncGeneratorResolve(
+[[nodiscard]] bool js::AsyncGeneratorResolve(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj, HandleValue value,
     bool done) {
   return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Resolve,
@@ -4800,7 +4801,7 @@ MOZ_MUST_USE bool js::AsyncGeneratorResolve(
 }
 
 
-MOZ_MUST_USE bool js::AsyncGeneratorReject(
+[[nodiscard]] bool js::AsyncGeneratorReject(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue exception) {
   return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Reject,
@@ -5035,11 +5036,11 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
 }
 
 
-MOZ_MUST_USE bool js::AsyncGeneratorEnqueue(JSContext* cx,
-                                            HandleValue asyncGenVal,
-                                            CompletionKind completionKind,
-                                            HandleValue completionValue,
-                                            MutableHandleValue result) {
+[[nodiscard]] bool js::AsyncGeneratorEnqueue(JSContext* cx,
+                                             HandleValue asyncGenVal,
+                                             CompletionKind completionKind,
+                                             HandleValue completionValue,
+                                             MutableHandleValue result) {
   
 
   
@@ -5760,8 +5761,8 @@ static MOZ_MUST_USE bool IsTopMostAsyncFunctionCall(JSContext* cx) {
   return false;
 }
 
-MOZ_MUST_USE bool js::CanSkipAwait(JSContext* cx, HandleValue val,
-                                   bool* canSkip) {
+[[nodiscard]] bool js::CanSkipAwait(JSContext* cx, HandleValue val,
+                                    bool* canSkip) {
   if (!cx->canSkipEnqueuingJobs) {
     *canSkip = false;
     return true;
@@ -5808,8 +5809,8 @@ MOZ_MUST_USE bool js::CanSkipAwait(JSContext* cx, HandleValue val,
   return true;
 }
 
-MOZ_MUST_USE bool js::ExtractAwaitValue(JSContext* cx, HandleValue val,
-                                        MutableHandleValue resolved) {
+[[nodiscard]] bool js::ExtractAwaitValue(JSContext* cx, HandleValue val,
+                                         MutableHandleValue resolved) {
 
 
 #ifdef DEBUG

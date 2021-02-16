@@ -28,7 +28,7 @@ using JS::Handle;
 
 
 
-MOZ_MUST_USE JSObject* js::CreateReadableStreamBYOBReader(
+[[nodiscard]] JSObject* js::CreateReadableStreamBYOBReader(
     JSContext* cx, Handle<ReadableStream*> unwrappedStream,
     ForAuthorCodeBool forAuthorCode, Handle<JSObject*> proto ) {
   

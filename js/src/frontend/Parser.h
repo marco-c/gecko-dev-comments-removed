@@ -432,7 +432,7 @@ class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
   TaggedParserAtomIndex prefixAccessorName(PropertyType propType,
                                            TaggedParserAtomIndex propAtom);
 
-  MOZ_MUST_USE bool setSourceMapInfo();
+  [[nodiscard]] bool setSourceMapInfo();
 
   void setFunctionEndFromCurrentToken(FunctionBox* funbox) const;
 };
@@ -536,6 +536,7 @@ class MOZ_STACK_CLASS PerHandlerParser : public ParserBase {
 
   inline bool processExport(Node node);
   inline bool processExportFrom(BinaryNodeType node);
+  inline bool processImport(BinaryNodeType node);
 
   
   
@@ -729,7 +730,7 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
  public:
   
 
-  MOZ_MUST_USE bool computeErrorMetadata(
+  [[nodiscard]] bool computeErrorMetadata(
       ErrorMetadata* err, const ErrorReportMixin::ErrorOffset& offset) override;
 
   using Base::error;
@@ -770,6 +771,7 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
   using Base::privateNameReference;
   using Base::processExport;
   using Base::processExportFrom;
+  using Base::processImport;
   using Base::setFunctionEndFromCurrentToken;
 
  private:
@@ -858,7 +860,7 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
 
     
     
-    MOZ_MUST_USE bool checkForError(ErrorKind kind);
+    [[nodiscard]] bool checkForError(ErrorKind kind);
 
     
     void transferErrorTo(ErrorKind kind, PossibleError* other);
@@ -889,12 +891,12 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
     
     
     
-    MOZ_MUST_USE bool checkForDestructuringErrorOrWarning();
+    [[nodiscard]] bool checkForDestructuringErrorOrWarning();
 
     
     
     
-    MOZ_MUST_USE bool checkForExpressionError();
+    [[nodiscard]] bool checkForExpressionError();
 
     
     
@@ -940,8 +942,8 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
 
 
   template <typename ConditionT, typename ErrorReportT>
-  MOZ_MUST_USE bool mustMatchTokenInternal(ConditionT condition,
-                                           ErrorReportT errorReport);
+  [[nodiscard]] bool mustMatchTokenInternal(ConditionT condition,
+                                            ErrorReportT errorReport);
 
  public:
   
@@ -954,22 +956,23 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
 
 
 
-  MOZ_MUST_USE bool mustMatchToken(TokenKind expected, JSErrNum errorNumber) {
+  [[nodiscard]] bool mustMatchToken(TokenKind expected, JSErrNum errorNumber) {
     return mustMatchTokenInternal(
         [expected](TokenKind actual) { return actual == expected; },
         [this, errorNumber](TokenKind) { this->error(errorNumber); });
   }
 
   template <typename ConditionT>
-  MOZ_MUST_USE bool mustMatchToken(ConditionT condition, JSErrNum errorNumber) {
+  [[nodiscard]] bool mustMatchToken(ConditionT condition,
+                                    JSErrNum errorNumber) {
     return mustMatchTokenInternal(condition, [this, errorNumber](TokenKind) {
       this->error(errorNumber);
     });
   }
 
   template <typename ErrorReportT>
-  MOZ_MUST_USE bool mustMatchToken(TokenKind expected,
-                                   ErrorReportT errorReport) {
+  [[nodiscard]] bool mustMatchToken(TokenKind expected,
+                                    ErrorReportT errorReport) {
     return mustMatchTokenInternal(
         [expected](TokenKind actual) { return actual == expected; },
         errorReport);
@@ -1005,7 +1008,7 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
 
   
   
-  MOZ_MUST_USE FunctionNodeType innerFunctionForFunctionBox(
+  [[nodiscard]] FunctionNodeType innerFunctionForFunctionBox(
       FunctionNodeType funNode, ParseContext* outerpc, FunctionBox* funbox,
       InHandling inHandling, YieldHandling yieldHandling,
       FunctionSyntaxKind kind, Directives* newDirectives);
@@ -1074,8 +1077,16 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
   ListNodeType lexicalDeclaration(YieldHandling yieldHandling,
                                   DeclarationKind kind);
 
-  inline BinaryNodeType importDeclaration();
+  NameNodeType moduleExportName();
+
+  BinaryNodeType importDeclaration();
   Node importDeclarationOrImportExpr(YieldHandling yieldHandling);
+  bool namedImports(ListNodeType importSpecSet);
+  bool namespaceImport(ListNodeType importSpecSet);
+
+  TaggedParserAtomIndex importedBinding() {
+    return bindingIdentifier(YieldIsName);
+  }
 
   BinaryNodeType exportFrom(uint32_t begin, Node specList);
   BinaryNodeType exportBatch(uint32_t begin);
@@ -1257,13 +1268,13 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
     
     size_t privateMethods = 0;
   };
-  MOZ_MUST_USE bool classMember(
+  [[nodiscard]] bool classMember(
       YieldHandling yieldHandling,
       const ParseContext::ClassStatement& classStmt,
       TaggedParserAtomIndex className, uint32_t classStartOffset,
       HasHeritage hasHeritage, ClassInitializedMembers& classInitializedMembers,
       ListNodeType& classMembers, bool* done);
-  MOZ_MUST_USE bool finishClassConstructor(
+  [[nodiscard]] bool finishClassConstructor(
       const ParseContext::ClassStatement& classStmt,
       TaggedParserAtomIndex className, HasHeritage hasHeritage,
       uint32_t classStartOffset, uint32_t classEndOffset,
@@ -1407,7 +1418,7 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
 
   ListNodeType statementList(YieldHandling yieldHandling);
 
-  MOZ_MUST_USE FunctionNodeType innerFunction(
+  [[nodiscard]] FunctionNodeType innerFunction(
       FunctionNodeType funNode, ParseContext* outerpc,
       TaggedParserAtomIndex explicitName, FunctionFlags flags,
       uint32_t toStringStart, InHandling inHandling,
@@ -1546,7 +1557,6 @@ class MOZ_STACK_CLASS Parser<SyntaxParseHandler, Unit> final
   
   ModuleNodeType moduleBody(ModuleSharedContext* modulesc);
 
-  inline BinaryNodeType importDeclaration();
   inline bool checkLocalExportNames(ListNodeType node);
   inline bool checkExportedName(TaggedParserAtomIndex exportName);
   inline bool checkExportedNamesForArrayBinding(ListNodeType array);
@@ -1691,7 +1701,6 @@ class MOZ_STACK_CLASS Parser<FullParseHandler, Unit> final
   
   ModuleNodeType moduleBody(ModuleSharedContext* modulesc);
 
-  BinaryNodeType importDeclaration();
   bool checkLocalExportNames(ListNodeType node);
   bool checkExportedName(TaggedParserAtomIndex exportName);
   bool checkExportedNamesForArrayBinding(ListNodeType array);
@@ -1709,7 +1718,8 @@ class MOZ_STACK_CLASS Parser<FullParseHandler, Unit> final
       GeneratorKind generatorKind, FunctionAsyncKind asyncKind, bool tryAnnexB,
       Directives inheritedDirectives, Directives* newDirectives);
 
-  MOZ_MUST_USE bool advancePastSyntaxParsedFunction(SyntaxParser* syntaxParser);
+  [[nodiscard]] bool advancePastSyntaxParsedFunction(
+      SyntaxParser* syntaxParser);
 
   bool skipLazyInnerFunction(FunctionNodeType funNode, uint32_t toStringStart,
                              FunctionSyntaxKind kind, bool tryAnnexB);
@@ -1742,12 +1752,6 @@ class MOZ_STACK_CLASS Parser<FullParseHandler, Unit> final
 
   
   ListNodeType globalBody(GlobalSharedContext* globalsc);
-
-  bool namedImportsOrNamespaceImport(TokenKind tt, ListNodeType importSpecSet);
-
-  TaggedParserAtomIndex importedBinding() {
-    return bindingIdentifier(YieldIsName);
-  }
 
   bool checkLocalExportName(TaggedParserAtomIndex ident, uint32_t offset) {
     return checkLabelOrIdentifierReference(ident, offset, YieldIsName);

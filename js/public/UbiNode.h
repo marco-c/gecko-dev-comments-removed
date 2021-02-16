@@ -430,7 +430,7 @@ class StackFrame {
   StackFrame parent() const { return base()->parent(); }
   bool isSystem() const { return base()->isSystem(); }
   bool isSelfHosted(JSContext* cx) const { return base()->isSelfHosted(cx); }
-  MOZ_MUST_USE bool constructSavedFrameStack(
+  [[nodiscard]] bool constructSavedFrameStack(
       JSContext* cx, MutableHandleObject outSavedFrameStack) const {
     return base()->constructSavedFrameStack(cx, outSavedFrameStack);
   }
@@ -463,7 +463,7 @@ class ConcreteStackFrame<void> : public BaseStackFrame {
 
   uint64_t identifier() const override { return 0; }
   void trace(JSTracer* trc) override {}
-  MOZ_MUST_USE bool constructSavedFrameStack(
+  [[nodiscard]] bool constructSavedFrameStack(
       JSContext* cx, MutableHandleObject out) const override {
     out.set(nullptr);
     return true;
@@ -485,7 +485,7 @@ class ConcreteStackFrame<void> : public BaseStackFrame {
   }
 };
 
-MOZ_MUST_USE JS_PUBLIC_API bool ConstructSavedFrameStackSlow(
+[[nodiscard]] JS_PUBLIC_API bool ConstructSavedFrameStackSlow(
     JSContext* cx, JS::ubi::StackFrame& frame,
     MutableHandleObject outSavedFrameStack);
 
@@ -998,15 +998,15 @@ class MOZ_STACK_CLASS JS_PUBLIC_API RootList {
            bool wantNames = false);
 
   
-  MOZ_MUST_USE bool init();
+  [[nodiscard]] bool init();
   
   
   
   
-  MOZ_MUST_USE bool init(CompartmentSet& debuggees);
+  [[nodiscard]] bool init(CompartmentSet& debuggees);
   
   
-  MOZ_MUST_USE bool init(HandleObject debuggees);
+  [[nodiscard]] bool init(HandleObject debuggees);
 
   
   
@@ -1015,7 +1015,7 @@ class MOZ_STACK_CLASS JS_PUBLIC_API RootList {
   
   
   
-  MOZ_MUST_USE bool addRoot(Node node, const char16_t* edgeName = nullptr);
+  [[nodiscard]] bool addRoot(Node node, const char16_t* edgeName = nullptr);
 };
 
 

@@ -25,17 +25,17 @@ JSObject* InitRegExpClass(JSContext* cx, HandleObject obj);
 
 
 
-MOZ_MUST_USE bool ExecuteRegExpLegacy(JSContext* cx, RegExpStatics* res,
-                                      Handle<RegExpObject*> reobj,
-                                      HandleLinearString input,
-                                      size_t* lastIndex, bool test,
-                                      MutableHandleValue rval);
+[[nodiscard]] bool ExecuteRegExpLegacy(JSContext* cx, RegExpStatics* res,
+                                       Handle<RegExpObject*> reobj,
+                                       HandleLinearString input,
+                                       size_t* lastIndex, bool test,
+                                       MutableHandleValue rval);
 
 
-MOZ_MUST_USE bool CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
-                                          HandleString input,
-                                          const MatchPairs& matches,
-                                          MutableHandleValue rval);
+[[nodiscard]] bool CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
+                                           HandleString input,
+                                           const MatchPairs& matches,
+                                           MutableHandleValue rval);
 
 extern MOZ_MUST_USE bool RegExpMatcher(JSContext* cx, unsigned argc, Value* vp);
 

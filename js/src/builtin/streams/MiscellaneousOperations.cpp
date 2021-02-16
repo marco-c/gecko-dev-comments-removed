@@ -31,7 +31,7 @@ using JS::MutableHandle;
 using JS::ToNumber;
 using JS::Value;
 
-MOZ_MUST_USE js::PromiseObject* js::PromiseRejectedWithPendingError(
+[[nodiscard]] js::PromiseObject* js::PromiseRejectedWithPendingError(
     JSContext* cx) {
   Rooted<Value> exn(cx);
   if (!cx->isExceptionPending() || !GetAndClearException(cx, &exn)) {
@@ -57,7 +57,7 @@ MOZ_MUST_USE js::PromiseObject* js::PromiseRejectedWithPendingError(
 
 
 
-MOZ_MUST_USE bool js::CreateAlgorithmFromUnderlyingMethod(
+[[nodiscard]] bool js::CreateAlgorithmFromUnderlyingMethod(
     JSContext* cx, Handle<Value> underlyingObject,
     const char* methodNameForErrorMessage, Handle<PropertyName*> methodName,
     MutableHandle<Value> method) {
@@ -112,9 +112,9 @@ MOZ_MUST_USE bool js::CreateAlgorithmFromUnderlyingMethod(
 
 
 
-MOZ_MUST_USE bool js::InvokeOrNoop(JSContext* cx, Handle<Value> O,
-                                   Handle<PropertyName*> P, Handle<Value> arg,
-                                   MutableHandle<Value> rval) {
+[[nodiscard]] bool js::InvokeOrNoop(JSContext* cx, Handle<Value> O,
+                                    Handle<PropertyName*> P, Handle<Value> arg,
+                                    MutableHandle<Value> rval) {
   cx->check(O, P, arg);
 
   
@@ -140,7 +140,7 @@ MOZ_MUST_USE bool js::InvokeOrNoop(JSContext* cx, Handle<Value> O,
 
 
 
-MOZ_MUST_USE bool js::ValidateAndNormalizeHighWaterMark(
+[[nodiscard]] bool js::ValidateAndNormalizeHighWaterMark(
     JSContext* cx, Handle<Value> highWaterMarkVal, double* highWaterMark) {
   
   if (!ToNumber(cx, highWaterMarkVal, highWaterMark)) {
@@ -169,8 +169,8 @@ MOZ_MUST_USE bool js::ValidateAndNormalizeHighWaterMark(
 
 
 
-MOZ_MUST_USE bool js::MakeSizeAlgorithmFromSizeFunction(JSContext* cx,
-                                                        Handle<Value> size) {
+[[nodiscard]] bool js::MakeSizeAlgorithmFromSizeFunction(JSContext* cx,
+                                                         Handle<Value> size) {
   cx->check(size);
 
   

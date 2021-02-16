@@ -728,7 +728,7 @@ class JSRope : public JSString {
   
   
   
-  MOZ_MUST_USE bool hash(uint32_t* outhHash) const;
+  [[nodiscard]] bool hash(uint32_t* outhHash) const;
 
   JSString* leftChild() const {
     MOZ_ASSERT(isRope());

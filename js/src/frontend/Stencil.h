@@ -220,8 +220,8 @@ class BigIntStencil {
  public:
   BigIntStencil() = default;
 
-  MOZ_MUST_USE bool init(JSContext* cx, LifoAlloc& alloc,
-                         const Vector<char16_t, 32>& buf);
+  [[nodiscard]] bool init(JSContext* cx, LifoAlloc& alloc,
+                          const Vector<char16_t, 32>& buf);
 
   BigInt* createBigInt(JSContext* cx) const {
     mozilla::Range<const char16_t> source(source_.data(), source_.size());
@@ -411,9 +411,9 @@ class ScopeStencil {
       BaseParserScopeData* baseData) const;
 
   template <typename SpecificEnvironmentType>
-  MOZ_MUST_USE bool createSpecificShape(JSContext* cx, ScopeKind kind,
-                                        BaseScopeData* scopeData,
-                                        MutableHandleShape shape) const;
+  [[nodiscard]] bool createSpecificShape(JSContext* cx, ScopeKind kind,
+                                         BaseScopeData* scopeData,
+                                         MutableHandleShape shape) const;
 
   template <typename SpecificScopeType, typename SpecificEnvironmentType>
   Scope* createSpecificScope(JSContext* cx, CompilationAtomCache& atomCache,
@@ -482,6 +482,10 @@ class StencilModuleEntry {
   
   
   
+  
+  
+  
+  
   TaggedParserAtomIndex specifier;
   TaggedParserAtomIndex localName;
   TaggedParserAtomIndex importName;
@@ -522,6 +526,16 @@ class StencilModuleEntry {
     return entry;
   }
 
+  static StencilModuleEntry importNamespaceEntry(
+      TaggedParserAtomIndex specifier, TaggedParserAtomIndex localName,
+      uint32_t lineno, uint32_t column) {
+    MOZ_ASSERT(specifier && localName);
+    StencilModuleEntry entry(lineno, column);
+    entry.specifier = specifier;
+    entry.localName = localName;
+    return entry;
+  }
+
   static StencilModuleEntry exportAsEntry(TaggedParserAtomIndex localName,
                                           TaggedParserAtomIndex exportName,
                                           uint32_t lineno, uint32_t column) {
@@ -536,12 +550,29 @@ class StencilModuleEntry {
                                             TaggedParserAtomIndex importName,
                                             TaggedParserAtomIndex exportName,
                                             uint32_t lineno, uint32_t column) {
-    
-    MOZ_ASSERT(specifier && importName);
+    MOZ_ASSERT(specifier && importName && exportName);
     StencilModuleEntry entry(lineno, column);
     entry.specifier = specifier;
     entry.importName = importName;
     entry.exportName = exportName;
+    return entry;
+  }
+
+  static StencilModuleEntry exportNamespaceFromEntry(
+      TaggedParserAtomIndex specifier, TaggedParserAtomIndex exportName,
+      uint32_t lineno, uint32_t column) {
+    MOZ_ASSERT(specifier && exportName);
+    StencilModuleEntry entry(lineno, column);
+    entry.specifier = specifier;
+    entry.exportName = exportName;
+    return entry;
+  }
+
+  static StencilModuleEntry exportBatchFromEntry(
+      TaggedParserAtomIndex specifier, uint32_t lineno, uint32_t column) {
+    MOZ_ASSERT(specifier);
+    StencilModuleEntry entry(lineno, column);
+    entry.specifier = specifier;
     return entry;
   }
 };

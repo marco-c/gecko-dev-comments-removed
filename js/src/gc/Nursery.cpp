@@ -78,7 +78,7 @@ struct NurseryChunk : public ChunkBase {
   
   void markPagesUnusedHard(size_t from);
   
-  MOZ_MUST_USE bool markPagesInUseHard(size_t to);
+  [[nodiscard]] bool markPagesInUseHard(size_t to);
 
   uintptr_t start() const { return uintptr_t(&data); }
   uintptr_t end() const { return uintptr_t(this) + ChunkSize; }

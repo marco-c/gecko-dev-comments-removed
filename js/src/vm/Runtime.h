@@ -647,7 +647,7 @@ struct JSRuntime {
   void getUnclonedSelfHostedValue(js::PropertyName* name, JS::Value* vp);
   JSFunction* getUnclonedSelfHostedFunction(js::PropertyName* name);
 
-  MOZ_MUST_USE bool createJitRuntime(JSContext* cx);
+  [[nodiscard]] bool createJitRuntime(JSContext* cx);
   js::jit::JitRuntime* jitRuntime() const { return jitRuntime_.ref(); }
   bool hasJitRuntime() const { return !!jitRuntime_; }
 

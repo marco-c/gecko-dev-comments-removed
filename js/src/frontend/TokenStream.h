@@ -422,8 +422,8 @@ class SourceCoords {
   SourceCoords(JSContext* cx, uint32_t initialLineNumber,
                uint32_t initialOffset);
 
-  MOZ_MUST_USE bool add(uint32_t lineNum, uint32_t lineStartOffset);
-  MOZ_MUST_USE bool fill(const SourceCoords& other);
+  [[nodiscard]] bool add(uint32_t lineNum, uint32_t lineStartOffset);
+  [[nodiscard]] bool fill(const SourceCoords& other);
 
   bool isOnThisLine(uint32_t offset, uint32_t lineNum, bool* onThisLine) const {
     uint32_t index = indexFromLineNumber(lineNum);
@@ -734,7 +734,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
     return currentToken().type == type;
   }
 
-  MOZ_MUST_USE bool checkOptions();
+  [[nodiscard]] bool checkOptions();
 
  private:
   TaggedParserAtomIndex reservedWordToPropertyName(TokenKind tt) const;
@@ -928,7 +928,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
 
 
-  MOZ_MUST_USE MOZ_ALWAYS_INLINE bool internalUpdateLineInfoForEOL(
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool internalUpdateLineInfoForEOL(
       uint32_t lineStartOffset);
 
  public:
@@ -1563,7 +1563,7 @@ class TokenStreamCharsShared {
   explicit TokenStreamCharsShared(JSContext* cx, ParserAtomsTable* parserAtoms)
       : cx(cx), charBuffer(cx), parserAtoms(parserAtoms) {}
 
-  MOZ_MUST_USE bool copyCharBufferTo(
+  [[nodiscard]] bool copyCharBufferTo(
       JSContext* cx, UniquePtr<char16_t[], JS::FreePolicy>* destination);
 
   
@@ -1699,7 +1699,7 @@ class TokenStreamCharsBase : public TokenStreamCharsShared {
 
 
 
-  MOZ_MUST_USE bool addLineOfContext(ErrorMetadata* err, uint32_t offset);
+  [[nodiscard]] bool addLineOfContext(ErrorMetadata* err, uint32_t offset);
 };
 
 template <>
@@ -1990,7 +1990,7 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
 
 
 
-  MOZ_MUST_USE bool fillExceptingContext(ErrorMetadata* err, uint32_t offset) {
+  [[nodiscard]] bool fillExceptingContext(ErrorMetadata* err, uint32_t offset) {
     if (anyCharsAccess().fillExceptingContext(err, offset)) {
       computeLineAndColumn(offset, &err->lineNumber, &err->columnNumber);
       return true;
@@ -2081,7 +2081,7 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
 
 
 
-  MOZ_MUST_USE bool getFullAsciiCodePoint(int32_t lead, int32_t* codePoint) {
+  [[nodiscard]] bool getFullAsciiCodePoint(int32_t lead, int32_t* codePoint) {
     MOZ_ASSERT(isAsciiCodePoint(lead),
                "non-ASCII code units must be handled separately");
     MOZ_ASSERT(toUnit(lead) == this->sourceUnits.previousCodeUnit(),
@@ -2105,7 +2105,7 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
     return ok;
   }
 
-  MOZ_MUST_USE MOZ_ALWAYS_INLINE bool updateLineInfoForEOL() {
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool updateLineInfoForEOL() {
     return anyCharsAccess().internalUpdateLineInfoForEOL(
         this->sourceUnits.offset());
   }
@@ -2122,8 +2122,8 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
 
 
 
-  MOZ_MUST_USE bool internalComputeLineOfContext(ErrorMetadata* err,
-                                                 uint32_t offset) {
+  [[nodiscard]] bool internalComputeLineOfContext(ErrorMetadata* err,
+                                                  uint32_t offset) {
     
     
     
@@ -2210,8 +2210,8 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 
 
 
-  MOZ_MUST_USE bool getNonAsciiCodePointDontNormalize(char16_t lead,
-                                                      char32_t* codePoint) {
+  [[nodiscard]] bool getNonAsciiCodePointDontNormalize(char16_t lead,
+                                                       char32_t* codePoint) {
     
     
     *codePoint = infallibleGetNonAsciiCodePointDontNormalize(lead);
@@ -2229,7 +2229,7 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 
 
 
-  MOZ_MUST_USE bool getNonAsciiCodePoint(int32_t lead, int32_t* codePoint);
+  [[nodiscard]] bool getNonAsciiCodePoint(int32_t lead, int32_t* codePoint);
 };
 
 template <class AnyCharsAccess>
@@ -2364,8 +2364,8 @@ class TokenStreamChars<mozilla::Utf8Unit, AnyCharsAccess>
 
 
 
-  MOZ_MUST_USE bool getNonAsciiCodePointDontNormalize(mozilla::Utf8Unit lead,
-                                                      char32_t* codePoint);
+  [[nodiscard]] bool getNonAsciiCodePointDontNormalize(mozilla::Utf8Unit lead,
+                                                       char32_t* codePoint);
 
   
 
@@ -2377,7 +2377,7 @@ class TokenStreamChars<mozilla::Utf8Unit, AnyCharsAccess>
 
 
 
-  MOZ_MUST_USE bool getNonAsciiCodePoint(int32_t lead, int32_t* codePoint);
+  [[nodiscard]] bool getNonAsciiCodePoint(int32_t lead, int32_t* codePoint);
 };
 
 
@@ -2499,7 +2499,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
 
 
-  MOZ_MUST_USE bool getCodePoint(int32_t* cp);
+  [[nodiscard]] bool getCodePoint(int32_t* cp);
 
   
   
@@ -2552,7 +2552,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
   JSContext* getContext() const override { return anyCharsAccess().cx; }
 
-  MOZ_MUST_USE bool strictMode() const override {
+  [[nodiscard]] bool strictMode() const override {
     return anyCharsAccess().strictMode();
   }
 
@@ -2563,7 +2563,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     return anyCharsAccess().options();
   }
 
-  MOZ_MUST_USE bool computeErrorMetadata(
+  [[nodiscard]] bool computeErrorMetadata(
       ErrorMetadata* err, const ErrorOffset& errorOffset) override;
 
  private:
@@ -2589,12 +2589,12 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
   void reportIllegalCharacter(int32_t cp);
 
-  MOZ_MUST_USE bool putIdentInCharBuffer(const Unit* identStart);
+  [[nodiscard]] bool putIdentInCharBuffer(const Unit* identStart);
 
   using IsIntegerUnit = bool (*)(int32_t);
-  MOZ_MUST_USE MOZ_ALWAYS_INLINE bool matchInteger(IsIntegerUnit isIntegerUnit,
-                                                   int32_t* nextUnit);
-  MOZ_MUST_USE MOZ_ALWAYS_INLINE bool matchIntegerAfterFirstDigit(
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool matchInteger(IsIntegerUnit isIntegerUnit,
+                                                    int32_t* nextUnit);
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool matchIntegerAfterFirstDigit(
       IsIntegerUnit isIntegerUnit, int32_t* nextUnit);
 
   
@@ -2635,24 +2635,24 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
 
 
-  MOZ_MUST_USE bool decimalNumber(int32_t unit, TokenStart start,
-                                  const Unit* numStart, Modifier modifier,
-                                  TokenKind* out);
+  [[nodiscard]] bool decimalNumber(int32_t unit, TokenStart start,
+                                   const Unit* numStart, Modifier modifier,
+                                   TokenKind* out);
 
   
-  MOZ_MUST_USE bool regexpLiteral(TokenStart start, TokenKind* out);
+  [[nodiscard]] bool regexpLiteral(TokenStart start, TokenKind* out);
 
   
 
 
 
-  MOZ_MUST_USE bool bigIntLiteral(TokenStart start, Modifier modifier,
-                                  TokenKind* out);
+  [[nodiscard]] bool bigIntLiteral(TokenStart start, Modifier modifier,
+                                   TokenKind* out);
 
  public:
   
   
-  MOZ_MUST_USE bool getToken(TokenKind* ttp, Modifier modifier = SlashIsDiv) {
+  [[nodiscard]] bool getToken(TokenKind* ttp, Modifier modifier = SlashIsDiv) {
     
     TokenStreamAnyChars& anyChars = anyCharsAccess();
     if (anyChars.lookahead != 0) {
@@ -2669,7 +2669,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     return getTokenInternal(ttp, modifier);
   }
 
-  MOZ_MUST_USE bool peekToken(TokenKind* ttp, Modifier modifier = SlashIsDiv) {
+  [[nodiscard]] bool peekToken(TokenKind* ttp, Modifier modifier = SlashIsDiv) {
     TokenStreamAnyChars& anyChars = anyCharsAccess();
     if (anyChars.lookahead > 0) {
       MOZ_ASSERT(!anyChars.flags.hadError);
@@ -2684,8 +2684,8 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     return true;
   }
 
-  MOZ_MUST_USE bool peekTokenPos(TokenPos* posp,
-                                 Modifier modifier = SlashIsDiv) {
+  [[nodiscard]] bool peekTokenPos(TokenPos* posp,
+                                  Modifier modifier = SlashIsDiv) {
     TokenStreamAnyChars& anyChars = anyCharsAccess();
     if (anyChars.lookahead == 0) {
       TokenKind tt;
@@ -2702,8 +2702,8 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     return true;
   }
 
-  MOZ_MUST_USE bool peekOffset(uint32_t* offset,
-                               Modifier modifier = SlashIsDiv) {
+  [[nodiscard]] bool peekOffset(uint32_t* offset,
+                                Modifier modifier = SlashIsDiv) {
     TokenPos pos;
     if (!peekTokenPos(&pos, modifier)) {
       return false;
@@ -2771,8 +2771,8 @@ class MOZ_STACK_CLASS TokenStreamSpecific
   }
 
   
-  MOZ_MUST_USE bool matchToken(bool* matchedp, TokenKind tt,
-                               Modifier modifier = SlashIsDiv) {
+  [[nodiscard]] bool matchToken(bool* matchedp, TokenKind tt,
+                                Modifier modifier = SlashIsDiv) {
     TokenKind token;
     if (!getToken(&token, modifier)) {
       return false;
@@ -2793,7 +2793,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     MOZ_ALWAYS_TRUE(matched);
   }
 
-  MOZ_MUST_USE bool nextTokenEndsExpr(bool* endsExpr) {
+  [[nodiscard]] bool nextTokenEndsExpr(bool* endsExpr) {
     TokenKind tt;
     if (!peekToken(&tt)) {
       return false;
@@ -2810,11 +2810,11 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     return true;
   }
 
-  MOZ_MUST_USE bool advance(size_t position);
+  [[nodiscard]] bool advance(size_t position);
 
   void seekTo(const Position& pos);
-  MOZ_MUST_USE bool seekTo(const Position& pos,
-                           const TokenStreamAnyChars& other);
+  [[nodiscard]] bool seekTo(const Position& pos,
+                            const TokenStreamAnyChars& other);
 
   void rewind(const Position& pos) {
     MOZ_ASSERT(pos.buf <= this->sourceUnits.addressOfNextCodeUnit(),
@@ -2822,8 +2822,8 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     seekTo(pos);
   }
 
-  MOZ_MUST_USE bool rewind(const Position& pos,
-                           const TokenStreamAnyChars& other) {
+  [[nodiscard]] bool rewind(const Position& pos,
+                            const TokenStreamAnyChars& other) {
     MOZ_ASSERT(pos.buf <= this->sourceUnits.addressOfNextCodeUnit(),
                "should be rewinding here");
     return seekTo(pos, other);
@@ -2835,8 +2835,8 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     seekTo(pos);
   }
 
-  MOZ_MUST_USE bool fastForward(const Position& pos,
-                                const TokenStreamAnyChars& other) {
+  [[nodiscard]] bool fastForward(const Position& pos,
+                                 const TokenStreamAnyChars& other) {
     MOZ_ASSERT(this->sourceUnits.addressOfNextCodeUnit() <= pos.buf,
                "should be moving forward here");
     return seekTo(pos, other);
@@ -2848,18 +2848,18 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
   const Unit* rawLimit() const { return this->sourceUnits.limit(); }
 
-  MOZ_MUST_USE bool identifierName(TokenStart start, const Unit* identStart,
-                                   IdentifierEscapes escaping,
-                                   Modifier modifier, NameVisibility visibility,
-                                   TokenKind* out);
+  [[nodiscard]] bool identifierName(TokenStart start, const Unit* identStart,
+                                    IdentifierEscapes escaping,
+                                    Modifier modifier,
+                                    NameVisibility visibility, TokenKind* out);
 
-  MOZ_MUST_USE bool matchIdentifierStart(IdentifierEscapes* sawEscape);
+  [[nodiscard]] bool matchIdentifierStart(IdentifierEscapes* sawEscape);
 
-  MOZ_MUST_USE bool getTokenInternal(TokenKind* const ttp,
-                                     const Modifier modifier);
+  [[nodiscard]] bool getTokenInternal(TokenKind* const ttp,
+                                      const Modifier modifier);
 
-  MOZ_MUST_USE bool getStringOrTemplateToken(char untilChar, Modifier modifier,
-                                             TokenKind* out);
+  [[nodiscard]] bool getStringOrTemplateToken(char untilChar, Modifier modifier,
+                                              TokenKind* out);
 
   
   
@@ -2879,19 +2879,19 @@ class MOZ_STACK_CLASS TokenStreamSpecific
   
   
   
-  MOZ_MUST_USE bool getTemplateToken(TokenKind* ttp) {
+  [[nodiscard]] bool getTemplateToken(TokenKind* ttp) {
     MOZ_ASSERT(anyCharsAccess().currentToken().type == TokenKind::RightCurly);
     return getStringOrTemplateToken('`', SlashIsInvalid, ttp);
   }
 
-  MOZ_MUST_USE bool getDirectives(bool isMultiline, bool shouldWarnDeprecated);
-  MOZ_MUST_USE bool getDirective(
+  [[nodiscard]] bool getDirectives(bool isMultiline, bool shouldWarnDeprecated);
+  [[nodiscard]] bool getDirective(
       bool isMultiline, bool shouldWarnDeprecated, const char* directive,
       uint8_t directiveLength, const char* errorMsgPragma,
       UniquePtr<char16_t[], JS::FreePolicy>* destination);
-  MOZ_MUST_USE bool getDisplayURL(bool isMultiline, bool shouldWarnDeprecated);
-  MOZ_MUST_USE bool getSourceMappingURL(bool isMultiline,
-                                        bool shouldWarnDeprecated);
+  [[nodiscard]] bool getDisplayURL(bool isMultiline, bool shouldWarnDeprecated);
+  [[nodiscard]] bool getSourceMappingURL(bool isMultiline,
+                                         bool shouldWarnDeprecated);
 };
 
 

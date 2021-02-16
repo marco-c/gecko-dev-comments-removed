@@ -73,7 +73,6 @@ class JitScript;
 
 class ModuleObject;
 class RegExpObject;
-class ScriptSourceHolder;
 class SourceCompressionTask;
 class Shape;
 class DebugScript;
@@ -610,15 +609,15 @@ class ScriptSource {
   void finalizeGCData();
   ~ScriptSource();
 
-  void incref() { refs++; }
-  void decref() {
+  void AddRef() { refs++; }
+  void Release() {
     MOZ_ASSERT(refs != 0);
     if (--refs == 0) {
       js_delete(this);
     }
   }
-  MOZ_MUST_USE bool initFromOptions(JSContext* cx,
-                                    const JS::ReadOnlyCompileOptions& options);
+  [[nodiscard]] bool initFromOptions(JSContext* cx,
+                                     const JS::ReadOnlyCompileOptions& options);
 
   
 
@@ -643,9 +642,9 @@ class ScriptSource {
 
   
   template <typename Unit>
-  MOZ_MUST_USE bool assignSource(JSContext* cx,
-                                 const JS::ReadOnlyCompileOptions& options,
-                                 JS::SourceText<Unit>& srcBuf);
+  [[nodiscard]] bool assignSource(JSContext* cx,
+                                  const JS::ReadOnlyCompileOptions& options,
+                                  JS::SourceText<Unit>& srcBuf);
 
   bool hasSourceText() const {
     return hasUncompressedSource() || hasCompressedSource();
@@ -851,8 +850,8 @@ class ScriptSource {
   JSLinearString* substringDontDeflate(JSContext* cx, size_t start,
                                        size_t stop);
 
-  MOZ_MUST_USE bool appendSubstring(JSContext* cx, js::StringBuffer& buf,
-                                    size_t start, size_t stop);
+  [[nodiscard]] bool appendSubstring(JSContext* cx, js::StringBuffer& buf,
+                                     size_t start, size_t stop);
 
   void setParameterListEnd(uint32_t parameterListEnd) {
     parameterListEnd_ = parameterListEnd;
@@ -871,24 +870,25 @@ class ScriptSource {
   
   
   template <typename Unit>
-  MOZ_MUST_USE bool setUncompressedSourceHelper(JSContext* cx,
-                                                EntryUnits<Unit>&& source,
-                                                size_t length,
-                                                SourceRetrievable retrievable);
+  [[nodiscard]] bool setUncompressedSourceHelper(JSContext* cx,
+                                                 EntryUnits<Unit>&& source,
+                                                 size_t length,
+                                                 SourceRetrievable retrievable);
 
  public:
   
   template <typename Unit>
-  MOZ_MUST_USE bool initializeUnretrievableUncompressedSource(
+  [[nodiscard]] bool initializeUnretrievableUncompressedSource(
       JSContext* cx, EntryUnits<Unit>&& source, size_t length);
 
   
   
   template <typename Unit>
-  MOZ_MUST_USE bool setRetrievedSource(JSContext* cx, EntryUnits<Unit>&& source,
-                                       size_t length);
+  [[nodiscard]] bool setRetrievedSource(JSContext* cx,
+                                        EntryUnits<Unit>&& source,
+                                        size_t length);
 
-  MOZ_MUST_USE bool tryCompressOffThread(JSContext* cx);
+  [[nodiscard]] bool tryCompressOffThread(JSContext* cx);
 
   
   
@@ -906,7 +906,7 @@ class ScriptSource {
   
   
   template <typename Unit>
-  MOZ_MUST_USE bool initializeWithUnretrievableCompressedSource(
+  [[nodiscard]] bool initializeWithUnretrievableCompressedSource(
       JSContext* cx, UniqueChars&& raw, size_t rawLength, size_t sourceLength);
 
  private:
@@ -964,22 +964,22 @@ class ScriptSource {
   
   
   template <XDRMode mode>
-  MOZ_MUST_USE XDRResult xdrUnretrievableUncompressedSource(
+  [[nodiscard]] XDRResult xdrUnretrievableUncompressedSource(
       XDRState<mode>* xdr, uint8_t sourceCharSize, uint32_t uncompressedLength);
 
  public:
   const char* filename() const {
     return filename_ ? filename_.ref().chars() : nullptr;
   }
-  MOZ_MUST_USE bool setFilename(JSContext* cx, const char* filename);
-  MOZ_MUST_USE bool setFilename(JSContext* cx, UniqueChars&& filename);
+  [[nodiscard]] bool setFilename(JSContext* cx, const char* filename);
+  [[nodiscard]] bool setFilename(JSContext* cx, UniqueChars&& filename);
 
   const char* introducerFilename() const {
     return introducerFilename_ ? introducerFilename_.ref().chars() : filename();
   }
-  MOZ_MUST_USE bool setIntroducerFilename(JSContext* cx, const char* filename);
-  MOZ_MUST_USE bool setIntroducerFilename(JSContext* cx,
-                                          UniqueChars&& filename);
+  [[nodiscard]] bool setIntroducerFilename(JSContext* cx, const char* filename);
+  [[nodiscard]] bool setIntroducerFilename(JSContext* cx,
+                                           UniqueChars&& filename);
 
   bool hasIntroductionType() const { return introductionType_; }
   const char* introductionType() const {
@@ -990,14 +990,14 @@ class ScriptSource {
   uint32_t id() const { return id_; }
 
   
-  MOZ_MUST_USE bool setDisplayURL(JSContext* cx, const char16_t* url);
-  MOZ_MUST_USE bool setDisplayURL(JSContext* cx, UniqueTwoByteChars&& url);
+  [[nodiscard]] bool setDisplayURL(JSContext* cx, const char16_t* url);
+  [[nodiscard]] bool setDisplayURL(JSContext* cx, UniqueTwoByteChars&& url);
   bool hasDisplayURL() const { return displayURL_.isSome(); }
   const char16_t* displayURL() { return displayURL_.ref().chars(); }
 
   
-  MOZ_MUST_USE bool setSourceMapURL(JSContext* cx, const char16_t* url);
-  MOZ_MUST_USE bool setSourceMapURL(JSContext* cx, UniqueTwoByteChars&& url);
+  [[nodiscard]] bool setSourceMapURL(JSContext* cx, const char16_t* url);
+  [[nodiscard]] bool setSourceMapURL(JSContext* cx, UniqueTwoByteChars&& url);
   bool hasSourceMapURL() const { return sourceMapURL_.isSome(); }
   const char16_t* sourceMapURL() { return sourceMapURL_.ref().chars(); }
 
@@ -1081,31 +1081,7 @@ class ScriptSource {
   template <XDRMode mode>
   static MOZ_MUST_USE XDRResult
   XDR(XDRState<mode>* xdr, const JS::ReadOnlyCompileOptions* maybeOptions,
-      ScriptSourceHolder& holder);
-};
-
-class ScriptSourceHolder {
-  ScriptSource* ss;
-
- public:
-  ScriptSourceHolder() : ss(nullptr) {}
-  explicit ScriptSourceHolder(ScriptSource* ss) : ss(ss) { ss->incref(); }
-  ~ScriptSourceHolder() {
-    if (ss) {
-      ss->decref();
-    }
-  }
-  void reset(ScriptSource* newss) {
-    
-    if (newss) {
-      newss->incref();
-    }
-    if (ss) {
-      ss->decref();
-    }
-    ss = newss;
-  }
-  ScriptSource* get() const { return ss; }
+      RefPtr<ScriptSource>& source);
 };
 
 
@@ -1605,8 +1581,8 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   uint32_t toStringEnd() const { return extent_.toStringEnd; }
   SourceExtent extent() const { return extent_; }
 
-  MOZ_MUST_USE bool appendSourceDataForToString(JSContext* cx,
-                                                js::StringBuffer& buf);
+  [[nodiscard]] bool appendSourceDataForToString(JSContext* cx,
+                                                 js::StringBuffer& buf);
 
   uint32_t lineno() const { return extent_.lineno; }
   uint32_t column() const { return extent_.column; }
@@ -1615,12 +1591,12 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   ImmutableScriptFlags immutableFlags() const { return immutableFlags_; }
 
   
-  MOZ_MUST_USE bool hasFlag(ImmutableFlags flag) const {
+  [[nodiscard]] bool hasFlag(ImmutableFlags flag) const {
     return immutableFlags_.hasFlag(flag);
   }
 
   
-  MOZ_MUST_USE bool hasFlag(MutableFlags flag) const {
+  [[nodiscard]] bool hasFlag(MutableFlags flag) const {
     return mutableFlags_.hasFlag(flag);
   }
   void setFlag(MutableFlags flag, bool b = true) {

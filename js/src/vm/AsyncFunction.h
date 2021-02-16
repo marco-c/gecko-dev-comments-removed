@@ -283,11 +283,11 @@ extern const JSClass AsyncFunctionClass;
 
 
 
-MOZ_MUST_USE bool AsyncFunctionAwaitedFulfilled(
+[[nodiscard]] bool AsyncFunctionAwaitedFulfilled(
     JSContext* cx, Handle<AsyncFunctionGeneratorObject*> generator,
     HandleValue value);
 
-MOZ_MUST_USE bool AsyncFunctionAwaitedRejected(
+[[nodiscard]] bool AsyncFunctionAwaitedRejected(
     JSContext* cx, Handle<AsyncFunctionGeneratorObject*> generator,
     HandleValue reason);
 

@@ -125,7 +125,7 @@ static MOZ_MUST_USE ReadableStream* CreateReadableStream(
 
 
 
- MOZ_MUST_USE ReadableStream* ReadableStream::create(
+ [[nodiscard]] ReadableStream* ReadableStream::create(
     JSContext* cx, void* nsISupportsObject_alreadyAddreffed ,
     Handle<JSObject*> proto ) {
   
@@ -296,7 +296,7 @@ static bool TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-MOZ_MUST_USE PromiseObject* js::ReadableStreamTee_Pull(
+[[nodiscard]] PromiseObject* js::ReadableStreamTee_Pull(
     JSContext* cx, JS::Handle<TeeState*> unwrappedTeeState) {
   
   
@@ -378,7 +378,7 @@ MOZ_MUST_USE PromiseObject* js::ReadableStreamTee_Pull(
 
 
 
-MOZ_MUST_USE JSObject* js::ReadableStreamTee_Cancel(
+[[nodiscard]] JSObject* js::ReadableStreamTee_Cancel(
     JSContext* cx, JS::Handle<TeeState*> unwrappedTeeState,
     JS::Handle<ReadableStreamDefaultController*> unwrappedBranch,
     JS::Handle<Value> reason) {
@@ -506,7 +506,7 @@ static bool TeeReaderErroredHandler(JSContext* cx, unsigned argc,
 
 
 
-MOZ_MUST_USE bool js::ReadableStreamTee(
+[[nodiscard]] bool js::ReadableStreamTee(
     JSContext* cx, JS::Handle<ReadableStream*> unwrappedStream,
     bool cloneForBranch2, JS::MutableHandle<ReadableStream*> branch1Stream,
     JS::MutableHandle<ReadableStream*> branch2Stream) {

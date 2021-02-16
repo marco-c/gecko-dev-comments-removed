@@ -141,7 +141,7 @@ class ParseContext : public Nestable<ParseContext> {
 
     uint32_t id() const { return id_; }
 
-    MOZ_MUST_USE bool init(ParseContext* pc) {
+    [[nodiscard]] bool init(ParseContext* pc) {
       if (id_ == UINT32_MAX) {
         pc->errorReporter_.errorNoOffset(JSMSG_NEED_DIET, js_script_str);
         return false;
@@ -166,22 +166,22 @@ class ParseContext : public Nestable<ParseContext> {
       return declared_->lookupForAdd(name);
     }
 
-    MOZ_MUST_USE bool addDeclaredName(ParseContext* pc, AddDeclaredNamePtr& p,
-                                      TaggedParserAtomIndex name,
-                                      DeclarationKind kind, uint32_t pos,
-                                      ClosedOver closedOver = ClosedOver::No) {
+    [[nodiscard]] bool addDeclaredName(ParseContext* pc, AddDeclaredNamePtr& p,
+                                       TaggedParserAtomIndex name,
+                                       DeclarationKind kind, uint32_t pos,
+                                       ClosedOver closedOver = ClosedOver::No) {
       return maybeReportOOM(
           pc, declared_->add(p, name, DeclaredNameInfo(kind, pos, closedOver)));
     }
 
     
-    MOZ_MUST_USE bool addPossibleAnnexBFunctionBox(ParseContext* pc,
-                                                   FunctionBox* funbox);
+    [[nodiscard]] bool addPossibleAnnexBFunctionBox(ParseContext* pc,
+                                                    FunctionBox* funbox);
 
     
     
-    MOZ_MUST_USE bool propagateAndMarkAnnexBFunctionBoxes(ParseContext* pc,
-                                                          ParserBase* parser);
+    [[nodiscard]] bool propagateAndMarkAnnexBFunctionBoxes(ParseContext* pc,
+                                                           ParserBase* parser);
 
     
     
@@ -382,7 +382,7 @@ class ParseContext : public Nestable<ParseContext> {
                ErrorReporter& errorReporter, CompilationState& compilationState,
                Directives* newDirectives, bool isFull);
 
-  MOZ_MUST_USE bool init();
+  [[nodiscard]] bool init();
 
   SharedContext* sc() { return sc_; }
 
@@ -450,14 +450,14 @@ class ParseContext : public Nestable<ParseContext> {
 
   
   
-  MOZ_MUST_USE inline JS::Result<Ok, BreakStatementError> checkBreakStatement(
+  [[nodiscard]] inline JS::Result<Ok, BreakStatementError> checkBreakStatement(
       TaggedParserAtomIndex label);
 
   enum class ContinueStatementError {
     NotInALoop,
     LabelNotFound,
   };
-  MOZ_MUST_USE inline JS::Result<Ok, ContinueStatementError>
+  [[nodiscard]] inline JS::Result<Ok, ContinueStatementError>
   checkContinueStatement(TaggedParserAtomIndex label);
 
   
@@ -580,14 +580,13 @@ class ParseContext : public Nestable<ParseContext> {
   bool declareTopLevelDotGeneratorName();
 
  private:
-  MOZ_MUST_USE bool isVarRedeclaredInInnermostScope(
+  [[nodiscard]] bool isVarRedeclaredInInnermostScope(
       TaggedParserAtomIndex name, ParserBase* parser, DeclarationKind kind,
       mozilla::Maybe<DeclarationKind>* out);
 
-  MOZ_MUST_USE bool isVarRedeclaredInEval(TaggedParserAtomIndex name,
-                                          ParserBase* parser,
-                                          DeclarationKind kind,
-                                          mozilla::Maybe<DeclarationKind>* out);
+  [[nodiscard]] bool isVarRedeclaredInEval(
+      TaggedParserAtomIndex name, ParserBase* parser, DeclarationKind kind,
+      mozilla::Maybe<DeclarationKind>* out);
 
   enum DryRunOption { NotDryRun, DryRunInnermostScopeOnly };
   template <DryRunOption dryRunOption>

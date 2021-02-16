@@ -164,7 +164,7 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
 
 
-  MOZ_MUST_USE bool currency(JSLinearString* currency);
+  [[nodiscard]] bool currency(JSLinearString* currency);
 
   enum class CurrencyDisplay { Code, Name, Symbol, NarrowSymbol };
 
@@ -173,7 +173,7 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
 
 
-  MOZ_MUST_USE bool currencyDisplay(CurrencyDisplay display);
+  [[nodiscard]] bool currencyDisplay(CurrencyDisplay display);
 
   
 
@@ -182,7 +182,7 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
 
 
-  MOZ_MUST_USE bool unit(JSLinearString* unit);
+  [[nodiscard]] bool unit(JSLinearString* unit);
 
   enum class UnitDisplay { Short, Narrow, Long };
 
@@ -191,7 +191,7 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
 
 
-  MOZ_MUST_USE bool unitDisplay(UnitDisplay display);
+  [[nodiscard]] bool unitDisplay(UnitDisplay display);
 
   
 
@@ -199,7 +199,7 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
 
 
-  MOZ_MUST_USE bool percent();
+  [[nodiscard]] bool percent();
 
   
 
@@ -207,7 +207,7 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
 
 
-  MOZ_MUST_USE bool fractionDigits(uint32_t min, uint32_t max);
+  [[nodiscard]] bool fractionDigits(uint32_t min, uint32_t max);
 
   
 
@@ -215,7 +215,7 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
 
 
-  MOZ_MUST_USE bool integerWidth(uint32_t min);
+  [[nodiscard]] bool integerWidth(uint32_t min);
 
   
 
@@ -223,14 +223,14 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
 
 
-  MOZ_MUST_USE bool significantDigits(uint32_t min, uint32_t max);
+  [[nodiscard]] bool significantDigits(uint32_t min, uint32_t max);
 
   
 
 
 
 
-  MOZ_MUST_USE bool useGrouping(bool on);
+  [[nodiscard]] bool useGrouping(bool on);
 
   enum class Notation {
     Standard,
@@ -245,7 +245,7 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
 
 
-  MOZ_MUST_USE bool notation(Notation style);
+  [[nodiscard]] bool notation(Notation style);
 
   enum class SignDisplay {
     Auto,
@@ -262,14 +262,14 @@ class MOZ_STACK_CLASS NumberFormatterSkeleton final {
 
 
 
-  MOZ_MUST_USE bool signDisplay(SignDisplay display);
+  [[nodiscard]] bool signDisplay(SignDisplay display);
 
   
 
 
 
 
-  MOZ_MUST_USE bool roundingModeHalfUp();
+  [[nodiscard]] bool roundingModeHalfUp();
 };
 
 }  

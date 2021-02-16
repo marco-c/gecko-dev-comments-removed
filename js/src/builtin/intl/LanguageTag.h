@@ -221,9 +221,9 @@ class MOZ_STACK_CLASS LanguageTag final {
 
   void performComplexLanguageMappings();
   void performComplexRegionMappings();
-  MOZ_MUST_USE bool performVariantMappings(JSContext* cx);
+  [[nodiscard]] bool performVariantMappings(JSContext* cx);
 
-  MOZ_MUST_USE bool updateGrandfatheredMappings(JSContext* cx);
+  [[nodiscard]] bool updateGrandfatheredMappings(JSContext* cx);
 
   static const char* replaceTransformExtensionType(
       mozilla::Span<const char> key, mozilla::Span<const char> type);
@@ -714,22 +714,22 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(LanguageTagParser::TokenKind)
 
 
 
-MOZ_MUST_USE bool ParseStandaloneLanguageTag(JS::Handle<JSLinearString*> str,
-                                             LanguageSubtag& result);
+[[nodiscard]] bool ParseStandaloneLanguageTag(JS::Handle<JSLinearString*> str,
+                                              LanguageSubtag& result);
 
 
 
 
 
-MOZ_MUST_USE bool ParseStandaloneScriptTag(JS::Handle<JSLinearString*> str,
-                                           ScriptSubtag& result);
+[[nodiscard]] bool ParseStandaloneScriptTag(JS::Handle<JSLinearString*> str,
+                                            ScriptSubtag& result);
 
 
 
 
 
-MOZ_MUST_USE bool ParseStandaloneRegionTag(JS::Handle<JSLinearString*> str,
-                                           RegionSubtag& result);
+[[nodiscard]] bool ParseStandaloneRegionTag(JS::Handle<JSLinearString*> str,
+                                            RegionSubtag& result);
 
 
 

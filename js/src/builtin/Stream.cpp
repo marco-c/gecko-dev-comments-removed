@@ -254,7 +254,7 @@ class MOZ_RAII AutoClearUnderlyingSource {
 
 
 
-MOZ_MUST_USE bool js::SetUpExternalReadableByteStreamController(
+[[nodiscard]] bool js::SetUpExternalReadableByteStreamController(
     JSContext* cx, Handle<ReadableStream*> stream,
     JS::ReadableStreamUnderlyingSource* source) {
   
@@ -581,7 +581,7 @@ static MOZ_MUST_USE PromiseObject* ReadableByteStreamControllerPullSteps(
 
 
 
-MOZ_MUST_USE PromiseObject* js::ReadableStreamControllerPullSteps(
+[[nodiscard]] PromiseObject* js::ReadableStreamControllerPullSteps(
     JSContext* cx, Handle<ReadableStreamController*> unwrappedController) {
   if (unwrappedController->is<ReadableStreamDefaultController>()) {
     Rooted<ReadableStreamDefaultController*> unwrappedDefaultController(
@@ -614,7 +614,7 @@ static MOZ_MUST_USE bool ReadableByteStreamControllerInvalidateBYOBRequest(
 
 
 
-MOZ_MUST_USE bool js::ReadableByteStreamControllerClearPendingPullIntos(
+[[nodiscard]] bool js::ReadableByteStreamControllerClearPendingPullIntos(
     JSContext* cx, Handle<ReadableByteStreamController*> unwrappedController) {
   
   
@@ -632,7 +632,7 @@ MOZ_MUST_USE bool js::ReadableByteStreamControllerClearPendingPullIntos(
 
 
 
-MOZ_MUST_USE bool js::ReadableByteStreamControllerClose(
+[[nodiscard]] bool js::ReadableByteStreamControllerClose(
     JSContext* cx, Handle<ReadableByteStreamController*> unwrappedController) {
   
   Rooted<ReadableStream*> unwrappedStream(cx, unwrappedController->stream());

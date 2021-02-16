@@ -87,7 +87,7 @@ class MOZ_STACK_CLASS JS_PUBLIC_API ForOfIterator {
 
 
 
-  MOZ_MUST_USE bool init(
+  [[nodiscard]] bool init(
       Handle<Value> iterable,
       NonIterableBehavior nonIterableBehavior = ThrowOnNonIterable);
 
@@ -95,7 +95,7 @@ class MOZ_STACK_CLASS JS_PUBLIC_API ForOfIterator {
 
 
 
-  MOZ_MUST_USE bool next(MutableHandle<Value> val, bool* done);
+  [[nodiscard]] bool next(MutableHandle<Value> val, bool* done);
 
   
 

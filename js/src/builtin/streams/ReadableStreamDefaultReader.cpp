@@ -46,9 +46,11 @@ using js::UnwrapAndTypeCheckThis;
 
 
 
-MOZ_MUST_USE ReadableStreamDefaultReader* js::CreateReadableStreamDefaultReader(
-    JSContext* cx, Handle<ReadableStream*> unwrappedStream,
-    ForAuthorCodeBool forAuthorCode, Handle<JSObject*> proto ) {
+[[nodiscard]] ReadableStreamDefaultReader*
+js::CreateReadableStreamDefaultReader(JSContext* cx,
+                                      Handle<ReadableStream*> unwrappedStream,
+                                      ForAuthorCodeBool forAuthorCode,
+                                      Handle<JSObject*> proto ) {
   Rooted<ReadableStreamDefaultReader*> reader(
       cx, NewObjectWithClassProto<ReadableStreamDefaultReader>(cx, proto));
   if (!reader) {

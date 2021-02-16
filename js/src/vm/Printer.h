@@ -79,14 +79,14 @@ class Sprinter final : public GenericPrinter {
   size_t size;           
   ptrdiff_t offset;      
 
-  MOZ_MUST_USE bool realloc_(size_t newSize);
+  [[nodiscard]] bool realloc_(size_t newSize);
 
  public:
   explicit Sprinter(JSContext* cx, bool shouldReportOOM = true);
   ~Sprinter();
 
   
-  MOZ_MUST_USE bool init();
+  [[nodiscard]] bool init();
 
   void checkInvariants() const;
 
@@ -113,7 +113,7 @@ class Sprinter final : public GenericPrinter {
   
   
   
-  MOZ_MUST_USE bool jsprintf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
+  [[nodiscard]] bool jsprintf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
 
   bool putString(JSString* str);
 
@@ -141,7 +141,7 @@ class Fprinter final : public GenericPrinter {
 #endif
 
   
-  MOZ_MUST_USE bool init(const char* path);
+  [[nodiscard]] bool init(const char* path);
   void init(FILE* fp);
   bool isInitialized() const { return file_ != nullptr; }
   void flush() override;

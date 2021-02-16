@@ -44,9 +44,9 @@ using JS::Value;
 
 
 
-MOZ_MUST_USE bool js::DequeueValue(JSContext* cx,
-                                   Handle<StreamController*> unwrappedContainer,
-                                   MutableHandle<Value> chunk) {
+[[nodiscard]] bool js::DequeueValue(
+    JSContext* cx, Handle<StreamController*> unwrappedContainer,
+    MutableHandle<Value> chunk) {
   
   
   
@@ -108,7 +108,7 @@ void js::DequeueValue(StreamController* unwrappedContainer, JSContext* cx) {
 
 
 
-MOZ_MUST_USE bool js::EnqueueValueWithSize(
+[[nodiscard]] bool js::EnqueueValueWithSize(
     JSContext* cx, Handle<StreamController*> unwrappedContainer,
     Handle<Value> value, Handle<Value> sizeVal) {
   cx->check(value, sizeVal);
@@ -156,8 +156,8 @@ MOZ_MUST_USE bool js::EnqueueValueWithSize(
 
 
 
-MOZ_MUST_USE bool js::ResetQueue(JSContext* cx,
-                                 Handle<StreamController*> unwrappedContainer) {
+[[nodiscard]] bool js::ResetQueue(
+    JSContext* cx, Handle<StreamController*> unwrappedContainer) {
   
   
   

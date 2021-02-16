@@ -28,7 +28,7 @@ using namespace js;
 
 
 
-MOZ_MUST_USE bool js::AsyncGeneratorAwaitedFulfilled(
+[[nodiscard]] bool js::AsyncGeneratorAwaitedFulfilled(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue value) {
   return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Normal, value);
@@ -36,7 +36,7 @@ MOZ_MUST_USE bool js::AsyncGeneratorAwaitedFulfilled(
 
 
 
-MOZ_MUST_USE bool js::AsyncGeneratorAwaitedRejected(
+[[nodiscard]] bool js::AsyncGeneratorAwaitedRejected(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue reason) {
   return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Throw, reason);
@@ -44,7 +44,7 @@ MOZ_MUST_USE bool js::AsyncGeneratorAwaitedRejected(
 
 
 
-MOZ_MUST_USE bool js::AsyncGeneratorYieldReturnAwaitedFulfilled(
+[[nodiscard]] bool js::AsyncGeneratorYieldReturnAwaitedFulfilled(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue value) {
   return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Return, value);
@@ -52,7 +52,7 @@ MOZ_MUST_USE bool js::AsyncGeneratorYieldReturnAwaitedFulfilled(
 
 
 
-MOZ_MUST_USE bool js::AsyncGeneratorYieldReturnAwaitedRejected(
+[[nodiscard]] bool js::AsyncGeneratorYieldReturnAwaitedRejected(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue reason) {
   return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Throw, reason);
@@ -237,7 +237,7 @@ AsyncGeneratorRequest* AsyncGeneratorObject::createRequest(
   return request;
 }
 
- MOZ_MUST_USE bool AsyncGeneratorObject::enqueueRequest(
+ [[nodiscard]] bool AsyncGeneratorObject::enqueueRequest(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     Handle<AsyncGeneratorRequest*> request) {
   if (asyncGenObj->isSingleQueue()) {
@@ -372,7 +372,7 @@ static MOZ_MUST_USE bool AsyncGeneratorYield(
 
 
 
-MOZ_MUST_USE bool js::AsyncGeneratorResume(
+[[nodiscard]] bool js::AsyncGeneratorResume(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     CompletionKind completionKind, HandleValue argument) {
   MOZ_ASSERT(!asyncGenObj->isClosed(),

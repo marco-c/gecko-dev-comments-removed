@@ -36,7 +36,7 @@ class FutexThread {
   static void unlock();
 
   FutexThread();
-  MOZ_MUST_USE bool initInstance();
+  [[nodiscard]] bool initInstance();
   void destroyInstance();
 
   
@@ -62,9 +62,9 @@ class FutexThread {
   
   
   
-  MOZ_MUST_USE WaitResult
-  wait(JSContext* cx, js::UniqueLock<js::Mutex>& locked,
-       const mozilla::Maybe<mozilla::TimeDuration>& timeout);
+  [[nodiscard]] WaitResult wait(
+      JSContext* cx, js::UniqueLock<js::Mutex>& locked,
+      const mozilla::Maybe<mozilla::TimeDuration>& timeout);
 
   
   
@@ -122,12 +122,12 @@ class FutexThread {
 };
 
 
-MOZ_MUST_USE FutexThread::WaitResult atomics_wait_impl(
+[[nodiscard]] FutexThread::WaitResult atomics_wait_impl(
     JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, int32_t value,
     const mozilla::Maybe<mozilla::TimeDuration>& timeout);
 
 
-MOZ_MUST_USE FutexThread::WaitResult atomics_wait_impl(
+[[nodiscard]] FutexThread::WaitResult atomics_wait_impl(
     JSContext* cx, SharedArrayRawBuffer* sarb, size_t byteOffset, int64_t value,
     const mozilla::Maybe<mozilla::TimeDuration>& timeout);
 
@@ -135,8 +135,8 @@ MOZ_MUST_USE FutexThread::WaitResult atomics_wait_impl(
 
 
 
-MOZ_MUST_USE int64_t atomics_notify_impl(SharedArrayRawBuffer* sarb,
-                                         size_t byteOffset, int64_t count);
+[[nodiscard]] int64_t atomics_notify_impl(SharedArrayRawBuffer* sarb,
+                                          size_t byteOffset, int64_t count);
 
 } 
 

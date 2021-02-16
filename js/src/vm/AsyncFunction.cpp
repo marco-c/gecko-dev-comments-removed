@@ -154,7 +154,7 @@ static bool AsyncFunctionResume(JSContext* cx,
 
 
 
-MOZ_MUST_USE bool js::AsyncFunctionAwaitedFulfilled(
+[[nodiscard]] bool js::AsyncFunctionAwaitedFulfilled(
     JSContext* cx, Handle<AsyncFunctionGeneratorObject*> generator,
     HandleValue value) {
   return AsyncFunctionResume(cx, generator, ResumeKind::Normal, value);
@@ -162,7 +162,7 @@ MOZ_MUST_USE bool js::AsyncFunctionAwaitedFulfilled(
 
 
 
-MOZ_MUST_USE bool js::AsyncFunctionAwaitedRejected(
+[[nodiscard]] bool js::AsyncFunctionAwaitedRejected(
     JSContext* cx, Handle<AsyncFunctionGeneratorObject*> generator,
     HandleValue reason) {
   return AsyncFunctionResume(cx, generator, ResumeKind::Throw, reason);

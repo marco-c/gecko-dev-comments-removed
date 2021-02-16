@@ -67,7 +67,7 @@ using js::ReadableStream;
 
 
 
-MOZ_MUST_USE js::PromiseObject* js::ReadableStreamAddReadOrReadIntoRequest(
+[[nodiscard]] js::PromiseObject* js::ReadableStreamAddReadOrReadIntoRequest(
     JSContext* cx, Handle<ReadableStream*> unwrappedStream) {
   
   
@@ -119,7 +119,7 @@ static bool ReturnUndefined(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-MOZ_MUST_USE JSObject* js::ReadableStreamCancel(
+[[nodiscard]] JSObject* js::ReadableStreamCancel(
     JSContext* cx, Handle<ReadableStream*> unwrappedStream,
     Handle<Value> reason) {
   AssertSameCompartment(cx, reason);
@@ -174,7 +174,7 @@ MOZ_MUST_USE JSObject* js::ReadableStreamCancel(
 
 
 
-MOZ_MUST_USE bool js::ReadableStreamCloseInternal(
+[[nodiscard]] bool js::ReadableStreamCloseInternal(
     JSContext* cx, Handle<ReadableStream*> unwrappedStream) {
   
   MOZ_ASSERT(unwrappedStream->readable());
@@ -250,7 +250,7 @@ MOZ_MUST_USE bool js::ReadableStreamCloseInternal(
 
 
 
-MOZ_MUST_USE PlainObject* js::ReadableStreamCreateReadResult(
+[[nodiscard]] PlainObject* js::ReadableStreamCreateReadResult(
     JSContext* cx, Handle<Value> value, bool done,
     ForAuthorCodeBool forAuthorCode) {
   
@@ -285,7 +285,7 @@ MOZ_MUST_USE PlainObject* js::ReadableStreamCreateReadResult(
 
 
 
-MOZ_MUST_USE bool js::ReadableStreamErrorInternal(
+[[nodiscard]] bool js::ReadableStreamErrorInternal(
     JSContext* cx, Handle<ReadableStream*> unwrappedStream, Handle<Value> e) {
   
 
@@ -383,7 +383,7 @@ MOZ_MUST_USE bool js::ReadableStreamErrorInternal(
 
 
 
-MOZ_MUST_USE bool js::ReadableStreamFulfillReadOrReadIntoRequest(
+[[nodiscard]] bool js::ReadableStreamFulfillReadOrReadIntoRequest(
     JSContext* cx, Handle<ReadableStream*> unwrappedStream, Handle<Value> chunk,
     bool done) {
   cx->check(chunk);
@@ -452,7 +452,7 @@ uint32_t js::ReadableStreamGetNumReadRequests(ReadableStream* stream) {
 
 
 
-MOZ_MUST_USE bool js::ReadableStreamHasDefaultReader(
+[[nodiscard]] bool js::ReadableStreamHasDefaultReader(
     JSContext* cx, Handle<ReadableStream*> unwrappedStream, bool* result) {
   
   

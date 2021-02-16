@@ -1747,8 +1747,8 @@ mozilla::Span<TaggedScriptThingIndex> ScriptStencil::gcthings(
   return stencil.gcThingData.Subspan(gcThingsOffset, gcThingsLength);
 }
 
-MOZ_MUST_USE bool BigIntStencil::init(JSContext* cx, LifoAlloc& alloc,
-                                      const Vector<char16_t, 32>& buf) {
+[[nodiscard]] bool BigIntStencil::init(JSContext* cx, LifoAlloc& alloc,
+                                       const Vector<char16_t, 32>& buf) {
 #ifdef DEBUG
   
   

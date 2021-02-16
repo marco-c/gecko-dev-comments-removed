@@ -220,8 +220,8 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
 
 
 
-  MOZ_MUST_USE bool resolveFun(FunctionNode* funNode,
-                               TaggedParserAtomIndex* retId) {
+  [[nodiscard]] bool resolveFun(FunctionNode* funNode,
+                                TaggedParserAtomIndex* retId) {
     MOZ_ASSERT(funNode != nullptr);
 
     FunctionBox* funbox = funNode->funbox();
@@ -340,7 +340,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
   }
 
  public:
-  MOZ_MUST_USE bool visitFunction(FunctionNode* pn) {
+  [[nodiscard]] bool visitFunction(FunctionNode* pn) {
     TaggedParserAtomIndex savedPrefix = prefix_;
     TaggedParserAtomIndex newPrefix;
     if (!resolveFun(pn, &newPrefix)) {
@@ -362,14 +362,14 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
   }
 
   
-  MOZ_MUST_USE bool visitCallSiteObj(CallSiteNode* callSite) {
+  [[nodiscard]] bool visitCallSiteObj(CallSiteNode* callSite) {
     
     
     return true;
   }
 
   
-  MOZ_MUST_USE bool visitTaggedTemplateExpr(BinaryNode* taggedTemplate) {
+  [[nodiscard]] bool visitTaggedTemplateExpr(BinaryNode* taggedTemplate) {
     ParseNode* tag = taggedTemplate->left();
 
     
@@ -410,7 +410,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
 
  private:
   
-  MOZ_MUST_USE bool internalVisitSpecList(ListNode* pn) {
+  [[nodiscard]] bool internalVisitSpecList(ListNode* pn) {
     
     
     
@@ -421,11 +421,22 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
       MOZ_ASSERT(item->is<NullaryNode>());
     } else {
       for (ParseNode* item : pn->contents()) {
-        BinaryNode* spec = &item->as<BinaryNode>();
-        MOZ_ASSERT(spec->isKind(isImport ? ParseNodeKind::ImportSpec
-                                         : ParseNodeKind::ExportSpec));
-        MOZ_ASSERT(spec->left()->isKind(ParseNodeKind::Name));
-        MOZ_ASSERT(spec->right()->isKind(ParseNodeKind::Name));
+        if (item->is<UnaryNode>()) {
+          auto* spec = &item->as<UnaryNode>();
+          MOZ_ASSERT(spec->isKind(isImport
+                                      ? ParseNodeKind::ImportNamespaceSpec
+                                      : ParseNodeKind::ExportNamespaceSpec));
+          MOZ_ASSERT(spec->kid()->isKind(ParseNodeKind::Name) ||
+                     spec->kid()->isKind(ParseNodeKind::StringExpr));
+        } else {
+          auto* spec = &item->as<BinaryNode>();
+          MOZ_ASSERT(spec->isKind(isImport ? ParseNodeKind::ImportSpec
+                                           : ParseNodeKind::ExportSpec));
+          MOZ_ASSERT(spec->left()->isKind(ParseNodeKind::Name) ||
+                     spec->left()->isKind(ParseNodeKind::StringExpr));
+          MOZ_ASSERT(spec->right()->isKind(ParseNodeKind::Name) ||
+                     spec->right()->isKind(ParseNodeKind::StringExpr));
+        }
       }
     }
 #endif
@@ -433,11 +444,11 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
   }
 
  public:
-  MOZ_MUST_USE bool visitImportSpecList(ListNode* pn) {
+  [[nodiscard]] bool visitImportSpecList(ListNode* pn) {
     return internalVisitSpecList(pn);
   }
 
-  MOZ_MUST_USE bool visitExportSpecList(ListNode* pn) {
+  [[nodiscard]] bool visitExportSpecList(ListNode* pn) {
     return internalVisitSpecList(pn);
   }
 
@@ -450,7 +461,7 @@ class NameResolver : public ParseNodeVisitor<NameResolver> {
   
 
 
-  MOZ_MUST_USE bool visit(ParseNode* pn) {
+  [[nodiscard]] bool visit(ParseNode* pn) {
     
     if (nparents_ >= MaxParents) {
       

@@ -59,9 +59,10 @@ using js::WritableStreamDefaultWriterWrite;
 
 
 
-MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
-    JSContext* cx, Handle<WritableStream*> unwrappedStream,
-    Handle<JSObject*> proto ) {
+[[nodiscard]] WritableStreamDefaultWriter*
+js::CreateWritableStreamDefaultWriter(JSContext* cx,
+                                      Handle<WritableStream*> unwrappedStream,
+                                      Handle<JSObject*> proto ) {
   Rooted<WritableStreamDefaultWriter*> writer(
       cx, NewObjectWithClassProto<WritableStreamDefaultWriter>(cx, proto));
   if (!writer) {

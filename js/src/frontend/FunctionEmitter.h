@@ -121,27 +121,27 @@ class MOZ_STACK_CLASS FunctionEmitter {
   FunctionEmitter(BytecodeEmitter* bce, FunctionBox* funbox,
                   FunctionSyntaxKind syntaxKind, IsHoisted isHoisted);
 
-  MOZ_MUST_USE bool prepareForNonLazy();
-  MOZ_MUST_USE bool emitNonLazyEnd();
+  [[nodiscard]] bool prepareForNonLazy();
+  [[nodiscard]] bool emitNonLazyEnd();
 
-  MOZ_MUST_USE bool emitLazy();
+  [[nodiscard]] bool emitLazy();
 
-  MOZ_MUST_USE bool emitAgain();
+  [[nodiscard]] bool emitAgain();
 
-  MOZ_MUST_USE bool emitAsmJSModule();
+  [[nodiscard]] bool emitAsmJSModule();
 
  private:
   
   
   
-  MOZ_MUST_USE bool emitFunction();
+  [[nodiscard]] bool emitFunction();
 
   
   
-  MOZ_MUST_USE bool emitNonHoisted(GCThingIndex index);
-  MOZ_MUST_USE bool emitHoisted(GCThingIndex index);
-  MOZ_MUST_USE bool emitTopLevelFunction(GCThingIndex index);
-  MOZ_MUST_USE bool emitNewTargetForArrow();
+  [[nodiscard]] bool emitNonHoisted(GCThingIndex index);
+  [[nodiscard]] bool emitHoisted(GCThingIndex index);
+  [[nodiscard]] bool emitTopLevelFunction(GCThingIndex index);
+  [[nodiscard]] bool emitNewTargetForArrow();
 };
 
 
@@ -246,15 +246,15 @@ class MOZ_STACK_CLASS FunctionScriptEmitter {
         paramStart_(paramStart),
         bodyEnd_(bodyEnd) {}
 
-  MOZ_MUST_USE bool prepareForParameters();
-  MOZ_MUST_USE bool prepareForBody();
-  MOZ_MUST_USE bool emitEndBody();
+  [[nodiscard]] bool prepareForParameters();
+  [[nodiscard]] bool prepareForBody();
+  [[nodiscard]] bool emitEndBody();
 
   
-  MOZ_MUST_USE bool intoStencil();
+  [[nodiscard]] bool intoStencil();
 
  private:
-  MOZ_MUST_USE bool emitExtraBodyVarScope();
+  [[nodiscard]] bool emitExtraBodyVarScope();
 };
 
 
@@ -406,30 +406,30 @@ class MOZ_STACK_CLASS FunctionParamsEmitter {
 
   
   
-  MOZ_MUST_USE bool emitSimple(TaggedParserAtomIndex paramName);
+  [[nodiscard]] bool emitSimple(TaggedParserAtomIndex paramName);
 
-  MOZ_MUST_USE bool prepareForDefault();
-  MOZ_MUST_USE bool emitDefaultEnd(TaggedParserAtomIndex paramName);
+  [[nodiscard]] bool prepareForDefault();
+  [[nodiscard]] bool emitDefaultEnd(TaggedParserAtomIndex paramName);
 
-  MOZ_MUST_USE bool prepareForDestructuring();
-  MOZ_MUST_USE bool emitDestructuringEnd();
+  [[nodiscard]] bool prepareForDestructuring();
+  [[nodiscard]] bool emitDestructuringEnd();
 
-  MOZ_MUST_USE bool prepareForDestructuringDefaultInitializer();
-  MOZ_MUST_USE bool prepareForDestructuringDefault();
-  MOZ_MUST_USE bool emitDestructuringDefaultEnd();
+  [[nodiscard]] bool prepareForDestructuringDefaultInitializer();
+  [[nodiscard]] bool prepareForDestructuringDefault();
+  [[nodiscard]] bool emitDestructuringDefaultEnd();
 
-  MOZ_MUST_USE bool emitRest(TaggedParserAtomIndex paramName);
+  [[nodiscard]] bool emitRest(TaggedParserAtomIndex paramName);
 
-  MOZ_MUST_USE bool prepareForDestructuringRest();
-  MOZ_MUST_USE bool emitDestructuringRestEnd();
+  [[nodiscard]] bool prepareForDestructuringRest();
+  [[nodiscard]] bool emitDestructuringRestEnd();
 
  private:
-  MOZ_MUST_USE bool prepareForInitializer();
-  MOZ_MUST_USE bool emitInitializerEnd();
+  [[nodiscard]] bool prepareForInitializer();
+  [[nodiscard]] bool emitInitializerEnd();
 
-  MOZ_MUST_USE bool emitRestArray();
+  [[nodiscard]] bool emitRestArray();
 
-  MOZ_MUST_USE bool emitAssignment(TaggedParserAtomIndex paramName);
+  [[nodiscard]] bool emitAssignment(TaggedParserAtomIndex paramName);
 };
 
 } 

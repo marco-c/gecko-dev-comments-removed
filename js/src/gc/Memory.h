@@ -57,7 +57,7 @@ void MarkPagesInUseSoft(void* region, size_t length);
 
 
 
-MOZ_MUST_USE bool MarkPagesInUseHard(void* region, size_t length);
+[[nodiscard]] bool MarkPagesInUseHard(void* region, size_t length);
 
 
 size_t GetPageFaultCount();

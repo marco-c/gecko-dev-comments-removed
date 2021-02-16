@@ -231,7 +231,7 @@ bool js::WritableStreamControllerStartFailedHandler(JSContext* cx,
 
 
 
-MOZ_MUST_USE bool js::SetUpWritableStreamDefaultController(
+[[nodiscard]] bool js::SetUpWritableStreamDefaultController(
     JSContext* cx, Handle<WritableStream*> stream,
     SinkAlgorithms sinkAlgorithms, Handle<Value> underlyingSink,
     Handle<Value> writeMethod, Handle<Value> closeMethod,
@@ -349,7 +349,7 @@ MOZ_MUST_USE bool js::SetUpWritableStreamDefaultController(
 
 
 
-MOZ_MUST_USE bool js::SetUpWritableStreamDefaultControllerFromUnderlyingSink(
+[[nodiscard]] bool js::SetUpWritableStreamDefaultControllerFromUnderlyingSink(
     JSContext* cx, Handle<WritableStream*> stream, Handle<Value> underlyingSink,
     double highWaterMark, Handle<Value> sizeAlgorithm) {
   cx->check(stream);
@@ -603,7 +603,7 @@ static MOZ_MUST_USE bool WritableStreamDefaultControllerProcessIfNeeded(
 
 
 
-MOZ_MUST_USE bool WritableStreamDefaultControllerAdvanceQueueIfNeeded(
+[[nodiscard]] bool WritableStreamDefaultControllerAdvanceQueueIfNeeded(
     JSContext* cx,
     Handle<WritableStreamDefaultController*> unwrappedController) {
   
