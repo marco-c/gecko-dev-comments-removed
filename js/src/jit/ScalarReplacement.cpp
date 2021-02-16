@@ -13,6 +13,7 @@
 #include "jit/MIR.h"
 #include "jit/MIRGenerator.h"
 #include "jit/MIRGraph.h"
+#include "vm/ArgumentsObject.h"
 
 #include "vm/JSObject-inl.h"
 
@@ -1249,10 +1250,19 @@ static bool IsArgumentsObjectEscaped(MInstruction* ins) {
         break;
       }
 
+      case MDefinition::Opcode::GuardArgumentsObjectFlags: {
+        if (IsArgumentsObjectEscaped(def->toInstruction())) {
+          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
+          return true;
+        }
+        break;
+      }
+
       
       case MDefinition::Opcode::ArgumentsObjectLength:
       case MDefinition::Opcode::GetArgumentsObjectArg:
       case MDefinition::Opcode::LoadArgumentsObjectArg:
+      case MDefinition::Opcode::ApplyArgsObj:
         break;
 
       
@@ -1279,9 +1289,11 @@ class ArgumentsReplacer : public MDefinitionVisitorDefaultNoop {
   TempAllocator& alloc() { return graph_.alloc(); }
 
   void visitGuardToClass(MGuardToClass* ins);
+  void visitGuardArgumentsObjectFlags(MGuardArgumentsObjectFlags* ins);
   void visitGetArgumentsObjectArg(MGetArgumentsObjectArg* ins);
   void visitLoadArgumentsObjectArg(MLoadArgumentsObjectArg* ins);
   void visitArgumentsObjectLength(MArgumentsObjectLength* ins);
+  void visitApplyArgsObj(MApplyArgsObj* ins);
 
  public:
   ArgumentsReplacer(MIRGenerator* mir, MIRGraph& graph, MInstruction* args)
@@ -1341,6 +1353,43 @@ void ArgumentsReplacer::visitGuardToClass(MGuardToClass* ins) {
     return;
   }
   MOZ_ASSERT(ins->isArgumentsObjectClass());
+
+  
+  ins->replaceAllUsesWith(args_);
+
+  
+  ins->block()->discard(ins);
+}
+
+void ArgumentsReplacer::visitGuardArgumentsObjectFlags(
+    MGuardArgumentsObjectFlags* ins) {
+  
+  if (ins->getArgsObject() != args_) {
+    return;
+  }
+
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t supportedBits = ArgumentsObject::LENGTH_OVERRIDDEN_BIT |
+                           ArgumentsObject::ITERATOR_OVERRIDDEN_BIT |
+                           ArgumentsObject::ELEMENT_OVERRIDDEN_BIT |
+                           ArgumentsObject::CALLEE_OVERRIDDEN_BIT |
+                           ArgumentsObject::FORWARDED_ARGUMENTS_BIT;
+
+  MOZ_ASSERT((ins->flags() & ~supportedBits) == 0);
+  MOZ_ASSERT_IF(ins->flags() & ArgumentsObject::FORWARDED_ARGUMENTS_BIT,
+                !args_->block()->info().anyFormalIsAliased());
+#endif
 
   
   ins->replaceAllUsesWith(args_);
@@ -1414,6 +1463,32 @@ void ArgumentsReplacer::visitArgumentsObjectLength(
   ins->replaceAllUsesWith(length);
 
   
+  ins->block()->discard(ins);
+}
+
+void ArgumentsReplacer::visitApplyArgsObj(MApplyArgsObj* ins) {
+  
+  if (ins->getArgsObj() != args_) {
+    return;
+  }
+
+  auto* numArgs = MArgumentsLength::New(alloc());
+  ins->block()->insertBefore(ins, numArgs);
+
+  
+  auto* apply = MApplyArgs::New(alloc(), ins->getSingleTarget(),
+                                ins->getFunction(), numArgs, ins->getThis());
+  if (!ins->maybeCrossRealm()) {
+    apply->setNotCrossRealm();
+  }
+  if (ins->ignoresReturnValue()) {
+    apply->setIgnoresReturnValue();
+  }
+
+  ins->block()->insertBefore(ins, apply);
+  ins->replaceAllUsesWith(apply);
+
+  apply->stealResumePoint(ins);
   ins->block()->discard(ins);
 }
 
