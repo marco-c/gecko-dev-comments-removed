@@ -31,17 +31,6 @@ using namespace mozilla;
 
 
 
-
-
-
-
-#if !defined(XP_WIN) && defined(__clang__)
-#  define __gcov_flush __custom_llvm_gcov_flush
-
-#  define __gcov_dump __custom_llvm_gcov_dump
-#  define __gcov_reset __custom_llvm_gcov_reset
-#endif
-
 extern "C" void __gcov_flush();
 extern "C" void __gcov_dump();
 extern "C" void __gcov_reset();
