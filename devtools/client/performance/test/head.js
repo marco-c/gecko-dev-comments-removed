@@ -96,6 +96,9 @@ const key = (id, win = window) => {
   
   Services.prefs.setIntPref(PrefUtils.PROFILER_BUFFER_SIZE_PREF, 100000);
 
+  
+  Services.prefs.setBoolPref("devtools.performance.new-panel-enabled", false);
+
   registerCleanupFunction(() => {
     info("finish() was called, cleaning up...");
 
