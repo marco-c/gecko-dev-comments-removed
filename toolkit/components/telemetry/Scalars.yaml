@@ -2241,41 +2241,6 @@ media:
     record_in_processes:
       - 'content'
 
-avif:
-  dav1d_decode_error:
-    bug_numbers:
-      - 1670827
-    description: >
-      Image-decode Error from dav1d decoder
-    kind: uint
-    expires: "never"
-    notification_emails:
-      - cchang@mozilla.com
-      - jbauman@mozilla.com
-    products:
-      - 'firefox'
-      - 'geckoview_streaming'
-    record_in_processes:
-      - 'main'
-      - 'content'
-
-  aom_decode_error:
-    bug_numbers:
-      - 1670827
-    description: >
-      Image-decode Error from aom decoder
-    kind: uint
-    expires: "never"
-    notification_emails:
-      - cchang@mozilla.com
-      - jbauman@mozilla.com
-    products:
-      - 'firefox'
-      - 'geckoview_streaming'
-    record_in_processes:
-      - 'main'
-      - 'content'
-
 # The following section contains content process base counters.
 dom.contentprocess:
   buildID_mismatch:
@@ -3543,7 +3508,7 @@ gfx.canvas.remote:
 gfx.hdr:
   windows_display_colorspace_bitfield:
     bug_numbers:
-      - 1514840
+      - 1514840, 1690597
     description: >
       A bitfield representation of the available DXGI color spaces of the connected displays on Windows.
       See (https://docs.microsoft.com/en-us/windows/desktop/api/dxgicommon/ne-dxgicommon-dxgi_color_space_type)
@@ -3551,13 +3516,12 @@ gfx.hdr:
       index 'N' is available on at least one connected monitor.
     keyed: false
     kind: uint
-    expires: "70"
+    expires: never
     notification_emails:
       - gfx-telemetry-alerts@mozilla.com
-      - rhunt@mozilla.com
+      - jmuizelaaar@mozilla.com
     products:
       - 'firefox'
-      - 'fennec'
     record_in_processes:
       - 'main'
 
