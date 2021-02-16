@@ -4310,6 +4310,14 @@ nsDocShell::Stop(uint32_t aStopFlags) {
       nsCOMPtr<nsIContentViewer> cv = mContentViewer;
       cv->Stop();
     }
+  } else if (nsIWebNavigation::STOP_NETWORK & aStopFlags) {
+    
+    if (mContentViewer) {
+      RefPtr<Document> doc = mContentViewer->GetDocument();
+      if (doc) {
+        doc->StopDocumentLoad();
+      }
+    }
   }
 
   if (nsIWebNavigation::STOP_NETWORK & aStopFlags) {
