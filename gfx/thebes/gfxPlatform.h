@@ -74,11 +74,11 @@ class SystemFontListEntry;
     }                                             \
   } while (0)
 
-enum eCMSMode {
-  eCMSMode_Off = 0,         
-  eCMSMode_All = 1,         
-  eCMSMode_TaggedOnly = 2,  
-  eCMSMode_AllCount = 3
+enum class CMSMode : int32_t {
+  Off = 0,         
+  All = 1,         
+  TaggedOnly = 2,  
+  AllCount = 3
 };
 
 enum eGfxLog {
@@ -530,12 +530,12 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-  static eCMSMode GetCMSMode();
+  static CMSMode GetCMSMode();
 
   
 
 
-  static void SetCMSModeOverride(eCMSMode aMode);
+  static void SetCMSModeOverride(CMSMode aMode);
 
   
 
