@@ -25,6 +25,11 @@ class TrackEncoderListener {
   
 
 
+  virtual void Started(TrackEncoder* aEncoder) = 0;
+
+  
+
+
 
   virtual void Initialized(TrackEncoder* aEncoder) = 0;
 
@@ -91,24 +96,13 @@ class TrackEncoder {
   
 
 
+  bool IsStarted();
+
+  
+
+
 
   bool IsEncodingComplete();
-
-  
-
-
-
-  void SetInitialized();
-
-  
-
-
-  void OnDataAvailable();
-
-  
-
-
-  void OnError();
 
   
 
@@ -141,12 +135,39 @@ class TrackEncoder {
   
 
 
+
+  void SetInitialized();
+
+  
+
+
+
+  void SetStarted();
+
+  
+
+
+  void OnDataAvailable();
+
+  
+
+
+  void OnError();
+
+  
+
+
   bool mEncodingComplete;
 
   
 
 
   bool mInitialized;
+
+  
+
+
+  bool mStarted;
 
   
 

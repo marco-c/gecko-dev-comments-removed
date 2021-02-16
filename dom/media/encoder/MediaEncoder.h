@@ -37,9 +37,21 @@ class MediaEncoder;
 class MediaEncoderListener {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaEncoderListener)
-  virtual void Initialized() = 0;
+  
+
+
+  virtual void Started() = 0;
+  
+
+
   virtual void DataAvailable() = 0;
+  
+
+
   virtual void Error() = 0;
+  
+
+
   virtual void Shutdown() = 0;
 
  protected:
@@ -192,6 +204,11 @@ class MediaEncoder {
   
 
 
+  void NotifyStarted();
+
+  
+
+
 
   void NotifyDataAvailable();
 
@@ -280,6 +297,7 @@ class MediaEncoder {
   TimeStamp mStartTime;
   const nsString mMIMEType;
   bool mInitialized;
+  bool mStarted;
   bool mCompleted;
   bool mError;
   
