@@ -625,3 +625,26 @@ for (const preventCancel of [false, true]) {
     rs.getReader();
   }, `return() should unlock the stream synchronously when preventCancel = ${preventCancel}`);
 }
+
+promise_test(async () => {
+  const rs = new ReadableStream({
+    async start(c) {
+      c.enqueue('a');
+      c.enqueue('b');
+      c.enqueue('c');
+      await flushAsyncEvents();
+      
+      
+      
+      
+      
+      c.close();
+    }
+  });
+
+  const chunks = [];
+  for await (const chunk of rs) {
+    chunks.push(chunk);
+  }
+  assert_array_equals(chunks, ['a', 'b', 'c']);
+}, 'close() while next() is pending');
