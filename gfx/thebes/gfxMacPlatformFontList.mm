@@ -1222,7 +1222,9 @@ static gfxFontFamily* CreateFamilyForSystemFont(NSFont* aFont, const nsACString&
 const CGFloat kTextDisplayCrossover = 20.0;  
 
 void gfxMacPlatformFontList::InitSystemFontNames() {
-  mUseSizeSensitiveSystemFont = true;
+  
+  
+  mUseSizeSensitiveSystemFont = !nsCocoaFeatures::OnCatalinaOrLater();
 
   
   NSFont* sys = [NSFont systemFontOfSize:0.0];
@@ -1252,16 +1254,6 @@ void gfxMacPlatformFontList::InitSystemFontNames() {
     } else {
       nsCocoaUtils::GetStringForNSString(displayFamilyName, familyName);
       CopyUTF16toUTF8(familyName, mSystemDisplayFontFamilyName);
-      if (nsCocoaFeatures::OnCatalinaOrLater()) {
-        
-        
-        RefPtr<gfxFontFamily> fam = CreateFamilyForSystemFont(sys, mSystemDisplayFontFamilyName);
-        if (fam) {
-          nsAutoCString key;
-          GenerateFontListKey(mSystemDisplayFontFamilyName, key);
-          mFontFamilies.Put(key, std::move(fam));
-        }
-      }
     }
   }
 
