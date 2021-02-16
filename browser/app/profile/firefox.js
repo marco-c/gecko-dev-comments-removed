@@ -956,6 +956,9 @@ pref("browser.sessionstore.max_write_failures", 5);
 pref("browser.sessionstore.warnOnQuit", false);
 
 
+pref("browser.quitShortcut.disabled", false);
+
+
 pref("accessibility.blockautorefresh", false);
 
 
