@@ -5690,9 +5690,16 @@ void CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply,
   masm.pushValue(ToValue(apply, LApplyArgsGeneric::ThisIndex));
 }
 
-void CodeGenerator::emitPushElementsAsArguments(Register tmpArgc,
-                                                Register elementsAndArgc,
-                                                Register extraStackSpace) {
+void CodeGenerator::emitPushArrayAsArguments(Register tmpArgc,
+                                             Register srcBaseAndArgc,
+                                             Register scratch,
+                                             size_t argvSrcOffset) {
+  
+  
+  
+  
+  
+  
   
   
   
@@ -5709,10 +5716,10 @@ void CodeGenerator::emitPushElementsAsArguments(Register tmpArgc,
   
   size_t argvDstOffset = 0;
 
-  Register argvSrcBase = elementsAndArgc;  
+  Register argvSrcBase = srcBaseAndArgc;
 
-  masm.push(extraStackSpace);
-  Register copyreg = extraStackSpace;
+  masm.push(scratch);
+  Register copyreg = scratch;
   argvDstOffset += sizeof(void*);
 
   masm.push(tmpArgc);
@@ -5720,16 +5727,17 @@ void CodeGenerator::emitPushElementsAsArguments(Register tmpArgc,
   argvDstOffset += sizeof(void*);
 
   
-  emitCopyValuesForApply(argvSrcBase, argvIndex, copyreg, 0, argvDstOffset);
+  emitCopyValuesForApply(argvSrcBase, argvIndex, copyreg, argvSrcOffset,
+                         argvDstOffset);
 
   
-  masm.pop(elementsAndArgc);
-  masm.pop(extraStackSpace);
+  masm.pop(srcBaseAndArgc);  
+  masm.pop(scratch);
   masm.jump(&epilogue);
 
   
   masm.bind(&noCopy);
-  masm.movePtr(ImmPtr(0), elementsAndArgc);
+  masm.movePtr(ImmWord(0), srcBaseAndArgc);
 
   
   
@@ -5754,7 +5762,9 @@ void CodeGenerator::emitPushArguments(LApplyArrayGeneric* apply,
   emitAllocateSpaceForApply(tmpArgc, extraStackSpace);
 
   
-  emitPushElementsAsArguments(tmpArgc, elementsAndArgc, extraStackSpace);
+  size_t elementsOffset = 0;
+  emitPushArrayAsArguments(tmpArgc, elementsAndArgc, extraStackSpace,
+                           elementsOffset);
 
   
   masm.addPtr(Imm32(sizeof(Value)), extraStackSpace);
@@ -5782,7 +5792,9 @@ void CodeGenerator::emitPushArguments(LConstructArrayGeneric* construct,
 
   
   
-  emitPushElementsAsArguments(tmpArgc, elementsAndArgc, extraStackSpace);
+  size_t elementsOffset = 0;
+  emitPushArrayAsArguments(tmpArgc, elementsAndArgc, extraStackSpace,
+                           elementsOffset);
 
   
   masm.addPtr(Imm32(sizeof(Value)), extraStackSpace);
