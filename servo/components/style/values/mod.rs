@@ -36,6 +36,17 @@ pub mod specified;
 pub type CSSFloat = f32;
 
 
+
+#[inline]
+pub fn normalize(v: CSSFloat) -> CSSFloat {
+    if v.is_nan() {
+        0.0
+    } else {
+        v
+    }
+}
+
+
 pub type CSSInteger = i32;
 
 define_keyword_type!(None_, "none");
