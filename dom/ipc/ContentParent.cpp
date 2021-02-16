@@ -7196,7 +7196,7 @@ PFileDescriptorSetParent* ContentParent::SendPFileDescriptorSetConstructor(
 mozilla::ipc::IPCResult ContentParent::RecvBlobURLDataRequest(
     const nsCString& aBlobURL, nsIPrincipal* aTriggeringPrincipal,
     nsIPrincipal* aLoadingPrincipal, const OriginAttributes& aOriginAttributes,
-    const Maybe<nsID>& aAgentClusterId,
+    uint64_t aInnerWindowId, const Maybe<nsID>& aAgentClusterId,
     BlobURLDataRequestResolver&& aResolver) {
   RefPtr<BlobImpl> blobImpl;
 
@@ -7204,8 +7204,8 @@ mozilla::ipc::IPCResult ContentParent::RecvBlobURLDataRequest(
   
   if (!BlobURLProtocolHandler::GetDataEntry(
           aBlobURL, getter_AddRefs(blobImpl), aLoadingPrincipal,
-          aTriggeringPrincipal, aOriginAttributes, aAgentClusterId,
-          true )) {
+          aTriggeringPrincipal, aOriginAttributes, aInnerWindowId,
+          aAgentClusterId, true )) {
     aResolver(NS_ERROR_DOM_BAD_URI);
     return IPC_OK();
   }
