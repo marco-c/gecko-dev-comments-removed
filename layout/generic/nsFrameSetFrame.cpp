@@ -315,8 +315,7 @@ void nsHTMLFramesetFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   mNonBlankChildCount = mChildCount;
   
   for (int blankX = mChildCount; blankX < numCells; blankX++) {
-    RefPtr<ComputedStyle> pseudoComputedStyle;
-    pseudoComputedStyle =
+    RefPtr<ComputedStyle> pseudoComputedStyle =
         presShell->StyleSet()->ResolveNonInheritingAnonymousBoxStyle(
             PseudoStyleType::framesetBlank);
 

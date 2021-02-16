@@ -669,7 +669,7 @@ impl Stylist {
     {
         debug_assert!(pseudo.is_precomputed());
 
-        let rule_node = self.rule_node_for_precomputed_pseudo(guards, pseudo, None);
+        let rule_node = self.rule_node_for_precomputed_pseudo(guards, pseudo, vec![]);
 
         self.precomputed_values_for_pseudo_with_rule_node::<E>(
             guards,
@@ -718,33 +718,31 @@ impl Stylist {
         &self,
         guards: &StylesheetGuards,
         pseudo: &PseudoElement,
-        extra_declarations: Option<Vec<ApplicableDeclarationBlock>>,
+        mut extra_declarations: Vec<ApplicableDeclarationBlock>,
     ) -> StrongRuleNode {
-        let mut decl;
+        let mut declarations_with_extra;
         let declarations = match self
             .cascade_data
             .user_agent
             .precomputed_pseudo_element_decls
             .get(pseudo)
         {
-            Some(declarations) => match extra_declarations {
-                Some(mut extra_decls) => {
-                    decl = declarations.clone();
-                    decl.append(&mut extra_decls);
-                    Some(&decl)
-                },
-                None => Some(declarations),
+            Some(declarations) => {
+                if !extra_declarations.is_empty() {
+                    declarations_with_extra = declarations.clone();
+                    declarations_with_extra.append(&mut extra_declarations);
+                    &*declarations_with_extra
+                } else {
+                    &**declarations
+                }
             },
-            None => extra_declarations.as_ref(),
+            None => &[],
         };
 
-        match declarations {
-            Some(decls) => self.rule_tree.insert_ordered_rules_with_important(
-                decls.into_iter().map(|a| a.clone().for_rule_tree()),
-                guards,
-            ),
-            None => self.rule_tree.root().clone(),
-        }
+        self.rule_tree.insert_ordered_rules_with_important(
+            declarations.into_iter().map(|a| a.clone().for_rule_tree()),
+            guards,
+        )
     }
 
     

@@ -758,14 +758,3 @@ void nsPageSequenceFrame::SetDateTimeStr(const nsAString& aDateTimeStr) {
 
   mPageData->mDateTimeStr = aDateTimeStr;
 }
-
-void nsPageSequenceFrame::AppendDirectlyOwnedAnonBoxes(
-    nsTArray<OwnedAnonBox>& aResult) {
-  MOZ_ASSERT(
-      mFrames.FirstChild() && mFrames.FirstChild()->IsPrintedSheetFrame(),
-      "nsPageSequenceFrame must have a PrintedSheetFrame child");
-  
-  
-  
-  aResult.AppendElement(mFrames.FirstChild());
-}

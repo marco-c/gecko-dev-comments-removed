@@ -2546,7 +2546,6 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
     rootFrame = mPageSequenceFrame =
         NS_NewPageSequenceFrame(mPresShell, viewportPseudoStyle);
     rootPseudo = PseudoStyleType::pageSequence;
-    rootFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
   }
 
   
@@ -2642,7 +2641,6 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
     
     auto* printedSheetFrame =
         ConstructPrintedSheetFrame(mPresShell, rootFrame, nullptr);
-    printedSheetFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
     SetInitialSingleChild(rootFrame, printedSheetFrame);
 
     
@@ -2691,12 +2689,9 @@ void nsCSSFrameConstructor::ConstructAnonymousContentForCanvas(
 PrintedSheetFrame* nsCSSFrameConstructor::ConstructPrintedSheetFrame(
     PresShell* aPresShell, nsContainerFrame* aParentFrame,
     nsIFrame* aPrevSheetFrame) {
-  ComputedStyle* parentComputedStyle = aParentFrame->Style();
-  ServoStyleSet* styleSet = aPresShell->StyleSet();
-
   RefPtr<ComputedStyle> printedSheetPseudoStyle =
-      styleSet->ResolveInheritingAnonymousBoxStyle(
-          PseudoStyleType::printedSheet, parentComputedStyle);
+      aPresShell->StyleSet()->ResolveNonInheritingAnonymousBoxStyle(
+          PseudoStyleType::printedSheet);
 
   auto* printedSheetFrame =
       NS_NewPrintedSheetFrame(aPresShell, printedSheetPseudoStyle);
@@ -2709,12 +2704,10 @@ PrintedSheetFrame* nsCSSFrameConstructor::ConstructPrintedSheetFrame(
 nsContainerFrame* nsCSSFrameConstructor::ConstructPageFrame(
     PresShell* aPresShell, nsContainerFrame* aParentFrame,
     nsIFrame* aPrevPageFrame, nsContainerFrame*& aCanvasFrame) {
-  ComputedStyle* parentComputedStyle = aParentFrame->Style();
   ServoStyleSet* styleSet = aPresShell->StyleSet();
 
   RefPtr<ComputedStyle> pagePseudoStyle =
-      styleSet->ResolveInheritingAnonymousBoxStyle(PseudoStyleType::page,
-                                                   parentComputedStyle);
+      styleSet->ResolveNonInheritingAnonymousBoxStyle(PseudoStyleType::page);
 
   nsContainerFrame* pageFrame = NS_NewPageFrame(aPresShell, pagePseudoStyle);
 
@@ -2723,8 +2716,8 @@ nsContainerFrame* nsCSSFrameConstructor::ConstructPageFrame(
   pageFrame->Init(nullptr, aParentFrame, aPrevPageFrame);
 
   RefPtr<ComputedStyle> pageContentPseudoStyle;
-  pageContentPseudoStyle = styleSet->ResolveInheritingAnonymousBoxStyle(
-      PseudoStyleType::pageContent, pagePseudoStyle);
+  pageContentPseudoStyle = styleSet->ResolveNonInheritingAnonymousBoxStyle(
+      PseudoStyleType::pageContent);
 
   nsContainerFrame* pageContentFrame =
       NS_NewPageContentFrame(aPresShell, pageContentPseudoStyle);
@@ -2738,6 +2731,8 @@ nsContainerFrame* nsCSSFrameConstructor::ConstructPageFrame(
   }
   pageContentFrame->Init(nullptr, pageFrame, prevPageContentFrame);
   if (!prevPageContentFrame) {
+    
+    
     pageContentFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
   }
   SetInitialSingleChild(pageFrame, pageContentFrame);
