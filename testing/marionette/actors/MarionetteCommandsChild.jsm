@@ -520,6 +520,11 @@ class MarionetteCommandsChild extends JSWindowActorChild {
       browsingContext = context;
     }
 
+    
+    
+    
+    browsingContext.window;
+
     return { browsingContextId: browsingContext.id };
   }
 
