@@ -41,7 +41,7 @@ class EbmlComposer {
 
 
 
-  void WriteSimpleBlock(EncodedFrame* aFrame);
+  nsresult WriteSimpleBlock(EncodedFrame* aFrame);
   
 
 
