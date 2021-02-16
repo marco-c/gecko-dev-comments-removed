@@ -29,12 +29,11 @@ class OpusMetadata : public TrackMetadataBase {
 
 class OpusTrackEncoder : public AudioTrackEncoder {
  public:
-  explicit OpusTrackEncoder(TrackRate aTrackRate);
+  OpusTrackEncoder(TrackRate aTrackRate,
+                   MediaQueue<EncodedFrame>& aEncodedDataQueue);
   virtual ~OpusTrackEncoder();
 
   already_AddRefed<TrackMetadataBase> GetMetadata() override;
-
-  nsresult GetEncodedTrack(nsTArray<RefPtr<EncodedFrame>>& aData) override;
 
   
 
@@ -49,6 +48,11 @@ class OpusTrackEncoder : public AudioTrackEncoder {
   int NumInputFramesPerPacket() const override;
 
   nsresult Init(int aChannels) override;
+
+  
+
+
+  nsresult Encode(AudioSegment* aSegment) override;
 
   
 
@@ -74,14 +78,6 @@ class OpusTrackEncoder : public AudioTrackEncoder {
 
 
   OpusEncoder* mEncoder;
-
-  
-
-
-
-
-
-  AudioSegment mSourceSegment;
 
   
 

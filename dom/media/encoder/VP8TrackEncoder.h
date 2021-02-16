@@ -34,13 +34,13 @@ class VP8TrackEncoder : public VideoTrackEncoder {
 
  public:
   VP8TrackEncoder(RefPtr<DriftCompensator> aDriftCompensator,
-                  TrackRate aTrackRate, FrameDroppingMode aFrameDroppingMode,
+                  TrackRate aTrackRate,
+                  MediaQueue<EncodedFrame>& aEncodedDataQueue,
+                  FrameDroppingMode aFrameDroppingMode,
                   Maybe<float> aKeyFrameIntervalFactor = Nothing());
   virtual ~VP8TrackEncoder();
 
   already_AddRefed<TrackMetadataBase> GetMetadata() final;
-
-  nsresult GetEncodedTrack(nsTArray<RefPtr<EncodedFrame>>& aData) final;
 
   void SetKeyFrameInterval(Maybe<TimeDuration> aKeyFrameInterval) final;
 
@@ -62,7 +62,11 @@ class VP8TrackEncoder : public VideoTrackEncoder {
   
   
   
-  nsresult GetEncodedPartitions(nsTArray<RefPtr<EncodedFrame>>& aData);
+  Result<RefPtr<EncodedFrame>, nsresult> ExtractEncodedData();
+
+  
+  
+  nsresult Encode(VideoSegment* aSegment) final;
 
   
   nsresult PrepareRawFrame(VideoChunk& aChunk);
@@ -142,12 +146,6 @@ class VP8TrackEncoder : public VideoTrackEncoder {
 
 
   Maybe<int32_t> mMaxKeyFrameDistance;
-
-  
-
-
-
-  VideoSegment mSourceSegment;
 
   
 

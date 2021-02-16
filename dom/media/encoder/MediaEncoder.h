@@ -44,10 +44,6 @@ class MediaEncoderListener {
   
 
 
-  virtual void DataAvailable() = 0;
-  
-
-
   virtual void Error() = 0;
   
 
@@ -127,8 +123,10 @@ class MediaEncoder {
                RefPtr<DriftCompensator> aDriftCompensator,
                UniquePtr<ContainerWriter> aWriter,
                UniquePtr<AudioTrackEncoder> aAudioEncoder,
-               UniquePtr<VideoTrackEncoder> aVideoEncoder, TrackRate aTrackRate,
-               const nsAString& aMIMEType);
+               UniquePtr<VideoTrackEncoder> aVideoEncoder,
+               UniquePtr<MediaQueue<EncodedFrame>> aEncodedAudioQueue,
+               UniquePtr<MediaQueue<EncodedFrame>> aEncodedVideoQueue,
+               TrackRate aTrackRate, const nsAString& aMIMEType);
 
   
 
@@ -210,12 +208,6 @@ class MediaEncoder {
 
 
 
-  void NotifyDataAvailable();
-
-  
-
-
-
   void RegisterListener(MediaEncoderListener* aListener);
 
   
@@ -266,6 +258,9 @@ class MediaEncoder {
 
   const RefPtr<TaskQueue> mEncoderThread;
   const RefPtr<DriftCompensator> mDriftCompensator;
+
+  const UniquePtr<MediaQueue<EncodedFrame>> mEncodedAudioQueue;
+  const UniquePtr<MediaQueue<EncodedFrame>> mEncodedVideoQueue;
 
   const UniquePtr<Muxer> mMuxer;
   const UniquePtr<AudioTrackEncoder> mAudioEncoder;

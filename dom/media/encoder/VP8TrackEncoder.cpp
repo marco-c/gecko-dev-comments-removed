@@ -139,10 +139,11 @@ nsresult CreateEncoderConfig(int32_t aWidth, int32_t aHeight,
 
 VP8TrackEncoder::VP8TrackEncoder(RefPtr<DriftCompensator> aDriftCompensator,
                                  TrackRate aTrackRate,
+                                 MediaQueue<EncodedFrame>& aEncodedDataQueue,
                                  FrameDroppingMode aFrameDroppingMode,
                                  Maybe<float> aKeyFrameIntervalFactor)
     : VideoTrackEncoder(std::move(aDriftCompensator), aTrackRate,
-                        aFrameDroppingMode),
+                        aEncodedDataQueue, aFrameDroppingMode),
       mKeyFrameInterval(
           TimeDuration::FromMilliseconds(DEFAULT_KEYFRAME_INTERVAL_MS)),
       mKeyFrameIntervalFactor(aKeyFrameIntervalFactor.valueOr(
@@ -363,7 +364,7 @@ already_AddRefed<TrackMetadataBase> VP8TrackEncoder::GetMetadata() {
 
   MOZ_ASSERT(mInitialized || mCanceled);
 
-  if (mCanceled || mEncodingComplete) {
+  if (mCanceled || IsEncodingComplete()) {
     return nullptr;
   }
 
@@ -375,8 +376,7 @@ already_AddRefed<TrackMetadataBase> VP8TrackEncoder::GetMetadata() {
   return do_AddRef(mMetadata);
 }
 
-nsresult VP8TrackEncoder::GetEncodedPartitions(
-    nsTArray<RefPtr<EncodedFrame>>& aData) {
+Result<RefPtr<EncodedFrame>, nsresult> VP8TrackEncoder::ExtractEncodedData() {
   vpx_codec_iter_t iter = nullptr;
   EncodedFrame::FrameType frameType = EncodedFrame::VP8_P_FRAME;
   auto frameData = MakeRefPtr<EncodedFrame::FrameData>();
@@ -402,74 +402,248 @@ nsresult VP8TrackEncoder::GetEncodedPartitions(
     }
   }
 
-  if (!frameData->IsEmpty()) {
-    if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
-      
-      
-      TrackTime frameTime = pkt->data.frame.pts;
-      DebugOnly<TrackTime> frameDuration = pkt->data.frame.duration;
-      MOZ_ASSERT(frameTime + frameDuration <= mEncodedTimestamp);
-      mDurationSinceLastKeyframe =
-          std::min(mDurationSinceLastKeyframe, mEncodedTimestamp - frameTime);
-    }
+  if (frameData->IsEmpty()) {
+    return RefPtr<EncodedFrame>(nullptr);
+  }
 
+  if (!pkt) {
     
-    media::TimeUnit timestamp =
-        FramesToTimeUnit(pkt->data.frame.pts, mTrackRate);
-    if (!timestamp.IsValid()) {
-      NS_ERROR("Microsecond timestamp overflow");
-      return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
-    }
+    return RefPtr<EncodedFrame>(nullptr);
+  }
 
-    mExtractedDuration += pkt->data.frame.duration;
-    if (!mExtractedDuration.isValid()) {
-      NS_ERROR("Duration overflow");
-      return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
-    }
-
-    media::TimeUnit totalDuration =
-        FramesToTimeUnit(mExtractedDuration.value(), mTrackRate);
-    if (!totalDuration.IsValid()) {
-      NS_ERROR("Duration overflow");
-      return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
-    }
-
-    media::TimeUnit duration = totalDuration - mExtractedDurationUs;
-    if (!duration.IsValid()) {
-      NS_ERROR("Duration overflow");
-      return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
-    }
-
-    mExtractedDurationUs = totalDuration;
-
-    VP8LOG(LogLevel::Verbose,
-           "GetEncodedPartitions TimeStamp %.2f, Duration %.2f, FrameType %d",
-           timestamp.ToSeconds(), duration.ToSeconds(), frameType);
-
+  if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
     
-    aData.AppendElement(MakeRefPtr<EncodedFrame>(
-        timestamp, duration.ToMicroseconds(), PR_USEC_PER_SEC, frameType,
-        std::move(frameData)));
+    
+    TrackTime frameTime = pkt->data.frame.pts;
+    DebugOnly<TrackTime> frameDuration = pkt->data.frame.duration;
+    MOZ_ASSERT(frameTime + frameDuration <= mEncodedTimestamp);
+    mDurationSinceLastKeyframe =
+        std::min(mDurationSinceLastKeyframe, mEncodedTimestamp - frameTime);
+  }
 
-    if (static_cast<int>(totalDuration.ToSeconds()) /
-            DYNAMIC_MAXKFDIST_CHECK_INTERVAL >
-        static_cast<int>(mLastKeyFrameDistanceUpdate.ToSeconds()) /
-            DYNAMIC_MAXKFDIST_CHECK_INTERVAL) {
-      
-      mLastKeyFrameDistanceUpdate = totalDuration;
-      const int32_t maxKfDistance =
-          CalculateMaxKeyFrameDistance().valueOr(*mMaxKeyFrameDistance);
-      const float diffFactor =
-          static_cast<float>(maxKfDistance) / *mMaxKeyFrameDistance;
-      VP8LOG(LogLevel::Debug, "maxKfDistance: %d, factor: %.2f", maxKfDistance,
-             diffFactor);
-      if (std::abs(1.0 - diffFactor) > DYNAMIC_MAXKFDIST_DIFFACTOR) {
-        SetMaxKeyFrameDistance(maxKfDistance);
-      }
+  
+  media::TimeUnit timestamp = FramesToTimeUnit(pkt->data.frame.pts, mTrackRate);
+  if (!timestamp.IsValid()) {
+    NS_ERROR("Microsecond timestamp overflow");
+    return Err(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR);
+  }
+
+  mExtractedDuration += pkt->data.frame.duration;
+  if (!mExtractedDuration.isValid()) {
+    NS_ERROR("Duration overflow");
+    return Err(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR);
+  }
+
+  media::TimeUnit totalDuration =
+      FramesToTimeUnit(mExtractedDuration.value(), mTrackRate);
+  if (!totalDuration.IsValid()) {
+    NS_ERROR("Duration overflow");
+    return Err(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR);
+  }
+
+  media::TimeUnit duration = totalDuration - mExtractedDurationUs;
+  if (!duration.IsValid()) {
+    NS_ERROR("Duration overflow");
+    return Err(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR);
+  }
+
+  mExtractedDurationUs = totalDuration;
+
+  VP8LOG(LogLevel::Verbose,
+         "ExtractEncodedData TimeStamp %.2f, Duration %.2f, FrameType %d",
+         timestamp.ToSeconds(), duration.ToSeconds(), frameType);
+
+  if (static_cast<int>(totalDuration.ToSeconds()) /
+          DYNAMIC_MAXKFDIST_CHECK_INTERVAL >
+      static_cast<int>(mLastKeyFrameDistanceUpdate.ToSeconds()) /
+          DYNAMIC_MAXKFDIST_CHECK_INTERVAL) {
+    
+    mLastKeyFrameDistanceUpdate = totalDuration;
+    const int32_t maxKfDistance =
+        CalculateMaxKeyFrameDistance().valueOr(*mMaxKeyFrameDistance);
+    const float diffFactor =
+        static_cast<float>(maxKfDistance) / *mMaxKeyFrameDistance;
+    VP8LOG(LogLevel::Debug, "maxKfDistance: %d, factor: %.2f", maxKfDistance,
+           diffFactor);
+    if (std::abs(1.0 - diffFactor) > DYNAMIC_MAXKFDIST_DIFFACTOR) {
+      SetMaxKeyFrameDistance(maxKfDistance);
     }
   }
 
-  return pkt ? NS_OK : NS_ERROR_NOT_AVAILABLE;
+  return MakeRefPtr<EncodedFrame>(timestamp, duration.ToMicroseconds(),
+                                  PR_USEC_PER_SEC, frameType,
+                                  std::move(frameData));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nsresult VP8TrackEncoder::Encode(VideoSegment* aSegment) {
+  MOZ_ASSERT(mInitialized);
+  MOZ_ASSERT(!IsEncodingComplete());
+
+  AUTO_PROFILER_LABEL("VP8TrackEncoder::Encode", OTHER);
+
+  EncodeOperation nextEncodeOperation = ENCODE_NORMAL_FRAME;
+
+  RefPtr<EncodedFrame> encodedFrame;
+  for (VideoSegment::ChunkIterator iter(*aSegment); !iter.IsEnded();
+       iter.Next()) {
+    VideoChunk& chunk = *iter;
+
+    VP8LOG(LogLevel::Verbose,
+           "nextEncodeOperation is %d for frame of duration %" PRId64,
+           nextEncodeOperation, chunk.GetDuration());
+
+    TimeStamp timebase = TimeStamp::Now();
+
+    
+    if (nextEncodeOperation != SKIP_FRAME) {
+      MOZ_ASSERT(!encodedFrame);
+      nsresult rv = PrepareRawFrame(chunk);
+      NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+
+      
+      int flags = 0;
+      if (nextEncodeOperation == ENCODE_I_FRAME) {
+        VP8LOG(LogLevel::Warning,
+               "MediaRecorder lagging behind. Encoding keyframe.");
+        flags |= VPX_EFLAG_FORCE_KF;
+      }
+
+      
+      
+      if (mKeyFrameInterval > TimeDuration::FromSeconds(0)) {
+        if (FramesToTimeUnit(mDurationSinceLastKeyframe, mTrackRate)
+                .ToTimeDuration() >= mKeyFrameInterval) {
+          VP8LOG(LogLevel::Warning,
+                 "Reached mKeyFrameInterval without seeing a keyframe. Forcing "
+                 "one. time: %.2f, interval: %.2f",
+                 FramesToTimeUnit(mDurationSinceLastKeyframe, mTrackRate)
+                     .ToSeconds(),
+                 mKeyFrameInterval.ToSeconds());
+          mDurationSinceLastKeyframe = 0;
+          flags |= VPX_EFLAG_FORCE_KF;
+        }
+        mDurationSinceLastKeyframe += chunk.GetDuration();
+      }
+
+      if (vpx_codec_encode(&mVPXContext, &mVPXImageWrapper, mEncodedTimestamp,
+                           (unsigned long)chunk.GetDuration(), flags,
+                           VPX_DL_REALTIME)) {
+        VP8LOG(LogLevel::Error, "vpx_codec_encode failed to encode the frame.");
+        return NS_ERROR_FAILURE;
+      }
+
+      
+      mEncodedTimestamp += chunk.GetDuration();
+
+      
+      
+      auto result = ExtractEncodedData();
+      if (result.isErr()) {
+        VP8LOG(LogLevel::Error, "ExtractEncodedData failed.");
+        return NS_ERROR_FAILURE;
+      }
+
+      MOZ_ASSERT(result.inspect(),
+                 "We expected a frame here. EOS is handled explicitly later");
+      encodedFrame = result.unwrap();
+    } else {
+      
+
+      MOZ_DIAGNOSTIC_ASSERT(encodedFrame);
+
+      
+      mEncodedTimestamp += chunk.GetDuration();
+
+      
+      
+      VP8LOG(LogLevel::Warning,
+             "MediaRecorder lagging behind. Skipping a frame.");
+
+      mExtractedDuration += chunk.mDuration;
+      if (!mExtractedDuration.isValid()) {
+        NS_ERROR("skipped duration overflow");
+        return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
+      }
+
+      media::TimeUnit totalDuration =
+          FramesToTimeUnit(mExtractedDuration.value(), mTrackRate);
+      media::TimeUnit skippedDuration = totalDuration - mExtractedDurationUs;
+      mExtractedDurationUs = totalDuration;
+      if (!skippedDuration.IsValid()) {
+        NS_ERROR("skipped duration overflow");
+        return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
+      }
+
+      encodedFrame = MakeRefPtr<EncodedFrame>(
+          encodedFrame->mTime,
+          encodedFrame->mDuration + skippedDuration.ToMicroseconds(),
+          encodedFrame->mDurationBase, encodedFrame->mFrameType,
+          encodedFrame->mFrameData);
+    }
+
+    mMeanFrameEncodeDuration.insert(TimeStamp::Now() - timebase);
+    mMeanFrameDuration.insert(
+        FramesToTimeUnit(chunk.GetDuration(), mTrackRate).ToTimeDuration());
+    nextEncodeOperation = GetNextEncodeOperation(
+        mMeanFrameEncodeDuration.mean(), mMeanFrameDuration.mean());
+
+    if (nextEncodeOperation != SKIP_FRAME) {
+      
+      
+      mEncodedDataQueue.Push(encodedFrame.forget());
+    }
+  }
+
+  if (encodedFrame) {
+    
+    mEncodedDataQueue.Push(encodedFrame.forget());
+  }
+
+  
+  aSegment->Clear();
+
+  if (mEndOfStream) {
+    
+    VP8LOG(LogLevel::Debug, "mEndOfStream is true");
+    if (mI420Frame) {
+      mI420Frame = nullptr;
+      mI420FrameSize = 0;
+    }
+    
+    
+    while (true) {
+      if (vpx_codec_encode(&mVPXContext, nullptr, mEncodedTimestamp, 0, 0,
+                           VPX_DL_REALTIME)) {
+        return NS_ERROR_FAILURE;
+      }
+      auto result = ExtractEncodedData();
+      if (result.isErr()) {
+        return NS_ERROR_FAILURE;
+      }
+      if (!result.inspect()) {
+        
+        break;
+      }
+      mEncodedDataQueue.Push(result.unwrap().forget());
+    }
+    mEncodedDataQueue.Finish();
+  }
+
+  return NS_OK;
 }
 
 nsresult VP8TrackEncoder::PrepareRawFrame(VideoChunk& aChunk) {
@@ -544,172 +718,6 @@ VP8TrackEncoder::EncodeOperation VP8TrackEncoder::GetNextEncodeOperation(
   }
 
   return ENCODE_NORMAL_FRAME;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-nsresult VP8TrackEncoder::GetEncodedTrack(
-    nsTArray<RefPtr<EncodedFrame>>& aData) {
-  AUTO_PROFILER_LABEL("VP8TrackEncoder::GetEncodedTrack", OTHER);
-
-  MOZ_ASSERT(mInitialized || mCanceled);
-
-  if (mCanceled || mEncodingComplete) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (!mInitialized) {
-    return NS_ERROR_FAILURE;
-  }
-
-  TakeTrackData(mSourceSegment);
-
-  EncodeOperation nextEncodeOperation = ENCODE_NORMAL_FRAME;
-
-  for (VideoSegment::ChunkIterator iter(mSourceSegment); !iter.IsEnded();
-       iter.Next()) {
-    TimeStamp timebase = TimeStamp::Now();
-    VideoChunk& chunk = *iter;
-    VP8LOG(LogLevel::Verbose,
-           "nextEncodeOperation is %d for frame of duration %" PRId64,
-           nextEncodeOperation, chunk.GetDuration());
-
-    
-    if (nextEncodeOperation != SKIP_FRAME) {
-      nsresult rv = PrepareRawFrame(chunk);
-      NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-
-      
-      int flags = 0;
-      if (nextEncodeOperation == ENCODE_I_FRAME) {
-        VP8LOG(LogLevel::Warning,
-               "MediaRecorder lagging behind. Encoding keyframe.");
-        flags |= VPX_EFLAG_FORCE_KF;
-      }
-
-      
-      
-      if (mKeyFrameInterval > TimeDuration::FromSeconds(0)) {
-        if (FramesToTimeUnit(mDurationSinceLastKeyframe, mTrackRate)
-                .ToTimeDuration() >= mKeyFrameInterval) {
-          VP8LOG(LogLevel::Warning,
-                 "Reached mKeyFrameInterval without seeing a keyframe. Forcing "
-                 "one. time: %.2f, interval: %.2f",
-                 FramesToTimeUnit(mDurationSinceLastKeyframe, mTrackRate)
-                     .ToSeconds(),
-                 mKeyFrameInterval.ToSeconds());
-          mDurationSinceLastKeyframe = 0;
-          flags |= VPX_EFLAG_FORCE_KF;
-        }
-        mDurationSinceLastKeyframe += chunk.GetDuration();
-      }
-
-      if (vpx_codec_encode(&mVPXContext, &mVPXImageWrapper, mEncodedTimestamp,
-                           (unsigned long)chunk.GetDuration(), flags,
-                           VPX_DL_REALTIME)) {
-        VP8LOG(LogLevel::Error, "vpx_codec_encode failed to encode the frame.");
-        return NS_ERROR_FAILURE;
-      }
-
-      
-      mEncodedTimestamp += chunk.GetDuration();
-
-      
-      rv = GetEncodedPartitions(aData);
-      if (rv != NS_OK && rv != NS_ERROR_NOT_AVAILABLE) {
-        VP8LOG(LogLevel::Error, "GetEncodedPartitions failed.");
-        return NS_ERROR_FAILURE;
-      }
-    } else {
-      
-
-      
-      mEncodedTimestamp += chunk.GetDuration();
-
-      
-      
-      VP8LOG(LogLevel::Warning,
-             "MediaRecorder lagging behind. Skipping a frame.");
-
-      mExtractedDuration += chunk.mDuration;
-      if (!mExtractedDuration.isValid()) {
-        NS_ERROR("skipped duration overflow");
-        return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
-      }
-
-      media::TimeUnit totalDuration =
-          FramesToTimeUnit(mExtractedDuration.value(), mTrackRate);
-      media::TimeUnit skippedDuration = totalDuration - mExtractedDurationUs;
-      mExtractedDurationUs = totalDuration;
-      if (!skippedDuration.IsValid()) {
-        NS_ERROR("skipped duration overflow");
-        return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
-      }
-
-      {
-        auto& last = aData.LastElement();
-        MOZ_DIAGNOSTIC_ASSERT(aData.LastElement());
-        uint64_t longerDuration =
-            last->mDuration + skippedDuration.ToMicroseconds();
-        auto longerFrame = MakeRefPtr<EncodedFrame>(
-            last->mTime, longerDuration, last->mDurationBase, last->mFrameType,
-            last->mFrameData);
-        std::swap(last, longerFrame);
-        MOZ_ASSERT(last->mDuration == longerDuration);
-      }
-    }
-
-    mMeanFrameEncodeDuration.insert(TimeStamp::Now() - timebase);
-    mMeanFrameDuration.insert(
-        FramesToTimeUnit(chunk.GetDuration(), mTrackRate).ToTimeDuration());
-    nextEncodeOperation = GetNextEncodeOperation(
-        mMeanFrameEncodeDuration.mean(), mMeanFrameDuration.mean());
-  }
-
-  
-  mSourceSegment.Clear();
-
-  
-  if (mEndOfStream) {
-    VP8LOG(LogLevel::Debug, "mEndOfStream is true");
-    mEncodingComplete = true;
-    if (mI420Frame) {
-      mI420Frame = nullptr;
-      mI420FrameSize = 0;
-    }
-    
-    
-    while (true) {
-      if (vpx_codec_encode(&mVPXContext, nullptr, mEncodedTimestamp, 0, 0,
-                           VPX_DL_REALTIME)) {
-        return NS_ERROR_FAILURE;
-      }
-      nsresult rv = GetEncodedPartitions(aData);
-      if (rv == NS_ERROR_NOT_AVAILABLE) {
-        
-        break;
-      }
-      if (rv != NS_OK) {
-        
-        return NS_ERROR_FAILURE;
-      }
-    }
-  }
-
-  return NS_OK;
 }
 
 }  

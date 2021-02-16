@@ -7,6 +7,7 @@
 #define DOM_MEDIA_ENCODER_MUXER_H_
 
 #include "MediaQueue.h"
+#include "mozilla/media/MediaUtils.h"
 
 namespace mozilla {
 
@@ -19,8 +20,14 @@ class TrackMetadataBase;
 
 class Muxer {
  public:
-  explicit Muxer(UniquePtr<ContainerWriter> aWriter);
+  Muxer(UniquePtr<ContainerWriter> aWriter,
+        MediaQueue<EncodedFrame>& aEncodedAudioQueue,
+        MediaQueue<EncodedFrame>& aEncodedVideoQueue);
   ~Muxer() = default;
+
+  
+  
+  void Disconnect();
 
   
   
@@ -33,20 +40,6 @@ class Muxer {
   nsresult SetMetadata(const nsTArray<RefPtr<TrackMetadataBase>>& aMetadata);
 
   
-  void AddEncodedAudioFrame(EncodedFrame* aFrame);
-
-  
-  void AddEncodedVideoFrame(EncodedFrame* aFrame);
-
-  
-  
-  void AudioEndOfStream();
-
-  
-  
-  void VideoEndOfStream();
-
-  
   nsresult GetData(nsTArray<nsTArray<uint8_t>>* aOutputBuffers);
 
  private:
@@ -54,9 +47,14 @@ class Muxer {
   nsresult Mux();
 
   
-  MediaQueue<EncodedFrame> mEncodedAudioQueue;
+  MediaQueue<EncodedFrame>& mEncodedAudioQueue;
   
-  MediaQueue<EncodedFrame> mEncodedVideoQueue;
+  MediaQueue<EncodedFrame>& mEncodedVideoQueue;
+  
+  MediaEventListener mAudioPushListener;
+  MediaEventListener mAudioFinishListener;
+  MediaEventListener mVideoPushListener;
+  MediaEventListener mVideoFinishListener;
   
   UniquePtr<ContainerWriter> mWriter;
   

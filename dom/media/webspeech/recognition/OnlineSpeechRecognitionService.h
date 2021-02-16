@@ -54,11 +54,6 @@ class OnlineSpeechRecognitionService : public nsISpeechRecognitionService,
       mService->EncoderInitialized();
     }
 
-    void DataAvailable(TrackEncoder* aEncoder) override {
-      MOZ_ASSERT(mOwningThread->IsCurrentThreadIn());
-      mService->EncoderDataAvailable();
-    }
-
     void Error(TrackEncoder* aEncoder) override {
       MOZ_ASSERT(mOwningThread->IsCurrentThreadIn());
       mService->EncoderError();
@@ -84,7 +79,7 @@ class OnlineSpeechRecognitionService : public nsISpeechRecognitionService,
 
 
 
-  void EncoderDataAvailable();
+  void EncoderFinished();
 
   
 
@@ -115,6 +110,8 @@ class OnlineSpeechRecognitionService : public nsISpeechRecognitionService,
   nsTArray<nsTArray<uint8_t>> mEncodedData;
   
   RefPtr<SpeechEncoderListener> mSpeechEncoderListener;
+  
+  MediaQueue<EncodedFrame> mEncodedAudioQueue;
   
   
   UniquePtr<AudioTrackEncoder> mAudioEncoder;

@@ -8,6 +8,7 @@
 
 #include "AudioSegment.h"
 #include "EncodedFrame.h"
+#include "MediaQueue.h"
 #include "MediaTrackGraph.h"
 #include "TrackMetadataBase.h"
 #include "VideoSegment.h"
@@ -37,12 +38,6 @@ class TrackEncoderListener {
 
 
 
-  virtual void DataAvailable(TrackEncoder* aEncoder) = 0;
-
-  
-
-
-
   virtual void Error(TrackEncoder* aEncoder) = 0;
 
  protected:
@@ -57,11 +52,10 @@ class TrackEncoderListener {
 
 
 
-
-
 class TrackEncoder {
  public:
-  explicit TrackEncoder(TrackRate aTrackRate);
+  TrackEncoder(TrackRate aTrackRate,
+               MediaQueue<EncodedFrame>& aEncodedDataQueue);
 
   
 
@@ -83,8 +77,7 @@ class TrackEncoder {
   
 
 
-
-  virtual nsresult GetEncodedTrack(nsTArray<RefPtr<EncodedFrame>>& aData) = 0;
+  MediaQueue<EncodedFrame>& EncodedDataQueue() { return mEncodedDataQueue; }
 
   
 
@@ -100,7 +93,7 @@ class TrackEncoder {
 
 
 
-  bool IsEncodingComplete();
+  bool IsEncodingComplete() const;
 
   
 
@@ -145,17 +138,7 @@ class TrackEncoder {
   
 
 
-  void OnDataAvailable();
-
-  
-
-
   void OnError();
-
-  
-
-
-  bool mEncodingComplete;
 
   
 
@@ -195,13 +178,19 @@ class TrackEncoder {
 
   RefPtr<AbstractThread> mWorkerThread;
 
+  
+
+
+  MediaQueue<EncodedFrame>& mEncodedDataQueue;
+
   nsTArray<RefPtr<TrackEncoderListener>> mListeners;
 };
 
 class AudioTrackEncoder : public TrackEncoder {
  public:
-  explicit AudioTrackEncoder(TrackRate aTrackRate)
-      : TrackEncoder(aTrackRate),
+  AudioTrackEncoder(TrackRate aTrackRate,
+                    MediaQueue<EncodedFrame>& aEncodedDataQueue)
+      : TrackEncoder(aTrackRate, aEncodedDataQueue),
         mChannels(0),
         mNotInitDuration(0),
         mAudioBitrate(0) {}
@@ -222,12 +211,6 @@ class AudioTrackEncoder : public TrackEncoder {
 
 
   void AppendAudioSegment(AudioSegment&& aSegment);
-
-  
-
-
-
-  void TakeTrackData(AudioSegment& aSegment);
 
   template <typename T>
   static void InterleaveTrackData(nsTArray<const T*>& aInput, int32_t aDuration,
@@ -314,6 +297,11 @@ class AudioTrackEncoder : public TrackEncoder {
   
 
 
+  virtual nsresult Encode(AudioSegment* aSegment) = 0;
+
+  
+
+
 
 
 
@@ -338,9 +326,10 @@ enum class FrameDroppingMode {
 
 class VideoTrackEncoder : public TrackEncoder {
  public:
-  explicit VideoTrackEncoder(RefPtr<DriftCompensator> aDriftCompensator,
-                             TrackRate aTrackRate,
-                             FrameDroppingMode aFrameDroppingMode);
+  VideoTrackEncoder(RefPtr<DriftCompensator> aDriftCompensator,
+                    TrackRate aTrackRate,
+                    MediaQueue<EncodedFrame>& aEncodedDataQueue,
+                    FrameDroppingMode aFrameDroppingMode);
 
   
 
@@ -371,12 +360,6 @@ class VideoTrackEncoder : public TrackEncoder {
 
 
   void AppendVideoSegment(VideoSegment&& aSegment);
-
-  
-
-
-
-  void TakeTrackData(VideoSegment& aSegment);
 
   
 
@@ -442,6 +425,11 @@ class VideoTrackEncoder : public TrackEncoder {
 
   virtual nsresult Init(int32_t aWidth, int32_t aHeight, int32_t aDisplayWidth,
                         int32_t aDisplayHeight, float aEstimatedFrameRate) = 0;
+
+  
+
+
+  virtual nsresult Encode(VideoSegment* aSegment) = 0;
 
   
 
