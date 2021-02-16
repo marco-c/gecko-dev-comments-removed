@@ -40,57 +40,7 @@ double js_strtod_harder(DtoaState* state, const char* s00, char** se);
 
 
 
-
-
-
-
-
-
-
-
-
-typedef enum JSDToStrMode {
-  DTOSTR_STANDARD, 
-  DTOSTR_STANDARD_EXPONENTIAL, 
-  DTOSTR_FIXED,       
-
-  DTOSTR_EXPONENTIAL, 
-
-  DTOSTR_PRECISION    
-
-} JSDToStrMode;
-
-
-
-
 #define DTOSTR_STANDARD_BUFFER_SIZE 26
-
-
-
-
-#define DTOSTR_VARIABLE_BUFFER_SIZE(precision)    \
-  ((precision) + 24 > DTOSTR_STANDARD_BUFFER_SIZE \
-       ? (precision) + 24                         \
-       : DTOSTR_STANDARD_BUFFER_SIZE)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-char* js_dtostr(DtoaState* state, char* buffer, size_t bufferSize,
-                JSDToStrMode mode, int precision, double dval);
 
 
 
