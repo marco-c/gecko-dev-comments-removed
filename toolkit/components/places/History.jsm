@@ -1087,6 +1087,14 @@ var notifyCleanup = async function(db, pages, transition = -1) {
     } else {
       
       notify(observers, "onDeleteURI", [uri, guid, reason]);
+      PlacesObservers.notifyListeners([
+        new PlacesVisitRemoved({
+          url: uri.spec,
+          pageGuid: guid,
+          reason: PlacesVisitRemoved.REASON_DELETED,
+          isRemovedFromStore: true,
+        }),
+      ]);
     }
     if (++notifiedCount % NOTIFICATION_CHUNK_SIZE == 0) {
       
