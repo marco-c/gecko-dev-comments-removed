@@ -38,15 +38,20 @@ let gCaretPromptOpeningObserver;
 function promiseCaretPromptOpened() {
   return new Promise(resolve => {
     function observer(subject, topic, data) {
-      info("Dialog opened.");
-      resolve(subject);
-      gCaretPromptOpeningObserver();
+      if (topic == "domwindowopened") {
+        Services.ww.unregisterNotification(observer);
+        let win = subject;
+        BrowserTestUtils.waitForEvent(
+          win,
+          "load",
+          false,
+          e => e.target.location.href != "about:blank"
+        ).then(() => resolve(win));
+        gCaretPromptOpeningObserver = null;
+      }
     }
-    Services.obs.addObserver(observer, "common-dialog-loaded");
-    gCaretPromptOpeningObserver = () => {
-      Services.obs.removeObserver(observer, "common-dialog-loaded");
-      gCaretPromptOpeningObserver = () => {};
-    };
+    Services.ww.registerNotification(observer);
+    gCaretPromptOpeningObserver = observer;
   });
 }
 
@@ -77,7 +82,8 @@ function syncToggleCaretNoDialog(expected) {
   
   
   if (!openedDialog) {
-    gCaretPromptOpeningObserver();
+    Services.ww.unregisterNotification(gCaretPromptOpeningObserver);
+    gCaretPromptOpeningObserver = null;
   }
   let prefVal = Services.prefs.getBoolPref(kPrefCaretBrowsingOn);
   is(prefVal, expected, "Caret browsing should now be " + expectedStr);
