@@ -637,11 +637,6 @@ max-width: ${width}px; max-height: ${height}px`;
 
       browser.changeRemoteness({ remoteType });
       browser.construct();
-
-      
-      
-      
-      
     }
   }
 
