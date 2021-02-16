@@ -148,20 +148,6 @@ parent:
   async SetClientInfo(IPCClientInfo aClientInfo);
 
   
-
-
-
-  async UpdateDocumentWouldPreloadResources();
-
-  
-
-
-
-  async SubmitLoadEventPreloadTelemetry(TimeStamp aNavigationStart,
-                                        TimeStamp aLoadStart,
-                                        TimeStamp aLoadEnd);
-
-  
   
   
   

@@ -214,8 +214,6 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
   mozilla::TimeStamp GetUnloadEventEndTimeStamp() const;
 
   bool IsTopLevelContentDocumentInContentProcess() const;
-  void MaybeSubmitTimeToLoadEventPreloadTelemetry(
-      mozilla::TimeStamp aLoadEventEnd) const;
 
   
   
@@ -245,8 +243,6 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
   mozilla::TimeStamp mDOMComplete;
 
   mozilla::TimeStamp mTTFI;
-
-  mozilla::TimeStamp mLoadEventStartForTelemetry;
 
   bool mDocShellHasBeenActiveSinceNavigationStart;
 
