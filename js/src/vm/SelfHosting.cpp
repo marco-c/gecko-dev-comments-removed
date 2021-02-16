@@ -2771,37 +2771,6 @@ static bool VerifyGlobalNames(JSContext* cx, Handle<GlobalObject*> shg) {
   return true;
 }
 
-bool JSRuntime::initSelfHostingFromXDR(JSContext* cx,
-                                       const CompileOptions& options,
-                                       frontend::CompilationStencil& stencil,
-                                       MutableHandle<JSScript*> scriptOut) {
-  MOZ_ASSERT(selfHostingGlobal_);
-  MOZ_ASSERT(selfHostedXDR.length() > 0);
-  scriptOut.set(nullptr);
-
-  
-  JS::TranscodeRange xdrRange(selfHostedXDR);
-  bool decodeOk = false;
-  if (!stencil.deserializeStencils(cx, xdrRange, &decodeOk)) {
-    return false;
-  }
-  
-  
-  if (!decodeOk) {
-    return true;
-  }
-
-  
-  Rooted<frontend::CompilationGCOutput> output(cx);
-  if (!frontend::CompilationStencil::instantiateStencils(cx, stencil,
-                                                         output.get())) {
-    return false;
-  }
-
-  scriptOut.set(output.get().script);
-  return true;
-}
-
 bool JSRuntime::initSelfHosting(JSContext* cx) {
   MOZ_ASSERT(!selfHostingGlobal_);
 
@@ -2831,31 +2800,27 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
   CompileOptions options(cx);
   FillSelfHostingCompileOptions(options);
 
-  RootedScript script(cx);
+  Rooted<UniquePtr<frontend::CompilationStencil>> stencil(
+      cx, MakeUnique<frontend::CompilationStencil>(cx, options));
+  if (!stencil.get()) {
+    return false;
+  }
+
+  if (!stencil->input.initForSelfHostingGlobal(cx)) {
+    return false;
+  }
 
   
+  bool decodeOk = false;
   if (selfHostedXDR.length() > 0) {
-    
-    Rooted<frontend::CompilationStencil> stencil(
-        cx, frontend::CompilationStencil(cx, options));
-    if (!stencil.get().input.initForSelfHostingGlobal(cx)) {
-      return false;
-    }
-
-    if (!initSelfHostingFromXDR(cx, options, stencil.get(), &script)) {
+    if (!stencil->deserializeStencils(cx, selfHostedXDR, &decodeOk)) {
       return false;
     }
   }
 
   
   
-  if (!script) {
-    Rooted<frontend::CompilationStencil> stencil(
-        cx, frontend::CompilationStencil(cx, options));
-    if (!stencil.get().input.initForSelfHostingGlobal(cx)) {
-      return false;
-    }
-
+  if (!decodeOk) {
     uint32_t srcLen = GetRawScriptsSize();
     const unsigned char* compressed = compressedSources;
     uint32_t compressedLen = GetCompressedSize();
@@ -2874,7 +2839,7 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
       return false;
     }
 
-    if (!frontend::CompileGlobalScriptToStencil(cx, stencil.get(), srcBuf,
+    if (!frontend::CompileGlobalScriptToStencil(cx, *stencil, srcBuf,
                                                 ScopeKind::Global)) {
       return false;
     }
@@ -2882,7 +2847,7 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
     
     if (selfHostedXDRWriter) {
       JS::TranscodeBuffer xdrBuffer;
-      if (!stencil.get().serializeStencils(cx, xdrBuffer)) {
+      if (!stencil->serializeStencils(cx, xdrBuffer)) {
         return false;
       }
 
@@ -2890,21 +2855,24 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
         return false;
       }
     }
+  }
 
-    
+  
+  
+  
+  {
     Rooted<frontend::CompilationGCOutput> output(cx);
-    if (!frontend::CompilationStencil::instantiateStencils(cx, stencil.get(),
+    if (!frontend::CompilationStencil::instantiateStencils(cx, *stencil,
                                                            output.get())) {
       return false;
     }
 
-    script.set(output.get().script);
-  }
-
-  MOZ_ASSERT(script);
-  RootedValue rval(cx);
-  if (!JS_ExecuteScript(cx, script, &rval)) {
-    return false;
+    
+    RootedScript script(cx, output.get().script);
+    RootedValue rval(cx);
+    if (!JS_ExecuteScript(cx, script, &rval)) {
+      return false;
+    }
   }
 
   if (!VerifyGlobalNames(cx, shg)) {
@@ -2913,8 +2881,6 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
 
   
   
-  
-  script.set(nullptr);
   cx->runtime()->gc.freezeSelfHostingZone();
 
   return true;
@@ -3055,17 +3021,17 @@ static ScriptSourceObject* SelfHostingScriptSourceObject(JSContext* cx) {
   CompileOptions options(cx);
   FillSelfHostingCompileOptions(options);
 
-  ScriptSource* ss = cx->new_<ScriptSource>();
-  if (!ss) {
-    return nullptr;
-  }
-  ScriptSourceHolder ssHolder(ss);
-
-  if (!ss->initFromOptions(cx, options)) {
+  RefPtr<ScriptSource> source(cx->new_<ScriptSource>());
+  if (!source) {
     return nullptr;
   }
 
-  RootedScriptSourceObject sourceObject(cx, ScriptSourceObject::create(cx, ss));
+  if (!source->initFromOptions(cx, options)) {
+    return nullptr;
+  }
+
+  RootedScriptSourceObject sourceObject(
+      cx, ScriptSourceObject::create(cx, source.get()));
   if (!sourceObject) {
     return nullptr;
   }
