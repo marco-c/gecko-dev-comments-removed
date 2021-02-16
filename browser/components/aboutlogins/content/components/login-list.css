@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
   --in-content-box-background-hover: var(--in-content-page-background);
@@ -43,7 +43,7 @@
   font-weight: normal;
 }
 
-#login-sort:-moz-focusring { 
+#login-sort:-moz-focusring { /* This is a workaround due to Bug 1580935 */
   color: transparent !important;
   fill: var(--in-content-text-color);
   text-shadow: 0 0 0 var(--in-content-text-color);
@@ -78,7 +78,7 @@
 .intro {
   text-align: center;
   padding: 1em;
-  max-width: 50ch; 
+  max-width: 50ch; /* This should be kept in sync with login-list-item username and title max-width */
   flex-grow: 1;
   border-bottom: 1px solid var(--in-content-border-color);
 }
@@ -190,7 +190,9 @@ ol {
   fill-opacity: 0.75;
 }
 
-.breached > .alert-icon {
-  fill: var(--red-60);
-  fill-opacity: 1;
+@media not (prefers-contrast) {
+  .breached > .alert-icon {
+    fill: var(--red-60);
+    fill-opacity: 1;
+  }
 }
