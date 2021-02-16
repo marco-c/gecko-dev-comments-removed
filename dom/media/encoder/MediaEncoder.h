@@ -241,15 +241,10 @@ class MediaEncoder {
       mozilla::MallocSizeOf aMallocSizeOf);
 
   
-  
-  
-  RefPtr<GenericPromise> Extract();
 
-  
-  
-  
-  
-  RefPtr<BlobPromise> GatherBlob();
+
+
+  RefPtr<BlobPromise> RequestData();
 
  protected:
   ~MediaEncoder();
@@ -288,6 +283,17 @@ class MediaEncoder {
 
 
   void MaybeCreateMutableBlobStorage();
+
+  
+  
+  
+  RefPtr<GenericPromise> Extract();
+
+  
+  
+  
+  
+  RefPtr<BlobPromise> GatherBlob();
 
   RefPtr<BlobPromise> GatherBlobImpl();
 

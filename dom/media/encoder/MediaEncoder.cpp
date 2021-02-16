@@ -883,6 +883,18 @@ void MediaEncoder::SetError() {
   Unused << rv;
 }
 
+auto MediaEncoder::RequestData() -> RefPtr<BlobPromise> {
+  return Extract()->Then(
+      mMainThread, __func__,
+      [this, self = RefPtr<MediaEncoder>(this)](
+          const GenericPromise::ResolveOrRejectValue& aValue) {
+        
+        
+        Unused << NS_WARN_IF(aValue.IsReject());
+        return GatherBlob();
+      });
+}
+
 void MediaEncoder::MaybeCreateMutableBlobStorage() {
   MOZ_ASSERT(NS_IsMainThread());
   if (!mMutableBlobStorage) {
