@@ -2,14 +2,14 @@
 % License, v. 2.0. If a copy of the MPL was not distributed with this
 % file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
+/* ===== global.css =====================================================
+  == Styles that apply everywhere.
+  ======================================================================= */
 
 %include ../../shared/global.inc.css
 
 :root {
-  
+  /* ::::: Variables ::::: */
   --arrowpanel-padding: 10px;
   --default-arrowpanel-background: Field;
   --default-arrowpanel-color: FieldText;
@@ -19,10 +19,41 @@
   --arrowpanel-border-color: var(--default-arrowpanel-border-color);
   --panel-disabled-color: GrayText;
   --panel-description-color: GrayText;
-  
+
+  /*
+   * Overridden below for the default windows 10 theme.
+   */
+  --menuitem-hover-background-color: -moz-menuhover;
+  --menuitem-hover-color: -moz-menuhovertext;
+
+  /* ::::: Styles ::::: */
   background-color: -moz-Dialog;
   color: -moz-DialogText;
   font: message-box;
+}
+
+@supports -moz-bool-pref("browser.proton.contextmenus.enabled") {
+@media (-moz-windows-default-theme) and (-moz-os-version: windows-win10) {
+  :root {
+    --menuitem-hover-background-color: #0250bb;
+    --menuitem-disabled-hover-background-color: rgba(207, 207, 216, 0.3);
+    --menuitem-hover-color: white;
+    --menu-background-color: #f9f9fb;
+    --menu-color: black;
+    --menu-disabled-color: rgba(21, 20, 26, 0.4);
+    --menu-border-color: #f0f0f4;
+  }
+
+  :root:-moz-lwtheme-brighttext {
+    --menuitem-hover-background-color: #00b4f5;
+    --menuitem-disabled-hover-background-color: rgba(74, 74, 85, 0.5);
+    --menuitem-hover-color: black;
+    --menu-background-color: #15141a;
+    --menu-color: white;
+    --menu-disabled-color: rgba(251, 251, 254, 0.6);
+    --menu-border-color: #5b5b67;
+  }
+}
 }
 
 @media (-moz-windows-default-theme) {
@@ -31,7 +62,7 @@
   }
 }
 
-
+/* ::::: Alert icons :::::*/
 
 .message-icon,
 .alert-dialog #infoIcon,
@@ -62,7 +93,7 @@
   fill-opacity: 0.8;
 }
 
-
+/* ::::: iframe ::::: */
 
 xul|iframe {
   border: none;
@@ -73,7 +104,7 @@ xul|iframe {
 }
 
 @supports -moz-bool-pref("layout.css.emulate-moz-box-with-flex") {
-  
+  /* In emulation, <iframe> is block instead of inline, so reset the width/height */
   xul|iframe {
     width: auto;
     height: auto;
@@ -85,7 +116,7 @@ xul|toolbar[mode="text"] .toolbarbutton-text {
   margin: 3px 5px !important;
 }
 
-
+/* ::::: Print preview ::::: */
 
 .print-preview-navigate-button {
   min-width: 1.9em;
@@ -111,12 +142,12 @@ xul|toolbar[mode="text"] .toolbarbutton-text {
 }
 
 html|*#print-preview-pageNumber {
-  
+  /* 3 chars + (3px border + 1px padding) on both sides */
   width: calc(8px + 3ch);
   margin: 0 4px;
 }
 
-
+/* ::::: Miscellaneous formatting ::::: */
 
 :root[lwtheme-image]:-moz-lwtheme-darktext {
   text-shadow: 0 -0.5px 1.5px white;
@@ -126,7 +157,7 @@ html|*#print-preview-pageNumber {
   text-shadow: 1px 1px 1.5px black;
 }
 
-
+/* separators */
 xul|separator:not([orient="vertical"]) {
   height: 1.5em;
 }
