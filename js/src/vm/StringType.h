@@ -869,6 +869,7 @@ class JSLinearString : public JSString {
 
 
 
+
   bool isIndex(uint32_t* indexp) const {
     MOZ_ASSERT(JSString::isLinear());
 
@@ -1235,6 +1236,9 @@ MOZ_ALWAYS_INLINE JSAtom* JSLinearString::morphAtomizedStringIntoPermanentAtom(
 }
 
 namespace js {
+
+
+
 
 template <typename CharT>
 bool CheckStringIsIndex(const CharT* s, size_t length, uint32_t* indexp);
