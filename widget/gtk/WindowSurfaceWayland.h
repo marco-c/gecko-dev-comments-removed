@@ -183,13 +183,13 @@ class WindowSurfaceWayland : public WindowSurface {
 
   
   nsWindow* mWindow;
-  
-  
-  
-  LayoutDeviceIntRect mLockedScreenRect;
 
   
   
+  
+  
+  LayoutDeviceIntRect mMozContainerRect;
+
   
   
   LayoutDeviceIntRect mWLBufferRect;
