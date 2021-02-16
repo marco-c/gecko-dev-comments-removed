@@ -33,7 +33,7 @@ export class InfoGroupContainer extends HTMLElement {
     
     
     if (i !== 0) {
-      this.infoGroupsContainers[i].setAttribute("hidden", true);
+      this.infoGroupsContainers[i].hidden = true;
     }
     this.infoGroupsContainers[i].classList.add("info-groups");
 
