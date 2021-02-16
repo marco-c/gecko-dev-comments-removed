@@ -103,10 +103,23 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
 
           return false;
         };
-        CACHE_TRY(BodyTraverseFiles(QuotaInfo{}, *bodyDir, getUsage,
-                                    
-                                    aInitializing,
-                                     false));
+        CACHE_TRY(ToResult(BodyTraverseFiles(QuotaInfo{}, *bodyDir, getUsage,
+                                             
+                                             aInitializing,
+                                              false))
+#ifdef WIN32
+                      .orElse([](const nsresult rv) -> Result<Ok, nsresult> {
+                        
+                        
+                        if (NS_ERROR_GET_MODULE(rv) == NS_ERROR_MODULE_WIN32 &&
+                            NS_ERROR_GET_CODE(rv) == ERROR_FILE_CORRUPT) {
+                          return Ok{};
+                        }
+
+                        return Err(rv);
+                      })
+#endif
+        );
         return usageInfo;
       }));
 }
