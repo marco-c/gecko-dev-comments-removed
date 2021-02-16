@@ -280,12 +280,6 @@ StyleContrastPref Gecko_MediaFeatures_PrefersContrast(
   
   
   
-  
-  
-  
-  
-  
-  
   if (!!LookAndFeel::GetInt(LookAndFeel::IntID::UseAccessibilityTheme, 0)) {
     return StyleContrastPref::More;
   }
