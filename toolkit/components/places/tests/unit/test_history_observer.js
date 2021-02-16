@@ -5,6 +5,36 @@
 
 
 
+function NavHistoryObserver() {}
+NavHistoryObserver.prototype = {
+  onBeginUpdateBatch() {},
+  onEndUpdateBatch() {},
+  onDeleteURI() {},
+  onDeleteVisits() {},
+  QueryInterface: ChromeUtils.generateQI(["nsINavHistoryObserver"]),
+};
+
+
+
+
+
+
+function onNotify(callback) {
+  return new Promise(resolve => {
+    let obs = new NavHistoryObserver();
+    obs[callback.name] = function() {
+      PlacesUtils.history.removeObserver(this);
+      callback.apply(this, arguments);
+      resolve();
+    };
+    PlacesUtils.history.addObserver(obs);
+  });
+}
+
+
+
+
+
 function promiseVisitAdded(callback) {
   return new Promise(resolve => {
     function listener(events) {
@@ -119,34 +149,32 @@ add_task(async function test_multiple_onVisit() {
   await promiseNotifications;
 });
 
-add_task(async function test_pageRemovedFromStore() {
+add_task(async function test_onDeleteURI() {
+  let promiseNotify = onNotify(function onDeleteURI(aURI, aGUID, aReason) {
+    Assert.ok(aURI.equals(testuri));
+    
+    Assert.equal(aGUID, testguid);
+    Assert.equal(aReason, Ci.nsINavHistoryObserver.REASON_DELETED);
+  });
   let [testuri] = await task_add_visit();
   let testguid = do_get_guid_for_uri(testuri);
-
-  const promiseNotify = PlacesTestUtils.waitForNotification(
-    "page-removed",
-    () => true,
-    "places"
-  );
-
   await PlacesUtils.history.remove(testuri);
-
-  const events = await promiseNotify;
-  Assert.equal(events.length, 1, "Right number of page-removed notified");
-  Assert.equal(events[0].type, "page-removed");
-  Assert.ok(events[0].isRemovedFromStore);
-  Assert.equal(events[0].url, testuri.spec);
-  Assert.equal(events[0].pageGuid, testguid);
-  Assert.equal(events[0].reason, PlacesVisitRemoved.REASON_DELETED);
+  await promiseNotify;
 });
 
-add_task(async function test_pageRemovedAllVisits() {
-  const promiseNotify = PlacesTestUtils.waitForNotification(
-    "page-removed",
-    () => true,
-    "places"
-  );
-
+add_task(async function test_onDeleteVisits() {
+  let promiseNotify = onNotify(function onDeleteVisits(
+    aURI,
+    aVisitTime,
+    aGUID,
+    aReason
+  ) {
+    Assert.ok(aURI.equals(testuri));
+    
+    Assert.equal(aGUID, testguid);
+    Assert.equal(aReason, Ci.nsINavHistoryObserver.REASON_DELETED);
+    Assert.equal(aVisitTime, 0); 
+  });
   let msecs24hrsAgo = Date.now() - 86400 * 1000;
   let [testuri] = await task_add_visit(undefined, msecs24hrsAgo * 1000);
   
@@ -157,16 +185,7 @@ add_task(async function test_pageRemovedAllVisits() {
   });
   let testguid = do_get_guid_for_uri(testuri);
   await PlacesUtils.history.remove(testuri);
-
-  const events = await promiseNotify;
-  Assert.equal(events.length, 1, "Right number of page-removed notified");
-  Assert.equal(events[0].type, "page-removed");
-  Assert.ok(!events[0].isRemovedFromStore);
-  Assert.equal(events[0].url, testuri.spec);
-  
-  Assert.equal(events[0].pageGuid, testguid);
-  Assert.equal(events[0].reason, PlacesVisitRemoved.REASON_DELETED);
-  Assert.ok(!events[0].isPartialVisistsRemoval); 
+  await promiseNotify;
 });
 
 add_task(async function test_pageTitleChanged() {

@@ -10,6 +10,10 @@
 
 
 
+var hs = Cc["@mozilla.org/browser/nav-history-service;1"].getService(
+  Ci.nsINavHistoryService
+);
+
 var tests = [
   {
     desc: "Add 1 bookmarked page.",
@@ -40,7 +44,7 @@ var tests = [
   },
 ];
 
-add_task(async () => {
+add_task(async function test_notifications_onDeleteURI() {
   
   setInterval(3600); 
 
@@ -72,27 +76,24 @@ add_task(async () => {
     }
 
     
-    const listener = events => {
-      for (const event of events) {
-        Assert.equal(event.type, "page-removed");
-
-        if (!event.isRemovedFromStore) {
-          continue;
-        }
-
+    let historyObserver = {
+      onBeginUpdateBatch: function PEX_onBeginUpdateBatch() {},
+      onEndUpdateBatch: function PEX_onEndUpdateBatch() {},
+      onDeleteURI(aURI, aGUID, aReason) {
         currentTest.receivedNotifications++;
         
-        Assert.equal(currentTest.bookmarks.indexOf(event.url), -1);
-        do_check_valid_places_guid(event.pageGuid);
-        Assert.equal(event.reason, PlacesVisitRemoved.REASON_EXPIRED);
-      }
+        Assert.equal(currentTest.bookmarks.indexOf(aURI.spec), -1);
+        do_check_valid_places_guid(aGUID);
+        Assert.equal(aReason, Ci.nsINavHistoryObserver.REASON_EXPIRED);
+      },
+      onDeleteVisits() {},
     };
-    PlacesObservers.addListener(["page-removed"], listener);
+    hs.addObserver(historyObserver);
 
     
     await promiseForceExpirationStep(-1);
 
-    PlacesObservers.removeListener(["page-removed"], listener);
+    hs.removeObserver(historyObserver, false);
 
     Assert.equal(
       currentTest.receivedNotifications,

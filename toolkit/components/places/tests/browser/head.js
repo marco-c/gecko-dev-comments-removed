@@ -80,6 +80,20 @@ function promiseFieldForUrl(aURI, aFieldName) {
   });
 }
 
+
+
+
+
+function NavHistoryObserver() {}
+
+NavHistoryObserver.prototype = {
+  onBeginUpdateBatch() {},
+  onEndUpdateBatch() {},
+  onDeleteURI() {},
+  onDeleteVisits() {},
+  QueryInterface: ChromeUtils.generateQI(["nsINavHistoryObserver"]),
+};
+
 function whenNewWindowLoaded(aOptions, aCallback) {
   BrowserTestUtils.waitForNewWindow().then(aCallback);
   OpenBrowserWindow(aOptions);

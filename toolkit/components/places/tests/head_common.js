@@ -732,6 +732,20 @@ NavBookmarkObserver.prototype = {
 
 
 
+function NavHistoryObserver() {}
+
+NavHistoryObserver.prototype = {
+  onBeginUpdateBatch() {},
+  onEndUpdateBatch() {},
+  onDeleteURI() {},
+  onDeleteVisits() {},
+  QueryInterface: ChromeUtils.generateQI(["nsINavHistoryObserver"]),
+};
+
+
+
+
+
 
 function NavHistoryResultObserver() {}
 

@@ -1036,59 +1036,64 @@ function removeOrphanIcons(db) {
 
 
 
-var notifyCleanup = async function(db, pages, transitionType = 0) {
-  const notifications = [];
+var notifyCleanup = async function(db, pages, transition = -1) {
   let notifiedCount = 0;
+  let observers = PlacesUtils.history.getObservers();
   let bookmarkObservers = PlacesUtils.bookmarks.getObservers();
 
+  let reason = Ci.nsINavHistoryObserver.REASON_DELETED;
+
   for (let page of pages) {
-    const isRemovedFromStore = !page.hasVisits && !page.hasForeign;
-    notifications.push(
-      new PlacesVisitRemoved({
-        url: Services.io.newURI(page.url.href).spec,
-        pageGuid: page.guid,
-        reason: PlacesVisitRemoved.REASON_DELETED,
-        transitionType,
-        isRemovedFromStore,
-        isPartialVisistsRemoval: !isRemovedFromStore && page.hasVisits > 0,
-      })
-    );
-
-    if (page.hasForeign && !page.hasVisits) {
-      PlacesUtils.bookmarks
-        .fetch({ url: page.url }, async bookmark => {
-          let itemId = await PlacesUtils.promiseItemId(bookmark.guid);
-          let parentId = await PlacesUtils.promiseItemId(bookmark.parentGuid);
-          notify(
-            bookmarkObservers,
-            "onItemChanged",
-            [
-              itemId,
-              "cleartime",
-              false,
-              "",
-              0,
-              PlacesUtils.bookmarks.TYPE_BOOKMARK,
-              parentId,
-              bookmark.guid,
-              bookmark.parentGuid,
-              "",
-              PlacesUtils.bookmarks.SOURCES.DEFAULT,
-            ],
-            { concurrent: true }
-          );
-
-          if (++notifiedCount % NOTIFICATION_CHUNK_SIZE == 0) {
-            
-            
-            await Promise.resolve();
-          }
-        })
-        .catch(Cu.reportError);
+    let uri = Services.io.newURI(page.url.href);
+    let guid = page.guid;
+    if (page.hasVisits || page.hasForeign) {
+      
+      
+      notify(observers, "onDeleteVisits", [
+        uri,
+        page.hasVisits > 0,
+        guid,
+        reason,
+        transition,
+      ]);
+      
+      
+      if (!page.hasVisits) {
+        PlacesUtils.bookmarks
+          .fetch({ url: page.url }, async bookmark => {
+            let itemId = await PlacesUtils.promiseItemId(bookmark.guid);
+            let parentId = await PlacesUtils.promiseItemId(bookmark.parentGuid);
+            notify(
+              bookmarkObservers,
+              "onItemChanged",
+              [
+                itemId,
+                "cleartime",
+                false,
+                "",
+                0,
+                PlacesUtils.bookmarks.TYPE_BOOKMARK,
+                parentId,
+                bookmark.guid,
+                bookmark.parentGuid,
+                "",
+                PlacesUtils.bookmarks.SOURCES.DEFAULT,
+              ],
+              { concurrent: true }
+            );
+          })
+          .catch(Cu.reportError);
+      }
+    } else {
+      
+      notify(observers, "onDeleteURI", [uri, guid, reason]);
+    }
+    if (++notifiedCount % NOTIFICATION_CHUNK_SIZE == 0) {
+      
+      
+      await Promise.resolve();
     }
   }
-
-  PlacesObservers.notifyListeners(notifications);
 };
 
 

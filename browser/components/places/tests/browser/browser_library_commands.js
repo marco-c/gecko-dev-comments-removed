@@ -81,17 +81,13 @@ add_task(async function test_date_container() {
   );
 
   
-  const promiseURIRemoved = PlacesTestUtils.waitForNotification(
-    "page-removed",
-    events => events[0].url === TEST_URI.spec,
-    "places"
+  let promiseURIRemoved = PlacesTestUtils.waitForNotification(
+    "onDeleteURI",
+    v => TEST_URI.equals(v),
+    "history"
   );
   PO._places.controller.doCommand("cmd_delete");
-  const removeEvents = await promiseURIRemoved;
-  Assert.ok(
-    removeEvents[0].isRemovedFromStore,
-    "isRemovedFromStore should be true"
-  );
+  await promiseURIRemoved;
 
   
   Assert.equal(historyNode.childCount, 0, "History node has no more children");
