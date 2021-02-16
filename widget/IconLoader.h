@@ -33,15 +33,10 @@ class IconLoader : public imgINotificationObserver {
 
 
 
-  class Helper : public nsISupports {
+  class Helper {
    public:
-    
-    
     virtual nsresult OnComplete(imgIContainer* aContainer,
                                 const nsIntRect& aRect) = 0;
-
-   protected:
-    virtual ~Helper() = default;
   };
 
   
