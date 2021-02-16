@@ -147,6 +147,9 @@ class WebConsoleUI {
 
     this._initializer = (async () => {
       this._initUI();
+      
+      
+      
       await this._attachTargets();
 
       this._commands = new ConsoleCommands({
@@ -329,6 +332,18 @@ class WebConsoleUI {
 
   async _attachTargets() {
     this.additionalProxies = new Map();
+
+    if (this.isBrowserConsole) {
+      
+      
+      
+      
+      
+      
+      
+      await this.hud.targetList.startListening();
+    }
+
     
     
     

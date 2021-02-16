@@ -59,7 +59,7 @@ class ConsoleMessageWatcher {
     
     
     const listener = new ConsoleAPIListener(
-      targetActor.window,
+      targetActor.isRootActor ? null : targetActor.window,
       onConsoleAPICall,
       targetActor.consoleAPIListenerOptions
     );

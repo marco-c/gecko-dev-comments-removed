@@ -10,13 +10,12 @@ const TEST_URI = "data:text/html;charset=utf8,Test browser console clear cache";
 
 add_task(async function() {
   await pushPref("devtools.browserconsole.contentMessages", true);
-  
-  await pushPref("devtools.browsertoolbox.fission", false);
+  await pushPref("devtools.browsertoolbox.fission", true);
 
   await addTab(TEST_URI);
   let hud = await BrowserConsoleManager.toggleBrowserConsole();
   const CACHED_MESSAGE = "CACHED_MESSAGE";
-  await logTextToConsole(hud, CACHED_MESSAGE);
+  await logTextInContentAndWaitForMessage(hud, CACHED_MESSAGE);
 
   info("Click the clear output button");
   const onBrowserConsoleOutputCleared = waitFor(
@@ -27,7 +26,7 @@ add_task(async function() {
 
   
   
-  await logTextToConsole(hud, "after clear");
+  await logTextInContentAndWaitForMessage(hud, "after clear");
   const messages = hud.ui.outputNode.querySelectorAll(".message");
   is(messages.length, 1, "There is only the new message in the output");
 
@@ -36,7 +35,7 @@ add_task(async function() {
   hud = await BrowserConsoleManager.toggleBrowserConsole();
 
   info("Log a smoke message in order to know that the console is ready");
-  await logTextToConsole(hud, "Smoke message");
+  await logTextInContentAndWaitForMessage(hud, "Smoke message");
   is(
     findMessage(hud, CACHED_MESSAGE),
     undefined,
@@ -44,7 +43,7 @@ add_task(async function() {
   );
 });
 
-function logTextToConsole(hud, text) {
+function logTextInContentAndWaitForMessage(hud, text) {
   const onMessage = waitForMessage(hud, text);
   SpecialPowers.spawn(gBrowser.selectedBrowser, [text], function(str) {
     content.wrappedJSObject.console.log(str);

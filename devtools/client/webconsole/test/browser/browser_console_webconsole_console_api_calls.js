@@ -86,6 +86,7 @@ async function checkContentConsoleApiMessages(nonPrimitiveVariablesDisplayed) {
     expectedMessages.push("console.table()");
   }
 
+  info("wait for all the messages to be displayed");
   await waitFor(
     () =>
       expectedMessages.every(expectedMessage =>
@@ -141,10 +142,5 @@ async function checkContentConsoleApiMessages(nonPrimitiveVariablesDisplayed) {
   }
 
   info("Clear and close the Browser Console");
-  await clearOutput(hud);
-  
-  
-  
-  await waitForTick();
-  await safeCloseBrowserConsole();
+  await safeCloseBrowserConsole({ clearOutput: true });
 }
