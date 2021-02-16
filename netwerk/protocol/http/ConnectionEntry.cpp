@@ -25,7 +25,7 @@ ConnectionEntry::~ConnectionEntry() {
 
   MOZ_ASSERT(!mIdleConns.Length());
   MOZ_ASSERT(!mActiveConns.Length());
-  MOZ_ASSERT(!mHalfOpens.Length());
+  MOZ_ASSERT(!mDnsAndConnectSockets.Length());
   MOZ_ASSERT(!PendingQueueLength());
   MOZ_ASSERT(!UrgentStartQueueLength());
   MOZ_ASSERT(!mDoNotDestroy);
@@ -53,45 +53,47 @@ bool ConnectionEntry::AvailableForDispatchNow() {
              : false;
 }
 
-uint32_t ConnectionEntry::UnconnectedHalfOpens() const {
-  uint32_t unconnectedHalfOpens = 0;
-  for (uint32_t i = 0; i < mHalfOpens.Length(); ++i) {
-    if (!mHalfOpens[i]->HasConnected()) {
-      ++unconnectedHalfOpens;
+uint32_t ConnectionEntry::UnconnectedDnsAndConnectSockets() const {
+  uint32_t unconnectedDnsAndConnectSockets = 0;
+  for (uint32_t i = 0; i < mDnsAndConnectSockets.Length(); ++i) {
+    if (!mDnsAndConnectSockets[i]->HasConnected()) {
+      ++unconnectedDnsAndConnectSockets;
     }
   }
-  return unconnectedHalfOpens;
+  return unconnectedDnsAndConnectSockets;
 }
 
-bool ConnectionEntry::RemoveHalfOpen(HalfOpenSocket* halfOpen) {
+bool ConnectionEntry::RemoveDnsAndConnectSocket(
+    DnsAndConnectSocket* dnsAndSock) {
   bool isPrimary = false;
   
   
-  if (mHalfOpens.RemoveElement(halfOpen)) {
+  
+  if (mDnsAndConnectSockets.RemoveElement(dnsAndSock)) {
     isPrimary = true;
-    if (halfOpen->IsSpeculative()) {
+    if (dnsAndSock->IsSpeculative()) {
       Telemetry::AutoCounter<Telemetry::HTTPCONNMGR_UNUSED_SPECULATIVE_CONN>
           unusedSpeculativeConn;
       ++unusedSpeculativeConn;
 
-      if (halfOpen->IsFromPredictor()) {
+      if (dnsAndSock->IsFromPredictor()) {
         Telemetry::AutoCounter<Telemetry::PREDICTOR_TOTAL_PRECONNECTS_UNUSED>
             totalPreconnectsUnused;
         ++totalPreconnectsUnused;
       }
     }
 
-    gHttpHandler->ConnMgr()->DecreaseNumHalfOpenConns();
+    gHttpHandler->ConnMgr()->DecreaseNumDnsAndConnectSockets();
   }
 
-  if (!UnconnectedHalfOpens()) {
+  if (!UnconnectedDnsAndConnectSockets()) {
     
     
     
     nsresult rv = gHttpHandler->ConnMgr()->ProcessPendingQ(mConnInfo);
     if (NS_FAILED(rv)) {
       LOG(
-          ("ConnectionEntry::RemoveHalfOpen\n"
+          ("ConnectionEntry::RemoveDnsAndConnectSocket\n"
            "    failed to process pending queue\n"));
     }
   }
@@ -238,7 +240,7 @@ bool ConnectionEntry::RestrictConnections() {
 
   bool doRestrict = mConnInfo->FirstHopSSL() && gHttpHandler->IsSpdyEnabled() &&
                     mUsingSpdy &&
-                    (mHalfOpens.Length() || mActiveConns.Length());
+                    (mDnsAndConnectSockets.Length() || mActiveConns.Length());
 
   
   if (!doRestrict) {
@@ -247,7 +249,7 @@ bool ConnectionEntry::RestrictConnections() {
 
   
   
-  if (UnconnectedHalfOpens()) {
+  if (UnconnectedDnsAndConnectSockets()) {
     return true;
   }
 
@@ -281,7 +283,7 @@ uint32_t ConnectionEntry::TotalActiveConnections() const {
   
   
   
-  return mActiveConns.Length() + UnconnectedHalfOpens();
+  return mActiveConns.Length() + UnconnectedDnsAndConnectSockets();
 }
 
 size_t ConnectionEntry::UrgentStartQueueLength() {
@@ -517,12 +519,13 @@ void ConnectionEntry::MakeAllDontReuseExcept(HttpConnectionBase* conn) {
 
   
   
-  for (int32_t index = HalfOpensLength() - 1; index >= 0; --index) {
-    RefPtr<HalfOpenSocket> half = mHalfOpens[index];
-    LOG((
-        "ConnectionEntry::MakeAllDontReuseExcept forcing halfopen abandon %p\n",
-        half.get()));
-    mHalfOpens[index]->Abandon();
+  for (int32_t index = DnsAndConnectSocketsLength() - 1; index >= 0; --index) {
+    RefPtr<DnsAndConnectSocket> dnsAndSock = mDnsAndConnectSockets[index];
+    LOG(
+        ("ConnectionEntry::MakeAllDontReuseExcept forcing DnsAndConnectSocket "
+         "abandon %p\n",
+         dnsAndSock.get()));
+    mDnsAndConnectSockets[index]->Abandon();
   }
 }
 
@@ -530,11 +533,11 @@ bool ConnectionEntry::FindConnToClaim(
     PendingTransactionInfo* pendingTransInfo) {
   nsHttpTransaction* trans = pendingTransInfo->Transaction();
 
-  uint32_t halfOpenLength = HalfOpensLength();
-  for (uint32_t i = 0; i < halfOpenLength; i++) {
-    auto halfOpen = mHalfOpens[i];
-    if (halfOpen->AcceptsTransaction(trans) &&
-        pendingTransInfo->TryClaimingHalfOpen(halfOpen)) {
+  uint32_t dnsAndSockLength = DnsAndConnectSocketsLength();
+  for (uint32_t i = 0; i < dnsAndSockLength; i++) {
+    auto *dnsAndSock = mDnsAndConnectSockets[i];
+    if (dnsAndSock->AcceptsTransaction(trans) &&
+        pendingTransInfo->TryClaimingDnsAndConnectSocket(dnsAndSock)) {
       
       
       
@@ -542,7 +545,7 @@ bool ConnectionEntry::FindConnToClaim(
       
       LOG(
           ("ConnectionEntry::FindConnToClaim [ci = %s]\n"
-           "Found a speculative or a free-to-use half open connection\n",
+           "Found a speculative or a free-to-use DnsAndConnectSocket\n",
            mConnInfo->HashKey().get()));
 
       
@@ -698,10 +701,11 @@ uint32_t ConnectionEntry::TimeoutTick() {
   LOG(
       ("ConnectionEntry::TimeoutTick() this=%p host=%s "
        "idle=%zu active=%zu"
-       " half-len=%zu pending=%zu"
+       " dnsAndSock-len=%zu pending=%zu"
        " urgentStart pending=%zu\n",
        this, mConnInfo->Origin(), IdleConnectionsLength(), ActiveConnsLength(),
-       mHalfOpens.Length(), PendingQueueLength(), UrgentStartQueueLength()));
+       mDnsAndConnectSockets.Length(), PendingQueueLength(),
+       UrgentStartQueueLength()));
 
   
   PRIntervalTime tickTime = PR_IntervalNow();
@@ -714,38 +718,38 @@ uint32_t ConnectionEntry::TimeoutTick() {
   }
 
   
-  if (mHalfOpens.Length()) {
+  if (mDnsAndConnectSockets.Length()) {
     TimeStamp currentTime = TimeStamp::Now();
     double maxConnectTime_ms = gHttpHandler->ConnectTimeout();
 
-    for (uint32_t index = mHalfOpens.Length(); index > 0;) {
+    for (uint32_t index = mDnsAndConnectSockets.Length(); index > 0;) {
       index--;
 
-      HalfOpenSocket* half = mHalfOpens[index];
-      double delta = half->Duration(currentTime);
+      DnsAndConnectSocket* dnsAndSock = mDnsAndConnectSockets[index];
+      double delta = dnsAndSock->Duration(currentTime);
       
       
       if (delta > maxConnectTime_ms) {
-        LOG(("Force timeout of half open to %s after %.2fms.\n",
+        LOG(("Force timeout of DnsAndConnectSocket to %s after %.2fms.\n",
              mConnInfo->HashKey().get(), delta));
-        if (half->SocketTransport()) {
-          half->SocketTransport()->Close(NS_ERROR_NET_TIMEOUT);
+        if (dnsAndSock->SocketTransport()) {
+          dnsAndSock->SocketTransport()->Close(NS_ERROR_NET_TIMEOUT);
         }
-        if (half->BackupTransport()) {
-          half->BackupTransport()->Close(NS_ERROR_NET_TIMEOUT);
+        if (dnsAndSock->BackupTransport()) {
+          dnsAndSock->BackupTransport()->Close(NS_ERROR_NET_TIMEOUT);
         }
       }
 
       
       
       if (delta > maxConnectTime_ms + 5000) {
-        LOG(("Abandon half open to %s after %.2fms.\n",
+        LOG(("Abandon DnsAndConnectSocket to %s after %.2fms.\n",
              mConnInfo->HashKey().get(), delta));
-        half->Abandon();
+        dnsAndSock->Abandon();
       }
     }
   }
-  if (mHalfOpens.Length()) {
+  if (mDnsAndConnectSockets.Length()) {
     timeoutTickNext = 1;
   }
 
@@ -771,19 +775,20 @@ void ConnectionEntry::MoveConnection(HttpConnectionBase* proxyConn,
   }
 }
 
-void ConnectionEntry::InsertIntoHalfOpens(HalfOpenSocket* sock) {
-  mHalfOpens.AppendElement(sock);
-  gHttpHandler->ConnMgr()->IncreaseNumHalfOpenConns();
+void ConnectionEntry::InsertIntoDnsAndConnectSockets(
+    DnsAndConnectSocket* sock) {
+  mDnsAndConnectSockets.AppendElement(sock);
+  gHttpHandler->ConnMgr()->IncreaseNumDnsAndConnectSockets();
 }
 
-void ConnectionEntry::CloseAllHalfOpens() {
-  for (int32_t i = int32_t(HalfOpensLength()) - 1; i >= 0; i--) {
-    mHalfOpens[i]->Abandon();
+void ConnectionEntry::CloseAllDnsAndConnectSockets() {
+  for (int32_t i = int32_t(DnsAndConnectSocketsLength()) - 1; i >= 0; i--) {
+    mDnsAndConnectSockets[i]->Abandon();
   }
 }
 
-bool ConnectionEntry::IsInHalfOpens(HalfOpenSocket* sock) {
-  return mHalfOpens.Contains(sock);
+bool ConnectionEntry::IsInDnsAndConnectSockets(DnsAndConnectSocket* sock) {
+  return mDnsAndConnectSockets.Contains(sock);
 }
 
 HttpRetParams ConnectionEntry::GetConnectionData() {
@@ -809,10 +814,10 @@ HttpRetParams ConnectionEntry::GetConnectionData() {
     info.SetHTTPProtocolVersion(mIdleConns[i]->Version());
     data.idle.AppendElement(info);
   }
-  for (uint32_t i = 0; i < mHalfOpens.Length(); i++) {
-    HalfOpenSockets hSocket;
-    hSocket.speculative = mHalfOpens[i]->IsSpeculative();
-    data.halfOpens.AppendElement(hSocket);
+  for (uint32_t i = 0; i < mDnsAndConnectSockets.Length(); i++) {
+    DnsAndConnectSockets dnsAndSock;
+    dnsAndSock.speculative = mDnsAndConnectSockets[i]->IsSpeculative();
+    data.dnsAndSocks.AppendElement(dnsAndSock);
   }
   if (mConnInfo->IsHttp3()) {
     data.httpVersion = "HTTP/3"_ns;
@@ -885,7 +890,7 @@ bool ConnectionEntry::RemoveTransFromPendingQ(nsHttpTransaction* aTrans) {
   }
 
   
-  pendingTransInfo->AbandonHalfOpenAndForgetActiveConn();
+  pendingTransInfo->AbandonDnsAndConnectSocketAndForgetActiveConn();
   return true;
 }
 
@@ -907,7 +912,7 @@ void ConnectionEntry::MaybeUpdateEchConfig(nsHttpConnectionInfo* aConnInfo) {
   
   
   
-  CloseAllHalfOpens();
+  CloseAllDnsAndConnectSockets();
   CloseIdleConnections();
 }
 

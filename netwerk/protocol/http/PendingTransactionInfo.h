@@ -6,7 +6,7 @@
 #ifndef PendingTransactionInfo_h__
 #define PendingTransactionInfo_h__
 
-#include "HalfOpenSocket.h"
+#include "DnsAndConnectSocket.h"
 
 namespace mozilla {
 namespace net {
@@ -24,23 +24,23 @@ class PendingTransactionInfo final : public ARefBase {
   
   bool IsAlreadyClaimedInitializingConn();
 
-  void AbandonHalfOpenAndForgetActiveConn();
+  void AbandonDnsAndConnectSocketAndForgetActiveConn();
 
   
   
-  bool TryClaimingHalfOpen(HalfOpenSocket* sock);
+  bool TryClaimingDnsAndConnectSocket(DnsAndConnectSocket* sock);
   
   
   bool TryClaimingActiveConn(HttpConnectionBase* conn);
   
   
-  void AddHalfOpen(HalfOpenSocket* sock);
+  void AddDnsAndConnectSocket(DnsAndConnectSocket* sock);
 
   nsHttpTransaction* Transaction() const { return mTransaction; }
 
  private:
   RefPtr<nsHttpTransaction> mTransaction;
-  nsWeakPtr mHalfOpen;
+  nsWeakPtr mDnsAndSock;
   nsWeakPtr mActiveConn;
 
   ~PendingTransactionInfo();

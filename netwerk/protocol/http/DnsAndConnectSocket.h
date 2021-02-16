@@ -3,8 +3,8 @@
 
 
 
-#ifndef HalfOpenSocket_h__
-#define HalfOpenSocket_h__
+#ifndef DnsAndConnectSocket_h__
+#define DnsAndConnectSocket_h__
 
 #include "mozilla/TimeStamp.h"
 #include "nsAHttpConnection.h"
@@ -19,7 +19,7 @@ namespace mozilla {
 namespace net {
 
 
-#define NS_HALFOPENSOCKET_IID                        \
+#define NS_DNSANDCONNECTSOCKET_IID                   \
   {                                                  \
     0x8d411b53, 0x54bc, 0x4a99, {                    \
       0x8b, 0x78, 0xff, 0x12, 0x5e, 0xab, 0x15, 0x64 \
@@ -29,16 +29,16 @@ namespace net {
 class PendingTransactionInfo;
 class ConnectionEntry;
 
-class HalfOpenSocket final : public nsIOutputStreamCallback,
-                             public nsITransportEventSink,
-                             public nsIInterfaceRequestor,
-                             public nsITimerCallback,
-                             public nsINamed,
-                             public nsSupportsWeakReference {
-  ~HalfOpenSocket();
+class DnsAndConnectSocket final : public nsIOutputStreamCallback,
+                                  public nsITransportEventSink,
+                                  public nsIInterfaceRequestor,
+                                  public nsITimerCallback,
+                                  public nsINamed,
+                                  public nsSupportsWeakReference {
+  ~DnsAndConnectSocket();
 
  public:
-  NS_DECLARE_STATIC_IID_ACCESSOR(NS_HALFOPENSOCKET_IID)
+  NS_DECLARE_STATIC_IID_ACCESSOR(NS_DNSANDCONNECTSOCKET_IID)
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOUTPUTSTREAMCALLBACK
   NS_DECL_NSITRANSPORTEVENTSINK
@@ -46,8 +46,9 @@ class HalfOpenSocket final : public nsIOutputStreamCallback,
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
 
-  HalfOpenSocket(ConnectionEntry* ent, nsAHttpTransaction* trans, uint32_t caps,
-                 bool speculative, bool isFromPredictor, bool urgentStart);
+  DnsAndConnectSocket(ConnectionEntry* ent, nsAHttpTransaction* trans,
+                      uint32_t caps, bool speculative, bool isFromPredictor,
+                      bool urgentStart);
 
   [[nodiscard]] nsresult SetupStreams(nsISocketTransport**,
                                       nsIAsyncInputStream**,
@@ -144,7 +145,7 @@ class HalfOpenSocket final : public nsIOutputStreamCallback,
   bool mIsHttp3;
 };
 
-NS_DEFINE_STATIC_IID_ACCESSOR(HalfOpenSocket, NS_HALFOPENSOCKET_IID)
+NS_DEFINE_STATIC_IID_ACCESSOR(DnsAndConnectSocket, NS_DNSANDCONNECTSOCKET_IID)
 
 }  
 }  

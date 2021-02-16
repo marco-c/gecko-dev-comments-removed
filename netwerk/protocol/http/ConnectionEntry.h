@@ -8,7 +8,7 @@
 
 #include "PendingTransactionInfo.h"
 #include "PendingTransactionQueue.h"
-#include "HalfOpenSocket.h"
+#include "DnsAndConnectSocket.h"
 #include "DashboardTypes.h"
 
 namespace mozilla {
@@ -79,11 +79,13 @@ class ConnectionEntry {
 
   void MoveConnection(HttpConnectionBase* proxyConn, ConnectionEntry* otherEnt);
 
-  size_t HalfOpensLength() const { return mHalfOpens.Length(); }
+  size_t DnsAndConnectSocketsLength() const {
+    return mDnsAndConnectSockets.Length();
+  }
 
-  void InsertIntoHalfOpens(HalfOpenSocket* sock);
-  void CloseAllHalfOpens();
-  bool IsInHalfOpens(HalfOpenSocket* sock);
+  void InsertIntoDnsAndConnectSockets(DnsAndConnectSocket* sock);
+  void CloseAllDnsAndConnectSockets();
+  bool IsInDnsAndConnectSockets(DnsAndConnectSocket* sock);
 
   HttpRetParams GetConnectionData();
   void LogConnections();
@@ -94,10 +96,10 @@ class ConnectionEntry {
 
   
   
-  uint32_t UnconnectedHalfOpens() const;
+  uint32_t UnconnectedDnsAndConnectSockets() const;
 
   
-  bool RemoveHalfOpen(HalfOpenSocket*);
+  bool RemoveDnsAndConnectSocket(DnsAndConnectSocket*);
 
   
   
@@ -188,7 +190,8 @@ class ConnectionEntry {
   nsTArray<RefPtr<nsHttpConnection>> mIdleConns;  
   nsTArray<RefPtr<HttpConnectionBase>> mActiveConns;  
 
-  nsTArray<HalfOpenSocket*> mHalfOpens;  
+  nsTArray<DnsAndConnectSocket*>
+      mDnsAndConnectSockets;  
 
   PendingTransactionQueue mPendingQ;
   ~ConnectionEntry();

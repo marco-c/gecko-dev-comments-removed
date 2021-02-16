@@ -6,7 +6,7 @@
 #ifndef nsHttpConnectionMgr_h__
 #define nsHttpConnectionMgr_h__
 
-#include "HalfOpenSocket.h"
+#include "DnsAndConnectSocket.h"
 #include "HttpConnectionBase.h"
 #include "HttpConnectionMgrShell.h"
 #include "nsHttpConnection.h"
@@ -130,8 +130,8 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   HttpConnectionBase* GetH2orH3ActiveConn(ConnectionEntry* ent, bool aNoHttp2,
                                           bool aNoHttp3);
 
-  void IncreaseNumHalfOpenConns();
-  void DecreaseNumHalfOpenConns();
+  void IncreaseNumDnsAndConnectSockets();
+  void DecreaseNumDnsAndConnectSockets();
 
   
   
@@ -183,7 +183,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void DecrementActiveConnCount(HttpConnectionBase*);
 
  private:
-  friend class HalfOpenSocket;
+  friend class DnsAndConnectSocket;
   friend class PendingTransactionInfo;
 
   
@@ -326,7 +326,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   uint16_t mNumSpdyHttp3ActiveConns;
   
   
-  uint32_t mNumHalfOpenConns;
+  uint32_t mNumDnsAndConnectSockets;
 
   
   uint64_t mTimeOfNextWakeUp;
