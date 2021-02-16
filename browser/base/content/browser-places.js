@@ -2233,6 +2233,14 @@ var BookmarkingUI = {
     let staticButtons = panelview.getElementsByTagName("toolbarbutton");
     for (let i = 0, l = staticButtons.length; i < l; ++i) {
       CustomizableUI.addShortcut(staticButtons[i]);
+
+      
+      
+      
+      
+      if (PanelUI.protonAppMenuEnabled) {
+        staticButtons[i].classList.remove("subviewbutton-iconic");
+      }
     }
 
     

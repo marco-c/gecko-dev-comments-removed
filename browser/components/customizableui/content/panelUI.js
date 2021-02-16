@@ -333,6 +333,8 @@ const PanelUI = {
       case "ViewShowing":
         if (aEvent.target == this.whatsNewPanel) {
           this.onWhatsNewPanelShowing();
+        } else if (aEvent.target == this.libraryView) {
+          this.onLibraryShowing(this.libraryView);
         }
         break;
     }
@@ -608,6 +610,19 @@ const PanelUI = {
     );
   },
 
+  onLibraryShowing(libraryPanel) {
+    
+    
+    
+    
+    if (PanelUI.protonAppMenuEnabled) {
+      let toolbarbuttons = libraryPanel.querySelectorAll("toolbarbutton");
+      for (let toolbarbutton of toolbarbuttons) {
+        toolbarbutton.classList.remove("subviewbutton-iconic");
+      }
+    }
+  },
+
   
 
 
@@ -693,7 +708,16 @@ const PanelUI = {
       if (node.id) {
         button.id = "appMenu_" + node.id;
       }
-      button.setAttribute("class", "subviewbutton subviewbutton-iconic");
+
+      button.classList.add("subviewbutton");
+
+      
+      
+      
+      
+      if (!PanelUI.protonAppMenuEnabled) {
+        button.classList.add("subviewbutton-iconic");
+      }
       fragment.appendChild(button);
     }
     items.appendChild(fragment);

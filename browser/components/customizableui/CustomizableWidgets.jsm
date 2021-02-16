@@ -109,6 +109,17 @@ const CustomizableWidgets = [
       let document = panelview.ownerDocument;
       let window = document.defaultView;
 
+      
+      
+      
+      
+      if (window.PanelUI.protonAppMenuEnabled) {
+        let toolbarbuttons = panelview.querySelectorAll("toolbarbutton");
+        for (let toolbarbutton of toolbarbuttons) {
+          toolbarbutton.classList.remove("subviewbutton-iconic");
+        }
+      }
+
       PanelMultiView.getViewNode(
         document,
         "appMenuRecentlyClosedTabs"

@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 %include ../../shared/customizableui/panelUI.inc.css
 
@@ -8,6 +8,7 @@
   display: none;
 }
 
+@supports not -moz-bool-pref("browser.proton.appmenu.enabled") {
 .subviewbutton {
   padding-inline-start: 18px;
 }
@@ -15,9 +16,10 @@
 .subviewbutton.download {
   padding-inline-start: 14px;
 }
+} /** END not Proton **/
 
 panelmultiview .toolbaritem-combined-buttons > spacer.before-label {
-  width: 42px; 
+  width: 42px; /* 18px toolbarbutton padding + 16px icon + 8px label padding start */
 }
 
 #appMenu-addon-banners > .addon-banner-item,
@@ -26,7 +28,7 @@ panelmultiview .toolbaritem-combined-buttons > spacer.before-label {
 }
 
 #appMenu-fxa-status[fxastatus="signedin"] > #appMenu-fxa-label {
-  
+  /* 18px space before the avatar, then 16px for the avatar */
   padding-inline-start: 34px;
   margin-inline-start: -34px;
 }
@@ -53,7 +55,7 @@ panelmultiview .toolbaritem-combined-buttons > spacer.before-label {
   margin: 1px;
 }
 
-
+/* Override OSX-specific toolkit styles for the bookmarks panel */
 menu.subviewbutton > .menu-right {
   margin-inline-end: -4px;
   appearance: none;
