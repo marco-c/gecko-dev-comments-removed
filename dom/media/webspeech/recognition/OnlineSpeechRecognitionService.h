@@ -117,7 +117,7 @@ class OnlineSpeechRecognitionService : public nsISpeechRecognitionService,
   RefPtr<SpeechEncoderListener> mSpeechEncoderListener;
   
   
-  RefPtr<AudioTrackEncoder> mAudioEncoder;
+  UniquePtr<AudioTrackEncoder> mAudioEncoder;
   
   UniquePtr<ContainerWriter> mWriter;
   
