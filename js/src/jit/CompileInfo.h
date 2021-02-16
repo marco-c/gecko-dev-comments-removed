@@ -304,9 +304,10 @@ class CompileInfo {
     }
 
     
+    
     if (hasArguments() && slot == argsObjSlot()) {
       MOZ_ASSERT(funMaybeLazy());
-      return SlotObservableKind::ObservableNotRecoverable;
+      return SlotObservableKind::ObservableRecoverable;
     }
 
     MOZ_ASSERT(slot == returnValueSlot());
