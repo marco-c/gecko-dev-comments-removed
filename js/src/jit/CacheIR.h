@@ -1638,7 +1638,7 @@ class MOZ_RAII CallIRGenerator : public IRGenerator {
   struct AtomicsReadWriteModifyOperands {
     ObjOperandId objId;
     IntPtrOperandId intPtrIndexId;
-    Int32OperandId int32ValueId;
+    OperandId numericValueId;
   };
 
   AtomicsReadWriteModifyOperands emitAtomicsReadWriteModifyOperands(
@@ -1710,7 +1710,7 @@ class MOZ_RAII CallIRGenerator : public IRGenerator {
                                        bool isPossiblyWrapped);
   AttachDecision tryAttachIsTypedArrayConstructor(HandleFunction callee);
   AttachDecision tryAttachTypedArrayByteOffset(HandleFunction callee);
-  AttachDecision tryAttachTypedArrayElementShift(HandleFunction callee);
+  AttachDecision tryAttachTypedArrayElementSize(HandleFunction callee);
   AttachDecision tryAttachTypedArrayLength(HandleFunction callee,
                                            bool isPossiblyWrapped);
   AttachDecision tryAttachArrayBufferByteLength(HandleFunction callee,

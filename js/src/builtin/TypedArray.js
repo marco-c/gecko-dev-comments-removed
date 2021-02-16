@@ -1282,10 +1282,10 @@ function TypedArraySubarray(begin, end) {
     var newLength = std_Math_max(endIndex - beginIndex, 0);
 
     
-    var elementShift = TypedArrayElementShift(obj);
+    var elementSize = TypedArrayElementSize(obj);
 
     
-    var beginByteOffset = srcByteOffset + (beginIndex << elementShift);
+    var beginByteOffset = srcByteOffset + (beginIndex * elementSize);
 
     
     return TypedArraySpeciesCreateWithBuffer(obj, buffer, beginByteOffset, newLength);

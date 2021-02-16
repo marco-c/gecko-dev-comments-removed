@@ -3295,10 +3295,15 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  
 
   void compareExchange64(const Synchronization& sync, const Address& mem,
                          Register64 expected, Register64 replacement,
-                         Register64 output) DEFINED_ON(arm, arm64, x64);
+                         Register64 output) DEFINED_ON(arm, arm64, x64, x86);
+
+  void compareExchange64(const Synchronization& sync, const BaseIndex& mem,
+                         Register64 expected, Register64 replacement,
+                         Register64 output) DEFINED_ON(arm, arm64, x64, x86);
 
   
   
@@ -3322,9 +3327,17 @@ class MacroAssembler : public MacroAssemblerSpecific {
                       Register offsetTemp, Register maskTemp, Register output)
       DEFINED_ON(mips_shared);
 
+  
+  
+  
+
   void atomicExchange64(const Synchronization& sync, const Address& mem,
                         Register64 value, Register64 output)
-      DEFINED_ON(arm64, x64);
+      DEFINED_ON(arm, arm64, x64, x86);
+
+  void atomicExchange64(const Synchronization& sync, const BaseIndex& mem,
+                        Register64 value, Register64 output)
+      DEFINED_ON(arm, arm64, x64, x86);
 
   
   
@@ -3371,10 +3384,78 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  
+  
+  
+  
+  
 
   void atomicFetchOp64(const Synchronization& sync, AtomicOp op,
                        Register64 value, const Address& mem, Register64 temp,
-                       Register64 output) DEFINED_ON(arm64, x64);
+                       Register64 output) DEFINED_ON(arm, arm64, x64);
+
+  void atomicFetchOp64(const Synchronization& sync, AtomicOp op,
+                       const Address& value, const Address& mem,
+                       Register64 temp, Register64 output) DEFINED_ON(x86);
+
+  void atomicFetchOp64(const Synchronization& sync, AtomicOp op,
+                       Register64 value, const BaseIndex& mem, Register64 temp,
+                       Register64 output) DEFINED_ON(arm, arm64, x64);
+
+  void atomicFetchOp64(const Synchronization& sync, AtomicOp op,
+                       const Address& value, const BaseIndex& mem,
+                       Register64 temp, Register64 output) DEFINED_ON(x86);
+
+  
+  
+  
+  
+  
+  
+
+  void atomicEffectOp64(const Synchronization& sync, AtomicOp op,
+                        Register64 value, const Address& mem) DEFINED_ON(x64);
+
+  void atomicEffectOp64(const Synchronization& sync, AtomicOp op,
+                        Register64 value, const Address& mem, Register64 temp)
+      DEFINED_ON(arm, arm64);
+
+  void atomicEffectOp64(const Synchronization& sync, AtomicOp op,
+                        Register64 value, const BaseIndex& mem) DEFINED_ON(x64);
+
+  void atomicEffectOp64(const Synchronization& sync, AtomicOp op,
+                        Register64 value, const BaseIndex& mem, Register64 temp)
+      DEFINED_ON(arm, arm64);
+
+  
+  
+  
+  
+  
+
+  void atomicLoad64(const Synchronization& sync, const Address& mem,
+                    Register64 temp, Register64 output) DEFINED_ON(x86);
+
+  void atomicLoad64(const Synchronization& sync, const BaseIndex& mem,
+                    Register64 temp, Register64 output) DEFINED_ON(x86);
+
+  void atomicLoad64(const Synchronization& sync, const Address& mem,
+                    Register64 output) DEFINED_ON(arm);
+
+  void atomicLoad64(const Synchronization& sync, const BaseIndex& mem,
+                    Register64 output) DEFINED_ON(arm);
+
+  
+  
+  
+  
+  
+
+  void atomicStore64(const Synchronization& sync, const Address& mem,
+                     Register64 value, Register64 temp) DEFINED_ON(x86, arm);
+
+  void atomicStore64(const Synchronization& sync, const BaseIndex& mem,
+                     Register64 value, Register64 temp) DEFINED_ON(x86, arm);
 
   
   
@@ -4120,7 +4201,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void branchArgumentsObjectHasOverridenIterator(Register obj, Register temp,
                                                  Label* label);
 
-  void typedArrayElementShift(Register obj, Register output);
+  void typedArrayElementSize(Register obj, Register output);
   void branchIfClassIsNotTypedArray(Register clasp, Label* notTypedArray);
 
   void branchIfNativeIteratorNotReusable(Register ni, Label* notReusable);

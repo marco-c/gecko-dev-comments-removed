@@ -2977,10 +2977,10 @@ void LIRGenerator::visitArrayBufferViewElements(MArrayBufferViewElements* ins) {
          ins);
 }
 
-void LIRGenerator::visitTypedArrayElementShift(MTypedArrayElementShift* ins) {
+void LIRGenerator::visitTypedArrayElementSize(MTypedArrayElementSize* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
   define(new (alloc())
-             LTypedArrayElementShift(useRegisterAtStart(ins->object())),
+             LTypedArrayElementSize(useRegisterAtStart(ins->object())),
          ins);
 }
 
@@ -3325,12 +3325,17 @@ void LIRGenerator::visitStringSplit(MStringSplit* ins) {
 void LIRGenerator::visitLoadUnboxedScalar(MLoadUnboxedScalar* ins) {
   MOZ_ASSERT(ins->elements()->type() == MIRType::Elements);
   MOZ_ASSERT(ins->index()->type() == MIRType::IntPtr);
+  MOZ_ASSERT(IsNumericType(ins->type()) || ins->type() == MIRType::Boolean);
+
+  if (Scalar::isBigIntType(ins->storageType()) &&
+      ins->requiresMemoryBarrier()) {
+    lowerAtomicLoad64(ins);
+    return;
+  }
 
   const LUse elements = useRegister(ins->elements());
   const LAllocation index = useRegisterOrIndexConstant(
       ins->index(), ins->storageType(), ins->offsetAdjustment());
-
-  MOZ_ASSERT(IsNumericType(ins->type()) || ins->type() == MIRType::Boolean);
 
   Synchronization sync = Synchronization::Load();
   if (ins->requiresMemoryBarrier()) {
@@ -3494,6 +3499,11 @@ void LIRGenerator::visitStoreUnboxedScalar(MStoreUnboxedScalar* ins) {
     MOZ_ASSERT(ins->value()->type() == MIRType::BigInt);
   } else {
     MOZ_ASSERT(ins->value()->type() == MIRType::Int32);
+  }
+
+  if (ins->isBigIntWrite() && ins->requiresMemoryBarrier()) {
+    lowerAtomicStore64(ins);
+    return;
   }
 
   LUse elements = useRegister(ins->elements());
