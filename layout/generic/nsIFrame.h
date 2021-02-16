@@ -3298,6 +3298,9 @@ class nsIFrame : public nsQueryFrame {
     eSupportsContainLayoutAndPaint = 1 << 12,
 
     
+    eSupportsAspectRatio = 1 << 13,
+
+    
     
     
     eDEBUGAllFrames = 1 << 30,
@@ -3317,7 +3320,8 @@ class nsIFrame : public nsQueryFrame {
                           nsIFrame::eDEBUGAllFrames |
 #endif
                           nsIFrame::eSupportsCSSTransforms |
-                          nsIFrame::eSupportsContainLayoutAndPaint));
+                          nsIFrame::eSupportsContainLayoutAndPaint |
+                          nsIFrame::eSupportsAspectRatio));
   }
 
   

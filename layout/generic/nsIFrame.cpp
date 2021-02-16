@@ -5949,8 +5949,9 @@ AspectRatio nsIFrame::GetAspectRatio() const {
   
   
   
-  
-  
+  if (!IsFrameOfType(eSupportsAspectRatio)) {
+    return AspectRatio();
+  }
 
   const StyleAspectRatio& aspectRatio = StylePosition()->mAspectRatio;
   
@@ -6386,8 +6387,9 @@ Maybe<nscoord> nsIFrame::ComputeInlineSizeFromAspectRatio(
     WritingMode aWM, const LogicalSize& aCBSize,
     const LogicalSize& aContentEdgeToBoxSizing, ComputeSizeFlags aFlags) const {
   
+  
   const AspectRatio aspectRatio = StylePosition()->mAspectRatio.ToLayoutRatio();
-  if (aFlags.contains(ComputeSizeFlag::SkipAspectRatio) || !aspectRatio) {
+  if (!IsFrameOfType(eSupportsAspectRatio) || !aspectRatio) {
     return Nothing();
   }
 
