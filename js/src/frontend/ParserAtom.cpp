@@ -16,6 +16,7 @@
 #include "frontend/NameCollections.h"
 #include "frontend/StencilXdr.h"  
 #include "util/StringBuffer.h"    
+#include "util/Unicode.h"
 #include "vm/JSContext.h"
 #include "vm/Printer.h"  
 #include "vm/Runtime.h"
@@ -497,6 +498,25 @@ bool ParserAtomsTable::isExtendedUnclonedSelfHostedFunctionName(
   return atom->charAt(0) == ExtendedUnclonedSelfHostedFunctionNamePrefix;
 }
 
+static bool HasUnpairedSurrogate(mozilla::Range<const char16_t> chars) {
+  for (auto ptr = chars.begin(); ptr < chars.end();) {
+    char16_t ch = *ptr++;
+    if (unicode::IsLeadSurrogate(ch)) {
+      if (ptr == chars.end() || !unicode::IsTrailSurrogate(*ptr++)) {
+        return true;
+      }
+    } else if (unicode::IsTrailSurrogate(ch)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ParserAtomsTable::isModuleExportName(TaggedParserAtomIndex index) const {
+  const ParserAtom* name = getParserAtom(index);
+  return name->hasLatin1Chars() || !HasUnpairedSurrogate(name->twoByteRange());
+}
+
 bool ParserAtomsTable::isIndex(TaggedParserAtomIndex index,
                                uint32_t* indexp) const {
   const auto* atom = getParserAtom(index);
@@ -550,23 +570,17 @@ UniqueChars ToPrintableStringImpl(JSContext* cx, mozilla::Range<CharT> str,
 UniqueChars ParserAtomsTable::toPrintableString(
     JSContext* cx, TaggedParserAtomIndex index) const {
   const auto* atom = getParserAtom(index);
-  size_t length = atom->length();
   return atom->hasLatin1Chars()
-             ? ToPrintableStringImpl(
-                   cx, mozilla::Range(atom->latin1Chars(), length))
-             : ToPrintableStringImpl(
-                   cx, mozilla::Range(atom->twoByteChars(), length));
+             ? ToPrintableStringImpl(cx, atom->latin1Range())
+             : ToPrintableStringImpl(cx, atom->twoByteRange());
 }
 
 UniqueChars ParserAtomsTable::toQuotedString(
     JSContext* cx, TaggedParserAtomIndex index) const {
   const auto* atom = getParserAtom(index);
-  size_t length = atom->length();
   return atom->hasLatin1Chars()
-             ? ToPrintableStringImpl(
-                   cx, mozilla::Range(atom->latin1Chars(), length), '\"')
-             : ToPrintableStringImpl(
-                   cx, mozilla::Range(atom->twoByteChars(), length), '\"');
+             ? ToPrintableStringImpl(cx, atom->latin1Range(), '\"')
+             : ToPrintableStringImpl(cx, atom->twoByteRange(), '\"');
 }
 
 JSAtom* ParserAtomsTable::toJSAtom(JSContext* cx, TaggedParserAtomIndex index,
