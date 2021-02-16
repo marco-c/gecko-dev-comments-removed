@@ -186,7 +186,11 @@ class MediaEncoder {
   
 
 
-  RefPtr<GenericNonExclusivePromise::AllPromiseType> Cancel();
+  
+
+
+
+  RefPtr<GenericNonExclusivePromise> Cancel();
 
   bool HasError();
 
@@ -248,7 +252,7 @@ class MediaEncoder {
 
 
 
-  RefPtr<GenericNonExclusivePromise::AllPromiseType> Shutdown();
+  RefPtr<GenericNonExclusivePromise> Shutdown();
 
   
 
@@ -297,7 +301,7 @@ class MediaEncoder {
   bool mCompleted;
   bool mError;
   
-  RefPtr<GenericNonExclusivePromise::AllPromiseType> mShutdownPromise;
+  RefPtr<GenericNonExclusivePromise> mShutdownPromise;
   
   double GetEncodeTimeStamp() {
     TimeDuration decodeTime;
