@@ -308,7 +308,7 @@ nsresult nsPNGDecoder::InitInternal() {
 
 #ifdef PNG_HANDLE_AS_UNKNOWN_SUPPORTED
   
-  if (mCMSMode == CMSMode::Off || IsMetadataDecode()) {
+  if (mCMSMode == eCMSMode_Off || IsMetadataDecode()) {
     png_set_keep_unknown_chunks(mPNG, 1, color_chunks, 2);
   }
 
@@ -584,7 +584,7 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
   uint32_t intent = -1;
   bool sRGBTag = false;
   if (!decoder->IsMetadataDecode()) {
-    if (decoder->mCMSMode != CMSMode::Off) {
+    if (decoder->mCMSMode != eCMSMode_Off) {
       intent = gfxPlatform::GetRenderingIntent();
       uint32_t pIntent =
           decoder->ReadColorProfile(png_ptr, info_ptr, color_type, &sRGBTag);
@@ -597,7 +597,7 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
       png_set_gray_to_rgb(png_ptr);
 
       
-      if (decoder->mCMSMode != CMSMode::Off) {
+      if (decoder->mCMSMode != eCMSMode_Off) {
         PNGDoGammaCorrection(png_ptr, info_ptr);
       }
     }
@@ -685,8 +685,8 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
     decoder->mTransform = qcms_transform_create(decoder->mInProfile, inType,
                                                 decoder->GetCMSOutputProfile(),
                                                 outType, (qcms_intent)intent);
-  } else if ((sRGBTag && decoder->mCMSMode == CMSMode::TaggedOnly) ||
-             decoder->mCMSMode == CMSMode::All) {
+  } else if ((sRGBTag && decoder->mCMSMode == eCMSMode_TaggedOnly) ||
+             decoder->mCMSMode == eCMSMode_All) {
     
     
     

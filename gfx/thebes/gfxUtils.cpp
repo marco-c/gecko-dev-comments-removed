@@ -1464,7 +1464,7 @@ DeviceColor ToDeviceColor(const sRGBColor& aColor) {
   
   
   
-  if (gfxPlatform::GetCMSMode() == CMSMode::All) {
+  if (gfxPlatform::GetCMSMode() == eCMSMode_All) {
     qcms_transform* transform = gfxPlatform::GetCMSRGBTransform();
     if (transform) {
       return gfxPlatform::TransformPixel(aColor, transform);
