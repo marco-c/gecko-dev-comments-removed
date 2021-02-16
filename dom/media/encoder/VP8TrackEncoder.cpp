@@ -607,10 +607,15 @@ nsresult VP8TrackEncoder::Encode(VideoSegment* aSegment) {
   if (mEndOfStream) {
     
     VP8LOG(LogLevel::Debug, "mEndOfStream is true");
+    
+    
     if (mI420Frame) {
       mI420Frame = nullptr;
       mI420FrameSize = 0;
     }
+    
+    
+    mMuteFrame = nullptr;
     
     
     while (true) {
