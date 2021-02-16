@@ -176,7 +176,7 @@ class WindowSurfaceWayland : public WindowSurface {
   void CacheImageSurface(const LayoutDeviceIntRegion& aRegion);
   bool CommitImageCacheToWaylandBuffer();
 
-  void DrawDelayedImageCommits(gfx::DrawTarget* aDrawTarget,
+  bool DrawDelayedImageCommits(gfx::DrawTarget* aDrawTarget,
                                LayoutDeviceIntRegion& aWaylandBufferDamage);
   
   bool FlushPendingCommitsLocked();
@@ -238,7 +238,7 @@ class WindowSurfaceWayland : public WindowSurface {
 
   
   
-  bool mBufferPendingCommit;
+  bool mWLBufferIsDirty;
 
   
   
