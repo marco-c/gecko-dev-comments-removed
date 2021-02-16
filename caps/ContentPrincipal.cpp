@@ -441,30 +441,16 @@ ContentPrincipal::GetBaseDomain(nsACString& aBaseDomain) {
 
 NS_IMETHODIMP
 ContentPrincipal::GetSiteOriginNoSuffix(nsACString& aSiteOrigin) {
-  nsresult rv = GetOriginNoSuffix(aSiteOrigin);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  
-  nsCOMPtr<nsIURI> origin;
-  if (NS_FAILED(NS_NewURI(getter_AddRefs(origin), aSiteOrigin))) {
-    
-    
-    return NS_OK;
-  }
-
   
   nsAutoCString baseDomain;
   bool handled;
-  rv = GetSpecialBaseDomain(origin, &handled, baseDomain);
+  nsresult rv = GetSpecialBaseDomain(mURI, &handled, baseDomain);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (handled) {
     
     
-    return NS_OK;
+    return GetOriginNoSuffix(aSiteOrigin);
   }
 
   
@@ -479,7 +465,7 @@ ContentPrincipal::GetSiteOriginNoSuffix(nsACString& aSiteOrigin) {
   }
 
   bool gotBaseDomain = false;
-  rv = tldService->GetBaseDomain(origin, 0, baseDomain);
+  rv = tldService->GetBaseDomain(mURI, 0, baseDomain);
   if (NS_SUCCEEDED(rv)) {
     gotBaseDomain = true;
   } else {
@@ -494,7 +480,7 @@ ContentPrincipal::GetSiteOriginNoSuffix(nsACString& aSiteOrigin) {
   
   
   nsCOMPtr<nsIURI> siteUri;
-  NS_MutateURI mutator(origin);
+  NS_MutateURI mutator(mURI);
   mutator.SetUserPass(""_ns).SetPort(-1);
   if (gotBaseDomain) {
     mutator.SetHost(baseDomain);
@@ -503,7 +489,6 @@ ContentPrincipal::GetSiteOriginNoSuffix(nsACString& aSiteOrigin) {
   MOZ_ASSERT(NS_SUCCEEDED(rv), "failed to create siteUri");
   NS_ENSURE_SUCCESS(rv, rv);
 
-  aSiteOrigin.Truncate();
   rv = GenerateOriginNoSuffixFromURI(siteUri, aSiteOrigin);
   MOZ_ASSERT(NS_SUCCEEDED(rv), "failed to create siteOriginNoSuffix");
   return rv;
