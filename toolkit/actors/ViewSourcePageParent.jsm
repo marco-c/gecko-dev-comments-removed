@@ -142,20 +142,6 @@ class ViewSourcePageParent extends JSWindowActorParent {
   
 
 
-  queryIsWrapping() {
-    return this.sendQuery("ViewSource:IsWrapping");
-  }
-
-  
-
-
-  queryIsSyntaxHighlighting() {
-    return this.sendQuery("ViewSource:IsSyntaxHighlighting");
-  }
-
-  
-
-
 
 
   storeWrapping(state) {

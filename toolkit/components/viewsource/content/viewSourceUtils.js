@@ -34,14 +34,6 @@ var gViewSourceUtils = {
 
 
 
-  getPageActor({ browsingContext }) {
-    return browsingContext.currentWindowGlobal.getActor("ViewSourcePage");
-  },
-
-  
-
-
-
 
 
 
