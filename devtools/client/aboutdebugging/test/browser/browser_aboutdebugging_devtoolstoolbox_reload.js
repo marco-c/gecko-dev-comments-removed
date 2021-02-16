@@ -25,6 +25,14 @@ const TOOLS = [
 ];
 
 
+if (
+  Services.prefs.getBoolPref("devtools.performance.new-panel-enabled", false)
+) {
+  const perfIndex = TOOLS.indexOf("performance");
+  TOOLS.splice(perfIndex, 1);
+}
+
+
 
 
 add_task(async function() {
