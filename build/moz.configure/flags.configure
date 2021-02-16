@@ -57,7 +57,7 @@ def new_pass_manager_flags(enabled, compiler, host, target, pgo, enable_fuzzing,
     if enable_fuzzing and compiler.version < "10.0.0":
         
         return None
-    if ubsan and compiler.version >= "10.0.0":
+    if ubsan and compiler.version == "10.0.0":
         
         
         return None
