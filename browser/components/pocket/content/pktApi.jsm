@@ -613,9 +613,7 @@ var pktApi = (function() {
   
 
 
-
-
-  function getTags(callback) {
+  function getTags() {
     var tagsFromSettings = function() {
       var tagsJSON = getSetting("tags");
       if (typeof tagsJSON !== "undefined") {
@@ -655,11 +653,10 @@ var pktApi = (function() {
       return usedTags;
     };
 
-    if (callback) {
-      var tags = tagsFromSettings();
-      var usedTags = sortedUsedTagsFromSettings();
-      callback(tags, usedTags);
-    }
+    return {
+      tags: tagsFromSettings(),
+      usedTags: sortedUsedTagsFromSettings(),
+    };
   }
 
   

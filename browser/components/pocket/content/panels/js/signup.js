@@ -7,7 +7,6 @@
 
 
 var PKT_SIGNUP_OVERLAY = function(options) {
-  var myself = this;
   this.inited = false;
   this.active = false;
   this.delayedStateSaved = false;
@@ -28,12 +27,11 @@ var PKT_SIGNUP_OVERLAY = function(options) {
   this.initCloseTabEvents = function() {
     function clickHelper(e, linkData) {
       e.preventDefault();
-      thePKT_SIGNUP.sendMessage("openTabWithUrl", {
+      thePKT_SIGNUP.sendMessage("PKT_openTabWithUrl", {
         url: linkData.url,
         activate: true,
         source: linkData.source || "",
       });
-      myself.closePopup();
     }
     $(".pkt_ext_learnmore").click(function(e) {
       clickHelper(e, {
@@ -66,9 +64,6 @@ var PKT_SIGNUP_OVERLAY = function(options) {
         url: $(this).attr("href"),
       });
     });
-  };
-  this.closePopup = function() {
-    thePKT_SIGNUP.sendMessage("close");
   };
   this.sanitizeText = function(s) {
     var sanitizeMap = {
@@ -189,9 +184,6 @@ PKT_SIGNUP_OVERLAY.prototype = {
     }
 
     
-    thePKT_SIGNUP.sendMessage("show");
-
-    
     this.initCloseTabEvents();
   },
 };
@@ -210,19 +202,15 @@ PKT_SIGNUP.prototype = {
     this.inited = true;
   },
 
-  addMessageListener(messageId, callback) {
-    pktPanelMessaging.addMessageListener(this.panelId, messageId, callback);
-  },
-
   sendMessage(messageId, payload, callback) {
-    pktPanelMessaging.sendMessage(this.panelId, messageId, payload, callback);
+    pktPanelMessaging.sendMessage(messageId, this.panelId, payload, callback);
   },
 
   create() {
     this.overlay.create();
 
     
-    thePKT_SIGNUP.sendMessage("show");
+    thePKT_SIGNUP.sendMessage("PKT_show_signup");
   },
 };
 
@@ -237,7 +225,7 @@ $(function() {
   var pocketHost = thePKT_SIGNUP.overlay.pockethost;
   
   thePKT_SIGNUP.sendMessage(
-    "initL10N",
+    "PKT_initL10N",
     {
       tos: [
         "https://" + pocketHost + "/tos?s=ffi&t=tos&tv=panel_tryit",
@@ -247,9 +235,10 @@ $(function() {
       ],
     },
     function(resp) {
-      window.pocketStrings = resp.strings;
+      const { data } = resp;
+      window.pocketStrings = data.strings;
       
-      document.documentElement.setAttribute("dir", resp.dir);
+      document.documentElement.setAttribute("dir", data.dir);
       window.thePKT_SIGNUP.create();
     }
   );

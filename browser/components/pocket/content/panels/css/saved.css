@@ -1,22 +1,22 @@
+/*  saved.css
+ *
+ *  Description:
+ *  With base elements out of the way, this sets all custom styling for the page saved dialog.
+ *
+ *  Contents:
+ *  Global
+ *  Loading spinner
+ *  Core detail
+ *  Tag entry
+ *  Recent/suggested tags
+ *  Premium upsell
+ *  Token input/autocomplete
+ *  Overflow mode
+ *  Language overrides
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*=Global
+--------------------------------------------------------------------------------------- */
 .pkt_ext_containersaved {
     background-color: #fbfbfb;
     border-radius: 4px;
@@ -41,8 +41,8 @@
     width: auto;
 }
 
-
-
+/*=Loading spinner
+--------------------------------------------------------------------------------------- */
 @keyframes pkt_ext_spin {
     to {
         transform: rotate(1turn);
@@ -97,8 +97,8 @@
     background: #bbb;
 }
 
-
-
+/*=Core detail
+--------------------------------------------------------------------------------------- */
 .pkt_ext_containersaved .pkt_ext_initload {
     inset-inline-start: 0;
     position: absolute;
@@ -340,8 +340,8 @@
     text-decoration: none;
 }
 
-
-
+/*=Tag entry
+--------------------------------------------------------------------------------------- */
 .pkt_ext_containersaved .pkt_ext_tag_detail {
     border: 1px solid #c1c1c1;
     border-radius: 2px;
@@ -451,8 +451,8 @@
     margin-top: 2.2em;
 }
 
-
-
+/*=Recent/suggested tags
+--------------------------------------------------------------------------------------- */
 .pkt_ext_containersaved .pkt_ext_suggestedtag_detail,
 .pkt_ext_containersaved .pkt_ext_suggestedtag_detailshown {
     box-sizing: border-box;
@@ -584,8 +584,8 @@
     display: none;
 }
 
-
-
+/*=Premium upsell
+--------------------------------------------------------------------------------------- */
 .pkt_ext_detail .pkt_ext_premupsell {
     background-color: #50bbb6;
     display: block;
@@ -606,8 +606,8 @@
     color: #14302f;
 }
 
-
-
+/*=Token input/autocomplete
+--------------------------------------------------------------------------------------- */
 .token-input-dropdown-tag {
     border-radius: 4px;
     box-sizing: border-box;
@@ -749,8 +749,8 @@
     color: #bbb;
 }
 
-
-
+/*=Overflow mode
+--------------------------------------------------------------------------------------- */
 .pkt_ext_saved_overflow .pkt_ext_logo {
     float: none;
     margin: 0.5em auto 0;
@@ -808,8 +808,8 @@
     width: 100%;
 }
 
-
-
+/*=Language overrides
+--------------------------------------------------------------------------------------- */
 .pkt_ext_saved_es .pkt_ext_btn {
     min-width: 5em;
 }
@@ -818,8 +818,8 @@
     min-width: 6em;
 }
 
-
-
+/*=Coral Button
+--------------------------------------------------------------------------------------- */
 button {
     padding: 0;
     margin: 0;
@@ -850,7 +850,7 @@ button {
     background-color: #d5374b;
 }
 
-
+/* alt button */
 .pkt_ext_blue_button {
     background-color: #0060df;
     color: #FFF;
@@ -877,8 +877,8 @@ button {
 }
 
 
-
-
+/*=Tmp Account Login
+--------------------------------------------------------------------------------------- */
 .pkt_shaded_background {
     background-color: #EBEBEB;
     border-top: 1px solid #C3C3C3;
@@ -919,7 +919,7 @@ button {
     display: block;
     border: 0;
     border-top: 1px solid #D7D7DB;
-    margin: 0 -16px 0;
+    margin: 0;
 }
 
 .pkt_ext_item_recs {

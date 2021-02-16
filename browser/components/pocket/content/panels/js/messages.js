@@ -1,6 +1,5 @@
 
 
-
 var pktPanelMessaging = (function() {
   function panelIdFromURL(url) {
     var panelId = url.match(/panelId=([\w|\d|\.]*)&?/);
@@ -11,69 +10,51 @@ var pktPanelMessaging = (function() {
     return 0;
   }
 
-  function prefixedMessageId(messageId) {
-    return "PKT_" + messageId;
+  function removeMessageListener(messageId, panelId, callback) {
+    RPMRemoveMessageListener(`${messageId}_${panelId}`, callback);
   }
 
-  function panelPrefixedMessageId(panelId, messageId) {
-    return prefixedMessageId(panelId + "_" + messageId);
+  function addMessageListener(messageId, panelId, callback = () => {}) {
+    RPMAddMessageListener(`${messageId}_${panelId}`, callback);
   }
 
-  function addMessageListener(panelId, messageId, callback) {
-    document.addEventListener(
-      panelPrefixedMessageId(panelId, messageId),
-      function(e) {
-        callback(JSON.parse(e.target.getAttribute("payload"))[0]);
-
-        
-        
-      }
-    );
-  }
-
-  function removeMessageListener(panelId, messageId, callback) {
-    document.removeEventListener(
-      panelPrefixedMessageId(panelId, messageId),
-      callback
-    );
-  }
-
-  function sendMessage(panelId, messageId, payload, callback) {
+  function sendMessage(messageId, panelId, payload = {}, callback) {
     
     
     var messagePayload = {
       panelId,
-      data: payload || {},
+      payload,
     };
 
-    
     if (callback) {
-      var messageResponseId = messageId + "Response";
+      
+      
+      
+      
+      const responseMessageId = `${messageId}_response`;
       var responseListener = function(responsePayload) {
         callback(responsePayload);
-        removeMessageListener(panelId, messageResponseId, responseListener);
+        removeMessageListener(responseMessageId, panelId, responseListener);
       };
 
-      addMessageListener(panelId, messageResponseId, responseListener);
+      addMessageListener(responseMessageId, panelId, responseListener);
     }
 
     
-    var element = document.createElement("PKTMessageFromPanelElement");
-    element.setAttribute("payload", JSON.stringify([messagePayload]));
-    document.documentElement.appendChild(element);
+    RPMSendAsyncMessage(messageId, messagePayload);
+  }
 
-    var evt = document.createEvent("Events");
-    evt.initEvent(prefixedMessageId(messageId), true, false);
-    element.dispatchEvent(evt);
+  function log() {
+    RPMSendAsyncMessage("PKT_log", arguments);
   }
 
   
 
 
   return {
+    log,
     panelIdFromURL,
     addMessageListener,
-    removeMessageListener,
     sendMessage,
   };
 })();

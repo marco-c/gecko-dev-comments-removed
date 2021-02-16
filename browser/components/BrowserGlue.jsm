@@ -261,6 +261,21 @@ let JSWINDOWACTORS = {
     matches: ["about:plugins"],
   },
 
+  AboutPocket: {
+    parent: {
+      moduleURI: "resource:///actors/AboutPocketParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///actors/AboutPocketChild.jsm",
+
+      events: {
+        DOMWindowCreated: { capture: true },
+      },
+    },
+
+    matches: ["about:pocket-saved*", "about:pocket-signup*"],
+  },
+
   AboutPrivateBrowsing: {
     parent: {
       moduleURI: "resource:///actors/AboutPrivateBrowsingParent.jsm",
@@ -2070,17 +2085,6 @@ BrowserGlue.prototype = {
     );
   },
 
-  _sendMediaTelemetry() {
-    let win = Services.wm.getMostRecentWindow("navigator:browser");
-    if (win) {
-      let v = win.document.createElementNS(
-        "http://www.w3.org/1999/xhtml",
-        "video"
-      );
-      v.reportCanPlayTelemetry();
-    }
-  },
-
   
 
 
@@ -2711,10 +2715,6 @@ BrowserGlue.prototype = {
 
   _scheduleBestEffortUserIdleTasks() {
     const idleTasks = [
-      () => {
-        this._sendMediaTelemetry();
-      },
-
       () => {
         
         
@@ -3864,7 +3864,6 @@ BrowserGlue.prototype = {
       );
       let isFeatureEnabled = ExperimentAPI.getExperiment({
         featureId: "infobar",
-        sendExposurePing: false,
       })?.branch.feature.enabled;
       if (willPrompt) {
         
