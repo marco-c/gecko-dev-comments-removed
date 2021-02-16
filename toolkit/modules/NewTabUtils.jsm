@@ -589,19 +589,12 @@ var PlacesProvider = {
   
 
 
-
-  _batchProcessingDepth: 0,
-
-  
-
-
   maxNumLinks: HISTORY_RESULTS_LIMIT,
 
   
 
 
   init: function PlacesProvider_init() {
-    PlacesUtils.history.addObserver(this, true);
     this._placesObserver = new PlacesWeakCallbackWrapper(
       this.handlePlacesEvents.bind(this)
     );
@@ -709,22 +702,7 @@ var PlacesProvider = {
 
   _observers: [],
 
-  
-
-
-  onBeginUpdateBatch() {
-    this._batchProcessingDepth += 1;
-  },
-
-  onEndUpdateBatch() {
-    this._batchProcessingDepth -= 1;
-  },
-
   handlePlacesEvents(aEvents) {
-    if (this._batchProcessingDepth) {
-      return;
-    }
-
     for (let event of aEvents) {
       switch (event.type) {
         case "page-visited": {
@@ -789,11 +767,6 @@ var PlacesProvider = {
       }
     }
   },
-
-  QueryInterface: ChromeUtils.generateQI([
-    "nsINavHistoryObserver",
-    "nsISupportsWeakReference",
-  ]),
 };
 
 

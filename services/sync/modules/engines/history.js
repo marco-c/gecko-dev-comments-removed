@@ -220,60 +220,41 @@ HistoryStore.prototype = {
       }
     });
     if (toAdd.length || toRemove.length) {
-      
-      
-      let observers = PlacesUtils.history.getObservers();
-      const notifyHistoryObservers = notification => {
-        for (let observer of observers) {
+      if (toRemove.length) {
+        
+        
+        
+        
+        await Async.yieldingForEach(toRemove, async record => {
           try {
-            observer[notification]();
+            await this.remove(record);
           } catch (ex) {
-            
-            
-            this._log.info("history observer failed", ex);
-          }
-        }
-      };
-      notifyHistoryObservers("onBeginUpdateBatch");
-      try {
-        if (toRemove.length) {
-          
-          
-          
-          
-          await Async.yieldingForEach(toRemove, async record => {
-            try {
-              await this.remove(record);
-            } catch (ex) {
-              if (Async.isShutdownException(ex)) {
-                throw ex;
-              }
-              this._log.error("Failed to delete a place info", ex);
-              this._log.trace("The record that failed", record);
-              failed.push(record.id);
+            if (Async.isShutdownException(ex)) {
+              throw ex;
             }
-          });
-        }
-        for (let chunk of this._generateChunks(toAdd)) {
-          
-          
-          
-          
-          try {
-            await PlacesUtils.history.insertMany(chunk, null, failedVisit => {
-              this._log.info(
-                "Failed to insert a history record",
-                failedVisit.guid
-              );
-              this._log.trace("The record that failed", failedVisit);
-              failed.push(failedVisit.guid);
-            });
-          } catch (ex) {
-            this._log.info("Failed to insert history records", ex);
+            this._log.error("Failed to delete a place info", ex);
+            this._log.trace("The record that failed", record);
+            failed.push(record.id);
           }
+        });
+      }
+      for (let chunk of this._generateChunks(toAdd)) {
+        
+        
+        
+        
+        try {
+          await PlacesUtils.history.insertMany(chunk, null, failedVisit => {
+            this._log.info(
+              "Failed to insert a history record",
+              failedVisit.guid
+            );
+            this._log.trace("The record that failed", failedVisit);
+            failed.push(failedVisit.guid);
+          });
+        } catch (ex) {
+          this._log.info("Failed to insert history records", ex);
         }
-      } finally {
-        notifyHistoryObservers("onEndUpdateBatch");
       }
     }
 
@@ -521,7 +502,6 @@ HistoryTracker.prototype = {
 
   onStart() {
     this._log.info("Adding Places observer.");
-    PlacesUtils.history.addObserver(this, true);
     this._placesObserver = new PlacesWeakCallbackWrapper(
       this.handlePlacesEvents.bind(this)
     );
@@ -533,7 +513,6 @@ HistoryTracker.prototype = {
 
   onStop() {
     this._log.info("Removing Places observer.");
-    PlacesUtils.history.removeObserver(this);
     if (this._placesObserver) {
       PlacesObservers.removeListener(
         ["page-visited", "history-cleared", "page-removed"],
@@ -542,45 +521,7 @@ HistoryTracker.prototype = {
     }
   },
 
-  QueryInterface: ChromeUtils.generateQI([
-    "nsINavHistoryObserver",
-    "nsISupportsWeakReference",
-  ]),
-
-  async onDeleteAffectsGUID(uri, guid, reason, source, increment) {
-    if (this.ignoreAll || reason === PlacesVisitRemoved.REASON_EXPIRED) {
-      return;
-    }
-    this._log.trace(source + ": " + uri.spec + ", reason " + reason);
-    const added = await this.addChangedID(guid);
-    if (added) {
-      this.score += increment;
-    }
-  },
-
-  onDeleteVisits(uri, partialRemoval, guid, reason) {
-    this.asyncObserver.enqueueCall(() =>
-      this.onDeleteAffectsGUID(
-        uri,
-        guid,
-        reason,
-        "onDeleteVisits",
-        SCORE_INCREMENT_SMALL
-      )
-    );
-  },
-
-  onDeleteURI(uri, guid, reason) {
-    this.asyncObserver.enqueueCall(() =>
-      this.onDeleteAffectsGUID(
-        uri,
-        guid,
-        reason,
-        "onDeleteURI",
-        SCORE_INCREMENT_XLARGE
-      )
-    );
-  },
+  QueryInterface: ChromeUtils.generateQI(["nsISupportsWeakReference"]),
 
   handlePlacesEvents(aEvents) {
     this.asyncObserver.enqueueCall(() => this._handlePlacesEvents(aEvents));
@@ -634,8 +575,4 @@ HistoryTracker.prototype = {
       }
     }
   },
-
-  onBeginUpdateBatch() {},
-  onEndUpdateBatch() {},
-  onBeforeDeleteURI() {},
 };
