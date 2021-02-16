@@ -771,13 +771,10 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
         mWindow->WaylandSurfaceNeedsClear() || isTransparentPopup;
 
     
-    
-    
-    mCanSwitchWaylandBuffer = true;
-
-    
     mDelayedImageCommits.Clear();
     mWaylandBufferDamage.SetEmpty();
+    mCanSwitchWaylandBuffer = true;
+    mWLBufferIsDirty = false;
 
     
     mWaylandFullscreenDamage = true;
@@ -806,20 +803,15 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
 
   if (!(mMozContainerRect == mozContainerSize)) {
     LOGWAYLAND(("   screen size changed\n"));
-
-    
-    
-    
-    
-    mDelayedImageCommits.Clear();
-    mWaylandBufferDamage.SetEmpty();
-
     if (!windowRedraw) {
       LOGWAYLAND(("   screen size changed without redraw!\n"));
       
       
       
-      return nullptr;
+      mDelayedImageCommits.Clear();
+      mWaylandBufferDamage.SetEmpty();
+      mCanSwitchWaylandBuffer = true;
+      mWLBufferIsDirty = false;
     }
     mMozContainerRect = mozContainerSize;
   }
@@ -847,11 +839,12 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
       mWaylandBuffer->DumpToFile("Lock");
 #endif
       if (!windowRedraw) {
-        mWLBufferIsDirty = DrawDelayedImageCommits(dt, mWaylandBufferDamage);
+        DrawDelayedImageCommits(dt, mWaylandBufferDamage);
 #if MOZ_LOGGING
         mWaylandBuffer->DumpToFile("Lock-after-commit");
 #endif
       }
+      mWLBufferIsDirty = true;
       return dt.forget();
     }
   }
