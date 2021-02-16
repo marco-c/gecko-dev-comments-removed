@@ -35,7 +35,8 @@
   _(MarkRuntime, "mkRntm")                    \
   _(MarkDebugger, "mkDbgr")                   \
   _(SweepCaches, "swpCch")                    \
-  _(CollectToFP, "collct")                    \
+  _(CollectToObjFP, "colObj")                 \
+  _(CollectToStrFP, "colStr")                 \
   _(ObjectsTenuredCallback, "tenCB")          \
   _(Sweep, "sweep")                           \
   _(UpdateJitActivations, "updtIn")           \
@@ -695,8 +696,12 @@ class Nursery {
                      bool highPromotionRate);
 
   
+  void collectToObjectFixedPoint(TenuringTracer& mover);
+
   
-  void collectToFixedPoint(TenuringTracer& trc);
+  
+  
+  void collectToStringFixedPoint(TenuringTracer& mover);
 
   
   
