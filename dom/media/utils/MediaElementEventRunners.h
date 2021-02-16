@@ -173,22 +173,6 @@ class nsSourceErrorEventRunner : public nsMediaEventRunner {
 
 
 
-class nsSyncSection : public nsMediaEventRunner {
- public:
-  nsSyncSection(HTMLMediaElement* aElement, nsIRunnable* aRunnable)
-      : nsMediaEventRunner(u"dom::nsSyncSection"_ns, aElement),
-        mRunnable(aRunnable) {}
-  NS_IMETHOD Run() override;
-
- private:
-  nsCOMPtr<nsIRunnable> mRunnable;
-};
-
-
-
-
-
-
 class nsTimeupdateRunner : public nsMediaEventRunner {
  public:
   nsTimeupdateRunner(HTMLMediaElement* aElement, bool aIsMandatory)

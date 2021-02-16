@@ -2295,15 +2295,24 @@ void HTMLMediaElement::NoSupportedMediaSourceError(
                               NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR);
 }
 
-typedef void (HTMLMediaElement::*SyncSectionFn)();
+
+
 
 void HTMLMediaElement::RunInStableState(nsIRunnable* aRunnable) {
   if (mShuttingDown) {
     return;
   }
 
-  nsCOMPtr<nsIRunnable> event = new nsSyncSection(this, aRunnable);
-  nsContentUtils::RunInStableState(event.forget());
+  nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction(
+      "HTMLMediaElement::RunInStableState",
+      [self = RefPtr<HTMLMediaElement>(this), loadId = GetCurrentLoadID(),
+       runnable = RefPtr<nsIRunnable>(aRunnable)]() {
+        if (self->GetCurrentLoadID() != loadId) {
+          return;
+        }
+        runnable->Run();
+      });
+  nsContentUtils::RunInStableState(task.forget());
 }
 
 void HTMLMediaElement::QueueLoadFromSourceTask() {
