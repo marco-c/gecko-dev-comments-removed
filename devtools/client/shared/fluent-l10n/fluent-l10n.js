@@ -18,7 +18,17 @@ class FluentL10n {
 
 
 
-  async init(resourceIds) {
+
+
+
+  async init(resourceIds, { setAttributesOnDocument } = {}) {
+    if (setAttributesOnDocument) {
+      const primaryLocale = Services.locale.appLocalesAsBCP47[0];
+      document.documentElement.setAttribute("lang", primaryLocale);
+      const direction = Services.locale.isAppLocaleRTL ? "rtl" : "ltr";
+      document.documentElement.setAttribute("dir", direction);
+    }
+
     const locales = Services.locale.appLocalesAsBCP47;
     const generator = L10nRegistry.generateBundles(locales, resourceIds);
 
