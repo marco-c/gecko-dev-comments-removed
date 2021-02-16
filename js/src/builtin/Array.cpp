@@ -44,6 +44,7 @@
 #include "vm/Shape.h"
 #include "vm/ToSource.h"  
 #include "vm/TypedArrayObject.h"
+#include "vm/WellKnownAtom.h"  
 #include "vm/WrapperObject.h"
 
 #include "vm/ArgumentsObject-inl.h"

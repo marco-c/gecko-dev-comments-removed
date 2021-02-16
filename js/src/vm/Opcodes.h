@@ -12,6 +12,8 @@
 
 #include <stddef.h>
 
+#include "vm/WellKnownAtom.h"  
+
 
 
 

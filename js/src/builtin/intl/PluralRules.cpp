@@ -27,6 +27,7 @@
 #include "vm/JSContext.h"
 #include "vm/PlainObject.h"  
 #include "vm/StringType.h"
+#include "vm/WellKnownAtom.h"  
 
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"

@@ -58,7 +58,8 @@
 #include "vm/RegExpObject.h"
 #include "vm/RegExpStatics.h"
 #include "vm/SelfHosting.h"
-#include "vm/ToSource.h"  
+#include "vm/ToSource.h"       
+#include "vm/WellKnownAtom.h"  
 
 #include "vm/InlineCharBuffer-inl.h"
 #include "vm/Interpreter-inl.h"

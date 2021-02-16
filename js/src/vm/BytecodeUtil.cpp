@@ -57,7 +57,8 @@
 #include "vm/Printer.h"
 #include "vm/Realm.h"
 #include "vm/Shape.h"
-#include "vm/ToSource.h"  
+#include "vm/ToSource.h"       
+#include "vm/WellKnownAtom.h"  
 
 #include "gc/GC-inl.h"
 #include "vm/BytecodeIterator-inl.h"

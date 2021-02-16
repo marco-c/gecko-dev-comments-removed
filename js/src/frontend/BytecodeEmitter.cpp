@@ -72,6 +72,7 @@
 #include "vm/Opcodes.h"        
 #include "vm/SharedStencil.h"  
 #include "vm/ThrowMsgKind.h"   
+#include "vm/WellKnownAtom.h"  
 #include "wasm/AsmJS.h"        
 
 #include "vm/JSObject-inl.h"  

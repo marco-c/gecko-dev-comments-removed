@@ -21,6 +21,7 @@
 #include "js/friend/ErrorMessages.h"  
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/GeneratorObject.h"  
+#include "vm/WellKnownAtom.h"    
 
 namespace js {
 

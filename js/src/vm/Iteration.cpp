@@ -41,6 +41,7 @@
 #include "vm/NativeObject.h"  
 #include "vm/Shape.h"
 #include "vm/TypedArrayObject.h"
+#include "vm/WellKnownAtom.h"  
 
 #include "vm/Compartment-inl.h"
 #include "vm/JSScript-inl.h"

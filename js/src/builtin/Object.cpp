@@ -34,7 +34,8 @@
 #include "vm/PlainObject.h"  
 #include "vm/RegExpObject.h"
 #include "vm/StringObject.h"
-#include "vm/ToSource.h"  
+#include "vm/ToSource.h"       
+#include "vm/WellKnownAtom.h"  
 
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
@@ -690,14 +691,14 @@ bool js::obj_toString(JSContext* cx, unsigned argc, Value* vp) {
   if (!tag.isString()) {
     if (!builtinTag) {
       builtinTag = GetBuiltinTagFast(obj, clasp, cx);
-  #ifdef DEBUG
+#ifdef DEBUG
       
       JSString* builtinTagSlow = GetBuiltinTagSlow(cx, obj);
       if (!builtinTagSlow) {
         return false;
       }
       MOZ_ASSERT(builtinTagSlow == builtinTag);
-  #endif
+#endif
     }
 
     args.rval().setString(builtinTag);

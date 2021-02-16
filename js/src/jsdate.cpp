@@ -50,6 +50,7 @@
 #include "vm/JSObject.h"
 #include "vm/StringType.h"
 #include "vm/Time.h"
+#include "vm/WellKnownAtom.h"  
 
 #include "vm/Compartment-inl.h"  
 #include "vm/JSObject-inl.h"

@@ -58,6 +58,7 @@
 #include "vm/SelfHosting.h"
 #include "vm/Stack.h"
 #include "vm/StringType.h"
+#include "vm/WellKnownAtom.h"  
 
 #include "vm/JSObject-inl.h"
 #include "vm/List-inl.h"

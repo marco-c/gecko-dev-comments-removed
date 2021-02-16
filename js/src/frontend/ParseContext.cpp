@@ -9,6 +9,8 @@
 #include "frontend/CompilationStencil.h"  
 #include "frontend/Parser.h"              
 #include "js/friend/ErrorMessages.h"      
+#include "vm/WellKnownAtom.h"             
+
 #include "vm/EnvironmentObject-inl.h"
 
 using mozilla::Maybe;

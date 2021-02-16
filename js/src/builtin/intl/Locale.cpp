@@ -39,6 +39,7 @@
 #include "vm/PlainObject.h"  
 #include "vm/Printer.h"
 #include "vm/StringType.h"
+#include "vm/WellKnownAtom.h"  
 
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"

@@ -31,6 +31,7 @@
 #ifdef DEBUG
 #  include "util/Unicode.h"
 #endif
+#include "vm/WellKnownAtom.h"  
 #include "vm/Xdr.h"
 
 #include "vm/JSObject-inl.h"

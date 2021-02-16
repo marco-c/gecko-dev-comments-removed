@@ -13,7 +13,8 @@
 #include "gc/Zone.h"
 #include "js/friend/ErrorMessages.h"  
 #include "vm/GlobalObject.h"
-#include "vm/PlainObject.h"  
+#include "vm/PlainObject.h"    
+#include "vm/WellKnownAtom.h"  
 
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"

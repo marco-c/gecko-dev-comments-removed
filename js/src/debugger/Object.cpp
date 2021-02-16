@@ -68,6 +68,7 @@
 #include "vm/Shape.h"                    
 #include "vm/Stack.h"                    
 #include "vm/StringType.h"               
+#include "vm/WellKnownAtom.h"            
 #include "vm/WrapperObject.h"            
 
 #include "vm/Compartment-inl.h"  

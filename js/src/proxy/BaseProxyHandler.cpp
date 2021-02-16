@@ -10,6 +10,7 @@
 #include "js/Proxy.h"
 #include "proxy/DeadObjectProxy.h"
 #include "vm/ProxyObject.h"
+#include "vm/WellKnownAtom.h"  
 #include "vm/WrapperObject.h"
 
 #include "vm/JSContext-inl.h"
