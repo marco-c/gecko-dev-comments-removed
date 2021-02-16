@@ -121,11 +121,6 @@ ModuleObject* CompileModule(JSContext* cx,
 
 
 
-bool ParseModuleToStencil(JSContext* cx, CompilationStencil& stencil,
-                          JS::SourceText<char16_t>& srcBuf);
-bool ParseModuleToStencil(JSContext* cx, CompilationStencil& stencil,
-                          JS::SourceText<mozilla::Utf8Unit>& srcBuf);
-
 UniquePtr<CompilationStencil> ParseModuleToStencil(
     JSContext* cx, const JS::ReadOnlyCompileOptions& options,
     JS::SourceText<char16_t>& srcBuf);
