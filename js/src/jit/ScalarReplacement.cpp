@@ -1341,8 +1341,9 @@ void ArgumentsReplacer::visitGuardToClass(MGuardToClass* ins) {
 void ArgumentsReplacer::visitGetArgumentsObjectArg(
     MGetArgumentsObjectArg* ins) {
   
-  
-  MOZ_ASSERT(ins->getArgsObject() == args_);
+  if (ins->getArgsObject() != args_) {
+    return;
+  }
 
   
   
@@ -1361,8 +1362,9 @@ void ArgumentsReplacer::visitGetArgumentsObjectArg(
 void ArgumentsReplacer::visitLoadArgumentsObjectArg(
     MLoadArgumentsObjectArg* ins) {
   
-  
-  MOZ_ASSERT(ins->getArgsObject() == args_);
+  if (ins->getArgsObject() != args_) {
+    return;
+  }
 
   MDefinition* index = ins->index();
 
@@ -1392,8 +1394,9 @@ void ArgumentsReplacer::visitLoadArgumentsObjectArg(
 void ArgumentsReplacer::visitArgumentsObjectLength(
     MArgumentsObjectLength* ins) {
   
-  
-  MOZ_ASSERT(ins->getArgsObject() == args_);
+  if (ins->getArgsObject() != args_) {
+    return;
+  }
 
   auto* length = MArgumentsLength::New(alloc());
   ins->block()->insertBefore(ins, length);
