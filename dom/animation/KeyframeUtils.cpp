@@ -1021,7 +1021,7 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
       
       
       double offset = n ? i++ / double(n) : 1;
-      Keyframe* keyframe = processedKeyframes.LookupOrAdd(offset);
+      Keyframe* keyframe = processedKeyframes.GetOrInsertNew(offset);
       if (keyframe->mPropertyValues.IsEmpty()) {
         keyframe->mComputedOffset = offset;
       }

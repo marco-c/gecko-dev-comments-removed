@@ -92,7 +92,7 @@ RefPtr<GenericPromise> AudioStreamTrack::SetAudioOutputDevice(
   }
 
   
-  UniquePtr<CrossGraphPort>& crossGraphPtr = *mCrossGraphs.LookupOrAdd(key);
+  UniquePtr<CrossGraphPort>& crossGraphPtr = *mCrossGraphs.GetOrInsertNew(key);
   if (crossGraphPtr) {
     
     crossGraphPtr->Destroy();
