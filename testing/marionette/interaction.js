@@ -184,8 +184,6 @@ async function webdriverClickElement(el, a11y) {
       clickPoint.y,
       {
         type: "mousemove",
-        
-        buttons: 0,
       },
       win
     );
