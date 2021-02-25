@@ -20,6 +20,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
+#include "nsIWidget.h"
 
 
 
@@ -381,6 +382,13 @@ class nsCocoaUtils {
 
 
   static uint32_t ConvertGeckoKeyCodeToMacCharCode(uint32_t aKeyCode);
+
+  
+
+
+
+  static NSEventModifierFlags ConvertWidgetModifiersToMacModifierFlags(
+      nsIWidget::Modifiers aNativeModifiers);
 
   
 

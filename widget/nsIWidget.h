@@ -1515,7 +1515,10 @@ class nsIWidget : public nsISupports {
       mozilla::WidgetGUIEvent* aEvent, int32_t aHorizontal,
       int32_t aVertical) = 0;
 
-  enum Modifiers {
+  
+  
+  enum Modifiers : uint32_t {
+    NO_MODIFIERS = 0x00000000,
     CAPS_LOCK = 0x00000001,  
     NUM_LOCK = 0x00000002,   
     SHIFT_L = 0x00000100,
@@ -1581,10 +1584,10 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual nsresult SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
-                                              uint32_t aNativeMessage,
-                                              uint32_t aModifierFlags,
-                                              nsIObserver* aObserver) = 0;
+
+  virtual nsresult SynthesizeNativeMouseEvent(
+      LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage,
+      nsIWidget::Modifiers aModifierFlags, nsIObserver* aObserver) = 0;
 
   
 

@@ -6604,10 +6604,9 @@ nsresult nsWindow::SynthesizeNativeKeyEvent(
       aUnmodifiedCharacters);
 }
 
-nsresult nsWindow::SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
-                                              uint32_t aNativeMessage,
-                                              uint32_t aModifierFlags,
-                                              nsIObserver* aObserver) {
+nsresult nsWindow::SynthesizeNativeMouseEvent(
+    LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage,
+    nsIWidget::Modifiers aModifierFlags, nsIObserver* aObserver) {
   AutoObserverNotifier notifier(aObserver, "mouseevent");
 
   if (aNativeMessage == MOUSEEVENTF_MOVE) {
@@ -6620,6 +6619,13 @@ nsresult nsWindow::SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
 
   INPUT input;
   memset(&input, 0, sizeof(input));
+
+  
+  
+  
+  
+  
+  
 
   input.type = INPUT_MOUSE;
   input.mi.dwFlags = aNativeMessage;

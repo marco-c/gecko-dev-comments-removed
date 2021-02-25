@@ -7868,10 +7868,9 @@ LayoutDeviceIntRect nsWindow::GdkRectToDevicePixels(GdkRectangle rect) {
                              rect.height * scale);
 }
 
-nsresult nsWindow::SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
-                                              uint32_t aNativeMessage,
-                                              uint32_t aModifierFlags,
-                                              nsIObserver* aObserver) {
+nsresult nsWindow::SynthesizeNativeMouseEvent(
+    LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage,
+    nsIWidget::Modifiers aModifierFlags, nsIObserver* aObserver) {
   AutoObserverNotifier notifier(aObserver, "mouseevent");
 
   if (!mGdkWindow) {
@@ -7891,6 +7890,8 @@ nsresult nsWindow::SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
     memset(&event, 0, sizeof(GdkEvent));
     event.type = (GdkEventType)aNativeMessage;
     event.button.button = 1;
+    event.button.state =
+        KeymapWrapper::ConvertWidgetModifierToGdkState(aModifierFlags);
     event.button.window = mGdkWindow;
     event.button.time = GDK_CURRENT_TIME;
 
@@ -7907,6 +7908,7 @@ nsresult nsWindow::SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
 
     gdk_event_put(&event);
   } else {
+    
     
     
     
