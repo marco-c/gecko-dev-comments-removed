@@ -192,7 +192,9 @@ bool nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext,
                                    nsIFrame* aFrame,
                                    StyleAppearance aAppearance) {
   
-  if (!aFrame) return false;
+  if (!aFrame) {
+    return false;
+  }
 
   
   
@@ -204,12 +206,18 @@ bool nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext,
     if (parentFrame && parentFrame->IsScrollFrame()) {
       
       
+      
+      
+      
+      
       parentFrame = parentFrame->GetParent();
-      if (parentFrame) {
-        return IsWidgetStyled(
-            aPresContext, parentFrame,
-            parentFrame->StyleDisplay()->EffectiveAppearance());
+      if (!parentFrame) {
+        return false;
       }
+      auto parentAppearance =
+          parentFrame->StyleDisplay()->EffectiveAppearance();
+      return parentAppearance == StyleAppearance::None ||
+             IsWidgetStyled(aPresContext, parentFrame, parentAppearance);
     }
   }
 
