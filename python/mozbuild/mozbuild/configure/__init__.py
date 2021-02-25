@@ -1029,8 +1029,11 @@ class ConfigureSandbox(dict):
 
             return wrapper
 
-        for f in ("call", "check_call", "check_output", "Popen"):
-            wrapped_subprocess[f] = wrap(wrapped_subprocess[f])
+        for f in ("call", "check_call", "check_output", "Popen", "run"):
+            
+            
+            if f in wrapped_subprocess:
+                wrapped_subprocess[f] = wrap(wrapped_subprocess[f])
 
         return ReadOnlyNamespace(**wrapped_subprocess)
 
