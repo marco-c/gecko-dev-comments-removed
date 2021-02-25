@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 
 
@@ -7,7 +6,7 @@ def test_function():
     pass
 
 
-class TestClass(object):
+class TestClass:
     def test_method(self):
         pass
 
