@@ -42,15 +42,29 @@ var UrlbarUtils = {
   
   
   
-  MAXIMUM_ALLOWED_EXTENSION_MATCHES: 6,
+  MAX_OMNIBOX_RESULT_COUNT: 6,
 
   
   
+  
+  
+  
+  
   RESULT_GROUP: {
-    HEURISTIC: "heuristic",
     GENERAL: "general",
-    SUGGESTION: "suggestion",
-    EXTENSION: "extension",
+    FORM_HISTORY: "formHistory",
+    HEURISTIC_AUTOFILL: "heuristicAutofill",
+    HEURISTIC_EXTENSION: "heuristicExtension",
+    HEURISTIC_FALLBACK: "heuristicFallback",
+    HEURISTIC_OMNIBOX: "heuristicOmnibox",
+    HEURISTIC_SEARCH_TIP: "heuristicSearchTip",
+    HEURISTIC_TEST: "heuristicTest",
+    HEURISTIC_TOKEN_ALIAS_ENGINE: "heuristicTokenAliasEngine",
+    HEURISTIC_UNIFIED_COMPLETE: "heuristicUnifiedComplete",
+    OMNIBOX: "extension",
+    REMOTE_SUGGESTION: "remoteSuggestion",
+    SUGGESTED_INDEX: "suggestedIndex",
+    TAIL_SUGGESTION: "tailSuggestion",
   },
 
   
@@ -472,6 +486,65 @@ var UrlbarUtils = {
       index = hits.indexOf(1, index + len);
     }
     return ranges;
+  },
+
+  
+
+
+
+
+
+
+
+  getResultGroup(result) {
+    if (result.suggestedIndex >= 0) {
+      return UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX;
+    }
+    if (result.heuristic) {
+      switch (result.providerName) {
+        case "Autofill":
+          return UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL;
+        case "HeuristicFallback":
+          return UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK;
+        case "Omnibox":
+          return UrlbarUtils.RESULT_GROUP.HEURISTIC_OMNIBOX;
+        case "TokenAliasEngines":
+          return UrlbarUtils.RESULT_GROUP.HEURISTIC_TOKEN_ALIAS_ENGINE;
+        case "UnifiedComplete":
+          return UrlbarUtils.RESULT_GROUP.HEURISTIC_UNIFIED_COMPLETE;
+        case "UrlbarProviderSearchTips":
+          return UrlbarUtils.RESULT_GROUP.HEURISTIC_SEARCH_TIP;
+        default:
+          if (result.providerName.startsWith("TestProvider")) {
+            return UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST;
+          }
+          break;
+      }
+      if (result.providerType == UrlbarUtils.PROVIDER_TYPE.EXTENSION) {
+        return UrlbarUtils.RESULT_GROUP.HEURISTIC_EXTENSION;
+      }
+      Cu.reportError(
+        "Returning HEURISTIC_FALLBACK for unrecognized heuristic result: " +
+          result
+      );
+      return UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK;
+    }
+    switch (result.type) {
+      case UrlbarUtils.RESULT_TYPE.SEARCH:
+        if (result.source == UrlbarUtils.RESULT_SOURCE.HISTORY) {
+          return UrlbarUtils.RESULT_GROUP.FORM_HISTORY;
+        }
+        if (result.payload.tail) {
+          return UrlbarUtils.RESULT_GROUP.TAIL_SUGGESTION;
+        }
+        if (result.payload.suggestion) {
+          return UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION;
+        }
+        break;
+      case UrlbarUtils.RESULT_TYPE.OMNIBOX:
+        return UrlbarUtils.RESULT_GROUP.OMNIBOX;
+    }
+    return UrlbarUtils.RESULT_GROUP.GENERAL;
   },
 
   
@@ -1102,6 +1175,12 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
     required: ["url"],
     properties: {
       displayUrl: {
+        type: "string",
+      },
+      helpL10nId: {
+        type: "string",
+      },
+      helpUrl: {
         type: "string",
       },
       icon: {

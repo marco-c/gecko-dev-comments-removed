@@ -35,7 +35,7 @@ add_task(function losslessDecode() {
     UrlbarUtils.RESULT_SOURCE.TABS,
     { url }
   );
-  gURLBar.setValueFromResult(result);
+  gURLBar.setValueFromResult({ result });
   
   Assert.equal(
     gURLBar.inputField.value,

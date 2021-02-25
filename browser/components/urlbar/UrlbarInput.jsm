@@ -694,8 +694,13 @@ class UrlbarInput {
       return;
     }
 
+    let urlOverride;
+    if (element?.classList.contains("urlbarView-help")) {
+      urlOverride = result.payload.helpUrl;
+    }
+
     let originalUntrimmedValue = this.untrimmedValue;
-    let isCanonized = this.setValueFromResult(result, event);
+    let isCanonized = this.setValueFromResult({ result, event, urlOverride });
     let where = this._whereToOpen(event);
     let openParams = {
       allowInheritPrincipal: false,
@@ -719,7 +724,9 @@ class UrlbarInput {
       return;
     }
 
-    let { url, postData } = UrlbarUtils.getUrlFromResult(result);
+    let { url, postData } = urlOverride
+      ? { url: urlOverride, postData: null }
+      : UrlbarUtils.getUrlFromResult(result);
     openParams.postData = postData;
 
     switch (result.type) {
@@ -850,7 +857,7 @@ class UrlbarInput {
       }
       case UrlbarUtils.RESULT_TYPE.TIP: {
         let scalarName;
-        if (element.classList.contains("urlbarView-tip-help")) {
+        if (element.classList.contains("urlbarView-help")) {
           url = result.payload.helpUrl;
           if (!url) {
             Cu.reportError("helpUrl not specified");
@@ -989,7 +996,10 @@ class UrlbarInput {
 
 
 
-  setValueFromResult(result = null, event = null) {
+
+
+
+  setValueFromResult({ result = null, event = null, urlOverride = null } = {}) {
     
     
     
@@ -1074,21 +1084,25 @@ class UrlbarInput {
     
     let allowTrim = true;
     if (
-      result.type == UrlbarUtils.RESULT_TYPE.URL &&
-      UrlbarPrefs.get("trimURLs") &&
-      result.payload.url.startsWith(BrowserUIUtils.trimURLProtocol)
+      (urlOverride || result.type == UrlbarUtils.RESULT_TYPE.URL) &&
+      UrlbarPrefs.get("trimURLs")
     ) {
-      let fixupInfo = this._getURIFixupInfo(
-        BrowserUIUtils.trimURL(result.payload.url)
-      );
-      if (fixupInfo?.keywordAsSent) {
-        allowTrim = false;
+      let url = urlOverride || result.payload.url;
+      if (url.startsWith(BrowserUIUtils.trimURLProtocol)) {
+        let fixupInfo = this._getURIFixupInfo(BrowserUIUtils.trimURL(url));
+        if (fixupInfo?.keywordAsSent) {
+          allowTrim = false;
+        }
       }
     }
 
     if (!result.autofill) {
-      setValueAndRestoreActionType(this._getValueFromResult(result), allowTrim);
+      setValueAndRestoreActionType(
+        this._getValueFromResult(result, urlOverride),
+        allowTrim
+      );
     }
+
     this.setResultForCurrentValue(result);
     return false;
   }
@@ -1140,7 +1154,7 @@ class UrlbarInput {
       return;
     }
 
-    this.setValueFromResult(result);
+    this.setValueFromResult({ result });
   }
 
   
@@ -1878,7 +1892,7 @@ class UrlbarInput {
     return val;
   }
 
-  _getValueFromResult(result) {
+  _getValueFromResult(result, urlOverride = null) {
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.KEYWORD:
         return result.payload.input;
@@ -1895,7 +1909,7 @@ class UrlbarInput {
     }
 
     try {
-      let uri = Services.io.newURI(result.payload.url);
+      let uri = Services.io.newURI(urlOverride || result.payload.url);
       if (uri) {
         return losslessDecodeURI(uri);
       }
