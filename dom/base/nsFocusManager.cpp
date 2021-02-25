@@ -1164,12 +1164,19 @@ nsFocusManager::BlurredElementInfo::~BlurredElementInfo() = default;
 
 
 static bool ShouldMatchFocusVisible(
-    const Element& aElement, int32_t aFocusFlags,
-    const Maybe<nsFocusManager::BlurredElementInfo>& aBlurredElementInfo) {
+    nsPIDOMWindowOuter* aWindow, const Element& aElement, int32_t aFocusFlags,
+    const Maybe<nsFocusManager::BlurredElementInfo>& aBlurredElementInfo,
+    bool aIsRefocus, bool aRefocusedElementUsedToShowOutline) {
   
   if (aFocusFlags & nsIFocusManager::FLAG_SHOWRING) {
     return true;
   }
+
+  if (aWindow->ShouldShowFocusRing()) {
+    
+    return true;
+  }
+
   
   
   
@@ -1201,6 +1208,12 @@ static bool ShouldMatchFocusVisible(
       
       
       
+      
+      
+      
+      if (aIsRefocus) {
+        return aRefocusedElementUsedToShowOutline;
+      }
       return !aBlurredElementInfo || aBlurredElementInfo->mHadRing;
     case InputContextAction::CAUSE_MOUSE:
     case InputContextAction::CAUSE_TOUCH:
@@ -2452,22 +2465,24 @@ void nsFocusManager::Focus(
     mFocusedElement = aElement;
 
     nsIContent* focusedNode = aWindow->GetFocusedElement();
-    bool isRefocus = focusedNode && focusedNode == aElement;
+    const bool sendFocusEvent = aElement && aElement->IsInComposedDoc() &&
+                                !IsNonFocusableRoot(aElement);
+    const bool isRefocus = focusedNode && focusedNode == aElement;
+    const bool shouldShowFocusRing =
+        sendFocusEvent &&
+        ShouldMatchFocusVisible(
+            aWindow, *aElement, aFlags, aBlurredElementInfo, isRefocus,
+            isRefocus && aWindow->FocusedElementShowedOutline());
 
-    aWindow->SetFocusedElement(aElement, focusMethod);
+    aWindow->SetFocusedElement(aElement, focusMethod, false,
+                               shouldShowFocusRing);
 
     
     if (aElement && aFocusChanged) {
       ScrollIntoView(presShell, aElement, aFlags);
     }
-
-    bool sendFocusEvent = aElement && aElement->IsInComposedDoc() &&
-                          !IsNonFocusableRoot(aElement);
     nsPresContext* presContext = presShell->GetPresContext();
     if (sendFocusEvent) {
-      const bool shouldShowFocusRing =
-          aWindow->ShouldShowFocusRing() ||
-          ShouldMatchFocusVisible(*aElement, aFlags, aBlurredElementInfo);
       NotifyFocusStateChange(aElement, nullptr, aFlags,
                               true, shouldShowFocusRing);
 

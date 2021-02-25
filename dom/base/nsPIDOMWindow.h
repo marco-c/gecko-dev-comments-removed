@@ -481,10 +481,22 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
 
 
-  inline mozilla::dom::Element* GetFocusedElement() const;
+  mozilla::dom::Element* GetFocusedElement() const {
+    return mFocusedElement.get();
+  }
+
   virtual void SetFocusedElement(mozilla::dom::Element* aElement,
                                  uint32_t aFocusMethod = 0,
-                                 bool aNeedsFocus = false) = 0;
+                                 bool aNeedsFocus = false,
+                                 bool aWillShowOutline = false) = 0;
+  
+
+
+
+
+  bool FocusedElementShowedOutline() const {
+    return mFocusedElementShowedOutlines;
+  }
 
   
 
@@ -668,6 +680,8 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   
   bool mHasNotifiedGlobalCreated;
+
+  bool mFocusedElementShowedOutlines = false;
 
   uint32_t mMarkedCCGeneration;
 
@@ -938,9 +952,17 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
   inline mozilla::dom::Element* GetFocusedElement() const;
+
   virtual void SetFocusedElement(mozilla::dom::Element* aElement,
                                  uint32_t aFocusMethod = 0,
-                                 bool aNeedsFocus = false) = 0;
+                                 bool aNeedsFocus = false,
+                                 bool aWillShowOutline = false) = 0;
+  
+
+
+
+
+  bool FocusedElementShowedOutline() const;
 
   
 
