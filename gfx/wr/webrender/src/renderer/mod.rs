@@ -90,7 +90,7 @@ use crate::scene_builder_thread::{SceneBuilderThread, SceneBuilderThreadChannels
 use crate::screen_capture::AsyncScreenshotGrabber;
 use crate::render_target::{AlphaRenderTarget, ColorRenderTarget, PictureCacheTarget};
 use crate::render_target::{RenderTarget, TextureCacheRenderTarget};
-use crate::render_target::{RenderTargetKind, BlitJob, BlitJobSource};
+use crate::render_target::{RenderTargetKind, BlitJob};
 use crate::texture_cache::{TextureCache, TextureCacheConfig};
 use crate::tile_cache::PictureCacheDebugInfo;
 use crate::util::drain_filter;
@@ -2643,23 +2643,15 @@ impl Renderer {
         
         
         for blit in blits {
-            let (source, layer, source_rect) = match blit.source {
-                BlitJobSource::Texture(texture_id, layer, source_rect) => {
-                    
-                    (texture_id, layer as usize, source_rect)
-                }
-                BlitJobSource::RenderTask(task_id) => {
-                    
-                    
-                    
-                    let source = &render_tasks[task_id];
-                    let (source_rect, layer) = source.get_target_rect();
-                    let source_texture = TextureSource::TextureCache(
-                        source.get_target_texture(),
-                        Swizzle::default(),
-                    );
-                    (source_texture, layer.0, source_rect)
-                }
+            let (source, layer, source_rect) = {
+                
+                
+                
+                let task = &render_tasks[blit.source];
+                let (source_rect, layer) = task.get_target_rect();
+                let source_texture = task.get_texture_source();
+
+                (source_texture, layer.0, source_rect)
             };
 
             debug_assert_eq!(source_rect.size, blit.target_rect.size);
