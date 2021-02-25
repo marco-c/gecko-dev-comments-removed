@@ -681,15 +681,17 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       }
       [[fallthrough]];
     case ePointerMove: {
-      
-      
-      
-      
-      
-      
-      if (!mInTouchDrag) {
+      if (!mInTouchDrag &&
+          mouseEvent->mInputSource != dom::MouseEvent_Binding::MOZ_SOURCE_PEN &&
+          mouseEvent->mReason != WidgetMouseEvent::eSynthesized) {
         GenerateDragGesture(aPresContext, mouseEvent);
       }
+      
+      
+      
+      
+      
+      
       UpdateCursor(aPresContext, aEvent, mCurrentTarget, aStatus);
 
       UpdateLastRefPointOfMouseEvent(mouseEvent);
@@ -4695,8 +4697,11 @@ OverOutElementsWrapper* EventStateManager::GetWrapperByEventID(
     }
     return mMouseEnterLeaveHelper;
   }
-  return mPointersEnterLeaveHelper.LookupForAdd(pointer->pointerId)
-      .OrInsert([]() { return new OverOutElementsWrapper(); });
+  return mPointersEnterLeaveHelper.WithEntryHandle(
+      pointer->pointerId, [](auto&& entry) {
+        return entry.OrInsertWith([] { return new OverOutElementsWrapper(); })
+            .get();
+      });
 }
 
 
