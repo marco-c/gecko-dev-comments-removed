@@ -1345,27 +1345,7 @@ void nsDragService::SourceEndDragSession(GdkDragContext* aContext,
 
   } else {
     dropEffect = DRAGDROP_ACTION_NONE;
-
-    bool isWaylandTabDrop = false;
-#ifdef MOZ_WAYLAND
-    
-    
-    
-    if (gfxPlatformGtk::GetPlatform()->IsWaylandDisplay() &&
-        aResult == MOZ_GTK_DRAG_RESULT_ERROR) {
-      for (GList* tmp = gdk_drag_context_list_targets(aContext); tmp;
-           tmp = tmp->next) {
-        GdkAtom atom = GDK_POINTER_TO_ATOM(tmp->data);
-        gchar* name = gdk_atom_name(atom);
-        if (name && (strcmp(name, gTabDropType) == 0)) {
-          isWaylandTabDrop = true;
-          LOG(("is wayland tab drop\n"));
-          break;
-        }
-      }
-    }
-#endif
-    if (aResult != MOZ_GTK_DRAG_RESULT_NO_TARGET && !isWaylandTabDrop) {
+    if (aResult != MOZ_GTK_DRAG_RESULT_NO_TARGET) {
       LOG(("drop is user chancelled\n"));
       mUserCancelled = true;
     }
@@ -1719,6 +1699,29 @@ static void invisibleSourceDragDataGet(GtkWidget* aWidget,
 static gboolean invisibleSourceDragFailed(GtkWidget* aWidget,
                                           GdkDragContext* aContext,
                                           gint aResult, gpointer aData) {
+#ifdef MOZ_WAYLAND
+  
+  
+  
+  
+  
+  
+  
+  
+  if (gfxPlatformGtk::GetPlatform()->IsWaylandDisplay() &&
+      aResult == MOZ_GTK_DRAG_RESULT_ERROR) {
+    for (GList* tmp = gdk_drag_context_list_targets(aContext); tmp;
+         tmp = tmp->next) {
+      GdkAtom atom = GDK_POINTER_TO_ATOM(tmp->data);
+      gchar* name = gdk_atom_name(atom);
+      if (name && (strcmp(name, gTabDropType) == 0)) {
+        aResult = MOZ_GTK_DRAG_RESULT_NO_TARGET;
+        LOG(("invisibleSourceDragFailed: Wayland tab drop\n"));
+        break;
+      }
+    }
+  }
+#endif
   LOG(("invisibleSourceDragFailed %i", aResult));
   nsDragService* dragService = (nsDragService*)aData;
   
