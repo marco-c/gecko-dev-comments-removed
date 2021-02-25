@@ -6,6 +6,7 @@
 #include "gfxPlatformMac.h"
 
 #include "gfxQuartzSurface.h"
+#include "mozilla/DataMutex.h"
 #include "mozilla/gfx/2D.h"
 
 #include "gfxMacPlatformFontList.h"
@@ -721,12 +722,19 @@ class OSXVsyncSource final : public VsyncSource {
 
   class OSXDisplay final : public VsyncSource::Display {
    public:
-    OSXDisplay() : mDisplayLink(nullptr) {
+    OSXDisplay()
+        : mDisplayLink(nullptr, "OSXVsyncSource::OSXDisplay::mDisplayLink") {
       MOZ_ASSERT(NS_IsMainThread());
       mTimer = NS_NewTimer();
+      CGDisplayRegisterReconfigurationCallback(DisplayReconfigurationCallback,
+                                               this);
     }
 
-    virtual ~OSXDisplay() { MOZ_ASSERT(NS_IsMainThread()); }
+    virtual ~OSXDisplay() {
+      MOZ_ASSERT(NS_IsMainThread());
+      CGDisplayRemoveReconfigurationCallback(DisplayReconfigurationCallback,
+                                             this);
+    }
 
     static void RetryEnableVsync(nsITimer* aTimer, void* aOsxDisplay) {
       MOZ_ASSERT(NS_IsMainThread());
@@ -741,12 +749,14 @@ class OSXVsyncSource final : public VsyncSource {
         return;
       }
 
+      auto displayLink = mDisplayLink.Lock();
+
       
       
       
       
       
-      CVReturn retval = CVDisplayLinkCreateWithActiveCGDisplays(&mDisplayLink);
+      CVReturn retval = CVDisplayLinkCreateWithActiveCGDisplays(&*displayLink);
 
       
       
@@ -758,7 +768,7 @@ class OSXVsyncSource final : public VsyncSource {
       
       
       if ((retval == kCVReturnSuccess) &&
-          (CVDisplayLinkGetCurrentCGDisplay(mDisplayLink) == 0)) {
+          (CVDisplayLinkGetCurrentCGDisplay(*displayLink) == 0)) {
         retval = kCVReturnInvalidDisplay;
       }
 
@@ -766,8 +776,8 @@ class OSXVsyncSource final : public VsyncSource {
         NS_WARNING(
             "Could not create a display link with all active displays. "
             "Retrying");
-        CVDisplayLinkRelease(mDisplayLink);
-        mDisplayLink = nullptr;
+        CVDisplayLinkRelease(*displayLink);
+        *displayLink = nullptr;
 
         
         
@@ -788,23 +798,23 @@ class OSXVsyncSource final : public VsyncSource {
         return;
       }
 
-      if (CVDisplayLinkSetOutputCallback(mDisplayLink, &VsyncCallback, this) !=
+      if (CVDisplayLinkSetOutputCallback(*displayLink, &VsyncCallback, this) !=
           kCVReturnSuccess) {
         NS_WARNING("Could not set displaylink output callback");
-        CVDisplayLinkRelease(mDisplayLink);
-        mDisplayLink = nullptr;
+        CVDisplayLinkRelease(*displayLink);
+        *displayLink = nullptr;
         return;
       }
 
       mPreviousTimestamp = TimeStamp::Now();
-      if (CVDisplayLinkStart(mDisplayLink) != kCVReturnSuccess) {
+      if (CVDisplayLinkStart(*displayLink) != kCVReturnSuccess) {
         NS_WARNING("Could not activate the display link");
-        CVDisplayLinkRelease(mDisplayLink);
-        mDisplayLink = nullptr;
+        CVDisplayLinkRelease(*displayLink);
+        *displayLink = nullptr;
       }
 
       CVTime vsyncRate =
-          CVDisplayLinkGetNominalOutputVideoRefreshPeriod(mDisplayLink);
+          CVDisplayLinkGetNominalOutputVideoRefreshPeriod(*displayLink);
       if (vsyncRate.flags & kCVTimeIsIndefinite) {
         NS_WARNING("Could not get vsync rate, setting to 60.");
         mVsyncRate = TimeDuration::FromMilliseconds(1000.0 / 60.0);
@@ -824,15 +834,17 @@ class OSXVsyncSource final : public VsyncSource {
       }
 
       
-      if (mDisplayLink) {
-        CVDisplayLinkRelease(mDisplayLink);
-        mDisplayLink = nullptr;
+      auto displayLink = mDisplayLink.Lock();
+      if (*displayLink) {
+        CVDisplayLinkRelease(*displayLink);
+        *displayLink = nullptr;
       }
     }
 
     bool IsVsyncEnabled() override {
       MOZ_ASSERT(NS_IsMainThread());
-      return mDisplayLink != nullptr;
+      auto displayLink = mDisplayLink.Lock();
+      return *displayLink != nullptr;
     }
 
     TimeDuration GetVsyncRate() override { return mVsyncRate; }
@@ -852,8 +864,42 @@ class OSXVsyncSource final : public VsyncSource {
     TimeStamp mPreviousTimestamp;
 
    private:
+    static void DisplayReconfigurationCallback(
+        CGDirectDisplayID aDisplay, CGDisplayChangeSummaryFlags aFlags,
+        void* aUserInfo) {
+      static_cast<OSXDisplay*>(aUserInfo)->OnDisplayReconfiguration(aDisplay,
+                                                                    aFlags);
+    }
+
+    void OnDisplayReconfiguration(CGDirectDisplayID aDisplay,
+                                  CGDisplayChangeSummaryFlags aFlags) {
+      
+      
+      
+      
+      
+      if (aFlags & kCGDisplayBeginConfigurationFlag) {
+        
+        
+        return;
+      }
+
+      auto displayLink = mDisplayLink.Lock();
+      if (*displayLink &&
+          CVDisplayLinkGetCurrentCGDisplay(*displayLink) == aDisplay) {
+        
+        
+        
+        CVDisplayLinkStop(*displayLink);
+        CVDisplayLinkStart(*displayLink);
+      }
+    }
+
     
-    CVDisplayLinkRef mDisplayLink;
+    
+    DataMutex<CVDisplayLinkRef> mDisplayLink;
+
+    
     RefPtr<nsITimer> mTimer;
     TimeDuration mVsyncRate;
   };  
