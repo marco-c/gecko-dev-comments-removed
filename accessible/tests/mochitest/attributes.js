@@ -295,14 +295,18 @@ const kBoldFontWeight = function equalsToBold(aWeight) {
   return aWeight > 400;
 };
 
+let isNNT = SpecialPowers.getBoolPref(
+  "widget.disable-native-theme-for-content"
+);
 
-const kInputFontSize = WIN
-  ? "10pt"
-  : MAC
-  ? "8pt"
-  : function() {
-      return true;
-    };
+const kInputFontSize =
+  WIN || (MAC && isNNT)
+    ? "10pt"
+    : MAC
+    ? "8pt"
+    : function() {
+        return true;
+      };
 
 const kAbsentFontFamily = function(aFontFamily) {
   return aFontFamily != "sans-serif";
