@@ -1005,8 +1005,7 @@ function synthesizeNativeMouseEvent(aParams, aCallback = null) {
     
     
     
-    
-    scale,
+    scale = "screenPixelsPerCSSPixel",
     button = 0, 
     modifiers = {}, 
     win = window, 
@@ -1053,9 +1052,8 @@ function synthesizeNativeMouseEvent(aParams, aCallback = null) {
 
   const rect = target?.getBoundingClientRect();
   const scaleValue = (() => {
-    if (!scale) {
-      
-      return screenX != undefined ? 1.0 : utils.screenPixelsPerCSSPixel;
+    if (scale === "inScreenPixels") {
+      return 1.0;
     }
     if (scale === "screenPixelsPerCSSPixel") {
       return utils.screenPixelsPerCSSPixel;
