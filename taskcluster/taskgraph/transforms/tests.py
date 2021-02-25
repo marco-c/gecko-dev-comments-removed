@@ -327,6 +327,18 @@ TEST_VARIANTS = {
             },
         },
     },
+    "webgl-ipc-profiling": {
+        
+        "description": "{description} with WebGL IPC process enabled",
+        "suffix": "gli",
+        "merge": {
+            "mozharness": {
+                "extra-options": [
+                    "--setpref=webgl.out-of-process=true",
+                ],
+            },
+        },
+    },
 }
 
 
