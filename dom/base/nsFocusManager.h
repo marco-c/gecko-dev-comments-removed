@@ -745,11 +745,10 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   
-  
-  
   static void NotifyFocusStateChange(
       mozilla::dom::Element* aElement, mozilla::dom::Element* aElementToFocus,
-      int32_t aFlags, bool aGettingFocus, bool aShouldShowFocusRing);
+      bool aWindowShouldShowFocusRing, int32_t aFlags, bool aGettingFocus,
+      const mozilla::Maybe<BlurredElementInfo>& = mozilla::Nothing());
 
   void SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow);
 

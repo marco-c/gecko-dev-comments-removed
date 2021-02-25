@@ -862,6 +862,7 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   Element* content = window->GetFocusedElement();
   if (content &&
       nsContentUtils::ContentIsHostIncludingDescendantOf(content, aContent)) {
+    bool shouldShowFocusRing = window->ShouldShowFocusRing();
     window->SetFocusedElement(nullptr);
 
     
@@ -919,8 +920,8 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
       }
     }
 
-    NotifyFocusStateChange(content, nullptr, 0,  false,
-                           false);
+    NotifyFocusStateChange(content, nullptr, shouldShowFocusRing, 0,
+                            false);
   }
 
   return NS_OK;
@@ -1038,7 +1039,8 @@ void nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow,
   RefPtr<PresShell> presShell = focusedDocShell->GetPresShell();
 
   if (oldFocusedElement && oldFocusedElement->IsInComposedDoc()) {
-    NotifyFocusStateChange(oldFocusedElement, nullptr, 0, false, false);
+    NotifyFocusStateChange(oldFocusedElement, nullptr,
+                           mFocusedWindow->ShouldShowFocusRing(), 0, false);
     window->UpdateCommands(u"focus"_ns, nullptr, 0);
 
     if (presShell) {
@@ -1164,20 +1166,12 @@ nsFocusManager::BlurredElementInfo::~BlurredElementInfo() = default;
 
 
 static bool ShouldMatchFocusVisible(
-    nsPIDOMWindowOuter* aWindow, const Element& aElement,
-    int32_t aFocusFlags,
-    const Maybe<nsFocusManager::BlurredElementInfo>& aBlurredElementInfo,
-    bool aIsRefocus, bool aRefocusedElementUsedToShowOutline) {
+    const Element& aElement, int32_t aFocusFlags,
+    const Maybe<nsFocusManager::BlurredElementInfo>& aBlurredElementInfo) {
   
   if (aFocusFlags & nsIFocusManager::FLAG_SHOWRING) {
     return true;
   }
-
-  if (aWindow->ShouldShowFocusRing()) {
-    
-    return true;
-  }
-
   
   
   
@@ -1209,12 +1203,6 @@ static bool ShouldMatchFocusVisible(
       
       
       
-      
-      
-      
-      if (aIsRefocus) {
-        return aRefocusedElementUsedToShowOutline;
-      }
       return !aBlurredElementInfo || aBlurredElementInfo->mHadRing;
     case InputContextAction::CAUSE_MOUSE:
     case InputContextAction::CAUSE_TOUCH:
@@ -1238,10 +1226,10 @@ static bool ShouldMatchFocusVisible(
 }
 
 
-void nsFocusManager::NotifyFocusStateChange(Element* aElement,
-                                            Element* aElementToFocus,
-                                            int32_t aFlags, bool aGettingFocus,
-                                            bool aShouldShowFocusRing) {
+void nsFocusManager::NotifyFocusStateChange(
+    Element* aElement, Element* aElementToFocus,
+    bool aWindowShouldShowFocusRing, int32_t aFlags, bool aGettingFocus,
+    const Maybe<BlurredElementInfo>& aBlurredElementInfo) {
   MOZ_ASSERT_IF(aElementToFocus, !aGettingFocus);
   nsIContent* commonAncestor = nullptr;
   if (aElementToFocus) {
@@ -1251,7 +1239,8 @@ void nsFocusManager::NotifyFocusStateChange(Element* aElement,
 
   if (aGettingFocus) {
     EventStates eventStateToAdd = NS_EVENT_STATE_FOCUS;
-    if (aShouldShowFocusRing) {
+    if (aWindowShouldShowFocusRing ||
+        ShouldMatchFocusVisible(*aElement, aFlags, aBlurredElementInfo)) {
       eventStateToAdd |= NS_EVENT_STATE_FOCUSRING;
     }
     aElement->AddStates(eventStateToAdd);
@@ -2189,6 +2178,7 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
   
   
   mFocusedElement = nullptr;
+  bool shouldShowFocusRing = window->ShouldShowFocusRing();
   if (aBrowsingContextToClear) {
     nsPIDOMWindowOuter* windowToClear = aBrowsingContextToClear->GetDOMWindow();
     if (windowToClear) {
@@ -2203,7 +2193,8 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
       element && element->IsInComposedDoc() && !IsNonFocusableRoot(element);
   if (element) {
     if (sendBlurEvent) {
-      NotifyFocusStateChange(element, aElementToFocus, 0, false, false);
+      NotifyFocusStateChange(element, aElementToFocus, shouldShowFocusRing, 0,
+                             false);
     }
 
     bool windowBeingLowered = !aBrowsingContextToClear &&
@@ -2466,26 +2457,22 @@ void nsFocusManager::Focus(
     mFocusedElement = aElement;
 
     nsIContent* focusedNode = aWindow->GetFocusedElement();
-    const bool sendFocusEvent = aElement && aElement->IsInComposedDoc() &&
-                                !IsNonFocusableRoot(aElement);
-    const bool isRefocus = focusedNode && focusedNode == aElement;
-    const bool shouldShowFocusRing =
-        sendFocusEvent &&
-        ShouldMatchFocusVisible(
-            aWindow, *aElement, aFlags, aBlurredElementInfo, isRefocus,
-            isRefocus && aWindow->FocusedElementShowedOutline());
+    bool isRefocus = focusedNode && focusedNode == aElement;
 
-    aWindow->SetFocusedElement(aElement, focusMethod, false,
-                               shouldShowFocusRing);
+    aWindow->SetFocusedElement(aElement, focusMethod);
 
     
     if (aElement && aFocusChanged) {
       ScrollIntoView(presShell, aElement, aFlags);
     }
+
+    bool sendFocusEvent = aElement && aElement->IsInComposedDoc() &&
+                          !IsNonFocusableRoot(aElement);
     nsPresContext* presContext = presShell->GetPresContext();
     if (sendFocusEvent) {
-      NotifyFocusStateChange(aElement, nullptr, aFlags,
-                              true, shouldShowFocusRing);
+      NotifyFocusStateChange(aElement, nullptr, aWindow->ShouldShowFocusRing(),
+                             aFlags,  true,
+                             aBlurredElementInfo);
 
       
       
