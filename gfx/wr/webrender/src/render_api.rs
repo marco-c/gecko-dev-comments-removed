@@ -157,6 +157,11 @@ pub struct Transaction {
 
     
     
+    
+    
+    
+    
+    
     use_scene_builder_thread: bool,
 
     
@@ -1302,7 +1307,6 @@ impl RenderApi {
 
         self.resources.update(&mut transaction);
 
-        transaction.use_scene_builder_thread |= !transaction.scene_ops.is_empty();
         if transaction.generate_frame.as_bool() {
             transaction.profile.start_time(profiler::API_SEND_TIME);
             transaction.profile.start_time(profiler::TOTAL_FRAME_CPU_TIME);
