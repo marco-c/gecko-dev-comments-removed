@@ -288,9 +288,10 @@ class AddrHostRecord final : public nsHostRecord {
   mozilla::TimeDuration mTrrDuration;
   mozilla::TimeDuration mNativeDuration;
 
-  mozilla::Atomic<bool> mTRRUsed;  
-  uint8_t mTRRSuccess;             
-  uint8_t mNativeSuccess;          
+  
+  mozilla::Atomic<mozilla::net::DNSResolverType> mResolverType;
+  uint8_t mTRRSuccess;     
+  uint8_t mNativeSuccess;  
 
   
   MOZ_ATOMIC_BITFIELDS(mAtomicBitfields, 8, (

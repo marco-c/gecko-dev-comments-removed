@@ -161,17 +161,7 @@ nsresult TRR::CreateQueryURI(nsIURI** aOutURI) {
   return NS_OK;
 }
 
-nsresult TRR::SendHTTPRequest() {
-  
-
-  if ((mType != TRRTYPE_A) && (mType != TRRTYPE_AAAA) &&
-      (mType != TRRTYPE_NS) && (mType != TRRTYPE_TXT) &&
-      (mType != TRRTYPE_HTTPSSVC)) {
-    
-    
-    return NS_ERROR_FAILURE;
-  }
-
+bool TRR::MaybeBlockRequest() {
   if (((mType == TRRTYPE_A) || (mType == TRRTYPE_AAAA)) &&
       mRec->mEffectiveTRRMode != nsIRequest::TRR_ONLY_MODE) {
     
@@ -188,18 +178,36 @@ nsresult TRR::SendHTTPRequest() {
 
       RecordReason(nsHostRecord::TRR_HOST_BLOCKED_TEMPORARY);
       
-      return NS_ERROR_UNKNOWN_HOST;
+      return true;
     }
 
     if (gTRRService->IsExcludedFromTRR(mHost)) {
       RecordReason(nsHostRecord::TRR_EXCLUDED);
-      return NS_ERROR_UNKNOWN_HOST;
+      return true;
     }
 
     if (UseDefaultServer() && (mType == TRRTYPE_A)) {
       Telemetry::Accumulate(Telemetry::DNS_TRR_BLACKLISTED2,
                             TRRService::AutoDetectedKey(), false);
     }
+  }
+
+  return false;
+}
+
+nsresult TRR::SendHTTPRequest() {
+  
+
+  if ((mType != TRRTYPE_A) && (mType != TRRTYPE_AAAA) &&
+      (mType != TRRTYPE_NS) && (mType != TRRTYPE_TXT) &&
+      (mType != TRRTYPE_HTTPSSVC)) {
+    
+    
+    return NS_ERROR_FAILURE;
+  }
+
+  if (MaybeBlockRequest()) {
+    return NS_ERROR_UNKNOWN_HOST;
   }
 
   LOG(("TRR::SendHTTPRequest resolve %s type %u\n", mHost.get(), mType));
@@ -326,7 +334,7 @@ nsresult TRR::SendHTTPRequest() {
   
   RefPtr<AddrHostRecord> addrRec = do_QueryObject(mRec);
   if (addrRec) {
-    addrRec->mTRRUsed = true;
+    addrRec->mResolverType = ResolverType();
   }
 
   NS_NewTimerWithCallback(
@@ -619,7 +627,7 @@ void TRR::SaveAdditionalRecords(
            nsCString(iter.Key()).get()));
       continue;
     }
-    RefPtr<AddrInfo> ai(new AddrInfo(iter.Key(), TRRTYPE_A,
+    RefPtr<AddrInfo> ai(new AddrInfo(iter.Key(), ResolverType(), TRRTYPE_A,
                                      std::move(iter.Data()->mAddresses),
                                      iter.Data()->mTtl));
     mHostResolver->MaybeRenewHostRecord(hostRecord);
@@ -661,8 +669,8 @@ void TRR::StoreIPHintAsDNSRecord(const struct SVCB& aSVCBRecord) {
   mHostResolver->MaybeRenewHostRecord(hostRecord);
 
   uint32_t ttl = AddrInfo::NO_TTL_DATA;
-  RefPtr<AddrInfo> ai(new AddrInfo(aSVCBRecord.mSvcDomainName, TRRTYPE_A,
-                                   std::move(addresses), ttl));
+  RefPtr<AddrInfo> ai(new AddrInfo(aSVCBRecord.mSvcDomainName, ResolverType(),
+                                   TRRTYPE_A, std::move(addresses), ttl));
 
   
   
@@ -679,8 +687,8 @@ void TRR::StoreIPHintAsDNSRecord(const struct SVCB& aSVCBRecord) {
 nsresult TRR::ReturnData(nsIChannel* aChannel) {
   if (mType != TRRTYPE_TXT && mType != TRRTYPE_HTTPSSVC) {
     
-    RefPtr<AddrInfo> ai(
-        new AddrInfo(mHost, mType, nsTArray<NetAddr>(), mDNS.mTtl));
+    RefPtr<AddrInfo> ai(new AddrInfo(mHost, ResolverType(), mType,
+                                     nsTArray<NetAddr>(), mDNS.mTtl));
     auto builder = ai->Build();
     builder.SetAddresses(std::move(mDNS.mAddresses));
     builder.SetCanonicalHostname(mCname);
@@ -730,7 +738,8 @@ nsresult TRR::FailData(nsresult error) {
     
     
     nsTArray<NetAddr> noAddresses;
-    RefPtr<AddrInfo> ai = new AddrInfo(mHost, mType, std::move(noAddresses));
+    RefPtr<AddrInfo> ai =
+        new AddrInfo(mHost, ResolverType(), mType, std::move(noAddresses));
 
     (void)mHostResolver->CompleteLookup(mRec, error, ai, mPB, mOriginSuffix,
                                         mTRRSkippedReason, this);
@@ -833,7 +842,7 @@ nsresult TRR::On200Response(nsIChannel* aChannel) {
   return FollowCname(aChannel);
 }
 
-static void RecordProcessingTime(nsIChannel* aChannel) {
+void TRR::RecordProcessingTime(nsIChannel* aChannel) {
   
   
   nsCOMPtr<nsITimedChannel> timedChan = do_QueryInterface(aChannel);
@@ -855,6 +864,16 @@ static void RecordProcessingTime(nsIChannel* aChannel) {
        (TimeStamp::Now() - end).ToMilliseconds()));
 }
 
+void TRR::ReportStatus(nsresult aStatusCode) {
+  
+  
+  if (UseDefaultServer() && aStatusCode != NS_ERROR_ABORT) {
+    
+    gTRRService->TRRIsOkay(NS_SUCCEEDED(aStatusCode) ? TRRService::OKAY_NORMAL
+                                                     : TRRService::OKAY_BAD);
+  }
+}
+
 NS_IMETHODIMP
 TRR::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
   
@@ -874,13 +893,7 @@ TRR::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
     }
   }
 
-  
-  
-  if (UseDefaultServer() && aStatusCode != NS_ERROR_ABORT) {
-    
-    gTRRService->TRRIsOkay(NS_SUCCEEDED(aStatusCode) ? TRRService::OKAY_NORMAL
-                                                     : TRRService::OKAY_BAD);
-  }
+  ReportStatus(aStatusCode);
 
   nsresult rv = NS_OK;
   
