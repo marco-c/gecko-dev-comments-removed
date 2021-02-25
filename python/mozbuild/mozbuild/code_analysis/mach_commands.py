@@ -596,6 +596,37 @@ class StaticAnalysis(MachCommandBase):
 
             return 0
 
+        
+        cmd = [
+            self.cov_configure,
+            "--delete-compiler-config",
+            "template-clangcc-config-0",
+            "coverity_config.xml",
+        ]
+        if self.run_cov_command(cmd):
+            return 1
+
+        cmd = [
+            self.cov_configure,
+            "--delete-compiler-config",
+            "template-clangcxx-config-0",
+            "coverity_config.xml",
+        ]
+        if self.run_cov_command(cmd):
+            return 1
+
+        cmd = [
+            self.cov_configure,
+            "--clang",
+            "--xml-option",
+            "append_arg:--ppp_translator",
+            "--xml-option",
+            "append_arg:replace/\{([a-zA-Z]+::None\(\))\}/=$1",
+        ]
+        if self.run_cov_command(cmd):
+            return 1
+        
+
         rc = self._build_compile_db(verbose=verbose)
         rc = rc or self._build_export(jobs=2, verbose=verbose)
 
