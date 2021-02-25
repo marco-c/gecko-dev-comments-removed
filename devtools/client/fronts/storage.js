@@ -12,11 +12,43 @@ const { childSpecs, storageSpec } = require("devtools/shared/specs/storage");
 
 for (const childSpec of Object.values(childSpecs)) {
   class ChildStorageFront extends FrontClassWithSpec(childSpec) {
+    constructor(client, targetFront, parentFront) {
+      super(client, targetFront, parentFront);
+
+      this.on("single-store-update", this._onStoreUpdate.bind(this));
+    }
+
     form(form) {
       this.actorID = form.actor;
       this.hosts = form.hosts;
       this.traits = form.traits || {};
       return null;
+    }
+
+    
+    async _onStoreUpdate({ changed, added, deleted }) {
+      
+      
+      const { resourceKey } = this;
+      if (added) {
+        for (const host in added[resourceKey]) {
+          if (!this.hosts[host]) {
+            this.hosts[host] = added[resourceKey][host];
+          }
+        }
+      }
+      if (deleted) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+      }
     }
   }
   registerFront(ChildStorageFront);
