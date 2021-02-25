@@ -13,6 +13,7 @@
 #include "mozilla/Casting.h"    
 #include "mozilla/DebugOnly.h"  
 #include "mozilla/FloatingPoint.h"  
+#include "mozilla/HashTable.h"      
 #include "mozilla/Maybe.h"          
 #include "mozilla/PodOperations.h"  
 #include "mozilla/Sprintf.h"        
@@ -54,10 +55,11 @@
 #include "frontend/PropOpEmitter.h"  
 #include "frontend/SourceNotes.h"    
 #include "frontend/SwitchEmitter.h"  
-#include "frontend/TDZCheckCache.h"  
-#include "frontend/TryEmitter.h"     
-#include "frontend/WhileEmitter.h"   
-#include "js/CompileOptions.h"       
+#include "frontend/TaggedParserAtomIndexHasher.h"  
+#include "frontend/TDZCheckCache.h"                
+#include "frontend/TryEmitter.h"                   
+#include "frontend/WhileEmitter.h"                 
+#include "js/CompileOptions.h"  
 #include "js/friend/ErrorMessages.h"      
 #include "js/friend/StackLimits.h"        
 #include "util/StringBuffer.h"            
@@ -8966,6 +8968,16 @@ bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj,
                                                  bool useObjLiteralValues) {
   ObjLiteralWriter writer;
 
+#ifdef DEBUG
+  
+  mozilla::Maybe<mozilla::HashSet<frontend::TaggedParserAtomIndex,
+                                  frontend::TaggedParserAtomIndexHasher>>
+      selfHostedPropNames;
+  if (emitterMode == BytecodeEmitter::SelfHosting) {
+    selfHostedPropNames.emplace();
+  }
+#endif
+
   writer.beginObject(flags);
   bool singleton = flags.contains(ObjLiteralFlag::Singleton);
 
@@ -8974,8 +8986,23 @@ bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj,
     ParseNode* key = prop->left();
 
     if (key->is<NameNode>()) {
-      if (!writer.setPropName(cx, parserAtoms(), key->as<NameNode>().atom())) {
-        return false;
+      if (emitterMode == BytecodeEmitter::SelfHosting) {
+        auto propName = key->as<NameNode>().atom();
+#ifdef DEBUG
+        
+        auto p = selfHostedPropNames->lookupForAdd(propName);
+        MOZ_ASSERT(!p);
+        if (!selfHostedPropNames->add(p, propName)) {
+          js::ReportOutOfMemory(cx);
+          return false;
+        }
+#endif
+        writer.setPropNameNoDuplicateCheck(parserAtoms(), propName);
+      } else {
+        if (!writer.setPropName(cx, parserAtoms(),
+                                key->as<NameNode>().atom())) {
+          return false;
+        }
       }
     } else {
       double numValue = key->as<NumericLiteral>().value();
