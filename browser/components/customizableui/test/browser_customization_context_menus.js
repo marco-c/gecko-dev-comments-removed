@@ -599,6 +599,7 @@ add_task(async function custom_context_menus() {
 });
 
 
+
 add_task(async function flexible_space_context_menu() {
   CustomizableUI.addWidgetToArea("spring", "nav-bar");
   let springs = document.querySelectorAll("#nav-bar toolbarspring");
@@ -611,19 +612,17 @@ add_task(async function flexible_space_context_menu() {
     button: 2,
   });
   await shownPromise;
+
   let expectedEntries = [
-    [".customize-context-moveToPanel", false],
-    [".customize-context-removeFromToolbar", true],
-    ["---"],
-  ];
-  if (!isOSX) {
-    expectedEntries.push(["#toggle_toolbar-menubar", true]);
-  }
-  expectedEntries.push(
     ["#toggle_PersonalToolbar", true],
     ["---"],
-    [".viewCustomizeToolbar", true]
-  );
+    [".viewCustomizeToolbar", true],
+  ];
+
+  if (!isOSX) {
+    expectedEntries.unshift(["#toggle_toolbar-menubar", true]);
+  }
+
   checkContextMenu(contextMenu, expectedEntries);
   contextMenu.hidePopup();
   gCustomizeMode.removeFromArea(lastSpring);
