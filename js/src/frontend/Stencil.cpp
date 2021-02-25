@@ -1557,6 +1557,38 @@ CompilationState::CompilationState(JSContext* cx,
       allocScope(frontendAllocScope),
       input(input) {}
 
+BorrowingCompilationStencil::BorrowingCompilationStencil(
+    ExtensibleCompilationStencil& extensibleStencil)
+    : CompilationStencil(extensibleStencil.source) {
+  hasExternalDependency = true;
+
+  functionKey = extensibleStencil.functionKey;
+
+  
+  scriptData = extensibleStencil.scriptData;
+  gcThingData = extensibleStencil.gcThingData;
+
+  scopeData = extensibleStencil.scopeData;
+  scopeNames = extensibleStencil.scopeNames;
+
+  regExpData = extensibleStencil.regExpData;
+  bigIntData = extensibleStencil.bigIntData;
+  objLiteralData = extensibleStencil.objLiteralData;
+
+  scriptExtra = extensibleStencil.scriptExtra;
+
+  
+  parserAtomData = extensibleStencil.parserAtoms.entries_;
+
+  
+  source = extensibleStencil.source;
+  asmJS = extensibleStencil.asmJS;
+  moduleMetadata = extensibleStencil.moduleMetadata;
+
+  
+  sharedData.setBorrow(&extensibleStencil.sharedData);
+}
+
 SharedDataContainer::~SharedDataContainer() {
   if (isEmpty()) {
     

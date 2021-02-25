@@ -530,6 +530,16 @@ struct BaseCompilationStencil {
 };
 
 
+
+
+
+
+
+
+
+
+
+
 struct CompilationStencil : public BaseCompilationStencil {
   static constexpr ScriptIndex TopLevelIndex = ScriptIndex(0);
 
@@ -576,8 +586,13 @@ struct CompilationStencil : public BaseCompilationStencil {
   
 
   
+  
+  
   explicit CompilationStencil(CompilationInput& input)
       : alloc(LifoAllocChunkSize), source(input.source) {}
+
+  explicit CompilationStencil(ScriptSource* source)
+      : alloc(LifoAllocChunkSize), source(source) {}
 
   [[nodiscard]] static bool instantiateBaseStencilAfterPreparation(
       JSContext* cx, CompilationInput& input,
@@ -696,6 +711,7 @@ struct ExtensibleCompilationStencil {
 #endif
 };
 
+
 struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
   Directives directives;
 
@@ -748,6 +764,15 @@ struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
 
   bool appendGCThings(JSContext* cx, ScriptIndex scriptIndex,
                       mozilla::Span<const TaggedScriptThingIndex> things);
+};
+
+
+
+
+class MOZ_STACK_CLASS BorrowingCompilationStencil : public CompilationStencil {
+ public:
+  explicit BorrowingCompilationStencil(
+      ExtensibleCompilationStencil& extensibleStencil);
 };
 
 
