@@ -115,6 +115,7 @@ struct AspectRatio {
 
 
 
+
   [[nodiscard]] nscoord ComputeRatioDependentSize(
       LogicalAxis aRatioDependentAxis, const WritingMode& aWM,
       nscoord aRatioDeterminingSize,
