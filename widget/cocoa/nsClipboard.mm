@@ -3,6 +3,8 @@
 
 
 
+#include <algorithm>
+
 #include "mozilla/Logging.h"
 
 #include "mozilla/Unused.h"
@@ -434,6 +436,18 @@ nsClipboard::SupportsFindClipboard(bool* _retval) {
 }
 
 
+mozilla::Maybe<uint32_t> nsClipboard::FindIndexOfImageFlavor(
+    const nsTArray<nsCString>& aMIMETypes) {
+  for (uint32_t i = 0; i < aMIMETypes.Length(); ++i) {
+    if (nsClipboard::IsImageType(aMIMETypes[i])) {
+      return mozilla::Some(i);
+    }
+  }
+
+  return mozilla::Nothing();
+}
+
+
 
 
 NSDictionary* nsClipboard::PasteboardDictFromTransferable(nsITransferable* aTransferable) {
@@ -451,6 +465,14 @@ NSDictionary* nsClipboard::PasteboardDictFromTransferable(nsITransferable* aTran
     return nil;
   }
 
+  const mozilla::Maybe<uint32_t> imageFlavorIndex = nsClipboard::FindIndexOfImageFlavor(flavors);
+
+  if (imageFlavorIndex) {
+    
+    
+    
+    std::swap(*flavors.begin(), flavors[*imageFlavorIndex]);
+  }
   for (uint32_t i = 0; i < flavors.Length(); i++) {
     nsCString& flavorStr = flavors[i];
 
