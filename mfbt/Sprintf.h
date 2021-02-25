@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+#ifndef mozilla_Sprintf_h_
+#define mozilla_Sprintf_h_
+
+#include <stdio.h>
+#include <stdarg.h>
+
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
+
+#ifdef __cplusplus
+
+template <size_t N>
+MOZ_FORMAT_PRINTF(2, 0)
+int VsprintfLiteral(char (&buffer)[N], const char* format, va_list args) {
+  MOZ_ASSERT(format != buffer);
+  int result = vsnprintf(buffer, N, format, args);
+  buffer[N - 1] = '\0';
+  return result;
+}
+
+template <size_t N>
+MOZ_FORMAT_PRINTF(2, 3)
+int SprintfLiteral(char (&buffer)[N], const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  int result = VsprintfLiteral(buffer, format, args);
+  va_end(args);
+  return result;
+}
+
+#endif
+#endif 

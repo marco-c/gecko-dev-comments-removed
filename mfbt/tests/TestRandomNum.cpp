@@ -5,7 +5,6 @@
 
 
 #include "mozilla/RandomNum.h"
-#include <vector>
 
 
 
@@ -38,20 +37,16 @@ static uint64_t getRandomUint64OrDie() {
 }
 
 static void TestRandomUint64() {
-  
-  
-  
-  std::vector<uint64_t> randomsList;
-  randomsList.reserve(NUM_RANDOMS_TO_GENERATE);
+  uint64_t randomsList[NUM_RANDOMS_TO_GENERATE];
 
   for (uint8_t i = 0; i < NUM_RANDOMS_TO_GENERATE; ++i) {
     uint64_t randomNum = getRandomUint64OrDie();
 
-    for (uint64_t num : randomsList) {
-      MOZ_RELEASE_ASSERT(randomNum != num);
+    for (uint8_t j = 0; j < i; ++j) {
+      MOZ_RELEASE_ASSERT(randomNum != randomsList[j]);
     }
 
-    randomsList.push_back(randomNum);
+    randomsList[i] = randomNum;
   }
 }
 
