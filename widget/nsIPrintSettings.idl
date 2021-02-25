@@ -62,6 +62,14 @@ interface nsIPrintSettings : nsISupports
   const unsigned long kInitSaveAll            = 0xFFFFFFFF;
 
   
+  
+  const unsigned long kGlobalSettings =
+      kInitSaveHeaderLeft | kInitSaveHeaderCenter | kInitSaveHeaderRight |
+      kInitSaveFooterLeft | kInitSaveFooterCenter | kInitSaveFooterRight |
+      kInitSaveEdges | kInitSaveReversed | kInitSaveInColor |
+      kInitSaveBGColors | kInitSaveBGImages | kInitSaveShrinkToFit;
+
+  
   const long kJustLeft   = 0;
   const long kJustCenter = 1;
   const long kJustRight  = 2;

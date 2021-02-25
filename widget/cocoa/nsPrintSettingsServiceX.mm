@@ -63,12 +63,7 @@ nsresult nsPrintSettingsServiceX::_CreatePrintSettings(nsIPrintSettings** _retva
     return rv;
   }
 
-  auto globalPrintSettings =
-      nsIPrintSettings::kInitSaveShrinkToFit | nsIPrintSettings::kInitSaveHeaderLeft |
-      nsIPrintSettings::kInitSaveHeaderCenter | nsIPrintSettings::kInitSaveHeaderRight |
-      nsIPrintSettings::kInitSaveFooterLeft | nsIPrintSettings::kInitSaveFooterCenter |
-      nsIPrintSettings::kInitSaveFooterRight | nsIPrintSettings::kInitSaveEdges |
-      nsIPrintSettings::kInitSaveReversed | nsIPrintSettings::kInitSaveInColor;
+  auto globalPrintSettings = nsIPrintSettings::kGlobalSettings;
 
   
   
