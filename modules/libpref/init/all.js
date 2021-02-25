@@ -1526,11 +1526,7 @@ pref("network.http.accept", "");
 
 pref("network.ftp.data.qos", 0);
 pref("network.ftp.control.qos", 0);
-#ifdef NIGHTLY_BUILD
-  pref("network.ftp.enabled", false);
-#else
-  pref("network.ftp.enabled", true);
-#endif
+pref("network.ftp.enabled", false);
 
 
 pref("network.sts.max_time_for_events_between_two_polls", 100);
