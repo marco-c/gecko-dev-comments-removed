@@ -3485,7 +3485,7 @@ bool js::CheckLexicalNameConflict(JSContext* cx,
   } else if ((shape = lexicalEnv->lookup(cx, name))) {
     
     redeclKind = shape->writable() ? "let" : "const";
-  } else if (varObj->isNative() &&
+  } else if (varObj->is<NativeObject>() &&
              (shape = varObj->as<NativeObject>().lookup(cx, name))) {
     
     
@@ -3703,7 +3703,8 @@ static bool InitHoistedFunctionDeclarations(JSContext* cx, HandleScript script,
 
 
 
-    MOZ_ASSERT(varObj->isNative() || varObj->is<DebugEnvironmentProxy>());
+    MOZ_ASSERT(varObj->is<NativeObject>() ||
+               varObj->is<DebugEnvironmentProxy>());
     if (varObj->is<GlobalObject>()) {
       Shape* shape = prop.shape();
       if (shape->configurable()) {

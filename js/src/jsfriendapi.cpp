@@ -557,14 +557,14 @@ JS_FRIEND_API JSObject* JS_CloneObject(JSContext* cx, HandleObject obj,
   
   cx->check(proto);
 
-  if (!obj->isNative() && !obj->is<ProxyObject>()) {
+  if (!obj->is<NativeObject>() && !obj->is<ProxyObject>()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_CANT_CLONE_OBJECT);
     return nullptr;
   }
 
   RootedObject clone(cx);
-  if (obj->isNative()) {
+  if (obj->is<NativeObject>()) {
     
     
     clone = NewTenuredObjectWithGivenProto(cx, obj->getClass(), proto);

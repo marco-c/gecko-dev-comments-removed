@@ -417,7 +417,7 @@ class ElementSpecific {
                "use setFromTypedArray instead of this method");
 
     size_t i = 0;
-    if (source->isNative()) {
+    if (source->is<NativeObject>()) {
       
       
       size_t bound = std::min<size_t>(

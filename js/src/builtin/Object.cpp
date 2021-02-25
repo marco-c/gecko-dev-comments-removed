@@ -96,8 +96,9 @@ bool js::obj_propertyIsEnumerable(JSContext* cx, unsigned argc, Value* vp) {
 
     
     PropertyResult prop;
-    if (obj->isNative() && NativeLookupOwnProperty<NoGC>(
-                               cx, &obj->as<NativeObject>(), id, &prop)) {
+    if (obj->is<NativeObject>() &&
+        NativeLookupOwnProperty<NoGC>(cx, &obj->as<NativeObject>(), id,
+                                      &prop)) {
       
       if (!prop) {
         args.rval().setBoolean(false);
@@ -775,7 +776,7 @@ static bool obj_setPrototypeOf(JSContext* cx, unsigned argc, Value* vp) {
 static bool PropertyIsEnumerable(JSContext* cx, HandleObject obj, HandleId id,
                                  bool* enumerable) {
   PropertyResult prop;
-  if (obj->isNative() &&
+  if (obj->is<NativeObject>() &&
       NativeLookupOwnProperty<NoGC>(cx, &obj->as<NativeObject>(), id, &prop)) {
     if (!prop) {
       *enumerable = false;
@@ -800,7 +801,7 @@ static bool TryAssignNative(JSContext* cx, HandleObject to, HandleObject from,
                             bool* optimized) {
   *optimized = false;
 
-  if (!from->isNative() || !to->isNative()) {
+  if (!from->is<NativeObject>() || !to->is<NativeObject>()) {
     return true;
   }
 
@@ -845,7 +846,7 @@ static bool TryAssignNative(JSContext* cx, HandleObject to, HandleObject from,
 
     
     
-    if (MOZ_LIKELY(from->isNative() &&
+    if (MOZ_LIKELY(from->is<NativeObject>() &&
                    from->as<NativeObject>().lastProperty() == fromShape &&
                    shape->isDataProperty())) {
       if (!shape->enumerable()) {
@@ -1274,7 +1275,7 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
   
   
   
-  if (!obj->isNative() || obj->as<NativeObject>().isIndexed() ||
+  if (!obj->is<NativeObject>() || obj->as<NativeObject>().isIndexed() ||
       obj->getClass()->getNewEnumerate() || obj->is<StringObject>()) {
     return true;
   }
@@ -1386,7 +1387,7 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
 
   
   
-  MOZ_ASSERT(obj->isNative());
+  MOZ_ASSERT(obj->is<NativeObject>());
 
   if (kind == EnumerableOwnPropertiesKind::Keys ||
       kind == EnumerableOwnPropertiesKind::Names ||
@@ -1472,7 +1473,7 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
 
       
       
-      if (obj->isNative() &&
+      if (obj->is<NativeObject>() &&
           obj->as<NativeObject>().lastProperty() == objShape &&
           shape->isDataProperty()) {
         if (!shape->enumerable()) {
@@ -1991,7 +1992,7 @@ static JSObject* CreateObjectConstructor(JSContext* cx, JSProtoKey key) {
 
 static JSObject* CreateObjectPrototype(JSContext* cx, JSProtoKey key) {
   MOZ_ASSERT(!cx->zone()->isAtomsZone());
-  MOZ_ASSERT(cx->global()->isNative());
+  MOZ_ASSERT(cx->global()->is<NativeObject>());
 
   
 

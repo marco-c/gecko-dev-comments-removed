@@ -1790,7 +1790,7 @@ static MOZ_ALWAYS_INLINE bool SetObjectElementOperation(
   
   
   
-  if (obj->isNative() && JSID_IS_ATOM(id) &&
+  if (obj->is<NativeObject>() && JSID_IS_ATOM(id) &&
       !obj->as<NativeObject>().inDictionaryMode() &&
       !obj->as<NativeObject>().hadElementsAccess() &&
       obj->as<NativeObject>().slotSpan() >

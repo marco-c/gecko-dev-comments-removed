@@ -73,7 +73,7 @@ inline bool IsExtensible(JSContext* cx, JS::Handle<JSObject*> obj,
   
   
   
-  MOZ_ASSERT_IF(obj->isNative() && !*extensible,
+  MOZ_ASSERT_IF(obj->is<NativeObject>() && !*extensible,
                 obj->as<NativeObject>().getDenseInitializedLength() ==
                     obj->as<NativeObject>().getDenseCapacity());
   return true;
