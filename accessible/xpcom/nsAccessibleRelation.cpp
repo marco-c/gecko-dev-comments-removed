@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsAccessibleRelation.h"
 
@@ -24,7 +24,7 @@ nsAccessibleRelation::nsAccessibleRelation(uint32_t aType, Relation* aRel)
 }
 
 nsAccessibleRelation::nsAccessibleRelation(
-    uint32_t aType, const nsTArray<ProxyAccessible*>* aTargets)
+    uint32_t aType, const nsTArray<RemoteAccessible*>* aTargets)
     : mType(aType) {
   mTargets = do_CreateInstance(NS_ARRAY_CONTRACTID);
   for (uint32_t idx = 0; idx < aTargets->Length(); ++idx) {
@@ -35,10 +35,10 @@ nsAccessibleRelation::nsAccessibleRelation(
 
 nsAccessibleRelation::~nsAccessibleRelation() {}
 
-
+// nsISupports
 NS_IMPL_ISUPPORTS(nsAccessibleRelation, nsIAccessibleRelation)
 
-
+// nsIAccessibleRelation
 NS_IMETHODIMP
 nsAccessibleRelation::GetRelationType(uint32_t* aType) {
   NS_ENSURE_ARG_POINTER(aType);

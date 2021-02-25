@@ -194,7 +194,7 @@ bool OuterDocAccessible::IsAcceptableChild(nsIContent* aEl) const {
 #if defined(XP_WIN)
 
 LocalAccessible* OuterDocAccessible::RemoteChildDocAccessible() const {
-  ProxyAccessible* docProxy = RemoteChildDoc();
+  RemoteAccessible* docProxy = RemoteChildDoc();
   if (docProxy) {
     
     return WrapperFor(docProxy);

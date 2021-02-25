@@ -16,7 +16,7 @@ int32_t AccessibleOrProxy::IndexInParent() const {
     return AsAccessible()->IndexInParent();
   }
 
-  ProxyAccessible* proxy = AsProxy();
+  RemoteAccessible* proxy = AsProxy();
   if (!proxy) {
     return -1;
   }
@@ -38,12 +38,12 @@ AccessibleOrProxy AccessibleOrProxy::Parent() const {
     return AsAccessible()->LocalParent();
   }
 
-  ProxyAccessible* proxy = AsProxy();
+  RemoteAccessible* proxy = AsProxy();
   if (!proxy) {
     return nullptr;
   }
 
-  if (ProxyAccessible* parent = proxy->RemoteParent()) {
+  if (RemoteAccessible* parent = proxy->RemoteParent()) {
     return parent;
   }
 
@@ -56,7 +56,7 @@ AccessibleOrProxy AccessibleOrProxy::ChildAtPoint(
   if (IsProxy()) {
     return AsProxy()->ChildAtPoint(aX, aY, aWhichChild);
   }
-  ProxyAccessible* childDoc = RemoteChildDoc();
+  RemoteAccessible* childDoc = RemoteChildDoc();
   if (childDoc) {
     
     nsIntRect docRect = AsAccessible()->Bounds();
@@ -81,7 +81,7 @@ AccessibleOrProxy AccessibleOrProxy::ChildAtPoint(
   return target;
 }
 
-ProxyAccessible* AccessibleOrProxy::RemoteChildDoc() const {
+RemoteAccessible* AccessibleOrProxy::RemoteChildDoc() const {
   MOZ_ASSERT(!IsNull());
   if (IsProxy()) {
     return nullptr;

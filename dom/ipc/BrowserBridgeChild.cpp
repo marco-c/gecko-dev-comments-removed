@@ -1,12 +1,12 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifdef ACCESSIBILITY
 #  ifdef XP_WIN
-#    include "mozilla/a11y/ProxyAccessible.h"
+#    include "mozilla/a11y/RemoteAccessible.h"
 #    include "mozilla/a11y/ProxyWrappers.h"
 #  endif
 #  include "mozilla/a11y/DocAccessible.h"
@@ -62,7 +62,7 @@ already_AddRefed<BrowserBridgeHost> BrowserBridgeChild::FinishInit(
       }
     }
   }
-#endif  
+#endif  // defined(ACCESSIBILITY)
 
   return MakeAndAddRef<BrowserBridgeHost>(this);
 }
@@ -89,7 +89,7 @@ void BrowserBridgeChild::SetIsUnderHiddenEmbedderElement(
   Unused << SendSetIsUnderHiddenEmbedderElement(aIsUnderHiddenEmbedderElement);
 }
 
-
+/*static*/
 BrowserBridgeChild* BrowserBridgeChild::GetFrom(nsFrameLoader* aFrameLoader) {
   if (!aFrameLoader) {
     return nullptr;
@@ -97,7 +97,7 @@ BrowserBridgeChild* BrowserBridgeChild::GetFrom(nsFrameLoader* aFrameLoader) {
   return aFrameLoader->GetBrowserBridgeChild();
 }
 
-
+/*static*/
 BrowserBridgeChild* BrowserBridgeChild::GetFrom(nsIContent* aContent) {
   RefPtr<nsFrameLoaderOwner> loaderOwner = do_QueryObject(aContent);
   if (!loaderOwner) {
@@ -109,7 +109,7 @@ BrowserBridgeChild* BrowserBridgeChild::GetFrom(nsIContent* aContent) {
 
 mozilla::ipc::IPCResult BrowserBridgeChild::RecvRequestFocus(
     const bool& aCanRaise, const CallerType aCallerType) {
-  
+  // Adapted from BrowserParent
   RefPtr<Element> owner = mFrameLoader->GetOwnerContent();
   if (!owner) {
     return IPC_OK();
@@ -120,7 +120,7 @@ mozilla::ipc::IPCResult BrowserBridgeChild::RecvRequestFocus(
 
 mozilla::ipc::IPCResult BrowserBridgeChild::RecvMoveFocus(
     const bool& aForward, const bool& aForDocumentNavigation) {
-  
+  // Adapted from BrowserParent
   RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager();
   if (!fm) {
     return IPC_OK();
@@ -156,7 +156,7 @@ BrowserBridgeChild::RecvSetEmbeddedDocAccessibleCOMProxy(
   }
   RefPtr<IDispatch> comProxy(aCOMProxy.Get());
   mEmbeddedDocAccessible =
-      new a11y::RemoteIframeDocProxyAccessibleWrap(comProxy);
+      new a11y::RemoteIframeDocRemoteAccessibleWrap(comProxy);
 #endif
   return IPC_OK();
 }
@@ -170,7 +170,7 @@ mozilla::ipc::IPCResult BrowserBridgeChild::RecvMaybeFireEmbedderLoadEvents(
 
   if (aFireEventAtEmbeddingElement == EmbedderElementEventType::LoadEvent) {
     nsEventStatus status = nsEventStatus_eIgnore;
-    WidgetEvent event( true, eLoad);
+    WidgetEvent event(/* aIsTrusted = */ true, eLoad);
     event.mFlags.mBubbles = false;
     event.mFlags.mCancelable = false;
     EventDispatcher::Dispatch(owner, nullptr, &event, nullptr, &status);
@@ -226,12 +226,12 @@ mozilla::ipc::IPCResult BrowserBridgeChild::RecvSubFrameCrashed() {
 
 void BrowserBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
   if (!mBrowsingContext) {
-    
+    // This BBC was never valid, skip teardown.
     return;
   }
 
-  
-  
+  // Ensure we unblock our document's 'load' event (in case the OOP-iframe has
+  // been removed before it finished loading, or its subprocess crashed):
   UnblockOwnerDocsLoadEvent();
 }
 
@@ -258,4 +258,4 @@ mozilla::ipc::IPCResult BrowserBridgeChild::RecvIntrinsicSizeOrRatioChanged(
   return IPC_OK();
 }
 
-}  
+}  // namespace mozilla::dom

@@ -5,7 +5,7 @@
 
 
 #include "mozilla/a11y/DocAccessibleChildBase.h"
-#include "mozilla/a11y/ProxyAccessible.h"
+#include "mozilla/a11y/RemoteAccessible.h"
 
 #include "LocalAccessible-inl.h"
 

@@ -13,9 +13,9 @@
 namespace mozilla {
 namespace a11y {
 
-class ProxyAccessibleWrap : public AccessibleWrap {
+class RemoteAccessibleWrap : public AccessibleWrap {
  public:
-  explicit ProxyAccessibleWrap(ProxyAccessible* aProxy)
+  explicit RemoteAccessibleWrap(RemoteAccessible* aProxy)
       : AccessibleWrap(nullptr, nullptr) {
     mType = eProxyType;
     mBits.proxy = aProxy;
@@ -31,9 +31,9 @@ class ProxyAccessibleWrap : public AccessibleWrap {
   }
 };
 
-class HyperTextProxyAccessibleWrap : public HyperTextAccessibleWrap {
+class HyperTextRemoteAccessibleWrap : public HyperTextAccessibleWrap {
  public:
-  explicit HyperTextProxyAccessibleWrap(ProxyAccessible* aProxy)
+  explicit HyperTextRemoteAccessibleWrap(RemoteAccessible* aProxy)
       : HyperTextAccessibleWrap(nullptr, nullptr) {
     mType = eProxyType;
     mBits.proxy = aProxy;
@@ -49,10 +49,10 @@ class HyperTextProxyAccessibleWrap : public HyperTextAccessibleWrap {
   }
 };
 
-class DocProxyAccessibleWrap : public HyperTextProxyAccessibleWrap {
+class DocRemoteAccessibleWrap : public HyperTextRemoteAccessibleWrap {
  public:
-  explicit DocProxyAccessibleWrap(ProxyAccessible* aProxy)
-      : HyperTextProxyAccessibleWrap(aProxy) {
+  explicit DocRemoteAccessibleWrap(RemoteAccessible* aProxy)
+      : HyperTextRemoteAccessibleWrap(aProxy) {
     mGenericTypes |= eDocument;
   }
 
@@ -80,10 +80,10 @@ class DocProxyAccessibleWrap : public HyperTextProxyAccessibleWrap {
 };
 
 template <typename T>
-inline ProxyAccessible* HyperTextProxyFor(T* aWrapper) {
+inline RemoteAccessible* HyperTextProxyFor(T* aWrapper) {
   static_assert(std::is_base_of<IUnknown, T>::value,
                 "only IAccessible* should be passed in");
-  auto wrapper = static_cast<HyperTextProxyAccessibleWrap*>(aWrapper);
+  auto wrapper = static_cast<HyperTextRemoteAccessibleWrap*>(aWrapper);
   return wrapper->IsProxy() ? wrapper->Proxy() : nullptr;
 }
 
@@ -95,9 +95,9 @@ inline ProxyAccessible* HyperTextProxyFor(T* aWrapper) {
 
 
 
-class RemoteIframeDocProxyAccessibleWrap : public HyperTextAccessibleWrap {
+class RemoteIframeDocRemoteAccessibleWrap : public HyperTextAccessibleWrap {
  public:
-  explicit RemoteIframeDocProxyAccessibleWrap(IDispatch* aCOMProxy)
+  explicit RemoteIframeDocRemoteAccessibleWrap(IDispatch* aCOMProxy)
       : HyperTextAccessibleWrap(nullptr, nullptr), mCOMProxy(aCOMProxy) {
     mType = eProxyType;
     mBits.proxy = nullptr;

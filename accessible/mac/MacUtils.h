@@ -22,7 +22,7 @@ NSArray<mozAccessible*>* ConvertToNSArray(nsTArray<LocalAccessible*>& aArray);
 
 
 
-NSArray<mozAccessible*>* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray);
+NSArray<mozAccessible*>* ConvertToNSArray(nsTArray<RemoteAccessible*>& aArray);
 
 
 

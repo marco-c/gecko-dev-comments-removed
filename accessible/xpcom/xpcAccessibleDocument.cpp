@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "xpcAccessibleDocument.h"
 #include "xpcAccessibleImage.h"
@@ -15,8 +15,8 @@
 using namespace mozilla;
 using namespace mozilla::a11y;
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsISupports
 
 NS_IMPL_QUERY_INTERFACE_INHERITED(xpcAccessibleDocument, xpcAccessibleHyperText,
                                   nsIAccessibleDocument)
@@ -25,7 +25,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) xpcAccessibleDocument::Release(void) {
   nsrefcnt r = xpcAccessibleHyperText::Release();
   NS_LOG_RELEASE(this, r, "xpcAccessibleDocument");
 
-  
+  // The only reference to the xpcAccessibleDocument is in DocManager's cache.
   if (r == 1 && !mIntl.IsNull() && mCache.Count() == 0) {
     if (mIntl.IsAccessible()) {
       GetAccService()->RemoveFromXPCDocumentCache(
@@ -38,8 +38,8 @@ NS_IMETHODIMP_(MozExternalRefCountType) xpcAccessibleDocument::Release(void) {
   return r;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsIAccessibleDocument
 
 NS_IMETHODIMP
 xpcAccessibleDocument::GetURL(nsAString& aURL) {
@@ -143,8 +143,8 @@ xpcAccessibleDocument::GetVirtualCursor(nsIAccessiblePivot** aVirtualCursor) {
   return NS_OK;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// xpcAccessibleDocument
 
 xpcAccessibleGeneric* xpcAccessibleDocument::GetAccessible(
     LocalAccessible* aAccessible) {
@@ -177,7 +177,7 @@ xpcAccessibleGeneric* xpcAccessibleDocument::GetAccessible(
 }
 
 xpcAccessibleGeneric* xpcAccessibleDocument::GetXPCAccessible(
-    ProxyAccessible* aProxy) {
+    RemoteAccessible* aProxy) {
   MOZ_ASSERT(mRemote);
   MOZ_ASSERT(aProxy->Document() == mIntl.AsProxy());
   if (aProxy->IsDoc()) {
@@ -189,7 +189,7 @@ xpcAccessibleGeneric* xpcAccessibleDocument::GetXPCAccessible(
     return acc;
   }
 
-  
+  // XXX support exposing optional interfaces.
   uint8_t interfaces = 0;
   if (aProxy->mHasValue) {
     interfaces |= eValue;

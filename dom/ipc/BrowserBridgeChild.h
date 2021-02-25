@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_BrowserBridgeChild_h
 #define mozilla_dom_BrowserBridgeChild_h
@@ -14,7 +14,7 @@
 namespace mozilla {
 
 namespace a11y {
-class RemoteIframeDocProxyAccessibleWrap;
+class RemoteIframeDocRemoteAccessibleWrap;
 }
 
 namespace dom {
@@ -22,10 +22,10 @@ class BrowsingContext;
 class ContentChild;
 class BrowserBridgeHost;
 
-
-
-
-
+/**
+ * BrowserBridgeChild implements the child actor part of the PBrowserBridge
+ * protocol. See PBrowserBridge for more information.
+ */
 class BrowserBridgeChild : public PBrowserBridgeChild {
  public:
   typedef mozilla::layers::LayersId LayersId;
@@ -58,7 +58,7 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
   already_AddRefed<BrowserBridgeHost> FinishInit(nsFrameLoader* aFrameLoader);
 
 #if defined(ACCESSIBILITY) && defined(XP_WIN)
-  a11y::RemoteIframeDocProxyAccessibleWrap* GetEmbeddedDocAccessible() {
+  a11y::RemoteIframeDocRemoteAccessibleWrap* GetEmbeddedDocAccessible() {
     return mEmbeddedDocAccessible;
   }
 #endif
@@ -111,11 +111,11 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
   RefPtr<nsFrameLoader> mFrameLoader;
   RefPtr<BrowsingContext> mBrowsingContext;
 #if defined(ACCESSIBILITY) && defined(XP_WIN)
-  RefPtr<a11y::RemoteIframeDocProxyAccessibleWrap> mEmbeddedDocAccessible;
+  RefPtr<a11y::RemoteIframeDocRemoteAccessibleWrap> mEmbeddedDocAccessible;
 #endif
 };
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif  
+#endif  // !defined(mozilla_dom_BrowserBridgeParent_h)

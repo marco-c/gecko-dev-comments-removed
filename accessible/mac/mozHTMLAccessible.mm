@@ -23,7 +23,7 @@ using namespace mozilla::a11y;
     
     
     acc->GetContent()->GetTextContent(title, rv);
-  } else if (ProxyAccessible* proxy = mGeckoAccessible.AsProxy()) {
+  } else if (RemoteAccessible* proxy = mGeckoAccessible.AsProxy()) {
     proxy->Title(title);
   }
 
@@ -34,7 +34,7 @@ using namespace mozilla::a11y;
   GroupPos groupPos;
   if (LocalAccessible* acc = mGeckoAccessible.AsAccessible()) {
     groupPos = acc->GroupPosition();
-  } else if (ProxyAccessible* proxy = mGeckoAccessible.AsProxy()) {
+  } else if (RemoteAccessible* proxy = mGeckoAccessible.AsProxy()) {
     groupPos = proxy->GroupPosition();
   }
 
@@ -53,7 +53,7 @@ using namespace mozilla::a11y;
   nsAutoString value;
   if (LocalAccessible* acc = mGeckoAccessible.AsAccessible()) {
     acc->Value(value);
-  } else if (ProxyAccessible* proxy = mGeckoAccessible.AsProxy()) {
+  } else if (RemoteAccessible* proxy = mGeckoAccessible.AsProxy()) {
     proxy->Value(value);
   }
 

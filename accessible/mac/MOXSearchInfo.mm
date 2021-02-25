@@ -182,7 +182,7 @@ using namespace mozilla::a11y;
       return;
     }
 
-    ProxyAccessible* proxy = geckoAcc.AsProxy();
+    RemoteAccessible* proxy = geckoAcc.AsProxy();
     if (ipcDoc &&
         ((ipcDoc != proxy->Document()) || (idx + 1 == [matches count]))) {
       
@@ -193,7 +193,7 @@ using namespace mozilla::a11y;
           accIds, mResultLimit, EWhichPostFilter::eContainsText, searchText,
           &matchIds);
       for (size_t i = 0; i < matchIds.Length(); i++) {
-        if (ProxyAccessible* postMatch =
+        if (RemoteAccessible* postMatch =
                 ipcDoc->GetAccessible(matchIds.ElementAt(i))) {
           if (mozAccessible* nativePostMatch =
                   GetNativeFromGeckoAccessible(postMatch)) {

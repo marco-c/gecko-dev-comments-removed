@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "xpcAccessibleHyperText.h"
 
@@ -19,8 +19,8 @@
 
 using namespace mozilla::a11y;
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsISupports
 
 NS_INTERFACE_MAP_BEGIN(xpcAccessibleHyperText)
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIAccessibleText,
@@ -34,8 +34,8 @@ NS_INTERFACE_MAP_END_INHERITING(xpcAccessibleGeneric)
 NS_IMPL_ADDREF_INHERITED(xpcAccessibleHyperText, xpcAccessibleGeneric)
 NS_IMPL_RELEASE_INHERITED(xpcAccessibleHyperText, xpcAccessibleGeneric)
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsIAccessibleText
 
 NS_IMETHODIMP
 xpcAccessibleHyperText::GetCharacterCount(int32_t* aCharacterCount) {
@@ -553,8 +553,8 @@ xpcAccessibleHyperText::GetRangeAtPoint(int32_t aX, int32_t aY,
   return NS_OK;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsIAccessibleEditableText
 
 NS_IMETHODIMP
 xpcAccessibleHyperText::SetTextContents(const nsAString& aText) {
@@ -655,8 +655,8 @@ xpcAccessibleHyperText::PasteText(int32_t aOffset) {
   return NS_OK;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// nsIAccessibleHyperText
 
 NS_IMETHODIMP
 xpcAccessibleHyperText::GetLinkCount(int32_t* aLinkCount) {
@@ -715,7 +715,7 @@ xpcAccessibleHyperText::GetLinkIndex(nsIAccessibleHyperLink* aLink,
 #else
     xpcAccessibleHyperText* linkHyperText =
         static_cast<xpcAccessibleHyperText*>(xpcLink.get());
-    ProxyAccessible* proxyLink = linkHyperText->mIntl.AsProxy();
+    RemoteAccessible* proxyLink = linkHyperText->mIntl.AsProxy();
     if (proxyLink) {
       *aIndex = mIntl.AsProxy()->LinkIndexOf(proxyLink);
     }
@@ -729,7 +729,7 @@ NS_IMETHODIMP
 xpcAccessibleHyperText::GetLinkIndexAtOffset(int32_t aOffset,
                                              int32_t* aLinkIndex) {
   NS_ENSURE_ARG_POINTER(aLinkIndex);
-  *aLinkIndex = -1;  
+  *aLinkIndex = -1;  // API says this magic value means 'not found'
 
   if (mIntl.IsNull()) return NS_ERROR_FAILURE;
 
