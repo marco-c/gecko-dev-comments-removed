@@ -374,6 +374,26 @@ class InactivePropertyHelper {
         msgId: "inactive-css-not-table",
         numFixProps: 1,
       },
+      
+      {
+        invalidProperties: [
+          "scroll-padding",
+          "scroll-padding-top",
+          "scroll-padding-right",
+          "scroll-padding-bottom",
+          "scroll-padding-left",
+          "scroll-padding-block",
+          "scroll-padding-block-end",
+          "scroll-padding-block-start",
+          "scroll-padding-inline",
+          "scroll-padding-inline-end",
+          "scroll-padding-inline-start",
+        ],
+        when: () => !this.isScrollContainer,
+        fixId: "inactive-scroll-padding-when-not-scroll-container-fix",
+        msgId: "inactive-scroll-padding-when-not-scroll-container",
+        numFixProps: 1,
+      },
     ];
   }
 
@@ -791,6 +811,24 @@ class InactivePropertyHelper {
 
   get isFloated() {
     return this.style && this.style.cssFloat !== "none";
+  }
+
+  
+
+
+  get isScrollContainer() {
+    
+    
+    
+    
+    const overflow = computedStyle(this.node).overflow;
+    
+    
+    
+    const overflowValues = overflow.split(" ");
+    return !(
+      overflowValues.includes("visible") || overflowValues.includes("clip")
+    );
   }
 
   
