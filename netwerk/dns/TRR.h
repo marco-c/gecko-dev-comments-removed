@@ -101,6 +101,8 @@ class TRR : public Runnable,
   RefPtr<nsHostRecord> mRec;
   RefPtr<AHostResolver> mHostResolver;
 
+  void SetTimeout(uint32_t aTimeoutMs) { mTimeoutMs = aTimeoutMs; }
+
  protected:
   virtual ~TRR() = default;
   virtual DNSPacket* GetOrCreateDNSPacket();
@@ -140,6 +142,10 @@ class TRR : public Runnable,
   bool mFailed = false;
   bool mPB;
   DOHresp mDNS;
+
+  
+  
+  uint32_t mTimeoutMs = 0;
   nsCOMPtr<nsITimer> mTimeout;
   nsCString mCname;
   uint32_t mCnameLoop = kCnameChaseMax;  
