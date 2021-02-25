@@ -8,7 +8,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import fnmatch
 import multiprocessing
 import os
-import re
 import subprocess
 import sys
 import time
@@ -166,9 +165,6 @@ class Documentation(MachCommandBase):
         else:
             print("\nGenerated documentation:\n%s" % savedir)
 
-        print("Post processing HTML files")
-        self._post_process_html(savedir)
-
         
         
         if write_url is not None:
@@ -262,36 +258,6 @@ class Documentation(MachCommandBase):
         print("Run sphinx with:")
         print(args)
         return sphinx.cmd.build.build_main(args)
-
-    def _post_process_html(self, savedir):
-        """
-        Perform some operations on the generated html to fix some URL
-        """
-        MERMAID_VERSION = "8.4.4"
-        for root, _, files in os.walk(savedir):
-            for file in files:
-                if file.endswith(".html"):
-                    p = os.path.join(root, file)
-
-                    with open(p, "r", encoding="utf_8") as file:
-                        filedata = file.read()
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    filedata = re.sub(
-                        r"https://unpkg.com/mermaid@.*/dist",
-                        r"https://cdnjs.cloudflare.com/ajax/libs/mermaid/{}".format(
-                            MERMAID_VERSION
-                        ),
-                        filedata,
-                    )
-
-                    with open(p, "w", encoding="utf_8") as file:
-                        file.write(filedata)
 
     @property
     def manager(self):
