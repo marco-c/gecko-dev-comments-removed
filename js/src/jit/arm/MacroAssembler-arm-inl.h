@@ -408,6 +408,10 @@ void MacroAssembler::mul32(Register rhs, Register srcDest) {
   as_mul(srcDest, srcDest, rhs);
 }
 
+void MacroAssembler::mulPtr(Register rhs, Register srcDest) {
+  as_mul(srcDest, srcDest, rhs);
+}
+
 void MacroAssembler::mul64(Imm64 imm, const Register64& dest) {
   
   
