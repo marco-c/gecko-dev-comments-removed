@@ -123,9 +123,6 @@ typedef enum {
 static NSString* const CGSSpaceIDKey = @"ManagedSpaceID";
 static NSString* const CGSSpacesKey = @"Spaces";
 extern CGSConnection _CGSDefaultConnection(void);
-extern CGError CGSSetWindowShadowAndRimParameters(const CGSConnection cid, CGSWindow wid,
-                                                  float standardDeviation, float density,
-                                                  int offsetX, int offsetY, unsigned int flags);
 extern CGError CGSSetWindowTransform(CGSConnection cid, CGSWindow wid, CGAffineTransform transform);
 }
 
@@ -850,7 +847,6 @@ void nsCocoaWindow::Show(bool bState) {
       [mWindow orderFront:nil];
       NS_OBJC_END_TRY_IGNORE_BLOCK;
       SendSetZLevelEvent();
-      AdjustWindowShadow();
       
       
       
@@ -1005,52 +1001,6 @@ bool nsCocoaWindow::NeedsRecreateToReshow() {
   
   
   return (mWindowType == eWindowType_popup) && mWasShown && ([[NSScreen screens] count] > 1);
-}
-
-struct ShadowParams {
-  float standardDeviation;
-  float density;
-  int offsetX;
-  int offsetY;
-  unsigned int flags;
-};
-
-
-
-static const ShadowParams kWindowShadowParametersPreYosemite[] = {
-    {0.0f, 0.0f, 0, 0, 0},       
-    {8.0f, 0.5f, 0, 6, 1},       
-    {10.0f, 0.44f, 0, 10, 512},  
-    {8.0f, 0.5f, 0, 6, 1},       
-    {4.0f, 0.6f, 0, 4, 512}      
-};
-
-static const ShadowParams kWindowShadowParametersPostYosemite[] = {
-    {0.0f, 0.0f, 0, 0, 0},       
-    {8.0f, 0.5f, 0, 6, 1},       
-    {9.882353f, 0.3f, 0, 4, 0},  
-    {3.294118f, 0.2f, 0, 1, 0},  
-    {9.882353f, 0.3f, 0, 4, 0}   
-};
-
-
-
-
-
-
-void nsCocoaWindow::AdjustWindowShadow() {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-
-  if (!mWindow || ![mWindow isVisible] || ![mWindow hasShadow] || [mWindow canBecomeKeyWindow] ||
-      [mWindow windowNumber] == -1)
-    return;
-
-  const ShadowParams& params = kWindowShadowParametersPostYosemite[uint8_t(mShadowStyle)];
-  CGSConnection cid = _CGSDefaultConnection();
-  CGSSetWindowShadowAndRimParameters(cid, [mWindow windowNumber], params.standardDeviation,
-                                     params.density, params.offsetX, params.offsetY, params.flags);
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 nsresult nsCocoaWindow::ConfigureChildren(const nsTArray<Configuration>& aConfigurations) {
@@ -2314,17 +2264,15 @@ bool nsCocoaWindow::HasPendingInputEvent() { return nsChildView::DoHasPendingInp
 void nsCocoaWindow::SetWindowShadowStyle(StyleWindowShadow aStyle) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
-  if (!mWindow) return;
-
   mShadowStyle = aStyle;
 
-  
-  if (mWindowType == eWindowType_popup) {
-    [mWindow setHasShadow:aStyle != StyleWindowShadow::None];
+  if (!mWindow || mWindowType != eWindowType_popup) {
+    return;
   }
 
-  [mWindow setUseMenuStyle:(aStyle == StyleWindowShadow::Menu)];
-  AdjustWindowShadow();
+  mWindow.shadowStyle = mShadowStyle;
+  [mWindow setUseMenuStyle:mShadowStyle == StyleWindowShadow::Menu];
+  [mWindow setHasShadow:aStyle != StyleWindowShadow::None];
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
@@ -3835,6 +3783,29 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 
 - (CGFloat)_backdropBleedAmount {
   return 0.0;
+}
+
+
+
+
+static const NSUInteger kWindowShadowOptionsNoShadow = 0;
+static const NSUInteger kWindowShadowOptionsMenu = 2;
+static const NSUInteger kWindowShadowOptionsTooltip = 4;
+- (NSUInteger)shadowOptions {
+  if (!self.hasShadow) {
+    return kWindowShadowOptionsNoShadow;
+  }
+
+  switch (self.shadowStyle) {
+    case StyleWindowShadow::None:
+      return kWindowShadowOptionsNoShadow;
+    case StyleWindowShadow::Default:  
+    case StyleWindowShadow::Menu:
+    case StyleWindowShadow::Sheet:
+      return kWindowShadowOptionsMenu;
+    case StyleWindowShadow::Tooltip:
+      return kWindowShadowOptionsTooltip;
+  }
 }
 
 - (BOOL)isContextMenu {
