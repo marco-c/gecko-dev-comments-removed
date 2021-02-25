@@ -749,6 +749,11 @@ void nsCanvasFrame::Reflow(nsPresContext* aPresContext,
   
   const WritingMode wm = aReflowInput.GetWritingMode();
   aDesiredSize.SetSize(wm, aReflowInput.ComputedSize());
+  if (aReflowInput.ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
+    
+    
+    aDesiredSize.BSize(wm) = nscoord(0);
+  }
   aDesiredSize.SetOverflowAreasToDesiredBounds();
   nsIFrame* nextKid = nullptr;
   for (auto* kidFrame = mFrames.FirstChild(); kidFrame; kidFrame = nextKid) {
