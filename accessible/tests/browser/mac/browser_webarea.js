@@ -35,8 +35,14 @@ addAccessibleTask(`<title>webarea test</title>`, async (browser, accDoc) => {
   
   
   let eventPromise = Promise.race([
-    waitForMacEvent("AXLayoutComplete"),
-    waitForMacEvent("AXLoadComplete"),
+    waitForMacEvent("AXLayoutComplete", (iface, data) => {
+      return (
+        iface.getAttributeValue("AXDescription") == "data:text/html,hello world"
+      );
+    }),
+    waitForMacEvent("AXLoadComplete", (iface, data) => {
+      return iface.getAttributeValue("AXDescription") == "webarea test";
+    }),
   ]);
   await SpecialPowers.spawn(browser, [], () => {
     const iframe = content.document.createElement("iframe");
