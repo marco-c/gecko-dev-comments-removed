@@ -8,10 +8,10 @@ const TEST_URI = URL_ROOT + "browser_toolbox_options_disable_js.html";
 add_task(async function() {
   const tab = await addTab(TEST_URI);
   const target = await TargetFactory.forTab(tab);
-  const toolbox = await gDevTools.showToolbox(target);
 
-  await toolbox.selectTool("options");
-  ok(true, "Toolbox selected via selectTool method");
+  
+  
+  const toolbox = await gDevTools.showToolbox(target, "options");
 
   await testJSEnabled();
   await testJSEnabledIframe();
