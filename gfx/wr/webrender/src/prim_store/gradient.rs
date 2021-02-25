@@ -848,15 +848,28 @@ impl GradientGpuBlockBuilder {
         start_color: &PremultipliedColorF,
         end_color: &PremultipliedColorF,
         entries: &mut [GradientDataEntry; GRADIENT_DATA_SIZE],
-    ) {
+        prev_step: &PremultipliedColorF,
+    ) -> PremultipliedColorF {
         
         let inv_steps = 1.0 / (end_idx - start_idx) as f32;
-        let step = PremultipliedColorF {
+        let mut step = PremultipliedColorF {
             r: (end_color.r - start_color.r) * inv_steps,
             g: (end_color.g - start_color.g) * inv_steps,
             b: (end_color.b - start_color.b) * inv_steps,
             a: (end_color.a - start_color.a) * inv_steps,
         };
+        
+        
+        
+        
+        
+        
+        if step == *prev_step {
+            
+            
+            
+            step.a = f32::from_bits(if step.a == 0.0 { 1 } else { step.a.to_bits() + 1 });
+        }
 
         let mut cur_color = *start_color;
 
@@ -870,6 +883,8 @@ impl GradientGpuBlockBuilder {
             cur_color.a += step.a;
             entry.end_step = step;
         }
+
+        step
     }
 
     
@@ -913,15 +928,16 @@ impl GradientGpuBlockBuilder {
         
         
         let mut entries = [GradientDataEntry::white(); GRADIENT_DATA_SIZE];
-
+        let mut prev_step = cur_color;
         if reverse_stops {
             
-            GradientGpuBlockBuilder::fill_colors(
+            prev_step = GradientGpuBlockBuilder::fill_colors(
                 GRADIENT_DATA_LAST_STOP,
                 GRADIENT_DATA_LAST_STOP + 1,
                 &cur_color,
                 &cur_color,
                 &mut entries,
+                &prev_step,
             );
 
             
@@ -933,12 +949,13 @@ impl GradientGpuBlockBuilder {
                 let next_idx = Self::get_index(1.0 - next.offset);
 
                 if next_idx < cur_idx {
-                    GradientGpuBlockBuilder::fill_colors(
+                    prev_step = GradientGpuBlockBuilder::fill_colors(
                         next_idx,
                         cur_idx,
                         &next_color,
                         &cur_color,
                         &mut entries,
+                        &prev_step,
                     );
                     cur_idx = next_idx;
                 }
@@ -956,15 +973,17 @@ impl GradientGpuBlockBuilder {
                 &cur_color,
                 &cur_color,
                 &mut entries,
+                &prev_step,
             );
         } else {
             
-            GradientGpuBlockBuilder::fill_colors(
+            prev_step = GradientGpuBlockBuilder::fill_colors(
                 GRADIENT_DATA_FIRST_STOP,
                 GRADIENT_DATA_FIRST_STOP + 1,
                 &cur_color,
                 &cur_color,
                 &mut entries,
+                &prev_step,
             );
 
             
@@ -976,12 +995,13 @@ impl GradientGpuBlockBuilder {
                 let next_idx = Self::get_index(next.offset);
 
                 if next_idx > cur_idx {
-                    GradientGpuBlockBuilder::fill_colors(
+                    prev_step = GradientGpuBlockBuilder::fill_colors(
                         cur_idx,
                         next_idx,
                         &cur_color,
                         &next_color,
                         &mut entries,
+                        &prev_step,
                     );
                     cur_idx = next_idx;
                 }
@@ -999,6 +1019,7 @@ impl GradientGpuBlockBuilder {
                 &cur_color,
                 &cur_color,
                 &mut entries,
+                &prev_step,
             );
         }
 

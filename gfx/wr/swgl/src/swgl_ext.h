@@ -938,6 +938,32 @@ static void blendYUV(P* buf, int span, S0 sampler0, vec2 uv0,
   swgl_commitTextureLinearYUV(__VA_ARGS__)
 
 
+struct GradientStops {
+  Float startColor;
+  union {
+    Float stepColor;
+    vec4_scalar stepData;
+  };
+
+  
+  
+  
+  
+  bool can_merge(const GradientStops& next) const {
+    return stepData == next.stepData;
+  }
+
+  
+  
+  Float interpolate(float offset) const {
+    return startColor + stepColor * offset;
+  }
+
+  
+  Float end_color() const { return startColor + stepColor; }
+};
+
+
 
 
 
@@ -947,14 +973,11 @@ static inline int swgl_validateGradient(sampler2D sampler, ivec2_scalar address,
   return sampler->format == TextureFormat::RGBA32F && address.y >= 0 &&
                  address.y < int(sampler->height) && address.x >= 0 &&
                  address.x < int(sampler->width) && entries > 0 &&
-                 address.x + 2 * entries <= int(sampler->width)
+                 address.x +
+                         int(sizeof(GradientStops) / sizeof(Float)) * entries <=
+                     int(sampler->width)
              ? address.y * sampler->stride + address.x * 4
              : -1;
-}
-
-
-static ALWAYS_INLINE HalfRGBA8 swizzleGradient(HalfRGBA8 v) {
-  return SHUFFLE(v, v, 2, 1, 0, 3, 6, 5, 4, 7);
 }
 
 static inline WideRGBA8 sampleGradient(sampler2D sampler, int address,
@@ -967,18 +990,18 @@ static inline WideRGBA8 sampleGradient(sampler2D sampler, int address,
   
   Float offset = entry - cast(index);
   
-  index *= 2;
-  assert(test_all(index >= 0 && index < int(sampler->width) - 1));
-  Float* buf = (Float*)&sampler->buf[address];
+  assert(test_all(index >= 0 &&
+                  index * int(sizeof(GradientStops) / sizeof(Float)) <
+                      int(sampler->width)));
+  GradientStops* stops = (GradientStops*)&sampler->buf[address];
   
   
   
-  return combine(swizzleGradient(packRGBA8(
-                     round_pixel(buf[index.x] + buf[index.x + 1] * offset.x),
-                     round_pixel(buf[index.y] + buf[index.y + 1] * offset.y))),
-                 swizzleGradient(packRGBA8(
-                     round_pixel(buf[index.z] + buf[index.z + 1] * offset.z),
-                     round_pixel(buf[index.w] + buf[index.w + 1] * offset.w))));
+  return combine(
+      packRGBA8(round_pixel(stops[index.x].interpolate(offset.x).zyxw),
+                round_pixel(stops[index.y].interpolate(offset.y).zyxw)),
+      packRGBA8(round_pixel(stops[index.z].interpolate(offset.z).zyxw),
+                round_pixel(stops[index.w].interpolate(offset.w).zyxw)));
 }
 
 
@@ -992,6 +1015,175 @@ static inline WideRGBA8 sampleGradient(sampler2D sampler, int address,
 #define swgl_commitGradientColorRGBA8(sampler, address, entry, color)         \
   swgl_commitChunk(RGBA8, applyColor(sampleGradient(sampler, address, entry), \
                                      packColor(swgl_OutRGBA, color)))
+
+
+
+
+template <bool BLEND>
+static void commitLinearGradient(sampler2D sampler, int address, float size,
+                                 bool repeat, Float offset, uint32_t* buf,
+                                 int span) {
+  assert(sampler->format == TextureFormat::RGBA32F);
+  assert(address >= 0 && address < int(sampler->height * sampler->stride));
+  GradientStops* stops = (GradientStops*)&sampler->buf[address];
+  
+  
+  
+  float delta = (offset.y - offset.x) * 4.0f;
+  for (; span > 0;) {
+    
+    if (repeat) {
+      offset = fract(offset);
+    }
+    
+    float chunks = 0.25f * span;
+    
+    
+    
+    
+    
+    float startEntry;
+    int minIndex, maxIndex;
+    if (offset.x < 0) {
+      
+      
+      startEntry = 0;
+      minIndex = int(startEntry);
+      maxIndex = minIndex;
+      if (delta > 0) {
+        chunks = min(chunks, -offset.x / delta);
+      }
+    } else if (offset.x >= 1) {
+      
+      
+      startEntry = 1.0f + size;
+      minIndex = int(startEntry);
+      maxIndex = minIndex;
+      if (delta < 0) {
+        chunks = min(chunks, (1 - offset.x) / delta);
+      }
+    } else {
+      
+      
+      
+      
+      
+      startEntry = 1.0f + offset.x * size;
+      if (delta < 0) {
+        chunks = min(chunks, -offset.x / delta);
+      } else if (delta > 0) {
+        chunks = min(chunks, (1 - offset.x) / delta);
+      }
+      float endEntry = clamp(1.0f + (offset.x + delta * int(chunks)) * size,
+                             0.0f, 1.0f + size);
+      
+      
+      
+      
+      
+      
+      minIndex = int(startEntry);
+      maxIndex = minIndex;
+      if (delta > 0) {
+        while (maxIndex + 1 < endEntry &&
+               stops[maxIndex].can_merge(stops[maxIndex + 1])) {
+          maxIndex++;
+        }
+        chunks = min(chunks, (maxIndex + 1 - startEntry) / (delta * size));
+      } else if (delta < 0) {
+        while (minIndex - 1 > endEntry &&
+               stops[minIndex - 1].can_merge(stops[minIndex])) {
+          minIndex--;
+        }
+        chunks = min(chunks, (minIndex - startEntry) / (delta * size));
+      }
+    }
+    
+    
+    
+    int inside = int(chunks);
+    if (inside > 0) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      auto minColorF = stops[minIndex].startColor.zyxw * float(0xFF00);
+      auto maxColorF = stops[maxIndex].end_color().zyxw * float(0xFF00);
+      
+      auto colorRangeF =
+          (maxColorF - minColorF) * (1.0f / (maxIndex + 1 - minIndex));
+      
+      
+      
+      auto colorF =
+          minColorF + colorRangeF * (startEntry - minIndex) + float(0x80);
+      
+      Float deltaColorF = colorRangeF * (delta * size);
+      
+      
+      auto deltaColor = repeat4(CONVERT(round_pixel(deltaColorF, 1), U16));
+      auto color =
+          combine(CONVERT(round_pixel(colorF, 1), U16),
+                  CONVERT(round_pixel(colorF + deltaColorF * 0.25f, 1), U16),
+                  CONVERT(round_pixel(colorF + deltaColorF * 0.5f, 1), U16),
+                  CONVERT(round_pixel(colorF + deltaColorF * 0.75f, 1), U16));
+      
+      
+      for (auto* end = buf + inside * 4; buf < end; buf += 4) {
+        commit_blend_span<BLEND>(buf, bit_cast<WideRGBA8>(color >> 8));
+        color += deltaColor;
+      }
+      
+      
+      span -= inside * 4;
+      if (span <= 0) {
+        break;
+      }
+      
+      
+      offset += inside * delta;
+      if (repeat) {
+        offset = fract(offset);
+      }
+    }
+    
+    
+    
+    
+    
+    
+    Float entry = clamp(offset * size + 1.0f, 0.0f, 1.0f + size);
+    commit_blend_span<BLEND>(buf, sampleGradient(sampler, address, entry));
+    span -= 4;
+    buf += 4;
+    offset += delta;
+  }
+}
+
+
+
+
+
+
+
+#define swgl_commitLinearGradientRGBA8(sampler, address, size, repeat, offset) \
+  do {                                                                         \
+    if (blend_key) {                                                           \
+      commitLinearGradient<true>(sampler, address, size, repeat, offset,       \
+                                 swgl_OutRGBA8, swgl_SpanLength);              \
+    } else {                                                                   \
+      commitLinearGradient<false>(sampler, address, size, repeat, offset,      \
+                                  swgl_OutRGBA8, swgl_SpanLength);             \
+    }                                                                          \
+    swgl_OutRGBA8 += swgl_SpanLength;                                          \
+    swgl_SpanLength = 0;                                                       \
+  } while (0)
 
 
 
