@@ -864,12 +864,6 @@ void net_ParseRequestContentType(const nsACString& aHeaderStr,
 }
 
 bool net_IsValidHostName(const nsACString& host) {
-  
-  
-  if (StaticPrefs::network_dns_limit_253_chars() && host.Length() > 253) {
-    return false;
-  }
-
   const char* end = host.EndReading();
   
   
