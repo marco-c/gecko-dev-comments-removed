@@ -116,7 +116,7 @@ class StorageUI {
     this._window = panelWin;
     this._panelDoc = panelWin.document;
     this._toolbox = toolbox;
-    this.storageTypes = null;
+    this.storageResources = null;
     this.sidebarToggledOpen = null;
     this.shouldLoadMoreItems = true;
 
@@ -280,7 +280,7 @@ class StorageUI {
     
     
     
-    this.storageTypes = {};
+    this.storageResources = {};
 
     this._onResourceListAvailable = this._onResourceListAvailable.bind(this);
 
@@ -350,12 +350,14 @@ class StorageUI {
 
   _onTargetDestroyed({ targetFront }) {
     
-    for (const type in this.storageTypes) {
-      this.storageTypes[type] = this.storageTypes[type].filter(storage => {
-        
-        
-        return !storage.isDestroyed() && storage.targetFront != targetFront;
-      });
+    for (const type in this.storageResources) {
+      this.storageResources[type] = this.storageResources[type].filter(
+        storage => {
+          
+          
+          return !storage.isDestroyed() && storage.targetFront != targetFront;
+        }
+      );
     }
 
     
@@ -488,7 +490,7 @@ class StorageUI {
   }
 
   _getStorage(type, host) {
-    const storageType = this.storageTypes[type];
+    const storageType = this.storageResources[type];
     return storageType.find(x => host in x.hosts);
   }
 
@@ -897,7 +899,7 @@ class StorageUI {
 
 
 
-  async populateStorageTree(storageTypes) {
+  async populateStorageTree(storageResources) {
     const populateTreeFromResource = (type, resource) => {
       for (const host in resource.hosts) {
         const label = this.getReadableLabelFromHostname(host);
@@ -932,7 +934,7 @@ class StorageUI {
     
     const initialSelectedItem = this.tree.selectedItem;
 
-    for (const type in storageTypes) {
+    for (const type in storageResources) {
       
       
       if (type === "from") {
@@ -947,12 +949,12 @@ class StorageUI {
 
       this.tree.add([{ id: type, label: typeLabel, type: "store" }]);
 
-      const resourcesWithHosts = storageTypes[type].filter(x => x.hosts);
+      const resourcesWithHosts = storageResources[type].filter(x => x.hosts);
       for (const resource of resourcesWithHosts) {
-        if (!this.storageTypes[type]) {
-          this.storageTypes[type] = [];
+        if (!this.storageResources[type]) {
+          this.storageResources[type] = [];
         }
-        this.storageTypes[type].push(resource);
+        this.storageResources[type].push(resource);
 
         populateTreeFromResource(type, resource);
       }
