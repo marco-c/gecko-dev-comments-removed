@@ -191,7 +191,10 @@ XPCOMUtils.defineLazyGetter(AboutPages, "aboutStudies", () => {
 
     async removePreferenceStudy(experimentName, reason) {
       try {
-        await PreferenceExperiments.stop(experimentName, { reason });
+        await PreferenceExperiments.stop(experimentName, {
+          reason,
+          caller: "AboutPages.removePreferenceStudy",
+        });
       } catch (err) {
         
         
