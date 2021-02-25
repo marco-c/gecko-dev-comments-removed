@@ -847,6 +847,9 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
   uint32_t from = findFilenameStart(aSpec);
   nsAutoCString fileName(Substring(aSpec, from));
 
+  nsAutoCString errorCString;
+  mozilla::GetErrorName(aStatus, errorCString);
+
   
   
   bool isTest = fileName.Find("test_empty_file.zip!") != -1;
@@ -877,17 +880,36 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
   } else if (StringEndsWith(fileName, ".xml"_ns)) {
     eventType = Telemetry::EventID::Zero_byte_load_Load_Xml;
   } else if (StringEndsWith(fileName, ".xhtml"_ns)) {
+    
+    
+    if (errorCString.EqualsLiteral("NS_ERROR_PARSED_DATA_CACHED")) {
+      return;
+    }
+
+    
+    if (!StringBeginsWith(fileName, "omni.ja!"_ns)) {
+      return;
+    }
+
+    
+    
+    if (fileName.Find("aboutNetError.xhtml") != -1) {
+      return;
+    }
+
     eventType = Telemetry::EventID::Zero_byte_load_Load_Xhtml;
   }
 
   
   
-  if (!isTest && eventType == Telemetry::EventID::Zero_byte_load_Load_Others) {
+  
+  
+  if (!isTest && eventType == Telemetry::EventID::Zero_byte_load_Load_Others &&
+      !StringBeginsWith(fileName, "omni.ja!"_ns) &&
+      !StringEndsWith(fileName, ".html"_ns) &&
+      !StringEndsWith(fileName, ".css"_ns)) {
     return;
   }
-
-  nsAutoCString errorCString;
-  mozilla::GetErrorName(aStatus, errorCString);
 
   
   
