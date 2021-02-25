@@ -58,6 +58,15 @@ struct StyleSizeOverrides {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool mApplyOverridesVerbatim = false;
 };
 }  

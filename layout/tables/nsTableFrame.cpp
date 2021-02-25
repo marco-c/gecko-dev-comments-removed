@@ -1535,6 +1535,14 @@ nsIFrame::SizeComputationResult nsTableFrame::ComputeSize(
 
   
   
+  
+  if (aSizeOverrides.mApplyOverridesVerbatim && aSizeOverrides.mStyleISize &&
+      aSizeOverrides.mStyleISize->IsLengthPercentage()) {
+    return result;
+  }
+
+  
+  
   AutoMaybeDisableFontInflation an(this);
 
   

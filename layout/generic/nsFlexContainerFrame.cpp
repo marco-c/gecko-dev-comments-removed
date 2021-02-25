@@ -1356,9 +1356,11 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
     } else {
       
       
-      
       MOZ_ASSERT(flexBasis.IsAuto());
+      styleFlexBaseSize.emplace(styleMainSize);
     }
+
+    MOZ_ASSERT(styleFlexBaseSize, "We should've emplace styleFlexBaseSize!");
 
     
     if (aAxisTracker.IsInlineAxisMainAxis(childWM)) {
