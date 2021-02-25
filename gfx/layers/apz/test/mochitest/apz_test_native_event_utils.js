@@ -175,39 +175,68 @@ function getBoundingClientRectRelativeToVisualViewport(aElement) {
 
 
 function getTargetOrigin(aTarget) {
-  let origin = { left: 0, top: 0 };
+  const rect = getTargetRect(aTarget);
+  return { left: rect.left, top: rect.top };
+}
+
+function getTargetRect(aTarget) {
+  let rect = { left: 0, top: 0, width: 0, height: 0 };
 
   
   
   if (aTarget instanceof Window) {
     
-    return origin;
+    return rect;
   }
 
   
   
   
   
-  let rect = aTarget.getBoundingClientRect();
-  origin.left += rect.left;
-  origin.top += rect.top;
+  const boundingClientRect = aTarget.getBoundingClientRect();
+  rect.left = boundingClientRect.left;
+  rect.top = boundingClientRect.top;
+  rect.width = boundingClientRect.width;
+  rect.height = boundingClientRect.height;
 
   
   
   
   while (aTarget.ownerDocument.defaultView.frameElement) {
-    let iframe = aTarget.ownerDocument.defaultView.frameElement;
+    const iframe = aTarget.ownerDocument.defaultView.frameElement;
     
     
     
-    let style = iframe.ownerDocument.defaultView.getComputedStyle(iframe);
-    let borderLeft = parseFloat(style.borderLeftWidth) || 0;
-    let borderTop = parseFloat(style.borderTopWidth) || 0;
-    let paddingLeft = parseFloat(style.paddingLeft) || 0;
-    let paddingTop = parseFloat(style.paddingTop) || 0;
-    rect = iframe.getBoundingClientRect();
-    origin.left += rect.left + borderLeft + paddingLeft;
-    origin.top += rect.top + borderTop + paddingTop;
+    const style = iframe.ownerDocument.defaultView.getComputedStyle(iframe);
+    const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+    const borderTop = parseFloat(style.borderTopWidth) || 0;
+    const borderRight = parseFloat(style.borderRightWidth) || 0;
+    const borderBottom = parseFloat(style.borderBottomWidth) || 0;
+    const paddingLeft = parseFloat(style.paddingLeft) || 0;
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingRight = parseFloat(style.paddingRight) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+    const iframeRect = iframe.getBoundingClientRect();
+    rect.left += iframeRect.left + borderLeft + paddingLeft;
+    rect.top += iframeRect.top + borderTop + paddingTop;
+    if (
+      rect.left + rect.width >
+      iframeRect.right - borderRight - paddingRight
+    ) {
+      rect.width = Math.max(
+        iframeRect.right - borderRight - paddingRight - rect.left,
+        0
+      );
+    }
+    if (
+      rect.top + rect.height >
+      iframeRect.bottom - borderBottom - paddingBottom
+    ) {
+      rect.height = Math.max(
+        iframeRect.bottom - borderBottom - paddingBottom - rect.top,
+        0
+      );
+    }
     aTarget = iframe;
   }
 
@@ -219,16 +248,22 @@ function getTargetOrigin(aTarget) {
     offsetY = {};
   let rootUtils = SpecialPowers.getDOMWindowUtils(window.top);
   rootUtils.getVisualViewportOffsetRelativeToLayoutViewport(offsetX, offsetY);
-  origin.left -= offsetX.value;
-  origin.top -= offsetY.value;
-  return origin;
+  rect.left -= offsetX.value;
+  rect.top -= offsetY.value;
+  return rect;
 }
 
 
 
 
 
-function coordinatesRelativeToScreen(aX, aY, aTarget) {
+function coordinatesRelativeToScreen(aParams) {
+  const {
+    target, 
+    offsetX, 
+    offsetY, 
+    atCenter, 
+  } = aParams;
   
   
   
@@ -241,11 +276,11 @@ function coordinatesRelativeToScreen(aX, aY, aTarget) {
   
   
   
-  var utils = SpecialPowers.getDOMWindowUtils(window);
-  var deviceScale = utils.screenPixelsPerCSSPixel;
-  var deviceScaleNoOverride = utils.screenPixelsPerCSSPixelNoOverride;
-  var resolution = getResolution();
-  var origin = getTargetOrigin(aTarget);
+  const utils = SpecialPowers.getDOMWindowUtils(window);
+  const deviceScale = utils.screenPixelsPerCSSPixel;
+  const deviceScaleNoOverride = utils.screenPixelsPerCSSPixelNoOverride;
+  const resolution = getResolution();
+  const rect = getTargetRect(target);
   
   
   
@@ -254,10 +289,14 @@ function coordinatesRelativeToScreen(aX, aY, aTarget) {
   return {
     x:
       window.top.mozInnerScreenX * deviceScaleNoOverride +
-      (origin.left + aX) * resolution * deviceScale,
+      (rect.left + (atCenter ? rect.width / 2 : offsetX)) *
+        resolution *
+        deviceScale,
     y:
       window.top.mozInnerScreenY * deviceScaleNoOverride +
-      (origin.top + aY) * resolution * deviceScale,
+      (rect.top + (atCenter ? rect.height / 2 : offsetY)) *
+        resolution *
+        deviceScale,
   };
 }
 
@@ -285,7 +324,11 @@ function rectRelativeToScreen(aElement) {
 
 
 function synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY, aObserver) {
-  var pt = coordinatesRelativeToScreen(aX, aY, aTarget);
+  var pt = coordinatesRelativeToScreen({
+    offsetX: aX,
+    offsetY: aY,
+    target: aTarget,
+  });
   if (aDeltaX && aDeltaY) {
     throw new Error(
       "Simultaneous wheeling of horizontal and vertical is not supported on all platforms."
@@ -439,7 +482,11 @@ function promiseNativeWheelAndWaitForScrollEvent(
 
 
 function synthesizeNativeMouseMove(aTarget, aX, aY) {
-  var pt = coordinatesRelativeToScreen(aX, aY, aTarget);
+  var pt = coordinatesRelativeToScreen({
+    offsetX: aX,
+    offsetY: aY,
+    target: aTarget,
+  });
   var utils = utilsForTarget(aTarget);
   var element = elementForTarget(aTarget);
   utils.sendNativeMouseEvent(pt.x, pt.y, nativeMouseMoveEventMsg(), 0, element);
@@ -491,7 +538,11 @@ function synthesizeNativeTouch(
   aObserver = null,
   aTouchId = 0
 ) {
-  var pt = coordinatesRelativeToScreen(aX, aY, aTarget);
+  var pt = coordinatesRelativeToScreen({
+    offsetX: aX,
+    offsetY: aY,
+    target: aTarget,
+  });
   var utils = utilsForTarget(aTarget);
   utils.sendNativeTouchPoint(aTouchId, aType, pt.x, pt.y, 1, 90, aObserver);
   return true;
@@ -538,11 +589,11 @@ function synthesizeNativeTouchSequences(
         
         
         
-        aPositions[i][j] = coordinatesRelativeToScreen(
-          aPositions[i][j].x,
-          aPositions[i][j].y,
-          aTarget
-        );
+        aPositions[i][j] = coordinatesRelativeToScreen({
+          offsetX: aPositions[i][j].x,
+          offsetY: aPositions[i][j].y,
+          target: aTarget,
+        });
       }
     }
   }
@@ -655,7 +706,11 @@ function promiseNativeTouchDrag(
 }
 
 function synthesizeNativeTap(aElement, aX, aY, aObserver = null) {
-  var pt = coordinatesRelativeToScreen(aX, aY, aElement);
+  var pt = coordinatesRelativeToScreen({
+    offsetX: aX,
+    offsetY: aY,
+    target: aElement,
+  });
   var utils = SpecialPowers.getDOMWindowUtils(
     aElement.ownerDocument.defaultView
   );
@@ -664,7 +719,11 @@ function synthesizeNativeTap(aElement, aX, aY, aObserver = null) {
 }
 
 function synthesizeNativeMouseEvent(aTarget, aX, aY, aType, aObserver = null) {
-  var pt = coordinatesRelativeToScreen(aX, aY, aTarget);
+  var pt = coordinatesRelativeToScreen({
+    offsetX: aX,
+    offsetY: aY,
+    target: aTarget,
+  });
   var utils = utilsForTarget(aTarget);
   var element = elementForTarget(aTarget);
   utils.sendNativeMouseEvent(pt.x, pt.y, aType, 0, element, aObserver);
@@ -688,8 +747,25 @@ function synthesizeNativeMouseClickWithAPZ(aParams, aObserver = null) {
     target, 
     offsetX, 
     offsetY, 
+    atCenter, 
   } = aParams;
-  const pt = coordinatesRelativeToScreen(offsetX, offsetY, target);
+  if (atCenter) {
+    if (offsetX != undefined || offsetY != undefined) {
+      throw Error(
+        `atCenter is specified, but offsetX (${offsetX}) and/or offsetY (${offsetY}) are also specified`
+      );
+    }
+  } else if (offsetX == undefined || offsetY == undefined) {
+    throw Error(
+      `offsetX and offsetY must be specified when atCenter is not true`
+    );
+  }
+  const pt = coordinatesRelativeToScreen({
+    offsetX,
+    offsetY,
+    atCenter,
+    target,
+  });
   const utils = SpecialPowers.getDOMWindowUtils(
     target.ownerDocument.defaultView
   );
@@ -1063,7 +1139,11 @@ async function pinchZoomInWithTouchpad(focusX, focusY) {
     1.0,
   ];
   var modifierFlags = 0;
-  var pt = coordinatesRelativeToScreen(focusX, focusY, document.body);
+  var pt = coordinatesRelativeToScreen({
+    offsetX: focusX,
+    offsetY: focusY,
+    target: document.body,
+  });
   var utils = utilsForTarget(document.body);
   for (let i = 0; i < scales.length; i++) {
     var phase;

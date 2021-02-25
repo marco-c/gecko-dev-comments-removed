@@ -5,20 +5,6 @@
 
 const TEST_URL = "data:text/html,<html><body></body></html>";
 
-function synthesizeNativeMouseClickAtCenterAsync(aElement) {
-  
-  return new Promise((resolve, reject) => {
-    function eventOccurred(e) {
-      aElement.removeEventListener("mouseup", eventOccurred, true);
-      resolve();
-    }
-
-    aElement.addEventListener("mouseup", eventOccurred, true);
-
-    EventUtils.synthesizeNativeMouseClickAtCenter(aElement, resolve);
-  });
-}
-
 
 
 
@@ -50,9 +36,11 @@ add_task(async function test_PanelMultiView_toggle_with_other_popup() {
       
       
       let clickFn = () =>
-        synthesizeNativeMouseClickAtCenterAsync(
-          document.getElementById("PanelUI-button")
-        );
+        EventUtils.promiseNativeMouseClickAndWaitForEvent({
+          target: document.getElementById("PanelUI-button"),
+          atCenter: true,
+          eventTypeToWait: "mouseup",
+        });
 
       if (AppConstants.platform == "win") {
         
