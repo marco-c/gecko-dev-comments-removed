@@ -22,6 +22,7 @@
 
 
 #include "mozilla/BaseProfilerCounts.h"
+#include "mozilla/BaseProfilerLabels.h"
 #include "mozilla/BaseProfilerMarkers.h"
 #include "mozilla/BaseProfilerState.h"
 
@@ -42,14 +43,6 @@
 
 #  define AUTO_BASE_PROFILER_THREAD_SLEEP
 #  define AUTO_BASE_PROFILER_THREAD_WAKE
-
-#  define AUTO_BASE_PROFILER_LABEL(label, categoryPair)
-#  define AUTO_BASE_PROFILER_LABEL_CATEGORY_PAIR(categoryPair)
-#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_CSTR(label, categoryPair, cStr)
-#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_STRING(label, categoryPair, str)
-#  define AUTO_BASE_PROFILER_LABEL_FAST(label, categoryPair, ctx)
-#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString, \
-                                                categoryPair, ctx, flags)
 
 
 
@@ -91,8 +84,6 @@ static inline UniquePtr<ProfileChunkedBuffer> profiler_capture_backtrace() {
 #  include "mozilla/Attributes.h"
 #  include "mozilla/Maybe.h"
 #  include "mozilla/PowerOfTwo.h"
-#  include "mozilla/Sprintf.h"
-#  include "mozilla/ThreadLocal.h"
 #  include "mozilla/TimeStamp.h"
 #  include "mozilla/UniquePtr.h"
 
@@ -112,11 +103,6 @@ namespace baseprofiler {
 
 class ProfilerBacktrace;
 class SpliceableJSONWriter;
-
-
-#  define BASE_PROFILER_RAII_PASTE(id, line) id##line
-#  define BASE_PROFILER_RAII_EXPAND(id, line) BASE_PROFILER_RAII_PASTE(id, line)
-#  define BASE_PROFILER_RAII BASE_PROFILER_RAII_EXPAND(raiiObject, __LINE__)
 
 
 
@@ -403,94 +389,6 @@ namespace baseprofiler {
 
 
 
-
-
-
-
-
-
-
-
-
-
-#  define AUTO_BASE_PROFILER_LABEL(label, categoryPair)            \
-    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII( \
-        label, nullptr,                                            \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
-
-
-
-
-
-
-#  define AUTO_BASE_PROFILER_LABEL_CATEGORY_PAIR(categoryPair)         \
-    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII(     \
-        "", nullptr,                                                   \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,  \
-        uint32_t(::mozilla::baseprofiler::ProfilingStackFrame::Flags:: \
-                     LABEL_DETERMINED_BY_CATEGORY_PAIR))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_CSTR(label, categoryPair, cStr) \
-    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII(         \
-        label, cStr,                                                       \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
-
-
-
-
-
-
-
-
-#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_STRING(label, categoryPair, str) \
-    Maybe<std::string> autoStr;                                             \
-    Maybe<::mozilla::baseprofiler::AutoProfilerLabel> raiiObjectString;     \
-    if (::mozilla::baseprofiler::profiler_is_active()) {                    \
-      autoStr.emplace(str);                                                 \
-      raiiObjectString.emplace(                                             \
-          label, autoStr->c_str(),                                          \
-          ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair);    \
-    }
-
-
-
-
-
-
-#  define AUTO_BASE_PROFILER_LABEL_FAST(label, categoryPair, ctx)  \
-    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII( \
-        ctx, label, nullptr,                                       \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
-
-
-
-
-#  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString,     \
-                                                categoryPair, ctx, flags) \
-    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII(        \
-        ctx, label, dynamicString,                                        \
-        ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair, flags)
-
 MFBT_API void profiler_add_js_marker(const char* aMarkerName,
                                      const char* aMarkerText);
 
@@ -578,52 +476,6 @@ class MOZ_RAII AutoProfilerThreadWake {
 
  private:
   bool mIssuedWake;
-};
-
-
-
-
-
-class MOZ_RAII AutoProfilerLabel {
- public:
-  
-  
-  AutoProfilerLabel(const char* aLabel, const char* aDynamicString,
-                    ProfilingCategoryPair aCategoryPair, uint32_t aFlags = 0) {
-    
-    Push(GetProfilingStack(), aLabel, aDynamicString, aCategoryPair, aFlags);
-  }
-
-  void Push(ProfilingStack* aProfilingStack, const char* aLabel,
-            const char* aDynamicString, ProfilingCategoryPair aCategoryPair,
-            uint32_t aFlags = 0) {
-    
-
-    mProfilingStack = aProfilingStack;
-    if (mProfilingStack) {
-      mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this,
-                                      aCategoryPair, aFlags);
-    }
-  }
-
-  ~AutoProfilerLabel() {
-    
-
-    if (mProfilingStack) {
-      mProfilingStack->pop();
-    }
-  }
-
-  MFBT_API static ProfilingStack* GetProfilingStack();
-
- private:
-  
-  
-  ProfilingStack* mProfilingStack;
-
- public:
-  
-  static MOZ_THREAD_LOCAL(ProfilingStack*) sProfilingStack;
 };
 
 

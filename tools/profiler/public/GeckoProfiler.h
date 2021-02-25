@@ -20,6 +20,7 @@
 
 #include "BaseProfiler.h"
 #include "mozilla/ProfilerCounts.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ProfilerState.h"
 
@@ -46,19 +47,6 @@
 
 #  define PROFILER_SET_JS_CONTEXT(cx)
 #  define PROFILER_CLEAR_JS_CONTEXT()
-
-#  define AUTO_PROFILER_LABEL(label, categoryPair)
-#  define AUTO_PROFILER_LABEL_CATEGORY_PAIR(categoryPair)
-#  define AUTO_PROFILER_LABEL_DYNAMIC_CSTR(label, categoryPair, cStr)
-#  define AUTO_PROFILER_LABEL_DYNAMIC_CSTR_NONSENSITIVE(label, categoryPair, \
-                                                        cStr)
-#  define AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING(label, categoryPair, nsCStr)
-#  define AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING_NONSENSITIVE( \
-      label, categoryPair, nsCStr)
-#  define AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(label, categoryPair, nsStr)
-#  define AUTO_PROFILER_LABEL_FAST(label, categoryPair, ctx)
-#  define AUTO_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString, categoryPair, \
-                                           ctx, flags)
 
 #  define AUTO_PROFILE_FOLLOWING_RUNNABLE(runnable)
 
@@ -88,15 +76,12 @@ profiler_capture_backtrace() {
 
 #else  
 
-#  include "js/ProfilingCategory.h"
 #  include "js/ProfilingStack.h"
-#  include "js/RootingAPI.h"
 #  include "mozilla/Assertions.h"
 #  include "mozilla/Atomics.h"
 #  include "mozilla/Attributes.h"
 #  include "mozilla/Maybe.h"
 #  include "mozilla/PowerOfTwo.h"
-#  include "mozilla/Sprintf.h"
 #  include "mozilla/ThreadLocal.h"
 #  include "mozilla/TimeStamp.h"
 #  include "mozilla/UniquePtr.h"
@@ -486,127 +471,6 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 
-
-
-
-
-
-
-
-
-
-
-#  define AUTO_PROFILER_LABEL(label, categoryPair) \
-    mozilla::AutoProfilerLabel PROFILER_RAII(      \
-        label, nullptr, JS::ProfilingCategoryPair::categoryPair)
-
-
-
-
-
-#  define AUTO_PROFILER_LABEL_CATEGORY_PAIR(categoryPair)     \
-    mozilla::AutoProfilerLabel PROFILER_RAII(                 \
-        "", nullptr, JS::ProfilingCategoryPair::categoryPair, \
-        uint32_t(js::ProfilingStackFrame::Flags::             \
-                     LABEL_DETERMINED_BY_CATEGORY_PAIR))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#  define AUTO_PROFILER_LABEL_DYNAMIC_CSTR(label, categoryPair, cStr) \
-    mozilla::AutoProfilerLabel PROFILER_RAII(                         \
-        label, cStr, JS::ProfilingCategoryPair::categoryPair)
-
-
-
-
-#  define AUTO_PROFILER_LABEL_DYNAMIC_CSTR_NONSENSITIVE(label, categoryPair, \
-                                                        cStr)                \
-    mozilla::AutoProfilerLabel PROFILER_RAII(                                \
-        label, cStr, JS::ProfilingCategoryPair::categoryPair,                \
-        uint32_t(js::ProfilingStackFrame::Flags::NONSENSITIVE))
-
-
-
-
-
-
-
-
-#  define AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING(label, categoryPair, nsCStr) \
-    mozilla::Maybe<nsAutoCString> autoCStr;                                  \
-    mozilla::Maybe<mozilla::AutoProfilerLabel> raiiObjectNsCString;          \
-    if (profiler_is_active()) {                                              \
-      autoCStr.emplace(nsCStr);                                              \
-      raiiObjectNsCString.emplace(label, autoCStr->get(),                    \
-                                  JS::ProfilingCategoryPair::categoryPair);  \
-    }
-
-
-#  define AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING_NONSENSITIVE(              \
-      label, categoryPair, nsCStr)                                         \
-    mozilla::Maybe<nsAutoCString> autoCStr;                                \
-    mozilla::Maybe<mozilla::AutoProfilerLabel> raiiObjectNsCString;        \
-    if (profiler_is_active()) {                                            \
-      autoCStr.emplace(nsCStr);                                            \
-      raiiObjectNsCString.emplace(                                         \
-          label, autoCStr->get(), JS::ProfilingCategoryPair::categoryPair, \
-          uint32_t(js::ProfilingStackFrame::Flags::NONSENSITIVE));         \
-    }
-
-
-
-
-
-
-
-
-
-#  define AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(label, categoryPair,   \
-                                                     nsStr)                 \
-    mozilla::Maybe<NS_LossyConvertUTF16toASCII> asciiStr;                   \
-    mozilla::Maybe<mozilla::AutoProfilerLabel> raiiObjectLossyNsString;     \
-    if (profiler_is_active()) {                                             \
-      asciiStr.emplace(nsStr);                                              \
-      raiiObjectLossyNsString.emplace(                                      \
-          label, asciiStr->get(), JS::ProfilingCategoryPair::categoryPair); \
-    }
-
-
-
-
-
-
-
-#  define AUTO_PROFILER_LABEL_FAST(label, categoryPair, ctx) \
-    mozilla::AutoProfilerLabel PROFILER_RAII(                \
-        ctx, label, nullptr, JS::ProfilingCategoryPair::categoryPair)
-
-
-
-
-#  define AUTO_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString, categoryPair, \
-                                           ctx, flags)                         \
-    mozilla::AutoProfilerLabel PROFILER_RAII(                                  \
-        ctx, label, dynamicString, JS::ProfilingCategoryPair::categoryPair,    \
-        flags)
-
 void profiler_add_js_marker(const char* aMarkerName, const char* aMarkerText);
 void profiler_add_js_allocation_marker(JS::RecordAllocationInfo&& info);
 
@@ -689,8 +553,6 @@ void profiler_save_profile_to_file(const char* aFilename);
 
 
 
-class TLSRegisteredThread;  
-
 namespace mozilla {
 
 class MOZ_RAII AutoProfilerInit {
@@ -754,124 +616,6 @@ class MOZ_RAII AutoProfilerThreadWake {
 
  private:
   bool mIssuedWake;
-};
-
-
-
-class ProfilingStackOwner {
- public:
-  class ProfilingStack& ProfilingStack() {
-    return mProfilingStack;
-  }
-
-  
-  
-  
-  void AddRef() const { ++mRefCnt; }
-  void Release() const {
-    MOZ_ASSERT(int32_t(mRefCnt) > 0);
-    if (--mRefCnt == 0) {
-      if (mProfilingStack.stackSize() > 0) {
-        DumpStackAndCrash();
-      }
-      delete this;
-    }
-  }
-
- private:
-  ~ProfilingStackOwner() = default;
-
-  MOZ_NORETURN void DumpStackAndCrash() const;
-
-  class ProfilingStack mProfilingStack;
-
-  mutable Atomic<int32_t, MemoryOrdering::ReleaseAcquire> mRefCnt;
-};
-
-
-
-
-
-class MOZ_RAII AutoProfilerLabel {
- public:
-  
-  AutoProfilerLabel(const char* aLabel, const char* aDynamicString,
-                    JS::ProfilingCategoryPair aCategoryPair,
-                    uint32_t aFlags = 0) {
-    
-    ProfilingStackOwner* profilingStackOwner = ProfilingStackOwnerTLS::Get();
-    Push(profilingStackOwner ? &profilingStackOwner->ProfilingStack() : nullptr,
-         aLabel, aDynamicString, aCategoryPair, aFlags);
-  }
-
-  
-  
-  
-  AutoProfilerLabel(JSContext* aJSContext, const char* aLabel,
-                    const char* aDynamicString,
-                    JS::ProfilingCategoryPair aCategoryPair, uint32_t aFlags) {
-    Push(js::GetContextProfilingStackIfEnabled(aJSContext), aLabel,
-         aDynamicString, aCategoryPair, aFlags);
-  }
-
-  void Push(ProfilingStack* aProfilingStack, const char* aLabel,
-            const char* aDynamicString, JS::ProfilingCategoryPair aCategoryPair,
-            uint32_t aFlags = 0) {
-    
-
-    mProfilingStack = aProfilingStack;
-    if (mProfilingStack) {
-      mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this,
-                                      aCategoryPair, aFlags);
-    }
-  }
-
-  ~AutoProfilerLabel() {
-    
-
-    if (mProfilingStack) {
-      mProfilingStack->pop();
-    }
-  }
-
- private:
-  
-  
-  ProfilingStack* mProfilingStack;
-
- public:
-  
-  class ProfilingStackOwnerTLS {
-   public:
-    static ProfilingStackOwner* Get() {
-      MOZ_ASSERT(
-          sState != State::Uninitialized,
-          "ProfilingStackOwnerTLS::Get() should only be called after Init()");
-      if (sState != State::Initialized) {
-        return nullptr;
-      }
-      return sProfilingStackOwnerTLS.get();
-    }
-
-    static void Set(ProfilingStackOwner* aProfilingStackOwner) {
-      MOZ_ASSERT(
-          sState != State::Uninitialized,
-          "ProfilingStackOwnerTLS::Set() should only be called after Init()");
-      MOZ_DIAGNOSTIC_ASSERT(sState == State::Initialized,
-                            "ProfilingStackOwnerTLS::Set() should only be "
-                            "called after a successful Init()");
-      sProfilingStackOwnerTLS.set(aProfilingStackOwner);
-    }
-
-   private:
-    friend TLSRegisteredThread;
-    static void Init();
-
-    enum class State { Uninitialized = 0, Initialized, Unavailable };
-    static State sState;
-
-    static MOZ_THREAD_LOCAL(ProfilingStackOwner*) sProfilingStackOwnerTLS;
-  };
 };
 
 
