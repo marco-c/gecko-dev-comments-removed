@@ -258,7 +258,7 @@ class nsStandardURL : public nsIFileURL,
                      nsACString::const_iterator& aEnd);
 
   
-  static void SanityCheck(const URLSegment&, const nsCString&);
+  void SanityCheck();
 
   
   nsCString mSpec;
