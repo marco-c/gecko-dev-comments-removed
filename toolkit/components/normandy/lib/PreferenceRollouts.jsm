@@ -212,7 +212,7 @@ var PreferenceRollouts = {
         this.GRADUATION_SET = graduationSet;
 
         try {
-          await testFunction(...args);
+          await testFunction(...args, rollouts);
         } finally {
           this.GRADUATION_SET = oldGraduationSet;
           db = await getDatabase();

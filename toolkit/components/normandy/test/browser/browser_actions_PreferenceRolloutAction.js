@@ -18,9 +18,9 @@ const { NormandyTestUtils } = ChromeUtils.import(
 
 
 decorate_task(
-  PreferenceRollouts.withTestMock(),
   withStub(TelemetryEnvironment, "setExperimentActive"),
   withSendEventSpy,
+  PreferenceRollouts.withTestMock(),
   async function simple_recipe_enrollment(
     setExperimentActiveStub,
     sendEventStub
@@ -128,8 +128,8 @@ decorate_task(
 
 
 decorate_task(
-  PreferenceRollouts.withTestMock(),
   withSendEventSpy,
+  PreferenceRollouts.withTestMock(),
   async function update_enrollment(sendEventStub) {
     
     const recipe = {
@@ -241,8 +241,8 @@ decorate_task(
 
 
 decorate_task(
-  PreferenceRollouts.withTestMock(),
   withSendEventSpy,
+  PreferenceRollouts.withTestMock(),
   async function ungraduate_enrollment(sendEventStub) {
     Services.prefs.getDefaultBranch("").setIntPref("test.pref", 1);
     await PreferenceRollouts.add({
@@ -306,8 +306,8 @@ decorate_task(
 
 
 decorate_task(
-  PreferenceRollouts.withTestMock(),
   withSendEventSpy,
+  PreferenceRollouts.withTestMock(),
   async function conflicting_recipes(sendEventStub) {
     
     const recipe1 = {
@@ -419,8 +419,8 @@ decorate_task(
 
 
 decorate_task(
-  PreferenceRollouts.withTestMock(),
   withSendEventSpy,
+  PreferenceRollouts.withTestMock(),
   async function wrong_preference_value(sendEventStub) {
     Services.prefs.getDefaultBranch("").setCharPref("test.pref", "not an int");
     const recipe = {
@@ -568,8 +568,8 @@ decorate_task(
 
 
 decorate_task(
-  PreferenceRollouts.withTestMock(),
   withSendEventSpy,
+  PreferenceRollouts.withTestMock(),
   async function(sendEventStub) {
     const recipe = {
       id: 1,
@@ -621,9 +621,9 @@ decorate_task(
 
 
 decorate_task(
-  PreferenceRollouts.withTestMock(),
   withStub(TelemetryEnvironment, "setExperimentActive"),
   withSendEventSpy,
+  PreferenceRollouts.withTestMock(),
   async function no_op_new_recipe(setExperimentActiveStub, sendEventStub) {
     Services.prefs.getDefaultBranch("").setIntPref("test.pref", 1);
 
