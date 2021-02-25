@@ -2878,7 +2878,11 @@
 
         
         
-        if (select && this.selectedTab.userContextId == userContextId) {
+        if (
+          select &&
+          this.selectedTab.userContextId == userContextId &&
+          !SessionStore.isTabRestoring(this.selectedTab)
+        ) {
           tabWasReused = true;
           tab = this.selectedTab;
           if (!tabData.pinned) {
