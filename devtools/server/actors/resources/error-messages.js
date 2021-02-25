@@ -30,7 +30,7 @@ const PLATFORM_SPECIFIC_CATEGORIES = [
 ];
 
 class ErrorMessageWatcher extends nsIConsoleListenerWatcher {
-  shouldHandleMessage(targetActor, message) {
+  shouldHandleMessage(targetActor, message, isCachedMessage = false) {
     
     
     if (
@@ -43,9 +43,11 @@ class ErrorMessageWatcher extends nsIConsoleListenerWatcher {
       return false;
     }
 
-    
     if (this.isProcessTarget(targetActor)) {
-      return !message.isFromPrivateWindow;
+      
+      
+      
+      return !isCachedMessage || !message.isFromPrivateWindow;
     }
 
     if (!message.innerWindowID) {

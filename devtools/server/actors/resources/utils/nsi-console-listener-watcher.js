@@ -59,7 +59,7 @@ class nsIConsoleListenerWatcher {
     
     const messages = [];
     for (const message of cachedMessages) {
-      if (!this.shouldHandleMessage(targetActor, message)) {
+      if (!this.shouldHandleMessage(targetActor, message, true)) {
         continue;
       }
 
