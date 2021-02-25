@@ -85,7 +85,17 @@ class LegacyWorkersWatcher {
       return;
     }
 
-    const { workers } = await front.listWorkers();
+    let workers;
+    try {
+      ({ workers } = await front.listWorkers());
+    } catch (e) {
+      
+      
+      if (front.isDestroyed()) {
+        return;
+      }
+      throw e;
+    }
 
     
     const existingTargets = this.targetsByProcess.get(targetFront);
