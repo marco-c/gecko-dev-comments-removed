@@ -196,12 +196,23 @@ class nsBaseHashtable
 
 
 
+  template <typename... Args>
+  DataType& GetOrInsert(const KeyType& aKey, Args&&... aArgs) {
+    return WithEntryHandle(aKey, [&](auto entryHandle) -> DataType& {
+      return entryHandle.OrInsert(std::forward<Args>(aArgs)...);
+    });
+  }
+
+  
 
 
 
-  DataType& GetOrInsert(const KeyType& aKey) {
-    EntryType* ent = this->PutEntry(aKey);
-    return ent->mData;
+
+  template <typename F>
+  DataType& GetOrInsertWith(const KeyType& aKey, F&& aFunc) {
+    return WithEntryHandle(aKey, [&aFunc](auto entryHandle) -> DataType& {
+      return entryHandle.OrInsertWith(std::forward<F>(aFunc));
+    });
   }
 
   
@@ -432,9 +443,9 @@ class nsBaseHashtable
 
 
 
-    template <typename U>
-    DataType& Insert(U&& aData) {
-      Base::InsertInternal(std::forward<U>(aData));
+    template <typename... Args>
+    DataType& Insert(Args&&... aArgs) {
+      Base::InsertInternal(std::forward<Args>(aArgs)...);
       return Data();
     }
 
@@ -446,10 +457,10 @@ class nsBaseHashtable
 
 
 
-    template <typename U>
-    DataType& OrInsert(U&& aData) {
+    template <typename... Args>
+    DataType& OrInsert(Args&&... aArgs) {
       if (!HasEntry()) {
-        return Insert(std::forward<U>(aData));
+        return Insert(std::forward<Args>(aArgs)...);
       }
       return Data();
     }
