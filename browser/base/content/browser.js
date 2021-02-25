@@ -583,15 +583,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   }
 );
 
-
-
-XPCOMUtils.defineLazyGetter(this, "aboutWelcomeFeature", () => {
-  const { ExperimentFeature } = ChromeUtils.import(
-    "resource://messaging-system/experiments/ExperimentAPI.jsm"
-  );
-  return new ExperimentFeature("aboutwelcome");
-});
-
 customElements.setElementCreationCallback("translation-notification", () => {
   Services.scriptloader.loadSubScript(
     "chrome://browser/content/translation-notification.js",
@@ -2208,16 +2199,7 @@ var gBrowserInit = {
     let shouldRemoveFocusedAttribute = true;
 
     this._callWithURIToLoad(uriToLoad => {
-      
-      
-      const aboutWelcomeSkipUrlBarFocus =
-        uriToLoad == "about:welcome" &&
-        aboutWelcomeFeature.getValue()?.skipFocus;
-
-      if (
-        (isBlankPageURL(uriToLoad) && !aboutWelcomeSkipUrlBarFocus) ||
-        uriToLoad == "about:privatebrowsing"
-      ) {
+      if (isBlankPageURL(uriToLoad) || uriToLoad == "about:privatebrowsing") {
         gURLBar.select();
         shouldRemoveFocusedAttribute = false;
         return;
