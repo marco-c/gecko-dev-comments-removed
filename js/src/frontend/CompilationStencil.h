@@ -327,80 +327,6 @@ using StencilAsmJSContainer =
     HashMap<ScriptIndex, RefPtr<const JS::WasmModule>,
             mozilla::DefaultHasher<ScriptIndex>, js::SystemAllocPolicy>;
 
-struct MOZ_RAII CompilationState {
-  
-  
-  Directives directives;
-
-  ScopeContext scopeContext;
-
-  UsedNameTracker usedNames;
-  LifoAllocScope& allocScope;
-
-  CompilationInput& input;
-
-  
-  
-  
-  
-  Vector<RegExpStencil, 0, js::SystemAllocPolicy> regExpData;
-  Vector<BigIntStencil, 0, js::SystemAllocPolicy> bigIntData;
-  Vector<ObjLiteralStencil, 0, js::SystemAllocPolicy> objLiteralData;
-  Vector<ScriptStencil, 0, js::SystemAllocPolicy> scriptData;
-  Vector<ScriptStencilExtra, 0, js::SystemAllocPolicy> scriptExtra;
-  Vector<ScopeStencil, 0, js::SystemAllocPolicy> scopeData;
-  Vector<BaseParserScopeData*, 0, js::SystemAllocPolicy> scopeNames;
-  Vector<TaggedScriptThingIndex, 0, js::SystemAllocPolicy> gcThingData;
-
-  
-  
-  StencilAsmJSContainer asmJS;
-
-  
-  ParserAtomsTable parserAtoms;
-
-  
-  
-  
-  
-  
-  size_t nonLazyFunctionCount = 0;
-
-  
-
-  CompilationState(JSContext* cx, LifoAllocScope& frontendAllocScope,
-                   CompilationInput& input, LifoAlloc& stencilAlloc);
-
-  bool init(JSContext* cx, InheritThis inheritThis = InheritThis::No,
-            JSObject* enclosingEnv = nullptr) {
-    return scopeContext.init(cx, input, parserAtoms, inheritThis, enclosingEnv);
-  }
-
-  
-  
-  
-  struct RewindToken {
-    
-    size_t scriptDataLength = 0;
-
-    size_t asmJSCount = 0;
-  };
-
-  RewindToken getRewindToken();
-  void rewind(const RewindToken& pos);
-
-  bool finish(JSContext* cx, CompilationStencil& stencil);
-
-  
-  
-  bool allocateGCThingsUninitialized(JSContext* cx, ScriptIndex scriptIndex,
-                                     size_t length,
-                                     TaggedScriptThingIndex** cursor);
-
-  bool appendGCThings(JSContext* cx, ScriptIndex scriptIndex,
-                      mozilla::Span<const TaggedScriptThingIndex> things);
-};
-
 
 struct SharedDataContainer {
   
@@ -533,18 +459,7 @@ struct BaseCompilationStencil {
 
   BaseCompilationStencil() = default;
 
-  bool prepareStorageFor(JSContext* cx, CompilationState& compilationState) {
-    
-    
-    
-    MOZ_ASSERT(scriptData.empty());
-    size_t allScriptCount = compilationState.scriptData.length();
-    size_t nonLazyScriptCount = compilationState.nonLazyFunctionCount;
-    if (!compilationState.scriptData[0].isFunction()) {
-      nonLazyScriptCount++;
-    }
-    return sharedData.prepareStorageFor(cx, nonLazyScriptCount, allScriptCount);
-  }
+  bool prepareStorageFor(JSContext* cx, CompilationState& compilationState);
 
   static FunctionKey toFunctionKey(const SourceExtent& extent) {
     
@@ -681,6 +596,80 @@ inline const CompilationStencil& BaseCompilationStencil::asCompilationStencil()
              "allowed only for initial stencil");
   return *static_cast<const CompilationStencil*>(this);
 }
+
+struct MOZ_RAII CompilationState {
+  
+  
+  Directives directives;
+
+  ScopeContext scopeContext;
+
+  UsedNameTracker usedNames;
+  LifoAllocScope& allocScope;
+
+  CompilationInput& input;
+
+  
+  
+  
+  
+  Vector<RegExpStencil, 0, js::SystemAllocPolicy> regExpData;
+  Vector<BigIntStencil, 0, js::SystemAllocPolicy> bigIntData;
+  Vector<ObjLiteralStencil, 0, js::SystemAllocPolicy> objLiteralData;
+  Vector<ScriptStencil, 0, js::SystemAllocPolicy> scriptData;
+  Vector<ScriptStencilExtra, 0, js::SystemAllocPolicy> scriptExtra;
+  Vector<ScopeStencil, 0, js::SystemAllocPolicy> scopeData;
+  Vector<BaseParserScopeData*, 0, js::SystemAllocPolicy> scopeNames;
+  Vector<TaggedScriptThingIndex, 0, js::SystemAllocPolicy> gcThingData;
+
+  
+  
+  StencilAsmJSContainer asmJS;
+
+  
+  ParserAtomsTable parserAtoms;
+
+  
+  
+  
+  
+  
+  size_t nonLazyFunctionCount = 0;
+
+  
+
+  CompilationState(JSContext* cx, LifoAllocScope& frontendAllocScope,
+                   CompilationInput& input, LifoAlloc& stencilAlloc);
+
+  bool init(JSContext* cx, InheritThis inheritThis = InheritThis::No,
+            JSObject* enclosingEnv = nullptr) {
+    return scopeContext.init(cx, input, parserAtoms, inheritThis, enclosingEnv);
+  }
+
+  
+  
+  
+  struct RewindToken {
+    
+    size_t scriptDataLength = 0;
+
+    size_t asmJSCount = 0;
+  };
+
+  RewindToken getRewindToken();
+  void rewind(const RewindToken& pos);
+
+  bool finish(JSContext* cx, CompilationStencil& stencil);
+
+  
+  
+  bool allocateGCThingsUninitialized(JSContext* cx, ScriptIndex scriptIndex,
+                                     size_t length,
+                                     TaggedScriptThingIndex** cursor);
+
+  bool appendGCThings(JSContext* cx, ScriptIndex scriptIndex,
+                      mozilla::Span<const TaggedScriptThingIndex> things);
+};
 
 
 
