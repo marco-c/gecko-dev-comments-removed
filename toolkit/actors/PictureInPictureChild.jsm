@@ -150,7 +150,9 @@ class PictureInPictureLauncherChild extends JSWindowActorChild {
     if (focusedWindow) {
       let doc = focusedWindow.document;
       if (doc) {
-        let listOfVideos = [...doc.querySelectorAll("video")];
+        let listOfVideos = [...doc.querySelectorAll("video")].filter(
+          video => !isNaN(video.duration)
+        );
         
         
         let video =
