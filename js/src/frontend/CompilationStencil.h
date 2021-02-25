@@ -663,7 +663,6 @@ inline const CompilationStencil& BaseCompilationStencil::asCompilationStencil()
 
 
 
-
 struct ExtensibleCompilationStencil {
   using FunctionKey = BaseCompilationStencil::FunctionKey;
 
@@ -705,6 +704,8 @@ struct ExtensibleCompilationStencil {
   bool isInitialStencil() const {
     return functionKey == BaseCompilationStencil::NullFunctionKey;
   }
+
+  [[nodiscard]] bool finish(JSContext* cx, CompilationStencil& stencil);
 
 #ifdef DEBUG
   void assertNoExternalDependency() const;
@@ -753,8 +754,6 @@ struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
 
   RewindToken getRewindToken();
   void rewind(const RewindToken& pos);
-
-  bool finish(JSContext* cx, CompilationStencil& stencil);
 
   
   
