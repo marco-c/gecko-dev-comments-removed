@@ -269,6 +269,23 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
 
 
+  static nsIContent* GetAtomicContentToDelete(
+      nsIEditor::EDirection aDirectionAndAmount,
+      const WSRunScanner& aWSRunScannerAtCaret,
+      const WSScanResult& aScanFromCaretPointResult) MOZ_NONNULL_RETURN;
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1637,8 +1654,16 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
         aWSRunScannerAtCaret.GetEditingHost()) {
       return NS_OK;
     }
+    nsIContent* atomicContent = GetAtomicContentToDelete(
+        aDirectionAndAmount, aWSRunScannerAtCaret, aScanFromCaretPointResult);
+    if (!HTMLEditUtils::IsRemovableNode(*atomicContent)) {
+      NS_WARNING(
+          "AutoDeleteRangesHandler::GetAtomicContentToDelete() cannot find "
+          "removable atomic content");
+      return NS_ERROR_FAILURE;
+    }
     nsresult rv = ComputeRangesToDeleteAtomicContent(
-        aHTMLEditor, *aScanFromCaretPointResult.GetContent(), aRangesToDelete);
+        aHTMLEditor, *atomicContent, aRangesToDelete);
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rv),
         "AutoDeleteRangesHandler::ComputeRangesToDeleteAtomicContent() failed");
@@ -1665,6 +1690,10 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
     if (NS_WARN_IF(!aScanFromCaretPointResult.GetContent()->IsElement())) {
       return NS_ERROR_FAILURE;
     }
+    
+    
+    
+    
     AutoBlockElementsJoiner joiner(*this);
     if (!joiner.PrepareToDeleteAtOtherBlockBoundary(
             aHTMLEditor, aDirectionAndAmount,
@@ -1764,9 +1793,17 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
         aWSRunScannerAtCaret.GetEditingHost()) {
       return EditActionHandled();
     }
+    nsCOMPtr<nsIContent> atomicContent = GetAtomicContentToDelete(
+        aDirectionAndAmount, aWSRunScannerAtCaret, aScanFromCaretPointResult);
+    if (!HTMLEditUtils::IsRemovableNode(*atomicContent)) {
+      NS_WARNING(
+          "AutoDeleteRangesHandler::GetAtomicContentToDelete() cannot find "
+          "removable atomic content");
+      return EditActionResult(NS_ERROR_FAILURE);
+    }
     EditActionResult result = HandleDeleteAtomicContent(
-        aHTMLEditor, MOZ_KnownLive(*aScanFromCaretPointResult.GetContent()),
-        aWSRunScannerAtCaret.ScanStartRef(), aWSRunScannerAtCaret);
+        aHTMLEditor, *atomicContent, aWSRunScannerAtCaret.ScanStartRef(),
+        aWSRunScannerAtCaret);
     NS_WARNING_ASSERTION(
         result.Succeeded(),
         "AutoDeleteRangesHandler::HandleDeleteAtomicContent() failed");
@@ -2262,6 +2299,38 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::HandleDeleteHRElement(
                        "WhiteSpaceVisibilityKeeper::"
                        "DeleteContentNodeAndJoinTextNodesAroundIt() failed");
   return EditActionHandled(rv);
+}
+
+
+nsIContent* HTMLEditor::AutoDeleteRangesHandler::GetAtomicContentToDelete(
+    nsIEditor::EDirection aDirectionAndAmount,
+    const WSRunScanner& aWSRunScannerAtCaret,
+    const WSScanResult& aScanFromCaretPointResult) {
+  MOZ_ASSERT(aScanFromCaretPointResult.GetContent());
+
+  if (!aScanFromCaretPointResult.ReachedSpecialContent()) {
+    return aScanFromCaretPointResult.GetContent();
+  }
+
+  if (!aScanFromCaretPointResult.GetContent()->IsText() ||
+      HTMLEditUtils::IsRemovableNode(*aScanFromCaretPointResult.GetContent())) {
+    return aScanFromCaretPointResult.GetContent();
+  }
+
+  
+  
+  
+  nsIContent* removableRoot = aScanFromCaretPointResult.GetContent();
+  while (removableRoot && !HTMLEditUtils::IsRemovableNode(*removableRoot)) {
+    removableRoot = removableRoot->GetParent();
+  }
+
+  if (removableRoot) {
+    return removableRoot;
+  }
+
+  
+  return aScanFromCaretPointResult.GetContent();
 }
 
 nsresult
