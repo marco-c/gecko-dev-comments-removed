@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 from datetime import datetime, timedelta
 
+from six import iteritems, PY2
+
 
 
 
@@ -16,7 +18,11 @@ def _ensure_str(s, encoding):
     """makes sure s is an instance of str, converting with encoding if needed"""
     if isinstance(s, str):
         return s
-    return s.decode(encoding)
+
+    if PY2:
+        return s.encode(encoding)
+    else:
+        return s.decode(encoding)
 
 
 class OpenSSL(object):
@@ -73,7 +79,7 @@ class OpenSSL(object):
         
         
         env = {}
-        for k, v in os.environ.items():
+        for k, v in iteritems(os.environ):
             env[_ensure_str(k, "utf8")] = _ensure_str(v, "utf8")
 
         if self.base_conf_path is not None:

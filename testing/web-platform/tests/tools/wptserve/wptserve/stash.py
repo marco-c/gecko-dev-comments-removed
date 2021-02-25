@@ -1,10 +1,12 @@
 import base64
 import json
 import os
+import six
 import threading
 import uuid
 
 from multiprocessing.managers import AcquirerProxy, BaseManager, DictProxy
+from six import text_type, binary_type
 
 from .utils import isomorphic_encode
 
@@ -65,10 +67,10 @@ def store_env_config(address, authkey):
 
 
 def start_server(address=None, authkey=None, mp_context=None):
-    if isinstance(authkey, str):
+    if isinstance(authkey, text_type):
         authkey = authkey.encode("ascii")
     kwargs = {}
-    if mp_context is not None:
+    if six.PY3 and mp_context is not None:
         kwargs["ctx"] = mp_context
     manager = ServerDictManager(address, authkey, **kwargs)
     manager.start()
@@ -158,7 +160,7 @@ class Stash(object):
         
         
         
-        if isinstance(key, bytes):
+        if isinstance(key, binary_type):
             
             key = key.decode('ascii')
         return (isomorphic_encode(path), uuid.UUID(key).bytes)
