@@ -22,7 +22,7 @@
 #include "nsString.h"
 #include "mozAutoDocUpdate.h"
 
-#include "mozilla/Services.h"
+#include "mozilla/Components.h"
 #include "nsAttrValueInlines.h"
 #include "HTMLLinkElement.h"
 
@@ -113,7 +113,7 @@ EventStates Link::LinkState() const {
     
     
     if (mHistory && hrefURI) {
-      if (nsCOMPtr<IHistory> history = services::GetHistory()) {
+      if (nsCOMPtr<IHistory> history = components::History::Service()) {
         self->mRegistered = true;
         history->RegisterVisitedCallback(hrefURI, self);
         
@@ -516,7 +516,7 @@ void Link::UnregisterFromHistory() {
 
   
   if (mHistory && mCachedURI) {
-    if (nsCOMPtr<IHistory> history = services::GetHistory()) {
+    if (nsCOMPtr<IHistory> history = components::History::Service()) {
       history->UnregisterVisitedCallback(mCachedURI, this);
       mRegistered = false;
     }
