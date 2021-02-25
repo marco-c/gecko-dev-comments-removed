@@ -587,11 +587,6 @@ struct CompilationStencil : public BaseCompilationStencil {
   
 
   
-  
-  
-  explicit CompilationStencil(CompilationInput& input)
-      : alloc(LifoAllocChunkSize), source(input.source) {}
-
   explicit CompilationStencil(ScriptSource* source)
       : alloc(LifoAllocChunkSize), source(source) {}
 
