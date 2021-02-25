@@ -49,16 +49,16 @@
 }
 
 - (void)dealloc {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   [mWindowMap release];
   [super dealloc];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 - (void)ensureDataForWindow:(NSWindow*)inWindow {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!inWindow || [self dataForWindow:inWindow]) return;
 
@@ -66,7 +66,7 @@
   [self setData:windowData forWindow:inWindow];  
   [windowData release];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 - (id)dataForWindow:(NSWindow*)inWindow {
@@ -78,19 +78,19 @@
 }
 
 - (void)setData:(id)inData forWindow:(NSWindow*)inWindow {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   [mWindowMap setObject:inData forKey:[self keyForWindow:inWindow]];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 - (void)removeDataForWindow:(NSWindow*)inWindow {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   [mWindowMap removeObjectForKey:[self keyForWindow:inWindow]];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 - (NSString*)keyForWindow:(NSWindow*)inWindow {
@@ -145,12 +145,12 @@
 }
 
 - (void)dealloc {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [super dealloc];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -163,7 +163,7 @@
 
 
 + (void)activateInWindow:(NSWindow*)aWindow {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   WindowDelegate* delegate = (WindowDelegate*)[aWindow delegate];
   if (!delegate || ![delegate isKindOfClass:[WindowDelegate class]]) return;
@@ -171,7 +171,7 @@
   if ([delegate toplevelActiveState]) return;
   [delegate sendToplevelActivateEvents];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -183,7 +183,7 @@
 
 
 + (void)deactivateInWindow:(NSWindow*)aWindow {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   WindowDelegate* delegate = (WindowDelegate*)[aWindow delegate];
   if (!delegate || ![delegate isKindOfClass:[WindowDelegate class]]) return;
@@ -191,29 +191,29 @@
   if (![delegate toplevelActiveState]) return;
   [delegate sendToplevelDeactivateEvents];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
 
 + (void)activateInWindowViews:(NSWindow*)aWindow {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   id firstResponder = [aWindow firstResponder];
   if ([firstResponder isKindOfClass:[ChildView class]]) [firstResponder viewsWindowDidBecomeKey];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
 
 + (void)deactivateInWindowViews:(NSWindow*)aWindow {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   id firstResponder = [aWindow firstResponder];
   if ([firstResponder isKindOfClass:[ChildView class]]) [firstResponder viewsWindowDidResignKey];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -266,7 +266,7 @@
 }
 
 - (void)windowWillClose:(NSNotification*)inNotification {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
   [[self retain] autorelease];
@@ -274,7 +274,7 @@
   
   [[WindowDataMap sharedWindowDataMap] removeDataForWindow:[inNotification object]];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 @end

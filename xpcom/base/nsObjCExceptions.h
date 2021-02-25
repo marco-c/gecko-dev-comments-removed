@@ -16,21 +16,15 @@
 
 
 
-
-
-
 void nsObjCExceptionLog(NSException* aException);
 
 
-#define NS_OBJC_BEGIN_TRY_ABORT_BLOCK @try {
-#define NS_OBJC_END_TRY_ABORT_BLOCK \
-  }                                 \
-  @catch (NSException * _exn) {     \
-    nsObjCExceptionLog(_exn);       \
+#define NS_OBJC_BEGIN_TRY_IGNORE_BLOCK @try {
+#define NS_OBJC_END_TRY_IGNORE_BLOCK \
+  }                                  \
+  @catch (NSException * _exn) {      \
+    nsObjCExceptionLog(_exn);        \
   }
-
-
-
 
 
 #define NS_OBJC_BEGIN_TRY_BLOCK_RETURN @try {

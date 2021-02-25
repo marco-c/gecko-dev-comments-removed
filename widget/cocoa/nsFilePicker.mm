@@ -49,7 +49,7 @@ NS_IMPL_ISUPPORTS(nsFilePicker, nsIFilePicker)
 
 
 static void SetShowHiddenFileState(NSSavePanel* panel) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   bool show = false;
   if (NS_SUCCEEDED(Preferences::GetBool(kShowHiddenFilesPref, &show))) {
@@ -83,7 +83,7 @@ static void SetShowHiddenFileState(NSSavePanel* panel) {
     [showHiddenFilesInvocation invoke];
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 nsFilePicker::nsFilePicker() : mSelectedTypeIndex(0) {}
@@ -539,7 +539,7 @@ NSArray* nsFilePicker::GetFilterList() {
 
 
 void nsFilePicker::SetDialogTitle(const nsString& inTitle, id aPanel) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   [aPanel setTitle:[NSString stringWithCharacters:(const unichar*)inTitle.get()
                                            length:inTitle.Length()]];
@@ -549,7 +549,7 @@ void nsFilePicker::SetDialogTitle(const nsString& inTitle, id aPanel) {
                                               length:mOkButtonLabel.Length()]];
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 

@@ -203,7 +203,7 @@ nsAppShell::nsAppShell()
 }
 
 nsAppShell::~nsAppShell() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   hal::Shutdown();
 
@@ -227,7 +227,7 @@ nsAppShell::~nsAppShell() {
 
   [mDelegate release];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK
+  NS_OBJC_END_TRY_IGNORE_BLOCK
 }
 
 NS_IMPL_ISUPPORTS(MacWakeLockListener, nsIDOMMozWakeLockListener)
@@ -407,7 +407,7 @@ nsresult nsAppShell::Init() {
 
 
 void nsAppShell::ProcessGeckoEvents(void* aInfo) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
   AUTO_PROFILER_LABEL("nsAppShell::ProcessGeckoEvents", OTHER);
 
   nsAppShell* self = static_cast<nsAppShell*>(aInfo);
@@ -498,7 +498,7 @@ void nsAppShell::ProcessGeckoEvents(void* aInfo) {
     }
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -541,7 +541,7 @@ void nsAppShell::WillTerminate() {
 
 
 void nsAppShell::ScheduleNativeEventCallback() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (mTerminated) return;
 
@@ -555,7 +555,7 @@ void nsAppShell::ScheduleNativeEventCallback() {
   ::CFRunLoopSourceSignal(mCFRunLoopSource);
   ::CFRunLoopWakeUp(mCFRunLoop);
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -573,7 +573,7 @@ extern "C" EventAttributes GetEventAttributes(EventRef inEvent);
 bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
   bool moreEvents = false;
 
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   bool eventProcessed = false;
   NSString* currentMode = nil;
@@ -670,7 +670,7 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
 
   mRunningEventLoop = wasRunningEventLoop;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 
   if (!moreEvents) {
     nsChildView::UpdateCurrentInputEventCount();
@@ -705,9 +705,9 @@ nsAppShell::Run(void) {
   
   nsresult rv = NS_OK;
   if (XRE_UseNativeEventProcessing()) {
-    NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+    NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
     [NSApp run];
-    NS_OBJC_END_TRY_ABORT_BLOCK;
+    NS_OBJC_END_TRY_IGNORE_BLOCK;
   } else {
     rv = nsBaseAppShell::Run();
   }
@@ -852,24 +852,24 @@ nsAppShell::AfterProcessNextEvent(nsIThreadInternal* aThread, bool aEventWasProc
 }
 
 - (void)dealloc {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [[NSDistributedNotificationCenter defaultCenter] removeObserver:self];
   [super dealloc];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
 
 
 - (void)applicationWillTerminate:(NSNotification*)aNotification {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   mAppShell->WillTerminate();
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -878,7 +878,7 @@ nsAppShell::AfterProcessNextEvent(nsIThreadInternal* aThread, bool aEventWasProc
 
 
 - (void)applicationDidBecomeActive:(NSNotification*)aNotification {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
   
@@ -893,7 +893,7 @@ nsAppShell::AfterProcessNextEvent(nsIThreadInternal* aThread, bool aEventWasProc
     observerService->NotifyObservers(nullptr, NS_WIDGET_MAC_APP_ACTIVATE_OBSERVER_TOPIC, nullptr);
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -902,7 +902,7 @@ nsAppShell::AfterProcessNextEvent(nsIThreadInternal* aThread, bool aEventWasProc
 
 
 - (void)beginMenuTracking:(NSNotification*)aNotification {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   NSString* sender = [aNotification object];
   if (!sender || ![sender isEqualToString:@"org.mozilla.gecko.PopupWindow"]) {
@@ -911,7 +911,7 @@ nsAppShell::AfterProcessNextEvent(nsIThreadInternal* aThread, bool aEventWasProc
     if (rollupWidget) rollupListener->Rollup(0, true, nullptr, nullptr);
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 @end

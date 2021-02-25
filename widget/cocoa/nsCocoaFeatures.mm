@@ -110,7 +110,7 @@ int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor, int32_t aBug
 }
 
  void nsCocoaFeatures::InitializeVersionNumbers() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
   
@@ -120,7 +120,7 @@ int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor, int32_t aBug
   GetSystemVersion(major, minor, bugfix);
   mOSVersion = GetVersion(major, minor, bugfix);
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
  int32_t nsCocoaFeatures::macOSVersion() {

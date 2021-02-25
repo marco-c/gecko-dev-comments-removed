@@ -182,7 +182,7 @@ nsCocoaWindow::nsCocoaWindow()
 }
 
 void nsCocoaWindow::DestroyNativeWindow() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow) return;
 
@@ -194,11 +194,11 @@ void nsCocoaWindow::DestroyNativeWindow() {
   mWindow = nil;
   [mDelegate autorelease];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 nsCocoaWindow::~nsCocoaWindow() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
   
@@ -232,7 +232,7 @@ nsCocoaWindow::~nsCocoaWindow() {
     NS_ASSERTION(gXULModalLevel >= 0, "Weirdness setting modality!");
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -672,7 +672,7 @@ bool nsCocoaWindow::IsVisible() const {
 }
 
 void nsCocoaWindow::SetModal(bool aState) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow) return;
 
@@ -743,7 +743,7 @@ void nsCocoaWindow::SetModal(bool aState) {
     }
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::SetFakeModal(bool aState) {
@@ -755,7 +755,7 @@ bool nsCocoaWindow::IsRunningAppModal() { return [NSApp _isRunningAppModal]; }
 
 
 void nsCocoaWindow::Show(bool bState) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow) return;
 
@@ -846,10 +846,10 @@ void nsCocoaWindow::Show(bool bState) {
       
       
       
-      NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+      NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
       [[mWindow contentView] setNeedsDisplay:YES];
       [mWindow orderFront:nil];
-      NS_OBJC_END_TRY_ABORT_BLOCK;
+      NS_OBJC_END_TRY_IGNORE_BLOCK;
       SendSetZLevelEvent();
       AdjustWindowShadow();
       SetWindowBackgroundBlur();
@@ -870,7 +870,7 @@ void nsCocoaWindow::Show(bool bState) {
       if (nativeParentWindow && mPopupLevel == ePopupLevelParent)
         [nativeParentWindow addChildWindow:mWindow ordered:NSWindowAbove];
     } else {
-      NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+      NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
       if (mWindowType == eWindowType_toplevel &&
           [mWindow respondsToSelector:@selector(setAnimationBehavior:)]) {
         NSWindowAnimationBehavior behavior;
@@ -900,7 +900,7 @@ void nsCocoaWindow::Show(bool bState) {
       } else {
         [mWindow makeKeyAndOrderFront:nil];
       }
-      NS_OBJC_END_TRY_ABORT_BLOCK;
+      NS_OBJC_END_TRY_IGNORE_BLOCK;
       SendSetZLevelEvent();
     }
   } else {
@@ -968,9 +968,9 @@ void nsCocoaWindow::Show(bool bState) {
         } else {
           
           
-          NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+          NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
           [sheetParent makeKeyAndOrderFront:nil];
-          NS_OBJC_END_TRY_ABORT_BLOCK;
+          NS_OBJC_END_TRY_IGNORE_BLOCK;
         }
         SendSetZLevelEvent();
       }
@@ -995,7 +995,7 @@ void nsCocoaWindow::Show(bool bState) {
 
   [mWindow setBeingShown:NO];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -1041,7 +1041,7 @@ static const ShadowParams kWindowShadowParametersPostYosemite[] = {
 
 
 void nsCocoaWindow::AdjustWindowShadow() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow || ![mWindow isVisible] || ![mWindow hasShadow] || [mWindow canBecomeKeyWindow] ||
       [mWindow windowNumber] == -1)
@@ -1052,13 +1052,13 @@ void nsCocoaWindow::AdjustWindowShadow() {
   CGSSetWindowShadowAndRimParameters(cid, [mWindow windowNumber], params.standardDeviation,
                                      params.density, params.offsetX, params.offsetY, params.flags);
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 static const NSUInteger kWindowBackgroundBlurRadius = 4;
 
 void nsCocoaWindow::SetWindowBackgroundBlur() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow || ![mWindow isVisible] || [mWindow windowNumber] == -1) return;
 
@@ -1068,7 +1068,7 @@ void nsCocoaWindow::SetWindowBackgroundBlur() {
   CGSConnection cid = _CGSDefaultConnection();
   CGSSetWindowBackgroundBlurRadius(cid, [mWindow windowNumber], kWindowBackgroundBlurRadius);
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 nsresult nsCocoaWindow::ConfigureChildren(const nsTArray<Configuration>& aConfigurations) {
@@ -1097,7 +1097,7 @@ nsTransparencyMode nsCocoaWindow::GetTransparencyMode() {
 
 
 void nsCocoaWindow::SetTransparencyMode(nsTransparencyMode aMode) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
   if (!mWindow || mWindowType != eWindowType_popup) {
@@ -1111,7 +1111,7 @@ void nsCocoaWindow::SetTransparencyMode(nsTransparencyMode aMode) {
     [mWindow setBackgroundColor:(isTransparent ? [NSColor clearColor] : [NSColor whiteColor])];
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::Enable(bool aState) {}
@@ -1121,7 +1121,7 @@ bool nsCocoaWindow::IsEnabled() const { return true; }
 #define kWindowPositionSlop 20
 
 void nsCocoaWindow::ConstrainPosition(bool aAllowSlop, int32_t* aX, int32_t* aY) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow || ![mWindow screen]) {
     return;
@@ -1174,11 +1174,11 @@ void nsCocoaWindow::ConstrainPosition(bool aAllowSlop, int32_t* aX, int32_t* aY)
     }
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
   NSRect rect = (mWindowType == eWindowType_popup) ? NSZeroRect : NSMakeRect(0.0, 0.0, 32, 32);
@@ -1211,12 +1211,12 @@ void nsCocoaWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {
 
   nsBaseWidget::SetSizeConstraints(c);
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
 void nsCocoaWindow::Move(double aX, double aY) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow) {
     return;
@@ -1232,11 +1232,11 @@ void nsCocoaWindow::Move(double aX, double aY) {
     [mWindow setFrameTopLeftPoint:coord];
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::SetSizeMode(nsSizeMode aMode) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow) return;
 
@@ -1259,7 +1259,7 @@ void nsCocoaWindow::SetSizeMode(nsSizeMode aMode) {
     if (!mInFullScreenMode) MakeFullScreen(true);
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -1334,7 +1334,7 @@ void nsCocoaWindow::GetWorkspaceID(nsAString& workspaceID) {
 }
 
 int32_t nsCocoaWindow::GetWorkspaceID() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
   
@@ -1364,11 +1364,11 @@ int32_t nsCocoaWindow::GetWorkspaceID() {
 
   return sid;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::MoveToWorkspace(const nsAString& workspaceIDStr) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if ([NSScreen screensHaveSeparateSpaces] && [[NSScreen screens] count] > 1) {
     
@@ -1430,7 +1430,7 @@ void nsCocoaWindow::MoveToWorkspace(const nsAString& workspaceIDStr) {
   RemoveWindowsFromSpaces(cid, (__bridge CFArrayRef) @[ @([mWindow windowNumber]) ],
                           (__bridge CFArrayRef) @[ @(currentSpace) ]);
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::SuppressAnimation(bool aSuppress) {
@@ -1449,7 +1449,7 @@ void nsCocoaWindow::SuppressAnimation(bool aSuppress) {
 
 
 void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow || !mWindowMadeHere ||
       (mWindowType != eWindowType_toplevel && mWindowType != eWindowType_dialog))
@@ -1503,7 +1503,7 @@ void nsCocoaWindow::HideWindowChrome(bool aShouldHide) {
     mIsAnimationSuppressed = wasAnimationSuppressed;
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 class FullscreenTransitionData : public nsISupports {
@@ -1703,7 +1703,7 @@ nsresult nsCocoaWindow::DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransi
 
 void nsCocoaWindow::DoResize(double aX, double aY, double aWidth, double aHeight, bool aRepaint,
                              bool aConstrainToCurrentScreen) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow || mInResize) {
     return;
@@ -1751,7 +1751,7 @@ void nsCocoaWindow::DoResize(double aX, double aY, double aWidth, double aHeight
   
   [mWindow setFrame:newFrame display:YES];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -2045,7 +2045,7 @@ static nsSizeMode GetWindowSizeMode(NSWindow* aWindow, bool aFullScreen) {
 }
 
 void nsCocoaWindow::ReportMoveEvent() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
   
@@ -2070,7 +2070,7 @@ void nsCocoaWindow::ReportMoveEvent() {
 
   mInReportMoveEvent = false;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::DispatchSizeModeEvent() {
@@ -2120,7 +2120,7 @@ void nsCocoaWindow::DispatchOcclusionEvent() {
 }
 
 void nsCocoaWindow::ReportSizeEvent() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   UpdateBounds();
 
@@ -2129,7 +2129,7 @@ void nsCocoaWindow::ReportSizeEvent() {
     mWidgetListener->WindowResized(this, innerBounds.width, innerBounds.height);
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::PauseCompositor() {
@@ -2280,7 +2280,7 @@ LayoutDeviceIntSize nsCocoaWindow::ClientToWindowSize(const LayoutDeviceIntSize&
 nsMenuBarX* nsCocoaWindow::GetMenuBar() { return mMenuBar; }
 
 void nsCocoaWindow::CaptureRollupEvents(nsIRollupListener* aListener, bool aDoCapture) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   gRollupListener = nullptr;
 
@@ -2315,7 +2315,7 @@ void nsCocoaWindow::CaptureRollupEvents(nsIRollupListener* aListener, bool aDoCa
     if (mWindow && (mWindowType == eWindowType_popup)) [mWindow setLevel:NSModalPanelWindowLevel];
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 nsresult nsCocoaWindow::GetAttention(int32_t aCycleCount) {
@@ -2330,7 +2330,7 @@ nsresult nsCocoaWindow::GetAttention(int32_t aCycleCount) {
 bool nsCocoaWindow::HasPendingInputEvent() { return nsChildView::DoHasPendingInputEvent(); }
 
 void nsCocoaWindow::SetWindowShadowStyle(StyleWindowShadow aStyle) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow) return;
 
@@ -2345,11 +2345,11 @@ void nsCocoaWindow::SetWindowShadowStyle(StyleWindowShadow aStyle) {
   AdjustWindowShadow();
   SetWindowBackgroundBlur();
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::SetWindowOpacity(float aOpacity) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow) {
     return;
@@ -2357,7 +2357,7 @@ void nsCocoaWindow::SetWindowOpacity(float aOpacity) {
 
   [mWindow setAlphaValue:(CGFloat)aOpacity];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 static inline CGAffineTransform GfxMatrixToCGAffineTransform(const gfx::Matrix& m) {
@@ -2372,7 +2372,7 @@ static inline CGAffineTransform GfxMatrixToCGAffineTransform(const gfx::Matrix& 
 }
 
 void nsCocoaWindow::SetWindowTransform(const gfx::Matrix& aTransform) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mWindow) {
     return;
@@ -2434,7 +2434,7 @@ void nsCocoaWindow::SetWindowTransform(const gfx::Matrix& aTransform) {
 
   mWindowTransformIsIdentity = isIdentity;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::SetWindowMouseTransparent(bool aIsTransparent) {
@@ -2447,15 +2447,15 @@ void nsCocoaWindow::SetWindowMouseTransparent(bool aIsTransparent) {
 }
 
 void nsCocoaWindow::SetShowsToolbarButton(bool aShow) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (mWindow) [mWindow setShowsToolbarButton:aShow];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::SetSupportsNativeFullscreen(bool aSupportsNativeFullscreen) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (mWindow) {
     
@@ -2473,7 +2473,7 @@ void nsCocoaWindow::SetSupportsNativeFullscreen(bool aSupportsNativeFullscreen) 
     [mWindow setCollectionBehavior:newBehavior];
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::SetWindowAnimationType(nsIWidget::WindowAnimationType aType) {
@@ -2481,7 +2481,7 @@ void nsCocoaWindow::SetWindowAnimationType(nsIWidget::WindowAnimationType aType)
 }
 
 void nsCocoaWindow::SetDrawsTitle(bool aDrawTitle) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (![mWindow drawsContentsIntoWindowFrame]) {
     
@@ -2491,7 +2491,7 @@ void nsCocoaWindow::SetDrawsTitle(bool aDrawTitle) {
     [mWindow setWantsTitleDrawn:aDrawTitle];
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 nsresult nsCocoaWindow::SetNonClientMargins(LayoutDeviceIntMargin& margins) {
@@ -2505,11 +2505,11 @@ nsresult nsCocoaWindow::SetNonClientMargins(LayoutDeviceIntMargin& margins) {
 }
 
 void nsCocoaWindow::SetDrawsInTitlebar(bool aState) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (mWindow) [mWindow setDrawsContentsIntoWindowFrame:aState];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 NS_IMETHODIMP nsCocoaWindow::SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
@@ -2548,7 +2548,7 @@ NS_IMETHODIMP nsCocoaWindow::SynthesizeNativeMouseScrollEvent(
 }
 
 void nsCocoaWindow::LockAspectRatio(bool aShouldLock) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (aShouldLock) {
     [mWindow setContentAspectRatio:mWindow.frame.size];
@@ -2561,17 +2561,17 @@ void nsCocoaWindow::LockAspectRatio(bool aShouldLock) {
     mAspectRatioLocked = false;
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::UpdateThemeGeometries(const nsTArray<ThemeGeometry>& aThemeGeometries) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (mPopupContentView) {
     return mPopupContentView->UpdateThemeGeometries(aThemeGeometries);
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 void nsCocoaWindow::SetPopupWindowLevel() {
@@ -2592,11 +2592,11 @@ void nsCocoaWindow::SetPopupWindowLevel() {
 
 void nsCocoaWindow::SetInputContext(const InputContext& aContext,
                                     const InputContextAction& aAction) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   mInputContext = aContext;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 bool nsCocoaWindow::GetEditCommands(NativeKeyBindingsType aType, const WidgetKeyboardEvent& aEvent,
@@ -2631,7 +2631,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
 
 
 + (void)paintMenubarForWindow:(NSWindow*)aWindow {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
   
@@ -2668,7 +2668,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
     [newMenuBar release];
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 - (id)initWithGeckoWindow:(nsCocoaWindow*)geckoWind {
@@ -2819,7 +2819,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
 }
 
 - (void)windowDidBecomeMain:(NSNotification*)aNotification {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   RollUpPopups();
   ChildViewMouseTracker::ReEvaluateMouseEnterState();
@@ -2834,7 +2834,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
     [(ToolbarWindow*)window windowMainStateChanged];
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 - (void)windowDidResignMain:(NSNotification*)aNotification {
@@ -2857,7 +2857,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
 }
 
 - (void)windowDidBecomeKey:(NSNotification*)aNotification {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   RollUpPopups();
   ChildViewMouseTracker::ReEvaluateMouseEnterState();
@@ -2875,11 +2875,11 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
     }
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 - (void)windowDidResignKey:(NSNotification*)aNotification {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   RollUpPopups();
   ChildViewMouseTracker::ReEvaluateMouseEnterState();
@@ -2891,7 +2891,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
 
   TextInputHandler::EnsureSecureEventInputDisabled();
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 - (void)windowWillMove:(NSNotification*)aNotification {
@@ -2939,7 +2939,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
 }
 
 - (void)windowDidChangeBackingProperties:(NSNotification*)aNotification {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   NSWindow* window = (NSWindow*)[aNotification object];
 
@@ -2951,7 +2951,7 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
     }
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -3801,7 +3801,7 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 
 
 - (void)_toolbarPillButtonClicked:(id)sender {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   RollUpPopups();
 
@@ -3814,7 +3814,7 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
     if (listener) listener->OSToolbarButtonPressed();
   }
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
