@@ -162,9 +162,6 @@ void nsBoxFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   MarkIntrinsicISizesDirty();
 
   CacheAttributes();
-
-  
-  RegUnregAccessKey(true);
 }
 
 void nsBoxFrame::CacheAttributes() {
@@ -720,9 +717,6 @@ nsBoxFrame::DoXULLayout(nsBoxLayoutState& aState) {
 void nsBoxFrame::DestroyFrom(nsIFrame* aDestructRoot,
                              PostDestroyData& aPostDestroyData) {
   
-  RegUnregAccessKey(false);
-
-  
   SetXULLayoutManager(nullptr);
 
   nsContainerFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
@@ -874,11 +868,6 @@ nsresult nsBoxFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
 
     PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
                                   NS_FRAME_IS_DIRTY);
-  }
-  
-  
-  else if (aAttribute == nsGkAtoms::accesskey) {
-    RegUnregAccessKey(true);
   } else if (aAttribute == nsGkAtoms::rows &&
              mContent->IsXULElement(nsGkAtoms::tree)) {
     
@@ -969,35 +958,6 @@ nsresult nsBoxFrame::GetFrameName(nsAString& aResult) const {
   return MakeFrameName(u"Box"_ns, aResult);
 }
 #endif
-
-
-
-void nsBoxFrame::RegUnregAccessKey(bool aDoReg) {
-  MOZ_ASSERT(mContent);
-
-  
-  if (!mContent->IsAnyOfXULElements(nsGkAtoms::button, nsGkAtoms::toolbarbutton,
-                                    nsGkAtoms::checkbox, nsGkAtoms::tab,
-                                    nsGkAtoms::radio)) {
-    return;
-  }
-
-  nsAutoString accessKey;
-  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::accesskey,
-                                 accessKey);
-
-  if (accessKey.IsEmpty()) return;
-
-  
-  
-  EventStateManager* esm = PresContext()->EventStateManager();
-
-  uint32_t key = accessKey.First();
-  if (aDoReg)
-    esm->RegisterAccessKey(mContent->AsElement(), key);
-  else
-    esm->UnregisterAccessKey(mContent->AsElement(), key);
-}
 
 void nsBoxFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) {
   if (HasAnyStateBits(NS_STATE_BOX_WRAPS_KIDS_IN_BLOCK)) {

@@ -680,6 +680,8 @@ nsresult nsXULElement::BindToTree(BindContext& aContext, nsINode& aParent) {
     XULKeySetGlobalKeyListener::AttachKeyHandler(this);
   }
 
+  RegUnRegAccessKey(true);
+
   if (NeedTooltipSupport(*this)) {
     AddTooltipSupport();
   }
@@ -698,6 +700,8 @@ void nsXULElement::UnbindFromTree(bool aNullParent) {
   if (NodeInfo()->Equals(nsGkAtoms::keyset, kNameSpaceID_XUL)) {
     XULKeySetGlobalKeyListener::DetachKeyHandler(this);
   }
+
+  RegUnRegAccessKey(false);
 
   if (NeedTooltipSupport(*this)) {
     RemoveTooltipSupport();
@@ -739,27 +743,57 @@ void nsXULElement::DoneAddingChildren(bool aHaveNotified) {
   }
 }
 
-void nsXULElement::UnregisterAccessKey(const nsAString& aOldValue) {
+
+void nsXULElement::RegUnRegAccessKey(bool aDoReg) {
   
+  if (!SupportsAccessKey()) {
+    return;
+  }
+
   
-  Document* doc = GetComposedDoc();
-  if (doc && !aOldValue.IsEmpty()) {
-    if (PresShell* presShell = doc->GetPresShell()) {
-      presShell->GetPresContext()->EventStateManager()->UnregisterAccessKey(
-          this, aOldValue.First());
+  nsAutoString accessKey;
+  GetAttr(nsGkAtoms::accesskey, accessKey);
+  if (accessKey.IsEmpty()) {
+    return;
+  }
+
+  
+  if (nsPresContext* presContext = GetPresContext(eForUncomposedDoc)) {
+    EventStateManager* esm = presContext->EventStateManager();
+
+    
+    if (aDoReg) {
+      esm->RegisterAccessKey(this, (uint32_t)accessKey.First());
+    } else {
+      esm->UnregisterAccessKey(this, (uint32_t)accessKey.First());
     }
   }
+}
+
+bool nsXULElement::SupportsAccessKey() const {
+  if (NodeInfo()->Equals(nsGkAtoms::label) && HasAttr(nsGkAtoms::control)) {
+    return true;
+  }
+
+  
+  
+  if (NodeInfo()->Equals(nsGkAtoms::description) && HasAttr(nsGkAtoms::value) &&
+      HasAttr(nsGkAtoms::control)) {
+    return true;
+  }
+
+  return IsAnyOfXULElements(nsGkAtoms::button, nsGkAtoms::toolbarbutton,
+                            nsGkAtoms::checkbox, nsGkAtoms::tab,
+                            nsGkAtoms::radio);
 }
 
 nsresult nsXULElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                      const nsAttrValueOrString* aValue,
                                      bool aNotify) {
-  if (aNamespaceID == kNameSpaceID_None && aName == nsGkAtoms::accesskey &&
-      IsInUncomposedDoc()) {
-    nsAutoString oldValue;
-    if (GetAttr(aNamespaceID, aName, oldValue)) {
-      UnregisterAccessKey(oldValue);
-    }
+  if (aNamespaceID == kNameSpaceID_None &&
+      (aName == nsGkAtoms::accesskey || aName == nsGkAtoms::control ||
+       aName == nsGkAtoms::value)) {
+    RegUnRegAccessKey(false);
   } else if (aNamespaceID == kNameSpaceID_None &&
              (aName == nsGkAtoms::command || aName == nsGkAtoms::observes) &&
              IsInUncomposedDoc()) {
@@ -810,7 +844,10 @@ nsresult nsXULElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
       AddListenerForAttributeIfNeeded(aName);
     }
 
-    if (aName == nsGkAtoms::tooltip || aName == nsGkAtoms::tooltiptext) {
+    if (aName == nsGkAtoms::accesskey || aName == nsGkAtoms::control ||
+        aName == nsGkAtoms::value) {
+      RegUnRegAccessKey(true);
+    } else if (aName == nsGkAtoms::tooltip || aName == nsGkAtoms::tooltiptext) {
       if (!!aValue != !!aOldValue && IsInComposedDoc() &&
           !NodeInfo()->Equals(nsGkAtoms::treechildren)) {
         if (aValue) {

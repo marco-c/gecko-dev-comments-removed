@@ -474,9 +474,6 @@ void ReflowInput::InitCBReflowInput() {
 static bool IsQuirkContainingBlockHeight(const ReflowInput* rs,
                                          LayoutFrameType aFrameType) {
   if (LayoutFrameType::Block == aFrameType ||
-#ifdef MOZ_XUL
-      LayoutFrameType::XULLabel == aFrameType ||
-#endif
       LayoutFrameType::Scroll == aFrameType) {
     
     
@@ -1904,11 +1901,7 @@ static nscoord CalcQuirkContainingBlockHeight(
     
     
     if (LayoutFrameType::Block == frameType ||
-#ifdef MOZ_XUL
-        LayoutFrameType::XULLabel == frameType ||
-#endif
         LayoutFrameType::Scroll == frameType) {
-
       secondAncestorRI = firstAncestorRI;
       firstAncestorRI = ri;
 

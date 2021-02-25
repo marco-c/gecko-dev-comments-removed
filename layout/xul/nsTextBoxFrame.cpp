@@ -85,11 +85,6 @@ nsresult nsTextBoxFrame::AttributeChanged(int32_t aNameSpaceID,
     XULRedraw(state);
   }
 
-  
-  
-  if (aAttribute == nsGkAtoms::accesskey || aAttribute == nsGkAtoms::control)
-    RegUnregAccessKey(true);
-
   return NS_OK;
 }
 
@@ -112,16 +107,6 @@ void nsTextBoxFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   bool aResize;
   bool aRedraw;
   UpdateAttributes(nullptr, aResize, aRedraw); 
-
-  
-  RegUnregAccessKey(true);
-}
-
-void nsTextBoxFrame::DestroyFrom(nsIFrame* aDestructRoot,
-                                 PostDestroyData& aPostDestroyData) {
-  
-  RegUnregAccessKey(false);
-  nsLeafBoxFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
 bool nsTextBoxFrame::AlwaysAppendAccessKey() {
@@ -1108,40 +1093,3 @@ nsresult nsTextBoxFrame::GetFrameName(nsAString& aResult) const {
   return NS_OK;
 }
 #endif
-
-
-
-nsresult nsTextBoxFrame::RegUnregAccessKey(bool aDoReg) {
-  
-  if (!mContent) return NS_ERROR_FAILURE;
-
-  
-  
-  
-
-  
-  
-  
-  
-  if (!mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::control))
-    return NS_OK;
-
-  
-  nsAutoString accessKey;
-  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::accesskey,
-                                 accessKey);
-
-  if (accessKey.IsEmpty()) return NS_OK;
-
-  
-  
-  EventStateManager* esm = PresContext()->EventStateManager();
-
-  uint32_t key = accessKey.First();
-  if (aDoReg)
-    esm->RegisterAccessKey(mContent->AsElement(), key);
-  else
-    esm->UnregisterAccessKey(mContent->AsElement(), key);
-
-  return NS_OK;
-}
