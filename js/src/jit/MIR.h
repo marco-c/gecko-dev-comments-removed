@@ -42,7 +42,6 @@
 #include "vm/EnvironmentObject.h"
 #include "vm/FunctionFlags.h"  
 #include "vm/JSContext.h"
-#include "vm/ReceiverGuard.h"
 #include "vm/RegExpObject.h"
 #include "vm/SharedMem.h"
 #include "vm/TypedArrayObject.h"

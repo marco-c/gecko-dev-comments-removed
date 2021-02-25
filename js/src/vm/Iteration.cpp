@@ -47,7 +47,6 @@
 #include "vm/JSScript-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/PlainObject-inl.h"  
-#include "vm/ReceiverGuard-inl.h"
 #include "vm/Stack-inl.h"
 #include "vm/StringType-inl.h"
 
@@ -73,8 +72,9 @@ void NativeIterator::trace(JSTracer* trc) {
   
   
   
-  std::for_each(guardsBegin(), guardsEnd(),
-                [trc](HeapReceiverGuard& guard) { guard.trace(trc); });
+  std::for_each(shapesBegin(), shapesEnd(), [trc](GCPtrShape& shape) {
+    TraceEdge(trc, &shape, "iterator_shape");
+  });
 
   
   
@@ -614,26 +614,20 @@ static PropertyIteratorObject* NewPropertyIteratorObject(JSContext* cx) {
   return res;
 }
 
-static inline size_t ExtraStringCount(size_t propertyCount, size_t guardCount) {
-  static_assert(sizeof(ReceiverGuard) == 2 * sizeof(GCPtrLinearString),
-                "NativeIterators are allocated in space for 1) themselves, "
-                "2) the properties a NativeIterator iterates (as "
-                "GCPtrLinearStrings), and 3) |numGuards| HeapReceiverGuard "
-                "objects; the additional-length calculation below assumes "
-                "this size-relationship when determining the extra space to "
-                "allocate");
-
-  return propertyCount + guardCount * 2;
+static inline size_t NumTrailingWords(size_t propertyCount, size_t shapeCount) {
+  static_assert(sizeof(GCPtrLinearString) == sizeof(uintptr_t));
+  static_assert(sizeof(GCPtrShape) == sizeof(uintptr_t));
+  return propertyCount + shapeCount;
 }
 
-static inline size_t AllocationSize(size_t propertyCount, size_t guardCount) {
-  return sizeof(NativeIterator) + (ExtraStringCount(propertyCount, guardCount) *
-                                   sizeof(GCPtrLinearString));
+static inline size_t AllocationSize(size_t propertyCount, size_t shapeCount) {
+  return sizeof(NativeIterator) +
+         (NumTrailingWords(propertyCount, shapeCount) * sizeof(uintptr_t));
 }
 
 static PropertyIteratorObject* CreatePropertyIterator(
     JSContext* cx, Handle<JSObject*> objBeingIterated, HandleIdVector props,
-    uint32_t numGuards, uint32_t guardKey) {
+    uint32_t numShapes, HashNumber shapesHash) {
   if (props.length() > NativeIterator::PropCountLimit) {
     ReportAllocationOverflow(cx);
     return nullptr;
@@ -644,8 +638,8 @@ static PropertyIteratorObject* CreatePropertyIterator(
     return nullptr;
   }
 
-  void* mem = cx->pod_malloc_with_extra<NativeIterator, GCPtrLinearString>(
-      ExtraStringCount(props.length(), numGuards));
+  void* mem = cx->pod_malloc_with_extra<NativeIterator, uintptr_t>(
+      NumTrailingWords(props.length(), numShapes));
   if (!mem) {
     return nullptr;
   }
@@ -653,7 +647,7 @@ static PropertyIteratorObject* CreatePropertyIterator(
   
   bool hadError = false;
   NativeIterator* ni = new (mem) NativeIterator(
-      cx, propIter, objBeingIterated, props, numGuards, guardKey, &hadError);
+      cx, propIter, objBeingIterated, props, numShapes, shapesHash, &hadError);
   if (hadError) {
     return nullptr;
   }
@@ -693,6 +687,10 @@ NativeIterator* NativeIterator::allocateSentinel(JSContext* cx) {
   return ni;
 }
 
+static HashNumber HashIteratorShape(Shape* shape) {
+  return DefaultHasher<Shape*>::hash(shape);
+}
+
 
 
 
@@ -703,21 +701,26 @@ NativeIterator* NativeIterator::allocateSentinel(JSContext* cx) {
 NativeIterator::NativeIterator(JSContext* cx,
                                Handle<PropertyIteratorObject*> propIter,
                                Handle<JSObject*> objBeingIterated,
-                               HandleIdVector props, uint32_t numGuards,
-                               uint32_t guardKey, bool* hadError)
+                               HandleIdVector props, uint32_t numShapes,
+                               HashNumber shapesHash, bool* hadError)
     : objectBeingIterated_(objBeingIterated),
       iterObj_(propIter),
       
       
-      guardsEnd_(guardsBegin()),
+      shapesEnd_(shapesBegin()),
       
       propertyCursor_(
-          reinterpret_cast<GCPtrLinearString*>(guardsBegin() + numGuards)),
+          reinterpret_cast<GCPtrLinearString*>(shapesBegin() + numShapes)),
       propertiesEnd_(propertyCursor_),
-      guardKey_(guardKey),
+      shapesHash_(shapesHash),
       flagsAndCount_(
           initialFlagsAndCount(props.length()))  
 {
+  
+  
+  MOZ_ASSERT_IF(numShapes > 0,
+                objBeingIterated && objBeingIterated->is<NativeObject>());
+
   MOZ_ASSERT(!*hadError);
 
   
@@ -730,11 +733,10 @@ NativeIterator::NativeIterator(JSContext* cx,
   
   
   
-  size_t nbytes = AllocationSize(props.length(), numGuards);
+  size_t nbytes = AllocationSize(props.length(), numShapes);
   AddCellMemory(propIter, nbytes, MemoryUse::NativeIterator);
 
-  if (numGuards > 0) {
-    
+  if (numShapes > 0) {
     
     
     
@@ -742,16 +744,16 @@ NativeIterator::NativeIterator(JSContext* cx,
 #ifdef DEBUG
     uint32_t i = 0;
 #endif
-    uint32_t key = 0;
+    HashNumber shapesHash = 0;
     do {
-      ReceiverGuard guard(pobj);
-      new (guardsEnd_) HeapReceiverGuard(guard);
-      guardsEnd_++;
+      Shape* shape = pobj->as<NativeObject>().lastProperty();
+      new (shapesEnd_) GCPtrShape(shape);
+      shapesEnd_++;
 #ifdef DEBUG
       i++;
 #endif
 
-      key = mozilla::AddToHash(key, guard.hash());
+      shapesHash = mozilla::AddToHash(shapesHash, HashIteratorShape(shape));
 
       
       
@@ -759,10 +761,10 @@ NativeIterator::NativeIterator(JSContext* cx,
       pobj = pobj->staticPrototype();
     } while (pobj);
 
-    guardKey_ = key;
-    MOZ_ASSERT(i == numGuards);
+    shapesHash_ = shapesHash;
+    MOZ_ASSERT(i == numShapes);
   }
-  MOZ_ASSERT(static_cast<void*>(guardsEnd_) == propertyCursor_);
+  MOZ_ASSERT(static_cast<void*>(shapesEnd_) == propertyCursor_);
 
   for (size_t i = 0, len = props.length(); i < len; i++) {
     JSLinearString* str = IdToString(cx, props[i]);
@@ -780,20 +782,21 @@ NativeIterator::NativeIterator(JSContext* cx,
 }
 
 inline size_t NativeIterator::allocationSize() const {
-  size_t numGuards = guardsEnd() - guardsBegin();
-  return AllocationSize(initialPropertyCount(), numGuards);
+  size_t numShapes = shapesEnd() - shapesBegin();
+  return AllocationSize(initialPropertyCount(), numShapes);
 }
 
 
 bool IteratorHashPolicy::match(PropertyIteratorObject* obj,
                                const Lookup& lookup) {
   NativeIterator* ni = obj->getNativeIterator();
-  if (ni->guardKey() != lookup.key || ni->guardCount() != lookup.numGuards) {
+  if (ni->shapesHash() != lookup.shapesHash ||
+      ni->shapeCount() != lookup.numShapes) {
     return false;
   }
 
-  return ArrayEqual(reinterpret_cast<ReceiverGuard*>(ni->guardsBegin()),
-                    lookup.guards, ni->guardCount());
+  return ArrayEqual(reinterpret_cast<Shape**>(ni->shapesBegin()), lookup.shapes,
+                    ni->shapeCount());
 }
 
 static inline bool CanCompareIterableObjectToCache(JSObject* obj) {
@@ -803,24 +806,22 @@ static inline bool CanCompareIterableObjectToCache(JSObject* obj) {
   return false;
 }
 
-using ReceiverGuardVector = Vector<ReceiverGuard, 8>;
-
 static MOZ_ALWAYS_INLINE PropertyIteratorObject* LookupInIteratorCache(
-    JSContext* cx, JSObject* obj, uint32_t* numGuards) {
-  MOZ_ASSERT(*numGuards == 0);
+    JSContext* cx, JSObject* obj, uint32_t* numShapes) {
+  MOZ_ASSERT(*numShapes == 0);
 
-  ReceiverGuardVector guards(cx);
-  uint32_t key = 0;
+  Vector<Shape*, 8> shapes(cx);
+  HashNumber shapesHash = 0;
   JSObject* pobj = obj;
   do {
     if (!CanCompareIterableObjectToCache(pobj)) {
       return nullptr;
     }
 
-    ReceiverGuard guard(pobj);
-    key = mozilla::AddToHash(key, guard.hash());
+    Shape* shape = pobj->as<NativeObject>().lastProperty();
+    shapesHash = mozilla::AddToHash(shapesHash, HashIteratorShape(shape));
 
-    if (MOZ_UNLIKELY(!guards.append(guard))) {
+    if (MOZ_UNLIKELY(!shapes.append(shape))) {
       cx->recoverFromOutOfMemory();
       return nullptr;
     }
@@ -828,10 +829,11 @@ static MOZ_ALWAYS_INLINE PropertyIteratorObject* LookupInIteratorCache(
     pobj = pobj->staticPrototype();
   } while (pobj);
 
-  MOZ_ASSERT(!guards.empty());
-  *numGuards = guards.length();
+  MOZ_ASSERT(!shapes.empty());
+  *numShapes = shapes.length();
 
-  IteratorHashPolicy::Lookup lookup(guards.begin(), guards.length(), key);
+  IteratorHashPolicy::Lookup lookup(shapes.begin(), shapes.length(),
+                                    shapesHash);
   auto p = ObjectRealm::get(obj).iteratorCache.lookup(lookup);
   if (!p) {
     return nullptr;
@@ -875,11 +877,11 @@ static bool CanStoreInIteratorCache(JSObject* obj) {
   MOZ_ASSERT(CanStoreInIteratorCache(obj));
 
   NativeIterator* ni = iterobj->getNativeIterator();
-  MOZ_ASSERT(ni->guardCount() > 0);
+  MOZ_ASSERT(ni->shapeCount() > 0);
 
   IteratorHashPolicy::Lookup lookup(
-      reinterpret_cast<ReceiverGuard*>(ni->guardsBegin()), ni->guardCount(),
-      ni->guardKey());
+      reinterpret_cast<Shape**>(ni->shapesBegin()), ni->shapeCount(),
+      ni->shapesHash());
 
   ObjectRealm::IteratorCache& cache = ObjectRealm::get(obj).iteratorCache;
   bool ok;
@@ -932,17 +934,17 @@ static JSObject* GetIterator(JSContext* cx, HandleObject obj) {
   MOZ_ASSERT(cx->compartment() == obj->compartment(),
              "We may end up allocating shapes in the wrong zone!");
 
-  uint32_t numGuards = 0;
+  uint32_t numShapes = 0;
   if (PropertyIteratorObject* iterobj =
-          LookupInIteratorCache(cx, obj, &numGuards)) {
+          LookupInIteratorCache(cx, obj, &numShapes)) {
     NativeIterator* ni = iterobj->getNativeIterator();
     ni->changeObjectBeingIterated(*obj);
     RegisterEnumerator(ObjectRealm::get(obj), ni);
     return iterobj;
   }
 
-  if (numGuards > 0 && !CanStoreInIteratorCache(obj)) {
-    numGuards = 0;
+  if (numShapes > 0 && !CanStoreInIteratorCache(obj)) {
+    numShapes = 0;
   }
 
   RootedIdVector keys(cx);
@@ -966,7 +968,7 @@ static JSObject* GetIterator(JSContext* cx, HandleObject obj) {
   }
 
   PropertyIteratorObject* iterobj =
-      CreatePropertyIterator(cx, obj, keys, numGuards, 0);
+      CreatePropertyIterator(cx, obj, keys, numShapes, 0);
   if (!iterobj) {
     return nullptr;
   }
@@ -982,7 +984,7 @@ static JSObject* GetIterator(JSContext* cx, HandleObject obj) {
 #endif
 
   
-  if (numGuards > 0) {
+  if (numShapes > 0) {
     if (!StoreInIteratorCache(cx, obj, iterobj)) {
       return nullptr;
     }
@@ -993,8 +995,8 @@ static JSObject* GetIterator(JSContext* cx, HandleObject obj) {
 
 PropertyIteratorObject* js::LookupInIteratorCache(JSContext* cx,
                                                   HandleObject obj) {
-  uint32_t numGuards = 0;
-  return LookupInIteratorCache(cx, obj, &numGuards);
+  uint32_t numShapes = 0;
+  return LookupInIteratorCache(cx, obj, &numShapes);
 }
 
 
