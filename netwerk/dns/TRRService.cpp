@@ -951,16 +951,17 @@ AHostResolver::LookupStatus TRRService::CompleteLookup(
         mRetryConfirmInterval *= 2;
       }
     } else {
-      if (mMode != nsIDNSService::MODE_TRRONLY) {
-        
-        
-        
-        Telemetry::Accumulate(Telemetry::DNS_TRR_NS_VERFIFIED2,
-                              TRRService::AutoDetectedKey(),
-                              (mConfirmationState == CONFIRM_OK));
-      }
       mRetryConfirmInterval = StaticPrefs::network_trr_retry_timeout_ms();
     }
+
+    if (mMode != nsIDNSService::MODE_TRRONLY) {
+      
+      
+      Telemetry::Accumulate(Telemetry::DNS_TRR_NS_VERFIFIED2,
+                            TRRService::AutoDetectedKey(),
+                            (mConfirmationState == CONFIRM_OK));
+    }
+
     return LOOKUP_OK;
   }
 
