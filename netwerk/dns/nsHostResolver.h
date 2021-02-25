@@ -119,8 +119,13 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
     TRR_SERVER_RESPONSE_ERR = 27,  
     TRR_RCODE_FAIL = 28,           
     TRR_NO_CONNECTIVITY = 29,      
-    TRR_NXDOMAIN = 30,       
-    TRR_REQ_CANCELLED = 31,  
+    TRR_NXDOMAIN = 30,            
+    TRR_REQ_CANCELLED = 31,       
+    ODOH_KEY_NOT_USABLE = 32,     
+    ODOH_UPDATE_KEY_FAILED = 33,  
+    ODOH_KEY_NOT_AVAILABLE = 34,  
+    ODOH_ENCRYPTION_FAILED = 35,  
+    ODOH_DECRYPTION_FAILED = 36,  
   };
 
   
