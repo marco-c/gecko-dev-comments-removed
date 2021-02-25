@@ -22,7 +22,7 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const IS_MAIN_PROCESS =
   Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
 
-const SYNC_DATA_PREF = "messaging-system.syncdatastore.data";
+const SYNC_DATA_PREF_BRANCH = "nimbus.syncdatastore.";
 let tryJSONParse = data => {
   try {
     return JSON.parse(data);
@@ -30,16 +30,36 @@ let tryJSONParse = data => {
 
   return {};
 };
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "syncDataStore",
-  SYNC_DATA_PREF,
-  {},
+XPCOMUtils.defineLazyGetter(this, "syncDataStore", () => {
   
-  (data, prev, latest) => tryJSONParse(latest),
-  
-  tryJSONParse
-);
+  try {
+    const previousPrefName = "messaging-system.syncdatastore.data";
+    Services.prefs.clearUserPref(previousPrefName);
+  } catch (e) {}
+
+  let prefBranch = Services.prefs.getBranch(SYNC_DATA_PREF_BRANCH);
+  return {
+    get(featureId) {
+      try {
+        return tryJSONParse(prefBranch.getStringPref(featureId));
+      } catch (e) {
+        
+      }
+
+      return null;
+    },
+    set(featureId, value) {
+      try {
+        prefBranch.setStringPref(featureId, JSON.stringify(value));
+      } catch (e) {
+        Cu.reportError(e);
+      }
+    },
+    delete(featureId) {
+      prefBranch.clearUserPref(featureId);
+    },
+  };
+});
 
 const DEFAULT_STORE_ID = "ExperimentStoreData";
 
@@ -61,11 +81,14 @@ class ExperimentStore extends SharedDataMap {
 
 
   getExperimentForFeature(featureId) {
-    return this.getAllActive().find(
-      experiment =>
-        experiment.featureIds?.includes(featureId) ||
+    return (
+      this.getAllActive().find(
+        experiment =>
+          experiment.featureIds?.includes(featureId) ||
+          
+          experiment.branch?.feature?.featureId === featureId
         
-        experiment.branch?.feature?.featureId === featureId
+      ) || syncDataStore.get(featureId)
     );
   }
 
@@ -90,7 +113,7 @@ class ExperimentStore extends SharedDataMap {
   getAll() {
     let data = [];
     try {
-      data = Object.values(this._data || syncDataStore);
+      data = Object.values(this._data || {});
     } catch (e) {
       Cu.reportError(e);
     }
@@ -132,19 +155,14 @@ class ExperimentStore extends SharedDataMap {
 
 
   _updateSyncStore(experiment) {
-    if (SYNC_ACCESS_FEATURES.includes(experiment.branch.feature?.featureId)) {
+    let featureId = experiment.branch.feature?.featureId;
+    if (SYNC_ACCESS_FEATURES.includes(featureId)) {
       if (!experiment.active) {
         
-        if (syncDataStore[experiment.slug]) {
-          delete syncDataStore[experiment.slug];
-        }
+        syncDataStore.delete(featureId);
       } else {
-        syncDataStore[experiment.slug] = experiment;
+        syncDataStore.set(featureId, experiment);
       }
-      Services.prefs.setStringPref(
-        SYNC_DATA_PREF,
-        JSON.stringify(syncDataStore)
-      );
     }
   }
 
