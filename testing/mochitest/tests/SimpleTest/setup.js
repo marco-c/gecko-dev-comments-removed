@@ -185,6 +185,10 @@ if (params.xOriginTests) {
   TestRunner.setXOriginEventHandler();
 }
 
+if (params.timeoutAsPass) {
+  TestRunner.timeoutAsPass = true;
+}
+
 
 TestRunner.logger.addListener("dumpListener", consoleLevel + "", function(msg) {
   dump(msg.info.join(" ") + "\n");
