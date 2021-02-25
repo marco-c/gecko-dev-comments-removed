@@ -616,24 +616,32 @@ add_task(async function test_check_synchronization_with_signatures() {
   
   TelemetryTestUtils.assertEvents([], {}, { process: "dummy" });
 
+  const TELEMETRY_EVENTS_FILTERS = {
+    category: "uptake.remotecontent.result",
+    method: "uptake",
+  };
+
   await withFakeChannel("nightly", async () => {
     
     await client.maybeSync(5000);
 
     
-    TelemetryTestUtils.assertEvents([
+    TelemetryTestUtils.assertEvents(
       [
-        "uptake.remotecontent.result",
-        "uptake",
-        "remotesettings",
-        UptakeTelemetry.STATUS.CORRUPTION_ERROR,
-        {
-          source: client.identifier,
-          duration: v => v > 0,
-          trigger: "manual",
-        },
+        [
+          "uptake.remotecontent.result",
+          "uptake",
+          "remotesettings",
+          UptakeTelemetry.STATUS.CORRUPTION_ERROR,
+          {
+            source: client.identifier,
+            duration: v => v > 0,
+            trigger: "manual",
+          },
+        ],
       ],
-    ]);
+      TELEMETRY_EVENTS_FILTERS
+    );
   });
 
   
