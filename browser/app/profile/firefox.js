@@ -331,6 +331,10 @@ pref("browser.urlbar.suggest.openpage",             true);
 pref("browser.urlbar.suggest.searches",             true);
 pref("browser.urlbar.suggest.topsites",             true);
 pref("browser.urlbar.suggest.engines",              true);
+pref("browser.urlbar.suggest.quicksuggest",         true);
+
+
+pref("browser.urlbar.quicksuggest.enabled", false);
 
 
 
