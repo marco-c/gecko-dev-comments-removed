@@ -62,14 +62,6 @@ class nsClassHashtable : public nsBaseHashtable<KeyClass, mozilla::UniquePtr<T>,
 
 
 
-
-  template <typename Factory>
-  UserDataType LookupOrAddFromFactory(KeyType aKey, const Factory& aFactory);
-
-  
-
-
-
   bool Get(KeyType aKey, UserDataType* aData) const;
 
   
@@ -102,21 +94,13 @@ template <class KeyClass, class T>
 template <typename... Args>
 T* nsClassHashtable<KeyClass, T>::LookupOrAdd(KeyType aKey,
                                               Args&&... aConstructionArgs) {
-  return LookupOrAddFromFactory(std::move(aKey), [&] {
-    return mozilla::MakeUnique<T>(std::forward<Args>(aConstructionArgs)...);
-  });
-}
-
-template <class KeyClass, class T>
-template <typename Factory>
-T* nsClassHashtable<KeyClass, T>::LookupOrAddFromFactory(
-    KeyType aKey, const Factory& aFactory) {
-  auto count = this->Count();
-  typename base_type::EntryType* ent = this->PutEntry(aKey);
-  if (count != this->Count()) {
-    ent->SetData(aFactory());
-  }
-  return ent->GetData().get();
+  return this
+      ->GetOrInsertWith(std::move(aKey),
+                        [&] {
+                          return mozilla::MakeUnique<T>(
+                              std::forward<Args>(aConstructionArgs)...);
+                        })
+      .get();
 }
 
 template <class KeyClass, class T>
