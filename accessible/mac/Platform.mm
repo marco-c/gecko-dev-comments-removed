@@ -138,7 +138,7 @@ void ProxyTextChangeEvent(ProxyAccessible* aTarget, const nsString& aStr,
   ProxyAccessible* acc = aTarget;
   
   while (acc && GetTypeFromRole(acc->Role()) != [mozTextAccessible class]) {
-    acc = acc->Parent();
+    acc = acc->RemoteParent();
   }
   mozAccessible* wrapper = GetNativeFromGeckoAccessible(acc ? acc : aTarget);
   [wrapper handleAccessibleTextChangeEvent:nsCocoaUtils::ToNSString(aStr)

@@ -768,7 +768,7 @@ ProxyAccessible* ProxyAccessible::FocusedChild() {
     
     
     MOZ_ASSERT(ChildrenCount() == 1);
-    ProxyAccessible* child = FirstChild();
+    ProxyAccessible* child = RemoteFirstChild();
     MOZ_ASSERT(child->IsDoc());
     return (child->State() & states::FOCUSED) ? child : nullptr;
   }
@@ -804,7 +804,7 @@ ProxyAccessible* ProxyAccessible::ChildAtPoint(
   do {
     if (target->mOuterDoc) {
       MOZ_ASSERT(target->ChildrenCount() == 1);
-      DocAccessibleParent* childDoc = target->ChildAt(0)->AsDoc();
+      DocAccessibleParent* childDoc = target->RemoteChildAt(0)->AsDoc();
       MOZ_ASSERT(childDoc);
       if (childDoc->IsTopLevelInContentProcess()) {
         

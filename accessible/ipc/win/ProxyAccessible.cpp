@@ -797,7 +797,7 @@ ProxyAccessible* ProxyAccessible::ChildAtPoint(
     
     
     if (proxy->ChildrenCount() == 1) {
-      proxy = proxy->ChildAt(0);
+      proxy = proxy->RemoteChildAt(0);
       if (proxy->IsDoc()) {
         
         doc = proxy->AsDoc();
