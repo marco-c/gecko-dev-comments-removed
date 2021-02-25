@@ -123,6 +123,7 @@ for (let {function: dateTimeFormatFunction, unwrap} of dateTimeFormatFunctions) 
     
     
     for (let thisValue of thisValues(Intl.DateTimeFormat).filter(IsObject)) {
+        let isPrototypeOf = Intl.DateTimeFormat.prototype.isPrototypeOf(thisValue);
         let hasInstanceCalled = false, symbolGetterCalled = false;
         Object.defineProperty(Intl.DateTimeFormat, Symbol.hasInstance, {
             value() {
@@ -143,8 +144,8 @@ for (let {function: dateTimeFormatFunction, unwrap} of dateTimeFormatFunctions) 
 
         delete Intl.DateTimeFormat[Symbol.hasInstance];
 
-        assertEq(hasInstanceCalled, unwrap);
-        assertEq(symbolGetterCalled, unwrap);
+        assertEq(hasInstanceCalled, false);
+        assertEq(symbolGetterCalled, unwrap && isPrototypeOf);
     }
 
     

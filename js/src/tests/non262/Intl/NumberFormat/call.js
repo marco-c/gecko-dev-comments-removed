@@ -71,6 +71,7 @@ for (let thisValue of thisValues()) {
 
 
 for (let thisValue of thisValues().filter(IsObject)) {
+    let isPrototypeOf = Intl.NumberFormat.prototype.isPrototypeOf(thisValue);
     let hasInstanceCalled = false;
     Object.defineProperty(Intl.NumberFormat, Symbol.hasInstance, {
         value() {
@@ -82,12 +83,13 @@ for (let thisValue of thisValues().filter(IsObject)) {
     let obj = Intl.NumberFormat.call(thisValue);
     delete Intl.NumberFormat[Symbol.hasInstance];
 
-    assertEq(Object.is(obj, thisValue), true);
-    assertEq(hasInstanceCalled, true);
-    assertEqArray(Object.getOwnPropertySymbols(thisValue), [intlFallbackSymbol]);
+    assertEq(Object.is(obj, thisValue), isPrototypeOf);
+    assertEq(hasInstanceCalled, false);
+    assertEqArray(Object.getOwnPropertySymbols(thisValue), isPrototypeOf ? [intlFallbackSymbol] : []);
 }
 
 for (let thisValue of thisValues().filter(IsObject)) {
+    let isPrototypeOf = Intl.NumberFormat.prototype.isPrototypeOf(thisValue);
     let hasInstanceCalled = false;
     Object.defineProperty(Intl.NumberFormat, Symbol.hasInstance, {
         value() {
@@ -99,10 +101,10 @@ for (let thisValue of thisValues().filter(IsObject)) {
     let obj = Intl.NumberFormat.call(thisValue);
     delete Intl.NumberFormat[Symbol.hasInstance];
 
-    assertEq(Object.is(obj, thisValue), false);
+    assertEq(Object.is(obj, thisValue), isPrototypeOf);
     assertEq(obj instanceof Intl.NumberFormat, true);
-    assertEq(hasInstanceCalled, true);
-    assertEqArray(Object.getOwnPropertySymbols(thisValue), []);
+    assertEq(hasInstanceCalled, false);
+    assertEqArray(Object.getOwnPropertySymbols(thisValue), isPrototypeOf ? [intlFallbackSymbol] : []);
 }
 
 for (let thisValue of thisValues().filter(IsPrimitive)) {

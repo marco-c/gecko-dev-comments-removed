@@ -127,7 +127,7 @@ function UnwrapNumberFormat(nf) {
     if (IsObject(nf) &&
         GuardToNumberFormat(nf) === null &&
         !IsWrappedNumberFormat(nf) &&
-        nf instanceof GetBuiltinConstructor("NumberFormat"))
+        callFunction(std_Object_isPrototypeOf, GetBuiltinPrototype("NumberFormat"), nf))
     {
         nf = nf[intlFallbackSymbol()];
     }
@@ -528,10 +528,8 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     initializeIntlObject(numberFormat, "NumberFormat", lazyNumberFormatData);
 
     
-    
-    
-    if (numberFormat !== thisValue && IsObject(thisValue) &&
-        thisValue instanceof GetBuiltinConstructor("NumberFormat"))
+    if (numberFormat !== thisValue &&
+        callFunction(std_Object_isPrototypeOf, GetBuiltinPrototype("NumberFormat"), thisValue))
     {
         _DefineDataProperty(thisValue, intlFallbackSymbol(), numberFormat,
                             ATTR_NONENUMERABLE | ATTR_NONCONFIGURABLE | ATTR_NONWRITABLE);

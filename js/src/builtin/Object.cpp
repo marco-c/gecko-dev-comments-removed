@@ -970,7 +970,7 @@ static bool obj_assign(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
-static bool obj_isPrototypeOf(JSContext* cx, unsigned argc, Value* vp) {
+bool js::obj_isPrototypeOf(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   

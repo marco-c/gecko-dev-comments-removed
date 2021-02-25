@@ -41,8 +41,8 @@ enum class BuiltinObjectKind : uint8_t {
   StringPrototype,
 
   
-  DateTimeFormat,
-  NumberFormat,
+  DateTimeFormatPrototype,
+  NumberFormatPrototype,
 
   
   None,
