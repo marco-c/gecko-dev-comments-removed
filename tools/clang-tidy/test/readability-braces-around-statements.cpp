@@ -7,6 +7,19 @@ bool cond(const char *) {
 
 void test() {
 if (cond("if0") ) do_something("same-line");
+
+if (cond("if1") )
+  do_something("next-line");
+
+  if (!1) return;
+  if (!2) { return; }
+
+  if (!3)
+    return;
+
+  if (!4) {
+    return;
+  }
 }
 
 void foo() {
