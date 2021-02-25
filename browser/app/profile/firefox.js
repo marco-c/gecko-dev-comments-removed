@@ -2170,8 +2170,6 @@ pref("devtools.inspector.showUserAgentStyles", false);
 
 pref("devtools.inspector.showAllAnonymousContent", false);
 
-pref("devtools.inspector.new-rulesview.enabled", false);
-
 pref("devtools.inspector.ruleview.inline-compatibility-warning.enabled", false);
 
 #if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)

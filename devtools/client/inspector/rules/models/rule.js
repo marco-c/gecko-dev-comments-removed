@@ -20,12 +20,6 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "updateSourceLink",
-  "devtools/client/inspector/rules/actions/rules",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "promiseWarn",
   "devtools/client/inspector/shared/utils",
   true
@@ -84,9 +78,7 @@ class Rule {
     this.textProps = this.textProps.concat(this._getDisabledProperties());
 
     this.getUniqueSelector = this.getUniqueSelector.bind(this);
-    this.onLocationChanged = this.onLocationChanged.bind(this);
     this.onStyleRuleFrontUpdated = this.onStyleRuleFrontUpdated.bind(this);
-    this.updateOriginalLocation = this.updateOriginalLocation.bind(this);
 
     this.domRule.on("rule-updated", this.onStyleRuleFrontUpdated);
   }
@@ -97,7 +89,6 @@ class Rule {
     }
 
     this.domRule.off("rule-updated", this.onStyleRuleFrontUpdated);
-    this.domRule.off("location-changed", this.onLocationChanged);
     this.compatibilityIssues = null;
   }
 
@@ -288,7 +279,7 @@ class Rule {
       }`;
     }
 
-    const currentLocation = this._originalLocation || this.generatedLocation;
+    const currentLocation = this.generatedLocation;
 
     let sourceText = currentLocation.url;
     if (shortenURL) {
@@ -900,58 +891,6 @@ class Rule {
       }
     }
     return false;
-  }
-
-  
-
-
-
-
-  onLocationChanged() {
-    
-    
-    this._generatedLocation = null;
-
-    this.store.dispatch(
-      updateSourceLink(this.domRule.actorID, this.sourceLink)
-    );
-  }
-
-  
-
-
-
-  subscribeToLocationChange() {
-    const { sheet, line, column } = this.generatedLocation;
-
-    if (sheet && !this.isSystem && this.domRule.type !== ELEMENT_STYLE) {
-      
-      if (this._unsubscribeSourceMap) {
-        this._unsubscribeSourceMap();
-      }
-      this._unsubscribeSourceMap = this.sourceMapURLService.subscribeByID(
-        sheet.actorID,
-        line,
-        column,
-        this.updateOriginalLocation
-      );
-    }
-
-    this.domRule.on("location-changed", this.onLocationChanged);
-  }
-
-  
-
-
-
-
-
-
-  updateOriginalLocation(originalLocation) {
-    this._originalLocation = originalLocation;
-    this.store.dispatch(
-      updateSourceLink(this.domRule.actorID, this.sourceLink)
-    );
   }
 }
 

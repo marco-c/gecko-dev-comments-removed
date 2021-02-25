@@ -5,17 +5,13 @@
 
 
 DIRS += [
-    "actions",
-    "components",
     "models",
-    "reducers",
     "utils",
     "views",
 ]
 
 DevToolsModules(
     "constants.js",
-    "new-rules.js",
     "rules.js",
     "types.js",
 )
