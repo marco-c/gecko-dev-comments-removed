@@ -548,6 +548,11 @@ if mozinfo.isWin:
         log = get_logger()
         file_name = os.path.join(dump_directory, str(uuid.uuid4()) + ".dmp")
 
+        if not os.path.exists(dump_directory):
+            
+            
+            os.makedirs(dump_directory)
+
         if mozinfo.info["bits"] != ctypes.sizeof(ctypes.c_voidp) * 8 and utility_path:
             
             

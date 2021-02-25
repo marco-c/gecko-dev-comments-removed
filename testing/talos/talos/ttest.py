@@ -165,7 +165,7 @@ class TTest(object):
                     shutil.copy(origin, dest)
 
             
-            timeout = test_config.get("timeout", 7200)  
+            timeout = test_config.get("timeout", 600)  
             if setup.gecko_profile:
                 
                 
