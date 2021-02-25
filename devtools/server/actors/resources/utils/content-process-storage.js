@@ -5,187 +5,47 @@
 "use strict";
 
 const { storageTypePool } = require("devtools/server/actors/storage");
+const EventEmitter = require("devtools/shared/event-emitter");
+const { Ci } = require("chrome");
+const Services = require("Services");
+const { isWindowIncluded } = require("devtools/shared/layout/utils");
 
 
 const BATCH_DELAY = 200;
+
+
+
+function getFilteredStorageEvents(updates, storageType) {
+  const filteredUpdate = Object.create(null);
+
+  
+  for (const updateType in updates) {
+    if (updates[updateType][storageType]) {
+      if (!filteredUpdate[updateType]) {
+        filteredUpdate[updateType] = {};
+      }
+      filteredUpdate[updateType][storageType] =
+        updates[updateType][storageType];
+    }
+  }
+
+  return Object.keys(filteredUpdate).length > 0 ? filteredUpdate : null;
+}
 
 class ContentProcessStorage {
   constructor(storageKey, storageType) {
     this.storageKey = storageKey;
     this.storageType = storageType;
+
+    this.onStoresUpdate = this.onStoresUpdate.bind(this);
+    this.onStoresCleared = this.onStoresCleared.bind(this);
   }
 
   async watch(targetActor, { onAvailable, onUpdated, onDestroyed }) {
     const ActorConstructor = storageTypePool.get(this.storageKey);
-    this.actor = new ActorConstructor({
-      get conn() {
-        return targetActor.conn;
-      },
-      get windows() {
-        
-        
-        
-        
-        
-        const windows = targetActor.windows.filter(win => {
-          const isTopPage = win.parent === win;
-          return isTopPage || win.location.href !== "about:blank";
-        });
-
-        return windows;
-      },
-      get window() {
-        return targetActor.window;
-      },
-      get document() {
-        return this.window.document;
-      },
-      get originAttributes() {
-        return this.document.effectiveStoragePrincipal.originAttributes;
-      },
-
-      update(action, storeType, data) {
-        if (!this.boundUpdate) {
-          this.boundUpdate = {};
-        }
-
-        if (action === "cleared") {
-          const response = {};
-          response[this.storageKey] = data;
-
-          onDestroyed([
-            {
-              
-              
-              ...storage,
-              clearedHostsOrPaths: data,
-            },
-          ]);
-        }
-
-        if (this.batchTimer) {
-          clearTimeout(this.batchTimer);
-        }
-
-        if (!this.boundUpdate[action]) {
-          this.boundUpdate[action] = {};
-        }
-        if (!this.boundUpdate[action][storeType]) {
-          this.boundUpdate[action][storeType] = {};
-        }
-        for (const host in data) {
-          if (!this.boundUpdate[action][storeType][host]) {
-            this.boundUpdate[action][storeType][host] = [];
-          }
-          for (const name of data[host]) {
-            if (!this.boundUpdate[action][storeType][host].includes(name)) {
-              this.boundUpdate[action][storeType][host].push(name);
-            }
-          }
-        }
-
-        if (action === "added") {
-          
-          
-          this._removeNamesFromUpdateList("deleted", storeType, data);
-          this._removeNamesFromUpdateList("changed", storeType, data);
-        } else if (
-          action === "changed" &&
-          this.boundUpdate?.added?.[storeType]
-        ) {
-          
-          
-          this._removeNamesFromUpdateList(
-            "changed",
-            storeType,
-            this.boundUpdate.added[storeType]
-          );
-        } else if (action === "deleted") {
-          
-          
-          this._removeNamesFromUpdateList("added", storeType, data);
-          this._removeNamesFromUpdateList("changed", storeType, data);
-
-          for (const host in data) {
-            if (
-              data[host].length === 0 &&
-              this.boundUpdate?.added?.[storeType]?.[host]
-            ) {
-              delete this.boundUpdate.added[storeType][host];
-            }
-
-            if (
-              data[host].length === 0 &&
-              this.boundUpdate?.changed?.[storeType]?.[host]
-            ) {
-              delete this.boundUpdate.changed[storeType][host];
-            }
-          }
-        }
-
-        this.batchTimer = setTimeout(() => {
-          clearTimeout(this.batchTimer);
-          onUpdated([
-            {
-              
-              
-              ...storage,
-              added: this.boundUpdate.added,
-              changed: this.boundUpdate.changed,
-              deleted: this.boundUpdate.deleted,
-            },
-          ]);
-          this.boundUpdate = {};
-        }, BATCH_DELAY);
-
-        return null;
-      },
-      
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      _removeNamesFromUpdateList(action, storeType, data) {
-        for (const host in data) {
-          if (this.boundUpdate?.[action]?.[storeType]?.[host]) {
-            for (const name in data[host]) {
-              const index = this.boundUpdate[action][storeType][host].indexOf(
-                name
-              );
-              if (index > -1) {
-                this.boundUpdate[action][storeType][host].splice(index, 1);
-              }
-            }
-            if (!this.boundUpdate[action][storeType][host].length) {
-              delete this.boundUpdate[action][storeType][host];
-            }
-          }
-        }
-        return null;
-      },
-
-      on() {
-        targetActor.on.apply(this, arguments);
-      },
-      off() {
-        targetActor.off.apply(this, arguments);
-      },
-      once() {
-        targetActor.once.apply(this, arguments);
-      },
-    });
+    const storageActor = new StorageActorMock(targetActor);
+    this.storageActor = storageActor;
+    this.actor = new ActorConstructor(storageActor);
 
     
     
@@ -207,12 +67,382 @@ class ContentProcessStorage {
     storage.resourceKey = this.storageKey;
 
     onAvailable([storage]);
+
+    
+    
+    storageActor.on("stores-update", this.onStoresUpdate);
+
+    
+    storageActor.on("stores-cleared", this.onStoresCleared);
+  }
+
+  onStoresUpdate(response) {
+    response = getFilteredStorageEvents(response, this.storageKey);
+    if (!response) {
+      return;
+    }
+    this.actor.emit("single-store-update", {
+      changed: response.changed,
+      added: response.added,
+      deleted: response.deleted,
+    });
+  }
+
+  onStoresCleared(response) {
+    const cleared = response[this.storageKey];
+
+    if (!cleared) {
+      return;
+    }
+
+    this.actor.emit("single-store-cleared", {
+      clearedHostsOrPaths: cleared,
+    });
   }
 
   destroy() {
     this.actor?.destroy();
     this.actor = null;
+    if (this.storageActor) {
+      this.storageActor.on("stores-update", this.onStoresUpdate);
+      this.storageActor.on("stores-cleared", this.onStoresCleared);
+      this.storageActor.destroy();
+      this.storageActor = null;
+    }
   }
 }
 
 module.exports = ContentProcessStorage;
+
+
+
+
+
+
+class StorageActorMock extends EventEmitter {
+  constructor(targetActor) {
+    super();
+    
+    this.conn = targetActor.conn;
+    this.targetActor = targetActor;
+
+    this.childWindowPool = new Set();
+
+    
+    this.fetchChildWindows(this.targetActor.docShell);
+
+    
+    
+    Services.obs.addObserver(this, "content-document-global-created");
+    Services.obs.addObserver(this, "inner-window-destroyed");
+    this.onPageChange = this.onPageChange.bind(this);
+
+    const handler = targetActor.chromeEventHandler;
+    handler.addEventListener("pageshow", this.onPageChange, true);
+    handler.addEventListener("pagehide", this.onPageChange, true);
+
+    this.destroyed = false;
+    this.boundUpdate = {};
+  }
+
+  destroy() {
+    clearTimeout(this.batchTimer);
+    this.batchTimer = null;
+    
+    Services.obs.removeObserver(this, "content-document-global-created");
+    Services.obs.removeObserver(this, "inner-window-destroyed");
+    this.destroyed = true;
+    if (this.targetActor.browser) {
+      this.targetActor.browser.removeEventListener(
+        "pageshow",
+        this.onPageChange,
+        true
+      );
+      this.targetActor.browser.removeEventListener(
+        "pagehide",
+        this.onPageChange,
+        true
+      );
+    }
+    this.childWindowPool.clear();
+
+    this.childWindowPool = null;
+    this.targetActor = null;
+    this.boundUpdate = null;
+  }
+
+  get window() {
+    return this.targetActor.window;
+  }
+
+  get document() {
+    return this.targetActor.window.document;
+  }
+
+  get windows() {
+    return this.childWindowPool;
+  }
+
+  
+
+
+
+
+
+  fetchChildWindows(item) {
+    const docShell = item
+      .QueryInterface(Ci.nsIDocShell)
+      .QueryInterface(Ci.nsIDocShellTreeItem);
+    if (!docShell.contentViewer) {
+      return null;
+    }
+    const window = docShell.contentViewer.DOMDocument.defaultView;
+    if (window.location.href == "about:blank") {
+      
+      
+      return null;
+    }
+    this.childWindowPool.add(window);
+    for (let i = 0; i < docShell.childCount; i++) {
+      const child = docShell.getChildAt(i);
+      this.fetchChildWindows(child);
+    }
+    return null;
+  }
+
+  isIncludedInTargetExtension(subject) {
+    const { document } = subject;
+    return (
+      document.nodePrincipal.addonId &&
+      document.nodePrincipal.addonId === this.targetActor.addonId
+    );
+  }
+
+  isIncludedInTopLevelWindow(window) {
+    return isWindowIncluded(this.window, window);
+  }
+
+  getWindowFromInnerWindowID(innerID) {
+    innerID = innerID.QueryInterface(Ci.nsISupportsPRUint64).data;
+    for (const win of this.childWindowPool.values()) {
+      const id = win.windowGlobalChild.innerWindowId;
+      if (id == innerID) {
+        return win;
+      }
+    }
+    return null;
+  }
+
+  getWindowFromHost(host) {
+    for (const win of this.childWindowPool.values()) {
+      const origin = win.document.nodePrincipal.originNoSuffix;
+      const url = win.document.URL;
+      if (origin === host || url === host) {
+        return win;
+      }
+    }
+    return null;
+  }
+
+  
+
+
+
+  observe(subject, topic) {
+    if (
+      subject.location &&
+      (!subject.location.href || subject.location.href == "about:blank")
+    ) {
+      return null;
+    }
+
+    
+    
+    
+    if (
+      topic == "content-document-global-created" &&
+      (this.isIncludedInTargetExtension(subject) ||
+        this.isIncludedInTopLevelWindow(subject))
+    ) {
+      this.childWindowPool.add(subject);
+      this.emit("window-ready", subject);
+    } else if (topic == "inner-window-destroyed") {
+      const window = this.getWindowFromInnerWindowID(subject);
+      if (window) {
+        this.childWindowPool.delete(window);
+        this.emit("window-destroyed", window);
+      }
+    }
+    return null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  onPageChange({ target, type, persisted }) {
+    if (this.destroyed) {
+      return;
+    }
+
+    const window = target.defaultView;
+
+    if (type == "pagehide" && this.childWindowPool.delete(window)) {
+      this.emit("window-destroyed", window);
+    } else if (
+      type == "pageshow" &&
+      persisted &&
+      window.location.href &&
+      window.location.href != "about:blank" &&
+      this.isIncludedInTopLevelWindow(window)
+    ) {
+      this.childWindowPool.add(window);
+      this.emit("window-ready", window);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  update(action, storeType, data) {
+    if (action == "cleared") {
+      this.emit("stores-cleared", { [storeType]: data });
+      return null;
+    }
+
+    if (this.batchTimer) {
+      clearTimeout(this.batchTimer);
+    }
+    if (!this.boundUpdate[action]) {
+      this.boundUpdate[action] = {};
+    }
+    if (!this.boundUpdate[action][storeType]) {
+      this.boundUpdate[action][storeType] = {};
+    }
+    for (const host in data) {
+      if (!this.boundUpdate[action][storeType][host]) {
+        this.boundUpdate[action][storeType][host] = [];
+      }
+      for (const name of data[host]) {
+        if (!this.boundUpdate[action][storeType][host].includes(name)) {
+          this.boundUpdate[action][storeType][host].push(name);
+        }
+      }
+    }
+    if (action == "added") {
+      
+      
+      this.removeNamesFromUpdateList("deleted", storeType, data);
+      this.removeNamesFromUpdateList("changed", storeType, data);
+    } else if (
+      action == "changed" &&
+      this.boundUpdate.added &&
+      this.boundUpdate.added[storeType]
+    ) {
+      
+      
+      this.removeNamesFromUpdateList(
+        "changed",
+        storeType,
+        this.boundUpdate.added[storeType]
+      );
+    } else if (action == "deleted") {
+      
+      
+      this.removeNamesFromUpdateList("added", storeType, data);
+      this.removeNamesFromUpdateList("changed", storeType, data);
+
+      for (const host in data) {
+        if (
+          data[host].length == 0 &&
+          this.boundUpdate.added &&
+          this.boundUpdate.added[storeType] &&
+          this.boundUpdate.added[storeType][host]
+        ) {
+          delete this.boundUpdate.added[storeType][host];
+        }
+        if (
+          data[host].length == 0 &&
+          this.boundUpdate.changed &&
+          this.boundUpdate.changed[storeType] &&
+          this.boundUpdate.changed[storeType][host]
+        ) {
+          delete this.boundUpdate.changed[storeType][host];
+        }
+      }
+    }
+
+    this.batchTimer = setTimeout(() => {
+      clearTimeout(this.batchTimer);
+      this.emit("stores-update", this.boundUpdate);
+      this.boundUpdate = {};
+    }, BATCH_DELAY);
+
+    return null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  removeNamesFromUpdateList(action, storeType, data) {
+    for (const host in data) {
+      if (
+        this.boundUpdate[action] &&
+        this.boundUpdate[action][storeType] &&
+        this.boundUpdate[action][storeType][host]
+      ) {
+        for (const name in data[host]) {
+          const index = this.boundUpdate[action][storeType][host].indexOf(name);
+          if (index > -1) {
+            this.boundUpdate[action][storeType][host].splice(index, 1);
+          }
+        }
+        if (!this.boundUpdate[action][storeType][host].length) {
+          delete this.boundUpdate[action][storeType][host];
+        }
+      }
+    }
+    return null;
+  }
+}

@@ -273,6 +273,9 @@ StorageActors.defaults = function(typeName, observationTopics) {
 
 
     async onWindowReady(window) {
+      if (!this.hostVsStores) {
+        return;
+      }
       const host = this.getHostName(window.location);
       if (host && !this.hostVsStores.has(host)) {
         await this.populateStoresForHost(host, window);
@@ -295,6 +298,9 @@ StorageActors.defaults = function(typeName, observationTopics) {
 
 
     onWindowDestroyed(window) {
+      if (!this.hostVsStores) {
+        return;
+      }
       if (!window.location) {
         
         return;
@@ -3372,6 +3378,11 @@ function trimHttpHttpsPort(url) {
   }
   return url;
 }
+
+
+
+
+
 
 
 

@@ -57,21 +57,18 @@ function makeStorageLegacyListener(storageKey, storageType) {
     onAvailable([storage]);
 
     
+    
+    
     storageFront.on("stores-update", response => {
       response = getFilteredStorageEvents(response, storageKey);
       if (!response) {
         return;
       }
-      onUpdated([
-        {
-          resourceId: storageType,
-          resourceType: storageType,
-          resourceKey: storageKey,
-          changed: response.changed,
-          added: response.added,
-          deleted: response.deleted,
-        },
-      ]);
+      storage.emit("single-store-update", {
+        changed: response.changed,
+        added: response.added,
+        deleted: response.deleted,
+      });
     });
 
     
@@ -82,14 +79,9 @@ function makeStorageLegacyListener(storageKey, storageType) {
         return;
       }
 
-      onDestroyed([
-        {
-          resourceId: storageType,
-          resourceType: storageType,
-          resourceKey: storageKey,
-          clearedHostsOrPaths: cleared,
-        },
-      ]);
+      storage.emit("single-store-cleared", {
+        clearedHostsOrPaths: cleared,
+      });
     });
   };
 }
