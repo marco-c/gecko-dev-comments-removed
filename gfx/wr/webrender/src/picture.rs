@@ -3325,7 +3325,6 @@ impl TileCacheInstance {
         
         let mut backdrop_candidate = None;
 
-
         
         
         
