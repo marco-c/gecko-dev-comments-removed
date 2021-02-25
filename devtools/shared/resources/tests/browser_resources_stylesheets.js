@@ -194,9 +194,13 @@ async function testResourceUpdateFeature() {
     EXISTING_RESOURCES.length,
     "Length of existing resources is correct"
   );
+  is(updates.length, 0, "there's no update yet");
 
   info("Check toggleDisabled function");
-  const resource = availableResources[0];
+  
+  const resource = availableResources.find(
+    innerResource => innerResource.targetFront.isTopLevel
+  );
   const styleSheetsFront = await resource.targetFront.getFront("stylesheets");
   await styleSheetsFront.toggleDisabled(resource.resourceId);
   await waitUntil(() => updates.length === 1);
@@ -229,7 +233,7 @@ async function testResourceUpdateFeature() {
       return stylesheet.disabled;
     }
   );
-  is(styleSheetDisabled, true, "actual stylesheet is is updated correctly");
+  is(styleSheetDisabled, true, "actual stylesheet was updated correctly");
 
   info("Check update function");
   const expectedMediaRules = [
@@ -336,7 +340,10 @@ async function testNestedResourceUpdateFeature() {
   
   tab.ownerGlobal.resizeTo(originalWindowWidth, 300);
 
-  const resource = availableResources[0];
+  
+  const resource = availableResources.find(
+    innerResource => innerResource.targetFront.isTopLevel
+  );
   const styleSheetsFront = await resource.targetFront.getFront("stylesheets");
   await styleSheetsFront.update(
     resource.resourceId,

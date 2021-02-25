@@ -624,7 +624,10 @@ class StyleSheetWatcher {
     styleSheet,
     { isCreatedByDevTools = false, fileName = null } = {}
   ) {
-    const resourceId = `stylesheet:${this._resourceCount++}`;
+    
+    
+    const resourceId = `${this._targetActor.actorID}:stylesheet:${this
+      ._resourceCount++}`;
 
     const resource = {
       resourceId,
