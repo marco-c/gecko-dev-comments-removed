@@ -85,7 +85,7 @@ add_task(async () => {
     return;
   }
 
-  startProfilerForMarkerTests();
+  startProfiler();
   startTime = Cu.now();
   while (Cu.now() < startTime + 1) {
     

@@ -10,8 +10,6 @@ const { BrowserTestUtils } = ChromeUtils.import(
 );
 
 const BASE_URL = "http://example.com/browser/tools/profiler/tests/browser/";
-const BASE_URL_HTTPS =
-  "https://example.com/browser/tools/profiler/tests/browser/";
 
 registerCleanupFunction(() => {
   if (Services.profiler.IsActive()) {
@@ -33,7 +31,6 @@ registerCleanupFunction(() => {
 
 
 async function stopProfilerNowAndGetThreads(contentPid) {
-  Services.profiler.Pause();
   const profile = await Services.profiler.getProfileDataAsync();
   Services.profiler.StopProfiler();
 
