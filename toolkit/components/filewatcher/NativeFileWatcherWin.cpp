@@ -1095,13 +1095,11 @@ void NativeFileWatcherIOTask::AppendCallbacksToHashtables(
     const nsMainThreadPtrHandle<nsINativeFileWatcherCallback>& aOnChangeHandle,
     const nsMainThreadPtrHandle<nsINativeFileWatcherErrorCallback>&
         aOnErrorHandle) {
-  
-  ChangeCallbackArray* callbacksArray = mChangeCallbacksTable.Get(aPath);
-  if (!callbacksArray) {
-    
-    callbacksArray = new ChangeCallbackArray();
-    mChangeCallbacksTable.Put(aPath, callbacksArray);
-  }
+  ChangeCallbackArray* const callbacksArray =
+      mChangeCallbacksTable
+          .GetOrInsertWith(aPath,
+                           [] { return MakeUnique<ChangeCallbackArray>(); })
+          .get();
 
   
   
@@ -1114,12 +1112,11 @@ void NativeFileWatcherIOTask::AppendCallbacksToHashtables(
   }
 
   
-  ErrorCallbackArray* errorCallbacksArray = mErrorCallbacksTable.Get(aPath);
-  if (!errorCallbacksArray) {
-    
-    errorCallbacksArray = new ErrorCallbackArray();
-    mErrorCallbacksTable.Put(aPath, errorCallbacksArray);
-  }
+  ErrorCallbackArray* const errorCallbacksArray =
+      mErrorCallbacksTable
+          .GetOrInsertWith(aPath,
+                           [] { return MakeUnique<ErrorCallbackArray>(); })
+          .get();
 
   ErrorCallbackArray::index_type errorCallbackIndex =
       errorCallbacksArray->IndexOf(aOnErrorHandle);

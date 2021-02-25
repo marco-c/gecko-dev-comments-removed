@@ -31,6 +31,7 @@
 #include "nsVariant.h"
 #include "TelemetryScalarData.h"
 
+using mozilla::MakeUnique;
 using mozilla::Nothing;
 using mozilla::Preferences;
 using mozilla::Some;
@@ -1499,7 +1500,6 @@ nsresult internal_GetScalarByEnum(const StaticMutexAutoLock& lock,
   }
 
   ScalarBase* scalar = nullptr;
-  ScalarStorageMapType* scalarStorage = nullptr;
   
   
   uint32_t storageId = static_cast<uint32_t>(aProcessStorage);
@@ -1512,10 +1512,11 @@ nsresult internal_GetScalarByEnum(const StaticMutexAutoLock& lock,
 
   
   
-  if (!processStorage.Get(storageId, &scalarStorage)) {
-    scalarStorage = new ScalarStorageMapType();
-    processStorage.Put(storageId, scalarStorage);
-  }
+  ScalarStorageMapType* const scalarStorage =
+      processStorage
+          .GetOrInsertWith(storageId,
+                           [] { return MakeUnique<ScalarStorageMapType>(); })
+          .get();
 
   
   
@@ -1783,7 +1784,6 @@ nsresult internal_GetKeyedScalarByEnum(const StaticMutexAutoLock& lock,
   }
 
   KeyedScalar* scalar = nullptr;
-  KeyedScalarStorageMapType* scalarStorage = nullptr;
   
   
   uint32_t storageId = static_cast<uint32_t>(aProcessStorage);
@@ -1796,10 +1796,11 @@ nsresult internal_GetKeyedScalarByEnum(const StaticMutexAutoLock& lock,
 
   
   
-  if (!processStorage.Get(storageId, &scalarStorage)) {
-    scalarStorage = new KeyedScalarStorageMapType();
-    processStorage.Put(storageId, scalarStorage);
-  }
+  KeyedScalarStorageMapType* const scalarStorage =
+      processStorage
+          .GetOrInsertWith(
+              storageId, [] { return MakeUnique<KeyedScalarStorageMapType>(); })
+          .get();
 
   if (scalarStorage->Get(aId.id, &scalar)) {
     *aRet = scalar;
