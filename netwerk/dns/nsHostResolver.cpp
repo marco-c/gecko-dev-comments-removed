@@ -413,8 +413,16 @@ void AddrHostRecord::ResolveComplete() {
 
   if (mResolverType == DNSResolverType::ODoH) {
     
-    
-    
+    if (mTRRSuccess) {
+      uint32_t millis = static_cast<uint32_t>(mTrrDuration.ToMilliseconds());
+      Telemetry::Accumulate(Telemetry::DNS_ODOH_LOOKUP_TIME, millis);
+    }
+
+    if (nsHostResolver::Mode() == nsIDNSService::MODE_TRRFIRST) {
+      Telemetry::Accumulate(Telemetry::ODOH_SKIP_REASON_ODOH_FIRST,
+                            mTRRTRRSkippedReason);
+    }
+
     return;
   }
 
