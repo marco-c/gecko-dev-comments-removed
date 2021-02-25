@@ -9,7 +9,7 @@ use crate::clip::{ClipItemKey, ClipItemKeyKind, ClipChainId};
 use crate::scene_building::SceneBuilder;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::gpu_types::BoxShadowStretchMode;
-use crate::render_task_cache::RenderTaskCacheEntryHandle;
+use crate::render_task_graph::RenderTaskId;
 use crate::internal_types::LayoutPrimitiveInfo;
 
 #[derive(Debug, Clone, MallocSizeOf)]
@@ -26,7 +26,7 @@ pub struct BoxShadowClipSource {
     
     
     pub cache_key: Option<(DeviceIntSize, BoxShadowCacheKey)>,
-    pub cache_handle: Option<RenderTaskCacheEntryHandle>,
+    pub render_task: Option<RenderTaskId>,
 
     
     pub shadow_rect_alloc_size: LayoutSize,
