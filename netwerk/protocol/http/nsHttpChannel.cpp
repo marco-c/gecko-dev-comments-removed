@@ -693,6 +693,8 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
   mConnectionInfo->SetTRRMode(nsIRequest::GetTRRMode());
   mConnectionInfo->SetIPv4Disabled(mCaps & NS_HTTP_DISABLE_IPV4);
   mConnectionInfo->SetIPv6Disabled(mCaps & NS_HTTP_DISABLE_IPV6);
+  mConnectionInfo->SetAnonymousAllowClientCert(
+      (mLoadFlags & LOAD_ANONYMOUS_ALLOW_CLIENT_CERT) != 0);
 
   
   gHttpHandler->OnBeforeConnect(this);
@@ -1213,6 +1215,10 @@ nsresult nsHttpChannel::SetupTransaction() {
   }
   if (LoadBeConservative()) {
     mCaps |= NS_HTTP_BE_CONSERVATIVE;
+  }
+
+  if (mLoadFlags & LOAD_ANONYMOUS_ALLOW_CLIENT_CERT) {
+    mCaps |= NS_HTTP_LOAD_ANONYMOUS_CONNECT_ALLOW_CLIENT_CERT;
   }
 
   

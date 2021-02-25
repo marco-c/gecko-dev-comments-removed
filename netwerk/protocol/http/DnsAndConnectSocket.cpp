@@ -1057,6 +1057,13 @@ nsresult DnsAndConnectSocket::TransportSetup::SetupStreams(
     tmpFlags |= nsISocketTransport::ANONYMOUS_CONNECT;
   }
 
+  
+  
+  if ((dnsAndSock->mCaps & NS_HTTP_LOAD_ANONYMOUS_CONNECT_ALLOW_CLIENT_CERT) ||
+      ci->GetAnonymousAllowClientCert()) {
+    tmpFlags |= nsISocketTransport::ANONYMOUS_CONNECT_ALLOW_CLIENT_CERT;
+  }
+
   if (ci->GetPrivate()) {
     tmpFlags |= nsISocketTransport::NO_PERMANENT_STORAGE;
   }
