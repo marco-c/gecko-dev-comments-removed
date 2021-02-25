@@ -2300,8 +2300,47 @@ public class WebExtension {
 
          void setDelegate(final Delegate delegate) { }
 
-         GeckoResult<Void> update(final Info data) {
-            return null;
+        
+
+
+
+
+
+
+
+        @Nullable
+        @UiThread
+        public GeckoResult<Void> update(final @NonNull Download.Info data) {
+            final GeckoBundle bundle = new GeckoBundle(12);
+
+            bundle.putInt("downloadItemId", this.id);
+
+            bundle.putString("filename", data.filename());
+            bundle.putString("mime", data.mime());
+            bundle.putString("startTime", String.valueOf(data.startTime()));
+            bundle.putString("endTime", data.endTime() == null ? null : String.valueOf(data.endTime()));
+            bundle.putInt("state", data.state());
+            bundle.putBoolean("canResume", data.canResume());
+            bundle.putBoolean("paused", data.paused());
+            Integer error = data.error();
+            if (error != null) {
+                bundle.putInt("error",  error);
+            }
+            bundle.putLong("totalBytes", data.totalBytes());
+            bundle.putLong("fileSize", data.fileSize());
+            bundle.putBoolean("exists", data.fileExists());
+
+            return EventDispatcher.getInstance().queryVoid(
+                    "GeckoView:WebExtension:DownloadChanged", bundle
+            ).map(null, e -> {
+                if (e instanceof EventDispatcher.QueryException) {
+                    EventDispatcher.QueryException queryException = (EventDispatcher.QueryException) e;
+                    if (queryException.data instanceof String) {
+                        return new IllegalArgumentException((String) queryException.data);
+                    }
+                }
+                return e;
+            });
         }
 
          interface Delegate {
