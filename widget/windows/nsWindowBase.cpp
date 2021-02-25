@@ -150,50 +150,46 @@ nsresult nsWindowBase::SynthesizeNativeTouchPoint(
   uint32_t pressure = (uint32_t)ceil(aPointerPressure * 1024);
 
   
-  PointerInfo* info = mActivePointers.Get(aPointerId);
+  return mActivePointers.WithEntryHandle(aPointerId, [&](auto&& entry) {
+    POINTER_FLAGS flags;
 
-  
-  if (info) {
-    POINTER_FLAGS flags = POINTER_FLAG_UPDATE;
-    if (hover) {
-      flags |= POINTER_FLAG_INRANGE;
-    } else if (contact) {
-      flags |= POINTER_FLAG_INCONTACT | POINTER_FLAG_INRANGE;
-    } else if (remove) {
-      flags = POINTER_FLAG_UP;
-      
-      
-      mActivePointers.Remove(aPointerId);
-    }
+    
+    if (entry) {
+      flags = POINTER_FLAG_UPDATE;
+      if (hover) {
+        flags |= POINTER_FLAG_INRANGE;
+      } else if (contact) {
+        flags |= POINTER_FLAG_INCONTACT | POINTER_FLAG_INRANGE;
+      } else if (remove) {
+        flags = POINTER_FLAG_UP;
+        
+        
+        entry.Remove();
+      }
 
-    if (cancel) {
-      flags |= POINTER_FLAG_CANCELED;
+      if (cancel) {
+        flags |= POINTER_FLAG_CANCELED;
+      }
+    } else {
+      
+      if (remove || cancel) {
+        return NS_ERROR_INVALID_ARG;
+      }
+
+      
+      flags = POINTER_FLAG_INRANGE;
+      if (contact) {
+        flags |= POINTER_FLAG_INCONTACT | POINTER_FLAG_DOWN;
+      }
+
+      entry.Insert(MakeUnique<PointerInfo>(aPointerId, aPoint));
     }
 
     return !InjectTouchPoint(aPointerId, aPoint, flags, pressure,
                              aPointerOrientation)
                ? NS_ERROR_UNEXPECTED
                : NS_OK;
-  }
-
-  
-  if (remove || cancel) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  
-  info = new PointerInfo(aPointerId, aPoint);
-
-  POINTER_FLAGS flags = POINTER_FLAG_INRANGE;
-  if (contact) {
-    flags |= POINTER_FLAG_INCONTACT | POINTER_FLAG_DOWN;
-  }
-
-  mActivePointers.Put(aPointerId, info);
-  return !InjectTouchPoint(aPointerId, aPoint, flags, pressure,
-                           aPointerOrientation)
-             ? NS_ERROR_UNEXPECTED
-             : NS_OK;
+  });
 }
 
 nsresult nsWindowBase::ClearNativeTouchSequence(nsIObserver* aObserver) {

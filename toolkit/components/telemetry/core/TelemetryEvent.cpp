@@ -30,6 +30,7 @@
 #include "TelemetryEventData.h"
 #include "TelemetryScalar.h"
 
+using mozilla::MakeUnique;
 using mozilla::Maybe;
 using mozilla::StaticAutoPtr;
 using mozilla::StaticMutex;
@@ -373,12 +374,10 @@ bool IsExpired(const EventKey& key) { return key.id == kExpiredEventId; }
 
 EventRecordArray* GetEventRecordsForProcess(const StaticMutexAutoLock& lock,
                                             ProcessID processType) {
-  EventRecordArray* eventRecords = nullptr;
-  if (!gEventRecords.Get(uint32_t(processType), &eventRecords)) {
-    eventRecords = new EventRecordArray();
-    gEventRecords.Put(uint32_t(processType), eventRecords);
-  }
-  return eventRecords;
+  return gEventRecords
+      .GetOrInsertWith(uint32_t(processType),
+                       [] { return MakeUnique<EventRecordArray>(); })
+      .get();
 }
 
 EventKey* GetEventKey(const StaticMutexAutoLock& lock,
@@ -711,6 +710,9 @@ void TelemetryEvent::InitializeGlobalState(bool aCanRecordBase,
     gEventNameIDMap.Put(UniqueEventName(info), new EventKey{eventId, false});
     gCategoryNames.PutEntry(info.common_info.category());
   }
+
+  
+  gEnabledCategories.PutEntry("avif"_ns);
 
   gInitDone = true;
 }

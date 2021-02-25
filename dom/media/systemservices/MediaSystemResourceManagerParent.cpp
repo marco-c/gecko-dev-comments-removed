@@ -24,17 +24,18 @@ MediaSystemResourceManagerParent::~MediaSystemResourceManagerParent() {
 mozilla::ipc::IPCResult MediaSystemResourceManagerParent::RecvAcquire(
     const uint32_t& aId, const MediaSystemResourceType& aResourceType,
     const bool& aWillWait) {
-  MediaSystemResourceRequest* request = mResourceRequests.Get(aId);
-  MOZ_ASSERT(!request);
-  if (request) {
-    
-    mozilla::Unused << SendResponse(aId, false );
-    return IPC_OK();
-  }
+  mResourceRequests.WithEntryHandle(aId, [&](auto&& request) {
+    MOZ_ASSERT(!request);
+    if (request) {
+      
+      mozilla::Unused << SendResponse(aId, false );
+      return;
+    }
 
-  request = new MediaSystemResourceRequest(aId, aResourceType);
-  mResourceRequests.Put(aId, request);
-  mMediaSystemResourceService->Acquire(this, aId, aResourceType, aWillWait);
+    request.Insert(MakeUnique<MediaSystemResourceRequest>(aId, aResourceType));
+    mMediaSystemResourceService->Acquire(this, aId, aResourceType, aWillWait);
+  });
+
   return IPC_OK();
 }
 

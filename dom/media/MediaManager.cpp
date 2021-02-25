@@ -2763,11 +2763,12 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
 
             
             
-            nsTArray<nsString>* array;
-            if (!self->mCallIds.Get(windowID, &array)) {
-              array = new nsTArray<nsString>();
-              self->mCallIds.Put(windowID, array);
-            }
+            nsTArray<nsString>* const array =
+                self->mCallIds
+                    .GetOrInsertWith(
+                        windowID,
+                        [] { return MakeUnique<nsTArray<nsString>>(); })
+                    .get();
             array->AppendElement(callID);
 
             nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
