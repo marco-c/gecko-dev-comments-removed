@@ -1077,7 +1077,13 @@ enum Role {
 
   LISTITEM_MARKER = 184,
 
-  LAST_ROLE = LISTITEM_MARKER
+  
+
+
+
+  METER = 185,
+
+  LAST_ROLE = METER
 };
 
 }  

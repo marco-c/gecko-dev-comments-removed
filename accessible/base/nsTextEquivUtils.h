@@ -111,6 +111,16 @@ class nsTextEquivUtils {
   static nsresult AppendTextEquivFromTextContent(nsIContent* aContent,
                                                  nsAString* aString);
 
+  
+
+
+
+
+
+
+  static nsresult AppendFromDOMChildren(nsIContent* aContent,
+                                        nsAString* aString);
+
  private:
   
 
@@ -130,11 +140,6 @@ class nsTextEquivUtils {
 
 
   static nsresult AppendFromValue(Accessible* aAccessible, nsAString* aString);
-  
-
-
-  static nsresult AppendFromDOMChildren(nsIContent* aContent,
-                                        nsAString* aString);
 
   
 

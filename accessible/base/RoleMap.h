@@ -1877,3 +1877,13 @@ ROLE(LISTITEM_MARKER,
      java::SessionAccessibility::CLASSNAME_VIEW,
      eNoNameRule)
 
+ROLE(METER,
+     "meter",
+     ATK_ROLE_LEVEL_BAR,
+     @"AXLevelIndicator",
+     NSAccessibilityUnknownSubrole,
+     ROLE_SYSTEM_PROGRESSBAR,
+     ROLE_SYSTEM_PROGRESSBAR,
+     java::SessionAccessibility::CLASSNAME_VIEW,
+     eNameFromValueRule)
+
