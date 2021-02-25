@@ -8,6 +8,7 @@
 
 #include "AntiTrackingLog.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/Components.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/net/CookieJarSettings.h"
@@ -649,7 +650,8 @@ bool AntiTrackingUtils::IsThirdPartyWindow(nsPIDOMWindowInner* aWindow,
   if (!doc || !doc->GetChannel()) {
     
     
-    nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
+    nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+        components::ThirdPartyUtil::Service();
     Unused << thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(),
                                                  nullptr, &thirdParty);
     return thirdParty;

@@ -9,6 +9,7 @@
 #include "ClassifierDummyChannel.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/Components.h"
 #include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/dom/WindowGlobalParent.h"
@@ -218,7 +219,8 @@ nsresult UrlClassifierCommon::SetBlockedContent(nsIChannel* channel,
   
   
   
-  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
+  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+      components::ThirdPartyUtil::Service();
   if (NS_WARN_IF(!thirdPartyUtil)) {
     return NS_OK;
   }
