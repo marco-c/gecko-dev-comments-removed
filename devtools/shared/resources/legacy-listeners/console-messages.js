@@ -13,7 +13,7 @@ module.exports = async function({ targetList, targetFront, onAvailable }) {
   
   
   
-  const listenForFrames = targetList.targetFront.isLocalTab;
+  const listenForFrames = targetList.descriptorFront.isLocalTab;
 
   
   const listenForWorkers = !targetList.rootFront.traits

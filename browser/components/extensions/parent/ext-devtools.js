@@ -38,17 +38,17 @@ function getDevToolsPrefBranchName(extensionId) {
 
 
 global.getTargetTabIdForToolbox = toolbox => {
-  let { target } = toolbox;
+  let { descriptorFront } = toolbox;
 
-  if (!target.isLocalTab) {
+  if (!descriptorFront.isLocalTab) {
     throw new Error(
       "Unexpected target type: only local tabs are currently supported."
     );
   }
 
-  let parentWindow = target.localTab.linkedBrowser.ownerGlobal;
+  let parentWindow = descriptorFront.localTab.linkedBrowser.ownerGlobal;
   let tab = parentWindow.gBrowser.getTabForBrowser(
-    target.localTab.linkedBrowser
+    descriptorFront.localTab.linkedBrowser
   );
 
   return tabTracker.getId(tab);
@@ -211,7 +211,11 @@ class DevToolsPageDefinition {
   }
 
   buildForToolbox(toolbox) {
-    if (!this.extension.canAccessWindow(toolbox.target.localTab.ownerGlobal)) {
+    if (
+      !this.extension.canAccessWindow(
+        toolbox.descriptorFront.localTab.ownerGlobal
+      )
+    ) {
       
       
       return;
@@ -247,7 +251,7 @@ class DevToolsPageDefinition {
       
       if (this.devtoolsPageForToolbox.has(toolbox)) {
         throw new Error(
-          `Leaked DevToolsPage instance for target "${toolbox.target.descriptorFront.url}", extension "${this.extension.policy.debugName}"`
+          `Leaked DevToolsPage instance for target "${toolbox.descriptorFront.url}", extension "${this.extension.policy.debugName}"`
         );
       }
 
@@ -272,8 +276,10 @@ class DevToolsPageDefinition {
     
     for (let toolbox of DevToolsShim.getToolboxes()) {
       if (
-        !toolbox.target.isLocalTab ||
-        !this.extension.canAccessWindow(toolbox.target.localTab.ownerGlobal)
+        !toolbox.descriptorFront.isLocalTab ||
+        !this.extension.canAccessWindow(
+          toolbox.descriptorFront.localTab.ownerGlobal
+        )
       ) {
         
         
@@ -415,8 +421,10 @@ this.devtools = class extends ExtensionAPI {
 
   onToolboxCreated(toolbox) {
     if (
-      !toolbox.target.isLocalTab ||
-      !this.extension.canAccessWindow(toolbox.target.localTab.ownerGlobal)
+      !toolbox.descriptorFront.isLocalTab ||
+      !this.extension.canAccessWindow(
+        toolbox.descriptorFront.localTab.ownerGlobal
+      )
     ) {
       
       
@@ -438,7 +446,7 @@ this.devtools = class extends ExtensionAPI {
   }
 
   onToolboxDestroy(toolbox) {
-    if (!toolbox.target.isLocalTab) {
+    if (!toolbox.descriptorFront.isLocalTab) {
       
       
       return;

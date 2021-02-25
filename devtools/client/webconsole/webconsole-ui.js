@@ -457,7 +457,7 @@ class WebConsoleUI {
 
     
     
-    const listenForFrames = this.hud.targetList.targetFront.isLocalTab;
+    const listenForFrames = this.hud.targetList.descriptorFront.isLocalTab;
 
     const { TYPES } = this.hud.targetList;
     const isWorkerTarget =

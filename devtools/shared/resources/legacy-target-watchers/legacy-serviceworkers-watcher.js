@@ -82,7 +82,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     
     await this._onRegistrationListChanged();
 
-    if (this.target.isLocalTab) {
+    if (this.targetList.descriptorFront.isLocalTab) {
       
       
       
@@ -96,7 +96,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
   unlisten() {
     this._workersListener.removeListener(this._onRegistrationListChanged);
 
-    if (this.target.isLocalTab) {
+    if (this.targetList.descriptorFront.isLocalTab) {
       this.target.off("navigate", this._onNavigate);
     }
 
@@ -105,7 +105,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
 
   
   async _onProcessAvailable({ targetFront }) {
-    if (this.target.isLocalTab) {
+    if (this.targetList.descriptorFront.isLocalTab) {
       
       
       
@@ -247,7 +247,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
       return true;
     }
 
-    if (!this.target.isLocalTab) {
+    if (!this.targetList.descriptorFront.isLocalTab) {
       
       
       return false;
