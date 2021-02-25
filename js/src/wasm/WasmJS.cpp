@@ -413,12 +413,21 @@ bool wasm::SimdAvailable(JSContext* cx) {
 #ifdef ENABLE_WASM_SIMD_WORMHOLE
 static bool IsSimdPrivilegedContext(JSContext* cx) {
   
-  return false;
+  
+  return cx->realm() && cx->realm()->principals() &&
+         cx->realm()->principals()->isSystemOrAddonPrincipal();
 }
 #endif
 
 bool wasm::SimdWormholeAvailable(JSContext* cx) {
 #ifdef ENABLE_WASM_SIMD_WORMHOLE
+  
+  
+  
+  
+  
+  
+  
   
   
   return js::jit::JitSupportsWasmSimd() &&
