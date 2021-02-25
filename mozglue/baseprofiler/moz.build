@@ -70,10 +70,6 @@ if CONFIG["MOZ_GECKO_PROFILER"]:
 
     FINAL_LIBRARY = "mozglue"
 
-
-
-
-
 EXPORTS += [
     "public/BaseProfiler.h",
 ]

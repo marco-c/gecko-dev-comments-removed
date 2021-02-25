@@ -8,6 +8,7 @@
 
 #include "nsIDOMEventListener.h"
 
+#include "GeckoProfiler.h"
 #include "jsapi.h"  
 #include "jsfriendapi.h"
 #include "js/ArrayBuffer.h"  
@@ -45,6 +46,7 @@
 #include "mozilla/UniquePtr.h"
 
 namespace mozilla {
+
 namespace dom {
 
 

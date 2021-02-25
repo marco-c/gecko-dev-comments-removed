@@ -18,6 +18,9 @@
 
 
 
+
+
+
 #include "BaseProfiler.h"
 #include "mozilla/ProfilerCounts.h"
 #include "mozilla/ProfilerLabels.h"
@@ -55,7 +58,7 @@
 
 
 struct ProfilerBacktrace {};
-using UniqueProfilerBacktrace = mozilla::UniquePtr<int>;
+using UniqueProfilerBacktrace = mozilla::UniquePtr<ProfilerBacktrace>;
 
 
 
@@ -63,6 +66,10 @@ using UniqueProfilerBacktrace = mozilla::UniquePtr<int>;
 static inline UniqueProfilerBacktrace profiler_get_backtrace() {
   return nullptr;
 }
+
+
+
+struct ProfileChunkedBuffer {};
 
 static inline bool profiler_capture_backtrace_into(
     mozilla::ProfileChunkedBuffer& aChunkedBuffer,

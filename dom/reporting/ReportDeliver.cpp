@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/JSONWriter.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/EndpointForReportChild.h"
 #include "mozilla/dom/Fetch.h"

@@ -42,9 +42,16 @@ extern const GUID CLSID_WebmMfVpxDec;
 namespace mozilla {
 
 
-static void MOZ_FORMAT_PRINTF(2, 3)
-    WmfDecoderModuleMarkerAndLog(const ProfilerString8View& aMarkerTag,
-                                 const char* aFormat, ...) {
+static void MOZ_FORMAT_PRINTF(2, 3) WmfDecoderModuleMarkerAndLog(
+#ifdef MOZ_GECKO_PROFILER
+    const ProfilerString8View&
+#else
+    
+    
+    const char*
+#endif
+        aMarkerTag,
+    const char* aFormat, ...) {
   va_list ap;
   va_start(ap, aFormat);
   const nsVprintfCString markerString(aFormat, ap);
