@@ -27,6 +27,7 @@
 #include "js/friend/DOMProxy.h"       
 #include "js/friend/WindowProxy.h"  
 #include "js/friend/XrayJitInfo.h"  
+#include "js/RegExpFlags.h"         
 #include "js/ScalarType.h"          
 #include "js/Wrapper.h"
 #include "proxy/DOMProxy.h"  
@@ -36,6 +37,7 @@
 #include "vm/Iteration.h"
 #include "vm/PlainObject.h"  
 #include "vm/ProxyObject.h"
+#include "vm/RegExpObject.h"
 #include "vm/SelfHosting.h"
 #include "vm/ThrowMsgKind.h"  
 #include "wasm/TypedObject.h"
@@ -375,6 +377,7 @@ AttachDecision GetPropIRGenerator::tryAttachStub() {
       TRY_ATTACH(tryAttachTypedArray(obj, objId, id));
       TRY_ATTACH(tryAttachDataView(obj, objId, id));
       TRY_ATTACH(tryAttachArrayBufferMaybeShared(obj, objId, id));
+      TRY_ATTACH(tryAttachRegExp(obj, objId, id));
       TRY_ATTACH(tryAttachNative(obj, objId, id, receiverId));
       TRY_ATTACH(tryAttachModuleNamespace(obj, objId, id));
       TRY_ATTACH(tryAttachWindowProxy(obj, objId, id));
@@ -1947,6 +1950,48 @@ AttachDecision GetPropIRGenerator::tryAttachArrayBufferMaybeShared(
   writer.returnFromIC();
 
   trackAttached("ArrayBufferMaybeSharedByteLength");
+  return AttachDecision::Attach;
+}
+
+AttachDecision GetPropIRGenerator::tryAttachRegExp(HandleObject obj,
+                                                   ObjOperandId objId,
+                                                   HandleId id) {
+  if (!obj->is<RegExpObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  if (mode_ != ICState::Mode::Specialized) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (isSuper()) {
+    return AttachDecision::NoAction;
+  }
+
+  RootedShape shape(cx_);
+  RootedNativeObject holder(cx_);
+  NativeGetPropCacheability type =
+      CanAttachNativeGetProp(cx_, obj, id, &holder, &shape, pc_);
+  if (type != CanAttachNativeGetter) {
+    return AttachDecision::NoAction;
+  }
+
+  auto& fun = shape->getterValue().toObject().as<JSFunction>();
+  JS::RegExpFlags flags = JS::RegExpFlag::NoFlags;
+  if (!RegExpObject::isOriginalFlagGetter(fun.native(), &flags)) {
+    return AttachDecision::NoAction;
+  }
+
+  maybeEmitIdGuard(id);
+  
+  
+  EmitCallGetterResultGuards(writer, obj, holder, shape, objId, mode_);
+
+  writer.regExpFlagResult(objId, flags.value());
+  writer.returnFromIC();
+
+  trackAttached("RegExpFlag");
   return AttachDecision::Attach;
 }
 
