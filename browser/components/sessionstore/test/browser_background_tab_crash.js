@@ -9,6 +9,15 @@
 
 
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "TelemetryTestUtils",
+  "resource://testing-common/TelemetryTestUtils.jsm"
+);
+
+
+const TABUI_PRESENTED_KEY = "dom.contentprocess.crash_tab_ui_presented";
+
 
 
 
@@ -106,6 +115,22 @@ async function crashBackgroundTabs(tabs) {
   }
 }
 
+
+
+
+
+
+
+
+function checkTelemetry(expectedCount, desc) {
+  TelemetryTestUtils.assertScalar(
+    TelemetryTestUtils.getProcessScalars("parent"),
+    TABUI_PRESENTED_KEY,
+    expectedCount,
+    desc + " telemetry"
+  );
+}
+
 add_task(async function setup() {
   
   
@@ -124,9 +149,13 @@ add_task(async function setup() {
 
 
 add_task(async function test_background_crash_simple() {
+  Services.telemetry.clearScalars();
+
   await setupBackgroundTabs(async function([tab1, tab2]) {
     
     await crashBackgroundTabs([tab1, tab2]);
+
+    checkTelemetry(0, "simple crash initial value");
 
     
     let tabCrashedPagePromise = BrowserTestUtils.waitForContentEvent(
@@ -139,10 +168,14 @@ add_task(async function test_background_crash_simple() {
     await BrowserTestUtils.switchTab(gBrowser, tab1);
     await tabCrashedPagePromise;
 
+    checkTelemetry(1, "simple crash after tab switch");
+
     
     let tabRestored = promiseTabRestored(tab2);
     await BrowserTestUtils.switchTab(gBrowser, tab2);
     await tabRestored;
+
+    checkTelemetry(1, "simple crash after tab switch");
   });
 });
 
@@ -156,6 +189,8 @@ add_task(async function test_background_crash_autosubmit_backlogged() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.crashReports.unsubmittedCheck.autoSubmit2", true]],
   });
+
+  Services.telemetry.clearScalars();
 
   await setupBackgroundTabs(async function([tab1, tab2]) {
     
@@ -172,6 +207,9 @@ add_task(async function test_background_crash_autosubmit_backlogged() {
     await tabRestored;
   });
 
+  
+  checkTelemetry(0, "crash with autosubmit");
+
   await SpecialPowers.popPrefEnv();
 });
 
@@ -186,6 +224,8 @@ add_task(async function test_background_crash_autosubmit_backlogged() {
 
 
 add_task(async function test_background_crash_multiple() {
+  Services.telemetry.clearScalars();
+
   let initialTab = gBrowser.selectedTab;
 
   await setupBackgroundTabs(async function([tab1, tab2]) {
@@ -203,16 +243,24 @@ add_task(async function test_background_crash_multiple() {
     await BrowserTestUtils.switchTab(gBrowser, tab1);
     await tabCrashedPagePromise;
 
+    checkTelemetry(1, "multiple crash after first tab select");
+
     
     await BrowserTestUtils.switchTab(gBrowser, initialTab);
 
+    checkTelemetry(1, "multiple crash after original tab select");
+
     await setupBackgroundTabs(async function([tab3, tab4]) {
       await crashBackgroundTabs([tab3, tab4]);
+
+      checkTelemetry(1, "multiple crash after second crash");
 
       
       let tabRestored = promiseTabRestored(tab2);
       await BrowserTestUtils.switchTab(gBrowser, tab2);
       await tabRestored;
+
+      checkTelemetry(1, "multiple crash after second crash and tab select");
 
       
       tabCrashedPagePromise = BrowserTestUtils.waitForContentEvent(
@@ -225,10 +273,20 @@ add_task(async function test_background_crash_multiple() {
       await BrowserTestUtils.switchTab(gBrowser, tab4);
       await tabCrashedPagePromise;
 
+      checkTelemetry(
+        2,
+        "multiple crash after second crash and third tab select"
+      );
+
       
       tabRestored = promiseTabRestored(tab3);
       await BrowserTestUtils.switchTab(gBrowser, tab3);
       await tabRestored;
+
+      checkTelemetry(
+        2,
+        "multiple crash after second crash and fourth tab select"
+      );
     });
   });
 });
@@ -236,6 +294,8 @@ add_task(async function test_background_crash_multiple() {
 
 
 add_task(async function test_preload_crash() {
+  Services.telemetry.clearScalars();
+
   if (!Services.prefs.getBoolPref("browser.newtab.preload")) {
     return;
   }
@@ -243,10 +303,14 @@ add_task(async function test_preload_crash() {
   
   NewTabPagePreloading.removePreloadedBrowser(window);
 
+  checkTelemetry(0, "preloaded close");
+
   
   await BrowserTestUtils.maybeCreatePreloadedBrowser(gBrowser);
 
   await BrowserTestUtils.crashFrame(gBrowser.preloadedBrowser, false);
+
+  checkTelemetry(0, "preloaded close after crash");
 
   Assert.ok(!gBrowser.preloadedBrowser);
 });

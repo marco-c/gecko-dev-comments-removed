@@ -427,6 +427,13 @@ var TabCrashHandler = {
       },
     ];
 
+    
+    
+    let removeTelemetryFn = this.telemetryIfTabSelected(
+      browser,
+      "dom.contentprocess.crash_subframe_ui_presented"
+    );
+
     notification = notificationBox.appendNotification(
       messageFragment,
       value,
@@ -435,6 +442,8 @@ var TabCrashHandler = {
       buttons,
       eventName => {
         if (eventName == "disconnected") {
+          removeTelemetryFn();
+
           let existingItem = this.notificationsMap.get(childID);
           if (existingItem) {
             let idx = existingItem.indexOf(notification);
@@ -463,6 +472,40 @@ var TabCrashHandler = {
     } else {
       this.notificationsMap.set(childID, [notification]);
     }
+  },
+
+  
+
+
+
+
+
+
+
+  telemetryIfTabSelected(browser, telemetryKey) {
+    let gBrowser = browser.getTabBrowser();
+    let tab = gBrowser.getTabForBrowser(browser);
+
+    let seenNotification = event => {
+      if (tab == event.target) {
+        tab.removeEventListener("TabSelect", seenNotification, true);
+
+        Services.telemetry.scalarAdd(telemetryKey, 1);
+      }
+    };
+
+    
+    
+    if (gBrowser.selectedTab == tab) {
+      Services.telemetry.scalarAdd(telemetryKey, 1);
+      return () => {};
+    }
+
+    tab.addEventListener("TabSelect", seenNotification, true);
+
+    return () => {
+      tab.removeEventListener("TabSelect", seenNotification, true);
+    };
   },
 
   
@@ -698,6 +741,15 @@ var TabCrashHandler = {
       this.unseenCrashedChildIDs.splice(index, 1);
     }
 
+    
+    
+    if (browser.getTabBrowser().selectedBrowser == browser) {
+      Services.telemetry.scalarAdd(
+        "dom.contentprocess.crash_tab_ui_presented",
+        1
+      );
+    }
+
     let dumpID = this.getDumpID(browser);
     if (!dumpID) {
       return {
@@ -722,12 +774,6 @@ var TabCrashHandler = {
 
     if (emailMe) {
       data.email = this.prefs.getCharPref("email");
-    }
-
-    
-    
-    if (this._crashedTabCount == 1) {
-      Services.telemetry.getHistogramById("FX_CONTENT_CRASH_PRESENTED").add(1);
     }
 
     return data;
@@ -1123,6 +1169,11 @@ var UnsubmittedCrashHandler = {
         }
       }
     };
+
+    Services.telemetry.scalarAdd(
+      "dom.contentprocess.unsubmitted_ui_presented",
+      1
+    );
 
     return chromeWin.gNotificationBox.appendNotification(
       message,

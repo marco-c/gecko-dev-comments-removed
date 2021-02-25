@@ -1,5 +1,14 @@
 "use strict";
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "TelemetryTestUtils",
+  "resource://testing-common/TelemetryTestUtils.jsm"
+);
+
+const SUBFRAME_CRASH_PRESENTED_KEY =
+  "dom.contentprocess.crash_subframe_ui_presented";
+
 
 
 
@@ -39,6 +48,8 @@ async function openTestTabs(numTabs) {
 
 
 async function testFrameCrash(numTabs) {
+  Services.telemetry.clearScalars();
+
   let iframeBC = await openTestTabs(numTabs);
   let browser = gBrowser.selectedBrowser;
   let rootBC = browser.browsingContext;
@@ -109,6 +120,33 @@ async function testFrameCrash(numTabs) {
   
   await notificationPromise;
 
+  TelemetryTestUtils.assertScalar(
+    TelemetryTestUtils.getProcessScalars("parent"),
+    SUBFRAME_CRASH_PRESENTED_KEY,
+    1,
+    "Subframe crashed ui count"
+  );
+
+  if (numTabs > 1) {
+    
+    
+    await BrowserTestUtils.switchTab(gBrowser, gBrowser.tabs[1]);
+    TelemetryTestUtils.assertScalar(
+      TelemetryTestUtils.getProcessScalars("parent"),
+      SUBFRAME_CRASH_PRESENTED_KEY,
+      2,
+      "Subframe crashed ui count after switching tab"
+    );
+
+    await BrowserTestUtils.switchTab(gBrowser, gBrowser.tabs[2]);
+    TelemetryTestUtils.assertScalar(
+      TelemetryTestUtils.getProcessScalars("parent"),
+      SUBFRAME_CRASH_PRESENTED_KEY,
+      3,
+      "Subframe crashed ui count after switching tab again"
+    );
+  }
+
   for (let count = 1; count <= numTabs; count++) {
     let notificationBox = gBrowser.getNotificationBox(gBrowser.browsers[count]);
     let notification = notificationBox.currentNotification;
@@ -149,6 +187,13 @@ async function testFrameCrash(numTabs) {
   for (let count = 1; count <= numTabs; count++) {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
+
+  TelemetryTestUtils.assertScalar(
+    TelemetryTestUtils.getProcessScalars("parent"),
+    SUBFRAME_CRASH_PRESENTED_KEY,
+    numTabs > 1 ? 3 : 1,
+    "Subframe crashed ui count at end of test"
+  );
 }
 
 
