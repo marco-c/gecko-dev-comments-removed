@@ -2773,6 +2773,38 @@ static bool VerifyGlobalNames(JSContext* cx, Handle<GlobalObject*> shg) {
   return true;
 }
 
+[[nodiscard]] bool InitSelfHostingFromStencil(
+    JSContext* cx, Handle<GlobalObject*> shg, frontend::CompilationInput& input,
+    const frontend::CompilationStencil& stencil) {
+  
+  
+  
+  {
+    Rooted<frontend::CompilationGCOutput> output(cx);
+    if (!frontend::CompilationStencil::instantiateStencils(cx, input, stencil,
+                                                           output.get())) {
+      return false;
+    }
+
+    
+    RootedScript script(cx, output.get().script);
+    RootedValue rval(cx);
+    if (!JS_ExecuteScript(cx, script, &rval)) {
+      return false;
+    }
+  }
+
+  if (!VerifyGlobalNames(cx, shg)) {
+    return false;
+  }
+
+  
+  
+  cx->runtime()->gc.freezeSelfHostingZone();
+
+  return true;
+}
+
 bool JSRuntime::initSelfHosting(JSContext* cx) {
   MOZ_ASSERT(!selfHostingGlobal_);
 
@@ -2802,95 +2834,67 @@ bool JSRuntime::initSelfHosting(JSContext* cx) {
   CompileOptions options(cx);
   FillSelfHostingCompileOptions(options);
 
-  Rooted<frontend::CompilationInput> input(cx,
-                                           frontend::CompilationInput(options));
-  UniquePtr<frontend::CompilationStencil> stencil;
-
   
   bool decodeOk = false;
+  Rooted<frontend::CompilationGCOutput> output(cx);
   if (selfHostedXDR.length() > 0) {
+    Rooted<frontend::CompilationInput> input(
+        cx, frontend::CompilationInput(options));
     if (!input.get().initForSelfHostingGlobal(cx)) {
       return false;
     }
 
-    stencil = cx->make_unique<frontend::CompilationStencil>(input.get());
-    if (!stencil) {
+    frontend::CompilationStencil stencil(input.get());
+    if (!stencil.deserializeStencils(cx, input.get(), selfHostedXDR,
+                                     &decodeOk)) {
       return false;
     }
 
-    if (!stencil->deserializeStencils(cx, input.get(), selfHostedXDR,
-                                      &decodeOk)) {
-      return false;
+    if (decodeOk) {
+      return InitSelfHostingFromStencil(cx, shg, input.get(), stencil);
     }
   }
 
   
   
-  if (!decodeOk) {
-    uint32_t srcLen = GetRawScriptsSize();
-    const unsigned char* compressed = compressedSources;
-    uint32_t compressedLen = GetCompressedSize();
-    auto src = cx->make_pod_array<char>(srcLen);
-    if (!src) {
-      return false;
-    }
-    if (!DecompressString(compressed, compressedLen,
-                          reinterpret_cast<unsigned char*>(src.get()),
-                          srcLen)) {
-      return false;
-    }
-
-    JS::SourceText<mozilla::Utf8Unit> srcBuf;
-    if (!srcBuf.init(cx, std::move(src), srcLen)) {
-      return false;
-    }
-
-    stencil = frontend::CompileGlobalScriptToStencil(cx, input.get(), srcBuf,
-                                                     ScopeKind::Global);
-    if (!stencil) {
-      return false;
-    }
-
-    
-    if (selfHostedXDRWriter) {
-      JS::TranscodeBuffer xdrBuffer;
-      if (!stencil->serializeStencils(cx, input.get(), xdrBuffer)) {
-        return false;
-      }
-
-      if (!selfHostedXDRWriter(cx, xdrBuffer)) {
-        return false;
-      }
-    }
+  uint32_t srcLen = GetRawScriptsSize();
+  const unsigned char* compressed = compressedSources;
+  uint32_t compressedLen = GetCompressedSize();
+  auto src = cx->make_pod_array<char>(srcLen);
+  if (!src) {
+    return false;
+  }
+  if (!DecompressString(compressed, compressedLen,
+                        reinterpret_cast<unsigned char*>(src.get()), srcLen)) {
+    return false;
   }
 
-  
-  
-  
-  {
-    Rooted<frontend::CompilationGCOutput> output(cx);
-    if (!frontend::CompilationStencil::instantiateStencils(
-            cx, input.get(), *stencil, output.get())) {
-      return false;
-    }
-
-    
-    RootedScript script(cx, output.get().script);
-    RootedValue rval(cx);
-    if (!JS_ExecuteScript(cx, script, &rval)) {
-      return false;
-    }
+  JS::SourceText<mozilla::Utf8Unit> srcBuf;
+  if (!srcBuf.init(cx, std::move(src), srcLen)) {
+    return false;
   }
 
-  if (!VerifyGlobalNames(cx, shg)) {
+  Rooted<frontend::CompilationInput> input(cx,
+                                           frontend::CompilationInput(options));
+  auto stencil = frontend::CompileGlobalScriptToStencil(cx, input.get(), srcBuf,
+                                                        ScopeKind::Global);
+  if (!stencil) {
     return false;
   }
 
   
-  
-  cx->runtime()->gc.freezeSelfHostingZone();
+  if (selfHostedXDRWriter) {
+    JS::TranscodeBuffer xdrBuffer;
+    if (!stencil->serializeStencils(cx, input.get(), xdrBuffer)) {
+      return false;
+    }
 
-  return true;
+    if (!selfHostedXDRWriter(cx, xdrBuffer)) {
+      return false;
+    }
+  }
+
+  return InitSelfHostingFromStencil(cx, shg, input.get(), *stencil);
 }
 
 void JSRuntime::finishSelfHosting() { selfHostingGlobal_ = nullptr; }
