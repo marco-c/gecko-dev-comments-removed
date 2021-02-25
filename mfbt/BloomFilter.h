@@ -53,7 +53,7 @@ namespace mozilla {
 
 
 template <unsigned KeySize, class T>
-class BloomFilter {
+class CountingBloomFilter {
   
 
 
@@ -103,7 +103,7 @@ class BloomFilter {
 
 
  public:
-  BloomFilter() {
+  CountingBloomFilter() {
     static_assert(KeySize <= kKeyShift, "KeySize too big");
 
     
@@ -169,12 +169,12 @@ class BloomFilter {
 };
 
 template <unsigned KeySize, class T>
-inline void BloomFilter<KeySize, T>::clear() {
+inline void CountingBloomFilter<KeySize, T>::clear() {
   memset(mCounters, 0, kArraySize);
 }
 
 template <unsigned KeySize, class T>
-inline void BloomFilter<KeySize, T>::add(uint32_t aHash) {
+inline void CountingBloomFilter<KeySize, T>::add(uint32_t aHash) {
   uint8_t& slot1 = firstSlot(aHash);
   if (MOZ_LIKELY(!full(slot1))) {
     ++slot1;
@@ -186,13 +186,13 @@ inline void BloomFilter<KeySize, T>::add(uint32_t aHash) {
 }
 
 template <unsigned KeySize, class T>
-MOZ_ALWAYS_INLINE void BloomFilter<KeySize, T>::add(const T* aValue) {
+MOZ_ALWAYS_INLINE void CountingBloomFilter<KeySize, T>::add(const T* aValue) {
   uint32_t hash = aValue->hash();
   return add(hash);
 }
 
 template <unsigned KeySize, class T>
-inline void BloomFilter<KeySize, T>::remove(uint32_t aHash) {
+inline void CountingBloomFilter<KeySize, T>::remove(uint32_t aHash) {
   
   
   uint8_t& slot1 = firstSlot(aHash);
@@ -206,20 +206,21 @@ inline void BloomFilter<KeySize, T>::remove(uint32_t aHash) {
 }
 
 template <unsigned KeySize, class T>
-MOZ_ALWAYS_INLINE void BloomFilter<KeySize, T>::remove(const T* aValue) {
+MOZ_ALWAYS_INLINE void CountingBloomFilter<KeySize, T>::remove(
+    const T* aValue) {
   uint32_t hash = aValue->hash();
   remove(hash);
 }
 
 template <unsigned KeySize, class T>
-MOZ_ALWAYS_INLINE bool BloomFilter<KeySize, T>::mightContain(
+MOZ_ALWAYS_INLINE bool CountingBloomFilter<KeySize, T>::mightContain(
     uint32_t aHash) const {
   
   return firstSlot(aHash) && secondSlot(aHash);
 }
 
 template <unsigned KeySize, class T>
-MOZ_ALWAYS_INLINE bool BloomFilter<KeySize, T>::mightContain(
+MOZ_ALWAYS_INLINE bool CountingBloomFilter<KeySize, T>::mightContain(
     const T* aValue) const {
   uint32_t hash = aValue->hash();
   return mightContain(hash);
