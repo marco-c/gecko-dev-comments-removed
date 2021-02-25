@@ -450,17 +450,12 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
         self.register_virtualenv_module(name="mock")
         self.register_virtualenv_module(name="simplejson")
 
-        marionette_requirements_file = os.path.join(
-            dirs["abs_test_install_dir"], "config", "marionette_requirements.txt"
-        )
-        
-        self.register_virtualenv_module(
-            requirements=[marionette_requirements_file],
-            two_pass=True,
-            legacy_resolver=True,
-        )
+        requirements_files = [
+            os.path.join(
+                dirs["abs_test_install_dir"], "config", "marionette_requirements.txt"
+            )
+        ]
 
-        requirements_files = []
         if self._query_specified_suites("mochitest") is not None:
             
             if PY2:
