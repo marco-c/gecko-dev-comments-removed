@@ -483,7 +483,6 @@ static inline PackedRGBA8 packYUV(V8<int16_t> gg, V8<int16_t> br) {
          PackedRGBA8{0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255};
 }
 
-enum YUVColorSpace { REC_601 = 0, REC_709, REC_2020, IDENTITY };
 
 
 
@@ -499,30 +498,58 @@ enum YUVColorSpace { REC_601 = 0, REC_709, REC_2020, IDENTITY };
 
 
 
+struct YUVMatrix {
+  
+  
+  
+  V8<int16_t> rbCoeffs;
+  V8<int16_t> gCoeffs;
+  V8<uint16_t> yScale;
+  V8<int16_t> yBias;
+  V8<int16_t> uvBias;
+  V8<int16_t> brMask;
 
-template <const double MATRIX[4]>
-struct YUVConverterImpl {
-  static inline PackedRGBA8 convert(V8<int16_t> yy, V8<int16_t> uv) {
+  
+  
+  
+  
+  YUVMatrix()
+      : rbCoeffs(1 << 6),
+        gCoeffs(0),
+        yScale(1 << (6 + 1)),
+        yBias(0),
+        uvBias(0),
+        brMask(0) {}
+
+  
+  YUVMatrix(double rv, double gu, double gv, double bu)
+      : rbCoeffs(
+            zip(I16(int16_t(bu * 64.0 + 0.5)), I16(int16_t(rv * 64.0 + 0.5)))),
+        gCoeffs(zip(I16(-int16_t(gu * -64.0 + 0.5)),
+                    I16(-int16_t(gv * -64.0 + 0.5)))),
+        yScale(2 * 74 + 1),
+        yBias(int16_t(-16 * 74.5) + (1 << 5)),
+        uvBias(-128),
+        brMask(-1) {}
+
+  ALWAYS_INLINE PackedRGBA8 convert(V8<int16_t> yy, V8<int16_t> uv) const {
     
-    constexpr int16_t mrv = int16_t(MATRIX[0] * 64.0 + 0.5);
-    constexpr int16_t mgu = -int16_t(MATRIX[1] * -64.0 + 0.5);
-    constexpr int16_t mgv = -int16_t(MATRIX[2] * -64.0 + 0.5);
-    constexpr int16_t mbu = int16_t(MATRIX[3] * 64.0 + 0.5);
+    
+    
+    
+    yy = bit_cast<V8<int16_t>>((bit_cast<V8<uint16_t>>(yy) * yScale) >> 1) +
+         yBias;
 
     
-    
-    yy = yy * 74 + (yy >> 1) + (int16_t(-16 * 74.5) + (1 << 5));
+    uv += uvBias;
 
     
-    uv -= 128;
-
-    
-    auto br = V8<int16_t>{mbu, mrv, mbu, mrv, mbu, mrv, mbu, mrv} * uv;
-    br = addsat(yy, br);
+    auto br = rbCoeffs * uv;
+    br = addsat(yy & brMask, br);
     br >>= 6;
 
     
-    auto gg = V8<int16_t>{mgu, mgv, mgu, mgv, mgu, mgv, mgu, mgv} * uv;
+    auto gg = gCoeffs * uv;
     gg = addsat(
         yy,
         addsat(gg, bit_cast<V8<int16_t>>(bit_cast<V4<uint32_t>>(gg) >> 16)));
@@ -533,55 +560,34 @@ struct YUVConverterImpl {
   }
 };
 
-template <YUVColorSpace COLOR_SPACE>
-struct YUVConverter {};
+enum YUVColorSpace { REC_601 = 0, REC_709, REC_2020, IDENTITY };
 
-
-
-
-
-
-
-constexpr double YUVMatrix601[4] = {1.5960267857142858, -0.3917622900949137,
-                                    -0.8129676472377708, 2.017232142857143};
-template <>
-struct YUVConverter<REC_601> : YUVConverterImpl<YUVMatrix601> {};
-
-
-
-
-
-
-
-static constexpr double YUVMatrix709[4] = {
-    1.7927410714285714, -0.21324861427372963, -0.532909328559444,
-    2.1124017857142854};
-template <>
-struct YUVConverter<REC_709> : YUVConverterImpl<YUVMatrix709> {};
-
-
-
-
-
-
-
-static constexpr double YUVMatrix2020[4] = {
-    1.678674107142860, -0.187326104219343, -0.650424318505057,
-    2.14177232142857};
-template <>
-struct YUVConverter<REC_2020> : YUVConverterImpl<YUVMatrix2020> {};
-
-
-
-
-
-
-template <>
-struct YUVConverter<IDENTITY> {
-  static inline PackedRGBA8 convert(V8<int16_t> y, V8<int16_t> uv) {
+static const YUVMatrix yuvMatrix[IDENTITY + 1] = {
     
-    return packYUV(y, uv);
-  }
+
+
+
+
+  {1.5960267857142858, -0.3917622900949137, -0.8129676472377708, 2.017232142857143},
+
+
+
+
+
+  {1.7927410714285714, -0.21324861427372963, -0.532909328559444, 2.1124017857142854},
+
+
+
+
+
+  {1.678674107142860, -0.187326104219343, -0.650424318505057, 2.14177232142857},
+
+
+
+
+
+  {},
+    
 };
 
 
@@ -684,13 +690,13 @@ const int STEP_BITS = 8;
 
 
 
-template <YUVColorSpace COLOR_SPACE>
 static inline void upscaleYUV42R8(uint32_t* dest, int span,
                                   sampler2D_impl sampler[3], I32 yU,
                                   int32_t yDU, int32_t yOffsetV,
                                   int32_t yStrideV, int16_t yFracV, I32 cU,
                                   int32_t cDU, int32_t cOffsetV,
-                                  int32_t cStrideV, int16_t cFracV) {
+                                  int32_t cStrideV, int16_t cFracV,
+                                  const YUVMatrix& colorSpace) {
   
   
   
@@ -802,15 +808,14 @@ static inline void upscaleYUV42R8(uint32_t* dest, int span,
                   SHUFFLE(yuvPx, yuvPx, 5, 7, 4, 6, 5, 7, 4, 6)) >>
                  2);
 
-    unaligned_store(dest, YUVConverter<COLOR_SPACE>::convert(yPx, uvPx));
+    unaligned_store(dest, colorSpace.convert(yPx, uvPx));
   }
 }
 
-template <YUVColorSpace COLOR_SPACE>
 static void linear_row_yuv(uint32_t* dest, int span, const vec2_scalar& srcUV,
                            float srcDU, const vec2_scalar& chromaUV,
                            float chromaDU, sampler2D_impl sampler[3],
-                           int colorDepth) {
+                           int colorDepth, const YUVMatrix& colorSpace) {
   
   I32 yU = cast(init_interp(srcUV.x, srcDU) * (1 << STEP_BITS));
   int32_t yV = int32_t(srcUV.y);
@@ -833,8 +838,8 @@ static void linear_row_yuv(uint32_t* dest, int span, const vec2_scalar& srcUV,
                     texelFetch(&sampler[1], ivec2(chromaUV), 0).x.x,
                     texelFetch(&sampler[2], ivec2(chromaUV), 0).x.x, 1.0f}),
                 I16);
-    auto rgb = YUVConverter<COLOR_SPACE>::convert(zip(I16(yuv.x), I16(yuv.x)),
-                                                  zip(I16(yuv.y), I16(yuv.z)));
+    auto rgb = colorSpace.convert(zip(I16(yuv.x), I16(yuv.x)),
+                                  zip(I16(yuv.y), I16(yuv.z)));
     for (; span >= 4; span -= 4) {
       unaligned_store(dest, rgb);
       dest += 4;
@@ -861,8 +866,7 @@ static void linear_row_yuv(uint32_t* dest, int span, const vec2_scalar& srcUV,
       auto vPx =
           textureLinearUnpackedR16(&sampler[2], ivec2(cU >> STEP_BITS, cV)) >>
           rescaleBits;
-      unaligned_store(dest, YUVConverter<COLOR_SPACE>::convert(zip(yPx, yPx),
-                                                               zip(uPx, vPx)));
+      unaligned_store(dest, colorSpace.convert(zip(yPx, yPx), zip(uPx, vPx)));
       dest += 4;
       yU += yDU;
       cU += cDU;
@@ -878,10 +882,8 @@ static void linear_row_yuv(uint32_t* dest, int span, const vec2_scalar& srcUV,
       auto vPx =
           textureLinearUnpackedR16(&sampler[2], ivec2(cU >> STEP_BITS, cV)) >>
           rescaleBits;
-      partial_store_span(
-          dest,
-          YUVConverter<COLOR_SPACE>::convert(zip(yPx, yPx), zip(uPx, vPx)),
-          span);
+      partial_store_span(dest, colorSpace.convert(zip(yPx, yPx), zip(uPx, vPx)),
+                         span);
     }
   } else {
     assert(sampler[0].format == TextureFormat::R8);
@@ -913,7 +915,7 @@ static void linear_row_yuv(uint32_t* dest, int span, const vec2_scalar& srcUV,
         auto uvPx =
             textureLinearRowPairedR8(&sampler[1], &sampler[2], cU >> STEP_BITS,
                                      cOffsetV, cStrideV, cFracV);
-        unaligned_store(dest, YUVConverter<COLOR_SPACE>::convert(yPx, uvPx));
+        unaligned_store(dest, colorSpace.convert(yPx, uvPx));
         dest += 4;
         yU += yDU;
         cU += cDU;
@@ -926,9 +928,8 @@ static void linear_row_yuv(uint32_t* dest, int span, const vec2_scalar& srcUV,
               4,
           span & ~3);
       if (inside > 0) {
-        upscaleYUV42R8<COLOR_SPACE>(dest, inside, sampler, yU, yDU, yOffsetV,
-                                    yStrideV, yFracV, cU, cDU, cOffsetV,
-                                    cStrideV, cFracV);
+        upscaleYUV42R8(dest, inside, sampler, yU, yDU, yOffsetV, yStrideV,
+                       yFracV, cU, cDU, cOffsetV, cStrideV, cFracV, colorSpace);
         span -= inside;
         dest += inside;
         yU += (inside / 4) * yDU;
@@ -945,7 +946,7 @@ static void linear_row_yuv(uint32_t* dest, int span, const vec2_scalar& srcUV,
       auto uvPx =
           textureLinearRowPairedR8(&sampler[1], &sampler[2], cU >> STEP_BITS,
                                    cOffsetV, cStrideV, cFracV);
-      unaligned_store(dest, YUVConverter<COLOR_SPACE>::convert(yPx, uvPx));
+      unaligned_store(dest, colorSpace.convert(yPx, uvPx));
       dest += 4;
       yU += yDU;
       cU += cDU;
@@ -957,8 +958,7 @@ static void linear_row_yuv(uint32_t* dest, int span, const vec2_scalar& srcUV,
       auto uvPx =
           textureLinearRowPairedR8(&sampler[1], &sampler[2], cU >> STEP_BITS,
                                    cOffsetV, cStrideV, cFracV);
-      partial_store_span(dest, YUVConverter<COLOR_SPACE>::convert(yPx, uvPx),
-                         span);
+      partial_store_span(dest, colorSpace.convert(yPx, uvPx), span);
     }
   }
 }
@@ -1010,28 +1010,8 @@ static void linear_convert_yuv(Texture& ytex, Texture& utex, Texture& vtex,
   char* dest = dsttex.sample_ptr(dstReq, dstBounds, 0);
   int span = dstBounds.width();
   for (int rows = dstBounds.height(); rows > 0; rows--) {
-    switch (colorSpace) {
-      case REC_601:
-        linear_row_yuv<REC_601>((uint32_t*)dest, span, srcUV, srcDUV.x,
-                                chromaUV, chromaDUV.x, sampler, colorDepth);
-        break;
-      case REC_709:
-        linear_row_yuv<REC_709>((uint32_t*)dest, span, srcUV, srcDUV.x,
-                                chromaUV, chromaDUV.x, sampler, colorDepth);
-        break;
-      case REC_2020:
-        linear_row_yuv<REC_2020>((uint32_t*)dest, span, srcUV, srcDUV.x,
-                                 chromaUV, chromaDUV.x, sampler, colorDepth);
-        break;
-      case IDENTITY:
-        linear_row_yuv<IDENTITY>((uint32_t*)dest, span, srcUV, srcDUV.x,
-                                 chromaUV, chromaDUV.x, sampler, colorDepth);
-        break;
-      default:
-        debugf("unknown YUV color space %d\n", colorSpace);
-        assert(false);
-        break;
-    }
+    linear_row_yuv((uint32_t*)dest, span, srcUV, srcDUV.x, chromaUV,
+                   chromaDUV.x, sampler, colorDepth, yuvMatrix[colorSpace]);
     dest += destStride;
     srcUV.y += srcDUV.y;
     chromaUV.y += chromaDUV.y;
@@ -1051,6 +1031,10 @@ void CompositeYUV(LockedTexture* lockedDst, LockedTexture* lockedY,
                   GLboolean flip, GLint clipX, GLint clipY, GLsizei clipWidth,
                   GLsizei clipHeight) {
   if (!lockedDst || !lockedY || !lockedU || !lockedV) {
+    return;
+  }
+  if (colorSpace > IDENTITY) {
+    assert(false);
     return;
   }
   Texture& ytex = *lockedY;
