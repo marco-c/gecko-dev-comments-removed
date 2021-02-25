@@ -320,7 +320,6 @@ class alignas(alignof(uint32_t)) ParserAtom {
   
   static constexpr uint32_t HasTwoByteCharsFlag = 1 << 0;
   static constexpr uint32_t UsedByStencilFlag = 1 << 1;
-  static constexpr uint32_t WellKnownOrStaticFlag = 1 << 2;
 
   
   
@@ -404,14 +403,7 @@ class alignas(alignof(uint32_t)) ParserAtom {
                       CompilationAtomCache& atomCache) const;
 
  private:
-  void markUsedByStencil() {
-    MOZ_ASSERT(!isWellKnownOrStatic());
-    flags_ |= UsedByStencilFlag;
-  }
-
-  bool isWellKnownOrStatic() const { return flags_ & WellKnownOrStaticFlag; }
-
-  constexpr void setWellKnownOrStatic() { flags_ |= WellKnownOrStaticFlag; }
+  void markUsedByStencil() { flags_ |= UsedByStencilFlag; }
 
   constexpr void setHashAndLength(HashNumber hash, uint32_t length) {
     hash_ = hash;
