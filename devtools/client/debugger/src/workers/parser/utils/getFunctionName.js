@@ -2,14 +2,12 @@
 
 
 
-
 import * as t from "@babel/types";
-import type { Node } from "@babel/types";
 
 
 
 
-export default function getFunctionName(node: Node, parent: Node): string {
+export default function getFunctionName(node, parent) {
   if (t.isIdentifier(node.id)) {
     return node.id.name;
   }

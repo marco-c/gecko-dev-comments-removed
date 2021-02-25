@@ -2,8 +2,6 @@
 
 
 
-
-
 import { sortSelectedBreakpoints } from "../index";
 
 import { makeMockBreakpoint, makeMockSource } from "../../test-mockup";

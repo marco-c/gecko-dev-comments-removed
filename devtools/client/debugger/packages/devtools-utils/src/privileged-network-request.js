@@ -2,9 +2,7 @@
 
 
 
-
-
-function networkRequest(url: string, opts: any): Promise<*> {
+function networkRequest(url, opts) {
   return fetch(url, {
     cache: opts.loadFromCache ? "default" : "no-cache",
   }).then(res => {

@@ -2,24 +2,12 @@
 
 
 
-
-
 import { connect } from "../../utils/connect";
 import { Component } from "react";
 import { getSelectedSource, getSelectedBreakableLines } from "../../selectors";
-import type { Source } from "../../types";
 import { fromEditorLine } from "../../utils/editor";
 
-type OwnProps = {|
-  editor: Object,
-|};
-type Props = {
-  selectedSource: Source,
-  editor: Object,
-  breakableLines: Set<number>,
-};
-
-class EmptyLines extends Component<Props> {
+class EmptyLines extends Component {
   componentDidMount() {
     this.disableEmptyLines();
   }
@@ -83,6 +71,4 @@ const mapStateToProps = state => {
   };
 };
 
-export default connect<Props, OwnProps, _, _, _, _>(mapStateToProps)(
-  EmptyLines
-);
+export default connect(mapStateToProps)(EmptyLines);

@@ -23,7 +23,7 @@ import { prefs } from "./prefs";
 
 
 
-export function log(...args: any[]): void {
+export function log(...args) {
   if (prefs.logging) {
     console.log(...args);
   }

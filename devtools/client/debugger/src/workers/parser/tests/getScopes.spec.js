@@ -3,8 +3,6 @@
 
 
 
-
-
 import getScopes from "../getScopes";
 import { populateOriginalSource } from "./helpers";
 import cases from "jest-in-case";

@@ -2,9 +2,7 @@
 
 
 
-
-
-export function scrollList(resultList: Element[], index: number): void {
+export function scrollList(resultList, index) {
   if (!resultList.hasOwnProperty(index)) {
     return;
   }

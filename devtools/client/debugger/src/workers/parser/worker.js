@@ -2,8 +2,6 @@
 
 
 
-
-
 import { getSymbols, clearSymbols } from "./getSymbols";
 import { clearASTs } from "./utils/ast";
 import getScopes, { clearScopes } from "./getScopes";

@@ -2,8 +2,6 @@
 
 
 
-
-
 import React from "react";
 import { shallow } from "enzyme";
 import A11yIntention from "../A11yIntention";

@@ -2,9 +2,6 @@
 
 
 
-
-
-
 const { PrefsHelper } = require("devtools/client/shared/prefs");
 
 import { isNode } from "./environment";
@@ -161,15 +158,14 @@ export const features = new PrefsHelper("devtools.debugger.features", {
 });
 
 
-
 const ThreadUtils = require("devtools/client/shared/thread-utils");
 export const asyncStore = ThreadUtils.asyncStore;
 
-export function resetSchemaVersion(): void {
+export function resetSchemaVersion() {
   prefs.debuggerPrefsSchemaVersion = prefsSchemaVersion;
 }
 
-export function verifyPrefSchema(): void {
+export function verifyPrefSchema() {
   if (prefs.debuggerPrefsSchemaVersion < prefsSchemaVersion) {
     asyncStore.pendingBreakpoints = {};
     asyncStore.tabs = [];

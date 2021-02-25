@@ -2,8 +2,6 @@
 
 
 
-
-
 import { handleError, promisify, endTruncateStr, waitForMs } from "../utils";
 
 describe("handleError()", () => {

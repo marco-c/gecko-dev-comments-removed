@@ -2,8 +2,6 @@
 
 
 
-
-
 import { getSymbols } from "../../../reducers/ast";
 import {
   actions,
@@ -173,7 +171,7 @@ describe("sources", () => {
     const source = await dispatch(
       actions.newGeneratedSource(makeSource("testSource"))
     );
-    const location = ({ test: "testLocation" }: any);
+    const location = { test: "testLocation" };
 
     
     dispatch(actions.setSelectedLocation(cx, source, location));

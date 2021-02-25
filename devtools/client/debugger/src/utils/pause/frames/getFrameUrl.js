@@ -2,10 +2,6 @@
 
 
 
-
-
-import type { Frame } from "../../../types";
-
-export function getFrameUrl(frame: Frame) {
+export function getFrameUrl(frame) {
   return frame?.source?.url ?? "";
 }

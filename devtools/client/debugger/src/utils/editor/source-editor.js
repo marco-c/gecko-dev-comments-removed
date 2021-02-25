@@ -7,10 +7,7 @@
 
 
 
-
-
 const CodeMirror = require("codemirror");
-
 
 require("raw!chrome://devtools/content/shared/sourceeditor/codemirror/lib/codemirror.css");
 require("codemirror/mode/javascript/javascript");
@@ -32,68 +29,50 @@ require("codemirror/addon/display/placeholder");
 require("codemirror/mode/clike/clike");
 require("codemirror/mode/rust/rust");
 
-
 require("raw!chrome://devtools/content/debugger/src/utils/editor/source-editor.css");
 
 
-type Mode = string | Object;
-export type AlignOpts = "top" | "center" | "bottom";
 
 
 
 const MAX_VERTICAL_OFFSET = 3;
 
-type SourceEditorOpts = {
-  enableCodeFolding: boolean,
-  extraKeys: Object,
-  gutters: string[],
-  foldGutter: boolean,
-  lineNumbers: boolean,
-  lineWrapping: boolean,
-  matchBrackets: boolean,
-  mode: string,
-  readOnly: boolean,
-  showAnnotationRuler: boolean,
-  theme: string,
-  value: string,
-};
-
 export default class SourceEditor {
-  opts: SourceEditorOpts;
-  editor: any;
+  opts;
+  editor;
 
-  constructor(opts: SourceEditorOpts): void {
+  constructor(opts) {
     this.opts = opts;
   }
 
-  appendToLocalElement(node: any): void {
+  appendToLocalElement(node) {
     this.editor = CodeMirror(node, this.opts);
   }
 
-  destroy(): void {
+  destroy() {
     
     if (this.editor.doc) {
       this.editor.doc.cm = null;
     }
   }
 
-  get codeMirror(): Object {
+  get codeMirror() {
     return this.editor;
   }
 
-  get CodeMirror(): Object {
+  get CodeMirror() {
     return CodeMirror;
   }
 
-  setText(str: string): void {
+  setText(str) {
     this.editor.setValue(str);
   }
 
-  getText(): string {
+  getText() {
     return this.editor.getValue();
   }
 
-  setMode(value: Mode): void {
+  setMode(value) {
     this.editor.setOption("mode", value);
   }
 
@@ -101,7 +80,7 @@ export default class SourceEditor {
 
 
 
-  replaceDocument(doc: any): void {
+  replaceDocument(doc) {
     this.editor.swapDoc(doc);
   }
 
@@ -110,7 +89,7 @@ export default class SourceEditor {
 
 
 
-  createDocument(): Object {
+  createDocument() {
     return new CodeMirror.Doc("");
   }
 
@@ -120,7 +99,7 @@ export default class SourceEditor {
 
 
 
-  alignLine(line: number, align: AlignOpts = "top"): void {
+  alignLine(line, align = "top") {
     const cm = this.editor;
     const editorClientRect = cm.getWrapperElement().getBoundingClientRect();
 
@@ -159,7 +138,7 @@ export default class SourceEditor {
 
 
 
-  setFirstVisibleLine(line: number): void {
+  setFirstVisibleLine(line) {
     const { top } = this.editor.charCoords({ line, ch: 0 }, "local");
     this.editor.scrollTo(0, top);
   }

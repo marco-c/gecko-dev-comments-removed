@@ -2,6 +2,4 @@
 
 
 
-
-
 export { setInScopeLines } from "./setInScopeLines";

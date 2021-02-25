@@ -2,8 +2,6 @@
 
 
 
-
-
 import { workerUtils } from "devtools-utils";
 const { WorkerDispatcher } = workerUtils;
 
@@ -19,7 +17,7 @@ function getDispatcher() {
   return dispatcher;
 }
 
-export const start = (...args: any[]) => {
+export const start = (...args) => {
   startArgs = args;
 };
 
@@ -31,10 +29,10 @@ export const stop = () => {
   }
 };
 
-export const getMatches = (...args: any[]) => {
+export const getMatches = (...args) => {
   return getDispatcher().invoke("getMatches", ...args);
 };
 
-export const findSourceMatches = (...args: any[]) => {
+export const findSourceMatches = (...args) => {
   return getDispatcher().invoke("findSourceMatches", ...args);
 };

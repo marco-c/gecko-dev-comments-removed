@@ -2,18 +2,13 @@
 
 
 
-
-
-import type { Why } from "../../../types";
-import type { NamedValue } from "./types";
-
-export function getFramePopVariables(why: Why, path: string): NamedValue[] {
-  const vars: Array<NamedValue> = [];
+export function getFramePopVariables(why, path) {
+  const vars = [];
 
   if (why && why.frameFinished) {
     const { frameFinished } = why;
 
-    // Always display a `throw` property if present, even if it is falsy.
+    
     if (Object.prototype.hasOwnProperty.call(frameFinished, "throw")) {
       vars.push({
         name: "<exception>",
@@ -40,7 +35,7 @@ export function getFramePopVariables(why: Why, path: string): NamedValue[] {
   return vars;
 }
 
-export function getThisVariable(this_: any, path: string): ?NamedValue {
+export function getThisVariable(this_, path) {
   if (!this_) {
     return null;
   }
@@ -54,7 +49,7 @@ export function getThisVariable(this_: any, path: string): ?NamedValue {
 
 
 
-export function getScopeItemPath(item: Object): string {
+export function getScopeItemPath(item) {
   
   return item.path.toString();
 }

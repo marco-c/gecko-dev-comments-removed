@@ -2,16 +2,13 @@
 
 
 
-
-
 import React from "react";
 import { shallow } from "enzyme";
 import WhyPaused from "../SecondaryPanes/WhyPaused.js";
 
-function render(why: Object, delay: ?number) {
+function render(why, delay) {
   const props = { why, delay };
 
-  
   const component = shallow(<WhyPaused.WrappedComponent {...props} />);
 
   return { component, props };

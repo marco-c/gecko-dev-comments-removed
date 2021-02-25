@@ -2,20 +2,13 @@
 
 
 
-
 import React from "react";
 
 import AccessibleImage from "../AccessibleImage";
 
 import "./styles/CloseButton.css";
 
-type Props = {
-  handleClick: Function,
-  buttonClass?: string,
-  tooltip?: string,
-};
-
-function CloseButton({ handleClick, buttonClass, tooltip }: Props) {
+function CloseButton({ handleClick, buttonClass, tooltip }) {
   return (
     <button
       className={buttonClass ? `close-btn ${buttonClass}` : "close-btn"}

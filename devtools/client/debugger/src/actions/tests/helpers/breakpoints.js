@@ -2,9 +2,7 @@
 
 
 
-
-
-export function mockPendingBreakpoint(overrides: Object = {}) {
+export function mockPendingBreakpoint(overrides = {}) {
   const { sourceUrl, line, column, condition, disabled, hidden } = overrides;
   return {
     location: {
@@ -33,11 +31,7 @@ export function mockPendingBreakpoint(overrides: Object = {}) {
   };
 }
 
-export function generateBreakpoint(
-  filename: string,
-  line: number = 5,
-  column: number = 0
-) {
+export function generateBreakpoint(filename, line = 5, column = 0) {
   return {
     id: "breakpoint",
     originalText: "",

@@ -2,13 +2,11 @@
 
 
 
-
 import * as t from "@babel/types";
-import type { SimplePath } from "./simple-path";
 
 
 
-function fromCallExpression(callExpression: SimplePath) {
+function fromCallExpression(callExpression) {
   const allowlist = ["extend", "createClass"];
   const { callee } = callExpression.node;
   if (!callee) {
@@ -75,7 +73,7 @@ function fromPrototype(assignment) {
 
 
 
-export function inferClassName(path: SimplePath): string | null {
+export function inferClassName(path) {
   const classDeclaration = path.findParent(p => t.isClassDeclaration(p.node));
   if (classDeclaration) {
     return classDeclaration.node.id.name;

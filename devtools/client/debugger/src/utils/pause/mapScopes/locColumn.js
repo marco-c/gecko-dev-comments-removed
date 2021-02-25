@@ -2,11 +2,7 @@
 
 
 
-
-
-import type { PartialPosition } from "../../../types";
-
-export function locColumn(loc: PartialPosition): number {
+export function locColumn(loc) {
   if (typeof loc.column !== "number") {
     
     

@@ -2,26 +2,10 @@
 
 
 
-
 import { sortBy } from "lodash";
 import { getSelectedLocation } from "./selected-location";
 
-import type {
-  MappedLocation,
-  PartialPosition,
-  SourceLocation,
-  SourceId,
-  Source,
-} from "../types";
-
-type IncompleteLocation = {
-  sourceId: SourceId,
-  line?: number,
-  column?: number,
-  sourceUrl?: string,
-};
-
-export function comparePosition(a: ?PartialPosition, b: ?PartialPosition) {
+export function comparePosition(a, b) {
   return a && b && a.line == b.line && a.column == b.column;
 }
 
@@ -31,7 +15,7 @@ export function createLocation({
   line = 0,
   column,
   sourceUrl = "",
-}: IncompleteLocation): SourceLocation {
+}) {
   return {
     sourceId,
     line,
@@ -40,10 +24,7 @@ export function createLocation({
   };
 }
 
-export function sortSelectedLocations<T: MappedLocation>(
-  locations: $ReadOnlyArray<T>,
-  selectedSource: ?Source
-): Array<T> {
+export function sortSelectedLocations(locations, selectedSource) {
   return sortBy(locations, [
     
     location => getSelectedLocation(location, selectedSource).line,

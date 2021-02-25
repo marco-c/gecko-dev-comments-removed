@@ -2,8 +2,6 @@
 
 
 
-
-
 import { basename, dirname, isURL, isAbsolute, join } from "../path";
 
 const fullTestURL = "https://www.example.com/some/endpoint";

@@ -2,24 +2,20 @@
 
 
 
-
-
-import type { QuickOpenAction } from "./types";
-
-export function setQuickOpenQuery(query: string): QuickOpenAction {
+export function setQuickOpenQuery(query) {
   return {
     type: "SET_QUICK_OPEN_QUERY",
     query,
   };
 }
 
-export function openQuickOpen(query?: string): QuickOpenAction {
+export function openQuickOpen(query) {
   if (query != null) {
     return { type: "OPEN_QUICK_OPEN", query };
   }
   return { type: "OPEN_QUICK_OPEN" };
 }
 
-export function closeQuickOpen(): QuickOpenAction {
+export function closeQuickOpen() {
   return { type: "CLOSE_QUICK_OPEN" };
 }

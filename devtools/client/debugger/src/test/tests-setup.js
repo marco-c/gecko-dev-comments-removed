@@ -2,14 +2,10 @@
 
 
 
-
-
-
 global.Worker = require("workerjs");
 
 import path from "path";
 import Enzyme from "enzyme";
-
 import Adapter from "enzyme-adapter-react-16";
 import { setupHelper } from "../utils/dbg";
 import { prefs } from "../utils/prefs";

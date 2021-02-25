@@ -2,25 +2,11 @@
 
 
 
-
-
 export {
   createInitial,
   insertResources,
   removeResources,
   updateResources,
-} from "./core";
-export type {
-  Id,
-  Resource,
-  ResourceBound,
-  
-  
-  ResourceState,
-  
-  
-  ResourceIdentity,
-  ResourceValues,
 } from "./core";
 
 export {
@@ -29,18 +15,8 @@ export {
   getResource,
   getMappedResource,
 } from "./selector";
-export type { ResourceMap } from "./selector";
 
 export { makeResourceQuery, makeMapWithArgs } from "./base-query";
-export type {
-  ResourceQuery,
-  QueryMap,
-  QueryMapNoArgs,
-  QueryMapWithArgs,
-  QueryFilter,
-  QueryReduce,
-  QueryResultCompare,
-} from "./base-query";
 
 export {
   filterAllIds,
@@ -53,22 +29,11 @@ export {
   makeReduceQuery,
   makeReduceAllQuery,
 } from "./query";
-export type {
-  WeakQuery,
-  ShallowQuery,
-  StrictQuery,
-  IdQuery,
-  LoadQuery,
-  FilterQuery,
-  ReduceQuery,
-  ReduceAllQuery,
-} from "./query";
 
 export {
   queryCacheWeak,
   queryCacheShallow,
   queryCacheStrict,
 } from "./query-cache";
-export type { WeakArgsBound, ShallowArgsBound } from "./query-cache";
 
 export { memoizeResourceShallow } from "./memoize";

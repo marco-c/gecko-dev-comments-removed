@@ -2,8 +2,6 @@
 
 
 
-
-
 import { isMinified } from "../isMinified";
 import { makeMockSourceWithContent } from "../test-mockup";
 

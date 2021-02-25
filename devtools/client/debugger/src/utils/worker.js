@@ -2,23 +2,13 @@
 
 
 
-
-
-export type Message = {
-  data: {
-    id: string,
-    method: string,
-    args: Array<any>,
-  },
-};
-
 let msgId = 1;
 
 
 
 
-function workerTask(worker: any, method: string): Function {
-  return function(...args: any): Promise<any> {
+function workerTask(worker, method) {
+  return function(...args) {
     return new Promise((resolve, reject) => {
       const id = msgId++;
       worker.postMessage({ id, method, args });
@@ -41,8 +31,8 @@ function workerTask(worker: any, method: string): Function {
   };
 }
 
-function workerHandler(publicInterface: any): Function {
-  return function onTask(msg: Message) {
+function workerHandler(publicInterface) {
+  return function onTask(msg) {
     const { id, method, args } = msg.data;
     const response = publicInterface[method].apply(null, args);
 

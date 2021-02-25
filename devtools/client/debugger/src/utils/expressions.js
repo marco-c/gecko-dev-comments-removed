@@ -2,12 +2,8 @@
 
 
 
-
-
 import { correctIndentation } from "./indentation";
 import { getGrip } from "./evaluation-result";
-import type { Expression } from "../types";
-import type { Grip } from "../client/firefox/types";
 
 const UNAVAILABLE_GRIP = { unavailable: true };
 
@@ -17,7 +13,7 @@ const UNAVAILABLE_GRIP = { unavailable: true };
 
 
 
-export function wrapExpression(input: string): string {
+export function wrapExpression(input) {
   return correctIndentation(`
     try {
       ${input}
@@ -27,7 +23,7 @@ export function wrapExpression(input: string): string {
   `);
 }
 
-function isUnavailable(value): boolean {
+function isUnavailable(value) {
   return (
     value &&
     !!value.isError &&
@@ -35,9 +31,7 @@ function isUnavailable(value): boolean {
   );
 }
 
-export function getValue(
-  expression: Expression
-): Grip | string | number | null | Object {
+export function getValue(expression) {
   const { value, exception, error } = expression;
 
   if (error) {

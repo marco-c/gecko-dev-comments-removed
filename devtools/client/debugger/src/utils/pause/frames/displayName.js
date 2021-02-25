@@ -5,9 +5,6 @@
 
 
 
-import type { Frame } from "../../../types";
-
-
 
 
 const objectProperty = /([\w\d\$]+)$/;
@@ -15,7 +12,7 @@ const arrayProperty = /\[(.*?)\]$/;
 const functionProperty = /([\w\d]+)[\/\.<]*?$/;
 const annonymousProperty = /([\w\d]+)\(\^\)$/;
 
-export function simplifyDisplayName(displayName: string | void): string | void {
+export function simplifyDisplayName(displayName) {
   
   if (!displayName || /\s/.exec(displayName)) {
     return displayName;
@@ -69,24 +66,16 @@ function mapDisplayNames(frame, library) {
   return displayNameMap[library]?.[displayName] || displayName;
 }
 
-function getFrameDisplayName(frame: Frame): string {
-  const {
-    displayName,
-    originalDisplayName,
-    userDisplayName,
-    name,
-  } = (frame: any);
+function getFrameDisplayName(frame) {
+  const { displayName, originalDisplayName, userDisplayName, name } = frame;
   return originalDisplayName || userDisplayName || displayName || name;
 }
 
-type formatDisplayNameParams = {
-  shouldMapDisplayName: boolean,
-};
 export function formatDisplayName(
-  frame: Frame,
-  { shouldMapDisplayName = true }: formatDisplayNameParams = {},
-  l10n: typeof L10N
-): string {
+  frame,
+  { shouldMapDisplayName = true } = {},
+  l10n
+) {
   const { library } = frame;
   let displayName = getFrameDisplayName(frame);
   if (library && shouldMapDisplayName) {
@@ -96,7 +85,7 @@ export function formatDisplayName(
   return simplifyDisplayName(displayName) || l10n.getStr("anonymousFunction");
 }
 
-export function formatCopyName(frame: Frame, l10n: typeof L10N): string {
+export function formatCopyName(frame, l10n) {
   const displayName = formatDisplayName(frame, undefined, l10n);
   if (!frame.source) {
     throw new Error("no frame source");

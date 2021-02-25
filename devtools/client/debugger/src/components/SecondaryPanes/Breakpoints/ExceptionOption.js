@@ -2,23 +2,14 @@
 
 
 
-
-
 import React from "react";
-
-type ExceptionOptionProps = {
-  className: string,
-  isChecked: boolean,
-  label: string,
-  onChange: Function,
-};
 
 export default function ExceptionOption({
   className,
   isChecked = false,
   label,
   onChange,
-}: ExceptionOptionProps) {
+}) {
   return (
     <div className={className} onClick={onChange}>
       <input

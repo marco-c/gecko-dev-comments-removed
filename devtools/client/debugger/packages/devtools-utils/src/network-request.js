@@ -2,14 +2,12 @@
 
 
 
-
-
 const InlineBase64JSON = "data:application/json;";
 
 
 
 
-function networkRequest(url: string, opts: any): Promise<*> {
+function networkRequest(url, opts) {
   if (url.startsWith(InlineBase64JSON)) {
     const content = atob(url.slice(url.indexOf("base64") + 7));
     return Promise.resolve({ content });

@@ -2,8 +2,6 @@
 
 
 
-
-
 import { stripQuery, parse } from "../url";
 
 describe("url", () => {

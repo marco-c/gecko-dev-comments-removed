@@ -2,8 +2,6 @@
 
 
 
-
-
 import React, { PureComponent } from "react";
 
 import { connect } from "../../utils/connect";
@@ -14,27 +12,9 @@ import { getSourceClassnames, isPretty } from "../../utils/source";
 import { getFramework } from "../../utils/tabs";
 import { getSymbols, getTabs } from "../../selectors";
 
-import type { Source } from "../../types";
-import type { Symbols } from "../../reducers/types";
-
 import "./SourceIcon.css";
 
-type OwnProps = {|
-  source: Source,
-
-  
-  modifier?: string => string | null,
-|};
-type Props = {
-  source: Source,
-  modifier?: string => string | null,
-
-  
-  symbols: ?Symbols,
-  framework: ?string,
-};
-
-class SourceIcon extends PureComponent<Props> {
+class SourceIcon extends PureComponent {
   render() {
     const { modifier, source, symbols, framework } = this.props;
     let iconClass = "";
@@ -59,7 +39,7 @@ class SourceIcon extends PureComponent<Props> {
   }
 }
 
-export default connect<Props, OwnProps, _, _, _, _>((state, props) => ({
+export default connect((state, props) => ({
   symbols: getSymbols(state, props.source),
   framework: getFramework(getTabs(state), props.source.url),
 }))(SourceIcon);

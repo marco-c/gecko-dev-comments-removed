@@ -2,34 +2,18 @@
 
 
 
-
-
 import { locColumn } from "./locColumn";
 import { mappingContains } from "./mappingContains";
 
-import type { BindingContents } from "../../../types";
 
-import type { ApplicableBinding } from "./getApplicableBindingsForOriginalPosition";
 
 import { clientCommands } from "../../../client/firefox";
 
-export type GeneratedDescriptor = {
-  name: string,
-  
-  
-  
-  desc: ?BindingContents,
-
-  expression: string,
-};
 
 
 
 
-
-export async function findGeneratedReference(
-  applicableBindings: Array<ApplicableBinding>
-): Promise<GeneratedDescriptor | null> {
+export async function findGeneratedReference(applicableBindings) {
   
   
   
@@ -48,9 +32,7 @@ export async function findGeneratedReference(
   return null;
 }
 
-export async function findGeneratedImportReference(
-  applicableBindings: Array<ApplicableBinding>
-): Promise<GeneratedDescriptor | null> {
+export async function findGeneratedImportReference(applicableBindings) {
   
   
   
@@ -94,9 +76,9 @@ export async function findGeneratedImportReference(
 
 
 export async function findGeneratedImportDeclaration(
-  applicableBindings: Array<ApplicableBinding>,
-  importName: string
-): Promise<GeneratedDescriptor | null> {
+  applicableBindings,
+  importName
+) {
   
   
   
@@ -160,7 +142,7 @@ async function mapBindingReferenceToDescriptor({
   range,
   firstInRange,
   firstOnLine,
-}: ApplicableBinding): Promise<GeneratedDescriptor | null> {
+}) {
   
   
   
@@ -191,10 +173,7 @@ async function mapBindingReferenceToDescriptor({
 
 
 
-async function mapImportReferenceToDescriptor({
-  binding,
-  range,
-}: ApplicableBinding): Promise<GeneratedDescriptor | null> {
+async function mapImportReferenceToDescriptor({ binding, range }) {
   if (binding.loc.type !== "ref") {
     return null;
   }
@@ -286,10 +265,10 @@ async function mapImportReferenceToDescriptor({
     : null;
 }
 
-function isPrimitiveValue(desc: ?BindingContents) {
+function isPrimitiveValue(desc) {
   return desc && (!desc.value || typeof desc.value !== "object");
 }
-function isObjectValue(desc: ?BindingContents) {
+function isObjectValue(desc) {
   return (
     desc &&
     !isPrimitiveValue(desc) &&
@@ -300,10 +279,7 @@ function isObjectValue(desc: ?BindingContents) {
   );
 }
 
-async function readDescriptorProperty(
-  desc: ?BindingContents,
-  property: string
-): Promise<?BindingContents> {
+async function readDescriptorProperty(desc, property) {
   if (!desc) {
     return null;
   }

@@ -2,9 +2,6 @@
 
 
 
-
-
-import type { Position } from "../../types";
 import { parseScript } from "./utils/ast";
 import { buildScopeList } from "./getScopes";
 import generate from "@babel/generator";
@@ -30,17 +27,11 @@ function getFirstExpression(ast) {
   return statements[0].expression;
 }
 
-function locationKey(start: Position): string {
+function locationKey(start) {
   return `${start.line}:${start.column}`;
 }
 
-export default function mapOriginalExpression(
-  expression: string,
-  ast: ?Object,
-  mappings: {
-    [string]: string | null,
-  }
-): string {
+export default function mapOriginalExpression(expression, ast, mappings) {
   const scopes = buildScopeList(ast, "");
   let shouldUpdate = false;
 

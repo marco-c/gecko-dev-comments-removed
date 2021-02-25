@@ -5,13 +5,10 @@
 
 
 
-
-type Expr = string;
-
 class Value {
-  val: Object;
+  val;
 
-  constructor(val: Object) {
+  constructor(val) {
     this.val = val;
   }
   toString() {
@@ -122,7 +119,7 @@ function toJS(buf, typeFormatter, frame_base = "fp()") {
   let i = 0,
     a,
     b;
-  const stack: Array<Object> = [frame_base];
+  const stack = [frame_base];
   while (i < buf.length) {
     const code = buf[i++];
     switch (code) {
@@ -244,7 +241,7 @@ function toJS(buf, typeFormatter, frame_base = "fp()") {
   return popValue(typeFormatter);
 }
 
-function decodeExpr(expr: string): Expr {
+function decodeExpr(expr) {
   if (expr.includes("//")) {
     expr = expr.slice(0, expr.indexOf("//")).trim();
   }
@@ -255,8 +252,6 @@ function decodeExpr(expr: string): Expr {
   const typeFormatter = Int32Formatter;
   return toJS(code, typeFormatter) || `dwarf("${expr}")`;
 }
-
-export type { Expr };
 
 module.exports = {
   decodeExpr,

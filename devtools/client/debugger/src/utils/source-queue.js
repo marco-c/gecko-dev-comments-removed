@@ -2,17 +2,14 @@
 
 
 
-
-
 import { throttle } from "lodash";
-import type { QueuedSourceData } from "../types";
 
 
 let newQueuedSources;
 let queuedSources;
 let currentWork;
 
-async function dispatchNewSources(): Promise<void> {
+async function dispatchNewSources() {
   const sources = queuedSources;
   queuedSources = [];
   currentWork = await newQueuedSources(sources);
@@ -21,15 +18,15 @@ async function dispatchNewSources(): Promise<void> {
 const queue = throttle(dispatchNewSources, 100);
 
 export default {
-  initialize: (actions: Object) => {
+  initialize: actions => {
     newQueuedSources = actions.newQueuedSources;
     queuedSources = [];
   },
-  queue: (source: QueuedSourceData) => {
+  queue: source => {
     queuedSources.push(source);
     queue();
   },
-  queueSources: (sources: QueuedSourceData[]) => {
+  queueSources: sources => {
     if (sources.length > 0) {
       queuedSources = queuedSources.concat(sources);
       queue();

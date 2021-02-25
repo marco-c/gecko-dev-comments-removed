@@ -2,13 +2,10 @@
 
 
 
-
-import type { TreeNode } from "../utils/sources-tree/types";
-
-export function setExpandedState(expanded: Set<string>) {
+export function setExpandedState(expanded) {
   return { type: "SET_EXPANDED_STATE", expanded };
 }
 
-export function focusItem(item: TreeNode) {
+export function focusItem(item) {
   return { type: "SET_FOCUSED_SOURCE_ITEM", item };
 }

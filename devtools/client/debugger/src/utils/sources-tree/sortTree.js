@@ -2,21 +2,16 @@
 
 
 
-
-
 import { nodeHasChildren, isExactUrlMatch } from "./utils";
 
-import type { TreeDirectory } from "./types";
-import type { URL } from "../../types";
 
 
 
 
 
 
-
-export function sortTree(tree: TreeDirectory, debuggeeUrl: URL = ""): number {
-  return (tree.contents: any).sort((previousNode, currentNode) => {
+export function sortTree(tree, debuggeeUrl = "") {
+  return tree.contents.sort((previousNode, currentNode) => {
     const currentNodeIsDir = nodeHasChildren(currentNode);
     const previousNodeIsDir = nodeHasChildren(previousNode);
     if (currentNode.name === "(index)") {

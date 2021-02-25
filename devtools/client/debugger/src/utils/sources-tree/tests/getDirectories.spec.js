@@ -2,14 +2,12 @@
 
 
 
-
-
 import { makeMockDisplaySource } from "../../../utils/test-mockup";
 
 import { getDirectories, findSourceTreeNodes, createTree } from "../index";
 
 function formatDirectories(source, tree) {
-  const paths: any = getDirectories(source, tree);
+  const paths = getDirectories(source, tree);
   return paths.map(node => node.path);
 }
 

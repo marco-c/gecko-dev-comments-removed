@@ -2,8 +2,6 @@
 
 
 
-
-
 import React from "react";
 import { shallow } from "enzyme";
 
@@ -45,7 +43,7 @@ describe("Modal", () => {
   });
 
   it("passes status to child div class", () => {
-    const status: any = "testStatus";
+    const status = "testStatus";
     const wrapper = shallow(<Modal status={status} handleClose={() => {}} />);
     expect(wrapper.find(`.modal-wrapper .${status}`)).toHaveLength(1);
   });

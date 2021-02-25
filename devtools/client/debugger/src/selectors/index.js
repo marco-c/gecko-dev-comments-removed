@@ -2,8 +2,6 @@
 
 
 
-
-
 export * from "../reducers/expressions";
 export * from "../reducers/sources";
 export * from "../reducers/tabs";
@@ -55,7 +53,6 @@ export {
   getSelectedFrames,
   getVisibleSelectedFrame,
 } from "./pause";
-
 
 import { objectInspector } from "devtools/client/shared/components/reps/index";
 

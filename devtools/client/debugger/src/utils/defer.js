@@ -2,15 +2,7 @@
 
 
 
-
-
-type Deferred<T> = {
-  promise: Promise<T>,
-  resolve: (arg: T) => mixed,
-  reject: (arg: mixed) => mixed,
-};
-
-export default function defer<T>(): Deferred<T> {
+export default function defer() {
   let resolve = () => {};
   let reject = () => {};
   const promise = new Promise((_res, _rej) => {

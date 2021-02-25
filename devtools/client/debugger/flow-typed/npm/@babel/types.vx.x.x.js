@@ -1,7 +1,0 @@
-
-
-
-
-declare module "@babel/types" {
-  declare module.exports: any;
-}

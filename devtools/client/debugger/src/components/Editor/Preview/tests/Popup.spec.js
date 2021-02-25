@@ -2,8 +2,6 @@
 
 
 
-
-
 import {
   addHighlightToTargetSiblings,
   removeHighlightForTargetSiblings,

@@ -2,21 +2,11 @@
 
 
 
-
-
 import { selectLocation } from "../sources";
 import { getContext, getSourceByURL } from "../../selectors";
-import type { ThunkArgs } from "../types";
-import type { URL } from "../../types";
 
-type Location = {
-  sourceUrl: URL,
-  column: number,
-  line: number,
-};
-
-export function previewPausedLocation(location: Location) {
-  return ({ dispatch, getState }: ThunkArgs) => {
+export function previewPausedLocation(location) {
+  return ({ dispatch, getState }) => {
     const cx = getContext(getState());
     const source = getSourceByURL(getState(), location.sourceUrl);
     if (!source) {

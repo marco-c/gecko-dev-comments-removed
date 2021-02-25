@@ -2,10 +2,6 @@
 
 
 
-
-
-import type { ResourceBound } from "./core";
-import type { QueryMap } from "./base-query";
 import { shallowEqual } from "./compare";
 
 
@@ -14,19 +10,14 @@ import { shallowEqual } from "./compare";
 
 
 
-export function memoizeResourceShallow<
-  R: ResourceBound,
-  Args,
-  Mapped,
-  T: QueryMap<R, Args, Mapped>
->(map: T): T {
+export function memoizeResourceShallow(map) {
   const cache = new WeakMap();
 
   const fn = (input, identity, args) => {
     let existingEntry = cache.get(identity);
 
     if (!existingEntry || existingEntry.input !== input) {
-      const mapper = (map: any);
+      const mapper = map;
       const output = mapper(input, identity, args);
 
       if (existingEntry) {
@@ -50,5 +41,5 @@ export function memoizeResourceShallow<
     return existingEntry.output;
   };
   fn.needsArgs = map.needsArgs;
-  return (fn: any);
+  return fn;
 }

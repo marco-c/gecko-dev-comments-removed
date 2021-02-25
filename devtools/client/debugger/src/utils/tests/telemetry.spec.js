@@ -2,15 +2,12 @@
 
 
 
-
-
 jest.mock("devtools/client/shared/telemetry", () => {
   function MockTelemetry() {}
   MockTelemetry.prototype.recordEvent = jest.fn();
 
   return MockTelemetry;
 });
-
 
 const Telemetry = require("devtools/client/shared/telemetry");
 

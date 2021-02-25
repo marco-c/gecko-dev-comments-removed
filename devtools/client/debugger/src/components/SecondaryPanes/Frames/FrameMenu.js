@@ -2,20 +2,14 @@
 
 
 
-
 import { showMenu } from "../../../context-menu/menu";
 import { copyToTheClipboard } from "../../../utils/clipboard";
-import type { ContextMenuItem, Frame, ThreadContext } from "../../../types";
 import { kebabCase } from "lodash";
 
 const blackboxString = "ignoreContextItem.ignore";
 const unblackboxString = "ignoreContextItem.unignore";
 
-function formatMenuElement(
-  labelString: string,
-  click: Function,
-  disabled: boolean = false
-): ContextMenuItem {
+function formatMenuElement(labelString, click, disabled = false) {
   const label = L10N.getStr(labelString);
   const accesskey = L10N.getStr(`${labelString}.accesskey`);
   const id = `node-menu-${kebabCase(label)}`;
@@ -61,7 +55,7 @@ function restartFrame(cx, frame, restart) {
   return formatMenuElement("restartFrame", () => restart(cx, frame));
 }
 
-function isValidRestartFrame(frame: Frame, callbacks: Object) {
+function isValidRestartFrame(frame, callbacks) {
   
   
   if (!callbacks.restart) {
@@ -75,11 +69,11 @@ function isValidRestartFrame(frame: Frame, callbacks: Object) {
 }
 
 export default function FrameMenu(
-  frame: Frame,
-  frameworkGroupingOn: boolean,
-  callbacks: Object,
-  event: SyntheticMouseEvent<HTMLElement>,
-  cx: ThreadContext
+  frame,
+  frameworkGroupingOn,
+  callbacks,
+  event,
+  cx
 ) {
   event.stopPropagation();
   event.preventDefault();

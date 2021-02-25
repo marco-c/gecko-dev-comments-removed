@@ -2,8 +2,6 @@
 
 
 
-
-
 import { reportException, executeSoon } from "../DevToolsUtils.js";
 
 describe("DevToolsUtils", () => {

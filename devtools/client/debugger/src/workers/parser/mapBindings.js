@@ -2,8 +2,6 @@
 
 
 
-
-
 import { replaceNode } from "./utils/ast";
 import { isTopLevel } from "./utils/helpers";
 
@@ -76,11 +74,7 @@ function globalizeAssignment(node, bindings) {
   );
 }
 
-export default function mapExpressionBindings(
-  expression: string,
-  ast?: Object,
-  bindings: string[] = []
-): string {
+export default function mapExpressionBindings(expression, ast, bindings = []) {
   let isMapped = false;
   let shouldUpdate = true;
 

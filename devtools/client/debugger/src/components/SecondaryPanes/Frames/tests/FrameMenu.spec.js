@@ -2,8 +2,6 @@
 
 
 
-
-
 import FrameMenu from "../FrameMenu";
 import { kebabCase } from "lodash";
 
@@ -26,9 +24,9 @@ function generateMockId(labelString) {
 }
 
 describe("FrameMenu", () => {
-  let mockEvent: any;
+  let mockEvent;
   let mockFrame;
-  let emptyFrame: any;
+  let emptyFrame;
   let callbacks;
   let frameworkGroupingOn;
   let toggleFrameworkGrouping;

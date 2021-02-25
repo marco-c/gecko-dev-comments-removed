@@ -2,8 +2,6 @@
 
 
 
-
-
-export function isConsole(expression: string): boolean {
+export function isConsole(expression) {
   return /^console/.test(expression);
 }

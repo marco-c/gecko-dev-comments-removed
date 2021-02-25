@@ -2,7 +2,6 @@
 
 
 
-
 import {
   getHiddenBreakpoint,
   isEvaluatingExpression,
@@ -18,8 +17,6 @@ import assert from "../../utils/assert";
 
 import { fetchScopes } from "./fetchScopes";
 
-import type { Pause } from "../../types";
-import type { ThunkArgs } from "../types";
 
 
 
@@ -27,9 +24,8 @@ import type { ThunkArgs } from "../types";
 
 
 
-
-export function paused(pauseInfo: Pause) {
-  return async function({ dispatch, getState, client, sourceMaps }: ThunkArgs) {
+export function paused(pauseInfo) {
+  return async function({ dispatch, getState, client, sourceMaps }) {
     const { thread, frame, why } = pauseInfo;
 
     dispatch({ type: "PAUSED", thread, why, frame });

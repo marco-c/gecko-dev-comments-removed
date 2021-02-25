@@ -2,8 +2,6 @@
 
 
 
-
-
 import { annotateFrames } from "../annotateFrames";
 import { makeMockFrameWithURL } from "../../../test-mockup";
 

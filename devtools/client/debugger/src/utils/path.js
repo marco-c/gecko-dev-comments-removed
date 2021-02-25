@@ -2,25 +2,23 @@
 
 
 
-
-
-export function basename(path: string): string {
+export function basename(path) {
   return path.split("/").pop();
 }
 
-export function dirname(path: string): string {
+export function dirname(path) {
   const idx = path.lastIndexOf("/");
   return path.slice(0, idx);
 }
 
-export function isURL(str: string): boolean {
+export function isURL(str) {
   return str.includes("://");
 }
 
-export function isAbsolute(str: string): boolean {
+export function isAbsolute(str) {
   return str[0] === "/";
 }
 
-export function join(base: string, dir: string): string {
+export function join(base, dir) {
   return `${base}/${dir}`;
 }

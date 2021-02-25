@@ -4,37 +4,22 @@
 
 
 
-
 import { toPairs } from "lodash";
 
-import type { NamedValue } from "./types";
-import type { BindingContents, ScopeBindings } from "../../../types";
-
-
-type VarAndBindingsPair = [string, any];
-type VarAndBindingsPairs = Array<VarAndBindingsPair>;
-
-
-type ScopeBindingsWrapper = {
-  variables: ScopeBindings,
-  arguments: BindingContents[],
-};
 
 
 
-export function getBindingVariables(
-  bindings: ?ScopeBindingsWrapper,
-  parentName: string
-): NamedValue[] {
+
+
+
+export function getBindingVariables(bindings, parentName) {
   if (!bindings) {
     return [];
   }
 
-  const args: VarAndBindingsPairs = bindings.arguments.map(
-    arg => toPairs(arg)[0]
-  );
+  const args = bindings.arguments.map(arg => toPairs(arg)[0]);
 
-  const variables: VarAndBindingsPairs = toPairs(bindings.variables);
+  const variables = toPairs(bindings.variables);
 
   return args.concat(variables).map(binding => {
     const name = binding[0];

@@ -2,8 +2,6 @@
 
 
 
-
-
 import { hasSyntaxError } from "../validate";
 
 describe("has syntax error", () => {

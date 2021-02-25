@@ -2,8 +2,6 @@
 
 
 
-
-
 import { isVisible } from "../ui";
 
 describe("ui", () => {

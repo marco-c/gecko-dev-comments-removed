@@ -2,37 +2,13 @@
 
 
 
-
-
-import type { ResourceBound, ResourceState } from "./core";
-import type {
-  ResourceQuery,
-  QueryCacheHandler,
-  QueryContext,
-  QueryResult,
-} from "./base-query";
 import { strictEqual, shallowEqual } from "./compare";
 
-export type WeakArgsBound =
-  | $ReadOnly<{ [string]: mixed }>
-  | $ReadOnlyArray<mixed>;
-
-export type ShallowArgsBound =
-  | $ReadOnly<{ [string]: mixed }>
-  | $ReadOnlyArray<mixed>;
 
 
 
 
-
-export function queryCacheWeak<
-  R: ResourceBound,
-  Args: WeakArgsBound,
-  Mapped,
-  Reduced
->(
-  handler: QueryCacheHandler<R, Args, Mapped, Reduced>
-): ResourceQuery<R, Args, Reduced> {
+export function queryCacheWeak(handler) {
   const cache = new WeakMap();
   return makeCacheFunction({
     handler,
@@ -50,16 +26,7 @@ export function queryCacheWeak<
 
 
 
-export function queryCacheShallow<
-  R: ResourceBound,
-  
-  
-  Args: ShallowArgsBound,
-  Mapped,
-  Reduced
->(
-  handler: QueryCacheHandler<R, Args, Mapped, Reduced>
-): ResourceQuery<R, Args, Reduced> {
+export function queryCacheShallow(handler) {
   let latestEntry = null;
   return makeCacheFunction({
     handler,
@@ -75,9 +42,7 @@ export function queryCacheShallow<
 
 
 
-export function queryCacheStrict<R: ResourceBound, Args, Mapped, Reduced>(
-  handler: QueryCacheHandler<R, Args, Mapped, Reduced>
-): ResourceQuery<R, Args, Reduced> {
+export function queryCacheStrict(handler) {
   let latestEntry = null;
   return makeCacheFunction({
     handler,
@@ -89,30 +54,10 @@ export function queryCacheStrict<R: ResourceBound, Args, Mapped, Reduced>(
   });
 }
 
-type CacheEntry<R: ResourceBound, Args, Mapped, Reduced> = {
-  context: QueryContext<Args>,
-  state: ResourceState<R>,
-  result: QueryResult<Mapped, Reduced>,
-};
-
-type CacheFunctionInfo<R: ResourceBound, Args, Mapped, Reduced> = {|
-  
-  
-  handler: QueryCacheHandler<R, Args, Mapped, Reduced>,
-
-  
-  
-  compareArgs: (a: Args, b: Args) => boolean,
-
-  getEntry: (args: Args) => CacheEntry<R, Args, Mapped, Reduced> | null,
-  setEntry: (args: Args, entry: CacheEntry<R, Args, Mapped, Reduced>) => void,
-|};
-function makeCacheFunction<R: ResourceBound, Args, Mapped, Reduced>(
-  info: CacheFunctionInfo<R, Args, Mapped, Reduced>
-): ResourceQuery<R, Args, Reduced> {
+function makeCacheFunction(info) {
   const { handler, compareArgs, getEntry, setEntry } = info;
 
-  return (state, args: Args) => {
+  return (state, args) => {
     let entry = getEntry(args);
 
     const sameArgs = !!entry && compareArgs(entry.context.args, args);

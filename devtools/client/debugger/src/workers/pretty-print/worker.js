@@ -2,32 +2,10 @@
 
 
 
-
-
 import prettyFast from "pretty-fast";
 
 import { workerUtils } from "devtools-utils";
 const { workerHandler } = workerUtils;
-
-type Mappings = {
-  _array: Mapping[],
-};
-
-type Mapping = {
-  originalLine: number,
-  originalColumn: number,
-  source?: string,
-  generatedLine?: number,
-  generatedColumn?: number,
-  name?: string,
-};
-
-type InvertedMapping = {
-  generated: Object,
-  source?: any,
-  original?: any,
-  name?: string,
-};
 
 function prettyPrint({ url, indent, sourceText }) {
   const prettified = prettyFast(sourceText, {
@@ -41,9 +19,9 @@ function prettyPrint({ url, indent, sourceText }) {
   };
 }
 
-function invertMappings(mappings: Mappings) {
-  return mappings._array.map((m: Mapping) => {
-    const mapping: InvertedMapping = {
+function invertMappings(mappings) {
+  return mappings._array.map(m => {
+    const mapping = {
       generated: {
         line: m.originalLine,
         column: m.originalColumn,

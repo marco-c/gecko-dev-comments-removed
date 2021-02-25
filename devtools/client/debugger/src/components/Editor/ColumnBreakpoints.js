@@ -2,8 +2,6 @@
 
 
 
-
-
 import React, { Component } from "react";
 
 import ColumnBreakpoint from "./ColumnBreakpoint";
@@ -16,26 +14,10 @@ import {
 import { connect } from "../../utils/connect";
 import { makeBreakpointId } from "../../utils/breakpoint";
 import { breakpointItemActions } from "./menus/breakpoints";
-import type { BreakpointItemActions } from "./menus/breakpoints";
 
-import type { Source, Context } from "../../types";
 
-import type { ColumnBreakpoint as ColumnBreakpointType } from "../../selectors/visibleColumnBreakpoints";
 
-type OwnProps = {|
-  editor: Object,
-|};
-type Props = {
-  cx: Context,
-  editor: Object,
-  selectedSource: ?Source,
-  columnBreakpoints: ColumnBreakpointType[],
-  breakpointActions: BreakpointItemActions,
-};
-
-class ColumnBreakpoints extends Component<Props> {
-  props: Props;
-
+class ColumnBreakpoints extends Component {
   render() {
     const {
       cx,
@@ -76,7 +58,6 @@ const mapStateToProps = state => ({
   columnBreakpoints: visibleColumnBreakpoints(state),
 });
 
-export default connect<Props, OwnProps, _, _, _, _>(
-  mapStateToProps,
-  dispatch => ({ breakpointActions: breakpointItemActions(dispatch) })
-)(ColumnBreakpoints);
+export default connect(mapStateToProps, dispatch => ({
+  breakpointActions: breakpointItemActions(dispatch),
+}))(ColumnBreakpoints);

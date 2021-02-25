@@ -2,25 +2,23 @@
 
 
 
-
-
 import { setupCommands, clientCommands } from "../commands";
 
 function makeThreadCLient(resp) {
   
   
-  return ({
+  return {
     pauseGrip: () => ({
       getPrototypeAndProperties: async () => resp,
     }),
-  }: any);
+  };
 }
 
 function makeDependencies() {
   return {
-    devToolsClient: (null: any),
-    currentTarget: (null: any),
-    targetList: (null: any),
+    devToolsClient: null,
+    currentTarget: null,
+    targetList: null,
   };
 }
 

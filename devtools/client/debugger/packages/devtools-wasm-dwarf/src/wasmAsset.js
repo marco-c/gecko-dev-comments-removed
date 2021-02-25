@@ -2,16 +2,15 @@
 
 
 
-
 const fs = require("fs");
 
 const assets = require("../assets");
 
-function setAssetRootURL(assetRoot: string): void {
+function setAssetRootURL(assetRoot) {
   
 }
 
-async function getDwarfToWasmData(): Promise<ArrayBuffer> {
+async function getDwarfToWasmData() {
   const data = await new Promise((res, rej) => {
     fs.readFile(assets["dwarf_to_json.wasm"], (err, result) => {
       if (err) {

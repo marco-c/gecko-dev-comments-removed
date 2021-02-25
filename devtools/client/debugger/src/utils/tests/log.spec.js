@@ -2,8 +2,6 @@
 
 
 
-
-
 import { prefs } from "../prefs";
 import { log } from "../log.js";
 

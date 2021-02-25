@@ -4,7 +4,6 @@
 
 
 
-
 const { getDwarfToWasmData } = require("./wasmAsset.js");
 
 let cachedWasmModule;
@@ -43,7 +42,7 @@ function convertDwarf(wasm, instance) {
   return output;
 }
 
-async function convertToJSON(buffer: ArrayBuffer): any {
+async function convertToJSON(buffer) {
   
   
   cachedWasmModule = cachedWasmModule || loadConverterModule();

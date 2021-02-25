@@ -2,20 +2,7 @@
 
 
 
-
-
-import type { Position } from "../../types";
-
-type Token = {
-  startColumn: number,
-  endColumn: number,
-  type: string,
-};
-
-export function tokenAtTextPosition(
-  cm: any,
-  { line, column }: Position
-): Token | null {
+export function tokenAtTextPosition(cm, { line, column }) {
   if (line < 0 || line >= cm.lineCount()) {
     return null;
   }
@@ -30,7 +17,7 @@ export function tokenAtTextPosition(
 
 
 
-export function getExpressionFromCoords(cm: any, coord: Position) {
+export function getExpressionFromCoords(cm, coord) {
   const token = tokenAtTextPosition(cm, coord);
   if (!token) {
     return null;

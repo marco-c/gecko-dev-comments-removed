@@ -2,22 +2,11 @@
 
 
 
-
-
-import type {
-  Grip,
-  ObjectFront,
-  LongStringFront,
-  ExpressionResult,
-} from "../client/firefox/types";
-
-function isFront(result: ExpressionResult): boolean %checks {
+function isFront(result) {
   return !!result && typeof result === "object" && !!result.getGrip;
 }
 
-export function getGrip(
-  result: ExpressionResult
-): Grip | string | number | null {
+export function getGrip(result) {
   if (isFront(result)) {
     return result.getGrip();
   }
@@ -25,8 +14,6 @@ export function getGrip(
   return result;
 }
 
-export function getFront(
-  result: ExpressionResult
-): ObjectFront | LongStringFront | null {
+export function getFront(result) {
   return isFront(result) ? result : null;
 }

@@ -2,11 +2,8 @@
 
 
 
-
-
 import { PROMISE } from "../utils/middleware/promise";
 import { recordEvent } from "../../utils/telemetry";
-import type { ThunkArgs } from "../types";
 
 
 
@@ -14,10 +11,10 @@ import type { ThunkArgs } from "../types";
 
 
 export function pauseOnExceptions(
-  shouldPauseOnExceptions: boolean,
-  shouldPauseOnCaughtExceptions: boolean
+  shouldPauseOnExceptions,
+  shouldPauseOnCaughtExceptions
 ) {
-  return ({ dispatch, getState, client }: ThunkArgs) => {
+  return ({ dispatch, getState, client }) => {
     recordEvent("pause_on_exceptions", {
       exceptions: shouldPauseOnExceptions,
       

@@ -2,19 +2,13 @@
 
 
 
-
-
-import type { OriginalFrame, SourceLocation } from "debugger-html";
-
 const { getWasmXScopes } = require("devtools-wasm-dwarf");
 const { getSourceMap } = require("./sourceMapRequests");
 const { generatedToOriginalId } = require("./index");
 
 
 
-async function getOriginalStackFrames(
-  generatedLocation: SourceLocation
-): Promise<?Array<OriginalFrame>> {
+async function getOriginalStackFrames(generatedLocation) {
   const wasmXScopes = await getWasmXScopes(generatedLocation.sourceId, {
     getSourceMap,
     generatedToOriginalId,

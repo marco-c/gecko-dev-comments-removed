@@ -2,8 +2,6 @@
 
 
 
-
-
 import React from "react";
 import { shallow } from "enzyme";
 import Expressions from "../Expressions";
@@ -37,7 +35,6 @@ function generateDefaults(overrides) {
 
 function render(overrides = {}) {
   const props = generateDefaults(overrides);
-  
   const component = shallow(<Expressions.WrappedComponent {...props} />);
   return { component, props };
 }

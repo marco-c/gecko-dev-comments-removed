@@ -9,9 +9,7 @@
 
 
 
-
-
-import { createStore, applyMiddleware, type StoreCreator } from "redux";
+import { createStore, applyMiddleware } from "redux";
 import { waitUntilService } from "./middleware/wait-service";
 import { log } from "./middleware/log";
 import { promise } from "./middleware/promise";
@@ -23,13 +21,6 @@ import { context } from "./middleware/context";
 
 
 
-type ReduxStoreOptions = {
-  makeThunkArgs?: Function,
-  history?: Array<Object>,
-  middleware?: Function[],
-  log?: boolean,
-  timing?: boolean,
-};
 
 
 
@@ -44,10 +35,8 @@ type ReduxStoreOptions = {
 
 
 
-const configureStore = (
-  opts: ReduxStoreOptions = {}
-): StoreCreator<any, any, any> => {
-  const middleware: any = [
+const configureStore = (opts = {}) => {
+  const middleware = [
     thunk(opts.makeThunkArgs),
     context,
     promise,

@@ -2,8 +2,6 @@
 
 
 
-
-
 import { getAst } from "../ast";
 import { setSource } from "../../sources";
 import cases from "jest-in-case";

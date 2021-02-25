@@ -7,14 +7,9 @@
 
 
 
-
-
 import { flatten } from "lodash";
 
-import {
-  stringToSourceActorId,
-  type SourceActor,
-} from "../../reducers/source-actors";
+import { stringToSourceActorId } from "../../reducers/source-actors";
 import { insertSourceActors } from "../../actions/source-actors";
 import { makeSourceId } from "../../client/firefox/create";
 import { toggleBlackBox } from "./blackbox";
@@ -45,21 +40,8 @@ import { prefs, features } from "../../utils/prefs";
 import sourceQueue from "../../utils/source-queue";
 import { validateNavigateContext, ContextError } from "../../utils/context";
 
-import type {
-  Source,
-  SourceId,
-  Context,
-  OriginalSourceData,
-  GeneratedSourceData,
-  QueuedSourceData,
-} from "../../types";
-import type { Action, ThunkArgs } from "../types";
-
-function loadSourceMaps(cx: Context, sources: SourceActor[]) {
-  return async function({
-    dispatch,
-    sourceMaps,
-  }: ThunkArgs): Promise<?(Promise<Source>[])> {
+function loadSourceMaps(cx, sources) {
+  return async function({ dispatch, sourceMaps }) {
     try {
       const sourceList = await Promise.all(
         sources.map(async sourceActor => {
@@ -91,12 +73,8 @@ function loadSourceMaps(cx: Context, sources: SourceActor[]) {
 
 
 
-function loadSourceMap(cx: Context, sourceActor: SourceActor) {
-  return async function({
-    dispatch,
-    getState,
-    sourceMaps,
-  }: ThunkArgs): Promise<OriginalSourceData[]> {
+function loadSourceMap(cx, sourceActor) {
+  return async function({ dispatch, getState, sourceMaps }) {
     if (!prefs.clientSourceMapsEnabled || !sourceActor.sourceMapURL) {
       return [];
     }
@@ -123,13 +101,11 @@ function loadSourceMap(cx: Context, sourceActor: SourceActor) {
 
     if (!data) {
       
-      dispatch(
-        ({
-          type: "CLEAR_SOURCE_ACTOR_MAP_URL",
-          cx,
-          id: sourceActor.id,
-        }: Action)
-      );
+      dispatch({
+        type: "CLEAR_SOURCE_ACTOR_MAP_URL",
+        cx,
+        id: sourceActor.id,
+      });
       return [];
     }
 
@@ -140,8 +116,8 @@ function loadSourceMap(cx: Context, sourceActor: SourceActor) {
 
 
 
-function checkSelectedSource(cx: Context, sourceId: SourceId) {
-  return async ({ dispatch, getState }: ThunkArgs) => {
+function checkSelectedSource(cx, sourceId) {
+  return async ({ dispatch, getState }) => {
     const state = getState();
     const pendingLocation = getPendingSelectedLocation(state);
 
@@ -176,8 +152,8 @@ function checkSelectedSource(cx: Context, sourceId: SourceId) {
   };
 }
 
-function checkPendingBreakpoints(cx: Context, sourceId: SourceId) {
-  return async ({ dispatch, getState }: ThunkArgs) => {
+function checkPendingBreakpoints(cx, sourceId) {
+  return async ({ dispatch, getState }) => {
     
     const source = getSource(getState(), sourceId);
     if (!source) {
@@ -206,8 +182,8 @@ function checkPendingBreakpoints(cx: Context, sourceId: SourceId) {
   };
 }
 
-function restoreBlackBoxedSources(cx: Context, sources: Source[]) {
-  return async ({ dispatch, getState }: ThunkArgs) => {
+function restoreBlackBoxedSources(cx, sources) {
+  return async ({ dispatch, getState }) => {
     const tabs = getBlackBoxList(getState());
     if (tabs.length == 0) {
       return;
@@ -220,8 +196,8 @@ function restoreBlackBoxedSources(cx: Context, sources: Source[]) {
   };
 }
 
-export function newQueuedSources(sourceInfo: Array<QueuedSourceData>) {
-  return async ({ dispatch }: ThunkArgs) => {
+export function newQueuedSources(sourceInfo) {
+  return async ({ dispatch }) => {
     const generated = [];
     const original = [];
     for (const source of sourceInfo) {
@@ -241,17 +217,17 @@ export function newQueuedSources(sourceInfo: Array<QueuedSourceData>) {
   };
 }
 
-export function newOriginalSource(sourceInfo: OriginalSourceData) {
-  return async ({ dispatch }: ThunkArgs) => {
+export function newOriginalSource(sourceInfo) {
+  return async ({ dispatch }) => {
     const sources = await dispatch(newOriginalSources([sourceInfo]));
     return sources[0];
   };
 }
-export function newOriginalSources(sourceInfo: Array<OriginalSourceData>) {
-  return async ({ dispatch, getState }: ThunkArgs) => {
+export function newOriginalSources(sourceInfo) {
+  return async ({ dispatch, getState }) => {
     const state = getState();
-    const seen: Set<string> = new Set();
-    const sources: Array<Source> = [];
+    const seen = new Set();
+    const sources = [];
 
     for (const { id, url } of sourceInfo) {
       if (seen.has(id) || getSource(state, id)) {
@@ -286,25 +262,21 @@ export function newOriginalSources(sourceInfo: Array<OriginalSourceData>) {
   };
 }
 
-export function newGeneratedSource(sourceInfo: GeneratedSourceData) {
-  return async ({ dispatch }: ThunkArgs) => {
+export function newGeneratedSource(sourceInfo) {
+  return async ({ dispatch }) => {
     const sources = await dispatch(newGeneratedSources([sourceInfo]));
     return sources[0];
   };
 }
-export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
-  return async ({
-    dispatch,
-    getState,
-    client,
-  }: ThunkArgs): Promise<Array<Source>> => {
+export function newGeneratedSources(sourceInfo) {
+  return async ({ dispatch, getState, client }) => {
     if (sourceInfo.length == 0) {
       return [];
     }
 
     const resultIds = [];
     const newSourcesObj = {};
-    const newSourceActors: Array<SourceActor> = [];
+    const newSourceActors = [];
 
     for (const { thread, source, id } of sourceInfo) {
       const newId = id || makeSourceId(source, thread);
@@ -325,8 +297,8 @@ export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
 
       const actorId = stringToSourceActorId(source.actor);
 
-      // We are sometimes notified about a new source multiple times if we
-      // request a new source list and also get a source event from the server.
+      
+      
       if (!hasSourceActor(getState(), actorId)) {
         newSourceActors.push({
           id: actorId,
@@ -344,7 +316,7 @@ export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
       resultIds.push(newId);
     }
 
-    const newSources: Array<Source> = (Object.values(newSourcesObj): any[]);
+    const newSources = Object.values(newSourcesObj);
 
     const cx = getContext(getState());
     dispatch(addSources(cx, newSources));
@@ -381,14 +353,14 @@ export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
   };
 }
 
-function addSources(cx: Context, sources: Array<Source>) {
-  return ({ dispatch, getState }: ThunkArgs) => {
+function addSources(cx, sources) {
+  return ({ dispatch, getState }) => {
     dispatch({ type: "ADD_SOURCES", cx, sources });
   };
 }
 
-function checkNewSources(cx: Context, sources: Source[]) {
-  return async ({ dispatch, getState }: ThunkArgs) => {
+function checkNewSources(cx, sources) {
+  return async ({ dispatch, getState }) => {
     for (const source of sources) {
       dispatch(checkSelectedSource(cx, source.id));
     }

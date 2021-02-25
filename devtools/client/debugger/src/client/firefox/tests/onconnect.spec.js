@@ -2,8 +2,6 @@
 
 
 
-
-
 import { onConnect } from "../../firefox";
 
 const threadFront = {

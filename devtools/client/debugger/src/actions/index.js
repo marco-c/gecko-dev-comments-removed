@@ -2,8 +2,6 @@
 
 
 
-
-
 import * as ast from "./ast";
 import * as breakpoints from "./breakpoints";
 import * as exceptions from "./exceptions";
@@ -22,7 +20,6 @@ import * as tabs from "./tabs";
 import * as threads from "./threads";
 import * as toolbox from "./toolbox";
 import * as preview from "./preview";
-
 
 import { objectInspector } from "devtools/client/shared/components/reps/index";
 

@@ -7,29 +7,15 @@
 
 
 
-
-
 import { parseQuickOpenQuery } from "../utils/quick-open";
-import type { Action } from "../actions/types";
 
-export type QuickOpenType = "sources" | "functions" | "goto" | "gotoSource";
-
-export type QuickOpenState = {
-  enabled: boolean,
-  query: string,
-  searchType: QuickOpenType,
-};
-
-export const initialQuickOpenState = (): QuickOpenState => ({
+export const initialQuickOpenState = () => ({
   enabled: false,
   query: "",
   searchType: "sources",
 });
 
-export default function update(
-  state: QuickOpenState = initialQuickOpenState(),
-  action: Action
-): QuickOpenState {
+export default function update(state = initialQuickOpenState(), action) {
   switch (action.type) {
     case "OPEN_QUICK_OPEN":
       if (action.query != null) {
@@ -54,18 +40,14 @@ export default function update(
   }
 }
 
-type OuterState = {
-  quickOpen: QuickOpenState,
-};
-
-export function getQuickOpenEnabled(state: OuterState): boolean {
+export function getQuickOpenEnabled(state) {
   return state.quickOpen.enabled;
 }
 
-export function getQuickOpenQuery(state: OuterState): string {
+export function getQuickOpenQuery(state) {
   return state.quickOpen.query;
 }
 
-export function getQuickOpenType(state: OuterState): QuickOpenType {
+export function getQuickOpenType(state) {
   return state.quickOpen.searchType;
 }

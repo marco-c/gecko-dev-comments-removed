@@ -7,8 +7,6 @@
 
 
 
-
-
 import expressions, { initialExpressionState } from "./expressions";
 import sourceActors from "./source-actors";
 import sources, { initialSourcesState } from "./sources";
@@ -32,9 +30,6 @@ import eventListenerBreakpoints, {
 } from "./event-listeners";
 import exceptions, { initialExceptionsState } from "./exceptions";
 
-import type { SourceActorsState } from "./source-actors";
-
-
 import { objectInspector } from "devtools/client/shared/components/reps/index";
 
 import { createInitial } from "../utils/resource";
@@ -43,7 +38,7 @@ export function initialState() {
   return {
     sources: initialSourcesState(),
     expressions: initialExpressionState(),
-    sourceActors: (createInitial(): SourceActorsState),
+    sourceActors: createInitial(),
     tabs: initialTabState(),
     breakpoints: initialBreakpointsState(),
     pendingBreakpoints: {},

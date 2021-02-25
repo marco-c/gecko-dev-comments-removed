@@ -2,9 +2,6 @@
 
 
 
-
-
-import type { ThunkArgs } from "../types";
 import { getSkipPausing } from "../../selectors";
 
 
@@ -12,7 +9,7 @@ import { getSkipPausing } from "../../selectors";
 
 
 export function toggleSkipPausing() {
-  return async ({ dispatch, client, getState, sourceMaps }: ThunkArgs) => {
+  return async ({ dispatch, client, getState, sourceMaps }) => {
     const skipPausing = !getSkipPausing(getState());
     await client.setSkipPausing(skipPausing);
     dispatch({ type: "TOGGLE_SKIP_PAUSING", skipPausing });
@@ -23,8 +20,8 @@ export function toggleSkipPausing() {
 
 
 
-export function setSkipPausing(skipPausing: boolean) {
-  return async ({ dispatch, client, getState, sourceMaps }: ThunkArgs) => {
+export function setSkipPausing(skipPausing) {
+  return async ({ dispatch, client, getState, sourceMaps }) => {
     const currentlySkipping = getSkipPausing(getState());
     if (currentlySkipping === skipPausing) {
       return;

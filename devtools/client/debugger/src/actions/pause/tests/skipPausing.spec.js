@@ -2,8 +2,6 @@
 
 
 
-
-
 import { actions, selectors, createStore } from "../../../utils/test-head";
 
 describe("sources - pretty print", () => {

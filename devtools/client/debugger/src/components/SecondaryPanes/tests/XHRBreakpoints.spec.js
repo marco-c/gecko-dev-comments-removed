@@ -2,7 +2,6 @@
 
 
 
-
 import React from "react";
 import { mount } from "enzyme";
 import XHRBreakpoints from "../XHRBreakpoints";
@@ -38,7 +37,6 @@ function generateDefaultState(propsOverride) {
 function renderXHRBreakpointsComponent(propsOverride) {
   const props = generateDefaultState(propsOverride);
   const xhrBreakpointsComponent = mount(
-    
     <XHRBreakpoints.WrappedComponent {...props} />
   );
   return xhrBreakpointsComponent;

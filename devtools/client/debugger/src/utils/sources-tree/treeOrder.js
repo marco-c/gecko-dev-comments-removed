@@ -2,20 +2,14 @@
 
 
 
-
-
 import { parse } from "../url";
 
 import { nodeHasChildren } from "./utils";
 
-import type { TreeNode } from "./types";
-
-import type { Source } from "../../types";
 
 
 
-
-export function getDomain(url?: string): ?string {
+export function getDomain(url) {
   if (!url) {
     return null;
   }
@@ -29,7 +23,7 @@ export function getDomain(url?: string): ?string {
 
 
 
-function isExactDomainMatch(part: string, debuggeeHost: string): boolean {
+function isExactDomainMatch(part, debuggeeHost) {
   return part.startsWith("www.")
     ? part.substr("www.".length) === debuggeeHost
     : part === debuggeeHost;
@@ -38,7 +32,7 @@ function isExactDomainMatch(part: string, debuggeeHost: string): boolean {
 
 
 
-function isIndexName(part: string, ...rest): boolean {
+function isIndexName(part, ...rest) {
   return part === IndexName;
 }
 
@@ -48,7 +42,6 @@ function isIndexName(part: string, ...rest): boolean {
 
 
 
-export type FindNodeInContentsMatcher = (node: TreeNode) => number;
 
 
 
@@ -57,10 +50,7 @@ export type FindNodeInContentsMatcher = (node: TreeNode) => number;
 
 
 
-export function findNodeInContents(
-  tree: TreeNode,
-  matcher: FindNodeInContentsMatcher
-): {| found: boolean, index: number |} {
+export function findNodeInContents(tree, matcher) {
   if (tree.type === "source" || tree.contents.length === 0) {
     return { found: false, index: 0 };
   }
@@ -100,13 +90,13 @@ const matcherFunctions = [isIndexName, isExactDomainMatch];
 
 
 export function createTreeNodeMatcher(
-  part: string,
-  isDir: boolean,
-  debuggeeHost: ?string,
-  source?: Source,
-  sortByUrl?: boolean
-): FindNodeInContentsMatcher {
-  return (node: TreeNode) => {
+  part,
+  isDir,
+  debuggeeHost,
+  source,
+  sortByUrl
+) {
+  return node => {
     for (let i = 0; i < matcherFunctions.length; i++) {
       
       if (matcherFunctions[i](part, debuggeeHost)) {

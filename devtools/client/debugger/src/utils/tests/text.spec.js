@@ -2,8 +2,6 @@
 
 
 
-
-
 import { truncateMiddleText } from "../text";
 
 describe("text", () => {

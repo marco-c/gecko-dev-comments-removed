@@ -2,27 +2,17 @@
 
 
 
-
-
 import { has } from "lodash";
-import type { SourceScope, BindingLocation } from "../../../workers/parser";
-import type { Scope, BindingContents } from "../../../types";
 import { clientCommands } from "../../../client/firefox";
 
 import { locColumn } from "./locColumn";
 import { getOptimizedOutGrip } from "./optimizedOut";
 
-export type GeneratedBindingLocation = {
-  name: string,
-  loc: BindingLocation,
-  desc: () => Promise<BindingContents | null>,
-};
-
 export function buildGeneratedBindingList(
-  scopes: Scope,
-  generatedAstScopes: SourceScope[],
-  thisBinding: ?BindingContents
-): Array<GeneratedBindingLocation> {
+  scopes,
+  generatedAstScopes,
+  thisBinding
+) {
   
   
   
@@ -119,9 +109,7 @@ export function buildGeneratedBindingList(
   return sortBindings(generatedBindings);
 }
 
-export function buildFakeBindingList(
-  generatedAstScopes: SourceScope[]
-): Array<GeneratedBindingLocation> {
+export function buildFakeBindingList(generatedAstScopes) {
   
   const generatedBindings = generatedAstScopes.reduce((acc, generated) => {
     for (const name of Object.keys(generated.bindings)) {
@@ -142,7 +130,7 @@ export function buildFakeBindingList(
   return sortBindings(generatedBindings);
 }
 
-function sortBindings(generatedBindings: Array<GeneratedBindingLocation>) {
+function sortBindings(generatedBindings) {
   return generatedBindings.sort((a, b) => {
     const aStart = a.loc.start;
     const bStart = b.loc.start;

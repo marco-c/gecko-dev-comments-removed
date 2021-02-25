@@ -2,8 +2,6 @@
 
 
 
-
-
 import { getDomain } from "../treeOrder";
 
 describe("getDomain", () => {

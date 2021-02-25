@@ -3,14 +3,11 @@
 
 
 
-
-
 import React from "react";
 import { shallow } from "enzyme";
 
 import DebugLine from "../DebugLine";
 
-import type { SourceWithContent } from "../../../types";
 import * as asyncValue from "../../../utils/async-value";
 import { createSourceObject } from "../../../utils/test-head";
 import { setDocument, toEditorLine } from "../../../utils/editor";
@@ -33,10 +30,10 @@ function generateDefaults(editor, overrides) {
       why: { type: "breakpoint" },
     },
     frame: null,
-    source: ({
+    source: {
       ...createSourceObject("foo"),
       content: null,
-    }: SourceWithContent),
+    },
     ...overrides,
   };
 }
@@ -57,7 +54,6 @@ function render(overrides = {}) {
   const doc = createMockDocument(clear);
   setDocument(props.source.id, doc);
 
-  
   const component = shallow(<DebugLine.WrappedComponent {...props} />, {
     lifecycleExperimental: true,
   });

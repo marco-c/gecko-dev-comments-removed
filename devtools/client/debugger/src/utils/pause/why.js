@@ -4,10 +4,6 @@
 
 
 
-import type { Why } from "../../types";
-
-
-
 
 
 const reasons = {
@@ -32,7 +28,7 @@ const reasons = {
   other: "whyPaused.other",
 };
 
-export function getPauseReason(why?: ?Why): string | null {
+export function getPauseReason(why) {
   if (!why) {
     return null;
   }
@@ -45,15 +41,15 @@ export function getPauseReason(why?: ?Why): string | null {
   return reasons[reasonType];
 }
 
-export function isException(why: Why) {
+export function isException(why) {
   return why?.type === "exception";
 }
 
-export function isInterrupted(why: ?Why) {
+export function isInterrupted(why) {
   return why?.type === "interrupted";
 }
 
-export function inDebuggerEval(why: ?Why) {
+export function inDebuggerEval(why) {
   if (
     why &&
     why.type === "exception" &&

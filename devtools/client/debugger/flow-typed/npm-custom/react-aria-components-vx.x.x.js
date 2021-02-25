@@ -1,7 +1,0 @@
-
-
-
-
-declare module "react-aria-components/src/tabs" {
-  declare module.exports: any;
-}

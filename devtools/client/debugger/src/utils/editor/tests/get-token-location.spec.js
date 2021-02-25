@@ -2,8 +2,6 @@
 
 
 
-
-
 import { getTokenLocation } from "../get-token-location";
 
 describe("getTokenLocation", () => {
@@ -13,7 +11,7 @@ describe("getTokenLocation", () => {
       ch: "C",
     })),
   };
-  const token: any = {
+  const token = {
     getBoundingClientRect() {
       return {
         left: 10,

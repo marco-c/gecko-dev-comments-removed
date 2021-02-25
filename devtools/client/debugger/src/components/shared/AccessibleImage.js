@@ -2,14 +2,12 @@
 
 
 
-
-
 import React from "react";
 import classnames from "classnames";
 
 import "./AccessibleImage.css";
 
-const AccessibleImage = (props: Object) => {
+const AccessibleImage = props => {
   props = {
     ...props,
     className: classnames("img", props.className),

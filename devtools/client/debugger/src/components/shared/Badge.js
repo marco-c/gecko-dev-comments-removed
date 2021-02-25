@@ -2,15 +2,10 @@
 
 
 
-
 import React from "react";
 import "./Badge.css";
 
-type Props = {
-  children: number,
-};
-
-const Badge = ({ children }: Props) => (
+const Badge = ({ children }) => (
   <span className="badge text-white text-center">{children}</span>
 );
 

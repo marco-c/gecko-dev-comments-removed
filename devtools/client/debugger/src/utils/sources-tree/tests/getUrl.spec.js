@@ -2,13 +2,10 @@
 
 
 
-
-
 import { getURL } from "../getURL";
 import { makeMockSource } from "../../../utils/test-mockup";
-import type { Source } from "../../../types";
 
-function createMockSource(props): Source {
+function createMockSource(props) {
   const rv = {
     ...makeMockSource(),
     ...Object.assign(
@@ -23,7 +20,7 @@ function createMockSource(props): Source {
       props
     ),
   };
-  return (rv: any);
+  return rv;
 }
 
 describe("getUrl", () => {

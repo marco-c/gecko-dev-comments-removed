@@ -2,15 +2,13 @@
 
 
 
-
-
 import generate from "@babel/generator";
 import * as t from "@babel/types";
 
 import { hasNode, replaceNode } from "./utils/ast";
 import { isTopLevel } from "./utils/helpers";
 
-function hasTopLevelAwait(ast: Object): boolean {
+function hasTopLevelAwait(ast) {
   const hasAwait = hasNode(
     ast,
     (node, ancestors, b) => t.isAwaitExpression(node) && isTopLevel(ancestors)
@@ -20,7 +18,7 @@ function hasTopLevelAwait(ast: Object): boolean {
 }
 
 
-function translateDeclarationIntoAssignment(node: Object): Object[] {
+function translateDeclarationIntoAssignment(node) {
   return node.declarations.reduce((acc, declaration) => {
     
     if (!declaration.init) {
@@ -39,7 +37,7 @@ function translateDeclarationIntoAssignment(node: Object): Object[] {
 
 
 
-function addReturnNode(ast: Object): Object {
+function addReturnNode(ast) {
   const statements = ast.program.body;
   const lastStatement = statements[statements.length - 1];
   return statements
@@ -47,7 +45,7 @@ function addReturnNode(ast: Object): Object {
     .concat(t.returnStatement(lastStatement.expression));
 }
 
-function getDeclarations(node: Object) {
+function getDeclarations(node) {
   const { kind, declarations } = node;
   const declaratorNodes = declarations.reduce((acc, d) => {
     const declarators = getVariableDeclarators(d.id);
@@ -63,7 +61,7 @@ function getDeclarations(node: Object) {
   );
 }
 
-function getVariableDeclarators(node: Object): Object[] | Object {
+function getVariableDeclarators(node) {
   if (t.isIdentifier(node)) {
     return t.variableDeclarator(t.identifier(node.name));
   }
@@ -98,7 +96,7 @@ function getVariableDeclarators(node: Object): Object[] | Object {
 
 
 
-function addTopDeclarationNodes(ast: Object, declarationNodes: Object[]) {
+function addTopDeclarationNodes(ast, declarationNodes) {
   const statements = [];
   declarationNodes.forEach(declarationNode => {
     statements.push(getDeclarations(declarationNode));
@@ -114,9 +112,7 @@ function addTopDeclarationNodes(ast: Object, declarationNodes: Object[]) {
 
 
 
-function translateDeclarationsIntoAssignment(
-  ast: Object
-): { newAst: Object, declarations: Node[] } {
+function translateDeclarationsIntoAssignment(ast) {
   const declarations = [];
   t.traverse(ast, (node, ancestors) => {
     const parent = ancestors[ancestors.length - 1];
@@ -154,7 +150,7 @@ function translateDeclarationsIntoAssignment(
 
 
 
-function wrapExpressionFromAst(ast: Object): string {
+function wrapExpressionFromAst(ast) {
   
   
   let { newAst, declarations } = translateDeclarationsIntoAssignment(ast);
@@ -174,10 +170,7 @@ function wrapExpressionFromAst(ast: Object): string {
   return generate(newAst).code;
 }
 
-export default function mapTopLevelAwait(
-  expression: string,
-  ast?: Object
-): string {
+export default function mapTopLevelAwait(expression, ast) {
   if (!ast) {
     
     

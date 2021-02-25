@@ -2,8 +2,6 @@
 
 
 
-
-
 import {
   formatCopyName,
   formatDisplayName,
@@ -77,7 +75,7 @@ describe("formatting display names", () => {
   });
 
   it("returns anonymous when displayName is null", () => {
-    const frame = { ...makeMockFrame(), displayName: (null: any) };
+    const frame = { ...makeMockFrame(), displayName: null };
     expect(formatDisplayName(frame, undefined, L10N)).toEqual("<anonymous>");
   });
 

@@ -2,8 +2,6 @@
 
 
 
-
-
 import React from "react";
 import { shallow } from "enzyme";
 
@@ -68,7 +66,7 @@ function generateDefaults(disabled) {
     selectSpecificLocation: jest.fn(),
     setBreakpointCondition: jest.fn(),
     openConditionalPanel: jest.fn(),
-    contextMenuEvent: ({ preventDefault: jest.fn() }: any),
+    contextMenuEvent: { preventDefault: jest.fn() },
     selectedSource: makeMockSource(),
     setBreakpointOptions: jest.fn(),
   };

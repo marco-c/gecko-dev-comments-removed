@@ -2,11 +2,7 @@
 
 
 
-
-
-import type { BindingContents } from "../../../types";
-
-export function getOptimizedOutGrip(): BindingContents {
+export function getOptimizedOutGrip() {
   return {
     configurable: false,
     enumerable: true,

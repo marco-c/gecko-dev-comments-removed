@@ -2,11 +2,9 @@
 
 
 
-
-
 import { parseScript } from "./utils/ast";
 
-export function hasSyntaxError(input: string): string | false {
+export function hasSyntaxError(input) {
   try {
     parseScript(input);
     return false;

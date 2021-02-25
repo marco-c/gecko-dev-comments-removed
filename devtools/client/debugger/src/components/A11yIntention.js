@@ -2,20 +2,10 @@
 
 
 
-
 import React from "react";
-import type { Node } from "react";
 import "./A11yIntention.css";
 
-type Props = {
-  children?: Node,
-};
-
-type State = {
-  keyboard: boolean,
-};
-
-export default class A11yIntention extends React.Component<Props, State> {
+export default class A11yIntention extends React.Component {
   state = { keyboard: false };
 
   handleKeyDown = () => {

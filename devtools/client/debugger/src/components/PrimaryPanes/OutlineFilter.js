@@ -2,34 +2,23 @@
 
 
 
-
-
 import React, { Component } from "react";
 import classnames from "classnames";
 
 import "./OutlineFilter.css";
 
-type Props = {
-  filter: string,
-  updateFilter: (filter: string) => void,
-};
-
-type State = {
-  focused: boolean,
-};
-
-export default class OutlineFilter extends Component<Props, State> {
+export default class OutlineFilter extends Component {
   state = { focused: false };
 
-  setFocus = (shouldFocus: boolean) => {
+  setFocus = shouldFocus => {
     this.setState({ focused: shouldFocus });
   };
 
-  onChange = (e: SyntheticInputEvent<HTMLElement>) => {
+  onChange = e => {
     this.props.updateFilter(e.target.value);
   };
 
-  onKeyDown = (e: SyntheticKeyboardEvent<HTMLInputElement>) => {
+  onKeyDown = e => {
     if (e.key === "Escape" && this.props.filter !== "") {
       
       

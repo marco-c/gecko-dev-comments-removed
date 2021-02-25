@@ -2,11 +2,7 @@
 
 
 
-
-
-
 import flags from "devtools/shared/flags";
-import type { ThunkArgs } from "../../types";
 import { prefs } from "../../../utils/prefs";
 
 const ignoreList = [
@@ -25,7 +21,7 @@ const ignoreList = [
   "SET_PREVIEW",
 ];
 
-function cloneAction(action: any) {
+function cloneAction(action) {
   action = action || {};
   action = { ...action };
 
@@ -96,13 +92,12 @@ function serializeAction(action) {
 
 
 
-export function log({ dispatch, getState }: ThunkArgs) {
-  return (next: any) => (action: any) => {
+export function log({ dispatch, getState }) {
+  return next => action => {
     const asyncMsg = !action.status ? "" : `[${action.status}]`;
 
     if (prefs.logActions) {
       if (flags.testing) {
-        
         dump(
           `[ACTION] ${action.type} ${asyncMsg} - ${serializeAction(action)}\n`
         );

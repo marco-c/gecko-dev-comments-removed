@@ -9,24 +9,6 @@
 
 
 
-
-import type { Action } from "../actions/types";
-import type { Cancellable, SourceId } from "../types";
-
-export type Search = {
-  +sourceId: SourceId,
-  +filepath: string,
-  +matches: any[],
-};
-
-export type SearchOperation = Cancellable;
-
-export type StatusType =
-  | "INITIAL"
-  | "FETCHING"
-  | "CANCELLED"
-  | "DONE"
-  | "ERROR";
 export const statusType = {
   initial: "INITIAL",
   fetching: "FETCHING",
@@ -35,15 +17,7 @@ export const statusType = {
   error: "ERROR",
 };
 
-export type ResultList = Search[];
-export type ProjectTextSearchState = {
-  +query: string,
-  +ongoingSearch: ?SearchOperation,
-  +results: ResultList,
-  +status: StatusType,
-};
-
-export function initialProjectTextSearchState(): ProjectTextSearchState {
+export function initialProjectTextSearchState() {
   return {
     query: "",
     results: [],
@@ -52,10 +26,7 @@ export function initialProjectTextSearchState(): ProjectTextSearchState {
   };
 }
 
-function update(
-  state: ProjectTextSearchState = initialProjectTextSearchState(),
-  action: Action
-): ProjectTextSearchState {
+function update(state = initialProjectTextSearchState(), action) {
   switch (action.type) {
     case "ADD_QUERY":
       return { ...state, query: action.query };
@@ -91,21 +62,19 @@ function update(
   return state;
 }
 
-type OuterState = { projectTextSearch: ProjectTextSearchState };
-
-export function getTextSearchOperation(state: OuterState) {
+export function getTextSearchOperation(state) {
   return state.projectTextSearch.ongoingSearch;
 }
 
-export function getTextSearchResults(state: OuterState) {
+export function getTextSearchResults(state) {
   return state.projectTextSearch.results;
 }
 
-export function getTextSearchStatus(state: OuterState) {
+export function getTextSearchStatus(state) {
   return state.projectTextSearch.status;
 }
 
-export function getTextSearchQuery(state: OuterState) {
+export function getTextSearchQuery(state) {
   return state.projectTextSearch.query;
 }
 

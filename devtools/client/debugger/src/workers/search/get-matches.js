@@ -2,18 +2,10 @@
 
 
 
-
-
 import assert from "../../utils/assert";
 import buildQuery from "../../utils/build-query";
 
-import type { SearchModifiers } from "../../types";
-
-export default function getMatches(
-  query: string,
-  text: string,
-  modifiers: SearchModifiers
-): Object[] {
+export default function getMatches(query, text, modifiers) {
   if (!query || !text || !modifiers) {
     return [];
   }

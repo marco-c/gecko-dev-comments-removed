@@ -2,16 +2,12 @@
 
 
 
-
-
 import {
   validateNavigateContext,
   validateContext,
 } from "../../../utils/context";
 
-import type { ThunkArgs } from "../../types";
-
-function validateActionContext(getState, action): void {
+function validateActionContext(getState, action) {
   if (action.type == "COMMAND" && action.status == "done") {
     
     
@@ -25,8 +21,8 @@ function validateActionContext(getState, action): void {
 
 
 
-function context({ dispatch, getState }: ThunkArgs) {
-  return (next: Function) => (action: Object) => {
+function context({ dispatch, getState }) {
+  return next => action => {
     if ("cx" in action) {
       validateActionContext(getState, action);
     }

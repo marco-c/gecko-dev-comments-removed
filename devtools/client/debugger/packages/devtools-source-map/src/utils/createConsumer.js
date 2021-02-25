@@ -2,10 +2,9 @@
 
 
 
-
 const { SourceMapConsumer } = require("source-map");
 
-async function createConsumer(map: any, sourceMapUrl: any): SourceMapConsumer {
+async function createConsumer(map, sourceMapUrl) {
   return new SourceMapConsumer(map, sourceMapUrl);
 }
 

@@ -7,31 +7,17 @@
 
 
 
-
-
 import { sortBy } from "lodash";
 import { createSelector } from "reselect";
 
-import type { Selector, State } from "./types";
-import type { Thread, ThreadList, Worker } from "../types";
-import type { Action } from "../actions/types";
-
-export type ThreadsState = {
-  threads: ThreadList,
-  isWebExtension: boolean,
-};
-
-export function initialThreadsState(): ThreadsState {
+export function initialThreadsState() {
   return {
     threads: [],
     isWebExtension: false,
   };
 }
 
-export default function update(
-  state: ThreadsState = initialThreadsState(),
-  action: Action
-): ThreadsState {
+export default function update(state = initialThreadsState(), action) {
   switch (action.type) {
     case "CONNECT":
       return {
@@ -69,43 +55,43 @@ export default function update(
   }
 }
 
-export const getWorkerCount = (state: State) => getThreads(state).length;
+export const getWorkerCount = state => getThreads(state).length;
 
-export function getWorkerByThread(state: State, thread: string): ?Worker {
+export function getWorkerByThread(state, thread) {
   return getThreads(state).find(worker => worker.actor == thread);
 }
 
-function isMainThread(thread: Thread) {
+function isMainThread(thread) {
   return thread.isTopLevel;
 }
 
-export function getMainThread(state: State): ?Thread {
+export function getMainThread(state) {
   return state.threads.threads.find(isMainThread);
 }
 
-export function getDebuggeeUrl(state: State): string {
+export function getDebuggeeUrl(state) {
   return getMainThread(state)?.url || "";
 }
 
-export const getThreads: Selector<Thread[]> = createSelector(
+export const getThreads = createSelector(
   state => state.threads.threads,
   threads => threads.filter(thread => !isMainThread(thread))
 );
 
-export const getAllThreads: Selector<Thread[]> = createSelector(
+export const getAllThreads = createSelector(
   getMainThread,
   getThreads,
   (mainThread, threads) =>
     [mainThread, ...sortBy(threads, thread => thread.name)].filter(Boolean)
 );
 
-export function getThread(state: State, threadActor: string) {
+export function getThread(state, threadActor) {
   return getAllThreads(state).find(thread => thread.actor === threadActor);
 }
 
 
 
-export function startsWithThreadActor(state: State, path: string): ?string {
+export function startsWithThreadActor(state, path) {
   const threadActors = getAllThreads(state).map(t => t.actor);
   const match = path.match(new RegExp(`(${threadActors.join("|")})\/(.*)`));
   return match?.[1];

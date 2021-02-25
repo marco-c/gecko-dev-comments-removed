@@ -2,18 +2,11 @@
 
 
 
-
-
-import createSimplePath, { type SimplePath } from "./simple-path";
+import createSimplePath from "./simple-path";
 import { traverseAst } from "./ast";
 import { nodeContainsPosition } from "./contains";
 
-import type { AstPosition, SourceId } from "../types";
-
-export function getClosestPath(
-  sourceId: SourceId,
-  location: AstPosition
-): SimplePath {
+export function getClosestPath(sourceId, location) {
   let closestPath = null;
 
   traverseAst(sourceId, {

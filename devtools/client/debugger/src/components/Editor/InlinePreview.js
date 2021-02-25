@@ -2,12 +2,8 @@
 
 
 
-
 import React, { PureComponent } from "react";
-
 import Reps from "devtools/client/shared/components/reps/index";
-
-import actions from "../../actions";
 
 const {
   REPS: {
@@ -17,18 +13,9 @@ const {
   MODE,
 } = Reps;
 
-type Props = {
-  line: number,
-  value: any,
-  variable: string,
-  openElementInInspector: typeof actions.openElementInInspectorCommand,
-  highlightDomElement: typeof actions.highlightDomElement,
-  unHighlightDomElement: typeof actions.unHighlightDomElement,
-};
 
-
-class InlinePreview extends PureComponent<Props> {
-  showInScopes(variable: string) {
+class InlinePreview extends PureComponent {
+  showInScopes(variable) {
     
     
   }

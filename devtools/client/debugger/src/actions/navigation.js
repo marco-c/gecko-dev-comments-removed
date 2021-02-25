@@ -2,8 +2,6 @@
 
 
 
-
-
 import { clearDocuments } from "../utils/editor";
 import sourceQueue from "../utils/source-queue";
 
@@ -11,8 +9,6 @@ import { evaluateExpressions } from "./expressions";
 
 import { clearWasmStates } from "../utils/wasm";
 import { getMainThread, getThreadContext } from "../selectors";
-import type { Action, ThunkArgs } from "./types";
-import type { ActorId, URL } from "../types";
 
 
 
@@ -23,14 +19,8 @@ import type { ActorId, URL } from "../types";
 
 
 
-export function willNavigate(event: Object) {
-  return async function({
-    dispatch,
-    getState,
-    client,
-    sourceMaps,
-    parser,
-  }: ThunkArgs) {
+export function willNavigate(event) {
+  return async function({ dispatch, getState, client, sourceMaps, parser }) {
     sourceQueue.clear();
     sourceMaps.clearSourceMaps();
     clearWasmStates();
@@ -45,15 +35,13 @@ export function willNavigate(event: Object) {
   };
 }
 
-export function connect(url: URL, actor: ActorId, isWebExtension: boolean) {
-  return async function({ dispatch, getState }: ThunkArgs) {
-    await dispatch(
-      ({
-        type: "CONNECT",
-        mainThreadActorID: actor,
-        isWebExtension,
-      }: Action)
-    );
+export function connect(url, actor, isWebExtension) {
+  return async function({ dispatch, getState }) {
+    await dispatch({
+      type: "CONNECT",
+      mainThreadActorID: actor,
+      isWebExtension,
+    });
 
     const cx = getThreadContext(getState());
     dispatch(evaluateExpressions(cx));
@@ -65,7 +53,7 @@ export function connect(url: URL, actor: ActorId, isWebExtension: boolean) {
 
 
 export function navigated() {
-  return async function({ dispatch, panel }: ThunkArgs) {
+  return async function({ dispatch, panel }) {
     panel.emit("reloaded");
   };
 }

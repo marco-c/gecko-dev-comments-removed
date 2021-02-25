@@ -4,17 +4,9 @@
 
 
 
-
-
 import getMatches from "./get-matches";
 
-import type { SourceId, TextSourceContent } from "../../types";
-
-export function findSourceMatches(
-  sourceId: SourceId,
-  content: TextSourceContent,
-  queryText: string
-): Object[] {
+export function findSourceMatches(sourceId, content, queryText) {
   if (queryText == "") {
     return [];
   }
@@ -51,7 +43,7 @@ const endRegex = new RegExp(
   ].join("")
 );
 
-function truncateLine(text: string, column: number) {
+function truncateLine(text, column) {
   if (text.length < 100) {
     return {
       matchIndex: column,

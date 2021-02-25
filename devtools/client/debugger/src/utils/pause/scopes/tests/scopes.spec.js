@@ -2,8 +2,6 @@
 
 
 
-
-
 import { getScopes } from "..";
 import {
   makeMockFrame,
@@ -13,11 +11,8 @@ import {
   mockScopeAddVariable,
 } from "../../../test-mockup";
 
-import type { Scope } from "../../../../types";
-import type { RenderableScope } from "../getScope";
-
-function convertScope(scope: Scope): RenderableScope {
-  return (scope: any);
+function convertScope(scope) {
+  return scope;
 }
 
 describe("scopes", () => {

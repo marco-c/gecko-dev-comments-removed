@@ -2,8 +2,6 @@
 
 
 
-
-
 import React from "react";
 import { shallow } from "enzyme";
 
@@ -59,7 +57,6 @@ const location = { sourceId: "foo/original", line: 5, column: 7 };
 
 function render(overrides = {}, breakpointOverrides = {}) {
   const props = generateDefaults(overrides, breakpointOverrides);
-  
   const component = shallow(<Breakpoint.WrappedComponent {...props} />);
   const defaultState = component.state();
   const instance = component.instance();
@@ -86,7 +83,7 @@ function generateDefaults(overrides = {}, breakpointOverrides = {}) {
     source,
     breakpoint,
     selectedSource,
-    frame: (null: any),
+    frame: null,
     editor: {
       CodeMirror: {
         runMode: function() {

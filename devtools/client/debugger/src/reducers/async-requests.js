@@ -7,11 +7,9 @@
 
 
 
-
-
 const initialAsyncRequestState = [];
 
-function update(state: string[] = initialAsyncRequestState, action: any) {
+function update(state = initialAsyncRequestState, action) {
   const { seqId } = action;
 
   if (action.type === "NAVIGATE") {
@@ -21,7 +19,7 @@ function update(state: string[] = initialAsyncRequestState, action: any) {
     if (action.status === "start") {
       newState = [...state, seqId];
     } else if (action.status === "error" || action.status === "done") {
-      newState = (state.filter(id => id !== seqId): string[]);
+      newState = state.filter(id => id !== seqId);
     }
 
     return newState;

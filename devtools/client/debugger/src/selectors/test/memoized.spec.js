@@ -2,8 +2,6 @@
 
 
 
-
-
 import { initialState } from "../../reducers/index";
 import { getDisplayedSources } from "../index";
 

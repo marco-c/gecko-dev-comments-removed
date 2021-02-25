@@ -2,11 +2,8 @@
 
 
 
-
-
 import React, { Component } from "react";
 import { connect } from "../../../utils/connect";
-
 
 import Reps from "devtools/client/shared/components/reps/index";
 const {
@@ -30,35 +27,8 @@ import PreviewFunction from "../../shared/PreviewFunction";
 
 import "./Popup.css";
 
-import type { ThreadContext, Exception } from "../../../types";
-import type { Preview } from "../../../reducers/types";
-
-type OwnProps = {|
-  editor: any,
-  preview: Preview,
-  editorRef: ?HTMLDivElement,
-|};
-type Props = {
-  cx: ThreadContext,
-  preview: Preview,
-  editor: any,
-  editorRef: ?HTMLDivElement,
-  addExpression: typeof actions.addExpression,
-  selectSourceURL: typeof actions.selectSourceURL,
-  openLink: typeof actions.openLink,
-  openElementInInspector: typeof actions.openElementInInspectorCommand,
-  highlightDomElement: typeof actions.highlightDomElement,
-  unHighlightDomElement: typeof actions.unHighlightDomElement,
-  clearPreview: typeof actions.clearPreview,
-};
-
-export class Popup extends Component<Props> {
-  marker: any;
-  pos: any;
-  popover: ?React$ElementRef<typeof Popover>;
-  isExceptionStactraceOpen: ?boolean;
-
-  constructor(props: Props) {
+export class Popup extends Component {
+  constructor(props) {
     super(props);
   }
 
@@ -182,7 +152,7 @@ export class Popup extends Component<Props> {
     );
   }
 
-  renderExceptionPreview(exception: Exception) {
+  renderExceptionPreview(exception) {
     return (
       <ExceptionPopup
         exception={exception}
@@ -238,10 +208,7 @@ export class Popup extends Component<Props> {
     clearPreview(cx);
   };
 
-  onMouseOutException = (
-    shouldClearOnMouseout: ?boolean,
-    isExceptionStactraceOpen: ?boolean
-  ) => {
+  onMouseOutException = (shouldClearOnMouseout, isExceptionStactraceOpen) => {
     
     
     
@@ -287,7 +254,7 @@ export class Popup extends Component<Props> {
   }
 }
 
-export function addHighlightToTargetSiblings(target: Element, props: Object) {
+export function addHighlightToTargetSiblings(target, props) {
   
   
   
@@ -341,7 +308,7 @@ export function addHighlightToTargetSiblings(target: Element, props: Object) {
   }
 }
 
-export function removeHighlightForTargetSiblings(target: Element) {
+export function removeHighlightForTargetSiblings(target) {
   
   
   
@@ -384,7 +351,4 @@ const mapDispatchToProps = {
   clearPreview,
 };
 
-export default connect<Props, OwnProps, _, _, _, _>(
-  mapStateToProps,
-  mapDispatchToProps
-)(Popup);
+export default connect(mapStateToProps, mapDispatchToProps)(Popup);

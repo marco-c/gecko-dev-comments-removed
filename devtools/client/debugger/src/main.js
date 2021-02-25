@@ -2,8 +2,6 @@
 
 
 
-
-
 import * as firefox from "./client/firefox";
 
 import { asyncStore, verifyPrefSchema } from "./utils/prefs";
@@ -20,9 +18,9 @@ import {
 import { initialBreakpointsState } from "./reducers/breakpoints";
 import { initialSourcesState } from "./reducers/sources";
 
-async function syncBreakpoints(): Promise<*> {
+async function syncBreakpoints() {
   const breakpoints = await asyncStore.pendingBreakpoints;
-  const breakpointValues = (Object.values(breakpoints): any);
+  const breakpointValues = Object.values(breakpoints);
   breakpointValues.forEach(({ disabled, options, generatedLocation }) => {
     if (!disabled) {
       firefox.clientCommands.setBreakpoint(generatedLocation, options);
@@ -30,7 +28,7 @@ async function syncBreakpoints(): Promise<*> {
   });
 }
 
-function syncXHRBreakpoints(): void {
+function syncXHRBreakpoints() {
   asyncStore.xhrBreakpoints.then(bps => {
     bps.forEach(({ path, method, disabled }) => {
       if (!disabled) {
@@ -64,7 +62,7 @@ export async function bootstrap({
   devToolsClient,
   workers: panelWorkers,
   panel,
-}: any) {
+}) {
   verifyPrefSchema();
 
   const commands = firefox.clientCommands;

@@ -4,9 +4,6 @@
 
 
 
-import type { PersistedTab, VisibleTab } from "../reducers/tabs";
-import type { TabList, Tab, TabsSources } from "../reducers/types";
-import type { URL } from "../types";
 
 
 
@@ -15,38 +12,32 @@ import type { URL } from "../types";
 
 
 
-
-
-
-export function getHiddenTabs(
-  sourceTabs: TabsSources,
-  sourceTabEls: Array<any>
-): TabsSources {
+export function getHiddenTabs(sourceTabs, sourceTabEls) {
   sourceTabEls = [].slice.call(sourceTabEls);
-  function getTopOffset(): number {
+  function getTopOffset() {
     const topOffsets = sourceTabEls.map(t => t.getBoundingClientRect().top);
     return Math.min(...topOffsets);
   }
 
-  function hasTopOffset(el): boolean {
+  function hasTopOffset(el) {
     
     
     const tabTopOffset = getTopOffset();
     return el.getBoundingClientRect().top > tabTopOffset + 10;
   }
 
-  return sourceTabs.filter((tab, index: number) => {
+  return sourceTabs.filter((tab, index) => {
     const element = sourceTabEls[index];
     return element && hasTopOffset(element);
   });
 }
 
-export function getFramework(tabs: TabList, url: URL): string {
+export function getFramework(tabs, url) {
   const tab = tabs.find(t => t.url === url);
   return tab?.framework ?? "";
 }
 
-export function getTabMenuItems(): Object {
+export function getTabMenuItems() {
   return {
     closeTab: {
       id: "node-menu-close-tab",
@@ -105,11 +96,11 @@ export function getTabMenuItems(): Object {
   };
 }
 
-export function isSimilarTab(tab: Tab, url: URL, isOriginal: boolean): boolean {
+export function isSimilarTab(tab, url, isOriginal) {
   return tab.url === url && tab.isOriginal === isOriginal;
 }
 
-export function persistTabs(tabs: VisibleTab[]): PersistedTab[] {
+export function persistTabs(tabs) {
   return [...tabs]
     .filter(tab => tab.url)
     .map(tab => ({ ...tab, sourceId: null }));

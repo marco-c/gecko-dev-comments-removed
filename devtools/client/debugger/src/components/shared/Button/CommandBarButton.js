@@ -2,7 +2,6 @@
 
 
 
-
 import classnames from "classnames";
 import React from "react";
 
@@ -10,19 +9,13 @@ import AccessibleImage from "../AccessibleImage";
 
 import "./styles/CommandBarButton.css";
 
-type Props = {
-  children: React$Element<any>,
-  className: string,
-  pressed?: boolean,
-};
-
 export function debugBtn(
-  onClick: ?Function,
-  type: string,
-  className: string,
-  tooltip: string,
-  disabled: boolean = false,
-  ariaPressed: boolean = false
+  onClick,
+  type,
+  className,
+  tooltip,
+  disabled = false,
+  ariaPressed = false
 ) {
   return (
     <CommandBarButton
@@ -38,7 +31,7 @@ export function debugBtn(
   );
 }
 
-const CommandBarButton = (props: Props) => {
+const CommandBarButton = props => {
   const { children, className, pressed = false, ...rest } = props;
 
   return (

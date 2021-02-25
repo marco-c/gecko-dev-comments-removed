@@ -7,26 +7,14 @@
 
 
 
-
-
-import type { SourceTreeAction, FocusItem } from "../actions/types";
-
-export type SourceTreeState = {
-  expanded: Set<string>,
-  focusedItem: ?FocusItem,
-};
-
-export function initialSourcesTreeState(): SourceTreeState {
+export function initialSourcesTreeState() {
   return {
     expanded: new Set(),
     focusedItem: null,
   };
 }
 
-export default function update(
-  state: SourceTreeState = initialSourcesTreeState(),
-  action: SourceTreeAction
-): SourceTreeState {
+export default function update(state = initialSourcesTreeState(), action) {
   switch (action.type) {
     case "SET_EXPANDED_STATE":
       return updateExpanded(state, action);
@@ -45,14 +33,10 @@ function updateExpanded(state, action) {
   };
 }
 
-type OuterState = {
-  sourceTree: SourceTreeState,
-};
-
-export function getExpandedState(state: OuterState) {
+export function getExpandedState(state) {
   return state.sourceTree.expanded;
 }
 
-export function getFocusedSourceItem(state: OuterState): ?FocusItem {
+export function getFocusedSourceItem(state) {
   return state.sourceTree.focusedItem;
 }

@@ -4,20 +4,16 @@
 
 
 
-import type { ThunkArgs, ActionType } from "../../types";
 
 
 
 
 
-
-
-
-export function thunk(makeArgs: any) {
-  return ({ dispatch, getState }: ThunkArgs) => {
+export function thunk(makeArgs) {
+  return ({ dispatch, getState }) => {
     const args = { dispatch, getState };
 
-    return (next: Function) => (action: ActionType) => {
+    return next => action => {
       return typeof action === "function"
         ? action(makeArgs ? makeArgs(args, getState()) : args)
         : next(action);

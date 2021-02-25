@@ -4,19 +4,14 @@
 
 
 
-import type { ThunkArgs } from "../types";
-import type { ThreadContext } from "../../types";
 
 
 
 
 
 
-
-
-
-export function breakOnNext(cx: ThreadContext): any {
-  return async ({ dispatch, getState, client }: ThunkArgs) => {
+export function breakOnNext(cx) {
+  return async ({ dispatch, getState, client }) => {
     await client.breakOnNext(cx.thread);
     return dispatch({ type: "BREAK_ON_NEXT", thread: cx.thread });
   };

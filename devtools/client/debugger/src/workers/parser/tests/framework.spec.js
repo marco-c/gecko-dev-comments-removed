@@ -2,8 +2,6 @@
 
 
 
-
-
 import { getSymbols } from "../getSymbols";
 import { populateOriginalSource } from "./helpers";
 import cases from "jest-in-case";

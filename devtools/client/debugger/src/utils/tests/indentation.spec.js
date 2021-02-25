@@ -2,8 +2,6 @@
 
 
 
-
-
 import { correctIndentation, getIndentation } from "../indentation";
 
 describe("indentation", () => {

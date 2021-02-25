@@ -2,9 +2,6 @@
 
 
 
-
-
-import type { Frame } from "../../../types";
 import { getFrameUrl } from "./getFrameUrl";
 
 const libraryMap = [
@@ -107,10 +104,7 @@ const libraryMap = [
   },
 ];
 
-export function getLibraryFromUrl(
-  frame: Frame,
-  callStack: Array<Frame> = []
-): ?string | void {
+export function getLibraryFromUrl(frame, callStack = []) {
   
   
   const frameUrl = getFrameUrl(frame);

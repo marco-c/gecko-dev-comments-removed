@@ -3,8 +3,6 @@
 
 
 
-
-
 import { formatSymbols } from "../utils/formatSymbols";
 import { populateSource, populateOriginalSource } from "./helpers";
 import cases from "jest-in-case";

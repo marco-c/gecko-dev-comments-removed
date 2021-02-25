@@ -2,8 +2,6 @@
 
 
 
-
-
 import { getCallStackFrames } from "../getCallStackFrames";
 import { pullAt } from "lodash";
 import { insertResources, createInitial } from "../../utils/resource";

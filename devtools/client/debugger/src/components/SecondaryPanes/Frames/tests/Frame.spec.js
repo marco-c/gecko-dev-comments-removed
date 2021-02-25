@@ -2,8 +2,6 @@
 
 
 
-
-
 import React from "react";
 import { shallow, mount } from "enzyme";
 import Frame from "../Frame.js";
@@ -16,7 +14,7 @@ import {
 import FrameMenu from "../FrameMenu";
 jest.mock("../FrameMenu", () => jest.fn());
 
-function frameProperties(frame, selectedFrame: any, overrides = {}) {
+function frameProperties(frame, selectedFrame, overrides = {}) {
   return {
     cx: mockthreadcx,
     frame,

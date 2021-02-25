@@ -3,8 +3,8 @@
 
 
 export function memoizeLast(fn) {
-  let lastArgs: any[];
-  let lastResult: any;
+  let lastArgs;
+  let lastResult;
 
   const memoized = (...args) => {
     if (

@@ -2,9 +2,6 @@
 
 
 
-
-
-import type { SourceWithContent } from "../types";
 import { isFulfilled } from "./async-value";
 
 
@@ -13,7 +10,7 @@ const INDENT_COUNT_THRESHOLD = 5;
 const CHARACTER_LIMIT = 250;
 const _minifiedCache = new Map();
 
-export function isMinified(source: SourceWithContent) {
+export function isMinified(source) {
   if (_minifiedCache.has(source.id)) {
     return _minifiedCache.get(source.id);
   }

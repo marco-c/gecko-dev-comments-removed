@@ -2,8 +2,6 @@
 
 
 
-
-
 import {
   actions,
   selectors,
@@ -62,7 +60,7 @@ describe("expressions", () => {
   it("should not add empty expressions", () => {
     const { dispatch, getState, cx } = createStore(mockThreadFront);
 
-    dispatch(actions.addExpression(cx, (undefined: any)));
+    dispatch(actions.addExpression(cx, undefined));
     dispatch(actions.addExpression(cx, ""));
     expect(selectors.getExpressions(getState())).toHaveLength(0);
   });

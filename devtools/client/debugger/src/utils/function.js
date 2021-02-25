@@ -2,18 +2,11 @@
 
 
 
-
 import { isFulfilled } from "./async-value";
 import { findClosestFunction } from "./ast";
 import { correctIndentation } from "./indentation";
-import type { SourceWithContent } from "../types";
-import type { Symbols } from "../reducers/ast";
 
-export function findFunctionText(
-  line: number,
-  source: SourceWithContent,
-  symbols: ?Symbols
-): ?string {
+export function findFunctionText(line, source, symbols) {
   const func = findClosestFunction(symbols, {
     sourceId: source.id,
     line,

@@ -2,8 +2,6 @@
 
 
 
-
-
 import {
   containsPosition,
   containsLocation,
@@ -27,8 +25,8 @@ function getTestLoc() {
 
 
 
-function undefinedColumn(): number {
-  return (undefined: any);
+function undefinedColumn() {
+  return undefined;
 }
 
 function startPos(lineOffset, columnOffset) {

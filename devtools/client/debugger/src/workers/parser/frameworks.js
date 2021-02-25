@@ -2,13 +2,9 @@
 
 
 
-
-
 import * as t from "@babel/types";
 
-import type { SymbolDeclarations } from "./getSymbols";
-
-export function getFramework(symbols: SymbolDeclarations): ?string {
+export function getFramework(symbols) {
   if (isReactComponent(symbols)) {
     return "React";
   }

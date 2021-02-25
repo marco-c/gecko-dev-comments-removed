@@ -2,36 +2,11 @@
 
 
 
-
-
-import {
-  buildScopeList,
-  parseSourceScopes,
-  type SourceScope,
-  type ParsedScope,
-  type BindingData,
-  type BindingDeclarationLocation,
-  type BindingLocation,
-  type BindingLocationType,
-  type BindingMetaValue,
-  type BindingType,
-} from "./visitor";
-
-export type {
-  SourceScope,
-  BindingData,
-  BindingDeclarationLocation,
-  BindingLocation,
-  BindingLocationType,
-  BindingMetaValue,
-  BindingType,
-};
-
-import type { SourceLocation } from "../../../types";
+import { buildScopeList, parseSourceScopes } from "./visitor";
 
 let parsedScopesCache = new Map();
 
-export default function getScopes(location: SourceLocation): SourceScope[] {
+export default function getScopes(location) {
   const { sourceId } = location;
   let parsedScopes = parsedScopesCache.get(sourceId);
   if (!parsedScopes) {
@@ -50,12 +25,9 @@ export { buildScopeList };
 
 
 
-function findScopes(
-  scopes: ParsedScope[],
-  location: SourceLocation
-): SourceScope[] {
+function findScopes(scopes, location) {
   
-  let searchInScopes: ?(ParsedScope[]) = scopes;
+  let searchInScopes = scopes;
   const found = [];
   while (searchInScopes) {
     const foundOne = searchInScopes.some(s => {
@@ -84,8 +56,7 @@ function findScopes(
   }));
 }
 
-function compareLocations(a: SourceLocation, b: SourceLocation): number {
-  
+function compareLocations(a, b) {
   
   
   return a.line == b.line ? a.column - b.column : a.line - b.line;

@@ -2,11 +2,6 @@
 
 
 
-
-
-import type { AstLocation, AstPosition } from "./types";
-import type { SourceId } from "../../types";
-
 import findIndex from "lodash/findIndex";
 import findLastIndex from "lodash/findLastIndex";
 
@@ -45,7 +40,7 @@ function getLocation(func) {
 
 
 
-function removeInnerLocations(locations: AstLocation[], position: AstPosition) {
+function removeInnerLocations(locations, position) {
   
   
   const newLocs = locations.slice();
@@ -81,7 +76,7 @@ function removeInnerLocations(locations: AstLocation[], position: AstPosition) {
 
 
 
-function removeOverlaps(locations: AstLocation[]) {
+function removeOverlaps(locations) {
   if (locations.length == 0) {
     return [];
   }
@@ -100,7 +95,7 @@ function deduplicateNode(nodes, location) {
 
 
 
-function sortByStart(a: AstLocation, b: AstLocation) {
+function sortByStart(a, b) {
   if (a.start.line < b.start.line) {
     return -1;
   } else if (a.start.line === b.start.line) {
@@ -114,10 +109,7 @@ function sortByStart(a: AstLocation, b: AstLocation) {
 
 
 
-function findOutOfScopeLocations(
-  sourceId: SourceId,
-  position: AstPosition
-): AstLocation[] {
+function findOutOfScopeLocations(sourceId, position) {
   const { functions, comments } = findSymbols(sourceId);
   const commentLocations = comments.map(c => c.location);
   let locations = functions

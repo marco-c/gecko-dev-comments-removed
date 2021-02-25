@@ -1,7 +1,0 @@
-
-
-
-
-declare module "whatwg-url" {
-  declare module.exports: any;
-}

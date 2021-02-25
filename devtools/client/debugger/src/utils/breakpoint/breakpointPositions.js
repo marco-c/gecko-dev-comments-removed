@@ -2,20 +2,10 @@
 
 
 
-
-
 import { comparePosition } from "../location";
 import { getSelectedLocation } from "../selected-location";
-import type {
-  BreakpointPosition,
-  BreakpointPositions,
-  SourceLocation,
-} from "../../types";
 
-export function findPosition(
-  positions: ?BreakpointPositions,
-  location: SourceLocation
-): ?BreakpointPosition {
+export function findPosition(positions, location) {
   if (!positions) {
     return null;
   }

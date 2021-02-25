@@ -3,8 +3,6 @@
 
 
 
-
-
 import findOutOfScopeLocations from "../findOutOfScopeLocations";
 
 import { populateSource } from "./helpers";

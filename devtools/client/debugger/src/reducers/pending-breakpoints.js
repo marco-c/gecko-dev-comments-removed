@@ -7,8 +7,6 @@
 
 
 
-
-
 import {
   createPendingBreakpoint,
   makePendingLocationId,
@@ -16,13 +14,7 @@ import {
 
 import { isPrettyURL } from "../utils/source";
 
-import type { SourcesState } from "./sources";
-import type { PendingBreakpoint, Source } from "../types";
-import type { Action } from "../actions/types";
-
-export type PendingBreakpointsState = { [string]: PendingBreakpoint };
-
-function update(state: PendingBreakpointsState = {}, action: Action) {
+function update(state = {}, action) {
   switch (action.type) {
     case "SET_BREAKPOINT":
       if (action.status === "start") {
@@ -72,25 +64,15 @@ function removeBreakpoint(state, { location }) {
 
 
 
-type OuterState = {
-  pendingBreakpoints: PendingBreakpointsState,
-  sources: SourcesState,
-};
-
-export function getPendingBreakpoints(state: OuterState) {
+export function getPendingBreakpoints(state) {
   return state.pendingBreakpoints;
 }
 
-export function getPendingBreakpointList(
-  state: OuterState
-): PendingBreakpoint[] {
-  return (Object.values(getPendingBreakpoints(state)): any);
+export function getPendingBreakpointList(state) {
+  return Object.values(getPendingBreakpoints(state));
 }
 
-export function getPendingBreakpointsForSource(
-  state: OuterState,
-  source: Source
-): PendingBreakpoint[] {
+export function getPendingBreakpointsForSource(state, source) {
   return getPendingBreakpointList(state).filter(pendingBreakpoint => {
     return (
       pendingBreakpoint.location.sourceUrl === source.url ||

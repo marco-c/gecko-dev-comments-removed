@@ -2,8 +2,6 @@
 
 
 
-
-
 import { createSelector } from "reselect";
 import { uniqBy } from "lodash";
 
@@ -13,16 +11,13 @@ import { getSelectedSource } from "../reducers/sources";
 import { sortSelectedBreakpoints } from "../utils/breakpoint";
 import { getSelectedLocation } from "../utils/selected-location";
 
-import type { Breakpoint, Source } from "../types";
-import type { Selector } from "../reducers/types";
 
 
 
-
-export const getVisibleBreakpoints: Selector<?(Breakpoint[])> = createSelector(
+export const getVisibleBreakpoints = createSelector(
   getSelectedSource,
   getBreakpointsList,
-  (selectedSource: ?Source, breakpoints: Breakpoint[]) => {
+  (selectedSource, breakpoints) => {
     if (!selectedSource) {
       return null;
     }
@@ -38,9 +33,7 @@ export const getVisibleBreakpoints: Selector<?(Breakpoint[])> = createSelector(
 
 
 
-export const getFirstVisibleBreakpoints: Selector<
-  Breakpoint[]
-> = createSelector(
+export const getFirstVisibleBreakpoints = createSelector(
   getVisibleBreakpoints,
   getSelectedSource,
   (breakpoints, selectedSource) => {
@@ -48,9 +41,9 @@ export const getFirstVisibleBreakpoints: Selector<
       return [];
     }
 
-    return (uniqBy(
+    return uniqBy(
       sortSelectedBreakpoints(breakpoints, selectedSource),
       bp => getSelectedLocation(bp, selectedSource).line
-    ): any);
+    );
   }
 );

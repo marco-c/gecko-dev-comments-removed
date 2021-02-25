@@ -6,8 +6,6 @@
 
 
 
-
-
 import Services from "devtools-services";
 const { appinfo } = Services;
 
@@ -26,7 +24,7 @@ const isMacOS = appinfo.OS === "Darwin";
 
 
 
-export function formatKeyShortcut(shortcut: string): string {
+export function formatKeyShortcut(shortcut) {
   if (isMacOS) {
     return shortcut
       .replace(/Shift\+/g, "\u21E7")
@@ -48,10 +46,7 @@ export function formatKeyShortcut(shortcut: string): string {
 
 
 
-export function truncateMiddleText(
-  sourceText: string,
-  maxLength: number
-): string {
+export function truncateMiddleText(sourceText, maxLength) {
   let truncatedText = sourceText;
   if (sourceText.length > maxLength) {
     truncatedText = `${sourceText.substring(

@@ -2,16 +2,12 @@
 
 
 
-
-
 import { createDirectoryNode } from "./utils";
 
-import type { TreeDirectory, TreeNode } from "./types";
 
 
 
-
-function _collapseTree(node: TreeNode, depth: number): TreeNode {
+function _collapseTree(node, depth) {
   
   if (node.type === "directory") {
     if (!Array.isArray(node.contents)) {
@@ -49,7 +45,7 @@ function _collapseTree(node: TreeNode, depth: number): TreeNode {
   return node;
 }
 
-export function collapseTree(node: TreeDirectory): TreeDirectory {
+export function collapseTree(node) {
   const tree = _collapseTree(node, 0);
-  return ((tree: any): TreeDirectory);
+  return tree;
 }

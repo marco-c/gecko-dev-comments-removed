@@ -2,10 +2,6 @@
 
 
 
-
-import type { ThreadId } from "../types";
-import type { State } from "../reducers/types";
-
 import { getThreadContext } from "../selectors";
 
 
@@ -27,34 +23,13 @@ import { getThreadContext } from "../selectors";
 
 
 
-export type NavigateContext = {|
-  
-  
-  +navigateCounter: number,
-|};
 
 
 
-export type ThreadContext = {|
-  +navigateCounter: number,
-
-  
-  +thread: ThreadId,
-
-  
-  
-  +pauseCounter: number,
-
-  
-  
-  +isPaused: boolean,
-|};
-
-export type Context = NavigateContext | ThreadContext;
 
 export class ContextError extends Error {}
 
-export function validateNavigateContext(state: State, cx: Context): void {
+export function validateNavigateContext(state, cx) {
   const newcx = getThreadContext(state);
 
   if (newcx.navigateCounter != cx.navigateCounter) {
@@ -62,7 +37,7 @@ export function validateNavigateContext(state: State, cx: Context): void {
   }
 }
 
-export function validateThreadContext(state: State, cx: ThreadContext): void {
+export function validateThreadContext(state, cx) {
   const newcx = getThreadContext(state);
 
   if (cx.thread != newcx.thread) {
@@ -74,15 +49,15 @@ export function validateThreadContext(state: State, cx: ThreadContext): void {
   }
 }
 
-export function validateContext(state: State, cx: Context): void {
+export function validateContext(state, cx) {
   validateNavigateContext(state, cx);
 
   if ("thread" in cx) {
-    validateThreadContext(state, (cx: any));
+    validateThreadContext(state, cx);
   }
 }
 
-export function isValidThreadContext(state: State, cx: ThreadContext): boolean {
+export function isValidThreadContext(state, cx) {
   const newcx = getThreadContext(state);
   return cx.thread == newcx.thread && cx.pauseCounter == newcx.pauseCounter;
 }

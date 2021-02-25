@@ -2,11 +2,7 @@
 
 
 
-
-
-import type { SourceActor } from "../../../types";
-
-export function createSource(name: string, code?: string) {
+export function createSource(name, code) {
   name = name.replace(/\..*$/, "");
   return {
     source: code || `function ${name}() {\n  return ${name} \n}`,
@@ -33,9 +29,7 @@ const sources = [
 ];
 
 export const mockCommandClient = {
-  sourceContents: function({
-    source,
-  }: SourceActor): Promise<{| source: any, contentType: ?string |}> {
+  sourceContents: function({ source }) {
     return new Promise((resolve, reject) => {
       if (sources.includes(source)) {
         resolve(createSource(source));
@@ -45,7 +39,7 @@ export const mockCommandClient = {
     });
   },
   setBreakpoint: async () => {},
-  removeBreakpoint: (_id: string) => Promise.resolve(),
+  removeBreakpoint: _id => Promise.resolve(),
   threadFront: async () => {},
   getFrameScopes: async () => {},
   getFrames: async () => [],

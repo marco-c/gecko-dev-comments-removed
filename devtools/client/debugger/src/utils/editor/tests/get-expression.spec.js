@@ -2,8 +2,6 @@
 
 
 
-
-
 import CodeMirror from "codemirror";
 import { getExpressionFromCoords } from "../get-expression";
 
@@ -11,13 +9,13 @@ describe("get-expression", () => {
   let isCreateTextRangeDefined;
 
   beforeAll(() => {
-    if ((document.body: any).createTextRange) {
+    if (document.body.createTextRange) {
       isCreateTextRangeDefined = true;
     } else {
       isCreateTextRangeDefined = false;
       
       
-      (document.body: any).createTextRange = () => ({
+      document.body.createTextRange = () => ({
         getBoundingClientRect: jest.fn(),
         getClientRects: () => ({}),
       });
@@ -26,7 +24,7 @@ describe("get-expression", () => {
 
   afterAll(() => {
     if (!isCreateTextRangeDefined) {
-      delete (document.body: any).createTextRange;
+      delete document.body.createTextRange;
     }
   });
 

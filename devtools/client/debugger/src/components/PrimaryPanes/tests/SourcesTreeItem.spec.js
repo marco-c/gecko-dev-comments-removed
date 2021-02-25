@@ -2,8 +2,6 @@
 
 
 
-
-
 import React from "react";
 import { shallow } from "enzyme";
 import { showMenu } from "../../../context-menu/menu";
@@ -38,7 +36,7 @@ const blackBoxAllContexMenuItem = {
 
 describe("SourceTreeItem", () => {
   afterEach(() => {
-    (copyToTheClipboard: any).mockClear();
+    copyToTheClipboard.mockClear();
     showMenu.mockClear();
   });
 
@@ -582,7 +580,6 @@ function generateDefaults(overrides) {
 
 function render(overrides = {}) {
   const props = generateDefaults(overrides);
-  
   const component = shallow(<SourcesTreeItem.WrappedComponent {...props} />);
   const defaultState = component.state();
   const instance = component.instance();

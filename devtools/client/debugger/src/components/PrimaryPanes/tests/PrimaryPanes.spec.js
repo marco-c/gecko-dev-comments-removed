@@ -2,8 +2,6 @@
 
 
 
-
-
 import React from "react";
 import { shallow } from "enzyme";
 
@@ -47,7 +45,6 @@ function generateDefaults(overrides) {
 
 function render(overrides = {}) {
   const props = generateDefaults(overrides);
-  
   const component = shallow(<PrimaryPanes.WrappedComponent {...props} />);
   const defaultState = component.state();
   const instance = component.instance();

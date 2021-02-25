@@ -2,13 +2,12 @@
 
 
 
-
 let root;
-function setAssetRootURL(assetRoot: string): void {
+function setAssetRootURL(assetRoot) {
   root = assetRoot;
 }
 
-async function getDwarfToWasmData(name: string): Promise<ArrayBuffer> {
+async function getDwarfToWasmData(name) {
   if (!root) {
     throw new Error(`No wasm path - Unable to resolve ${name}`);
   }

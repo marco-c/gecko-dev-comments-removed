@@ -2,8 +2,7 @@
 
 
 
-
-function setAssetRootURL(assetRoot: string): void {
+function setAssetRootURL(assetRoot) {
   
 }
 

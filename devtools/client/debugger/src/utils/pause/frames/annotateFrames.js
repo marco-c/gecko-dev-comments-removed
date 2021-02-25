@@ -2,27 +2,17 @@
 
 
 
-
-
 import { flatMap, zip, range } from "lodash";
 
-import type { Frame } from "../../../types";
 import { getFrameUrl } from "./getFrameUrl";
 import { getLibraryFromUrl } from "./getLibraryFromUrl";
 
-type AnnotatedFrame =
-  | {|
-      ...Frame,
-      library: string,
-    |}
-  | Frame;
-
-export function annotateFrames(frames: Frame[]): AnnotatedFrame[] {
+export function annotateFrames(frames) {
   const annotatedFrames = frames.map(f => annotateFrame(f, frames));
   return annotateBabelAsyncFrames(annotatedFrames);
 }
 
-function annotateFrame(frame: Frame, frames: Frame[]): AnnotatedFrame {
+function annotateFrame(frame, frames) {
   const library = getLibraryFromUrl(frame, frames);
   if (library) {
     return { ...frame, library };
@@ -31,7 +21,7 @@ function annotateFrame(frame: Frame, frames: Frame[]): AnnotatedFrame {
   return frame;
 }
 
-function annotateBabelAsyncFrames(frames: Frame[]): Frame[] {
+function annotateBabelAsyncFrames(frames) {
   const babelFrameIndexes = getBabelFrameIndexes(frames);
   const isBabelFrame = frameIndex => babelFrameIndexes.includes(frameIndex);
 
@@ -70,7 +60,6 @@ function getBabelFrameIndexes(frames) {
     return frames;
   }
 
-  
   
   
   

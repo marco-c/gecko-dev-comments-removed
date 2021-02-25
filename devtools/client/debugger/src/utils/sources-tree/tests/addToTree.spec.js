@@ -4,8 +4,6 @@
 
 
 
-
-
 import { makeMockDisplaySource } from "../../../utils/test-mockup";
 
 import {
@@ -17,9 +15,7 @@ import {
   nodeHasChildren,
 } from "../index";
 
-type RawSource = {| url: string, id: string, actors?: any |};
-
-function createSourcesMap(sources: RawSource[]) {
+function createSourcesMap(sources) {
   const sourcesMap = sources.reduce((map, source) => {
     map[source.id] = makeMockDisplaySource(source.url, source.id);
     return map;
@@ -28,7 +24,7 @@ function createSourcesMap(sources: RawSource[]) {
   return sourcesMap;
 }
 
-function createSourcesList(sources: { url: string, id?: string }[]) {
+function createSourcesList(sources) {
   return sources.map((s, i) => makeMockDisplaySource(s.url, s.id));
 }
 

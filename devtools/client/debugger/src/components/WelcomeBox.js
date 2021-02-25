@@ -2,7 +2,6 @@
 
 
 
-
 import React, { Component } from "react";
 
 import { connect } from "../utils/connect";
@@ -11,24 +10,9 @@ import actions from "../actions";
 import { getPaneCollapse } from "../selectors";
 import { formatKeyShortcut } from "../utils/text";
 
-import type { ActiveSearchType } from "../reducers/ui";
-
 import "./WelcomeBox.css";
 
-type OwnProps = {|
-  horizontal: boolean,
-  toggleShortcutsModal: () => void,
-|};
-type Props = {
-  horizontal: boolean,
-  endPanelCollapsed: boolean,
-  togglePaneCollapse: Function,
-  setActiveSearch: (ActiveSearchType | void) => any,
-  openQuickOpen: typeof actions.openQuickOpen,
-  toggleShortcutsModal: () => void,
-};
-
-export class WelcomeBox extends Component<Props> {
+export class WelcomeBox extends Component {
   render() {
     const searchSourcesShortcut = formatKeyShortcut(
       L10N.getStr("sources.search.key2")
@@ -89,7 +73,7 @@ const mapStateToProps = state => ({
   endPanelCollapsed: getPaneCollapse(state, "end"),
 });
 
-export default connect<Props, OwnProps, _, _, _, _>(mapStateToProps, {
+export default connect(mapStateToProps, {
   togglePaneCollapse: actions.togglePaneCollapse,
   setActiveSearch: actions.setActiveSearch,
   openQuickOpen: actions.openQuickOpen,

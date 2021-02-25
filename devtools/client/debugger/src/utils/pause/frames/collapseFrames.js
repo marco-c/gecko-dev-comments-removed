@@ -2,12 +2,9 @@
 
 
 
-
-
 import { findIndex } from "lodash";
 
 
-import type { Frame } from "../../../types";
 import { getFrameUrl } from "./getFrameUrl";
 
 function collapseLastFrames(frames) {
@@ -24,10 +21,7 @@ function collapseLastFrames(frames) {
   return { newFrames, lastGroup };
 }
 
-type FrameGroup = Frame[];
-type GroupedFrames = Array<FrameGroup | Frame>;
-
-export function collapseFrames(frames: Frame[]): GroupedFrames {
+export function collapseFrames(frames) {
   
   
   function addGroupToList(group, list) {

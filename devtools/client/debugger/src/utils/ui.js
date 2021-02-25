@@ -7,15 +7,14 @@
 
 
 
-
-export function isVisible(): boolean {
+export function isVisible() {
   const el = document.querySelector("#mount");
   return !!(el && el.getBoundingClientRect().width > 0);
 }
 
 
 
-export function getLineNumberWidth(editor: Object): number {
+export function getLineNumberWidth(editor) {
   const { gutters } = editor.display;
   const lineNumbers = gutters.querySelector(".CodeMirror-linenumbers");
   return lineNumbers?.clientWidth;
@@ -27,7 +26,7 @@ export function getLineNumberWidth(editor: Object): number {
 
 
 
-export function resizeBreakpointGutter(editor: Object): void {
+export function resizeBreakpointGutter(editor) {
   const { gutters } = editor.display;
   const breakpoints = gutters.querySelector(".breakpoints");
   if (breakpoints) {
@@ -39,7 +38,7 @@ export function resizeBreakpointGutter(editor: Object): void {
 
 
 
-export function resizeToggleButton(editor: Object): void {
+export function resizeToggleButton(editor) {
   const toggleButton = document.querySelector(
     ".source-header .toggle-button-start"
   );

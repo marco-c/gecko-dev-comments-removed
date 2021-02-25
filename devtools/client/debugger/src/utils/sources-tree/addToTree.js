@@ -2,8 +2,6 @@
 
 
 
-
-
 import {
   nodeHasChildren,
   isPathDirectory,
@@ -12,21 +10,11 @@ import {
   createSourceNode,
   createDirectoryNode,
   getPathParts,
-  type PathPart,
 } from "./utils";
 import { createTreeNodeMatcher, findNodeInContents } from "./treeOrder";
 import { getDisplayURL } from "./getURL";
 
-import type { ParsedURL } from "./getURL";
-import type { TreeDirectory, TreeNode } from "./types";
-import type { DisplaySource, Source } from "../../types";
-
-function createNodeInTree(
-  part: string,
-  path: string,
-  tree: TreeDirectory,
-  index: number
-): TreeDirectory {
+function createNodeInTree(part, path, tree, index) {
   const node = createDirectoryNode(part, path, []);
 
   
@@ -43,15 +31,15 @@ function createNodeInTree(
 
 
 function findOrCreateNode(
-  parts: PathPart[],
-  subTree: TreeDirectory,
-  path: string,
-  part: string,
-  index: number,
-  url: Object,
-  debuggeeHost: ?string,
-  source: Source
-): TreeDirectory {
+  parts,
+  subTree,
+  path,
+  part,
+  index,
+  url,
+  debuggeeHost,
+  source
+) {
   const addedPartIsFile = partIsFile(index, parts, url);
 
   const { found: childFound, index: childIndex } = findNodeInContents(
@@ -80,20 +68,14 @@ function findOrCreateNode(
   }
 
   
-  return (child: any);
+  return child;
 }
 
 
 
 
 
-function traverseTree(
-  url: ParsedURL,
-  tree: TreeDirectory,
-  debuggeeHost: ?string,
-  source: Source,
-  thread: string
-): TreeNode {
+function traverseTree(url, tree, debuggeeHost, source, thread) {
   const parts = getPathParts(url, thread, debuggeeHost);
   return parts.reduce(
     (subTree, { part, path, debuggeeHostIfRoot }, index) =>
@@ -114,11 +96,7 @@ function traverseTree(
 
 
 
-function addSourceToNode(
-  node: TreeDirectory,
-  url: ParsedURL,
-  source: Source
-): Source | TreeNode[] {
+function addSourceToNode(node, url, source) {
   const isFile = !isPathDirectory(url.path);
 
   if (node.type == "source" && !isFile) {
@@ -128,7 +106,6 @@ function addSourceToNode(
   
   
   if (isFile) {
-    
     node.type = "source";
     return source;
   }
@@ -168,12 +145,7 @@ function addSourceToNode(
 
 
 
-export function addToTree(
-  tree: TreeDirectory,
-  source: DisplaySource,
-  debuggeeHost: ?string,
-  thread: string
-): void {
+export function addToTree(tree, source, debuggeeHost, thread) {
   const url = getDisplayURL(source, debuggeeHost);
 
   if (isInvalidUrl(url, source)) {
@@ -182,6 +154,5 @@ export function addToTree(
 
   const finalNode = traverseTree(url, tree, debuggeeHost, source, thread);
 
-  
   finalNode.contents = addSourceToNode(finalNode, url, source);
 }

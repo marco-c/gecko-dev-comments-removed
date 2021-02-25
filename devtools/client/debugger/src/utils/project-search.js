@@ -4,12 +4,9 @@
 
 
 
-
-
 import React from "react";
-import type { Match } from "../components/ProjectSearch";
 
-export function highlightMatches(lineMatch: Match) {
+export function highlightMatches(lineMatch) {
   const { value, matchIndex, match } = lineMatch;
   const len = match.length;
 

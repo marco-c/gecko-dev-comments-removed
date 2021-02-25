@@ -2,25 +2,8 @@
 
 
 
-
-
-import type { ThunkArgs } from "../actions/types";
-import { asSettled, type AsyncValue } from "./async-value";
+import { asSettled } from "./async-value";
 import { validateContext } from "./context";
-import type { Context } from "./context";
-
-type ArgsWithContext = { cx: Context };
-
-export type MemoizedAction<
-  Args,
-  Result
-> = Args => ThunkArgs => Promise<Result | null>;
-
-type MemoizableActionParams<Args, Result> = {
-  getValue: (args: Args, thunkArgs: ThunkArgs) => AsyncValue<Result> | null,
-  createKey: (args: Args, thunkArgs: ThunkArgs) => string,
-  action: (args: Args, thunkArgs: ThunkArgs) => Promise<mixed>,
-};
 
 
 
@@ -44,10 +27,7 @@ type MemoizableActionParams<Args, Result> = {
 
 
 
-export function memoizeableAction<Args: ArgsWithContext, Result>(
-  name: string,
-  { getValue, createKey, action }: MemoizableActionParams<Args, Result>
-): MemoizedAction<Args, Result> {
+export function memoizeableAction(name, { getValue, createKey, action }) {
   const requests = new Map();
   return args => async thunkArgs => {
     let result = asSettled(getValue(args, thunkArgs));

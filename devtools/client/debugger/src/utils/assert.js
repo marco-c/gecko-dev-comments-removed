@@ -2,10 +2,9 @@
 
 
 
-
 import { isNodeTest } from "./environment";
 
-export default function assert(condition: boolean, message: string): void {
+export default function assert(condition, message) {
   if (isNodeTest() && !condition) {
     throw new Error(`Assertion failure: ${message}`);
   }

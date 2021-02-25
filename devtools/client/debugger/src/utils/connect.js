@@ -2,7 +2,6 @@
 
 
 
-
 import { connect as reduxConnect } from "react-redux";
 
-export const connect: typeof reduxConnect = reduxConnect;
+export const connect = reduxConnect;

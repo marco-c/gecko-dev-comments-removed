@@ -3,8 +3,6 @@
 
 
 
-
-
 import {
   createStore,
   selectors,
@@ -144,14 +142,11 @@ describe("preview", () => {
 
     let fail = false;
 
-    
-
     resolveFirst();
     waitForPreview(store, "firstSetPreview").then(() => {
       fail = true;
     });
 
-    
     resolveSecond();
     await waitForPreview(store, "secondSetPreview");
     expect(fail).toEqual(false);
@@ -196,12 +191,9 @@ describe("preview", () => {
 
     let fail = false;
 
-    
-
     resolveSecond();
     await waitForPreview(store, "secondSetPreview");
 
-    
     resolveFirst();
     waitForPreview(store, "firstSetPreview").then(() => {
       fail = true;

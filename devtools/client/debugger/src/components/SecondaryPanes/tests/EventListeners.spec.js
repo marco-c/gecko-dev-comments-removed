@@ -2,8 +2,6 @@
 
 
 
-
-
 import React from "react";
 import { shallow } from "enzyme";
 import EventListeners from "../EventListeners";
@@ -39,7 +37,6 @@ function generateDefaults(overrides = {}) {
 
 function render(overrides = {}) {
   const props = generateDefaults(overrides);
-  
   const component = shallow(<EventListeners.WrappedComponent {...props} />);
   return { component, props };
 }
