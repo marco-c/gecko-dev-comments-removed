@@ -2183,10 +2183,7 @@ void UnlockProfile() {
   }
 }
 
-
-
-
-nsresult LaunchChild(bool aBlankCommandLine) {
+nsresult LaunchChild(bool aBlankCommandLine, bool aTryExec) {
   
   
 
@@ -2234,8 +2231,16 @@ nsresult LaunchChild(bool aBlankCommandLine) {
   rv = lf->GetNativePath(exePath);
   if (NS_FAILED(rv)) return rv;
 
-  if (PR_FAILURE ==
-      PR_CreateProcessDetached(exePath.get(), gRestartArgv, nullptr, nullptr)) {
+#      if defined(XP_UNIX)
+  if (aTryExec) {
+    execv(exePath.get(), gRestartArgv);
+
+    
+    return NS_ERROR_FAILURE;
+  }
+#      endif
+  if (PR_CreateProcessDetached(exePath.get(), gRestartArgv, nullptr, nullptr) ==
+      PR_FAILURE) {
     return NS_ERROR_FAILURE;
   }
 
@@ -2417,7 +2422,7 @@ static ReturnAbortOnError ProfileLockedDialog(nsIFile* aProfileDir,
         SaveFileToEnv("XRE_PROFILE_PATH", aProfileDir);
         SaveFileToEnv("XRE_PROFILE_LOCAL_PATH", aProfileLocalDir);
 
-        return LaunchChild(false);
+        return LaunchChild(false, true);
       }
     } else {
 #ifdef MOZ_WIDGET_ANDROID
@@ -2527,7 +2532,7 @@ static ReturnAbortOnError ShowProfileManager(
     gRestartArgv[gRestartArgc] = nullptr;
   }
 
-  return LaunchChild(false);
+  return LaunchChild(false, true);
 }
 
 static bool gDoMigration = false;
@@ -2947,7 +2952,7 @@ static ReturnAbortOnError CheckDowngrade(nsIFile* aProfileDir,
     SaveFileToEnv("XRE_PROFILE_PATH", profD);
     SaveFileToEnv("XRE_PROFILE_LOCAL_PATH", profLD);
 
-    return LaunchChild(false);
+    return LaunchChild(false, true);
   }
 
   

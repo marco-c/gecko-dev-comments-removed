@@ -115,7 +115,14 @@ void OverrideDefaultLocaleIfNeeded();
 void MozExpectedExit();
 
 class nsINativeAppSupport;
-nsresult LaunchChild(bool aBlankCommandLine);
+
+
+
+
+
+
+nsresult LaunchChild(bool aBlankCommandLine, bool aTryExec = false);
+
 void UnlockProfile();
 
 #ifdef XP_WIN
