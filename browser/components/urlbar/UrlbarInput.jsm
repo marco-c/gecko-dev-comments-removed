@@ -708,7 +708,7 @@ class UrlbarInput {
 
     let selIndex = result.rowIndex;
     if (!result.payload.providesSearchMode) {
-      this.view.close( true);
+      this.view.close({ elementPicked: true });
     }
 
     this.controller.recordSelectedResult(event, result);
@@ -1373,7 +1373,9 @@ class UrlbarInput {
     this._hideFocus = false;
     if (this.focused) {
       this.setAttribute("focused", "true");
-      this.startLayoutExtend();
+      if (!UrlbarPrefs.get("browser.proton.urlbar.enabled")) {
+        this.startLayoutExtend();
+      }
     }
   }
 
@@ -1607,7 +1609,9 @@ class UrlbarInput {
       return;
     }
     await this._updateLayoutBreakoutDimensions();
-    this.startLayoutExtend();
+    if (!UrlbarPrefs.get("browser.proton.urlbar.enabled")) {
+      this.startLayoutExtend();
+    }
   }
 
   startLayoutExtend() {
@@ -1617,6 +1621,9 @@ class UrlbarInput {
       !this.hasAttribute("breakout") ||
       this.hasAttribute("breakout-extend")
     ) {
+      return;
+    }
+    if (UrlbarPrefs.get("browser.proton.urlbar.enabled") && !this.view.isOpen) {
       return;
     }
     
@@ -1660,15 +1667,19 @@ class UrlbarInput {
     
     
     
+    if (!this.hasAttribute("breakout-extend") || this.view.isOpen) {
+      return;
+    }
+
     if (
-      !this.hasAttribute("breakout-extend") ||
-      this.view.isOpen ||
-      (this.getAttribute("focused") == "true" &&
-        (!this.window.gReduceMotion ||
-          !this.window.matchMedia("(prefers-reduced-motion: reduce)").matches))
+      !UrlbarPrefs.get("browser.proton.urlbar.enabled") &&
+      this.getAttribute("focused") == "true" &&
+      (!this.window.gReduceMotion ||
+        !this.window.matchMedia("(prefers-reduced-motion: reduce)").matches)
     ) {
       return;
     }
+
     this.removeAttribute("breakout-extend");
     this._toolbar.removeAttribute("urlbar-exceeds-toolbar-bounds");
   }
@@ -2393,7 +2404,9 @@ class UrlbarInput {
       }
     }
 
-    this.view.close();
+    
+    
+    this.view.close({ showFocusBorder: false });
   }
 
   
@@ -2678,7 +2691,9 @@ class UrlbarInput {
     });
 
     this.removeAttribute("focused");
-    this.endLayoutExtend();
+    if (!UrlbarPrefs.get("browser.proton.urlbar.enabled")) {
+      this.endLayoutExtend();
+    }
 
     if (this._autofillPlaceholder && this.window.gBrowser.userTypedValue) {
       
@@ -2788,7 +2803,9 @@ class UrlbarInput {
       }
     }
 
-    this.startLayoutExtend();
+    if (!UrlbarPrefs.get("browser.proton.urlbar.enabled")) {
+      this.startLayoutExtend();
+    }
 
     if (this.focusedViaMousedown) {
       this.view.autoOpen({ event });
@@ -2855,7 +2872,13 @@ class UrlbarInput {
           this._preventClickSelectsAll = true;
           this.search(UrlbarTokenizer.RESTRICT.SEARCH);
         } else {
-          this.view.autoOpen({ event });
+          
+          
+          
+          this.view.autoOpen({
+            event,
+            suppressFocusBorder: !this.hasAttribute("focused"),
+          });
         }
         break;
       case this.window:

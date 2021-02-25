@@ -434,8 +434,16 @@ class UrlbarView {
 
 
 
-  close(elementPicked = false) {
+
+
+  close({ elementPicked = false, showFocusBorder = true } = {}) {
     this.controller.cancelQuery();
+    
+    
+    
+    if (!elementPicked && showFocusBorder) {
+      this.input.removeAttribute("suppress-focus-border");
+    }
 
     if (!this.isOpen) {
       return;
@@ -481,24 +489,28 @@ class UrlbarView {
 
 
 
-  autoOpen(queryOptions = {}) {
-    if (this._pickSearchTipIfPresent(queryOptions.event)) {
+
+
+  autoOpen({ event, suppressFocusBorder = true }) {
+    if (this._pickSearchTipIfPresent(event)) {
       return false;
     }
 
-    if (!queryOptions.event) {
+    if (!event) {
       return false;
     }
+
+    let queryOptions = { event };
 
     if (
       !this.input.value ||
       this.input.getAttribute("pageproxystate") == "valid"
     ) {
-      if (
-        !this.isOpen &&
-        ["mousedown", "command"].includes(queryOptions.event.type)
-      ) {
+      if (!this.isOpen && ["mousedown", "command"].includes(event.type)) {
         this.input.startQuery(queryOptions);
+        if (suppressFocusBorder) {
+          this.input.toggleAttribute("suppress-focus-border", true);
+        }
         return true;
       }
       return false;
@@ -511,7 +523,7 @@ class UrlbarView {
 
     
     
-    if (this.isOpen && queryOptions.event.type != "tabswitch") {
+    if (this.isOpen && event.type != "tabswitch") {
       return false;
     }
 
@@ -545,6 +557,9 @@ class UrlbarView {
     
     
     this.input.startQuery(queryOptions);
+    if (suppressFocusBorder) {
+      this.input.toggleAttribute("suppress-focus-border", true);
+    }
     return true;
   }
 
@@ -855,6 +870,7 @@ class UrlbarView {
 
     this.input.inputField.setAttribute("aria-expanded", "true");
 
+    this.input.toggleAttribute("suppress-focus-border", true);
     this.input.setAttribute("open", "true");
     this.input.startLayoutExtend();
 
