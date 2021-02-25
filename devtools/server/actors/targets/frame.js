@@ -13,8 +13,7 @@
 
 
 
-var {
-  BrowsingContextTargetActor,
+const {
   browsingContextTargetPrototype,
 } = require("devtools/server/actors/targets/browsing-context");
 
@@ -28,28 +27,9 @@ const TargetActorMixin = require("devtools/server/actors/targets/target-actor-mi
 
 
 
+
+
 const frameTargetPrototype = extend({}, browsingContextTargetPrototype);
-
-
-
-
-
-
-
-
-
-
-
-frameTargetPrototype.initialize = function(connection, docShell, options) {
-  BrowsingContextTargetActor.prototype.initialize.call(
-    this,
-    connection,
-    docShell,
-    options
-  );
-
-  this.traits.reconfigure = false;
-};
 
 Object.defineProperty(frameTargetPrototype, "title", {
   get: function() {

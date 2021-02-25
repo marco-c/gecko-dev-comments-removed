@@ -289,7 +289,6 @@ const browsingContextTargetPrototype = {
     this.watchNewDocShells = false;
 
     this.traits = {
-      reconfigure: true,
       
       
       frames: true,
