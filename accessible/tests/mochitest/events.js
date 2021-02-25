@@ -1454,7 +1454,7 @@ function synthOpenComboboxKey(aID, aCheckerOrEventSeq) {
   this.__proto__ = new synthDownKey(aID, aCheckerOrEventSeq, { altKey: true });
 
   this.getID = function synthOpenComboboxKey_getID() {
-    return "open combobox (atl + down arrow) " + prettyName(aID);
+    return "open combobox (alt + down arrow) " + prettyName(aID);
   };
 }
 
