@@ -92,7 +92,7 @@ nsMenuX::nsMenuX()
       mNeedsRebuild(true),
       mConstructed(false),
       mVisible(true) {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (!gMenuMethodsSwizzled) {
     nsToolkit::SwizzleMethods([NSMenu class], @selector(_addItem:toTable:),
@@ -119,11 +119,11 @@ nsMenuX::nsMenuX()
 
   MOZ_COUNT_CTOR(nsMenuX);
 
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 nsMenuX::~nsMenuX() {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   
   if (mIcon) {
@@ -146,12 +146,12 @@ nsMenuX::~nsMenuX() {
 
   MOZ_COUNT_DTOR(nsMenuX);
 
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 nsresult nsMenuX::Create(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
                          nsIContent* aContent) {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   mContent = aContent;
   if (mContent->IsElement()) {
@@ -202,11 +202,11 @@ nsresult nsMenuX::Create(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOw
 
   return NS_OK;
 
-  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 nsresult nsMenuX::AddMenuItem(nsMenuItemX* aMenuItem) {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (!aMenuItem) {
     return NS_ERROR_INVALID_ARG;
@@ -235,11 +235,11 @@ nsresult nsMenuX::AddMenuItem(nsMenuItemX* aMenuItem) {
 
   return NS_OK;
 
-  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 nsMenuX* nsMenuX::AddMenu(UniquePtr<nsMenuX> aMenu) {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   
   
@@ -261,7 +261,7 @@ nsMenuX* nsMenuX::AddMenu(UniquePtr<nsMenuX> aMenu) {
 
   return menu;
 
-  NS_OBJC_END_TRY_BLOCK_RETURN(nullptr);
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 
@@ -313,7 +313,7 @@ nsMenuObjectX* nsMenuX::GetVisibleItemAt(uint32_t aPos) {
 }
 
 nsresult nsMenuX::RemoveAll() {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (mNativeMenu) {
     
@@ -332,7 +332,7 @@ nsresult nsMenuX::RemoveAll() {
 
   return NS_OK;
 
-  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 nsEventStatus nsMenuX::MenuOpened() {
@@ -455,7 +455,7 @@ nsresult nsMenuX::GetEnabled(bool* aIsEnabled) {
 }
 
 GeckoNSMenu* nsMenuX::CreateMenuWithGeckoString(nsString& menuTitle) {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   NSString* title = [NSString stringWithCharacters:(UniChar*)menuTitle.get()
                                             length:menuTitle.Length()];
@@ -473,7 +473,7 @@ GeckoNSMenu* nsMenuX::CreateMenuWithGeckoString(nsString& menuTitle) {
 
   return myMenu;
 
-  NS_OBJC_END_TRY_BLOCK_RETURN(nil);
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 void nsMenuX::LoadMenuItem(nsIContent* inMenuItemContent) {
@@ -651,7 +651,7 @@ bool nsMenuX::IsXULHelpMenu(nsIContent* aMenuContent) {
 
 void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aContent,
                                       nsAtom* aAttribute) {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   
   if (gConstructingMenu || (aAttribute == nsGkAtoms::open)) {
@@ -722,7 +722,7 @@ void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aCon
     SetupIcon();
   }
 
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 void nsMenuX::ObserveContentRemoved(dom::Document* aDocument, nsIContent* aContainer,
@@ -761,7 +761,7 @@ nsresult nsMenuX::SetupIcon() {
 @implementation MenuDelegate
 
 - (id)initWithGeckoMenu:(nsMenuX*)geckoMenu {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if ((self = [super init])) {
     NS_ASSERTION(geckoMenu,
@@ -770,7 +770,7 @@ nsresult nsMenuX::SetupIcon() {
   }
   return self;
 
-  NS_OBJC_END_TRY_BLOCK_RETURN(nil);
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 - (void)menu:(NSMenu*)menu willHighlightItem:(NSMenuItem*)item {
@@ -870,7 +870,7 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
 @implementation KeyEquivDBItem
 
 - (id)initWithItem:(NSMenuItem*)aItem table:(NSMapTable*)aTable {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (!gShadowKeyEquivDB) {
     gShadowKeyEquivDB = [[NSMutableDictionary alloc] init];
@@ -886,11 +886,11 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
   }
   return self;
 
-  NS_OBJC_END_TRY_BLOCK_RETURN(nil);
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 - (void)dealloc {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (mTables) {
     [mTables release];
@@ -900,31 +900,31 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
   }
   [super dealloc];
 
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 - (BOOL)hasTable:(NSMapTable*)aTable {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   return [mTables member:[NSValue valueWithPointer:aTable]] ? YES : NO;
 
-  NS_OBJC_END_TRY_BLOCK_RETURN(NO);
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 
 - (int)addTable:(NSMapTable*)aTable {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (aTable) {
     [mTables addObject:[NSValue valueWithPointer:aTable]];
   }
   return [mTables count];
 
-  NS_OBJC_END_TRY_BLOCK_RETURN(0);
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 - (int)removeTable:(NSMapTable*)aTable {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (aTable) {
     NSValue* objectToRemove = [mTables member:[NSValue valueWithPointer:aTable]];
@@ -934,7 +934,7 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
   }
   return [mTables count];
 
-  NS_OBJC_END_TRY_BLOCK_RETURN(0);
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 @end
@@ -947,7 +947,7 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
 @implementation NSMenu (MethodSwizzling)
 
 + (void)nsMenuX_NSMenu_addItem:(NSMenuItem*)aItem toTable:(NSMapTable*)aTable {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (aItem && aTable) {
     NSValue* key = [NSValue valueWithPointer:aItem];
@@ -963,7 +963,7 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
     }
   }
 
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 
   [self nsMenuX_NSMenu_addItem:aItem toTable:aTable];
 }
@@ -971,7 +971,7 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
 + (void)nsMenuX_NSMenu_removeItem:(NSMenuItem*)aItem fromTable:(NSMapTable*)aTable {
   [self nsMenuX_NSMenu_removeItem:aItem fromTable:aTable];
 
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (aItem && aTable) {
     NSValue* key = [NSValue valueWithPointer:aItem];
@@ -983,7 +983,7 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
     }
   }
 
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 @end
