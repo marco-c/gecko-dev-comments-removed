@@ -4030,6 +4030,7 @@ nsCSSFrameConstructor::FindXULButtonData(const Element& aElement,
   return &sXULButtonData;
 }
 
+
 const nsCSSFrameConstructor::FrameConstructionData*
 nsCSSFrameConstructor::FindXULLabelOrDescriptionData(const Element& aElement,
                                                      ComputedStyle&) {
