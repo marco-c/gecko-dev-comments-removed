@@ -90,6 +90,16 @@ class WatcherFront extends FrontClassWithSpec(watcherSpec) {
   
 
 
+  async getTargetConfigurationActor() {
+    if (!this._targetConfigurationActor) {
+      this._targetConfigurationActor = await super.getTargetConfigurationActor();
+    }
+    return this._targetConfigurationActor;
+  }
+
+  
+
+
   async getBrowsingContextTarget(id) {
     
     for (const front of this.poolChildren()) {

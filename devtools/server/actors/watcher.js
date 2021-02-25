@@ -45,6 +45,12 @@ loader.lazyRequireGetter(
   "devtools/server/actors/breakpoint-list",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "TargetConfigurationActor",
+  "devtools/server/actors/target-configuration",
+  true
+);
 
 exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   
@@ -156,6 +162,12 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         
         
         "set-breakpoints": true,
+        
+        
+        
+        
+        
+        "target-configuration": true,
       },
     };
   },
@@ -477,6 +489,19 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
+  getTargetConfigurationActor() {
+    if (!this._configurationListActor) {
+      this._configurationListActor = new TargetConfigurationActor(this);
+    }
+    return this._configurationListActor;
+  },
+
+  
+
+
+
+
+
 
 
 
@@ -535,5 +560,15 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     if (targetActor) {
       targetActor.removeWatcherDataEntry(type, entries);
     }
+  },
+
+  
+
+
+
+
+
+  getWatchedData(type) {
+    return this.watchedData?.[type];
   },
 });

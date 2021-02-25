@@ -1023,7 +1023,7 @@ const browsingContextTargetPrototype = {
     
     if (this.docShell) {
       this._unwatchDocShell(this.docShell);
-      this._restoreDocumentSettings();
+      this._restoreTargetConfiguration();
     }
     this._unwatchDocshells();
 
@@ -1183,21 +1183,6 @@ const browsingContextTargetPrototype = {
   
 
 
-  reconfigure(request) {
-    const options = request.options || {};
-
-    if (!this.docShell) {
-      
-      return {};
-    }
-    this._toggleDevToolsSettings(options);
-
-    return {};
-  },
-
-  
-
-
   async ensureCSSErrorReportingEnabled(request) {
     const promises = [];
     for (const docShell of this.docShells) {
@@ -1237,7 +1222,31 @@ const browsingContextTargetPrototype = {
   
 
 
-  _toggleDevToolsSettings(options) {
+
+
+  reconfigure(request) {
+    const options = request.options || {};
+    return this.updateTargetConfiguration(options);
+  },
+
+  
+
+
+
+
+
+  updateTargetConfiguration(options = {}) {
+    if (!this.docShell) {
+      
+      return;
+    }
+
+    if (!this.isTopLevelTarget) {
+      
+      
+      return;
+    }
+
     
     
     let reload = false;
@@ -1285,7 +1294,7 @@ const browsingContextTargetPrototype = {
 
 
 
-  _restoreDocumentSettings() {
+  _restoreTargetConfiguration() {
     this._restoreJavascript();
     this._setCacheDisabled(false);
     this._setServiceWorkersTestingEnabled(false);

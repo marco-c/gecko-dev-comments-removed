@@ -11,6 +11,7 @@
 
 
 
+
 const Types = (exports.__TypesForTests = [
   {
     types: [
@@ -281,6 +282,11 @@ const Types = (exports.__TypesForTests = [
     types: ["symbolIterator"],
     spec: "devtools/shared/specs/symbol-iterator",
     front: "devtools/client/fronts/symbol-iterator",
+  },
+  {
+    types: ["target-configuration"],
+    spec: "devtools/shared/specs/target-configuration",
+    front: "devtools/client/fronts/target-configuration",
   },
   {
     types: ["browsingContextTarget"],

@@ -42,12 +42,15 @@ types.addDictType("browsingContextTarget.reload", {
   force: "boolean",
 });
 
+
 types.addDictType("browsingContextTarget.reconfigure", {
-  javascriptEnabled: "nullable:boolean",
   cacheDisabled: "nullable:boolean",
   colorSchemeSimulation: "nullable:string",
-  serviceWorkersTestingEnabled: "nullable:boolean",
+  javascriptEnabled: "nullable:boolean",
+  paintFlashing: "nullable:boolean",
   printSimulationEnabled: "nullable:boolean",
+  restoreFocus: "nullable:boolean",
+  serviceWorkersTestingEnabled: "nullable:boolean",
 });
 
 const browsingContextTargetSpecPrototype = {
@@ -90,6 +93,10 @@ const browsingContextTargetSpecPrototype = {
       },
       response: {},
     },
+    
+    
+    
+    
     reconfigure: {
       request: {
         options: Option(0, "browsingContextTarget.reconfigure"),
