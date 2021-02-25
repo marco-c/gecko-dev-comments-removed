@@ -34,6 +34,7 @@ class LoadListener {
   _callback = null;
   _channel = null;
   _countRead = 0;
+  _expectedContentType = null;
   _stream = null;
   QueryInterface = ChromeUtils.generateQI([
     Ci.nsIRequestObserver,
@@ -43,9 +44,22 @@ class LoadListener {
     Ci.nsIProgressEventSink,
   ]);
 
-  constructor(channel, callback) {
+  
+
+
+
+
+
+
+
+
+
+
+
+  constructor(channel, expectedContentType, callback) {
     this._channel = channel;
     this._callback = callback;
+    this._expectedContentType = expectedContentType;
   }
 
   
@@ -68,8 +82,14 @@ class LoadListener {
       logConsole.warn("loadListener: request failed!");
       
       this._bytes = null;
+    } else if (!this._expectedContentType.test(this._channel.contentType)) {
+      logConsole.warn(
+        "loadListener: Content type does not match expected",
+        this._channel.contentType
+      );
+      this._bytes = null;
     }
-    this._callback(this._bytes);
+    this._callback(this._bytes, this._bytes ? this._channel.contentType : "");
     this._channel = null;
   }
 

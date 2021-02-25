@@ -766,9 +766,7 @@ class SearchEngine {
       case "http":
       case "https":
       case "ftp":
-        var chan = SearchUtils.makeChannel(uri);
-
-        let iconLoadCallback = function(byteArray) {
+        let iconLoadCallback = function(byteArray, contentType) {
           
           
           if (this._hasPreferredIcon && !isPreferred) {
@@ -780,7 +778,6 @@ class SearchEngine {
             return;
           }
 
-          let contentType = chan.contentType;
           if (byteArray.length > SearchUtils.MAX_ICON_SIZE) {
             try {
               logConsole.debug("iconLoadCallback: rescaling icon");
@@ -791,13 +788,6 @@ class SearchEngine {
             }
           }
 
-          if (!contentType.startsWith("image/")) {
-            logConsole.info(
-              "Unable to set icon, content type is not an image",
-              contentType
-            );
-            return;
-          }
           let dataURL =
             "data:" +
             contentType +
@@ -816,8 +806,10 @@ class SearchEngine {
           this._hasPreferredIcon = isPreferred;
         };
 
-        var listener = new SearchUtils.LoadListener(
+        let chan = SearchUtils.makeChannel(uri);
+        let listener = new SearchUtils.LoadListener(
           chan,
+          /^image\//,
           
           
           
