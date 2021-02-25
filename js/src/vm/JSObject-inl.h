@@ -27,16 +27,7 @@ namespace js {
 
 
 
-
-static inline gc::AllocKind NewObjectGCKind(const JSClass* clasp) {
-  if (clasp == &ArrayObject::class_) {
-    return gc::AllocKind::OBJECT8;
-  }
-  if (clasp == &JSFunction::class_) {
-    return gc::AllocKind::OBJECT2;
-  }
-  return gc::AllocKind::OBJECT4;
-}
+static inline gc::AllocKind NewObjectGCKind() { return gc::AllocKind::OBJECT4; }
 
 }  
 
