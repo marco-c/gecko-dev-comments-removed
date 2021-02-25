@@ -918,6 +918,13 @@ class nsLayoutUtils {
 
 
 
+  static bool AuthorSpecifiedBorderBackgroundDisablesTheming(
+      mozilla::StyleAppearance);
+
+  
+
+
+
 
 
 
