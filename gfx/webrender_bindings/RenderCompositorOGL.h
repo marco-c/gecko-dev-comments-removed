@@ -32,9 +32,6 @@ class RenderCompositorOGL : public RenderCompositor {
   LayoutDeviceIntSize GetBufferSize() override;
 
   
-  CompositorCapabilities GetCompositorCapabilities() override;
-
-  
   bool UsePartialPresent() override;
   bool RequestFullRender() override;
   uint32_t GetMaxPartialPresentRects() override;

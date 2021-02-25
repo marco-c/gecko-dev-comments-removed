@@ -235,13 +235,10 @@ LayoutDeviceIntSize RenderCompositorSWGL::GetBufferSize() {
   return mWidget->GetClientSize();
 }
 
-CompositorCapabilities RenderCompositorSWGL::GetCompositorCapabilities() {
-  CompositorCapabilities caps;
-
+void RenderCompositorSWGL::GetCompositorCapabilities(
+    CompositorCapabilities* aCaps) {
   
-  caps.virtual_surface_size = 0;
-
-  return caps;
+  aCaps->redraw_on_invalidation = true;
 }
 
 }  

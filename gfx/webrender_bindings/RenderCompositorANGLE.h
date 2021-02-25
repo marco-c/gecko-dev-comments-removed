@@ -96,7 +96,7 @@ class RenderCompositorANGLE : public RenderCompositor {
                   wr::DeviceIntRect aClipRect,
                   wr::ImageRendering aImageRendering) override;
   void EnableNativeCompositor(bool aEnable) override;
-  CompositorCapabilities GetCompositorCapabilities() override;
+  void GetCompositorCapabilities(CompositorCapabilities* aCaps) override;
 
   
   bool UsePartialPresent() override;

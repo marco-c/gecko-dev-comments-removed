@@ -282,7 +282,7 @@ pub enum CompositorKind {
         
         max_update_rects: usize,
         
-        virtual_surface_size: i32,
+        capabilities: CompositorCapabilities,
     },
 }
 
@@ -300,7 +300,7 @@ impl CompositorKind {
     pub fn get_virtual_surface_size(&self) -> i32 {
         match self {
             CompositorKind::Draw { .. } => 0,
-            CompositorKind::Native { virtual_surface_size, .. } => *virtual_surface_size,
+            CompositorKind::Native { capabilities, .. } => capabilities.virtual_surface_size,
         }
     }
 
@@ -310,6 +310,16 @@ impl CompositorKind {
         match self {
             CompositorKind::Draw { .. } => false,
             CompositorKind::Native { .. } => true,
+        }
+    }
+
+    pub fn should_redraw_on_invalidation(&self) -> bool {
+        match self {
+            CompositorKind::Draw { max_partial_present_rects, .. } => {
+                
+                *max_partial_present_rects > 0
+            }
+            CompositorKind::Native { capabilities, .. } => capabilities.redraw_on_invalidation,
         }
     }
 }
@@ -906,8 +916,27 @@ pub struct NativeSurfaceInfo {
 }
 
 #[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CompositorCapabilities {
+    
     pub virtual_surface_size: i32,
+    
+    pub redraw_on_invalidation: bool,
+}
+
+impl Default for CompositorCapabilities {
+    fn default() -> Self {
+        
+        
+        
+        
+        CompositorCapabilities {
+            virtual_surface_size: 0,
+            redraw_on_invalidation: false,
+        }
+    }
 }
 
 
