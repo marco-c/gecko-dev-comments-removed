@@ -260,7 +260,11 @@ class ProviderTabToSearch extends UrlbarProvider {
 
 
 
-  onEngagement(isPrivate, state) {
+
+
+
+
+  onEngagement(isPrivate, state, queryContext, details) {
     if (!this.enginesShown.regular.size && !this.enginesShown.onboarding.size) {
       return;
     }

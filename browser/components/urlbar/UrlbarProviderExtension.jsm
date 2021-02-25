@@ -252,7 +252,14 @@ class UrlbarProviderExtension extends UrlbarProvider {
 
 
 
-  onEngagement(isPrivate, state) {
+
+
+
+
+
+
+
+  onEngagement(isPrivate, state, queryContext, details) {
     this._notifyListener("engagement", isPrivate, state);
   }
 

@@ -128,7 +128,17 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
 
-  onEngagement(isPrivate, state) {
+
+
+
+
+
+
+
+
+
+
+  onEngagement(isPrivate, state, queryContext, details) {
     if (
       state == "engagement" &&
       this._addedResultInLastQuery &&

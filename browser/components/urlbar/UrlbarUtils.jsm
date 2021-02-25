@@ -1651,7 +1651,40 @@ class UrlbarProvider {
 
 
 
-  onEngagement(isPrivate, state) {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  onEngagement(isPrivate, state, queryContext, details) {}
 
   
 

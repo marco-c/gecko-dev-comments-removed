@@ -289,9 +289,21 @@ class ProvidersManager {
 
 
 
-  notifyEngagementChange(isPrivate, state) {
+
+
+
+
+
+
+  notifyEngagementChange(isPrivate, state, queryContext, details) {
     for (let provider of this.providers) {
-      provider.tryMethod("onEngagement", isPrivate, state);
+      provider.tryMethod(
+        "onEngagement",
+        isPrivate,
+        state,
+        queryContext,
+        details
+      );
     }
   }
 }

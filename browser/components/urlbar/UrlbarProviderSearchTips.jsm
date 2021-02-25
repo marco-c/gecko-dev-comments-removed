@@ -234,7 +234,17 @@ class ProviderSearchTips extends UrlbarProvider {
 
 
 
-  onEngagement(isPrivate, state) {
+
+
+
+
+
+
+
+
+
+
+  onEngagement(isPrivate, state, queryContext, details) {
     if (
       this.showedTipTypeInCurrentEngagement != TIPS.NONE &&
       state == "engagement"
