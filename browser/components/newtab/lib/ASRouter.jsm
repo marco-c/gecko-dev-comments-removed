@@ -29,7 +29,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   KintoHttpClient: "resource://services-common/kinto-http-client.js",
   Downloader: "resource://services-settings/Attachments.jsm",
   RemoteL10n: "resource://activity-stream/lib/RemoteL10n.jsm",
-  ExperimentAPI: "resource://messaging-system/experiments/ExperimentAPI.jsm",
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.jsm",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.jsm",
   TargetingContext: "resource://messaging-system/targeting/Targeting.jsm",
@@ -348,10 +348,7 @@ const MessageLoaderUtils = {
 
     let experiments = [];
     for (const featureId of provider.messageGroups) {
-      let experimentData = ExperimentAPI.getExperiment({
-        featureId,
-        sendExposurePing: false,
-      });
+      let experimentData = ExperimentAPI.getExperiment({ featureId });
       
       if (!experimentData) {
         continue;
@@ -364,7 +361,6 @@ const MessageLoaderUtils = {
       if (featureData.enabled) {
         experiments.push({
           forExposureEvent: {
-            sent: experimentData.exposurePingSent,
             experimentSlug: experimentData.slug,
             branchSlug: experimentData.branch.slug,
           },
@@ -1698,12 +1694,13 @@ class _ASRouter {
     
     
     if (nonReachMessages.length && nonReachMessages[0].forExposureEvent) {
-      ExperimentAPI.recordExposureEvent(
+      ExperimentAPI.recordExposureEvent({
         
         
-        "cfr",
-        nonReachMessages[0].forExposureEvent
-      );
+        featureId: "cfr",
+        
+        ...nonReachMessages[0].forExposureEvent,
+      });
     }
 
     return this.routeCFRMessage(
