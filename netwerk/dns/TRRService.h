@@ -13,6 +13,7 @@
 #include "nsWeakReference.h"
 #include "ODoHService.h"
 #include "TRRServiceBase.h"
+#include "nsICaptivePortalService.h"
 
 class nsDNSService;
 class nsIPrefBranch;
@@ -39,7 +40,7 @@ class TRRService : public TRRServiceBase,
   nsresult Init();
   nsresult Start();
   bool Enabled(nsIRequest::TRRMode aRequestMode = nsIRequest::TRR_DEFAULT_MODE);
-  bool IsConfirmed() { return mConfirmationState == CONFIRM_OK; }
+  bool IsConfirmed() { return mConfirmation.mState == CONFIRM_OK; }
 
   bool DisableIPv6() { return mDisableIPv6; }
   nsresult GetURI(nsACString& result);
@@ -48,7 +49,8 @@ class TRRService : public TRRServiceBase,
 
   LookupStatus CompleteLookup(nsHostRecord*, nsresult, mozilla::net::AddrInfo*,
                               bool pb, const nsACString& aOriginSuffix,
-                              nsHostRecord::TRRSkippedReason aReason) override;
+                              nsHostRecord::TRRSkippedReason aReason,
+                              TRR* aTrrRequest) override;
   LookupStatus CompleteLookupByType(nsHostRecord*, nsresult,
                                     mozilla::net::TypeRecordResultType&,
                                     uint32_t, bool pb) override;
@@ -85,8 +87,8 @@ class TRRService : public TRRServiceBase,
 
   nsresult ReadPrefs(const char* name);
   void GetPrefBranch(nsIPrefBranch** result);
-  void MaybeConfirm();
-  void MaybeConfirm_locked();
+  void MaybeConfirm(const char* aReason);
+  void MaybeConfirm_locked(const char* aReason);
   friend class ::nsDNSService;
   void SetDetectedTrrURI(const nsACString& aURI);
 
@@ -139,13 +141,53 @@ class TRRService : public TRRServiceBase,
     CONFIRM_OK = 2,
     CONFIRM_FAILED = 3
   };
-  Atomic<ConfirmationState, Relaxed> mConfirmationState;
-  RefPtr<TRR> mConfirmer;
-  nsCOMPtr<nsITimer> mRetryConfirmTimer;
-  uint32_t mRetryConfirmInterval;  
-  Atomic<uint32_t, Relaxed> mTRRFailures;
+
+  class ConfirmationContext {
+    static const size_t RESULTS_SIZE = 32;
+
+   public:
+    Atomic<ConfirmationState, Relaxed> mState;
+    RefPtr<TRR> mTask;
+    nsCOMPtr<nsITimer> mTimer;
+    uint32_t mRetryInterval = 125;  
+    
+    Atomic<uint32_t, Relaxed> mTRRFailures;
+
+    
+    uint32_t mAttemptCount = 0;
+
+    
+    
+    char mResults[RESULTS_SIZE] = {0};
+
+    
+    
+    TimeStamp mFirstRequestTime;
+    
+    nsCString mNetworkId;
+    
+    int32_t mCaptivePortalStatus = nsICaptivePortalService::UNKNOWN;
+
+    
+    nsCString mContextChangeReason;
+
+    
+    nsCString mTrigger;
+
+    
+    
+    void RecordEvent(const char* aReason);
+
+    
+    
+    void RequestCompleted(nsresult aLookupStatus, nsresult aChannelStatus);
+  };
+
+  ConfirmationContext mConfirmation;
+
   bool mParentalControlEnabled;
   RefPtr<ODoHService> mODoHService;
+  nsCOMPtr<nsINetworkLinkService> mLinkService;
 };
 
 extern TRRService* gTRRService;
