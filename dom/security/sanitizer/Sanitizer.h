@@ -59,7 +59,7 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
 
 
   already_AddRefed<DocumentFragment> Sanitize(
-      const Optional<mozilla::dom::StringOrDocumentFragmentOrDocument>& aInput,
+      const mozilla::dom::StringOrDocumentFragmentOrDocument& aInput,
       ErrorResult& aRv);
 
   
@@ -67,9 +67,8 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
 
 
 
-  void SanitizeToString(
-      const Optional<StringOrDocumentFragmentOrDocument>& aInput,
-      nsAString& outSanitized, ErrorResult& aRv);
+  void SanitizeToString(const StringOrDocumentFragmentOrDocument& aInput,
+                        nsAString& outSanitized, ErrorResult& aRv);
 
   
 
@@ -83,7 +82,7 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
  private:
   ~Sanitizer() = default;
   already_AddRefed<DocumentFragment> InputToNewFragment(
-      const Optional<mozilla::dom::StringOrDocumentFragmentOrDocument>& aInput,
+      const mozilla::dom::StringOrDocumentFragmentOrDocument& aInput,
       ErrorResult& aRv);
   
 
