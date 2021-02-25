@@ -113,8 +113,14 @@ NS_IMETHODIMP nsTimeupdateRunner::Run() {
   
   
   
-  mElement->UpdateLastTimeupdateDispatchTime();
-  return DispatchEvent(mEventName);
+  nsresult rv = DispatchEvent(mEventName);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    LOG_EVENT(LogLevel::Debug,
+              ("%p Failed to dispatch 'timeupdate'", mElement.get()));
+  } else {
+    mElement->UpdateLastTimeupdateDispatchTime();
+  }
+  return rv;
 }
 
 bool nsTimeupdateRunner::ShouldDispatchTimeupdate() const {
