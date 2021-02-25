@@ -53,6 +53,7 @@
 
 #include "harfbuzz/hb.h"
 
+#include "AppleUtils.h"
 #include "MainThreadUtils.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsDirectoryServiceDefs.h"
@@ -1429,19 +1430,51 @@ gfxFontEntry* gfxMacPlatformFontList::LookupLocalFont(const nsACString& aFontNam
   nsAutoreleasePool localPool;
 
   NSString* faceName = GetNSStringForString(NS_ConvertUTF8toUTF16(aFontName));
-  MacOSFontEntry* newFontEntry;
 
   
-  CGFontRef fontRef = ::CGFontCreateWithFontName(CFStringRef(faceName));
+  AutoCFRelease<CGFontRef> fontRef = CGFontCreateWithFontName(CFStringRef(faceName));
   if (!fontRef) {
     return nullptr;
   }
 
-  newFontEntry = new MacOSFontEntry(aFontName, fontRef, aWeightForEntry, aStretchForEntry,
-                                    aStyleForEntry, false, true);
-  ::CFRelease(fontRef);
+  
+  
+  
+  
 
-  return newFontEntry;
+  
+  AutoCFRelease<CTFontRef> ctFont = CTFontCreateWithGraphicsFont(fontRef, 0.0, nullptr, nullptr);
+  if (!ctFont) {
+    return nullptr;
+  }
+  AutoCFRelease<CFStringRef> name = CTFontCopyFamilyName(ctFont);
+
+  
+  nsAutoCString key;
+  
+  
+  
+  key.SetLength((CFStringGetLength(name) + 1) * 3);
+  if (!CFStringGetCString(name, key.BeginWriting(), key.Length(), kCFStringEncodingUTF8)) {
+    
+    NS_WARNING("Failed to get family name?");
+    key.Truncate(0);
+  }
+  if (key.IsEmpty()) {
+    return nullptr;
+  }
+  
+  
+  key.Truncate(strlen(key.get()));
+  ToLowerCase(key);
+  
+  FontFamily family = FindFamily(key);
+  if (family.IsNull()) {
+    return nullptr;
+  }
+
+  return new MacOSFontEntry(aFontName, fontRef, aWeightForEntry, aStretchForEntry, aStyleForEntry,
+                            false, true);
 }
 
 static void ReleaseData(void* info, const void* data, size_t size) { free((void*)data); }
