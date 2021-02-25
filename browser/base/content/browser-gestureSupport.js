@@ -27,6 +27,8 @@ var gGestureSupport = {
 
 
 
+
+
   init: function GS_init(aAddListener) {
     const gestureEvents = [
       "SwipeGestureMayStart",
@@ -44,12 +46,12 @@ var gGestureSupport = {
       "PressTapGesture",
     ];
 
-    let addRemove = aAddListener
-      ? window.addEventListener
-      : window.removeEventListener;
-
     for (let event of gestureEvents) {
-      addRemove("Moz" + event, this, true);
+      if (aAddListener) {
+        gBrowser.tabbox.addEventListener("Moz" + event, this, true);
+      } else {
+        gBrowser.tabbox.removeEventListener("Moz" + event, this, true);
+      }
     }
   },
 
