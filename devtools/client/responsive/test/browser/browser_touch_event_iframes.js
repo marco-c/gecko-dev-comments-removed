@@ -153,6 +153,9 @@ for (const mvcontent of META_VIEWPORT_CONTENTS) {
               }
 
               
+              
+              
+              
               function synthesizeNativeMouseClick(win, screenX, screenY) {
                 const utils = win.windowUtils;
                 const scale = utils.screenPixelsPerCSSPixelNoOverride;

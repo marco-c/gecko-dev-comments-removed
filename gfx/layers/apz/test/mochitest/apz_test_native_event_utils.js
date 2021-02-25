@@ -694,6 +694,16 @@ function synthesizeNativeMouseEventWithAPZ(aParams, aObserver = null) {
       "Are you trying to use EventUtils' API? `win` won't be used with synthesizeNativeMouseClickWithAPZ."
     );
   }
+  if (aParams.scale !== undefined) {
+    throw Error(
+      "Are you trying to use EventUtils' API? `scale` won't be used with synthesizeNativeMouseClickWithAPZ."
+    );
+  }
+  if (aParams.elementOnWidget !== undefined) {
+    throw Error(
+      "Are you trying to use EventUtils' API? `elementOnWidget` won't be used with synthesizeNativeMouseClickWithAPZ."
+    );
+  }
   const {
     type, 
     target, 
