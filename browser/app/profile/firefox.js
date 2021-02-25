@@ -2180,11 +2180,7 @@ pref("devtools.inspector.compatibility.enabled", true);
 pref("devtools.inspector.compatibility.enabled", false);
 #endif
 
-#if defined(NIGHTLY_BUILD)
 pref("devtools.inspector.color-scheme-simulation.enabled", true);
-#else
-pref("devtools.inspector.color-scheme-simulation.enabled", false);
-#endif
 
 pref("devtools.overflow.debugging.enabled", true);
 
