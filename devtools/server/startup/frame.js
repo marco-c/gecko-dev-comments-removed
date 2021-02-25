@@ -80,7 +80,12 @@ try {
         const { docShell } = chromeGlobal;
         
         
-        actor = new FrameTargetActor(conn, docShell);
+        
+        
+        
+        actor = new FrameTargetActor(conn, docShell, {
+          isTopLevelTarget: true,
+        });
       }
       actor.manage(actor);
 
