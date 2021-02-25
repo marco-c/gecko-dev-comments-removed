@@ -7,22 +7,25 @@
 
 #include "frontend/ObjLiteral.h"
 
+#include "mozilla/HashTable.h"  
+
 #include "NamespaceImports.h"  
 
 #include "builtin/Array.h"                
 #include "frontend/CompilationStencil.h"  
 #include "frontend/ParserAtom.h"          
-#include "gc/AllocKind.h"                 
-#include "gc/Rooting.h"                   
-#include "js/Id.h"                        
-#include "js/RootingAPI.h"                
-#include "js/TypeDecls.h"                 
-#include "vm/JSAtom.h"                    
-#include "vm/JSONPrinter.h"               
-#include "vm/NativeObject.h"              
-#include "vm/ObjectGroup.h"               
-#include "vm/PlainObject.h"               
-#include "vm/Printer.h"                   
+#include "frontend/TaggedParserAtomIndexHasher.h"  
+#include "gc/AllocKind.h"                          
+#include "gc/Rooting.h"                            
+#include "js/Id.h"                                 
+#include "js/RootingAPI.h"                         
+#include "js/TypeDecls.h"                          
+#include "vm/JSAtom.h"                             
+#include "vm/JSONPrinter.h"                        
+#include "vm/NativeObject.h"                       
+#include "vm/ObjectGroup.h"                        
+#include "vm/PlainObject.h"                        
+#include "vm/Printer.h"                            
 
 #include "gc/ObjectKind-inl.h"    
 #include "vm/JSAtom-inl.h"        
@@ -30,6 +33,50 @@
 #include "vm/NativeObject-inl.h"  
 
 namespace js {
+
+bool ObjLiteralWriter::checkForDuplicatedNames(JSContext* cx) {
+  if (!mightContainDuplicatePropertyNames_) {
+    return true;
+  }
+
+  
+  
+
+  mozilla::HashSet<frontend::TaggedParserAtomIndex,
+                   frontend::TaggedParserAtomIndexHasher>
+      propNameSet;
+
+  if (!propNameSet.reserve(propertyCount_)) {
+    js::ReportOutOfMemory(cx);
+    return false;
+  }
+
+  ObjLiteralReader reader(getCode());
+
+  while (true) {
+    ObjLiteralInsn insn;
+    if (!reader.readInsn(&insn)) {
+      break;
+    }
+
+    if (insn.getKey().isArrayIndex()) {
+      continue;
+    }
+
+    auto propName = insn.getKey().getAtomIndex();
+
+    auto p = propNameSet.lookupForAdd(propName);
+    if (p) {
+      flags_ += ObjLiteralFlag::HasIndexOrDuplicatePropName;
+      break;
+    }
+
+    
+    MOZ_ALWAYS_TRUE(propNameSet.add(p, propName));
+  }
+
+  return true;
+}
 
 static void InterpretObjLiteralValue(
     JSContext* cx, const frontend::CompilationAtomCache& atomCache,

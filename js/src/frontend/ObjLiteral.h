@@ -8,13 +8,12 @@
 #ifndef frontend_ObjLiteral_h
 #define frontend_ObjLiteral_h
 
+#include "mozilla/BloomFilter.h"  
 #include "mozilla/EndianUtils.h"
 #include "mozilla/EnumSet.h"
-#include "mozilla/HashTable.h"  
 #include "mozilla/Span.h"
 
 #include "frontend/ParserAtom.h"  
-#include "frontend/TaggedParserAtomIndexHasher.h"  
 #include "js/AllocPolicy.h"
 #include "js/GCPolicyAPI.h"
 #include "js/Value.h"
@@ -290,6 +289,7 @@ struct ObjLiteralWriter : private ObjLiteralWriterBase {
 
   using CodeVector = typename ObjLiteralWriterBase::CodeVector;
 
+  bool checkForDuplicatedNames(JSContext* cx);
   mozilla::Span<const uint8_t> getCode() const { return code_; }
   ObjLiteralFlags getFlags() const { return flags_; }
   uint32_t getPropertyCount() const { return propertyCount_; }
@@ -304,14 +304,16 @@ struct ObjLiteralWriter : private ObjLiteralWriterBase {
       return true;
     }
 
-    auto p = propNames_.lookupForAdd(propName);
-    if (!p) {
-      if (!propNames_.add(p, propName)) {
-        js::ReportOutOfMemory(cx);
-        return false;
-      }
+    
+    if (mightContainDuplicatePropertyNames_) {
+      return true;
+    }
+
+    
+    if (propNamesFilter_.mightContain(propName.rawData())) {
+      mightContainDuplicatePropertyNames_ = true;
     } else {
-      flags_ += ObjLiteralFlag::HasIndexOrDuplicatePropName;
+      propNamesFilter_.add(propName.rawData());
     }
     return true;
   }
@@ -383,12 +385,24 @@ struct ObjLiteralWriter : private ObjLiteralWriterBase {
 #endif
 
  private:
+  
+  
+  bool mightContainDuplicatePropertyNames_ = false;
+
   ObjLiteralFlags flags_;
   ObjLiteralKey nextKey_;
   uint32_t propertyCount_ = 0;
-  mozilla::HashSet<frontend::TaggedParserAtomIndex,
-                   frontend::TaggedParserAtomIndexHasher>
-      propNames_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::BitBloomFilter<12, frontend::TaggedParserAtomIndex> propNamesFilter_;
 };
 
 struct ObjLiteralReaderBase {
