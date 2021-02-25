@@ -185,29 +185,6 @@ nsresult HTMLFormElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                              aNotify);
 }
 
-nsresult HTMLFormElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
-                                       const nsAttrValue* aValue,
-                                       const nsAttrValue* aOldValue,
-                                       nsIPrincipal* aSubjectPrincipal,
-                                       bool aNotify) {
-  if (aName == nsGkAtoms::novalidate && aNameSpaceID == kNameSpaceID_None) {
-    
-    
-    for (uint32_t i = 0, length = mControls->mElements.Length(); i < length;
-         ++i) {
-      mControls->mElements[i]->UpdateState(true);
-    }
-
-    for (uint32_t i = 0, length = mControls->mNotInElements.Length();
-         i < length; ++i) {
-      mControls->mNotInElements[i]->UpdateState(true);
-    }
-  }
-
-  return nsGenericHTMLElement::AfterSetAttr(
-      aNameSpaceID, aName, aValue, aOldValue, aSubjectPrincipal, aNotify);
-}
-
 void HTMLFormElement::GetAutocomplete(nsAString& aValue) {
   GetEnumAttr(nsGkAtoms::autocomplete, kFormDefaultAutocomplete->tag, aValue);
 }
