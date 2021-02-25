@@ -32,20 +32,22 @@ static ALWAYS_INLINE P applyColor(P src, P color) {
   return muldiv256(src, color);
 }
 
-static ALWAYS_INLINE PackedRGBA8 applyColor(PackedRGBA8 src, WideRGBA8 color) {
-  return pack(muldiv256(unpack(src), color));
+static ALWAYS_INLINE WideRGBA8 applyColor(PackedRGBA8 src, WideRGBA8 color) {
+  return muldiv256(unpack(src), color);
 }
 
-static ALWAYS_INLINE PackedR8 applyColor(PackedR8 src, WideR8 color) {
-  return pack(muldiv256(unpack(src), color));
+static ALWAYS_INLINE WideR8 applyColor(PackedR8 src, WideR8 color) {
+  return muldiv256(unpack(src), color);
 }
+
+
 
 
 
 
 template <typename P, typename C>
 static ALWAYS_INLINE auto packColor(P* buf, C color) {
-  return pack_span(buf, color, 256.0f);
+  return pack_span(buf, color, 256.49f);
 }
 
 template <typename P>
@@ -55,6 +57,10 @@ static ALWAYS_INLINE NoColor packColor(UNUSED P* buf, NoColor noColor) {
 
 static ALWAYS_INLINE void commit_span(uint32_t* buf, WideRGBA8 r) {
   unaligned_store(buf, pack(r));
+}
+
+static ALWAYS_INLINE void commit_span(uint32_t* buf, WideRGBA8 r, int len) {
+  partial_store_span(buf, pack(r), len);
 }
 
 static ALWAYS_INLINE WideRGBA8 blend_span(uint32_t* buf, WideRGBA8 r) {
@@ -69,12 +75,25 @@ static ALWAYS_INLINE void commit_span(uint32_t* buf, PackedRGBA8 r) {
   unaligned_store(buf, r);
 }
 
+static ALWAYS_INLINE void commit_span(uint32_t* buf, PackedRGBA8 r, int len) {
+  partial_store_span(buf, r, len);
+}
+
 static ALWAYS_INLINE PackedRGBA8 blend_span(uint32_t* buf, PackedRGBA8 r) {
   return pack(blend_span(buf, unpack(r)));
 }
 
+static ALWAYS_INLINE PackedRGBA8 blend_span(uint32_t* buf, PackedRGBA8 r,
+                                            int len) {
+  return pack(blend_span(buf, unpack(r), len));
+}
+
 static ALWAYS_INLINE void commit_span(uint8_t* buf, WideR8 r) {
   unaligned_store(buf, pack(r));
+}
+
+static ALWAYS_INLINE void commit_span(uint8_t* buf, WideR8 r, int len) {
+  partial_store_span(buf, pack(r), len);
 }
 
 static ALWAYS_INLINE WideR8 blend_span(uint8_t* buf, WideR8 r) {
@@ -172,6 +191,15 @@ static ALWAYS_INLINE void commit_blend_span(P* buf, R r) {
     commit_span(buf, blend_span(buf, r));
   } else {
     commit_span(buf, r);
+  }
+}
+
+template <bool BLEND, typename P, typename R>
+static ALWAYS_INLINE void commit_blend_span(P* buf, R r, int len) {
+  if (BLEND) {
+    commit_span(buf, blend_span(buf, r, len), len);
+  } else {
+    commit_span(buf, r, len);
   }
 }
 
@@ -545,9 +573,9 @@ static int blendTextureLinear(S sampler, vec2 uv, int span,
 
 
 template <bool BLEND, typename S, typename C, typename P>
-static int blendTextureNearest(S sampler, vec2 uv, int span,
-                               const vec4_scalar& uv_rect, C color, P* buf,
-                               float layer = 0) {
+static int blendTextureNearestFast(S sampler, vec2 uv, int span,
+                                   const vec4_scalar& uv_rect, C color, P* buf,
+                                   float layer = 0) {
   if (!matchTextureFormat(sampler, buf)) {
     return 0;
   }
@@ -587,23 +615,15 @@ static int blendTextureNearest(S sampler, vec2 uv, int span,
   int n = max(min(maxX + 1, endX) - curX, 0);
   
   for (int end = curX + (n & ~3); curX < end; curX += 4, buf += 4) {
-    auto src =
-        applyColor(unpack(unaligned_load<packed_type>(&row[curX])), color);
+    auto src = applyColor(unaligned_load<packed_type>(&row[curX]), color);
     commit_blend_span<BLEND>(buf, src);
   }
   n &= 3;
   
   
   if (n > 0) {
-    if (BLEND) {
-      auto src = applyColor(
-          unpack(partial_load_span<packed_type>(&row[curX], n)), color);
-      partial_store_span(buf, pack(blend_span(buf, src, n)), n);
-    } else {
-      auto src =
-          applyColor(partial_load_span<packed_type>(&row[curX], n), color);
-      partial_store_span(buf, src, n);
-    }
+    auto src = applyColor(partial_load_span<packed_type>(&row[curX], n), color);
+    commit_blend_span<BLEND>(buf, src, n);
     buf += n;
     curX += n;
   }
@@ -618,6 +638,16 @@ static int blendTextureNearest(S sampler, vec2 uv, int span,
 
 
 
+
+template <typename T>
+static ALWAYS_INLINE bool spanNeedsScale(int span, T P) {
+  span &= ~(128 - 1);
+  span += 128;
+  return round((P.x.y - P.x.x) * span) != span;
+}
+
+
+
 template <typename S, typename T>
 static inline LinearFilter needsTextureLinear(S sampler, T P, int span) {
   
@@ -625,16 +655,11 @@ static inline LinearFilter needsTextureLinear(S sampler, T P, int span) {
     return LINEAR_FILTER_FALLBACK;
   }
   P = samplerScale(sampler, P);
-  
-  
-  
-  span &= ~(128 - 1);
-  span += 128;
-  float dx = P.x.y - P.x.x;
-  if (round(dx * span) != span) {
+  if (spanNeedsScale(span, P)) {
     
     
-    return dx >= 0 && dx <= 1 ? LINEAR_FILTER_UPSCALE : LINEAR_FILTER_FALLBACK;
+    return P.x.x <= P.x.y && P.x.y - P.x.x <= 1 ? LINEAR_FILTER_UPSCALE
+                                                : LINEAR_FILTER_FALLBACK;
   }
   
   
@@ -653,31 +678,31 @@ static inline LinearFilter needsTextureLinear(S sampler, T P, int span) {
 }
 
 
-#define swgl_commitTextureLinear(format, s, p, uv_rect, color, ...)        \
-  do {                                                                     \
-    auto packed_color = packColor(swgl_Out##format, color);                \
-    int drawn = 0;                                                         \
-    if (LinearFilter filter = needsTextureLinear(s, p, swgl_SpanLength)) { \
-      if (blend_key) {                                                     \
-        drawn = blendTextureLinear<true>(s, p, swgl_SpanLength, uv_rect,   \
-                                         packed_color, swgl_Out##format,   \
-                                         filter, __VA_ARGS__);             \
-      } else {                                                             \
-        drawn = blendTextureLinear<false>(s, p, swgl_SpanLength, uv_rect,  \
-                                          packed_color, swgl_Out##format,  \
-                                          filter, __VA_ARGS__);            \
-      }                                                                    \
-    } else if (blend_key) {                                                \
-      drawn = blendTextureNearest<true>(s, p, swgl_SpanLength, uv_rect,    \
-                                        packed_color, swgl_Out##format,    \
-                                        __VA_ARGS__);                      \
-    } else {                                                               \
-      drawn = blendTextureNearest<false>(s, p, swgl_SpanLength, uv_rect,   \
-                                         packed_color, swgl_Out##format,   \
-                                         __VA_ARGS__);                     \
-    }                                                                      \
-    swgl_Out##format += drawn;                                             \
-    swgl_SpanLength -= drawn;                                              \
+#define swgl_commitTextureLinear(format, s, p, uv_rect, color, ...)          \
+  do {                                                                       \
+    auto packed_color = packColor(swgl_Out##format, color);                  \
+    int drawn = 0;                                                           \
+    if (LinearFilter filter = needsTextureLinear(s, p, swgl_SpanLength)) {   \
+      if (blend_key) {                                                       \
+        drawn = blendTextureLinear<true>(s, p, swgl_SpanLength, uv_rect,     \
+                                         packed_color, swgl_Out##format,     \
+                                         filter, __VA_ARGS__);               \
+      } else {                                                               \
+        drawn = blendTextureLinear<false>(s, p, swgl_SpanLength, uv_rect,    \
+                                          packed_color, swgl_Out##format,    \
+                                          filter, __VA_ARGS__);              \
+      }                                                                      \
+    } else if (blend_key) {                                                  \
+      drawn = blendTextureNearestFast<true>(s, p, swgl_SpanLength, uv_rect,  \
+                                            packed_color, swgl_Out##format,  \
+                                            __VA_ARGS__);                    \
+    } else {                                                                 \
+      drawn = blendTextureNearestFast<false>(s, p, swgl_SpanLength, uv_rect, \
+                                             packed_color, swgl_Out##format, \
+                                             __VA_ARGS__);                   \
+    }                                                                        \
+    swgl_Out##format += drawn;                                               \
+    swgl_SpanLength -= drawn;                                                \
   } while (0)
 #define swgl_commitTextureLinearRGBA8(s, p, uv_rect, ...) \
   swgl_commitTextureLinear(RGBA8, s, p, uv_rect, NoColor(), __VA_ARGS__)
@@ -691,20 +716,188 @@ static inline LinearFilter needsTextureLinear(S sampler, T P, int span) {
   swgl_commitTextureLinear(R8, s, p, uv_rect, color, __VA_ARGS__)
 
 
-#define swgl_commitTextureLinearChunk(format, s, p, color, ...)      \
-  swgl_commitChunk(format, applyColor(textureLinearUnpacked##format( \
-                                          s, ivec2(p), __VA_ARGS__), \
-                                      packColor(swgl_Out##format, color)))
-#define swgl_commitTextureLinearChunkRGBA8(s, p, ...) \
-  swgl_commitTextureLinearChunk(RGBA8, s, p, NoColor(), __VA_ARGS__)
-#define swgl_commitTextureLinearChunkR8(s, p, ...) \
-  swgl_commitTextureLinearChunk(R8, s, p, NoColor(), __VA_ARGS__)
+template <bool BLEND, typename S, typename C, typename P>
+static int blendTextureLinearRepeat(S sampler, vec2 uv, int span,
+                                    const vec4_scalar& uv_repeat,
+                                    const vec4_scalar& uv_rect, C color, P* buf,
+                                    float z = 0) {
+  if (!matchTextureFormat(sampler, buf)) {
+    return 0;
+  }
+  
+  
+  
+  vec2_scalar uv_step =
+      float(swgl_StepSize) * vec2_scalar{uv.x.y - uv.x.x, uv.y.y - uv.y.x};
+  vec2_scalar uv_scale = swgl_linearQuantizeStep(
+      sampler,
+      vec2_scalar{uv_repeat.z - uv_repeat.x, uv_repeat.w - uv_repeat.y});
+  vec2_scalar uv_offset =
+      swgl_linearQuantize(sampler, vec2_scalar{uv_repeat.x, uv_repeat.y});
+  vec2_scalar min_uv =
+      swgl_linearQuantize(sampler, vec2_scalar{uv_rect.x, uv_rect.y});
+  vec2_scalar max_uv =
+      swgl_linearQuantize(sampler, vec2_scalar{uv_rect.z, uv_rect.w});
+  int zoffset = swgl_textureLayerOffset(sampler, z);
+  for (P* end = buf + span; buf < end; buf += swgl_StepSize, uv += uv_step) {
+    vec2 repeated_uv = clamp(fract(uv) * uv_scale + uv_offset, min_uv, max_uv);
+    commit_blend_span<BLEND>(
+        buf, applyColor(textureLinearUnpacked(buf, sampler, ivec2(repeated_uv),
+                                              zoffset),
+                        color));
+  }
+  return span;
+}
 
 
-#define swgl_commitTextureLinearChunkColorRGBA8(s, p, color, ...) \
-  swgl_commitTextureLinearChunk(RGBA8, s, p, color, __VA_ARGS__)
-#define swgl_commitTextureLinearChunkColorR8(s, p, color, ...) \
-  swgl_commitTextureLinearChunk(R8, s, p, color, __VA_ARGS__)
+#define swgl_commitTextureLinearRepeat(format, s, p, uv_repeat, uv_rect,       \
+                                       color, ...)                             \
+  do {                                                                         \
+    auto packed_color = packColor(swgl_Out##format, color);                    \
+    int drawn = 0;                                                             \
+    if (blend_key) {                                                           \
+      drawn = blendTextureLinearRepeat<true>(s, p, swgl_SpanLength, uv_repeat, \
+                                             uv_rect, packed_color,            \
+                                             swgl_Out##format, __VA_ARGS__);   \
+    } else {                                                                   \
+      drawn = blendTextureLinearRepeat<false>(                                 \
+          s, p, swgl_SpanLength, uv_repeat, uv_rect, packed_color,             \
+          swgl_Out##format, __VA_ARGS__);                                      \
+    }                                                                          \
+    swgl_Out##format += drawn;                                                 \
+    swgl_SpanLength -= drawn;                                                  \
+  } while (0)
+#define swgl_commitTextureLinearRepeatRGBA8(s, p, uv_repeat, uv_rect, ...)   \
+  swgl_commitTextureLinearRepeat(RGBA8, s, p, uv_repeat, uv_rect, NoColor(), \
+                                 __VA_ARGS__)
+#define swgl_commitTextureLinearRepeatColorRGBA8(s, p, uv_repeat, uv_rect, \
+                                                 color, ...)               \
+  swgl_commitTextureLinearRepeat(RGBA8, s, p, uv_repeat, uv_rect, color,   \
+                                 __VA_ARGS__)
+
+template <typename S>
+static ALWAYS_INLINE PackedRGBA8 textureNearestPacked(UNUSED uint32_t* buf,
+                                                      S sampler, ivec2 i,
+                                                      int zoffset) {
+  return textureNearestPackedRGBA8(sampler, i, zoffset);
+}
+
+
+
+template <bool BLEND, bool REPEAT, typename S, typename C, typename P>
+static int blendTextureNearestRepeat(S sampler, vec2 uv, int span,
+                                     const vec4_scalar& uv_rect, C color,
+                                     P* buf, float z = 0) {
+  if (!matchTextureFormat(sampler, buf)) {
+    return 0;
+  }
+  if (!REPEAT) {
+    
+    
+    uv = samplerScale(sampler, uv);
+  }
+  vec2_scalar uv_step =
+      float(swgl_StepSize) * vec2_scalar{uv.x.y - uv.x.x, uv.y.y - uv.y.x};
+  vec2_scalar min_uv = samplerScale(sampler, vec2_scalar{uv_rect.x, uv_rect.y});
+  vec2_scalar max_uv = samplerScale(sampler, vec2_scalar{uv_rect.z, uv_rect.w});
+  vec2_scalar uv_scale = max_uv - min_uv;
+  int zoffset = swgl_textureLayerOffset(sampler, z);
+  
+  
+  
+  
+  
+  
+  if ((int(min_uv.x) + (REPEAT ? 1 : 0) >= int(max_uv.x) ||
+       (uv_step.x * span * (REPEAT ? uv_scale.x : 1.0f) < 0.5f)) &&
+      (int(min_uv.y) + (REPEAT ? 1 : 0) >= int(max_uv.y) ||
+       (uv_step.y * span * (REPEAT ? uv_scale.y : 1.0f) < 0.5f))) {
+    vec2 repeated_uv =
+        REPEAT ? fract(uv) * uv_scale + min_uv : clamp(uv, min_uv, max_uv);
+    commit_solid_span<BLEND>(
+        buf,
+        applyColor(unpack(textureNearestPacked(buf, sampler, ivec2(repeated_uv),
+                                               zoffset)),
+                   color),
+        span);
+  } else {
+    for (P* end = buf + span; buf < end; buf += swgl_StepSize, uv += uv_step) {
+      vec2 repeated_uv =
+          REPEAT ? fract(uv) * uv_scale + min_uv : clamp(uv, min_uv, max_uv);
+      commit_blend_span<BLEND>(
+          buf, applyColor(textureNearestPacked(buf, sampler, ivec2(repeated_uv),
+                                               zoffset),
+                          color));
+    }
+  }
+  return span;
+}
+
+
+
+
+
+template <typename S, typename T>
+static ALWAYS_INLINE bool needsNearestFallback(S sampler, T P, int span) {
+  P = samplerScale(sampler, P);
+  return (P.y.y - P.y.x) * span >= 0.5f || spanNeedsScale(span, P);
+}
+
+
+
+#define swgl_commitTextureNearest(format, repeat, s, p, uv_rect, color, ...) \
+  do {                                                                       \
+    auto packed_color = packColor(swgl_Out##format, color);                  \
+    int drawn = 0;                                                           \
+    if (repeat || needsNearestFallback(s, p, swgl_SpanLength)) {             \
+      if (blend_key) {                                                       \
+        drawn = blendTextureNearestRepeat<true, repeat>(                     \
+            s, p, swgl_SpanLength, uv_rect, packed_color, swgl_Out##format,  \
+            __VA_ARGS__);                                                    \
+      } else {                                                               \
+        drawn = blendTextureNearestRepeat<false, repeat>(                    \
+            s, p, swgl_SpanLength, uv_rect, packed_color, swgl_Out##format,  \
+            __VA_ARGS__);                                                    \
+      }                                                                      \
+    } else if (blend_key) {                                                  \
+      drawn = blendTextureNearestFast<true>(s, p, swgl_SpanLength, uv_rect,  \
+                                            packed_color, swgl_Out##format,  \
+                                            __VA_ARGS__);                    \
+    } else {                                                                 \
+      drawn = blendTextureNearestFast<false>(s, p, swgl_SpanLength, uv_rect, \
+                                             packed_color, swgl_Out##format, \
+                                             __VA_ARGS__);                   \
+    }                                                                        \
+    swgl_Out##format += drawn;                                               \
+    swgl_SpanLength -= drawn;                                                \
+  } while (0)
+#define swgl_commitTextureNearestRGBA8(s, p, uv_rect, ...) \
+  swgl_commitTextureNearest(RGBA8, false, s, p, uv_rect, NoColor(), __VA_ARGS__)
+#define swgl_commitTextureNearestColorRGBA8(s, p, uv_rect, color, ...) \
+  swgl_commitTextureNearest(RGBA8, false, s, p, uv_rect, color, __VA_ARGS__)
+#define swgl_commitTextureNearestRepeatRGBA8(s, p, uv_repeat, uv_rect, ...) \
+  swgl_commitTextureNearest(RGBA8, true, s, p, uv_repeat, NoColor(),        \
+                            __VA_ARGS__)
+#define swgl_commitTextureNearestRepeatColorRGBA8(s, p, uv_repeat, uv_rect, \
+                                                  color, ...)               \
+  swgl_commitTextureNearest(RGBA8, true, s, p, uv_repeat, color, __VA_ARGS__)
+
+
+#define swgl_commitTexture(format, s, ...)               \
+  do {                                                   \
+    if (s->filter == TextureFilter::LINEAR) {            \
+      swgl_commitTextureLinear##format(s, __VA_ARGS__);  \
+    } else {                                             \
+      swgl_commitTextureNearest##format(s, __VA_ARGS__); \
+    }                                                    \
+  } while (0)
+#define swgl_commitTextureRGBA8(...) swgl_commitTexture(RGBA8, __VA_ARGS__)
+#define swgl_commitTextureColorRGBA8(...) \
+  swgl_commitTexture(ColorRGBA8, __VA_ARGS__)
+#define swgl_commitTextureRepeatRGBA8(...) \
+  swgl_commitTexture(RepeatRGBA8, __VA_ARGS__)
+#define swgl_commitTextureRepeatColorRGBA8(...) \
+  swgl_commitTexture(RepeatColorRGBA8, __VA_ARGS__)
 
 
 
@@ -792,9 +985,12 @@ static ALWAYS_INLINE PackedRGBA8 sampleYUV(S0 sampler0, ivec2 uv0, int layer0,
 }
 
 template <bool BLEND, typename S0, typename P, typename C = NoColor>
-static void blendYUV(P* buf, int span, S0 sampler0, vec2 uv0,
-                     const vec4_scalar uv_rect0, float z0, int colorSpace,
-                     int rescaleFactor, C color = C()) {
+static int blendYUV(P* buf, int span, S0 sampler0, vec2 uv0,
+                    const vec4_scalar uv_rect0, float z0, int colorSpace,
+                    int rescaleFactor, C color = C()) {
+  if (!swgl_isTextureLinear(sampler0)) {
+    return 0;
+  }
   LINEAR_QUANTIZE_UV(sampler0, uv0, uv_step0, uv_rect0, min_uv0, max_uv0, z0,
                      layer0);
   auto c = packColor(buf, color);
@@ -805,6 +1001,7 @@ static void blendYUV(P* buf, int span, S0 sampler0, vec2 uv0,
                                   layer0, colorSpace, rescaleFactor),
                         c));
   }
+  return span;
 }
 
 template <typename S0, typename S1>
@@ -833,10 +1030,13 @@ static ALWAYS_INLINE PackedRGBA8 sampleYUV(S0 sampler0, ivec2 uv0, int layer0,
 
 template <bool BLEND, typename S0, typename S1, typename P,
           typename C = NoColor>
-static void blendYUV(P* buf, int span, S0 sampler0, vec2 uv0,
-                     const vec4_scalar uv_rect0, float z0, S1 sampler1,
-                     vec2 uv1, const vec4_scalar uv_rect1, float z1,
-                     int colorSpace, int rescaleFactor, C color = C()) {
+static int blendYUV(P* buf, int span, S0 sampler0, vec2 uv0,
+                    const vec4_scalar uv_rect0, float z0, S1 sampler1, vec2 uv1,
+                    const vec4_scalar uv_rect1, float z1, int colorSpace,
+                    int rescaleFactor, C color = C()) {
+  if (!swgl_isTextureLinear(sampler0) || !swgl_isTextureLinear(sampler1)) {
+    return 0;
+  }
   LINEAR_QUANTIZE_UV(sampler0, uv0, uv_step0, uv_rect0, min_uv0, max_uv0, z0,
                      layer0);
   LINEAR_QUANTIZE_UV(sampler1, uv1, uv_step1, uv_rect1, min_uv1, max_uv1, z1,
@@ -851,6 +1051,7 @@ static void blendYUV(P* buf, int span, S0 sampler0, vec2 uv0,
                                   colorSpace, rescaleFactor),
                         c));
   }
+  return span;
 }
 
 template <typename S0, typename S1, typename S2>
@@ -890,12 +1091,15 @@ static ALWAYS_INLINE PackedRGBA8 sampleYUV(S0 sampler0, ivec2 uv0, int layer0,
 
 template <bool BLEND, typename S0, typename S1, typename S2, typename P,
           typename C = NoColor>
-static void blendYUV(P* buf, int span, S0 sampler0, vec2 uv0,
-                     const vec4_scalar uv_rect0, float z0, S1 sampler1,
-                     vec2 uv1, const vec4_scalar uv_rect1, float z1,
-                     S2 sampler2, vec2 uv2, const vec4_scalar uv_rect2,
-                     float z2, int colorSpace, int rescaleFactor,
-                     C color = C()) {
+static int blendYUV(P* buf, int span, S0 sampler0, vec2 uv0,
+                    const vec4_scalar uv_rect0, float z0, S1 sampler1, vec2 uv1,
+                    const vec4_scalar uv_rect1, float z1, S2 sampler2, vec2 uv2,
+                    const vec4_scalar uv_rect2, float z2, int colorSpace,
+                    int rescaleFactor, C color = C()) {
+  if (!swgl_isTextureLinear(sampler0) || !swgl_isTextureLinear(sampler1) ||
+      !swgl_isTextureLinear(sampler2)) {
+    return 0;
+  }
   LINEAR_QUANTIZE_UV(sampler0, uv0, uv_step0, uv_rect0, min_uv0, max_uv0, z0,
                      layer0);
   LINEAR_QUANTIZE_UV(sampler1, uv1, uv_step1, uv_rect1, min_uv1, max_uv1, z1,
@@ -914,6 +1118,7 @@ static void blendYUV(P* buf, int span, S0 sampler0, vec2 uv0,
                                   layer2, colorSpace, rescaleFactor),
                         c));
   }
+  return span;
 }
 
 
@@ -922,15 +1127,16 @@ static void blendYUV(P* buf, int span, S0 sampler0, vec2 uv0,
 
 
 
-#define swgl_commitTextureLinearYUV(...)                            \
-  do {                                                              \
-    if (blend_key) {                                                \
-      blendYUV<true>(swgl_OutRGBA8, swgl_SpanLength, __VA_ARGS__);  \
-    } else {                                                        \
-      blendYUV<false>(swgl_OutRGBA8, swgl_SpanLength, __VA_ARGS__); \
-    }                                                               \
-    swgl_OutRGBA8 += swgl_SpanLength;                               \
-    swgl_SpanLength = 0;                                            \
+#define swgl_commitTextureLinearYUV(...)                                    \
+  do {                                                                      \
+    int drawn = 0;                                                          \
+    if (blend_key) {                                                        \
+      drawn = blendYUV<true>(swgl_OutRGBA8, swgl_SpanLength, __VA_ARGS__);  \
+    } else {                                                                \
+      drawn = blendYUV<false>(swgl_OutRGBA8, swgl_SpanLength, __VA_ARGS__); \
+    }                                                                       \
+    swgl_OutRGBA8 += drawn;                                                 \
+    swgl_SpanLength -= drawn;                                               \
   } while (0)
 
 
