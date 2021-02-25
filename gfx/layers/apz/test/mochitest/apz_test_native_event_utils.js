@@ -748,6 +748,8 @@ function synthesizeNativeMouseClickWithAPZ(aParams, aObserver = null) {
     offsetX, 
     offsetY, 
     atCenter, 
+    screenX, 
+    screenY, 
   } = aParams;
   if (atCenter) {
     if (offsetX != undefined || offsetY != undefined) {
@@ -755,17 +757,35 @@ function synthesizeNativeMouseClickWithAPZ(aParams, aObserver = null) {
         `atCenter is specified, but offsetX (${offsetX}) and/or offsetY (${offsetY}) are also specified`
       );
     }
-  } else if (offsetX == undefined || offsetY == undefined) {
-    throw Error(
-      `offsetX and offsetY must be specified when atCenter is not true`
-    );
+    if (screenX != undefined || screenY != undefined) {
+      throw Error(
+        `atCenter is specified, but screenX (${screenX}) and/or screenY (${screenY}) are also specified`
+      );
+    }
+  } else if (offsetX != undefined && offsetY != undefined) {
+    if (screenX != undefined || screenY != undefined) {
+      throw Error(
+        `offsetX/Y are specified, but screenX (${screenX}) and/or screenY (${screenY}) are also specified`
+      );
+    }
+  } else if (screenX != undefined && screenY != undefined) {
+    if (offsetX != undefined || offsetY != undefined) {
+      throw Error(
+        `screenX/Y are specified, but offsetX (${offsetX}) and/or offsetY (${offsetY}) are also specified`
+      );
+    }
   }
-  const pt = coordinatesRelativeToScreen({
-    offsetX,
-    offsetY,
-    atCenter,
-    target,
-  });
+  const pt = (() => {
+    if (screenX != undefined) {
+      return { x: screenX, y: screenY };
+    }
+    return coordinatesRelativeToScreen({
+      offsetX,
+      offsetY,
+      atCenter,
+      target,
+    });
+  })();
   const utils = SpecialPowers.getDOMWindowUtils(
     target.ownerDocument.defaultView
   );
