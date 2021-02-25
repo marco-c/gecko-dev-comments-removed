@@ -488,7 +488,7 @@ void nsChildView::SuppressAnimation(bool aSuppress) {
 }
 
 bool nsChildView::IsVisible() const {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   if (!mVisible) {
     return mVisible;
@@ -503,7 +503,7 @@ bool nsChildView::IsVisible() const {
   
   return ([mView window] != nil) && !NSIsEmptyRect([mView visibleRect]);
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(false);
+  NS_OBJC_END_TRY_BLOCK_RETURN(false);
 }
 
 
@@ -1361,19 +1361,19 @@ void nsChildView::ReportSizeEvent() {
 #pragma mark -
 
 LayoutDeviceIntPoint nsChildView::GetClientOffset() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   NSPoint origin = [mView convertPoint:NSMakePoint(0, 0) toView:nil];
   origin.y = [[mView window] frame].size.height - origin.y;
   return CocoaPointsToDevPixels(origin);
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(LayoutDeviceIntPoint(0, 0));
+  NS_OBJC_END_TRY_BLOCK_RETURN(LayoutDeviceIntPoint(0, 0));
 }
 
 
 
 LayoutDeviceIntPoint nsChildView::WidgetToScreenOffset() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   NSPoint origin = NSMakePoint(0, 0);
 
@@ -1391,7 +1391,7 @@ LayoutDeviceIntPoint nsChildView::WidgetToScreenOffset() {
   
   return CocoaPointsToDevPixels(origin);
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(LayoutDeviceIntPoint(0, 0));
+  NS_OBJC_END_TRY_BLOCK_RETURN(LayoutDeviceIntPoint(0, 0));
 }
 
 nsresult nsChildView::SetTitle(const nsAString& title) {
@@ -2499,7 +2499,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
 
 
 - (BOOL)maybeRollup:(NSEvent*)theEvent {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   BOOL consumeEvent = NO;
 
@@ -2559,7 +2559,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
 
   return consumeEvent;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NO);
+  NS_OBJC_END_TRY_BLOCK_RETURN(NO);
 }
 
 - (void)swipeWithEvent:(NSEvent*)anEvent {
@@ -3485,7 +3485,7 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 
 - (void)convertCocoaTabletPointerEvent:(NSEvent*)aPointerEvent
                           toGeckoEvent:(WidgetMouseEvent*)aOutGeckoEvent {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN
   if (!aOutGeckoEvent || !sIsTabletPointerActivated) {
     return;
   }
@@ -3504,7 +3504,7 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 }
 
 - (void)tabletProximity:(NSEvent*)theEvent {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN
   sIsTabletPointerActivated = [theEvent isEnteringProximity];
   NS_OBJC_END_TRY_ABORT_BLOCK
 }
@@ -3513,21 +3513,21 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 
 
 - (NSRange)markedRange {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   NS_ENSURE_TRUE(mTextInputHandler, NSMakeRange(NSNotFound, 0));
   return mTextInputHandler->MarkedRange();
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NSMakeRange(0, 0));
+  NS_OBJC_END_TRY_BLOCK_RETURN(NSMakeRange(0, 0));
 }
 
 - (NSRange)selectedRange {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   NS_ENSURE_TRUE(mTextInputHandler, NSMakeRange(NSNotFound, 0));
   return mTextInputHandler->SelectedRange();
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NSMakeRange(0, 0));
+  NS_OBJC_END_TRY_BLOCK_RETURN(NSMakeRange(0, 0));
 }
 
 - (BOOL)drawsVerticallyForCharacterAtIndex:(NSUInteger)charIndex {
@@ -3638,12 +3638,12 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 }
 
 - (NSInteger)windowLevel {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   NS_ENSURE_TRUE(mTextInputHandler, [[self window] level]);
   return mTextInputHandler->GetWindowLevel();
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NSNormalWindowLevel);
+  NS_OBJC_END_TRY_BLOCK_RETURN(NSNormalWindowLevel);
 }
 
 #pragma mark -
@@ -4019,12 +4019,12 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 }
 
 - (BOOL)isFirstResponder {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   NSResponder* resp = [[self window] firstResponder];
   return (resp == (NSResponder*)self);
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NO);
+  NS_OBJC_END_TRY_BLOCK_RETURN(NO);
 }
 
 - (BOOL)isDragInProgress {
@@ -4047,11 +4047,11 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 
 
 - (BOOL)becomeFirstResponder {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   return [super becomeFirstResponder];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(YES);
+  NS_OBJC_END_TRY_BLOCK_RETURN(YES);
 }
 
 - (void)viewsWindowDidBecomeKey {
@@ -4145,7 +4145,7 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 
 
 - (NSDragOperation)doDragAction:(EventMessage)aMessage sender:(id)aSender {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   if (!mGeckoChild) return NSDragOperationNone;
 
@@ -4253,12 +4253,12 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 
   return NSDragOperationGeneric;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NSDragOperationNone);
+  NS_OBJC_END_TRY_BLOCK_RETURN(NSDragOperationNone);
 }
 
 
 - (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   MOZ_LOG(sCocoaLog, LogLevel::Info, ("ChildView draggingEntered: entered\n"));
 
@@ -4273,7 +4273,7 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 
   return [self doDragAction:eDragEnter sender:sender];
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NSDragOperationNone);
+  NS_OBJC_END_TRY_BLOCK_RETURN(NSDragOperationNone);
 }
 
 
@@ -4586,7 +4586,7 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
 }
 
 - (BOOL)writeSelectionToPasteboard:(NSPasteboard*)pboard types:(NSArray*)types {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
 
@@ -4638,7 +4638,7 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
   }
   return YES;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NO);
+  NS_OBJC_END_TRY_BLOCK_RETURN(NO);
 }
 
 

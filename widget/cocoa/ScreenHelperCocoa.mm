@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ScreenHelperCocoa.h"
 
@@ -77,7 +77,7 @@ ScreenHelperCocoa::~ScreenHelperCocoa() {
 }
 
 static already_AddRefed<Screen> MakeScreen(NSScreen* aScreen) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   DesktopToLayoutDeviceScale contentsScaleFactor(nsCocoaUtils::GetBackingScaleFactor(aScreen));
   CSSToLayoutDeviceScale defaultCssScaleFactor(contentsScaleFactor.scale);
@@ -105,7 +105,7 @@ static already_AddRefed<Screen> MakeScreen(NSScreen* aScreen) {
                                      defaultCssScaleFactor, dpi);
   return screen.forget();
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(nullptr);
+  NS_OBJC_END_TRY_BLOCK_RETURN(nullptr);
 }
 
 void ScreenHelperCocoa::RefreshScreens() {
@@ -152,5 +152,5 @@ NSScreen* ScreenHelperCocoa::CocoaScreenForScreen(nsIScreen* aScreen) {
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
-}  // namespace widget
-}  // namespace mozilla
+}  
+}  

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #import <Cocoa/Cocoa.h>
 #import <CoreWLAN/CoreWLAN.h>
@@ -17,7 +17,7 @@
 #include "nsWifiAccessPoint.h"
 
 nsresult GetAccessPointsFromWLAN(nsCOMArray<nsWifiAccessPoint>& accessPoints) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   accessPoints.Clear();
 
@@ -53,8 +53,8 @@ nsresult GetAccessPointsFromWLAN(nsCOMArray<nsWifiAccessPoint>& accessPoints) {
         return NS_ERROR_OUT_OF_MEMORY;
       }
 
-      // [CWInterface bssidData] is deprecated on OS X 10.7 and up.  Which is
-      // is a pain, so we'll use it for as long as it's available.
+      
+      
       unsigned char macData[6] = {0};
       if ([anObject respondsToSelector:@selector(bssidData)]) {
         NSData* data = [anObject bssidData];
@@ -62,7 +62,7 @@ nsresult GetAccessPointsFromWLAN(nsCOMArray<nsWifiAccessPoint>& accessPoints) {
           memcpy(macData, [data bytes], 6);
         }
       } else {
-        // [CWInterface bssid] returns a string formatted "00:00:00:00:00:00".
+        
         NSString* macString = [anObject bssid];
         if (macString && ([macString length] == 17)) {
           for (NSUInteger i = 0; i < 6; ++i) {
@@ -77,8 +77,8 @@ nsresult GetAccessPointsFromWLAN(nsCOMArray<nsWifiAccessPoint>& accessPoints) {
         }
       }
 
-      // [CWInterface rssiValue] is available on OS X 10.7 and up (and
-      // [CWInterface rssi] is deprecated).
+      
+      
       int signal = 0;
       if ([anObject respondsToSelector:@selector(rssiValue)]) {
         signal = (int)((NSInteger)[anObject rssiValue]);
@@ -101,5 +101,5 @@ nsresult GetAccessPointsFromWLAN(nsCOMArray<nsWifiAccessPoint>& accessPoints) {
 
   return NS_OK;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NS_ERROR_NOT_AVAILABLE);
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_NOT_AVAILABLE);
 }

@@ -199,7 +199,7 @@ void nsToolkit::StopMonitoringAllProcessMouseEvents() {
 
 
 nsToolkit* nsToolkit::GetToolkit() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   if (!gToolkit) {
     gToolkit = new nsToolkit();
@@ -207,7 +207,7 @@ nsToolkit* nsToolkit::GetToolkit() {
 
   return gToolkit;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(nullptr);
+  NS_OBJC_END_TRY_BLOCK_RETURN(nullptr);
 }
 
 
