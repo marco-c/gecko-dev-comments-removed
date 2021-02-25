@@ -86,12 +86,7 @@ class nsCheckboxRadioFrame final : public nsAtomicContainerFrame,
  protected:
   virtual ~nsCheckboxRadioFrame();
 
-  static nscoord DefaultSize() {
-    
-    
-    
-    return nsPresContext::CSSPixelsToAppUnits(9);
-  }
+  nscoord DefaultSize();
 
   
 
