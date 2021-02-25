@@ -218,9 +218,9 @@ nsresult JSExecutionContext::Decode(JS::CompileOptions& aCompileOptions,
   
   
   
-  MOZ_ASSERT(tr != JS::TranscodeResult_Failure_BadBuildId &&
-             tr != JS::TranscodeResult_Failure_WrongCompileOption);
-  if (tr != JS::TranscodeResult_Ok) {
+  MOZ_ASSERT(tr != JS::TranscodeResult::Failure_BadBuildId &&
+             tr != JS::TranscodeResult::Failure_WrongCompileOption);
+  if (tr != JS::TranscodeResult::Ok) {
     mSkip = true;
     mRv = NS_ERROR_DOM_JS_DECODING_ERROR;
     return mRv;
