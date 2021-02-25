@@ -510,9 +510,9 @@ nsresult OggDemuxer::ReadMetadata() {
         
         
         
-        OggCodecState* const codecState = mCodecStore.Add(
-            serial,
-            OggCodecState::Create(mSandbox.get(), page.to_opaque(), serial));
+        OggCodecState* codecState =
+            OggCodecState::Create(mSandbox.get(), page.to_opaque(), serial);
+        mCodecStore.Add(serial, codecState);
         bitstreams.AppendElement(codecState);
         serials.AppendElement(serial);
       }
@@ -685,7 +685,7 @@ bool OggDemuxer::ReadOggChain(const media::TimeUnit& aLastEndTime) {
 
   OggCodecState* state;
 
-  mCodecStore.Add(serial, std::move(codecState));
+  mCodecStore.Add(serial, codecState.release());
   state = mCodecStore.Get(serial);
 
   NS_ENSURE_TRUE(state != nullptr, false);

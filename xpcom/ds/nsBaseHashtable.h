@@ -196,11 +196,12 @@ class nsBaseHashtable
 
 
 
-  template <typename... Args>
-  DataType& GetOrInsert(const KeyType& aKey, Args&&... aArgs) {
-    return WithEntryHandle(aKey, [&](auto entryHandle) -> DataType& {
-      return entryHandle.OrInsert(std::forward<Args>(aArgs)...);
-    });
+
+
+
+  DataType& GetOrInsert(const KeyType& aKey) {
+    EntryType* ent = this->PutEntry(aKey);
+    return ent->mData;
   }
 
   
@@ -208,37 +209,41 @@ class nsBaseHashtable
 
 
 
-  template <typename F>
-  DataType& GetOrInsertWith(const KeyType& aKey, F&& aFunc) {
-    return WithEntryHandle(aKey, [&aFunc](auto entryHandle) -> DataType& {
-      return entryHandle.OrInsertWith(std::forward<F>(aFunc));
+  void Put(KeyType aKey, const UserDataType& aData) {
+    WithEntryHandle(aKey, [&aData](auto entryHandle) {
+      entryHandle.InsertOrUpdate(Converter::Wrap(aData));
     });
   }
 
-  
-
-
-
-
-
-
-
-
-
-  template <typename U>
-  DataType& Put(KeyType aKey, U&& aData) {
-    return WithEntryHandle(aKey, [&aData](auto entryHandle) -> DataType& {
-      return entryHandle.InsertOrUpdate(std::forward<U>(aData));
-    });
-  }
-
-  template <typename U>
-  [[nodiscard]] bool Put(KeyType aKey, U&& aData, const fallible_t& aFallible) {
+  [[nodiscard]] bool Put(KeyType aKey, const UserDataType& aData,
+                         const fallible_t& aFallible) {
     return WithEntryHandle(aKey, aFallible, [&aData](auto maybeEntryHandle) {
       if (!maybeEntryHandle) {
         return false;
       }
-      maybeEntryHandle->InsertOrUpdate(std::forward<U>(aData));
+      maybeEntryHandle->InsertOrUpdate(Converter::Wrap(aData));
+      return true;
+    });
+  }
+
+  
+
+
+
+
+  void Put(KeyType aKey, UserDataType&& aData) {
+    WithEntryHandle(aKey, [&aData](auto entryHandle) {
+      entryHandle.InsertOrUpdate(Converter::Wrap(std::move(aData)));
+    });
+  }
+
+  [[nodiscard]] bool Put(KeyType aKey, UserDataType&& aData,
+                         const fallible_t& aFallible) {
+    return WithEntryHandle(aKey, aFallible, [&aData](auto maybeEntryHandle) {
+      if (!maybeEntryHandle) {
+        return false;
+      }
+      maybeEntryHandle->InsertOrUpdate(Converter::Wrap(std::move(aData)));
       return true;
     });
   }
@@ -427,9 +432,9 @@ class nsBaseHashtable
 
 
 
-    template <typename... Args>
-    DataType& Insert(Args&&... aArgs) {
-      Base::InsertInternal(std::forward<Args>(aArgs)...);
+    template <typename U>
+    DataType& Insert(U&& aData) {
+      Base::InsertInternal(std::forward<U>(aData));
       return Data();
     }
 
@@ -441,10 +446,10 @@ class nsBaseHashtable
 
 
 
-    template <typename... Args>
-    DataType& OrInsert(Args&&... aArgs) {
+    template <typename U>
+    DataType& OrInsert(U&& aData) {
       if (!HasEntry()) {
-        return Insert(std::forward<Args>(aArgs)...);
+        return Insert(std::forward<U>(aData));
       }
       return Data();
     }

@@ -662,10 +662,9 @@ nsresult NativeFileWatcherIOTask::AddPathRunnableMethod(
   nsresult rv = AddDirectoryToWatchList(resourceDesc.get());
   if (NS_SUCCEEDED(rv)) {
     
-    mWatchedResourcesByHandle.Put(
-        resHandle, mWatchedResourcesByPath
-                       .Put(wrappedParameters->mPath, std::move(resourceDesc))
-                       .get());
+    WatchedResourceDescriptor* resource = resourceDesc.release();
+    mWatchedResourcesByPath.Put(wrappedParameters->mPath, resource);
+    mWatchedResourcesByHandle.Put(resHandle, resource);
 
     
     nsresult rv = ReportSuccess(wrappedParameters->mSuccessCallbackHandle,
@@ -1096,11 +1095,13 @@ void NativeFileWatcherIOTask::AppendCallbacksToHashtables(
     const nsMainThreadPtrHandle<nsINativeFileWatcherCallback>& aOnChangeHandle,
     const nsMainThreadPtrHandle<nsINativeFileWatcherErrorCallback>&
         aOnErrorHandle) {
-  ChangeCallbackArray* const callbacksArray =
-      mChangeCallbacksTable
-          .GetOrInsertWith(aPath,
-                           [] { return MakeUnique<ChangeCallbackArray>(); })
-          .get();
+  
+  ChangeCallbackArray* callbacksArray = mChangeCallbacksTable.Get(aPath);
+  if (!callbacksArray) {
+    
+    callbacksArray = new ChangeCallbackArray();
+    mChangeCallbacksTable.Put(aPath, callbacksArray);
+  }
 
   
   
@@ -1113,11 +1114,12 @@ void NativeFileWatcherIOTask::AppendCallbacksToHashtables(
   }
 
   
-  ErrorCallbackArray* const errorCallbacksArray =
-      mErrorCallbacksTable
-          .GetOrInsertWith(aPath,
-                           [] { return MakeUnique<ErrorCallbackArray>(); })
-          .get();
+  ErrorCallbackArray* errorCallbacksArray = mErrorCallbacksTable.Get(aPath);
+  if (!errorCallbacksArray) {
+    
+    errorCallbacksArray = new ErrorCallbackArray();
+    mErrorCallbacksTable.Put(aPath, errorCallbacksArray);
+  }
 
   ErrorCallbackArray::index_type errorCallbackIndex =
       errorCallbacksArray->IndexOf(aOnErrorHandle);

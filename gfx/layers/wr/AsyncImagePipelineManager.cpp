@@ -101,22 +101,21 @@ void AsyncImagePipelineManager::AddPipeline(const wr::PipelineId& aPipelineId,
   if (mDestroyed) {
     return;
   }
+  uint64_t id = wr::AsUint64(aPipelineId);
 
-  mPipelineTexturesHolders.WithEntryHandle(
-      wr::AsUint64(aPipelineId), [&](auto&& holder) {
-        if (holder) {
-          
-          
-          
-          MOZ_ASSERT(holder.Data()->mDestroyedEpoch.isSome());
-          holder.Data()->mDestroyedEpoch = Nothing();  
-          holder.Data()->mWrBridge = aWrBridge;
-          return;
-        }
-
-        holder.Insert(MakeUnique<PipelineTexturesHolder>())->mWrBridge =
-            aWrBridge;
-      });
+  PipelineTexturesHolder* holder =
+      mPipelineTexturesHolders.Get(wr::AsUint64(aPipelineId));
+  if (holder) {
+    
+    
+    MOZ_ASSERT(holder->mDestroyedEpoch.isSome());
+    holder->mDestroyedEpoch = Nothing();  
+    holder->mWrBridge = aWrBridge;
+    return;
+  }
+  holder = new PipelineTexturesHolder();
+  holder->mWrBridge = aWrBridge;
+  mPipelineTexturesHolders.Put(id, holder);
 }
 
 void AsyncImagePipelineManager::RemovePipeline(
@@ -162,10 +161,10 @@ void AsyncImagePipelineManager::AddAsyncImagePipeline(
   MOZ_ASSERT(aImageHost);
   uint64_t id = wr::AsUint64(aPipelineId);
 
-  MOZ_ASSERT(!mAsyncImagePipelines.Contains(id));
-  auto holder = MakeUnique<AsyncImagePipeline>();
+  MOZ_ASSERT(!mAsyncImagePipelines.Get(id));
+  AsyncImagePipeline* holder = new AsyncImagePipeline();
   holder->mImageHost = aImageHost;
-  mAsyncImagePipelines.Put(id, std::move(holder));
+  mAsyncImagePipelines.Put(id, holder);
   AddPipeline(aPipelineId,  nullptr);
 }
 

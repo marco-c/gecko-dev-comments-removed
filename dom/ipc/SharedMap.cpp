@@ -225,8 +225,8 @@ Result<Ok, nsresult> SharedMap::MaybeRebuild() {
     
     
     
-    const auto& name = entry->Name();
-    mEntries.Put(name, std::move(entry));
+    mEntries.Put(entry->Name(), entry.get());
+    Unused << entry.release();
   }
 
   return Ok();

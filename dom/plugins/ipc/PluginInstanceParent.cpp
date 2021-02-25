@@ -2082,8 +2082,7 @@ void PluginInstanceParent::SubclassPluginWindow(HWND aWnd) {
     mPluginWndProc = nullptr;
     
     
-    sPluginInstanceList->Put((void*)mPluginHWND,
-                             UniquePtr<PluginInstanceParent>(this));
+    sPluginInstanceList->Put((void*)mPluginHWND, this);
     return;
   }
 

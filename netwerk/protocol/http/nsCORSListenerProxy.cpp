@@ -272,7 +272,11 @@ nsPreflightCache::CacheEntry* nsPreflightCache::GetEntry(
 
   
   
-  auto newEntry = MakeUnique<CacheEntry>(key);
+  CacheEntry* newEntry = new CacheEntry(key);
+  if (!newEntry) {
+    NS_WARNING("Failed to allocate new cache entry!");
+    return nullptr;
+  }
 
   NS_ASSERTION(mTable.Count() <= PREFLIGHT_CACHE_SIZE,
                "Something is borked, too many entries in the cache!");
@@ -306,10 +310,10 @@ nsPreflightCache::CacheEntry* nsPreflightCache::GetEntry(
     }
   }
 
-  auto* newEntryWeakRef = mTable.Put(key, std::move(newEntry)).get();
-  mList.insertFront(newEntryWeakRef);
+  mTable.Put(key, newEntry);
+  mList.insertFront(newEntry);
 
-  return newEntryWeakRef;
+  return newEntry;
 }
 
 void nsPreflightCache::RemoveEntries(

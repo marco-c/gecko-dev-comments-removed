@@ -2583,7 +2583,7 @@ nsPrefBranch::GetChildList(const char* aStartingAt,
 NS_IMETHODIMP
 nsPrefBranch::AddObserverImpl(const nsACString& aDomain, nsIObserver* aObserver,
                               bool aHoldWeak) {
-  UniquePtr<PrefCallback> pCallback;
+  PrefCallback* pCallback;
 
   NS_ENSURE_ARG(aObserver);
 
@@ -2600,25 +2600,26 @@ nsPrefBranch::AddObserverImpl(const nsACString& aDomain, nsIObserver* aObserver,
     }
 
     
-    pCallback = MakeUnique<PrefCallback>(prefName, weakRefFactory, this);
+    pCallback = new PrefCallback(prefName, weakRefFactory, this);
 
   } else {
     
-    pCallback = MakeUnique<PrefCallback>(prefName, aObserver, this);
+    pCallback = new PrefCallback(prefName, aObserver, this);
   }
 
-  mObservers.WithEntryHandle(pCallback.get(), [&](auto&& p) {
+  mObservers.WithEntryHandle(pCallback, [&](auto&& p) {
     if (p) {
       NS_WARNING("Ignoring duplicate observer.");
+      delete pCallback;
     } else {
+      p.Insert(UniquePtr<PrefCallback>{pCallback});
+
       
       
       
-      Preferences::RegisterCallback(NotifyObserver, prefName, pCallback.get(),
+      Preferences::RegisterCallback(NotifyObserver, prefName, pCallback,
                                     Preferences::PrefixMatch,
                                      false);
-
-      p.Insert(std::move(pCallback));
     }
   });
 

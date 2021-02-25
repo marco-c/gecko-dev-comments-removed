@@ -1552,10 +1552,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseMoveEvent(
     mToBeDispatchedMouseData.Push(dispatchData.release());
 
     
-    CoalescedMouseData* newData =
-        mCoalescedMouseData
-            .Put(aEvent.pointerId, MakeUnique<CoalescedMouseData>())
-            .get();
+    CoalescedMouseData* newData = new CoalescedMouseData();
+    mCoalescedMouseData.Put(aEvent.pointerId, newData);
     newData->Coalesce(aEvent, aGuid, aInputBlockId);
 
     
