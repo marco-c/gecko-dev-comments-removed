@@ -133,6 +133,48 @@ function getInflatedMarkerData(thread) {
 
 
 
+
+function getInflatedNetworkMarkers(thread) {
+  const markers = getInflatedMarkerData(thread);
+  return markers.filter(
+    m =>
+      m.data &&
+      m.data.type === "Network" &&
+      
+      
+      m.data.URI.includes("/browser/tools/profiler/")
+  );
+}
+
+
+
+
+
+
+
+
+
+function getPairsOfNetworkMarkers(allNetworkMarkers) {
+  
+  
+  
+  
+  
+  
+  
+  return allNetworkMarkers
+    .filter(({ data }) => data.status === "STATUS_START")
+    .map(startMarker =>
+      allNetworkMarkers.filter(({ data }) => data.id === startMarker.data.id)
+    );
+}
+
+
+
+
+
+
+
 function captureAtLeastOneJsSample() {
   function getProfileSampleCount() {
     const profile = Services.profiler.getProfileData();
@@ -219,6 +261,27 @@ function getSchema(profile, name) {
     console.error("Child process schema", subprocess.meta.markerSchema);
   }
   throw new Error(`Could not find a schema for "${name}".`);
+}
+
+
+
+
+
+
+
+
+
+
+function escapeStringRegexp(string) {
+  if (typeof string !== "string") {
+    throw new TypeError("Expected a string");
+  }
+
+  
+  
+  
+  
+  return string.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&").replace(/-/g, "\\x2d");
 }
 
 

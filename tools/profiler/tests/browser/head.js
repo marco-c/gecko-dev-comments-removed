@@ -31,6 +31,7 @@ registerCleanupFunction(() => {
 
 
 async function stopProfilerNowAndGetThreads(contentPid) {
+  Services.profiler.Pause();
   const profile = await Services.profiler.getProfileDataAsync();
   Services.profiler.StopProfiler();
 
