@@ -85,8 +85,10 @@ class Transaction {
   
   
   
-  void Apply(Context* aOwner);
+  void Apply(Context* aOwner, bool aFromIPC);
 
+  
+  
   
   
   IndexSet Validate(Context* aOwner, ContentParent* aSource);
@@ -191,6 +193,17 @@ class FieldStorage {
   
   std::array<uint64_t, Values::count> mEpochs{};
   Values mValues;
+};
+
+
+
+enum class CanSetResult : uint8_t {
+  
+  Deny,
+  
+  Allow,
+  
+  Revert,
 };
 
 

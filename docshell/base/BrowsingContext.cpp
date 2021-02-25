@@ -132,6 +132,7 @@ extern mozilla::LazyLogModule gUserInteractionPRLog;
   MOZ_LOG(gUserInteractionPRLog, LogLevel::Debug, (msg, ##__VA_ARGS__))
 
 static LazyLogModule gBrowsingContextLog("BrowsingContext");
+static LazyLogModule gBrowsingContextSyncLog("BrowsingContextSync");
 
 typedef nsDataHashtable<nsUint64HashKey, BrowsingContext*> BrowsingContextMap;
 
@@ -223,6 +224,9 @@ void BrowsingContext::Init() {
 
 
 LogModule* BrowsingContext::GetLog() { return gBrowsingContextLog; }
+
+
+LogModule* BrowsingContext::GetSyncLog() { return gBrowsingContextSyncLog; }
 
 
 already_AddRefed<BrowsingContext> BrowsingContext::Get(uint64_t aId) {
@@ -2831,37 +2835,32 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_EmbedderElementType>,
   return CheckOnlyEmbedderCanSet(aSource);
 }
 
-bool BrowsingContext::CanSet(FieldIndex<IDX_CurrentInnerWindowId>,
-                             const uint64_t& aValue, ContentParent* aSource) {
+auto BrowsingContext::CanSet(FieldIndex<IDX_CurrentInnerWindowId>,
+                             const uint64_t& aValue, ContentParent* aSource)
+    -> CanSetResult {
   
   
   if (aValue == 0) {
-    return true;
-  }
-
-  if (aSource) {
-    MOZ_ASSERT(XRE_IsParentProcess());
-
-    
-    
-    RefPtr<WindowGlobalParent> wgp =
-        WindowGlobalParent::GetByInnerWindowId(aValue);
-    if (NS_WARN_IF(!wgp) || NS_WARN_IF(wgp->BrowsingContext() != this)) {
-      return false;
-    }
-
-    
-    if (!Canonical()->IsOwnedByProcess(aSource->ChildID()) &&
-        aSource->ChildID() != Canonical()->GetInFlightProcessId()) {
-      return false;
-    }
-  } else if (XRE_IsContentProcess() && !IsOwnedByProcess()) {
-    return false;
+    return CanSetResult::Allow;
   }
 
   
   RefPtr<WindowContext> window = WindowContext::GetById(aValue);
-  return window && window->GetBrowsingContext() == this;
+  if (!window || window->GetBrowsingContext() != this) {
+    return CanSetResult::Deny;
+  }
+
+  if (aSource) {
+    
+    MOZ_ASSERT(XRE_IsParentProcess());
+    if (!Canonical()->IsOwnedByProcess(aSource->ChildID())) {
+      return CanSetResult::Revert;
+    }
+  } else if (XRE_IsContentProcess() && !IsOwnedByProcess()) {
+    return CanSetResult::Deny;
+  }
+
+  return CanSetResult::Allow;
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_CurrentInnerWindowId>) {

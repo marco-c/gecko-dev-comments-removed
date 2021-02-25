@@ -29,6 +29,7 @@ namespace dom {
 template class syncedcontext::Transaction<WindowContext>;
 
 static LazyLogModule gWindowContextLog("WindowContext");
+static LazyLogModule gWindowContextSyncLog("WindowContextSync");
 
 extern mozilla::LazyLogModule gUserInteractionPRLog;
 
@@ -40,6 +41,9 @@ static StaticAutoPtr<WindowContextByIdMap> gWindowContexts;
 
 
 LogModule* WindowContext::GetLog() { return gWindowContextLog; }
+
+
+LogModule* WindowContext::GetSyncLog() { return gWindowContextSyncLog; }
 
 
 already_AddRefed<WindowContext> WindowContext::GetById(
