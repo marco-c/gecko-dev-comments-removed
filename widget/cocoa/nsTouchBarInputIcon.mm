@@ -63,7 +63,7 @@ void nsTouchBarInputIcon::Destroy() {
 }
 
 nsresult nsTouchBarInputIcon::SetupIcon(nsCOMPtr<nsIURI> aIconURI) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   
   
@@ -103,7 +103,7 @@ nsresult nsTouchBarInputIcon::SetupIcon(nsCOMPtr<nsIURI> aIconURI) {
 
   return rv;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
 void nsTouchBarInputIcon::ReleaseJSObjects() { mDocument = nil; }
@@ -113,7 +113,7 @@ void nsTouchBarInputIcon::ReleaseJSObjects() { mDocument = nil; }
 
 
 nsresult nsTouchBarInputIcon::OnComplete(imgIContainer* aImage) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN
 
   
   
@@ -128,5 +128,5 @@ nsresult nsTouchBarInputIcon::OnComplete(imgIContainer* aImage) {
   mIconLoader->Destroy();
   return NS_OK;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE)
 }

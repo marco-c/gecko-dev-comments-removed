@@ -298,7 +298,7 @@ void nsAppShell::OnRunLoopActivityChanged(CFRunLoopActivity aActivity) {
 
 
 nsresult nsAppShell::Init() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   
   
@@ -393,7 +393,7 @@ nsresult nsAppShell::Init() {
 
   return rv;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
 
@@ -721,7 +721,7 @@ nsAppShell::Run(void) {
 
 NS_IMETHODIMP
 nsAppShell::Exit(void) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   
   
@@ -767,7 +767,7 @@ nsAppShell::Exit(void) {
 
   return nsBaseAppShell::Exit();
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
 
@@ -782,7 +782,7 @@ nsAppShell::Exit(void) {
 
 NS_IMETHODIMP
 nsAppShell::OnProcessNextEvent(nsIThreadInternal* aThread, bool aMayWait) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   NS_ASSERTION(mAutoreleasePools, "No stack on which to store autorelease pool");
 
@@ -791,7 +791,7 @@ nsAppShell::OnProcessNextEvent(nsIThreadInternal* aThread, bool aMayWait) {
 
   return nsBaseAppShell::OnProcessNextEvent(aThread, aMayWait);
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
 
@@ -803,7 +803,7 @@ nsAppShell::OnProcessNextEvent(nsIThreadInternal* aThread, bool aMayWait) {
 
 NS_IMETHODIMP
 nsAppShell::AfterProcessNextEvent(nsIThreadInternal* aThread, bool aEventWasProcessed) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   CFIndex count = ::CFArrayGetCount(mAutoreleasePools);
 
@@ -816,7 +816,7 @@ nsAppShell::AfterProcessNextEvent(nsIThreadInternal* aThread, bool aEventWasProc
 
   return nsBaseAppShell::AfterProcessNextEvent(aThread, aEventWasProcessed);
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
 

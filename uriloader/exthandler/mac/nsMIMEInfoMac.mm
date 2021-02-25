@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 3; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #import <ApplicationServices/ApplicationServices.h>
 
@@ -11,7 +11,7 @@
 #include "nsMIMEInfoMac.h"
 #include "nsILocalFileMac.h"
 
-// We override this to make sure app bundles display their pretty name (without .app suffix)
+
 NS_IMETHODIMP nsMIMEInfoMac::GetDefaultDescription(nsAString& aDefaultDescription) {
   if (mDefaultApplication) {
     nsCOMPtr<nsILocalFileMac> macFile = do_QueryInterface(mDefaultApplication);
@@ -27,7 +27,7 @@ NS_IMETHODIMP nsMIMEInfoMac::GetDefaultDescription(nsAString& aDefaultDescriptio
 
 NS_IMETHODIMP
 nsMIMEInfoMac::LaunchWithFile(nsIFile* aFile) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   nsCOMPtr<nsIFile> application;
   nsresult rv;
@@ -36,8 +36,8 @@ nsMIMEInfoMac::LaunchWithFile(nsIFile* aFile) {
                                     "to pass content by value");
 
   if (mPreferredAction == useHelperApp) {
-    // we don't yet support passing content by value (rather than reference)
-    // to web apps.  at some point, we will probably want to.
+    
+    
     nsCOMPtr<nsILocalHandlerApp> localHandlerApp = do_QueryInterface(mPreferredApplication, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -49,13 +49,13 @@ nsMIMEInfoMac::LaunchWithFile(nsIFile* aFile) {
   } else
     return NS_ERROR_INVALID_ARG;
 
-  // if we've already got an app, just QI so we have the launchWithDoc method
+  
   nsCOMPtr<nsILocalFileMac> app;
   if (application) {
     app = do_QueryInterface(application, &rv);
     if (NS_FAILED(rv)) return rv;
   } else {
-    // otherwise ask LaunchServices for an app directly
+    
     nsCOMPtr<nsILocalFileMac> tempFile = do_QueryInterface(aFile, &rv);
     if (NS_FAILED(rv)) return rv;
 
@@ -73,11 +73,11 @@ nsMIMEInfoMac::LaunchWithFile(nsIFile* aFile) {
   }
   return app->LaunchWithDoc(aFile, false);
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
 nsresult nsMIMEInfoMac::LoadUriInternal(nsIURI* aURI) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   NS_ENSURE_ARG_POINTER(aURI);
 
@@ -97,5 +97,5 @@ nsresult nsMIMEInfoMac::LoadUriInternal(nsIURI* aURI) {
 
   return rv;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
