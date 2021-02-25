@@ -30,6 +30,7 @@ Preferences.addAll([
   { id: "browser.search.suggest.enabled", type: "bool" },
   { id: "browser.urlbar.suggest.searches", type: "bool" },
   { id: "browser.search.suggest.enabled.private", type: "bool" },
+  { id: "browser.urlbar.suggest.quicksuggest", type: "bool" },
   { id: "browser.search.hiddenOneOffs", type: "unichar" },
   { id: "browser.search.widget.inNavBar", type: "bool" },
   { id: "browser.urlbar.showSearchSuggestionsFirst", type: "bool" },
@@ -40,6 +41,10 @@ Preferences.addAll([
 const ENGINE_FLAVOR = "text/x-moz-search-engine";
 const SEARCH_TYPE = "default_search";
 const SEARCH_KEY = "defaultSearch";
+
+
+
+const QUICK_SUGGEST_EXPERIMENT_PREF = "browser.urlbar.quicksuggest.enabled";
 
 var gEngineView = null;
 
@@ -122,6 +127,12 @@ var gSearchPane = {
     this._initDefaultEngines();
     this._updateSuggestionCheckboxes();
     this._showAddEngineButton();
+
+    Services.prefs.addObserver(QUICK_SUGGEST_EXPERIMENT_PREF, this);
+    window.addEventListener("unload", () => {
+      Services.prefs.removeObserver(QUICK_SUGGEST_EXPERIMENT_PREF, this);
+    });
+    this._updateQuickSuggest();
   },
 
   
@@ -179,6 +190,7 @@ var gSearchPane = {
     let privateWindowCheckbox = document.getElementById(
       "showSearchSuggestionsPrivateWindows"
     );
+    let quickSuggestCheckbox = document.getElementById("showQuickSuggest");
 
     urlbarSuggests.disabled = !suggestsPref.value || permanentPB;
     privateWindowCheckbox.disabled = !suggestsPref.value;
@@ -202,15 +214,62 @@ var gSearchPane = {
       positionCheckbox.checked = Preferences.get(
         positionCheckbox.getAttribute("preference")
       ).value;
+      quickSuggestCheckbox.disabled = false;
+      quickSuggestCheckbox.checked = Preferences.get(
+        quickSuggestCheckbox.getAttribute("preference")
+      ).value;
     } else {
       positionCheckbox.disabled = true;
       positionCheckbox.checked = false;
+      quickSuggestCheckbox.disabled = true;
+      quickSuggestCheckbox.checked = false;
     }
 
     let permanentPBLabel = document.getElementById(
       "urlBarSuggestionPermanentPBLabel"
     );
     permanentPBLabel.hidden = urlbarSuggests.hidden || !permanentPB;
+  },
+
+  
+
+
+
+
+
+
+
+  _updateQuickSuggest(experimentPrefChanged = false) {
+    let container = document.getElementById("showQuickSuggestContainer");
+    let desc = document.getElementById("searchSuggestionsDesc");
+
+    if (!Services.prefs.getBoolPref(QUICK_SUGGEST_EXPERIMENT_PREF, false)) {
+      
+      
+      
+      if (experimentPrefChanged) {
+        container.setAttribute("hidden", "true");
+        if (desc.dataset.l10nIdOriginal) {
+          desc.dataset.l10nId = desc.dataset.l10nIdOriginal;
+          delete desc.dataset.l10nIdOriginal;
+        }
+        document.l10n.translateElements([desc]);
+      }
+      return;
+    }
+
+    
+    
+    let learnMoreURL = "https://mozilla.org/";
+    document
+      .getElementById("showQuickSuggestLearnMore")
+      .setAttribute("href", learnMoreURL);
+    container.removeAttribute("hidden");
+    if (desc.dataset.l10nId) {
+      desc.dataset.l10nIdOriginal = desc.dataset.l10nId;
+      delete desc.dataset.l10nId;
+    }
+    desc.textContent = "Choose how search suggestions appear.";
   },
 
   _showAddEngineButton() {
@@ -366,12 +425,21 @@ var gSearchPane = {
     }
   },
 
-  observe(aEngine, aTopic, aVerb) {
-    if (aTopic == "browser-search-engine-modified") {
-      aEngine.QueryInterface(Ci.nsISearchEngine);
-      switch (aVerb) {
+  
+
+
+
+
+
+
+
+  observe(subject, topic, data) {
+    if (topic == "browser-search-engine-modified") {
+      let engine = subject;
+      engine.QueryInterface(Ci.nsISearchEngine);
+      switch (data) {
         case "engine-added":
-          gEngineView._engineStore.addEngine(aEngine);
+          gEngineView._engineStore.addEngine(engine);
           gEngineView.rowCountChanged(gEngineView.lastEngineIndex, 1);
           gSearchPane.buildDefaultEngineDropDowns();
           break;
@@ -386,7 +454,7 @@ var gSearchPane = {
           }
           break;
         case "engine-removed":
-          gSearchPane.remove(aEngine);
+          gSearchPane.remove(engine);
           break;
         case "engine-default": {
           
@@ -394,7 +462,7 @@ var gSearchPane = {
           
           let selectedEngine = document.getElementById("defaultEngine")
             .selectedItem.engine;
-          if (selectedEngine.name != aEngine.name) {
+          if (selectedEngine.name != engine.name) {
             gSearchPane.buildDefaultEngineDropDowns();
           }
           break;
@@ -410,13 +478,17 @@ var gSearchPane = {
             const selectedEngine = document.getElementById(
               "defaultPrivateEngine"
             ).selectedItem.engine;
-            if (selectedEngine.name != aEngine.name) {
+            if (selectedEngine.name != engine.name) {
               gSearchPane.buildDefaultEngineDropDowns();
             }
           }
           break;
         }
       }
+      return;
+    }
+    if (topic == "nsPref:changed" && data == QUICK_SUGGEST_EXPERIMENT_PREF) {
+      this._updateQuickSuggest(true);
     }
   },
 
