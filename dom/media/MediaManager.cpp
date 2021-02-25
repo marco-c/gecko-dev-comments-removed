@@ -3106,19 +3106,14 @@ RefPtr<MediaManager::DevicesPromise> MediaManager::EnumerateDevices(
                               devices)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr<MediaManager>(this), this, windowListener,
-           sourceListener, devices](bool) {
-            if (!IsWindowListenerStillActive(windowListener)) {
-              MOZ_ASSERT(!windowListener->Remove(sourceListener));
-              return DevicesPromise::CreateAndReject(
-                  MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError),
-                  __func__);
-            }
-            DebugOnly<bool> rv = windowListener->Remove(sourceListener);
-            MOZ_ASSERT(rv);
+          [windowListener, sourceListener, devices](bool) {
+            
+            
+            windowListener->Remove(sourceListener);
             return DevicesPromise::CreateAndResolve(devices, __func__);
           },
           [windowListener, sourceListener](RefPtr<MediaMgrError>&& aError) {
+            
             
             
             MOZ_ASSERT(!windowListener->Remove(sourceListener));
