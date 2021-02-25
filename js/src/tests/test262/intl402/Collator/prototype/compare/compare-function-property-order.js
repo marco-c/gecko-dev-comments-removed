@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+var compareFn = new Intl.Collator().compare;
+
+assert.compareArray(
+  Object.getOwnPropertyNames(compareFn),
+  ['length', 'name']
+);
+
+reportCompare(0, 0);

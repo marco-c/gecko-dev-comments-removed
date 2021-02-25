@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+var formatFn = new Intl.NumberFormat().format;
+
+assert.compareArray(
+  Object.getOwnPropertyNames(formatFn),
+  ['length', 'name']
+);
+
+reportCompare(0, 0);

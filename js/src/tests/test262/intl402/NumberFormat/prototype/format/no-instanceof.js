@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+const nf = new Intl.NumberFormat();
+
+Object.defineProperty(Intl.NumberFormat, Symbol.hasInstance, {
+    get() { throw new Test262Error(); }
+});
+
+nf.format;
+
+reportCompare(0, 0);

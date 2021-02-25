@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+Object.defineProperty(Intl.DateTimeFormat, Symbol.hasInstance, {
+    get() { throw new Test262Error(); }
+});
+
+Intl.DateTimeFormat();
+
+reportCompare(0, 0);

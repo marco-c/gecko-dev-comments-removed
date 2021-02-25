@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+Object.defineProperty(Intl.NumberFormat, Symbol.hasInstance, {
+    get() { throw new Test262Error(); }
+});
+
+Intl.NumberFormat();
+
+reportCompare(0, 0);

@@ -33,21 +33,18 @@
 
 
 
+
 testWithBigIntTypedArrayConstructors(function(TA) {
   var sample = new TA(2);
   var loops = 0;
-  var completion = false;
 
-  assert.throws(TypeError, function() {
-    sample.findIndex(function() {
-      loops++;
+  sample.findIndex(function() {
+    if (loops === 0) {
       $DETACHBUFFER(sample.buffer);
-      completion = true;
-    });
-  }, "throws a TypeError getting a value from the detached buffer");
-
-  assert.sameValue(loops, 1, "predicated is called once");
-  assert(completion, "abrupt completion does not come from DETACHBUFFER");
+    }
+    loops++;
+  });
+  assert.sameValue(loops, 2, "predicate is called once");
 });
 
 reportCompare(0, 0);

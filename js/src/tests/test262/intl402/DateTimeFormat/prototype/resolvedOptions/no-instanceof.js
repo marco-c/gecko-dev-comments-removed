@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+const dtf = new Intl.DateTimeFormat();
+
+Object.defineProperty(Intl.DateTimeFormat, Symbol.hasInstance, {
+    get() { throw new Test262Error(); }
+});
+
+dtf.resolvedOptions();
+
+reportCompare(0, 0);
