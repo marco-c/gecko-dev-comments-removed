@@ -112,6 +112,8 @@ var TabStateInternal = {
 
     tabData.searchMode = tab.ownerGlobal.gURLBar.getSearchMode(browser, true);
 
+    tabData.userContextId = tab.userContextId || 0;
+
     
     tabData.attributes = TabAttributes.get(tab);
 
@@ -189,10 +191,6 @@ var TabStateInternal = {
         
         
         tabData.entries = [...value.entries];
-
-        if (value.hasOwnProperty("userContextId")) {
-          tabData.userContextId = value.userContextId;
-        }
 
         if (value.hasOwnProperty("index")) {
           tabData.index = value.index;
