@@ -1791,9 +1791,6 @@ pub enum Appearance {
 
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    MozMacFullscreenButton,
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMacHelpButton,
 
     
