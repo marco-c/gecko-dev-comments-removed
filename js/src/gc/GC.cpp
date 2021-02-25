@@ -874,6 +874,7 @@ void TenuredChunk::releaseArena(GCRuntime* gc, Arena* arena,
 }
 
 bool TenuredChunk::decommitOneFreeArena(GCRuntime* gc, AutoLockGC& lock) {
+  MOZ_ASSERT(DecommitEnabled());
   MOZ_ASSERT(info.numArenasFreeCommitted > 0);
   Arena* arena = fetchNextFreeArena(gc);
   updateChunkListAfterAlloc(gc, lock);
@@ -895,6 +896,7 @@ bool TenuredChunk::decommitOneFreeArena(GCRuntime* gc, AutoLockGC& lock) {
 }
 
 void TenuredChunk::decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock) {
+  MOZ_ASSERT(DecommitEnabled());
   info.freeArenasHead = nullptr;
   Arena** freeCursor = &info.freeArenasHead;
 
@@ -3336,7 +3338,9 @@ void js::gc::BackgroundDecommitTask::run(AutoLockHelperThreadState& lock) {
       
       gc->availableChunks(gcLock).sort();
 
-      gc->decommitFreeArenas(cancel_, gcLock);
+      if (DecommitEnabled()) {
+        gc->decommitFreeArenas(cancel_, gcLock);
+      }
 
       emptyChunksToFree = gc->expireEmptyChunkPool(gcLock);
     }
@@ -3350,6 +3354,8 @@ void js::gc::BackgroundDecommitTask::run(AutoLockHelperThreadState& lock) {
 
 
 void GCRuntime::decommitFreeArenas(const bool& cancel, AutoLockGC& lock) {
+  MOZ_ASSERT(DecommitEnabled());
+
   
   
   
@@ -3381,6 +3387,7 @@ void GCRuntime::decommitFreeArenas(const bool& cancel, AutoLockGC& lock) {
 
 
 void GCRuntime::decommitFreeArenasWithoutUnlocking(const AutoLockGC& lock) {
+  MOZ_ASSERT(DecommitEnabled());
   for (ChunkPool::Iter chunk(availableChunks(lock)); !chunk.done();
        chunk.next()) {
     chunk->decommitFreeArenasWithoutUnlocking(lock);
@@ -7725,7 +7732,9 @@ void GCRuntime::onOutOfMallocMemory(const AutoLockGC& lock) {
   
   
   
-  decommitFreeArenasWithoutUnlocking(lock);
+  if (DecommitEnabled()) {
+    decommitFreeArenasWithoutUnlocking(lock);
+  }
 }
 
 void GCRuntime::minorGC(JS::GCReason reason, gcstats::PhaseKind phase) {

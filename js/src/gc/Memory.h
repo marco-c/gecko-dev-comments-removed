@@ -39,6 +39,10 @@ void UnmapPages(void* region, size_t length);
 
 
 
+bool DecommitEnabled();
+
+
+
 bool MarkPagesUnusedSoft(void* region, size_t length);
 
 
