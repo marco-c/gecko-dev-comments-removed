@@ -100,54 +100,6 @@ function nativeScrollUnits(aTarget, aDimen) {
   return aDimen;
 }
 
-function nativeMouseDownEventMsg() {
-  switch (getPlatform()) {
-    case "windows":
-      return 2; 
-    case "mac":
-      return 1; 
-    case "linux":
-      return 4; 
-    case "android":
-      return 5; 
-  }
-  throw new Error(
-    "Native mouse-down events not supported on platform " + getPlatform()
-  );
-}
-
-function nativeMouseMoveEventMsg() {
-  switch (getPlatform()) {
-    case "windows":
-      return 1; 
-    case "mac":
-      return 5; 
-    case "linux":
-      return 3; 
-    case "android":
-      return 7; 
-  }
-  throw new Error(
-    "Native mouse-move events not supported on platform " + getPlatform()
-  );
-}
-
-function nativeMouseUpEventMsg() {
-  switch (getPlatform()) {
-    case "windows":
-      return 4; 
-    case "mac":
-      return 2; 
-    case "linux":
-      return 7; 
-    case "android":
-      return 6; 
-  }
-  throw new Error(
-    "Native mouse-up events not supported on platform " + getPlatform()
-  );
-}
-
 function parseNativeModifiers(aModifiers, aWindow = window) {
   let modifiers = 0;
   if (aModifiers.capsLockKey) {
@@ -794,14 +746,16 @@ function synthesizeNativeMouseEventWithAPZ(aParams, aObserver = null) {
     utils.sendNativeMouseEvent(
       pt.x,
       pt.y,
-      nativeMouseDownEventMsg(),
+      utils.NATIVE_MOUSE_MESSAGE_BUTTON_DOWN,
+      0,
       modifierFlags,
       element,
       function() {
         utils.sendNativeMouseEvent(
           pt.x,
           pt.y,
-          nativeMouseUpEventMsg(),
+          utils.NATIVE_MOUSE_MESSAGE_BUTTON_UP,
+          0,
           modifierFlags,
           element,
           aObserver
@@ -817,15 +771,16 @@ function synthesizeNativeMouseEventWithAPZ(aParams, aObserver = null) {
     (() => {
       switch (type) {
         case "mousedown":
-          return nativeMouseDownEventMsg();
+          return utils.NATIVE_MOUSE_MESSAGE_BUTTON_DOWN;
         case "mouseup":
-          return nativeMouseUpEventMsg();
+          return utils.NATIVE_MOUSE_MESSAGE_BUTTON_UP;
         case "mousemove":
-          return nativeMouseMoveEventMsg();
+          return utils.NATIVE_MOUSE_MESSAGE_MOVE;
         default:
           throw Error(`Invalid type is specified: ${type}`);
       }
     })(),
+    0,
     modifierFlags,
     element,
     aObserver

@@ -1584,10 +1584,17 @@ class nsIWidget : public nsISupports {
 
 
 
-
+  enum class NativeMouseMessage : uint32_t {
+    ButtonDown,   
+    ButtonUp,     
+    Move,         
+    EnterWindow,  
+    LeaveWindow,  
+  };
   virtual nsresult SynthesizeNativeMouseEvent(
-      LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage,
-      nsIWidget::Modifiers aModifierFlags, nsIObserver* aObserver) = 0;
+      LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
+      mozilla::MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
+      nsIObserver* aObserver) = 0;
 
   
 
