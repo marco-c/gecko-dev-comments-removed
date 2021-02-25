@@ -2162,7 +2162,7 @@ Connection::CreateFunction(const nsACString& aFunctionName,
   
   
   SQLiteMutexAutoLock lockedScope(sharedDBMutex);
-  NS_ENSURE_FALSE(mFunctions.Get(aFunctionName, nullptr), NS_ERROR_FAILURE);
+  NS_ENSURE_FALSE(mFunctions.Contains(aFunctionName), NS_ERROR_FAILURE);
 
   int srv = ::sqlite3_create_function(
       mDBConn, nsPromiseFlatCString(aFunctionName).get(), aNumArguments,
