@@ -790,7 +790,19 @@ struct alignas(js::gc::JSClassAlignBytes) JSClass {
 
   static const uint32_t NON_NATIVE = JSCLASS_INTERNAL_FLAG2;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool isNativeObject() const { return !(flags & NON_NATIVE); }
+  bool isProxyObject() const { return flags & JSCLASS_IS_PROXY; }
 
   bool hasPrivate() const { return !!(flags & JSCLASS_HAS_PRIVATE); }
 
@@ -799,13 +811,11 @@ struct alignas(js::gc::JSClassAlignBytes) JSClass {
   bool isJSFunction() const { return this == js::FunctionClassPtr; }
 
   bool nonProxyCallable() const {
-    MOZ_ASSERT(!isProxy());
+    MOZ_ASSERT(!isProxyObject());
     return isJSFunction() || getCall();
   }
 
   bool isGlobal() const { return flags & JSCLASS_IS_GLOBAL; }
-
-  bool isProxy() const { return flags & JSCLASS_IS_PROXY; }
 
   bool isDOMClass() const { return flags & JSCLASS_IS_DOMJSCLASS; }
 

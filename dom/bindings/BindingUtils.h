@@ -94,7 +94,7 @@ inline bool IsDOMClass(const JSClass* clasp) {
 
 
 inline bool IsNonProxyDOMClass(const JSClass* clasp) {
-  return IsDOMClass(clasp) && !clasp->isProxy();
+  return IsDOMClass(clasp) && clasp->isNativeObject();
 }
 
 

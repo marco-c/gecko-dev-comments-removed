@@ -122,7 +122,7 @@ class ProxyObject : public JSObject {
 
     
     
-    return clasp->isProxy() && clasp->isTrace(ProxyObject::trace) &&
+    return clasp->isProxyObject() && clasp->isTrace(ProxyObject::trace) &&
            !clasp->getCall() && !clasp->getConstruct();
   }
 
@@ -137,8 +137,6 @@ class ProxyObject : public JSObject {
 
   void nuke();
 };
-
-inline bool IsProxyClass(const JSClass* clasp) { return clasp->isProxy(); }
 
 bool IsDerivedProxyObject(const JSObject* obj,
                           const js::BaseProxyHandler* handler);
