@@ -960,8 +960,17 @@ void nsFocusManager::WindowShown(mozIDOMWindowProxy* aWindow,
     }
   }
 
-  if (mFocusedWindow != window) {
-    return;
+  if (XRE_IsParentProcess()) {
+    if (mFocusedWindow != window) {
+      return;
+    }
+  } else {
+    BrowsingContext* bc = window->GetBrowsingContext();
+    if (!bc || mFocusedBrowsingContextInContent != bc) {
+      return;
+    }
+    
+    SetFocusedWindowInternal(window, false);
   }
 
   if (aNeedsFocus) {
@@ -1061,8 +1070,46 @@ void nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow,
   
   
   
-  
   nsCOMPtr<nsIDocShell> docShellBeingHidden = window->GetDocShell();
+  
+  
+  
+  
+  
+  
+  
+  if (nsDocShell::Cast(docShellBeingHidden)->WillChangeProcess() &&
+      docShellBeingHidden->GetBrowsingContext()->GetEmbedderElement()) {
+    if (mFocusedWindow != window) {
+      
+#ifdef DEBUG
+      BrowsingContext* ancestor = window->GetBrowsingContext();
+      BrowsingContext* bc = mFocusedWindow->GetBrowsingContext();
+      for (;;) {
+        if (!bc) {
+          MOZ_ASSERT(false, "Should have found ancestor");
+        }
+        bc = bc->GetParent();
+        if (ancestor == bc) {
+          break;
+        }
+      }
+#endif
+      
+      
+      SetFocusedWindowInternal(window);
+    }
+    mFocusedWindow = nullptr;
+    window->SetFocusedElement(nullptr);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
   bool beingDestroyed = !docShellBeingHidden;
   if (docShellBeingHidden) {
     docShellBeingHidden->IsBeingDestroyed(&beingDestroyed);
@@ -1147,6 +1194,17 @@ void nsFocusManager::FireDelayedEvents(Document* aDocument) {
         --i;
       }
     }
+  }
+}
+
+void nsFocusManager::WasNuked(nsPIDOMWindowOuter* aWindow) {
+  MOZ_ASSERT(aWindow, "Expected non-null window.");
+  MOZ_ASSERT(aWindow != mActiveWindow,
+             "How come we're nuking a window that's still active?");
+  if (aWindow == mFocusedWindow) {
+    mFocusedWindow = nullptr;
+    SetFocusedBrowsingContext(nullptr);
+    mFocusedElement = nullptr;
   }
 }
 
@@ -1384,8 +1442,6 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
   nsCOMPtr<nsPIDOMWindowOuter> newWindow;
   nsCOMPtr<nsPIDOMWindowOuter> subWindow = GetContentWindow(elementToFocus);
   if (subWindow) {
-    
-    
     elementToFocus = GetFocusedDescendant(subWindow, eIncludeAllDescendants,
                                           getter_AddRefs(newWindow));
 
@@ -4882,7 +4938,8 @@ static bool IsInPointerLockContext(nsPIDOMWindowOuter* aWin) {
                                                   : nullptr);
 }
 
-void nsFocusManager::SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow) {
+void nsFocusManager::SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow,
+                                              bool aSyncBrowsingContext) {
   if (XRE_IsParentProcess() && !PointerUnlocker::sActiveUnlocker &&
       IsInPointerLockContext(mFocusedWindow) &&
       !IsInPointerLockContext(aWindow)) {
@@ -4900,7 +4957,13 @@ void nsFocusManager::SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow) {
   }
 
   mFocusedWindow = aWindow;
-  SetFocusedBrowsingContext(aWindow ? aWindow->GetBrowsingContext() : nullptr);
+  BrowsingContext* bc = aWindow ? aWindow->GetBrowsingContext() : nullptr;
+  if (aSyncBrowsingContext) {
+    SetFocusedBrowsingContext(bc);
+  } else if (XRE_IsContentProcess()) {
+    MOZ_ASSERT(mFocusedBrowsingContextInContent == bc,
+               "Not syncing BrowsingContext even when different.");
+  }
 }
 
 void nsFocusManager::NotifyOfReFocus(nsIContent& aContent) {
