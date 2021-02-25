@@ -14,7 +14,7 @@ namespace net {
 
 
 
-typedef std::pair<char16_t, char16_t> BlocklistRange;
+using BlocklistRange = std::pair<char16_t, char16_t>;
 
 
 class BlocklistPairToCharComparator {

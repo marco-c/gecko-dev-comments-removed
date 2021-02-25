@@ -221,34 +221,34 @@ AHostResolver::LookupStatus TRRQuery::CompleteLookup(
 
     LOG(("CompleteLookup: waiting for all responses!\n"));
     return LOOKUP_OK;
-  } else {
-    
-    
-    if (mFirstTRR) {
-      if (NS_SUCCEEDED(status)) {
-        LOG(("Merging responses"));
-        newRRSet = merge_rrset(newRRSet, mFirstTRR);
-      } else {
-        LOG(("Will use previous response"));
-        newRRSet.swap(mFirstTRR);  
-        
-        
-        status = mFirstTRRresult;
-      }
-      mFirstTRR = nullptr;
-    } else {
-      if (NS_FAILED(status) && status != NS_ERROR_DEFINITIVE_UNKNOWN_HOST &&
-          mFirstTRRresult == NS_ERROR_DEFINITIVE_UNKNOWN_HOST) {
-        status = NS_ERROR_DEFINITIVE_UNKNOWN_HOST;
-      }
-    }
+  }
 
-    if (mTRRSuccess && mHostResolver->GetNCS() &&
-        (mHostResolver->GetNCS()->GetNAT64() ==
-         nsINetworkConnectivityService::OK) &&
-        newRRSet) {
-      newRRSet = mHostResolver->GetNCS()->MapNAT64IPs(newRRSet);
+  
+  
+  if (mFirstTRR) {
+    if (NS_SUCCEEDED(status)) {
+      LOG(("Merging responses"));
+      newRRSet = merge_rrset(newRRSet, mFirstTRR);
+    } else {
+      LOG(("Will use previous response"));
+      newRRSet.swap(mFirstTRR);  
+      
+      
+      status = mFirstTRRresult;
     }
+    mFirstTRR = nullptr;
+  } else {
+    if (NS_FAILED(status) && status != NS_ERROR_DEFINITIVE_UNKNOWN_HOST &&
+        mFirstTRRresult == NS_ERROR_DEFINITIVE_UNKNOWN_HOST) {
+      status = NS_ERROR_DEFINITIVE_UNKNOWN_HOST;
+    }
+  }
+
+  if (mTRRSuccess && mHostResolver->GetNCS() &&
+      (mHostResolver->GetNCS()->GetNAT64() ==
+       nsINetworkConnectivityService::OK) &&
+      newRRSet) {
+    newRRSet = mHostResolver->GetNCS()->MapNAT64IPs(newRRSet);
   }
 
   if (resolverType == DNSResolverType::TRR) {
