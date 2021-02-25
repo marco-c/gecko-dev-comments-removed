@@ -117,6 +117,13 @@ XPCOMUtils.defineLazyGetter(this, "gBundle", function() {
   );
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gProtonAppMenuEnabled",
+  "browser.proton.appmenu.enabled",
+  false
+);
+
 
 
 
@@ -1414,6 +1421,11 @@ var PanelView = class extends AssociatedToNode {
 
     header.append(backButton, label);
     this.node.prepend(header);
+
+    if (gProtonAppMenuEnabled) {
+      let separator = this.document.createXULElement("toolbarseparator");
+      this.node.insertBefore(separator, header.nextSibling);
+    }
   }
 
   
