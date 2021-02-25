@@ -27,8 +27,6 @@ var gGestureSupport = {
 
 
 
-
-
   init: function GS_init(aAddListener) {
     const gestureEvents = [
       "SwipeGestureMayStart",
