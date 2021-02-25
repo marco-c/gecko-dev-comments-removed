@@ -122,7 +122,17 @@ extern int32_t gXULModalLevel;
 
 static bool gAppShellMethodsSwizzled = false;
 
+void OnUncaughtException(NSException* aException) {
+  nsObjCExceptionLog(aException);
+  MOZ_CRASH("Uncaught Objective C exception from NSSetUncaughtExceptionHandler");
+}
+
 @implementation GeckoNSApplication
+
+
++ (void)load {
+  NSSetUncaughtExceptionHandler(OnUncaughtException);
+}
 
 - (void)sendEvent:(NSEvent*)anEvent {
   mozilla::BackgroundHangMonitor().NotifyActivity();
