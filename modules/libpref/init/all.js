@@ -341,6 +341,13 @@ pref("browser.triple_click_selects_paragraph", true);
 pref("pdfjs.renderInteractiveForms", true);
 
 
+#ifdef NIGHTLY_BUILD
+  pref("pdfjs.enableScripting", true);
+#else
+  pref("pdfjs.enableScripting", false);
+#endif
+
+
 pref("mathml.disabled",    false);
 
 
