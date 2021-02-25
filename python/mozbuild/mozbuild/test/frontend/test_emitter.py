@@ -511,20 +511,20 @@ class TestEmitterBasic(unittest.TestCase):
         sources, ldflags, lib, flags = self.read_topsrcdir(reader)
         self.assertEqual(flags.flags["WARNINGS_CFLAGS"], [])
 
-    def test_use_yasm(self):
+    def test_use_nasm(self):
         
-        reader = self.reader("use-yasm")
+        reader = self.reader("use-nasm")
         with six.assertRaisesRegex(
-            self, SandboxValidationError, "yasm is not available"
+            self, SandboxValidationError, "nasm is not available"
         ):
             self.read_topsrcdir(reader)
 
         
         reader = self.reader(
-            "use-yasm",
+            "use-nasm",
             extra_substs=dict(
-                YASM="yasm",
-                YASM_ASFLAGS="-foo",
+                NASM="nasm",
+                NASM_ASFLAGS="-foo",
             ),
         )
 
@@ -535,13 +535,13 @@ class TestEmitterBasic(unittest.TestCase):
         self.assertIsInstance(flags, ComputedFlags)
         self.assertIsInstance(asflags, ComputedFlags)
 
-        self.assertEqual(asflags.flags["OS"], reader.config.substs["YASM_ASFLAGS"])
+        self.assertEqual(asflags.flags["OS"], reader.config.substs["NASM_ASFLAGS"])
 
         maxDiff = self.maxDiff
         self.maxDiff = None
         self.assertEqual(
             passthru.variables,
-            {"AS": "yasm", "AS_DASH_C_FLAG": "", "ASOUTOPTION": "-o "},
+            {"AS": "nasm", "AS_DASH_C_FLAG": "", "ASOUTOPTION": "-o "},
         )
         self.maxDiff = maxDiff
 
