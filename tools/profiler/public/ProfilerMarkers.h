@@ -47,6 +47,8 @@
 
 #else  
 
+#  include "mozilla/ProfilerLabels.h"
+
 
 bool profiler_capture_backtrace_into(
     mozilla::ProfileChunkedBuffer& aChunkedBuffer,
@@ -68,6 +70,7 @@ mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
     const mozilla::ProfilerString8View& aName,
     const mozilla::MarkerCategory& aCategory, mozilla::MarkerOptions&& aOptions,
     MarkerType aMarkerType, const PayloadArguments&... aPayloadArguments) {
+  AUTO_PROFILER_LABEL("AddMarkerToBuffer", PROFILER);
   mozilla::Unused << aMarkerType;  
   return mozilla::base_profiler_markers_detail::AddMarkerToBuffer<MarkerType>(
       aBuffer, aName, aCategory, std::move(aOptions),
@@ -170,6 +173,7 @@ class MOZ_RAII AutoProfilerTextMarker {
   }
 
   ~AutoProfilerTextMarker() {
+    AUTO_PROFILER_LABEL("TextMarker", PROFILER);
     mOptions.TimingRef().SetIntervalEnd();
     AUTO_PROFILER_STATS(AUTO_PROFILER_MARKER_TEXT);
     profiler_add_marker(

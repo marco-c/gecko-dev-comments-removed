@@ -44,6 +44,7 @@
 
 #else  
 
+#  include "mozilla/BaseProfilerLabels.h"
 #  include "mozilla/TimeStamp.h"
 #  include "mozilla/Unused.h"
 
@@ -67,6 +68,7 @@ ProfileBufferBlockIndex AddMarkerToBuffer(
     const MarkerCategory& aCategory, MarkerOptions&& aOptions,
     MarkerType aMarkerType, const PayloadArguments&... aPayloadArguments) {
   Unused << aMarkerType;  
+  AUTO_BASE_PROFILER_LABEL("baseprofiler::AddMarkerToBuffer", PROFILER);
   return base_profiler_markers_detail::AddMarkerToBuffer<MarkerType>(
       aBuffer, aName, aCategory, std::move(aOptions),
       ::mozilla::baseprofiler::profiler_capture_backtrace_into,

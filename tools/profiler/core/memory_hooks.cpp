@@ -367,6 +367,7 @@ static void AllocCallback(void* aPtr, size_t aReqSize) {
   
   
   AutoBlockIntercepts block(threadIntercept.ref());
+  AUTO_PROFILER_LABEL("AllocCallback", PROFILER);
 
   
   
@@ -412,6 +413,7 @@ static void FreeCallback(void* aPtr) {
   
   
   AutoBlockIntercepts block(threadIntercept.ref());
+  AUTO_PROFILER_LABEL("FreeCallback", PROFILER);
 
   
   
