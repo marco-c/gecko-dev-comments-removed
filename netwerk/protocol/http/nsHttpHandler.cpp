@@ -951,6 +951,18 @@ void nsHttpHandler::InitUserAgentComponents() {
   if (GetVersionEx(&info)) {
 #    pragma warning(pop)
 
+    if (info.dwMajorVersion >= 10) {
+      
+      
+      
+      
+      
+      
+      
+      info.dwMajorVersion = 10;
+      info.dwMinorVersion = 0;
+    }
+
     const char* format;
 #    if defined _M_X64 || defined _M_AMD64
     format = OSCPU_WIN64;

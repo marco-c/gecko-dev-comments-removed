@@ -70,6 +70,10 @@ const SPOOFED_PLATFORM = {
   other: "Linux x86_64",
 };
 
+
+
+
+
 const WindowsOscpu =
   cpuArch == "x86_64"
     ? `Windows NT ${osVersion}; Win64; x64`
