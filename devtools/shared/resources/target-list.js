@@ -582,6 +582,16 @@ class TargetList extends EventEmitter {
     return this._isDestroyed;
   }
 
+  
+
+
+
+
+
+  isJavascriptEnabled() {
+    return !!this.targetFront._javascriptEnabled;
+  }
+
   destroy() {
     this.stopListening();
     this._createListeners.off();
