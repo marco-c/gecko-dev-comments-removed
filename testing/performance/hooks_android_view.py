@@ -17,7 +17,14 @@ from mozperftest.utils import (
     install_package,
 )
 
-URL = "'https://www.example.com'"
+
+
+
+
+
+
+
+URL = "'https://mozilla-mobile.github.io/perf-tools/mozperftest-test-page.html'"
 
 COMMON_OPTIONS = [
     ("processStartTime", "true"),
