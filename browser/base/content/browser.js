@@ -5776,15 +5776,6 @@ var TabsProgressListener = {
           stopwatchRunning 
         ) {
           if (recordLoadTelemetry) {
-            if (aBrowser.browsingContext?.topWindowContext?.hadLazyLoadImage) {
-              let timeElapsed = TelemetryStopwatch.timeElapsed(
-                histogram,
-                aBrowser
-              );
-              Services.telemetry
-                .getHistogramById("FX_LAZYLOAD_IMAGE_PAGE_LOAD_MS")
-                .add(timeElapsed);
-            }
             TelemetryStopwatch.finish(histogram, aBrowser);
             BrowserTelemetryUtils.recordSiteOriginTelemetry(browserWindows());
           }
