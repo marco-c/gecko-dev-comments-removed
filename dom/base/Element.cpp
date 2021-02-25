@@ -3954,14 +3954,12 @@ void Element::RegisterIntersectionObserver(DOMIntersectionObserver* aObserver) {
     return;
   }
 
-  observers->LookupForAdd(aObserver).OrInsert([]() {
-    
-    
-    
-    
-    
-    return eUninitialized;
-  });
+  
+  
+  
+  
+  
+  Unused << observers->GetOrInsert(aObserver, eUninitialized);
 }
 
 void Element::UnregisterIntersectionObserver(

@@ -4368,15 +4368,12 @@ already_AddRefed<QuotaObject> QuotaManager::GetQuotaObject(
     
     
     const NotNull<QuotaObject*> quotaObject =
-        originInfo->mQuotaObjects.WithEntryHandle(
-            path, [&](auto&& entryHandle) {
-              return entryHandle.OrInsertWith([&] {
-                
-                
-                return WrapNotNullUnchecked(
-                    new QuotaObject(originInfo, aClientType, path, fileSize));
-              });
-            });
+        originInfo->mQuotaObjects.GetOrInsertWith(path, [&] {
+          
+          
+          return WrapNotNullUnchecked(
+              new QuotaObject(originInfo, aClientType, path, fileSize));
+        });
 
     
     
@@ -6941,21 +6938,16 @@ auto QuotaManager::GetDirectoryLockTable(PersistenceType aPersistenceType)
 bool QuotaManager::IsSanitizedOriginValid(const nsACString& aSanitizedOrigin) {
   AssertIsOnIOThread();
 
-  return mValidOrigins.WithEntryHandle(
-      aSanitizedOrigin, [&aSanitizedOrigin](auto&& entry) {
-        if (entry) {
-          
-          return entry.Data();
-        }
+  
+  return mValidOrigins.GetOrInsertWith(aSanitizedOrigin, [&aSanitizedOrigin] {
+    nsCString spec;
+    OriginAttributes attrs;
+    nsCString originalSuffix;
+    const auto result = OriginParser::ParseOrigin(aSanitizedOrigin, spec,
+                                                  &attrs, originalSuffix);
 
-        nsCString spec;
-        OriginAttributes attrs;
-        nsCString originalSuffix;
-        const auto result = OriginParser::ParseOrigin(aSanitizedOrigin, spec,
-                                                      &attrs, originalSuffix);
-
-        return entry.Insert(result == OriginParser::ValidOrigin);
-      });
+    return result == OriginParser::ValidOrigin;
+  });
 }
 
 int64_t QuotaManager::GenerateDirectoryLockId() {

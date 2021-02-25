@@ -1279,8 +1279,8 @@ void FontFaceSet::CacheFontLoadability() {
         if (src.mSourceType != gfxFontFaceSrc::eSourceType_URL) {
           continue;
         }
-        mAllowedFontLoads.LookupForAdd(&src).OrInsert(
-            [&] { return IsFontLoadAllowed(src); });
+        Unused << mAllowedFontLoads.GetOrInsertWith(
+            &src, [&] { return IsFontLoadAllowed(src); });
       }
     }
   }

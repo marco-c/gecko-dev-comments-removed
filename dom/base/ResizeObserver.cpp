@@ -150,8 +150,7 @@ void ResizeObserver::Observe(Element& aTarget,
     mDocument->AddResizeObserver(*this);
   }
 
-  RefPtr<ResizeObservation>& observation =
-      mObservationMap.LookupForAdd(&aTarget).OrInsert([] { return nullptr; });
+  auto& observation = mObservationMap.GetOrInsert(&aTarget);
   if (observation) {
     if (observation->BoxOptions() == aOptions.mBox) {
       

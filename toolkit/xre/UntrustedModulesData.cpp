@@ -318,14 +318,7 @@ void UntrustedModulesData::AddNewLoads(
       continue;
     }
 
-    auto addPtr = mModules.LookupForAdd(iter.Key());
-    if (addPtr) {
-      
-      continue;
-    }
-
-    RefPtr<ModuleRecord> rec(iter.Data());
-    addPtr.OrInsert([rec = std::move(rec)]() { return rec; });
+    Unused << mModules.GetOrInsert(iter.Key(), iter.Data());
   }
 
   
@@ -373,15 +366,18 @@ void UntrustedModulesData::Merge(UntrustedModulesData&& aNewData) {
 
   Unused << mEvents.reserve(mEvents.length() + newData.mEvents.length());
   for (auto&& event : newData.mEvents) {
-    auto addPtr = mModules.LookupForAdd(event.mModule->mResolvedNtName);
-    if (addPtr) {
-      
-      
-      
-      event.mModule = addPtr.Data();
-    } else {
-      addPtr.OrInsert([modRef = event.mModule]() { return modRef; });
-    }
+    mModules.WithEntryHandle(event.mModule->mResolvedNtName,
+                             [&](auto&& addPtr) {
+                               if (addPtr) {
+                                 
+                                 
+                                 
+                                 
+                                 event.mModule = addPtr.Data();
+                               } else {
+                                 addPtr.Insert(event.mModule);
+                               }
+                             });
 
     Unused << mEvents.emplaceBack(std::move(event));
   }
