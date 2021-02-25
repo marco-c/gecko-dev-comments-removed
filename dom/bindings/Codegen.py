@@ -18023,7 +18023,22 @@ class CGBindingRoot(CGThing):
         )
 
         
-        bindingHeaders["GeckoProfiler.h"] = True
+        
+        
+        
+        bindingHeaders["mozilla/ProfilerLabels.h"] = any(
+            
+            d.interface.namedConstructors
+            or (d.interface.hasInterfaceObject() and d.interface.ctor())
+            or any(
+                
+                m.isAttr()
+                
+                or m.isMethod()
+                for m in d.interface.members
+            )
+            for d in descriptors
+        )
 
         def descriptorHasCrossOriginProperties(desc):
             def hasCrossOriginProperty(m):
