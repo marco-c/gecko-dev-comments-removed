@@ -331,14 +331,14 @@ class MozbuildObject(ProcessExecutionMixin):
         
         
         logger = logging.getLogger("moz.configure.reduced")
+        handler = logging.StreamHandler(out)
+        logger.addHandler(handler)
         
         logger.propagate = False
         sandbox = ReducedConfigureSandbox(
             {},
             environ=env,
             argv=["mach", "--help"],
-            stdout=out,
-            stderr=out,
             logger=logger,
         )
         base_dir = os.path.join(topsrcdir, "build", "moz.configure")
