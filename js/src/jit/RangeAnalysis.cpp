@@ -1794,7 +1794,8 @@ void MLoadDataViewElement::computeRange(TempAllocator& alloc) {
 void MArrayLength::computeRange(TempAllocator& alloc) {
   
   
-  setRange(Range::NewUInt32Range(alloc, 0, UINT32_MAX));
+  MOZ_ASSERT(type() == MIRType::Int32);
+  setRange(Range::NewUInt32Range(alloc, 0, INT32_MAX));
 }
 
 void MInitializedLength::computeRange(TempAllocator& alloc) {
@@ -1856,9 +1857,16 @@ void MInt32ToIntPtr::computeRange(TempAllocator& alloc) {
   setRange(new (alloc) Range(input()));
 }
 
+void MNonNegativeIntPtrToInt32::computeRange(TempAllocator& alloc) {
+  
+  setRange(Range::NewUInt32Range(alloc, 0, INT32_MAX));
+}
+
 void MArrayPush::computeRange(TempAllocator& alloc) {
   
-  setRange(Range::NewUInt32Range(alloc, 0, UINT32_MAX));
+  
+  MOZ_ASSERT(type() == MIRType::Int32);
+  setRange(Range::NewUInt32Range(alloc, 0, INT32_MAX));
 }
 
 void MMathFunction::computeRange(TempAllocator& alloc) {
