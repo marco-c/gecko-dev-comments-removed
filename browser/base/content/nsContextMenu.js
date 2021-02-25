@@ -626,14 +626,6 @@ class nsContextMenu {
       !Services.prefs.getBoolPref("devtools.policy.disabled", false);
 
     this.showItem("context-viewsource", shouldShow);
-    this.showItem("context-viewinfo", shouldShow);
-    
-    
-    this.setItemAttr(
-      "context-viewinfo",
-      "disabled",
-      this.webExtBrowserType === "popup"
-    );
     this.showItem("inspect-separator", showInspect);
     this.showItem("context-inspect", showInspect);
 

@@ -238,8 +238,6 @@ add_task(
           null,
           "context-viewsource",
           true,
-          "context-viewinfo",
-          true,
         ],
         {
           
