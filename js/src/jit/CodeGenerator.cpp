@@ -2455,7 +2455,7 @@ static void CreateMatchResultFallback(MacroAssembler& masm, Register object,
   masm.move32(Imm32(int32_t(templateObject.getAllocKind())), temp1);
   masm.passABIArg(temp1);
   masm.move32(
-      Imm32(int32_t(templateObject.asNativeTemplateObject().numDynamicSlots())),
+      Imm32(int32_t(templateObject.asTemplateNativeObject().numDynamicSlots())),
       temp2);
   masm.passABIArg(temp2);
   masm.callWithABI<Fn, CreateMatchResultFallbackFunc>();
@@ -2499,8 +2499,8 @@ JitCode* JitRealm::generateRegExpMatcherStub(JSContext* cx) {
     return nullptr;
   }
   TemplateObject templateObj(templateObject);
-  const NativeTemplateObject& nativeTemplateObj =
-      templateObj.asNativeTemplateObject();
+  const TemplateNativeObject& nativeTemplateObj =
+      templateObj.asTemplateNativeObject();
 
   
   
@@ -6936,10 +6936,10 @@ void CodeGenerator::visitNewObjectVMCall(LNewObject* lir) {
 }
 
 static bool ShouldInitFixedSlots(LInstruction* lir, const TemplateObject& obj) {
-  if (!obj.isNative()) {
+  if (!obj.isNativeObject()) {
     return true;
   }
-  const NativeTemplateObject& templateObj = obj.asNativeTemplateObject();
+  const TemplateNativeObject& templateObj = obj.asTemplateNativeObject();
 
   
   

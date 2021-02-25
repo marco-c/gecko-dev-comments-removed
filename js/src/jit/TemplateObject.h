@@ -13,7 +13,7 @@
 namespace js {
 namespace jit {
 
-class NativeTemplateObject;
+class TemplateNativeObject;
 
 
 
@@ -28,8 +28,8 @@ class TemplateObject {
 
   
   
-  inline bool isNative() const;
-  inline const NativeTemplateObject& asNativeTemplateObject() const;
+  inline bool isNativeObject() const;
+  inline const TemplateNativeObject& asTemplateNativeObject() const;
   inline bool isArrayObject() const;
   inline bool isArgumentsObject() const;
   inline bool isTypedArrayObject() const;
@@ -43,9 +43,9 @@ class TemplateObject {
   inline gc::Cell* shape() const;
 };
 
-class NativeTemplateObject : public TemplateObject {
+class TemplateNativeObject : public TemplateObject {
  protected:
-  NativeObject& asNative() const { return obj_->as<NativeObject>(); }
+  NativeObject& asNativeObject() const { return obj_->as<NativeObject>(); }
 
  public:
   
