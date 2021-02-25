@@ -563,15 +563,24 @@ var DownloadsPanel = {
     }
 
     DownloadsCommon.log("Opening downloads panel popup.");
-    PanelMultiView.openPopup(
-      this.panel,
-      anchor,
-      "bottomcenter topright",
-      0,
-      0,
-      false,
-      null
-    ).catch(Cu.reportError);
+
+    
+    
+    
+    
+    setTimeout(
+      () =>
+        PanelMultiView.openPopup(
+          this.panel,
+          anchor,
+          "bottomcenter topright",
+          0,
+          0,
+          false,
+          null
+        ).catch(Cu.reportError),
+      0
+    );
   },
 };
 
