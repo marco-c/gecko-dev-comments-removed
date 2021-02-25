@@ -12,7 +12,11 @@
 #ifndef mozilla_Bootstrap_h
 #define mozilla_Bootstrap_h
 
+#include "mozilla/Maybe.h"
+#include "mozilla/ResultVariant.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/Variant.h"
 #include "nscore.h"
 #include "nsXULAppAPI.h"
 
@@ -143,6 +147,16 @@ enum class LibLoadingStrategy {
   ReadAhead,
 };
 
+#if defined(XP_WIN)
+using DLErrorType = unsigned long;  
+#else
+using DLErrorType = UniqueFreePtr<char>;
+#endif
+
+using BootstrapError = Variant<nsresult, DLErrorType>;
+
+using BootstrapResult = ::mozilla::Result<Bootstrap::UniquePtr, BootstrapError>;
+
 
 
 
@@ -152,14 +166,14 @@ enum class LibLoadingStrategy {
 
 #ifdef XPCOM_GLUE
 typedef void (*GetBootstrapType)(Bootstrap::UniquePtr&);
-Bootstrap::UniquePtr GetBootstrap(
+BootstrapResult GetBootstrap(
     const char* aXPCOMFile = nullptr,
     LibLoadingStrategy aLibLoadingStrategy = LibLoadingStrategy::NoReadAhead);
 #else
 extern "C" NS_EXPORT void NS_FROZENCALL
 XRE_GetBootstrap(Bootstrap::UniquePtr& b);
 
-inline Bootstrap::UniquePtr GetBootstrap(const char* aXPCOMFile = nullptr) {
+inline BootstrapResult GetBootstrap(const char* aXPCOMFile = nullptr) {
   Bootstrap::UniquePtr bootstrap;
   XRE_GetBootstrap(bootstrap);
   return bootstrap;
