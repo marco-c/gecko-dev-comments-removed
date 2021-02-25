@@ -544,7 +544,7 @@ struct CompilationStencil : public BaseCompilationStencil {
   RefPtr<ScriptSource> source;
 
   
-  UniquePtr<StencilModuleMetadata> moduleMetadata;
+  RefPtr<StencilModuleMetadata> moduleMetadata;
 
   
   
@@ -655,7 +655,7 @@ struct ExtensibleCompilationStencil {
   Vector<BigIntStencil, 0, js::SystemAllocPolicy> bigIntData;
   Vector<ObjLiteralStencil, 0, js::SystemAllocPolicy> objLiteralData;
 
-  UniquePtr<StencilModuleMetadata> moduleMetadata;
+  RefPtr<StencilModuleMetadata> moduleMetadata;
 
   StencilAsmJSContainer asmJS;
 

@@ -24,6 +24,7 @@
 #include "frontend/ScriptIndex.h"         
 #include "frontend/TypedIndex.h"          
 #include "js/AllocPolicy.h"               
+#include "js/RefCounted.h"                
 #include "js/RegExpFlags.h"               
 #include "js/RootingAPI.h"                
 #include "js/TypeDecls.h"                 
@@ -580,7 +581,8 @@ class StencilModuleEntry {
 };
 
 
-class StencilModuleMetadata {
+class StencilModuleMetadata
+    : public js::AtomicRefCounted<StencilModuleMetadata> {
  public:
   using EntryVector = Vector<StencilModuleEntry, 0, js::SystemAllocPolicy>;
 
