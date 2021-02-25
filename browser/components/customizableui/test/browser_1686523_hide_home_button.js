@@ -78,7 +78,7 @@ async function testHomeButton(shouldRemoveHomeButton, shouldUpdateVersion) {
 
 
 
-add_task(async function testButtonRemoval() {
+add_task(async function() {
   let tests = [
     
     {
@@ -123,43 +123,4 @@ add_task(async function testButtonRemoval() {
     HomePage.reset();
     await SpecialPowers.popPrefEnv();
   }
-});
-
-
-
-
-add_task(async function testNullSavedState() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [kPrefProtonToolbarVersion, 0],
-      [kPrefProtonToolbarEnabled, true],
-    ],
-  });
-  let oldState = CustomizableUIBSPass.gSavedState;
-
-  Assert.equal(
-    Services.prefs.getIntPref(kPrefProtonToolbarVersion),
-    0,
-    "Toolbar proton version is 0"
-  );
-
-  let { CustomizableUIInternal } = CustomizableUIBSPass;
-  CustomizableUIInternal.initialize();
-
-  Assert.ok(
-    Services.prefs.getIntPref(kPrefProtonToolbarVersion) >= 1,
-    "Toolbar proton version updated"
-  );
-
-  let navbarPlacements = CustomizableUIBSPass.gAreas
-    .get("nav-bar")
-    .get("defaultPlacements");
-  Assert.ok(
-    !navbarPlacements.includes("home-button"),
-    "Home button isn't included by default"
-  );
-
-  
-  CustomizableUIBSPass.gSavedState = oldState;
-  await SpecialPowers.popPrefEnv();
 });
