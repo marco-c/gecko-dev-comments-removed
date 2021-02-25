@@ -396,6 +396,15 @@ typedef enum JSGCParamKey {
 
 
   JSGC_MINOR_GC_NUMBER = 45,
+
+  
+
+
+
+
+
+
+  JSGC_NURSERY_TIMEOUT_FOR_IDLE_COLLECTION_MS = 46,
 } JSGCParamKey;
 
 

@@ -982,12 +982,6 @@ inline bool js::Nursery::isNearlyFull() const {
   return belowBytesThreshold && belowFractionThreshold;
 }
 
-
-
-
-
-static const TimeDuration UnderuseTimeout = TimeDuration::FromSeconds(2.0);
-
 inline bool js::Nursery::isUnderused() const {
   if (js::SupportDifferentialTesting() || !previousGC.endTime) {
     return false;
@@ -997,8 +991,12 @@ inline bool js::Nursery::isUnderused() const {
     return false;
   }
 
+  
+  
+  
+  
   TimeDuration timeSinceLastCollection = ReallyNow() - previousGC.endTime;
-  return timeSinceLastCollection > UnderuseTimeout;
+  return timeSinceLastCollection > tunables().nurseryTimeoutForIdleCollection();
 }
 
 
@@ -1593,7 +1591,8 @@ size_t js::Nursery::targetSize(JSGCInvocationKind kind, JS::GCReason reason) {
 
   
   if (hasRecentGrowthData && previousGC.nurseryUsedBytes == 0 &&
-      now - lastCollectionEndTime() > UnderuseTimeout &&
+      now - lastCollectionEndTime() >
+          tunables().nurseryTimeoutForIdleCollection() &&
       !js::SupportDifferentialTesting()) {
     clearRecentGrowthData();
     return 0;
