@@ -155,6 +155,9 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared {
 
   void canonicalizeIfDeterministic(Scalar::Type type, const LAllocation* value);
 
+  template <typename T>
+  Operand toMemoryAccessOperand(T* lir, int32_t disp);
+
  public:
   
   void visitOutOfLineBailout(OutOfLineBailout* ool);

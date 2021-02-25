@@ -534,14 +534,14 @@ enum class SimdOp {
   I32x4TruncSatF64x2SZero = 0x55,
   I32x4TruncSatF64x2UZero = 0x56,
   F32x4DemoteF64x2Zero = 0x57,
-  
-  
-  
-  
-  
-  
-  
-  
+  V128Load8Lane = 0x58,
+  V128Load16Lane = 0x59,
+  V128Load32Lane = 0x5a,
+  V128Load64Lane = 0x5b,
+  V128Store8Lane = 0x5c,
+  V128Store16Lane = 0x5d,
+  V128Store32Lane = 0x5e,
+  V128Store64Lane = 0x5f,
   I8x16Abs = 0x60,
   I8x16Neg = 0x61,
   V128AnyTrue = 0x62,  
