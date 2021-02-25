@@ -512,14 +512,13 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages(
   Message* m = output_queue_.FirstElement().get();
 
   if (partial_write_iter_.isNothing()) {
+    AddIPCProfilerMarker(*m, other_pid_, MessageDirection::eSending,
+                         MessagePhase::TransferStart);
     Pickle::BufferList::IterImpl iter(m->Buffers());
     partial_write_iter_.emplace(iter);
   }
 
   Pickle::BufferList::IterImpl& iter = partial_write_iter_.ref();
-
-  AddIPCProfilerMarker(*m, other_pid_, MessageDirection::eSending,
-                       MessagePhase::TransferStart);
 
   
   
