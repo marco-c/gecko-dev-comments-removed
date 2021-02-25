@@ -414,7 +414,7 @@ static const double NurseryFreeThresholdForIdleCollectionFraction = 0.25;
 
 
 static const TimeDuration NurseryTimeoutForIdleCollection =
-    TimeDuration::FromSeconds(2.0);
+    TimeDuration::FromSeconds(5.0);
 
 
 static const double PretenureThreshold = 0.6;
