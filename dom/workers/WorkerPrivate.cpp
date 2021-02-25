@@ -137,9 +137,6 @@ const nsIID kDEBUGWorkerEventTargetIID = {
 
 #endif
 
-
-const uint32_t kClampTimeoutNestingLevel = 5u;
-
 template <class T>
 class UniquePtrComparator {
   typedef UniquePtr<T> A;
@@ -966,8 +963,7 @@ class WorkerPrivate::EventTarget final : public nsISerialEventTarget {
 };
 
 struct WorkerPrivate::TimeoutInfo {
-  TimeoutInfo()
-      : mId(0), mNestingLevel(0), mIsInterval(false), mCanceled(false) {
+  TimeoutInfo() : mId(0), mIsInterval(false), mCanceled(false) {
     MOZ_COUNT_CTOR(mozilla::dom::WorkerPrivate::TimeoutInfo);
   }
 
@@ -981,29 +977,10 @@ struct WorkerPrivate::TimeoutInfo {
     return mTargetTime < aOther.mTargetTime;
   }
 
-  void AccumulateNestingLevel(const uint32_t& aBaseLevel) {
-    if (aBaseLevel < kClampTimeoutNestingLevel) {
-      mNestingLevel = aBaseLevel + 1;
-      return;
-    }
-    mNestingLevel = kClampTimeoutNestingLevel;
-  }
-
-  void CalculateTargetTime() {
-    auto target = mInterval;
-    if (mNestingLevel >= kClampTimeoutNestingLevel) {
-      target = TimeDuration::Max(
-          mInterval,
-          TimeDuration::FromMilliseconds(StaticPrefs::dom_min_timeout_value()));
-    }
-    mTargetTime = TimeStamp::Now() + target;
-  }
-
   RefPtr<TimeoutHandler> mHandler;
   mozilla::TimeStamp mTargetTime;
   mozilla::TimeDuration mInterval;
   int32_t mId;
-  uint32_t mNestingLevel;
   bool mIsInterval;
   bool mCanceled;
 };
@@ -2127,7 +2104,6 @@ WorkerPrivate::WorkerThreadAccessible::WorkerThreadAccessible(
       mDebuggerEventLoopLevel(0),
       mErrorHandlerRecursionCount(0),
       mNextTimeoutId(1),
-      mCurrentTimerNestingLevel(0),
       mFrozen(false),
       mTimerRunning(false),
       mRunningExpiredTimeouts(false),
@@ -4559,7 +4535,6 @@ int32_t WorkerPrivate::SetTimeout(JSContext* aCx, TimeoutHandler* aHandler,
   auto newInfo = MakeUnique<TimeoutInfo>();
   newInfo->mIsInterval = aIsInterval;
   newInfo->mId = timerId;
-  newInfo->AccumulateNestingLevel(data->mCurrentTimerNestingLevel);
 
   if (MOZ_UNLIKELY(timerId == INT32_MAX)) {
     NS_WARNING("Timeout ids overflowed!");
@@ -4571,7 +4546,8 @@ int32_t WorkerPrivate::SetTimeout(JSContext* aCx, TimeoutHandler* aHandler,
   
   aTimeout = std::max(0, aTimeout);
   newInfo->mInterval = TimeDuration::FromMilliseconds(aTimeout);
-  newInfo->CalculateTargetTime();
+
+  newInfo->mTargetTime = TimeStamp::Now() + newInfo->mInterval;
 
   const auto& insertedInfo = data->mTimeouts.InsertElementSorted(
       std::move(newInfo), GetUniquePtrComparator(data->mTimeouts));
@@ -4666,20 +4642,13 @@ bool WorkerPrivate::RunExpiredTimeouts(JSContext* aCx) {
   
   data->mRunningExpiredTimeouts = true;
 
-  MOZ_DIAGNOSTIC_ASSERT(data->mCurrentTimerNestingLevel == 0);
-
   
   for (uint32_t index = 0; index < expiredTimeouts.Length(); index++) {
     TimeoutInfo*& info = expiredTimeouts[index];
-    AutoRestore<uint32_t> nestingLevel(data->mCurrentTimerNestingLevel);
 
     if (info->mCanceled) {
       continue;
     }
-
-    
-    
-    data->mCurrentTimerNestingLevel = info->mNestingLevel;
 
     LOG(TimeoutsLog(),
         ("Worker %p executing timeout with original delay %f ms.\n", this,
@@ -4729,9 +4698,7 @@ bool WorkerPrivate::RunExpiredTimeouts(JSContext* aCx) {
         info->mCanceled) {
       if (info->mIsInterval && !info->mCanceled) {
         
-        
-        info->AccumulateNestingLevel(info->mNestingLevel);
-        info->CalculateTargetTime();
+        info->mTargetTime = info->mTargetTime + info->mInterval;
         
         ++index;
       } else {
