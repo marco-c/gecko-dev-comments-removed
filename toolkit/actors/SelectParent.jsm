@@ -153,19 +153,22 @@ var SelectParentHelper = {
       
       
       
-      if (
-        customStylingEnabled &&
-        selectStyle["background-color"] != uaStyle["background-color"]
-      ) {
+      if (selectStyle["background-color"] != uaStyle["background-color"]) {
         
         
         
         let parsedColor = sheet.cssRules[0].style["background-color"];
-        sheet.cssRules[0].style["background-color"] = "";
-        sheet.cssRules[0].style[
-          "background-image"
-        ] = `linear-gradient(${parsedColor}, ${parsedColor})`;
+        
+        sheet.cssRules[0].style.setProperty(
+          "--content-select-background-image",
+          `linear-gradient(${parsedColor}, ${parsedColor})`
+        );
         selectBackgroundSet = true;
+      }
+      if (addedRule) {
+        
+        
+        sheet.cssRules[0].style["background-color"] = "";
       }
       if (addedRule) {
         sheet.insertRule(
