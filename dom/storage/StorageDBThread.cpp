@@ -304,7 +304,7 @@ void StorageDBThread::SyncPreload(LocalStorageCacheBridge* aCache,
   
   
   nsresult rv =
-      InsertDBOp(new DBOperation(DBOperation::opPreloadUrgent, aCache));
+      InsertDBOp(MakeUnique<DBOperation>(DBOperation::opPreloadUrgent, aCache));
 
   
   if (NS_SUCCEEDED(rv)) {
@@ -330,11 +330,9 @@ void StorageDBThread::GetOriginsHavingData(nsTArray<nsCString>* aOrigins) {
   }
 }
 
-nsresult StorageDBThread::InsertDBOp(StorageDBThread::DBOperation* aOperation) {
+nsresult StorageDBThread::InsertDBOp(
+    UniquePtr<StorageDBThread::DBOperation> aOperation) {
   MonitorAutoLock monitor(mThreadObserver->GetMonitor());
-
-  
-  UniquePtr<StorageDBThread::DBOperation> opScope(aOperation);
 
   if (NS_FAILED(mStatus)) {
     MonitorAutoUnlock unlock(mThreadObserver->GetMonitor());
@@ -377,13 +375,10 @@ nsresult StorageDBThread::InsertDBOp(StorageDBThread::DBOperation* aOperation) {
     case DBOperation::opGetUsage:
       if (aOperation->Type() == DBOperation::opPreloadUrgent) {
         SetHigherPriority();  
-        mPreloads.InsertElementAt(0, aOperation);
+        mPreloads.InsertElementAt(0, aOperation.release());
       } else {
-        mPreloads.AppendElement(aOperation);
+        mPreloads.AppendElement(aOperation.release());
       }
-
-      
-      Unused << opScope.release();
 
       
       monitor.Notify();
@@ -392,10 +387,7 @@ nsresult StorageDBThread::InsertDBOp(StorageDBThread::DBOperation* aOperation) {
     default:
       
       
-      mPendingTasks.Add(aOperation);
-
-      
-      Unused << opScope.release();
+      mPendingTasks.Add(std::move(aOperation));
 
       ScheduleFlush();
       break;
@@ -1308,14 +1300,13 @@ bool StorageDBThread::PendingOperations::CheckForCoalesceOpportunity(
 }
 
 void StorageDBThread::PendingOperations::Add(
-    StorageDBThread::DBOperation* aOperation) {
+    UniquePtr<StorageDBThread::DBOperation> aOperation) {
   
   
   
-  if (CheckForCoalesceOpportunity(aOperation, DBOperation::opAddItem,
+  if (CheckForCoalesceOpportunity(aOperation.get(), DBOperation::opAddItem,
                                   DBOperation::opRemoveItem)) {
     mUpdates.Remove(aOperation->Target());
-    delete aOperation;
     return;
   }
 
@@ -1323,7 +1314,7 @@ void StorageDBThread::PendingOperations::Add(
   
   
   
-  if (CheckForCoalesceOpportunity(aOperation, DBOperation::opAddItem,
+  if (CheckForCoalesceOpportunity(aOperation.get(), DBOperation::opAddItem,
                                   DBOperation::opUpdateItem)) {
     aOperation->mType = DBOperation::opAddItem;
   }
@@ -1332,7 +1323,7 @@ void StorageDBThread::PendingOperations::Add(
   
   
   
-  if (CheckForCoalesceOpportunity(aOperation, DBOperation::opRemoveItem,
+  if (CheckForCoalesceOpportunity(aOperation.get(), DBOperation::opRemoveItem,
                                   DBOperation::opAddItem)) {
     aOperation->mType = DBOperation::opUpdateItem;
   }
@@ -1344,7 +1335,7 @@ void StorageDBThread::PendingOperations::Add(
     case DBOperation::opUpdateItem:
     case DBOperation::opRemoveItem:
       
-      mUpdates.Put(aOperation->Target(), aOperation);
+      mUpdates.Put(aOperation->Target(), std::move(aOperation));
       break;
 
       
@@ -1381,14 +1372,14 @@ void StorageDBThread::PendingOperations::Add(
         iter.Remove();
       }
 
-      mClears.Put(aOperation->Target(), aOperation);
+      mClears.Put(aOperation->Target(), std::move(aOperation));
       break;
 
     case DBOperation::opClearAll:
       
       mUpdates.Clear();
       mClears.Clear();
-      mClears.Put(aOperation->Target(), aOperation);
+      mClears.Put(aOperation->Target(), std::move(aOperation));
       break;
 
     default:

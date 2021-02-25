@@ -195,7 +195,7 @@ void ReportingHeader::ReportingFromChannel(nsIHttpChannel* aChannel) {
   }
 
   
-  mOrigins.Put(origin, client.release());
+  mOrigins.Put(origin, std::move(client));
 
   MaybeCreateCleanupTimer();
 }

@@ -220,41 +220,25 @@ class nsBaseHashtable
 
 
 
-  void Put(KeyType aKey, const UserDataType& aData) {
-    WithEntryHandle(aKey, [&aData](auto entryHandle) {
-      entryHandle.InsertOrUpdate(Converter::Wrap(aData));
+
+
+
+
+
+  template <typename U>
+  DataType& Put(KeyType aKey, U&& aData) {
+    return WithEntryHandle(aKey, [&aData](auto entryHandle) -> DataType& {
+      return entryHandle.InsertOrUpdate(std::forward<U>(aData));
     });
   }
 
-  [[nodiscard]] bool Put(KeyType aKey, const UserDataType& aData,
-                         const fallible_t& aFallible) {
+  template <typename U>
+  [[nodiscard]] bool Put(KeyType aKey, U&& aData, const fallible_t& aFallible) {
     return WithEntryHandle(aKey, aFallible, [&aData](auto maybeEntryHandle) {
       if (!maybeEntryHandle) {
         return false;
       }
-      maybeEntryHandle->InsertOrUpdate(Converter::Wrap(aData));
-      return true;
-    });
-  }
-
-  
-
-
-
-
-  void Put(KeyType aKey, UserDataType&& aData) {
-    WithEntryHandle(aKey, [&aData](auto entryHandle) {
-      entryHandle.InsertOrUpdate(Converter::Wrap(std::move(aData)));
-    });
-  }
-
-  [[nodiscard]] bool Put(KeyType aKey, UserDataType&& aData,
-                         const fallible_t& aFallible) {
-    return WithEntryHandle(aKey, aFallible, [&aData](auto maybeEntryHandle) {
-      if (!maybeEntryHandle) {
-        return false;
-      }
-      maybeEntryHandle->InsertOrUpdate(Converter::Wrap(std::move(aData)));
+      maybeEntryHandle->InsertOrUpdate(std::forward<U>(aData));
       return true;
     });
   }

@@ -118,9 +118,9 @@ class OggCodecState {
 
   
   
-  static OggCodecState* Create(rlbox_sandbox_ogg* aSandbox,
-                               tainted_opaque_ogg<ogg_page*> aPage,
-                               uint32_t aSerial);
+  static UniquePtr<OggCodecState> Create(rlbox_sandbox_ogg* aSandbox,
+                                         tainted_opaque_ogg<ogg_page*> aPage,
+                                         uint32_t aSerial);
 
   virtual CodecType GetType() { return TYPE_UNKNOWN; }
 
