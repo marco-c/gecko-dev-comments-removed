@@ -229,11 +229,23 @@ class nsTableWrapperFrame : public nsContainerFrame {
 
   
   
+  
+  
+  
+  mozilla::LogicalSize GetAreaOccupiedByCaption(
+      mozilla::StyleCaptionSide,
+      const mozilla::LogicalSize& aCaptionMarginBoxSize) const;
+
+  
+  
+  
+  
+  
   void CreateReflowInputForInnerTable(
       nsPresContext* aPresContext, nsTableFrame* aTableFrame,
       const ReflowInput& aOuterRI, Maybe<ReflowInput>& aChildRI,
       const nscoord aAvailISize,
-      const mozilla::Maybe<mozilla::LogicalSize>& aContainingBlockSize =
+      const mozilla::Maybe<mozilla::LogicalSize>& aAreaOccupiedByCaption =
           mozilla::Nothing()) const;
   void CreateReflowInputForCaption(nsPresContext* aPresContext,
                                    nsIFrame* aCaptionFrame,
