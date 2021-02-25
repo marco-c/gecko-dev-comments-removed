@@ -1071,7 +1071,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   
   bool mHavePendingClose : 1;
-  bool mIsPopupSpam : 1;
 
   
   bool mBlockScriptedClosingFlag : 1;

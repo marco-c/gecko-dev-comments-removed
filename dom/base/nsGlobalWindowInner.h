@@ -1041,10 +1041,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   nsPIDOMWindowOuter* GetInProcessParentInternal();
 
- public:
-  
-  bool IsPopupSpamWindow();
-
  private:
   
   
@@ -1537,14 +1533,6 @@ inline nsIScriptContext* nsGlobalWindowInner::GetContextInternal() {
 inline nsGlobalWindowOuter* nsGlobalWindowInner::GetOuterWindowInternal()
     const {
   return nsGlobalWindowOuter::Cast(GetOuterWindow());
-}
-
-inline bool nsGlobalWindowInner::IsPopupSpamWindow() {
-  if (!mOuterWindow) {
-    return false;
-  }
-
-  return GetOuterWindowInternal()->mIsPopupSpam;
 }
 
 #endif 
