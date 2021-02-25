@@ -47,11 +47,7 @@
 
 #else  
 
-namespace mozilla {
-class ProfileChunkedBuffer;
-}
 
-bool profiler_can_accept_markers();
 bool profiler_capture_backtrace_into(
     mozilla::ProfileChunkedBuffer& aChunkedBuffer,
     mozilla::StackCaptureOptions aCaptureOptions);

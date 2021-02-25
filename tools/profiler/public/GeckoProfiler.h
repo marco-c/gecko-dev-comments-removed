@@ -20,14 +20,11 @@
 
 #include "BaseProfiler.h"
 #include "mozilla/ProfilerCounts.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ProfilerState.h"
-
-
-
 
 #ifndef MOZ_GECKO_PROFILER
 
-#  include "mozilla/ProfilerMarkers.h"
 #  include "mozilla/UniquePtr.h"
 
 
@@ -484,10 +481,6 @@ struct ProfilerBufferInfo {
 
 
 mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
-
-
-
-#  include "mozilla/ProfilerMarkers.h"
 
 
 

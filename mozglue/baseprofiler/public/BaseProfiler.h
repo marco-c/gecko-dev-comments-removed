@@ -22,14 +22,11 @@
 
 
 #include "mozilla/BaseProfilerCounts.h"
+#include "mozilla/BaseProfilerMarkers.h"
 #include "mozilla/BaseProfilerState.h"
-
-
-
 
 #ifndef MOZ_GECKO_PROFILER
 
-#  include "mozilla/BaseProfilerMarkers.h"
 #  include "mozilla/UniquePtr.h"
 
 
@@ -398,10 +395,6 @@ MFBT_API Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 }  
 }  
-
-
-
-#  include "mozilla/BaseProfilerMarkers.h"
 
 namespace mozilla {
 namespace baseprofiler {

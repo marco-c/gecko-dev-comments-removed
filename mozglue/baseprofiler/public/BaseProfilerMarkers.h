@@ -44,7 +44,6 @@
 
 #else  
 
-#  include "mozilla/ProfileChunkedBuffer.h"
 #  include "mozilla/TimeStamp.h"
 #  include "mozilla/Unused.h"
 
@@ -53,6 +52,10 @@
 #  include <utility>
 
 namespace mozilla::baseprofiler {
+
+
+MFBT_API bool profiler_capture_backtrace_into(
+    ProfileChunkedBuffer& aChunkedBuffer, StackCaptureOptions aCaptureOptions);
 
 
 
