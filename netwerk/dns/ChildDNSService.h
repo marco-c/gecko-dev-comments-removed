@@ -53,8 +53,9 @@ class ChildDNSService final : public nsPIDNSService, public nsIObserver {
       nsIDNSResolverInfo* aResolver, nsIDNSListener* aListener,
       nsresult aReason, const OriginAttributes& aOriginAttributes);
 
-  bool mFirstTime;
-  bool mDisablePrefetch;
+  bool mFirstTime = true;
+  bool mDisablePrefetch = false;
+  bool mODoHActivated = false;
 
   
   nsClassHashtable<nsCStringHashKey, nsTArray<RefPtr<DNSRequestSender>>>
