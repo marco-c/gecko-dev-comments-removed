@@ -1098,13 +1098,9 @@ class nsLayoutUtils {
     Compressed = 0x200,
     ForWebRender = 0x400,
     UseHighQualityScaling = 0x800,
-    ResetViewportScrolling = 0x1000,
   };
 
   
-
-
-
 
 
 
