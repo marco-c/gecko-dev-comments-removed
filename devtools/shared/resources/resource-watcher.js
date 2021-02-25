@@ -37,6 +37,11 @@ class ResourceWatcher {
     this._watchers = [];
 
     
+    
+    
+    this._pendingWatchers = new Set();
+
+    
     this._cache = [];
     this._listenerCount = new Map();
 
@@ -113,6 +118,16 @@ class ResourceWatcher {
     }
 
     
+    
+    
+    
+    const pendingWatcher = {
+      resources,
+      onAvailable,
+    };
+    this._pendingWatchers.add(pendingWatcher);
+
+    
     if (!this._listenerRegistered && this.watcherFront) {
       this._listenerRegistered = true;
       
@@ -159,9 +174,22 @@ class ResourceWatcher {
     this._notifyWatchers();
 
     
+    this._pendingWatchers.delete(pendingWatcher);
+
+    
+    
+    const watchedResources = pendingWatcher.resources;
+
+    
+    
+    if (!watchedResources.length) {
+      return;
+    }
+
+    
     
     this._watchers.push({
-      resources,
+      resources: watchedResources,
       onAvailable,
       onUpdated,
       onDestroyed,
@@ -169,7 +197,7 @@ class ResourceWatcher {
     });
 
     if (!ignoreExistingResources) {
-      await this._forwardCachedResources(resources, onAvailable);
+      await this._forwardCachedResources(watchedResources, onAvailable);
     }
   }
 
@@ -196,7 +224,10 @@ class ResourceWatcher {
       }
     }
     
-    for (const watcherEntry of this._watchers) {
+    
+    
+    const allWatchers = [...this._watchers, ...this._pendingWatchers];
+    for (const watcherEntry of allWatchers) {
       
       
       if (watcherEntry.onAvailable == onAvailable) {
