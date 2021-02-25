@@ -263,6 +263,8 @@ class alignas(ArenaSize) Arena {
     hasDelayedGrayMarking_ = 0;
     nextDelayedMarkingArena_ = 0;
     bufferedCells_ = nullptr;
+
+    MOZ_ASSERT(!allocated());
   }
 
   
@@ -652,6 +654,10 @@ class TenuredChunk : public TenuredChunkBase {
 
   
   Arena* fetchNextFreeArena(GCRuntime* gc);
+
+#ifdef DEBUG
+  void verify() const;
+#endif
 
  private:
   
