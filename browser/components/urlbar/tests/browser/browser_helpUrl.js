@@ -23,6 +23,59 @@ add_task(async function init() {
 
 
 
+add_task(async function title_helpL10nId() {
+  let helpL10nId = "urlbar-tip-help-icon";
+  let provider = registerTestProvider(1, { helpL10nId });
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    value: "example",
+    window,
+  });
+
+  await assertIsTestResult(1);
+
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
+  let helpButton = result.element.row._elements.get("helpButton");
+  Assert.ok(helpButton, "Sanity check: help button should exist");
+
+  let l10nAttrs = document.l10n.getAttributes(helpButton);
+  Assert.deepEqual(
+    l10nAttrs,
+    { id: helpL10nId, args: null },
+    "The l10n ID attribute was correctly set"
+  );
+
+  await UrlbarTestUtils.promisePopupClose(window);
+  UrlbarProvidersManager.unregisterProvider(provider);
+});
+
+
+
+add_task(async function title_helpTitle() {
+  let helpTitle = "Example help title";
+  let provider = registerTestProvider(1, { helpTitle });
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    value: "example",
+    window,
+  });
+
+  await assertIsTestResult(1);
+
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
+  let helpButton = result.element.row._elements.get("helpButton");
+  Assert.ok(helpButton, "Sanity check: help button should exist");
+
+  Assert.deepEqual(
+    helpButton.getAttribute("title"),
+    helpTitle,
+    "The title attribute was correctly set"
+  );
+
+  await UrlbarTestUtils.promisePopupClose(window);
+  UrlbarProvidersManager.unregisterProvider(provider);
+});
+
+
+
 add_task(async function keyboardSelection_secondResult() {
   let provider = registerTestProvider(1);
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -68,9 +121,6 @@ add_task(async function keyboardSelection_secondResult() {
   assertOtherResultSelected(0, "previous result");
 
   await UrlbarTestUtils.promisePopupClose(window);
-  UrlbarProvidersManager.unregisterProvider(provider);
-
-  gURLBar.view.close();
   UrlbarProvidersManager.unregisterProvider(provider);
 });
 
@@ -233,16 +283,21 @@ async function doPickTest({ pickHelpButton, useKeyboard }) {
 
 
 
-function registerTestProvider(suggestedIndex) {
+
+
+function registerTestProvider(suggestedIndex, extraPayloadProperties = {}) {
   let results = [
     Object.assign(
       new UrlbarResult(
         UrlbarUtils.RESULT_TYPE.URL,
         UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-        {
-          url: RESULT_URL,
-          helpUrl: RESULT_HELP_URL,
-        }
+        Object.assign(
+          {
+            url: RESULT_URL,
+            helpUrl: RESULT_HELP_URL,
+          },
+          extraPayloadProperties
+        )
       ),
       { suggestedIndex }
     ),
