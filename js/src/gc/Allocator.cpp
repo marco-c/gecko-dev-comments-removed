@@ -872,10 +872,6 @@ void TenuredChunk::init(GCRuntime* gc) {
 
   decommitAllArenas();
 
-#ifdef DEBUG
-  verify();
-#endif
-
   
 }
 
