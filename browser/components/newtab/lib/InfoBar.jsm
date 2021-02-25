@@ -100,10 +100,11 @@ class InfoBarNotification {
 
 
   infobarCallback(eventType) {
-    if (eventType === "removed" || eventType === "disconnected") {
+    if (eventType === "removed") {
       this.notification = null;
-    } else {
-      this.sendUserEventTelemetry(eventType.toUpperCase());
+    } else if (this.notification) {
+      this.sendUserEventTelemetry("DISMISSED");
+      this.notification = null;
     }
   }
 
