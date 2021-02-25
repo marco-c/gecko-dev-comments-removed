@@ -606,6 +606,15 @@ class TargetList extends EventEmitter {
   async isJavascriptEnabled(configuration) {
     if (this.hasTargetWatcherSupport("target-configuration")) {
       const targetConfigurationFront = await this.watcherFront.getTargetConfigurationActor();
+
+      const { javascriptEnabled } = targetConfigurationFront.configuration;
+      if (typeof javascriptEnabled === "undefined") {
+        
+        
+        
+        
+        return this.targetFront._javascriptEnabled;
+      }
       return targetConfigurationFront.configuration.javascriptEnabled;
     }
 
