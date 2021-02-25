@@ -1275,14 +1275,8 @@ const browsingContextTargetPrototype = {
     if (typeof options.restoreFocus == "boolean") {
       this._restoreFocus = options.restoreFocus;
     }
-    
-    
-    
-    const hasExplicitReloadFlag = "performReload" in options;
-    if (
-      (hasExplicitReloadFlag && options.performReload) ||
-      (!hasExplicitReloadFlag && reload)
-    ) {
+
+    if (reload) {
       this.reload();
     }
   },
