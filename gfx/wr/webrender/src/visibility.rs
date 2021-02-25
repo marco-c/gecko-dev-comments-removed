@@ -727,16 +727,6 @@ fn update_prim_post_visibility(
             
             
         }
-        PrimitiveInstanceKind::Image { .. } => {
-
-        }
-        PrimitiveInstanceKind::ImageBorder { data_handle, .. } => {
-            let prim_data = &mut frame_state.data_stores.image_border[data_handle];
-            prim_data.kind.request_resources(
-                frame_state.resource_cache,
-                frame_state.gpu_cache,
-            );
-        }
         PrimitiveInstanceKind::YuvImage { data_handle, .. } => {
             let prim_data = &mut frame_state.data_stores.yuv_image[data_handle];
             prim_data.kind.request_resources(

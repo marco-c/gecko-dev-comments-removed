@@ -522,7 +522,10 @@ fn prepare_interned_prim_for_render(
 
             
             
-            prim_data.kind.update(&mut prim_data.common, frame_state);
+            prim_data.kind.update(
+                &mut prim_data.common,
+                frame_state
+            );
         }
         PrimitiveInstanceKind::Rectangle { data_handle, segment_instance_index, color_binding_index, .. } => {
             profile_scope!("Rectangle");
