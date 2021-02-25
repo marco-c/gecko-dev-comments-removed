@@ -3155,9 +3155,15 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
 
   
   
+  
+  
+  
+  
   gfxFont* candidateFont = nullptr;
   FontMatchType candidateMatchType;
 
+  
+  
   
   
   auto CheckCandidate = [&](gfxFont* f, FontMatchType t) -> bool {
@@ -3329,6 +3335,7 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
       
       
       
+      RefPtr<gfxFont> autoRefDeref(candidateFont);
       *aMatchType = FontMatchType::Kind::kPrefsFallback;
       return font;
     }
