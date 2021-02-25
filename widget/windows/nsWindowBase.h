@@ -83,11 +83,6 @@ class nsWindowBase : public nsBaseWidget {
   
 
 
-  virtual bool DispatchPluginEvent(const MSG& aMsg);
-
-  
-
-
   virtual nsresult SynthesizeNativeTouchPoint(uint32_t aPointerId,
                                               TouchPointerState aPointerState,
                                               LayoutDeviceIntPoint aPoint,
