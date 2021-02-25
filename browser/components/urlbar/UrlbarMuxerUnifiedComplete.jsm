@@ -27,35 +27,6 @@ XPCOMUtils.defineLazyGetter(this, "logger", () =>
   UrlbarUtils.getLogger({ prefix: "MuxerUnifiedComplete" })
 );
 
-function groupFromResult(result) {
-  if (result.heuristic) {
-    return UrlbarUtils.RESULT_GROUP.HEURISTIC;
-  }
-  switch (result.type) {
-    case UrlbarUtils.RESULT_TYPE.SEARCH:
-      if (result.payload.suggestion) {
-        return UrlbarUtils.RESULT_GROUP.SUGGESTION;
-      }
-      break;
-    case UrlbarUtils.RESULT_TYPE.OMNIBOX:
-      return UrlbarUtils.RESULT_GROUP.EXTENSION;
-  }
-  return UrlbarUtils.RESULT_GROUP.GENERAL;
-}
-
-
-
-const HEURISTIC_ORDER = [
-  
-  
-  "UrlbarProviderSearchTips",
-  "Omnibox",
-  "UnifiedComplete",
-  "Autofill",
-  "TokenAliasEngines",
-  "HeuristicFallback",
-];
-
 
 
 
@@ -88,27 +59,22 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       context,
       resultsByGroup: new Map(),
       totalResultCount: 0,
-      topHeuristicRank: Infinity,
       strippedUrlToTopPrefixAndTitle: new Map(),
       canShowPrivateSearch: context.results.length > 1,
       canShowTailSuggestions: true,
-      formHistorySuggestions: new Set(),
+      
+      
+      
+      suggestions: new Set(),
       canAddTabToSearch: true,
+      
     };
-
-    let resultsWithSuggestedIndex = [];
 
     
     for (let result of context.results) {
       
-      if (result.suggestedIndex >= 0) {
-        resultsWithSuggestedIndex.push(result);
-        continue;
-      }
-
       
-      
-      let group = groupFromResult(result);
+      let group = UrlbarUtils.getResultGroup(result);
       let results = state.resultsByGroup.get(group);
       if (!results) {
         results = [];
@@ -120,75 +86,43 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       this._updateStatePreAdd(result, state);
     }
 
-    if (
-      context.heuristicResult?.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-      context.heuristicResult?.payload.query
-    ) {
-      state.heuristicResultQuery = context.heuristicResult.payload.query.toLocaleLowerCase();
-    }
+    
+    
+    let rootBucket = context.searchMode?.engineName
+      ? UrlbarPrefs.makeResultBuckets({ showSearchSuggestionsFirst: true })
+      : UrlbarPrefs.get("resultBuckets");
+    logger.debug(`Buckets: ${rootBucket}`);
 
-    
-    
-    let buckets =
-      context.heuristicResult?.type == UrlbarUtils.RESULT_TYPE.SEARCH
-        ? UrlbarPrefs.get("matchBucketsSearch")
-        : UrlbarPrefs.get("matchBuckets");
-    logger.debug(`Buckets: ${buckets}`);
-
-    
-    
-    let resultsByBucketIndex = [];
-    for (let [group, maxResultCount] of buckets) {
-      let results = this._addResults(group, maxResultCount, state);
-      resultsByBucketIndex.push(results);
-    }
-
-    
-    
-    
-    
-    if (context.searchMode?.engineName) {
-      let suggestionsIndex = resultsByBucketIndex.findIndex(
-        results =>
-          results[0] &&
-          !results[0].heuristic &&
-          results[0].type == UrlbarUtils.RESULT_TYPE.SEARCH
-      );
-      if (suggestionsIndex > 1) {
-        logger.debug(`Transplanting suggestions before general results.`);
-        let removed = resultsByBucketIndex.splice(suggestionsIndex, 1);
-        resultsByBucketIndex.splice(1, 0, ...removed);
-      }
-    }
-
-    
-    let sortedResults = [];
-    let remainingCount = context.maxResults;
-    for (let i = 0; i < resultsByBucketIndex.length && remainingCount; i++) {
-      let results = resultsByBucketIndex[i];
-      let count = Math.min(remainingCount, results.length);
-      sortedResults.push(...results.slice(0, count));
-      remainingCount -= count;
-    }
-
-    
-    
-    resultsWithSuggestedIndex.sort(
-      (a, b) => a.suggestedIndex - b.suggestedIndex
+    let sortedResults = this._fillBuckets(
+      rootBucket,
+      context.maxResults,
+      state
     );
+
     
-    for (let result of resultsWithSuggestedIndex) {
-      this._updateStatePreAdd(result, state);
-    }
-    
-    for (let result of resultsWithSuggestedIndex) {
-      if (this._canAddResult(result, state)) {
-        let index =
-          result.suggestedIndex <= sortedResults.length
-            ? result.suggestedIndex
-            : sortedResults.length;
-        sortedResults.splice(index, 0, result);
-        this._updateStatePostAdd(result, state);
+    let resultsWithSuggestedIndex = state.resultsByGroup.get(
+      UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX
+    );
+    if (resultsWithSuggestedIndex) {
+      
+      
+      resultsWithSuggestedIndex.sort(
+        (a, b) => a.suggestedIndex - b.suggestedIndex
+      );
+      
+      for (let result of resultsWithSuggestedIndex) {
+        this._updateStatePreAdd(result, state);
+      }
+      
+      for (let result of resultsWithSuggestedIndex) {
+        if (this._canAddResult(result, state)) {
+          let index =
+            result.suggestedIndex <= sortedResults.length
+              ? result.suggestedIndex
+              : sortedResults.length;
+          sortedResults.splice(index, 0, result);
+          this._updateStatePostAdd(result, state);
+        }
       }
     }
 
@@ -206,9 +140,163 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
 
+  _copyState(state) {
+    let copy = Object.assign({}, state, {
+      resultsByGroup: new Map(),
+      strippedUrlToTopPrefixAndTitle: new Map(
+        state.strippedUrlToTopPrefixAndTitle
+      ),
+      suggestions: new Set(state.suggestions),
+    });
+    for (let [group, results] of state.resultsByGroup) {
+      copy.resultsByGroup.set(group, [...results]);
+    }
+    return copy;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _fillBuckets(bucket, maxResultCount, state) {
+    
+    if (!bucket.children) {
+      return this._addResults(bucket.group, maxResultCount, state);
+    }
+
+    
+    let stateCopy;
+    let flexSum = 0;
+    let unfilledChildIndexes = [];
+    let unfilledChildResultCount = 0;
+    if (bucket.flexChildren) {
+      stateCopy = this._copyState(state);
+      for (let child of bucket.children) {
+        let flex = typeof child.flex == "number" ? child.flex : 0;
+        flexSum += flex;
+      }
+    }
+
+    
+    
+    let flexSumFilled = flexSum;
+
+    
+    let results = [];
+    for (
+      let i = 0;
+      i < bucket.children.length && results.length < maxResultCount;
+      i++
+    ) {
+      let child = bucket.children[i];
+
+      
+      let childMaxResultCount;
+      if (bucket.flexChildren) {
+        let flex = typeof child.flex == "number" ? child.flex : 0;
+        childMaxResultCount = Math.round(maxResultCount * (flex / flexSum));
+      } else {
+        childMaxResultCount = Math.min(
+          typeof child.maxResultCount == "number"
+            ? child.maxResultCount
+            : Infinity,
+          
+          maxResultCount - results.length
+        );
+      }
+
+      
+      let childResults = this._fillBuckets(child, childMaxResultCount, state);
+      results = results.concat(childResults);
+
+      if (bucket.flexChildren && childResults.length < childMaxResultCount) {
+        
+        
+        let flex = typeof child.flex == "number" ? child.flex : 0;
+        flexSumFilled -= flex;
+        unfilledChildIndexes.push(i);
+        unfilledChildResultCount += childResults.length;
+      }
+    }
+
+    
+    
+    
+    if (unfilledChildIndexes.length) {
+      results = [];
+      let remainingResultCount = maxResultCount - unfilledChildResultCount;
+      for (
+        let i = 0;
+        i < bucket.children.length && results.length < maxResultCount;
+        i++
+      ) {
+        let child = bucket.children[i];
+        let childMaxResultCount;
+        if (unfilledChildIndexes.length && i == unfilledChildIndexes[0]) {
+          
+          
+          
+          
+          
+          
+          unfilledChildIndexes.shift();
+          childMaxResultCount = maxResultCount;
+        } else {
+          let flex = typeof child.flex == "number" ? child.flex : 0;
+          childMaxResultCount = flex
+            ? Math.round(remainingResultCount * (flex / flexSumFilled))
+            : remainingResultCount;
+        }
+        let childResults = this._fillBuckets(
+          child,
+          childMaxResultCount,
+          stateCopy
+        );
+        results = results.concat(childResults);
+      }
+
+      
+      for (let [key, value] of Object.entries(stateCopy)) {
+        state[key] = value;
+      }
+    }
+
+    return results;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
 
 
   _addResults(group, maxResultCount, state) {
+    
+    
+    
+    
+    if (
+      group == UrlbarUtils.RESULT_GROUP.FORM_HISTORY &&
+      !UrlbarPrefs.get("maxHistoricalSearchSuggestions")
+    ) {
+      maxResultCount = 0;
+    }
+
     let addedResults = [];
     let groupResults = state.resultsByGroup.get(group);
     while (
@@ -242,11 +330,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
   _canAddResult(result, state) {
-    
-    if (result.heuristic && result != state.context.heuristicResult) {
-      return false;
-    }
-
     
     
     
@@ -319,6 +402,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       if (!result.payload.satisfiesAutofillThreshold) {
         
         if (
+          !state.context.heuristicResult ||
           state.context.heuristicResult.type != UrlbarUtils.RESULT_TYPE.URL ||
           !state.context.heuristicResult.autofill
         ) {
@@ -369,19 +453,8 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     if (
       result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-      result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
-      (result.payload.lowerCaseSuggestion === state.heuristicResultQuery ||
-        state.formHistorySuggestions.has(result.payload.lowerCaseSuggestion))
-    ) {
-      return false;
-    }
-
-    
-    if (
-      result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-      result.source == UrlbarUtils.RESULT_SOURCE.SEARCH &&
       result.payload.lowerCaseSuggestion &&
-      result.payload.lowerCaseSuggestion === state.heuristicResultQuery
+      state.suggestions.has(result.payload.lowerCaseSuggestion)
     ) {
       return false;
     }
@@ -404,10 +477,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       let submission = Services.search.parseSubmissionURL(result.payload.url);
       if (submission) {
         let resultQuery = submission.terms.toLocaleLowerCase();
-        if (
-          state.heuristicResultQuery === resultQuery ||
-          state.formHistorySuggestions.has(resultQuery)
-        ) {
+        if (state.suggestions.has(resultQuery)) {
           
           
           
@@ -446,6 +516,16 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     
+    
+    
+    
+    
+    
+    if (result.heuristic && state.totalResultCount) {
+      return false;
+    }
+
+    
     return true;
   }
 
@@ -460,30 +540,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
   _updateStatePreAdd(result, state) {
-    
-    if (result.heuristic) {
-      
-      
-      let heuristicRank = HEURISTIC_ORDER.indexOf(result.providerName) + 2;
-      
-      
-      if (result.providerType == UrlbarUtils.PROVIDER_TYPE.EXTENSION) {
-        heuristicRank = 1;
-      } else if (result.providerName.startsWith("TestProvider")) {
-        heuristicRank = 0;
-      } else if (heuristicRank - 2 == -1) {
-        throw new Error(
-          `Heuristic result returned by unexpected provider: ${result.providerName}`
-        );
-      }
-      
-      
-      if (heuristicRank <= state.topHeuristicRank) {
-        state.topHeuristicRank = heuristicRank;
-        state.context.heuristicResult = result;
-      }
-    }
-
     
     if (result.type == UrlbarUtils.RESULT_TYPE.URL && result.payload.url) {
       let [strippedUrl, prefix] = UrlbarUtils.stripPrefixAndTrim(
@@ -533,6 +589,17 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
   _updateStatePostAdd(result, state) {
     
+    if (result.heuristic) {
+      state.context.heuristicResult = result;
+      if (
+        result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+        result.payload.query
+      ) {
+        state.suggestions.add(result.payload.query.toLocaleLowerCase());
+      }
+    }
+
+    
     
     
     if (
@@ -547,9 +614,9 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     if (
       result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-      result.source == UrlbarUtils.RESULT_SOURCE.HISTORY
+      result.payload.lowerCaseSuggestion
     ) {
-      state.formHistorySuggestions.add(result.payload.lowerCaseSuggestion);
+      state.suggestions.add(result.payload.lowerCaseSuggestion);
     }
 
     

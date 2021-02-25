@@ -627,7 +627,9 @@ add_resultBuckets_task({
     
     ...makeIndexRange(MAX_RESULTS, 3),
     
-    ...makeIndexRange(0, 3),
+    
+    
+    ...makeIndexRange(3, 3),
   ],
 });
 
@@ -661,7 +663,9 @@ add_resultBuckets_task({
     
     ...makeIndexRange(MAX_RESULTS, 3),
     
-    ...makeIndexRange(0, 2),
+    
+    
+    ...makeIndexRange(3, 2),
   ],
 });
 
@@ -695,7 +699,9 @@ add_resultBuckets_task({
     
     ...makeIndexRange(MAX_RESULTS, 5),
     
-    ...makeIndexRange(0, 2),
+    
+    
+    ...makeIndexRange(5, 2),
   ],
 });
 
@@ -729,7 +735,9 @@ add_resultBuckets_task({
     
     ...makeIndexRange(MAX_RESULTS, 3),
     
-    ...makeIndexRange(0, 4),
+    
+    
+    ...makeIndexRange(3, 4),
   ],
 });
 
@@ -763,7 +771,9 @@ add_resultBuckets_task({
     
     ...makeIndexRange(MAX_RESULTS, 1),
     
-    ...makeIndexRange(0, 7),
+    
+    
+    ...makeIndexRange(1, 7),
   ],
 });
 
@@ -797,7 +807,9 @@ add_resultBuckets_task({
     
     ...makeIndexRange(MAX_RESULTS, 1),
     
-    ...makeIndexRange(0, 7),
+    
+    
+    ...makeIndexRange(1, 7),
   ],
 });
 
@@ -862,7 +874,9 @@ add_resultBuckets_task({
     
     ...makeIndexRange(MAX_RESULTS, 1),
     
-    ...makeIndexRange(0, 3),
+    
+    
+    ...makeIndexRange(1, 3),
   ],
 });
 
@@ -975,7 +989,9 @@ add_resultBuckets_task({
     
     ...makeIndexRange(0, 5),
     
-    ...makeIndexRange(MAX_RESULTS, 2),
+    
+    
+    ...makeIndexRange(MAX_RESULTS + 5, 2),
     
     ...makeIndexRange(2 * MAX_RESULTS + 2, 1),
   ],
@@ -1019,7 +1035,9 @@ add_resultBuckets_task({
     
     ...makeIndexRange(0, 5),
     
-    ...makeIndexRange(MAX_RESULTS, 3),
+    
+    
+    ...makeIndexRange(MAX_RESULTS + 5, 3),
   ],
 });
 
@@ -1058,7 +1076,9 @@ add_resultBuckets_task({
     
     ...makeIndexRange(0, 5),
     
-    ...makeIndexRange(MAX_RESULTS, 3),
+    
+    
+    ...makeIndexRange(MAX_RESULTS + 5, 3),
   ],
 });
 
@@ -1111,7 +1131,9 @@ add_resultBuckets_task({
 
     
     
-    ...makeIndexRange(MAX_RESULTS, 2),
+    
+    
+    ...makeIndexRange(MAX_RESULTS + 5, 2),
     
     ...makeIndexRange(2 * MAX_RESULTS + 2, 1),
   ],
@@ -1164,7 +1186,9 @@ add_resultBuckets_task({
 
     
     
-    ...makeIndexRange(MAX_RESULTS, 3),
+    
+    
+    ...makeIndexRange(MAX_RESULTS + 7, 3),
     
   ],
 });
