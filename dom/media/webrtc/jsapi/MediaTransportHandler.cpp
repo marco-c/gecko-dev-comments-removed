@@ -643,14 +643,10 @@ void MediaTransportHandlerSTS::Destroy() {
   }
 
   MOZ_ASSERT(NS_IsMainThread());
-  if (!STSShutdownHandler::Instance()) {
-    CSFLogDebug(LOGTAG, "%s Already shut down. Nothing else to do.", __func__);
-    delete this;
-    return;
+  if (STSShutdownHandler::Instance()) {
+    STSShutdownHandler::Instance()->Deregister(this);
+    Shutdown();
   }
-
-  STSShutdownHandler::Instance()->Deregister(this);
-  Shutdown();
 
   
   
