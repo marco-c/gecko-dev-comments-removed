@@ -3,7 +3,6 @@
 const PAGE =
   "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20page.";
 const COMMENTS = "Here's my test comment!";
-const EMAIL = "foo@privacy.com";
 
 
 requestLongerTimeout(2);
@@ -11,10 +10,6 @@ requestLongerTimeout(2);
 add_task(async function setup() {
   await setupLocalCrashReportServer();
 });
-
-
-
-
 
 
 
@@ -53,9 +48,7 @@ function crashTabTestHelper(fieldValues, expectedExtra) {
     async function(browser) {
       let prefs = TabCrashHandler.prefs;
       let originalSendReport = prefs.getBoolPref("sendReport");
-      let originalEmailMe = prefs.getBoolPref("emailMe");
       let originalIncludeURL = prefs.getBoolPref("includeURL");
-      let originalEmail = prefs.getCharPref("email");
 
       let tab = gBrowser.getTabForBrowser(browser);
       await BrowserTestUtils.crashFrame(browser);
@@ -64,20 +57,10 @@ function crashTabTestHelper(fieldValues, expectedExtra) {
       
       
       let comments = doc.getElementById("comments");
-      let email = doc.getElementById("email");
-      let emailMe = doc.getElementById("emailMe");
       let includeURL = doc.getElementById("includeURL");
 
       if (fieldValues.hasOwnProperty("comments")) {
         comments.value = fieldValues.comments;
-      }
-
-      if (fieldValues.hasOwnProperty("email")) {
-        email.value = fieldValues.email;
-      }
-
-      if (fieldValues.hasOwnProperty("emailMe")) {
-        emailMe.checked = fieldValues.emailMe;
       }
 
       if (fieldValues.hasOwnProperty("includeURL")) {
@@ -93,13 +76,10 @@ function crashTabTestHelper(fieldValues, expectedExtra) {
       
       
       prefs.setBoolPref("sendReport", originalSendReport);
-      prefs.setBoolPref("emailMe", originalEmailMe);
       prefs.setBoolPref("includeURL", originalIncludeURL);
-      prefs.setCharPref("email", originalEmail);
     }
   );
 }
-
 
 
 
@@ -111,7 +91,6 @@ add_task(async function test_default() {
     {
       Comments: null,
       URL: "",
-      Email: null,
     }
   );
 });
@@ -127,41 +106,6 @@ add_task(async function test_just_a_comment() {
     {
       Comments: COMMENTS,
       URL: "",
-      Email: null,
-    }
-  );
-});
-
-
-
-
-add_task(async function test_no_email() {
-  await crashTabTestHelper(
-    {
-      email: EMAIL,
-      emailMe: false,
-    },
-    {
-      Comments: null,
-      URL: "",
-      Email: null,
-    }
-  );
-});
-
-
-
-
-add_task(async function test_yes_email() {
-  await crashTabTestHelper(
-    {
-      email: EMAIL,
-      emailMe: true,
-    },
-    {
-      Comments: null,
-      URL: "",
-      Email: EMAIL,
     }
   );
 });
@@ -177,7 +121,6 @@ add_task(async function test_send_URL() {
     {
       Comments: null,
       URL: PAGE,
-      Email: null,
     }
   );
 });
@@ -189,14 +132,11 @@ add_task(async function test_send_all() {
   await crashTabTestHelper(
     {
       includeURL: true,
-      emailMe: true,
-      email: EMAIL,
       comments: COMMENTS,
     },
     {
       Comments: COMMENTS,
       URL: PAGE,
-      Email: EMAIL,
     }
   );
 });

@@ -79,10 +79,6 @@ var AboutTabCrashed = {
         this.onClick(event);
         break;
       }
-      case "input": {
-        this.onInput(event);
-        break;
-      }
     }
   },
 
@@ -95,9 +91,6 @@ var AboutTabCrashed = {
       let el = document.getElementById(targetID);
       el.addEventListener("click", this);
     });
-
-    
-    document.getElementById("email").addEventListener("input", this);
 
     
     let event = new CustomEvent("AboutTabCrashedLoad", { bubbles: true });
@@ -130,22 +123,7 @@ var AboutTabCrashed = {
     }
   },
 
-  onInput(event) {
-    switch (event.target.id) {
-      case "email": {
-        document.getElementById("emailMe").checked = !!event.target.value;
-        break;
-      }
-    }
-  },
   
-
-
-
-
-
-
-
 
 
 
@@ -179,14 +157,6 @@ var AboutTabCrashed = {
 
       document.getElementById("sendReport").checked = data.sendReport;
       document.getElementById("includeURL").checked = data.includeURL;
-
-      if (data.requestEmail) {
-        document.getElementById("requestEmail").hidden = false;
-        document.getElementById("emailMe").checked = data.emailMe;
-        if (data.emailMe) {
-          document.getElementById("email").value = data.email;
-        }
-      }
 
       this.showCrashReportUI(data.sendReport);
     } else {
@@ -255,10 +225,8 @@ var AboutTabCrashed = {
 
   sendMessage(messageName) {
     let comments = "";
-    let email = "";
     let URL = "";
     let sendReport = false;
-    let emailMe = false;
     let includeURL = false;
     let autoSubmit = false;
 
@@ -270,13 +238,6 @@ var AboutTabCrashed = {
         includeURL = document.getElementById("includeURL").checked;
         if (includeURL) {
           URL = this.pageData.URL.trim();
-        }
-
-        if (!document.getElementById("requestEmail").hidden) {
-          emailMe = document.getElementById("emailMe").checked;
-          if (emailMe) {
-            email = document.getElementById("email").value.trim();
-          }
         }
       }
     }
@@ -293,8 +254,6 @@ var AboutTabCrashed = {
     RPMSendAsyncMessage(messageName, {
       sendReport,
       comments,
-      email,
-      emailMe,
       includeURL,
       URL,
       autoSubmit,
