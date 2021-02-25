@@ -2498,6 +2498,21 @@ set_define("MOZ_USE_NATIVE_POPUP_WINDOWS", True, when="MOZ_USE_NATIVE_POPUP_WIND
 
 
 
+option(
+    "--with-crashreporter-url",
+    env="MOZ_CRASHREPORTER_URL",
+    default="https://crash-reports.mozilla.com/",
+    nargs=1,
+    help="Set an alternative crashreporter url",
+)
+
+set_config(
+    "MOZ_CRASHREPORTER_URL",
+    depends("--with-crashreporter-url")(lambda x: x[0].rstrip("/")),
+)
+
+
+
 
 @depends(target)
 def oxidized_breakpad(target):
