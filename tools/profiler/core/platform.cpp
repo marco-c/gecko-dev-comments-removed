@@ -2625,7 +2625,7 @@ static void StreamMetaJSCustomObject(
 
   
   
-  if (!gXPCOMShuttingDown) {
+  if (nsCOMPtr<nsIObserverService> os = services::GetObserverService()) {
     aWriter.StartObjectProperty("extensions");
     {
       {
