@@ -1346,11 +1346,7 @@ pref("browser.menu.showCharacterEncoding", "chrome://browser/locale/browser.prop
 
 pref("prompts.defaultModalType", 3);
 
-#ifdef EARLY_BETA_OR_EARLIER
-  pref("browser.topsites.useRemoteSetting", true);
-#else
-  pref("browser.topsites.useRemoteSetting", false);
-#endif
+pref("browser.topsites.useRemoteSetting", true);
 
 
 
