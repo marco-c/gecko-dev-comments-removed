@@ -1194,20 +1194,18 @@ impl LonghandId {
         }
     }
 
-    
-    
     fn parse_value<'i, 't>(
         &self,
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<PropertyDeclaration, ParseError<'i>> {
-        match *self {
-            % for property in data.longhands:
-                LonghandId::${property.camel_case} => {
-                    longhands::${property.ident}::parse_declared(context, input)
-                }
-            % endfor
-        }
+        type ParsePropertyFn = for<'i, 't> fn(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<PropertyDeclaration, ParseError<'i>>;
+        static PARSE_PROPERTY: [ParsePropertyFn; ${len(data.longhands)}] = [
+        % for property in data.longhands:
+            longhands::${property.ident}::parse_declared,
+        % endfor
+        ];
+        (PARSE_PROPERTY[*self as usize])(context, input)
     }
 
     
@@ -1596,15 +1594,36 @@ impl ShorthandId {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<(), ParseError<'i>> {
-        match *self {
-            % for shorthand in data.shorthands_except_all():
-                ShorthandId::${shorthand.camel_case} => {
-                    shorthands::${shorthand.ident}::parse_into(declarations, context, input)
-                }
-            % endfor
-            
-            ShorthandId::All => Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+        type ParseIntoFn = for<'i, 't> fn(
+            declarations: &mut SourcePropertyDeclaration,
+            context: &ParserContext,
+            input: &mut Parser<'i, 't>,
+        ) -> Result<(), ParseError<'i>>;
+
+        fn unreachable<'i, 't>(
+            _: &mut SourcePropertyDeclaration,
+            _: &ParserContext,
+            _: &mut Parser<'i, 't>
+        ) -> Result<(), ParseError<'i>> {
+            unreachable!()
         }
+
+        
+        if *self == ShorthandId::All {
+            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+        }
+
+        static PARSE_INTO: [ParseIntoFn; ${len(data.shorthands)}] = [
+            % for shorthand in data.shorthands:
+            % if shorthand.ident == "all":
+            unreachable,
+            % else:
+            shorthands::${shorthand.ident}::parse_into,
+            % endif
+            % endfor
+        ];
+
+        (PARSE_INTO[*self as usize])(declarations, context, input)
     }
 }
 
@@ -1647,6 +1666,7 @@ impl UnparsedValue {
     fn substitute_variables<'cache>(
         &self,
         longhand_id: LonghandId,
+        writing_mode: WritingMode,
         custom_properties: Option<<&Arc<crate::custom_properties::CustomPropertiesMap>>,
         quirks_mode: QuirksMode,
         device: &Device,
@@ -1719,43 +1739,18 @@ impl UnparsedValue {
             Some(shorthand) => shorthand,
         };
 
-        match shorthand {
-            ShorthandId::All => {
-                
-                
-                return invalid_at_computed_value_time();
-            }
-            % for shorthand in data.shorthands_except_all():
-            ShorthandId::${shorthand.camel_case} => {
-                let longhands = match input.parse_entirely(|input| shorthands::${shorthand.ident}::parse_value(&context, input)) {
-                    Ok(l) => l,
-                    _ => return invalid_at_computed_value_time(),
-                };
+        let mut decls = SourcePropertyDeclaration::new();
+        
+        if shorthand.parse_into(&mut decls, &context, &mut input).is_err() {
+            return invalid_at_computed_value_time();
+        }
 
-                <% seen = set() %>
-                % for property in shorthand.sub_properties:
-                
-                
-                
-                
-                
-                % for prop in property.all_physical_mapped_properties(data) + [property]:
-                % if prop.ident not in seen:
-                    shorthand_cache.insert(
-                        (shorthand, LonghandId::${prop.camel_case}),
-                        PropertyDeclaration::${prop.camel_case}(
-                            longhands.${property.ident}
-                            % if prop.ident != property.ident:
-                            .clone()
-                            % endif
-                        )
-                    );
-                % endif
-                <% seen.add(prop.ident) %>
-                % endfor
-                % endfor
+        for declaration in decls.declarations.drain(..) {
+            let longhand = declaration.id().as_longhand().unwrap();
+            if longhand.is_logical() {
+                shorthand_cache.insert((shorthand, longhand.to_physical(writing_mode)), declaration.clone());
             }
-            % endfor
+            shorthand_cache.insert((shorthand, longhand), declaration);
         }
 
         Cow::Borrowed(&shorthand_cache[&(shorthand, longhand_id)])
@@ -2469,7 +2464,7 @@ impl PropertyDeclaration {
                             id,
                             value: Arc::new(UnparsedValue {
                                 css: css.into_owned(),
-                                first_token_type: first_token_type,
+                                first_token_type,
                                 url_data: context.url_data.clone(),
                                 from_shorthand: None,
                             }),
@@ -2506,7 +2501,7 @@ impl PropertyDeclaration {
                             crate::custom_properties::parse_non_custom_with_var(input)?;
                         let unparsed = Arc::new(UnparsedValue {
                             css: css.into_owned(),
-                            first_token_type: first_token_type,
+                            first_token_type,
                             url_data: context.url_data.clone(),
                             from_shorthand: Some(id),
                         });

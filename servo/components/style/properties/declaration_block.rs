@@ -829,11 +829,12 @@ impl PropertyDeclarationBlock {
             
             
             
-            (&PropertyDeclaration::WithVariables(ref declaration), Some(ref _computed_values)) => {
+            (&PropertyDeclaration::WithVariables(ref declaration), Some(ref computed_values)) => {
                 declaration
                     .value
                     .substitute_variables(
                         declaration.id,
+                        computed_values.writing_mode,
                         custom_properties.as_ref(),
                         QuirksMode::NoQuirks,
                         device,
