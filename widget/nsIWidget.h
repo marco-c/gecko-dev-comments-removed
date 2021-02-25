@@ -1190,12 +1190,6 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual void SetUseBrightTitlebarForeground(bool aBrightForeground) {}
-
-  
-
-
-
   virtual void HideWindowChrome(bool aShouldHide) = 0;
 
   enum FullscreenTransitionStage {
@@ -1650,7 +1644,11 @@ class nsIWidget : public nsISupports {
     
     ALL_BITS = (1 << 4) - 1
   };
+  
 
+
+
+  enum TouchpadPinchPhase { PHASE_BEGIN = 0, PHASE_UPDATE = 1, PHASE_END = 2 };
   
 
 
@@ -1672,6 +1670,13 @@ class nsIWidget : public nsISupports {
                                               double aPointerPressure,
                                               uint32_t aPointerOrientation,
                                               nsIObserver* aObserver) = 0;
+  
+
+
+  virtual nsresult SynthesizeNativeTouchPadPinch(TouchpadPinchPhase aEventPhase,
+                                                 float aScale,
+                                                 LayoutDeviceIntPoint aPoint,
+                                                 int32_t aModifierFlags) = 0;
 
   
 
