@@ -942,9 +942,6 @@ pub enum DebugCommand {
     
     SimulateLongSceneBuild(u32),
     
-    
-    SimulateLongLowPrioritySceneBuild(u32),
-    
     SetPictureTileSize(Option<DeviceIntSize>),
 }
 
@@ -965,9 +962,6 @@ pub enum ApiMsg {
     
     DebugCommand(DebugCommand),
     
-    
-    WakeUp,
-    
     SceneBuilderResult(SceneBuilderResult),
 }
 
@@ -981,7 +975,6 @@ impl fmt::Debug for ApiMsg {
             ApiMsg::MemoryPressure => "ApiMsg::MemoryPressure",
             ApiMsg::ReportMemory(..) => "ApiMsg::ReportMemory",
             ApiMsg::DebugCommand(..) => "ApiMsg::DebugCommand",
-            ApiMsg::WakeUp => "ApiMsg::WakeUp",
             ApiMsg::SceneBuilderResult(..) => "ApiMsg::SceneBuilderResult",
         })
     }
@@ -1022,18 +1015,7 @@ impl RenderApiSender {
         let (sync_tx, sync_rx) = single_msg_channel();
         let msg = ApiMsg::CloneApi(sync_tx);
         self.api_sender.send(msg).expect("Failed to send CloneApi message");
-        let namespace_id = match sync_rx.recv() {
-            Ok(id) => id,
-            Err(e) => {
-                
-                let webrender_is_alive = self.api_sender.send(ApiMsg::WakeUp);
-                if webrender_is_alive.is_err() {
-                    panic!("WebRender was shut down before processing CloneApi: {}", e);
-                } else {
-                    panic!("CloneApi message response was dropped while WebRender was still alive: {}", e);
-                }
-            }
-        };
+        let namespace_id = sync_rx.recv().expect("Failed to receive CloneApi reply");
         RenderApi {
             api_sender: self.api_sender.clone(),
             scene_sender: self.scene_sender.clone(),
