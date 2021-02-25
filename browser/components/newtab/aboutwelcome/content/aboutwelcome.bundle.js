@@ -245,7 +245,7 @@ async function retrieveRenderContent() {
   
   let aboutWelcomeProps = await window.AWGetWelcomeOverrideContent();
 
-  if ((_aboutWelcomeProps = aboutWelcomeProps) === null || _aboutWelcomeProps === void 0 ? void 0 : _aboutWelcomeProps.template) {
+  if ((_aboutWelcomeProps = aboutWelcomeProps) !== null && _aboutWelcomeProps !== void 0 && _aboutWelcomeProps.template) {
     let {
       messageId,
       UTMTerm
@@ -262,19 +262,19 @@ async function retrieveRenderContent() {
     slug,
     branch
   } = await window.AWGetExperimentData();
-  aboutWelcomeProps = (branch === null || branch === void 0 ? void 0 : branch.feature) ? branch.feature.value : {}; 
+  aboutWelcomeProps = branch !== null && branch !== void 0 && branch.feature ? branch.feature.value : {}; 
   
   
   
 
   const attribution = await window.AWGetAttributionData();
 
-  if (attribution === null || attribution === void 0 ? void 0 : attribution.template) {
+  if (attribution !== null && attribution !== void 0 && attribution.template) {
     var _aboutWelcomeProps2;
 
     aboutWelcomeProps = { ...aboutWelcomeProps,
       
-      template: ((_aboutWelcomeProps2 = aboutWelcomeProps) === null || _aboutWelcomeProps2 === void 0 ? void 0 : _aboutWelcomeProps2.template) ? aboutWelcomeProps.template : attribution.template,
+      template: (_aboutWelcomeProps2 = aboutWelcomeProps) !== null && _aboutWelcomeProps2 !== void 0 && _aboutWelcomeProps2.template ? aboutWelcomeProps.template : attribution.template,
       ...attribution.extraProps
     };
   }
@@ -296,7 +296,7 @@ async function mount() {
     messageId,
     UTMTerm
   } = await retrieveRenderContent();
-  react_dom__WEBPACK_IMPORTED_MODULE_1___default.a.render(react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(AboutWelcome, _extends({
+  react_dom__WEBPACK_IMPORTED_MODULE_1___default.a.render( react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(AboutWelcome, _extends({
     messageId: messageId,
     UTMTerm: UTMTerm
   }, aboutWelcomeProps)), document.getElementById("root"));
@@ -372,7 +372,7 @@ const MultiStageAboutWelcome = props => {
   Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(() => {
     (async () => {
       if (metricsFlowUri) {
-        setFlowParams((await _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__["AboutWelcomeUtils"].fetchFlowParams(metricsFlowUri)));
+        setFlowParams(await _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__["AboutWelcomeUtils"].fetchFlowParams(metricsFlowUri));
       }
     })();
   }, [metricsFlowUri]); 
@@ -388,7 +388,7 @@ const MultiStageAboutWelcome = props => {
   const [region, setRegion] = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])(null);
   Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(() => {
     (async () => {
-      setRegion((await window.AWGetRegion()));
+      setRegion(await window.AWGetRegion());
     })();
   }, []); 
   
@@ -409,7 +409,7 @@ const MultiStageAboutWelcome = props => {
   Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(() => {
     (async () => {
       let DEFAULT_SITES = await window.AWGetDefaultSites();
-      const importable = JSON.parse((await window.AWGetImportableSites()));
+      const importable = JSON.parse(await window.AWGetImportableSites());
       const showImportable = useImportable && importable.length >= 5;
 
       if (!importTelemetrySent.current) {
@@ -669,7 +669,7 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
 
     for (let i = 0; i < this.props.totalNumberOfScreens; i++) {
       let className = i === this.props.order ? "current" : "";
-      steps.push(react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      steps.push( react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
         key: i,
         className: `indicator ${className}`
       }));
@@ -1448,7 +1448,7 @@ class ReturnToAMO extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCompo
       url
     } = this.props;
 
-    if (!(content === null || content === void 0 ? void 0 : (_content$primary_butt = content.primary_button) === null || _content$primary_butt === void 0 ? void 0 : (_content$primary_butt2 = _content$primary_butt.action) === null || _content$primary_butt2 === void 0 ? void 0 : _content$primary_butt2.data)) {
+    if (!(content !== null && content !== void 0 && (_content$primary_butt = content.primary_button) !== null && _content$primary_butt !== void 0 && (_content$primary_butt2 = _content$primary_butt.action) !== null && _content$primary_butt2 !== void 0 && _content$primary_butt2.data)) {
       return;
     } 
 

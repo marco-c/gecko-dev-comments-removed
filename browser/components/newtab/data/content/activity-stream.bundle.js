@@ -153,14 +153,14 @@ function renderWithoutState() {
     doRequest();
   }
 
-  react_dom__WEBPACK_IMPORTED_MODULE_6___default.a.hydrate(react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement(NewTab, {
+  react_dom__WEBPACK_IMPORTED_MODULE_6___default.a.hydrate( react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement(NewTab, {
     store: store
   }), document.getElementById("root"));
 }
 function renderCache(initialState) {
   const store = Object(content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_3__["initStore"])(common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_7__["reducers"], initialState);
   new content_src_lib_detect_user_session_start__WEBPACK_IMPORTED_MODULE_2__["DetectUserSessionStart"](store).sendEventOrAddListener();
-  react_dom__WEBPACK_IMPORTED_MODULE_6___default.a.hydrate(react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement(NewTab, {
+  react_dom__WEBPACK_IMPORTED_MODULE_6___default.a.hydrate( react__WEBPACK_IMPORTED_MODULE_5___default.a.createElement(NewTab, {
     store: store
   }), document.getElementById("root"));
 }
@@ -2830,12 +2830,16 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_7___default.a.Pur
     }
 
     const shouldRenderBelowSearch = TEMPLATES_BELOW_SEARCH.includes(message.template);
-    return shouldRenderBelowSearch ? 
+    return shouldRenderBelowSearch ?
+    
+    
     react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement("div", {
       className: "below-search-snippet-wrapper"
-    }, this.renderSnippets()) : 
+    }, this.renderSnippets()) :
     
-    react_dom__WEBPACK_IMPORTED_MODULE_8___default.a.createPortal(react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_7___default.a.Fragment, null, this.renderPreviewBanner(), this.renderSnippets()), this.footerPortal);
+    
+    
+    react_dom__WEBPACK_IMPORTED_MODULE_8___default.a.createPortal( react__WEBPACK_IMPORTED_MODULE_7___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_7___default.a.Fragment, null, this.renderPreviewBanner(), this.renderSnippets()), this.footerPortal);
   }
 
 }
@@ -4275,6 +4279,8 @@ class ContextMenu extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCompo
   render() {
     
     return (
+      
+      
       react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", {
         className: "context-menu"
       }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("ul", {
@@ -7607,12 +7613,12 @@ class _Sections extends react__WEBPACK_IMPORTED_MODULE_8___default.a.PureCompone
       };
 
       if (sectionId === "topsites" && showTopSites) {
-        sections.push(react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__["TopSites"], commonProps));
+        sections.push( react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__["TopSites"], commonProps));
       } else {
         const section = enabledSections.find(s => s.id === sectionId);
 
         if (section) {
-          sections.push(react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(SectionIntl, _extends({}, section, commonProps)));
+          sections.push( react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(SectionIntl, _extends({}, section, commonProps)));
         }
       }
     }
@@ -11287,7 +11293,7 @@ function toArguments(props) {
     if (propname.startsWith("$")) {
       const name = propname.substr(1);
       args[name] = propval;
-    } else if (Object(external_React_["isValidElement"])(propval)) {
+    } else if ( Object(external_React_["isValidElement"])(propval)) {
       
       
       const name = propname.toLowerCase();
@@ -11385,7 +11391,7 @@ class localized_Localized extends external_React_["Component"] {
     
     
 
-    if (!Object(external_React_["isValidElement"])(elem)) {
+    if (! Object(external_React_["isValidElement"])(elem)) {
       return messageValue;
     } 
     
@@ -11598,7 +11604,9 @@ function convertLinks(links, sendClick, doNotAutoBlock, openNewWindow = false) {
       } = links[linkTag]; 
 
       const url = action ? false : safeURI(links[linkTag].url);
-      acc[linkTag] = 
+      acc[linkTag] =
+      
+      
       
       
       external_React_default.a.createElement("a", {
