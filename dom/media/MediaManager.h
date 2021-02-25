@@ -174,6 +174,11 @@ class MediaManager final : public nsIMediaManagerService, public nsIObserver {
   media::Parent<media::NonE10s>* GetNonE10sParent();
   MediaEngine* GetBackend();
 
+  
+  
+  
+  RefPtr<GetUserMediaWindowListener> GetOrMakeWindowListener(
+      nsPIDOMWindowInner* aWindow);
   WindowTable* GetActiveWindows() {
     MOZ_ASSERT(NS_IsMainThread());
     return &mActiveWindows;
