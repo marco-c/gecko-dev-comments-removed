@@ -363,6 +363,8 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Event", insecureContext: true },
   
+  { name: "EventCounts", insecureContext: true, nightly: true },
+  
   { name: "EventSource", insecureContext: true },
   
   { name: "EventTarget", insecureContext: true },
@@ -778,7 +780,11 @@ var interfaceNamesInGlobalScope = [
   
   { name: "OfflineAudioContext", insecureContext: true },
   
-  { name: "OfflineResourceList", insecureContext: false },
+  {
+    name: "OfflineResourceList",
+    insecureContext: false,
+    disabled: isEarlyBetaOrEarlier,
+  },
   
   { name: "Option", insecureContext: true },
   
@@ -842,6 +848,8 @@ var interfaceNamesInGlobalScope = [
   { name: "Performance", insecureContext: true },
   
   { name: "PerformanceEntry", insecureContext: true },
+  
+  { name: "PerformanceEventTiming", insecureContext: true, nightly: true },
   
   { name: "PerformanceMark", insecureContext: true },
   
