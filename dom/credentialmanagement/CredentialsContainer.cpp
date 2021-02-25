@@ -66,6 +66,12 @@ static bool IsSameOriginWithAncestors(nsPIDOMWindowInner* aParent) {
 
   
   
+  if (!wgc) {
+    return false;
+  }
+
+  
+  
   for (WindowContext* parentContext =
            wgc->WindowContext()->GetParentWindowContext();
        parentContext; parentContext = parentContext->GetParentWindowContext()) {
