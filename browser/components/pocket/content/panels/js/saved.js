@@ -19,13 +19,13 @@ var PKT_SAVED_OVERLAY = function(options) {
   this.closeValid = true;
   this.mouseInside = false;
   this.autocloseTimer = null;
-  this.inoverflowmenu = false;
   this.dictJSON = {};
   this.autocloseTimerEnabled = false;
   this.autocloseTiming = 4500;
   this.autocloseTimingFinalState = 2000;
   this.mouseInside = false;
   this.userTags = [];
+  this.tagsDropdownOpen = false;
   this.cxt_suggested_available = 0;
   this.cxt_entered = 0;
   this.cxt_suggested = 0;
@@ -309,8 +309,10 @@ var PKT_SAVED_OVERLAY = function(options) {
         myself.checkPlaceholderStatus();
       },
       onShowDropdown() {
-        $(".pkt_ext_item_recs").hide(); 
-        thePKT_SAVED.sendMessage("PKT_expandSavePanel");
+        myself.tagsDropdownOpen = true;
+      },
+      onHideDropdown() {
+        myself.tagsDropdownOpen = false;
       },
     });
     $("body").on("keydown", function(e) {
@@ -540,27 +542,9 @@ var PKT_SAVED_OVERLAY = function(options) {
       
       const model = data.recommendations[0].experiment;
       const renderedRecs = Handlebars.templates.item_recs(data);
-
-      
-      thePKT_SAVED.sendMessage(
-        "PKT_resizePanel",
-        {
-          width: 350,
-          height: this.premiumStatus ? 535 : 424, 
-        },
-        () => {
-          
-          
-          
-          
-          
-          
-          $("body").addClass("recs_enabled");
-          $(".pkt_ext_subshell").show();
-          $(".pkt_ext_item_recs").append(renderedRecs);
-        }
-      );
-
+      $("body").addClass("recs_enabled");
+      $(".pkt_ext_subshell").show();
+      $(".pkt_ext_item_recs").append(renderedRecs);
       $(".pkt_ext_item_recs_link").click(function(e) {
         e.preventDefault();
         const url = $(this).attr("href");
@@ -632,11 +616,6 @@ PKT_SAVED_OVERLAY.prototype = {
     this.dictJSON.pockethost = this.pockethost;
 
     
-    if (this.inoverflowmenu) {
-      $("body").addClass("pkt_ext_saved_overflow");
-    }
-
-    
     if (this.locale) {
       $("body").addClass("pkt_ext_saved_" + this.locale);
     }
@@ -681,6 +660,7 @@ PKT_SAVED.prototype = {
     }
     this.panelId = pktPanelMessaging.panelIdFromURL(window.location.href);
     this.overlay = new PKT_SAVED_OVERLAY();
+    this.setupMutationObserver();
 
     this.inited = true;
   },
@@ -691,6 +671,42 @@ PKT_SAVED.prototype = {
 
   sendMessage(messageId, payload, callback) {
     pktPanelMessaging.sendMessage(messageId, this.panelId, payload, callback);
+  },
+
+  setupMutationObserver() {
+    
+    const targetNode = document.body;
+
+    
+    const config = { attributes: false, childList: true, subtree: true };
+
+    
+    const callback = (mutationList, observer) => {
+      mutationList.forEach(mutation => {
+        switch (mutation.type) {
+          case "childList": {
+            
+
+
+            let clientHeight = document.body.clientHeight;
+            if (this.overlay.tagsDropdownOpen) {
+              clientHeight = Math.max(clientHeight, 252);
+            }
+            thePKT_SAVED.sendMessage("PKT_resizePanel", {
+              width: document.body.clientWidth,
+              height: clientHeight,
+            });
+            break;
+          }
+        }
+      });
+    };
+
+    
+    const observer = new MutationObserver(callback);
+
+    
+    observer.observe(targetNode, config);
   },
 
   create() {
@@ -706,12 +722,6 @@ PKT_SAVED.prototype = {
     var host = window.location.href.match(/pockethost=([\w|\.]*)&?/);
     if (host && host.length > 1) {
       myself.overlay.pockethost = host[1];
-    }
-    var inoverflowmenu = window.location.href.match(
-      /inoverflowmenu=([\w|\.]*)&?/
-    );
-    if (inoverflowmenu && inoverflowmenu.length > 1) {
-      myself.overlay.inoverflowmenu = inoverflowmenu[1] == "true";
     }
     var locale = window.location.href.match(/locale=([\w|\.]*)&?/);
     if (locale && locale.length > 1) {
