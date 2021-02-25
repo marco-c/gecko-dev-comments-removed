@@ -1584,6 +1584,18 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     
     
     insert = true;
+
+    
+    
+    
+    
+    if (frame && !frame->StyleVisibility()->IsVisible()) {
+      ContentRemoved(aRoot);
+      
+      
+      
+      insert = false;
+    }
   } else {
     
     
