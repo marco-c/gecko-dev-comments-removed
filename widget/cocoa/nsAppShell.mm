@@ -138,6 +138,10 @@ void OnUncaughtException(NSException* aException) {
 
 
 - (void)reportException:(NSException*)aException {
+  if (ShouldIgnoreObjCException(aException)) {
+    return;
+  }
+
   nsObjCExceptionLog(aException);
   MOZ_CRASH("Uncaught Objective C exception from -[GeckoNSApplication reportException:]");
 }

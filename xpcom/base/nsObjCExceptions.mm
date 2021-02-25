@@ -30,3 +30,19 @@ void nsObjCExceptionLog(NSException* aException) {
   NSLog(@"Stack trace:\n%@", [aException callStackSymbols]);
 #endif
 }
+
+namespace mozilla {
+
+bool ShouldIgnoreObjCException(NSException* aException) {
+  
+  
+  if (aException.name == NSInternalInconsistencyException) {
+    if ([aException.reason containsString:@"Missing Touches."]) {
+      
+      return true;
+    }
+  }
+  return false;
+}
+
+}  

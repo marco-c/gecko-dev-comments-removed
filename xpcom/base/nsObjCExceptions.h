@@ -18,6 +18,14 @@
 
 void nsObjCExceptionLog(NSException* aException);
 
+namespace mozilla {
+
+
+
+bool ShouldIgnoreObjCException(NSException* aException);
+
+}
+
 
 
 #define NS_OBJC_BEGIN_TRY_ABORT_BLOCK @try {
