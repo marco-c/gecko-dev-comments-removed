@@ -59,7 +59,6 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
         "libx11-xcb-dev",
         "libxt-dev",
         "xvfb",
-        "yasm",
     ]
 
     
