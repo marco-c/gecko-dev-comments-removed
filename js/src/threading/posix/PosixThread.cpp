@@ -88,9 +88,16 @@ void ThisThread::SetName(const char* name) {
   MOZ_RELEASE_ASSERT(name);
 
 #if (defined(__APPLE__) && defined(__MACH__)) || defined(__linux__)
+#  if defined(XP_DARWIN)
   
   
-  char nameBuf[16];
+#    define SETNAME_LENGTH_CONSTRAINT 63
+#  else
+  
+  
+#    define SETNAME_LENGTH_CONSTRAINT 15
+#  endif
+  char nameBuf[SETNAME_LENGTH_CONSTRAINT + 1];
 
   strncpy(nameBuf, name, sizeof nameBuf - 1);
   nameBuf[sizeof nameBuf - 1] = '\0';
