@@ -947,9 +947,19 @@ var BrowserTestUtils = {
 
 
 
-  domWindowOpenedAndLoaded(win) {
-    return this.domWindowOpened(win, async win => {
-      await this.waitForEvent(win, "load");
+
+
+
+
+
+
+
+  domWindowOpenedAndLoaded(win, checkFn) {
+    return this.domWindowOpened(win, async observedWin => {
+      await this.waitForEvent(observedWin, "load");
+      if (checkFn && !(await checkFn(observedWin))) {
+        return false;
+      }
       return true;
     });
   },
@@ -2269,7 +2279,7 @@ var BrowserTestUtils = {
       
       
       
-      win = await this.domWindowOpenedAndLoaded(null, async win => {
+      win = await this.domWindowOpenedAndLoaded(null, win => {
         return win.document.documentURI === uri;
       });
     }
