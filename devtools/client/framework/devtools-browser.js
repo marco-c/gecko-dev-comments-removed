@@ -555,16 +555,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
   
 
 
-  unsetSlowScriptDebugHandler() {
-    const debugService = Cc["@mozilla.org/dom/slow-script-debug;1"].getService(
-      Ci.nsISlowScriptDebug
-    );
-    debugService.activationHandler = undefined;
-  },
-
-  
-
-
 
 
 
@@ -610,10 +600,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
       
       
       gDevToolsBrowser._updateMenuItems(win);
-    }
-
-    if (toolDefinition.id === "jsdebugger") {
-      gDevToolsBrowser.setSlowScriptDebugHandler();
     }
   },
 
@@ -698,10 +684,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
   _removeToolFromWindows(toolId) {
     for (const win of gDevToolsBrowser._trackedBrowserWindows) {
       BrowserMenus.removeToolFromMenu(toolId, win.document);
-    }
-
-    if (toolId === "jsdebugger") {
-      gDevToolsBrowser.unsetSlowScriptDebugHandler();
     }
   },
 
@@ -792,6 +774,8 @@ gDevTools.on("tool-registered", function(toolId) {
     gDevToolsBrowser._addToolToWindows(toolDefinition);
   }
 });
+
+gDevToolsBrowser.setSlowScriptDebugHandler();
 
 gDevTools.on("tool-unregistered", function(toolId) {
   gDevToolsBrowser._removeToolFromWindows(toolId);
