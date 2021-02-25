@@ -178,7 +178,7 @@ impl VariableValue {
         
         
         
-        const MAX_VALUE_LENGTH_IN_BYTES: usize = 1024 * 1024;
+        const MAX_VALUE_LENGTH_IN_BYTES: usize = 2 * 1024 * 1024;
 
         if self.css.len() + css.len() > MAX_VALUE_LENGTH_IN_BYTES {
             return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
