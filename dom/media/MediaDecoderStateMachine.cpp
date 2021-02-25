@@ -403,8 +403,7 @@ class MediaDecoderStateMachine::DormantState
 
     
     
-    
-    mMaster->ResetDecode(TrackInfo::kVideoTrack);
+    mMaster->ResetDecode();
 
     
     
