@@ -2114,10 +2114,6 @@ class CreateMachEnvironment(MachCommandBase):
         else:
             manager.build(sys.executable)
 
-        manager.install_pip_requirements(
-            os.path.join(self.topsrcdir, "build", "zstandard_requirements.txt")
-        )
-
         try:
             
             
@@ -2131,6 +2127,10 @@ class CreateMachEnvironment(MachCommandBase):
             )
 
         if not PY2:
+            manager.install_pip_requirements(
+                os.path.join(self.topsrcdir, "build", "zstandard_requirements.txt")
+            )
+
             
             
             try:
