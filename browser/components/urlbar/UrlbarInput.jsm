@@ -3056,6 +3056,8 @@ class UrlbarInput {
       event.stopImmediatePropagation();
 
       this.inputField.value = oldStart + pasteData + oldEnd;
+      this._untrimmedValue = this.inputField.value;
+
       
       let newCursorPos = oldStart.length + pasteData.length;
       this.selectionStart = newCursorPos;
