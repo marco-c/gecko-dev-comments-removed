@@ -1545,15 +1545,19 @@ bool CompilationStencil::deserializeStencils(JSContext* cx,
   return true;
 }
 
+ExtensibleCompilationStencil::ExtensibleCompilationStencil(
+    JSContext* cx, LifoAlloc& stencilAlloc)
+    : parserAtoms(cx->runtime(), stencilAlloc) {}
+
 CompilationState::CompilationState(JSContext* cx,
                                    LifoAllocScope& frontendAllocScope,
                                    CompilationInput& input,
                                    LifoAlloc& stencilAlloc)
-    : directives(input.options.forceStrictMode()),
+    : ExtensibleCompilationStencil(cx, stencilAlloc),
+      directives(input.options.forceStrictMode()),
       usedNames(cx),
       allocScope(frontendAllocScope),
-      input(input),
-      parserAtoms(cx->runtime(), stencilAlloc) {}
+      input(input) {}
 
 SharedDataContainer::~SharedDataContainer() {
   if (isEmpty()) {

@@ -597,9 +597,32 @@ inline const CompilationStencil& BaseCompilationStencil::asCompilationStencil()
   return *static_cast<const CompilationStencil*>(this);
 }
 
-struct MOZ_RAII CompilationState {
+
+
+
+
+struct ExtensibleCompilationStencil {
+  Vector<ScriptStencil, 0, js::SystemAllocPolicy> scriptData;
+  Vector<ScriptStencilExtra, 0, js::SystemAllocPolicy> scriptExtra;
+
+  Vector<TaggedScriptThingIndex, 0, js::SystemAllocPolicy> gcThingData;
+
+  Vector<ScopeStencil, 0, js::SystemAllocPolicy> scopeData;
+  Vector<BaseParserScopeData*, 0, js::SystemAllocPolicy> scopeNames;
+
+  Vector<RegExpStencil, 0, js::SystemAllocPolicy> regExpData;
+  Vector<BigIntStencil, 0, js::SystemAllocPolicy> bigIntData;
+  Vector<ObjLiteralStencil, 0, js::SystemAllocPolicy> objLiteralData;
+
+  StencilAsmJSContainer asmJS;
+
   
-  
+  ParserAtomsTable parserAtoms;
+
+  ExtensibleCompilationStencil(JSContext* cx, LifoAlloc& stencilAlloc);
+};
+
+struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
   Directives directives;
 
   ScopeContext scopeContext;
@@ -608,26 +631,6 @@ struct MOZ_RAII CompilationState {
   LifoAllocScope& allocScope;
 
   CompilationInput& input;
-
-  
-  
-  
-  
-  Vector<RegExpStencil, 0, js::SystemAllocPolicy> regExpData;
-  Vector<BigIntStencil, 0, js::SystemAllocPolicy> bigIntData;
-  Vector<ObjLiteralStencil, 0, js::SystemAllocPolicy> objLiteralData;
-  Vector<ScriptStencil, 0, js::SystemAllocPolicy> scriptData;
-  Vector<ScriptStencilExtra, 0, js::SystemAllocPolicy> scriptExtra;
-  Vector<ScopeStencil, 0, js::SystemAllocPolicy> scopeData;
-  Vector<BaseParserScopeData*, 0, js::SystemAllocPolicy> scopeNames;
-  Vector<TaggedScriptThingIndex, 0, js::SystemAllocPolicy> gcThingData;
-
-  
-  
-  StencilAsmJSContainer asmJS;
-
-  
-  ParserAtomsTable parserAtoms;
 
   
   
