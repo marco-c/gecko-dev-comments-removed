@@ -75,14 +75,13 @@ bool DataViewObject::getAndCheckConstructorArgs(JSContext* cx,
                                                 BufferSize* byteOffsetPtr,
                                                 BufferSize* byteLengthPtr) {
   
-  if (!IsArrayBufferMaybeShared(bufobj)) {
+  if (!bufobj->is<ArrayBufferObjectMaybeShared>()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_NOT_EXPECTED_TYPE, "DataView",
                               "ArrayBuffer", bufobj->getClass()->name);
     return false;
   }
-  Rooted<ArrayBufferObjectMaybeShared*> buffer(
-      cx, &AsArrayBufferMaybeShared(bufobj));
+  auto buffer = bufobj.as<ArrayBufferObjectMaybeShared>();
 
   
   uint64_t offset;
@@ -151,8 +150,7 @@ bool DataViewObject::constructSameCompartment(JSContext* cx,
     return false;
   }
 
-  Rooted<ArrayBufferObjectMaybeShared*> buffer(
-      cx, &AsArrayBufferMaybeShared(bufobj));
+  auto buffer = bufobj.as<ArrayBufferObjectMaybeShared>();
   JSObject* obj =
       DataViewObject::create(cx, byteOffset, byteLength, buffer, proto);
   if (!obj) {

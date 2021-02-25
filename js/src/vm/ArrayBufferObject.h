@@ -504,19 +504,6 @@ bool CreateWasmBuffer(JSContext* cx, wasm::MemoryKind memKind,
 
 
 
-
-bool IsArrayBuffer(HandleValue v);
-bool IsArrayBuffer(JSObject* obj);
-ArrayBufferObject& AsArrayBuffer(JSObject* obj);
-
-
-
-
-bool IsArrayBufferMaybeShared(JSObject* obj);
-ArrayBufferObjectMaybeShared& AsArrayBufferMaybeShared(JSObject* obj);
-
-
-
 class InnerViewTable {
  public:
   typedef Vector<JSObject*, 1, ZoneAllocPolicy> ViewVector;
