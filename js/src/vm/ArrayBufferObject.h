@@ -512,7 +512,6 @@ ArrayBufferObject& AsArrayBuffer(JSObject* obj);
 
 
 
-bool IsArrayBufferMaybeShared(HandleValue v);
 bool IsArrayBufferMaybeShared(JSObject* obj);
 ArrayBufferObjectMaybeShared& AsArrayBufferMaybeShared(JSObject* obj);
 
