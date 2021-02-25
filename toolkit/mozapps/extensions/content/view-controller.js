@@ -33,16 +33,16 @@ async function initialize(resolvePromiseInitialized) {
 
   
   
-  if (gViewController.initialViewSelected) {
+  if (gViewController.currentViewId) {
     return;
   }
 
   if (history.state) {
     
-    gViewController.updateState(history.state);
+    gViewController.renderState(history.state);
   } else if (!gViewController.currentViewId) {
     
-    gViewController.loadInitialView(
+    gViewController.loadView(
       document.querySelector("categories-box").initialViewId
     );
   }
@@ -80,30 +80,22 @@ async function recordViewTelemetry(param) {
 }
 
 
-async function loadView(aViewId) {
+async function loadView(viewId) {
   
   
   await window.promiseInitialized;
 
-  if (!gViewController.initialViewSelected) {
-    
-    
-
-    gViewController.loadInitialView(aViewId);
-  } else {
-    gViewController.loadView(aViewId);
-  }
+  gViewController.loadView(viewId);
 }
 
 var gViewController = {
-  currentViewId: "",
+  currentViewId: null,
   get defaultViewId() {
     if (!isDiscoverEnabled()) {
       return "addons://list/extension";
     }
     return "addons://discover/";
   },
-  initialViewSelected: false,
   isLoading: true,
   
   
@@ -119,91 +111,69 @@ var gViewController = {
         await this.loadView(viewId);
       },
       replaceWithDefaultViewFn: async () => {
-        await this.replaceView(this.defaultViewId);
+        await this.resetState();
       },
     });
 
     window.addEventListener("popstate", e => {
-      this.updateState(e.state);
+      this.renderState(e.state);
     });
   },
 
-  updateState(state) {
-    this.loadViewInternal(state.view, state.previousView, state);
-  },
-
   parseViewId(aViewId) {
-    var matchRegex = /^addons:\/\/([^\/]+)\/(.*)$/;
-    var [, viewType, viewParam] = aViewId.match(matchRegex) || [];
+    const matchRegex = /^addons:\/\/([^\/]+)\/(.*)$/;
+    const [, viewType, viewParam] = aViewId.match(matchRegex) || [];
     return { type: viewType, param: decodeURIComponent(viewParam) };
   },
 
-  loadView(aViewId) {
-    if (aViewId == this.currentViewId) {
-      return;
+  loadView(viewId, replace = false) {
+    if (viewId == this.currentViewId) {
+      return Promise.resolve();
     }
 
-    var state = {
-      view: aViewId,
-      previousView: this.currentViewId,
+    
+    replace = replace || !this.currentViewId;
+
+    const state = {
+      view: viewId,
+      previousView: replace ? null : this.currentViewId,
       historyEntryId: ++this.nextHistoryEntryId,
     };
-    history.pushState(state, "");
-    this.loadViewInternal(aViewId, this.currentViewId, state);
-  },
-
-  
-  
-  replaceView(aViewId) {
-    if (aViewId == this.currentViewId) {
-      return;
+    if (replace) {
+      history.replaceState(state, "");
+    } else {
+      history.pushState(state, "");
     }
-
-    var state = {
-      view: aViewId,
-      previousView: null,
-      historyEntryId: ++this.nextHistoryEntryId,
-    };
-    history.replaceState(state, "");
-    this.loadViewInternal(aViewId, null, state);
+    return this.renderState(state);
   },
 
-  loadInitialView(aViewId) {
-    let state = {
-      view: aViewId,
-      previousView: null,
-      historyEntryId: ++this.nextHistoryEntryId,
-    };
-    history.replaceState(state, "");
-    this.loadViewInternal(aViewId, null, state);
-  },
-
-  loadViewInternal(aViewId, aPreviousView, aState) {
-    const view = this.parseViewId(aViewId);
+  renderState(state) {
+    const view = this.parseViewId(state.view);
     const viewTypes = ["shortcuts", "list", "detail", "updates", "discover"];
 
     if (!view.type || !viewTypes.includes(view.type)) {
       throw Components.Exception("Invalid view: " + view.type);
     }
 
-    this.currentViewId = aViewId;
+    this.currentViewId = state.view;
     this.isLoading = true;
 
     recordViewTelemetry(view.param);
 
     let promiseLoad;
-    if (aViewId != aPreviousView) {
-      promiseLoad = showView(view.type, view.param, aState).then(() => {
+    if (state.view != state.previousView) {
+      promiseLoad = showView(view.type, view.param, state).then(() => {
         this.isLoading = false;
 
-        var event = document.createEvent("Events");
+        const event = document.createEvent("Events");
         event.initEvent("ViewChanged", true, true);
         document.dispatchEvent(event);
       });
     }
-
-    this.initialViewSelected = true;
-
     return promiseLoad;
+  },
+
+  resetState() {
+    return this.loadView(this.defaultViewId, true);
   },
 };
