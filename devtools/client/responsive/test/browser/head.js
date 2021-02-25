@@ -522,7 +522,6 @@ function getSessionHistory(browser) {
     const browsingContext = browser.browsingContext;
     const uri = browsingContext.currentWindowGlobal.documentURI.displaySpec;
     const history = browsingContext.sessionHistory;
-    const userContextId = browsingContext.originAttributes.userContextId;
     const body = ContentTask.spawn(browser, browsingContext, function(
       
       browsingContext
@@ -536,7 +535,7 @@ function getSessionHistory(browser) {
     const { SessionHistory } = ChromeUtils.import(
       "resource://gre/modules/sessionstore/SessionHistory.jsm"
     );
-    return SessionHistory.collectFromParent(uri, body, history, userContextId);
+    return SessionHistory.collectFromParent(uri, body, history);
     
   }
   return ContentTask.spawn(browser, null, function() {
