@@ -283,10 +283,6 @@ pref("browser.startup.preXulSkeletonUI", false);
 
 pref("toolkit.lazyHiddenWindow", true);
 
-pref("browser.slowStartup.notificationDisabled", false);
-pref("browser.slowStartup.timeThreshold", 20000);
-pref("browser.slowStartup.maxSamples", 5);
-
 pref("browser.chrome.site_icons", true);
 
 pref("browser.warnOnQuit", true);
