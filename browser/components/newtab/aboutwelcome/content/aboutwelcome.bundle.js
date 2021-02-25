@@ -453,6 +453,9 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
   constructor(props) {
     super(props);
     this.handleAction = this.handleAction.bind(this);
+    this.state = {
+      alternateContent: ""
+    };
   }
 
   handleOpenURL(action, flowParams, UTMTerm) {
@@ -521,6 +524,23 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
         await window.AWWaitForMigrationClose();
         _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__["AboutWelcomeUtils"].sendActionTelemetry(props.messageId, "migrate_close");
       }
+    } 
+
+
+    if (action.waitForDefault) {
+      
+      this.setState({
+        alternateContent: "waiting_for_default"
+      }); 
+
+      await new Promise(resolve => async function checkDefault() {
+        if (await window.AWIsDefaultBrowser()) {
+          resolve();
+        } else {
+          setTimeout(checkDefault, 100);
+        }
+      }());
+      _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__["AboutWelcomeUtils"].sendActionTelemetry(props.messageId, "default_browser");
     } 
 
 
@@ -668,10 +688,16 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
   }
 
   render() {
+    
     const {
       content,
       topSites
     } = this.props;
+
+    if (content[this.state.alternateContent]) {
+      Object.assign(content, content[this.state.alternateContent]);
+    }
+
     const showImportableSitesDisclaimer = content.tiles && content.tiles.type === "topsites" && topSites && topSites.showImportable;
     return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("main", {
       className: `screen ${this.props.id}`
@@ -690,7 +716,7 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
       className: "primary",
       value: "primary_button",
       onClick: this.handleAction
-    }))), content.secondary_button ? this.renderSecondaryCTA() : null, content.help_text && content.help_text.position === "default" ? this.renderHelpText() : null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("nav", {
+    }))), content.help_text && content.help_text.position === "default" ? this.renderHelpText() : null, content.secondary_button ? this.renderSecondaryCTA() : null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("nav", {
       className: content.help_text && content.help_text.position === "footer" || showImportableSitesDisclaimer ? "steps has-helptext" : "steps",
       "data-l10n-id": "onboarding-welcome-steps-indicator",
       "data-l10n-args": `{"current": ${parseInt(this.props.order, 10) + 1}, "total": ${this.props.totalNumberOfScreens}}`

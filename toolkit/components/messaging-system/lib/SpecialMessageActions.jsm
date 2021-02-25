@@ -84,6 +84,23 @@ const SpecialMessageActions = {
 
 
 
+  pinFirefoxToTaskbar(window) {
+    try {
+      
+      window
+        .getShellService()
+        .QueryInterface(Ci.nsIWindowsShellService)
+        .pinCurrentAppToTaskbar();
+    } catch (e) {
+      Cu.reportError(e);
+    }
+  },
+
+  
+
+
+
+
   setDefaultBrowser(window) {
     window.getShellService().setAsDefault();
   },
@@ -228,6 +245,13 @@ const SpecialMessageActions = {
           action.data.url,
           action.data.telemetrySource
         );
+        break;
+      case "PIN_FIREFOX_TO_TASKBAR":
+        this.pinFirefoxToTaskbar(window);
+        break;
+      case "PIN_AND_DEFAULT":
+        this.pinFirefoxToTaskbar(window);
+        this.setDefaultBrowser(window);
         break;
       case "SET_DEFAULT_BROWSER":
         this.setDefaultBrowser(window);
