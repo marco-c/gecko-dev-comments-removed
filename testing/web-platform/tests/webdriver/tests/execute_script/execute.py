@@ -1,5 +1,6 @@
 import pytest
 
+from webdriver.error import NoSuchAlertException
 from webdriver.transport import Response
 
 from tests.support.asserts import assert_error, assert_success
@@ -89,7 +90,14 @@ def test_abort_by_user_prompt_twice(session, dialog_type):
 
     
     
-    
-    assert session.alert.text == "Bye"
+    wait = Poll(
+        session,
+        timeout=5,
+        message="Second alert has not been opened",
+        ignored_exceptions=NoSuchAlertException
+    )
+    text = wait.until(lambda s: s.alert.text)
+
+    assert text == "Bye"
 
     session.alert.accept()
