@@ -32,6 +32,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_print.h"
 
+#include <dlfcn.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -136,6 +137,72 @@ struct {
 #undef DECLARE_KNOWN_MONOCHROME_SETTING
 
 
+static GtkPaperSize* GtkPaperSizeFromIpp(const gchar* aIppName, gdouble aWidth,
+                                         gdouble aHeight) {
+  static auto sPtr = (GtkPaperSize * (*)(const gchar*, gdouble, gdouble))
+      dlsym(RTLD_DEFAULT, "gtk_paper_size_new_from_ipp");
+  if (gtk_check_version(3, 16, 0)) {
+    return nullptr;
+  }
+  return sPtr(aIppName, aWidth, aHeight);
+}
+
+static bool PaperSizeAlmostEquals(GtkPaperSize* aSize,
+                                  GtkPaperSize* aOtherSize) {
+  const double kEpsilon = 1.0;  
+  
+  if (fabs(gtk_paper_size_get_height(aSize, GTK_UNIT_MM) -
+           gtk_paper_size_get_height(aOtherSize, GTK_UNIT_MM)) > kEpsilon) {
+    return false;
+  }
+  if (fabs(gtk_paper_size_get_width(aSize, GTK_UNIT_MM) -
+           gtk_paper_size_get_width(aOtherSize, GTK_UNIT_MM)) > kEpsilon) {
+    return false;
+  }
+  return true;
+}
+
+
+
+
+
+
+static GtkPaperSize* GetStandardGtkPaperSize(GtkPaperSize* aGeckoPaperSize) {
+  const gchar* geckoName = gtk_paper_size_get_name(aGeckoPaperSize);
+
+  
+  
+  
+  GtkPaperSize* size = GtkPaperSizeFromIpp(
+      geckoName, gtk_paper_size_get_width(aGeckoPaperSize, GTK_UNIT_POINTS),
+      gtk_paper_size_get_height(aGeckoPaperSize, GTK_UNIT_POINTS));
+  if (size && !gtk_paper_size_is_custom(size)) {
+    return size;
+  }
+
+  if (size) {
+    gtk_paper_size_free(size);
+  }
+
+  size = gtk_paper_size_new(geckoName);
+  if (gtk_paper_size_is_equal(size, aGeckoPaperSize)) {
+    return size;
+  }
+
+  
+  
+  
+  
+  if (PaperSizeAlmostEquals(aGeckoPaperSize, size)) {
+    return size;
+  }
+
+  
+  gtk_paper_size_free(size);
+  return nullptr;
+}
+
+
 
 
 
@@ -143,12 +210,10 @@ struct {
 NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget* aWidget,
                                            nsIPrintSettings* aPS,
                                            bool aIsPrintPreview) {
-  if (gtk_major_version < 2 ||
-      (gtk_major_version == 2 && gtk_minor_version < 10))
-    return NS_ERROR_NOT_AVAILABLE;  
-
   mPrintSettings = do_QueryInterface(aPS);
-  if (!mPrintSettings) return NS_ERROR_NO_INTERFACE;
+  if (!mPrintSettings) {
+    return NS_ERROR_NO_INTERFACE;
+  }
 
   
   bool toFile;
@@ -159,14 +224,8 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget* aWidget,
   mGtkPrintSettings = mPrintSettings->GetGtkPrintSettings();
   mGtkPageSetup = mPrintSettings->GetGtkPageSetup();
 
-  
-  
-  
-  
-  GtkPaperSize* geckosHackishPaperSize =
-      gtk_page_setup_get_paper_size(mGtkPageSetup);
-  GtkPaperSize* standardGtkPaperSize =
-      gtk_paper_size_new(gtk_paper_size_get_name(geckosHackishPaperSize));
+  GtkPaperSize* geckoPaperSize = gtk_page_setup_get_paper_size(mGtkPageSetup);
+  GtkPaperSize* gtkPaperSize = GetStandardGtkPaperSize(geckoPaperSize);
 
   mGtkPageSetup = gtk_page_setup_copy(mGtkPageSetup);
   mGtkPrintSettings = gtk_print_settings_copy(mGtkPrintSettings);
@@ -185,16 +244,13 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget* aWidget,
     nsPrinterCUPS::ForEachExtraMonochromeSetting(applySetting);
   }
 
-  GtkPaperSize* properPaperSize;
-  if (gtk_paper_size_is_equal(geckosHackishPaperSize, standardGtkPaperSize)) {
-    properPaperSize = standardGtkPaperSize;
-  } else {
-    properPaperSize = geckosHackishPaperSize;
-  }
+  GtkPaperSize* properPaperSize = gtkPaperSize ? gtkPaperSize : geckoPaperSize;
   gtk_print_settings_set_paper_size(mGtkPrintSettings, properPaperSize);
   gtk_page_setup_set_paper_size_and_default_margins(mGtkPageSetup,
                                                     properPaperSize);
-  gtk_paper_size_free(standardGtkPaperSize);
+  if (gtkPaperSize) {
+    gtk_paper_size_free(gtkPaperSize);
+  }
 
   return NS_OK;
 }
