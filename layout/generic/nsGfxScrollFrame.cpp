@@ -4329,12 +4329,18 @@ bool ScrollFrameHelper::DecideScrollableLayer(
       !DisplayPortUtils::HasDisplayPort(content) &&
       nsLayoutUtils::AsyncPanZoomEnabled(mOuter) && WantAsyncScroll() &&
       aBuilder->IsPaintingToWindow() && aSetBase) {
+    
+    
+    
+    
+    
+    content->SetProperty(nsGkAtoms::MinimalDisplayPort,
+                         reinterpret_cast<void*>(true));
+
     DisplayPortUtils::SetDisplayPortMargins(
         content, mOuter->PresShell(), DisplayPortMargins::Empty(content),
         DisplayPortUtils::ClearMinimalDisplayPortProperty::No, 0,
         DisplayPortUtils::RepaintMode::DoNotRepaint);
-    content->SetProperty(nsGkAtoms::MinimalDisplayPort,
-                         reinterpret_cast<void*>(true));
   }
 
   bool usingDisplayPort = DisplayPortUtils::HasDisplayPort(content);
