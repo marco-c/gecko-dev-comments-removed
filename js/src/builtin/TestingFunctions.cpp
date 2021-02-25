@@ -5003,17 +5003,19 @@ static bool CompileStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
 
   Rooted<frontend::CompilationInput> input(cx,
                                            frontend::CompilationInput(options));
-  UniquePtr<frontend::CompilationStencil> stencil =
-      frontend::CompileGlobalScriptToStencil(cx, input.get(), srcBuf,
-                                             ScopeKind::Global);
+  auto stencil = frontend::CompileGlobalScriptToExtensibleStencil(
+      cx, input.get(), srcBuf, ScopeKind::Global);
   if (!stencil) {
     return false;
   }
 
   
   JS::TranscodeBuffer xdrBytes;
-  if (!stencil->serializeStencils(cx, input.get(), xdrBytes)) {
-    return false;
+  {
+    frontend::BorrowingCompilationStencil borrowingStencil(*stencil);
+    if (!borrowingStencil.serializeStencils(cx, input.get(), xdrBytes)) {
+      return false;
+    }
   }
 
   
