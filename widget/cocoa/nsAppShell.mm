@@ -134,6 +134,14 @@ void OnUncaughtException(NSException* aException) {
   NSSetUncaughtExceptionHandler(OnUncaughtException);
 }
 
+
+
+
+- (void)reportException:(NSException*)aException {
+  nsObjCExceptionLog(aException);
+  MOZ_CRASH("Uncaught Objective C exception from -[GeckoNSApplication reportException:]");
+}
+
 - (void)sendEvent:(NSEvent*)anEvent {
   mozilla::BackgroundHangMonitor().NotifyActivity();
 
