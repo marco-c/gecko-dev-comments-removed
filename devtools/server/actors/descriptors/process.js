@@ -74,7 +74,12 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
       
       
       
-      targetActor = new ParentProcessTargetActor(this.conn);
+      targetActor = new ParentProcessTargetActor(this.conn, {
+        
+        
+        
+        isTopLevelTarget: true,
+      });
       
       
       

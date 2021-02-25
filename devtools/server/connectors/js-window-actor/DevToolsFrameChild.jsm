@@ -260,7 +260,8 @@ class DevToolsFrameChild extends JSWindowActorChild {
     );
 
     
-    const targetActor = new FrameTargetActor(connection, this.docShell, {
+    const targetActor = new FrameTargetActor(connection, {
+      docShell: this.docShell,
       followWindowGlobalLifeCycle: true,
       doNotFireFrameUpdates: true,
     });

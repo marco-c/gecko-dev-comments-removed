@@ -84,11 +84,12 @@ const webExtensionTargetPrototype = extend({}, parentProcessTargetPrototype);
 
 
 
+
+
+
 webExtensionTargetPrototype.initialize = function(
   conn,
-  chromeGlobal,
-  prefix,
-  addonId
+  { addonId, chromeGlobal, isTopLevelTarget, prefix }
 ) {
   this.addonId = addonId;
   this.chromeGlobal = chromeGlobal;
@@ -97,7 +98,10 @@ webExtensionTargetPrototype.initialize = function(
   
   const extensionWindow = this._searchForExtensionWindow();
 
-  parentProcessTargetPrototype.initialize.call(this, conn, extensionWindow);
+  parentProcessTargetPrototype.initialize.call(this, conn, {
+    isTopLevelTarget,
+    window: extensionWindow,
+  });
   this._chromeGlobal = chromeGlobal;
   this._prefix = prefix;
 

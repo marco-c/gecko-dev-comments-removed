@@ -262,7 +262,15 @@ const browsingContextTargetPrototype = {
 
 
 
-  initialize: function(connection, docShell, options = {}) {
+  initialize: function(
+    connection,
+    {
+      docShell,
+      doNotFireFrameUpdates,
+      followWindowGlobalLifeCycle,
+      isTopLevelTarget,
+    }
+  ) {
     Actor.prototype.initialize.call(this, connection);
 
     if (!docShell) {
@@ -272,9 +280,9 @@ const browsingContextTargetPrototype = {
     }
     this.docShell = docShell;
 
-    this.followWindowGlobalLifeCycle = options.followWindowGlobalLifeCycle;
-    this.doNotFireFrameUpdates = options.doNotFireFrameUpdates;
-    this.isTopLevelTarget = !!options.isTopLevelTarget;
+    this.followWindowGlobalLifeCycle = followWindowGlobalLifeCycle;
+    this.doNotFireFrameUpdates = doNotFireFrameUpdates;
+    this.isTopLevelTarget = !!isTopLevelTarget;
 
     
     this._extraActors = {};

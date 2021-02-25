@@ -50,7 +50,16 @@ const parentProcessTargetPrototype = extend({}, browsingContextTargetPrototype);
 
 
 
-parentProcessTargetPrototype.initialize = function(connection, window) {
+
+
+
+
+
+
+parentProcessTargetPrototype.initialize = function(
+  connection,
+  { isTopLevelTarget, window }
+) {
   
   if (!window) {
     window = Services.wm.getMostRecentWindow(DevToolsServer.chromeWindowType);
@@ -68,17 +77,10 @@ parentProcessTargetPrototype.initialize = function(connection, window) {
     window = Services.appShell.hiddenDOMWindow;
   }
 
-  BrowsingContextTargetActor.prototype.initialize.call(
-    this,
-    connection,
-    window.docShell,
-    {
-      
-      
-      
-      isTopLevelTarget: true,
-    }
-  );
+  BrowsingContextTargetActor.prototype.initialize.call(this, connection, {
+    docShell: window.docShell,
+    isTopLevelTarget,
+  });
 
   
   this.makeDebugger = makeDebugger.bind(null, {

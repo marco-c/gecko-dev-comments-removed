@@ -54,15 +54,18 @@ const chromeWindowTargetPrototype = extend({}, browsingContextTargetPrototype);
 
 
 
-chromeWindowTargetPrototype.initialize = function(connection, window) {
-  BrowsingContextTargetActor.prototype.initialize.call(
-    this,
-    connection,
-    window.docShell,
-    {
-      isTopLevelTarget: true,
-    }
-  );
+
+
+
+chromeWindowTargetPrototype.initialize = function(
+  connection,
+  window,
+  { isTopLevelTarget }
+) {
+  BrowsingContextTargetActor.prototype.initialize.call(this, connection, {
+    docShell: window.docShell,
+    isTopLevelTarget,
+  });
 };
 
 

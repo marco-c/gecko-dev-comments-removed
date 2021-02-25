@@ -67,12 +67,12 @@ try {
         const {
           WebExtensionTargetActor,
         } = require("devtools/server/actors/targets/webextension");
-        actor = new WebExtensionTargetActor(
-          conn,
+        actor = new WebExtensionTargetActor(conn, {
+          addonId,
           chromeGlobal,
+          isTopLevelTarget: true,
           prefix,
-          addonId
-        );
+        });
       } else {
         const {
           FrameTargetActor,
@@ -83,7 +83,8 @@ try {
         
         
         
-        actor = new FrameTargetActor(conn, docShell, {
+        actor = new FrameTargetActor(conn, {
+          docShell,
           isTopLevelTarget: true,
         });
       }
