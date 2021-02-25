@@ -914,7 +914,10 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
   const bool composing = !mIMERanges->IsEmpty();
   nsEventStatus status = nsEventStatus_eIgnore;
   bool textChanged = composing;
-  bool performDeletion = true;
+  
+  bool performDeletion = false;
+  
+  bool needDispatchCompositionStart = false;
 
   if (!mIMEKeyEvents.IsEmpty() || !composition || !mDispatcher->IsComposing() ||
       uint32_t(aStart) != composition->NativeOffsetOfStartComposition() ||
@@ -988,8 +991,14 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
     }
 
     if (aStart != aEnd) {
-      
-      performDeletion = true;
+      if (composing) {
+        
+        
+        needDispatchCompositionStart = true;
+      } else {
+        
+        performDeletion = true;
+      }
     }
   } else if (composition->String().Equals(string)) {
     
@@ -1014,7 +1023,14 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
     }
   }
 
-  if (performDeletion) {
+  if (needDispatchCompositionStart) {
+    
+    nsEventStatus status = nsEventStatus_eIgnore;
+    mDispatcher->StartComposition(status);
+    if (!mDispatcher || widget->Destroyed()) {
+      return false;
+    }
+  } else if (performDeletion) {
     WidgetContentCommandEvent event(true, eContentCommandDelete, widget);
     event.mTime = PR_Now() / 1000;
     widget->DispatchEvent(&event, status);
