@@ -3,15 +3,7 @@
 
 
 module.exports = {
-  plugins: [
-    "react",
-    "mozilla",
-    "flowtype",
-    "babel",
-    "prettier",
-    "import",
-    "file-header",
-  ],
+  plugins: ["react", "mozilla", "babel", "prettier", "import", "file-header"],
   globals: {
     atob: true,
     btoa: true,
@@ -37,12 +29,7 @@ module.exports = {
     global: true,
     L10N: true,
   },
-  extends: [
-    "prettier",
-    "prettier/flowtype",
-    "prettier/react",
-    "plugin:jest/recommended",
-  ],
+  extends: ["prettier", "prettier/react", "plugin:jest/recommended"],
   parserOptions: {
     ecmaVersion: 2016,
     sourceType: "module",
@@ -92,9 +79,6 @@ module.exports = {
     "import/no-duplicates": "error",
     "import/named": "error",
     "import/export": "error",
-
-    "flowtype/define-flow-type": 1,
-    "flowtype/use-flow-type": 1,
 
     
     
