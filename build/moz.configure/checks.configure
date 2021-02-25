@@ -99,6 +99,11 @@ def checking(what, callback=None):
 
 
 
+
+
+
+
+
 @template
 @imports(_from="mozbuild.shellutil", _import="quote")
 def check_prog(
@@ -108,7 +113,9 @@ def check_prog(
     input=None,
     allow_missing=False,
     paths=None,
+    bootstrap=None,
     when=None,
+    bootstrap_search_path=None,
 ):
     if input is not None:
         
@@ -139,6 +146,20 @@ def check_prog(
     progs = dependable(progs)
     paths = dependable(paths)
     allow_missing = dependable(allow_missing)
+
+    if bootstrap:
+        if input is var:
+            
+            
+            has_input = depends(input, when=when)(lambda x: x)
+        else:
+            has_input = input
+        
+        if when:
+            bootstrap_when = depends(when, has_input)(lambda w, i: w and not i)
+        else:
+            bootstrap_when = depends(has_input)(lambda i: not i)
+        paths = bootstrap_search_path(bootstrap, paths, when=bootstrap_when)
 
     
     
