@@ -4,7 +4,6 @@
 
 
 #include "FrameAnimator.h"
-#include "GeckoProfiler.h"
 
 #include <utility>
 
@@ -12,6 +11,7 @@
 #include "RasterImage.h"
 #include "imgIContainer.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/StaticPrefs_image.h"
 
 namespace mozilla {

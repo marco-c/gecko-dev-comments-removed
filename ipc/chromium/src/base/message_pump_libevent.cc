@@ -18,8 +18,8 @@
 #include "base/time.h"
 #include "nsDependentSubstring.h"
 #include "event.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/UniquePtr.h"
-#include "GeckoProfiler.h"
 
 
 

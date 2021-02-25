@@ -5,9 +5,9 @@
 
 
 #include "xpcprivate.h"
-#include "GeckoProfiler.h"
 #include "StaticComponents.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/ProfilerLabels.h"
 #include "js/String.h"  
 #include "nsJSUtils.h"
 

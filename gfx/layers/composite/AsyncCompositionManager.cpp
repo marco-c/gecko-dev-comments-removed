@@ -9,6 +9,7 @@
 #include "LayerManagerComposite.h"  
 #include "Layers.h"                 
 #include "gfxPoint.h"               
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/ServoBindings.h"  
 #include "mozilla/ScopeExit.h"      
 #include "mozilla/StaticPrefs_apz.h"
@@ -44,7 +45,6 @@
 #  include "mozilla/layers/UiCompositorControllerParent.h"
 #  include "mozilla/widget/AndroidCompositorWidget.h"
 #endif
-#include "GeckoProfiler.h"
 #include "FrameUniformityData.h"
 #include "TreeTraversal.h"  
 #include "VsyncSource.h"
@@ -80,30 +80,17 @@ AsyncCompositionManager::AsyncCompositionManager(
 AsyncCompositionManager::~AsyncCompositionManager() = default;
 
 void AsyncCompositionManager::ResolveRefLayers(
-    CompositorBridgeParent* aCompositor, bool* aHasRemoteContent,
-    bool* aResolvePlugins) {
+    CompositorBridgeParent* aCompositor, bool* aHasRemoteContent) {
   if (aHasRemoteContent) {
     *aHasRemoteContent = false;
   }
 
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  
-  
-  bool resolvePlugins = (aCompositor && aResolvePlugins && *aResolvePlugins);
-#endif
-
   if (!mLayerManager->GetRoot()) {
-    
-    
-    if (aResolvePlugins) {
-      *aResolvePlugins = false;
-    }
     return;
   }
 
   mReadyForCompose = true;
   bool hasRemoteContent = false;
-  bool didResolvePlugins = false;
 
   ForEachNode<ForwardIterator>(mLayerManager->GetRoot(), [&](Layer* layer) {
     RefLayer* refLayer = layer->AsRefLayer();
@@ -136,20 +123,10 @@ void AsyncCompositionManager::ResolveRefLayers(
     }
 
     refLayer->ConnectReferentLayer(referent);
-
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-    if (resolvePlugins) {
-      didResolvePlugins |=
-          aCompositor->UpdatePluginWindowState(refLayer->GetReferentId());
-    }
-#endif
   });
 
   if (aHasRemoteContent) {
     *aHasRemoteContent = hasRemoteContent;
-  }
-  if (aResolvePlugins) {
-    *aResolvePlugins = didResolvePlugins;
   }
 }
 

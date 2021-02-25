@@ -6,7 +6,6 @@
 
 #include "BasicPaintedLayer.h"
 #include <stdint.h>                
-#include "GeckoProfiler.h"         
 #include "ReadbackLayer.h"         
 #include "ReadbackProcessor.h"     
 #include "RenderTrace.h"           
@@ -20,6 +19,7 @@
 #include "mozilla/gfx/Rect.h"      
 #include "mozilla/gfx/Types.h"     
 #include "mozilla/layers/LayersTypes.h"
+#include "mozilla/ProfilerLabels.h"
 #include "nsCOMPtr.h"         
 #include "nsISupportsImpl.h"  
 #include "nsPoint.h"          

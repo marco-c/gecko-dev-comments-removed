@@ -9,6 +9,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/StartupTimeline.h"
 #include "mozilla/dom/Document.h"
 #include "nsGfxCIID.h"
@@ -16,10 +17,8 @@
 #include "nsCOMPtr.h"
 #include "nsRegion.h"
 #include "nsCOMArray.h"
-#include "nsIPluginWidget.h"
 #include "nsXULPopupManager.h"
 #include "nsPresContext.h"
-#include "GeckoProfiler.h"
 #include "nsRefreshDriver.h"
 #include "nsContentUtils.h"  
 #include "nsLayoutUtils.h"
@@ -540,46 +539,8 @@ void nsViewManager::InvalidateWidgetArea(nsView* aWidgetView,
     return;
   }
 
-  
-  
-  
-  nsRegion children;
-  if (widget->GetTransparencyMode() != eTransparencyTransparent) {
-    for (nsIWidget* childWidget = widget->GetFirstChild(); childWidget;
-         childWidget = childWidget->GetNextSibling()) {
-      nsView* view = nsView::GetViewFor(childWidget);
-      NS_ASSERTION(view != aWidgetView, "will recur infinitely");
-      nsWindowType type = childWidget->WindowType();
-      if (view && childWidget->IsVisible() && type != eWindowType_popup) {
-        NS_ASSERTION(childWidget->IsPlugin(),
-                     "Only plugin or popup widgets can be children!");
-
-        
-        
-        
-        
-#ifndef XP_MACOSX
-        
-        LayoutDeviceIntRect bounds = childWidget->GetBounds();
-
-        nsTArray<LayoutDeviceIntRect> clipRects;
-        childWidget->GetWindowClipRegion(&clipRects);
-        for (uint32_t i = 0; i < clipRects.Length(); ++i) {
-          nsRect rr = LayoutDeviceIntRect::ToAppUnits(
-              clipRects[i] + bounds.TopLeft(), AppUnitsPerDevPixel());
-          children.Or(children, rr - aWidgetView->ViewToWidgetOffset());
-          children.SimplifyInward(20);
-        }
-#endif
-      }
-    }
-  }
-
-  nsRegion leftOver;
-  leftOver.Sub(aDamagedRegion, children);
-
-  if (!leftOver.IsEmpty()) {
-    for (auto iter = leftOver.RectIter(); !iter.Done(); iter.Next()) {
+  if (!aDamagedRegion.IsEmpty()) {
+    for (auto iter = aDamagedRegion.RectIter(); !iter.Done(); iter.Next()) {
       LayoutDeviceIntRect bounds = ViewToWidget(aWidgetView, iter.Get());
       widget->Invalidate(bounds);
     }
@@ -670,10 +631,6 @@ void nsViewManager::WillPaintWindow(nsIWidget* aWidget) {
       }
     }
   }
-
-  if (RefPtr<PresShell> presShell = mPresShell) {
-    presShell->WillPaintWindow();
-  }
 }
 
 bool nsViewManager::PaintWindow(nsIWidget* aWidget,
@@ -729,8 +686,7 @@ void nsViewManager::DispatchEvent(WidgetGUIEvent* aEvent, nsView* aView,
   
   nsIFrame* frame = view->GetFrame();
   if (!frame && (dispatchUsingCoordinates || aEvent->HasKeyEventMessage() ||
-                 aEvent->IsIMERelatedEvent() ||
-                 aEvent->HasPluginActivationEventMessage())) {
+                 aEvent->IsIMERelatedEvent())) {
     while (view && !view->GetFrame()) {
       view = view->GetParent();
     }

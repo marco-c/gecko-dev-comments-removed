@@ -5,9 +5,9 @@
 
 
 #include "ClientCanvasLayer.h"
-#include "GeckoProfiler.h"       
 #include "ClientLayerManager.h"  
 #include "nsCOMPtr.h"            
+#include "mozilla/ProfilerLabels.h"
 
 namespace mozilla {
 namespace layers {

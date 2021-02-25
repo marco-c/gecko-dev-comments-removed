@@ -10,7 +10,6 @@
 #include <vector>  
 
 #include "ClientLayerManager.h"  
-#include "GeckoProfiler.h"       
 #include "IPDLActor.h"
 #include "ISurfaceAllocator.h"    
 #include "Layers.h"               
@@ -35,6 +34,7 @@
 #  include "mozilla/layers/TextureSync.h"
 #endif
 #include "ShadowLayerUtils.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/layers/TextureClient.h"  

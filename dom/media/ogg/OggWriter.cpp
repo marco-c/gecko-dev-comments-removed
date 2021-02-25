@@ -4,7 +4,7 @@
 
 #include "OggWriter.h"
 #include "prtime.h"
-#include "GeckoProfiler.h"
+#include "mozilla/ProfilerLabels.h"
 
 #define LOG(args, ...)
 

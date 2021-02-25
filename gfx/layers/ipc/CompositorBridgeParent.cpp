@@ -69,6 +69,8 @@
 #include "mozilla/mozalloc.h"                          
 #include "mozilla/PerfStats.h"
 #include "mozilla/PodOperations.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Telemetry.h"
 #ifdef MOZ_WIDGET_GTK
 #  include "basic/X11BasicCompositor.h"  
@@ -84,7 +86,6 @@
 #  include "mozilla/widget/WinCompositorWidget.h"
 #  include "mozilla/WindowsVersion.h"
 #endif
-#include "GeckoProfiler.h"
 #include "mozilla/ipc/ProtocolTypes.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Hal.h"

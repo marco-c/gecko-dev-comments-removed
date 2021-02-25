@@ -20,13 +20,13 @@
 #include "mozilla/layers/Effects.h"      
 #include "mozilla/layers/LayerManagerCompositeUtils.h"
 #include "mozilla/mozalloc.h"  
+#include "mozilla/ProfilerLabels.h"
 #include "nsAString.h"
 #include "mozilla/RefPtr.h"   
 #include "nsISupportsImpl.h"  
 #include "nsMathUtils.h"      
 #include "nsString.h"         
 #include "TextRenderer.h"
-#include "GeckoProfiler.h"
 
 namespace mozilla {
 namespace layers {

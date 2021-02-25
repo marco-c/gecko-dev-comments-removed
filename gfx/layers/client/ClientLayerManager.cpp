@@ -5,10 +5,10 @@
 
 
 #include "ClientLayerManager.h"
-#include "GeckoProfiler.h"       
 #include "gfxEnv.h"              
 #include "mozilla/Assertions.h"  
 #include "mozilla/Hal.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"

@@ -21,7 +21,6 @@
 #include "mozilla/dom/Document.h"
 #include "nsIExternalProtocolHandler.h"
 #include "nsIInterfaceRequestorUtils.h"
-#include "nsIObjectFrame.h"
 #include "nsIOService.h"
 #include "nsIPermissionManager.h"
 #include "nsPluginHost.h"
@@ -66,8 +65,6 @@
 
 #include "nsObjectLoadingContent.h"
 #include "mozAutoDocUpdate.h"
-#include "GeckoProfiler.h"
-#include "nsPluginFrame.h"
 #include "nsWrapperCacheInlines.h"
 #include "nsDOMJSUtils.h"
 #include "js/Object.h"  
@@ -97,6 +94,7 @@
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "nsChannelClassifier.h"
@@ -248,7 +246,6 @@ CheckPluginStopEvent::Run() {
     }
   }
 
-  
   
   LOG(("OBJLC [%p]: Stopping plugin that lost frame", this));
   objLC->StopPluginInstance();
@@ -599,11 +596,6 @@ void nsObjectLoadingContent::UnbindFromTree(bool aNullParent) {
     UnloadObject();
   }
 
-  
-  if (thisElement->IsInComposedDoc()) {
-    thisElement->NotifyUAWidgetTeardown();
-  }
-
   if (mType == eType_Plugin) {
     Document* doc = thisElement->GetComposedDoc();
     if (doc && doc->IsActive()) {
@@ -725,7 +717,6 @@ nsresult nsObjectLoadingContent::InstantiatePluginInstance(bool aIsLoading) {
     
     if (newOwner) {
       RefPtr<nsNPAPIPluginInstance> inst = newOwner->GetInstance();
-      newOwner->SetFrame(nullptr);
       if (inst) {
         pluginHost->StopPluginInstance(inst);
       }
@@ -741,18 +732,6 @@ nsresult nsObjectLoadingContent::InstantiatePluginInstance(bool aIsLoading) {
 
     rv = inst->GetRunID(&mRunID);
     mHasRunID = NS_SUCCEEDED(rv);
-  }
-
-  
-  
-  
-  nsIFrame* frame = thisContent->GetPrimaryFrame();
-  if (frame && mInstanceOwner) {
-    mInstanceOwner->SetFrame(static_cast<nsPluginFrame*>(frame));
-
-    
-    
-    mInstanceOwner->CallSetWindow();
   }
 
   
@@ -1114,42 +1093,6 @@ nsObjectLoadingContent::GetActualType(nsACString& aType) {
 NS_IMETHODIMP
 nsObjectLoadingContent::GetDisplayedType(uint32_t* aType) {
   *aType = DisplayedType();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsObjectLoadingContent::HasNewFrame(nsIObjectFrame* aFrame) {
-  if (mType != eType_Plugin) {
-    return NS_OK;
-  }
-
-  if (!aFrame) {
-    
-    
-    
-    if (mInstanceOwner || mInstantiating) {
-      if (mInstanceOwner) {
-        mInstanceOwner->SetFrame(nullptr);
-      }
-      QueueCheckPluginStopEvent();
-    }
-    return NS_OK;
-  }
-
-  
-
-  if (!mInstanceOwner) {
-    
-    
-    AsyncStartPluginInstance();
-    return NS_OK;
-  }
-
-  
-  
-  nsPluginFrame* objFrame = static_cast<nsPluginFrame*>(aFrame);
-  mInstanceOwner->SetFrame(objFrame);
-
   return NS_OK;
 }
 
@@ -2590,35 +2533,6 @@ void nsObjectLoadingContent::NotifyStateChanged(ObjectType aOldType,
     }
   }
 
-  auto NeedsUAWidget = [](ObjectType aType, FallbackType aFallbackType) {
-    if (aType != eType_Null) {
-      return false;
-    }
-    return aFallbackType != eFallbackUnsupported &&
-           aFallbackType != eFallbackOutdated &&
-           aFallbackType != eFallbackAlternate &&
-           aFallbackType != eFallbackDisabled;
-  };
-
-  const bool needsWidget = NeedsUAWidget(mType, mFallbackType);
-  const bool neededWidget = NeedsUAWidget(aOldType, aOldFallbackType);
-  if (needsWidget != neededWidget) {
-    
-    if (neededWidget) {
-      thisEl->NotifyUAWidgetTeardown();
-    } else {
-      thisEl->AttachAndSetUAShadowRoot();
-      
-      
-      if (PluginFallbackType() == eFallbackBlockAllPlugins) {
-        nsFocusManager* fm = nsFocusManager::GetFocusManager();
-        if (fm && fm->GetFocusedElement() == thisEl) {
-          fm->ClearFocus(doc->GetWindow());
-        }
-      }
-    }
-  }
-
   if (aOldType != mType) {
     if (RefPtr<PresShell> presShell = doc->GetPresShell()) {
       presShell->PostRecreateFramesFor(thisEl);
@@ -2658,23 +2572,9 @@ nsObjectLoadingContent::ObjectType nsObjectLoadingContent::GetTypeOfContent(
   return type;
 }
 
-nsPluginFrame* nsObjectLoadingContent::GetExistingFrame() {
-  nsCOMPtr<nsIContent> thisContent =
-      do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
-  nsIFrame* frame = thisContent->GetPrimaryFrame();
-  nsIObjectFrame* objFrame = do_QueryFrame(frame);
-  return static_cast<nsPluginFrame*>(objFrame);
-}
-
 void nsObjectLoadingContent::CreateStaticClone(
     nsObjectLoadingContent* aDest) const {
   aDest->mType = mType;
-  nsObjectLoadingContent* thisObj = const_cast<nsObjectLoadingContent*>(this);
-  if (thisObj->mPrintFrame.IsAlive()) {
-    aDest->mPrintFrame = thisObj->mPrintFrame;
-  } else {
-    aDest->mPrintFrame = thisObj->GetExistingFrame();
-  }
 
   if (mFrameLoader) {
     nsCOMPtr<nsIContent> content =
@@ -2684,12 +2584,6 @@ void nsObjectLoadingContent::CreateStaticClone(
       doc->AddPendingFrameStaticClone(aDest, mFrameLoader);
     }
   }
-}
-
-NS_IMETHODIMP
-nsObjectLoadingContent::GetPrintFrame(nsIFrame** aFrame) {
-  *aFrame = mPrintFrame.GetFrame();
-  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -2978,10 +2872,6 @@ nsObjectLoadingContent::StopPluginInstance() {
     LOG(("OBJLC [%p]: StopPluginInstance - Closing used channel", this));
     CloseChannel();
   }
-
-  
-  
-  mInstanceOwner->SetFrame(nullptr);
 
   RefPtr<nsPluginInstanceOwner> ownerGrip(mInstanceOwner);
   mInstanceOwner = nullptr;

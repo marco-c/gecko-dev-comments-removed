@@ -7,7 +7,6 @@
 #include "ClientPaintedLayer.h"
 #include "ClientTiledPaintedLayer.h"    
 #include <stdint.h>                     
-#include "GeckoProfiler.h"              
 #include "client/ClientLayerManager.h"  
 #include "gfxContext.h"                 
 #include "gfx2DGlue.h"
@@ -22,6 +21,7 @@
 #include "mozilla/gfx/Types.h"   
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/ProfilerLabels.h"
 #include "nsCOMPtr.h"         
 #include "nsISupportsImpl.h"  
 #include "nsRect.h"           

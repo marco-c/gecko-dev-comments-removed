@@ -9,7 +9,6 @@
 #include <stdint.h>  
 
 #include "BufferTexture.h"
-#include "GeckoProfiler.h"
 #include "IPDLActor.h"
 #include "ImageContainer.h"  
 #include "Layers.h"          
@@ -19,6 +18,7 @@
 #include "gfxUtils.h"     
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"

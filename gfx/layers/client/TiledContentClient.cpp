@@ -8,12 +8,12 @@
 #include <math.h>  
 #include <algorithm>
 #include "ClientTiledPaintedLayer.h"  
-#include "GeckoProfiler.h"            
 #include "ClientLayerManager.h"       
 #include "gfxContext.h"               
 #include "gfxPlatform.h"              
 #include "gfxRect.h"                  
 #include "mozilla/MathAlgorithms.h"   
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/gfx/Point.h"        
 #include "mozilla/gfx/Rect.h"         
 #include "mozilla/gfx/Tools.h"        

@@ -103,7 +103,7 @@ using mozilla::gfx::SurfaceFormat;
 #include "ScreenHelperAndroid.h"
 #include "TouchResampler.h"
 
-#include "GeckoProfiler.h"  
+#include "mozilla/ProfilerLabels.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
 

@@ -10,7 +10,6 @@
 #include <stack>                  
 #include "BasicContainerLayer.h"  
 #include "BasicLayersImpl.h"      
-#include "GeckoProfiler.h"        
 #include "ImageContainer.h"       
 #include "Layers.h"               
 #include "ReadbackLayer.h"        
@@ -29,6 +28,7 @@
 #include "gfxUtils.h"            
 #include "gfx2DGlue.h"           
 #include "mozilla/Assertions.h"  
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/StaticPrefs_nglayout.h"
 #include "mozilla/WidgetUtils.h"    
 #include "mozilla/gfx/2D.h"         
