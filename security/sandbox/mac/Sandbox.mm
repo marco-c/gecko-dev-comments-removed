@@ -280,7 +280,11 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
 
   
   
-  std::string flashCacheDir, flashTempDir, flashPath;
+  std::string flashTempDir, flashPath;
+
+  
+  
+  std::string userCacheDir;
 
   if (aInfo.type == MacSandboxType_Flash) {
     profile = SandboxPolicyFlash;
@@ -311,10 +315,10 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
     if (!confstr(_CS_DARWIN_USER_CACHE_DIR, confStrBuf, sizeof(confStrBuf))) {
       return false;
     }
-    if (!GetRealPath(flashCacheDir, confStrBuf)) {
+    if (!GetRealPath(userCacheDir, confStrBuf)) {
       return false;
     }
-    params.push_back(flashCacheDir.c_str());
+    params.push_back(userCacheDir.c_str());
 
     
     params.push_back("DARWIN_USER_TEMP_DIR");
@@ -415,6 +419,17 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
         params.push_back("CRASH_PORT");
         params.push_back(aInfo.crashServerPort.c_str());
       }
+
+      params.push_back("DARWIN_USER_CACHE_DIR");
+      char confStrBuf[PATH_MAX];
+      if (!confstr(_CS_DARWIN_USER_CACHE_DIR, confStrBuf, sizeof(confStrBuf))) {
+        return false;
+      }
+      if (!GetRealPath(userCacheDir, confStrBuf)) {
+        return false;
+      }
+      params.push_back(userCacheDir.c_str());
+
       if (!aInfo.testingReadPath1.empty()) {
         params.push_back("TESTING_READ_PATH1");
         params.push_back(aInfo.testingReadPath1.c_str());
