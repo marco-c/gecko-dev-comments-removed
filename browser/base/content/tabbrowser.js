@@ -79,13 +79,7 @@
 
     ownerDocument: document,
 
-    closingTabsEnum: {
-      ALL: 0,
-      OTHER: 1,
-      TO_START: 2,
-      TO_END: 3,
-      MULTI_SELECTED: 4,
-    },
+    closingTabsEnum: { ALL: 0, OTHER: 1, TO_END: 2, MULTI_SELECTED: 3 },
 
     _visibleTabs: null,
 
@@ -3204,37 +3198,12 @@
       tab.dispatchEvent(evt);
     },
 
-    getTabsToTheStartFrom(aTab) {
-      let tabsToStart = [];
-      let tabs = this.visibleTabs;
-      for (let i = 0; i < tabs.length; ++i) {
-        if (tabs[i] == aTab) {
-          break;
-        }
-        
-        if (tabs[i].pinned) {
-          continue;
-        }
-        
-        
-        if (aTab.multiselected && tabs[i].multiselected) {
-          continue;
-        }
-        tabsToStart.push(tabs[i]);
-      }
-      return tabsToStart;
-    },
-
     getTabsToTheEndFrom(aTab) {
       let tabsToEnd = [];
       let tabs = this.visibleTabs;
       for (let i = tabs.length - 1; i >= 0; --i) {
-        if (tabs[i] == aTab) {
+        if (tabs[i] == aTab || tabs[i].pinned) {
           break;
-        }
-        
-        if (tabs[i].pinned) {
-          continue;
         }
         
         
@@ -3244,21 +3213,6 @@
         tabsToEnd.push(tabs[i]);
       }
       return tabsToEnd;
-    },
-
-    
-
-
-
-    removeTabsToTheStartFrom(aTab) {
-      let tabs = this.getTabsToTheStartFrom(aTab);
-      if (
-        !this.warnAboutClosingTabs(tabs.length, this.closingTabsEnum.TO_START)
-      ) {
-        return;
-      }
-
-      this.removeTabs(tabs);
     },
 
     
@@ -6693,9 +6647,6 @@ var TabContextMenu = {
 
     
     
-    document.getElementById(
-      "context_closeTabsToTheStart"
-    ).disabled = !gBrowser.getTabsToTheStartFrom(this.contextTab).length;
     document.getElementById(
       "context_closeTabsToTheEnd"
     ).disabled = !gBrowser.getTabsToTheEndFrom(this.contextTab).length;
