@@ -18,11 +18,21 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
+const ONBOARDING_COUNT_PREF = "quicksuggest.onboardingCount";
+const ONBOARDING_MAX_COUNT_PREF = "quicksuggest.onboardingMaxCount";
+
+
+const ONBOARDING_URL = "https://mozilla.org/";
+const ONBOARDING_TEXT = "Learn more about Firefox Suggests";
+
 
 
 
 
 class ProviderQuickSuggest extends UrlbarProvider {
+  
+  _addedResultInLastQuery = false;
+
   
 
 
@@ -46,6 +56,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
   isActive(queryContext) {
+    this._addedResultInLastQuery = false;
+
     
     
     if (
@@ -81,21 +93,62 @@ class ProviderQuickSuggest extends UrlbarProvider {
     if (!suggestion || instance != this.queryInstance) {
       return;
     }
+
+    let payload = {
+      title: suggestion.title,
+      url: suggestion.url,
+      icon: suggestion.icon,
+      isSponsored: true,
+    };
+
+    
+    if (this._onboardingCount < this._onboardingMaxCount) {
+      payload.helpUrl = ONBOARDING_URL;
+      payload.helpTitle = ONBOARDING_TEXT;
+    }
+
     let result = new UrlbarResult(
       UrlbarUtils.RESULT_TYPE.URL,
       UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
-      {
-        title: suggestion.title,
-        url: suggestion.url,
-        icon: suggestion.icon,
-        isSponsored: true,
-      }
+      payload
     );
     result.suggestedIndex = UrlbarPrefs.get("quicksuggest.suggestedIndex");
     if (result.suggestedIndex == -1) {
       result.suggestedIndex = UrlbarPrefs.get("maxRichResults") - 1;
     }
     addCallback(this, result);
+
+    this._addedResultInLastQuery = true;
+  }
+
+  
+
+
+
+
+
+
+  onEngagement(isPrivate, state) {
+    if (
+      state == "engagement" &&
+      this._addedResultInLastQuery &&
+      this._onboardingCount < this._onboardingMaxCount
+    ) {
+      this._onboardingCount++;
+    }
+    this._addedResultInLastQuery = false;
+  }
+
+  get _onboardingCount() {
+    return UrlbarPrefs.get(ONBOARDING_COUNT_PREF);
+  }
+
+  set _onboardingCount(value) {
+    UrlbarPrefs.set(ONBOARDING_COUNT_PREF, value);
+  }
+
+  get _onboardingMaxCount() {
+    return UrlbarPrefs.get(ONBOARDING_MAX_COUNT_PREF);
   }
 }
 

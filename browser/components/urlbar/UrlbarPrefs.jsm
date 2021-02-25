@@ -170,6 +170,14 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
+  ["quicksuggest.onboardingCount", 0],
+
+  
+  
+  ["quicksuggest.onboardingMaxCount", 5],
+
+  
+  
   ["quicksuggest.suggestedIndex", -1],
 
   
