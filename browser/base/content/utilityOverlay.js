@@ -1099,6 +1099,30 @@ function buildHelpMenu() {
   if (typeof gSafeBrowsing != "undefined") {
     gSafeBrowsing.setReportPhishingMenu();
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let reportSiteIssueEnabled = Services.prefs.getBoolPref(
+    "extensions.webcompat-reporter.enabled",
+    false
+  );
+  let reportSiteIssue = document.getElementById("help_reportSiteIssue");
+  reportSiteIssue.hidden = !reportSiteIssueEnabled;
+  if (reportSiteIssueEnabled) {
+    let uri = gBrowser.currentURI;
+    let isReportablePage =
+      uri && (uri.schemeIs("http") || uri.schemeIs("https"));
+    reportSiteIssue.disabled = !isReportablePage;
+  }
 }
 
 function isElementVisible(aElement) {

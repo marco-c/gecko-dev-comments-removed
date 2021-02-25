@@ -8140,6 +8140,22 @@ function ReportFalseDeceptiveSite() {
 
 
 
+
+
+
+function ReportSiteIssue() {
+  let subject = { wrappedJSObject: gBrowser.selectedTab };
+  Services.obs.notifyObservers(subject, "report-site-issue");
+}
+
+
+
+
+
+
+
+
+
 function formatURL(aFormat, aIsPref) {
   return aIsPref
     ? Services.urlFormatter.formatURLPref(aFormat)
