@@ -613,16 +613,8 @@ DevToolsStartup.prototype = {
     
     
     const doc = subview.ownerDocument;
-
     const menu = doc.getElementById("menuWebDeveloperPopup");
-
     const itemsToDisplay = [...menu.children];
-    
-    itemsToDisplay.push({
-      localName: "menuseparator",
-      getAttribute: () => {},
-    });
-    itemsToDisplay.push(doc.getElementById("goOfflineMenuitem"));
 
     CustomizableUI.clearSubview(subview);
     CustomizableUI.fillSubviewFromMenuItems(itemsToDisplay, subview);
