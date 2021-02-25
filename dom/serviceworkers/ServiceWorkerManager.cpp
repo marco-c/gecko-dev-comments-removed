@@ -1589,8 +1589,9 @@ ServiceWorkerManager::GetOrCreateJobQueue(const nsACString& aKey,
   
   
   if (!mRegistrationInfos.Get(aKey, &data)) {
-    data = new RegistrationDataPerPrincipal();
-    mRegistrationInfos.Put(aKey, data);
+    data =
+        mRegistrationInfos.Put(aKey, MakeUnique<RegistrationDataPerPrincipal>())
+            .get();
   }
 
   return data->mJobQueues

@@ -78,7 +78,7 @@ void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent,
       
       sActivePointersIds->Put(
           aEvent->pointerId,
-          new PointerInfo(false, aEvent->mInputSource, true, nullptr));
+          MakeUnique<PointerInfo>(false, aEvent->mInputSource, true, nullptr));
 
       MaybeCacheSpoofedPointerID(aEvent->mInputSource, aEvent->pointerId);
       break;
@@ -90,7 +90,7 @@ void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent,
         
         sActivePointersIds->Put(
             pointerEvent->pointerId,
-            new PointerInfo(
+            MakeUnique<PointerInfo>(
                 true, pointerEvent->mInputSource, pointerEvent->mIsPrimary,
                 aTargetContent ? aTargetContent->OwnerDoc() : nullptr));
         MaybeCacheSpoofedPointerID(pointerEvent->mInputSource,
@@ -109,8 +109,8 @@ void PointerEventHandler::UpdateActivePointerState(WidgetMouseEvent* aEvent,
             MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
           sActivePointersIds->Put(
               pointerEvent->pointerId,
-              new PointerInfo(false, pointerEvent->mInputSource,
-                              pointerEvent->mIsPrimary, nullptr));
+              MakeUnique<PointerInfo>(false, pointerEvent->mInputSource,
+                                      pointerEvent->mIsPrimary, nullptr));
         } else {
           sActivePointersIds->Remove(pointerEvent->pointerId);
         }

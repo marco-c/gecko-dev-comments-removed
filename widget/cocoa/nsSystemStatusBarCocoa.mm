@@ -1,7 +1,7 @@
-/* -*- Mode: c++; tab-width: 2; indent-tabs-mode: nil; -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #import <Cocoa/Cocoa.h>
 
@@ -26,7 +26,7 @@ nsSystemStatusBarCocoa::AddItem(Element* aElement) {
   }
 
   nsCOMPtr<nsISupports> keyPtr = aElement;
-  mItems.Put(keyPtr, new StatusItem(menu));
+  mItems.Put(keyPtr, mozilla::MakeUnique<StatusItem>(menu));
 
   return NS_OK;
 
@@ -55,10 +55,10 @@ nsSystemStatusBarCocoa::StatusItem::StatusItem(nsStandaloneNativeMenu* aMenu) : 
   [mStatusItem setMenu:nativeMenu];
   [mStatusItem setHighlightMode:YES];
 
-  // We want the status item to get its image from menu item that mMenu was
-  // initialized with. Icon loads are asynchronous, so we need to let the menu
-  // know about the item so that it can update its icon as soon as it has
-  // loaded.
+  
+  
+  
+  
   mMenu->SetContainerStatusBarItem(mStatusItem);
 }
 

@@ -132,20 +132,17 @@ class GradientCache final : public nsExpirationTracker<GradientCacheData, 4> {
     return gradient;
   }
 
-  
-  
-  bool RegisterEntry(GradientCacheData* aValue) {
-    nsresult rv = AddObject(aValue);
+  void RegisterEntry(UniquePtr<GradientCacheData> aValue) {
+    nsresult rv = AddObject(aValue.get());
     if (NS_FAILED(rv)) {
       
       
       
       
       
-      return false;
+      return;
     }
-    mHashEntries.Put(aValue->mKey, aValue);
-    return true;
+    mHashEntries.Put(aValue->mKey, std::move(aValue));
   }
 
  protected:
@@ -190,11 +187,8 @@ already_AddRefed<GradientStops> gfxGradientCache::GetOrCreateGradientStops(
     if (!gs) {
       return nullptr;
     }
-    GradientCacheData* cached = new GradientCacheData(
-        gs, GradientCacheKey(aStops, aExtend, aDT->GetBackendType()));
-    if (!gGradientCache->RegisterEntry(cached)) {
-      delete cached;
-    }
+    gGradientCache->RegisterEntry(MakeUnique<GradientCacheData>(
+        gs, GradientCacheKey(aStops, aExtend, aDT->GetBackendType())));
   }
   return gs.forget();
 }

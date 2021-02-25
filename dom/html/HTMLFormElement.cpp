@@ -2169,12 +2169,10 @@ HTMLFormElement::WalkRadioGroup(const nsAString& aName,
 void HTMLFormElement::AddToRadioGroup(const nsAString& aName,
                                       HTMLInputElement* aRadio) {
   if (aRadio->IsRequired()) {
-    auto entry = mRequiredRadioButtonCounts.LookupForAdd(aName);
-    if (!entry) {
-      entry.OrInsert([]() { return 1; });
-    } else {
-      ++entry.Data();
-    }
+    mRequiredRadioButtonCounts.WithEntryHandle(aName, [](auto&& entry) {
+      uint32_t& value = entry.OrInsert(0);
+      ++value;
+    });
   }
 }
 
@@ -2276,81 +2274,83 @@ struct RadioNodeListAdaptor {
 nsresult HTMLFormElement::AddElementToTableInternal(
     nsInterfaceHashtable<nsStringHashKey, nsISupports>& aTable,
     nsIContent* aChild, const nsAString& aName) {
-  auto entry = aTable.LookupForAdd(aName);
-  if (!entry) {
-    
-    entry.OrInsert([&aChild]() { return aChild; });
-    ++mExpandoAndGeneration.generation;
-  } else {
-    
-    nsCOMPtr<nsIContent> content = do_QueryInterface(entry.Data());
-
-    if (content) {
+  return aTable.WithEntryHandle(aName, [&](auto&& entry) {
+    if (!entry) {
       
-      
-      
-      
-      if (content == aChild) {
-        return NS_OK;
-      }
-
-      
-      
-      RadioNodeList* list = new RadioNodeList(this);
-
-      
-      
-      NS_ASSERTION(
-          (content->IsElement() &&
-           content->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::form)) ||
-              content->GetParent(),
-          "Item in list without parent");
-
-      
-      bool newFirst = nsContentUtils::PositionIsBefore(aChild, content);
-
-      list->AppendElement(newFirst ? aChild : content.get());
-      list->AppendElement(newFirst ? content.get() : aChild);
-
-      nsCOMPtr<nsISupports> listSupports = do_QueryObject(list);
-
-      
-      entry.Data() = listSupports;
+      entry.Insert(aChild);
+      ++mExpandoAndGeneration.generation;
     } else {
       
-      MOZ_ASSERT(nsCOMPtr<RadioNodeList>(do_QueryInterface(entry.Data())));
-      auto* list = static_cast<RadioNodeList*>(entry.Data().get());
+      nsCOMPtr<nsIContent> content = do_QueryInterface(entry.Data());
 
-      NS_ASSERTION(list->Length() > 1,
-                   "List should have been converted back to a single element");
+      if (content) {
+        
+        
+        
+        
+        if (content == aChild) {
+          return NS_OK;
+        }
 
-      
-      
-      
-      
-      if (nsContentUtils::PositionIsBefore(list->Item(list->Length() - 1),
-                                           aChild)) {
-        list->AppendElement(aChild);
-        return NS_OK;
+        
+        
+        RadioNodeList* list = new RadioNodeList(this);
+
+        
+        
+        NS_ASSERTION(
+            (content->IsElement() && content->AsElement()->HasAttr(
+                                         kNameSpaceID_None, nsGkAtoms::form)) ||
+                content->GetParent(),
+            "Item in list without parent");
+
+        
+        bool newFirst = nsContentUtils::PositionIsBefore(aChild, content);
+
+        list->AppendElement(newFirst ? aChild : content.get());
+        list->AppendElement(newFirst ? content.get() : aChild);
+
+        nsCOMPtr<nsISupports> listSupports = do_QueryObject(list);
+
+        
+        entry.Data() = listSupports;
+      } else {
+        
+        MOZ_ASSERT(nsCOMPtr<RadioNodeList>(do_QueryInterface(entry.Data())));
+        auto* list = static_cast<RadioNodeList*>(entry.Data().get());
+
+        NS_ASSERTION(
+            list->Length() > 1,
+            "List should have been converted back to a single element");
+
+        
+        
+        
+        
+        if (nsContentUtils::PositionIsBefore(list->Item(list->Length() - 1),
+                                             aChild)) {
+          list->AppendElement(aChild);
+          return NS_OK;
+        }
+
+        
+        
+        if (list->IndexOf(aChild) != -1) {
+          return NS_OK;
+        }
+
+        size_t idx;
+        DebugOnly<bool> found =
+            BinarySearchIf(RadioNodeListAdaptor(list), 0, list->Length(),
+                           PositionComparator(aChild), &idx);
+        MOZ_ASSERT(!found, "should not have found an element");
+
+        list->InsertElementAt(aChild, idx);
       }
-
-      
-      
-      if (list->IndexOf(aChild) != -1) {
-        return NS_OK;
-      }
-
-      size_t idx;
-      DebugOnly<bool> found =
-          BinarySearchIf(RadioNodeListAdaptor(list), 0, list->Length(),
-                         PositionComparator(aChild), &idx);
-      MOZ_ASSERT(!found, "should not have found an element");
-
-      list->InsertElementAt(aChild, idx);
     }
-  }
 
-  return NS_OK;
+    return NS_OK;
+  });
 }
 
 nsresult HTMLFormElement::AddImageElement(HTMLImageElement* aChild) {
@@ -2385,7 +2385,7 @@ void HTMLFormElement::AddToPastNamesMap(const nsAString& aName,
   
   nsCOMPtr<nsIContent> node = do_QueryInterface(aChild);
   if (node) {
-    mPastNameLookupTable.Put(aName, node);
+    mPastNameLookupTable.Put(aName, ToSupports(node));
     node->SetFlags(MAY_BE_IN_PAST_NAMES_MAP);
   }
 }
