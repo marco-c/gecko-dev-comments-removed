@@ -154,6 +154,14 @@ class nsITheme : public nsISupports {
 
 
 
+  virtual nscoord GetCheckboxRadioPrefSize() {
+    return mozilla::CSSPixel::ToAppUnits(9);
+  }
+
+  
+
+
+
 
 
   NS_IMETHOD GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aFrame,
