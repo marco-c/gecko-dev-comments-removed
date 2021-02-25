@@ -367,6 +367,7 @@ impl AnimationValue {
                 }
             },
             PropertyDeclaration::WithVariables(ref declaration) => {
+                let mut cache = Default::default();
                 let substituted = {
                     let custom_properties =
                         extra_custom_properties.or_else(|| context.style().custom_properties());
@@ -376,6 +377,7 @@ impl AnimationValue {
                         custom_properties,
                         context.quirks_mode,
                         context.device(),
+                        &mut cache,
                     )
                 };
                 return AnimationValue::from_declaration(
@@ -584,7 +586,7 @@ macro_rules! animated_list_impl {
             where
                 T: Animate,
             {
-                
+                // If the length of either list is zero, the least common multiple is undefined.
                 if self.is_empty() || other.is_empty() {
                     return Err(());
                 }
