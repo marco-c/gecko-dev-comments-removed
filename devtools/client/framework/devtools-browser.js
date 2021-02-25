@@ -421,23 +421,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
 
 
 
-
-  async openWorkerToolbox(workerDescriptorFront, toolId) {
-    await gDevTools.showToolbox(
-      workerDescriptorFront,
-      toolId,
-      Toolbox.HostType.WINDOW
-    );
-  },
-
-  
-
-
-
-
-
-
-
   loadBrowserStyleSheet: function(win) {
     if (this._browserStyleSheets.has(win)) {
       return Promise.resolve();
