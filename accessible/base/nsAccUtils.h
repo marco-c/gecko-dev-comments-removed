@@ -6,7 +6,7 @@
 #ifndef nsAccUtils_h_
 #define nsAccUtils_h_
 
-#include "mozilla/a11y/Accessible.h"
+#include "mozilla/a11y/LocalAccessible.h"
 #include "mozilla/a11y/DocManager.h"
 
 #include "AccessibleOrProxy.h"
@@ -65,13 +65,13 @@ class nsAccUtils {
   
 
 
-  static int32_t GetDefaultLevel(const Accessible* aAcc);
+  static int32_t GetDefaultLevel(const LocalAccessible* aAcc);
 
   
 
 
 
-  static int32_t GetARIAOrDefaultLevel(const Accessible* aAccessible);
+  static int32_t GetARIAOrDefaultLevel(const LocalAccessible* aAccessible);
 
   
 
@@ -132,27 +132,27 @@ class nsAccUtils {
 
 
 
-  static Accessible* GetSelectableContainer(Accessible* aAccessible,
-                                            uint64_t aState);
+  static LocalAccessible* GetSelectableContainer(LocalAccessible* aAccessible,
+                                                 uint64_t aState);
 
   
 
 
   static HyperTextAccessible* GetTextContainer(nsINode* aNode);
 
-  static Accessible* TableFor(Accessible* aRow);
+  static LocalAccessible* TableFor(LocalAccessible* aRow);
 
   
 
 
 
-  static bool IsDOMAttrTrue(const Accessible* aAccessible, nsAtom* aAttr);
+  static bool IsDOMAttrTrue(const LocalAccessible* aAccessible, nsAtom* aAttr);
 
   
 
 
 
-  static inline bool IsARIASelected(const Accessible* aAccessible) {
+  static inline bool IsARIASelected(const LocalAccessible* aAccessible) {
     return IsDOMAttrTrue(aAccessible, nsGkAtoms::aria_selected);
   }
 
@@ -160,7 +160,7 @@ class nsAccUtils {
 
 
 
-  static inline bool IsARIAMultiSelectable(const Accessible* aAccessible) {
+  static inline bool IsARIAMultiSelectable(const LocalAccessible* aAccessible) {
     return IsDOMAttrTrue(aAccessible, nsGkAtoms::aria_multiselectable);
   }
 
@@ -177,7 +177,7 @@ class nsAccUtils {
 
   static nsIntPoint ConvertToScreenCoords(int32_t aX, int32_t aY,
                                           uint32_t aCoordinateType,
-                                          Accessible* aAccessible);
+                                          LocalAccessible* aAccessible);
 
   
 
@@ -192,14 +192,14 @@ class nsAccUtils {
 
   static void ConvertScreenCoordsTo(int32_t* aX, int32_t* aY,
                                     uint32_t aCoordinateType,
-                                    Accessible* aAccessible);
+                                    LocalAccessible* aAccessible);
 
   
 
 
 
 
-  static nsIntPoint GetScreenCoordsForParent(Accessible* aAccessible);
+  static nsIntPoint GetScreenCoordsForParent(LocalAccessible* aAccessible);
 
   
 
@@ -217,13 +217,13 @@ class nsAccUtils {
 
 
 
-  static bool IsTextInterfaceSupportCorrect(Accessible* aAccessible);
+  static bool IsTextInterfaceSupportCorrect(LocalAccessible* aAccessible);
 #endif
 
   
 
 
-  static uint32_t TextLength(Accessible* aAccessible);
+  static uint32_t TextLength(LocalAccessible* aAccessible);
 
   
 
@@ -261,7 +261,7 @@ class nsAccUtils {
 
 
 
-  static bool IsARIALive(const Accessible* aAccessible);
+  static bool IsARIALive(const LocalAccessible* aAccessible);
 };
 
 }  

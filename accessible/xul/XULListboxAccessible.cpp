@@ -5,7 +5,7 @@
 
 #include "XULListboxAccessible.h"
 
-#include "Accessible-inl.h"
+#include "LocalAccessible-inl.h"
 #include "nsAccessibilityService.h"
 #include "nsAccUtils.h"
 #include "DocAccessible.h"
@@ -85,7 +85,7 @@ uint64_t XULListboxAccessible::NativeState() const {
   
 
   
-  uint64_t states = Accessible::NativeState();
+  uint64_t states = LocalAccessible::NativeState();
 
   
 
@@ -122,8 +122,8 @@ uint32_t XULListboxAccessible::RowCount() {
   return itemCount;
 }
 
-Accessible* XULListboxAccessible::CellAt(uint32_t aRowIndex,
-                                         uint32_t aColumnIndex) {
+LocalAccessible* XULListboxAccessible::CellAt(uint32_t aRowIndex,
+                                              uint32_t aColumnIndex) {
   nsCOMPtr<nsIDOMXULSelectControlElement> control = Elm()->AsXULSelectControl();
   NS_ENSURE_TRUE(control, nullptr);
 
@@ -131,7 +131,7 @@ Accessible* XULListboxAccessible::CellAt(uint32_t aRowIndex,
   control->GetItemAtIndex(aRowIndex, getter_AddRefs(element));
   if (!element) return nullptr;
 
-  Accessible* row = mDoc->GetAccessible(element);
+  LocalAccessible* row = mDoc->GetAccessible(element);
   NS_ENSURE_TRUE(row, nullptr);
 
   return row->LocalChildAt(aColumnIndex);
@@ -217,7 +217,7 @@ uint32_t XULListboxAccessible::SelectedRowCount() {
   return selectedRowCount >= 0 ? selectedRowCount : 0;
 }
 
-void XULListboxAccessible::SelectedCells(nsTArray<Accessible*>* aCells) {
+void XULListboxAccessible::SelectedCells(nsTArray<LocalAccessible*>* aCells) {
   nsCOMPtr<nsIDOMXULMultiSelectControlElement> control =
       Elm()->AsXULMultiSelectControl();
   NS_ASSERTION(control,
@@ -231,12 +231,12 @@ void XULListboxAccessible::SelectedCells(nsTArray<Accessible*>* aCells) {
 
   for (uint32_t index = 0; index < selectedItemsCount; index++) {
     nsIContent* itemContent = selectedItems->Item(index);
-    Accessible* item = mDoc->GetAccessible(itemContent);
+    LocalAccessible* item = mDoc->GetAccessible(itemContent);
 
     if (item) {
       uint32_t cellCount = item->ChildCount();
       for (uint32_t cellIdx = 0; cellIdx < cellCount; cellIdx++) {
-        Accessible* cell = mChildren[cellIdx];
+        LocalAccessible* cell = mChildren[cellIdx];
         if (cell->Role() == roles::CELL) aCells->AppendElement(cell);
       }
     }
@@ -387,7 +387,7 @@ bool XULListboxAccessible::AreItemsOperable() const {
   return true;
 }
 
-Accessible* XULListboxAccessible::ContainerWidget() const {
+LocalAccessible* XULListboxAccessible::ContainerWidget() const {
   if (IsAutoCompletePopup() && mContent->GetParent()) {
     
     
@@ -399,7 +399,7 @@ Accessible* XULListboxAccessible::ContainerWidget() const {
       RefPtr<mozilla::dom::Element> inputElm;
       menuListElm->GetInputField(getter_AddRefs(inputElm));
       if (inputElm) {
-        Accessible* input = mDoc->GetAccessible(inputElm);
+        LocalAccessible* input = mDoc->GetAccessible(inputElm);
         return input ? input->ContainerWidget() : nullptr;
       }
     }
@@ -421,7 +421,7 @@ XULListitemAccessible::XULListitemAccessible(nsIContent* aContent,
 
 XULListitemAccessible::~XULListitemAccessible() {}
 
-Accessible* XULListitemAccessible::GetListAccessible() const {
+LocalAccessible* XULListitemAccessible::GetListAccessible() const {
   if (IsDefunct()) return nullptr;
 
   nsCOMPtr<nsIDOMXULSelectControlItemElement> listItem =
@@ -449,11 +449,11 @@ void XULListitemAccessible::Description(nsString& aDesc) {
 
 
 ENameValueFlag XULListitemAccessible::NativeName(nsString& aName) const {
-  return Accessible::NativeName(aName);
+  return LocalAccessible::NativeName(aName);
 }
 
 role XULListitemAccessible::NativeRole() const {
-  Accessible* list = GetListAccessible();
+  LocalAccessible* list = GetListAccessible();
   if (!list) {
     NS_ERROR("No list accessible for listitem accessible!");
     return roles::NOTHING;
@@ -508,6 +508,6 @@ void XULListitemAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
 
 
 
-Accessible* XULListitemAccessible::ContainerWidget() const {
+LocalAccessible* XULListitemAccessible::ContainerWidget() const {
   return LocalParent();
 }

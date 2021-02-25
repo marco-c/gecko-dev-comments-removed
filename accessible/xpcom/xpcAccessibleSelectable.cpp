@@ -4,7 +4,7 @@
 
 
 
-#include "Accessible-inl.h"
+#include "LocalAccessible-inl.h"
 
 #include "nsComponentManagerUtils.h"
 #include "nsIAccessible.h"
@@ -22,7 +22,7 @@ xpcAccessibleSelectable::GetSelectedItems(nsIArray** aSelectedItems) {
   if (!Intl()) return NS_ERROR_FAILURE;
   MOZ_ASSERT(Intl()->IsSelect(), "Called on non selectable widget!");
 
-  AutoTArray<Accessible*, 10> items;
+  AutoTArray<LocalAccessible*, 10> items;
   Intl()->SelectedItems(&items);
 
   uint32_t itemCount = items.Length();

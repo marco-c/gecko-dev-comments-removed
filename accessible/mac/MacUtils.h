@@ -18,7 +18,7 @@ namespace a11y {
 namespace utils {
 
 
-NSArray<mozAccessible*>* ConvertToNSArray(nsTArray<Accessible*>& aArray);
+NSArray<mozAccessible*>* ConvertToNSArray(nsTArray<LocalAccessible*>& aArray);
 
 
 

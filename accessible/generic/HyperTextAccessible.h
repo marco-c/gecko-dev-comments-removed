@@ -60,8 +60,8 @@ class HyperTextAccessible : public AccessibleWrap {
   virtual uint64_t NativeState() const override;
 
   virtual void Shutdown() override;
-  virtual bool RemoveChild(Accessible* aAccessible) override;
-  virtual bool InsertChildAt(uint32_t aIndex, Accessible* aChild) override;
+  virtual bool RemoveChild(LocalAccessible* aAccessible) override;
+  virtual bool InsertChildAt(uint32_t aIndex, LocalAccessible* aChild) override;
   virtual Relation RelationByType(RelationType aType) const override;
 
   
@@ -85,12 +85,14 @@ class HyperTextAccessible : public AccessibleWrap {
   
 
 
-  Accessible* LinkAt(uint32_t aIndex) { return GetEmbeddedChildAt(aIndex); }
+  LocalAccessible* LinkAt(uint32_t aIndex) {
+    return GetEmbeddedChildAt(aIndex);
+  }
 
   
 
 
-  int32_t LinkIndexOf(Accessible* aLink) {
+  int32_t LinkIndexOf(LocalAccessible* aLink) {
     return GetIndexOfEmbeddedChild(aLink);
   }
 
@@ -98,7 +100,7 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
   int32_t LinkIndexAtOffset(uint32_t aOffset) {
-    Accessible* child = GetChildAtOffset(aOffset);
+    LocalAccessible* child = GetChildAtOffset(aOffset);
     return child ? LinkIndexOf(child) : -1;
   }
 
@@ -130,7 +132,7 @@ class HyperTextAccessible : public AccessibleWrap {
   
 
 
-  uint32_t TransformOffset(Accessible* aDescendant, uint32_t aOffset,
+  uint32_t TransformOffset(LocalAccessible* aDescendant, uint32_t aOffset,
                            bool aIsEndOffset) const;
 
   
@@ -167,7 +169,7 @@ class HyperTextAccessible : public AccessibleWrap {
     int32_t childIdx = GetChildIndexAtOffset(aOffset);
     if (childIdx == -1) return false;
 
-    Accessible* child = LocalChildAt(childIdx);
+    LocalAccessible* child = LocalChildAt(childIdx);
     child->AppendTextTo(aChar, aOffset - GetChildOffset(childIdx), 1);
 
     if (aStartOffset && aEndOffset) {
@@ -235,7 +237,7 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
 
-  int32_t GetChildOffset(const Accessible* aChild,
+  int32_t GetChildOffset(const LocalAccessible* aChild,
                          bool aInvalidateAfter = false) const {
     int32_t index = GetIndexOf(aChild);
     return index == -1 ? -1 : GetChildOffset(index, aInvalidateAfter);
@@ -259,7 +261,7 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
 
-  Accessible* GetChildAtOffset(uint32_t aOffset) const {
+  LocalAccessible* GetChildAtOffset(uint32_t aOffset) const {
     return LocalChildAt(GetChildIndexAtOffset(aOffset));
   }
 
@@ -380,7 +382,7 @@ class HyperTextAccessible : public AccessibleWrap {
   
 
 
-  void RangeByChild(Accessible* aChild, TextRange& aRange) const;
+  void RangeByChild(LocalAccessible* aChild, TextRange& aRange) const;
 
   
 
@@ -515,7 +517,7 @@ class HyperTextAccessible : public AccessibleWrap {
 
   
   nsresult GetDOMPointByFrameOffset(nsIFrame* aFrame, int32_t aOffset,
-                                    Accessible* aAccessible,
+                                    LocalAccessible* aAccessible,
                                     mozilla::a11y::DOMPoint* aPoint);
 
   
@@ -551,7 +553,7 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
 
-inline HyperTextAccessible* Accessible::AsHyperText() {
+inline HyperTextAccessible* LocalAccessible::AsHyperText() {
   return IsHyperText() ? static_cast<HyperTextAccessible*>(this) : nullptr;
 }
 

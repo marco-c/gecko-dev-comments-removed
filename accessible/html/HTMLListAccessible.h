@@ -54,8 +54,9 @@ class HTMLLIAccessible : public HyperTextAccessibleWrap {
   virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() const override;
 
-  virtual bool InsertChildAt(uint32_t aIndex, Accessible* aChild) override;
-  virtual void RelocateChild(uint32_t aNewIndex, Accessible* aChild) override;
+  virtual bool InsertChildAt(uint32_t aIndex, LocalAccessible* aChild) override;
+  virtual void RelocateChild(uint32_t aNewIndex,
+                             LocalAccessible* aChild) override;
 
   
   HTMLListBulletAccessible* Bullet() const { return mBullet; }
@@ -92,7 +93,7 @@ class HTMLListBulletAccessible : public LeafAccessible {
   bool IsInside() const;
 };
 
-inline HTMLLIAccessible* Accessible::AsHTMLListItem() {
+inline HTMLLIAccessible* LocalAccessible::AsHTMLListItem() {
   return IsHTMLListItem() ? static_cast<HTMLLIAccessible*>(this) : nullptr;
 }
 

@@ -6,7 +6,7 @@
 
 #include "HyperTextAccessible-inl.h"
 
-#include "Accessible-inl.h"
+#include "LocalAccessible-inl.h"
 #include "nsAccessibilityService.h"
 #include "nsAccessiblePivot.h"
 #include "nsIAccessibleTypes.h"
@@ -58,7 +58,7 @@ using namespace mozilla::a11y;
 
 class ParagraphBoundaryRule : public PivotRule {
  public:
-  explicit ParagraphBoundaryRule(Accessible* aAnchor,
+  explicit ParagraphBoundaryRule(LocalAccessible* aAnchor,
                                  uint32_t aAnchorTextoffset,
                                  nsDirection aDirection,
                                  bool aSkipAnchorSubtree = false)
@@ -70,7 +70,7 @@ class ParagraphBoundaryRule : public PivotRule {
 
   virtual uint16_t Match(const AccessibleOrProxy& aAccOrProxy) override {
     MOZ_ASSERT(aAccOrProxy.IsAccessible());
-    Accessible* acc = aAccOrProxy.AsAccessible();
+    LocalAccessible* acc = aAccOrProxy.AsAccessible();
     if (acc->IsOuterDoc()) {
       
       
@@ -131,7 +131,7 @@ class ParagraphBoundaryRule : public PivotRule {
   uint32_t GetLastMatchTextOffset() { return mLastMatchTextOffset; }
 
  private:
-  Accessible* mAnchor;
+  LocalAccessible* mAnchor;
   uint32_t mAnchorTextOffset;
   nsDirection mDirection;
   bool mSkipAnchorSubtree;
@@ -292,7 +292,7 @@ void HyperTextAccessible::TextSubstring(int32_t aStartOffset,
     int32_t childOffset = GetChildOffset(startChildIdx);
     if (childOffset == -1) return;
 
-    Accessible* child = LocalChildAt(startChildIdx);
+    LocalAccessible* child = LocalChildAt(startChildIdx);
     child->AppendTextTo(aText, startOffset - childOffset,
                         endOffset - startOffset);
     return;
@@ -301,19 +301,19 @@ void HyperTextAccessible::TextSubstring(int32_t aStartOffset,
   int32_t startChildOffset = GetChildOffset(startChildIdx);
   if (startChildOffset == -1) return;
 
-  Accessible* startChild = LocalChildAt(startChildIdx);
+  LocalAccessible* startChild = LocalChildAt(startChildIdx);
   startChild->AppendTextTo(aText, startOffset - startChildOffset);
 
   for (int32_t childIdx = startChildIdx + 1; childIdx < endChildIdx;
        childIdx++) {
-    Accessible* child = LocalChildAt(childIdx);
+    LocalAccessible* child = LocalChildAt(childIdx);
     child->AppendTextTo(aText);
   }
 
   int32_t endChildOffset = GetChildOffset(endChildIdx);
   if (endChildOffset == -1) return;
 
-  Accessible* endChild = LocalChildAt(endChildIdx);
+  LocalAccessible* endChild = LocalChildAt(endChildIdx);
   endChild->AppendTextTo(aText, 0, endOffset - endChildOffset);
 }
 
@@ -375,7 +375,7 @@ uint32_t HyperTextAccessible::DOMPointToOffset(nsINode* aNode,
   
   
   
-  Accessible* descendant = nullptr;
+  LocalAccessible* descendant = nullptr;
   if (findNode) {
     dom::HTMLBRElement* brElement = dom::HTMLBRElement::FromNode(findNode);
     if (brElement && brElement->IsPaddingForEmptyEditor()) {
@@ -386,7 +386,7 @@ uint32_t HyperTextAccessible::DOMPointToOffset(nsINode* aNode,
 
     descendant = mDoc->GetAccessible(findNode);
     if (!descendant && findNode->IsContent()) {
-      Accessible* container = mDoc->GetContainerAccessible(findNode);
+      LocalAccessible* container = mDoc->GetContainerAccessible(findNode);
       if (container) {
         TreeWalker walker(container, findNode->AsContent(),
                           TreeWalker::eWalkContextTree);
@@ -399,14 +399,14 @@ uint32_t HyperTextAccessible::DOMPointToOffset(nsINode* aNode,
   return TransformOffset(descendant, offset, aIsEndOffset);
 }
 
-uint32_t HyperTextAccessible::TransformOffset(Accessible* aDescendant,
+uint32_t HyperTextAccessible::TransformOffset(LocalAccessible* aDescendant,
                                               uint32_t aOffset,
                                               bool aIsEndOffset) const {
   
   uint32_t offset = aOffset;
-  Accessible* descendant = aDescendant;
+  LocalAccessible* descendant = aDescendant;
   while (descendant) {
-    Accessible* parent = descendant->LocalParent();
+    LocalAccessible* parent = descendant->LocalParent();
     if (parent == this) return GetChildOffset(descendant) + offset;
 
     
@@ -456,7 +456,7 @@ DOMPoint HyperTextAccessible::OffsetToDOMPoint(int32_t aOffset) const {
   int32_t childIdx = GetChildIndexAtOffset(aOffset);
   if (childIdx == -1) return DOMPoint();
 
-  Accessible* child = LocalChildAt(childIdx);
+  LocalAccessible* child = LocalChildAt(childIdx);
   int32_t innerOffset = aOffset - GetChildOffset(childIdx);
 
   
@@ -497,7 +497,7 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
 
   
   HyperTextAccessible* text = this;
-  Accessible* child = nullptr;
+  LocalAccessible* child = nullptr;
   int32_t innerOffset = aOffset;
 
   do {
@@ -609,7 +609,7 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
     
     if (IsHTMLListItem() && aAmount == eSelectBeginLine &&
         hyperTextOffset > 0) {
-      Accessible* prevOffsetChild = GetChildAtOffset(hyperTextOffset - 1);
+      LocalAccessible* prevOffsetChild = GetChildAtOffset(hyperTextOffset - 1);
       if (prevOffsetChild == AsHTMLListItem()->Bullet()) return 0;
     }
   }
@@ -638,7 +638,7 @@ uint32_t HyperTextAccessible::FindWordBoundary(
     
     
     
-    Accessible* child = GetChildAtOffset(orig);
+    LocalAccessible* child = GetChildAtOffset(orig);
     if (child && child->IsHyperText()) {
       
       
@@ -861,7 +861,7 @@ int32_t HyperTextAccessible::FindParagraphStartOffset(uint32_t aOffset) {
   
   
   
-  Accessible* child = GetChildAtOffset(aOffset);
+  LocalAccessible* child = GetChildAtOffset(aOffset);
   if (!child) {
     return -1;  
   }
@@ -920,7 +920,7 @@ int32_t HyperTextAccessible::FindParagraphEndOffset(uint32_t aOffset) {
   
   
   
-  Accessible* child = GetChildAtOffset(aOffset);
+  LocalAccessible* child = GetChildAtOffset(aOffset);
   if (!child) {
     return -1;  
   }
@@ -939,7 +939,7 @@ int32_t HyperTextAccessible::FindParagraphEndOffset(uint32_t aOffset) {
   AccessibleOrProxy match = p.Next(wrappedChild, boundaryRule, true);
   if (!match.IsNull()) {
     
-    Accessible* matchAcc = match.AsAccessible();
+    LocalAccessible* matchAcc = match.AsAccessible();
     uint32_t matchOffset;
     if (matchAcc->IsTextLeaf()) {
       
@@ -1217,7 +1217,7 @@ already_AddRefed<nsIPersistentProperties> HyperTextAccessible::TextAttributes(
 
   RefPtr<nsPersistentProperties> attributes = new nsPersistentProperties();
 
-  Accessible* accAtOffset = GetChildAtOffset(offset);
+  LocalAccessible* accAtOffset = GetChildAtOffset(offset);
   if (!accAtOffset) {
     
     
@@ -1275,7 +1275,7 @@ int32_t HyperTextAccessible::GetLevelInternal() {
 void HyperTextAccessible::SetMathMLXMLRoles(
     nsIPersistentProperties* aAttributes) {
   
-  Accessible* parent = LocalParent();
+  LocalAccessible* parent = LocalParent();
   if (parent) {
     switch (parent->Role()) {
       case roles::MATHML_CELL:
@@ -1486,7 +1486,7 @@ int32_t HyperTextAccessible::OffsetAtPoint(int32_t aX, int32_t aY,
   int32_t offset = 0;
   uint32_t childCount = ChildCount();
   for (uint32_t childIdx = 0; childIdx < childCount; childIdx++) {
-    Accessible* childAcc = mChildren[childIdx];
+    LocalAccessible* childAcc = mChildren[childIdx];
 
     nsIFrame* primaryFrame = childAcc->GetFrame();
     NS_ENSURE_TRUE(primaryFrame, -1);
@@ -1597,7 +1597,7 @@ already_AddRefed<TextEditor> HyperTextAccessible::GetEditor() const {
   if (!mContent->HasFlag(NODE_IS_EDITABLE)) {
     
     
-    Accessible* ancestor = LocalParent();
+    LocalAccessible* ancestor = LocalParent();
     while (ancestor) {
       HyperTextAccessible* hyperText = ancestor->AsHyperText();
       if (hyperText) {
@@ -2046,7 +2046,7 @@ void HyperTextAccessible::SelectionRanges(
 void HyperTextAccessible::VisibleRanges(
     nsTArray<a11y::TextRange>* aRanges) const {}
 
-void HyperTextAccessible::RangeByChild(Accessible* aChild,
+void HyperTextAccessible::RangeByChild(LocalAccessible* aChild,
                                        a11y::TextRange& aRange) const {
   HyperTextAccessible* ht = aChild->AsHyperText();
   if (ht) {
@@ -2054,8 +2054,8 @@ void HyperTextAccessible::RangeByChild(Accessible* aChild,
     return;
   }
 
-  Accessible* child = aChild;
-  Accessible* parent = nullptr;
+  LocalAccessible* child = aChild;
+  LocalAccessible* parent = nullptr;
   while ((parent = child->LocalParent()) && !(ht = parent->AsHyperText())) {
     child = parent;
   }
@@ -2073,10 +2073,10 @@ void HyperTextAccessible::RangeByChild(Accessible* aChild,
 
 void HyperTextAccessible::RangeAtPoint(int32_t aX, int32_t aY,
                                        a11y::TextRange& aRange) const {
-  Accessible* child = mDoc->ChildAtPoint(aX, aY, eDeepestChild);
+  LocalAccessible* child = mDoc->ChildAtPoint(aX, aY, eDeepestChild);
   if (!child) return;
 
-  Accessible* parent = nullptr;
+  LocalAccessible* parent = nullptr;
   while ((parent = child->LocalParent()) && !parent->IsHyperText()) {
     child = parent;
   }
@@ -2121,7 +2121,7 @@ void HyperTextAccessible::Shutdown() {
   AccessibleWrap::Shutdown();
 }
 
-bool HyperTextAccessible::RemoveChild(Accessible* aAccessible) {
+bool HyperTextAccessible::RemoveChild(LocalAccessible* aAccessible) {
   const int32_t childIndex = aAccessible->IndexInParent();
   if (childIndex < static_cast<int64_t>(mOffsets.Length())) {
     mOffsets.RemoveLastElements(mOffsets.Length() -
@@ -2131,7 +2131,8 @@ bool HyperTextAccessible::RemoveChild(Accessible* aAccessible) {
   return AccessibleWrap::RemoveChild(aAccessible);
 }
 
-bool HyperTextAccessible::InsertChildAt(uint32_t aIndex, Accessible* aChild) {
+bool HyperTextAccessible::InsertChildAt(uint32_t aIndex,
+                                        LocalAccessible* aChild) {
   if (aIndex < mOffsets.Length()) {
     mOffsets.RemoveLastElements(mOffsets.Length() - aIndex);
   }
@@ -2140,12 +2141,12 @@ bool HyperTextAccessible::InsertChildAt(uint32_t aIndex, Accessible* aChild) {
 }
 
 Relation HyperTextAccessible::RelationByType(RelationType aType) const {
-  Relation rel = Accessible::RelationByType(aType);
+  Relation rel = LocalAccessible::RelationByType(aType);
 
   switch (aType) {
     case RelationType::NODE_CHILD_OF:
       if (HasOwnContent() && mContent->IsMathMLElement()) {
-        Accessible* parent = LocalParent();
+        LocalAccessible* parent = LocalParent();
         if (parent) {
           nsIContent* parentContent = parent->GetContent();
           if (parentContent &&
@@ -2158,8 +2159,8 @@ Relation HyperTextAccessible::RelationByType(RelationType aType) const {
       break;
     case RelationType::NODE_PARENT_OF:
       if (HasOwnContent() && mContent->IsMathMLElement(nsGkAtoms::mroot_)) {
-        Accessible* base = LocalChildAt(0);
-        Accessible* index = LocalChildAt(1);
+        LocalAccessible* base = LocalChildAt(0);
+        LocalAccessible* index = LocalChildAt(1);
         if (base && index) {
           
           rel.AppendTarget(index);
@@ -2249,7 +2250,7 @@ int32_t HyperTextAccessible::GetChildOffset(uint32_t aChildIndex,
       mOffsets.IsEmpty() ? 0 : mOffsets[mOffsets.Length() - 1];
 
   while (mOffsets.Length() < aChildIndex) {
-    Accessible* child = mChildren[mOffsets.Length()];
+    LocalAccessible* child = mChildren[mOffsets.Length()];
     lastOffset += nsAccUtils::TextLength(child);
     mOffsets.AppendElement(lastOffset);
   }
@@ -2275,7 +2276,7 @@ int32_t HyperTextAccessible::GetChildIndexAtOffset(uint32_t aOffset) const {
 
   uint32_t childCount = ChildCount();
   while (mOffsets.Length() < childCount) {
-    Accessible* child = LocalChildAt(mOffsets.Length());
+    LocalAccessible* child = LocalChildAt(mOffsets.Length());
     lastOffset += nsAccUtils::TextLength(child);
     mOffsets.AppendElement(lastOffset);
     if (aOffset < lastOffset) return mOffsets.Length() - 1;
@@ -2289,10 +2290,9 @@ int32_t HyperTextAccessible::GetChildIndexAtOffset(uint32_t aOffset) const {
 
 
 
-nsresult HyperTextAccessible::GetDOMPointByFrameOffset(nsIFrame* aFrame,
-                                                       int32_t aOffset,
-                                                       Accessible* aAccessible,
-                                                       DOMPoint* aPoint) {
+nsresult HyperTextAccessible::GetDOMPointByFrameOffset(
+    nsIFrame* aFrame, int32_t aOffset, LocalAccessible* aAccessible,
+    DOMPoint* aPoint) {
   NS_ENSURE_ARG(aAccessible);
 
   if (!aFrame) {

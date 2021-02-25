@@ -98,7 +98,7 @@ class HTMLTextFieldAccessible : public HyperTextAccessibleWrap {
 
   
   virtual bool IsWidget() const override;
-  virtual Accessible* ContainerWidget() const override;
+  virtual LocalAccessible* ContainerWidget() const override;
 
  protected:
   virtual ~HTMLTextFieldAccessible() {}
@@ -130,7 +130,7 @@ class HTMLFileInputAccessible : public HyperTextAccessibleWrap {
   
   virtual mozilla::a11y::role NativeRole() const override;
   virtual nsresult HandleAccEvent(AccEvent* aAccEvent) override;
-  virtual Accessible* CurrentItem() const override;
+  virtual LocalAccessible* CurrentItem() const override;
 };
 
 

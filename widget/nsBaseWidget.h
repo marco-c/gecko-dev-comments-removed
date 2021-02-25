@@ -45,7 +45,7 @@ class LiveResizeListener;
 
 #ifdef ACCESSIBILITY
 namespace a11y {
-class Accessible;
+class LocalAccessible;
 }
 #endif
 
@@ -345,7 +345,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
 
 #ifdef ACCESSIBILITY
   
-  mozilla::a11y::Accessible* GetRootAccessible();
+  mozilla::a11y::LocalAccessible* GetRootAccessible();
 #endif
 
   

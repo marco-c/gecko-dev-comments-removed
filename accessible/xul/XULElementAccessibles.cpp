@@ -5,7 +5,7 @@
 
 #include "XULElementAccessibles.h"
 
-#include "Accessible-inl.h"
+#include "LocalAccessible-inl.h"
 #include "BaseAccessibles.h"
 #include "DocAccessible-inl.h"
 #include "nsAccUtils.h"
@@ -73,7 +73,7 @@ ENameValueFlag XULLabelAccessible::NativeName(nsString& aName) const {
   
   if (mValueTextLeaf) return mValueTextLeaf->Name(aName);
 
-  return Accessible::NativeName(aName);
+  return LocalAccessible::NativeName(aName);
 }
 
 role XULLabelAccessible::NativeRole() const { return roles::LABEL; }
@@ -89,7 +89,7 @@ Relation XULLabelAccessible::RelationByType(RelationType aType) const {
 
   
   if (aType == RelationType::LABEL_FOR) {
-    Accessible* parent = LocalParent();
+    LocalAccessible* parent = LocalParent();
     if (parent && parent->Role() == roles::GROUPING &&
         parent->LocalChildAt(0) == this) {
       nsIContent* parentContent = parent->GetContent();
@@ -202,12 +202,12 @@ uint32_t XULLinkAccessible::StartOffset() {
   
   
   
-  if (Accessible::IsLink()) return Accessible::StartOffset();
+  if (LocalAccessible::IsLink()) return LocalAccessible::StartOffset();
   return IndexInParent();
 }
 
 uint32_t XULLinkAccessible::EndOffset() {
-  if (Accessible::IsLink()) return Accessible::EndOffset();
+  if (LocalAccessible::IsLink()) return LocalAccessible::EndOffset();
   return IndexInParent() + 1;
 }
 

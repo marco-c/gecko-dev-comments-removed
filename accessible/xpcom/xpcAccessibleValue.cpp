@@ -5,7 +5,7 @@
 
 
 #include "xpcAccessibleGeneric.h"
-#include "Accessible.h"
+#include "LocalAccessible.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;

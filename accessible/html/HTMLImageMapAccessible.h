@@ -28,7 +28,7 @@ class HTMLImageMapAccessible final : public ImageAccessibleWrap {
 
   
   virtual uint32_t AnchorCount() override;
-  virtual Accessible* AnchorAt(uint32_t aAnchorIndex) override;
+  virtual LocalAccessible* AnchorAt(uint32_t aAnchorIndex) override;
   virtual already_AddRefed<nsIURI> AnchorURIAt(
       uint32_t aAnchorIndex) const override;
 
@@ -40,7 +40,7 @@ class HTMLImageMapAccessible final : public ImageAccessibleWrap {
   
 
 
-  Accessible* GetChildAccessibleFor(const nsINode* aNode) const;
+  LocalAccessible* GetChildAccessibleFor(const nsINode* aNode) const;
 
  protected:
   virtual ~HTMLImageMapAccessible() {}
@@ -55,8 +55,8 @@ class HTMLAreaAccessible final : public HTMLLinkAccessible {
 
   
   virtual void Description(nsString& aDescription) override;
-  virtual Accessible* ChildAtPoint(int32_t aX, int32_t aY,
-                                   EWhichChildAtPoint aWhichChild) override;
+  virtual LocalAccessible* ChildAtPoint(
+      int32_t aX, int32_t aY, EWhichChildAtPoint aWhichChild) override;
   virtual nsRect RelativeBounds(nsIFrame** aBoundingFrame) const override;
 
   
@@ -75,7 +75,7 @@ class HTMLAreaAccessible final : public HTMLLinkAccessible {
 
 
 
-inline HTMLImageMapAccessible* Accessible::AsImageMap() {
+inline HTMLImageMapAccessible* LocalAccessible::AsImageMap() {
   return IsImageMap() ? static_cast<HTMLImageMapAccessible*>(this) : nullptr;
 }
 

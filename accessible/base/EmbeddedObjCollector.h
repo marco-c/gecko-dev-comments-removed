@@ -10,7 +10,7 @@
 namespace mozilla {
 namespace a11y {
 
-class Accessible;
+class LocalAccessible;
 
 
 
@@ -23,7 +23,7 @@ class EmbeddedObjCollector final {
   
 
 
-  int32_t GetIndexAt(Accessible* aAccessible);
+  int32_t GetIndexAt(LocalAccessible* aAccessible);
 
   
 
@@ -33,33 +33,33 @@ class EmbeddedObjCollector final {
   
 
 
-  Accessible* GetAccessibleAt(uint32_t aIndex);
+  LocalAccessible* GetAccessibleAt(uint32_t aIndex);
 
  protected:
   
 
 
-  Accessible* EnsureNGetObject(uint32_t aIndex);
+  LocalAccessible* EnsureNGetObject(uint32_t aIndex);
 
   
 
 
-  int32_t EnsureNGetIndex(Accessible* aAccessible);
+  int32_t EnsureNGetIndex(LocalAccessible* aAccessible);
 
   
-  explicit EmbeddedObjCollector(Accessible* aRoot)
+  explicit EmbeddedObjCollector(LocalAccessible* aRoot)
       : mRoot(aRoot), mRootChildIdx(0) {}
 
   
 
 
-  void AppendObject(Accessible* aAccessible);
+  void AppendObject(LocalAccessible* aAccessible);
 
-  friend class Accessible;
+  friend class LocalAccessible;
 
-  Accessible* mRoot;
+  LocalAccessible* mRoot;
   uint32_t mRootChildIdx;
-  nsTArray<Accessible*> mObjects;
+  nsTArray<LocalAccessible*> mObjects;
 };
 
 }  

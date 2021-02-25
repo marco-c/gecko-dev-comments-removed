@@ -38,7 +38,7 @@ class XULMenuitemAccessible : public AccessibleWrap {
   
   virtual bool IsActiveWidget() const override;
   virtual bool AreItemsOperable() const override;
-  virtual Accessible* ContainerWidget() const override;
+  virtual LocalAccessible* ContainerWidget() const override;
 
  protected:
   
@@ -82,7 +82,7 @@ class XULMenupopupAccessible : public XULSelectControlAccessible {
   virtual bool IsActiveWidget() const override;
   virtual bool AreItemsOperable() const override;
 
-  virtual Accessible* ContainerWidget() const override;
+  virtual LocalAccessible* ContainerWidget() const override;
 
  protected:
   
@@ -102,8 +102,8 @@ class XULMenubarAccessible : public AccessibleWrap {
   
   virtual bool IsActiveWidget() const override;
   virtual bool AreItemsOperable() const override;
-  virtual Accessible* CurrentItem() const override;
-  virtual void SetCurrentItem(const Accessible* aItem) override;
+  virtual LocalAccessible* CurrentItem() const override;
+  virtual void SetCurrentItem(const LocalAccessible* aItem) override;
 
  protected:
   

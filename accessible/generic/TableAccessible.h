@@ -16,7 +16,7 @@
 namespace mozilla {
 namespace a11y {
 
-class Accessible;
+class LocalAccessible;
 
 
 
@@ -26,7 +26,7 @@ class TableAccessible {
   
 
 
-  virtual Accessible* Caption() const { return nullptr; }
+  virtual LocalAccessible* Caption() const { return nullptr; }
 
   
 
@@ -46,7 +46,7 @@ class TableAccessible {
   
 
 
-  virtual Accessible* CellAt(uint32_t aRowIdx, uint32_t aColIdx) {
+  virtual LocalAccessible* CellAt(uint32_t aRowIdx, uint32_t aColIdx) {
     return nullptr;
   }
 
@@ -140,7 +140,7 @@ class TableAccessible {
   
 
 
-  virtual void SelectedCells(nsTArray<Accessible*>* aCells) = 0;
+  virtual void SelectedCells(nsTArray<LocalAccessible*>* aCells) = 0;
 
   
 
@@ -185,9 +185,10 @@ class TableAccessible {
   
 
 
-  virtual Accessible* AsAccessible() = 0;
+  virtual LocalAccessible* AsAccessible() = 0;
 
-  typedef nsRefPtrHashtable<nsPtrHashKey<const TableCellAccessible>, Accessible>
+  typedef nsRefPtrHashtable<nsPtrHashKey<const TableCellAccessible>,
+                            LocalAccessible>
       HeaderCache;
 
   
@@ -203,12 +204,12 @@ class TableAccessible {
   
 
 
-  Accessible* RowAt(int32_t aRow);
+  LocalAccessible* RowAt(int32_t aRow);
 
   
 
 
-  Accessible* CellInRowAt(Accessible* aRow, int32_t aColumn);
+  LocalAccessible* CellInRowAt(LocalAccessible* aRow, int32_t aColumn);
 
  private:
   HeaderCache mHeaderCache;

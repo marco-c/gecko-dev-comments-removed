@@ -9,7 +9,7 @@
 
 #include "nsIAccessiblePivot.h"
 
-#include "Accessible-inl.h"
+#include "LocalAccessible-inl.h"
 #include "nsTObserverArray.h"
 #include "nsCycleCollectionParticipant.h"
 #include "mozilla/Attributes.h"
@@ -21,9 +21,9 @@ class RuleCache;
 
 class nsAccessiblePivot final : public nsIAccessiblePivot {
  public:
-  typedef mozilla::a11y::Accessible Accessible;
+  typedef mozilla::a11y::LocalAccessible LocalAccessible;
 
-  explicit nsAccessiblePivot(Accessible* aRoot);
+  explicit nsAccessiblePivot(LocalAccessible* aRoot);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsAccessiblePivot,
@@ -34,7 +34,7 @@ class nsAccessiblePivot final : public nsIAccessiblePivot {
   
 
 
-  Accessible* Position() { return mPosition; }
+  LocalAccessible* Position() { return mPosition; }
 
   int32_t StartOffset() { return mStartOffset; }
 
@@ -50,7 +50,7 @@ class nsAccessiblePivot final : public nsIAccessiblePivot {
 
 
 
-  bool NotifyOfPivotChange(Accessible* aOldAccessible, int32_t aOldStart,
+  bool NotifyOfPivotChange(LocalAccessible* aOldAccessible, int32_t aOldStart,
                            int32_t aOldEnd, PivotMoveReason aReason,
                            TextBoundaryType aBoundaryType,
                            bool aIsFromUserInput);
@@ -58,26 +58,26 @@ class nsAccessiblePivot final : public nsIAccessiblePivot {
   
 
 
-  bool IsDescendantOf(Accessible* aAccessible, Accessible* aAncestor);
+  bool IsDescendantOf(LocalAccessible* aAccessible, LocalAccessible* aAncestor);
 
   
 
 
-  Accessible* SearchForward(Accessible* aAccessible,
-                            nsIAccessibleTraversalRule* aRule,
-                            bool aSearchCurrent, nsresult* aResult);
+  LocalAccessible* SearchForward(LocalAccessible* aAccessible,
+                                 nsIAccessibleTraversalRule* aRule,
+                                 bool aSearchCurrent, nsresult* aResult);
 
   
 
 
-  Accessible* SearchBackward(Accessible* aAccessible,
-                             nsIAccessibleTraversalRule* aRule,
-                             bool aSearchCurrent, nsresult* aResult);
+  LocalAccessible* SearchBackward(LocalAccessible* aAccessible,
+                                  nsIAccessibleTraversalRule* aRule,
+                                  bool aSearchCurrent, nsresult* aResult);
 
   
 
 
-  Accessible* GetActiveRoot() const {
+  LocalAccessible* GetActiveRoot() const {
     if (mModalRoot) {
       NS_ENSURE_FALSE(mModalRoot->IsDefunct(), mRoot);
       return mModalRoot;
@@ -89,7 +89,7 @@ class nsAccessiblePivot final : public nsIAccessiblePivot {
   
 
 
-  bool MovePivotInternal(Accessible* aPosition, PivotMoveReason aReason,
+  bool MovePivotInternal(LocalAccessible* aPosition, PivotMoveReason aReason,
                          bool aIsFromUserInput);
 
   
@@ -101,23 +101,25 @@ class nsAccessiblePivot final : public nsIAccessiblePivot {
 
 
 
-  Accessible* AdjustStartPosition(Accessible* aAccessible, RuleCache& aCache,
-                                  uint16_t* aFilterResult, nsresult* aResult);
+  LocalAccessible* AdjustStartPosition(LocalAccessible* aAccessible,
+                                       RuleCache& aCache,
+                                       uint16_t* aFilterResult,
+                                       nsresult* aResult);
 
   
 
 
-  RefPtr<Accessible> mRoot;
+  RefPtr<LocalAccessible> mRoot;
 
   
 
 
-  RefPtr<Accessible> mModalRoot;
+  RefPtr<LocalAccessible> mModalRoot;
 
   
 
 
-  RefPtr<Accessible> mPosition;
+  RefPtr<LocalAccessible> mPosition;
 
   
 

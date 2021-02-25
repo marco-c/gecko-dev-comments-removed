@@ -24,7 +24,7 @@ class Relation {
 
   explicit Relation(AccIterable* aIter) : mFirstIter(aIter), mLastIter(aIter) {}
 
-  explicit Relation(Accessible* aAcc)
+  explicit Relation(LocalAccessible* aAcc)
       : mFirstIter(nullptr), mLastIter(nullptr) {
     AppendTarget(aAcc);
   }
@@ -59,7 +59,7 @@ class Relation {
   
 
 
-  inline void AppendTarget(Accessible* aAcc) {
+  inline void AppendTarget(LocalAccessible* aAcc) {
     if (aAcc) AppendIter(new SingleAccIterator(aAcc));
   }
 
@@ -74,8 +74,8 @@ class Relation {
   
 
 
-  inline Accessible* Next() {
-    Accessible* target = nullptr;
+  inline LocalAccessible* Next() {
+    LocalAccessible* target = nullptr;
 
     while (mFirstIter && !(target = mFirstIter->Next())) {
       mFirstIter = std::move(mFirstIter->mNextIter);

@@ -5,7 +5,7 @@
 
 #include "EventQueue.h"
 
-#include "Accessible-inl.h"
+#include "LocalAccessible-inl.h"
 #include "nsEventShell.h"
 #include "DocAccessible.h"
 #include "DocAccessibleChild.h"
@@ -48,7 +48,7 @@ bool EventQueue::PushEvent(AccEvent* aEvent) {
   return true;
 }
 
-bool EventQueue::PushNameOrDescriptionChange(Accessible* aTarget) {
+bool EventQueue::PushNameOrDescriptionChange(LocalAccessible* aTarget) {
   
   
   
@@ -63,7 +63,7 @@ bool EventQueue::PushNameOrDescriptionChange(Accessible* aTarget) {
   
   
   
-  Accessible* parent = aTarget->LocalParent();
+  LocalAccessible* parent = aTarget->LocalParent();
   while (parent &&
          nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeIfReqRule)) {
     
@@ -82,7 +82,7 @@ bool EventQueue::PushNameOrDescriptionChange(Accessible* aTarget) {
       }
 
       Relation rel = parent->RelationByType(RelationType::LABEL_FOR);
-      while (Accessible* relTarget = rel.Next()) {
+      while (LocalAccessible* relTarget = rel.Next()) {
         RefPtr<AccEvent> nameChangeEvent =
             new AccEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, relTarget);
         pushed |= PushEvent(nameChangeEvent);
@@ -91,7 +91,7 @@ bool EventQueue::PushNameOrDescriptionChange(Accessible* aTarget) {
 
     if (doDesc) {
       Relation rel = parent->RelationByType(RelationType::DESCRIPTION_FOR);
-      while (Accessible* relTarget = rel.Next()) {
+      while (LocalAccessible* relTarget = rel.Next()) {
         RefPtr<AccEvent> descChangeEvent = new AccEvent(
             nsIAccessibleEvent::EVENT_DESCRIPTION_CHANGE, relTarget);
         pushed |= PushEvent(descChangeEvent);
@@ -113,7 +113,7 @@ void EventQueue::CoalesceEvents() {
 
   switch (tailEvent->mEventRule) {
     case AccEvent::eCoalesceReorder: {
-      DebugOnly<Accessible*> target = tailEvent->mAccessible.get();
+      DebugOnly<LocalAccessible*> target = tailEvent->mAccessible.get();
       MOZ_ASSERT(
           target->IsApplication() || target->IsOuterDoc() ||
               target->IsXULTree(),
@@ -314,7 +314,7 @@ void EventQueue::ProcessEventQueue() {
   for (uint32_t idx = 0; idx < eventCount; idx++) {
     AccEvent* event = events[idx];
     if (event->mEventRule != AccEvent::eDoNotEmit) {
-      Accessible* target = event->GetAccessible();
+      LocalAccessible* target = event->GetAccessible();
       if (!target || target->IsDefunct()) continue;
 
       

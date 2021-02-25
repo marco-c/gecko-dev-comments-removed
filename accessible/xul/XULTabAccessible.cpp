@@ -79,7 +79,7 @@ uint64_t XULTabAccessible::NativeState() const {
 }
 
 uint64_t XULTabAccessible::NativeInteractiveState() const {
-  uint64_t state = Accessible::NativeInteractiveState();
+  uint64_t state = LocalAccessible::NativeInteractiveState();
   return (state & states::UNAVAILABLE) ? state : state | states::SELECTABLE;
 }
 
@@ -150,7 +150,7 @@ void XULTabsAccessible::ApplyARIAState(uint64_t* aState) const {
 
 
 
-void XULTabsAccessible::SelectedItems(nsTArray<Accessible*>* aItems) {
+void XULTabsAccessible::SelectedItems(nsTArray<LocalAccessible*>* aItems) {
   if (nsAccUtils::IsARIAMultiSelectable(this)) {
     AccessibleWrap::SelectedItems(aItems);
   } else {
@@ -158,7 +158,7 @@ void XULTabsAccessible::SelectedItems(nsTArray<Accessible*>* aItems) {
   }
 }
 
-Accessible* XULTabsAccessible::GetSelectedItem(uint32_t aIndex) {
+LocalAccessible* XULTabsAccessible::GetSelectedItem(uint32_t aIndex) {
   if (nsAccUtils::IsARIAMultiSelectable(this)) {
     return AccessibleWrap::GetSelectedItem(aIndex);
   }

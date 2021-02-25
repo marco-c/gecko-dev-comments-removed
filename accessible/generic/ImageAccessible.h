@@ -71,7 +71,7 @@ class ImageAccessible : public LinkableAccessible {
 
 
 
-inline ImageAccessible* Accessible::AsImage() {
+inline ImageAccessible* LocalAccessible::AsImage() {
   return IsImage() ? static_cast<ImageAccessible*>(this) : nullptr;
 }
 

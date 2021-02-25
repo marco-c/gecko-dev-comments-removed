@@ -117,7 +117,7 @@ class NotificationController final : public EventQueue,
 
 
 
-  EventTree* QueueMutation(Accessible* aContainer);
+  EventTree* QueueMutation(LocalAccessible* aContainer);
 
   class MoveGuard final {
    public:
@@ -180,13 +180,13 @@ class NotificationController final : public EventQueue,
   
 
 
-  void ScheduleContentInsertion(Accessible* aContainer,
+  void ScheduleContentInsertion(LocalAccessible* aContainer,
                                 nsTArray<nsCOMPtr<nsIContent>>& aInsertions);
 
   
 
 
-  void ScheduleRelocation(Accessible* aOwner) {
+  void ScheduleRelocation(LocalAccessible* aOwner) {
     if (!mRelocations.Contains(aOwner)) {
       
       
@@ -351,7 +351,8 @@ class NotificationController final : public EventQueue,
   
 
 
-  nsClassHashtable<nsRefPtrHashKey<Accessible>, nsTArray<nsCOMPtr<nsIContent>>>
+  nsClassHashtable<nsRefPtrHashKey<LocalAccessible>,
+                   nsTArray<nsCOMPtr<nsIContent>>>
       mContentInsertions;
 
   template <class T>
@@ -393,7 +394,7 @@ class NotificationController final : public EventQueue,
   
 
 
-  nsTArray<RefPtr<Accessible>> mRelocations;
+  nsTArray<RefPtr<LocalAccessible>> mRelocations;
 
   
 
@@ -432,7 +433,7 @@ class NotificationController final : public EventQueue,
     };
 
     void PutEvent(AccTreeMutationEvent* aEvent);
-    AccTreeMutationEvent* GetEvent(Accessible* aTarget, EventType aType);
+    AccTreeMutationEvent* GetEvent(LocalAccessible* aTarget, EventType aType);
     void RemoveEvent(AccTreeMutationEvent* aEvent);
     void Clear() { mTable.Clear(); }
 

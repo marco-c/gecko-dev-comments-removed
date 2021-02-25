@@ -46,7 +46,7 @@ class HTMLLinkAccessible : public HyperTextAccessibleWrap {
   enum { eAction_Jump = 0 };
 };
 
-inline HTMLLinkAccessible* Accessible::AsHTMLLink() {
+inline HTMLLinkAccessible* LocalAccessible::AsHTMLLink() {
   return IsHTMLLink() ? static_cast<HTMLLinkAccessible*>(this) : nullptr;
 }
 

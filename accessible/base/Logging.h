@@ -26,7 +26,7 @@ class Selection;
 namespace a11y {
 
 class AccEvent;
-class Accessible;
+class LocalAccessible;
 class DocAccessible;
 class OuterDocAccessible;
 
@@ -108,7 +108,7 @@ void OuterDocDestroy(OuterDocAccessible* OuterDoc);
 
 
 void FocusNotificationTarget(const char* aMsg, const char* aTargetDescr,
-                             Accessible* aTarget);
+                             LocalAccessible* aTarget);
 void FocusNotificationTarget(const char* aMsg, const char* aTargetDescr,
                              nsINode* aTargetNode);
 void FocusNotificationTarget(const char* aMsg, const char* aTargetDescr,
@@ -117,17 +117,17 @@ void FocusNotificationTarget(const char* aMsg, const char* aTargetDescr,
 
 
 
-void ActiveItemChangeCausedBy(const char* aMsg, Accessible* aTarget);
+void ActiveItemChangeCausedBy(const char* aMsg, LocalAccessible* aTarget);
 
 
 
 
-void ActiveWidget(Accessible* aWidget);
+void ActiveWidget(LocalAccessible* aWidget);
 
 
 
 
-void FocusDispatched(Accessible* aTarget);
+void FocusDispatched(LocalAccessible* aTarget);
 
 
 
@@ -140,14 +140,14 @@ void SelChange(dom::Selection* aSelection, DocAccessible* aDocument,
 
 void TreeInfo(const char* aMsg, uint32_t aExtraFlags, ...);
 void TreeInfo(const char* aMsg, uint32_t aExtraFlags, const char* aMsg1,
-              Accessible* aAcc, const char* aMsg2, nsINode* aNode);
-void TreeInfo(const char* aMsg, uint32_t aExtraFlags, Accessible* aParent);
+              LocalAccessible* aAcc, const char* aMsg2, nsINode* aNode);
+void TreeInfo(const char* aMsg, uint32_t aExtraFlags, LocalAccessible* aParent);
 
 
 
 
-typedef const char* (*GetTreePrefix)(void* aData, Accessible*);
-void Tree(const char* aTitle, const char* aMsgText, Accessible* aRoot,
+typedef const char* (*GetTreePrefix)(void* aData, LocalAccessible*);
+void Tree(const char* aTitle, const char* aMsgText, LocalAccessible* aRoot,
           GetTreePrefix aPrefixFunc = nullptr,
           void* aGetTreePrefixData = nullptr);
 void DOMTree(const char* aTitle, const char* aMsgText, DocAccessible* aDoc);
@@ -181,7 +181,7 @@ void Text(const char* aText);
 
 
 
-void Address(const char* aDescr, Accessible* aAcc);
+void Address(const char* aDescr, LocalAccessible* aAcc);
 
 
 
@@ -196,8 +196,8 @@ void Document(DocAccessible* aDocument);
 
 
 
-void AccessibleInfo(const char* aDescr, Accessible* aAccessible);
-void AccessibleNNode(const char* aDescr, Accessible* aAccessible);
+void AccessibleInfo(const char* aDescr, LocalAccessible* aAccessible);
+void AccessibleNNode(const char* aDescr, LocalAccessible* aAccessible);
 void AccessibleNNode(const char* aDescr, nsINode* aNode);
 
 

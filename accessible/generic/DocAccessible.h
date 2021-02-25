@@ -47,7 +47,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
                       public nsSupportsWeakReference,
                       public nsIAccessiblePivotObserver {
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DocAccessible, Accessible)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DocAccessible, LocalAccessible)
 
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIACCESSIBLEPIVOTOBSERVER
@@ -70,7 +70,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   virtual mozilla::a11y::ENameValueFlag Name(nsString& aName) const override;
   virtual void Description(nsString& aDescription) override;
-  virtual Accessible* FocusedChild() override;
+  virtual LocalAccessible* FocusedChild() override;
   virtual mozilla::a11y::role NativeRole() const override;
   virtual uint64_t NativeState() const override;
   virtual uint64_t NativeInteractiveState() const override;
@@ -192,18 +192,20 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
   void FireDelayedEvent(AccEvent* aEvent);
-  void FireDelayedEvent(uint32_t aEventType, Accessible* aTarget);
-  void FireEventsOnInsertion(Accessible* aContainer);
+  void FireDelayedEvent(uint32_t aEventType, LocalAccessible* aTarget);
+  void FireEventsOnInsertion(LocalAccessible* aContainer);
 
   
 
 
-  void MaybeNotifyOfValueChange(Accessible* aAccessible);
+  void MaybeNotifyOfValueChange(LocalAccessible* aAccessible);
 
   
 
 
-  Accessible* AnchorJump() { return GetAccessibleOrContainer(mAnchorJumpElm); }
+  LocalAccessible* AnchorJump() {
+    return GetAccessibleOrContainer(mAnchorJumpElm);
+  }
 
   void SetAnchorJump(nsIContent* aTargetNode) { mAnchorJumpElm = aTargetNode; }
 
@@ -230,7 +232,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  Accessible* GetAccessible(nsINode* aNode) const;
+  LocalAccessible* GetAccessible(nsINode* aNode) const;
 
   
 
@@ -238,8 +240,8 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  Accessible* GetAccessibleEvenIfNotInMap(nsINode* aNode) const;
-  Accessible* GetAccessibleEvenIfNotInMapOrContainer(nsINode* aNode) const;
+  LocalAccessible* GetAccessibleEvenIfNotInMap(nsINode* aNode) const;
+  LocalAccessible* GetAccessibleEvenIfNotInMapOrContainer(nsINode* aNode) const;
 
   
 
@@ -253,7 +255,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  Accessible* GetAccessibleByUniqueID(void* aUniqueID) {
+  LocalAccessible* GetAccessibleByUniqueID(void* aUniqueID) {
     return UniqueID() == aUniqueID ? this : mAccessibleCache.GetWeak(aUniqueID);
   }
 
@@ -261,7 +263,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  Accessible* GetAccessibleByUniqueIDInSubtree(void* aUniqueID);
+  LocalAccessible* GetAccessibleByUniqueIDInSubtree(void* aUniqueID);
 
   
 
@@ -269,13 +271,13 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  Accessible* GetAccessibleOrContainer(nsINode* aNode,
-                                       bool aNoContainerIfPruned = false) const;
+  LocalAccessible* GetAccessibleOrContainer(
+      nsINode* aNode, bool aNoContainerIfPruned = false) const;
 
   
 
 
-  Accessible* GetContainerAccessible(nsINode* aNode) const {
+  LocalAccessible* GetContainerAccessible(nsINode* aNode) const {
     return aNode ? GetAccessibleOrContainer(aNode->GetParentNode()) : nullptr;
   }
 
@@ -283,26 +285,27 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  Accessible* AccessibleOrTrueContainer(
+  LocalAccessible* AccessibleOrTrueContainer(
       nsINode* aNode, bool aNoContainerIfPruned = false) const;
 
   
 
 
-  Accessible* GetAccessibleOrDescendant(nsINode* aNode) const;
+  LocalAccessible* GetAccessibleOrDescendant(nsINode* aNode) const;
 
   
 
 
-  Accessible* ARIAOwnedAt(Accessible* aParent, uint32_t aIndex) const {
-    nsTArray<RefPtr<Accessible>>* children = mARIAOwnsHash.Get(aParent);
+  LocalAccessible* ARIAOwnedAt(LocalAccessible* aParent,
+                               uint32_t aIndex) const {
+    nsTArray<RefPtr<LocalAccessible>>* children = mARIAOwnsHash.Get(aParent);
     if (children) {
       return children->SafeElementAt(aIndex);
     }
     return nullptr;
   }
-  uint32_t ARIAOwnedCount(Accessible* aParent) const {
-    nsTArray<RefPtr<Accessible>>* children = mARIAOwnsHash.Get(aParent);
+  uint32_t ARIAOwnedCount(LocalAccessible* aParent) const {
+    nsTArray<RefPtr<LocalAccessible>>* children = mARIAOwnsHash.Get(aParent);
     return children ? children->Length() : 0;
   }
 
@@ -320,13 +323,13 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  void BindToDocument(Accessible* aAccessible,
+  void BindToDocument(LocalAccessible* aAccessible,
                       const nsRoleMapEntry* aRoleMapEntry);
 
   
 
 
-  void UnbindFromDocument(Accessible* aAccessible);
+  void UnbindFromDocument(LocalAccessible* aAccessible);
 
   
 
@@ -336,7 +339,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
-  void ContentRemoved(Accessible* aAccessible);
+  void ContentRemoved(LocalAccessible* aAccessible);
   void ContentRemoved(nsIContent* aContentNode);
 
   
@@ -434,7 +437,8 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  void AddDependentIDsFor(Accessible* aRelProvider, nsAtom* aRelAttr = nullptr);
+  void AddDependentIDsFor(LocalAccessible* aRelProvider,
+                          nsAtom* aRelAttr = nullptr);
 
   
 
@@ -444,7 +448,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  void RemoveDependentIDsFor(Accessible* aRelProvider,
+  void RemoveDependentIDsFor(LocalAccessible* aRelProvider,
                              nsAtom* aRelAttr = nullptr);
 
   
@@ -465,7 +469,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  void AttributeChangedImpl(Accessible* aAccessible, int32_t aNameSpaceID,
+  void AttributeChangedImpl(LocalAccessible* aAccessible, int32_t aNameSpaceID,
                             nsAtom* aAttribute, int32_t aModType);
 
   
@@ -474,20 +478,20 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  void ARIAAttributeChanged(Accessible* aAccessible, nsAtom* aAttribute);
+  void ARIAAttributeChanged(LocalAccessible* aAccessible, nsAtom* aAttribute);
 
   
 
 
-  void ARIAActiveDescendantChanged(Accessible* aAccessible);
+  void ARIAActiveDescendantChanged(LocalAccessible* aAccessible);
 
   
 
 
   void ProcessContentInserted(
-      Accessible* aContainer,
+      LocalAccessible* aContainer,
       const nsTArray<nsCOMPtr<nsIContent>>* aInsertedContent);
-  void ProcessContentInserted(Accessible* aContainer,
+  void ProcessContentInserted(LocalAccessible* aContainer,
                               nsIContent* aInsertedContent);
 
   
@@ -502,15 +506,15 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
-  void DoARIAOwnsRelocation(Accessible* aOwner);
+  void DoARIAOwnsRelocation(LocalAccessible* aOwner);
 
   
 
 
-  void PutChildrenBack(nsTArray<RefPtr<Accessible>>* aChildren,
+  void PutChildrenBack(nsTArray<RefPtr<LocalAccessible>>* aChildren,
                        uint32_t aStartIdx);
 
-  bool MoveChild(Accessible* aChild, Accessible* aNewParent,
+  bool MoveChild(LocalAccessible* aChild, LocalAccessible* aNewParent,
                  int32_t aIdxInParent);
 
   
@@ -520,14 +524,14 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  void CacheChildrenInSubtree(Accessible* aRoot,
-                              Accessible** aFocusedAcc = nullptr);
-  void CreateSubtree(Accessible* aRoot);
+  void CacheChildrenInSubtree(LocalAccessible* aRoot,
+                              LocalAccessible** aFocusedAcc = nullptr);
+  void CreateSubtree(LocalAccessible* aRoot);
 
   
 
 
-  void UncacheChildrenInSubtree(Accessible* aRoot);
+  void UncacheChildrenInSubtree(LocalAccessible* aRoot);
 
   
 
@@ -535,7 +539,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  void ShutdownChildrenInSubtree(Accessible* aAccessible);
+  void ShutdownChildrenInSubtree(LocalAccessible* aAccessible);
 
   
 
@@ -602,7 +606,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
   AccessibleHashtable mAccessibleCache;
-  nsDataHashtable<nsPtrHashKey<const nsINode>, Accessible*>
+  nsDataHashtable<nsPtrHashKey<const nsINode>, LocalAccessible*>
       mNodeToAccessibleMap;
 
   Document* mDocumentNode;
@@ -700,7 +704,8 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
-  nsClassHashtable<nsPtrHashKey<Accessible>, nsTArray<RefPtr<Accessible>>>
+  nsClassHashtable<nsPtrHashKey<LocalAccessible>,
+                   nsTArray<RefPtr<LocalAccessible>>>
       mARIAOwnsHash;
 
   
@@ -719,7 +724,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
   DocAccessibleChild* mIPCDoc;
 };
 
-inline DocAccessible* Accessible::AsDoc() {
+inline DocAccessible* LocalAccessible::AsDoc() {
   return IsDoc() ? static_cast<DocAccessible*>(this) : nullptr;
 }
 

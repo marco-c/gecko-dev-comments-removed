@@ -28,7 +28,7 @@ class XULAlertAccessible : public AccessibleWrap {
 
   
   virtual bool IsWidget() const override;
-  virtual Accessible* ContainerWidget() const override;
+  virtual LocalAccessible* ContainerWidget() const override;
 
  protected:
   ~XULAlertAccessible();

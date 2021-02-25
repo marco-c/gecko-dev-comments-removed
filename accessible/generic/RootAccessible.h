@@ -61,7 +61,7 @@ class RootAccessible : public DocAccessibleWrap, public nsIDOMEventListener {
   
 
 
-  void HandlePopupShownEvent(Accessible* aAccessible);
+  void HandlePopupShownEvent(LocalAccessible* aAccessible);
 
   
 
@@ -78,7 +78,7 @@ class RootAccessible : public DocAccessibleWrap, public nsIDOMEventListener {
 #endif
 };
 
-inline RootAccessible* Accessible::AsRoot() {
+inline RootAccessible* LocalAccessible::AsRoot() {
   return IsRoot() ? static_cast<mozilla::a11y::RootAccessible*>(this) : nullptr;
 }
 

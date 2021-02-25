@@ -22,7 +22,7 @@ class Selection;
 }  
 namespace a11y {
 
-class Accessible;
+class LocalAccessible;
 class HyperTextAccessible;
 
 
@@ -88,13 +88,13 @@ class TextRange final {
   
 
 
-  Accessible* Container() const;
+  LocalAccessible* Container() const;
 
   
 
 
 
-  void EmbeddedChildren(nsTArray<Accessible*>* aChildren) const;
+  void EmbeddedChildren(nsTArray<LocalAccessible*>* aChildren) const;
 
   
 
@@ -132,7 +132,7 @@ class TextRange final {
 
 
 
-  bool Crop(Accessible* aContainer);
+  bool Crop(LocalAccessible* aContainer);
 
   enum EDirection { eBackward, eForward };
 
@@ -253,7 +253,7 @@ class TextRange final {
 
 
 
-  bool TextInternal(nsAString& aText, Accessible* aCurrent,
+  bool TextInternal(nsAString& aText, LocalAccessible* aCurrent,
                     uint32_t aStartIntlOffset) const;
 
   void MoveInternal(ETextUnit aUnit, int32_t aCount,
@@ -265,10 +265,11 @@ class TextRange final {
 
 
 
-  Accessible* CommonParent(Accessible* aAcc1, Accessible* aAcc2,
-                           nsTArray<Accessible*>* aParents1, uint32_t* aPos1,
-                           nsTArray<Accessible*>* aParents2,
-                           uint32_t* aPos2) const;
+  LocalAccessible* CommonParent(LocalAccessible* aAcc1, LocalAccessible* aAcc2,
+                                nsTArray<LocalAccessible*>* aParents1,
+                                uint32_t* aPos1,
+                                nsTArray<LocalAccessible*>* aParents2,
+                                uint32_t* aPos2) const;
 
   RefPtr<HyperTextAccessible> mRoot;
   RefPtr<HyperTextAccessible> mStartContainer;

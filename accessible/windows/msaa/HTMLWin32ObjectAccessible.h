@@ -36,7 +36,7 @@ class HTMLWin32ObjectOwnerAccessible : public AccessibleWrap {
 
  protected:
   void* mHwnd;
-  RefPtr<Accessible> mNativeAccessible;
+  RefPtr<LocalAccessible> mNativeAccessible;
 };
 
 

@@ -78,7 +78,7 @@ nsRect HTMLLIAccessible::BoundsInAppUnits() const {
   return rect;
 }
 
-bool HTMLLIAccessible::InsertChildAt(uint32_t aIndex, Accessible* aChild) {
+bool HTMLLIAccessible::InsertChildAt(uint32_t aIndex, LocalAccessible* aChild) {
   
   if (mBullet && aIndex == 0 && aChild != mBullet) {
     return HyperTextAccessible::InsertChildAt(aIndex + 1, aChild);
@@ -87,7 +87,8 @@ bool HTMLLIAccessible::InsertChildAt(uint32_t aIndex, Accessible* aChild) {
   return HyperTextAccessible::InsertChildAt(aIndex, aChild);
 }
 
-void HTMLLIAccessible::RelocateChild(uint32_t aNewIndex, Accessible* aChild) {
+void HTMLLIAccessible::RelocateChild(uint32_t aNewIndex,
+                                     LocalAccessible* aChild) {
   
   if (mBullet && aChild != mBullet && aNewIndex != 0) {
     HyperTextAccessible::RelocateChild(aNewIndex, aChild);

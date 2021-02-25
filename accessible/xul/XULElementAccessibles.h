@@ -39,7 +39,7 @@ class XULLabelAccessible : public HyperTextAccessibleWrap {
   RefPtr<XULLabelTextLeafAccessible> mValueTextLeaf;
 };
 
-inline XULLabelAccessible* Accessible::AsXULLabel() {
+inline XULLabelAccessible* LocalAccessible::AsXULLabel() {
   return IsXULLabel() ? static_cast<XULLabelAccessible*>(this) : nullptr;
 }
 

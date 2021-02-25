@@ -31,10 +31,10 @@ class LeafAccessible : public AccessibleWrap {
   NS_INLINE_DECL_REFCOUNTING_INHERITED(LeafAccessible, AccessibleWrap)
 
   
-  virtual Accessible* ChildAtPoint(int32_t aX, int32_t aY,
-                                   EWhichChildAtPoint aWhichChild) override;
-  bool InsertChildAt(uint32_t aIndex, Accessible* aChild) final;
-  bool RemoveChild(Accessible* aChild) final;
+  virtual LocalAccessible* ChildAtPoint(
+      int32_t aX, int32_t aY, EWhichChildAtPoint aWhichChild) override;
+  bool InsertChildAt(uint32_t aIndex, LocalAccessible* aChild) final;
+  bool RemoveChild(LocalAccessible* aChild) final;
 
   virtual bool IsAcceptableChild(nsIContent* aEl) const override;
 
@@ -69,9 +69,9 @@ class LinkableAccessible : public AccessibleWrap {
   virtual KeyBinding AccessKey() const override;
 
   
-  const Accessible* ActionWalk(bool* aIsLink = nullptr,
-                               bool* aIsOnclick = nullptr,
-                               bool* aIsLabelWithControl = nullptr) const;
+  const LocalAccessible* ActionWalk(bool* aIsLink = nullptr,
+                                    bool* aIsOnclick = nullptr,
+                                    bool* aIsLabelWithControl = nullptr) const;
   
   virtual already_AddRefed<nsIURI> AnchorURIAt(
       uint32_t aAnchorIndex) const override;
@@ -90,7 +90,7 @@ class EnumRoleAccessible : public AccessibleWrap {
       : AccessibleWrap(aContent, aDoc) {}
 
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aPtr) override {
-    return Accessible::QueryInterface(aIID, aPtr);
+    return LocalAccessible::QueryInterface(aIID, aPtr);
   }
 
   

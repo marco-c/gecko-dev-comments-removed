@@ -5,7 +5,7 @@
 
 
 
-#include "Accessible-inl.h"
+#include "LocalAccessible-inl.h"
 #include "HyperTextAccessible-inl.h"
 #include "mozilla/a11y/PDocAccessible.h"
 #include "nsCocoaUtils.h"
@@ -76,7 +76,7 @@ inline NSString* ToNSString(id aValue) {
     
     
     
-    if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
+    if (LocalAccessible* acc = mGeckoAccessible.AsAccessible()) {
       HyperTextAccessible* text = acc->AsHyperText();
       if (!text || !text->IsTextRole()) {
         
@@ -150,7 +150,7 @@ inline NSString* ToNSString(id aValue) {
   }
 
   if (mRole == roles::ENTRY) {
-    Accessible* acc = mGeckoAccessible.AsAccessible();
+    LocalAccessible* acc = mGeckoAccessible.AsAccessible();
     ProxyAccessible* proxy = mGeckoAccessible.AsProxy();
     if ((acc && acc->IsSearchbox()) || (proxy && proxy->IsSearchbox())) {
       return @"AXSearchField";

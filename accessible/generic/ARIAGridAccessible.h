@@ -32,15 +32,15 @@ class ARIAGridAccessible : public HyperTextAccessibleWrap,
   
   virtual uint32_t ColCount() const override;
   virtual uint32_t RowCount() override;
-  virtual Accessible* CellAt(uint32_t aRowIndex,
-                             uint32_t aColumnIndex) override;
+  virtual LocalAccessible* CellAt(uint32_t aRowIndex,
+                                  uint32_t aColumnIndex) override;
   virtual bool IsColSelected(uint32_t aColIdx) override;
   virtual bool IsRowSelected(uint32_t aRowIdx) override;
   virtual bool IsCellSelected(uint32_t aRowIdx, uint32_t aColIdx) override;
   virtual uint32_t SelectedCellCount() override;
   virtual uint32_t SelectedColCount() override;
   virtual uint32_t SelectedRowCount() override;
-  virtual void SelectedCells(nsTArray<Accessible*>* aCells) override;
+  virtual void SelectedCells(nsTArray<LocalAccessible*>* aCells) override;
   virtual void SelectedCellIndices(nsTArray<uint32_t>* aCells) override;
   virtual void SelectedColIndices(nsTArray<uint32_t>* aCols) override;
   virtual void SelectedRowIndices(nsTArray<uint32_t>* aRows) override;
@@ -48,7 +48,7 @@ class ARIAGridAccessible : public HyperTextAccessibleWrap,
   virtual void SelectRow(uint32_t aRowIdx) override;
   virtual void UnselectCol(uint32_t aColIdx) override;
   virtual void UnselectRow(uint32_t aRowIdx) override;
-  virtual Accessible* AsAccessible() override { return this; }
+  virtual LocalAccessible* AsAccessible() override { return this; }
 
  protected:
   virtual ~ARIAGridAccessible() {}
@@ -61,7 +61,7 @@ class ARIAGridAccessible : public HyperTextAccessibleWrap,
 
 
 
-  nsresult SetARIASelected(Accessible* aAccessible, bool aIsSelected,
+  nsresult SetARIASelected(LocalAccessible* aAccessible, bool aIsSelected,
                            bool aNotify = true);
 };
 
@@ -110,8 +110,8 @@ class ARIAGridCellAccessible : public HyperTextAccessibleWrap,
   
 
 
-  Accessible* Row() const {
-    Accessible* row = LocalParent();
+  LocalAccessible* Row() const {
+    LocalAccessible* row = LocalParent();
     return row && row->IsTableRow() ? row : nullptr;
   }
 
@@ -119,7 +119,7 @@ class ARIAGridCellAccessible : public HyperTextAccessibleWrap,
 
 
 
-  int32_t RowIndexFor(Accessible* aRow) const;
+  int32_t RowIndexFor(LocalAccessible* aRow) const;
 
   
   virtual TableAccessible* Table() const override;

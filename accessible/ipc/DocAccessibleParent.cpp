@@ -817,7 +817,7 @@ void DocAccessibleParent::MaybeInitWindowEmulation() {
 
   
   
-  Accessible* outerDoc = OuterDocOfRemoteBrowser();
+  LocalAccessible* outerDoc = OuterDocOfRemoteBrowser();
   if (!outerDoc) {
     return;
   }
@@ -870,7 +870,7 @@ void DocAccessibleParent::MaybeInitWindowEmulation() {
   MOZ_ASSERT(hWnd);
 }
 
-void DocAccessibleParent::SendParentCOMProxy(Accessible* aOuterDoc) {
+void DocAccessibleParent::SendParentCOMProxy(LocalAccessible* aOuterDoc) {
   
   auto tab = static_cast<dom::BrowserParent*>(Manager());
   MOZ_ASSERT(tab);

@@ -36,7 +36,7 @@ class TextLeafAccessible : public LinkableAccessible {
 
 
 
-inline TextLeafAccessible* Accessible::AsTextLeaf() {
+inline TextLeafAccessible* LocalAccessible::AsTextLeaf() {
   return IsTextLeaf() ? static_cast<TextLeafAccessible*>(this) : nullptr;
 }
 

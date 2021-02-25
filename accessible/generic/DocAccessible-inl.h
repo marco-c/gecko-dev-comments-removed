@@ -22,11 +22,12 @@
 namespace mozilla {
 namespace a11y {
 
-inline Accessible* DocAccessible::AccessibleOrTrueContainer(
+inline LocalAccessible* DocAccessible::AccessibleOrTrueContainer(
     nsINode* aNode, bool aNoContainerIfPruned) const {
   
   
-  Accessible* container = GetAccessibleOrContainer(aNode, aNoContainerIfPruned);
+  LocalAccessible* container =
+      GetAccessibleOrContainer(aNode, aNoContainerIfPruned);
   if (container && container->IsHTMLCombobox()) {
     return container->LocalFirstChild();
   }
@@ -60,7 +61,7 @@ inline void DocAccessible::FireDelayedEvent(AccEvent* aEvent) {
 }
 
 inline void DocAccessible::FireDelayedEvent(uint32_t aEventType,
-                                            Accessible* aTarget) {
+                                            LocalAccessible* aTarget) {
   RefPtr<AccEvent> event = new AccEvent(aEventType, aTarget);
   FireDelayedEvent(event);
 }
@@ -101,25 +102,26 @@ inline void DocAccessible::NotifyOfLoad(uint32_t aLoadEventType) {
   }
 }
 
-inline void DocAccessible::MaybeNotifyOfValueChange(Accessible* aAccessible) {
+inline void DocAccessible::MaybeNotifyOfValueChange(
+    LocalAccessible* aAccessible) {
   if (aAccessible->IsCombobox() || aAccessible->Role() == roles::ENTRY ||
       aAccessible->Role() == roles::SPINBUTTON) {
     FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE, aAccessible);
   }
 }
 
-inline Accessible* DocAccessible::GetAccessibleEvenIfNotInMapOrContainer(
+inline LocalAccessible* DocAccessible::GetAccessibleEvenIfNotInMapOrContainer(
     nsINode* aNode) const {
-  Accessible* acc = GetAccessibleEvenIfNotInMap(aNode);
+  LocalAccessible* acc = GetAccessibleEvenIfNotInMap(aNode);
   return acc ? acc : GetContainerAccessible(aNode);
 }
 
-inline void DocAccessible::CreateSubtree(Accessible* aChild) {
+inline void DocAccessible::CreateSubtree(LocalAccessible* aChild) {
   
   
   
   
-  Accessible* focusedAcc = nullptr;
+  LocalAccessible* focusedAcc = nullptr;
   CacheChildrenInSubtree(aChild, &focusedAcc);
 
 #ifdef A11Y_LOG

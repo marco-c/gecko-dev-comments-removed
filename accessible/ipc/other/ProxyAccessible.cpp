@@ -803,7 +803,7 @@ ProxyAccessible* ProxyAccessible::FocusedChild() {
 }
 
 ProxyAccessible* ProxyAccessible::ChildAtPoint(
-    int32_t aX, int32_t aY, Accessible::EWhichChildAtPoint aWhichChild) {
+    int32_t aX, int32_t aY, LocalAccessible::EWhichChildAtPoint aWhichChild) {
   ProxyAccessible* target = this;
   do {
     if (target->mOuterDoc) {
@@ -813,7 +813,7 @@ ProxyAccessible* ProxyAccessible::ChildAtPoint(
       if (childDoc->IsTopLevelInContentProcess()) {
         
         
-        if (aWhichChild == Accessible::eDirectChild) {
+        if (aWhichChild == LocalAccessible::eDirectChild) {
           
           nsIntRect docRect = target->Bounds();
           if (docRect.Contains(aX, aY)) {
@@ -834,7 +834,7 @@ ProxyAccessible* ProxyAccessible::ChildAtPoint(
     auto useDoc = static_cast<DocAccessibleParent*>(resultDoc);
     target = resultDoc ? useDoc->GetAccessible(resultID) : nullptr;
   } while (target && target->mOuterDoc &&
-           aWhichChild == Accessible::eDeepestChild);
+           aWhichChild == LocalAccessible::eDeepestChild);
   return target;
 }
 

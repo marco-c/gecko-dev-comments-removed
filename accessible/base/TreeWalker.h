@@ -16,7 +16,7 @@ class nsIContent;
 namespace mozilla {
 namespace a11y {
 
-class Accessible;
+class LocalAccessible;
 class DocAccessible;
 
 
@@ -35,7 +35,7 @@ class TreeWalker final {
   
 
 
-  explicit TreeWalker(Accessible* aContext);
+  explicit TreeWalker(LocalAccessible* aContext);
 
   
 
@@ -45,7 +45,7 @@ class TreeWalker final {
 
 
 
-  TreeWalker(Accessible* aContext, nsIContent* aAnchorNode,
+  TreeWalker(LocalAccessible* aContext, nsIContent* aAnchorNode,
              uint32_t aFlags = eWalkCache);
 
   
@@ -59,7 +59,7 @@ class TreeWalker final {
 
 
 
-  Accessible* Scope(nsIContent* aAnchorNode);
+  LocalAccessible* Scope(nsIContent* aAnchorNode);
 
   
 
@@ -82,10 +82,10 @@ class TreeWalker final {
 
 
 
-  Accessible* Next();
-  Accessible* Prev();
+  LocalAccessible* Next();
+  LocalAccessible* Prev();
 
-  Accessible* Context() const { return mContext; }
+  LocalAccessible* Context() const { return mContext; }
   DocAccessible* Document() const { return mDoc; }
 
  private:
@@ -96,8 +96,8 @@ class TreeWalker final {
   
 
 
-  Accessible* AccessibleFor(nsIContent* aNode, uint32_t aFlags,
-                            bool* aSkipSubtree);
+  LocalAccessible* AccessibleFor(nsIContent* aNode, uint32_t aFlags,
+                                 bool* aSkipSubtree);
 
   
 
@@ -123,7 +123,7 @@ class TreeWalker final {
   dom::AllChildrenIterator* PopState();
 
   DocAccessible* mDoc;
-  Accessible* mContext;
+  LocalAccessible* mContext;
   nsIContent* mAnchorNode;
 
   AutoTArray<dom::AllChildrenIterator, 20> mStateStack;

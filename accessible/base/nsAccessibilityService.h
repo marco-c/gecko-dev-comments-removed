@@ -55,8 +55,8 @@ SelectionManager* SelectionMgr();
 ApplicationAccessible* ApplicationAcc();
 xpcAccessibleApplication* XPCApplicationAcc();
 
-typedef Accessible*(New_Accessible)(mozilla::dom::Element* aElement,
-                                    Accessible* aContext);
+typedef LocalAccessible*(New_Accessible)(mozilla::dom::Element* aElement,
+                                         LocalAccessible* aContext);
 
 
 struct MarkupAttrInfo {
@@ -100,7 +100,7 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
                                      public nsIListenerChangeListener,
                                      public nsIObserver {
  public:
-  typedef mozilla::a11y::Accessible Accessible;
+  typedef mozilla::a11y::LocalAccessible LocalAccessible;
   typedef mozilla::a11y::DocAccessible DocAccessible;
 
   
@@ -113,15 +113,15 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIOBSERVER
 
-  Accessible* GetRootDocumentAccessible(mozilla::PresShell* aPresShell,
-                                        bool aCanCreate);
+  LocalAccessible* GetRootDocumentAccessible(mozilla::PresShell* aPresShell,
+                                             bool aCanCreate);
 
   
 
 
 
-  Accessible* AddNativeRootAccessible(void* aAtkAccessible);
-  void RemoveNativeRootAccessible(Accessible* aRootAccessible);
+  LocalAccessible* AddNativeRootAccessible(void* aAtkAccessible);
+  void RemoveNativeRootAccessible(LocalAccessible* aRootAccessible);
 
   bool HasAccessible(nsINode* aDOMNode);
 
@@ -225,7 +225,7 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
   void RecreateAccessible(mozilla::PresShell* aPresShell, nsIContent* aContent);
 
-  void FireAccessibleEvent(uint32_t aEvent, Accessible* aTarget);
+  void FireAccessibleEvent(uint32_t aEvent, LocalAccessible* aTarget);
 
   
 
@@ -251,8 +251,8 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
 
 
-  Accessible* CreateAccessible(nsINode* aNode, Accessible* aContext,
-                               bool* aIsSubtreeHidden = nullptr);
+  LocalAccessible* CreateAccessible(nsINode* aNode, LocalAccessible* aContext,
+                                    bool* aIsSubtreeHidden = nullptr);
 
   mozilla::a11y::role MarkupRole(const nsIContent* aContent) const {
     const mozilla::a11y::HTMLMarkupMapInfo* markupMap =
@@ -324,8 +324,8 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
-  already_AddRefed<Accessible> CreateAccessibleByFrameType(
-      nsIFrame* aFrame, nsIContent* aContent, Accessible* aContext);
+  already_AddRefed<LocalAccessible> CreateAccessibleByFrameType(
+      nsIFrame* aFrame, nsIContent* aContent, LocalAccessible* aContext);
 
   
 

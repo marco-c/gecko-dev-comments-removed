@@ -2064,20 +2064,20 @@ void nsChildView::LookUpDictionary(const nsAString& aText,
 }
 
 #ifdef ACCESSIBILITY
-already_AddRefed<a11y::Accessible> nsChildView::GetDocumentAccessible() {
+already_AddRefed<a11y::LocalAccessible> nsChildView::GetDocumentAccessible() {
   if (!mozilla::a11y::ShouldA11yBeEnabled()) return nullptr;
 
   
   
   if (mAccessible && mAccessible->IsAlive()) {
-    RefPtr<a11y::Accessible> ret;
-    CallQueryReferent(mAccessible.get(), static_cast<a11y::Accessible**>(getter_AddRefs(ret)));
+    RefPtr<a11y::LocalAccessible> ret;
+    CallQueryReferent(mAccessible.get(), static_cast<a11y::LocalAccessible**>(getter_AddRefs(ret)));
     return ret.forget();
   }
 
   
   
-  RefPtr<a11y::Accessible> acc = GetRootAccessible();
+  RefPtr<a11y::LocalAccessible> acc = GetRootAccessible();
   mAccessible = do_GetWeakReference(acc.get());
 
   return acc.forget();
@@ -4722,7 +4722,7 @@ nsresult nsChildView::GetSelectionAsPlaintext(nsAString& aResult) {
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
   RefPtr<nsChildView> geckoChild(mGeckoChild);
-  RefPtr<a11y::Accessible> accessible = geckoChild->GetDocumentAccessible();
+  RefPtr<a11y::LocalAccessible> accessible = geckoChild->GetDocumentAccessible();
   if (!accessible) return nil;
 
   accessible->GetNativeInterface((void**)&nativeAccessible);

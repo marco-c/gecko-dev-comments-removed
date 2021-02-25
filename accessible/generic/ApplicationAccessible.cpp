@@ -73,13 +73,13 @@ ApplicationAccessible::NativeAttributes() {
 
 GroupPos ApplicationAccessible::GroupPosition() { return GroupPos(); }
 
-Accessible* ApplicationAccessible::ChildAtPoint(
+LocalAccessible* ApplicationAccessible::ChildAtPoint(
     int32_t aX, int32_t aY, EWhichChildAtPoint aWhichChild) {
   return nullptr;
 }
 
-Accessible* ApplicationAccessible::FocusedChild() {
-  Accessible* focus = FocusMgr()->FocusedAccessible();
+LocalAccessible* ApplicationAccessible::FocusedChild() {
+  LocalAccessible* focus = FocusMgr()->FocusedAccessible();
   if (focus && focus->LocalParent() == this) {
     return focus;
   }
@@ -133,8 +133,8 @@ void ApplicationAccessible::Init() {
   }
 }
 
-Accessible* ApplicationAccessible::GetSiblingAtOffset(int32_t aOffset,
-                                                      nsresult* aError) const {
+LocalAccessible* ApplicationAccessible::GetSiblingAtOffset(
+    int32_t aOffset, nsresult* aError) const {
   if (aError) *aError = NS_OK;  
 
   return nullptr;

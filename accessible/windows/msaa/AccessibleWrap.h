@@ -8,7 +8,7 @@
 #define mozilla_a11y_AccessibleWrap_h_
 
 #include "nsCOMPtr.h"
-#include "Accessible.h"
+#include "LocalAccessible.h"
 #include "ia2Accessible.h"
 #include "ia2AccessibleComponent.h"
 #include "ia2AccessibleHyperlink.h"
@@ -33,7 +33,7 @@ namespace mozilla {
 namespace a11y {
 class DocProxyAccessibleWrap;
 
-class AccessibleWrap : public Accessible,
+class AccessibleWrap : public LocalAccessible,
                        public ia2Accessible,
                        public ia2AccessibleComponent,
                        public ia2AccessibleHyperlink,
@@ -160,10 +160,10 @@ class AccessibleWrap : public Accessible,
   virtual void Shutdown() override;
 
   
-  static int32_t GetChildIDFor(Accessible* aAccessible);
-  static HWND GetHWNDFor(Accessible* aAccessible);
+  static int32_t GetChildIDFor(LocalAccessible* aAccessible);
+  static HWND GetHWNDFor(LocalAccessible* aAccessible);
 
-  static void FireWinEvent(Accessible* aTarget, uint32_t aEventType);
+  static void FireWinEvent(LocalAccessible* aTarget, uint32_t aEventType);
 
   
 
@@ -172,7 +172,7 @@ class AccessibleWrap : public Accessible,
 
 
 
-  void UpdateSystemCaretFor(Accessible* aAccessible);
+  void UpdateSystemCaretFor(LocalAccessible* aAccessible);
   static void UpdateSystemCaretFor(ProxyAccessible* aProxy,
                                    const LayoutDeviceIntRect& aCaretRect);
 
@@ -208,7 +208,7 @@ class AccessibleWrap : public Accessible,
 
   virtual void GetNativeInterface(void** aOutAccessible) override;
 
-  static IDispatch* NativeAccessible(Accessible* aAccessible);
+  static IDispatch* NativeAccessible(LocalAccessible* aAccessible);
 
   uint32_t GetExistingID() const { return mID; }
   static const uint32_t kNoID = 0;

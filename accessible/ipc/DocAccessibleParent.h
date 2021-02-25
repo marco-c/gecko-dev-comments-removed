@@ -232,7 +232,7 @@ class DocAccessibleParent : public ProxyAccessible,
 
 
 
-  void SendParentCOMProxy(Accessible* aOuterDoc);
+  void SendParentCOMProxy(LocalAccessible* aOuterDoc);
 
   virtual mozilla::ipc::IPCResult RecvGetWindowedPluginIAccessible(
       const WindowsHandle& aHwnd, IAccessibleHolder* aPluginCOMProxy) override;

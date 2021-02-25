@@ -22,7 +22,7 @@ class PresShell;
 
 namespace a11y {
 
-class Accessible;
+class LocalAccessible;
 class DocAccessible;
 class xpcAccessibleDocument;
 class DocAccessibleParent;
@@ -52,7 +52,7 @@ class DocManager : public nsIWebProgressListener,
 
 
 
-  Accessible* FindAccessibleInCache(nsINode* aNode) const;
+  LocalAccessible* FindAccessibleInCache(nsINode* aNode) const;
 
   
 

@@ -18,7 +18,7 @@ class Document;
 namespace a11y {
 
 class AccEvent;
-class Accessible;
+class LocalAccessible;
 class DocAccessible;
 
 
@@ -31,18 +31,18 @@ class FocusManager {
   
 
 
-  Accessible* FocusedAccessible() const;
+  LocalAccessible* FocusedAccessible() const;
 
   
 
 
-  bool IsFocused(const Accessible* aAccessible) const;
+  bool IsFocused(const LocalAccessible* aAccessible) const;
 
   
 
 
 
-  inline bool IsActiveItem(const Accessible* aAccessible) {
+  inline bool IsActiveItem(const LocalAccessible* aAccessible) {
     return aAccessible == mActiveItem;
   }
 
@@ -61,14 +61,15 @@ class FocusManager {
   
 
 
-  bool IsFocusWithin(const Accessible* aContainer) const;
+  bool IsFocusWithin(const LocalAccessible* aContainer) const;
 
   
 
 
 
   enum FocusDisposition { eNone, eFocused, eContainsFocus, eContainedByFocus };
-  FocusDisposition IsInOrContainsFocus(const Accessible* aAccessible) const;
+  FocusDisposition IsInOrContainsFocus(
+      const LocalAccessible* aAccessible) const;
 
   
 
@@ -80,7 +81,7 @@ class FocusManager {
 
 
 
-  bool WasLastFocused(const Accessible* aAccessible) const;
+  bool WasLastFocused(const LocalAccessible* aAccessible) const;
 
   
   
@@ -99,7 +100,7 @@ class FocusManager {
 
 
 
-  void ActiveItemChanged(Accessible* aItem, bool aCheckIfActive = true);
+  void ActiveItemChanged(LocalAccessible* aItem, bool aCheckIfActive = true);
 
   
 
@@ -109,7 +110,7 @@ class FocusManager {
   
 
 
-  void DispatchFocusEvent(DocAccessible* aDocument, Accessible* aTarget);
+  void DispatchFocusEvent(DocAccessible* aDocument, LocalAccessible* aTarget);
 
   
 
@@ -135,9 +136,9 @@ class FocusManager {
   dom::Document* FocusedDOMDocument() const;
 
  private:
-  RefPtr<Accessible> mActiveItem;
-  RefPtr<Accessible> mLastFocus;
-  RefPtr<Accessible> mActiveARIAMenubar;
+  RefPtr<LocalAccessible> mActiveItem;
+  RefPtr<LocalAccessible> mLastFocus;
+  RefPtr<LocalAccessible> mActiveARIAMenubar;
 };
 
 }  

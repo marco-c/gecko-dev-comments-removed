@@ -15,7 +15,7 @@ class nsIArray;
 namespace mozilla {
 namespace a11y {
 
-class Accessible;
+class LocalAccessible;
 
 
 
@@ -41,7 +41,7 @@ class xpcAccessibleSelectable : public nsIAccessibleSelectable {
   xpcAccessibleSelectable(const xpcAccessibleSelectable&) = delete;
   xpcAccessibleSelectable& operator=(const xpcAccessibleSelectable&) = delete;
 
-  Accessible* Intl();
+  LocalAccessible* Intl();
 };
 
 }  

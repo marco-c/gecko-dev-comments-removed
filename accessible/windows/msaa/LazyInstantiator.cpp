@@ -7,7 +7,7 @@
 #include "LazyInstantiator.h"
 
 #include "MainThreadUtils.h"
-#include "mozilla/a11y/Accessible.h"
+#include "mozilla/a11y/LocalAccessible.h"
 #include "mozilla/a11y/AccessibleHandler.h"
 #include "mozilla/a11y/Compatibility.h"
 #include "mozilla/a11y/Platform.h"
@@ -70,7 +70,8 @@ already_AddRefed<IAccessible> LazyInstantiator::GetRootAccessible(HWND aHwnd) {
   }
 
   
-  a11y::Accessible* rootAcc = widget::WinUtils::GetRootAccessibleForHWND(aHwnd);
+  a11y::LocalAccessible* rootAcc =
+      widget::WinUtils::GetRootAccessibleForHWND(aHwnd);
   if (!rootAcc) {
     return nullptr;
   }
@@ -247,7 +248,7 @@ bool LazyInstantiator::ShouldInstantiate(const DWORD aClientTid) {
 }
 
 RootAccessibleWrap* LazyInstantiator::ResolveRootAccWrap() {
-  Accessible* acc = widget::WinUtils::GetRootAccessibleForHWND(mHwnd);
+  LocalAccessible* acc = widget::WinUtils::GetRootAccessibleForHWND(mHwnd);
   if (!acc || !acc->IsRoot()) {
     return nullptr;
   }

@@ -10,7 +10,7 @@
 
 #define CreateEvent CreateEventA
 
-#include "Accessible-inl.h"
+#include "LocalAccessible-inl.h"
 #include "DocAccessible-inl.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "nsAccessibilityService.h"
@@ -73,7 +73,7 @@ ENameValueFlag RootAccessible::Name(nsString& aName) const {
   aName.Truncate();
 
   if (ARIARoleMap()) {
-    Accessible::Name(aName);
+    LocalAccessible::Name(aName);
     if (!aName.IsEmpty()) return eNameOK;
   }
 
@@ -281,7 +281,8 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
     return;
   }
 
-  Accessible* accessible = targetDocument->GetAccessibleOrContainer(aTarget);
+  LocalAccessible* accessible =
+      targetDocument->GetAccessibleOrContainer(aTarget);
   if (!accessible) return;
 
 #ifdef MOZ_XUL
@@ -333,7 +334,7 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
     return;
   }
 
-  Accessible* treeItemAcc = nullptr;
+  LocalAccessible* treeItemAcc = nullptr;
 #ifdef MOZ_XUL
   
   if (treeAcc) {
@@ -408,7 +409,7 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
     
     
     
-    Accessible* widget =
+    LocalAccessible* widget =
         accessible->IsWidget() ? accessible : accessible->ContainerWidget();
     if (widget && widget->IsAutoCompletePopup()) {
       FocusMgr()->ActiveItemChanged(nullptr);
@@ -429,7 +430,7 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
     
     
     
-    Accessible* activeItem = accessible->CurrentItem();
+    LocalAccessible* activeItem = accessible->CurrentItem();
     if (activeItem) {
       FocusMgr()->ActiveItemChanged(activeItem);
 #ifdef A11Y_LOG
@@ -498,7 +499,7 @@ Relation RootAccessible::RelationByType(RelationType aType) const {
 
 
 
-void RootAccessible::HandlePopupShownEvent(Accessible* aAccessible) {
+void RootAccessible::HandlePopupShownEvent(LocalAccessible* aAccessible) {
   roles::Role role = aAccessible->Role();
 
   if (role == roles::MENUPOPUP) {
@@ -510,7 +511,7 @@ void RootAccessible::HandlePopupShownEvent(Accessible* aAccessible) {
 
   if (role == roles::COMBOBOX_LIST) {
     
-    Accessible* combobox = aAccessible->LocalParent();
+    LocalAccessible* combobox = aAccessible->LocalParent();
     if (!combobox) return;
 
     if (combobox->IsCombobox() || combobox->IsAutoComplete()) {
@@ -526,7 +527,7 @@ void RootAccessible::HandlePopupShownEvent(Accessible* aAccessible) {
     MOZ_ASSERT(aAccessible->Elm());
     if (aAccessible->Elm()->HasAttr(kNameSpaceID_None,
                                     nsGkAtoms::aria_activedescendant)) {
-      Accessible* activeDescendant = aAccessible->CurrentItem();
+      LocalAccessible* activeDescendant = aAccessible->CurrentItem();
       if (activeDescendant) {
         FocusMgr()->ActiveItemChanged(activeDescendant, false);
 #ifdef A11Y_LOG
@@ -552,14 +553,15 @@ void RootAccessible::HandlePopupHidingEvent(nsINode* aPopupNode) {
   
   
   
-  Accessible* popup = document->GetAccessible(aPopupNode);
+  LocalAccessible* popup = document->GetAccessible(aPopupNode);
   if (!popup) {
-    Accessible* popupContainer = document->GetContainerAccessible(aPopupNode);
+    LocalAccessible* popupContainer =
+        document->GetContainerAccessible(aPopupNode);
     if (!popupContainer) return;
 
     uint32_t childCount = popupContainer->ChildCount();
     for (uint32_t idx = 0; idx < childCount; idx++) {
-      Accessible* child = popupContainer->LocalChildAt(idx);
+      LocalAccessible* child = popupContainer->LocalChildAt(idx);
       if (child->IsAutoCompletePopup()) {
         popup = child;
         break;
@@ -585,7 +587,7 @@ void RootAccessible::HandlePopupHidingEvent(nsINode* aPopupNode) {
   
   
   
-  Accessible* widget = nullptr;
+  LocalAccessible* widget = nullptr;
   if (popup->IsCombobox()) {
     widget = popup;
   } else {
@@ -610,7 +612,7 @@ void RootAccessible::HandlePopupHidingEvent(nsINode* aPopupNode) {
 
   } else if (widget->IsMenuButton()) {
     
-    Accessible* compositeWidget = widget->ContainerWidget();
+    LocalAccessible* compositeWidget = widget->ContainerWidget();
     if (compositeWidget && compositeWidget->IsAutoComplete()) {
       widget = compositeWidget;
       notifyOf = kNotifyOfState;

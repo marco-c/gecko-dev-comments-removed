@@ -42,7 +42,7 @@ class XULButtonAccessible : public AccessibleWrap {
   virtual bool IsWidget() const override;
   virtual bool IsActiveWidget() const override;
   virtual bool AreItemsOperable() const override;
-  virtual Accessible* ContainerWidget() const override;
+  virtual LocalAccessible* ContainerWidget() const override;
 
   virtual bool IsAcceptableChild(nsIContent* aEl) const override;
 
@@ -102,7 +102,7 @@ class XULRadioButtonAccessible : public RadioButtonAccessible {
   virtual uint64_t NativeInteractiveState() const override;
 
   
-  virtual Accessible* ContainerWidget() const override;
+  virtual LocalAccessible* ContainerWidget() const override;
 };
 
 
@@ -120,8 +120,8 @@ class XULRadioGroupAccessible : public XULSelectControlAccessible {
   virtual bool IsWidget() const override;
   virtual bool IsActiveWidget() const override;
   virtual bool AreItemsOperable() const override;
-  virtual Accessible* CurrentItem() const override;
-  virtual void SetCurrentItem(const Accessible* aItem) override;
+  virtual LocalAccessible* CurrentItem() const override;
+  virtual void SetCurrentItem(const LocalAccessible* aItem) override;
 };
 
 
@@ -147,7 +147,7 @@ class XULToolbarButtonAccessible : public XULButtonAccessible {
                                           int32_t* aSetSize) override;
 
   
-  static bool IsSeparator(Accessible* aAccessible);
+  static bool IsSeparator(LocalAccessible* aAccessible);
 
   
   virtual bool IsAcceptableChild(nsIContent* aEl) const override;
