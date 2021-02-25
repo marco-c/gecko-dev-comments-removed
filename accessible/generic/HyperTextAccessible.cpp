@@ -467,8 +467,9 @@ DOMPoint HyperTextAccessible::OffsetToDOMPoint(int32_t aOffset) const {
       nsIContent* content = child->GetContent();
       int32_t idx = 0;
       if (NS_FAILED(RenderedToContentOffset(content->GetPrimaryFrame(),
-                                            innerOffset, &idx)))
+                                            innerOffset, &idx))) {
         return DOMPoint();
+      }
 
       return DOMPoint(content, idx);
     }
@@ -720,8 +721,9 @@ uint32_t HyperTextAccessible::FindLineBoundary(
     case ePrevLineBegin: {
       
       
-      if (IsEmptyLastLineOffset(aOffset))
+      if (IsEmptyLastLineOffset(aOffset)) {
         return FindOffset(aOffset, eDirPrevious, eSelectBeginLine);
+      }
 
       uint32_t tmpOffset = FindOffset(aOffset, eDirPrevious, eSelectLine);
       return FindOffset(tmpOffset, eDirPrevious, eSelectBeginLine);
@@ -978,13 +980,15 @@ void HyperTextAccessible::TextBeforeOffset(int32_t aOffset,
   }
 
   uint32_t adjustedOffset = convertedOffset;
-  if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET)
+  if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET) {
     adjustedOffset = AdjustCaretOffset(adjustedOffset);
+  }
 
   switch (aBoundaryType) {
     case nsIAccessibleText::BOUNDARY_CHAR:
-      if (convertedOffset != 0)
+      if (convertedOffset != 0) {
         CharAt(convertedOffset - 1, aText, aStartOffset, aEndOffset);
+      }
       break;
 
     case nsIAccessibleText::BOUNDARY_WORD_START: {
@@ -1054,15 +1058,17 @@ void HyperTextAccessible::TextAtOffset(int32_t aOffset,
       
       
       if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET &&
-          IsCaretAtEndOfLine())
+          IsCaretAtEndOfLine()) {
         *aStartOffset = *aEndOffset = adjustedOffset;
-      else
+      } else {
         CharAt(adjustedOffset, aText, aStartOffset, aEndOffset);
+      }
       break;
 
     case nsIAccessibleText::BOUNDARY_WORD_START:
-      if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET)
+      if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET) {
         adjustedOffset = AdjustCaretOffset(adjustedOffset);
+      }
 
       *aEndOffset = FindWordBoundary(adjustedOffset, eDirNext, eStartWord);
       *aStartOffset = FindWordBoundary(*aEndOffset, eDirPrevious, eStartWord);
@@ -1079,8 +1085,9 @@ void HyperTextAccessible::TextAtOffset(int32_t aOffset,
       break;
 
     case nsIAccessibleText::BOUNDARY_LINE_START:
-      if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET)
+      if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET) {
         adjustedOffset = AdjustCaretOffset(adjustedOffset);
+      }
 
       *aStartOffset = FindLineBoundary(adjustedOffset, eThisLineBegin);
       *aEndOffset = FindLineBoundary(adjustedOffset, eNextLineBegin);
@@ -1088,8 +1095,9 @@ void HyperTextAccessible::TextAtOffset(int32_t aOffset,
       break;
 
     case nsIAccessibleText::BOUNDARY_LINE_END:
-      if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET)
+      if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET) {
         adjustedOffset = AdjustCaretOffset(adjustedOffset);
+      }
 
       
       *aStartOffset = FindLineBoundary(adjustedOffset, ePrevLineEnd);
@@ -1138,17 +1146,19 @@ void HyperTextAccessible::TextAfterOffset(int32_t aOffset,
   }
 
   uint32_t adjustedOffset = convertedOffset;
-  if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET)
+  if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET) {
     adjustedOffset = AdjustCaretOffset(adjustedOffset);
+  }
 
   switch (aBoundaryType) {
     case nsIAccessibleText::BOUNDARY_CHAR:
       
       
-      if (adjustedOffset >= CharacterCount())
+      if (adjustedOffset >= CharacterCount()) {
         *aStartOffset = *aEndOffset = CharacterCount();
-      else
+      } else {
         CharAt(adjustedOffset + 1, aText, aStartOffset, aEndOffset);
+      }
       break;
 
     case nsIAccessibleText::BOUNDARY_WORD_START:
@@ -1461,8 +1471,9 @@ int32_t HyperTextAccessible::OffsetAtPoint(int32_t aX, int32_t aY,
       ToAppUnits(coords, presContext->AppUnitsPerDevPixel());
 
   nsRect frameScreenRect = hyperFrame->GetScreenRectInAppUnits();
-  if (!frameScreenRect.Contains(coordsInAppUnits.x, coordsInAppUnits.y))
+  if (!frameScreenRect.Contains(coordsInAppUnits.x, coordsInAppUnits.y)) {
     return -1;  
+  }
 
   nsPoint pointInHyperText(coordsInAppUnits.x - frameScreenRect.X(),
                            coordsInAppUnits.y - frameScreenRect.Y());
@@ -1689,8 +1700,9 @@ int32_t HyperTextAccessible::CaretOffset() const {
 
     nsINode* textNode = text->GetNode();
     
-    if (nsCoreUtils::IsAncestorOf(GetNode(), textNode))
+    if (nsCoreUtils::IsAncestorOf(GetNode(), textNode)) {
       return TransformOffset(text, textNode->IsText() ? caretOffset : 0, false);
+    }
   }
 
   
@@ -1715,8 +1727,9 @@ int32_t HyperTextAccessible::CaretOffset() const {
 
     nsINode* thisNode = GetNode();
     if (resultNode != thisNode &&
-        !nsCoreUtils::IsAncestorOf(thisNode, resultNode))
+        !nsCoreUtils::IsAncestorOf(thisNode, resultNode)) {
       return -1;
+    }
   }
 
   return DOMPointToOffset(focusNode, focusOffset);
@@ -1830,8 +1843,9 @@ void HyperTextAccessible::GetSelectionDOMRanges(SelectionType aSelectionType,
   
   RefPtr<nsFrameSelection> frameSelection = FrameSelection();
   if (!frameSelection || frameSelection->GetDisplaySelection() <=
-                             nsISelectionController::SELECTION_HIDDEN)
+                             nsISelectionController::SELECTION_HIDDEN) {
     return;
+  }
 
   dom::Selection* domSel = frameSelection->GetSelection(aSelectionType);
   if (!domSel) return;
@@ -1870,8 +1884,9 @@ bool HyperTextAccessible::SelectionBoundsAt(int32_t aSelectionNum,
   GetSelectionDOMRanges(SelectionType::eNormal, &ranges);
 
   uint32_t rangeCount = ranges.Length();
-  if (aSelectionNum < 0 || aSelectionNum >= static_cast<int32_t>(rangeCount))
+  if (aSelectionNum < 0 || aSelectionNum >= static_cast<int32_t>(rangeCount)) {
     return false;
+  }
 
   nsRange* range = ranges[aSelectionNum];
 
@@ -1899,15 +1914,17 @@ bool HyperTextAccessible::SelectionBoundsAt(int32_t aSelectionNum,
     endOffset = tempOffset;
   }
 
-  if (!startNode->IsInclusiveDescendantOf(mContent))
+  if (!startNode->IsInclusiveDescendantOf(mContent)) {
     *aStartOffset = 0;
-  else
+  } else {
     *aStartOffset = DOMPointToOffset(startNode, startOffset);
+  }
 
-  if (!endNode->IsInclusiveDescendantOf(mContent))
+  if (!endNode->IsInclusiveDescendantOf(mContent)) {
     *aEndOffset = CharacterCount();
-  else
+  } else {
     *aEndOffset = DOMPointToOffset(endNode, endOffset, true);
+  }
   return true;
 }
 
@@ -1931,8 +1948,9 @@ bool HyperTextAccessible::RemoveFromSelection(int32_t aSelectionNum) {
   if (!domSel) return false;
 
   if (aSelectionNum < 0 ||
-      aSelectionNum >= static_cast<int32_t>(domSel->RangeCount()))
+      aSelectionNum >= static_cast<int32_t>(domSel->RangeCount())) {
     return false;
+  }
 
   const RefPtr<nsRange> range{domSel->GetRangeAt(aSelectionNum)};
   domSel->RemoveRangeAndUnselectFramesAndNotifyListeners(*range,
@@ -2091,8 +2109,9 @@ ENameValueFlag HyperTextAccessible::NativeName(nsString& aName) const {
   
   
   if (IsAbbreviation() && mContent->AsElement()->GetAttr(
-                              kNameSpaceID_None, nsGkAtoms::title, aName))
+                              kNameSpaceID_None, nsGkAtoms::title, aName)) {
     aName.CompressWhitespace();
+  }
 
   return hasImgAlt ? eNoNameOnPurpose : eNameOK;
 }
@@ -2391,8 +2410,9 @@ void HyperTextAccessible::GetSpellTextAttr(
     
     
     
-    if (startOffset > *aStartOffset && startOffset < *aEndOffset)
+    if (startOffset > *aStartOffset && startOffset < *aEndOffset) {
       *aStartOffset = startOffset;
+    }
 
     if (endOffset < *aEndOffset) *aEndOffset = endOffset;
 
@@ -2410,8 +2430,9 @@ void HyperTextAccessible::GetSpellTextAttr(
   
   
   
-  if (startOffset > *aStartOffset && startOffset < *aEndOffset)
+  if (startOffset > *aStartOffset && startOffset < *aEndOffset) {
     *aStartOffset = startOffset;
+  }
 }
 
 bool HyperTextAccessible::IsTextRole() {
@@ -2420,8 +2441,9 @@ bool HyperTextAccessible::IsTextRole() {
                        roleMapEntry->role == roles::IMAGE_MAP ||
                        roleMapEntry->role == roles::SLIDER ||
                        roleMapEntry->role == roles::PROGRESSBAR ||
-                       roleMapEntry->role == roles::SEPARATOR))
+                       roleMapEntry->role == roles::SEPARATOR)) {
     return false;
+  }
 
   return true;
 }

@@ -43,10 +43,11 @@ uint64_t XULMenuitemAccessible::NativeState() const {
   
   if (mContent->NodeInfo()->Equals(nsGkAtoms::menu, kNameSpaceID_XUL)) {
     state |= states::HASPOPUP;
-    if (mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::open))
+    if (mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::open)) {
       state |= states::EXPANDED;
-    else
+    } else {
       state |= states::COLLAPSED;
+    }
   }
 
   
@@ -61,8 +62,9 @@ uint64_t XULMenuitemAccessible::NativeState() const {
     
     if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
                                            nsGkAtoms::checked, nsGkAtoms::_true,
-                                           eCaseMatters))
+                                           eCaseMatters)) {
       state |= states::CHECKED;
+    }
   }
 
   
@@ -225,12 +227,14 @@ role XULMenuitemAccessible::NativeRole() const {
   }
 
   if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                                         nsGkAtoms::radio, eCaseMatters))
+                                         nsGkAtoms::radio, eCaseMatters)) {
     return roles::RADIO_MENU_ITEM;
+  }
 
   if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                                         nsGkAtoms::checkbox, eCaseMatters))
+                                         nsGkAtoms::checkbox, eCaseMatters)) {
     return roles::CHECK_MENU_ITEM;
+  }
 
   return roles::MENUITEM;
 }
@@ -406,14 +410,16 @@ role XULMenupopupAccessible::NativeRole() const {
   }
 
   if (mParent) {
-    if (mParent->IsCombobox() || mParent->IsAutoComplete())
+    if (mParent->IsCombobox() || mParent->IsAutoComplete()) {
       return roles::COMBOBOX_LIST;
+    }
 
     if (mParent->Role() == roles::PUSHBUTTON) {
       
       Accessible* grandParent = mParent->LocalParent();
-      if (grandParent && grandParent->IsAutoComplete())
+      if (grandParent && grandParent->IsAutoComplete()) {
         return roles::COMBOBOX_LIST;
+      }
     }
   }
 
@@ -445,16 +451,19 @@ Accessible* XULMenupopupAccessible::ContainerWidget() const {
   while (menuPopupFrame) {
     Accessible* menuPopup =
         document->GetAccessible(menuPopupFrame->GetContent());
-    if (!menuPopup)  
+    if (!menuPopup) {  
       return nullptr;
+    }
 
     nsMenuFrame* menuFrame = do_QueryFrame(menuPopupFrame->GetParent());
-    if (!menuFrame)  
+    if (!menuFrame) {  
       return nullptr;
+    }
 
     nsMenuParent* menuParent = menuFrame->GetMenuParent();
-    if (!menuParent)  
+    if (!menuParent) {  
       return menuPopup->LocalParent();
+    }
 
     if (menuParent->IsMenuBar()) {  
       nsMenuBarFrame* menuBarFrame = static_cast<nsMenuBarFrame*>(menuParent);

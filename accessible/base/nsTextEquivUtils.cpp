@@ -191,8 +191,9 @@ nsresult nsTextEquivUtils::AppendFromAccessible(Accessible* aAccessible,
   
   
   nsAutoString text;
-  if (aAccessible->Name(text) != eNameFromTooltip)
+  if (aAccessible->Name(text) != eNameFromTooltip) {
     isEmptyTextEquiv = !AppendString(aString, text);
+  }
 
   
   nsresult rv = AppendFromValue(aAccessible, aString);
@@ -223,8 +224,9 @@ nsresult nsTextEquivUtils::AppendFromAccessible(Accessible* aAccessible,
 
 nsresult nsTextEquivUtils::AppendFromValue(Accessible* aAccessible,
                                            nsAString* aString) {
-  if (GetRoleRule(aAccessible->Role()) != eNameFromValueRule)
+  if (GetRoleRule(aAccessible->Role()) != eNameFromValueRule) {
     return NS_OK_NO_NAME_CLAUSE_HANDLED;
+  }
 
   
   
@@ -298,13 +300,15 @@ bool nsTextEquivUtils::AppendString(nsAString* aString,
   if (aTextEquivalent.IsEmpty()) return false;
 
   
-  if (!aString->IsEmpty() && !nsCoreUtils::IsWhitespace(aString->Last()))
+  if (!aString->IsEmpty() && !nsCoreUtils::IsWhitespace(aString->Last())) {
     aString->Append(char16_t(' '));
+  }
 
   aString->Append(aTextEquivalent);
 
-  if (!nsCoreUtils::IsWhitespace(aString->Last()))
+  if (!nsCoreUtils::IsWhitespace(aString->Last())) {
     aString->Append(char16_t(' '));
+  }
 
   return true;
 }

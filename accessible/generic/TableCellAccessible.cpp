@@ -29,8 +29,9 @@ void TableCellAccessible::RowHeaderCells(nsTArray<Accessible*>* aCells) {
 
     
     
-    if (tableCell->ColIdx() == curColIdx && cell->Role() == roles::ROWHEADER)
+    if (tableCell->ColIdx() == curColIdx && cell->Role() == roles::ROWHEADER) {
       aCells->AppendElement(cell);
+    }
   }
 }
 

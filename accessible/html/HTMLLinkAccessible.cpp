@@ -40,8 +40,9 @@ uint64_t HTMLLinkAccessible::NativeLinkState() const {
   EventStates eventState = mContent->AsElement()->State();
   if (eventState.HasState(NS_EVENT_STATE_UNVISITED)) return states::LINKED;
 
-  if (eventState.HasState(NS_EVENT_STATE_VISITED))
+  if (eventState.HasState(NS_EVENT_STATE_VISITED)) {
     return states::LINKED | states::TRAVERSED;
+  }
 
   
   
@@ -55,8 +56,9 @@ uint64_t HTMLLinkAccessible::NativeInteractiveState() const {
   
   
   
-  if (mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::name))
+  if (mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::name)) {
     state |= states::SELECTABLE;
+  }
 
   return state;
 }
@@ -65,8 +67,9 @@ void HTMLLinkAccessible::Value(nsString& aValue) const {
   aValue.Truncate();
 
   HyperTextAccessible::Value(aValue);
-  if (aValue.IsEmpty())
+  if (aValue.IsEmpty()) {
     nsContentUtils::GetLinkLocation(mContent->AsElement(), aValue);
+  }
 }
 
 uint8_t HTMLLinkAccessible::ActionCount() const {
