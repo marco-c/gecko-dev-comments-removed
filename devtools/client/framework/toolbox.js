@@ -836,6 +836,7 @@ Toolbox.prototype = {
       this._buildTabs();
       this._applyCacheSettings();
       this._applyServiceWorkersTestingSettings();
+      this._applyJavascriptEnabledSettings();
       this._addWindowListeners();
       this._addChromeEventHandlerEvents();
       this._registerOverlays();
@@ -929,11 +930,7 @@ Toolbox.prototype = {
         
         
         
-        await this.target.reconfigure({
-          options: {
-            restoreFocus: true,
-          },
-        });
+        await this.targetList.updateConfiguration({ restoreFocus: true });
       }
 
       
@@ -2059,11 +2056,7 @@ Toolbox.prototype = {
     const pref = "devtools.cache.disabled";
     const cacheDisabled = Services.prefs.getBoolPref(pref);
 
-    await this.target.reconfigure({
-      options: {
-        cacheDisabled: cacheDisabled,
-      },
-    });
+    await this.targetList.updateConfiguration({ cacheDisabled });
 
     
     if (flags.testing) {
@@ -2078,11 +2071,16 @@ Toolbox.prototype = {
   _applyServiceWorkersTestingSettings: function() {
     const pref = "devtools.serviceWorkers.testing.enabled";
     const serviceWorkersTestingEnabled = Services.prefs.getBoolPref(pref);
-    this.target.reconfigure({
-      options: {
-        serviceWorkersTestingEnabled,
-      },
-    });
+    this.targetList.updateConfiguration({ serviceWorkersTestingEnabled });
+  },
+
+  
+
+
+
+  _applyJavascriptEnabledSettings: function() {
+    const javascriptEnabled = this.target._javascriptEnabled;
+    this.targetList.updateConfiguration({ javascriptEnabled });
   },
 
   
@@ -2127,10 +2125,8 @@ Toolbox.prototype = {
       this.telemetry.toolClosed("paintflashing", this.sessionId, this);
     }
     this.isPaintFlashing = !this.isPaintFlashing;
-    return this.target.reconfigure({
-      options: {
-        paintFlashing: this.isPaintFlashing,
-      },
+    return this.targetList.updateConfiguration({
+      paintFlashing: this.isPaintFlashing,
     });
   },
 

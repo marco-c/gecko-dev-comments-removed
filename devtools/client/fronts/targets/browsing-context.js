@@ -21,6 +21,11 @@ class BrowsingContextTargetFront extends TargetMixin(
     
     
     
+    
+    
+    
+    
+    
     this._javascriptEnabled = null;
 
     this._onTabNavigated = this._onTabNavigated.bind(this);

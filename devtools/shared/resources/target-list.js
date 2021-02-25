@@ -588,6 +588,16 @@ class TargetList extends EventEmitter {
 
 
 
+  async updateConfiguration(configuration) {
+    await this.targetFront.reconfigure({ options: configuration });
+  }
+
+  
+
+
+
+
+
   isJavascriptEnabled() {
     return !!this.targetFront._javascriptEnabled;
   }
