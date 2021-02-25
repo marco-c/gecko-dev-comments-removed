@@ -1635,12 +1635,12 @@ impl Device {
         
         let supports_nonzero_pbo_offsets = !is_macos;
 
-        let is_mali_g = renderer_name.starts_with("Mali-G");
+        let is_mali = renderer_name.starts_with("Mali");
 
         
         
         
-        let supports_render_target_partial_update = !is_mali_g;
+        let supports_render_target_partial_update = !is_mali;
 
         let supports_shader_storage_object = match gl.get_type() {
             
@@ -1657,6 +1657,8 @@ impl Device {
         
         
         let uses_native_antialiasing = is_software_webrender;
+
+        let is_mali_g = renderer_name.starts_with("Mali-G");
 
         let mut requires_batched_texture_uploads = None;
         if is_software_webrender {
