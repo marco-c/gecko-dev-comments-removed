@@ -205,7 +205,7 @@ void GamepadManager::AddGamepad(GamepadHandle aHandle, const nsAString& aId,
 
   
   
-  MOZ_ASSERT(!mGamepads.Get(aHandle, nullptr));
+  MOZ_ASSERT(!mGamepads.Contains(aHandle, nullptr));
   mGamepads.Put(aHandle, std::move(newGamepad));
   NewConnectionEvent(aHandle, true);
 }
