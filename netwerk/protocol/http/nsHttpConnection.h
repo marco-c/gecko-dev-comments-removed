@@ -217,6 +217,8 @@ class nsHttpConnection final : public HttpConnectionBase,
   [[nodiscard]] nsresult StartLongLivedTCPKeepalives();
   [[nodiscard]] nsresult DisableTCPKeepalives();
 
+  bool CheckCanWrite0RTTData();
+
  private:
   
   
