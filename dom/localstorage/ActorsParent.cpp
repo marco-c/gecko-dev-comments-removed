@@ -829,6 +829,20 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateShadowStorageConnection(
 
   LS_TRY(SetShadowJournalMode(connection));
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   LS_TRY(ToResult(StorageDBUpdater::Update(connection))
              .orElse([&connection, &shadowFile,
                       &ss](const nsresult) -> Result<Ok, nsresult> {
@@ -842,7 +856,7 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateShadowStorageConnection(
 
                LS_TRY(SetShadowJournalMode(connection));
 
-               LS_TRY(StorageDBUpdater::Update(connection));
+               LS_TRY(StorageDBUpdater::CreateCurrentSchema(connection));
 
                return Ok{};
              }));

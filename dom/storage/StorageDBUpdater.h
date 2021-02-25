@@ -12,6 +12,10 @@ namespace dom {
 
 namespace StorageDBUpdater {
 
+
+nsresult CreateCurrentSchema(mozIStorageConnection* aWorkerConnection);
+
+
 nsresult Update(mozIStorageConnection* aWorkerConnection);
 
 }  
