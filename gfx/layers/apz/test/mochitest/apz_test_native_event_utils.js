@@ -678,24 +678,34 @@ function promiseNativeMouseEvent(aTarget, aX, aY, aType) {
   });
 }
 
-function synthesizeNativeClick(aElement, aX, aY, aObserver = null) {
-  var pt = coordinatesRelativeToScreen(aX, aY, aElement);
-  var utils = SpecialPowers.getDOMWindowUtils(
-    aElement.ownerDocument.defaultView
+function synthesizeNativeMouseClickWithAPZ(aParams, aObserver = null) {
+  if (aParams.win !== undefined) {
+    throw Error(
+      "Are you trying to use EventUtils' API? `win` won't be used with synthesizeNativeMouseClickWithAPZ."
+    );
+  }
+  const {
+    target, 
+    offsetX, 
+    offsetY, 
+  } = aParams;
+  const pt = coordinatesRelativeToScreen(offsetX, offsetY, target);
+  const utils = SpecialPowers.getDOMWindowUtils(
+    target.ownerDocument.defaultView
   );
   utils.sendNativeMouseEvent(
     pt.x,
     pt.y,
     nativeMouseDownEventMsg(),
     0,
-    aElement,
+    target,
     function() {
       utils.sendNativeMouseEvent(
         pt.x,
         pt.y,
         nativeMouseUpEventMsg(),
         0,
-        aElement,
+        target,
         aObserver
       );
     }
@@ -704,19 +714,18 @@ function synthesizeNativeClick(aElement, aX, aY, aObserver = null) {
 }
 
 
-function promiseNativeClick(aElement, aX, aY) {
+function promiseNativeMouseClickWithAPZ(aParams) {
   return new Promise(resolve => {
-    synthesizeNativeClick(aElement, aX, aY, resolve);
+    synthesizeNativeMouseClickWithAPZ(aParams, resolve);
   });
 }
 
-function synthesizeNativeClickAndWaitForClickEvent(
-  aElement,
-  aX,
-  aY,
-  aCallback
+
+function synthesizeNativeMouseClickWithAPZAndWaitForClickEvent(
+  aParams,
+  aCallback = null
 ) {
-  var targetWindow = windowForTarget(aElement);
+  const targetWindow = windowForTarget(aParams.target);
   targetWindow.addEventListener(
     "click",
     function(e) {
@@ -724,13 +733,13 @@ function synthesizeNativeClickAndWaitForClickEvent(
     },
     { capture: true, once: true }
   );
-  return synthesizeNativeClick(aElement, aX, aY);
+  return synthesizeNativeMouseClickWithAPZ(aParams);
 }
 
 
-function promiseNativeClickAndClickEvent(aElement, aX, aY) {
+function promiseNativeMouseClickWithAPZAndClickEvent(aParams) {
   return new Promise(resolve => {
-    synthesizeNativeClickAndWaitForClickEvent(aElement, aX, aY, resolve);
+    synthesizeNativeMouseClickWithAPZAndWaitForClickEvent(aParams, resolve);
   });
 }
 
