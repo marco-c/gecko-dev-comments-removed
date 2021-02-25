@@ -649,6 +649,10 @@ class nsFlexContainerFrame::FlexItem final {
     
     
     mMainSize = NS_CSS_MINMAX(mFlexBaseSize, mMainMinSize, mMainMaxSize);
+
+    FLEX_LOGV(
+        "Set flex base size: %d, hypothetical main size: %d for flex item %p",
+        mFlexBaseSize, mMainSize, mFrame);
   }
 
   
@@ -1310,7 +1314,14 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
     const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis) {
   const auto flexWM = aAxisTracker.GetWritingMode();
   const auto childWM = aChildFrame->GetWritingMode();
-  const auto* stylePos = aChildFrame->StylePosition();
+
+  
+  
+  
+  
+  
+  const auto* stylePos =
+      nsLayoutUtils::GetStyleFrame(aChildFrame)->StylePosition();
 
   
   
@@ -1355,6 +1366,10 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
     } else {
       sizeOverrides.mStyleBSize = std::move(styleFlexBaseSize);
     }
+
+    
+    
+    sizeOverrides.mApplyOverridesVerbatim = true;
   }
 
   
@@ -2265,7 +2280,8 @@ nscoord FlexItem::BaselineOffsetFromOuterCrossEdge(
 }
 
 bool FlexItem::IsCrossSizeAuto() const {
-  const nsStylePosition* stylePos = mFrame->StylePosition();
+  const nsStylePosition* stylePos =
+      nsLayoutUtils::GetStyleFrame(mFrame)->StylePosition();
   
   
   

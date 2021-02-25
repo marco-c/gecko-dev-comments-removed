@@ -315,9 +315,23 @@ nscoord nsTableWrapperFrame::InnerTableShrinkWrapISize(
   LogicalSize marginSize(aWM);  
   LogicalSize bpSize = input.ComputedLogicalBorderPadding(aWM).Size(aWM);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const LogicalSize areaOccupiedByCaption(aWM);
+  StyleSizeOverrides innerOverrides = ComputeSizeOverridesForInnerTable(
+      aTableFrame, aSizeOverrides, bpSize, areaOccupiedByCaption);
   auto size =
       aTableFrame->ComputeSize(aRenderingContext, aWM, aCBSize, aAvailableISize,
-                               marginSize, bpSize, aSizeOverrides, aFlags);
+                               marginSize, bpSize, innerOverrides, aFlags);
   return size.mLogicalSize.ISize(aWM) + bpSize.ISize(aWM);
 }
 
@@ -339,6 +353,91 @@ nscoord nsTableWrapperFrame::CaptionShrinkWrapISize(
                                          {}, aFlags);
   return size.mLogicalSize.ISize(aWM) + marginSize.ISize(aWM) +
          bpSize.ISize(aWM);
+}
+
+StyleSize nsTableWrapperFrame::ReduceStyleSizeBy(
+    const StyleSize& aStyleSize, const nscoord aAmountToReduce) const {
+  MOZ_ASSERT(aStyleSize.ConvertsToLength(), "Only handles 'Length' StyleSize!");
+  const nscoord size = std::max(0, aStyleSize.ToLength() - aAmountToReduce);
+  return StyleSize::LengthPercentage(LengthPercentage::FromAppUnits(size));
+}
+
+StyleSizeOverrides nsTableWrapperFrame::ComputeSizeOverridesForInnerTable(
+    const nsTableFrame* aTableFrame,
+    const StyleSizeOverrides& aWrapperSizeOverrides,
+    const LogicalSize& aBorderPadding,
+    const LogicalSize& aAreaOccupiedByCaption) const {
+  if (aWrapperSizeOverrides.mApplyOverridesVerbatim ||
+      !aWrapperSizeOverrides.HasAnyLengthOverrides()) {
+    
+    
+    return aWrapperSizeOverrides;
+  }
+
+  const auto wm = aTableFrame->GetWritingMode();
+  LogicalSize areaOccupied = aAreaOccupiedByCaption;
+  if (aTableFrame->StylePosition()->mBoxSizing == StyleBoxSizing::Content) {
+    
+    
+    
+    areaOccupied += aBorderPadding;
+  }
+
+  StyleSizeOverrides innerSizeOverrides;
+  const auto& wrapperISize = aWrapperSizeOverrides.mStyleISize;
+  if (wrapperISize) {
+    MOZ_ASSERT(!wrapperISize->HasPercent(),
+               "Table doesn't support size overrides containing percentages!");
+    innerSizeOverrides.mStyleISize.emplace(
+        wrapperISize->ConvertsToLength()
+            ? ReduceStyleSizeBy(*wrapperISize, areaOccupied.ISize(wm))
+            : *wrapperISize);
+  }
+
+  const auto& wrapperBSize = aWrapperSizeOverrides.mStyleBSize;
+  if (wrapperBSize) {
+    MOZ_ASSERT(!wrapperBSize->HasPercent(),
+               "Table doesn't support size overrides containing percentages!");
+    innerSizeOverrides.mStyleBSize.emplace(
+        wrapperBSize->ConvertsToLength()
+            ? ReduceStyleSizeBy(*wrapperBSize, areaOccupied.BSize(wm))
+            : *wrapperBSize);
+  }
+
+  return innerSizeOverrides;
+}
+
+
+nsIFrame::SizeComputationResult nsTableWrapperFrame::ComputeSize(
+    gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
+    nscoord aAvailableISize, const LogicalSize& aMargin,
+    const LogicalSize& aBorderPadding, const StyleSizeOverrides& aSizeOverrides,
+    ComputeSizeFlags aFlags) {
+  auto result = nsContainerFrame::ComputeSize(
+      aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin, aBorderPadding,
+      aSizeOverrides, aFlags);
+
+  if (aSizeOverrides.mApplyOverridesVerbatim &&
+      aSizeOverrides.HasAnyOverrides()) {
+    
+    
+    
+    
+    
+    auto size =
+        ComputeAutoSize(aRenderingContext, aWM, aCBSize, aAvailableISize,
+                        aMargin, aBorderPadding, aSizeOverrides, aFlags);
+    result.mLogicalSize.ISize(aWM) = size.ISize(aWM);
+
+    
+    
+    
+    
+    
+    
+  }
+
+  return result;
 }
 
 
@@ -641,7 +740,10 @@ void nsTableWrapperFrame::CreateReflowInputForInnerTable(
     }
   }
 
-  if (!aTableFrame->IsBorderCollapse()) {
+  if (!aTableFrame->IsBorderCollapse() &&
+      !aOuterRI.mStyleSizeOverrides.HasAnyOverrides()) {
+    
+    
     aChildRI.emplace(aPresContext, aOuterRI, aTableFrame, availSize, cbSize);
     return;
   }
@@ -663,8 +765,12 @@ void nsTableWrapperFrame::CreateReflowInputForInnerTable(
     padding.emplace(input.ComputedLogicalPadding(wm));
   }
 
+  StyleSizeOverrides innerOverrides = ComputeSizeOverridesForInnerTable(
+      aTableFrame, aOuterRI.mStyleSizeOverrides, borderPadding->Size(wm),
+      areaOccupiedByCaption);
+
   aChildRI.emplace(aPresContext, aOuterRI, aTableFrame, availSize, Nothing(),
-                   ReflowInput::InitFlag::CallerWillInit);
+                   ReflowInput::InitFlag::CallerWillInit, innerOverrides);
   aChildRI->Init(aPresContext, cbSize, Some(*borderPadding - *padding),
                  padding);
 }
