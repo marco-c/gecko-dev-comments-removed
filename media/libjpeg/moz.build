@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "ImageLib")
@@ -51,7 +51,7 @@ SOURCES += [
     'jutils.c',
 ]
 
-# These files enable support for writing JPEGs
+
 SOURCES += [
     'jcapimin.c',
     'jcapistd.c',
@@ -75,8 +75,8 @@ SOURCES += [
     'jpeg_nbits_table.c',
 ]
 
-if CONFIG['LIBJPEG_TURBO_USE_YASM']:
-    USE_YASM = True
+if CONFIG['LIBJPEG_TURBO_USE_NASM']:
+    USE_NASM = True
 
 if CONFIG['LIBJPEG_TURBO_ASFLAGS']:
     if CONFIG['CPU_ARCH'] == 'arm':
@@ -178,13 +178,13 @@ if CONFIG['LIBJPEG_TURBO_ASFLAGS']:
             'simd/i386/jsimdcpu.asm',
         ]
 elif CONFIG['CPU_ARCH'].startswith('ppc'):
-    # PowerPC has no assembly files, but still needs its own headers.
+    
     LOCAL_INCLUDES += ['/media/libjpeg/simd/powerpc']
 
-    # For libjpeg's internal runtime detection to work, jsimd.c must NOT
-    # be compiled with -maltivec (otherwise it gets statically set),
-    # but everything else should be. If -maltivec was already
-    # specified in .mozconfig, though, then this won't harm anything.
+    
+    
+    
+    
     ppc_vmx_sources = [
         'simd/powerpc/jccolor-altivec.c',
         'simd/powerpc/jcgray-altivec.c',
@@ -204,14 +204,14 @@ elif CONFIG['CPU_ARCH'].startswith('ppc'):
     ]
     for srcfile in ppc_vmx_sources:
         SOURCES[srcfile].flags += CONFIG['PPC_VMX_FLAGS']
-else: # No SIMD support?
+else: 
     SOURCES += [
         'jsimd_none.c',
     ]
 
 ASFLAGS += CONFIG['LIBJPEG_TURBO_ASFLAGS']
 
-# Make sure the x86 & x86-64 ASM files can see the necessary includes.
+
 if CONFIG['CPU_ARCH'] == 'x86':
     ASFLAGS += ['-I%s/media/libjpeg/simd/nasm/' % TOPSRCDIR]
     ASFLAGS += ['-I%s/media/libjpeg/simd/i386/' % TOPSRCDIR]
@@ -219,7 +219,7 @@ if CONFIG['CPU_ARCH'] == 'x86_64':
     ASFLAGS += ['-I%s/media/libjpeg/simd/nasm/' % TOPSRCDIR]
     ASFLAGS += ['-I%s/media/libjpeg/simd/x86_64/' % TOPSRCDIR]
 
-# We allow warnings for third-party code that can be updated from upstream.
+
 AllowCompilerWarnings()
 
 FINAL_LIBRARY = 'gkmedias'
