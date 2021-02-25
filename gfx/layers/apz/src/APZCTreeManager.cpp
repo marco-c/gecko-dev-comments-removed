@@ -2892,7 +2892,10 @@ AsyncPanZoomController* APZCTreeManager::FindHandoffParent(
   RefPtr<HitTestingTreeNode> node = GetTargetNode(aApzc->GetGuid(), nullptr);
   while (node) {
     if (auto* apzc = GetTargetApzcForNode(node->GetParent())) {
-      return apzc;
+      
+      if (apzc != aApzc) {
+        return apzc;
+      }
     }
     node = node->GetParent();
   }
