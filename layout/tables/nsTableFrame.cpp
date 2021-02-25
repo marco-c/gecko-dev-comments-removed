@@ -1525,16 +1525,13 @@ nsIFrame::SizeComputationResult nsTableFrame::ComputeSize(
     nscoord aAvailableISize, const LogicalSize& aMargin,
     const LogicalSize& aBorderPadding, const StyleSizeOverrides& aSizeOverrides,
     ComputeSizeFlags aFlags) {
+  
+  MOZ_ASSERT(aWM == GetWritingMode(),
+             "aWM should be the same as our writing mode!");
+
   auto result = nsContainerFrame::ComputeSize(
       aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin, aBorderPadding,
       aSizeOverrides, aFlags);
-
-  
-  
-  
-  if (aWM.IsVertical() != GetWritingMode().IsVertical()) {
-    return result;
-  }
 
   
   
