@@ -592,32 +592,11 @@ static const nsDefaultMimeTypeEntry nonDecodableExtensions[] = {
 
 static const char* forcedExtensionMimetypes[] = {
     
-    "application/vnd.oasis.opendocument.text",
-    "application/vnd.oasis.opendocument.presentation",
-    "application/vnd.oasis.opendocument.spreadsheet",
-    "application/vnd.oasis.opendocument.graphics",
-
-    
-    "application/msword", "application/vnd.ms-powerpoint",
-    "application/vnd.ms-excel",
-
-    
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-
     
     
     
-    
-
-    APPLICATION_PDF,
-
-    APPLICATION_OGG,
-
-    APPLICATION_WASM,
-
-    TEXT_CALENDAR, TEXT_CSS, TEXT_VCARD};
+    APPLICATION_PDF, APPLICATION_OGG, APPLICATION_WASM,
+    TEXT_CALENDAR,   TEXT_CSS,        TEXT_VCARD};
 
 
 
