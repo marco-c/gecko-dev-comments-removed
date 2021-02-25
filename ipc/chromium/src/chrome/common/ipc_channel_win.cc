@@ -435,7 +435,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
       
       
       AddIPCProfilerMarker(m, other_pid_, MessageDirection::eReceiving,
-                           MessagePhase::TransferStart);
+                           MessagePhase::TransferEnd);
 
 #ifdef IPC_MESSAGE_DEBUG_EXTRA
       DLOG(INFO) << "received message on channel @" << this << " with type "
