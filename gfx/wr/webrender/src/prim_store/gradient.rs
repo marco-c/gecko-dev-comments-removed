@@ -927,6 +927,25 @@ impl GradientGpuBlockBuilder {
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         let mut entries = [GradientDataEntry::white(); GRADIENT_DATA_SIZE];
         let mut prev_step = cur_color;
         if reverse_stops {
