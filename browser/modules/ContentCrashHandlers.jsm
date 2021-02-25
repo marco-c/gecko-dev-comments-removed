@@ -33,6 +33,7 @@ const PENDING_CRASH_REPORT_DAYS = 28;
 const DAY = 24 * 60 * 60 * 1000; 
 const DAYS_TO_SUPPRESS = 30;
 const MAX_UNSEEN_CRASHED_CHILD_IDS = 20;
+const MAX_UNSEEN_CRASHED_SUBFRAME_IDS = 10;
 
 
 const CHECK_FOR_UNSUBMITTED_CRASH_REPORTS_DELAY_MS = 60 * 10000; 
@@ -79,6 +80,8 @@ var TabCrashHandler = {
   browserMap: new BrowserWeakMap(),
   notificationsMap: new Map(),
   unseenCrashedChildIDs: [],
+  pendingSubFrameCrashes: new Map(),
+  pendingSubFrameCrashesIDs: [],
   crashedBrowserQueues: new Map(),
   restartRequiredBrowsers: new WeakSet(),
   testBuildIDMismatch: false,
@@ -112,12 +115,29 @@ var TabCrashHandler = {
         let childID = aSubject.get("childID");
         let dumpID = aSubject.get("dumpID");
 
+        
+        let subframeCrashItem = this.getAndRemoveSubframeCrash(childID);
+
         if (!dumpID) {
           Services.telemetry
             .getHistogramById("FX_CONTENT_CRASH_DUMP_UNAVAILABLE")
             .add(1);
         } else if (AppConstants.MOZ_CRASHREPORTER) {
           this.childMap.set(childID, dumpID);
+
+          
+          
+          if (subframeCrashItem) {
+            let browsers =
+              ChromeUtils.nondeterministicGetWeakMapKeys(subframeCrashItem) ||
+              [];
+            for (let browserItem of browsers) {
+              let browser = subframeCrashItem.get(browserItem);
+              if (browser.isConnected && !browser.ownerGlobal.closed) {
+                this.showSubFrameNotification(browser, childID, dumpID);
+              }
+            }
+          }
         }
 
         if (!this.flushCrashedBrowserQueue(childID)) {
@@ -294,6 +314,72 @@ var TabCrashHandler = {
 
 
   async onSubFrameCrash(browser, childID) {
+    if (!AppConstants.MOZ_CRASHREPORTER) {
+      return;
+    }
+
+    
+    
+    
+    let dumpID = this.childMap.get(childID);
+    if (dumpID) {
+      this.showSubFrameNotification(browser, childID, dumpID);
+    } else {
+      let item = this.pendingSubFrameCrashes.get(childID);
+      if (!item) {
+        item = new BrowserWeakMap();
+        this.pendingSubFrameCrashes.set(childID, item);
+
+        
+        
+        
+        if (
+          this.pendingSubFrameCrashesIDs.length >=
+          MAX_UNSEEN_CRASHED_SUBFRAME_IDS
+        ) {
+          let idToDelete = this.pendingSubFrameCrashesIDs.shift();
+          this.pendingSubFrameCrashes.delete(idToDelete);
+        }
+        this.pendingSubFrameCrashesIDs.push(childID);
+      }
+      item.set(browser, browser);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+  getAndRemoveSubframeCrash(childID) {
+    let item = this.pendingSubFrameCrashes.get(childID);
+    if (item) {
+      this.pendingSubFrameCrashes.delete(childID);
+      let idx = this.pendingSubFrameCrashesIDs.indexOf(childID);
+      if (idx >= 0) {
+        this.pendingSubFrameCrashesIDs.splice(idx, 1);
+      }
+    }
+
+    return item;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  showSubFrameNotification(browser, childID, dumpID) {
     let gBrowser = browser.getTabBrowser();
     let notificationBox = gBrowser.getNotificationBox(browser);
 
@@ -333,7 +419,6 @@ var TabCrashHandler = {
         "l10n-id": "crashed-subframe-submit",
         popup: null,
         callback: async () => {
-          let dumpID = this.childMap.get(childID);
           if (dumpID) {
             UnsubmittedCrashHandler.submitReports([dumpID]);
           }
@@ -362,7 +447,6 @@ var TabCrashHandler = {
             }
           }
         } else if (eventName == "dismissed") {
-          let dumpID = this.childMap.get(childID);
           if (dumpID) {
             CrashSubmit.ignore(dumpID);
             this.childMap.delete(childID);
