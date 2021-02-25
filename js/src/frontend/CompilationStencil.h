@@ -28,6 +28,7 @@
 #include "js/GCVector.h"
 #include "js/HashTable.h"
 #include "js/RealmOptions.h"
+#include "js/RefCounted.h"  
 #include "js/SourceText.h"
 #include "js/Transcoding.h"
 #include "js/UniquePtr.h"  
@@ -323,9 +324,23 @@ struct CompilationInput {
 
 
 
-using StencilAsmJSContainer =
+using StencilAsmJSMap =
     HashMap<ScriptIndex, RefPtr<const JS::WasmModule>,
             mozilla::DefaultHasher<ScriptIndex>, js::SystemAllocPolicy>;
+
+struct StencilAsmJSContainer
+    : public js::AtomicRefCounted<StencilAsmJSContainer> {
+  StencilAsmJSMap moduleMap;
+
+  StencilAsmJSContainer() = default;
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return moduleMap.shallowSizeOfExcludingThis(mallocSizeOf);
+  }
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
+  }
+};
 
 
 struct SharedDataContainer {
@@ -552,7 +567,7 @@ struct CompilationStencil : public BaseCompilationStencil {
 
   
   
-  StencilAsmJSContainer asmJS;
+  RefPtr<StencilAsmJSContainer> asmJS;
 
   
   
@@ -657,7 +672,7 @@ struct ExtensibleCompilationStencil {
 
   RefPtr<StencilModuleMetadata> moduleMetadata;
 
-  StencilAsmJSContainer asmJS;
+  RefPtr<StencilAsmJSContainer> asmJS;
 
   SharedDataContainer sharedData;
 
@@ -767,13 +782,13 @@ inline size_t CompilationStencil::sizeOfExcludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
   size_t moduleMetadataSize =
       moduleMetadata ? moduleMetadata->sizeOfIncludingThis(mallocSizeOf) : 0;
+  size_t asmJSSize = asmJS ? asmJS->sizeOfIncludingThis(mallocSizeOf) : 0;
   size_t delazificationSetSize =
       delazificationSet ? delazificationSet->sizeOfIncludingThis(mallocSizeOf)
                         : 0;
 
   return alloc.sizeOfExcludingThis(mallocSizeOf) + moduleMetadataSize +
-         asmJS.shallowSizeOfExcludingThis(mallocSizeOf) +
-         delazificationSetSize +
+         asmJSSize + delazificationSetSize +
          BaseCompilationStencil::sizeOfExcludingThis(mallocSizeOf);
 }
 
