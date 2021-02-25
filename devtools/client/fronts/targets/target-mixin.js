@@ -522,6 +522,24 @@ function TargetMixin(parentClass) {
         );
       }
       this.threadFront = await this.getFront("thread");
+
+      
+      
+      
+      
+      
+      
+      
+      const isAttached =
+        this.getTrait("supportsThreadActorIsAttached") &&
+        (await this.threadFront.isAttached());
+      if (isAttached) {
+        
+        
+        
+        await this.threadFront.reconfigure(options);
+        return this.threadFront;
+      }
       if (
         this.isDestroyedOrBeingDestroyed() ||
         this.threadFront.isDestroyed()

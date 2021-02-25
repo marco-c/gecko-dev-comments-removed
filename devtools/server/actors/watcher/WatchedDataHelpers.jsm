@@ -122,3 +122,10 @@ const WatchedDataHelpers = {
     return true;
   },
 };
+
+
+
+
+if (typeof module == "object") {
+  module.exports.WatchedDataHelpers = WatchedDataHelpers;
+}

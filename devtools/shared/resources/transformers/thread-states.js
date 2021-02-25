@@ -9,7 +9,23 @@ const { Front, types } = require("devtools/shared/protocol.js");
 module.exports = function({ resource, watcherFront, targetFront }) {
   
   if (resource.frame && !(resource.frame instanceof Front)) {
-    resource.frame = types.getType("frame").read(resource.frame, targetFront);
+    
+    
+    resource.frame = types
+      .getType("frame")
+      .read(resource.frame, targetFront.threadFront);
+  }
+
+  
+  
+  
+  
+  if (watcherFront) {
+    if (resource.state == "paused") {
+      targetFront.threadFront._beforePaused(resource);
+    } else if (resource.state == "resumed") {
+      targetFront.threadFront._beforeResumed(resource);
+    }
   }
 
   return resource;
