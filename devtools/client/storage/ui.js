@@ -116,7 +116,6 @@ class StorageUI {
     this._window = panelWin;
     this._panelDoc = panelWin.document;
     this._toolbox = toolbox;
-    this.storageResources = null;
     this.sidebarToggledOpen = null;
     this.shouldLoadMoreItems = true;
 
@@ -266,6 +265,13 @@ class StorageUI {
   }
 
   async init() {
+    
+    
+    
+    
+    
+    this.storageResources = {};
+
     const { targetList } = this._toolbox;
     this._onTargetAvailable = this._onTargetAvailable.bind(this);
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
@@ -274,13 +280,6 @@ class StorageUI {
       this._onTargetAvailable,
       this._onTargetDestroyed
     );
-
-    
-    
-    
-    
-    
-    this.storageResources = {};
 
     this._onResourceListAvailable = this._onResourceListAvailable.bind(this);
 
@@ -314,16 +313,15 @@ class StorageUI {
   }
 
   async _onResourceListAvailable(resources) {
-    const storages = {};
-
     for (const resource of resources) {
       const { resourceKey } = resource;
+
       
       
-      if (!storages[resourceKey]) {
-        storages[resourceKey] = [];
+      if (!this.storageResources[resourceKey]) {
+        this.storageResources[resourceKey] = [];
       }
-      storages[resourceKey].push(resource);
+      this.storageResources[resourceKey].push(resource);
       resource.on(
         "single-store-update",
         this._onStoreUpdate.bind(this, resource)
@@ -335,7 +333,7 @@ class StorageUI {
     }
 
     try {
-      await this.populateStorageTree(storages);
+      await this.populateStorageTree();
     } catch (e) {
       if (!this._toolbox || this._toolbox._destroyer) {
         
@@ -895,11 +893,7 @@ class StorageUI {
 
 
 
-
-
-
-
-  async populateStorageTree(storageResources) {
+  async populateStorageTree() {
     const populateTreeFromResource = (type, resource) => {
       for (const host in resource.hosts) {
         const label = this.getReadableLabelFromHostname(host);
@@ -934,12 +928,7 @@ class StorageUI {
     
     const initialSelectedItem = this.tree.selectedItem;
 
-    for (const type in storageResources) {
-      
-      
-      if (type === "from") {
-        continue;
-      }
+    for (const [type, resources] of Object.entries(this.storageResources)) {
       let typeLabel = type;
       try {
         typeLabel = L10N.getStr("tree.labels." + type);
@@ -949,13 +938,9 @@ class StorageUI {
 
       this.tree.add([{ id: type, label: typeLabel, type: "store" }]);
 
-      const resourcesWithHosts = storageResources[type].filter(x => x.hosts);
-      for (const resource of resourcesWithHosts) {
-        if (!this.storageResources[type]) {
-          this.storageResources[type] = [];
-        }
-        this.storageResources[type].push(resource);
-
+      
+      
+      for (const resource of resources) {
         populateTreeFromResource(type, resource);
       }
     }
