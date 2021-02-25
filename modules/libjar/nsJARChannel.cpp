@@ -1186,6 +1186,11 @@ nsJARChannel::OnDataAvailable(nsIRequest* req, nsIInputStream* stream,
 
   nsresult rv;
 
+  
+  if (mCanceled) {
+    return mStatus;
+  }
+
   mOnDataCalled = true;
   rv = mListener->OnDataAvailable(this, stream, offset, count);
 
