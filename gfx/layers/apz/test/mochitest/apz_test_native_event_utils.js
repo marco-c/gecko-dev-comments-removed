@@ -783,32 +783,14 @@ function synthesizeNativeTap(aElement, aX, aY, aObserver = null) {
   return true;
 }
 
-function synthesizeNativeMouseEvent(aTarget, aX, aY, aType, aObserver = null) {
-  var pt = coordinatesRelativeToScreen({
-    offsetX: aX,
-    offsetY: aY,
-    target: aTarget,
-  });
-  var utils = utilsForTarget(aTarget);
-  var element = elementForTarget(aTarget);
-  utils.sendNativeMouseEvent(pt.x, pt.y, aType, 0, element, aObserver);
-  return true;
-}
-
-
-function promiseNativeMouseEvent(aTarget, aX, aY, aType) {
-  return new Promise(resolve => {
-    synthesizeNativeMouseEvent(aTarget, aX, aY, aType, resolve);
-  });
-}
-
-function synthesizeNativeMouseClickWithAPZ(aParams, aObserver = null) {
+function synthesizeNativeMouseEventWithAPZ(aParams, aObserver = null) {
   if (aParams.win !== undefined) {
     throw Error(
       "Are you trying to use EventUtils' API? `win` won't be used with synthesizeNativeMouseClickWithAPZ."
     );
   }
   const {
+    type, 
     target, 
     offsetX, 
     offsetY, 
@@ -852,35 +834,65 @@ function synthesizeNativeMouseClickWithAPZ(aParams, aObserver = null) {
       target,
     });
   })();
-  const utils = SpecialPowers.getDOMWindowUtils(
-    target.ownerDocument.defaultView
-  );
+  const utils = utilsForTarget(target);
+  const element = elementForTarget(target);
   const modifierFlags = parseNativeModifiers(modifiers);
+  if (type === "click") {
+    utils.sendNativeMouseEvent(
+      pt.x,
+      pt.y,
+      nativeMouseDownEventMsg(),
+      modifierFlags,
+      element,
+      function() {
+        utils.sendNativeMouseEvent(
+          pt.x,
+          pt.y,
+          nativeMouseUpEventMsg(),
+          modifierFlags,
+          element,
+          aObserver
+        );
+      }
+    );
+    return;
+  }
+
   utils.sendNativeMouseEvent(
     pt.x,
     pt.y,
-    nativeMouseDownEventMsg(),
+    (() => {
+      switch (type) {
+        case "mousedown":
+          return nativeMouseDownEventMsg();
+        case "mouseup":
+          return nativeMouseUpEventMsg();
+        case "mousemove":
+          return nativeMouseMoveEventMsg();
+        default:
+          throw Error(`Invalid type is specified: ${type}`);
+      }
+    })(),
     modifierFlags,
-    target,
-    function() {
-      utils.sendNativeMouseEvent(
-        pt.x,
-        pt.y,
-        nativeMouseUpEventMsg(),
-        modifierFlags,
-        target,
-        aObserver
-      );
-    }
+    element,
+    aObserver
   );
-  return true;
 }
 
+function promiseNativeMouseEventWithAPZ(aParams) {
+  return new Promise(resolve =>
+    synthesizeNativeMouseEventWithAPZ(aParams, resolve)
+  );
+}
+
+function synthesizeNativeMouseClickWithAPZ(aParams, aObserver = null) {
+  aParams.type = "click";
+  return synthesizeNativeMouseEventWithAPZ(aParams, aObserver);
+}
 
 function promiseNativeMouseClickWithAPZ(aParams) {
-  return new Promise(resolve => {
-    synthesizeNativeMouseClickWithAPZ(aParams, resolve);
-  });
+  aParams.type = "click";
+  return promiseNativeMouseEventWithAPZ(aParams);
 }
 
 
@@ -1001,44 +1013,44 @@ async function promiseVerticalScrollbarDrag(
   );
 
   
-  await promiseNativeMouseEvent(
+  await promiseNativeMouseEventWithAPZ({
     target,
-    mouseX,
-    mouseY,
-    nativeMouseMoveEventMsg()
-  );
+    offsetX: mouseX,
+    offsetY: mouseY,
+    type: "mousemove",
+  });
   
-  await promiseNativeMouseEvent(
+  await promiseNativeMouseEventWithAPZ({
     target,
-    mouseX,
-    mouseY,
-    nativeMouseDownEventMsg()
-  );
+    offsetX: mouseX,
+    offsetY: mouseY,
+    type: "mousedown",
+  });
   
   for (var y = increment; y < distance; y += increment) {
-    await promiseNativeMouseEvent(
+    await promiseNativeMouseEventWithAPZ({
       target,
-      mouseX,
-      mouseY + y,
-      nativeMouseMoveEventMsg()
-    );
+      offsetX: mouseX,
+      offsetY: mouseY + y,
+      type: "mousemove",
+    });
   }
-  await promiseNativeMouseEvent(
+  await promiseNativeMouseEventWithAPZ({
     target,
-    mouseX,
-    mouseY + distance,
-    nativeMouseMoveEventMsg()
-  );
+    offsetX: mouseX,
+    offsetY: mouseY + distance,
+    type: "mousemove",
+  });
 
   
   return async function() {
     dump("Finishing drag of #" + targetElement.id + "\n");
-    await promiseNativeMouseEvent(
+    await promiseNativeMouseEventWithAPZ({
       target,
-      mouseX,
-      mouseY + distance,
-      nativeMouseUpEventMsg()
-    );
+      offsetX: mouseX,
+      offsetY: mouseY + distance,
+      type: "mouseup",
+    });
   };
 }
 
@@ -1074,40 +1086,40 @@ async function promiseNativeMouseDrag(
   );
 
   
-  await promiseNativeMouseEvent(
+  await promiseNativeMouseEventWithAPZ({
     target,
-    mouseX,
-    mouseY,
-    nativeMouseMoveEventMsg()
-  );
+    offsetX: mouseX,
+    offsetY: mouseY,
+    type: "mousemove",
+  });
   
-  await promiseNativeMouseEvent(
+  await promiseNativeMouseEventWithAPZ({
     target,
-    mouseX,
-    mouseY,
-    nativeMouseDownEventMsg()
-  );
+    offsetX: mouseX,
+    offsetY: mouseY,
+    type: "mousedown",
+  });
   
   for (var s = 1; s <= steps; s++) {
     let dx = distanceX * (s / steps);
     let dy = distanceY * (s / steps);
     dump(`Dragging to ${mouseX + dx}, ${mouseY + dy} from target\n`);
-    await promiseNativeMouseEvent(
+    await promiseNativeMouseEventWithAPZ({
       target,
-      mouseX + dx,
-      mouseY + dy,
-      nativeMouseMoveEventMsg()
-    );
+      offsetX: mouseX + dx,
+      offsetY: mouseY + dy,
+      type: "mousemove",
+    });
   }
 
   
   return function() {
-    return promiseNativeMouseEvent(
+    return promiseNativeMouseEventWithAPZ({
       target,
-      mouseX + distanceX,
-      mouseY + distanceY,
-      nativeMouseUpEventMsg()
-    );
+      offsetX: mouseX + distanceX,
+      offsetY: mouseY + distanceY,
+      type: "mouseup",
+    });
   };
 }
 
