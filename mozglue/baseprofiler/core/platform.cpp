@@ -1368,6 +1368,13 @@ static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       
       
       if (!profilingStackFrame.isSpMarkerFrame()) {
+        if (aIsSynchronous && profilingStackFrame.categoryPair() ==
+                                  ProfilingCategoryPair::PROFILER) {
+          
+          
+          
+          return;
+        }
         aCollector.CollectProfilingStackFrame(profilingStackFrame);
       }
       profilingStackIndex++;
