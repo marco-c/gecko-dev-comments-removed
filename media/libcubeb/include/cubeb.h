@@ -557,14 +557,6 @@ CUBEB_EXPORT int cubeb_stream_stop(cubeb_stream * stream);
 
 
 
-
-CUBEB_EXPORT int cubeb_stream_reset_default_device(cubeb_stream * stream);
-
-
-
-
-
-
 CUBEB_EXPORT int cubeb_stream_get_position(cubeb_stream * stream, uint64_t * position);
 
 

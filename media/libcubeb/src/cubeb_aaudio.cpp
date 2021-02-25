@@ -1450,7 +1450,6 @@ const static struct cubeb_ops aaudio_ops = {
     aaudio_stream_destroy,
     aaudio_stream_start,
     aaudio_stream_stop,
-    NULL,
     aaudio_stream_get_position,
     aaudio_stream_get_latency,
     aaudio_stream_get_input_latency,
