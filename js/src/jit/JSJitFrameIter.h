@@ -565,7 +565,7 @@ class SnapshotIterator {
     
     if (script->argumentsHasVarBinding()) {
       if (argsObj) {
-        Value v = read();
+        Value v = maybeRead(fallback);
         if (v.isObject()) {
           *argsObj = &v.toObject().as<ArgumentsObject>();
         }
