@@ -804,6 +804,9 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
+
+
+
   nsresult RenderDocument(const nsRect& aRect, RenderDocumentFlags aFlags,
                           nscolor aBackgroundColor,
                           gfxContext* aRenderedContext);
@@ -997,12 +1000,6 @@ class PresShell final : public nsStubDocumentObserver,
   nsresult HandleEvent(nsIFrame* aFrame, WidgetGUIEvent* aEvent,
                        bool aDontRetargetEvents, nsEventStatus* aEventStatus);
   bool ShouldIgnoreInvalidation();
-  
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT void WillPaintWindow();
   
 
 
