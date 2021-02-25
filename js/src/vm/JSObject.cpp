@@ -3652,9 +3652,8 @@ js::gc::AllocKind JSObject::allocKindForTenure(
     return InlineTypedObject::allocKindForTypeDescriptor(&descr);
   }
 
-  
   if (is<OutlineTypedObject>()) {
-    return gc::AllocKind::OBJECT0;
+    return OutlineTypedObject::allocKind;
   }
 
   
