@@ -404,12 +404,6 @@ def deprecated_option(*args, **kwargs):
 
 
 
-@imports(_from="mozbuild.util", _import="ReadOnlyNamespace")
-def namespace(**kwargs):
-    return ReadOnlyNamespace(**kwargs)
-
-
-
 
 
 @template
