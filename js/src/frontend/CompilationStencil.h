@@ -357,6 +357,19 @@ struct SharedDataContainer {
   
   SharedDataContainer() = default;
 
+  SharedDataContainer(const SharedDataContainer&) = delete;
+  SharedDataContainer(SharedDataContainer&& other) noexcept {
+    std::swap(data_, other.data_);
+    MOZ_ASSERT(other.isEmpty());
+  }
+
+  SharedDataContainer& operator=(const SharedDataContainer&) = delete;
+  SharedDataContainer& operator=(SharedDataContainer&& other) noexcept {
+    std::swap(data_, other.data_);
+    MOZ_ASSERT(other.isEmpty());
+    return *this;
+  }
+
   ~SharedDataContainer();
 
   bool initVector(JSContext* cx);
@@ -458,8 +471,6 @@ struct BaseCompilationStencil {
   
 
   BaseCompilationStencil() = default;
-
-  bool prepareStorageFor(JSContext* cx, CompilationState& compilationState);
 
   static FunctionKey toFunctionKey(const SourceExtent& extent) {
     
@@ -601,7 +612,16 @@ inline const CompilationStencil& BaseCompilationStencil::asCompilationStencil()
 
 
 
+
 struct ExtensibleCompilationStencil {
+  using FunctionKey = BaseCompilationStencil::FunctionKey;
+
+  
+  
+  LifoAlloc alloc;
+
+  RefPtr<ScriptSource> source;
+
   Vector<ScriptStencil, 0, js::SystemAllocPolicy> scriptData;
   Vector<ScriptStencilExtra, 0, js::SystemAllocPolicy> scriptExtra;
 
@@ -614,12 +634,26 @@ struct ExtensibleCompilationStencil {
   Vector<BigIntStencil, 0, js::SystemAllocPolicy> bigIntData;
   Vector<ObjLiteralStencil, 0, js::SystemAllocPolicy> objLiteralData;
 
+  UniquePtr<StencilModuleMetadata> moduleMetadata;
+
   StencilAsmJSContainer asmJS;
+
+  SharedDataContainer sharedData;
 
   
   ParserAtomsTable parserAtoms;
 
-  ExtensibleCompilationStencil(JSContext* cx, LifoAlloc& stencilAlloc);
+  FunctionKey functionKey = BaseCompilationStencil::NullFunctionKey;
+
+  ExtensibleCompilationStencil(JSContext* cx, CompilationInput& input);
+
+  void setFunctionKey(BaseScript* lazy) {
+    functionKey = BaseCompilationStencil::toFunctionKey(lazy->extent());
+  }
+
+  bool isInitialStencil() const {
+    return functionKey == BaseCompilationStencil::NullFunctionKey;
+  }
 };
 
 struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
@@ -642,7 +676,7 @@ struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
   
 
   CompilationState(JSContext* cx, LifoAllocScope& frontendAllocScope,
-                   CompilationInput& input, LifoAlloc& stencilAlloc);
+                   CompilationInput& input);
 
   bool init(JSContext* cx, InheritThis inheritThis = InheritThis::No,
             JSObject* enclosingEnv = nullptr) {
@@ -658,6 +692,8 @@ struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
 
     size_t asmJSCount = 0;
   };
+
+  bool prepareSharedDataStorage(JSContext* cx);
 
   RewindToken getRewindToken();
   void rewind(const RewindToken& pos);
