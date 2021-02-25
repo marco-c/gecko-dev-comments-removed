@@ -3224,12 +3224,33 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
     visibleRegion = aDirtyRegion;
   }
 
+  Maybe<nsPoint> originalScrollPosition;
+  auto maybeResetScrollPosition = MakeScopeExit([&]() {
+    if (originalScrollPosition && rootScrollFrame) {
+      nsIScrollableFrame* rootScrollableFrame =
+          presShell->GetRootScrollFrameAsScrollable();
+      MOZ_ASSERT(rootScrollableFrame->GetScrolledFrame()->GetPosition() ==
+                 nsPoint());
+      rootScrollableFrame->GetScrolledFrame()->SetPosition(
+          *originalScrollPosition);
+    }
+  });
+
   nsRect canvasArea(nsPoint(0, 0), aFrame->GetSize());
   bool ignoreViewportScrolling =
       !aFrame->GetParent() && presShell->IgnoringViewportScrolling();
   if (ignoreViewportScrolling && rootScrollFrame) {
     nsIScrollableFrame* rootScrollableFrame =
         presShell->GetRootScrollFrameAsScrollable();
+    if (aFlags & PaintFrameFlags::ResetViewportScrolling) {
+      
+      
+      
+      
+      originalScrollPosition.emplace(
+          rootScrollableFrame->GetScrolledFrame()->GetPosition());
+      rootScrollableFrame->GetScrolledFrame()->SetPosition(nsPoint());
+    }
     if (aFlags & PaintFrameFlags::DocumentRelative) {
       
       
