@@ -44,7 +44,7 @@ void TextAttrsMgr::GetAttributes(nsIPersistentProperties* aAttributes,
   
   if (mOffsetAcc && !mOffsetAcc->IsText()) {
     for (int32_t childIdx = mOffsetAccIdx - 1; childIdx >= 0; childIdx--) {
-      Accessible* currAcc = mHyperTextAcc->GetChildAt(childIdx);
+      Accessible* currAcc = mHyperTextAcc->LocalChildAt(childIdx);
       if (currAcc->IsText()) break;
 
       (*aStartOffset)--;
@@ -53,7 +53,7 @@ void TextAttrsMgr::GetAttributes(nsIPersistentProperties* aAttributes,
     uint32_t childCount = mHyperTextAcc->ChildCount();
     for (uint32_t childIdx = mOffsetAccIdx + 1; childIdx < childCount;
          childIdx++) {
-      Accessible* currAcc = mHyperTextAcc->GetChildAt(childIdx);
+      Accessible* currAcc = mHyperTextAcc->LocalChildAt(childIdx);
       if (currAcc->IsText()) break;
 
       (*aEndOffset)++;
@@ -137,7 +137,7 @@ void TextAttrsMgr::GetRange(TextAttr* aAttrArray[], uint32_t aAttrArrayLen,
                             uint32_t* aStartOffset, uint32_t* aEndOffset) {
   
   for (int32_t childIdx = mOffsetAccIdx - 1; childIdx >= 0; childIdx--) {
-    Accessible* currAcc = mHyperTextAcc->GetChildAt(childIdx);
+    Accessible* currAcc = mHyperTextAcc->LocalChildAt(childIdx);
 
     
     
@@ -163,7 +163,7 @@ void TextAttrsMgr::GetRange(TextAttr* aAttrArray[], uint32_t aAttrArrayLen,
   
   uint32_t childLen = mHyperTextAcc->ChildCount();
   for (uint32_t childIdx = mOffsetAccIdx + 1; childIdx < childLen; childIdx++) {
-    Accessible* currAcc = mHyperTextAcc->GetChildAt(childIdx);
+    Accessible* currAcc = mHyperTextAcc->LocalChildAt(childIdx);
     if (!currAcc->IsText()) break;
 
     MOZ_ASSERT(nsCoreUtils::GetDOMElementFor(currAcc->GetContent()),

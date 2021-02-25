@@ -74,8 +74,8 @@ bool HyperTextIterator::NormalizeForward() {
       
       return false;
     }
-    if (!mCurrentContainer->Parent() ||
-        !mCurrentContainer->Parent()->IsHyperText()) {
+    if (!mCurrentContainer->LocalParent() ||
+        !mCurrentContainer->LocalParent()->IsHyperText()) {
       
       
       
@@ -84,7 +84,7 @@ bool HyperTextIterator::NormalizeForward() {
     }
     uint32_t endOffset = mCurrentContainer->EndOffset();
     if (endOffset != 0) {
-      mCurrentContainer = mCurrentContainer->Parent()->AsHyperText();
+      mCurrentContainer = mCurrentContainer->LocalParent()->AsHyperText();
       mCurrentStartOffset = endOffset;
 
       if (mCurrentContainer == mEndContainer &&
@@ -143,8 +143,8 @@ bool HyperTextIterator::NormalizeBackward() {
       
       return false;
     }
-    if (!mCurrentContainer->Parent() ||
-        !mCurrentContainer->Parent()->IsHyperText()) {
+    if (!mCurrentContainer->LocalParent() ||
+        !mCurrentContainer->LocalParent()->IsHyperText()) {
       
       
       
@@ -153,7 +153,7 @@ bool HyperTextIterator::NormalizeBackward() {
     }
 
     uint32_t startOffset = mCurrentContainer->StartOffset();
-    mCurrentContainer = mCurrentContainer->Parent()->AsHyperText();
+    mCurrentContainer = mCurrentContainer->LocalParent()->AsHyperText();
     mCurrentStartOffset = startOffset;
 
     
@@ -519,11 +519,11 @@ void HyperTextAccessibleWrap::ParagraphAt(int32_t aOffset,
     return;
   }
 
-  if (end.mOffset == -1 && Parent() && Parent()->IsHyperText()) {
+  if (end.mOffset == -1 && LocalParent() && LocalParent()->IsHyperText()) {
     
     
     
-    static_cast<HyperTextAccessibleWrap*>(Parent()->AsHyperText())
+    static_cast<HyperTextAccessibleWrap*>(LocalParent()->AsHyperText())
         ->ParagraphAt(StartOffset(), aStartContainer, aStartOffset,
                       aEndContainer, aEndOffset);
     return;
@@ -551,9 +551,9 @@ void HyperTextAccessibleWrap::StyleAt(int32_t aOffset,
     return;
   }
 
-  MOZ_ASSERT(leaf->Parent()->IsHyperText());
+  MOZ_ASSERT(leaf->LocalParent()->IsHyperText());
   HyperTextAccessibleWrap* container =
-      static_cast<HyperTextAccessibleWrap*>(leaf->Parent()->AsHyperText());
+      static_cast<HyperTextAccessibleWrap*>(leaf->LocalParent()->AsHyperText());
   if (!container) {
     return;
   }
@@ -594,7 +594,7 @@ void HyperTextAccessibleWrap::PreviousClusterAt(
 void HyperTextAccessibleWrap::RangeOfChild(Accessible* aChild,
                                            int32_t* aStartOffset,
                                            int32_t* aEndOffset) {
-  MOZ_ASSERT(aChild->Parent() == this);
+  MOZ_ASSERT(aChild->LocalParent() == this);
   *aStartOffset = *aEndOffset = -1;
   int32_t index = GetIndexOf(aChild);
   if (index != -1) {
@@ -617,7 +617,7 @@ Accessible* HyperTextAccessibleWrap::LeafAtOffset(int32_t aOffset) {
       return text;
     }
 
-    child = text->GetChildAt(childIdx);
+    child = text->LocalChildAt(childIdx);
     if (!child || nsAccUtils::MustPrune(text)) {
       return text;
     }
@@ -665,16 +665,16 @@ TextPoint HyperTextAccessibleWrap::FindTextPoint(
       return TextPoint(text, 0);
     }
 
-    child = text->GetChildAt(childIdx);
+    child = text->LocalChildAt(childIdx);
     if (child->IsHyperText() && !child->ChildCount()) {
       
       
       
       if (aDirection == eDirPrevious && childIdx > 0) {
-        child = text->GetChildAt(--childIdx);
+        child = text->LocalChildAt(--childIdx);
       } else if (aDirection == eDirNext &&
                  childIdx + 1 < static_cast<int32_t>(text->ChildCount())) {
-        child = text->GetChildAt(++childIdx);
+        child = text->LocalChildAt(++childIdx);
       }
     }
 
@@ -687,7 +687,7 @@ TextPoint HyperTextAccessibleWrap::FindTextPoint(
       
       childIdx--;
       innerOffset -= text->GetChildOffset(childIdx);
-      child = text->GetChildAt(childIdx);
+      child = text->LocalChildAt(childIdx);
     } else {
       innerOffset -= childOffset;
     }
@@ -757,7 +757,8 @@ TextPoint HyperTextAccessibleWrap::FindTextPoint(
 
 HyperTextAccessibleWrap* HyperTextAccessibleWrap::EditableRoot() {
   Accessible* editable = nullptr;
-  for (Accessible* acc = this; acc && acc != Document(); acc = acc->Parent()) {
+  for (Accessible* acc = this; acc && acc != Document();
+       acc = acc->LocalParent()) {
     if (acc->NativeState() & states::EDITABLE) {
       editable = acc;
     } else {

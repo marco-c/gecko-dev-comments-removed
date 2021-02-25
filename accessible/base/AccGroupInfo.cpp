@@ -20,7 +20,7 @@ AccGroupInfo::AccGroupInfo(const Accessible* aItem, role aRole)
 void AccGroupInfo::Update() {
   mParent = nullptr;
 
-  Accessible* parent = mItem->Parent();
+  Accessible* parent = mItem->LocalParent();
   if (!parent) return;
 
   int32_t indexInParent = mItem->IndexInParent();
@@ -36,7 +36,7 @@ void AccGroupInfo::Update() {
   
   mPosInSet = 1;
   for (int32_t idx = indexInParent - 1; idx >= 0; idx--) {
-    Accessible* sibling = parent->GetChildAt(idx);
+    Accessible* sibling = parent->LocalChildAt(idx);
     roles::Role siblingRole = sibling->Role();
 
     
@@ -82,7 +82,7 @@ void AccGroupInfo::Update() {
   mSetSize = mPosInSet;
 
   for (uint32_t idx = indexInParent + 1; idx < siblingCount; idx++) {
-    Accessible* sibling = parent->GetChildAt(idx);
+    Accessible* sibling = parent->LocalChildAt(idx);
 
     roles::Role siblingRole = sibling->Role();
 
@@ -131,7 +131,7 @@ void AccGroupInfo::Update() {
   
   
   if (mRole == roles::OUTLINEITEM) {
-    Accessible* parentPrevSibling = parent->PrevSibling();
+    Accessible* parentPrevSibling = parent->LocalPrevSibling();
     if (parentPrevSibling && parentPrevSibling->Role() == mRole) {
       mParent = parentPrevSibling;
       return;
@@ -142,7 +142,7 @@ void AccGroupInfo::Update() {
   
   
   if (mRole == roles::LISTITEM || mRole == roles::OUTLINEITEM) {
-    Accessible* grandParent = parent->Parent();
+    Accessible* grandParent = parent->LocalParent();
     if (grandParent && grandParent->Role() == mRole) mParent = grandParent;
   }
 }
@@ -151,10 +151,10 @@ Accessible* AccGroupInfo::FirstItemOf(const Accessible* aContainer) {
   
   
   a11y::role containerRole = aContainer->Role();
-  Accessible* item = aContainer->NextSibling();
+  Accessible* item = aContainer->LocalNextSibling();
   if (item) {
     if (containerRole == roles::OUTLINEITEM && item->Role() == roles::GROUPING)
-      item = item->FirstChild();
+      item = item->LocalFirstChild();
 
     if (item) {
       AccGroupInfo* itemGroupInfo = item->GetGroupInfo();
@@ -165,13 +165,13 @@ Accessible* AccGroupInfo::FirstItemOf(const Accessible* aContainer) {
 
   
   
-  item = aContainer->LastChild();
+  item = aContainer->LocalLastChild();
   if (!item) return nullptr;
 
   if (item->Role() == roles::GROUPING &&
       (containerRole == roles::LISTITEM ||
        containerRole == roles::OUTLINEITEM)) {
-    item = item->FirstChild();
+    item = item->LocalFirstChild();
     if (item) {
       AccGroupInfo* itemGroupInfo = item->GetGroupInfo();
       if (itemGroupInfo && itemGroupInfo->ConceptualParent() == aContainer)
@@ -180,7 +180,7 @@ Accessible* AccGroupInfo::FirstItemOf(const Accessible* aContainer) {
   }
 
   
-  item = aContainer->FirstChild();
+  item = aContainer->LocalFirstChild();
   if (ShouldReportRelations(item->Role(), containerRole)) return item;
 
   return nullptr;
@@ -231,10 +231,10 @@ uint32_t AccGroupInfo::TotalItemCount(Accessible* aContainer,
     case roles::PAGETABLIST: {
       Accessible* childItem = AccGroupInfo::FirstItemOf(aContainer);
       if (!childItem) {
-        childItem = aContainer->FirstChild();
+        childItem = aContainer->LocalFirstChild();
         if (childItem && childItem->IsTextLeaf()) {
           
-          childItem = childItem->NextSibling();
+          childItem = childItem->LocalNextSibling();
         }
       }
 
@@ -261,10 +261,10 @@ Accessible* AccGroupInfo::NextItemTo(Accessible* aItem) {
   
   if (groupInfo->PosInSet() >= groupInfo->SetSize()) return nullptr;
 
-  Accessible* parent = aItem->Parent();
+  Accessible* parent = aItem->LocalParent();
   uint32_t childCount = parent->ChildCount();
   for (uint32_t idx = aItem->IndexInParent() + 1; idx < childCount; idx++) {
-    Accessible* nextItem = parent->GetChildAt(idx);
+    Accessible* nextItem = parent->LocalChildAt(idx);
     AccGroupInfo* nextGroupInfo = nextItem->GetGroupInfo();
     if (nextGroupInfo &&
         nextGroupInfo->ConceptualParent() == groupInfo->ConceptualParent()) {

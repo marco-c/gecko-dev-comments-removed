@@ -28,7 +28,7 @@ inline Accessible* DocAccessible::AccessibleOrTrueContainer(
   
   Accessible* container = GetAccessibleOrContainer(aNode, aNoContainerIfPruned);
   if (container && container->IsHTMLCombobox()) {
-    return container->FirstChild();
+    return container->LocalFirstChild();
   }
   return container;
 }

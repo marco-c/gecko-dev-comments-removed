@@ -1762,7 +1762,7 @@ void DocAccessible::DoInitialUpdate() {
   
   
   if (!IsRoot()) {
-    RefPtr<AccReorderEvent> reorderEvent = new AccReorderEvent(Parent());
+    RefPtr<AccReorderEvent> reorderEvent = new AccReorderEvent(LocalParent());
     ParentDocument()->FireDelayedEvent(reorderEvent);
   }
 
@@ -2035,7 +2035,7 @@ bool InsertIterator::Next() {
     
     
     if (container->IsHTMLCombobox()) {
-      container = container->FirstChild();
+      container = container->LocalFirstChild();
     }
 
     if (!container->IsAcceptableChild(node)) {
@@ -2097,12 +2097,12 @@ void DocAccessible::ProcessContentInserted(
 
   TreeMutation mt(aContainer);
   do {
-    Accessible* parent = iter.Child()->Parent();
+    Accessible* parent = iter.Child()->LocalParent();
     if (parent) {
       Accessible* previousSibling = iter.ChildBefore();
       if (parent != aContainer ||
-          iter.Child()->PrevSibling() != previousSibling) {
-        if (previousSibling && previousSibling->Parent() != aContainer) {
+          iter.Child()->LocalPrevSibling() != previousSibling) {
+        if (previousSibling && previousSibling->LocalParent() != aContainer) {
           
           
           
@@ -2196,12 +2196,12 @@ void DocAccessible::FireEventsOnInsertion(Accessible* aContainer) {
         FireDelayedEvent(nsIAccessibleEvent::EVENT_ALERT, ancestor);
         break;
       }
-    } while ((ancestor = ancestor->Parent()));
+    } while ((ancestor = ancestor->LocalParent()));
   }
 }
 
 void DocAccessible::ContentRemoved(Accessible* aChild) {
-  Accessible* parent = aChild->Parent();
+  Accessible* parent = aChild->LocalParent();
   MOZ_DIAGNOSTIC_ASSERT(parent, "Unattached accessible from tree");
 
 #ifdef A11Y_LOG
@@ -2221,7 +2221,7 @@ void DocAccessible::ContentRemoved(Accessible* aChild) {
     return;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(aChild->Parent(), "Alive but unparented #1");
+  MOZ_DIAGNOSTIC_ASSERT(aChild->LocalParent(), "Alive but unparented #1");
 
   if (aChild->IsRelocated()) {
     nsTArray<RefPtr<Accessible>>* owned = mARIAOwnsHash.Get(parent);
@@ -2231,7 +2231,7 @@ void DocAccessible::ContentRemoved(Accessible* aChild) {
       mARIAOwnsHash.Remove(parent);
     }
   }
-  MOZ_DIAGNOSTIC_ASSERT(aChild->Parent(), "Unparented #2");
+  MOZ_DIAGNOSTIC_ASSERT(aChild->LocalParent(), "Unparented #2");
   parent->RemoveChild(aChild);
   UncacheChildrenInSubtree(aChild);
 
@@ -2340,7 +2340,7 @@ void DocAccessible::DoARIAOwnsRelocation(Accessible* aOwner) {
     }
 
     
-    if (child->Parent() == aOwner) {
+    if (child->LocalParent() == aOwner) {
       int32_t indexInParent = child->IndexInParent();
 
       
@@ -2372,7 +2372,7 @@ void DocAccessible::DoARIAOwnsRelocation(Accessible* aOwner) {
     MOZ_ASSERT(owned->SafeElementAt(idx) != child, "Already in place!");
 
     
-    if (child->Parent() != aOwner) {
+    if (child->LocalParent() != aOwner) {
       
       if (child->IsRelocated()) {
         continue;
@@ -2380,7 +2380,7 @@ void DocAccessible::DoARIAOwnsRelocation(Accessible* aOwner) {
 
       Accessible* parent = aOwner;
       while (parent && parent != child && !parent->IsDoc()) {
-        parent = parent->Parent();
+        parent = parent->LocalParent();
       }
       
       if (parent == child) {
@@ -2415,7 +2415,7 @@ void DocAccessible::PutChildrenBack(nsTArray<RefPtr<Accessible>>* aChildren,
     }
 
     
-    Accessible* owner = child->Parent();
+    Accessible* owner = child->LocalParent();
     if (!owner) {
       NS_ERROR("Cannot put the child back. No parent, a broken tree.");
       continue;
@@ -2439,9 +2439,9 @@ void DocAccessible::PutChildrenBack(nsTArray<RefPtr<Accessible>>* aChildren,
         Accessible* prevChild = walker.Prev();
         if (prevChild) {
           idxInParent = prevChild->IndexInParent() + 1;
-          MOZ_DIAGNOSTIC_ASSERT(origContainer == prevChild->Parent(),
+          MOZ_DIAGNOSTIC_ASSERT(origContainer == prevChild->LocalParent(),
                                 "Broken tree");
-          origContainer = prevChild->Parent();
+          origContainer = prevChild->LocalParent();
         } else {
           idxInParent = 0;
         }
@@ -2460,9 +2460,11 @@ void DocAccessible::PutChildrenBack(nsTArray<RefPtr<Accessible>>* aChildren,
       DebugOnly<bool> moved = MoveChild(child, origContainer, idxInParent);
       MOZ_ASSERT(moved, "Failed to put child back.");
     } else {
-      MOZ_ASSERT(!child->PrevSibling() || !child->PrevSibling()->IsRelocated(),
+      MOZ_ASSERT(!child->LocalPrevSibling() ||
+                     !child->LocalPrevSibling()->IsRelocated(),
                  "No relocated child should appear before this one");
-      MOZ_ASSERT(!child->NextSibling() || child->NextSibling()->IsRelocated(),
+      MOZ_ASSERT(!child->LocalNextSibling() ||
+                     child->LocalNextSibling()->IsRelocated(),
                  "No ordinal child should appear after this one");
     }
   }
@@ -2473,14 +2475,14 @@ void DocAccessible::PutChildrenBack(nsTArray<RefPtr<Accessible>>* aChildren,
 bool DocAccessible::MoveChild(Accessible* aChild, Accessible* aNewParent,
                               int32_t aIdxInParent) {
   MOZ_ASSERT(aChild, "No child");
-  MOZ_ASSERT(aChild->Parent(), "No parent");
+  MOZ_ASSERT(aChild->LocalParent(), "No parent");
   
   
   MOZ_ASSERT(
       aIdxInParent <= static_cast<int32_t>(aNewParent->mChildren.Length()),
       "Wrong insertion point for a moving child");
 
-  Accessible* curParent = aChild->Parent();
+  Accessible* curParent = aChild->LocalParent();
 
   if (!aNewParent->IsAcceptableChild(aChild->GetContent())) {
     return false;
@@ -2555,7 +2557,7 @@ void DocAccessible::CacheChildrenInSubtree(Accessible* aRoot,
       FocusMgr()->HasDOMFocus(aRoot->GetContent()))
     *aFocusedAcc = aRoot;
 
-  Accessible* root = aRoot->IsHTMLCombobox() ? aRoot->FirstChild() : aRoot;
+  Accessible* root = aRoot->IsHTMLCombobox() ? aRoot->LocalFirstChild() : aRoot;
   if (root->KidsFromDOM()) {
     TreeMutation mt(root, TreeMutation::kNoEvents);
     TreeWalker walker(root);

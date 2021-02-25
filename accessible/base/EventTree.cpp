@@ -55,7 +55,7 @@ TreeMutation::~TreeMutation() {
 }
 
 void TreeMutation::AfterInsertion(Accessible* aChild) {
-  MOZ_ASSERT(aChild->Parent() == mParent);
+  MOZ_ASSERT(aChild->LocalParent() == mParent);
 
   if (static_cast<uint32_t>(aChild->mIndexInParent) < mStartIdx) {
     mStartIdx = aChild->mIndexInParent + 1;
@@ -72,7 +72,7 @@ void TreeMutation::AfterInsertion(Accessible* aChild) {
 }
 
 void TreeMutation::BeforeRemoval(Accessible* aChild, bool aNoShutdown) {
-  MOZ_ASSERT(aChild->Parent() == mParent);
+  MOZ_ASSERT(aChild->LocalParent() == mParent);
 
   if (static_cast<uint32_t>(aChild->mIndexInParent) < mStartIdx) {
     mStartIdx = aChild->mIndexInParent;
@@ -267,7 +267,7 @@ EventTree* EventTree::FindOrInsert(Accessible* aContainer) {
       }
 
       
-      if (parent->Parent() == node->mContainer) {
+      if (parent->LocalParent() == node->mContainer) {
         
         uint32_t evCount = node->mDependentEvents.Length();
         for (uint32_t idx = 0; idx < evCount; idx++) {
@@ -295,7 +295,7 @@ EventTree* EventTree::FindOrInsert(Accessible* aContainer) {
         return node->FindOrInsert(aContainer);
       }
 
-      parent = parent->Parent();
+      parent = parent->LocalParent();
       MOZ_ASSERT(parent, "Wrong tree");
     }
 
@@ -306,8 +306,8 @@ EventTree* EventTree::FindOrInsert(Accessible* aContainer) {
     
     Accessible* curParent = node->mContainer;
     while (curParent && !curParent->IsDoc()) {
-      if (curParent->Parent() != aContainer) {
-        curParent = curParent->Parent();
+      if (curParent->LocalParent() != aContainer) {
+        curParent = curParent->LocalParent();
         continue;
       }
 
@@ -330,8 +330,8 @@ EventTree* EventTree::FindOrInsert(Accessible* aContainer) {
       while (node) {
         Accessible* curParent = node->mContainer;
         while (curParent && !curParent->IsDoc()) {
-          if (curParent->Parent() != aContainer) {
-            curParent = curParent->Parent();
+          if (curParent->LocalParent() != aContainer) {
+            curParent = curParent->LocalParent();
             continue;
           }
 
@@ -526,7 +526,7 @@ void EventTree::Mutated(AccMutationEvent* aEv) {
         *node = std::move((*node)->mNext);
         break;
       }
-      cntr = cntr->Parent();
+      cntr = cntr->LocalParent();
     }
     if (cntr == aEv->mAccessible) {
       continue;

@@ -470,11 +470,11 @@ enum CachedBool { eCachedBoolMiss, eCachedTrue, eCachedFalse };
       
       
       
-      Accessible* treeColumns = treeAcc->GetChildAt(0);
+      Accessible* treeColumns = treeAcc->LocalChildAt(0);
       if (treeColumns) {
         uint32_t colCount = treeColumns->ChildCount();
         for (uint32_t i = 0; i < colCount; i++) {
-          Accessible* treeColumnItem = treeColumns->GetChildAt(i);
+          Accessible* treeColumnItem = treeColumns->LocalChildAt(i);
           [cols addObject:GetNativeFromGeckoAccessible(treeColumnItem)];
         }
         return cols;

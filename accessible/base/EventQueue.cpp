@@ -63,7 +63,7 @@ bool EventQueue::PushNameOrDescriptionChange(Accessible* aTarget) {
   
   
   
-  Accessible* parent = aTarget->Parent();
+  Accessible* parent = aTarget->LocalParent();
   while (parent &&
          nsTextEquivUtils::HasNameRule(parent, eNameFromSubtreeIfReqRule)) {
     
@@ -98,7 +98,7 @@ bool EventQueue::PushNameOrDescriptionChange(Accessible* aTarget) {
       }
     }
 
-    parent = parent->Parent();
+    parent = parent->LocalParent();
   }
   return pushed;
 }

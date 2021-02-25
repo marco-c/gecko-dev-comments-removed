@@ -171,7 +171,7 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
       Accessible* acc = aEvent->GetAccessible();
       
       while (acc && GetTypeFromRole(acc->Role()) != [mozTextAccessible class]) {
-        acc = acc->Parent();
+        acc = acc->LocalParent();
       }
       eventTarget = acc ? acc : aEvent->GetAccessible();
       break;

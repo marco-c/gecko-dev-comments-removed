@@ -388,12 +388,12 @@ class Accessible : public nsISupports {
   
 
 
-  Accessible* Parent() const { return mParent; }
+  Accessible* LocalParent() const { return mParent; }
 
   
 
 
-  virtual Accessible* GetChildAt(uint32_t aIndex) const;
+  virtual Accessible* LocalChildAt(uint32_t aIndex) const;
 
   
 
@@ -415,17 +415,17 @@ class Accessible : public nsISupports {
   
 
 
-  bool HasChildren() const { return !!GetChildAt(0); }
+  bool HasChildren() const { return !!LocalChildAt(0); }
 
   
 
 
-  inline Accessible* NextSibling() const { return GetSiblingAtOffset(1); }
-  inline Accessible* PrevSibling() const { return GetSiblingAtOffset(-1); }
-  inline Accessible* FirstChild() const { return GetChildAt(0); }
-  inline Accessible* LastChild() const {
+  inline Accessible* LocalNextSibling() const { return GetSiblingAtOffset(1); }
+  inline Accessible* LocalPrevSibling() const { return GetSiblingAtOffset(-1); }
+  inline Accessible* LocalFirstChild() const { return LocalChildAt(0); }
+  inline Accessible* LocalLastChild() const {
     uint32_t childCount = ChildCount();
-    return childCount != 0 ? GetChildAt(childCount - 1) : nullptr;
+    return childCount != 0 ? LocalChildAt(childCount - 1) : nullptr;
   }
 
   

@@ -222,7 +222,7 @@ Relation XULGroupboxAccessible::RelationByType(RelationType aType) const {
 
   
   if (aType == RelationType::LABELLED_BY && ChildCount() > 0) {
-    Accessible* childAcc = GetChildAt(0);
+    Accessible* childAcc = LocalChildAt(0);
     if (childAcc->Role() == roles::LABEL &&
         childAcc->GetContent()->IsXULElement(nsGkAtoms::label)) {
       rel.AppendTarget(childAcc);
@@ -363,12 +363,12 @@ void XULToolbarButtonAccessible::GetPositionAndSizeInternal(int32_t* aPosInSet,
   int32_t setSize = 0;
   int32_t posInSet = 0;
 
-  Accessible* parent = Parent();
+  Accessible* parent = LocalParent();
   if (!parent) return;
 
   uint32_t childCount = parent->ChildCount();
   for (uint32_t childIdx = 0; childIdx < childCount; childIdx++) {
-    Accessible* child = parent->GetChildAt(childIdx);
+    Accessible* child = parent->LocalChildAt(childIdx);
     if (IsSeparator(child)) {  
       if (posInSet) break;     
 

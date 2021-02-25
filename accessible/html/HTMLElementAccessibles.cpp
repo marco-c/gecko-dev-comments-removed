@@ -160,7 +160,7 @@ HTMLSummaryAccessible* HTMLSummaryAccessible::FromDetails(Accessible* details) {
     
     
     
-    Accessible* child = details->GetChildAt(i);
+    Accessible* child = details->LocalChildAt(i);
     auto* summary =
         mozilla::dom::HTMLSummaryElement::FromNodeOrNull(child->GetContent());
     if (summary && summary->IsMainSummary()) {
