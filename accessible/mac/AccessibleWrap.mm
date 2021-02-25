@@ -65,7 +65,7 @@ AccessibleWrap::AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc)
 AccessibleWrap::~AccessibleWrap() {}
 
 mozAccessible* AccessibleWrap::GetNativeObject() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   if (!mNativeInited && !mNativeObject) {
     
@@ -83,7 +83,7 @@ mozAccessible* AccessibleWrap::GetNativeObject() {
 
   return mNativeObject;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
+  NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
 
 void AccessibleWrap::GetNativeInterface(void** aOutInterface) {
@@ -93,7 +93,7 @@ void AccessibleWrap::GetNativeInterface(void** aOutInterface) {
 
 
 Class AccessibleWrap::GetNativeType() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   if (IsXULTabpanels()) {
     return [mozPaneAccessible class];
@@ -117,7 +117,7 @@ Class AccessibleWrap::GetNativeType() {
 
   return GetTypeFromRole(Role());
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
+  NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
 
 
@@ -290,7 +290,7 @@ bool AccessibleWrap::ApplyPostFilter(const EWhichPostFilter& aSearchKey,
 
 
 Class a11y::GetTypeFromRole(roles::Role aRole) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   switch (aRole) {
     case roles::COMBOBOX:
@@ -398,5 +398,5 @@ Class a11y::GetTypeFromRole(roles::Role aRole) {
 
   return nil;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
+  NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
