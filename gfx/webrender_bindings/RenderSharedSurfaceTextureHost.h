@@ -7,7 +7,7 @@
 #ifndef MOZILLA_GFX_RENDERSHAREDSURFACETEXTUREHOST_H
 #define MOZILLA_GFX_RENDERSHAREDSURFACETEXTUREHOST_H
 
-#include "RenderTextureHostSWGL.h"
+#include "RenderTextureHost.h"
 
 namespace mozilla {
 namespace gfx {
@@ -21,28 +21,15 @@ namespace wr {
 
 
 
-class RenderSharedSurfaceTextureHost final : public RenderTextureHostSWGL {
+class RenderSharedSurfaceTextureHost final : public RenderTextureHost {
  public:
   explicit RenderSharedSurfaceTextureHost(
       gfx::SourceSurfaceSharedDataWrapper* aSurface);
 
-  
   wr::WrExternalImage Lock(uint8_t aChannelIndex, gl::GLContext* aGL,
                            wr::ImageRendering aRendering) override;
   void Unlock() override;
   size_t Bytes() override;
-
-  
-  size_t GetPlaneCount() const override;
-
-  gfx::SurfaceFormat GetFormat() const override;
-
-  gfx::ColorDepth GetColorDepth() const override;
-
-  bool MapPlane(RenderCompositor* aCompositor, uint8_t aChannelIndex,
-                PlaneInfo& aPlaneInfo) override;
-
-  void UnmapPlanes() override;
 
  private:
   virtual ~RenderSharedSurfaceTextureHost();

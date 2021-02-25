@@ -29,7 +29,6 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/TextEventDispatcher.h"
@@ -827,10 +826,6 @@ bool nsBaseWidget::ComputeShouldAccelerate() {
          WidgetTypeSupportsAcceleration();
 }
 
-bool nsBaseWidget::WidgetTypePrefersSoftwareWebRender() const {
-  return StaticPrefs::gfx_webrender_software_unaccelerated_widget_force();
-}
-
 bool nsBaseWidget::UseAPZ() {
   return (gfxPlatform::AsyncPanZoomEnabled() &&
           (WindowType() == eWindowType_toplevel ||
@@ -1219,27 +1214,10 @@ already_AddRefed<LayerManager> nsBaseWidget::CreateCompositorSession(
     
     
     
-    
-    bool supportsAcceleration = WidgetTypeSupportsAcceleration();
-    bool enableWR;
-    bool enableSWWR;
-    if (supportsAcceleration) {
-      enableWR = gfx::gfxVars::UseWebRender();
-      enableSWWR = gfx::gfxVars::UseSoftwareWebRender();
-    } else if (WidgetTypePrefersSoftwareWebRender()) {
-      enableWR = enableSWWR = gfx::gfxVars::UseWebRender();
-    } else {
-      enableWR = enableSWWR = false;
-    }
+    bool enableWR =
+        gfx::gfxVars::UseWebRender() && WidgetTypeSupportsAcceleration();
     bool enableAPZ = UseAPZ();
-    CompositorOptions options(enableAPZ, enableWR, enableSWWR);
-
-#ifdef XP_WIN
-    if (supportsAcceleration) {
-      options.SetAllowSoftwareWebRenderD3D11(
-          StaticPrefs::gfx_webrender_software_d3d11_AtStartup());
-    }
-#endif
+    CompositorOptions options(enableAPZ, enableWR);
 
 #ifdef MOZ_WIDGET_ANDROID
     if (!GetNativeData(NS_JAVA_SURFACE)) {

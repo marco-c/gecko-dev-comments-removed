@@ -58,7 +58,6 @@ namespace wr {
 class DisplayListBuilder;
 class RendererOGL;
 class RendererEvent;
-class WebRenderAPI;
 
 
 
@@ -92,8 +91,7 @@ struct WrHitResult {
 
 class TransactionBuilder final {
  public:
-  explicit TransactionBuilder(WebRenderAPI* aApi,
-                              bool aUseSceneBuilderThread = true);
+  explicit TransactionBuilder(bool aUseSceneBuilderThread = true);
 
   ~TransactionBuilder();
 
@@ -200,12 +198,10 @@ class TransactionBuilder final {
   void Clear();
 
   bool UseSceneBuilderThread() const { return mUseSceneBuilderThread; }
-  layers::WebRenderBackend GetBackendType() { return mApiBackend; }
   Transaction* Raw() { return mTxn; }
 
  protected:
   bool mUseSceneBuilderThread;
-  layers::WebRenderBackend mApiBackend;
   Transaction* mTxn;
 };
 
@@ -418,9 +414,7 @@ struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
 
 class DisplayListBuilder final {
  public:
-  explicit DisplayListBuilder(wr::PipelineId aId,
-                              layers::WebRenderBackend aBackend,
-                              size_t aCapacity = 0,
+  explicit DisplayListBuilder(wr::PipelineId aId, size_t aCapacity = 0,
                               layers::DisplayItemCache* aCache = nullptr);
   DisplayListBuilder(DisplayListBuilder&&) = default;
 
@@ -655,7 +649,6 @@ class DisplayListBuilder final {
   }
 
   const wr::PipelineId& CurrentPipelineId() const { return mPipelineId; }
-  layers::WebRenderBackend GetBackendType() const { return mBackend; }
 
   
   
@@ -738,7 +731,6 @@ class DisplayListBuilder final {
   FixedPosScrollTargetTracker* mActiveFixedPosTracker;
 
   wr::PipelineId mPipelineId;
-  layers::WebRenderBackend mBackend;
   wr::LayoutSize mContentSize;
 
   nsTArray<wr::PipelineId> mRemotePipelineIds;
