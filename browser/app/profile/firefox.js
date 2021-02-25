@@ -1379,9 +1379,6 @@ pref("prompts.tabChromePromptSubDialog", true);
 pref("browser.newtab.preload", true);
 
 
-pref("browser.newtab.experiments.value", "{\"prefsButtonIcon\": \"icon-settings\"}");
-
-
 pref("browser.newtabpage.activity-stream.newNewtabExperience.enabled", false);
 
 
@@ -1468,6 +1465,7 @@ pref("trailhead.firstrun.newtab.triplets", "");
 pref("browser.aboutwelcome.enabled", true);
 
 pref("browser.aboutwelcome.overrideContent", "");
+pref("browser.aboutwelcome.skipFocus", false);
 
 
 pref("browser.messaging-system.whatsNewPanel.enabled", true);
