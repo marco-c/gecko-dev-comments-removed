@@ -23,6 +23,7 @@
 #include "gfxCrashReporterUtils.h"
 #include "gfxPlatform.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Components.h"
 #include "mozilla/HangDetails.h"
 #include "mozilla/PerfStats.h"
 #include "mozilla/Preferences.h"
@@ -229,7 +230,7 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   if (gfxVars::UseWebRender()) {
     DeviceManagerDx::Get()->CreateDirectCompositionDevice();
     
-    nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
+    nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
     Unused << gfxInfo;
 
     Factory::EnsureDWriteFactory();
@@ -271,7 +272,7 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   }
 
   
-  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
+  nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
   Unused << gfxInfo;
 #endif
 
