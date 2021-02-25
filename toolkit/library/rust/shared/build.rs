@@ -22,7 +22,7 @@ fn main() {
     
     
     
-    if bootstrap {
+    if bootstrap && ver < Version::parse("1.50.0").unwrap() {
         println!("cargo:rustc-env=RUSTC_BOOTSTRAP=1");
     }
 }
