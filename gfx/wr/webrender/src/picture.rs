@@ -4521,6 +4521,7 @@ pub struct PicturePrimitive {
     
     pub is_backface_visible: bool,
 
+    pub primary_render_task_id: Option<RenderTaskId>,
     
     
     
@@ -4668,6 +4669,7 @@ impl PicturePrimitive {
         PicturePrimitive {
             prim_list,
             state: None,
+            primary_render_task_id: None,
             secondary_render_task_id: None,
             requested_composite_mode,
             raster_config: None,
@@ -4698,6 +4700,9 @@ impl PicturePrimitive {
         tile_cache_logger: &mut TileCacheLogger,
         tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
     ) -> Option<(PictureContext, PictureState, PrimitiveList)> {
+        self.primary_render_task_id = None;
+        self.secondary_render_task_id = None;
+
         if !self.is_visible() {
             return None;
         }
@@ -5202,6 +5207,7 @@ impl PicturePrimitive {
                     }
                 }
 
+                let primary_render_task_id;
                 match raster_config.composite_mode {
                     PictureCompositeMode::TileCache { .. } => {
                         unreachable!("handled above");
@@ -5289,6 +5295,8 @@ impl PicturePrimitive {
                             original_size.to_i32(),
                         );
 
+                        primary_render_task_id = Some(blur_render_task_id);
+
                         frame_state.init_surface_chain(
                             raster_config.surface_index,
                             blur_render_task_id,
@@ -5363,8 +5371,6 @@ impl PicturePrimitive {
                             picture_task_id,
                         );
 
-                        self.secondary_render_task_id = Some(picture_task_id);
-
                         let mut blur_tasks = BlurTaskCache::default();
 
                         self.extra_gpu_data_handles.resize(shadows.len(), GpuCacheHandle::new());
@@ -5385,7 +5391,9 @@ impl PicturePrimitive {
                             );
                         }
 
-                        
+                        primary_render_task_id = Some(blur_render_task_id);
+                        self.secondary_render_task_id = Some(picture_task_id);
+
                         frame_state.init_surface_chain(
                             raster_config.surface_index,
                             blur_render_task_id,
@@ -5507,6 +5515,8 @@ impl PicturePrimitive {
                             ).with_uv_rect_kind(uv_rect_kind)
                         );
 
+                        primary_render_task_id = Some(render_task_id);
+
                         frame_state.init_surface(
                             raster_config.surface_index,
                             render_task_id,
@@ -5551,6 +5561,8 @@ impl PicturePrimitive {
                             ).with_uv_rect_kind(uv_rect_kind)
                         );
 
+                        primary_render_task_id = Some(render_task_id);
+
                         frame_state.init_surface(
                             raster_config.surface_index,
                             render_task_id,
@@ -5593,6 +5605,8 @@ impl PicturePrimitive {
                                 )
                             ).with_uv_rect_kind(uv_rect_kind)
                         );
+
+                        primary_render_task_id = Some(render_task_id);
 
                         frame_state.init_surface(
                             raster_config.surface_index,
@@ -5637,6 +5651,8 @@ impl PicturePrimitive {
                                 )
                             ).with_uv_rect_kind(uv_rect_kind)
                         );
+
+                        primary_render_task_id = Some(render_task_id);
 
                         frame_state.init_surface(
                             raster_config.surface_index,
@@ -5692,6 +5708,8 @@ impl PicturePrimitive {
                             device_pixel_scale,
                         );
 
+                        primary_render_task_id = Some(filter_task_id);
+
                         frame_state.init_surface_chain(
                             raster_config.surface_index,
                             filter_task_id,
@@ -5702,6 +5720,8 @@ impl PicturePrimitive {
                     }
                 }
 
+                self.primary_render_task_id = primary_render_task_id;
+
                 
                 
                 
@@ -5711,6 +5731,7 @@ impl PicturePrimitive {
             }
             None => {}
         };
+
 
         #[cfg(feature = "capture")]
         {
