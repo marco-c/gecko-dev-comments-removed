@@ -19,6 +19,14 @@ var EXPORTED_SYMBOLS = [
   "ContentDispatchChooserTelemetry",
 ];
 
+const gPrefs = {};
+XPCOMUtils.defineLazyPreferenceGetter(
+  gPrefs,
+  "promptForExternal",
+  "network.protocol-handler.prompt-from-external",
+  true
+);
+
 const PROTOCOL_HANDLER_OPEN_PERM_KEY = "open-protocol-handler";
 const PERMISSION_KEY_DELIMITER = "^";
 
@@ -239,11 +247,25 @@ class nsContentDispatchChooser {
 
 
 
-  async handleURI(aHandler, aURI, aPrincipal, aBrowsingContext) {
+
+
+  async handleURI(
+    aHandler,
+    aURI,
+    aPrincipal,
+    aBrowsingContext,
+    aTriggeredExternally = false
+  ) {
     let callerHasPermission = this._hasProtocolHandlerPermission(
       aHandler.type,
       aPrincipal
     );
+
+    
+    
+    if (aTriggeredExternally && gPrefs.promptForExternal) {
+      aHandler.alwaysAskBeforeHandling = true;
+    }
 
     
     

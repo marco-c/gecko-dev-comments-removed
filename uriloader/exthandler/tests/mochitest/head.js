@@ -125,11 +125,26 @@ async function openHelperAppDialog(launcher) {
   return dlg;
 }
 
+
+
+
+
+
+
+
 async function waitForSubDialog(browser, url, state) {
   let eventStr = state ? "dialogopen" : "dialogclose";
 
-  let tabDialogBox = gBrowser.getTabDialogBox(browser);
-  let dialogStack = tabDialogBox.getTabDialogManager()._dialogStack;
+  let eventTarget;
+
+  
+  if (browser.tabContainer) {
+    eventTarget = browser.tabContainer.ownerDocument.documentElement;
+  } else {
+    
+    let tabDialogBox = browser.ownerGlobal.gBrowser.getTabDialogBox(browser);
+    eventTarget = tabDialogBox.getTabDialogManager()._dialogStack;
+  }
 
   let checkFn;
 
@@ -138,7 +153,7 @@ async function waitForSubDialog(browser, url, state) {
   }
 
   let event = await BrowserTestUtils.waitForEvent(
-    dialogStack,
+    eventTarget,
     eventStr,
     true,
     checkFn
