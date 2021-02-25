@@ -1480,9 +1480,13 @@ impl RenderBackend {
         
         if invalidate_rendered_frame {
             doc.rendered_frame_is_valid = false;
-            if doc.scene.config.compositor_kind.should_redraw_on_invalidation() {
-                let msg = ResultMsg::ForceRedraw;
-                self.result_tx.send(msg).unwrap();
+            if let CompositorKind::Draw { max_partial_present_rects, .. } = doc.scene.config.compositor_kind {
+
+              
+              if max_partial_present_rects > 0 {
+                  let msg = ResultMsg::ForceRedraw;
+                  self.result_tx.send(msg).unwrap();
+              }
             }
         }
 

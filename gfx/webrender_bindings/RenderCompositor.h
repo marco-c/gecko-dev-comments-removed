@@ -144,9 +144,7 @@ class RenderCompositor {
                                 size_t aNumOpaqueRects) {}
   virtual void EnableNativeCompositor(bool aEnable) {}
   virtual void DeInit() {}
-  
-  
-  virtual void GetCompositorCapabilities(CompositorCapabilities* aCaps) {}
+  virtual CompositorCapabilities GetCompositorCapabilities() = 0;
 
   
   virtual bool UsePartialPresent() { return false; }

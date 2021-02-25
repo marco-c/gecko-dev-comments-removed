@@ -2728,49 +2728,50 @@ impl TileCacheInstance {
         
         
 
-        let virtual_surface_size = frame_context.config.compositor_kind.get_virtual_surface_size();
-        
-        
-        if virtual_surface_size > 0 {
+        if let CompositorKind::Native { virtual_surface_size, .. } = frame_context.config.compositor_kind {
             
-            let tx0 = self.virtual_offset.x + x0 * self.current_tile_size.width;
-            let ty0 = self.virtual_offset.y + y0 * self.current_tile_size.height;
-            let tx1 = self.virtual_offset.x + (x1+1) * self.current_tile_size.width;
-            let ty1 = self.virtual_offset.y + (y1+1) * self.current_tile_size.height;
+            
+            if virtual_surface_size > 0 {
+                
+                let tx0 = self.virtual_offset.x + x0 * self.current_tile_size.width;
+                let ty0 = self.virtual_offset.y + y0 * self.current_tile_size.height;
+                let tx1 = self.virtual_offset.x + (x1+1) * self.current_tile_size.width;
+                let ty1 = self.virtual_offset.y + (y1+1) * self.current_tile_size.height;
 
-            let need_new_virtual_offset = tx0 < 0 ||
-                                          ty0 < 0 ||
-                                          tx1 >= virtual_surface_size ||
-                                          ty1 >= virtual_surface_size;
+                let need_new_virtual_offset = tx0 < 0 ||
+                                              ty0 < 0 ||
+                                              tx1 >= virtual_surface_size ||
+                                              ty1 >= virtual_surface_size;
 
-            if need_new_virtual_offset {
-                
-                
-                
-                self.virtual_offset = DeviceIntPoint::new(
-                    (virtual_surface_size/2) - ((x0 + x1) / 2) * self.current_tile_size.width,
-                    (virtual_surface_size/2) - ((y0 + y1) / 2) * self.current_tile_size.height,
-                );
+                if need_new_virtual_offset {
+                    
+                    
+                    
+                    self.virtual_offset = DeviceIntPoint::new(
+                        (virtual_surface_size/2) - ((x0 + x1) / 2) * self.current_tile_size.width,
+                        (virtual_surface_size/2) - ((y0 + y1) / 2) * self.current_tile_size.height,
+                    );
 
-                
-                
-                for tile in self.tiles.values_mut() {
-                    if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { ref mut id, .. }, .. }) = tile.surface {
-                        if let Some(id) = id.take() {
-                            frame_state.resource_cache.destroy_compositor_tile(id);
-                            tile.surface = None;
-                            
-                            
-                            tile.invalidate(None, InvalidationReason::CompositorKindChanged);
+                    
+                    
+                    for tile in self.tiles.values_mut() {
+                        if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { ref mut id, .. }, .. }) = tile.surface {
+                            if let Some(id) = id.take() {
+                                frame_state.resource_cache.destroy_compositor_tile(id);
+                                tile.surface = None;
+                                
+                                
+                                tile.invalidate(None, InvalidationReason::CompositorKindChanged);
+                            }
                         }
                     }
-                }
 
-                
-                
-                if let Some(native_surface) = self.native_surface.take() {
-                    frame_state.resource_cache.destroy_compositor_surface(native_surface.opaque);
-                    frame_state.resource_cache.destroy_compositor_surface(native_surface.alpha);
+                    
+                    
+                    if let Some(native_surface) = self.native_surface.take() {
+                        frame_state.resource_cache.destroy_compositor_surface(native_surface.opaque);
+                        frame_state.resource_cache.destroy_compositor_surface(native_surface.alpha);
+                    }
                 }
             }
         }

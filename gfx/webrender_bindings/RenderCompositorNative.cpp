@@ -414,6 +414,15 @@ void RenderCompositorNative::AddSurface(
   }
 }
 
+CompositorCapabilities RenderCompositorNative::GetCompositorCapabilities() {
+  CompositorCapabilities caps;
+
+  
+  caps.virtual_surface_size = 0;
+
+  return caps;
+}
+
 
 UniquePtr<RenderCompositor> RenderCompositorNativeOGL::Create(
     RefPtr<widget::CompositorWidget>&& aWidget, nsACString& aError) {
