@@ -1,0 +1,11 @@
+
+
+
+"use strict";
+
+
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/remote/cdp/test/browser/head.js",
+  this
+);
