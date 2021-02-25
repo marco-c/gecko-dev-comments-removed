@@ -26,7 +26,7 @@ bool nsGenConList::DestroyNodesFor(nsIFrame* aFrame) {
   
   
   
-  nsGenConNode* node = mNodes.GetAndRemove(aFrame).valueOr(nullptr);
+  nsGenConNode* node = mNodes.Extract(aFrame).valueOr(nullptr);
   if (!node) {
     return false;
   }

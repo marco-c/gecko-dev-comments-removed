@@ -208,8 +208,7 @@ void MsaaIdGenerator::ReleaseContentProcessIDFor(
     return;
   }
 
-  Maybe<uint32_t> mapping =
-      sContentParentIdMap->GetAndRemove(aIPCContentProcessID);
+  Maybe<uint32_t> mapping = sContentParentIdMap->Extract(aIPCContentProcessID);
   if (!mapping) {
     
     

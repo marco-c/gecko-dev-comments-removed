@@ -293,7 +293,7 @@ class nsBaseHashtable
 
 
 
-  [[nodiscard]] mozilla::Maybe<DataType> GetAndRemove(KeyType aKey) {
+  [[nodiscard]] mozilla::Maybe<DataType> Extract(KeyType aKey) {
     mozilla::Maybe<DataType> value;
     if (EntryType* ent = this->GetEntry(aKey)) {
       value.emplace(std::move(ent->mData));
