@@ -65,12 +65,6 @@ class PlacesShutdownBlocker : public nsIAsyncShutdownBlocker,
   already_AddRefed<nsIAsyncShutdownClient> GetClient();
 
   
-
-
-
-  static bool IsStarted() { return sIsStarted; }
-
-  
   
   enum States {
     NOT_STARTED,
@@ -97,6 +91,8 @@ class PlacesShutdownBlocker : public nsIAsyncShutdownBlocker,
   };
   States State() { return mState; }
 
+  static Atomic<bool> sIsStarted;
+
  protected:
   
   nsString mName;
@@ -111,8 +107,6 @@ class PlacesShutdownBlocker : public nsIAsyncShutdownBlocker,
   
   uint16_t mCounter;
   static uint16_t sCounter;
-
-  static Atomic<bool> sIsStarted;
 
   virtual ~PlacesShutdownBlocker() = default;
 };
