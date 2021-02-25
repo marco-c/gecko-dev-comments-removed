@@ -40,7 +40,6 @@
 
 
 
-
 window.__defineGetter__("_EU_Ci", function() {
   var c = Object.getOwnPropertyDescriptor(window, "Components");
   return c && c.value && !c.writable ? Ci : SpecialPowers.Ci;
@@ -1042,33 +1041,6 @@ function synthesizeNativeTap(
   utils.sendNativeTouchTap(x, y, aLongTap, observer);
 }
 
-function synthesizeNativeMouseMove(
-  aTarget,
-  aOffsetX,
-  aOffsetY,
-  aCallback,
-  aWindow = window
-) {
-  var utils = _getDOMWindowUtils(aWindow);
-  if (!utils) {
-    return;
-  }
-
-  var rect = aTarget.getBoundingClientRect();
-  var x = aOffsetX + window.mozInnerScreenX + rect.left;
-  var y = aOffsetY + window.mozInnerScreenY + rect.top;
-  var scale = utils.screenPixelsPerCSSPixel;
-
-  var observer = {
-    observe: (subject, topic, data) => {
-      if (aCallback && topic == "mouseevent") {
-        aCallback(data);
-      }
-    },
-  };
-  utils.sendNativeMouseMove(x * scale, y * scale, null, observer);
-}
-
 function synthesizeNativeMouseEvent(aParams, aCallback = null) {
   const {
     type, 
@@ -1250,7 +1222,13 @@ function synthesizeAndWaitNativeMouseMove(
     }
   );
   eventRegisteredPromise.then(() => {
-    synthesizeNativeMouseMove(aTarget, aOffsetX, aOffsetY, null, aWindow);
+    synthesizeNativeMouseEvent({
+      type: "mousemove",
+      target: aTarget,
+      offsetX: aOffsetX,
+      offsetY: aOffsetY,
+      win: aWindow,
+    });
   });
   return eventReceivedPromise;
 }

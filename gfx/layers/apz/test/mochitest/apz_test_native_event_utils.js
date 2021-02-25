@@ -546,55 +546,6 @@ function promiseNativeWheelAndWaitForScrollEvent(
 
 
 
-function synthesizeNativeMouseMove(aTarget, aX, aY) {
-  var pt = coordinatesRelativeToScreen({
-    offsetX: aX,
-    offsetY: aY,
-    target: aTarget,
-  });
-  var utils = utilsForTarget(aTarget);
-  var element = elementForTarget(aTarget);
-  utils.sendNativeMouseEvent(pt.x, pt.y, nativeMouseMoveEventMsg(), 0, element);
-  return true;
-}
-
-
-
-
-
-
-function synthesizeNativeMouseMoveAndWaitForMoveEvent(
-  aTarget,
-  aX,
-  aY,
-  aCallback
-) {
-  promiseNativeMouseMoveAndWaitForMoveEvent(aTarget, aX, aY).then(aCallback);
-  return true;
-}
-
-
-
-function promiseNativeMouseMoveAndWaitForMoveEvent(aTarget, aX, aY) {
-  return new Promise((resolve, reject) => {
-    var targetWindow = windowForTarget(aTarget);
-    targetWindow.addEventListener(
-      "mousemove",
-      function(e) {
-        setTimeout(resolve, 0);
-      },
-      { once: true }
-    );
-    try {
-      synthesizeNativeMouseMove(aTarget, aX, aY);
-    } catch (e) {
-      reject();
-    }
-  });
-}
-
-
-
 function synthesizeNativeTouch(
   aTarget,
   aX,
@@ -783,6 +734,8 @@ function synthesizeNativeTap(aElement, aX, aY, aObserver = null) {
   return true;
 }
 
+
+
 function synthesizeNativeMouseEventWithAPZ(aParams, aObserver = null) {
   if (aParams.win !== undefined) {
     throw Error(
@@ -886,7 +839,7 @@ function promiseNativeMouseEventWithAPZ(aParams) {
 }
 
 
-function synthesizeNativeMouseEventWithAPZAndWaitForWaitForEvent(
+function synthesizeNativeMouseEventWithAPZAndWaitForEvent(
   aParams,
   aCallback = null
 ) {
@@ -904,7 +857,7 @@ function synthesizeNativeMouseEventWithAPZAndWaitForWaitForEvent(
 
 function promiseNativeMouseEventWithAPZAndWaitForEvent(aParams) {
   return new Promise(resolve => {
-    synthesizeNativeMouseEventWithAPZAndWaitForWaitForEvent(aParams, resolve);
+    synthesizeNativeMouseEventWithAPZAndWaitForEvent(aParams, resolve);
   });
 }
 
@@ -943,7 +896,12 @@ function promiseMoveMouseAndScrollWheelOver(
   waitForScroll = true,
   scrollDelta = 10
 ) {
-  let p = promiseNativeMouseMoveAndWaitForMoveEvent(target, dx, dy);
+  let p = promiseNativeMouseEventWithAPZAndWaitForEvent({
+    type: "mousemove",
+    target,
+    offsetX: dx,
+    offsetY: dy,
+  });
   if (waitForScroll) {
     p = p.then(() =>
       promiseNativeWheelAndWaitForScrollEvent(target, dx, dy, 0, -scrollDelta)

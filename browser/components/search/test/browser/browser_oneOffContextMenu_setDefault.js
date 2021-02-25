@@ -225,11 +225,11 @@ async function promiseClosePopup(popup) {
   await promise;
 
   
-  await EventUtils.synthesizeNativeMouseMove(
-    popup,
-    undefined,
-    undefined,
-    undefined,
-    popup.ownerGlobal
-  );
+  EventUtils.synthesizeNativeMouseEvent({
+    type: "mousemove",
+    target: popup,
+    offsetX: 0,
+    offsetY: 0,
+    win: popup.ownerGlobal,
+  });
 }

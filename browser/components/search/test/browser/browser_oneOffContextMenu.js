@@ -79,5 +79,10 @@ add_task(async function telemetry() {
   BrowserTestUtils.removeTab(tab);
 
   
-  await EventUtils.synthesizeNativeMouseMove(searchbar);
+  await EventUtils.promiseNativeMouseEvent({
+    type: "mousemove",
+    target: searchbar,
+    offsetX: 0,
+    offsetY: 0,
+  });
 });
