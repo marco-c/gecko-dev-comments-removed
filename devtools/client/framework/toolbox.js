@@ -224,7 +224,7 @@ const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
 
 
 function Toolbox(
-  target,
+  descriptorFront,
   selectedTool,
   hostType,
   contentWindow,
@@ -236,7 +236,8 @@ function Toolbox(
   this.selection = new Selection();
   this.telemetry = new Telemetry();
 
-  this.targetList = new TargetList(target.client.mainRoot, target);
+  this.descriptorFront = descriptorFront;
+  this.targetList = new TargetList(descriptorFront);
   this.targetList.on(
     "target-thread-wrong-order-on-resume",
     this._onTargetThreadFrontResumeWrongOrder.bind(this)
@@ -542,6 +543,9 @@ Toolbox.prototype = {
   },
 
   
+
+
+
 
 
   get target() {
@@ -1952,6 +1956,9 @@ Toolbox.prototype = {
   },
 
   _onPickerStarting: async function() {
+    if (this.isDestroying()) {
+      return;
+    }
     this.tellRDMAboutPickerState(true, PICKER_TYPES.ELEMENT);
     this.pickerButton.isChecked = true;
     await this.selectTool("inspector", "inspect_dom");
@@ -1965,6 +1972,9 @@ Toolbox.prototype = {
   },
 
   _onPickerStopped: function() {
+    if (this.isDestroying()) {
+      return;
+    }
     this.tellRDMAboutPickerState(false, PICKER_TYPES.ELEMENT);
     this.off("select", this.nodePicker.stop);
     this.doc.removeEventListener("keypress", this._onPickerKeypress, true);
@@ -3703,6 +3713,10 @@ Toolbox.prototype = {
       this.ReactDOM.unmountComponentAtNode(this._componentMount);
       this._componentMount = null;
       this._tabBar = null;
+    }
+    if (this._nodePicker) {
+      this._nodePicker.stop();
+      this._nodePicker = null;
     }
 
     const outstanding = [];

@@ -24,8 +24,7 @@ async function testDocumentEventResources() {
   
   const client = await createLocalClient();
   const descriptor = await client.mainRoot.getTab({ tab });
-  const target = await descriptor.getTarget();
-  const targetList = new TargetList(client.mainRoot, target);
+  const targetList = new TargetList(descriptor);
   await targetList.startListening();
 
   

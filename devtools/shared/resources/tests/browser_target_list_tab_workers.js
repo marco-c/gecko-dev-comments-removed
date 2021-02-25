@@ -43,7 +43,7 @@ add_task(async function() {
   
   await target.attach();
 
-  const targetList = new TargetList(mainRoot, target);
+  const targetList = new TargetList(target.descriptorFront);
 
   
   

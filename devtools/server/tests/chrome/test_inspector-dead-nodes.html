@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1121528
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1121528</title>
@@ -35,7 +35,7 @@ addAsyncTest(async function() {
   gDoc = doc;
   const inspector = await target.getFront("inspector");
   gWalker = inspector.walker;
-  gResourceWatcher = createResourceWatcher(target);
+  gResourceWatcher = await createResourceWatcher(target);
 
   info("Start watching for root nodes and wait for the initial root node");
   const rootNodePromise = new Promise(r => (gRootNodeResolve = r));

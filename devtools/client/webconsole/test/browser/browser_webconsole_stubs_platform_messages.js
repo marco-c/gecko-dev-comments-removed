@@ -5,7 +5,7 @@
 
 const {
   STUBS_UPDATE_ENV,
-  createResourceWatcherForTarget,
+  createResourceWatcherForDescriptor,
   getCleanedPacket,
   getSerializedPacket,
   getStubFile,
@@ -71,9 +71,10 @@ async function generatePlatformMessagesStubs() {
   const client = new DevToolsClient(transport);
   await client.connect();
   const mainProcessDescriptor = await client.mainRoot.getMainProcess();
-  const target = await mainProcessDescriptor.getTarget();
 
-  const resourceWatcher = await createResourceWatcherForTarget(target);
+  const resourceWatcher = await createResourceWatcherForDescriptor(
+    mainProcessDescriptor
+  );
 
   
   

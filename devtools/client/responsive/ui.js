@@ -397,12 +397,11 @@ class ResponsiveUI {
     
     
     const descriptor = await this.client.mainRoot.getTab({ tab: this.tab });
-    const targetFront = await descriptor.getTarget();
 
-    this.targetList = new TargetList(this.client.mainRoot, targetFront);
+    this.targetList = new TargetList(descriptor);
     this.resourceWatcher = new ResourceWatcher(this.targetList);
 
-    this.targetList.startListening();
+    await this.targetList.startListening();
 
     await this.targetList.watchTargets(
       [this.targetList.TYPES.FRAME],

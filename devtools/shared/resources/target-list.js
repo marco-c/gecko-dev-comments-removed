@@ -49,32 +49,18 @@ class TargetList extends EventEmitter {
 
 
 
-
-
-
-  constructor(rootFront, targetFront) {
+  constructor(descriptorFront) {
     super();
 
-    this.rootFront = rootFront;
-
-    
-    
-    
-    
-    this.descriptorFront = targetFront.descriptorFront;
-
-    
-    
-    this.targetFront = targetFront;
-    targetFront.setTargetType(this.getTargetType(targetFront));
-    targetFront.setIsTopLevel(true);
+    this.descriptorFront = descriptorFront;
+    this.rootFront = descriptorFront.client.mainRoot;
 
     
     
     this.onLocalTabRemotenessChange = this.onLocalTabRemotenessChange.bind(
       this
     );
-    if (this.descriptorFront?.isLocalTab) {
+    if (this.descriptorFront.isLocalTab) {
       this.descriptorFront.on(
         "remoteness-change",
         this.onLocalTabRemotenessChange
@@ -90,9 +76,6 @@ class TargetList extends EventEmitter {
     
     
     this._pendingWatchTargetInitialization = new Map();
-
-    
-    this._targets.add(targetFront);
 
     
     this._createListeners = new EventEmitter();
@@ -250,10 +233,22 @@ class TargetList extends EventEmitter {
 
   async startListening({ onlyLegacy = false } = {}) {
     
+    if (!this.targetFront) {
+      
+      
+      this.targetFront = await this.descriptorFront.getTarget();
+      this.targetFront.setTargetType(this.getTargetType(this.targetFront));
+      this.targetFront.setIsTopLevel(true);
+
+      
+      this._targets.add(this.targetFront);
+    }
+
+    
     
     if (!this.watcherFront) {
       
-      const supportsWatcher = this.descriptorFront?.traits?.watcher;
+      const supportsWatcher = this.descriptorFront.traits?.watcher;
       if (supportsWatcher) {
         this.watcherFront = await this.descriptorFront.getWatcher();
       }
