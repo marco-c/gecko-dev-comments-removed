@@ -310,6 +310,7 @@ class SourceListener : public SupportsWeakPtr {
   
 
 
+
   void Register(GetUserMediaWindowListener* aListener);
 
   
@@ -435,7 +436,7 @@ class SourceListener : public SupportsWeakPtr {
   PrincipalHandle GetPrincipalHandle() const;
 
  private:
-  virtual ~SourceListener() = default;
+  virtual ~SourceListener() { MOZ_ASSERT(!mWindowListener); }
 
   using DeviceOperationPromise =
       MozPromise<nsresult, bool,  true>;
@@ -578,6 +579,8 @@ class GetUserMediaWindowListener {
   }
 
   
+
+
 
 
 
@@ -1342,9 +1345,8 @@ class GetUserMediaTask final {
                         __func__);
         }));
     
-    NS_DispatchToMainThread(NewRunnableMethod<RefPtr<SourceListener>>(
-        "GetUserMediaWindowListener::Remove", mWindowListener,
-        &GetUserMediaWindowListener::Remove, mSourceListener));
+    NS_DispatchToMainThread(NewRunnableMethod(
+        "SourceListener::Stop", mSourceListener, &SourceListener::Stop));
   }
 
   
@@ -1436,7 +1438,7 @@ class GetUserMediaTask final {
     if (NS_IsMainThread()) {
       mHolder.Reject(MakeRefPtr<MediaMgrError>(aName, aMessage), __func__);
       
-      mWindowListener->Remove(mSourceListener);
+      mSourceListener->Stop();
     } else {
       
       Fail(aName, aMessage);
@@ -2583,7 +2585,7 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
     if ((!IsOn(c.mAudio) && !IsOn(c.mVideo)) ||
         (IsOn(c.mAudio) && audioPerm == nsIPermissionManager::DENY_ACTION) ||
         (IsOn(c.mVideo) && videoPerm == nsIPermissionManager::DENY_ACTION)) {
-      windowListener->Remove(sourceListener);
+      sourceListener->Stop();
       return StreamPromise::CreateAndReject(
           MakeRefPtr<MediaMgrError>(MediaMgrError::Name::NotAllowedError),
           __func__);
@@ -2695,7 +2697,7 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
               LOG("GetUserMedia: bad window (%" PRIu64
                   ") in post enumeration success callback 2!",
                   windowID);
-              windowListener->Remove(sourceListener);
+              sourceListener->Stop();
               return StreamPromise::CreateAndReject(
                   MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError),
                   __func__);
@@ -2706,7 +2708,7 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
                   "promise2 success callback! Calling error handler!");
               nsString constraint;
               constraint.AssignASCII(badConstraint);
-              windowListener->Remove(sourceListener);
+              sourceListener->Stop();
               return StreamPromise::CreateAndReject(
                   MakeRefPtr<MediaMgrError>(
                       MediaMgrError::Name::OverconstrainedError, "",
@@ -2716,7 +2718,7 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
             if (!devices->Length()) {
               LOG("GetUserMedia: no devices found in post enumeration promise2 "
                   "success callback! Calling error handler!");
-              windowListener->Remove(sourceListener);
+              sourceListener->Stop();
               
               
               
@@ -2733,7 +2735,7 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
               for (auto& device : *devices) {
                 nsresult rv = devicesCopy->AppendElement(device);
                 if (NS_WARN_IF(NS_FAILED(rv))) {
-                  windowListener->Remove(sourceListener);
+                  sourceListener->Stop();
                   return StreamPromise::CreateAndReject(
                       MakeRefPtr<MediaMgrError>(
                           MediaMgrError::Name::AbortError),
@@ -2793,10 +2795,10 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
 #endif
             return p;
           },
-          [windowListener, sourceListener](RefPtr<MediaMgrError>&& aError) {
+          [sourceListener](RefPtr<MediaMgrError>&& aError) {
             LOG("GetUserMedia: post enumeration SelectSettings failure "
                 "callback called!");
-            windowListener->Remove(sourceListener);
+            sourceListener->Stop();
             return StreamPromise::CreateAndReject(std::move(aError), __func__);
           });
 };
@@ -3106,17 +3108,17 @@ RefPtr<MediaManager::DevicesPromise> MediaManager::EnumerateDevices(
                               devices)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [windowListener, sourceListener, devices](bool) {
+          [sourceListener, devices](bool) {
             
             
-            windowListener->Remove(sourceListener);
+            sourceListener->Stop();
             return DevicesPromise::CreateAndResolve(devices, __func__);
           },
-          [windowListener, sourceListener](RefPtr<MediaMgrError>&& aError) {
+          [sourceListener](RefPtr<MediaMgrError>&& aError) {
             
             
             
-            MOZ_ASSERT(!windowListener->Remove(sourceListener));
+            MOZ_ASSERT(sourceListener->Stopped());
             return DevicesPromise::CreateAndReject(std::move(aError), __func__);
           });
 }
