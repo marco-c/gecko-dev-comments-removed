@@ -40,6 +40,10 @@ function startProfiler(callersSettings) {
   );
 }
 
+function startProfilerForMarkerTests() {
+  startProfiler({ features: ["threads", "nostacksampling"] });
+}
+
 
 
 
