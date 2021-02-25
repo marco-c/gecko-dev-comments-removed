@@ -1,18 +1,22 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* ===== menu.css =======================================================
+  == Styles used by XUL menu-related elements.
+  ======================================================================= */
 
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 
-
+/* ::::: menu/menuitem ::::: */
 
 menupopup,
 menubar {
   font: menu;
+}
+
+menuitem {
+  padding: 4px 6px;
 }
 
 menu,
@@ -25,9 +29,9 @@ menucaption {
   list-style-image: none;
   -moz-image-region: auto;
 
-  
-
-
+  /* Specify our background to avoid triggering reflows on hover. This is an
+   * optimization, as backgrounds don't disable theming on XUL elements, but
+   * also papers over bug 1653832. */
   background-color: initial;
 }
 
@@ -39,13 +43,6 @@ menuitem[_moz-menuactive="true"] {
 
 menuitem[customoptionstyling="true"] {
   appearance: none;
-}
-
-menuitem[customoptionstyling="true"][_moz-menuactive="true"] {
-  
-
-  color: highlighttext;
-  background-color: highlight;
 }
 
 menu[disabled="true"],
@@ -83,7 +80,7 @@ menucaption {
   font-weight: bold;
 }
 
-
+/* ::::: menu/menuitems in menulist popups ::::: */
 
 menulist > menupopup {
   font: inherit;
@@ -96,7 +93,7 @@ menulist > menupopup > menu {
   max-width: none;
 }
 
-
+/* ..... internal content .... */
 
 .menu-text,
 .menu-iconic-left,
@@ -108,7 +105,7 @@ menulist > menupopup > menu {
 }
 
 .menu-text {
-  
+  /* This is (18 + the size of end-padding on .menu-iconic-left)px */
   margin-inline-start: 21px !important;
 }
 
@@ -125,7 +122,7 @@ menulist > menupopup > menu {
 
 .menu-iconic-left {
   width: 16px;
-  
+  /* We can only hardcode this, to make the default GTK icon<->label spacing */
   padding-inline-end: 3px !important;
 }
 
@@ -141,7 +138,7 @@ menulist > menupopup > menu {
   margin-inline-end: 0;
   width: 1ex;
   height: 1ex;
-  
+  /* These next two rules are needed to prevent inheritance and thus ugliness */
   list-style-image: none;
   -moz-image-region: auto;
   appearance: auto;
@@ -166,7 +163,7 @@ menulist > menupopup > menu > .menu-iconic-left {
   display: none;
 }
 
-
+/* ::::: checkbox menuitem ::::: */
 
 menuitem[checked="true"] {
   appearance: auto !important;
@@ -178,14 +175,14 @@ menuitem[type="checkbox"] {
   -moz-default-appearance: checkmenuitem !important;
 }
 
-
+/* ::::: radio menuitem ::::: */
 
 menuitem[type="radio"] {
   appearance: auto !important;
   -moz-default-appearance: radiomenuitem !important;
 }
 
-
+/* ::::: menuseparator ::::: */
 
 menuseparator {
   appearance: auto !important;
