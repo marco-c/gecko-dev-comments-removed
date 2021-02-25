@@ -269,9 +269,11 @@ function addTopLevelItems(doc) {
   
   
   
-  const pageSource = doc.getElementById("menu_pageSource");
-  const endSeparator = doc.getElementById("devToolsEndSeparator");
-  menu.insertBefore(pageSource, endSeparator);
+  const pageSourceMenu = doc.getElementById("menu_pageSource");
+  const extensionsForDevelopersMenu = doc.getElementById(
+    "menu_extensionsForDevelopers"
+  );
+  menu.insertBefore(pageSourceMenu, extensionsForDevelopersMenu);
 }
 
 
