@@ -298,6 +298,11 @@ var SessionStore = {
     SessionStoreInternal.setTabState(aTab, aState);
   },
 
+  
+  isTabRestoring(aTab) {
+    return TAB_STATE_FOR_BROWSER.has(aTab.linkedBrowser);
+  },
+
   getInternalObjectState(obj) {
     return SessionStoreInternal.getInternalObjectState(obj);
   },
