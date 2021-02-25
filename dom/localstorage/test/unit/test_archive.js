@@ -26,7 +26,8 @@ async function testSteps() {
 
   Services.prefs.setBoolPref("dom.storage.next_gen", true);
 
-  
+  info("Sub test case 1 - Archive file is a directory.");
+
   info("Clearing");
 
   let request = clear();
@@ -38,7 +39,8 @@ async function testSteps() {
 
   checkStorage();
 
-  
+  info("Sub test case 2 - Corrupted archive file.");
+
   info("Clearing");
 
   request = clear();
@@ -53,7 +55,8 @@ async function testSteps() {
 
   checkStorage();
 
-  
+  info("Sub test case 3 - Nonupdateable archive file.");
+
   info("Clearing");
 
   request = clear();
