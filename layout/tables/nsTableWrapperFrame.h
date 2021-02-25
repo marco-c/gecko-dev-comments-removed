@@ -262,12 +262,20 @@ class nsTableWrapperFrame : public nsContainerFrame {
 
 
 
-  nscoord ChildShrinkWrapISize(
-      gfxContext* aRenderingContext, nsIFrame* aChildFrame,
-      mozilla::WritingMode aWM, mozilla::LogicalSize aCBSize,
+
+
+  nscoord InnerTableShrinkWrapISize(
+      gfxContext* aRenderingContext, nsTableFrame* aTableFrame,
+      mozilla::WritingMode aWM, const mozilla::LogicalSize& aCBSize,
       nscoord aAvailableISize,
       const mozilla::StyleSizeOverrides& aSizeOverrides,
       mozilla::ComputeSizeFlags aFlag) const;
+  nscoord CaptionShrinkWrapISize(gfxContext* aRenderingContext,
+                                 nsIFrame* aCaptionFrame,
+                                 mozilla::WritingMode aWM,
+                                 const mozilla::LogicalSize& aCBSize,
+                                 nscoord aAvailableISize,
+                                 mozilla::ComputeSizeFlags aFlag) const;
 
  private:
   nsFrameList mCaptionFrames;
