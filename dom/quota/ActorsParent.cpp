@@ -2169,6 +2169,19 @@ class UpgradeStorageFrom0_0To1_0Helper final : public RepositoryOperationBase {
       : RepositoryOperationBase(aDirectory, aPersistent) {}
 
  private:
+  
+
+
+
+
+
+
+
+
+
+
+  Result<bool, nsresult> MaybeRenameOrigin(const OriginProps& aOriginProps);
+
   nsresult PrepareOriginDirectory(OriginProps& aOriginProps,
                                   bool* aRemoved) override;
 
@@ -10502,6 +10515,31 @@ nsresult CreateOrUpgradeDirectoryMetadataHelper::ProcessOriginDirectory(
   return NS_OK;
 }
 
+Result<bool, nsresult> UpgradeStorageFrom0_0To1_0Helper::MaybeRenameOrigin(
+    const OriginProps& aOriginProps) {
+  AssertIsOnIOThread();
+  MOZ_ASSERT(aOriginProps.mDirectory);
+
+  const auto newLeafName =
+      MakeSanitizedOriginString(aOriginProps.mOriginMetadata.mOrigin);
+
+  if (aOriginProps.mLeafName == newLeafName) {
+    return false;
+  }
+
+  QM_TRY(CreateDirectoryMetadata(*aOriginProps.mDirectory,
+                                 aOriginProps.mTimestamp,
+                                 aOriginProps.mOriginMetadata));
+
+  QM_TRY(CreateDirectoryMetadata2(
+      *aOriginProps.mDirectory, aOriginProps.mTimestamp,
+       false, aOriginProps.mOriginMetadata));
+
+  QM_TRY(aOriginProps.mDirectory->RenameTo(nullptr, newLeafName));
+
+  return true;
+}
+
 nsresult UpgradeStorageFrom0_0To1_0Helper::PrepareOriginDirectory(
     OriginProps& aOriginProps, bool* aRemoved) {
   AssertIsOnIOThread();
@@ -10530,6 +10568,11 @@ nsresult UpgradeStorageFrom0_0To1_0Helper::ProcessOriginDirectory(
     const OriginProps& aOriginProps) {
   AssertIsOnIOThread();
 
+  QM_TRY_INSPECT(const bool& renamed, MaybeRenameOrigin(aOriginProps));
+  if (renamed) {
+    return NS_OK;
+  }
+
   if (aOriginProps.mNeedsRestore) {
     QM_TRY(CreateDirectoryMetadata(*aOriginProps.mDirectory,
                                    aOriginProps.mTimestamp,
@@ -10539,13 +10582,6 @@ nsresult UpgradeStorageFrom0_0To1_0Helper::ProcessOriginDirectory(
   QM_TRY(CreateDirectoryMetadata2(
       *aOriginProps.mDirectory, aOriginProps.mTimestamp,
        false, aOriginProps.mOriginMetadata));
-
-  const auto newName =
-      MakeSanitizedOriginString(aOriginProps.mOriginMetadata.mOrigin);
-
-  if (!aOriginProps.mLeafName.Equals(newName)) {
-    QM_TRY(aOriginProps.mDirectory->RenameTo(nullptr, newName));
-  }
 
   return NS_OK;
 }
