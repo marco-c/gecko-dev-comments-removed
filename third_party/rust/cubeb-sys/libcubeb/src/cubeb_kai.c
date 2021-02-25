@@ -358,7 +358,6 @@ static struct cubeb_ops const kai_ops = {
    kai_stream_destroy,
    kai_stream_start,
    kai_stream_stop,
-   NULL,
    kai_stream_get_position,
    kai_stream_get_latency,
    NULL,

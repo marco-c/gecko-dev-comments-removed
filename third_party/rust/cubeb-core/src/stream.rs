@@ -120,11 +120,6 @@ impl StreamRef {
     }
 
     
-    pub fn reset_default_device(&self) -> Result<()> {
-        unsafe { call!(ffi::cubeb_stream_reset_default_device(self.as_ptr())) }
-    }
-
-    
     pub fn position(&self) -> Result<u64> {
         let mut position = 0u64;
         unsafe {

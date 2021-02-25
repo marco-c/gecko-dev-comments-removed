@@ -230,10 +230,20 @@ typedef enum {
   CUBEB_STREAM_PREF_DISABLE_DEVICE_SWITCHING = 0x02, 
 
 
-  CUBEB_STREAM_PREF_VOICE = 0x04  
+  CUBEB_STREAM_PREF_VOICE = 0x04, 
 
 
 
+
+
+  CUBEB_STREAM_PREF_RAW = 0x08, 
+
+  CUBEB_STREAM_PREF_PERSIST = 0x10, 
+
+
+
+
+  CUBEB_STREAM_PREF_JACK_NO_AUTO_CONNECT = 0x20  
 
 
 } cubeb_stream_prefs;
@@ -511,6 +521,8 @@ CUBEB_EXPORT void cubeb_destroy(cubeb * context);
 
 
 
+
+
 CUBEB_EXPORT int cubeb_stream_init(cubeb * context,
                                    cubeb_stream ** stream,
                                    char const * stream_name,
@@ -539,14 +551,6 @@ CUBEB_EXPORT int cubeb_stream_start(cubeb_stream * stream);
 
 
 CUBEB_EXPORT int cubeb_stream_stop(cubeb_stream * stream);
-
-
-
-
-
-
-
-CUBEB_EXPORT int cubeb_stream_reset_default_device(cubeb_stream * stream);
 
 
 
