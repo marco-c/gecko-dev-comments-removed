@@ -23,8 +23,6 @@
 
 namespace js {
 
-class TypeDescr;
-
 class ObjectGroupRealm;
 class PlainObject;
 
@@ -57,9 +55,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   JS::Realm* realm_;  
 
   
-  GCPtr<TypeDescr*> typeDescr_;  
-
-  
 
  private:
   static inline uint32_t offsetOfClasp() { return offsetOfHeaderPtr(); }
@@ -78,8 +73,7 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   friend class js::jit::MacroAssembler;
 
  public:
-  inline ObjectGroup(const JSClass* clasp, TaggedProto proto, JS::Realm* realm,
-                     TypeDescr* descr);
+  inline ObjectGroup(const JSClass* clasp, TaggedProto proto, JS::Realm* realm);
 
   const GCPtr<TaggedProto>& proto() const { return proto_; }
 
@@ -92,17 +86,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   }
   JS::Compartment* maybeCompartment() const { return compartment(); }
   JS::Realm* realm() const { return realm_; }
-
-  TypeDescr* maybeTypeDescr() {
-    
-    
-    return typeDescr_;
-  }
-
-  TypeDescr& typeDescr() {
-    MOZ_ASSERT(typeDescr_);
-    return *typeDescr_;
-  }
 
   
 
@@ -120,8 +103,7 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   }
 
   static ObjectGroup* defaultNewGroup(JSContext* cx, const JSClass* clasp,
-                                      TaggedProto proto,
-                                      Handle<TypeDescr*> descr = nullptr);
+                                      TaggedProto proto);
 };
 
 
@@ -136,20 +118,15 @@ class ObjectGroupRealm {
   
   class DefaultNewGroupCache {
     ObjectGroup* group_;
-    TypeDescr* associated_;
 
    public:
-    DefaultNewGroupCache() : associated_(nullptr) { purge(); }
+    DefaultNewGroupCache() { purge(); }
 
     void purge() { group_ = nullptr; }
-    void put(ObjectGroup* group, TypeDescr* associated) {
-      group_ = group;
-      associated_ = associated;
-    }
+    void put(ObjectGroup* group) { group_ = group; }
 
     MOZ_ALWAYS_INLINE ObjectGroup* lookup(const JSClass* clasp,
-                                          TaggedProto proto,
-                                          TypeDescr* associated);
+                                          TaggedProto proto);
   } defaultNewGroupCache = {};
 
   
