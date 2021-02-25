@@ -18,9 +18,9 @@
 
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/CompilationStencil.h"  
-#include "frontend/FullParseHandler.h"  
-#include "frontend/ParseContext.h"      
-#include "frontend/Parser.h"            
+#include "frontend/FullParseHandler.h"    
+#include "frontend/ParseContext.h"        
+#include "frontend/Parser.h"       
 #include "js/CharacterEncoding.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/RootingAPI.h"            
@@ -93,15 +93,16 @@ static JSScript* CompileSourceBufferAndStartIncrementalEncoding(
 
   Rooted<frontend::CompilationInput> input(cx,
                                            frontend::CompilationInput(options));
-  UniquePtr<frontend::CompilationStencil> stencil =
-      frontend::CompileGlobalScriptToStencil(cx, input.get(), srcBuf,
-                                             scopeKind);
+  auto stencil = frontend::CompileGlobalScriptToExtensibleStencil(
+      cx, input.get(), srcBuf, scopeKind);
   if (!stencil) {
     return nullptr;
   }
 
+  frontend::BorrowingCompilationStencil borrowingStencil(*stencil);
+
   Rooted<frontend::CompilationGCOutput> gcOutput(cx);
-  if (!frontend::InstantiateStencils(cx, input.get(), *stencil,
+  if (!frontend::InstantiateStencils(cx, input.get(), borrowingStencil,
                                      gcOutput.get())) {
     return nullptr;
   }
@@ -115,8 +116,8 @@ static JSScript* CompileSourceBufferAndStartIncrementalEncoding(
 
   UniquePtr<XDRIncrementalStencilEncoder> xdrEncoder;
 
-  if (!stencil->source->xdrEncodeInitialStencil(cx, input.get(), *stencil,
-                                                xdrEncoder)) {
+  if (!borrowingStencil.source->xdrEncodeInitialStencil(
+          cx, input.get(), borrowingStencil, xdrEncoder)) {
     return nullptr;
   }
 
