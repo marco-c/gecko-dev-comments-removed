@@ -225,9 +225,11 @@ class UnifiedBuildFinder(UnifiedFinder):
             
             return GeneratedFile(
                 b"".join(
-                    content1[: content1.index(b"</body>\n")]
-                    + [b"<hr> </hr>\n"]
-                    + content2[content2.index(b"<h1>Build Configuration</h1>\n") + 1 :]
+                    content1[: content1.index(b"    </div>\n")]
+                    + [b"      <hr> </hr>\n"]
+                    + content2[
+                        content2.index(b"      <h1>Build Configuration</h1>\n") + 1 :
+                    ]
                 )
             )
         elif file1 and file2 and basename == "install.rdf":
