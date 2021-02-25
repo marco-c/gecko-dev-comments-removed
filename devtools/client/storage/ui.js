@@ -275,6 +275,11 @@ class StorageUI {
       this._onTargetDestroyed
     );
 
+    
+    
+    
+    
+    
     this.storageTypes = {};
 
     this._onResourceListAvailable = this._onResourceListAvailable.bind(this);
@@ -344,6 +349,15 @@ class StorageUI {
   }
 
   _onTargetDestroyed({ targetFront }) {
+    
+    for (const type in this.storageTypes) {
+      this.storageTypes[type] = this.storageTypes[type].filter(storage => {
+        
+        
+        return !storage.isDestroyed() && storage.targetFront != targetFront;
+      });
+    }
+
     
     
     if (!targetFront.isTopLevel) {
