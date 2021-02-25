@@ -71,7 +71,10 @@ class TRRService : public TRRServiceBase,
   bool IsOnTRRThread();
 
   bool IsUsingAutoDetectedURL() { return mURISetByDetection; }
-  static const nsCString& AutoDetectedKey();
+
+  
+  
+  static const nsCString& ProviderKey();
 
  private:
   virtual ~TRRService();
