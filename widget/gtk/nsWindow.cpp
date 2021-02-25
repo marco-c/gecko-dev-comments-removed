@@ -8056,6 +8056,17 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
     return sCSDSupportLevel;
   }
 
+  
+  
+  
+  if (sCSDSupportLevel == GTK_DECORATION_SYSTEM) {
+    const char* csdOverride = getenv("GTK_CSD");
+    if (csdOverride && atoi(csdOverride)) {
+      sCSDSupportLevel = GTK_DECORATION_CLIENT;
+      return sCSDSupportLevel;
+    }
+  }
+
   const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
   if (currentDesktop) {
     
@@ -8095,28 +8106,11 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel() {
     } else if (strstr(currentDesktop, "Deepin") != nullptr) {
       sCSDSupportLevel = GTK_DECORATION_CLIENT;
     } else {
-
-
-#if defined(RELEASE_OR_BETA)
-      sCSDSupportLevel = GTK_DECORATION_NONE;
-#else
       sCSDSupportLevel = GTK_DECORATION_CLIENT;
-#endif
     }
   } else {
-    sCSDSupportLevel = GTK_DECORATION_NONE;
+    sCSDSupportLevel = GTK_DECORATION_CLIENT;
   }
-
-  
-  
-  
-  if (sCSDSupportLevel == GTK_DECORATION_SYSTEM) {
-    const char* csdOverride = getenv("GTK_CSD");
-    if (csdOverride && g_strcmp0(csdOverride, "1") == 0) {
-      sCSDSupportLevel = GTK_DECORATION_CLIENT;
-    }
-  }
-
   return sCSDSupportLevel;
 }
 
