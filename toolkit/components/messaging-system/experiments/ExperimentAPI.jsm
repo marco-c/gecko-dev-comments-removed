@@ -65,6 +65,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
   COLLECTION_ID_PREF,
   COLLECTION_ID_FALLBACK
 );
+const EXPOSURE_EVENT_CATEGORY = "normandy";
+const EXPOSURE_EVENT_METHOD = "expose";
 
 function parseJSON(value) {
   if (value) {
@@ -93,7 +95,7 @@ const ExperimentAPI = {
 
 
 
-  getExperiment({ slug, featureId, sendExposurePing } = {}) {
+  getExperiment({ slug, featureId, sendExposureEvent } = {}) {
     if (!slug && !featureId) {
       throw new Error(
         "getExperiment(options) must include a slug or a feature."
@@ -113,8 +115,7 @@ const ExperimentAPI = {
       return {
         slug: experimentData.slug,
         active: experimentData.active,
-        exposurePingSent: experimentData.exposurePingSent,
-        branch: this.activateBranch({ featureId, sendExposurePing }),
+        branch: this.activateBranch({ featureId, sendExposureEvent }),
       };
     }
 
@@ -146,7 +147,6 @@ const ExperimentAPI = {
       return {
         slug: experimentData.slug,
         active: experimentData.active,
-        exposurePingSent: experimentData.exposurePingSent,
         branch: { slug: experimentData.branch.slug },
       };
     }
@@ -159,7 +159,7 @@ const ExperimentAPI = {
 
 
 
-  activateBranch({ slug, featureId, sendExposurePing = true }) {
+  activateBranch({ slug, featureId, sendExposureEvent }) {
     let experiment = null;
     try {
       if (slug) {
@@ -175,10 +175,10 @@ const ExperimentAPI = {
       return null;
     }
 
-    if (sendExposurePing) {
-      this._store._emitExperimentExposure({
+    if (sendExposureEvent) {
+      this.recordExposureEvent({
         experimentSlug: experiment.slug,
-        branchSlug: experiment?.branch?.slug,
+        branchSlug: experiment.branch.slug,
         featureId,
       });
     }
@@ -285,23 +285,22 @@ const ExperimentAPI = {
     return recipe?.branches;
   },
 
-  recordExposureEvent(name, { sent, experimentSlug, branchSlug }) {
-    if (!IS_MAIN_PROCESS) {
-      Cu.reportError("Need to call from Parent process");
-      return false;
+  recordExposureEvent({ featureId, experimentSlug, branchSlug }) {
+    Services.telemetry.setEventRecordingEnabled(EXPOSURE_EVENT_CATEGORY, true);
+    try {
+      Services.telemetry.recordEvent(
+        EXPOSURE_EVENT_CATEGORY,
+        EXPOSURE_EVENT_METHOD,
+        "feature_study",
+        experimentSlug,
+        {
+          branchSlug,
+          featureId,
+        }
+      );
+    } catch (e) {
+      Cu.reportError(e);
     }
-    if (sent) {
-      return false;
-    }
-
-    
-    this._store._emitExperimentExposure({
-      featureId: name,
-      experimentSlug,
-      branchSlug,
-    });
-
-    return true;
   },
 };
 
@@ -346,16 +345,20 @@ class ExperimentFeature {
     });
   }
 
+  ready() {
+    return ExperimentAPI.ready();
+  }
+
   
 
 
 
 
 
-  isEnabled({ sendExposurePing, defaultValue = null } = {}) {
+  isEnabled({ sendExposureEvent, defaultValue = null } = {}) {
     const branch = ExperimentAPI.activateBranch({
       featureId: this.featureId,
-      sendExposurePing,
+      sendExposureEvent,
     });
 
     
@@ -378,16 +381,23 @@ class ExperimentFeature {
 
 
 
-  getValue({ sendExposurePing, defaultValue = null } = {}) {
+  getValue({ sendExposureEvent, defaultValue = null } = {}) {
     const branch = ExperimentAPI.activateBranch({
       featureId: this.featureId,
-      sendExposurePing,
+      sendExposureEvent,
     });
     if (branch?.feature?.value) {
       return branch.feature.value;
     }
 
     return this.defaultPrefValues.value || defaultValue;
+  }
+
+  recordExposureEvent() {
+    ExperimentAPI.activateBranch({
+      featureId: this.featureId,
+      sendExposureEvent: true,
+    });
   }
 
   onUpdate(callback) {
