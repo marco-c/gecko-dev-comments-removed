@@ -1626,6 +1626,14 @@ class SpecialPowersChild extends JSWindowActorChild {
     this._SimpleTest = val;
   }
 
+  async evictAllContentViewers() {
+    if (Services.appinfo.sessionHistoryInParent) {
+      await this.sendQuery("EvictAllContentViewers");
+    } else {
+      this.browsingContext.top.childSessionHistory.legacySHistory.evictAllContentViewers();
+    }
+  }
+
   
 
 
