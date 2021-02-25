@@ -36,7 +36,8 @@ add_task(async function test_PanelMultiView_toggle_with_other_popup() {
       
       
       let clickFn = () =>
-        EventUtils.promiseNativeMouseClickAndWaitForEvent({
+        EventUtils.promiseNativeMouseEventAndWaitForEvent({
+          type: "click",
           target: document.getElementById("PanelUI-button"),
           atCenter: true,
           eventTypeToWait: "mouseup",
