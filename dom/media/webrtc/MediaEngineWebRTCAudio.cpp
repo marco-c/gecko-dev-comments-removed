@@ -823,7 +823,10 @@ void AudioInputProcessing::Pull(MediaTrackGraphImpl* aGraph, GraphTime aFrom,
     if (MOZ_UNLIKELY(buffering > mLiveBufferingAppended)) {
       
       
-      
+      MOZ_ASSERT(!PassThrough(aGraph), "Must have turned off passthrough");
+      MOZ_ASSERT(mPacketizerInput);
+      MOZ_ASSERT((buffering - mLiveBufferingAppended) ==
+                 mPacketizerInput->mPacketSize);
       LOG_FRAME("AudioInputProcessing %p Inserting %" PRId64
                 " frames of silence due to buffer increase",
                 this, buffering - mLiveBufferingAppended);
@@ -846,6 +849,16 @@ void AudioInputProcessing::Pull(MediaTrackGraphImpl* aGraph, GraphTime aFrom,
   }
 
   if (mSegment.GetDuration() > 0) {
+    if (!mLiveFramesAppended) {
+      
+      
+      LOG_FRAME("AudioInputProcessing %p Buffering %" PRId64
+                " frames of pre-silence for %u channels.",
+                this, buffering, mRequestedInputChannelCount);
+      mSegment.InsertNullDataAtStart(buffering - mLiveBufferingAppended);
+      mLiveFramesAppended = true;
+      mLiveBufferingAppended = buffering;
+    }
     MOZ_ASSERT(buffering == mLiveBufferingAppended);
     TrackTime frames = std::min(mSegment.GetDuration(), delta);
     LOG_FRAME("AudioInputProcessing %p Appending %" PRId64
@@ -1162,7 +1175,6 @@ void AudioInputProcessing::NotifyInputData(MediaTrackGraphImpl* aGraph,
   if (!mLiveFramesAppended) {
     
     
-    mLiveFramesAppended = true;
     mLiveBufferingAppended = aAlreadyBuffered;
   }
 
@@ -1207,12 +1219,6 @@ void AudioInputProcessing::DeviceChanged(MediaTrackGraphImpl* aGraph) {
 void AudioInputProcessing::End() {
   mEnded = true;
   mSegment.Clear();
-}
-
-TrackTime AudioInputProcessing::NumBufferedFrames(
-    MediaTrackGraphImpl* aGraph) const {
-  MOZ_ASSERT(aGraph->OnGraphThread());
-  return mSegment.GetDuration();
 }
 
 void AudioInputTrack::Destroy() {

@@ -980,10 +980,9 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
   nsCOMPtr<nsITimer> mShutdownTimer;
 
- protected:
+ private:
   virtual ~MediaTrackGraphImpl();
 
- private:
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
 
   
