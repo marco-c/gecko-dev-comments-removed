@@ -509,6 +509,10 @@ struct CompilationStencil : public BaseCompilationStencil {
 
   
   
+  bool hasExternalDependency = false;
+
+  
+  
   
   
   
