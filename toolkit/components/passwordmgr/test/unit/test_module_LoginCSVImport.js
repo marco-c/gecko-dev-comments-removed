@@ -155,13 +155,34 @@ add_task(async function test_import_lacking_username_column() {
 
 
 
-add_task(async function test_import_with_duplicate_columns() {
+add_task(async function test_import_with_duplicate_fields() {
   
   
   let csvFilePath = await setupCsv([
     "url,login_uri,username,login_password",
     "https://example.com/path,https://example.com,john@example.com,azerty",
     "https://mozilla.org,https://mozilla.org,jdoe@example.com,qwerty",
+  ]);
+
+  await Assert.rejects(
+    LoginCSVImport.importFromCSV(csvFilePath),
+    /CONFLICTING_VALUES_ERROR/,
+    "Check that the errorType is file format error"
+  );
+
+  LoginTestUtils.checkLogins(
+    [],
+    "Check that no login was added from a file with duplicated columns"
+  );
+});
+
+
+
+
+add_task(async function test_import_with_duplicate_columns() {
+  let csvFilePath = await setupCsv([
+    "url,username,password,password",
+    "https://example.com/path,john@example.com,azerty,12345",
   ]);
 
   await Assert.rejects(
