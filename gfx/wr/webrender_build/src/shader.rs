@@ -194,13 +194,22 @@ pub fn build_shader_prefix_string<F: FnMut(&str)>(
     output(kind_string);
 
     
-    match std::env::var("CARGO_CFG_TARGET_OS") {
-        Ok(os) if os == "macos" => output("#define PLATFORM_MACOS\n"),
+    let is_macos = match std::env::var("CARGO_CFG_TARGET_OS") {
+        Ok(os) => os == "macos",
         
         
-        Err(_) if cfg!(target_os = "macos") => output("#define PLATFORM_MACOS\n"),
-        _ => {}
+        Err(_) => cfg!(target_os = "macos"),
+    };
+    let is_android = match std::env::var("CARGO_CFG_TARGET_OS") {
+        Ok(os) => os == "android",
+        Err(_) => cfg!(target_os = "android"),
+    };
+    if is_macos {
+        output("#define PLATFORM_MACOS\n");
+    } else if is_android {
+        output("#define PLATFORM_ANDROID\n");
     }
+
     
     output("#define WR_MAX_VERTEX_TEXTURE_WIDTH ");
     output(&MAX_VERTEX_TEXTURE_WIDTH_STRING);

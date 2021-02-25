@@ -613,11 +613,6 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       
       isUnblocked |= gpu.Find("Mali-G",  true) >= 0 &&
                      
-                     
-                     !(mSDKVersion == 30 &&
-                       (gpu.Find("Mali-G72",  true) >= 0 ||
-                        gpu.Find("Mali-G76",  true) >= 0)) &&
-                     
                      gpu.Find("Mali-G31",  true) == kNotFound;
 
       
