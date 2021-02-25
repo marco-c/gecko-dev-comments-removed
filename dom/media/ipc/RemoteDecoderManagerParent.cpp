@@ -23,11 +23,6 @@
 
 namespace mozilla {
 
-#ifdef XP_WIN
-extern const nsCString GetFoundD3D11BlacklistedDLL();
-extern const nsCString GetFoundD3D9BlacklistedDLL();
-#endif  
-
 using namespace ipc;
 using namespace layers;
 using namespace gfx;
