@@ -3290,7 +3290,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 106;
+    const UI_VERSION = 107;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     if (!Services.prefs.prefHasUserValue("browser.migration.version")) {
@@ -3847,6 +3847,21 @@ BrowserGlue.prototype = {
     
     if (currentUIVersion < 106) {
       UrlbarPrefs.initializeShowSearchSuggestionsFirstPref();
+    }
+
+    if (currentUIVersion < 107) {
+      
+      
+      
+      const kPref = "browser.handlers.migrations";
+      
+      
+      let migrations = Services.prefs
+        .getCharPref(kPref, "")
+        .split(",")
+        .filter(x => !!x);
+      migrations.push("secure-mail");
+      Services.prefs.setCharPref(kPref, migrations.join(","));
     }
 
     
