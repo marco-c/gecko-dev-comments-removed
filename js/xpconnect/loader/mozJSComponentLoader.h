@@ -74,6 +74,14 @@ class mozJSComponentLoader final : public nsIMemoryReporter {
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
+  
+
+
+
+
+
+  nsresult AnnotateCrashReport();
+
  protected:
   mozJSComponentLoader();
   ~mozJSComponentLoader();
