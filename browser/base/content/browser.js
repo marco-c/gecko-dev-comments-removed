@@ -988,10 +988,6 @@ const gStoragePressureObserver = {
       [msg] = await document.l10n.formatValues([
         { id: "space-alert-under-5gb-message" },
       ]);
-      buttons.push({
-        "l10n-id": "space-alert-under-5gb-ok-button",
-        callback() {},
-      });
     } else {
       
       
