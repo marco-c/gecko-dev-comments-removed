@@ -1,0 +1,15 @@
+
+
+
+
+
+
+LOCAL_INCLUDES += [
+    "/dom/canvas",
+]
+
+UNIFIED_SOURCES += [
+    "TestSanitizeRenderer.cpp",
+]
+
+FINAL_LIBRARY = "xul-gtest"
