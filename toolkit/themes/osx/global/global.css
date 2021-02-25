@@ -5,7 +5,7 @@
 %include ../../shared/global.inc.css
 
 :root {
-  
+  /* ::::: Variables ::::: */
   --arrowpanel-padding: 16px;
   --default-arrowpanel-background: #fff;
   --default-arrowpanel-color: hsl(0,0%,10%);
@@ -18,7 +18,7 @@
   --panel-description-color: hsl(0,0%,50%);
 
   --focus-ring-box-shadow: 0 0 0 1px -moz-mac-focusring inset, 0 0 0 1px -moz-mac-focusring;
-  
+  /* ::::: Styles ::::: */
   appearance: auto;
   -moz-default-appearance: dialog;
   background-color: #FFFFFF;
@@ -26,7 +26,7 @@
   font: message-box;
 }
 
-
+/* ::::: Alert icons :::::*/
 
 .message-icon,
 .alert-icon,
@@ -55,7 +55,7 @@
   list-style-image: url("chrome://global/skin/icons/question-64.png");
 }
 
-
+/* ::::: iframe ::::: */
 
 xul|iframe {
   border: none;
@@ -66,18 +66,14 @@ xul|iframe {
 }
 
 @supports -moz-bool-pref("layout.css.emulate-moz-box-with-flex") {
-  
+  /* In emulation, <iframe> is block instead of inline, so reset the width/height */
   xul|iframe {
     width: auto;
     height: auto;
   }
 }
 
-
-
-:root:-moz-lwtheme {
-  appearance: none;
-}
+/* ::::: Miscellaneous formatting ::::: */
 
 :root[lwtheme-image]:-moz-lwtheme-darktext {
   text-shadow: 0 -0.5px 1.5px white;
