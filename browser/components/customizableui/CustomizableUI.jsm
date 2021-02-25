@@ -610,6 +610,12 @@ var CustomizableUIInternal = {
       return;
     }
 
+    if (!gSavedState) {
+      
+      Services.prefs.setIntPref(kPrefProtonToolbarVersion, VERSION);
+      return;
+    }
+
     
     if (currentVersion < 1) {
       let placements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
