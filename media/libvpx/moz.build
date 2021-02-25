@@ -9,8 +9,8 @@ with Files('*'):
 
 include('sources.mozbuild')
 
-if CONFIG['VPX_USE_YASM']:
-    USE_YASM = True
+if CONFIG['VPX_USE_NASM']:
+    USE_NASM = True
 
 
 if CONFIG['CPU_ARCH'] == 'x86_64':
