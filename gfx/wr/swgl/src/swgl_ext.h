@@ -1391,18 +1391,19 @@ static void commitLinearGradient(sampler2D sampler, int address, float size,
     swgl_SpanLength = 0;                                                       \
   } while (0)
 
-template <typename V>
+template <bool CLAMP, typename V>
 static ALWAYS_INLINE V fastSqrt(V v) {
 #if USE_SSE2 || USE_NEON
-  return v * inversesqrt(v);
+  
+  return v * inversesqrt(CLAMP ? max(v, V(1.0e-10f)) : v);
 #else
   return sqrt(v);
 #endif
 }
 
-template <typename V>
+template <bool CLAMP, typename V>
 static ALWAYS_INLINE auto fastLength(V v) {
-  return fastSqrt(dot(v, v));
+  return fastSqrt<CLAMP>(dot(v, v));
 }
 
 
@@ -1454,8 +1455,8 @@ static void commitRadialGradient(sampler2D sampler, int address, float size,
   
   
   
-  Float middleEndRadius =
-      fastLength(pos0 + delta * (Float){middleT, float(span), 0.0f, 0.0f});
+  Float middleEndRadius = fastLength<true>(
+      pos0 + delta * (Float){middleT, float(span), 0.0f, 0.0f});
   float middleRadius = span < middleT ? middleEndRadius.y : middleEndRadius.x;
   float endRadius = middleEndRadius.y;
   
@@ -1477,7 +1478,7 @@ static void commitRadialGradient(sampler2D sampler, int address, float size,
   float deltaDelta2 = 2.0f * deltaDelta;
   for (int t = 0; t < span;) {
     
-    Float offset = fastSqrt(dotPos) - radius;
+    Float offset = fastSqrt<true>(dotPos) - radius;
     float startRadius = radius;
     
     if (repeat) {
@@ -1547,7 +1548,7 @@ static void commitRadialGradient(sampler2D sampler, int address, float size,
     if (intercept >= 0) {
       float b = middleB + intercept * intercept * invDelta;
       if (b > 0) {
-        b = fastSqrt(b);
+        b = fastSqrt<false>(b);
         endT = min(endT, t >= middleT ? middleT + b : middleT - b);
       }
     }
@@ -1569,7 +1570,7 @@ static void commitRadialGradient(sampler2D sampler, int address, float size,
       
       
       for (auto* end = buf + inside; buf < end; buf += 4) {
-        Float offsetG = fastSqrt(dotPos);
+        Float offsetG = fastSqrt<false>(dotPos);
         commit_blend_span<BLEND>(
             buf,
             combine(
@@ -1591,7 +1592,7 @@ static void commitRadialGradient(sampler2D sampler, int address, float size,
       
       
       
-      offset = fastSqrt(dotPos) - radius;
+      offset = fastSqrt<true>(dotPos) - radius;
       if (repeat) {
         offset = fract(offset);
       }
