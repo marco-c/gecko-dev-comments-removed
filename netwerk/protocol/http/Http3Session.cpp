@@ -597,15 +597,15 @@ nsresult Http3Session::ProcessOutput(nsIUDPSocket* socket) {
       continue;
     }
     nsresult rv = socket->SendWithAddress(&addr, packetToSend, &written);
-    MOZ_ASSERT(packetToSend.Length() == written);
-    if (NS_FAILED(rv)) {
+    LOG(("Http3Session::ProcessOutput sending packet rv=%d",
+         static_cast<int32_t>(rv)));
+    if (NS_FAILED(rv) && (rv != NS_BASE_STREAM_WOULD_BLOCK)) {
       mSocketError = rv;
       
       
       
       return rv;
     }
-
     mTotalBytesWritten += packetToSend.Length();
     mLastWriteTime = PR_IntervalNow();
   }
