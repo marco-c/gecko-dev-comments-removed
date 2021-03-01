@@ -4966,6 +4966,34 @@
       }
     },
 
+    
+
+
+
+
+
+
+
+    _maybeRequestReplyFromRemoteContent(aEvent) {
+      if (aEvent.defaultPrevented) {
+        return false;
+      }
+      
+      
+      
+      if (aEvent.isWaitingReplyFromRemoteContent) {
+        return true; 
+      }
+      if (
+        !aEvent.isReplyEventFromRemoteContent &&
+        aEvent.target?.isRemoteBrowser === true
+      ) {
+        aEvent.requestReplyFromRemoteContent();
+        return true;
+      }
+      return false;
+    },
+
     _handleKeyDownEvent(aEvent) {
       if (!aEvent.isTrusted) {
         
@@ -4981,6 +5009,9 @@
       
 
       switch (ShortcutUtils.getSystemActionForEvent(aEvent)) {
+        case ShortcutUtils.TOGGLE_CARET_BROWSING:
+          this._maybeRequestReplyFromRemoteContent(aEvent);
+          return;
         case ShortcutUtils.MOVE_TAB_BACKWARD:
           this.moveTabBackward();
           aEvent.preventDefault();
@@ -5068,9 +5099,13 @@
 
       switch (ShortcutUtils.getSystemActionForEvent(aEvent, { rtl: RTL_UI })) {
         case ShortcutUtils.TOGGLE_CARET_BROWSING:
-          if (!aEvent.defaultPrevented) {
-            this.toggleCaretBrowsing();
+          if (
+            aEvent.defaultPrevented ||
+            this._maybeRequestReplyFromRemoteContent(aEvent)
+          ) {
+            break;
           }
+          this.toggleCaretBrowsing();
           break;
 
         case ShortcutUtils.NEXT_TAB:

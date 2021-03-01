@@ -290,6 +290,18 @@ class Event : public nsISupports, public nsWrapperCache {
 
   static void GetWidgetEventType(WidgetEvent* aEvent, nsAString& aType);
 
+  void RequestReplyFromRemoteContent() {
+    mEvent->MarkAsWaitingReplyFromRemoteProcess();
+  }
+
+  bool IsWaitingReplyFromRemoteContent() const {
+    return mEvent->IsWaitingReplyFromRemoteProcess();
+  }
+
+  bool IsReplyEventFromRemoteContent() const {
+    return mEvent->IsHandledInRemoteProcess();
+  }
+
  protected:
   
   void SetEventType(const nsAString& aEventTypeArg);
