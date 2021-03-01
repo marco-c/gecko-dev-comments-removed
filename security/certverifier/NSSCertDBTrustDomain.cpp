@@ -1189,10 +1189,31 @@ static Result CheckForStartComOrWoSign(const UniqueCERTCertList& certChain) {
   return Success;
 }
 
+SECStatus GetCertDistrustAfterValue(const SECItem* distrustItem,
+                                    PRTime& distrustTime) {
+  if (!distrustItem || !distrustItem->data || distrustItem->len != 13) {
+    PR_SetError(SEC_ERROR_INVALID_ARGS, 0);
+    return SECFailure;
+  }
+  return DER_DecodeTimeChoice(&distrustTime, distrustItem);
+}
+
+SECStatus GetCertNotBeforeValue(const CERTCertificate* cert,
+                                PRTime& distrustTime) {
+  return DER_DecodeTimeChoice(&distrustTime, &cert->validity.notBefore);
+}
+
 nsresult isDistrustedCertificateChain(const UniqueCERTCertList& certList,
+                                      const SECTrustType certDBTrustType,
                                       bool& isDistrusted) {
   
   isDistrusted = true;
+
+  
+  if (certDBTrustType != trustSSL && certDBTrustType != trustEmail) {
+    isDistrusted = false;
+    return NS_OK;
+  }
 
   
   const CERTCertificate* certRoot = CERT_LIST_TAIL(certList)->cert;
@@ -1205,16 +1226,26 @@ nsresult isDistrustedCertificateChain(const UniqueCERTCertList& certList,
   }
 
   
+  SECItem* distrustPtr = nullptr;
+  if (certDBTrustType == trustSSL) {
+    distrustPtr = &certRoot->distrust->serverDistrustAfter;
+  }
+  if (certDBTrustType == trustEmail) {
+    distrustPtr = &certRoot->distrust->emailDistrustAfter;
+  }
+
+  
   
   PRTime certRootDistrustAfter;
   PRTime certLeafNotBefore;
 
-  SECStatus rv1 = DER_DecodeTimeChoice(
-      &certRootDistrustAfter, &certRoot->distrust->serverDistrustAfter);
-  SECStatus rv2 =
-      DER_DecodeTimeChoice(&certLeafNotBefore, &certLeaf->validity.notBefore);
+  SECStatus rv = GetCertDistrustAfterValue(distrustPtr, certRootDistrustAfter);
+  if (rv != SECSuccess) {
+    return NS_ERROR_FAILURE;
+  }
 
-  if ((rv1 != SECSuccess) || (rv2 != SECSuccess)) {
+  rv = GetCertNotBeforeValue(certLeaf, certLeafNotBefore);
+  if (rv != SECSuccess) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1223,6 +1254,7 @@ nsresult isDistrustedCertificateChain(const UniqueCERTCertList& certList,
   if (certLeafNotBefore <= certRootDistrustAfter) {
     isDistrusted = false;
   }
+
   return NS_OK;
 }
 
@@ -1304,7 +1336,8 @@ Result NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
   
   if (isBuiltInRoot) {
     bool isDistrusted;
-    nsrv = isDistrustedCertificateChain(certList, isDistrusted);
+    nsrv =
+        isDistrustedCertificateChain(certList, mCertDBTrustType, isDistrusted);
     if (NS_FAILED(nsrv)) {
       return Result::FATAL_ERROR_LIBRARY_FAILURE;
     }
