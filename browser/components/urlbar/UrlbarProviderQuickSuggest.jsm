@@ -19,6 +19,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
+
+const EXPERIMENT_PREF = "quicksuggest.enabled";
+const SUGGEST_PREF = "suggest.quicksuggest";
 const ONBOARDING_COUNT_PREF = "quicksuggest.onboardingCount";
 const ONBOARDING_MAX_COUNT_PREF = "quicksuggest.onboardingMaxCount";
 
@@ -31,13 +34,18 @@ const TELEMETRY_SCALAR_IMPRESSION =
 const TELEMETRY_SCALAR_CLICK = "contextual.services.quicksuggest.click";
 const TELEMETRY_SCALAR_HELP = "contextual.services.quicksuggest.help";
 
+const TELEMETRY_EVENT_CATEGORY = "contextservices.quicksuggest";
+
 
 
 
 
 class ProviderQuickSuggest extends UrlbarProvider {
-  
-  _addedResultInLastQuery = false;
+  constructor(...args) {
+    super(...args);
+    this._updateExperimentState();
+    UrlbarPrefs.addObserver(this);
+  }
 
   
 
@@ -76,8 +84,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
     return (
       queryContext.trimmedSearchString &&
       !queryContext.searchMode &&
-      UrlbarPrefs.get("quicksuggest.enabled") &&
-      UrlbarPrefs.get("suggest.quicksuggest") &&
+      UrlbarPrefs.get(EXPERIMENT_PREF) &&
+      UrlbarPrefs.get(SUGGEST_PREF) &&
       UrlbarPrefs.get("suggest.searches") &&
       UrlbarPrefs.get("browser.search.suggest.enabled") &&
       (!queryContext.isPrivate ||
@@ -191,6 +199,44 @@ class ProviderQuickSuggest extends UrlbarProvider {
       );
     }
   }
+
+  
+
+
+
+
+
+
+
+
+  onPrefChanged(pref) {
+    switch (pref) {
+      case EXPERIMENT_PREF:
+        this._updateExperimentState();
+        break;
+      case SUGGEST_PREF:
+        Services.telemetry.recordEvent(
+          TELEMETRY_EVENT_CATEGORY,
+          "enable_toggled",
+          UrlbarPrefs.get(SUGGEST_PREF) ? "enabled" : "disabled"
+        );
+        break;
+    }
+  }
+
+  
+
+
+
+  _updateExperimentState() {
+    Services.telemetry.setEventRecordingEnabled(
+      TELEMETRY_EVENT_CATEGORY,
+      UrlbarPrefs.get(EXPERIMENT_PREF)
+    );
+  }
+
+  
+  _addedResultInLastQuery = false;
 
   get _onboardingCount() {
     return UrlbarPrefs.get(ONBOARDING_COUNT_PREF);
