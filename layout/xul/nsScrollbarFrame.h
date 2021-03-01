@@ -34,8 +34,10 @@ class nsScrollbarFrame final : public nsBoxFrame,
  public:
   explicit nsScrollbarFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
       : nsBoxFrame(aStyle, aPresContext, kClassID),
-        mIncrement(0),
         mSmoothScroll(false),
+        mScrollUnit(mozilla::ScrollUnit::DEVICE_PIXELS),
+        mDirection(0),
+        mIncrement(0),
         mScrollbarMediator(nullptr),
         mUpTopButton(nullptr),
         mDownTopButton(nullptr),
@@ -114,7 +116,13 @@ class nsScrollbarFrame final : public nsBoxFrame,
 
 
 
-  int32_t MoveToNewPosition();
+
+
+
+
+
+  enum class ImplementsScrollByUnit { Yes, No };
+  int32_t MoveToNewPosition(ImplementsScrollByUnit aImplementsScrollByUnit);
   int32_t GetIncrement() { return mIncrement; }
 
   
@@ -126,8 +134,15 @@ class nsScrollbarFrame final : public nsBoxFrame,
   void UpdateChildrenAttributeValue(nsAtom* aAttribute, bool aNotify);
 
  protected:
-  int32_t mIncrement;  
   bool mSmoothScroll;
+  mozilla::ScrollUnit mScrollUnit;
+  
+  int32_t mDirection;
+
+  
+  
+  
+  int32_t mIncrement;
 
  private:
   nsCOMPtr<nsIContent> mScrollbarMediator;
