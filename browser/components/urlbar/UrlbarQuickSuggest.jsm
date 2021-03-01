@@ -28,6 +28,9 @@ const RS_COLLECTION = "quicksuggest";
 const RS_PREF = "quicksuggest.enabled";
 
 
+const NONSPONSORED_IAB_CATEGORIES = new Set(["5 - Education"]);
+
+
 
 
 
@@ -85,6 +88,7 @@ class Suggestions {
       impression_url: result.impression_url,
       block_id: result.id,
       advertiser: result.advertiser.toLocaleLowerCase(),
+      isSponsored: !NONSPONSORED_IAB_CATEGORIES.has(result.iab_category),
       icon,
     };
   }
