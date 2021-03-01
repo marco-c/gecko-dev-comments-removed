@@ -3818,59 +3818,10 @@ bool GeneralParser<ParseHandler, Unit>::maybeParseDirective(
       
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      switch (anyChars.sawDeprecatedContent()) {
-        case DeprecatedContent::None:
-          break;
-        case DeprecatedContent::OctalLiteral:
-          error(JSMSG_DEPRECATED_OCTAL_LITERAL);
-          return false;
-        case DeprecatedContent::OctalEscape:
-          error(JSMSG_DEPRECATED_OCTAL_ESCAPE);
-          return false;
-        case DeprecatedContent::EightOrNineEscape:
-          error(JSMSG_DEPRECATED_EIGHT_OR_NINE_ESCAPE);
-          return false;
+      if (anyChars.sawDeprecatedOctal()) {
+        error(JSMSG_DEPRECATED_OCTAL);
+        return false;
       }
-
       pc_->sc()->setStrictScript();
     }
   } else if (IsUseAsmDirective(directivePos, directive)) {
@@ -3896,9 +3847,7 @@ GeneralParser<ParseHandler, Unit>::statementList(YieldHandling yieldHandling) {
 
   bool canHaveDirectives = pc_->atBodyLevel();
   if (canHaveDirectives) {
-    
-    
-    anyChars.clearSawDeprecatedContent();
+    anyChars.clearSawDeprecatedOctal();
   }
 
   bool canHaveHashbangComment = pc_->atTopLevel();
