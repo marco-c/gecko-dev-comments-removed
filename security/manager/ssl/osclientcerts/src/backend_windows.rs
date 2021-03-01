@@ -572,6 +572,8 @@ pub struct Key {
     key_type_enum: KeyType,
     
     slot_type: SlotType,
+    
+    key_handle: Option<KeyHandle>,
 }
 
 impl Key {
@@ -620,6 +622,7 @@ impl Key {
             ec_params,
             key_type_enum,
             slot_type: SlotType::Modern,
+            key_handle: None,
         })
     }
 
@@ -705,7 +708,7 @@ impl Key {
     }
 
     pub fn get_signature_length(
-        &self,
+        &mut self,
         data: &[u8],
         params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
     ) -> Result<usize, ()> {
@@ -716,7 +719,7 @@ impl Key {
     }
 
     pub fn sign(
-        &self,
+        &mut self,
         data: &[u8],
         params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
     ) -> Result<Vec<u8>, ()> {
@@ -727,14 +730,25 @@ impl Key {
     
     
     fn sign_internal(
-        &self,
+        &mut self,
         data: &[u8],
         params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
         do_signature: bool,
     ) -> Result<Vec<u8>, ()> {
         
         
-        let key = KeyHandle::from_cert(&self.cert)?;
+        
+        
+        if self.key_handle.is_none() {
+            let _ = self.key_handle.replace(KeyHandle::from_cert(&self.cert)?);
+        }
+        let key = match &self.key_handle {
+            Some(key) => key,
+            None => {
+                error!("key_handle not set when it should have just been set?");
+                return Err(());
+            }
+        };
         key.sign(data, params, do_signature, self.key_type_enum)
     }
 }
