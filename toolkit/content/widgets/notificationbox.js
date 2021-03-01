@@ -126,6 +126,13 @@
 
 
 
+
+
+
+
+
+
+
     appendNotification(
       aLabel,
       aValue,
@@ -152,6 +159,8 @@
         }
         insertPos = notifications[n];
       }
+
+      MozXULElement.insertFTLIfNeeded("toolkit/global/notification.ftl");
 
       
       var newitem = document.createXULElement(
@@ -182,27 +191,52 @@
 
       if (aButtons) {
         for (var b = 0; b < aButtons.length; b++) {
-          var button = aButtons[b];
-          var buttonElem = document.createXULElement(
-            "button",
-            button.is ? { is: button.is } : {}
-          );
+          let button = aButtons[b];
+          let buttonElem;
 
-          if (button["l10n-id"]) {
-            buttonElem.setAttribute("data-l10n-id", button["l10n-id"]);
+          let link = button.link;
+          let localeId = button["l10n-id"];
+          if (!link && button.supportPage) {
+            link =
+              Services.urlFormatter.formatURLPref("app.support.baseURL") +
+              button.supportPage;
+            if (!button.label && !localeId) {
+              localeId = "notification-learnmore-default-label";
+            }
+          }
+
+          if (link) {
+            buttonElem = document.createXULElement("label", {
+              is: "text-link",
+            });
+            buttonElem.setAttribute("href", link);
+            buttonElem.classList.add("notification-link");
           } else {
-            buttonElem.setAttribute("label", button.label);
+            buttonElem = document.createXULElement(
+              "button",
+              button.is ? { is: button.is } : {}
+            );
+            buttonElem.classList.add("notification-button");
+
+            if (button.primary) {
+              buttonElem.classList.add("primary");
+            }
+          }
+
+          if (localeId) {
+            buttonElem.setAttribute("data-l10n-id", localeId);
+          } else {
+            buttonElem.setAttribute(link ? "value" : "label", button.label);
             if (typeof button.accessKey == "string") {
               buttonElem.setAttribute("accesskey", button.accessKey);
             }
           }
 
-          buttonElem.classList.add("notification-button");
-          if (button.primary) {
-            buttonElem.classList.add("primary");
+          if (link) {
+            newitem.messageText.appendChild(buttonElem);
+          } else {
+            newitem.messageDetails.appendChild(buttonElem);
           }
-
-          newitem.messageDetails.appendChild(buttonElem);
           buttonElem.buttonInfo = button;
         }
       }
