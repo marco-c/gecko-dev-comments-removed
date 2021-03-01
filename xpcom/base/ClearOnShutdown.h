@@ -52,7 +52,6 @@
 
 
 
-
 namespace mozilla {
 
 namespace ClearOnShutdown_Internal {
@@ -109,7 +108,7 @@ extern ShutdownPhase sCurrentShutdownPhase;
 
 template <class SmartPtr>
 inline void ClearOnShutdown(
-    SmartPtr* aPtr, ShutdownPhase aPhase = ShutdownPhase::XPCOMShutdownFinal) {
+    SmartPtr* aPtr, ShutdownPhase aPhase = ShutdownPhase::ShutdownFinal) {
   using namespace ClearOnShutdown_Internal;
 
   MOZ_ASSERT(NS_IsMainThread());
@@ -119,9 +118,8 @@ inline void ClearOnShutdown(
 }
 
 template <typename CallableT>
-inline void RunOnShutdown(
-    CallableT&& aCallable,
-    ShutdownPhase aPhase = ShutdownPhase::XPCOMShutdownFinal) {
+inline void RunOnShutdown(CallableT&& aCallable,
+                          ShutdownPhase aPhase = ShutdownPhase::ShutdownFinal) {
   using namespace ClearOnShutdown_Internal;
 
   MOZ_ASSERT(NS_IsMainThread());

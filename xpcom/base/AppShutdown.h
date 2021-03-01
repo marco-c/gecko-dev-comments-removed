@@ -7,7 +7,6 @@
 #ifndef AppShutdown_h
 #define AppShutdown_h
 
-#include <type_traits>
 #include "ShutdownPhase.h"
 
 namespace mozilla {
@@ -20,6 +19,7 @@ enum class AppShutdownMode {
 class AppShutdown {
  public:
   static bool IsShuttingDown();
+
   
 
 
@@ -51,6 +51,12 @@ class AppShutdown {
 
 
 
+  static void MaybeFastShutdown(ShutdownPhase aPhase);
+
+  
+
+
+
 
 
 
@@ -63,25 +69,6 @@ class AppShutdown {
 
 
   static bool IsRestarting();
-
-  
-
-
-
-  static void AdvanceShutdownPhase(
-      ShutdownPhase aPhase, const char16_t* aNotificationData = nullptr,
-      nsCOMPtr<nsISupports> aNotificationSubject = nullptr);
-
-  
-
-
-
-  static void MaybeFastShutdown(ShutdownPhase aPhase);
-
-  
-
-
-  static const char* GetObserverKey(ShutdownPhase aPhase);
 };
 
 }  

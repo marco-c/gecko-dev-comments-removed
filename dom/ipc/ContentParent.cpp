@@ -2839,7 +2839,7 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   
   
   
-  if (PastShutdownPhase(ShutdownPhase::XPCOMShutdown)) {
+  if (PastShutdownPhase(ShutdownPhase::Shutdown)) {
     return false;
   }
 

@@ -400,7 +400,7 @@ void ProfilerParentTracker::EnsureInstance() {
   
   
   
-  ClearOnShutdown(&sInstance, ShutdownPhase::XPCOMShutdownThreads);
+  ClearOnShutdown(&sInstance, ShutdownPhase::ShutdownThreads);
 }
 
 

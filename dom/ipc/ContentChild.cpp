@@ -575,7 +575,7 @@ ContentChild::ContentChild()
   
   if (!sShutdownCanary) {
     sShutdownCanary = new ShutdownCanary();
-    ClearOnShutdown(&sShutdownCanary, ShutdownPhase::XPCOMShutdown);
+    ClearOnShutdown(&sShutdownCanary, ShutdownPhase::Shutdown);
   }
 }
 

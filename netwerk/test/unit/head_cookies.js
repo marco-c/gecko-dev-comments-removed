@@ -100,7 +100,7 @@ function do_close_profile(generator) {
 
   
   let service = Services.cookies.QueryInterface(Ci.nsIObserver);
-  service.observe(null, "profile-before-change", null);
+  service.observe(null, "profile-before-change", "shutdown-persist");
 }
 
 function _promise_observer(topic) {
@@ -131,7 +131,7 @@ function promise_close_profile() {
 
   
   let service = Services.cookies.QueryInterface(Ci.nsIObserver);
-  service.observe(null, "profile-before-change", null);
+  service.observe(null, "profile-before-change", "shutdown-persist");
 
   return promise;
 }

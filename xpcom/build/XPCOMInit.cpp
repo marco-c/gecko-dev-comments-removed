@@ -598,29 +598,45 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
       return NS_ERROR_UNEXPECTED;
     }
 
-    mozilla::AppShutdown::AdvanceShutdownPhase(
-        mozilla::ShutdownPhase::XPCOMWillShutdown);
+    RefPtr<nsObserverService> observerService;
+    CallGetService("@mozilla.org/observer-service;1",
+                   (nsObserverService**)getter_AddRefs(observerService));
 
-    nsCOMPtr<nsIServiceManager> mgr;
-    rv = NS_GetServiceManager(getter_AddRefs(mgr));
-    if (NS_SUCCEEDED(rv)) {
-      
-      mozilla::AppShutdown::AdvanceShutdownPhase(
-          mozilla::ShutdownPhase::XPCOMShutdown, nullptr,
-          do_QueryInterface(mgr));
-    }
+    if (observerService) {
+      mozilla::KillClearOnShutdown(ShutdownPhase::WillShutdown);
+      mozilla::AppShutdown::MaybeFastShutdown(
+          mozilla::ShutdownPhase::WillShutdown);
+      observerService->NotifyObservers(
+          nullptr, NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID, nullptr);
+
+      nsCOMPtr<nsIServiceManager> mgr;
+      rv = NS_GetServiceManager(getter_AddRefs(mgr));
+      if (NS_SUCCEEDED(rv)) {
+        mozilla::KillClearOnShutdown(ShutdownPhase::Shutdown);
+        mozilla::AppShutdown::MaybeFastShutdown(
+            mozilla::ShutdownPhase::Shutdown);
+        observerService->NotifyObservers(mgr, NS_XPCOM_SHUTDOWN_OBSERVER_ID,
+                                         nullptr);
+      }
 
 #ifndef ANDROID
-    mozilla::XPCOMShutdownNotified();
+      mozilla::XPCOMShutdownNotified();
 #endif
+    }
 
     
     
     NS_ProcessPendingEvents(thread);
     gfxPlatform::ShutdownLayersIPC();
 
-    mozilla::AppShutdown::AdvanceShutdownPhase(
-        mozilla::ShutdownPhase::XPCOMShutdownThreads);
+    if (observerService) {
+      mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownThreads);
+      mozilla::AppShutdown::MaybeFastShutdown(
+          mozilla::ShutdownPhase::ShutdownThreads);
+      observerService->NotifyObservers(
+          nullptr, NS_XPCOM_SHUTDOWN_THREADS_OBSERVER_ID, nullptr);
+    }
+
     gXPCOMThreadsShutDown = true;
     NS_ProcessPendingEvents(thread);
 
@@ -630,13 +646,8 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
     NS_ProcessPendingEvents(thread);
 
-    mozilla::KillClearOnShutdown(ShutdownPhase::XPCOMShutdownLoaders);
-    
-
-    RefPtr<nsObserverService> observerService;
-    CallGetService("@mozilla.org/observer-service;1",
-                   (nsObserverService**)getter_AddRefs(observerService));
     if (observerService) {
+      mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownLoaders);
       observerService->Shutdown();
     }
 
@@ -644,7 +655,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     
     
     
-    mozilla::KillClearOnShutdown(ShutdownPhase::XPCOMShutdownFinal);
+    mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownFinal);
 
     
     
@@ -664,7 +675,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   AbstractThread::ShutdownMainThread();
 
   mozilla::AppShutdown::MaybeFastShutdown(
-      mozilla::ShutdownPhase::XPCOMShutdownFinal);
+      mozilla::ShutdownPhase::ShutdownFinal);
 
   
   
@@ -707,9 +718,9 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
   
   
-  mozilla::KillClearOnShutdown(ShutdownPhase::CCPostLastCycleCollection);
+  mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownPostLastCycleCollection);
   mozilla::AppShutdown::MaybeFastShutdown(
-      mozilla::ShutdownPhase::CCPostLastCycleCollection);
+      mozilla::ShutdownPhase::ShutdownPostLastCycleCollection);
 
   mozilla::scache::StartupCache::DeleteSingleton();
 
