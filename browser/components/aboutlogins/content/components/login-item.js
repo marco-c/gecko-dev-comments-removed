@@ -422,8 +422,12 @@ export default class LoginItem extends HTMLElement {
               detail: propertyToCopy,
             })
           );
-          otherCopyButton.disabled = false;
-          delete otherCopyButton.dataset.copied;
+          
+          
+          if (this._login.username) {
+            otherCopyButton.disabled = false;
+            delete otherCopyButton.dataset.copied;
+          }
           clearTimeout(this._copyUsernameTimeoutId);
           clearTimeout(this._copyPasswordTimeoutId);
           let timeoutId = setTimeout(() => {
