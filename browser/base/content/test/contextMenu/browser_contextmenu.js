@@ -1071,12 +1071,14 @@ add_task(async function test_textarea() {
 
 
 
+
 });
 
 add_task(async function test_textarea_spellcheck() {
   todo(false, "spell checker tests are failing, bug 1246296");
 
   
+
 
 
 
@@ -1144,12 +1146,14 @@ add_task(async function test_undo_add_to_dictionary() {
 
 
 
+
 });
 
 add_task(async function test_contenteditable() {
   todo(false, "spell checker tests are failing, bug 1246296");
 
   
+
 
 
 
@@ -1642,12 +1646,14 @@ add_task(async function test_select_input_text() {
 
 
 
+
 });
 
 add_task(async function test_select_input_text_password() {
   todo(false, "spell checker tests are failing, bug 1246296");
 
   
+
 
 
 
@@ -1770,6 +1776,7 @@ add_task(async function test_input_spell_false() {
   todo(false, "spell checker tests are failing, bug 1246296");
 
   
+
 
 
 
