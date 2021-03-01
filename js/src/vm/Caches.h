@@ -102,11 +102,7 @@ class NewObjectCache {
 
 
 
-
-
-
-
-    gc::Cell* key;
+    JSObject* key;
 
     
     gc::AllocKind kind;
@@ -147,11 +143,6 @@ class NewObjectCache {
   inline bool lookupGlobal(const JSClass* clasp, js::GlobalObject* global,
                            gc::AllocKind kind, EntryIndex* pentry);
 
-  bool lookupGroup(js::ObjectGroup* group, gc::AllocKind kind,
-                   EntryIndex* pentry) {
-    return lookup(group->clasp(), group, kind, pentry);
-  }
-
   
 
 
@@ -168,15 +159,8 @@ class NewObjectCache {
                          js::GlobalObject* global, gc::AllocKind kind,
                          NativeObject* obj);
 
-  void fillGroup(EntryIndex entry, js::ObjectGroup* group, gc::AllocKind kind,
-                 NativeObject* obj) {
-    MOZ_ASSERT(obj->group() == group);
-    return fill(entry, group->clasp(), group, kind, obj);
-  }
-
   
-  void invalidateEntriesForShape(JSContext* cx, HandleShape shape,
-                                 HandleObject proto);
+  void invalidateEntriesForShape(Shape* shape, JSObject* proto);
 
  private:
   EntryIndex makeIndex(const JSClass* clasp, gc::Cell* key,
@@ -185,7 +169,7 @@ class NewObjectCache {
     return hash % std::size(entries);
   }
 
-  bool lookup(const JSClass* clasp, gc::Cell* key, gc::AllocKind kind,
+  bool lookup(const JSClass* clasp, JSObject* key, gc::AllocKind kind,
               EntryIndex* pentry) {
     *pentry = makeIndex(clasp, key, kind);
     Entry* entry = &entries[*pentry];
@@ -195,7 +179,7 @@ class NewObjectCache {
     return entry->clasp == clasp && entry->key == key;
   }
 
-  void fill(EntryIndex entry_, const JSClass* clasp, gc::Cell* key,
+  void fill(EntryIndex entry_, const JSClass* clasp, JSObject* key,
             gc::AllocKind kind, NativeObject* obj) {
     MOZ_ASSERT(unsigned(entry_) < std::size(entries));
     MOZ_ASSERT(entry_ == makeIndex(clasp, key, kind));
