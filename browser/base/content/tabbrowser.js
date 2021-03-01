@@ -64,6 +64,12 @@
       XPCOMUtils.defineLazyModuleGetters(this, {
         E10SUtils: "resource://gre/modules/E10SUtils.jsm",
       });
+      XPCOMUtils.defineLazyServiceGetters(this, {
+        MacSharingService: [
+          "@mozilla.org/widget/macsharingservice;1",
+          "nsIMacSharingService",
+        ],
+      });
 
       
       
@@ -6734,12 +6740,20 @@ var TabContextMenu = {
     document.getElementById("context_reopenInContainer").hidden =
       !Services.prefs.getBoolPref("privacy.userContext.enabled", false) ||
       PrivateBrowsingUtils.isWindowPrivate(window);
+
+    this.updateShareURLMenuItem();
   },
+
   handleEvent(aEvent) {
     switch (aEvent.type) {
+      case "command":
+        this.onShareURLCommand(aEvent);
+        break;
       case "popuphiding":
-        gBrowser.removeEventListener("TabAttrModified", this);
-        aEvent.target.removeEventListener("popuphiding", this);
+        this.onPopupHiding(aEvent);
+        break;
+      case "popupshowing":
+        this.onPopupShowing(aEvent);
         break;
       case "TabAttrModified":
         let tab = aEvent.target;
@@ -6749,6 +6763,30 @@ var TabContextMenu = {
         break;
     }
   },
+
+  onPopupHiding(event) {
+    
+    
+    
+    if (event.target.id === "tabContextMenu") {
+      let menupopup = document.getElementById("context_shareTabURL_popup");
+      menupopup?.removeAttribute("data-initialized");
+    }
+
+    gBrowser.removeEventListener("TabAttrModified", this);
+    event.target.removeEventListener("popuphiding", this);
+  },
+
+  onPopupShowing(event) {
+    let menupopup = document.getElementById("context_shareTabURL_popup");
+    if (
+      event.target === menupopup &&
+      !menupopup.hasAttribute("data-initialized")
+    ) {
+      this.initializeShareURLPopup();
+    }
+  },
+
   createReopenInContainerMenu(event) {
     createUserContextMenu(event, {
       isContextMenu: true,
@@ -6834,6 +6872,136 @@ var TabContextMenu = {
       gBrowser.removeMultiSelectedTabs();
     } else {
       gBrowser.removeTab(this.contextTab, { animate: true });
+    }
+  },
+
+  updateShareURLMenuItem() {
+    
+    if (!gProton || AppConstants.platform == "linux") {
+      return;
+    }
+
+    let shareURL = document.getElementById("context_shareTabURL");
+
+    if (!shareURL) {
+      shareURL = this.createShareURLMenuItem();
+    }
+
+    
+    let browser = this.contextTab.linkedBrowser;
+    shareURL.hidden = !BrowserUtils.isShareableURL(browser.currentURI);
+  },
+
+  
+
+
+  createShareURLMenuItem() {
+    let menu = document.getElementById("tabContextMenu");
+    let shareURL = null;
+
+    if (AppConstants.platform == "win") {
+      shareURL = this.buildShareURLItem();
+    } else if (AppConstants.platform == "macosx") {
+      shareURL = this.buildShareURLMenu();
+    }
+
+    let sendTabContext = document.getElementById("context_sendTabToDevice");
+    menu.insertBefore(shareURL, sendTabContext.nextSibling);
+    return shareURL;
+  },
+
+  
+
+
+  buildShareURLItem() {
+    let shareURLMenuItem = document.createXULElement("menuitem");
+    shareURLMenuItem.setAttribute("id", "context_shareTabURL");
+    document.l10n.setAttributes(shareURLMenuItem, "tab-context-share-url");
+
+    shareURLMenuItem.addEventListener("command", this);
+    return shareURLMenuItem;
+  },
+
+  
+
+
+  buildShareURLMenu() {
+    let menu = document.createXULElement("menu");
+    menu.id = "context_shareTabURL";
+    document.l10n.setAttributes(menu, "tab-context-share-url");
+
+    let menuPopup = document.createXULElement("menupopup");
+    menuPopup.id = "context_shareTabURL_popup";
+    menuPopup.addEventListener("popupshowing", this);
+    menu.appendChild(menuPopup);
+
+    return menu;
+  },
+
+  
+
+
+  initializeShareURLPopup() {
+    if (AppConstants.platform !== "macosx") {
+      return;
+    }
+
+    let menuPopup = document.getElementById("context_shareTabURL_popup");
+
+    
+    while (menuPopup.firstChild) {
+      menuPopup.firstChild.remove();
+    }
+
+    let url = this.contextTab.linkedBrowser.currentURI;
+    let sharingService = gBrowser.MacSharingService;
+    let currentURI = gURLBar.makeURIReadable(url).displaySpec;
+    let services = sharingService.getSharingProviders(currentURI);
+
+    services.forEach(share => {
+      let item = document.createXULElement("menuitem");
+      item.classList.add("menuitem-iconic");
+      item.setAttribute("label", share.menuItemTitle);
+      item.setAttribute("share-name", share.name);
+      item.setAttribute("image", share.image);
+      menuPopup.appendChild(item);
+    });
+    let moreItem = document.createXULElement("menuitem");
+    document.l10n.setAttributes(moreItem, "tab-context-share-more");
+    moreItem.classList.add("menuitem-iconic", "share-more-button");
+    menuPopup.appendChild(moreItem);
+
+    menuPopup.addEventListener("command", this);
+    menuPopup.setAttribute("data-initialized", true);
+  },
+
+  onShareURLCommand(event) {
+    
+    
+    
+    if (
+      event.target.parentNode.id !== "context_shareTabURL_popup" &&
+      event.target.id !== "context_shareTabURL"
+    ) {
+      return;
+    }
+
+    let browser = this.contextTab.linkedBrowser;
+    let currentURI = gURLBar.makeURIReadable(browser.currentURI).displaySpec;
+
+    if (AppConstants.platform == "win") {
+      WindowsUIUtils.shareUrl(currentURI, browser.contentTitle);
+      return;
+    }
+
+    
+    let sharingService = gBrowser.MacSharingService;
+    let shareName = event.target.getAttribute("share-name");
+
+    if (shareName) {
+      sharingService.shareUrl(shareName, currentURI, browser.contentTitle);
+    } else if (event.target.classList.contains("share-more-button")) {
+      sharingService.openSharingPreferences();
     }
   },
 };
