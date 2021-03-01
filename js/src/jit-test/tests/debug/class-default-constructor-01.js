@@ -8,7 +8,6 @@ var gDO = dbg.addDebuggee(g);
 
 
 
-
 gDO.executeInGlobal(`   // 1729
   class X {};           // 1730
                         // 1731

@@ -1,10 +1,10 @@
 
 
 const source = `
-  /* JSOp::ClassConstructor */ class A {
+  /* GeneralParser::synthesizeConstructor */ class A {
   }
 
-  /* JSOp::DerivedConstructor */ class B extends A {
+  /* GeneralParser::synthesizeConstructor (derived) */ class B extends A {
   }
 
   /* GeneralParser::synthesizeConstructor */ class C {
