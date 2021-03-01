@@ -1156,8 +1156,7 @@ bool js::NativeLookupOwnProperty(
     JSContext* cx, typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
     typename MaybeRooted<jsid, allowGC>::HandleType id,
     typename MaybeRooted<PropertyResult, allowGC>::MutableHandleType propp) {
-  bool done;
-  return LookupOwnPropertyInline<allowGC>(cx, obj, id, propp, &done);
+  return LookupOwnPropertyInline<allowGC>(cx, obj, id, propp);
 }
 
 template bool js::NativeLookupOwnProperty<CanGC>(
@@ -1987,8 +1986,7 @@ bool js::NativeHasProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
   
   for (;;) {
     
-    bool done;
-    if (!LookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop, &done)) {
+    if (!LookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop)) {
       return false;
     }
 
@@ -1999,18 +1997,16 @@ bool js::NativeHasProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    JSObject* proto = done ? nullptr : pobj->staticPrototype();
+    JSObject* proto = pobj->staticPrototype();
 
     
-    if (!proto) {
+    
+    
+    
+    
+    
+    
+    if (!proto || prop.shouldIgnoreProtoChain()) {
       *foundp = false;
       return true;
     }
@@ -2261,8 +2257,7 @@ static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
   
   for (;;) {
     
-    bool done;
-    if (!LookupOwnPropertyInline<allowGC>(cx, pobj, id, &prop, &done)) {
+    if (!LookupOwnPropertyInline<allowGC>(cx, pobj, id, &prop)) {
       return false;
     }
 
@@ -2284,18 +2279,11 @@ static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    JSObject* proto = done ? nullptr : pobj->staticPrototype();
+    JSObject* proto = pobj->staticPrototype();
 
     
     
-    if (!proto) {
+    if (!proto || prop.shouldIgnoreProtoChain()) {
       return GetNonexistentProperty(cx, id, nameLookup, vp);
     }
 
@@ -2653,8 +2641,7 @@ bool js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
   
   for (;;) {
     
-    bool done;
-    if (!LookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop, &done)) {
+    if (!LookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop)) {
       return false;
     }
 
@@ -2670,9 +2657,8 @@ bool js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
     
     
     
-    
-    JSObject* proto = done ? nullptr : pobj->staticPrototype();
-    if (!proto) {
+    JSObject* proto = pobj->staticPrototype();
+    if (!proto || prop.shouldIgnoreProtoChain()) {
       
       return SetNonexistentProperty<IsQualified>(cx, obj, id, v, receiver,
                                                  result);

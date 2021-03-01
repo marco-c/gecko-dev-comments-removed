@@ -614,19 +614,16 @@ inline bool NativeObject::denseElementsMaybeInIteration() {
 
 
 
-
-static MOZ_ALWAYS_INLINE bool CallResolveOp(JSContext* cx,
-                                            HandleNativeObject obj, HandleId id,
-                                            MutableHandle<PropertyResult> propp,
-                                            bool* recursedp) {
+static MOZ_ALWAYS_INLINE bool CallResolveOp(
+    JSContext* cx, HandleNativeObject obj, HandleId id,
+    MutableHandle<PropertyResult> propp) {
   
   AutoResolving resolving(cx, obj, id);
   if (resolving.alreadyStarted()) {
     
-    *recursedp = true;
+    propp.setRecursiveResolve();
     return true;
   }
-  *recursedp = false;
 
   bool resolved = false;
   AutoRealm ar(cx, obj);
@@ -667,14 +664,12 @@ template <AllowGC allowGC>
 static MOZ_ALWAYS_INLINE bool LookupOwnPropertyInline(
     JSContext* cx, typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
     typename MaybeRooted<jsid, allowGC>::HandleType id,
-    typename MaybeRooted<PropertyResult, allowGC>::MutableHandleType propp,
-    bool* donep) {
+    typename MaybeRooted<PropertyResult, allowGC>::MutableHandleType propp) {
   
   if (JSID_IS_INT(id)) {
     uint32_t index = JSID_TO_INT(id);
     if (obj->containsDenseElement(index)) {
       propp.setDenseElement(index);
-      *donep = true;
       return true;
     }
   }
@@ -696,9 +691,8 @@ static MOZ_ALWAYS_INLINE bool LookupOwnPropertyInline(
       if (idx < obj->template as<TypedArrayObject>().length().get()) {
         propp.setTypedArrayElement(idx);
       } else {
-        propp.setNotFound();
+        propp.setTypedArrayOutOfRange();
       }
-      *donep = true;
       return true;
     }
   }
@@ -709,7 +703,6 @@ static MOZ_ALWAYS_INLINE bool LookupOwnPropertyInline(
   
   if (Shape* shape = obj->lastProperty()->search(cx, id)) {
     propp.setNativeProperty(shape);
-    *donep = true;
     return true;
   }
 
@@ -719,26 +712,11 @@ static MOZ_ALWAYS_INLINE bool LookupOwnPropertyInline(
     if constexpr (!allowGC) {
       return false;
     } else {
-      bool recursed;
-      if (!CallResolveOp(cx, obj, id, propp, &recursed)) {
-        return false;
-      }
-
-      if (recursed) {
-        propp.setNotFound();
-        *donep = true;
-        return true;
-      }
-
-      if (propp.isFound()) {
-        *donep = true;
-        return true;
-      }
+      return CallResolveOp(cx, obj, id, propp);
     }
   }
 
   propp.setNotFound();
-  *donep = false;
   return true;
 }
 
@@ -768,7 +746,7 @@ static MOZ_ALWAYS_INLINE bool LookupOwnPropertyInline(
       if (index.value() < obj->as<TypedArrayObject>().length().get()) {
         result.setTypedArrayElement(index.value());
       } else {
-        result.setNotFound();
+        result.setTypedArrayOutOfRange();
       }
       return true;
     }
@@ -793,16 +771,15 @@ static MOZ_ALWAYS_INLINE bool LookupPropertyInline(
   typename MaybeRooted<NativeObject*, allowGC>::RootType current(cx, obj);
 
   while (true) {
-    bool done;
-    if (!LookupOwnPropertyInline<allowGC>(cx, current, id, propp, &done)) {
+    if (!LookupOwnPropertyInline<allowGC>(cx, current, id, propp)) {
       return false;
     }
-    if (done) {
-      if (propp.isFound()) {
-        objp.set(current);
-      } else {
-        objp.set(nullptr);
-      }
+    if (propp.isFound()) {
+      objp.set(current);
+      return true;
+    }
+    if (propp.shouldIgnoreProtoChain()) {
+      objp.set(nullptr);
       return true;
     }
 
