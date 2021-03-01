@@ -175,8 +175,6 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   
   bool mTimerActive;
 
-  nsTArray<uint8_t> mPacketToSend;
-
   RefPtr<HttpConnectionUDP> mUdpConn;
 
   
