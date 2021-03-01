@@ -693,14 +693,14 @@ HashNumber ICScript::hash() {
     if (!stub->isFallback()) {
       stub = stub->toCacheIRStub()->next();
       while (!stub->isFallback()) {
-        h = mozilla::AddToHash(h, stub->enteredCount());
+        h = mozilla::AddToHash(h, stub->enteredCount() == 0);
         stub = stub->toCacheIRStub()->next();
       }
     }
 
     
     MOZ_ASSERT(stub->isFallback());
-    h = mozilla::AddToHash(h, stub->enteredCount());
+    h = mozilla::AddToHash(h, stub->enteredCount() == 0);
   }
 
   if (inlinedChildren_) {

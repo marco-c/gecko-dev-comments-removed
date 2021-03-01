@@ -844,6 +844,7 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
   
   
   
+  
   for (ICStub* next = stub->next(); next; next = next->maybeNext()) {
     if (next->enteredCount() == 0) {
       continue;
