@@ -720,7 +720,7 @@ impl SwCompositeThread {
         }
     }
 
-    fn start_compositing(&self) {
+    fn prepare_for_composites(&self) {
         
         
         
@@ -1693,7 +1693,8 @@ impl Compositor for SwCompositor {
 
             self.locked_framebuffer = self.gl.lock_framebuffer(0);
 
-            composite_thread.start_compositing();
+            composite_thread.prepare_for_composites();
+
             
             let mut lock = composite_thread.lock();
             for &(ref id, ref transform, ref clip_rect, filter) in &self.frame_surfaces {
@@ -1761,7 +1762,7 @@ impl Compositor for SwCompositor {
                 
                 
                 
-                composite_thread.start_compositing();
+                composite_thread.prepare_for_composites();
                 {
                     let mut lock = composite_thread.lock();
                     for &(ref id, ref transform, ref clip_rect, filter) in &self.late_surfaces {
