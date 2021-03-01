@@ -553,10 +553,8 @@ class FrameLayerBuilder : public layers::LayerUserData {
 
 
 
-  static bool HasRetainedDataFor(nsIFrame* aFrame, uint32_t aDisplayItemKey);
-
-  typedef void (*DisplayItemDataCallback)(nsIFrame* aFrame,
-                                          DisplayItemData* aItem);
+  static bool HasRetainedDataFor(const nsIFrame* aFrame,
+                                 uint32_t aDisplayItemKey);
 
   
 
@@ -567,8 +565,7 @@ class FrameLayerBuilder : public layers::LayerUserData {
 
   static gfxSize GetPaintedLayerScaleForFrame(nsIFrame* aFrame);
 
-  static void RemoveFrameFromLayerManager(
-      const nsIFrame* aFrame, SmallPointerArray<DisplayItemData>& aArray);
+  static void RemoveFrameFromLayerManager(nsIFrame* aFrame);
 
   
 
