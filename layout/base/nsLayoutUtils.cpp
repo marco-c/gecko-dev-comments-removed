@@ -4252,9 +4252,10 @@ static bool GetAbsoluteCoord(const LengthPercentageLike& aStyle,
   return true;
 }
 
-static nscoord GetBSizeTakenByBoxSizing(StyleBoxSizing aBoxSizing,
-                                        nsIFrame* aFrame, bool aHorizontalAxis,
-                                        bool aIgnorePadding);
+static nscoord GetBSizePercentBasisAdjustment(StyleBoxSizing aBoxSizing,
+                                              nsIFrame* aFrame,
+                                              bool aHorizontalAxis,
+                                              bool aResolvesAgainstPaddingBox);
 
 static bool GetPercentBSize(const LengthPercentage& aStyle, nsIFrame* aFrame,
                             bool aHorizontalAxis, nscoord& aResult);
@@ -4355,12 +4356,11 @@ static bool GetPercentBSize(const LengthPercentage& aStyle, nsIFrame* aFrame,
   
   
   
-  const bool ignorePadding = aFrame->IsAbsolutelyPositioned();
-  nscoord bSizeTakenByBoxSizing = GetBSizeTakenByBoxSizing(
-      pos->mBoxSizing, f, aHorizontalAxis, ignorePadding);
-  h = std::max(0, h - bSizeTakenByBoxSizing);
+  const bool resolvesAgainstPaddingBox = aFrame->IsAbsolutelyPositioned();
+  h += GetBSizePercentBasisAdjustment(pos->mBoxSizing, f, aHorizontalAxis,
+                                      resolvesAgainstPaddingBox);
 
-  aResult = std::max(aStyle.Resolve(h), 0);
+  aResult = std::max(aStyle.Resolve(std::max(h, 0)), 0);
   return true;
 }
 
@@ -4413,38 +4413,37 @@ static bool GetDefiniteSize(const SizeOrMaxSize& aStyle, nsIFrame* aFrame,
 
 
 
-static nscoord GetBSizeTakenByBoxSizing(StyleBoxSizing aBoxSizing,
-                                        nsIFrame* aFrame, bool aHorizontalAxis,
-                                        bool aIgnorePadding) {
-  nscoord bSizeTakenByBoxSizing = 0;
+static nscoord GetBSizePercentBasisAdjustment(StyleBoxSizing aBoxSizing,
+                                              nsIFrame* aFrame,
+                                              bool aHorizontalAxis,
+                                              bool aResolvesAgainstPaddingBox) {
+  nscoord adjustment = 0;
   if (aBoxSizing == StyleBoxSizing::Border) {
-    const nsStyleBorder* styleBorder = aFrame->StyleBorder();
-    bSizeTakenByBoxSizing += aHorizontalAxis
-                                 ? styleBorder->GetComputedBorder().TopBottom()
-                                 : styleBorder->GetComputedBorder().LeftRight();
-    if (!aIgnorePadding) {
-      const auto& stylePadding = aFrame->StylePadding()->mPadding;
-      const LengthPercentage& paddingStart =
-          stylePadding.Get(aHorizontalAxis ? eSideTop : eSideLeft);
-      const LengthPercentage& paddingEnd =
-          stylePadding.Get(aHorizontalAxis ? eSideBottom : eSideRight);
-      nscoord pad;
-      
-      
-      
-      
-      
-      if (GetAbsoluteCoord(paddingStart, pad) ||
-          GetPercentBSize(paddingStart, aFrame, aHorizontalAxis, pad)) {
-        bSizeTakenByBoxSizing += pad;
-      }
-      if (GetAbsoluteCoord(paddingEnd, pad) ||
-          GetPercentBSize(paddingEnd, aFrame, aHorizontalAxis, pad)) {
-        bSizeTakenByBoxSizing += pad;
-      }
+    const auto& border = aFrame->StyleBorder()->GetComputedBorder();
+    adjustment -= aHorizontalAxis ? border.TopBottom() : border.LeftRight();
+  }
+  if ((aBoxSizing == StyleBoxSizing::Border) == !aResolvesAgainstPaddingBox) {
+    const auto& stylePadding = aFrame->StylePadding()->mPadding;
+    const LengthPercentage& paddingStart =
+        stylePadding.Get(aHorizontalAxis ? eSideTop : eSideLeft);
+    const LengthPercentage& paddingEnd =
+        stylePadding.Get(aHorizontalAxis ? eSideBottom : eSideRight);
+    nscoord pad;
+    
+    
+    
+    
+    
+    if (GetAbsoluteCoord(paddingStart, pad) ||
+        GetPercentBSize(paddingStart, aFrame, aHorizontalAxis, pad)) {
+      adjustment += aResolvesAgainstPaddingBox ? pad : -pad;
+    }
+    if (GetAbsoluteCoord(paddingEnd, pad) ||
+        GetPercentBSize(paddingEnd, aFrame, aHorizontalAxis, pad)) {
+      adjustment += aResolvesAgainstPaddingBox ? pad : -pad;
     }
   }
-  return bSizeTakenByBoxSizing;
+  return adjustment;
 }
 
 
