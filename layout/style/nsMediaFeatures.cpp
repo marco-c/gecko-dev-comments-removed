@@ -272,18 +272,17 @@ StylePrefersColorScheme Gecko_MediaFeatures_PrefersColorScheme(
   return aDocument->PrefersColorScheme();
 }
 
-StyleContrastPref Gecko_MediaFeatures_PrefersContrast(
-    const Document* aDocument, const bool aForcedColors) {
+StylePrefersContrast Gecko_MediaFeatures_PrefersContrast(
+    const Document* aDocument) {
   if (nsContentUtils::ShouldResistFingerprinting(aDocument)) {
-    return StyleContrastPref::NoPreference;
+    return StylePrefersContrast::NoPreference;
   }
-  
   
   
   if (!!LookAndFeel::GetInt(LookAndFeel::IntID::UseAccessibilityTheme, 0)) {
-    return StyleContrastPref::More;
+    return StylePrefersContrast::More;
   }
-  return StyleContrastPref::NoPreference;
+  return StylePrefersContrast::NoPreference;
 }
 
 static PointerCapabilities GetPointerCapabilities(const Document* aDocument,

@@ -309,21 +309,7 @@ fn eval_prefers_reduced_motion(device: &Device, query_value: Option<PrefersReduc
 
 #[derive(Clone, Copy, Debug, FromPrimitive, PartialEq, Parse, ToCss)]
 #[repr(u8)]
-#[allow(missing_docs)]
-enum PrefersContrast {
-    More,
-    Less,
-    NoPreference,
-    Forced,
-}
-
-
-
-
-
-#[derive(Clone, Copy, Debug, FromPrimitive, PartialEq)]
-#[repr(u8)]
-pub enum ContrastPref {
+pub enum PrefersContrast {
     
     
     More,
@@ -335,19 +321,11 @@ pub enum ContrastPref {
 
 
 fn eval_prefers_contrast(device: &Device, query_value: Option<PrefersContrast>) -> bool {
-    let forced_colors = !device.use_document_colors();
-    let contrast_pref =
-        unsafe { bindings::Gecko_MediaFeatures_PrefersContrast(device.document(), forced_colors) };
-    if let Some(query_value) = query_value {
-        match query_value {
-            PrefersContrast::Forced => forced_colors,
-            PrefersContrast::More => contrast_pref == ContrastPref::More,
-            PrefersContrast::Less => contrast_pref == ContrastPref::Less,
-            PrefersContrast::NoPreference => contrast_pref == ContrastPref::NoPreference,
-        }
-    } else {
-        
-        forced_colors || (contrast_pref != ContrastPref::NoPreference)
+    let prefers_contrast =
+        unsafe { bindings::Gecko_MediaFeatures_PrefersContrast(device.document()) };
+    match query_value {
+        Some(v) => v == prefers_contrast,
+        None => prefers_contrast != PrefersContrast::NoPreference,
     }
 }
 
