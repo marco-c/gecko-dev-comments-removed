@@ -311,20 +311,12 @@ const DevToolsShim = {
 const webExtensionsMethods = [
   "createDescriptorForTab",
   "createWebExtensionInspectedWindowFront",
+  "getTargetForTab",
   "getTheme",
   "openBrowserConsole",
 ];
 
-
-
-
-const otherToolMethods = [
-  
-  
-  "showToolboxForTab",
-];
-
-for (const method of [...webExtensionsMethods, ...otherToolMethods]) {
+for (const method of webExtensionsMethods) {
   DevToolsShim[method] = function() {
     if (!this.isEnabled()) {
       throw new Error(

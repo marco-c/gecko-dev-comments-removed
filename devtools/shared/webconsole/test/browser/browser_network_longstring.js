@@ -13,7 +13,7 @@ let ORIGINAL_LONG_STRING_LENGTH, ORIGINAL_LONG_STRING_INITIAL_LENGTH;
 add_task(async function() {
   const tab = await addTab(URL_ROOT + "network_requests_iframe.html");
 
-  const target = await createAndAttachTargetForTab(tab);
+  const target = await getTargetForTab(tab);
 
   
   const {

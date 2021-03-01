@@ -24,7 +24,9 @@ const TEST_URI = "data:text/html;charset=utf-8," + DOCUMENT_SRC;
 add_task(async function() {
   
   
-  const { inspector, tab, toolbox } = await openInspectorForURL(TEST_URI);
+  const { inspector, toolbox } = await openInspectorForURL(TEST_URI);
+
+  const target = await TargetFactory.forTab(gBrowser.selectedTab);
 
   const nodeFront = await getNodeFront("#foo", inspector);
   const container = getContainerForNodeFront(nodeFront, inspector);
@@ -48,7 +50,7 @@ add_task(async function() {
   );
   EventUtils.synthesizeMouse(debuggerIcon, 2, 2, {}, debuggerIcon.ownerGlobal);
 
-  await gDevTools.showToolboxForTab(tab, { toolId: "jsdebugger" });
+  await gDevTools.showToolbox(target, "jsdebugger");
   const dbg = toolbox.getPanel("jsdebugger");
 
   let source;

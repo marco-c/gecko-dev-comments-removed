@@ -6,7 +6,6 @@
 
 
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/helpers.js",
   this
@@ -170,7 +169,8 @@ function executeAndWaitForMessage(
 
 async function initWorkerDebugger(TAB_URL, WORKER_URL) {
   const tab = await addTab(TAB_URL);
-  const target = await createAndAttachTargetForTab(tab);
+  const target = await TargetFactory.forTab(tab);
+  await target.attach();
   const { client } = target;
 
   await createWorkerInTab(tab, WORKER_URL);

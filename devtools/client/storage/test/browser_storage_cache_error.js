@@ -19,7 +19,8 @@ add_task(async function() {
   
   
   
-  await openStoragePanel({ tab: win.gBrowser.selectedTab });
+  const target = await TargetFactory.forTab(win.gBrowser.selectedTab);
+  await openStoragePanel(null, target);
 
   const cacheItemId = ["Cache", "http://test2.example.org"];
 

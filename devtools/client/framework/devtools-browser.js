@@ -19,6 +19,12 @@ const { gDevTools } = require("devtools/client/framework/devtools");
 
 loader.lazyRequireGetter(
   this,
+  "TargetFactory",
+  "devtools/client/framework/target",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "Toolbox",
   "devtools/client/framework/toolbox",
   true
@@ -98,16 +104,17 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
 
   
   async toggleToolboxCommand(gBrowser, startTime) {
-    const toolbox = await gDevTools.getToolboxForTab(gBrowser.selectedTab);
+    const target = await TargetFactory.forTab(gBrowser.selectedTab);
+    const toolbox = gDevTools.getToolbox(target);
 
     
     
     
     const isDocked = toolbox && toolbox.hostType != Toolbox.HostType.WINDOW;
     if (isDocked) {
-      gDevTools.closeToolboxForTab(gBrowser.selectedTab);
+      gDevTools.closeToolbox(target);
     } else {
-      gDevTools.showToolboxForTab(gBrowser.selectedTab, { startTime });
+      gDevTools.showToolbox(target, null, null, null, startTime);
     }
   },
 
@@ -228,8 +235,8 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
       return;
     }
 
-    const tab = win.gBrowser.selectedTab;
-    const toolbox = await gDevTools.getToolboxForTab(tab);
+    const target = await TargetFactory.forTab(win.gBrowser.selectedTab);
+    const toolbox = gDevTools.getToolbox(target);
     const toolDefinition = gDevTools.getToolDefinition(toolId);
 
     if (
@@ -252,11 +259,15 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
       gDevTools.emit("select-tool-command", toolId);
     } else {
       gDevTools
-        .showToolboxForTab(tab, {
-          raise: !toolDefinition.preventRaisingOnKey,
-          startTime,
+        .showToolbox(
+          target,
           toolId,
-        })
+          null,
+          null,
+          startTime,
+          undefined,
+          !toolDefinition.preventRaisingOnKey
+        )
         .then(newToolbox => {
           newToolbox.fireCustomKey(toolId);
           gDevTools.emit("select-tool-command", toolId);
@@ -457,42 +468,42 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     );
 
     async function slowScriptDebugHandler(tab, callback) {
-      gDevTools
-        .showToolboxForTab(tab, { toolId: "jsdebugger" })
-        .then(toolbox => {
-          const threadFront = toolbox.threadFront;
+      const target = await TargetFactory.forTab(tab);
 
-          
-          
-          switch (threadFront.state) {
-            case "paused":
-              
+      gDevTools.showToolbox(target, "jsdebugger").then(toolbox => {
+        const threadFront = toolbox.threadFront;
+
+        
+        
+        switch (threadFront.state) {
+          case "paused":
+            
+            threadFront.resumeThenPause();
+            callback();
+            break;
+          case "attached":
+            
+            threadFront.interrupt().then(() => {
               threadFront.resumeThenPause();
               callback();
-              break;
-            case "attached":
-              
+            });
+            break;
+          case "resuming":
+            
+            threadFront.once("resumed", () => {
               threadFront.interrupt().then(() => {
                 threadFront.resumeThenPause();
                 callback();
               });
-              break;
-            case "resuming":
-              
-              threadFront.once("resumed", () => {
-                threadFront.interrupt().then(() => {
-                  threadFront.resumeThenPause();
-                  callback();
-                });
-              });
-              break;
-            default:
-              throw Error(
-                "invalid thread front state in slow script debug handler: " +
-                  threadFront.state
-              );
-          }
-        });
+            });
+            break;
+          default:
+            throw Error(
+              "invalid thread front state in slow script debug handler: " +
+                threadFront.state
+            );
+        }
+      });
     }
 
     debugService.activationHandler = function(window) {

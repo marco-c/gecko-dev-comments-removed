@@ -12,9 +12,8 @@ const MenuItem = require("devtools/client/framework/menu-item");
 add_task(async function() {
   info("Create a test tab and open the toolbox");
   const tab = await addTab(URL);
-  const toolbox = await gDevTools.showToolboxForTab(tab, {
-    toolId: "webconsole",
-  });
+  const target = await TargetFactory.forTab(tab);
+  const toolbox = await gDevTools.showToolbox(target, "webconsole");
 
   
   

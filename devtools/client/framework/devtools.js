@@ -13,8 +13,8 @@ const {
 
 loader.lazyRequireGetter(
   this,
-  "TabTargetFactory",
-  "devtools/client/framework/tab-target-factory",
+  "TargetFactory",
+  "devtools/client/framework/target",
   true
 );
 loader.lazyRequireGetter(
@@ -553,38 +553,6 @@ DevTools.prototype = {
 
 
 
-
-
-
-  async showToolboxForTab(
-    tab,
-    { toolId, hostType, startTime, raise, reason, hostOptions } = {}
-  ) {
-    const target = await TabTargetFactory.forTab(tab);
-    return this.showToolbox(
-      target,
-      toolId,
-      hostType,
-      hostOptions,
-      startTime,
-      reason,
-      raise
-    );
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
   logToolboxOpenTime(toolbox, startTime) {
     const toolId = toolbox.currentToolId || toolbox.defaultToolId;
     const delay = Cu.now() - startTime;
@@ -698,14 +666,12 @@ DevTools.prototype = {
 
 
 
-  async getToolboxForTab(tab) {
-    const target = await TabTargetFactory.forTab(tab);
-    return this._toolboxes.get(target);
-  },
 
-  async closeToolboxForTab(tab) {
-    const target = await TabTargetFactory.forTab(tab);
-    return this.closeToolbox(target);
+
+
+
+  getTargetForTab: function(tab) {
+    return TargetFactory.forTab(tab);
   },
 
   
@@ -716,7 +682,7 @@ DevTools.prototype = {
 
 
   createDescriptorForTab: function(tab) {
-    return TabTargetFactory.createDescriptorForTab(tab);
+    return TargetFactory.createDescriptorForTab(tab);
   },
 
   
@@ -753,11 +719,16 @@ DevTools.prototype = {
 
 
   async inspectNode(tab, domReference, startTime) {
-    const toolbox = await gDevTools.showToolboxForTab(tab, {
-      toolId: "inspector",
+    const target = await TargetFactory.forTab(tab);
+
+    const toolbox = await gDevTools.showToolbox(
+      target,
+      "inspector",
+      null,
+      null,
       startTime,
-      reason: "inspect_dom",
-    });
+      "inspect_dom"
+    );
     const inspector = toolbox.getCurrentPanel();
 
     const nodeFront = await inspector.inspectorFront.getNodeActorFromContentDomReference(
@@ -796,10 +767,15 @@ DevTools.prototype = {
 
 
   async inspectA11Y(tab, domReference, startTime) {
-    const toolbox = await gDevTools.showToolboxForTab(tab, {
-      toolId: "accessibility",
-      startTime,
-    });
+    const target = await TargetFactory.forTab(tab);
+
+    const toolbox = await gDevTools.showToolbox(
+      target,
+      "accessibility",
+      null,
+      null,
+      startTime
+    );
     const inspectorFront = await toolbox.target.getFront("inspector");
     const nodeFront = await inspectorFront.getNodeActorFromContentDomReference(
       domReference

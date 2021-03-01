@@ -5,6 +5,7 @@
 
 
 const { gDevTools } = require("devtools/client/framework/devtools");
+const { TargetFactory } = require("devtools/client/framework/target");
 const {
   addTab,
   removeTab,
@@ -27,11 +28,12 @@ exports.initPanelInNewTab = async function({ tool, url, win }, options = {}) {
 exports.initPanelInTab = async function({ tool, tab }) {
   dump(`Initializing a ${tool} panel.\n`);
 
+  const target = await TargetFactory.forTab(tab);
+
   
   
   
-  const toolbox = await gDevTools.showToolboxForTab(tab, { toolId: tool });
-  const target = toolbox.target;
+  const toolbox = await gDevTools.showToolbox(target, tool);
   
   await target.getFront("performance");
 

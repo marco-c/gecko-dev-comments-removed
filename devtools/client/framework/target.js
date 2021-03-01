@@ -22,7 +22,7 @@ const targets = new WeakMap();
 
 
 
-exports.TabTargetFactory = {
+exports.TargetFactory = {
   
 
 

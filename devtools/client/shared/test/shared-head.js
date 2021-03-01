@@ -48,9 +48,7 @@ const { loader, require } = ChromeUtils.import(
 );
 
 const { gDevTools } = require("devtools/client/framework/devtools");
-const {
-  TabTargetFactory,
-} = require("devtools/client/framework/tab-target-factory");
+const { TargetFactory } = require("devtools/client/framework/target");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 
@@ -457,8 +455,8 @@ var refreshTab = async function(tab = gBrowser.selectedTab) {
 
 
 async function navigateTo(uri, { isErrorPage = false } = {}) {
-  const toolbox = await gDevTools.getToolboxForTab(gBrowser.selectedTab);
-  const target = toolbox.target;
+  const target = await TargetFactory.forTab(gBrowser.selectedTab);
+  const toolbox = gDevTools.getToolbox(target);
 
   
   
@@ -519,23 +517,6 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
 
 
 
-
-
-
-
-
-
-async function createAndAttachTargetForTab(tab) {
-  info("Creating and attaching to a local tab target");
-  const target = await TabTargetFactory.forTab(tab);
-  await target.attach();
-  return target;
-}
-
-
-
-
-
 function waitForPanelReload(currentToolId, target, panel) {
   if (currentToolId == "inspector") {
     const inspector = panel;
@@ -586,8 +567,8 @@ var openInspectorForURL = async function(url, hostType) {
 };
 
 async function getActiveInspector() {
-  const toolbox = await gDevTools.getToolboxForTab(gBrowser.selectedTab);
-  return toolbox.getPanel("inspector");
+  const target = await TargetFactory.forTab(gBrowser.selectedTab);
+  return gDevTools.getToolbox(target).getPanel("inspector");
 }
 
 
@@ -829,9 +810,10 @@ var openToolboxForTab = async function(tab, toolId, hostType) {
   info("Opening the toolbox");
 
   let toolbox;
+  const target = await TargetFactory.forTab(tab);
 
   
-  toolbox = await gDevTools.getToolboxForTab(tab);
+  toolbox = gDevTools.getToolbox(target);
   if (toolbox) {
     if (!toolId || (toolId && toolbox.getPanel(toolId))) {
       info("Toolbox is already opened");
@@ -840,7 +822,7 @@ var openToolboxForTab = async function(tab, toolId, hostType) {
   }
 
   
-  toolbox = await gDevTools.showToolboxForTab(tab, { toolId, hostType });
+  toolbox = await gDevTools.showToolbox(target, toolId, hostType);
 
   
   await new Promise(resolve => waitForFocus(resolve, toolbox.win));
@@ -870,8 +852,11 @@ var openNewTabAndToolbox = async function(url, toolId, hostType) {
 
 
 var closeTabAndToolbox = async function(tab = gBrowser.selectedTab) {
-  if (TabTargetFactory.isKnownTab(tab)) {
-    await gDevTools.closeToolboxForTab(tab);
+  if (TargetFactory.isKnownTab(tab)) {
+    const target = await TargetFactory.forTab(tab);
+    if (target) {
+      await gDevTools.closeToolbox(target);
+    }
   }
 
   await removeTab(tab);
@@ -889,38 +874,6 @@ var closeToolboxAndTab = async function(toolbox) {
   await toolbox.destroy();
   await removeTab(gBrowser.selectedTab);
 };
-
-
-
-
-
-
-
-
-async function getSupportedToolIds(tab) {
-  info("Getting the entire list of tools supported in this tab");
-
-  let shouldDestroyToolbox = false;
-
-  
-  let toolbox = await gDevTools.getToolboxForTab(tab);
-  if (!toolbox) {
-    toolbox = await gDevTools.showToolboxForTab(tab);
-    shouldDestroyToolbox = true;
-  }
-
-  const toolIds = gDevTools
-    .getToolDefinitionArray()
-    .filter(def => def.isTargetSupported(toolbox.target))
-    .map(def => def.id);
-
-  if (shouldDestroyToolbox) {
-    
-    await toolbox.destroy();
-  }
-
-  return toolIds;
-}
 
 
 
@@ -1050,7 +1003,8 @@ function lookupPath(obj, path) {
 }
 
 var closeToolbox = async function() {
-  await gDevTools.closeToolboxForTab(gBrowser.selectedTab);
+  const target = await TargetFactory.forTab(gBrowser.selectedTab);
+  await gDevTools.closeToolbox(target);
 };
 
 

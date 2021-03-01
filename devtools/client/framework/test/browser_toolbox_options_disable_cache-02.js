@@ -29,19 +29,16 @@ add_task(async function() {
   await setDisableCacheCheckboxChecked(tabs[0], true);
 
   
-  tabs[2].toolbox = await gDevTools.showToolboxForTab(tabs[2].tab, {
-    toolId: "options",
-  });
+  tabs[2].toolbox = await gDevTools.showToolbox(tabs[2].target, "options");
   await checkCacheEnabled(tabs[2], false);
 
   
   await tabs[2].toolbox.destroy();
+  tabs[2].target = await TargetFactory.forTab(tabs[2].tab);
   await checkCacheEnabled(tabs[2], true);
 
   
-  tabs[2].toolbox = await gDevTools.showToolboxForTab(tabs[2].tab, {
-    toolId: "options",
-  });
+  tabs[2].toolbox = await gDevTools.showToolbox(tabs[2].target, "options");
   await checkCacheEnabled(tabs[2], false);
 
   

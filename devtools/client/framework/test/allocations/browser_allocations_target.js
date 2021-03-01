@@ -22,9 +22,7 @@ SimpleTest.requestCompleteLog();
 
 const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 
-const {
-  TabTargetFactory,
-} = require("devtools/client/framework/tab-target-factory");
+const { TargetFactory } = require("devtools/client/framework/target");
 
 async function doGC() {
   
@@ -48,7 +46,7 @@ async function addTab(url) {
 }
 
 async function testScript(tab) {
-  const target = await TabTargetFactory.forTab(tab);
+  const target = await TargetFactory.forTab(tab);
   await target.attach();
 
   
