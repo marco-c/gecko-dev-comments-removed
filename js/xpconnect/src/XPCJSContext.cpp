@@ -661,9 +661,12 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
     return true;
   }
 
-  
-  
-  if (runningContentJS && XRE_IsContentProcess()) {
+  int32_t limitWithoutImportantUserInput =
+      StaticPrefs::dom_max_script_run_time_without_important_user_input();
+  if (runningContentJS && XRE_IsContentProcess() && limit &&
+      limitWithoutImportantUserInput > limit &&
+      limitWithoutImportantUserInput >
+          self->mSlowScriptActualWait.ToSeconds()) {
     
     
     ContentChild* contentChild = ContentChild::GetSingleton();
