@@ -2030,6 +2030,15 @@ nscoord nsFlexContainerFrame::MeasureFlexItemContentBSize(
   availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
 
   StyleSizeOverrides sizeOverrides;
+  if (aFlexItem.IsStretched()) {
+    sizeOverrides.mStyleISize.emplace(aFlexItem.StyleCrossSize());
+    
+    
+    
+    
+    sizeOverrides.mAspectRatio.emplace(AspectRatio());
+    FLEX_LOGV(" Cross size override: %d", aFlexItem.CrossSize());
+  }
   sizeOverrides.mStyleBSize.emplace(StyleSize::Auto());
 
   ReflowInput childRIForMeasuringBSize(
@@ -2039,18 +2048,6 @@ nscoord nsFlexContainerFrame::MeasureFlexItemContentBSize(
   childRIForMeasuringBSize.mFlags.mApplyLineClamp =
       childRIForMeasuringBSize.mFlags.mInsideLineClamp || aHasLineClampEllipsis;
   childRIForMeasuringBSize.Init(PresContext());
-
-  if (aFlexItem.IsStretched()) {
-    
-    
-    
-    
-    
-    
-    childRIForMeasuringBSize.SetComputedISize(aFlexItem.CrossSize());
-    childRIForMeasuringBSize.SetIResize(true);
-    FLEX_LOGV(" Cross size override: %d", aFlexItem.CrossSize());
-  }
 
   
   
