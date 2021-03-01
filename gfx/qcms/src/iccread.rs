@@ -229,22 +229,18 @@ fn read_uInt16Number(mem: &mut MemSource, offset: usize) -> uInt16Number {
     read_u16(mem, offset)
 }
 pub fn write_u32(mem: &mut [u8], offset: usize, value: u32) {
-    if offset > mem.len() - std::mem::size_of_val(&value) {
-        panic!("OOB");
-    }
-    let mem = mem.as_mut_ptr();
-    unsafe {
-        std::ptr::write_unaligned(mem.add(offset) as *mut u32, cpu_to_be32(value));
-    }
+    
+    
+    mem.get_mut(offset..offset+std::mem::size_of_val(&value))
+        .expect("OOB")
+        .copy_from_slice(&value.to_be_bytes());
 }
 pub fn write_u16(mem: &mut [u8], offset: usize, value: u16) {
-    if offset > mem.len() - std::mem::size_of_val(&value) {
-        panic!("OOB");
-    }
-    let mem = mem.as_mut_ptr();
-    unsafe {
-        std::ptr::write_unaligned(mem.add(offset) as *mut u16, cpu_to_be16(value));
-    }
+    
+    
+    mem.get_mut(offset..offset+std::mem::size_of_val(&value))
+        .expect("OOB")
+        .copy_from_slice(&value.to_be_bytes());
 }
 
 
