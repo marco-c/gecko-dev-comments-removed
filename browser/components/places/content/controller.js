@@ -553,8 +553,6 @@ PlacesController.prototype = {
 
 
 
-
-
   buildContextMenu: function PC_buildContextMenu(aPopup) {
     
     
@@ -589,16 +587,12 @@ PlacesController.prototype = {
         var hideIfInTabBrowser =
           item.getAttribute("forcehideintabbrowser") == "true" &&
           window.top.gBrowser;
-        var hideIfNotInTabBrowser =
-          item.getAttribute("forcehidenotintabbrowser") == "true" &&
-          !window.top.gBrowser;
         var hideIfPrivate =
           item.getAttribute("hideifprivatebrowsing") == "true" &&
           PrivateBrowsingUtils.isWindowPrivate(window);
         var shouldHideItem =
           hideIfNoIP ||
           hideIfInTabBrowser ||
-          hideIfNotInTabBrowser ||
           hideIfPrivate ||
           !this._shouldShowMenuItem(item, metadata);
         item.hidden = item.disabled = shouldHideItem;
@@ -627,32 +621,20 @@ PlacesController.prototype = {
         
         visibleItemsBeforeSep = false;
       }
-
-      if (item.id === "placesContext_deleteBookmark") {
-        document.l10n.setAttributes(item, "places-remove-bookmark", {
-          count: metadata.length,
-        });
-      }
     }
 
     
     if (usableItemCount > 0) {
-      let openContainerInTabsItem = document.getElementById(
+      var openContainerInTabsItem = document.getElementById(
         "placesContext_openContainer:tabs"
       );
-      let openBookmarksItem = document.getElementById(
-        "placesContext_openBookmarkContainer:tabs"
-      );
-      for (let menuItem of [openContainerInTabsItem, openBookmarksItem]) {
-        if (!menuItem.hidden) {
-          var containerToUse =
-            this._view.selectedNode || this._view.result.root;
-          if (PlacesUtils.nodeIsContainer(containerToUse)) {
-            if (!PlacesUtils.hasChildURIs(containerToUse)) {
-              menuItem.disabled = true;
-              
-              usableItemCount--;
-            }
+      if (!openContainerInTabsItem.hidden) {
+        var containerToUse = this._view.selectedNode || this._view.result.root;
+        if (PlacesUtils.nodeIsContainer(containerToUse)) {
+          if (!PlacesUtils.hasChildURIs(containerToUse)) {
+            openContainerInTabsItem.disabled = true;
+            
+            usableItemCount--;
           }
         }
       }
