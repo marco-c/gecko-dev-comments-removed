@@ -10,8 +10,9 @@
 
 
 
+
 var gAllowedNotificationTypes =
-  "MediaWMFNeeded,MediaFFMpegNotFound,MediaUnsupportedLibavcodec,";
+  "MediaWMFNeeded,MediaFFMpegNotFound,MediaUnsupportedLibavcodec,MediaDecodeError";
 
 
 
@@ -81,6 +82,54 @@ add_task(async function testNoDecoder() {
   BrowserTestUtils.removeTab(tab);
 });
 
+const gErrorList = [
+  "NS_ERROR_DOM_MEDIA_ABORT_ERR",
+  "NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR",
+  "NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR",
+  "NS_ERROR_DOM_MEDIA_DECODE_ERR",
+  "NS_ERROR_DOM_MEDIA_FATAL_ERR",
+  "NS_ERROR_DOM_MEDIA_METADATA_ERR",
+  "NS_ERROR_DOM_MEDIA_OVERFLOW_ERR",
+  "NS_ERROR_DOM_MEDIA_MEDIASINK_ERR",
+  "NS_ERROR_DOM_MEDIA_DEMUXER_ERR",
+  "NS_ERROR_DOM_MEDIA_CDM_ERR",
+  "NS_ERROR_DOM_MEDIA_CUBEB_INITIALIZATION_ERR",
+];
+
+add_task(async function testDecodeError() {
+  const type = "decode-error";
+  const decoderDoctorReportId = "mediadecodeerror";
+  for (let error of gErrorList) {
+    const tab = await createTab("about:blank");
+    info(`first to try if the error is not allowed to be reported`);
+    
+    await SpecialPowers.pushPrefEnv({
+      set: [["media.decoder-doctor.decode-errors-allowed", ""]],
+    });
+    await setDecodeError(tab, {
+      type,
+      decoderDoctorReportId,
+      error,
+      shouldReportNotification: false,
+    });
+
+    
+    
+    
+    info(`Then to try if the error is allowed to be reported`);
+    await SpecialPowers.pushPrefEnv({
+      set: [["media.decoder-doctor.decode-errors-allowed", error]],
+    });
+    await setDecodeError(tab, {
+      type,
+      decoderDoctorReportId,
+      error,
+      shouldReportNotification: true,
+    });
+    BrowserTestUtils.removeTab(tab);
+  }
+});
+
 
 
 
@@ -126,6 +175,27 @@ async function createTab(url) {
         });
       },
     };
+    content._waitForReport = (params, shouldReportNotification) => {
+      const reportToConsolePromise = new Promise(r => {
+        content.document.addEventListener(
+          "mozreportmediaerror",
+          _ => {
+            r();
+          },
+          { once: true }
+        );
+      });
+      const reportToNotificationBannerPromise = shouldReportNotification
+        ? content._obs.waitFor(params)
+        : Promise.resolve();
+      info(
+        `waitForConsole=true, waitForNotificationBanner=${shouldReportNotification}`
+      );
+      return Promise.all([
+        reportToConsolePromise,
+        reportToNotificationBannerPromise,
+      ]);
+    };
   });
   return tab;
 }
@@ -143,26 +213,22 @@ async function setFormatDiagnosticsReportForMimeType(tab, params) {
         params.formats,
         params.decoderDoctorReportId
       );
-      const reportToConsolePromise = new Promise(r => {
-        content.document.addEventListener(
-          "mozreportmediaerror",
-          _ => {
-            r();
-          },
-          { once: true }
-        );
-      });
-      const reportToNotificationBannerPromise = shouldReportNotification
-        ? content._obs.waitFor(params)
-        : Promise.resolve();
-      info(
-        `waitForConsole=true, waitForNotificationBanner=${shouldReportNotification}`
-      );
-      await Promise.all([
-        reportToConsolePromise,
-        reportToNotificationBannerPromise,
-      ]);
+      await content._waitForReport(params, shouldReportNotification);
     }
   );
   ok(true, `finished check for ${params.decoderDoctorReportId}`);
+}
+
+async function setDecodeError(tab, params) {
+  info(`start check for ${params.error}`);
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [params],
+    async (params, shouldReportNotification) => {
+      const video = content.document.createElement("video");
+      SpecialPowers.wrap(video).setDecodeError(params.error);
+      await content._waitForReport(params, params.shouldReportNotification);
+    }
+  );
+  ok(true, `finished check for ${params.error}`);
 }

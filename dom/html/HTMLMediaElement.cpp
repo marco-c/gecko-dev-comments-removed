@@ -9,6 +9,9 @@
 #endif
 
 #include "mozilla/dom/HTMLMediaElement.h"
+
+#include <unordered_map>
+
 #include "AudioDeviceInfo.h"
 #include "AudioStreamTrack.h"
 #include "AutoplayPolicy.h"
@@ -2085,6 +2088,44 @@ void HTMLMediaElement::SetFormatDiagnosticsReportForMimeType(
   diagnostics.SetDecoderDoctorReportType(aType);
   diagnostics.StoreFormatDiagnostics(OwnerDoc(), aMimeType, false ,
                                      __func__);
+}
+
+void HTMLMediaElement::SetDecodeError(const nsAString& aError,
+                                      ErrorResult& aRv) {
+  
+  
+  
+  
+  
+  
+  static struct {
+    const char* mName;
+    nsresult mResult;
+  } kSupportedErrorList[] = {
+      {"NS_ERROR_DOM_MEDIA_ABORT_ERR", NS_ERROR_DOM_MEDIA_ABORT_ERR},
+      {"NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR",
+       NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR},
+      {"NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR",
+       NS_ERROR_DOM_MEDIA_NOT_SUPPORTED_ERR},
+      {"NS_ERROR_DOM_MEDIA_DECODE_ERR", NS_ERROR_DOM_MEDIA_DECODE_ERR},
+      {"NS_ERROR_DOM_MEDIA_FATAL_ERR", NS_ERROR_DOM_MEDIA_FATAL_ERR},
+      {"NS_ERROR_DOM_MEDIA_METADATA_ERR", NS_ERROR_DOM_MEDIA_METADATA_ERR},
+      {"NS_ERROR_DOM_MEDIA_OVERFLOW_ERR", NS_ERROR_DOM_MEDIA_OVERFLOW_ERR},
+      {"NS_ERROR_DOM_MEDIA_MEDIASINK_ERR", NS_ERROR_DOM_MEDIA_MEDIASINK_ERR},
+      {"NS_ERROR_DOM_MEDIA_DEMUXER_ERR", NS_ERROR_DOM_MEDIA_DEMUXER_ERR},
+      {"NS_ERROR_DOM_MEDIA_CDM_ERR", NS_ERROR_DOM_MEDIA_CDM_ERR},
+      {"NS_ERROR_DOM_MEDIA_CUBEB_INITIALIZATION_ERR",
+       NS_ERROR_DOM_MEDIA_CUBEB_INITIALIZATION_ERR}
+  };
+  for (auto& error : kSupportedErrorList) {
+    if (strcmp(error.mName, NS_ConvertUTF16toUTF8(aError).get()) == 0) {
+      DecoderDoctorDiagnostics diagnostics;
+      diagnostics.StoreDecodeError(OwnerDoc(), error.mResult, u""_ns, __func__);
+      return;
+    }
+  }
+  aRv.Throw(NS_ERROR_FAILURE);
+  return;
 }
 
 already_AddRefed<layers::Image> HTMLMediaElement::GetCurrentImage() {
