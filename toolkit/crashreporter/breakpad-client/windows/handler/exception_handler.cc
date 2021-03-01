@@ -399,7 +399,19 @@ bool ExceptionHandler::RequestUpload(DWORD crash_id) {
 }
 
 
+typedef HRESULT(WINAPI* SetThreadDescriptionPtr)(HANDLE hThread,
+                                                 PCWSTR lpThreadDescription);
+
+
 DWORD ExceptionHandler::ExceptionHandlerThreadMain(void* lpParameter) {
+  static auto SetThreadDescriptionFunc =
+      reinterpret_cast<SetThreadDescriptionPtr>(::GetProcAddress(
+          ::GetModuleHandle(L"Kernel32.dll"), "SetThreadDescription"));
+  if (SetThreadDescriptionFunc) {
+    SetThreadDescriptionFunc(::GetCurrentThread(),
+                             L"Breakpad ExceptionHandler");
+  }
+
   ExceptionHandler* self = reinterpret_cast<ExceptionHandler *>(lpParameter);
   assert(self);
   assert(self->handler_start_semaphore_ != NULL);
