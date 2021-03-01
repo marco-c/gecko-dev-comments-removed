@@ -38,6 +38,7 @@ class KeyboardBlockState;
 class AsyncDragMetrics;
 class QueuedInput;
 enum class APZHandledResult : uint8_t;
+struct APZEventResult;
 
 
 
@@ -55,11 +56,9 @@ class InputQueue {
 
 
 
-  nsEventStatus ReceiveInputEvent(
+  APZEventResult ReceiveInputEvent(
       const RefPtr<AsyncPanZoomController>& aTarget,
       TargetConfirmationFlags aFlags, const InputData& aEvent,
-      uint64_t* aOutInputBlockId,
-      Maybe<APZHandledResult>* aOutputHandledResult = nullptr,
       const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors = Nothing());
   
 
@@ -186,30 +185,25 @@ class InputQueue {
       const RefPtr<AsyncPanZoomController>& aTarget,
       CancelableBlockState* aBlock);
 
-  nsEventStatus ReceiveTouchInput(
+  APZEventResult ReceiveTouchInput(
       const RefPtr<AsyncPanZoomController>& aTarget,
       TargetConfirmationFlags aFlags, const MultiTouchInput& aEvent,
-      uint64_t* aOutInputBlockId, Maybe<APZHandledResult>* aOutputHandledResult,
       const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors);
-  nsEventStatus ReceiveMouseInput(const RefPtr<AsyncPanZoomController>& aTarget,
-                                  TargetConfirmationFlags aFlags,
-                                  const MouseInput& aEvent,
-                                  uint64_t* aOutInputBlockId);
-  nsEventStatus ReceiveScrollWheelInput(
+  APZEventResult ReceiveMouseInput(
       const RefPtr<AsyncPanZoomController>& aTarget,
-      TargetConfirmationFlags aFlags, const ScrollWheelInput& aEvent,
-      uint64_t* aOutInputBlockId);
-  nsEventStatus ReceivePanGestureInput(
+      TargetConfirmationFlags aFlags, const MouseInput& aEvent);
+  APZEventResult ReceiveScrollWheelInput(
       const RefPtr<AsyncPanZoomController>& aTarget,
-      TargetConfirmationFlags aFlags, const PanGestureInput& aEvent,
-      uint64_t* aOutInputBlockId);
-  nsEventStatus ReceivePinchGestureInput(
+      TargetConfirmationFlags aFlags, const ScrollWheelInput& aEvent);
+  APZEventResult ReceivePanGestureInput(
       const RefPtr<AsyncPanZoomController>& aTarget,
-      TargetConfirmationFlags aFlags, const PinchGestureInput& aEvent,
-      uint64_t* aOutInputBlockId);
-  nsEventStatus ReceiveKeyboardInput(
+      TargetConfirmationFlags aFlags, const PanGestureInput& aEvent);
+  APZEventResult ReceivePinchGestureInput(
       const RefPtr<AsyncPanZoomController>& aTarget,
-      const KeyboardInput& aEvent, uint64_t* aOutInputBlockId);
+      TargetConfirmationFlags aFlags, const PinchGestureInput& aEvent);
+  APZEventResult ReceiveKeyboardInput(
+      const RefPtr<AsyncPanZoomController>& aTarget,
+      TargetConfirmationFlags aFlags, const KeyboardInput& aEvent);
 
   
 

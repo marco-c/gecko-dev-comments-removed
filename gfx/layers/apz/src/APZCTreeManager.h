@@ -565,7 +565,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
     
     HitTestResult(HitTestResult&&) = default;
     HitTestResult& operator=(HitTestResult&&) = default;
-    Maybe<APZHandledResult> HandledByRoot() const;
   };
 
   
