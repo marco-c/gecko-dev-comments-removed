@@ -48,7 +48,9 @@ const { loader, require } = ChromeUtils.import(
 );
 
 const { gDevTools } = require("devtools/client/framework/devtools");
-const { TargetFactory } = require("devtools/client/framework/target");
+const {
+  TabTargetFactory,
+} = require("devtools/client/framework/tab-target-factory");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 
@@ -851,7 +853,7 @@ var openNewTabAndToolbox = async function(url, toolId, hostType) {
 
 
 var closeTabAndToolbox = async function(tab = gBrowser.selectedTab) {
-  if (TargetFactory.isKnownTab(tab)) {
+  if (TabTargetFactory.isKnownTab(tab)) {
     await gDevTools.closeToolboxForTab(tab);
   }
 

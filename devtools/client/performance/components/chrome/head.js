@@ -12,7 +12,6 @@ const { BrowserLoader } = ChromeUtils.import(
   "resource://devtools/client/shared/browser-loader.js"
 );
 const flags = require("devtools/shared/flags");
-let { TargetFactory } = require("devtools/client/framework/target");
 let { Toolbox } = require("devtools/client/framework/toolbox");
 
 let { require: browserRequire } = BrowserLoader({
