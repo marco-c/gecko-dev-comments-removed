@@ -6,7 +6,10 @@
 
 Cu.importGlobalProperties(["fetch"]);
 
-var EXPORTED_SYMBOLS = ["PartnerLinkAttribution"];
+var EXPORTED_SYMBOLS = [
+  "PartnerLinkAttribution",
+  "CONTEXTUAL_SERVICES_PING_TYPES",
+];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -15,7 +18,44 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
   Region: "resource://gre/modules/Region.jsm",
+  PingCentre: "resource:///modules/PingCentre.jsm",
 });
+
+XPCOMUtils.defineLazyServiceGetters(this, {
+  gUUIDGenerator: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
+});
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "structuredIngestionEndpointBase",
+  "browser.newtabpage.activity-stream.telemetry.structuredIngestion.endpoint",
+  ""
+);
+const NAMESPACE_CONTEXUAL_SERVICES = "contextual-services";
+
+
+XPCOMUtils.defineLazyGetter(this, "pingcentre", () => {
+  return new PingCentre({ topic: "contextual-services" });
+});
+
+
+const CONTEXT_ID_PREF = "browser.contextual-services.contextId";
+XPCOMUtils.defineLazyGetter(this, "contextId", () => {
+  let _contextId = Services.prefs.getStringPref(CONTEXT_ID_PREF, null);
+  if (!_contextId) {
+    _contextId = String(gUUIDGenerator.generateUUID());
+    Services.prefs.setStringPref(CONTEXT_ID_PREF, _contextId);
+  }
+  return _contextId;
+});
+
+const CONTEXTUAL_SERVICES_PING_TYPES = {
+  TOPSITES_IMPRESSION: "topsites-impression",
+  TOPSITES_SELECTION: "topsites-click",
+  QS_IMPRESSION: "quicksuggest-impression",
+  QS_SELECTION: "quicksuggest-click",
+};
 
 var PartnerLinkAttribution = {
   
@@ -116,6 +156,39 @@ var PartnerLinkAttribution = {
 
     await sendRequest(attributionUrl, "searchurl", strippedTargetUrl);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  sendContextualServicesPing(payload, pingType) {
+    if (!Object.values(CONTEXTUAL_SERVICES_PING_TYPES).includes(pingType)) {
+      Cu.reportError("Invalid Contextual Services ping type");
+      return;
+    }
+
+    const endpoint = makeEndpointUrl(pingType, "1");
+    payload.context_id = contextId;
+    pingcentre.sendStructuredIngestionPing(payload, endpoint);
+  },
+
+  
+
+
+  get _pingCentre() {
+    return pingcentre;
+  },
 };
 
 async function sendRequest(attributionUrl, source, targetURL) {
@@ -130,4 +203,27 @@ async function sendRequest(attributionUrl, source, targetURL) {
 function recordTelemetryEvent({ method, objectString, value }) {
   Services.telemetry.setEventRecordingEnabled("partner_link", true);
   Services.telemetry.recordEvent("partner_link", method, objectString, value);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function makeEndpointUrl(pingType, version) {
+  
+  
+  const docID = gUUIDGenerator
+    .generateUUID()
+    .toString()
+    .slice(1, -1);
+  const extension = `${NAMESPACE_CONTEXUAL_SERVICES}/${pingType}/${version}/${docID}`;
+  return `${structuredIngestionEndpointBase}/${extension}`;
 }
