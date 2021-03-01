@@ -979,13 +979,6 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       )
     )
       
-      .filter(s => {
-        if (s.score >= s.min_score) {
-          return true;
-        }
-        return false;
-      })
-      
       .sort(this.sortItem);
 
     return { data };
@@ -993,7 +986,6 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
   async scoreItem(item, personalizedByType) {
     item.score = item.item_score;
-    item.min_score = item.min_score || 0;
     if (item.score !== 0 && !item.score) {
       item.score = 1;
     }
