@@ -170,11 +170,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
-  
-  ["quicksuggest.helpURL", "https://www.mozilla.org/"],
-
-  
-  
   ["quicksuggest.onboardingCount", 0],
 
   

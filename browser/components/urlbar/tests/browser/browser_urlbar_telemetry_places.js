@@ -139,8 +139,6 @@ add_task(async function setup() {
     url: TEST_URL + "?q=%s",
   });
 
-  UrlbarTestUtils.init(this);
-
   
   registerCleanupFunction(async function() {
     await PlacesUtils.keywords.remove("get");

@@ -166,8 +166,6 @@ add_task(async function setup() {
     .stub(SyncedTabs._internal, "getTabClients")
     .callsFake(() => Promise.resolve(Cu.cloneInto([REMOTE_TAB], {})));
 
-  UrlbarTestUtils.init(this);
-
   
   registerCleanupFunction(async function() {
     sandbox.restore();

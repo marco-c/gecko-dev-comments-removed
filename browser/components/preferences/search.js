@@ -259,9 +259,11 @@ var gSearchPane = {
     }
 
     
+    
+    let learnMoreURL = "https://mozilla.org/";
     document
       .getElementById("showQuickSuggestLearnMore")
-      .setAttribute("href", UrlbarPrefs.get("quicksuggest.helpURL"));
+      .setAttribute("href", learnMoreURL);
     container.removeAttribute("hidden");
     if (desc.dataset.l10nId) {
       desc.dataset.l10nIdOriginal = desc.dataset.l10nId;

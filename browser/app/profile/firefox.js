@@ -333,10 +333,6 @@ pref("browser.urlbar.suggest.quicksuggest",         true);
 pref("browser.urlbar.quicksuggest.enabled", false);
 
 
-
-pref("browser.urlbar.quicksuggest.helpURL", "https://www.mozilla.org/");
-
-
 pref("browser.urlbar.quicksuggest.onboardingCount", 0);
 pref("browser.urlbar.quicksuggest.onboardingMaxCount", 5);
 
