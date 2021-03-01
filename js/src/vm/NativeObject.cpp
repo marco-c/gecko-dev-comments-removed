@@ -1537,7 +1537,9 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
     
     Rooted<TypedArrayObject*> tobj(cx, &obj->as<TypedArrayObject>());
     mozilla::Maybe<uint64_t> index;
-    JS_TRY_VAR_OR_RETURN_FALSE(cx, index, IsTypedArrayIndex(cx, id));
+    if (!ToTypedArrayIndex(cx, id, &index)) {
+      return false;
+    }
 
     if (index) {
       MOZ_ASSERT(!cx->isHelperThreadContext());
@@ -1857,7 +1859,9 @@ static bool DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj,
   } else if (obj->is<TypedArrayObject>()) {
     
     mozilla::Maybe<uint64_t> index;
-    JS_TRY_VAR_OR_RETURN_FALSE(cx, index, IsTypedArrayIndex(cx, id));
+    if (!ToTypedArrayIndex(cx, id, &index)) {
+      return false;
+    }
 
     if (index) {
       
