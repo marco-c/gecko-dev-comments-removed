@@ -17,8 +17,13 @@
 
 
 
+
+
 var calls = '';
 var re = {
+  get hasIndices() {
+    calls += 'd';
+  },
   get global() {
     calls += 'g';
   },
@@ -42,6 +47,6 @@ var re = {
 var get = Object.getOwnPropertyDescriptor(RegExp.prototype, 'flags').get;
 
 get.call(re);
-assert.sameValue(calls, 'gimsuy');
+assert.sameValue(calls, 'dgimsuy');
 
 reportCompare(0, 0);

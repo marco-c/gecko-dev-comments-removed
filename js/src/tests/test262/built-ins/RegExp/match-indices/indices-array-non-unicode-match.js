@@ -28,15 +28,19 @@
 
 
 
-assert.deepEqual([[1, 2], [1, 2]], "bab".match(/(a)/).indices);
-assert.deepEqual([[0, 3], [1, 2]], "bab".match(/.(a)./).indices);
-assert.deepEqual([[0, 3], [1, 2], [2, 3]], "bab".match(/.(a)(.)/).indices);
-assert.deepEqual([[0, 3], [1, 3]], "bab".match(/.(\w\w)/).indices);
-assert.deepEqual([[0, 3], [0, 3]], "bab".match(/(\w\w\w)/).indices);
-assert.deepEqual([[0, 3], [0, 2], [2, 3]], "bab".match(/(\w\w)(\w)/).indices);
-assert.deepEqual([[0, 2], [0, 2], undefined], "bab".match(/(\w\w)(\W)?/).indices);
 
-let groups = /(?<a>.)(?<b>.)(?<c>.)\k<c>\k<b>\k<a>/.exec("abccba").indices.groups;
+
+
+
+assert.deepEqual([[1, 2], [1, 2]], "bab".match(/(a)/d).indices);
+assert.deepEqual([[0, 3], [1, 2]], "bab".match(/.(a)./d).indices);
+assert.deepEqual([[0, 3], [1, 2], [2, 3]], "bab".match(/.(a)(.)/d).indices);
+assert.deepEqual([[0, 3], [1, 3]], "bab".match(/.(\w\w)/d).indices);
+assert.deepEqual([[0, 3], [0, 3]], "bab".match(/(\w\w\w)/d).indices);
+assert.deepEqual([[0, 3], [0, 2], [2, 3]], "bab".match(/(\w\w)(\w)/d).indices);
+assert.deepEqual([[0, 2], [0, 2], undefined], "bab".match(/(\w\w)(\W)?/d).indices);
+
+let groups = /(?<a>.)(?<b>.)(?<c>.)\k<c>\k<b>\k<a>/d.exec("abccba").indices.groups;
 assert.compareArray([0, 1], groups.a);
 assert.compareArray([1, 2], groups.b);
 assert.compareArray([2, 3], groups.c);
@@ -68,11 +72,11 @@ assert.sameValue("𝐁".match(/./)[0].length, 1, 'The length of a single code un
 assert.sameValue("\u{1d401}".match(/./)[0].length, 1, 'The length of a single code unit match against "\\u{1d401}" is 1 (without /u flag)');
 assert.sameValue("\uD835\uDC01".match(/./)[0].length, 1, 'The length of a single code unit match against "\\ud835\\udc01" is 1 (without /u flag)');
 
-assert.compareArray([0, 1], "𝐁".match(/./).indices[0], 'Indices for non-unicode match against "𝐁" (without /u flag)');
-assert.compareArray([0, 1], "\u{1d401}".match(/./).indices[0], 'Indices for non-unicode match against "\\u{1d401}" (without /u flag)');
-assert.compareArray([0, 1], "\uD835\uDC01".match(/./).indices[0], 'Indices for non-unicode match against "\\ud835\\udc01" (without /u flag)');
-assert.compareArray([0, 1], "𝐁".match(/(?<a>.)/).indices.groups.a, 'Indices for non-unicode match against "𝐁" in groups.a (without /u flag)');
-assert.compareArray([0, 1], "\u{1d401}".match(/(?<a>.)/).indices.groups.a, 'Indices for non-unicode match against "\\u{1d401}" in groups.a (without /u flag)');
-assert.compareArray([0, 1], "\uD835\uDC01".match(/(?<a>.)/).indices.groups.a, 'Indices for non-unicode match against "\\ud835\\udc01" in groups.a (without /u flag)');
+assert.compareArray([0, 1], "𝐁".match(/./d).indices[0], 'Indices for non-unicode match against "𝐁" (without /u flag)');
+assert.compareArray([0, 1], "\u{1d401}".match(/./d).indices[0], 'Indices for non-unicode match against "\\u{1d401}" (without /u flag)');
+assert.compareArray([0, 1], "\uD835\uDC01".match(/./d).indices[0], 'Indices for non-unicode match against "\\ud835\\udc01" (without /u flag)');
+assert.compareArray([0, 1], "𝐁".match(/(?<a>.)/d).indices.groups.a, 'Indices for non-unicode match against "𝐁" in groups.a (without /u flag)');
+assert.compareArray([0, 1], "\u{1d401}".match(/(?<a>.)/d).indices.groups.a, 'Indices for non-unicode match against "\\u{1d401}" in groups.a (without /u flag)');
+assert.compareArray([0, 1], "\uD835\uDC01".match(/(?<a>.)/d).indices.groups.a, 'Indices for non-unicode match against "\\ud835\\udc01" in groups.a (without /u flag)');
 
 reportCompare(0, 0);

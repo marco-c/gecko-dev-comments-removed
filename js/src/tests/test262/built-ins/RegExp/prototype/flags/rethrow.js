@@ -17,7 +17,17 @@
 
 
 
+
+
 var get = Object.getOwnPropertyDescriptor(RegExp.prototype, 'flags').get;
+
+assert.throws(Test262Error, function() {
+  get.call({
+    get hasIndices() {
+      throw new Test262Error();
+    },
+  });
+}, 'Let hasIndices be ToBoolean(? Get(R, "hasIndices"))');
 
 assert.throws(Test262Error, function() {
   get.call({

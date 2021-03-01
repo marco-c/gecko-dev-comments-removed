@@ -22,7 +22,7 @@ Object.defineProperty(Array.prototype, "groups", {
   set() { counter++; }
 });
 
-let indices = /(?<x>.)/.exec("a").indices;
+let indices = /(?<x>.)/d.exec("a").indices;
 assert.sameValue(counter, 0);
 
 
@@ -35,7 +35,7 @@ verifyProperty(indices, 'groups', {
 
 
 
-let {groups} = /(?<__proto__>.)/.exec("a").indices;
+let {groups} = /(?<__proto__>.)/d.exec("a").indices;
 assert.compareArray([0, 1], groups.__proto__);
 assert.sameValue(null, Object.getPrototypeOf(groups));
 

@@ -11,7 +11,7 @@
 
 
 
-let match = /a/.exec("a");
+let match = /a/d.exec("a");
 let indices = match.indices;
 
 

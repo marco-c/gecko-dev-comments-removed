@@ -16,16 +16,16 @@
 
 
 
-let groupNames = Object.getOwnPropertyNames(/(?<fst>.)|(?<snd>.)/u.exec("abcd").indices.groups);
+let groupNames = Object.getOwnPropertyNames(/(?<fst>.)|(?<snd>.)/du.exec("abcd").indices.groups);
 assert.compareArray(groupNames, ["fst", "snd"]);
 
 
+let counter = 0;
+Object.defineProperty(Object.prototype, 'x', {set() { counter++; }});
 
-
-
-let indices = /(?<x>.)/.exec('a').indices;
+let indices = /(?<x>.)/d.exec('a').indices;
 let groups = indices.groups;
-
+assert.sameValue(counter, 0);
 
 
 

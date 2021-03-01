@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var get = Object.getOwnPropertyDescriptor(RegExp.prototype, "hasIndices").get;
+
+assert.sameValue(get.call(RegExp.prototype), undefined);
+
+reportCompare(0, 0);

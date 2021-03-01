@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let match = /a/.exec("a");
+
+
+assert(!match.hasOwnProperty("indices"));
+
+reportCompare(0, 0);

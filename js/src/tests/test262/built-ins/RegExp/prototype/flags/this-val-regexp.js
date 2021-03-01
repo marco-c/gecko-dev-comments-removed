@@ -23,6 +23,7 @@
 
 
 
+
 assert.sameValue(/./.flags, '', 'no flags');
 assert.sameValue(/./g.flags, 'g', 'global');
 assert.sameValue(/./i.flags, 'i', 'ignoreCase');
@@ -30,5 +31,6 @@ assert.sameValue(/./m.flags, 'm', 'multiline');
 assert.sameValue(/./s.flags, 's', 'dotAll');
 assert.sameValue(/./u.flags, 'u', 'unicode');
 assert.sameValue(/./y.flags, 'y', 'sticky');
+assert.sameValue(/./d.flags, 'd', 'hasIndices');
 
 reportCompare(0, 0);

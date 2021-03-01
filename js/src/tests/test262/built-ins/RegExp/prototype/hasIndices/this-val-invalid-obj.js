@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var hasIndices = Object.getOwnPropertyDescriptor(RegExp.prototype, 'hasIndices').get;
+
+assert.throws(TypeError, function() {
+  hasIndices.call({});
+}, 'ordinary object');
+
+assert.throws(TypeError, function() {
+  hasIndices.call([]);
+}, 'array exotic object');
+
+assert.throws(TypeError, function() {
+  hasIndices.call(arguments);
+}, 'arguments object');
+
+reportCompare(0, 0);

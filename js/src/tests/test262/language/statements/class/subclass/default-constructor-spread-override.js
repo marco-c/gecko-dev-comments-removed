@@ -8,50 +8,20 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var arrayIterator = Array.prototype[Symbol.iterator];
-
-
 Array.prototype[Symbol.iterator] = function() {
-  return arrayIterator.call(["spread-value"]);
+  $ERROR('@@iterator invoked');
 };
-
-var receivedValue;
 
 class Base {
   constructor(value) {
-    receivedValue = value;
+    this.value = value;
   }
 }
 
 class Derived extends Base {}
 
-new Derived();
+const instance = new Derived(5);
 
-assert.sameValue(receivedValue, "spread-value");
+assert.sameValue(instance.value, 5);
 
 reportCompare(0, 0);

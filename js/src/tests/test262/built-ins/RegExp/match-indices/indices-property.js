@@ -14,12 +14,15 @@
 
 
 
+
+
+
 let counter = 0;
 Object.defineProperty(Array.prototype, "indices", {
   set() { counter++; }
 });
 
-let match = /a/.exec("a");
+let match = /a/d.exec("a");
 assert.sameValue(counter, 0);
 
 

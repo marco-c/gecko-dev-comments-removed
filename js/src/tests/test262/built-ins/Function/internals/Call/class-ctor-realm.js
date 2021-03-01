@@ -8,13 +8,11 @@
 
 
 
+const realm = $262.createRealm();
+const C = realm.global.eval('(class {})');
+const TE = realm.global.eval('TypeError');
 
-
-
-
-var C = $262.createRealm().global.eval('0, class {}');
-
-assert.throws(TypeError, function() {
+assert.throws(TE, function() {
   C();
 });
 

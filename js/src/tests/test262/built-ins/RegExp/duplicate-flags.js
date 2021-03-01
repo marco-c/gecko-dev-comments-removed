@@ -10,6 +10,7 @@
 
 
 
+
 new RegExp("", "mig"); 
 assert.throws(SyntaxError, () => new RegExp("", "migg"), "duplicate g");
 
@@ -27,5 +28,8 @@ assert.throws(SyntaxError, () => new RegExp("", "uu"), "duplicate u");
 
 new RegExp("", "y"); 
 assert.throws(SyntaxError, () => new RegExp("", "yy"), "duplicate y");
+
+new RegExp("", "d"); 
+assert.throws(SyntaxError, () => new RegExp("", "dd"), "duplicate d");
 
 reportCompare(0, 0);
