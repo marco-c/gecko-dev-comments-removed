@@ -75,6 +75,18 @@ class nsHttpConnection final : public HttpConnectionBase,
 
   
   
+  
+  
+  
+  [[nodiscard]] virtual nsresult Init(nsHttpConnectionInfo* info,
+                                      uint16_t maxHangTime, nsISocketTransport*,
+                                      nsIAsyncInputStream*,
+                                      nsIAsyncOutputStream*,
+                                      bool connectedTransport, nsresult status,
+                                      nsIInterfaceRequestor*, PRIntervalTime);
+
+  
+  
 
   bool IsKeepAlive() {
     return (mUsingSpdyVersion != SpdyVersion::NONE) ||
@@ -167,6 +179,8 @@ class nsHttpConnection final : public HttpConnectionBase,
   bool NoClientCertAuth() const override;
 
   bool CanAcceptWebsocket() override;
+
+  int64_t BytesWritten() override { return mTotalBytesWritten; }
 
  private:
   
@@ -334,6 +348,7 @@ class nsHttpConnection final : public HttpConnectionBase,
 
  private:
   bool mThroughCaptivePortal;
+  int64_t mTotalBytesWritten;  
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsHttpConnection, NS_HTTPCONNECTION_IID)

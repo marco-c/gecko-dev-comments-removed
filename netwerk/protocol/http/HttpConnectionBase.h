@@ -56,16 +56,6 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   
   
   
-  
-  
-  [[nodiscard]] virtual nsresult Init(
-      nsHttpConnectionInfo* info, uint16_t maxHangTime, nsISocketTransport*,
-      nsIAsyncInputStream*, nsIAsyncOutputStream*, bool connectedTransport,
-      nsresult status, nsIInterfaceRequestor*, PRIntervalTime) = 0;
-
-  
-  
-  
   [[nodiscard]] virtual nsresult Activate(nsAHttpTransaction*, uint32_t caps,
                                           int32_t pri) = 0;
 
@@ -128,7 +118,7 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   virtual bool IsProxyConnectInProgress() = 0;
   virtual bool LastTransactionExpectedNoContent() = 0;
   virtual void SetLastTransactionExpectedNoContent(bool) = 0;
-  int64_t BytesWritten() { return mTotalBytesWritten; }  
+  virtual int64_t BytesWritten() = 0;  
   void SetSecurityCallbacks(nsIInterfaceRequestor* aCallbacks);
   void SetTrafficCategory(HttpTrafficCategory);
 
@@ -154,8 +144,6 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   bool mBootstrappedTimingsSet;
   TimingStruct mBootstrappedTimings;
 
-  int64_t mTotalBytesWritten;  
-
   Mutex mCallbacksLock;
   nsMainThreadPtrHandle<nsIInterfaceRequestor> mCallbacks;
 
@@ -167,10 +155,6 @@ class HttpConnectionBase : public nsSupportsWeakReference {
 NS_DEFINE_STATIC_IID_ACCESSOR(HttpConnectionBase, HTTPCONNECTIONBASE_IID)
 
 #define NS_DECL_HTTPCONNECTIONBASE                                             \
-  [[nodiscard]] nsresult Init(                                                 \
-      nsHttpConnectionInfo*, uint16_t, nsISocketTransport*,                    \
-      nsIAsyncInputStream*, nsIAsyncOutputStream*, bool, nsresult,             \
-      nsIInterfaceRequestor*, PRIntervalTime) override;                        \
   [[nodiscard]] nsresult Activate(nsAHttpTransaction*, uint32_t, int32_t)      \
       override;                                                                \
   [[nodiscard]] nsresult OnHeadersAvailable(                                   \

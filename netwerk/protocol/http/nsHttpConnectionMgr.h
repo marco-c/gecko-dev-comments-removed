@@ -176,6 +176,9 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   static nsAHttpConnection* MakeConnectionHandle(HttpConnectionBase* aWrapped);
   void RegisterOriginCoalescingKey(HttpConnectionBase*, const nsACString& host,
                                    int32_t port);
+  
+  
+  bool BeConservativeIfProxied(nsIProxyInfo* proxy);
 
  protected:
   friend class ConnectionEntry;
@@ -440,10 +443,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
   void NotifyConnectionOfWindowIdChange(uint64_t previousWindowId);
-
-  
-  
-  bool BeConservativeIfProxied(nsIProxyInfo* proxy);
 };
 
 }  

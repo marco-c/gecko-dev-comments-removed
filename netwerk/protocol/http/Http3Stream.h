@@ -136,9 +136,6 @@ class Http3Stream final : public nsAHttpSegmentReader,
   uint32_t mRequestBodyLenRemaining;
 
   
-  RefPtr<nsISocketTransport> mSocketTransport;
-
-  
   uint64_t mTotalSent;
   uint64_t mTotalRead;
 
