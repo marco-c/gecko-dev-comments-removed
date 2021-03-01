@@ -60,6 +60,7 @@
 #if defined(XP_WIN)
 #  include <dwrite.h>
 #  include <process.h>
+#  include <windows.h>
 
 #  include "gfxWindowsPlatform.h"
 #  include "mozilla/WindowsVersion.h"
@@ -97,6 +98,40 @@ GPUParent::~GPUParent() { sGPUParent = nullptr; }
 GPUParent* GPUParent::GetSingleton() {
   MOZ_DIAGNOSTIC_ASSERT(sGPUParent);
   return sGPUParent;
+}
+
+ void GPUParent::MaybeFlushMemory() {
+#if defined(XP_WIN) && !defined(HAVE_64BIT_BUILD)
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  if (!XRE_IsGPUProcess()) {
+    return;
+  }
+
+  MEMORYSTATUSEX stat;
+  stat.dwLength = sizeof(stat);
+  if (!GlobalMemoryStatusEx(&stat)) {
+    return;
+  }
+
+  
+  
+  static const size_t kLowVirtualMemoryThreshold = 384 * 1024 * 1024;
+  bool lowMemory = stat.ullAvailVirtual < kLowVirtualMemoryThreshold;
+
+  
+  
+  
+  
+  static bool sLowMemory = false;
+  if (lowMemory && !sLowMemory) {
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction("gfx::GPUParent::FlushMemory", []() -> void {
+          Unused << GPUParent::GetSingleton()->SendFlushMemory(
+              u"low-memory"_ns);
+        }));
+  }
+  sLowMemory = lowMemory;
+#endif
 }
 
 bool GPUParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,

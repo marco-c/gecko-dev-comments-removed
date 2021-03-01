@@ -33,6 +33,9 @@ class GPUParent final : public PGPUParent {
   
   static void GetGPUProcessName(nsACString& aStr);
 
+  
+  static void MaybeFlushMemory();
+
   bool Init(base::ProcessId aParentPid, const char* aParentBuildID,
             MessageLoop* aIOLoop, UniquePtr<IPC::Channel> aChannel);
   void NotifyDeviceReset();
