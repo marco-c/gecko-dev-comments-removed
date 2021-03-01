@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MediaStatusManager.h"
 
@@ -18,11 +18,11 @@
 
 #ifdef MOZ_PLACES
 #  include "nsIFaviconService.h"
-#endif  
+#endif  // MOZ_PLACES
 
 extern mozilla::LazyLogModule gMediaControlLog;
 
-
+// avoid redefined macro in unified build
 #undef LOG
 #define LOG(msg, ...)                        \
   MOZ_LOG(gMediaControlLog, LogLevel::Debug, \
@@ -31,13 +31,13 @@ extern mozilla::LazyLogModule gMediaControlLog;
 namespace mozilla::dom {
 
 static bool IsMetadataEmpty(const Maybe<MediaMetadataBase>& aMetadata) {
-  
+  // Media session's metadata is null.
   if (!aMetadata) {
     return true;
   }
 
-  
-  
+  // All attirbutes in metadata are empty.
+  // https://w3c.github.io/mediasession/#empty-metadata
   const MediaMetadataBase& metadata = *aMetadata;
   return metadata.mTitle.IsEmpty() && metadata.mArtist.IsEmpty() &&
          metadata.mAlbum.IsEmpty() && metadata.mArtwork.IsEmpty();
@@ -67,7 +67,8 @@ void MediaStatusManager::NotifySessionCreated(uint64_t aBrowsingContextId) {
   }
 
   LOG("Session %" PRIu64 " has been created", aBrowsingContextId);
-  mMediaSessionInfoMap.Put(aBrowsingContextId, MediaSessionInfo::EmptyInfo());
+  mMediaSessionInfoMap.InsertOrUpdate(aBrowsingContextId,
+                                      MediaSessionInfo::EmptyInfo());
   if (IsSessionOwningAudioFocus(aBrowsingContextId)) {
     SetActiveMediaSessionContextId(aBrowsingContextId);
   }
@@ -102,8 +103,8 @@ void MediaStatusManager::UpdateMetadata(
         NS_ConvertUTF16toUTF8(aMetadata->mAlbum).get());
     info->mMetadata = aMetadata;
   }
-  
-  
+  // Only notify the event if the changed metadata belongs to the active media
+  // session.
   if (mActiveMediaSessionContextId &&
       *mActiveMediaSessionContextId == aBrowsingContextId) {
     LOG("Notify metadata change for active session %" PRIu64,
@@ -120,20 +121,20 @@ void MediaStatusManager::UpdateMetadata(
 
 void MediaStatusManager::HandleAudioFocusOwnerChanged(
     Maybe<uint64_t>& aBrowsingContextId) {
-  
+  // No one is holding the audio focus.
   if (!aBrowsingContextId) {
     LOG("No one is owning audio focus");
     return ClearActiveMediaSessionContextIdIfNeeded();
   }
 
-  
-  
+  // This owner of audio focus doesn't have media session, so we should deactive
+  // the active session because the active session must own the audio focus.
   if (!mMediaSessionInfoMap.Contains(*aBrowsingContextId)) {
     LOG("The owner of audio focus doesn't have media session");
     return ClearActiveMediaSessionContextIdIfNeeded();
   }
 
-  
+  // This owner has media session so it should become an active session context.
   SetActiveMediaSessionContextId(*aBrowsingContextId);
 }
 
@@ -217,13 +218,13 @@ nsString MediaStatusManager::GetDefaultTitle() const {
     return defaultTitle;
   }
 
-  
-  
-  
-  
-  
-  
-  
+  // The media metadata would be shown on the virtual controller interface. For
+  // example, on Android, the interface would be shown on both notification bar
+  // and lockscreen. Therefore, what information we provide via metadata is
+  // quite important, because if we're in private browsing, we don't want to
+  // expose details about what website the user is browsing on the lockscreen.
+  // Therefore, using the default title when in the private browsing or the
+  // document title is empty. Otherwise, use the document title.
   nsString documentTitle;
   if (!IsInPrivateBrowsing()) {
     globalParent->GetDocumentTitle(documentTitle);
@@ -238,9 +239,9 @@ nsString MediaStatusManager::GetDefaultFaviconURL() const {
                           nsLiteralCString(FAVICON_DEFAULT_URL));
   NS_ENSURE_SUCCESS(rv, u""_ns);
 
-  
-  
-  
+  // Convert URI from `chrome://XXX` to `file://XXX` because we would like to
+  // let OS related frameworks, such as SMTC and MPRIS, handle this URL in order
+  // to show the icon on virtual controller interface.
   nsCOMPtr<nsIChromeRegistry> regService = services::GetChromeRegistry();
   if (!regService) {
     return u""_ns;
@@ -286,9 +287,9 @@ void MediaStatusManager::NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
   const bool oldPlaying = mPlaybackStatusDelegate.IsPlaying();
   mPlaybackStatusDelegate.UpdateMediaPlaybackState(aBrowsingContextId, aState);
 
-  
-  
-  
+  // Playback state doesn't change, we don't need to update the guessed playback
+  // state. This is used to prevent the state from changing from `none` to
+  // `paused` when receiving `MediaPlaybackState::eStarted`.
   if (mPlaybackStatusDelegate.IsPlaying() == oldPlaying) {
     return;
   }
@@ -309,8 +310,8 @@ void MediaStatusManager::SetGuessedPlayState(MediaSessionPlaybackState aState) {
 }
 
 void MediaStatusManager::UpdateActualPlaybackState() {
-  
-  
+  // The way to compute the actual playback state is based on the spec.
+  // https://w3c.github.io/mediasession/#actual-playback-state
   MediaSessionPlaybackState newState =
       GetCurrentDeclaredPlaybackState() == MediaSessionPlaybackState::Playing
           ? MediaSessionPlaybackState::Playing
@@ -360,7 +361,7 @@ void MediaStatusManager::DisableAction(uint64_t aBrowsingContextId,
 
 void MediaStatusManager::UpdatePositionState(uint64_t aBrowsingContextId,
                                              const PositionState& aState) {
-  
+  // The position state comes from non-active media session which we don't care.
   if (!mActiveMediaSessionContextId ||
       *mActiveMediaSessionContextId != aBrowsingContextId) {
     return;
@@ -370,9 +371,9 @@ void MediaStatusManager::UpdatePositionState(uint64_t aBrowsingContextId,
 
 void MediaStatusManager::NotifySupportedKeysChangedIfNeeded(
     uint64_t aBrowsingContextId) {
-  
-  
-  
+  // Only the active media session's supported actions would be shown in virtual
+  // control interface, so we only notify the event when supported actions
+  // change happens on the active media session.
   if (!mActiveMediaSessionContextId ||
       *mActiveMediaSessionContextId != aBrowsingContextId) {
     return;
@@ -400,10 +401,10 @@ CopyableTArray<MediaSessionAction> MediaStatusManager::GetSupportedActions()
 }
 
 MediaMetadataBase MediaStatusManager::GetCurrentMediaMetadata() const {
-  
-  
-  
-  
+  // If we don't have active media session, active media session doesn't have
+  // media metadata, or we're in private browsing mode, then we should create a
+  // default metadata which is using website's title and favicon as title and
+  // artwork.
   if (mActiveMediaSessionContextId && !IsInPrivateBrowsing()) {
     MediaSessionInfo info =
         mMediaSessionInfoMap.Get(*mActiveMediaSessionContextId);
@@ -419,9 +420,9 @@ MediaMetadataBase MediaStatusManager::GetCurrentMediaMetadata() const {
 
 void MediaStatusManager::FillMissingTitleAndArtworkIfNeeded(
     MediaMetadataBase& aMetadata) const {
-  
-  
-  
+  // If the metadata doesn't set its title and artwork properly, we would like
+  // to use default title and favicon instead in order to prevent showing
+  // nothing on the virtual control interface.
   if (aMetadata.mTitle.IsEmpty()) {
     aMetadata.mTitle = GetDefaultTitle();
   }
@@ -460,14 +461,14 @@ bool MediaStatusManager::IsAnyMediaBeingControlled() const {
 }
 
 void MediaStatusManager::NotifyPageTitleChanged() {
-  
-  
+  // If active media session has set non-empty metadata, then we would use that
+  // instead of using default metadata.
   if (mActiveMediaSessionContextId &&
       mMediaSessionInfoMap.GetValue(*mActiveMediaSessionContextId)->mMetadata) {
     return;
   }
-  
-  
+  // In private browsing mode, we won't show page title on default metadata so
+  // we don't need to update that.
   if (IsInPrivateBrowsing()) {
     return;
   }
@@ -475,4 +476,4 @@ void MediaStatusManager::NotifyPageTitleChanged() {
   mMetadataChangedEvent.Notify(GetCurrentMediaMetadata());
 }
 
-}  
+}  // namespace mozilla::dom

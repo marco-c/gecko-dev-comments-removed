@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GMPUtils.h"
 
@@ -117,7 +117,7 @@ bool ReadIntoString(nsIFile* aFile, nsCString& aOutDst, size_t aMaxLength) {
   nsTArray<uint8_t> buf;
   bool rv = ReadIntoArray(aFile, buf, aMaxLength);
   if (rv) {
-    buf.AppendElement(0);  
+    buf.AppendElement(0);  // Append null terminator, required by nsC*String.
     aOutDst = nsDependentCString((const char*)buf.Elements(), buf.Length() - 1);
   }
   return rv;
@@ -133,17 +133,17 @@ bool GMPInfoFileParser::Init(nsIFile* aInfoFile) {
     return false;
   }
 
-  
-  
+  // Note: we pass "\r\n" to SplitAt so that we'll split lines delimited
+  // by \n (Unix), \r\n (Windows) and \r (old MacOSX).
   SplitAt("\r\n", info, lines);
 
   for (nsCString line : lines) {
-    
-    
+    // Field name is the string up to but not including the first ':'
+    // character on the line.
     int32_t colon = line.FindChar(':');
     if (colon <= 0) {
-      
-      
+      // Not allowed to be the first character.
+      // Info field name must be at least one character.
       continue;
     }
     nsAutoCString key(Substring(line, 0, colon));
@@ -152,8 +152,9 @@ bool GMPInfoFileParser::Init(nsIFile* aInfoFile) {
 
     auto value = MakeUnique<nsCString>(Substring(line, colon + 1));
     value->Trim(" ");
-    mValues.Put(key,
-                std::move(value));  
+    mValues.InsertOrUpdate(
+        key,
+        std::move(value));  // Hashtable assumes ownership of value.
   }
 
   return true;
@@ -210,7 +211,7 @@ already_AddRefed<nsISerialEventTarget> GetGMPThread() {
 }
 
 static size_t Align16(size_t aNumber) {
-  const size_t mask = 15;  
+  const size_t mask = 15;  // Alignment - 1.
   return (aNumber + mask) & ~mask;
 }
 
@@ -224,4 +225,4 @@ size_t I420FrameBufferSizePadded(int32_t aWidth, int32_t aHeight) {
   return ySize + (ySize / 4) * 2;
 }
 
-}  
+}  // namespace mozilla

@@ -142,7 +142,7 @@ class GradientCache final : public nsExpirationTracker<GradientCacheData, 4> {
       
       return;
     }
-    mHashEntries.Put(aValue->mKey, std::move(aValue));
+    mHashEntries.InsertOrUpdate(aValue->mKey, std::move(aValue));
   }
 
  protected:

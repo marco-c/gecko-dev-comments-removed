@@ -603,7 +603,7 @@ void DocAccessible::HandleScroll(nsINode* aTarget) {
     if (HasLoadState(eTreeConstructed)) {
       DispatchScrollingEvent(aTarget, nsIAccessibleEvent::EVENT_SCROLLING);
     }
-    mLastScrollingDispatch.Put(aTarget, now);
+    mLastScrollingDispatch.InsertOrUpdate(aTarget, now);
   }
 
   
@@ -1396,11 +1396,11 @@ void DocAccessible::BindToDocument(LocalAccessible* aAccessible,
                                    const nsRoleMapEntry* aRoleMapEntry) {
   
   if (aAccessible->IsNodeMapEntry()) {
-    mNodeToAccessibleMap.Put(aAccessible->GetNode(), aAccessible);
+    mNodeToAccessibleMap.InsertOrUpdate(aAccessible->GetNode(), aAccessible);
   }
 
   
-  mAccessibleCache.Put(aAccessible->UniqueID(), RefPtr{aAccessible});
+  mAccessibleCache.InsertOrUpdate(aAccessible->UniqueID(), RefPtr{aAccessible});
 
   aAccessible->SetRoleMapEntry(aRoleMapEntry);
 

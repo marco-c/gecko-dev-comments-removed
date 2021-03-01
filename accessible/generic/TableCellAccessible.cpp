@@ -84,7 +84,7 @@ LocalAccessible* TableCellAccessible::PrevColHeader() {
         (tableCell->ColExtent() == 1 || tableCell->ColIdx() == colIdx)) {
       if (!cachedHeader || !cachedHeader->IsDefunct()) {
         
-        cache.Put(this, RefPtr<LocalAccessible>(cachedHeader));
+        cache.InsertOrUpdate(this, RefPtr<LocalAccessible>(cachedHeader));
         return cachedHeader;
       }
     }
@@ -97,12 +97,12 @@ LocalAccessible* TableCellAccessible::PrevColHeader() {
     }
 
     
-    cache.Put(this, RefPtr<LocalAccessible>(cell));
+    cache.InsertOrUpdate(this, RefPtr<LocalAccessible>(cell));
     return cell;
   }
 
   
-  cache.Put(this, RefPtr<LocalAccessible>(nullptr));
+  cache.InsertOrUpdate(this, RefPtr<LocalAccessible>(nullptr));
   return nullptr;
 }
 

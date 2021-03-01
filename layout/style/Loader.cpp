@@ -1727,7 +1727,7 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
     if (completed == Completed::Yes) {
       
       if (isWorthCaching) {
-        mInlineSheets.Put(aBuffer, std::move(sheet));
+        mInlineSheets.InsertOrUpdate(aBuffer, std::move(sheet));
       }
     } else {
       data->mMustNotify = true;

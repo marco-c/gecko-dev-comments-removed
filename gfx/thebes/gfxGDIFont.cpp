@@ -407,7 +407,7 @@ uint32_t gfxGDIFont::GetGlyph(uint32_t aUnicode, uint32_t aVarSelector) {
     }
   }
 
-  mGlyphIDs->Put(aUnicode, glyph);
+  mGlyphIDs->InsertOrUpdate(aUnicode, glyph);
   return glyph;
 }
 
@@ -429,7 +429,7 @@ int32_t gfxGDIFont::GetGlyphWidth(uint16_t aGID) {
     
     devWidth = std::min(std::max(0, devWidth), 0x7fff);
     width = devWidth << 16;
-    mGlyphWidths->Put(aGID, width);
+    mGlyphWidths->InsertOrUpdate(aGID, width);
     return width;
   }
 

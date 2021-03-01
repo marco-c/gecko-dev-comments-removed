@@ -252,7 +252,7 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
         touch->mMessage = aEvent->mMessage;
         TouchInfo info = {
             touch, GetNonAnonymousAncestor(touch->mOriginalTarget), true};
-        sCaptureTouchList->Put(id, info);
+        sCaptureTouchList->InsertOrUpdate(id, info);
         if (touch->mIsTouchEventSuppressed) {
           
           
@@ -301,7 +301,7 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
 
         info.mTouch = touch;
         
-        sCaptureTouchList->Put(id, info);
+        sCaptureTouchList->InsertOrUpdate(id, info);
         
         
         if (oldTouch->mMessage != touch->mMessage) {
@@ -390,7 +390,7 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
           continue;
         }
         info.mConvertToPointer = false;
-        sCaptureTouchList->Put(id, info);
+        sCaptureTouchList->InsertOrUpdate(id, info);
       }
       break;
     }

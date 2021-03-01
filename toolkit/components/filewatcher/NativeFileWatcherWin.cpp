@@ -662,10 +662,11 @@ nsresult NativeFileWatcherIOTask::AddPathRunnableMethod(
   nsresult rv = AddDirectoryToWatchList(resourceDesc.get());
   if (NS_SUCCEEDED(rv)) {
     
-    mWatchedResourcesByHandle.Put(
-        resHandle, mWatchedResourcesByPath
-                       .Put(wrappedParameters->mPath, std::move(resourceDesc))
-                       .get());
+    mWatchedResourcesByHandle.InsertOrUpdate(
+        resHandle,
+        mWatchedResourcesByPath
+            .InsertOrUpdate(wrappedParameters->mPath, std::move(resourceDesc))
+            .get());
 
     
     nsresult rv = ReportSuccess(wrappedParameters->mSuccessCallbackHandle,

@@ -1349,7 +1349,7 @@ void nsProtocolProxyService::DisableProxy(nsProxyInfo* pi) {
 
   
   
-  mFailedProxies.Put(key, dsec);
+  mFailedProxies.InsertOrUpdate(key, dsec);
 }
 
 bool nsProtocolProxyService::IsProxyDisabled(nsProxyInfo* pi) {

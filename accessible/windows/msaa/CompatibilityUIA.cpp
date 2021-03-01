@@ -295,7 +295,7 @@ Maybe<bool> Compatibility::OnUIAMessage(WPARAM aWParam, LPARAM aLParam) {
 
       
       
-      objMap.Put(curHandle.mObject, curHandle.mPid);
+      objMap.InsertOrUpdate(curHandle.mObject, curHandle.mPid);
     } else if (handle == section.get()) {
       
       

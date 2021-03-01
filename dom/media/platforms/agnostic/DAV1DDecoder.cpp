@@ -102,7 +102,7 @@ RefPtr<MediaDataDecoder::DecodePromise> DAV1DDecoder::InvokeDecode(
   
   
   
-  mDecodingBuffers.Put(aSample->Data(), RefPtr{aSample});
+  mDecodingBuffers.InsertOrUpdate(aSample->Data(), RefPtr{aSample});
   Dav1dData data;
   int res = dav1d_data_wrap(&data, aSample->Data(), aSample->Size(),
                             ReleaseDataBuffer_s, this);

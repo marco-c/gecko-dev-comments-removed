@@ -1335,7 +1335,7 @@ void StorageDBThread::PendingOperations::Add(
     case DBOperation::opUpdateItem:
     case DBOperation::opRemoveItem:
       
-      mUpdates.Put(aOperation->Target(), std::move(aOperation));
+      mUpdates.InsertOrUpdate(aOperation->Target(), std::move(aOperation));
       break;
 
       
@@ -1372,14 +1372,14 @@ void StorageDBThread::PendingOperations::Add(
         iter.Remove();
       }
 
-      mClears.Put(aOperation->Target(), std::move(aOperation));
+      mClears.InsertOrUpdate(aOperation->Target(), std::move(aOperation));
       break;
 
     case DBOperation::opClearAll:
       
       mUpdates.Clear();
       mClears.Clear();
-      mClears.Put(aOperation->Target(), std::move(aOperation));
+      mClears.InsertOrUpdate(aOperation->Target(), std::move(aOperation));
       break;
 
     default:

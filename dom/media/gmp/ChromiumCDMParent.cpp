@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ChromiumCDMParent.h"
 
@@ -84,7 +84,7 @@ RefPtr<ChromiumCDMParent::InitPromise> ChromiumCDMParent::Init(
             GMP_LOG_DEBUG(
                 "ChromiumCDMParent::Init() succeeded with callback from child");
             self->mCDMCallback = aCDMCallback;
-            self->mInitPromise.ResolveIfExists(true , __func__);
+            self->mInitPromise.ResolveIfExists(true /* unused */, __func__);
           },
           [self](ResponseRejectReason&& aReason) {
             RefPtr<gmp::GeckoMediaPluginService> service =
@@ -132,7 +132,7 @@ void ChromiumCDMParent::CreateSession(uint32_t aCreateSessionToken,
         aPromiseId, "Failed to send generateRequest to CDM process."_ns);
     return;
   }
-  mPromiseToCreateSessionToken.Put(aPromiseId, aCreateSessionToken);
+  mPromiseToCreateSessionToken.InsertOrUpdate(aPromiseId, aCreateSessionToken);
 }
 
 void ChromiumCDMParent::LoadSession(uint32_t aPromiseId, uint32_t aSessionType,
@@ -206,8 +206,8 @@ void ChromiumCDMParent::RemoveSession(const nsCString& aSessionId,
   }
 }
 
-
-
+// See
+// https://cs.chromium.org/chromium/src/media/blink/webcontentdecryptionmodule_impl.cc?l=33-66&rcl=d49aa59ac8c2925d5bec229f3f1906537b6b4547
 static Result<cdm::HdcpVersion, nsresult> ToCDMHdcpVersion(
     const nsCString& aMinHdcpVersion) {
   if (aMinHdcpVersion.IsEmpty()) {
@@ -237,10 +237,10 @@ static Result<cdm::HdcpVersion, nsresult> ToCDMHdcpVersion(
   if (aMinHdcpVersion.EqualsIgnoreCase("2.2")) {
     return cdm::HdcpVersion::kHdcpVersion2_2;
   }
-  
-  
+  // When adding another version remember to update GMPMessageUtils so that we
+  // can serialize it correctly and have correct bounds on the enum!
 
-  
+  // Invalid hdcp version string.
   return Err(NS_ERROR_INVALID_ARG);
 }
 
@@ -254,10 +254,10 @@ void ChromiumCDMParent::GetStatusForPolicy(uint32_t aPromiseId,
   auto hdcpVersionResult = ToCDMHdcpVersion(aMinHdcpVersion);
   if (hdcpVersionResult.isErr()) {
     ErrorResult rv;
-    
-    
-    
-    
+    // XXXbz there's no spec for this yet, and
+    // <https://github.com/WICG/hdcp-detection/blob/master/explainer.md>
+    // does not define what exceptions get thrown.  Let's assume
+    // TypeError for invalid args, as usual.
     constexpr auto err =
         "getStatusForPolicy failed due to bad hdcp version argument"_ns;
     rv.ThrowTypeError(err);
@@ -287,7 +287,7 @@ bool ChromiumCDMParent::InitCDMInputBuffer(gmp::CDMInputBuffer& aBuffer,
   cdm::EncryptionScheme encryptionScheme = cdm::EncryptionScheme::kUnencrypted;
   switch (crypto.mCryptoScheme) {
     case CryptoScheme::None:
-      break;  
+      break;  // Default to none
     case CryptoScheme::Cenc:
       encryptionScheme = cdm::EncryptionScheme::kCenc;
       break;
@@ -338,8 +338,8 @@ RefPtr<DecryptPromise> ChromiumCDMParent::Decrypt(MediaRawData* aSample) {
     return DecryptPromise::CreateAndReject(DecryptResult(GenericErr, aSample),
                                            __func__);
   }
-  
-  
+  // Send a buffer to the CDM to store the output. The CDM will either fill
+  // it with the decrypted sample and return it, or deallocate it on failure.
   if (!SendBufferToCDM(aSample->Size())) {
     DeallocShmem(buffer.mData());
     return DecryptPromise::CreateAndReject(DecryptResult(GenericErr, aSample),
@@ -428,8 +428,8 @@ void ChromiumCDMParent::ResolvePromise(uint32_t aPromiseId) {
   GMP_LOG_DEBUG("ChromiumCDMParent::ResolvePromise(this=%p, pid=%" PRIu32 ")",
                 this, aPromiseId);
 
-  
-  
+  // Note: The MediaKeys rejects all pending DOM promises when it
+  // initiates shutdown.
   if (!mCDMCallback || mIsShutdown) {
     return;
   }
@@ -448,8 +448,8 @@ void ChromiumCDMParent::RejectPromise(uint32_t aPromiseId,
                                       const nsCString& aErrorMessage) {
   GMP_LOG_DEBUG("ChromiumCDMParent::RejectPromise(this=%p, pid=%" PRIu32 ")",
                 this, aPromiseId);
-  
-  
+  // Note: The MediaKeys rejects all pending DOM promises when it
+  // initiates shutdown.
   if (!mCDMCallback || mIsShutdown) {
     return;
   }
@@ -470,8 +470,8 @@ void ChromiumCDMParent::RejectPromiseWithStateError(
 
 static ErrorResult ToErrorResult(uint32_t aException,
                                  const nsCString& aErrorMessage) {
-  
-  
+  // XXXbz could we have a CopyableErrorResult sent to us with a better error
+  // message?
   ErrorResult rv;
   switch (static_cast<cdm::Exception>(aException)) {
     case cdm::Exception::kExceptionNotSupportedError:
@@ -488,7 +488,7 @@ static ErrorResult ToErrorResult(uint32_t aException,
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("Invalid cdm::Exception enum value.");
-      
+      // Note: Unique placeholder.
       rv.ThrowTimeoutError(aErrorMessage);
   };
   return rv;
@@ -588,8 +588,8 @@ ipc::IPCResult ChromiumCDMParent::RecvDecrypted(const uint32_t& aId,
                 ", status=%" PRIu32 ")",
                 this, aId, aStatus);
 
-  
-  
+  // We must deallocate the shmem once we've copied the result out of it
+  // in PostResult below.
   auto autoDeallocateShmem = MakeScopeExit([&, this] { DeallocShmem(aShmem); });
 
   if (mIsShutdown) {
@@ -612,12 +612,12 @@ ipc::IPCResult ChromiumCDMParent::RecvIncreaseShmemPoolSize() {
   GMP_LOG_DEBUG("%s(this=%p) limit=%" PRIu32 " active=%" PRIu32, __func__, this,
                 mVideoShmemLimit, mVideoShmemsActive);
 
-  
-  
-  
-  
-  
-  
+  // Put an upper limit on the number of shmems we tolerate the CDM asking
+  // for, to prevent a memory blow-out. In practice, we expect the CDM to
+  // need less than 5, but some encodings require more.
+  // We'd expect CDMs to not have video frames larger than 720p-1080p
+  // (due to DRM robustness requirements), which is about 1.5MB-3MB per
+  // frame.
   if (mVideoShmemLimit > 50) {
     mDecodePromise.RejectIfExists(
         MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
@@ -640,7 +640,7 @@ bool ChromiumCDMParent::PurgeShmems() {
       this, mVideoFrameBufferSize, mVideoShmemLimit, mVideoShmemsActive);
 
   if (mVideoShmemsActive == 0) {
-    
+    // We haven't allocated any shmems, nothing to do here.
     return true;
   }
   if (!SendPurgeShmems()) {
@@ -657,42 +657,42 @@ bool ChromiumCDMParent::EnsureSufficientShmems(size_t aVideoFrameSize) {
       this, aVideoFrameSize, mVideoFrameBufferSize, mVideoShmemLimit,
       mVideoShmemsActive);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // The Chromium CDM API requires us to implement a synchronous
+  // interface to supply buffers to the CDM for it to write decrypted samples
+  // into. We want our buffers to be backed by shmems, in order to reduce
+  // the overhead of transferring decoded frames. However due to sandboxing
+  // restrictions, the CDM process cannot allocate shmems itself.
+  // We don't want to be doing synchronous IPC to request shmems from the
+  // content process, nor do we want to have to do intr IPC or make async
+  // IPC conform to the sync allocation interface. So instead we have the
+  // content process pre-allocate a set of shmems and give them to the CDM
+  // process in advance of them being needed.
+  //
+  // When the CDM needs to allocate a buffer for storing a decoded video
+  // frame, the CDM host gives it one of these shmems' buffers. When this
+  // is sent back to the content process, we upload it to a GPU surface,
+  // and send the shmem back to the CDM process so it can reuse it.
+  //
+  // Normally the CDM won't allocate more than one buffer at once, but
+  // we've seen cases where it allocates multiple buffers, returns one and
+  // holds onto the rest. So we need to ensure we have several extra
+  // shmems pre-allocated for the CDM. This threshold is set by the pref
+  // media.eme.chromium-api.video-shmems.
+  //
+  // We also have a failure recovery mechanism; if the CDM asks for more
+  // buffers than we have shmem's available, ChromiumCDMChild gives the
+  // CDM a non-shared memory buffer, and returns the frame to the parent
+  // in an nsTArray<uint8_t> instead of a shmem. The child then sends a
+  // message to the parent asking it to increase the number of shmems in
+  // the pool. Via this mechanism we should recover from incorrectly
+  // predicting how many shmems to pre-allocate.
+  //
+  // At decoder start up, we guess how big the shmems need to be based on
+  // the video frame dimensions. If we guess wrong, the CDM will follow
+  // the non-shmem path, and we'll re-create the shmems of the correct size.
+  // This meanns we can recover from guessing the shmem size wrong.
+  // We must re-take this path after every decoder de-init/re-init, as the
+  // frame sizes should change every time we switch video stream.
 
   if (mVideoFrameBufferSize < aVideoFrameSize) {
     if (!PurgeShmems()) {
@@ -748,8 +748,8 @@ ipc::IPCResult ChromiumCDMParent::RecvDecodedShmem(const CDMVideoFrame& aFrame,
                 " duration=%" PRId64,
                 this, aFrame.mTimestamp(), aFrame.mDuration());
 
-  
-  
+  // On failure we need to deallocate the shmem we're to return to the
+  // CDM. On success we return it to the CDM to be reused.
   auto autoDeallocateShmem =
       MakeScopeExit([&, this] { this->DeallocShmem(aShmem); });
 
@@ -767,8 +767,8 @@ ipc::IPCResult ChromiumCDMParent::RecvDecodedShmem(const CDMVideoFrame& aFrame,
     return IPC_OK();
   }
 
-  
-  
+  // Return the shmem to the CDM so the shmem can be reused to send us
+  // another frame.
   if (!SendGiveBuffer(std::move(aShmem))) {
     mDecodePromise.RejectIfExists(
         MediaResult(NS_ERROR_OUT_OF_MEMORY,
@@ -777,8 +777,8 @@ ipc::IPCResult ChromiumCDMParent::RecvDecodedShmem(const CDMVideoFrame& aFrame,
     return IPC_OK();
   }
 
-  
-  
+  // Don't need to deallocate the shmem since the CDM process is responsible
+  // for it again.
   autoDeallocateShmem.release();
 
   ReorderAndReturnOutput(std::move(v));
@@ -805,8 +805,8 @@ already_AddRefed<VideoData> ChromiumCDMParent::CreateVideoFrame(
   VideoData::YCbCrBuffer b;
   MOZ_ASSERT(aData.Length() > 0);
 
-  
-  
+  // Since we store each plane separately we can just roll the offset
+  // into our pointer to that plane and store that.
   b.mPlanes[0].mData = aData.Elements() + aFrame.mYPlane().mPlaneOffset();
   b.mPlanes[0].mWidth = aFrame.mImageWidth();
   b.mPlanes[0].mHeight = aFrame.mImageHeight();
@@ -825,8 +825,8 @@ already_AddRefed<VideoData> ChromiumCDMParent::CreateVideoFrame(
   b.mPlanes[2].mStride = aFrame.mVPlane().mStride();
   b.mPlanes[2].mSkip = 0;
 
-  
-  
+  // We unfortunately can't know which colorspace the video is using at this
+  // stage.
   b.mYUVColorSpace =
       DefaultColorSpace({aFrame.mImageWidth(), aFrame.mImageHeight()});
 
@@ -876,11 +876,11 @@ void ChromiumCDMParent::ActorDestroy(ActorDestroyReason aWhy) {
                 aWhy);
   MOZ_ASSERT(!mActorDestroyed);
   mActorDestroyed = true;
-  
-  
+  // Shutdown() will clear mCDMCallback, so let's keep a reference for later
+  // use.
   auto callback = mCDMCallback;
   if (!mIsShutdown) {
-    
+    // Plugin crash.
     MOZ_ASSERT(aWhy == AbnormalShutdown);
     Shutdown();
   }
@@ -907,13 +907,13 @@ RefPtr<MediaDataDecoder::InitPromise> ChromiumCDMParent::InitializeVideoDecoder(
         __func__);
   }
 
-  
-  
-  
-  
-  
-  
-  
+  // The Widevine CDM version 1.4.8.970 and above contain a video decoder that
+  // does not optimally allocate video frames; it requests buffers much larger
+  // than required. The exact formula the CDM uses to calculate their frame
+  // sizes isn't obvious, but they normally request around or slightly more
+  // than 1.5X the optimal amount. So pad the size of buffers we allocate so
+  // that we're likely to have buffers big enough to accomodate the CDM's weird
+  // frame size calculation.
   const size_t bufferSize =
       1.7 * I420FrameBufferSizePadded(aInfo.mImage.width, aInfo.mImage.height);
   if (bufferSize <= 0) {
@@ -1086,9 +1086,9 @@ RefPtr<ShutdownPromise> ChromiumCDMParent::ShutdownVideoDecoder() {
 
   GMP_LOG_DEBUG("ChromiumCDMParent::~ShutdownVideoDecoder(this=%p) ", this);
 
-  
-  
-  
+  // The ChromiumCDMChild will purge its shmems, so if the decoder is
+  // reinitialized the shmems need to be re-allocated, and they may need
+  // to be a different size.
   mVideoShmemsActive = 0;
   mVideoFrameBufferSize = 0;
   return ShutdownPromise::CreateAndResolve(true, __func__);
@@ -1102,18 +1102,18 @@ void ChromiumCDMParent::Shutdown() {
   }
   mIsShutdown = true;
 
-  
-  
-  
-  
-  
+  // If we're shutting down due to the plugin shutting down due to application
+  // shutdown, we should tell the CDM proxy to also shutdown. Otherwise the
+  // proxy will shutdown when the owning MediaKeys is destroyed during cycle
+  // collection, and that will not shut down cleanly as the GMP thread will be
+  // shutdown by then.
   if (mCDMCallback) {
     mCDMCallback->Shutdown();
   }
 
-  
-  
-  
+  // We may be called from a task holding the last reference to the CDM
+  // callback, so let's clear our local weak pointer to ensure it will not be
+  // used afterward (including from an already-queued task, e.g.: ActorDestroy).
   mCDMCallback = nullptr;
 
   mReorderQueue.Clear();
@@ -1128,8 +1128,8 @@ void ChromiumCDMParent::Shutdown() {
     mVideoDecoderInitialized = false;
   }
 
-  
-  
+  // Note: MediaKeys rejects all outstanding promises when it initiates
+  // shutdown.
   mPromiseToCreateSessionToken.Clear();
 
   mInitPromise.RejectIfExists(
@@ -1155,6 +1155,6 @@ void ChromiumCDMParent::Shutdown() {
   }
 }
 
-}  
+}  // namespace mozilla::gmp
 
 #undef NS_DispatchToMainThread

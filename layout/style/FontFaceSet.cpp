@@ -656,7 +656,7 @@ bool FontFaceSet::UpdateRules(const nsTArray<nsFontFaceRuleContainer>& aRules) {
     if (!f) {
       continue;
     }
-    ruleFaceMap.Put(f->GetRule(), f);
+    ruleFaceMap.InsertOrUpdate(f->GetRule(), f);
   }
 
   

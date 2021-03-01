@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "plhash.h"
 #include "nsDirectoryServiceUtils.h"
@@ -18,8 +18,8 @@
 
 namespace mozilla::gmp {
 
-
-
+// We store the records for a given GMP as files in the profile dir.
+// $profileDir/gmp/$platform/$gmpName/storage/$nodeId/
 static nsresult GetGMPStorageDir(nsIFile** aTempDir, const nsString& aGMPName,
                                  const nsCString& aNodeId) {
   if (NS_WARN_IF(!aTempDir)) {
@@ -63,20 +63,20 @@ static nsresult GetGMPStorageDir(nsIFile** aTempDir, const nsString& aGMPName,
   return NS_OK;
 }
 
-
-
-
-
-
-
-
+// Disk-backed GMP storage. Records are stored in files on disk in
+// the profile directory. The record name is a hash of the filename,
+// and we resolve hash collisions by just adding 1 to the hash code.
+// The format of records on disk is:
+//   4 byte, uint32_t $recordNameLength, in little-endian byte order,
+//   record name (i.e. $recordNameLength bytes, no null terminator)
+//   record bytes (entire remainder of file)
 class GMPDiskStorage : public GMPStorage {
  public:
   explicit GMPDiskStorage(const nsCString& aNodeId, const nsString& aGMPName)
       : mNodeId(aNodeId), mGMPName(aGMPName) {}
 
   ~GMPDiskStorage() {
-    
+    // Close all open file handles.
     for (auto iter = mRecords.ConstIter(); !iter.Done(); iter.Next()) {
       Record* record = iter.UserData();
       if (record->mFileDesc) {
@@ -87,7 +87,7 @@ class GMPDiskStorage : public GMPStorage {
   }
 
   nsresult Init() {
-    
+    // Build our index of records on disk.
     nsCOMPtr<nsIFile> storageDir;
     nsresult rv =
         GetGMPStorageDir(getter_AddRefs(storageDir), mGMPName, mNodeId);
@@ -107,8 +107,8 @@ class GMPDiskStorage : public GMPStorage {
       nsresult err = ReadRecordMetadata(fd, recordLength, recordName);
       PR_Close(fd);
       if (NS_WARN_IF(NS_FAILED(err))) {
-        
-        
+        // File is not a valid storage file. Don't index it. Delete the file,
+        // to make our indexing faster in future.
         dirEntry->Remove(false);
         continue;
       }
@@ -119,7 +119,8 @@ class GMPDiskStorage : public GMPStorage {
         continue;
       }
 
-      mRecords.Put(recordName, MakeUnique<Record>(filename, recordName));
+      mRecords.InsertOrUpdate(recordName,
+                              MakeUnique<Record>(filename, recordName));
     }
 
     return NS_OK;
@@ -131,7 +132,7 @@ class GMPDiskStorage : public GMPStorage {
     Record* const record =
         mRecords.WithEntryHandle(aRecordName, [&](auto&& entry) -> Record* {
           if (!entry) {
-            
+            // New file.
             nsAutoString filename;
             nsresult rv = GetUnusedFilename(aRecordName, filename);
             if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -165,8 +166,8 @@ class GMPDiskStorage : public GMPStorage {
   }
 
   bool IsOpen(const nsCString& aRecordName) const override {
-    
-    
+    // We are open if we have a record indexed, and it has a valid
+    // file descriptor.
     const Record* record = mRecords.Get(aRecordName);
     return record && !!record->mFileDesc;
   }
@@ -179,11 +180,11 @@ class GMPDiskStorage : public GMPStorage {
 
     Record* record = nullptr;
     mRecords.Get(aRecordName, &record);
-    MOZ_ASSERT(record && !!record->mFileDesc);  
+    MOZ_ASSERT(record && !!record->mFileDesc);  // IsOpen() guarantees this.
 
-    
-    
-    
+    // Our error strategy is to report records with invalid contents as
+    // containing 0 bytes. Zero length records are considered "deleted" by
+    // the GMPStorage API.
     aOutBytes.SetLength(0);
 
     int32_t recordLength = 0;
@@ -191,10 +192,10 @@ class GMPDiskStorage : public GMPStorage {
     nsresult err =
         ReadRecordMetadata(record->mFileDesc, recordLength, recordName);
     if (NS_WARN_IF(NS_FAILED(err) || recordLength == 0)) {
-      
-      
-      
-      
+      // We failed to read the record metadata. Or the record is 0 length.
+      // Treat damaged records as empty.
+      // ReadRecordMetadata() could fail if the GMP opened a new record and
+      // tried to read it before anything was written to it..
       return GMPNoErr;
     }
 
@@ -203,8 +204,8 @@ class GMPDiskStorage : public GMPStorage {
       return GMPRecordCorrupted;
     }
 
-    
-    
+    // After calling ReadRecordMetadata, we should be ready to read the
+    // record data.
     if (PR_Available(record->mFileDesc) != recordLength) {
       NS_WARNING("Record file length mismatch!");
       return GMPRecordCorrupted;
@@ -224,31 +225,31 @@ class GMPDiskStorage : public GMPStorage {
 
     Record* record = nullptr;
     mRecords.Get(aRecordName, &record);
-    MOZ_ASSERT(record && !!record->mFileDesc);  
+    MOZ_ASSERT(record && !!record->mFileDesc);  // IsOpen() guarantees this.
 
-    
+    // Write operations overwrite the entire record. So close it now.
     PR_Close(record->mFileDesc);
     record->mFileDesc = nullptr;
 
-    
+    // Writing 0 bytes means removing (deleting) the file.
     if (aBytes.Length() == 0) {
       nsresult rv = RemoveStorageFile(record->mFilename);
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        
+        // Could not delete file -> Continue with trying to erase the contents.
       } else {
         return GMPNoErr;
       }
     }
 
-    
-    
+    // Write operations overwrite the entire record. So re-open the file
+    // in truncate mode, to clear its contents.
     if (NS_WARN_IF(NS_FAILED(OpenStorageFile(record->mFilename, Truncate,
                                              &record->mFileDesc)))) {
       return GMPGenericErr;
     }
 
-    
-    
+    // Store the length of the record name followed by the record name
+    // at the start of the file.
     int32_t bytesWritten = 0;
     char buf[sizeof(uint32_t)] = {0};
     LittleEndian::writeUint32(buf, aRecordName.Length());
@@ -271,8 +272,8 @@ class GMPDiskStorage : public GMPStorage {
       return GMPRecordCorrupted;
     }
 
-    
-    
+    // Try to sync the file to disk, so that in the event of a crash,
+    // the record is less likely to be corrupted.
     PR_Sync(record->mFileDesc);
 
     return GMPNoErr;
@@ -289,9 +290,9 @@ class GMPDiskStorage : public GMPStorage {
   }
 
  private:
-  
-  
-  
+  // We store records in a file which is a hash of the record name.
+  // If there is a hash collision, we just keep adding 1 to the hash
+  // code, until we find a free slot.
   nsresult GetUnusedFilename(const nsACString& aRecordName,
                              nsString& aOutFilename) {
     nsCOMPtr<nsIFile> storageDir;
@@ -317,17 +318,17 @@ class GMPDiskStorage : public GMPStorage {
       bool exists = false;
       f->Exists(&exists);
       if (!exists) {
-        
+        // Filename not in use, we can write into this file.
         aOutFilename = hashStr;
         return NS_OK;
       } else {
-        
+        // Hash collision; just increment the hash name and try that again.
         ++recordNameHash;
         continue;
       }
     }
-    
-    
+    // Somehow, we've managed to completely fail to find a vacant file name.
+    // Give up.
     NS_WARNING("GetUnusedFilename had extreme hash collision!");
     return NS_ERROR_FAILURE;
   }
@@ -359,23 +360,23 @@ class GMPDiskStorage : public GMPStorage {
     PR_Seek(aFd, 0, PR_SEEK_SET);
 
     if (offset < 0 || offset > GMP_MAX_RECORD_SIZE) {
-      
+      // Refuse to read big records, or records where we can't get a length.
       return NS_ERROR_FAILURE;
     }
     const uint32_t fileLength = static_cast<uint32_t>(offset);
 
-    
-    
-    
-    
+    // At the start of the file the length of the record name is stored in a
+    // uint32_t (little endian byte order) followed by the record name at the
+    // start of the file. The record name is not null terminated. The remainder
+    // of the file is the record's data.
 
     if (fileLength < sizeof(uint32_t)) {
-      
-      
+      // Record file doesn't have enough contents to store the record name
+      // length. Fail.
       return NS_ERROR_FAILURE;
     }
 
-    
+    // Read length, and convert to host byte order.
     uint32_t recordNameLength = 0;
     char buf[sizeof(recordNameLength)] = {0};
     int32_t bytesRead = PR_Read(aFd, &buf, sizeof(recordNameLength));
@@ -383,7 +384,7 @@ class GMPDiskStorage : public GMPStorage {
     if (sizeof(recordNameLength) != bytesRead || recordNameLength == 0 ||
         recordNameLength + sizeof(recordNameLength) > fileLength ||
         recordNameLength > GMP_MAX_RECORD_NAME_SIZE) {
-      
+      // Record file has invalid contents. Fail.
       return NS_ERROR_FAILURE;
     }
 
@@ -391,7 +392,7 @@ class GMPDiskStorage : public GMPStorage {
     recordName.SetLength(recordNameLength);
     bytesRead = PR_Read(aFd, recordName.BeginWriting(), recordNameLength);
     if ((uint32_t)bytesRead != recordNameLength) {
-      
+      // Read failed.
       return NS_ERROR_FAILURE;
     }
 
@@ -402,8 +403,8 @@ class GMPDiskStorage : public GMPStorage {
     aOutRecordLength = recordLength;
     aOutRecordName = recordName;
 
-    
-    
+    // Read cursor should be positioned after the record name, before the record
+    // contents.
     if (PR_Seek(aFd, 0, PR_SEEK_CUR) !=
         (int32_t)(sizeof(recordNameLength) + recordNameLength)) {
       NS_WARNING("Read cursor mismatch after ReadRecordMetadata()");
@@ -423,7 +424,7 @@ class GMPDiskStorage : public GMPStorage {
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-    return f->Remove( false);
+    return f->Remove(/* bool recursive= */ false);
   }
 
   struct Record {
@@ -435,7 +436,7 @@ class GMPDiskStorage : public GMPStorage {
     PRFileDesc* mFileDesc;
   };
 
-  
+  // Hash record name to record data.
   nsClassHashtable<nsCStringHashKey, Record> mRecords;
   const nsCString mNodeId;
   const nsString mGMPName;
@@ -451,4 +452,4 @@ already_AddRefed<GMPStorage> CreateGMPDiskStorage(const nsCString& aNodeId,
   return storage.forget();
 }
 
-}  
+}  // namespace mozilla::gmp

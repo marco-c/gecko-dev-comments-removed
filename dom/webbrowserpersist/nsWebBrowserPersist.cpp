@@ -572,7 +572,7 @@ nsresult nsWebBrowserPersist::StartUpload(nsIInputStream* aInputStream,
 
   
   nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(destChannel);
-  mUploadList.Put(keyPtr, MakeUnique<UploadData>(aDestinationURI));
+  mUploadList.InsertOrUpdate(keyPtr, MakeUnique<UploadData>(aDestinationURI));
 
   return NS_OK;
 }
@@ -1507,7 +1507,8 @@ nsresult nsWebBrowserPersist::SaveChannelInternal(nsIChannel* aChannel,
   MutexAutoLock lock(mOutputMapMutex);
   
   nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(aChannel);
-  mOutputMap.Put(keyPtr, MakeUnique<OutputData>(aFile, mURI, aCalcFileExt));
+  mOutputMap.InsertOrUpdate(keyPtr,
+                            MakeUnique<OutputData>(aFile, mURI, aCalcFileExt));
 
   return NS_OK;
 }
@@ -2420,7 +2421,7 @@ nsresult nsWebBrowserPersist::FixRedirectedChannelEntry(
     
     if (!(mPersistFlags & PERSIST_FLAGS_IGNORE_REDIRECTED_DATA)) {
       nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(aNewChannel);
-      mOutputMap.Put(keyPtr, std::move(outputData));
+      mOutputMap.InsertOrUpdate(keyPtr, std::move(outputData));
     }
   }
 
@@ -2738,7 +2739,7 @@ nsresult nsWebBrowserPersist::MakeAndStoreLocalFilenameInURIMap(
 
   if (aNeedsPersisting) mCurrentThingsToPersist++;
 
-  mURIMap.Put(spec, UniquePtr<URIData>(data));
+  mURIMap.InsertOrUpdate(spec, UniquePtr<URIData>(data));
   if (aData) {
     *aData = data;
   }

@@ -92,7 +92,7 @@ AndroidAlerts::ShowPersistentNotification(const nsAString& aPersistentData,
       sListenerMap = new ListenerMap();
     }
     
-    sListenerMap->Put(name, aAlertListener);
+    sListenerMap->InsertOrUpdate(name, aAlertListener);
   }
 
   java::WebNotification::LocalRef notification = notification->New(
@@ -101,7 +101,7 @@ AndroidAlerts::ShowPersistentNotification(const nsAString& aPersistentData,
   if (runtime != NULL) {
     runtime->NotifyOnShow(notification);
   }
-  mNotificationsMap.Put(name, notification);
+  mNotificationsMap.InsertOrUpdate(name, notification);
 
   return NS_OK;
 }

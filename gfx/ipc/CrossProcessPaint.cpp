@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CrossProcessPaint.h"
 
@@ -39,10 +39,10 @@ namespace gfx {
 
 using namespace mozilla::ipc;
 
-
+/// The minimum scale we allow tabs to be rasterized at.
 static const float kMinPaintScale = 0.05f;
 
-
+/* static */
 PaintFragment PaintFragment::Record(dom::BrowsingContext* aBc,
                                     const Maybe<IntRect>& aRect, float aScale,
                                     nscolor aBackgroundColor,
@@ -64,7 +64,7 @@ PaintFragment PaintFragment::Record(dom::BrowsingContext* aBc,
     nsCOMPtr<nsIWidget> widget =
         nsContentUtils::WidgetForDocument(presContext->Document());
 
-    
+    // TODO: Apply some sort of clipping to visible bounds here (Bug 1562720)
     LayoutDeviceIntRect boundsDevice = widget->GetBounds();
     boundsDevice.MoveTo(0, 0);
     nsRect boundsAu = LayoutDevicePixel::ToAppUnits(
@@ -75,7 +75,7 @@ PaintFragment PaintFragment::Record(dom::BrowsingContext* aBc,
   }
 
   if (rect.IsEmpty()) {
-    
+    // TODO: Should we return an empty surface here?
     PF_LOG("Empty rect to paint.\n");
     return PaintFragment{};
   }
@@ -94,7 +94,7 @@ PaintFragment PaintFragment::Record(dom::BrowsingContext* aBc,
       NS_GET_R(aBackgroundColor), NS_GET_G(aBackgroundColor),
       NS_GET_B(aBackgroundColor), NS_GET_A(aBackgroundColor));
 
-  
+  // Check for invalid sizes
   if (surfaceSize.width <= 0 || surfaceSize.height <= 0 ||
       !Factory::CheckSurfaceSize(surfaceSize)) {
     PF_LOG("Invalid surface size of (%d x %d).\n", surfaceSize.width,
@@ -102,15 +102,15 @@ PaintFragment PaintFragment::Record(dom::BrowsingContext* aBc,
     return PaintFragment{};
   }
 
-  
+  // Flush any pending notifications
   nsContentUtils::FlushLayoutForTree(ds->GetWindow());
 
-  
+  // Initialize the recorder
   SurfaceFormat format = SurfaceFormat::B8G8R8A8;
   RefPtr<DrawTarget> referenceDt = Factory::CreateDrawTarget(
       gfxPlatform::GetPlatform()->GetSoftwareBackend(), IntSize(1, 1), format);
 
-  
+  // TODO: This may OOM crash if the content is complex enough
   RefPtr<DrawEventRecorderMemory> recorder =
       MakeAndAddRef<DrawEventRecorderMemory>(nullptr);
   RefPtr<DrawTarget> dt = Factory::CreateRecordingDrawTarget(
@@ -123,7 +123,7 @@ PaintFragment PaintFragment::Record(dom::BrowsingContext* aBc,
                       RenderDocumentFlags::DocumentRelative);
   }
 
-  
+  // Perform the actual rendering
   {
     nsRect r(nsPresContext::CSSPixelsToAppUnits(rect.x),
              nsPresContext::CSSPixelsToAppUnits(rect.y),
@@ -166,16 +166,16 @@ PaintFragment::PaintFragment(IntSize aSize, ByteBuf&& aRecording,
       mDependencies(std::move(aDependencies)) {}
 
 static dom::TabId GetTabId(dom::WindowGlobalParent* aWGP) {
-  
-  
-  
-  
-  
+  // There is no unique TabId for a given WindowGlobalParent, as multiple
+  // WindowGlobalParents share the same PBrowser actor. However, we only
+  // ever queue one paint per PBrowser by just using the current
+  // WindowGlobalParent for a PBrowser. So we can interchange TabId and
+  // WindowGlobalParent when dealing with resolving surfaces.
   RefPtr<dom::BrowserParent> browserParent = aWGP->GetBrowserParent();
   return browserParent ? browserParent->GetTabId() : dom::TabId(0);
 }
 
-
+/* static */
 bool CrossProcessPaint::Start(dom::WindowGlobalParent* aRoot,
                               const dom::DOMRect* aRect, float aScale,
                               nscolor aBackgroundColor,
@@ -214,7 +214,7 @@ bool CrossProcessPaint::Start(dom::WindowGlobalParent* aRoot,
       return false;
     }
 
-    
+    // `BrowsingContext()` cannot be nullptr.
     RefPtr<dom::BrowsingContext> bc = childActor->BrowsingContext();
 
     promise = resolver->Init();
@@ -233,7 +233,7 @@ bool CrossProcessPaint::Start(dom::WindowGlobalParent* aRoot,
         RefPtr<RecordedDependentSurface> root = aFragments.Get(rootId);
         CPP_LOG("Resolved all fragments.\n");
 
-        
+        // Create the destination draw target
         RefPtr<DrawTarget> drawTarget =
             gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
                 root->mSize, SurfaceFormat::B8G8R8A8);
@@ -245,7 +245,7 @@ bool CrossProcessPaint::Start(dom::WindowGlobalParent* aRoot,
           return;
         }
 
-        
+        // Translate the recording using our child tabs
         {
           InlineTranslator translator(drawTarget, nullptr);
           translator.SetDependentSurfaces(&aFragments);
@@ -284,7 +284,7 @@ bool CrossProcessPaint::Start(dom::WindowGlobalParent* aRoot,
   return true;
 }
 
-
+/* static */
 RefPtr<CrossProcessPaint::ResolvePromise> CrossProcessPaint::Start(
     nsTHashtable<nsUint64HashKey>&& aDependencies) {
   MOZ_ASSERT(!aDependencies.IsEmpty());
@@ -297,7 +297,8 @@ RefPtr<CrossProcessPaint::ResolvePromise> CrossProcessPaint::Start(
   rootFragment.mDependencies = std::move(aDependencies);
 
   resolver->QueueDependencies(rootFragment.mDependencies);
-  resolver->mReceivedFragments.Put(dom::TabId(0), std::move(rootFragment));
+  resolver->mReceivedFragments.InsertOrUpdate(dom::TabId(0),
+                                              std::move(rootFragment));
 
   resolver->MaybeResolve();
 
@@ -321,8 +322,8 @@ void CrossProcessPaint::ReceiveFragment(dom::WindowGlobalParent* aWGP,
   MOZ_ASSERT(mPendingFragments > 0);
   MOZ_ASSERT(!mReceivedFragments.GetValue(surfaceId));
 
-  
-  
+  // Double check our invariants to protect against a compromised content
+  // process
   if (mPendingFragments == 0 || mReceivedFragments.GetValue(surfaceId) ||
       aFragment.IsEmpty()) {
     CPP_LOG("Dropping invalid fragment from %p.\n", aWGP);
@@ -333,13 +334,13 @@ void CrossProcessPaint::ReceiveFragment(dom::WindowGlobalParent* aWGP,
   CPP_LOG("Receiving fragment from %p(%" PRIu64 ").\n", aWGP,
           (uint64_t)surfaceId);
 
-  
+  // Queue paints for child tabs
   QueueDependencies(aFragment.mDependencies);
 
-  mReceivedFragments.Put(surfaceId, std::move(aFragment));
+  mReceivedFragments.InsertOrUpdate(surfaceId, std::move(aFragment));
   mPendingFragments -= 1;
 
-  
+  // Resolve this paint if we have received all pending fragments
   MaybeResolve();
 }
 
@@ -357,8 +358,8 @@ void CrossProcessPaint::QueueDependencies(
   for (auto iter = aDependencies.ConstIter(); !iter.Done(); iter.Next()) {
     auto dependency = dom::TabId(iter.Get()->GetKey());
 
-    
-    
+    // Get the current WindowGlobalParent of the remote browser that was marked
+    // as a dependency
     dom::ContentProcessManager* cpm =
         dom::ContentProcessManager::GetSingleton();
     dom::ContentParentId cpId = cpm->GetTabProcessId(dependency);
@@ -378,7 +379,7 @@ void CrossProcessPaint::QueueDependencies(
       continue;
     }
 
-    
+    // TODO: Apply some sort of clipping to visible bounds here (Bug 1562720)
     QueuePaint(wgp, Nothing());
   }
 }
@@ -405,8 +406,8 @@ void CrossProcessPaint::Clear(nsresult aStatus) {
 bool CrossProcessPaint::IsCleared() const { return mPromise.IsEmpty(); }
 
 void CrossProcessPaint::MaybeResolve() {
-  
-  
+  // Don't do anything if we aren't ready, experienced an error, or already
+  // resolved this paint
   if (IsCleared() || mPendingFragments > 0) {
     CPP_LOG("Not ready to resolve yet, have %u fragments left.\n",
             mPendingFragments);
@@ -415,7 +416,7 @@ void CrossProcessPaint::MaybeResolve() {
 
   CPP_LOG("Starting to resolve fragments.\n");
 
-  
+  // Resolve the paint fragments from the bottom up
   ResolvedFragmentMap resolved;
   {
     nsresult rv = ResolveInternal(mRoot, &resolved);
@@ -434,7 +435,7 @@ void CrossProcessPaint::MaybeResolve() {
 
 nsresult CrossProcessPaint::ResolveInternal(dom::TabId aTabId,
                                             ResolvedFragmentMap* aResolved) {
-  
+  // We should not have resolved this paint already
   MOZ_ASSERT(!aResolved->GetWeak(aTabId));
 
   CPP_LOG("Resolving fragment %" PRIu64 ".\n", (uint64_t)aTabId);
@@ -444,7 +445,7 @@ nsresult CrossProcessPaint::ResolveInternal(dom::TabId aTabId,
     return NS_ERROR_LOSS_OF_SIGNIFICANT_DATA;
   }
 
-  
+  // Rasterize all the dependencies first so that we can resolve this fragment
   for (auto iter = fragment->mDependencies.Iter(); !iter.Done(); iter.Next()) {
     auto dependency = dom::TabId(iter.Get()->GetKey());
 
@@ -456,9 +457,9 @@ nsresult CrossProcessPaint::ResolveInternal(dom::TabId aTabId,
 
   RefPtr<RecordedDependentSurface> surface = new RecordedDependentSurface{
       fragment->mSize, std::move(fragment->mRecording)};
-  aResolved->Put(aTabId, std::move(surface));
+  aResolved->InsertOrUpdate(aTabId, std::move(surface));
   return NS_OK;
 }
 
-}  
-}  
+}  // namespace gfx
+}  // namespace mozilla

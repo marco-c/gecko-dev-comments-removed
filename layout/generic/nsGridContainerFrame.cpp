@@ -4665,7 +4665,7 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
         mCellMap.Fill(area);
         SetSubgridChildEdgeBits(item);
         if (isSparse) {
-          cursors->Put(major.mStart, minor.mEnd);
+          cursors->InsertOrUpdate(major.mStart, minor.mEnd);
         }
       }
       InflateGridFor(area);  

@@ -383,7 +383,7 @@ class BlurCache final : public nsExpirationTracker<BlurCacheData, 4> {
       
       return;
     }
-    mHashEntries.Put(aValue->mKey, std::move(aValue));
+    mHashEntries.InsertOrUpdate(aValue->mKey, std::move(aValue));
   }
 
  protected:

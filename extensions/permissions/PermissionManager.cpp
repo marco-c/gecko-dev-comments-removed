@@ -3047,8 +3047,8 @@ void PermissionManager::SetPermissionsWithKey(
     
     return;
   }
-  mPermissionKeyPromiseMap.Put(aPermissionKey,
-                               RefPtr<GenericNonExclusivePromise::Private>{});
+  mPermissionKeyPromiseMap.InsertOrUpdate(
+      aPermissionKey, RefPtr<GenericNonExclusivePromise::Private>{});
 
   
   for (IPC::Permission& perm : aPerms) {
@@ -3229,7 +3229,7 @@ void PermissionManager::WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
       
       
       promise = new GenericNonExclusivePromise::Private(__func__);
-      mPermissionKeyPromiseMap.Put(pair.first, RefPtr{promise});
+      mPermissionKeyPromiseMap.InsertOrUpdate(pair.first, RefPtr{promise});
     }
 
     if (promise) {

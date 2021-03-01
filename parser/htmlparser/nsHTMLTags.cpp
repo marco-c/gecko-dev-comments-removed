@@ -49,13 +49,13 @@ nsresult nsHTMLTags::AddRefTable(void) {
       
       nsString tmp;
       tmp.AssignLiteral(tagName, nsString::char_traits::length(tagName));
-      gTagTable->Put(tmp, tagValue);
+      gTagTable->InsertOrUpdate(tmp, tagValue);
 
       
       
       nsStaticAtom* atom = NS_GetStaticAtom(tmp);
       MOZ_ASSERT(atom);
-      gTagAtomTable->Put(atom, tagValue);
+      gTagAtomTable->InsertOrUpdate(atom, tagValue);
     }
 
 #ifdef DEBUG

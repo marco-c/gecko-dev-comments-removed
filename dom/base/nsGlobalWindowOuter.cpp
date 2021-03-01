@@ -1376,7 +1376,7 @@ nsGlobalWindowOuter::nsGlobalWindowOuter(uint64_t aWindowID)
   
   
   if (sOuterWindowsById) {
-    sOuterWindowsById->Put(mWindowID, this);
+    sOuterWindowsById->InsertOrUpdate(mWindowID, this);
   }
 }
 

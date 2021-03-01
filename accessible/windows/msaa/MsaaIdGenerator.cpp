@@ -195,7 +195,7 @@ uint32_t MsaaIdGenerator::GetContentProcessIDFor(
   
   MOZ_RELEASE_ASSERT(index < ArrayLength(sContentProcessIdBitmap));
 
-  sContentParentIdMap->Put(aIPCContentProcessID, value);
+  sContentParentIdMap->InsertOrUpdate(aIPCContentProcessID, value);
   return value;
 }
 

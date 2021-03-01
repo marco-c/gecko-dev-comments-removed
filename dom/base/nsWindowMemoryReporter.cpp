@@ -232,7 +232,7 @@ static void CollectWindowReports(nsGlobalWindowInner* aWindow,
                     aAnonymize);
     windowPath.AppendPrintf(", id=%" PRIu64 ")", top->WindowID());
 
-    aTopWindowPaths->Put(aWindow->WindowID(), windowPath);
+    aTopWindowPaths->InsertOrUpdate(aWindow->WindowID(), windowPath);
 
     windowPath += aWindow->IsFrozen() ? "/cached/"_ns : "/active/"_ns;
   } else {
@@ -252,7 +252,7 @@ static void CollectWindowReports(nsGlobalWindowInner* aWindow,
   censusWindowPath.ReplaceLiteral(0, strlen("explicit"), "event-counts");
 
   
-  aWindowPaths->Put(aWindow->WindowID(), windowPath);
+  aWindowPaths->InsertOrUpdate(aWindow->WindowID(), windowPath);
 
 
 
@@ -711,7 +711,7 @@ void nsWindowMemoryReporter::ObserveDOMWindowDetached(
     return;
   }
 
-  mDetachedWindows.Put(weakWindow, TimeStamp());
+  mDetachedWindows.InsertOrUpdate(weakWindow, TimeStamp());
 
   AsyncCheckForGhostWindows();
 }

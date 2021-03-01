@@ -1012,7 +1012,7 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter* aOuterWindow,
   
   
   if (sInnerWindowsById) {
-    sInnerWindowsById->Put(mWindowID, this);
+    sInnerWindowsById->InsertOrUpdate(mWindowID, this);
   }
 }
 
@@ -6597,7 +6597,7 @@ void nsGlobalWindowInner::AddGamepad(GamepadHandle aHandle, Gamepad* aGamepad) {
   }
   mGamepadIndexSet.Put(index);
   aGamepad->SetIndex(index);
-  mGamepads.Put(aHandle, RefPtr{aGamepad});
+  mGamepads.InsertOrUpdate(aHandle, RefPtr{aGamepad});
 }
 
 void nsGlobalWindowInner::RemoveGamepad(GamepadHandle aHandle) {

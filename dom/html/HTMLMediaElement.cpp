@@ -3726,7 +3726,7 @@ void HTMLMediaElement::UpdateOutputTrackSources() {
 
     track->QueueSetAutoend(false);
     MOZ_DIAGNOSTIC_ASSERT(!mOutputTrackSources.GetWeak(id));
-    mOutputTrackSources.Put(id, RefPtr{source});
+    mOutputTrackSources.InsertOrUpdate(id, RefPtr{source});
 
     
     for (OutputMediaStream& ms : mOutputStreams) {

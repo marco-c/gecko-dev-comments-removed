@@ -904,7 +904,7 @@ void TRRService::AddToBlocklist(const nsACString& aHost,
   
   {
     auto bl = mTRRBLStorage.Lock();
-    bl->Put(hashkey, NowInSeconds());
+    bl->InsertOrUpdate(hashkey, NowInSeconds());
   }
 
   if (aParentsToo) {

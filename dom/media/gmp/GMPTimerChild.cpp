@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GMPTimerChild.h"
 #include "GMPPlatform.h"
@@ -35,7 +35,7 @@ GMPErr GMPTimerChild::SetTimer(GMPTask* aTask, int64_t aTimeoutMS) {
     return GMPQuotaExceededErr;
   }
   uint32_t timerId = mTimerCount;
-  mTimers.Put(timerId, aTask);
+  mTimers.InsertOrUpdate(timerId, aTask);
   mTimerCount++;
 
   if (!SendSetTimer(timerId, aTimeoutMS)) {
@@ -56,4 +56,4 @@ mozilla::ipc::IPCResult GMPTimerChild::RecvTimerExpired(
   return IPC_OK();
 }
 
-}  
+}  // namespace mozilla::gmp

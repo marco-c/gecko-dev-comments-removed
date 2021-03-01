@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/DebugOnly.h"
 
@@ -15,7 +15,7 @@ OggCodecStore::OggCodecStore() : mMonitor("CodecStore") {}
 OggCodecState* OggCodecStore::Add(uint32_t serial,
                                   UniquePtr<OggCodecState> codecState) {
   MonitorAutoLock mon(mMonitor);
-  return mCodecStates.Put(serial, std::move(codecState)).get();
+  return mCodecStates.InsertOrUpdate(serial, std::move(codecState)).get();
 }
 
 bool OggCodecStore::Contains(uint32_t serial) {
@@ -28,4 +28,4 @@ OggCodecState* OggCodecStore::Get(uint32_t serial) {
   return mCodecStates.Get(serial);
 }
 
-}  
+}  // namespace mozilla

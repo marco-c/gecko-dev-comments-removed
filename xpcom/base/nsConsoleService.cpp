@@ -466,7 +466,7 @@ nsConsoleService::RegisterListener(nsIConsoleListener* aListener) {
     
     return NS_ERROR_FAILURE;
   }
-  mListeners.Put(canonical, aListener);
+  mListeners.InsertOrUpdate(canonical, aListener);
   return NS_OK;
 }
 
