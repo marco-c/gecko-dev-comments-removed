@@ -383,11 +383,15 @@ impl ContextOps for ClientContext {
                                  ContextSetupDeviceCollectionCallback =>
                                  ContextSetupDeviceCollectionCallback())?;
 
-            
-            
-            
             let stream =
                 unsafe { audioipc::MessageStream::from_raw_fd(fds.platform_handles[0].into_raw()) };
+
+            
+            
+            unsafe {
+                fds.platform_handles[1].into_file();
+                fds.platform_handles[2].into_file();
+            }
 
             let server = DeviceCollectionServer {
                 input_device_callback: self.input_device_callback.clone(),
