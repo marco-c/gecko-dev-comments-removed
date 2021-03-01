@@ -174,8 +174,7 @@ class AboutLoginsParent extends JSWindowActorParent {
       }
 
       case "AboutLogins:ImportReportInit": {
-        
-        let reportData = [];
+        let reportData = LoginCSVImport.lastImportReport;
         this.sendAsyncMessage("AboutLogins:ImportReportData", reportData);
         break;
       }
