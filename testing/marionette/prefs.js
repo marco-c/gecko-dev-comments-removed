@@ -231,6 +231,16 @@ class MarionetteBranch extends Branch {
   get recommendedPrefs() {
     return this.get("prefs.recommended", true);
   }
+
+  
+
+
+
+
+
+  get setPermissionEnabled() {
+    return this.get("setpermission.enabled", false);
+  }
 }
 
 
