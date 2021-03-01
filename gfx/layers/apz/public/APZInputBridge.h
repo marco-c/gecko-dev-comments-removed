@@ -20,6 +20,7 @@ namespace layers {
 
 class APZInputBridgeParent;
 class AsyncPanZoomController;
+class InputBlockState;
 struct ScrollableLayerGuid;
 struct TargetConfirmationFlags;
 
@@ -53,6 +54,44 @@ struct APZEventResult {
 
   APZEventResult(const RefPtr<AsyncPanZoomController>& aInitialTarget,
                  TargetConfirmationFlags aFlags);
+
+  void SetStatusAsConsumeNoDefault() {
+    mStatus = nsEventStatus_eConsumeNoDefault;
+  }
+
+  void SetStatusAsIgnore() {
+    mStatus = nsEventStatus_eIgnore;
+  }
+
+  
+  
+  void SetStatusAsConsumeDoDefault(
+      const RefPtr<AsyncPanZoomController>& aTarget);
+  
+  
+  void SetStatusAsConsumeDoDefault(const InputBlockState& aBlock);
+  
+  
+  
+  
+  void SetStatusAsConsumeDoDefaultWithTargetConfirmationFlags(
+      const InputBlockState& aBlock, TargetConfirmationFlags aFlags);
+
+  
+  
+  void UpdateStatus(nsEventStatus aStatus) { mStatus = aStatus; }
+  nsEventStatus GetStatus() const { return mStatus; };
+
+  
+  
+  void UpdateHandledResult(const Maybe<APZHandledResult>& aHandledResult) {
+    mHandledResult = aHandledResult;
+  }
+  const Maybe<APZHandledResult>& GetHandledResult() const {
+    return mHandledResult;
+  }
+
+ private:
   
 
 
@@ -74,13 +113,7 @@ struct APZEventResult {
 
 
   nsEventStatus mStatus;
-  
 
-
-
-
-
-  ScrollableLayerGuid mTargetGuid;
   
 
 
@@ -89,6 +122,15 @@ struct APZEventResult {
 
 
   Maybe<APZHandledResult> mHandledResult;
+
+ public:
+  
+
+
+
+
+
+  ScrollableLayerGuid mTargetGuid;
   
 
 

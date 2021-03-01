@@ -9,6 +9,7 @@
 #include "AsyncPanZoomController.h"
 #include "InputData.h"                      
 #include "InputBlockState.h"                
+#include "OverscrollHandoffState.h"         
 #include "mozilla/dom/WheelEventBinding.h"  
 #include "mozilla/EventStateManager.h"      
 #include "mozilla/layers/APZThreadUtils.h"  
@@ -50,6 +51,43 @@ APZEventResult::APZEventResult(
     return Nothing();
   }();
   aInitialTarget->GetGuid(&mTargetGuid);
+}
+
+void APZEventResult::SetStatusAsConsumeDoDefault(
+    const InputBlockState& aBlock) {
+  SetStatusAsConsumeDoDefault(aBlock.GetTargetApzc());
+}
+
+void APZEventResult::SetStatusAsConsumeDoDefault(
+    const RefPtr<AsyncPanZoomController>& aTarget) {
+  mStatus = nsEventStatus_eConsumeDoDefault;
+  mHandledResult =
+      Some(aTarget->IsRootContent() ? APZHandledResult::HandledByRoot
+                                    : APZHandledResult::HandledByContent);
+}
+
+void APZEventResult::SetStatusAsConsumeDoDefaultWithTargetConfirmationFlags(
+    const InputBlockState& aBlock, TargetConfirmationFlags aFlags) {
+  mStatus = nsEventStatus_eConsumeDoDefault;
+
+  const RefPtr<AsyncPanZoomController>& target = aBlock.GetTargetApzc();
+  if (!target->IsRootContent() &&
+      aBlock.GetOverscrollHandoffChain()->ScrollingDownWillMoveDynamicToolbar(
+          target)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mHandledResult = aFlags.mDispatchToContent
+                         ? Nothing()
+                         : Some(APZHandledResult::HandledByRoot);
+  }
 }
 
 static bool WillHandleMouseEvent(const WidgetMouseEventBase& aEvent) {
@@ -187,7 +225,7 @@ APZEventResult APZInputBridge::ReceiveInputEvent(WidgetInputEvent& aEvent) {
       UpdateWheelTransaction(aEvent.mRefPoint, aEvent.mMessage);
       ProcessUnhandledEvent(&aEvent.mRefPoint, &result.mTargetGuid,
                             &aEvent.mFocusSequenceNumber, &aEvent.mLayersId);
-      MOZ_ASSERT(result.mStatus == nsEventStatus_eIgnore);
+      MOZ_ASSERT(result.GetStatus() == nsEventStatus_eIgnore);
       return result;
     }
     case eKeyboardEventClass: {
@@ -210,7 +248,7 @@ APZEventResult APZInputBridge::ReceiveInputEvent(WidgetInputEvent& aEvent) {
   }
 
   MOZ_ASSERT_UNREACHABLE("Invalid WidgetInputEvent type.");
-  result.mStatus = nsEventStatus_eConsumeNoDefault;
+  result.SetStatusAsConsumeNoDefault();
   return result;
 }
 
