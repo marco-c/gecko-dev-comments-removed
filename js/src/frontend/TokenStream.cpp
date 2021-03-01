@@ -2957,10 +2957,14 @@ template <typename Unit, class AnyCharsAccess>
         }
       } else if (IsAsciiDigit(unit)) {
         
-        if (!strictModeError(JSMSG_DEPRECATED_OCTAL)) {
+        if (!strictModeError(JSMSG_DEPRECATED_OCTAL_LITERAL)) {
           return badToken();
         }
-        anyCharsAccess().flags.sawDeprecatedOctal = true;
+
+        
+        
+        
+        anyCharsAccess().setSawDeprecatedOctalLiteral();
 
         radix = 8;
         
@@ -3617,6 +3621,38 @@ bool TokenStreamSpecific<Unit, AnyCharsAccess>::getStringOrTemplateToken(
 
         default: {
           if (!IsAsciiOctal(unit)) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if (unit == '8' || unit == '9') {
+              TokenStreamAnyChars& anyChars = anyCharsAccess();
+              if (parsingTemplate) {
+                anyChars.setInvalidTemplateEscape(
+                    this->sourceUnits.offset() - 2,
+                    InvalidEscapeType::EightOrNine);
+                continue;
+              }
+
+              
+              if (!strictModeError(JSMSG_DEPRECATED_EIGHT_OR_NINE_ESCAPE)) {
+                return false;
+              }
+
+              
+              
+              
+              anyChars.setSawDeprecatedEightOrNineEscape();
+            }
             break;
           }
 
@@ -3637,10 +3673,15 @@ bool TokenStreamSpecific<Unit, AnyCharsAccess>::getStringOrTemplateToken(
                                                 InvalidEscapeType::Octal);
               continue;
             }
-            if (!strictModeError(JSMSG_DEPRECATED_OCTAL)) {
+
+            if (!strictModeError(JSMSG_DEPRECATED_OCTAL_ESCAPE)) {
               return false;
             }
-            anyChars.flags.sawDeprecatedOctal = true;
+
+            
+            
+            
+            anyChars.setSawDeprecatedOctalEscape();
           }
 
           if (IsAsciiOctal(unit)) {
