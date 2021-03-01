@@ -906,7 +906,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvUpdateResources(
     return IPC_OK();
   }
 
-  wr::TransactionBuilder txn;
+  wr::TransactionBuilder txn(mApi);
   txn.SetLowPriority(!IsRootWebRenderBridgeParent());
 
   Unused << GetNextWrEpoch();
@@ -1141,7 +1141,7 @@ bool WebRenderBridgeParent::ProcessDisplayListData(
     DisplayListData& aDisplayList, wr::Epoch aWrEpoch,
     const TimeStamp& aTxnStartTime, bool aValidTransaction,
     bool aObserveLayersUpdate) {
-  wr::TransactionBuilder txn;
+  wr::TransactionBuilder txn(mApi);
   Maybe<wr::AutoTransactionSender> sender;
 
   
@@ -1251,7 +1251,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
 bool WebRenderBridgeParent::ProcessEmptyTransactionUpdates(
     TransactionData& aData, bool* aScheduleComposite) {
   *aScheduleComposite = false;
-  wr::TransactionBuilder txn;
+  wr::TransactionBuilder txn(mApi);
   txn.SetLowPriority(!IsRootWebRenderBridgeParent());
 
   if (!aData.mScrollUpdates.IsEmpty()) {
@@ -1404,7 +1404,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvParentCommands(
     return IPC_OK();
   }
 
-  wr::TransactionBuilder txn;
+  wr::TransactionBuilder txn(mApi);
   txn.SetLowPriority(!IsRootWebRenderBridgeParent());
   if (!ProcessWebRenderParentCommands(aCommands, txn)) {
     return IPC_FAIL(this, "Invalid parent command found");
@@ -1419,7 +1419,7 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
     wr::TransactionBuilder& aTxn) {
   
   
-  wr::TransactionBuilder txnForImageBridge;
+  wr::TransactionBuilder txnForImageBridge(mApi);
   wr::AutoTransactionSender sender(mApi, &txnForImageBridge);
 
   for (nsTArray<WebRenderParentCommand>::index_type i = 0;
@@ -1563,7 +1563,7 @@ void WebRenderBridgeParent::DisableNativeCompositor() {
 }
 
 void WebRenderBridgeParent::UpdateQualitySettings() {
-  wr::TransactionBuilder txn;
+  wr::TransactionBuilder txn(mApi);
   txn.UpdateQualitySettings(gfxVars::ForceSubpixelAAWherePossible());
   mApi->SendTransaction(txn);
 }
@@ -1807,7 +1807,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvClearCachedResources() {
   }
 
   
-  wr::TransactionBuilder txn;
+  wr::TransactionBuilder txn(mApi);
   txn.SetLowPriority(true);
   txn.ClearDisplayList(GetNextWrEpoch(), mPipelineId);
   txn.Notify(
@@ -1886,7 +1886,7 @@ void WebRenderBridgeParent::InvalidateRenderedFrame() {
     return;
   }
 
-  wr::TransactionBuilder fastTxn( false);
+  wr::TransactionBuilder fastTxn(mApi,  false);
   fastTxn.InvalidateRenderedFrame();
   mApi->SendTransaction(fastTxn);
 }
@@ -2141,9 +2141,9 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
   
   
   
-  wr::TransactionBuilder fastTxn(false );
+  wr::TransactionBuilder fastTxn(mApi, false );
   
-  wr::TransactionBuilder sceneBuilderTxn;
+  wr::TransactionBuilder sceneBuilderTxn(mApi);
   wr::AutoTransactionSender sender(mApi, &sceneBuilderTxn);
 
   mAsyncImageManager->SetCompositionInfo(start, mCompositionOpportunityId);
@@ -2444,7 +2444,7 @@ void WebRenderBridgeParent::ClearResources() {
 
   mAsyncImageManager->RemovePipeline(mPipelineId, wrEpoch);
 
-  wr::TransactionBuilder txn;
+  wr::TransactionBuilder txn(mApi);
   txn.SetLowPriority(true);
   txn.ClearDisplayList(wrEpoch, mPipelineId);
 

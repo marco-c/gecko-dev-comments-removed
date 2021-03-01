@@ -247,12 +247,13 @@ Maybe<TextureHost::ResourceUpdateOp> AsyncImagePipelineManager::UpdateImageKeys(
 
   
   
+  auto backend = aSceneBuilderTxn.GetBackendType();
   bool canUpdate = !!previousTexture &&
                    previousTexture->GetSize() == texture->GetSize() &&
                    previousTexture->GetFormat() == texture->GetFormat() &&
                    previousTexture->NeedsYFlip() == texture->NeedsYFlip() &&
-                   previousTexture->SupportsExternalCompositing() ==
-                       texture->SupportsExternalCompositing() &&
+                   previousTexture->SupportsExternalCompositing(backend) ==
+                       texture->SupportsExternalCompositing(backend) &&
                    aPipeline->mKeys.Length() == numKeys;
 
   if (!canUpdate) {
@@ -405,7 +406,7 @@ void AsyncImagePipelineManager::ApplyAsyncImageForPipeline(
 
   aPipeline->mIsChanged = false;
 
-  wr::DisplayListBuilder builder(aPipelineId);
+  wr::DisplayListBuilder builder(aPipelineId, mApi->GetBackendType());
 
   float opacity = 1.0f;
   wr::StackingContextParams params;
@@ -477,7 +478,7 @@ void AsyncImagePipelineManager::ApplyAsyncImageForPipeline(
   if (!pipeline) {
     return;
   }
-  wr::TransactionBuilder fastTxn( false);
+  wr::TransactionBuilder fastTxn(mApi,  false);
   wr::AutoTransactionSender sender(mApi, &fastTxn);
 
   
@@ -514,7 +515,7 @@ void AsyncImagePipelineManager::SetEmptyDisplayList(
   auto& txn = pipeline->mImageHost->GetAsyncRef() ? aTxnForImageBridge : aTxn;
 
   wr::Epoch epoch = GetNextImageEpoch();
-  wr::DisplayListBuilder builder(aPipelineId);
+  wr::DisplayListBuilder builder(aPipelineId, mApi->GetBackendType());
 
   wr::BuiltDisplayList dl;
   builder.Finalize(dl);
