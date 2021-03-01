@@ -243,6 +243,62 @@ function handleRequest(req, res) {
   
   var pushPushServer1, pushPushServer2, pushPushServer3, pushPushServer4;
 
+  function createCNameContent() {
+    let rContent;
+    if (0 == cname_confirm) {
+      
+      rContent = Buffer.from(
+        "00000100000100010000000005636E616D65076578616D706C6503636F6D0000050001C00C0005000100000037002012706F696E74696E672D656C73657768657265076578616D706C6503636F6D00",
+        "hex"
+      );
+      cname_confirm++;
+    } else {
+      
+      rContent = Buffer.from(
+        "00000100000100010000000012706F696E74696E672D656C73657768657265076578616D706C6503636F6D0000010001C00C0001000100000037000463584D42",
+        "hex"
+      );
+    }
+    return rContent;
+  }
+
+  function createCNameARecord() {
+    
+    
+    
+    let rContent;
+
+    rContent = Buffer.from(
+      "0000" +
+      "0100" +
+      "0001" + 
+      "0002" + 
+      "00000000" + 
+      "07636E616D652d61" + 
+      "076578616D706C6503636F6D00" + 
+      "00010001" + 
+      
+      "C00C" + 
+      "0005" + 
+      "0001" + 
+      "00000037" + 
+      "0012" + 
+      "0468657265" + 
+      "076578616D706C6503636F6D00" + 
+      
+      "0468657265" + 
+      "076578616D706C6503636F6D00" + 
+      "0001" + 
+      "0001" + 
+      "00000037" + 
+      "0004" + 
+        "09080706", 
+      "hex"
+    );
+
+    return rContent;
+  }
+
   function responseType(packet, responseIP) {
     if (
       packet.questions.length > 0 &&
@@ -726,21 +782,8 @@ function handleRequest(req, res) {
   
   else if (u.pathname === "/dns-cname") {
     
-    let rContent;
-    if (0 == cname_confirm) {
-      
-      rContent = Buffer.from(
-        "00000100000100010000000005636E616D65076578616D706C6503636F6D0000050001C00C0005000100000037002012706F696E74696E672D656C73657768657265076578616D706C6503636F6D00",
-        "hex"
-      );
-      cname_confirm++;
-    } else {
-      
-      rContent = Buffer.from(
-        "00000100000100010000000012706F696E74696E672D656C73657768657265076578616D706C6503636F6D0000010001C00C0001000100000037000463584D42",
-        "hex"
-      );
-    }
+    let rContent = createCNameContent();
+
     res.setHeader("Content-Type", "application/dns-message");
     res.setHeader("Content-Length", rContent.length);
     res.writeHead(200);
@@ -982,6 +1025,10 @@ function handleRequest(req, res) {
       }
     }
 
+    if (u.query.noResponse) {
+      return;
+    }
+
     let payload = Buffer.from("");
 
     function emitResponse(response, requestPayload) {
@@ -1011,6 +1058,28 @@ function handleRequest(req, res) {
       payload = Buffer.concat([payload, chunk]);
     });
     req.on("end", function finishedData() {
+      if (u.query.httpError) {
+        res.writeHead(404);
+        res.end("Not Found");
+        return;
+      }
+
+      if (u.query.cname) {
+        odoh.decrypt_query(payload);
+        let rContent;
+        if (u.query.cname === "ARecord") {
+          rContent = createCNameARecord();
+        } else {
+          rContent = createCNameContent();
+        }
+        let encryptedResponse = odoh.create_response(rContent);
+        res.setHeader("Content-Type", "application/oblivious-dns-message");
+        res.setHeader("Content-Length", encryptedResponse.length);
+        res.writeHead(200);
+        res.write(encryptedResponse);
+        res.end("");
+        return;
+      }
       
       if (payload.length) {
         emitResponse(res, payload);
@@ -1114,38 +1183,7 @@ function handleRequest(req, res) {
     });
     return;
   } else if (u.pathname === "/dns-cname-a") {
-    
-    
-    
-    let rContent;
-
-    rContent = Buffer.from(
-      "0000" +
-      "0100" +
-      "0001" + 
-      "0002" + 
-      "00000000" + 
-      "07636E616D652d61" + 
-      "076578616D706C6503636F6D00" + 
-      "00010001" + 
-      
-      "C00C" + 
-      "0005" + 
-      "0001" + 
-      "00000037" + 
-      "0012" + 
-      "0468657265" + 
-      "076578616D706C6503636F6D00" + 
-      
-      "0468657265" + 
-      "076578616D706C6503636F6D00" + 
-      "0001" + 
-      "0001" + 
-      "00000037" + 
-      "0004" + 
-        "09080706", 
-      "hex"
-    );
+    let rContent = createCNameARecord();
     res.setHeader("Content-Type", "application/dns-message");
     res.setHeader("Content-Length", rContent.length);
     res.writeHead(200);
