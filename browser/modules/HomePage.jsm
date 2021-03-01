@@ -11,6 +11,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  CustomizableUI: "resource:///modules/CustomizableUI.jsm",
   ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
   ExtensionPreferencesManager:
     "resource://gre/modules/ExtensionPreferencesManager.jsm",
@@ -24,6 +25,9 @@ const kDefaultHomePage = "about:home";
 const kExtensionControllerPref =
   "browser.startup.homepage_override.extensionControlled";
 const kHomePageIgnoreListId = "homepage-urls";
+const kWidgetId = "home-button";
+const kWidgetRemovedPref = "browser.engagement.home-button.has-removed";
+const kProtonToolbarEnabledPref = "browser.proton.toolbar.enabled";
 
 function getHomepagePref(useDefault) {
   let homePage;
@@ -88,6 +92,8 @@ let HomePage = {
     this._initializationPromise = IgnoreLists.getAndSubscribe(
       this._ignoreListListener
     );
+
+    this._addCustomizableUiListener();
 
     const current = await this._initializationPromise;
 
@@ -196,6 +202,7 @@ let HomePage = {
       return false;
     }
     Services.prefs.setStringPref(kPrefName, value);
+    this._maybeAddHomeButtonToToolbar(value);
     return true;
   },
 
@@ -302,6 +309,55 @@ let HomePage = {
           "saved_reset"
         );
       }
+    }
+  },
+
+  onWidgetRemoved(widgetId, area) {
+    if (widgetId == kWidgetId) {
+      Services.prefs.setBoolPref(kWidgetRemovedPref, true);
+      CustomizableUI.removeListener(this);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  _maybeAddHomeButtonToToolbar(homePage) {
+    if (
+      homePage !== "about:home" &&
+      homePage !== "about:blank" &&
+      Services.prefs.getBoolPref(kProtonToolbarEnabledPref, false) &&
+      !Services.prefs.getBoolPref(kExtensionControllerPref, false) &&
+      !Services.prefs.getBoolPref(kWidgetRemovedPref, false) &&
+      !CustomizableUI.getWidget(kWidgetId).areaType
+    ) {
+      
+      
+      
+      
+      let navbarPlacements = CustomizableUI.getWidgetIdsInArea("nav-bar");
+      let position = navbarPlacements.indexOf("urlbar-container");
+      for (let i = position - 1; i >= 0; i--) {
+        if (!navbarPlacements[i].startsWith("customizableui-special-spring")) {
+          position = i + 1;
+          break;
+        }
+      }
+      CustomizableUI.addWidgetToArea(kWidgetId, "nav-bar", position);
+    }
+  },
+
+  _addCustomizableUiListener() {
+    if (
+      Services.prefs.getBoolPref(kProtonToolbarEnabledPref, false) &&
+      !Services.prefs.getBoolPref(kWidgetRemovedPref, false)
+    ) {
+      CustomizableUI.addListener(this);
     }
   },
 };
