@@ -5,6 +5,7 @@
 
 
 
+use crate::values::animated::ToAnimatedZero;
 use crate::values::generics::ratio::Ratio;
 
 
@@ -163,7 +164,6 @@ impl<Integer> ZIndex<Integer> {
     MallocSizeOf,
     PartialEq,
     SpecifiedValueInfo,
-    ToAnimatedZero,
     ToComputedValue,
     ToCss,
     ToResolvedValue,
@@ -175,7 +175,12 @@ pub enum PreferredRatio<N> {
     #[css(skip)]
     None,
     
-    Ratio(#[css(field_bound)] Ratio<N>),
+    Ratio(
+        #[animation(field_bound)]
+        #[css(field_bound)]
+        #[distance(field_bound)]
+        Ratio<N>,
+    ),
 }
 
 
@@ -188,7 +193,6 @@ pub enum PreferredRatio<N> {
     MallocSizeOf,
     PartialEq,
     SpecifiedValueInfo,
-    ToAnimatedZero,
     ToComputedValue,
     ToCss,
     ToResolvedValue,
@@ -201,7 +205,9 @@ pub struct GenericAspectRatio<N> {
     #[css(represents_keyword)]
     pub auto: bool,
     
+    #[animation(field_bound)]
     #[css(field_bound)]
+    #[distance(field_bound)]
     pub ratio: PreferredRatio<N>,
 }
 
@@ -215,5 +221,12 @@ impl<N> AspectRatio<N> {
             auto: true,
             ratio: PreferredRatio::None,
         }
+    }
+}
+
+impl<N> ToAnimatedZero for AspectRatio<N> {
+    #[inline]
+    fn to_animated_zero(&self) -> Result<Self, ()> {
+        Err(())
     }
 }

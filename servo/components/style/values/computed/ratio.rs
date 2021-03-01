@@ -4,7 +4,9 @@
 
 
 
+use crate::values::animated::{Animate, Procedure};
 use crate::values::computed::NonNegativeNumber;
+use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use crate::values::generics::ratio::Ratio as GenericRatio;
 use crate::{One, Zero};
 use std::cmp::{Ordering, PartialOrd};
@@ -21,8 +23,58 @@ impl PartialOrd for Ratio {
     }
 }
 
+
+impl Animate for Ratio {
+    fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
+        
+        if self.is_degenerate() || other.is_degenerate() {
+            return Err(());
+        }
+
+        
+        
+        
+        
+        if matches!(procedure, Procedure::Add | Procedure::Accumulate { .. }) {
+            return Ok(self.clone());
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        let start = self.to_f32().ln();
+        let end = other.to_f32().ln();
+        let e = std::f32::consts::E;
+        let result = e.powf(start.animate(&end, procedure)?);
+        
+        if result.is_zero() || result.is_infinite() {
+            return Err(());
+        }
+        Ok(Ratio::new(result, 1.0f32))
+    }
+}
+
+impl ComputeSquaredDistance for Ratio {
+    fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
+        if self.is_degenerate() || other.is_degenerate() {
+            return Err(());
+        }
+        
+        
+        self.to_f32()
+            .ln()
+            .compute_squared_distance(&other.to_f32().ln())
+    }
+}
+
 impl Ratio {
     
+    #[inline]
     pub fn new(a: f32, b: f32) -> Self {
         GenericRatio(a.into(), b.into())
     }
@@ -35,5 +87,19 @@ impl Ratio {
         } else {
             self
         }
+    }
+
+    
+    
+    #[inline]
+    pub fn is_degenerate(&self) -> bool {
+        self.0.is_zero() || self.1.is_zero()
+    }
+
+    
+    #[inline]
+    fn to_f32(&self) -> f32 {
+        debug_assert!(!self.is_degenerate());
+        (self.0).0 / (self.1).0
     }
 }
