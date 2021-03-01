@@ -31,6 +31,7 @@ class ImportRowProcessor {
   uniqueLoginIdentifiers = new Set();
   originToRows = new Map();
   summary = [];
+  mandatoryFields = ["origin", "username", "password"];
 
   
 
@@ -59,13 +60,15 @@ class ImportRowProcessor {
 
   checkMissingMandatoryFieldsError(loginData) {
     loginData.origin = LoginHelper.getLoginOrigin(loginData.origin);
-    if (!loginData.origin) {
-      this.addLoginToSummary({ ...loginData }, "error_invalid_origin");
-      return true;
-    }
-    if (!loginData.password) {
-      this.addLoginToSummary({ ...loginData }, "error_invalid_password");
-      return true;
+    for (let mandatoryField of this.mandatoryFields) {
+      if (!loginData[mandatoryField]) {
+        const missingFieldRow = this.addLoginToSummary(
+          { ...loginData },
+          "error_missing_field"
+        );
+        missingFieldRow.field_name = mandatoryField;
+        return true;
+      }
     }
     return false;
   }
@@ -263,15 +266,18 @@ class ImportRowProcessor {
 
 
   cleanupActionAndRealmFields(loginData) {
+    const cleanOrigin = loginData.formActionOrigin
+      ? LoginHelper.getLoginOrigin(loginData.formActionOrigin, true)
+      : "";
     loginData.formActionOrigin =
-      LoginHelper.getLoginOrigin(loginData.formActionOrigin, true) ||
-      (typeof loginData.httpRealm == "string" ? null : "");
+      cleanOrigin || (typeof loginData.httpRealm == "string" ? null : "");
 
     loginData.httpRealm =
       typeof loginData.httpRealm == "string" ? loginData.httpRealm : null;
   }
 
   
+
 
 
 
@@ -288,6 +294,7 @@ class ImportRowProcessor {
     const newSummaryRow = { result, login, propBag };
     rows.push(newSummaryRow);
     this.summary.push(newSummaryRow);
+    return newSummaryRow;
   }
 
   

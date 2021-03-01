@@ -217,6 +217,12 @@ var whitelist = [
   { file: "chrome://browser/content/aboutlogins/aboutLoginsUtils.js" },
 
   
+  {
+    file:
+      "chrome://browser/content/aboutlogins/components/import-details-row.js",
+  },
+
+  
   { file: "resource://app/localization/en-US/browser/screenshots.ftl" },
 
   
