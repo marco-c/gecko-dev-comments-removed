@@ -1228,7 +1228,7 @@ static inline WideRGBA8 sampleGradient(sampler2D sampler, int address,
 
 
 template <bool BLEND>
-static void commitLinearGradient(sampler2D sampler, int address, float size,
+static bool commitLinearGradient(sampler2D sampler, int address, float size,
                                  bool repeat, Float offset, uint32_t* buf,
                                  int span) {
   assert(sampler->format == TextureFormat::RGBA32F);
@@ -1238,6 +1238,9 @@ static void commitLinearGradient(sampler2D sampler, int address, float size,
   
   
   float delta = (offset.y - offset.x) * 4.0f;
+  if (!isfinite(delta)) {
+    return false;
+  }
   for (; span > 0;) {
     
     if (repeat) {
@@ -1261,16 +1264,7 @@ static void commitLinearGradient(sampler2D sampler, int address, float size,
       if (delta > 0) {
         chunks = min(chunks, -offset.x / delta);
       }
-    } else if (offset.x >= 1) {
-      
-      
-      startEntry = 1.0f + size;
-      minIndex = int(startEntry);
-      maxIndex = minIndex;
-      if (delta < 0) {
-        chunks = min(chunks, (1 - offset.x) / delta);
-      }
-    } else {
+    } else if (offset.x < 1) {
       
       
       
@@ -1305,12 +1299,21 @@ static void commitLinearGradient(sampler2D sampler, int address, float size,
         }
         chunks = min(chunks, (minIndex - startEntry) / (delta * size));
       }
+    } else {
+      
+      
+      startEntry = 1.0f + size;
+      minIndex = int(startEntry);
+      maxIndex = minIndex;
+      if (delta < 0) {
+        chunks = min(chunks, (1 - offset.x) / delta);
+      }
     }
     
     
     
-    int inside = int(chunks);
-    if (inside > 0) {
+    if (chunks >= 1.0f) {
+      int inside = int(chunks);
       
       
       
@@ -1372,6 +1375,7 @@ static void commitLinearGradient(sampler2D sampler, int address, float size,
     buf += 4;
     offset += delta;
   }
+  return true;
 }
 
 
@@ -1382,15 +1386,20 @@ static void commitLinearGradient(sampler2D sampler, int address, float size,
 
 #define swgl_commitLinearGradientRGBA8(sampler, address, size, repeat, offset) \
   do {                                                                         \
+    bool drawn = false;                                                        \
     if (blend_key) {                                                           \
-      commitLinearGradient<true>(sampler, address, size, repeat, offset,       \
-                                 swgl_OutRGBA8, swgl_SpanLength);              \
+      drawn =                                                                  \
+          commitLinearGradient<true>(sampler, address, size, repeat, offset,   \
+                                     swgl_OutRGBA8, swgl_SpanLength);          \
     } else {                                                                   \
-      commitLinearGradient<false>(sampler, address, size, repeat, offset,      \
-                                  swgl_OutRGBA8, swgl_SpanLength);             \
+      drawn =                                                                  \
+          commitLinearGradient<false>(sampler, address, size, repeat, offset,  \
+                                      swgl_OutRGBA8, swgl_SpanLength);         \
     }                                                                          \
-    swgl_OutRGBA8 += swgl_SpanLength;                                          \
-    swgl_SpanLength = 0;                                                       \
+    if (drawn) {                                                               \
+      swgl_OutRGBA8 += swgl_SpanLength;                                        \
+      swgl_SpanLength = 0;                                                     \
+    }                                                                          \
   } while (0)
 
 template <bool CLAMP, typename V>
@@ -1413,7 +1422,7 @@ static ALWAYS_INLINE auto fastLength(V v) {
 
 
 template <bool BLEND>
-static void commitRadialGradient(sampler2D sampler, int address, float size,
+static bool commitRadialGradient(sampler2D sampler, int address, float size,
                                  bool repeat, vec2 pos, float radius,
                                  uint32_t* buf, int span) {
   assert(sampler->format == TextureFormat::RGBA32F);
@@ -1442,6 +1451,9 @@ static void commitRadialGradient(sampler2D sampler, int address, float size,
   vec2_scalar pos0 = {pos.x.x, pos.y.x};
   vec2_scalar delta = {pos.x.y - pos.x.x, pos.y.y - pos.y.x};
   float deltaDelta = dot(delta, delta);
+  if (!isfinite(deltaDelta) || !isfinite(radius)) {
+    return false;
+  }
   float invDelta, middleT, middleB;
   if (deltaDelta > 0) {
     invDelta = 1.0f / deltaDelta;
@@ -1503,16 +1515,7 @@ static void commitRadialGradient(sampler2D sampler, int address, float size,
       if (t >= middleT) {
         intercept = radius;
       }
-    } else if (offset.x >= 1) {
-      
-      
-      
-      
-      minIndex = maxIndex;
-      if (t < middleT) {
-        intercept = radius + 1;
-      }
-    } else {
+    } else if (offset.x < 1) {
       
       minIndex = int(1.0f + offset.x * size);
       maxIndex = minIndex;
@@ -1543,6 +1546,15 @@ static void commitRadialGradient(sampler2D sampler, int address, float size,
       
       
       intercept = clamp((intercept - 1.0f) / size, 0.0f, 1.0f) + startRadius;
+    } else {
+      
+      
+      
+      
+      minIndex = maxIndex;
+      if (t < middleT) {
+        intercept = radius + 1;
+      }
     }
     
     
@@ -1555,8 +1567,8 @@ static void commitRadialGradient(sampler2D sampler, int address, float size,
       }
     }
     
-    int inside = int(endT - t) & ~3;
-    if (inside > 0) {
+    if (t + 4.0f <= endT) {
+      int inside = int(endT - t) & ~3;
       
       auto minColorF = stops[minIndex].startColor.zyxw * 255.0f;
       auto maxColorF = stops[maxIndex].end_color().zyxw * 255.0f;
@@ -1609,6 +1621,7 @@ static void commitRadialGradient(sampler2D sampler, int address, float size,
     dotPos += dotPosDelta;
     dotPosDelta += deltaDelta2;
   }
+  return true;
 }
 
 
@@ -1618,15 +1631,20 @@ static void commitRadialGradient(sampler2D sampler, int address, float size,
 #define swgl_commitRadialGradientRGBA8(sampler, address, size, repeat, pos,    \
                                        radius)                                 \
   do {                                                                         \
+    bool drawn = false;                                                        \
     if (blend_key) {                                                           \
-      commitRadialGradient<true>(sampler, address, size, repeat, pos, radius,  \
-                                 swgl_OutRGBA8, swgl_SpanLength);              \
+      drawn =                                                                  \
+          commitRadialGradient<true>(sampler, address, size, repeat, pos,      \
+                                     radius, swgl_OutRGBA8, swgl_SpanLength);  \
     } else {                                                                   \
-      commitRadialGradient<false>(sampler, address, size, repeat, pos, radius, \
-                                  swgl_OutRGBA8, swgl_SpanLength);             \
+      drawn =                                                                  \
+          commitRadialGradient<false>(sampler, address, size, repeat, pos,     \
+                                      radius, swgl_OutRGBA8, swgl_SpanLength); \
     }                                                                          \
-    swgl_OutRGBA8 += swgl_SpanLength;                                          \
-    swgl_SpanLength = 0;                                                       \
+    if (drawn) {                                                               \
+      swgl_OutRGBA8 += swgl_SpanLength;                                        \
+      swgl_SpanLength = 0;                                                     \
+    }                                                                          \
   } while (0)
 
 
