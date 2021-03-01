@@ -659,6 +659,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void SetFormatDiagnosticsReportForMimeType(const nsAString& aMimeType,
                                              DecoderDoctorReportType aType);
   void SetDecodeError(const nsAString& aError, ErrorResult& aRv);
+  void SetAudioSinkFailedStartup();
 
   
   
