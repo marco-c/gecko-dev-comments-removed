@@ -1504,13 +1504,6 @@ extern JS_PUBLIC_API bool Construct(JSContext* cx, JS::HandleValue fun,
 
 
 
-
-
-extern JS_PUBLIC_API JSObject* JS_New(JSContext* cx, JS::HandleObject ctor,
-                                      const JS::HandleValueArray& args);
-
-
-
 extern JS_PUBLIC_API JSObject* JS_DefineObject(JSContext* cx,
                                                JS::HandleObject obj,
                                                const char* name,
