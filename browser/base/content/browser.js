@@ -968,8 +968,18 @@ const gStoragePressureObserver = {
         "browser.storageManager.pressureNotification.usageThresholdGB"
       );
     let msg = "";
-    let buttons = [{ supportPage: "storage-permissions" }];
+    let buttons = [];
     let usage = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
+    buttons.push({
+      "l10n-id": "space-alert-learn-more-button",
+      callback(notificationBar, button) {
+        let learnMoreURL =
+          Services.urlFormatter.formatURLPref("app.support.baseURL") +
+          "storage-permissions";
+        
+        openTrustedLinkIn(learnMoreURL, "tab");
+      },
+    });
     if (usage < USAGE_THRESHOLD_BYTES) {
       
       
