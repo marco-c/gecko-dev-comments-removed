@@ -795,8 +795,6 @@ BookmarksStore.prototype = {
 
 function BookmarksTracker(name, engine) {
   Tracker.call(this, name, engine);
-  this._batchDepth = 0;
-  this._batchSawScoreIncrement = false;
 }
 BookmarksTracker.prototype = {
   __proto__: Tracker.prototype,
@@ -863,13 +861,8 @@ BookmarksTracker.prototype = {
   ]),
 
   
-
   _upScore: function BMT__upScore() {
-    if (this._batchDepth == 0) {
-      this.score += SCORE_INCREMENT_XLARGE;
-    } else {
-      this._batchSawScoreIncrement = true;
-    }
+    this.score += SCORE_INCREMENT_XLARGE;
   },
 
   handlePlacesEvents(events) {
@@ -951,16 +944,6 @@ BookmarksTracker.prototype = {
 
     this._log.trace("onItemMoved: " + itemId);
     this._upScore();
-  },
-
-  onBeginUpdateBatch() {
-    ++this._batchDepth;
-  },
-  onEndUpdateBatch() {
-    if (--this._batchDepth === 0 && this._batchSawScoreIncrement) {
-      this.score += SCORE_INCREMENT_XLARGE;
-      this._batchSawScoreIncrement = false;
-    }
   },
 };
 

@@ -387,8 +387,7 @@ nsNavHistory::nsNavHistory()
       mDecayFrecencyPendingCount(0),
       mTagsFolder(-1),
       mLastCachedStartOfDay(INT64_MAX),
-      mLastCachedEndOfDay(0),
-      mCanNotify(true)
+      mLastCachedEndOfDay(0)
 #ifdef XP_WIN
       ,
       mCryptoProviderInitialized(false)
@@ -1918,48 +1917,6 @@ nsresult nsNavHistory::GetQueryResults(
 }
 
 NS_IMETHODIMP
-nsNavHistory::AddObserver(nsINavHistoryObserver* aObserver, bool aOwnsWeak) {
-  NS_ASSERTION(NS_IsMainThread(), "This can only be called on the main thread");
-  NS_ENSURE_ARG(aObserver);
-
-  if (NS_WARN_IF(!mCanNotify)) return NS_ERROR_UNEXPECTED;
-
-  return mObservers.AppendWeakElementUnlessExists(aObserver, aOwnsWeak);
-}
-
-NS_IMETHODIMP
-nsNavHistory::RemoveObserver(nsINavHistoryObserver* aObserver) {
-  NS_ASSERTION(NS_IsMainThread(), "This can only be called on the main thread");
-  NS_ENSURE_ARG(aObserver);
-
-  return mObservers.RemoveWeakElement(aObserver);
-}
-
-NS_IMETHODIMP
-nsNavHistory::GetObservers(
-    nsTArray<RefPtr<nsINavHistoryObserver>>& aObservers) {
-  aObservers.Clear();
-
-  
-  
-  InvalidateDaysOfHistory();
-
-  if (!mCanNotify) return NS_OK;
-
-  
-  for (uint32_t i = 0; i < mObservers.Length(); ++i) {
-    nsCOMPtr<nsINavHistoryObserver> observer =
-        mObservers.ElementAt(i).GetValue();
-    
-    if (observer) {
-      aObservers.AppendElement(observer.forget());
-    }
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsNavHistory::GetHistoryDisabled(bool* _retval) {
   NS_ASSERTION(NS_IsMainThread(), "This can only be called on the main thread");
   NS_ENSURE_ARG_POINTER(_retval);
@@ -2154,13 +2111,6 @@ nsNavHistory::Observe(nsISupports* aSubject, const char* aTopic,
     
     
     mDB->Observe(aSubject, aTopic, aData);
-  }
-
-  else if (strcmp(aTopic, TOPIC_PLACES_CONNECTION_CLOSED) == 0) {
-    
-    
-    mCanNotify = false;
-    mObservers.Clear();
   }
 
   else if (strcmp(aTopic, TOPIC_PREF_CHANGED) == 0) {

@@ -56,10 +56,6 @@ class BookmarksObserver extends Observer {
   }
 
   
-  onBeginUpdateBatch() {}
-
-  onEndUpdateBatch() {}
-
   onItemMoved() {}
 
   
