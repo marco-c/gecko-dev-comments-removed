@@ -241,8 +241,8 @@ impl DocumentMatchingFunction {
 
 
 
-#[css(comma)]
 #[derive(Clone, Debug, ToCss, ToShmem)]
+#[css(comma)]
 pub struct DocumentCondition(#[css(iterable)] Vec<DocumentMatchingFunction>);
 
 impl DocumentCondition {

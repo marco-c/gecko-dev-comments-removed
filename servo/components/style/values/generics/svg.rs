@@ -42,7 +42,6 @@ pub use self::GenericSVGPaintFallback as SVGPaintFallback;
 
 
 
-#[animation(no_bound(Url))]
 #[derive(
     Animate,
     Clone,
@@ -58,6 +57,7 @@ pub use self::GenericSVGPaintFallback as SVGPaintFallback;
     ToResolvedValue,
     ToShmem,
 )]
+#[animation(no_bound(Url))]
 #[repr(C)]
 pub struct GenericSVGPaint<Color, Url> {
     
@@ -81,7 +81,6 @@ impl<C, U> Default for SVGPaint<C, U> {
 
 
 
-#[animation(no_bound(U))]
 #[derive(
     Animate,
     Clone,
@@ -98,6 +97,7 @@ impl<C, U> Default for SVGPaint<C, U> {
     ToResolvedValue,
     ToShmem,
 )]
+#[animation(no_bound(U))]
 #[repr(C, u8)]
 pub enum GenericSVGPaintKind<C, U> {
     

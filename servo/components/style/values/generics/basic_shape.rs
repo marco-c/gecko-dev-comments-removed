@@ -91,7 +91,6 @@ impl Default for ShapeBox {
 
 
 #[allow(missing_docs)]
-#[animation(no_bound(U))]
 #[derive(
     Animate,
     Clone,
@@ -106,6 +105,7 @@ impl Default for ShapeBox {
     ToResolvedValue,
     ToShmem,
 )]
+#[animation(no_bound(U))]
 #[repr(u8)]
 pub enum GenericClipPath<BasicShape, U> {
     #[animation(error)]
@@ -126,7 +126,6 @@ pub use self::GenericClipPath as ClipPath;
 
 
 #[allow(missing_docs)]
-#[animation(no_bound(I))]
 #[derive(
     Animate,
     Clone,
@@ -141,6 +140,7 @@ pub use self::GenericClipPath as ClipPath;
     ToResolvedValue,
     ToShmem,
 )]
+#[animation(no_bound(I))]
 #[repr(u8)]
 pub enum GenericShapeOutside<BasicShape, I> {
     #[animation(error)]
@@ -193,7 +193,6 @@ pub use self::GenericBasicShape as BasicShape;
 
 
 #[allow(missing_docs)]
-#[css(function = "inset")]
 #[derive(
     Animate,
     Clone,
@@ -207,6 +206,7 @@ pub use self::GenericBasicShape as BasicShape;
     ToResolvedValue,
     ToShmem,
 )]
+#[css(function = "inset")]
 #[repr(C)]
 pub struct InsetRect<LengthPercentage, NonNegativeLengthPercentage> {
     pub rect: Rect<LengthPercentage>,
@@ -216,7 +216,6 @@ pub struct InsetRect<LengthPercentage, NonNegativeLengthPercentage> {
 
 
 #[allow(missing_docs)]
-#[css(function)]
 #[derive(
     Animate,
     Clone,
@@ -231,6 +230,7 @@ pub struct InsetRect<LengthPercentage, NonNegativeLengthPercentage> {
     ToResolvedValue,
     ToShmem,
 )]
+#[css(function)]
 #[repr(C)]
 pub struct Circle<H, V, NonNegativeLengthPercentage> {
     pub position: GenericPosition<H, V>,
@@ -239,7 +239,6 @@ pub struct Circle<H, V, NonNegativeLengthPercentage> {
 
 
 #[allow(missing_docs)]
-#[css(function)]
 #[derive(
     Animate,
     Clone,
@@ -254,6 +253,7 @@ pub struct Circle<H, V, NonNegativeLengthPercentage> {
     ToResolvedValue,
     ToShmem,
 )]
+#[css(function)]
 #[repr(C)]
 pub struct Ellipse<H, V, NonNegativeLengthPercentage> {
     pub position: GenericPosition<H, V>,
@@ -293,7 +293,6 @@ pub use self::GenericShapeRadius as ShapeRadius;
 
 
 
-#[css(comma, function = "polygon")]
 #[derive(
     Clone,
     Debug,
@@ -306,6 +305,7 @@ pub use self::GenericShapeRadius as ShapeRadius;
     ToResolvedValue,
     ToShmem,
 )]
+#[css(comma, function = "polygon")]
 #[repr(C)]
 pub struct GenericPolygon<LengthPercentage> {
     
@@ -364,7 +364,6 @@ pub enum FillRule {
 
 
 
-#[css(comma)]
 #[derive(
     Animate,
     Clone,
@@ -379,6 +378,7 @@ pub enum FillRule {
     ToResolvedValue,
     ToShmem,
 )]
+#[css(comma)]
 #[repr(C)]
 pub struct Path {
     

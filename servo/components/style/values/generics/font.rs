@@ -77,7 +77,6 @@ pub struct VariationValue<Number> {
 }
 
 
-#[css(comma)]
 #[derive(
     Clone,
     Debug,
@@ -90,6 +89,7 @@ pub struct VariationValue<Number> {
     ToResolvedValue,
     ToShmem,
 )]
+#[css(comma)]
 pub struct FontSettings<T>(#[css(if_empty = "normal", iterable)] pub Box<[T]>);
 
 impl<T> FontSettings<T> {
