@@ -11,7 +11,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
@@ -19,9 +18,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
-
-const EXPERIMENT_PREF = "quicksuggest.enabled";
-const SUGGEST_PREF = "suggest.quicksuggest";
 const ONBOARDING_COUNT_PREF = "quicksuggest.onboardingCount";
 const ONBOARDING_MAX_COUNT_PREF = "quicksuggest.onboardingMaxCount";
 
@@ -29,23 +25,13 @@ const ONBOARDING_MAX_COUNT_PREF = "quicksuggest.onboardingMaxCount";
 const ONBOARDING_URL = "https://mozilla.org/";
 const ONBOARDING_TEXT = "Learn more about Firefox Suggests";
 
-const TELEMETRY_SCALAR_IMPRESSION =
-  "contextual.services.quicksuggest.impression";
-const TELEMETRY_SCALAR_CLICK = "contextual.services.quicksuggest.click";
-const TELEMETRY_SCALAR_HELP = "contextual.services.quicksuggest.help";
-
-const TELEMETRY_EVENT_CATEGORY = "contextservices.quicksuggest";
-
 
 
 
 
 class ProviderQuickSuggest extends UrlbarProvider {
-  constructor(...args) {
-    super(...args);
-    this._updateExperimentState();
-    UrlbarPrefs.addObserver(this);
-  }
+  
+  _addedResultInLastQuery = false;
 
   
 
@@ -84,8 +70,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
     return (
       queryContext.trimmedSearchString &&
       !queryContext.searchMode &&
-      UrlbarPrefs.get(EXPERIMENT_PREF) &&
-      UrlbarPrefs.get(SUGGEST_PREF) &&
+      UrlbarPrefs.get("quicksuggest.enabled") &&
+      UrlbarPrefs.get("suggest.quicksuggest") &&
       UrlbarPrefs.get("suggest.searches") &&
       UrlbarPrefs.get("browser.search.suggest.enabled") &&
       (!queryContext.isPrivate ||
@@ -153,90 +139,15 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
   onEngagement(isPrivate, state, queryContext, details) {
-    if (!this._addedResultInLastQuery) {
-      return;
-    }
-    this._addedResultInLastQuery = false;
-
-    
-    
-    if (state != "engagement") {
-      return;
-    }
-
-    
-    let resultIndex = queryContext.results.length - 1;
-    let lastResult = queryContext.results[resultIndex];
-    if (!lastResult?.payload.isSponsored) {
-      Cu.reportError(`Last result is not a quick suggest`);
-      return;
-    }
-
-    
-    if (this._onboardingCount < this._onboardingMaxCount) {
+    if (
+      state == "engagement" &&
+      this._addedResultInLastQuery &&
+      this._onboardingCount < this._onboardingMaxCount
+    ) {
       this._onboardingCount++;
     }
-
-    
-    
-    let telemetryResultIndex = resultIndex + 1;
-
-    
-    Services.telemetry.keyedScalarAdd(
-      TELEMETRY_SCALAR_IMPRESSION,
-      telemetryResultIndex,
-      1
-    );
-
-    if (details.selIndex == resultIndex) {
-      
-      Services.telemetry.keyedScalarAdd(
-        details.selType == "help"
-          ? TELEMETRY_SCALAR_HELP
-          : TELEMETRY_SCALAR_CLICK,
-        telemetryResultIndex,
-        1
-      );
-    }
+    this._addedResultInLastQuery = false;
   }
-
-  
-
-
-
-
-
-
-
-
-  onPrefChanged(pref) {
-    switch (pref) {
-      case EXPERIMENT_PREF:
-        this._updateExperimentState();
-        break;
-      case SUGGEST_PREF:
-        Services.telemetry.recordEvent(
-          TELEMETRY_EVENT_CATEGORY,
-          "enable_toggled",
-          UrlbarPrefs.get(SUGGEST_PREF) ? "enabled" : "disabled"
-        );
-        break;
-    }
-  }
-
-  
-
-
-
-  _updateExperimentState() {
-    Services.telemetry.setEventRecordingEnabled(
-      TELEMETRY_EVENT_CATEGORY,
-      UrlbarPrefs.get(EXPERIMENT_PREF)
-    );
-  }
-
-  
-  _addedResultInLastQuery = false;
 
   get _onboardingCount() {
     return UrlbarPrefs.get(ONBOARDING_COUNT_PREF);
