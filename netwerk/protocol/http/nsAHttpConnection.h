@@ -5,6 +5,7 @@
 #ifndef nsAHttpConnection_h__
 #define nsAHttpConnection_h__
 
+#include "mozilla/net/DNS.h"
 #include "nsHttp.h"
 #include "nsISupports.h"
 #include "nsAHttpTransaction.h"
@@ -158,6 +159,11 @@ class nsAHttpConnection : public nsISupports {
   
   
   virtual void SetTrafficCategory(HttpTrafficCategory) = 0;
+
+  virtual nsresult GetSelfAddr(NetAddr* addr) = 0;
+  virtual nsresult GetPeerAddr(NetAddr* addr) = 0;
+  virtual bool ResolvedByTRR() = 0;
+  virtual bool GetEchConfigUsed() = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
@@ -237,7 +243,21 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
   }                                                                        \
   void SetTrafficCategory(HttpTrafficCategory aCategory) override {        \
     if (fwdObject) (fwdObject)->SetTrafficCategory(aCategory);             \
-  }
+  }                                                                        \
+  nsresult GetSelfAddr(NetAddr* addr) override {                           \
+    if (!(fwdObject)) return NS_ERROR_FAILURE;                             \
+    return (fwdObject)->GetSelfAddr(addr);                                 \
+  }                                                                        \
+  nsresult GetPeerAddr(NetAddr* addr) override {                           \
+    if (!(fwdObject)) return NS_ERROR_FAILURE;                             \
+    return (fwdObject)->GetPeerAddr(addr);                                 \
+  }                                                                        \
+  bool ResolvedByTRR() override {                                          \
+    return (!fwdObject) ? false : (fwdObject)->ResolvedByTRR();            \
+  }                                                                        \
+  bool GetEchConfigUsed() override {                                       \
+    return (!fwdObject) ? false : (fwdObject)->GetEchConfigUsed();         \
+  }                                                                        \
 
 
 
