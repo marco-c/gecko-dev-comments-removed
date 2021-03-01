@@ -193,14 +193,14 @@ add_UITour_task(
       tooltip,
       "Should show info tooltip"
     );
-    await showInfoPromise("customize", "title", "text");
+    await showInfoPromise("addons", "title", "text");
     await appMenuShownPromise;
     await pageActionPanelHiddenPromise;
     await tooltipVisiblePromise;
     is(
       appMenu.state,
       "open",
-      "Should open the app menu to show info on the customize button"
+      "Should open the app menu to show info on the addons button"
     );
     is(
       pageActionPanel.state,
@@ -209,8 +209,8 @@ add_UITour_task(
     );
     is(
       getShowInfoTargetName(),
-      "customize",
-      "Should show info tooltip on the customize button on the app menu"
+      "addons",
+      "Should show info tooltip on the addons button on the app menu"
     );
 
     
