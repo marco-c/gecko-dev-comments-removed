@@ -42,7 +42,7 @@ class nsInterfaceHashtable
   
 
 
-  already_AddRefed<Interface> Get(KeyType aKey) const;
+  [[nodiscard]] already_AddRefed<Interface> Get(KeyType aKey) const;
 
   
 
@@ -50,7 +50,7 @@ class nsInterfaceHashtable
 
 
 
-  Interface* GetWeak(KeyType aKey, bool* aFound = nullptr) const;
+  [[nodiscard]] Interface* GetWeak(KeyType aKey, bool* aFound = nullptr) const;
 
   
 

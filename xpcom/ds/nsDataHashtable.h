@@ -38,7 +38,7 @@ class nsDataHashtable : public nsBaseHashtable<KeyClass, DataType, DataType> {
 
 
 
-  DataType* GetValue(KeyType aKey) {
+  [[nodiscard]] DataType* GetValue(KeyType aKey) {
     if (EntryType* ent = this->GetEntry(aKey)) {
       return ent->GetModifiableData();
     }

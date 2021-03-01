@@ -117,13 +117,17 @@ class nsBaseHashtable
 
 
 
-  uint32_t Count() const { return nsTHashtable<EntryType>::Count(); }
+  [[nodiscard]] uint32_t Count() const {
+    return nsTHashtable<EntryType>::Count();
+  }
 
   
 
 
 
-  bool IsEmpty() const { return nsTHashtable<EntryType>::IsEmpty(); }
+  [[nodiscard]] bool IsEmpty() const {
+    return nsTHashtable<EntryType>::IsEmpty();
+  }
 
   
 
@@ -135,7 +139,11 @@ class nsBaseHashtable
 
 
 
-  bool Get(KeyType aKey, UserDataType* aData) const {
+
+
+
+
+  [[nodiscard]] bool Get(KeyType aKey, UserDataType* aData) const {
     EntryType* ent = this->GetEntry(aKey);
     if (!ent) {
       return false;
@@ -162,7 +170,7 @@ class nsBaseHashtable
 
 
 
-  UserDataType Get(KeyType aKey) const {
+  [[nodiscard]] UserDataType Get(KeyType aKey) const {
     EntryType* ent = this->GetEntry(aKey);
     if (!ent) {
       return UserDataType{};
@@ -178,7 +186,7 @@ class nsBaseHashtable
 
 
 
-  mozilla::Maybe<UserDataType> MaybeGet(KeyType aKey) const {
+  [[nodiscard]] mozilla::Maybe<UserDataType> MaybeGet(KeyType aKey) const {
     EntryType* ent = this->GetEntry(aKey);
     if (!ent) {
       return mozilla::Nothing();
@@ -257,6 +265,10 @@ class nsBaseHashtable
 
 
 
+  
+  
+  
+  
   bool Remove(KeyType aKey, DataType* aData) {
     if (auto* ent = this->GetEntry(aKey)) {
       if (aData) {
@@ -534,7 +546,7 @@ class nsBaseHashtable
 
 
 
-    DataType& Data() { return Entry()->mData; }
+    [[nodiscard]] DataType& Data() { return Entry()->mData; }
 
    private:
     friend class nsBaseHashtable;
@@ -558,7 +570,7 @@ class nsBaseHashtable
 
 
   template <class F>
-  auto WithEntryHandle(KeyType aKey, F&& aFunc)
+  [[nodiscard]] auto WithEntryHandle(KeyType aKey, F&& aFunc)
       -> std::invoke_result_t<F, EntryHandle&&> {
     return Base::WithEntryHandle(
         aKey, [&aFunc](auto entryHandle) -> decltype(auto) {
@@ -576,7 +588,8 @@ class nsBaseHashtable
 
 
   template <class F>
-  auto WithEntryHandle(KeyType aKey, const fallible_t& aFallible, F&& aFunc)
+  [[nodiscard]] auto WithEntryHandle(KeyType aKey, const fallible_t& aFallible,
+                                     F&& aFunc)
       -> std::invoke_result_t<F, mozilla::Maybe<EntryHandle>&&> {
     return Base::WithEntryHandle(
         aKey, aFallible, [&aFunc](auto maybeEntryHandle) {

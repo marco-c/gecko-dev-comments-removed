@@ -40,7 +40,7 @@ class nsRefPtrHashtable
   
 
 
-  already_AddRefed<PtrType> Get(KeyType aKey) const;
+  [[nodiscard]] already_AddRefed<PtrType> Get(KeyType aKey) const;
 
   
 
@@ -48,7 +48,7 @@ class nsRefPtrHashtable
 
 
 
-  PtrType* GetWeak(KeyType aKey, bool* aFound = nullptr) const;
+  [[nodiscard]] PtrType* GetWeak(KeyType aKey, bool* aFound = nullptr) const;
 
   
   

@@ -68,7 +68,7 @@ class nsClassHashtable : public nsBaseHashtable<KeyClass, mozilla::UniquePtr<T>,
 
 
 
-  UserDataType Get(KeyType aKey) const;
+  [[nodiscard]] UserDataType Get(KeyType aKey) const;
 };
 
 template <typename K, typename T>
