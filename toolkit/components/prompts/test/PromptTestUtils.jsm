@@ -148,7 +148,7 @@ let PromptTestUtils = {
       } else if (parent instanceof Ci.nsIDOMChromeWindow) {
         
         parentWindow = parent;
-        parentBrowser = parentWindow.gBrowser.selectedBrowser;
+        parentBrowser = parentWindow.gBrowser?.selectedBrowser;
       } else {
         throw new Error("Invalid parent. Expected browser or dom window");
       }
@@ -162,7 +162,7 @@ let PromptTestUtils = {
     await TestUtils.topicObserved(topic, subject => {
       
       let browser =
-        parentBrowser || subject.ownerGlobal.gBrowser.selectedBrowser;
+        parentBrowser || subject.ownerGlobal.gBrowser?.selectedBrowser;
       if (isCommonDialog(modalType)) {
         
         if (parentWindow && subject.opener !== parentWindow) {
@@ -170,7 +170,7 @@ let PromptTestUtils = {
         }
 
         
-        if (modalType == Services.prompt.MODAL_TYPE_TAB) {
+        if (browser && modalType == Services.prompt.MODAL_TYPE_TAB) {
           let dialogBox = parentWindow.gBrowser.getTabDialogBox(browser);
           let hasMatchingDialog = dialogBox._tabDialogManager._dialogs.some(
             d => d._frame?.browsingContext == subject.browsingContext
