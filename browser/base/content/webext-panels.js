@@ -67,9 +67,6 @@ function getBrowser(panel) {
         oa
       )
     );
-    
-    
-
     readyPromise = promiseEvent(browser, "XULFrameLoaderCreated");
   } else {
     readyPromise = Promise.resolve();
@@ -104,7 +101,7 @@ function getBrowser(panel) {
     true
   );
 
-  const initBrowser = () => {
+  return readyPromise.then(() => {
     ExtensionParent.apiManager.emit(
       "extension-browser-inserted",
       browser,
@@ -123,10 +120,7 @@ function getBrowser(panel) {
         : {};
     browser.messageManager.sendAsyncMessage("Extension:InitBrowser", options);
     return browser;
-  };
-
-  browser.addEventListener("DidChangeBrowserRemoteness", initBrowser);
-  return readyPromise.then(initBrowser);
+  });
 }
 
 
