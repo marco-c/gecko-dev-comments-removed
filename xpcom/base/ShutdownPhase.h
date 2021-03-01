@@ -12,15 +12,21 @@ namespace mozilla {
 
 enum class ShutdownPhase {
   NotInShutdown = 0,
-  WillShutdown,
-  Shutdown,
-  ShutdownThreads,
-  ShutdownLoaders,
-  ShutdownFinal,
-  ShutdownPostLastCycleCollection,
-  ShutdownPhase_Length,  
-  First = WillShutdown,  
-  Last = ShutdownFinal
+  AppShutdownConfirmed,
+  AppShutdownNetTeardown,
+  AppShutdownTeardown,
+  AppShutdown,
+  AppShutdownQM,
+  AppShutdownTelemetry,
+  XPCOMWillShutdown,
+  XPCOMShutdown,
+  XPCOMShutdownThreads,
+  XPCOMShutdownLoaders,
+  XPCOMShutdownFinal,
+  CCPostLastCycleCollection,
+  ShutdownPhase_Length,          
+  First = AppShutdownConfirmed,  
+  Last = XPCOMShutdownFinal
 };
 
 }  

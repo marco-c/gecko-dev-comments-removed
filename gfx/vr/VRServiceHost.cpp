@@ -240,7 +240,8 @@ void VRServiceHost::PuppetReset() {
   
   
   if (!mVRProcessEnabled &&
-      !(NS_IsMainThread() && PastShutdownPhase(ShutdownPhase::ShutdownFinal))) {
+      !(NS_IsMainThread() &&
+        PastShutdownPhase(ShutdownPhase::XPCOMShutdownFinal))) {
     
     VRPuppetCommandBuffer::Get().Reset();
   }

@@ -1220,7 +1220,7 @@ nsresult mozJSComponentLoader::Import(JSContext* aCx,
       !mInProgressImports.Get(info.Key(), &mod)) {
     
     
-    if (PastShutdownPhase(ShutdownPhase::ShutdownFinal)) {
+    if (PastShutdownPhase(ShutdownPhase::XPCOMShutdownFinal)) {
       return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
     }
 

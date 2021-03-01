@@ -152,7 +152,7 @@ LocaleService* LocaleService::GetInstance() {
     }
     
     
-    ClearOnShutdown(&sInstance, ShutdownPhase::ShutdownPostLastCycleCollection);
+    ClearOnShutdown(&sInstance, ShutdownPhase::CCPostLastCycleCollection);
   }
   return sInstance;
 }
