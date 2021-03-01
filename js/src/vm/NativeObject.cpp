@@ -1156,7 +1156,7 @@ bool js::NativeLookupOwnProperty(
     JSContext* cx, typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
     typename MaybeRooted<jsid, allowGC>::HandleType id,
     typename MaybeRooted<PropertyResult, allowGC>::MutableHandleType propp) {
-  return LookupOwnPropertyInline<allowGC>(cx, obj, id, propp);
+  return NativeLookupOwnPropertyInline<allowGC>(cx, obj, id, propp);
 }
 
 template bool js::NativeLookupOwnProperty<CanGC>(
@@ -1986,7 +1986,7 @@ bool js::NativeHasProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
   
   for (;;) {
     
-    if (!LookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop)) {
+    if (!NativeLookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop)) {
       return false;
     }
 
@@ -2257,7 +2257,7 @@ static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
   
   for (;;) {
     
-    if (!LookupOwnPropertyInline<allowGC>(cx, pobj, id, &prop)) {
+    if (!NativeLookupOwnPropertyInline<allowGC>(cx, pobj, id, &prop)) {
       return false;
     }
 
@@ -2641,7 +2641,7 @@ bool js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
   
   for (;;) {
     
-    if (!LookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop)) {
+    if (!NativeLookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop)) {
       return false;
     }
 
