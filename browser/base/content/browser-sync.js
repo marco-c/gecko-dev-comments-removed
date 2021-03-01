@@ -915,11 +915,7 @@ var gSync = {
       );
     } else if (state.status === UIState.STATUS_SIGNED_IN) {
       stateValue = "signedin";
-      if (
-        state.avatarURL &&
-        !state.avatarIsDefault &&
-        !PanelUI.protonAppMenuEnabled
-      ) {
+      if (state.avatarURL && !state.avatarIsDefault) {
         
         const bgImage = `url("${state.avatarURL}")`;
         let img = new Image();
