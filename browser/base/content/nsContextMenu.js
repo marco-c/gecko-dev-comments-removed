@@ -681,10 +681,7 @@ class nsContextMenu {
       (this.onLink && !this.onMailtoLink && !this.onMozExtLink) ||
         this.onPlainTextLink
     );
-    this.showItem(
-      "context-keywordfield",
-      this.onTextInput && this.onKeywordField
-    );
+    this.showItem("context-keywordfield", this.shouldShowAddKeyword());
     this.showItem("frame", this.inFrame);
 
     if (this.inFrame) {
@@ -809,7 +806,8 @@ class nsContextMenu {
     );
     this.showItem(
       "context-sep-selectall",
-      !this.inAboutDevtoolsToolbox && this.isContentSelected
+      !this.inAboutDevtoolsToolbox &&
+        (this.isContentSelected || this.shouldShowAddKeyword())
     );
 
     
@@ -956,19 +954,9 @@ class nsContextMenu {
     let showGenerate = false;
     let enableGeneration = Services.logins.isLoggedIn;
     try {
-      let loginFillInfo = this.contentData && this.contentData.loginFillInfo;
-      let documentURI = this.contentData.documentURIObject;
-
       
       
-      if (
-        !loginFillInfo ||
-        !loginFillInfo.passwordField.found ||
-        documentURI.schemeIs("about") ||
-        this.browser.contentPrincipal.spec ==
-          "resource://pdf.js/web/viewer.html"
-      ) {
-        
+      if (!this.isLoginForm()) {
         return;
       }
       showFill = true;
@@ -976,10 +964,11 @@ class nsContextMenu {
       
       
       
+      let loginFillInfo = this.contentData?.loginFillInfo;
       let disableFill =
         !Services.logins.isLoggedIn ||
-        loginFillInfo.passwordField.disabled ||
-        loginFillInfo.activeField.disabled;
+        loginFillInfo?.passwordField.disabled ||
+        loginFillInfo?.activeField.disabled;
       this.setItemAttr("fill-login", "disabled", disableFill);
 
       let onPasswordLikeField = PASSWORD_FIELDNAME_HINTS.includes(
@@ -1002,7 +991,8 @@ class nsContextMenu {
         );
       }
 
-      let formOrigin = LoginHelper.getLoginOrigin(documentURI.spec);
+      let documentURI = this.contentData?.documentURIObject;
+      let formOrigin = LoginHelper.getLoginOrigin(documentURI?.spec);
       let isGeneratedPasswordEnabled =
         LoginHelper.generationAvailable && LoginHelper.generationEnabled;
       showGenerate =
@@ -1094,6 +1084,19 @@ class nsContextMenu {
       this.targetIdentifier,
       this.contentData.documentURIObject,
       this.browser
+    );
+  }
+
+  isLoginForm() {
+    let loginFillInfo = this.contentData?.loginFillInfo;
+    let documentURI = this.contentData?.documentURIObject;
+
+    
+    
+    return (
+      loginFillInfo?.passwordField?.found &&
+      !documentURI?.schemeIs("about") &&
+      this.browser.contentPrincipal.spec != "resource://pdf.js/web/viewer.html"
     );
   }
 
@@ -1923,6 +1926,10 @@ class nsContextMenu {
       }
     }
     return false;
+  }
+
+  shouldShowAddKeyword() {
+    return this.onTextInput && this.onKeywordField && !this.isLoginForm();
   }
 
   addDictionaries() {
