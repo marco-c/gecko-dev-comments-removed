@@ -1745,9 +1745,11 @@ var gBrowserInit = {
       }
     });
 
-    this._setInitialFocus();
-
     updateFxaToolbarMenu(gFxaToolbarEnabled, true);
+
+    
+    
+    this._setInitialFocus();
 
     this.domContentLoaded = true;
   },
