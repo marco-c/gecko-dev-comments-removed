@@ -3,7 +3,7 @@
 
 
 
-load(libdir + "../../tests/non262/shell.js");
+load(libdir + "non262.js");
 
 if (typeof assertWarning === 'undefined') {
     var assertWarning = function assertWarning(f, pattern) {

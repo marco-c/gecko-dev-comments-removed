@@ -1,13 +1,13 @@
-loadRelativeToScript("../../../tests/ecma_6/Math/shell.js");
+load(libdir + "math.js");
 
 for (var i = -20; i < 20; i++) {
     assertEq(Math.hypot(+0, i), Math.abs(i));
     assertEq(Math.hypot(-0, i), Math.abs(i));
 }
 
-// The implementation must avoid underlow.
-// The implementation must avoid overflow, where possible.
-// The implementation must minimise rounding errors.
+
+
+
 
 assertNear(Math.hypot(1e-300, 1e-300), 1.414213562373095e-300);
 assertNear(Math.hypot(1e-300, 1e-300, 1e-300), 1.732050807568877e-300);
