@@ -172,8 +172,7 @@ already_AddRefed<nsHttpHandler> nsHttpHandler::GetInstance() {
     MOZ_ASSERT(NS_SUCCEEDED(rv));
     
     
-    ClearOnShutdown(&gHttpHandler,
-                    ShutdownPhase::ShutdownPostLastCycleCollection);
+    ClearOnShutdown(&gHttpHandler, ShutdownPhase::CCPostLastCycleCollection);
   }
   RefPtr<nsHttpHandler> httpHandler = gHttpHandler;
   return httpHandler.forget();

@@ -15,6 +15,7 @@
 
 
 
+#include "mozilla/ShutdownPhase.h"
 #include "nsTerminator.h"
 
 #include "prthread.h"
@@ -39,6 +40,7 @@
 #  include <unistd.h>
 #endif
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
@@ -64,6 +66,8 @@
 
 #define ADDITIONAL_WAIT_BEFORE_CRASH_MS 3000
 
+#define HEARTBEAT_INTERVAL_MS 100
+
 namespace mozilla {
 
 namespace {
@@ -76,24 +80,33 @@ namespace {
 
 
 struct ShutdownStep {
-  char const* const mTopic;
+  mozilla::ShutdownPhase mPhase;
   int mTicks;
 
-  constexpr explicit ShutdownStep(const char* const topic)
-      : mTopic(topic), mTicks(-1) {}
+  constexpr explicit ShutdownStep(mozilla::ShutdownPhase aPhase)
+      : mPhase(aPhase), mTicks(-1) {}
 };
 
 static ShutdownStep sShutdownSteps[] = {
-    ShutdownStep("quit-application"),
-    ShutdownStep("profile-change-net-teardown"),
-    ShutdownStep("profile-change-teardown"),
-    ShutdownStep("profile-before-change"),
-    ShutdownStep("profile-before-change-qm"),
-    ShutdownStep("xpcom-will-shutdown"),
-    ShutdownStep("xpcom-shutdown"),
+    ShutdownStep(mozilla::ShutdownPhase::AppShutdownConfirmed),
+    ShutdownStep(mozilla::ShutdownPhase::AppShutdownNetTeardown),
+    ShutdownStep(mozilla::ShutdownPhase::AppShutdownTeardown),
+    ShutdownStep(mozilla::ShutdownPhase::AppShutdown),
+    ShutdownStep(mozilla::ShutdownPhase::AppShutdownQM),
+    ShutdownStep(mozilla::ShutdownPhase::XPCOMWillShutdown),
+    ShutdownStep(mozilla::ShutdownPhase::XPCOMShutdown),
 };
 
 Atomic<bool> sShutdownNotified;
+
+int GetStepForPhase(mozilla::ShutdownPhase aPhase) {
+  for (size_t i = 0; i < std::size(sShutdownSteps); i++) {
+    if (sShutdownSteps[i].mPhase >= aPhase) {
+      return (int)i;
+    }
+  }
+  return -1;
+}
 
 
 
@@ -172,9 +185,9 @@ void RunWatchdog(void* arg) {
     
     
 #if defined(XP_WIN)
-    Sleep(1000 );
+    Sleep(HEARTBEAT_INTERVAL_MS );
 #else
-    usleep(1000000 );
+    usleep(HEARTBEAT_INTERVAL_MS * 1000 );
 #endif
 
     if (gHeartbeat++ < timeToLive) {
@@ -185,24 +198,24 @@ void RunWatchdog(void* arg) {
 
     
     if (!sShutdownNotified) {
-      const char* lastStep = nullptr;
+      mozilla::ShutdownPhase lastStep = mozilla::ShutdownPhase::NotInShutdown;
       
       
       
       
       for (int i = ArrayLength(sShutdownSteps) - 1; i >= 0; --i) {
         if (sShutdownSteps[i].mTicks > -1) {
-          lastStep = sShutdownSteps[i].mTopic;
+          lastStep = sShutdownSteps[i].mPhase;
           break;
         }
       }
 
-      if (lastStep) {
+      if (lastStep != mozilla::ShutdownPhase::NotInShutdown) {
         nsCString msg;
         msg.AppendPrintf(
             "Shutdown hanging at step %s. "
             "Something is blocking the main-thread.",
-            lastStep);
+            mozilla::AppShutdown::GetObserverKey(lastStep));
         
         MOZ_CRASH_UNSAFE(strdup(msg.BeginReading()));
       }
@@ -349,6 +362,7 @@ void RunWriter(void* arg) {
     
     
     
+    Unused << PR_Delete(destinationPath.get());
     if (PR_Rename(tmpFilePath.get(), destinationPath.get()) != PR_SUCCESS) {
       break;
     }
@@ -362,24 +376,10 @@ NS_IMPL_ISUPPORTS(nsTerminator, nsIObserver)
 nsTerminator::nsTerminator() : mInitialized(false), mCurrentStep(-1) {}
 
 
-nsresult nsTerminator::SelfInit() {
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (!os) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  for (auto& shutdownStep : sShutdownSteps) {
-    DebugOnly<nsresult> rv = os->AddObserver(this, shutdownStep.mTopic, false);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AddObserver failed");
-  }
-
-  return NS_OK;
-}
-
-
 
 void nsTerminator::Start() {
   MOZ_ASSERT(!mInitialized);
+  sShutdownNotified = false;
   StartWatchdog();
 #if !defined(NS_FREE_PERMANENT_DATA)
   
@@ -388,7 +388,33 @@ void nsTerminator::Start() {
   StartWriter();
 #endif  
   mInitialized = true;
-  sShutdownNotified = false;
+}
+
+NS_IMETHODIMP
+nsTerminator::Observe(nsISupports*, const char* aTopic, const char16_t*) {
+  
+  
+  if (strcmp(aTopic, "terminator-test-quit-application") == 0) {
+    AdvancePhase(mozilla::ShutdownPhase::AppShutdownConfirmed);
+  } else if (strcmp(aTopic, "terminator-test-profile-change-net-teardown") ==
+             0) {
+    AdvancePhase(mozilla::ShutdownPhase::AppShutdownNetTeardown);
+  } else if (strcmp(aTopic, "terminator-test-profile-change-teardown") == 0) {
+    AdvancePhase(mozilla::ShutdownPhase::AppShutdownTeardown);
+  } else if (strcmp(aTopic, "terminator-test-profile-before-change") == 0) {
+    AdvancePhase(mozilla::ShutdownPhase::AppShutdown);
+  } else if (strcmp(aTopic, "terminator-test-profile-before-change-qm") == 0) {
+    AdvancePhase(mozilla::ShutdownPhase::AppShutdownQM);
+  } else if (strcmp(aTopic,
+                    "terminator-test-profile-before-change-telemetry") == 0) {
+    AdvancePhase(mozilla::ShutdownPhase::AppShutdownTelemetry);
+  } else if (strcmp(aTopic, "terminator-test-xpcom-will-shutdown") == 0) {
+    AdvancePhase(mozilla::ShutdownPhase::XPCOMWillShutdown);
+  } else if (strcmp(aTopic, "terminator-test-xpcom-shutdown") == 0) {
+    AdvancePhase(mozilla::ShutdownPhase::XPCOMShutdown);
+  }
+
+  return NS_OK;
 }
 
 
@@ -431,11 +457,12 @@ void nsTerminator::StartWatchdog() {
 #endif
 
   UniquePtr<Options> options(new Options());
-  const PRIntervalTime ticksDuration = PR_MillisecondsToInterval(1000);
+  const PRIntervalTime ticksDuration =
+      PR_MillisecondsToInterval(HEARTBEAT_INTERVAL_MS);
   options->crashAfterTicks = crashAfterMS / ticksDuration;
   
   if (options->crashAfterTicks == 0) {
-    options->crashAfterTicks = crashAfterMS / 1000;
+    options->crashAfterTicks = crashAfterMS / HEARTBEAT_INTERVAL_MS;
   }
 
   DebugOnly<PRThread*> watchdogThread =
@@ -478,14 +505,11 @@ void nsTerminator::StartWriter() {
   }
 }
 
-NS_IMETHODIMP
-nsTerminator::Observe(nsISupports*, const char* aTopic, const char16_t*) {
-  if (strcmp(aTopic, "profile-after-change") == 0) {
-    return SelfInit();
-  }
-
+void nsTerminator::AdvancePhase(mozilla::ShutdownPhase aPhase) {
   
-
+  if (sShutdownNotified) {
+    return;
+  }
   
   
   
@@ -493,41 +517,29 @@ nsTerminator::Observe(nsISupports*, const char* aTopic, const char16_t*) {
     Start();
   }
 
-  UpdateHeartbeat(aTopic);
+  UpdateHeartbeat(GetStepForPhase(aPhase));
 #if !defined(NS_FREE_PERMANENT_DATA)
   
   
   
   UpdateTelemetry();
 #endif  
-  UpdateCrashReport(aTopic);
-
-  
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  MOZ_RELEASE_ASSERT(os);
-  (void)os->RemoveObserver(this, aTopic);
-
-  return NS_OK;
+  UpdateCrashReport(mozilla::AppShutdown::GetObserverKey(aPhase));
 }
 
-void nsTerminator::UpdateHeartbeat(const char* aTopic) {
-  
-  uint32_t ticks = gHeartbeat.exchange(0);
-  if (mCurrentStep >= 0) {
-    sShutdownSteps[mCurrentStep].mTicks = ticks;
-  }
+void nsTerminator::UpdateHeartbeat(int32_t aStep) {
+  MOZ_ASSERT(aStep >= mCurrentStep);
 
-  
-  
-  int nextStep = -1;
-  for (size_t i = 0; i < ArrayLength(sShutdownSteps); ++i) {
-    if (strcmp(sShutdownSteps[i].mTopic, aTopic) == 0) {
-      nextStep = i;
-      break;
+  if (aStep > mCurrentStep) {
+    
+    uint32_t ticks = gHeartbeat.exchange(0);
+    if (mCurrentStep >= 0) {
+      sShutdownSteps[mCurrentStep].mTicks = ticks;
     }
+    sShutdownSteps[aStep].mTicks = 0;
+
+    mCurrentStep = aStep;
   }
-  MOZ_ASSERT(nextStep != -1);
-  mCurrentStep = nextStep;
 }
 
 void nsTerminator::UpdateTelemetry() {
@@ -556,7 +568,8 @@ void nsTerminator::UpdateTelemetry() {
       telemetryData->AppendLiteral(", ");
     }
     telemetryData->AppendLiteral(R"(")");
-    telemetryData->Append(shutdownStep.mTopic);
+    telemetryData->Append(
+        mozilla::AppShutdown::GetObserverKey(shutdownStep.mPhase));
     telemetryData->AppendLiteral(R"(": )");
     telemetryData->AppendInt(shutdownStep.mTicks);
   }

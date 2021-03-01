@@ -472,7 +472,7 @@ nsresult nsStringBundleBase::ParseProperties(nsIPersistentProperties** aProps) {
 nsresult nsStringBundle::LoadProperties() {
   
   
-  if (PastShutdownPhase(ShutdownPhase::Shutdown)) {
+  if (PastShutdownPhase(ShutdownPhase::XPCOMShutdown)) {
     return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
 
@@ -500,7 +500,7 @@ nsresult SharedStringBundle::LoadProperties() {
   
   
   
-  if (PastShutdownPhase(ShutdownPhase::Shutdown)) {
+  if (PastShutdownPhase(ShutdownPhase::XPCOMShutdown)) {
     return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
 
