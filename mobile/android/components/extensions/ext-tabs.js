@@ -233,9 +233,11 @@ this.tabs = class extends ExtensionAPI {
             function sanitize(tab, changeInfo) {
               const result = {};
               let nonempty = false;
-              const hasTabs = tab.hasTabPermission;
               for (const prop in changeInfo) {
-                if (hasTabs || !restricted.includes(prop)) {
+                
+                
+                
+                if (!restricted.includes(prop) || tab.hasTabPermission) {
                   nonempty = true;
                   result[prop] = changeInfo[prop];
                 }

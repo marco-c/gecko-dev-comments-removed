@@ -217,9 +217,13 @@ class TabsUpdateFilterEventManager extends EventManager {
       function sanitize(tab, changeInfo) {
         let result = {};
         let nonempty = false;
-        const hasTabs = tab.hasTabPermission;
         for (let prop in changeInfo) {
-          if (hasTabs || !restricted.has(prop)) {
+          
+          
+          
+          
+          
+          if (!restricted.has(prop) || tab.hasTabPermission) {
             nonempty = true;
             result[prop] = changeInfo[prop];
           }
