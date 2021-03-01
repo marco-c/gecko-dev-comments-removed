@@ -10,6 +10,12 @@ add_task(async function test_setup() {
   
   
   registerCleanupFunction(() => {
+    
+    
+    
+    if (PanelUI.protonAppMenuEnabled) {
+      gBrowser.removeAllTabsBut(gBrowser.tabs[0]);
+    }
     Services.prefs.clearUserPref("identity.fxaccounts.toolbar.accessed");
   });
 });

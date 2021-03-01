@@ -22,21 +22,31 @@ add_task(async function test_panelview_bookmarks_delete() {
 
   await gCUITestUtils.openMainMenu();
 
-  document.getElementById("appMenu-library-button").click();
-  let libraryView = document.getElementById("appMenu-libraryView");
-  let promise = BrowserTestUtils.waitForEvent(libraryView, "ViewShown");
-  await promise;
+  
+  
+  
+  if (PanelUI.protonAppMenuEnabled) {
+    document.getElementById("appMenu-bookmarks-button").click();
+    let bookmarksView = document.getElementById("PanelUI-bookmarks");
+    let promise = BrowserTestUtils.waitForEvent(bookmarksView, "ViewShown");
+    await promise;
+  } else {
+    document.getElementById("appMenu-library-button").click();
+    let libraryView = document.getElementById("appMenu-libraryView");
+    let promise = BrowserTestUtils.waitForEvent(libraryView, "ViewShown");
+    await promise;
 
-  document.getElementById("appMenu-library-bookmarks-button").click();
-  let bookmarksView = document.getElementById("PanelUI-bookmarks");
-  promise = BrowserTestUtils.waitForEvent(bookmarksView, "ViewShown");
-  await promise;
+    document.getElementById("appMenu-library-bookmarks-button").click();
+    let bookmarksView = document.getElementById("PanelUI-bookmarks");
+    promise = BrowserTestUtils.waitForEvent(bookmarksView, "ViewShown");
+    await promise;
+  }
 
   let list = document.getElementById("panelMenu_bookmarksMenu");
   let listItem = [...list.children].find(node => node.label == TEST_URL);
 
   let placesContext = document.getElementById("placesContext");
-  promise = BrowserTestUtils.waitForEvent(placesContext, "popupshown");
+  let promise = BrowserTestUtils.waitForEvent(placesContext, "popupshown");
   EventUtils.synthesizeMouseAtCenter(listItem, {
     button: 2,
     type: "contextmenu",

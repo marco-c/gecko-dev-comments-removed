@@ -714,6 +714,15 @@ add_task(async function testQuickSwitchTabAfterTogglingTPSwitch() {
 
 
 add_task(async function testProtectionsButton() {
+  
+  if (PanelUI.protonAppMenuEnabled) {
+    Assert.ok(
+      true,
+      "Skipping test since this item does not exist in the Proton AppMenu"
+    );
+    return;
+  }
+
   let gCUITestUtils = new CustomizableUITestUtils(window);
 
   await BrowserTestUtils.withNewTab(gBrowser, async function(browser) {
