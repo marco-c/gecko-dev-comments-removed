@@ -2238,6 +2238,28 @@ bool AsyncPanZoomController::CanScrollDownwards() const {
   return mY.CanScrollTo(eSideBottom);
 }
 
+SideBits AsyncPanZoomController::ScrollableDirections() const {
+  SideBits result;
+  {  
+    
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    result = mX.ScrollableDirections() | mY.ScrollableDirections();
+  }
+
+  if (IsRootContent()) {
+    if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
+      ScreenMargin fixedLayerMargins =
+          treeManagerLocal->GetCompositorFixedLayerMargins();
+      {
+        RecursiveMutexAutoLock lock(mRecursiveMutex);
+        result |= mY.ScrollableDirectionsWithDynamicToolbar(fixedLayerMargins);
+      }
+    }
+  }
+
+  return result;
+}
+
 bool AsyncPanZoomController::IsContentOfHonouredTargetRightToLeft(
     bool aHonoursRoot) const {
   if (aHonoursRoot) {
