@@ -236,8 +236,11 @@ where
             }
         }
 
+        
+        
         let fds = item.platform_handles();
         self.codec.encode(item, &mut self.write_buf)?;
+
         let fds = fds.and_then(|fds| {
             cmsg::builder(&mut self.outgoing_fds)
                 .rights(&fds.0[..])
