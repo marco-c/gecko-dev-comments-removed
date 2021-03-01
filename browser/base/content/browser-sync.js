@@ -419,23 +419,6 @@ var gSync = {
   _definePrefGetters() {
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
-      "UNSENDABLE_URL_REGEXP",
-      "services.sync.engine.tabs.filteredUrls",
-      null,
-      null,
-      rx => {
-        try {
-          return new RegExp(rx, "i");
-        } catch (e) {
-          Cu.reportError(
-            `Failed to build url filter regexp for send tab: ${e}`
-          );
-          return null;
-        }
-      }
-    );
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
       "FXA_ENABLED",
       "identity.fxaccounts.enabled"
     );
@@ -972,7 +955,7 @@ var gSync = {
     
     
     let canSendAllURIs = gBrowser.selectedTabs.every(t =>
-      this.isSendableURI(t.linkedBrowser.currentURI.spec)
+      BrowserUtils.isShareableURL(t.linkedBrowser.currentURI)
     );
 
     PanelMultiView.getViewNode(
@@ -1560,24 +1543,6 @@ var gSync = {
     }
   },
 
-  isSendableURI(aURISpec) {
-    if (!aURISpec) {
-      return false;
-    }
-    
-    if (aURISpec.length > 65535) {
-      return false;
-    }
-    if (this.UNSENDABLE_URL_REGEXP) {
-      return !this.UNSENDABLE_URL_REGEXP.test(aURISpec);
-    }
-    
-    
-    
-    
-    return true;
-  },
-
   
   updateTabContextMenu(aPopupMenu, aTargetTab) {
     
@@ -1592,7 +1557,7 @@ var gSync = {
     for (let tab of aTargetTab.multiselected
       ? gBrowser.selectedTabs
       : [aTargetTab]) {
-      if (this.isSendableURI(tab.linkedBrowser.currentURI.spec)) {
+      if (BrowserUtils.isShareableURL(tab.linkedBrowser.currentURI)) {
         hasASendableURI = true;
         break;
       }
@@ -1654,10 +1619,11 @@ var gSync = {
     }
 
     const targetURI = showSendLink
-      ? contextMenu.linkURL
-      : contextMenu.browser.currentURI.spec;
+      ? contextMenu.getLinkURI()
+      : contextMenu.browser.currentURI;
     const enabled =
-      !this.sendTabConfiguredAndLoading && this.isSendableURI(targetURI);
+      !this.sendTabConfiguredAndLoading &&
+      BrowserUtils.isShareableURL(targetURI);
     contextMenu.setItemAttr(
       showSendPage ? "context-sendpagetodevice" : "context-sendlinktodevice",
       "disabled",
