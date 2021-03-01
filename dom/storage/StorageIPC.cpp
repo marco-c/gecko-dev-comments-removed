@@ -1463,11 +1463,7 @@ mozilla::ipc::IPCResult RecvPBackgroundLocalStorageCacheConstructor(
     gLocalStorageCacheParents = new LocalStorageCacheParentHashtable();
   }
 
-  gLocalStorageCacheParents
-      ->LookupOrInsertWith(
-          aOriginKey,
-          [] { return MakeUnique<nsTArray<LocalStorageCacheParent*>>(); })
-      ->AppendElement(actor);
+  gLocalStorageCacheParents->GetOrInsertNew(aOriginKey)->AppendElement(actor);
 
   
   

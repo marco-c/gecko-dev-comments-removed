@@ -57,14 +57,11 @@ void PendingTransactionQueue::InsertTransactionNormal(
 
   uint64_t windowId = TabIdForQueuing(info->Transaction());
   nsTArray<RefPtr<PendingTransactionInfo>>* const infoArray =
-      mPendingTransactionTable
-          .LookupOrInsertWith(
-              windowId,
-              [] {
-                return MakeUnique<nsTArray<RefPtr<PendingTransactionInfo>>>();
-              })
-          .get();
+      mPendingTransactionTable.GetOrInsertNew(windowId);
 
+  
+  
+  
   InsertTransactionSorted(*infoArray, info, aInsertAsFirstForTheSamePriority);
 }
 

@@ -119,14 +119,9 @@ nsresult nsStreamConverterService::AddAdjacency(const char* aContractID) {
   
 
   nsTArray<RefPtr<nsAtom>>* const fromEdges =
-      mAdjacencyList
-          .LookupOrInsertWith(
-              fromStr,
-              [] { return mozilla::MakeUnique<nsTArray<RefPtr<nsAtom>>>(); })
-          .get();
+      mAdjacencyList.GetOrInsertNew(fromStr);
 
-  mozilla::Unused << mAdjacencyList.LookupOrInsertWith(
-      toStr, [] { return mozilla::MakeUnique<nsTArray<RefPtr<nsAtom>>>(); });
+  mAdjacencyList.GetOrInsertNew(toStr);
 
   
   

@@ -1514,10 +1514,7 @@ nsresult internal_GetScalarByEnum(const StaticMutexAutoLock& lock,
   
   
   ScalarStorageMapType* const scalarStorage =
-      processStorage
-          .LookupOrInsertWith(storageId,
-                              [] { return MakeUnique<ScalarStorageMapType>(); })
-          .get();
+      processStorage.GetOrInsertNew(storageId);
 
   
   
@@ -1798,10 +1795,7 @@ nsresult internal_GetKeyedScalarByEnum(const StaticMutexAutoLock& lock,
   
   
   KeyedScalarStorageMapType* const scalarStorage =
-      processStorage
-          .LookupOrInsertWith(
-              storageId, [] { return MakeUnique<KeyedScalarStorageMapType>(); })
-          .get();
+      processStorage.GetOrInsertNew(storageId);
 
   if (scalarStorage->Get(aId.id, &scalar)) {
     *aRet = scalar;
