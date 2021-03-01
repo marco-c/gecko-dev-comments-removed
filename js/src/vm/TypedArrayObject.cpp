@@ -402,20 +402,9 @@ class TypedArrayObjectTemplate : public TypedArrayObject {
         buffer ? gc::GetGCObjectKind(instanceClass())
                : AllocKindForLazyBuffer(len.get() * BYTES_PER_ELEMENT);
 
-    
-    
-    
-    RootedObject checkProto(cx);
-    if (proto) {
-      checkProto = GlobalObject::getOrCreatePrototype(cx, protoKey());
-      if (!checkProto) {
-        return nullptr;
-      }
-    }
-
     AutoSetNewObjectMetadata metadata(cx);
     Rooted<TypedArrayObject*> obj(cx);
-    if (proto && proto != checkProto) {
+    if (proto) {
       obj = makeProtoInstance(cx, proto, allocKind);
     } else {
       obj = newBuiltinClassInstance(cx, allocKind, GenericObject);
