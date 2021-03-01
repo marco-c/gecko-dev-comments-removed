@@ -532,7 +532,7 @@ void NotificationController::ProcessMutationEvents() {
     }
 
     LocalAccessible* parent = event->GetAccessible()->LocalParent();
-    showEvents.GetOrInsert(parent).AppendElement(event);
+    showEvents.LookupOrInsert(parent).AppendElement(event);
   }
 
   

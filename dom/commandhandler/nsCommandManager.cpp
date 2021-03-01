@@ -82,8 +82,9 @@ nsCommandManager::AddCommandObserver(nsIObserver* aCommandObserver,
   
   auto* const commandObservers =
       mObserversTable
-          .GetOrInsertWith(aCommandToObserve,
-                           [] { return mozilla::MakeUnique<ObserverList>(); })
+          .LookupOrInsertWith(
+              aCommandToObserve,
+              [] { return mozilla::MakeUnique<ObserverList>(); })
           .get();
 
   

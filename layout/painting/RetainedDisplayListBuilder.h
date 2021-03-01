@@ -48,7 +48,7 @@ struct RetainedDisplayListData {
 
 
 
-  FrameFlags& Flags(nsIFrame* aFrame) { return mFrames.GetOrInsert(aFrame); }
+  FrameFlags& Flags(nsIFrame* aFrame) { return mFrames.LookupOrInsert(aFrame); }
 
   
 

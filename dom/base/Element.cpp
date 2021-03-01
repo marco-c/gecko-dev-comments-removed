@@ -3959,7 +3959,7 @@ void Element::RegisterIntersectionObserver(DOMIntersectionObserver* aObserver) {
   
   
   
-  Unused << observers->GetOrInsert(aObserver, eUninitialized);
+  observers->LookupOrInsert(aObserver, eUninitialized);
 }
 
 void Element::UnregisterIntersectionObserver(

@@ -1593,7 +1593,7 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
       
       faceListPtr =
           faces
-              .GetOrInsertWith(
+              .LookupOrInsertWith(
                   keyName,
                   [&] {
                     FontVisibility visibility =
@@ -1656,18 +1656,19 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
       ToLowerCase(keyName);
 
       faces
-          .GetOrInsertWith(keyName,
-                           [&] {
-                             FontVisibility visibility =
-                                 aAppFont ? FontVisibility::Base
-                                          : GetVisibilityForFamily(keyName);
-                             families.AppendElement(fontlist::Family::InitData(
-                                 keyName, otherFamilyName,
-                                 fontlist::Family::kNoIndex, visibility,
-                                  aAppFont,  false));
+          .LookupOrInsertWith(
+              keyName,
+              [&] {
+                FontVisibility visibility =
+                    aAppFont ? FontVisibility::Base
+                             : GetVisibilityForFamily(keyName);
+                families.AppendElement(fontlist::Family::InitData(
+                    keyName, otherFamilyName, fontlist::Family::kNoIndex,
+                    visibility,
+                     aAppFont,  false));
 
-                             return MakeUnique<FaceInitArray>();
-                           })
+                return MakeUnique<FaceInitArray>();
+              })
           ->AppendElement(fontlist::Face::InitData{descriptor, 0, false, weight,
                                                    stretch, style});
 

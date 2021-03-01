@@ -1098,8 +1098,8 @@ void NativeFileWatcherIOTask::AppendCallbacksToHashtables(
         aOnErrorHandle) {
   ChangeCallbackArray* const callbacksArray =
       mChangeCallbacksTable
-          .GetOrInsertWith(aPath,
-                           [] { return MakeUnique<ChangeCallbackArray>(); })
+          .LookupOrInsertWith(aPath,
+                              [] { return MakeUnique<ChangeCallbackArray>(); })
           .get();
 
   
@@ -1115,8 +1115,8 @@ void NativeFileWatcherIOTask::AppendCallbacksToHashtables(
   
   ErrorCallbackArray* const errorCallbacksArray =
       mErrorCallbacksTable
-          .GetOrInsertWith(aPath,
-                           [] { return MakeUnique<ErrorCallbackArray>(); })
+          .LookupOrInsertWith(aPath,
+                              [] { return MakeUnique<ErrorCallbackArray>(); })
           .get();
 
   ErrorCallbackArray::index_type errorCallbackIndex =

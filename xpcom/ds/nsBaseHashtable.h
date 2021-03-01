@@ -196,7 +196,7 @@ class nsBaseHashtable
 
 
   template <typename... Args>
-  DataType& GetOrInsert(const KeyType& aKey, Args&&... aArgs) {
+  DataType& LookupOrInsert(const KeyType& aKey, Args&&... aArgs) {
     return WithEntryHandle(aKey, [&](auto entryHandle) -> DataType& {
       return entryHandle.OrInsert(std::forward<Args>(aArgs)...);
     });
@@ -208,7 +208,7 @@ class nsBaseHashtable
 
 
   template <typename F>
-  DataType& GetOrInsertWith(const KeyType& aKey, F&& aFunc) {
+  DataType& LookupOrInsertWith(const KeyType& aKey, F&& aFunc) {
     return WithEntryHandle(aKey, [&aFunc](auto entryHandle) -> DataType& {
       return entryHandle.OrInsertWith(std::forward<F>(aFunc));
     });

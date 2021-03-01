@@ -1232,7 +1232,7 @@ static void AddAccessCount(const nsACString& aPrefName) {
   
   
   if (NS_IsMainThread()) {
-    uint32_t& count = gAccessCounts->GetOrInsert(aPrefName);
+    uint32_t& count = gAccessCounts->LookupOrInsert(aPrefName);
     count++;
   }
 }

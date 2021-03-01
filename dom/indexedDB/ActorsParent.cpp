@@ -7628,11 +7628,11 @@ nsresult DatabaseConnection::UpdateRefcountFunction::ProcessValue(
 
     const auto entry =
         WrapNotNull(mFileInfoEntries
-                        .GetOrInsertWith(id,
-                                         [&file] {
-                                           return MakeUnique<FileInfoEntry>(
-                                               file.FileInfoPtr());
-                                         })
+                        .LookupOrInsertWith(id,
+                                            [&file] {
+                                              return MakeUnique<FileInfoEntry>(
+                                                  file.FileInfoPtr());
+                                            })
                         .get());
 
     if (mInSavepoint) {

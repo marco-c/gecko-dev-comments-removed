@@ -634,7 +634,7 @@ void MediaTrackGraphImpl::OpenAudioInputImpl(CubebUtils::AudioDeviceID aID,
   
   
   nsTArray<RefPtr<AudioDataListener>>& listeners =
-      mInputDeviceUsers.GetOrInsert(aID);
+      mInputDeviceUsers.LookupOrInsert(aID);
   if (listeners.IsEmpty() && mInputDeviceUsers.Count() > 1) {
     
     listeners.RemoveElement(aID);

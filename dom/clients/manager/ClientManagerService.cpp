@@ -193,14 +193,22 @@ already_AddRefed<ClientManagerService> ClientManagerService::GetInstance() {
 bool ClientManagerService::AddSource(ClientSourceParent* aSource) {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aSource);
-  auto entry = mSourceTable.LookupForAdd(aSource->Info().Id());
-  
-  
-  
-  if (NS_WARN_IF(!!entry)) {
+  if (!mSourceTable.WithEntryHandle(aSource->Info().Id(),
+                                    [aSource](auto&& entry) {
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      
+                                      if (NS_WARN_IF(entry.HasEntry())) {
+                                        return false;
+                                      }
+                                      entry.Insert(aSource);
+                                      return true;
+                                    })) {
     return false;
   }
-  entry.OrInsert([&] { return aSource; });
 
   
   
@@ -246,7 +254,7 @@ ClientSourceParent* ClientManagerService::FindSource(
 
 void ClientManagerService::WaitForSource(ClientHandleParent* aHandle,
                                          const nsID& aID) {
-  auto& entry = mPendingHandles.GetOrInsert(aID);
+  auto& entry = mPendingHandles.LookupOrInsert(aID);
   entry.AppendElement(aHandle);
 }
 
