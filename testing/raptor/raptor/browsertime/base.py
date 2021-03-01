@@ -415,8 +415,8 @@ class Browsertime(Perftest):
                 level = level.lower()
                 if "error" in level:
                     self.browsertime_failure = msg
-                    
-                    raise Exception("Browsertime failed to run")
+                    LOG.error("Browsertime failed to run")
+                    proc.kill()
                 elif "warning" in level:
                     LOG.warning(msg)
                 else:
