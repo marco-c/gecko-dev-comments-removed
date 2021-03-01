@@ -1371,7 +1371,7 @@ nsGlobalWindowOuter::nsGlobalWindowOuter(uint64_t aWindowID)
   MOZ_ASSERT(sOuterWindowsById, "Outer Windows hash table must be created!");
 
   
-  MOZ_ASSERT(!sOuterWindowsById->Get(mWindowID),
+  MOZ_ASSERT(!sOuterWindowsById->Contains(mWindowID),
              "This window shouldn't be in the hash table yet!");
   
   
