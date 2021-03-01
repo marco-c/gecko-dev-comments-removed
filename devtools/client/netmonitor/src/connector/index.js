@@ -539,6 +539,14 @@ class Connector {
 
 
 
+  getToolbox() {
+    return this.toolbox;
+  }
+
+  
+
+
+
 
   viewSourceInDebugger(sourceURL, sourceLine, sourceColumn) {
     if (this.toolbox) {
