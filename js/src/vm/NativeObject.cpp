@@ -1578,7 +1578,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
     
     
     
-    if (!NativeLookupOwnPropertyNoResolve(cx, obj, id, &prop)) {
+    if (!NativeLookupOwnPropertyNoResolve(cx, obj, id, prop.address())) {
       return false;
     }
   } else {
@@ -1900,7 +1900,7 @@ static bool DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj,
   }
 
 #ifdef DEBUG
-  Rooted<PropertyResult> prop(cx);
+  PropertyResult prop;
   if (!NativeLookupOwnPropertyNoResolve(cx, obj, id, &prop)) {
     return false;
   }
