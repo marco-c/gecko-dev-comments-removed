@@ -27,6 +27,8 @@
 #include "nsXULAppAPI.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/gfx/2D.h"
 #include "WindowsDefaultBrowser.h"
 
@@ -883,26 +885,23 @@ nsWindowsShellService::CheckPinCurrentAppToTaskbar() {
   return PinCurrentAppToTaskbarImpl( true);
 }
 
-NS_IMETHODIMP
-nsWindowsShellService::IsCurrentAppPinnedToTaskbar( bool* aIsPinned) {
-  *aIsPinned = false;
-
+static bool IsCurrentAppPinnedToTaskbarSync() {
   wchar_t exePath[MAXPATHLEN] = {};
   if (NS_WARN_IF(NS_FAILED(BinaryPath::GetLong(exePath)))) {
-    return NS_OK;
+    return false;
   }
 
   wchar_t folderChars[MAX_PATH] = {};
   HRESULT hr = SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr,
                                 SHGFP_TYPE_CURRENT, folderChars);
   if (NS_WARN_IF(FAILED(hr))) {
-    return NS_OK;
+    return false;
   }
 
   nsAutoString folder;
   folder.Assign(folderChars);
   if (NS_WARN_IF(folder.IsEmpty())) {
-    return NS_OK;
+    return false;
   }
   if (folder[folder.Length() - 1] != '\\') {
     folder.AppendLiteral("\\");
@@ -917,12 +916,13 @@ nsWindowsShellService::IsCurrentAppPinnedToTaskbar( bool* aIsPinned) {
   HANDLE hFindFile = FindFirstFileW(pattern.get(), &findData);
   if (hFindFile == INVALID_HANDLE_VALUE) {
     Unused << NS_WARN_IF(GetLastError() != ERROR_FILE_NOT_FOUND);
-    return NS_OK;
+    return false;
   }
   
   
 
   
+  bool isPinned = false;
   do {
     nsAutoString fileName;
     fileName.Assign(folder);
@@ -965,13 +965,57 @@ nsWindowsShellService::IsCurrentAppPinnedToTaskbar( bool* aIsPinned) {
     
     
     if (wcsnicmp(storedExePath, exePath, MAXPATHLEN) == 0) {
-      *aIsPinned = true;
+      isPinned = true;
       break;
     }
   } while (FindNextFileW(hFindFile, &findData));
 
   FindClose(hFindFile);
 
+  return isPinned;
+}
+
+NS_IMETHODIMP
+nsWindowsShellService::IsCurrentAppPinnedToTaskbarAsync(
+    JSContext* aCx,  dom::Promise** aPromise) {
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  ErrorResult rv;
+  RefPtr<dom::Promise> promise =
+      dom::Promise::Create(xpc::CurrentNativeGlobal(aCx), rv);
+  if (MOZ_UNLIKELY(rv.Failed())) {
+    return rv.StealNSResult();
+  }
+
+  
+  
+  auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
+      "IsCurrentAppPinnedToTaskbarAsync promise", promise);
+
+  NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction(
+          "IsCurrentAppPinnedToTaskbarAsync",
+          [promiseHolder = std::move(promiseHolder)] {
+            bool isPinned = false;
+
+            HRESULT hr = CoInitialize(nullptr);
+            if (SUCCEEDED(hr)) {
+              isPinned = IsCurrentAppPinnedToTaskbarSync();
+              CoUninitialize();
+            }
+
+            
+            NS_DispatchToMainThread(NS_NewRunnableFunction(
+                "IsCurrentAppPinnedToTaskbarAsync callback",
+                [isPinned, promiseHolder = std::move(promiseHolder)] {
+                  promiseHolder.get()->get()->MaybeResolve(isPinned);
+                }));
+          }),
+      NS_DISPATCH_EVENT_MAY_BLOCK);
+
+  promise.forget(aPromise);
   return NS_OK;
 }
 
