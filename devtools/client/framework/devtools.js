@@ -710,6 +710,20 @@ DevTools.prototype = {
 
 
 
+  async getToolboxForTab(tab) {
+    const target = await this.getTargetForTab(tab);
+    return this._toolboxes.get(target);
+  },
+
+  async closeToolboxForTab(tab) {
+    const target = await this.getTargetForTab(tab);
+    return this.closeToolbox(target);
+  },
+
+  
+
+
+
 
 
 
