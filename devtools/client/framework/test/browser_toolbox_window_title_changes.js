@@ -21,9 +21,9 @@ function test() {
   let panel;
 
   addTab(URL_1).then(async function() {
-    let target = await TargetFactory.forTab(gBrowser.selectedTab);
+    const tab = gBrowser.selectedTab;
     gDevTools
-      .showToolbox(target, null, Toolbox.HostType.BOTTOM)
+      .showToolboxForTab(tab, { hostType: Toolbox.HostType.BOTTOM })
       .then(function(aToolbox) {
         toolbox = aToolbox;
       })
@@ -77,12 +77,9 @@ function test() {
             .destroy()
             .then(async function() {
               
-              target = await TargetFactory.forTab(gBrowser.selectedTab);
-              return gDevTools.showToolbox(
-                target,
-                null,
-                Toolbox.HostType.WINDOW
-              );
+              return gDevTools.showToolboxForTab(tab, {
+                hostType: Toolbox.HostType.WINDOW,
+              });
             })
             .then(function(aToolbox) {
               toolbox = aToolbox;
