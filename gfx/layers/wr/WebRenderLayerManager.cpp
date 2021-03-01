@@ -744,7 +744,9 @@ WebRenderLayerManager::CreatePersistentBufferProvider(
     const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat) {
   
   
-  gfxPlatform::GetPlatform()->EnsureDevicesInitialized();
+  if (!gfxPlatform::UseRemoteCanvas()) {
+    gfxPlatform::GetPlatform()->EnsureDevicesInitialized();
+  }
 
   RefPtr<PersistentBufferProvider> provider =
       PersistentBufferProviderShared::Create(aSize, aFormat,

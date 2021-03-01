@@ -125,10 +125,16 @@ already_AddRefed<DrawTarget> LayerManager::CreateDrawTarget(
 already_AddRefed<PersistentBufferProvider>
 LayerManager::CreatePersistentBufferProvider(
     const mozilla::gfx::IntSize& aSize, mozilla::gfx::SurfaceFormat aFormat) {
-  RefPtr<PersistentBufferProviderBasic> bufferProvider =
-      PersistentBufferProviderBasic::Create(
-          aSize, aFormat,
-          gfxPlatform::GetPlatform()->GetPreferredCanvasBackend());
+  RefPtr<PersistentBufferProviderBasic> bufferProvider;
+  
+  
+  if (!gfxPlatform::UseRemoteCanvas() ||
+      !gfxPlatform::IsBackendAccelerated(
+          gfxPlatform::GetPlatform()->GetPreferredCanvasBackend())) {
+    bufferProvider = PersistentBufferProviderBasic::Create(
+        aSize, aFormat,
+        gfxPlatform::GetPlatform()->GetPreferredCanvasBackend());
+  }
 
   if (!bufferProvider) {
     bufferProvider = PersistentBufferProviderBasic::Create(

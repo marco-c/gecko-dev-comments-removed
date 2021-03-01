@@ -467,13 +467,18 @@ void gfxWindowsPlatform::UpdateBackendPrefs() {
   BackendPrefsData data = GetBackendPrefs();
   
   if (!Factory::HasD2D1Device()) {
-    data.mCanvasBitmask &= ~BackendTypeBit(BackendType::DIRECT2D1_1);
     data.mContentBitmask &= ~BackendTypeBit(BackendType::DIRECT2D1_1);
-    if (data.mCanvasDefault == BackendType::DIRECT2D1_1) {
-      data.mCanvasDefault = BackendType::SKIA;
-    }
     if (data.mContentDefault == BackendType::DIRECT2D1_1) {
       data.mContentDefault = BackendType::SKIA;
+    }
+
+    
+    
+    if (!gfxPlatform::UseRemoteCanvas()) {
+      data.mCanvasBitmask &= ~BackendTypeBit(BackendType::DIRECT2D1_1);
+      if (data.mCanvasDefault == BackendType::DIRECT2D1_1) {
+        data.mCanvasDefault = BackendType::SKIA;
+      }
     }
   }
   InitBackendPrefs(std::move(data));
