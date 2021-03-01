@@ -118,10 +118,6 @@ pub enum ImageBufferKind {
     
     
     TextureExternal = 2,
-    
-    
-    
-    Texture2DArray = 3,
 }
 
 
