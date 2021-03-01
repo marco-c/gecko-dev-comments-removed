@@ -19,10 +19,7 @@ interface nsINetworkLinkService : nsISupports
   const unsigned long LINK_TYPE_USB = 2;
   const unsigned long LINK_TYPE_WIFI = 3;
   const unsigned long LINK_TYPE_WIMAX = 4;
-  const unsigned long LINK_TYPE_2G = 5;
-  const unsigned long LINK_TYPE_3G = 6;
-  const unsigned long LINK_TYPE_4G = 7;
-  const unsigned long LINK_TYPE_5G = 8;
+  const unsigned long LINK_TYPE_MOBILE = 9;
 
   
 
@@ -131,14 +128,5 @@ interface nsINetworkLinkService : nsISupports
 #define NS_NETWORK_LINK_TYPE_WIMAX "wimax"
 
 
-#define NS_NETWORK_LINK_TYPE_2G "2g"
-
-
-#define NS_NETWORK_LINK_TYPE_3G "3g"
-
-
-#define NS_NETWORK_LINK_TYPE_4G "4g"
-
-
-#define NS_NETWORK_LINK_TYPE_5G "5g"
+#define NS_NETWORK_LINK_TYPE_MOBILE "mobile"
 %}
