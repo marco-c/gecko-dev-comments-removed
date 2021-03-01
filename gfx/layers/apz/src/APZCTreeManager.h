@@ -565,6 +565,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
     
     HitTestResult(HitTestResult&&) = default;
     HitTestResult& operator=(HitTestResult&&) = default;
+    Maybe<APZHandledResult> HandledByRoot() const;
   };
 
   
@@ -600,8 +601,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       AsyncPanZoomController* aStart) const;
 
   ScreenMargin GetGeckoFixedLayerMargins() const;
-
-  ScreenMargin GetCompositorFixedLayerMargins() const;
 
  private:
   typedef bool (*GuidComparator)(const ScrollableLayerGuid&,

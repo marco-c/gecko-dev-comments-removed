@@ -527,13 +527,10 @@ class AsyncPanZoomController {
   bool CanScroll(ScrollDirection aDirection) const;
 
   
-  SideBits ScrollableDirections() const;
-
   
   
   
-  
-  bool CanVerticalScrollWithDynamicToolbar() const;
+  bool CanScrollDownwardsWithDynamicToolbar() const;
 
   
   bool CanScrollDownwards() const;

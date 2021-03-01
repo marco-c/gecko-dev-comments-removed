@@ -191,7 +191,7 @@ FocusTarget::FocusTarget(PresShell* aRootPresShell,
           selectedContent.get(), HorizontalScrollDirection);
   nsIScrollableFrame* vertical =
       presShell->GetScrollableFrameToScrollForContent(selectedContent.get(),
-                                                      VerticalScrollDirection);
+                                                      VerticalScollDirection);
 
   
   

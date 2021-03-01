@@ -9,7 +9,6 @@
 
 #include "mozilla/EventForwards.h"  
 #include "mozilla/layers/APZPublicUtils.h"       
-#include "mozilla/layers/LayersTypes.h"          
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "Units.h"                               
 
@@ -20,12 +19,9 @@ class InputData;
 namespace layers {
 
 class APZInputBridgeParent;
-class AsyncPanZoomController;
-class InputBlockState;
 struct ScrollableLayerGuid;
-struct TargetConfirmationFlags;
 
-enum class APZHandledPlace : uint8_t {
+enum class APZHandledResult : uint8_t {
   Unhandled = 0,         
                          
   HandledByRoot = 1,     
@@ -35,33 +31,6 @@ enum class APZHandledPlace : uint8_t {
                          
   Invalid = 3,
   Last = Invalid
-};
-
-struct APZHandledResult {
-  APZHandledPlace mPlace = APZHandledPlace::Invalid;
-  SideBits mScrollableDirections = SideBits::eNone;
-  ScrollDirections mOverscrollDirections = ScrollDirections();
-
-  APZHandledResult() = default;
-  APZHandledResult(APZHandledPlace aPlace,
-                   const AsyncPanZoomController* aTarget);
-  APZHandledResult(APZHandledPlace aPlace, SideBits aScrollableDirections,
-                   ScrollDirections aOverscrollDirections)
-      : mPlace(aPlace),
-        mScrollableDirections(aScrollableDirections),
-        mOverscrollDirections(aOverscrollDirections) {}
-
-  bool IsHandledByContent() const {
-    return mPlace == APZHandledPlace::HandledByContent;
-  }
-  bool IsHandledByRoot() const {
-    return mPlace == APZHandledPlace::HandledByRoot;
-  }
-  bool operator==(const APZHandledResult& aOther) const {
-    return mPlace == aOther.mPlace &&
-           mScrollableDirections == aOther.mScrollableDirections &&
-           mOverscrollDirections == aOther.mOverscrollDirections;
-  }
 };
 
 
@@ -75,51 +44,6 @@ struct APZEventResult {
 
   APZEventResult();
 
-  
-
-
-
-
-  APZEventResult(const RefPtr<AsyncPanZoomController>& aInitialTarget,
-                 TargetConfirmationFlags aFlags);
-
-  void SetStatusAsConsumeNoDefault() {
-    mStatus = nsEventStatus_eConsumeNoDefault;
-  }
-
-  void SetStatusAsIgnore() {
-    mStatus = nsEventStatus_eIgnore;
-  }
-
-  
-  
-  void SetStatusAsConsumeDoDefault(
-      const RefPtr<AsyncPanZoomController>& aTarget);
-  
-  
-  void SetStatusAsConsumeDoDefault(const InputBlockState& aBlock);
-  
-  
-  
-  
-  void SetStatusAsConsumeDoDefaultWithTargetConfirmationFlags(
-      const InputBlockState& aBlock, TargetConfirmationFlags aFlags);
-
-  
-  
-  void UpdateStatus(nsEventStatus aStatus) { mStatus = aStatus; }
-  nsEventStatus GetStatus() const { return mStatus; };
-
-  
-  
-  void UpdateHandledResult(const Maybe<APZHandledResult>& aHandledResult) {
-    mHandledResult = aHandledResult;
-  }
-  const Maybe<APZHandledResult>& GetHandledResult() const {
-    return mHandledResult;
-  }
-
- private:
   
 
 
@@ -141,7 +65,13 @@ struct APZEventResult {
 
 
   nsEventStatus mStatus;
+  
 
+
+
+
+
+  ScrollableLayerGuid mTargetGuid;
   
 
 
@@ -150,15 +80,6 @@ struct APZEventResult {
 
 
   Maybe<APZHandledResult> mHandledResult;
-
- public:
-  
-
-
-
-
-
-  ScrollableLayerGuid mTargetGuid;
   
 
 

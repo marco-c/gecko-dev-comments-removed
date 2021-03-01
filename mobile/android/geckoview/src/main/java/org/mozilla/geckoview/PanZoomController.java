@@ -17,7 +17,6 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Rect;
 import android.os.SystemClock;
-import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
 import androidx.annotation.IntDef;
@@ -91,104 +90,6 @@ public class PanZoomController {
 
     @WrapForJNI
     public static final int INPUT_RESULT_IGNORED = 3;
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef(flag = true,
-            value = { SCROLLABLE_FLAG_NONE, SCROLLABLE_FLAG_TOP, SCROLLABLE_FLAG_RIGHT,
-                      SCROLLABLE_FLAG_BOTTOM, SCROLLABLE_FLAG_LEFT })
-     @interface ScrollableDirections {}
-    
-
-
-
-
-    
-    @WrapForJNI
-    public static final int SCROLLABLE_FLAG_NONE = 0;
-    
-    @WrapForJNI
-    public static final int SCROLLABLE_FLAG_TOP = 1 << 0;
-    
-    @WrapForJNI
-    public static final int SCROLLABLE_FLAG_RIGHT = 1 << 1;
-    
-    @WrapForJNI
-    public static final int SCROLLABLE_FLAG_BOTTOM = 1 << 2;
-    
-    @WrapForJNI
-    public static final int SCROLLABLE_FLAG_LEFT = 1 << 3;
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef(flag = true,
-            value = { OVERSCROLL_FLAG_NONE, OVERSCROLL_FLAG_HORIZONTAL, OVERSCROLL_FLAG_VERTICAL })
-     @interface OverscrollDirections {}
-    
-
-
-
-
-    
-    @WrapForJNI
-    public static final int OVERSCROLL_FLAG_NONE = 0;
-    
-    @WrapForJNI
-    public static final int OVERSCROLL_FLAG_HORIZONTAL = 1 << 0;
-    
-    @WrapForJNI
-    public static final int OVERSCROLL_FLAG_VERTICAL = 1 << 1;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    @WrapForJNI
-    public static class InputResultDetail {
-        protected InputResultDetail(final @InputResult int handledResult,
-                                    final @ScrollableDirections int scrollableDirections,
-                                    final @OverscrollDirections int overscrollDirections) {
-            mHandledResult = handledResult;
-            mScrollableDirections = scrollableDirections;
-            mOverscrollDirections = overscrollDirections;
-        }
-
-        
-
-
-
-        @AnyThread
-        public @InputResult int handledResult() {
-            return mHandledResult;
-        }
-        
-
-
-
-        @AnyThread
-        public @ScrollableDirections int scrollableDirections() {
-            return mScrollableDirections;
-        }
-        
-
-
-
-        @AnyThread
-        public @OverscrollDirections int overscrollDirections() {
-            return mOverscrollDirections;
-        }
-
-        private final @InputResult int mHandledResult;
-        private final @ScrollableDirections int mScrollableDirections;
-        private final @OverscrollDirections int mOverscrollDirections;
-    }
 
     private SynthesizedEventState mPointerState;
 
@@ -289,7 +190,7 @@ public class PanZoomController {
         @WrapForJNI(calledFrom = "ui")
         private native void handleMotionEvent(
                MotionEventData eventData, float screenX, float screenY,
-               GeckoResult<InputResultDetail> result);
+               GeckoResult<Integer> result);
 
         @WrapForJNI(calledFrom = "ui")
         private native @InputResult int handleScrollEvent(
@@ -342,12 +243,11 @@ public class PanZoomController {
         handleMotionEvent(event, null);
     }
 
-    private void handleMotionEvent(final MotionEvent event, final GeckoResult<InputResultDetail> result) {
+    private void handleMotionEvent(final MotionEvent event, final GeckoResult<Integer> result) {
         if (!mAttached) {
             mQueuedEvents.add(new Pair<>(EVENT_SOURCE_MOTION, event));
             if (result != null) {
-                result.complete(
-                    new InputResultDetail(INPUT_RESULT_HANDLED, SCROLLABLE_FLAG_NONE, OVERSCROLL_FLAG_NONE));
+                result.complete(INPUT_RESULT_HANDLED);
             }
             return;
         }
@@ -358,8 +258,7 @@ public class PanZoomController {
             mLastDownTime = event.getDownTime();
         } else if (mLastDownTime != event.getDownTime()) {
             if (result != null) {
-                result.complete(
-                    new InputResultDetail(INPUT_RESULT_UNHANDLED, SCROLLABLE_FLAG_NONE, OVERSCROLL_FLAG_NONE));
+                result.complete(INPUT_RESULT_UNHANDLED);
             }
             return;
         }
@@ -513,33 +412,14 @@ public class PanZoomController {
 
 
 
-    @Deprecated @DeprecationSchedule(version = 90, id = "on-touch-event-for-result")
     public @NonNull GeckoResult<Integer> onTouchEventForResult(final @NonNull MotionEvent event) {
-        return onTouchEventForDetailResult(event).map(detail -> detail.handledResult());
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    public @NonNull GeckoResult<InputResultDetail> onTouchEventForDetailResult(final @NonNull MotionEvent event) {
         ThreadUtils.assertOnUiThread();
 
         if (!sTreatMouseAsTouch && event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE) {
-            return GeckoResult.fromValue(
-                new InputResultDetail(handleMouseEvent(event), SCROLLABLE_FLAG_NONE, OVERSCROLL_FLAG_NONE));
+            return GeckoResult.fromValue(handleMouseEvent(event));
         }
 
-        final GeckoResult<InputResultDetail> result = new GeckoResult<>();
+        final GeckoResult<Integer> result = new GeckoResult<>();
         handleMotionEvent(event, result);
         return result;
     }
