@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 use std::collections::HashMap;
 
@@ -20,7 +20,7 @@ bitflags! {
 
 pub type ShaderFeatures = HashMap<&'static str, Vec<String>>;
 
-/// Builder for a list of features.
+
 #[derive(Clone)]
 struct FeatureList<'a> {
     list: Vec<&'a str>,
@@ -58,16 +58,16 @@ impl<'a> FeatureList<'a> {
     }
 }
 
-/// Computes available shaders and their features for the given feature flags.
+
 pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
     let mut shaders = ShaderFeatures::new();
 
-    // Clip shaders
+    
     shaders.insert("cs_clip_rectangle", vec![String::new(), "FAST_PATH".to_string()]);
     shaders.insert("cs_clip_image", vec!["TEXTURE_2D".to_string()]);
     shaders.insert("cs_clip_box_shadow", vec!["TEXTURE_2D".to_string()]);
 
-    // Cache shaders
+    
     shaders.insert("cs_blur", vec!["ALPHA_TARGET".to_string(), "COLOR_TARGET".to_string()]);
 
     for name in &["cs_line_decoration", "cs_gradient", "cs_border_segment", "cs_border_solid", "cs_svg_filter"] {
@@ -76,7 +76,7 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
 
     let mut base_prim_features = FeatureList::new();
 
-    // Brush shaders
+    
     let mut brush_alpha_features = base_prim_features.with("ALPHA_PASS");
     for name in &["brush_solid", "brush_blend", "brush_mix_blend"] {
         let mut features: Vec<String> = Vec::new();
@@ -108,8 +108,8 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
         shaders.insert("brush_opacity", features);
     }
 
-    // Image brush shaders
-    let mut texture_types = vec!["TEXTURE_2D_ARRAY", "TEXTURE_2D"];
+    
+    let mut texture_types = vec!["TEXTURE_2D"];
     if flags.contains(ShaderFeatureFlags::GL) {
         texture_types.push("TEXTURE_RECT");
     }
@@ -151,7 +151,7 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
     }
     shaders.insert("cs_scale", composite_features.clone());
 
-    // YUV image brush shaders
+    
     let mut yuv_features: Vec<String> = Vec::new();
     for texture_type in &texture_types {
         let mut list = FeatureList::new();
@@ -167,7 +167,7 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
     shaders.insert("composite", composite_features);
     shaders.insert("brush_yuv_image", yuv_features);
 
-    // Prim shaders
+    
     let mut text_types = vec![""];
     if flags.contains(ShaderFeatureFlags::DUAL_SOURCE_BLENDING) {
         text_types.push("DUAL_SOURCE_BLENDING");
