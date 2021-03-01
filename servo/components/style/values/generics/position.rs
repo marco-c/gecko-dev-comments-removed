@@ -5,8 +5,7 @@
 
 
 
-use std::fmt::{self, Write};
-use style_traits::{CssWriter, ToCss};
+use crate::values::generics::ratio::Ratio;
 
 
 #[derive(
@@ -151,50 +150,6 @@ impl<Integer> ZIndex<Integer> {
             ZIndex::Integer(n) => n,
             ZIndex::Auto => auto,
         }
-    }
-}
-
-
-#[derive(
-    Animate,
-    Clone,
-    ComputeSquaredDistance,
-    Copy,
-    Debug,
-    MallocSizeOf,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToAnimatedZero,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(C)]
-pub struct Ratio<N>(pub N, pub N);
-
-impl<N> ToCss for Ratio<N>
-where
-    N: ToCss,
-{
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        self.0.to_css(dest)?;
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        dest.write_str(" / ")?;
-        self.1.to_css(dest)?;
-        Ok(())
     }
 }
 
