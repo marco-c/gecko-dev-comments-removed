@@ -9,6 +9,7 @@
 
 #include "mozilla/EventForwards.h"  
 #include "mozilla/layers/APZPublicUtils.h"       
+#include "mozilla/layers/LayersTypes.h"          
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "Units.h"                               
 
@@ -24,7 +25,7 @@ class InputBlockState;
 struct ScrollableLayerGuid;
 struct TargetConfirmationFlags;
 
-enum class APZHandledResult : uint8_t {
+enum class APZHandledPlace : uint8_t {
   Unhandled = 0,         
                          
   HandledByRoot = 1,     
@@ -34,6 +35,33 @@ enum class APZHandledResult : uint8_t {
                          
   Invalid = 3,
   Last = Invalid
+};
+
+struct APZHandledResult {
+  APZHandledPlace mPlace = APZHandledPlace::Invalid;
+  SideBits mScrollableDirections = SideBits::eNone;
+  ScrollDirections mOverscrollDirections = ScrollDirections();
+
+  APZHandledResult() = default;
+  APZHandledResult(APZHandledPlace aPlace,
+                   const AsyncPanZoomController* aTarget);
+  APZHandledResult(APZHandledPlace aPlace, SideBits aScrollableDirections,
+                   ScrollDirections aOverscrollDirections)
+      : mPlace(aPlace),
+        mScrollableDirections(aScrollableDirections),
+        mOverscrollDirections(aOverscrollDirections) {}
+
+  bool IsHandledByContent() const {
+    return mPlace == APZHandledPlace::HandledByContent;
+  }
+  bool IsHandledByRoot() const {
+    return mPlace == APZHandledPlace::HandledByRoot;
+  }
+  bool operator==(const APZHandledResult& aOther) const {
+    return mPlace == aOther.mPlace &&
+           mScrollableDirections == aOther.mScrollableDirections &&
+           mOverscrollDirections == aOther.mOverscrollDirections;
+  }
 };
 
 
