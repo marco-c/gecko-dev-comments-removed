@@ -504,10 +504,15 @@ var View = {
     
     await document.l10n.translateFragment(this._fragment);
 
+    
+    
+    document.l10n.pauseObserving();
     while (tbody.firstChild) {
       tbody.firstChild.remove();
     }
     tbody.appendChild(this._fragment);
+    document.l10n.resumeObserving();
+
     this._fragment = document.createDocumentFragment();
   },
   insertAfterRow(row) {
