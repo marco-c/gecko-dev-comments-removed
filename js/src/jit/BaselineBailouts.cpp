@@ -2034,6 +2034,12 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       }
       break;
 
+    case BailoutKind::InstructionReordering:
+      
+      outerScript->setHadReorderingBailout();
+      action = BailoutAction::InvalidateIfFrequent;
+      break;
+
     case BailoutKind::HoistBoundsCheck:
       
       MOZ_ASSERT(!outerScript->failedBoundsCheck());

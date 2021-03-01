@@ -125,6 +125,12 @@ enum class BailoutKind : uint8_t {
   
   
   
+  
+  InstructionReordering,
+
+  
+  
+  
   HoistBoundsCheck,
 
   
@@ -184,6 +190,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "TypePolicy";
     case BailoutKind::LICM:
       return "LICM";
+    case BailoutKind::InstructionReordering:
+      return "InstructionReordering";
     case BailoutKind::HoistBoundsCheck:
       return "HoistBoundsCheck";
     case BailoutKind::EagerTruncation:

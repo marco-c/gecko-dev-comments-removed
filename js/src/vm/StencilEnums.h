@@ -297,24 +297,29 @@ enum class MutableScriptFlagsEnum : uint32_t {
   IonDisabled = 1 << 18,
 
   
-  FailedBoundsCheck = 1 << 19,
-
   
-  FailedShapeGuard = 1 << 20,
-
-  
-  HadLICMInvalidation = 1 << 21,
+  Uninlineable = 1 << 19,
 
   
   
-  HadEagerTruncationBailout = 1 << 22,
+  IsInlinableLargeFunction = 1 << 20,
 
   
   
-  Uninlineable = 1 << 23,
+  
+  
 
   
-  InvalidatedIdempotentCache = 1 << 24,
+  FailedBoundsCheck = 1 << 21,
+
+  
+  HadLICMInvalidation = 1 << 22,
+
+  
+  HadReorderingBailout = 1 << 23,
+
+  
+  HadEagerTruncationBailout = 1 << 24,
 
   
   FailedLexicalCheck = 1 << 25,
@@ -324,10 +329,6 @@ enum class MutableScriptFlagsEnum : uint32_t {
 
   
   HadUnboxFoldingBailout = 1 << 27,
-
-  
-  
-  IsInlinableLargeFunction = 1 << 28,
 };
 
 }  
