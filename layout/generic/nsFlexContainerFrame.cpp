@@ -2028,10 +2028,13 @@ nscoord nsFlexContainerFrame::MeasureFlexItemContentBSize(
   WritingMode wm = aFlexItem.Frame()->GetWritingMode();
   LogicalSize availSize = aParentReflowInput.ComputedSize(wm);
   availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-  ReflowInput childRIForMeasuringBSize(PresContext(), aParentReflowInput,
-                                       aFlexItem.Frame(), availSize, Nothing(),
-                                       ReflowInput::InitFlag::CallerWillInit);
-  childRIForMeasuringBSize.mFlags.mIsFlexContainerMeasuringBSize = true;
+
+  StyleSizeOverrides sizeOverrides;
+  sizeOverrides.mStyleBSize.emplace(StyleSize::Auto());
+
+  ReflowInput childRIForMeasuringBSize(
+      PresContext(), aParentReflowInput, aFlexItem.Frame(), availSize,
+      Nothing(), ReflowInput::InitFlag::CallerWillInit, sizeOverrides);
   childRIForMeasuringBSize.mFlags.mInsideLineClamp = GetLineClampValue() != 0;
   childRIForMeasuringBSize.mFlags.mApplyLineClamp =
       childRIForMeasuringBSize.mFlags.mInsideLineClamp || aHasLineClampEllipsis;
@@ -2048,6 +2051,13 @@ nscoord nsFlexContainerFrame::MeasureFlexItemContentBSize(
     childRIForMeasuringBSize.SetIResize(true);
     FLEX_LOGV(" Cross size override: %d", aFlexItem.CrossSize());
   }
+
+  
+  
+  
+  
+  childRIForMeasuringBSize.ComputedMinBSize() = 0;
+  childRIForMeasuringBSize.ComputedMaxBSize() = NS_UNCONSTRAINEDSIZE;
 
   if (aForceBResizeForMeasuringReflow) {
     childRIForMeasuringBSize.SetBResize(true);

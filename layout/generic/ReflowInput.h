@@ -485,10 +485,6 @@ struct ReflowInput : public SizeComputationInput {
 
     
     
-    bool mIsFlexContainerMeasuringBSize : 1;
-
-    
-    
     
     
     
