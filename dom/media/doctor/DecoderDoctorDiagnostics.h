@@ -11,6 +11,7 @@
 #include "mozilla/DefineEnum.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/EnumTypeTraits.h"
+#include "mozilla/dom/DecoderDoctorNotificationBinding.h"
 #include "nsString.h"
 
 namespace mozilla {
@@ -129,6 +130,9 @@ class DecoderDoctorDiagnostics {
 
   const MediaResult& DecodeIssue() const { return mDecodeIssue; }
   const nsString& DecodeIssueMediaSrc() const { return mDecodeIssueMediaSrc; }
+
+  
+  void SetDecoderDoctorReportType(const dom::DecoderDoctorReportType& aType);
 
  private:
   
