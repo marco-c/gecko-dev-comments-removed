@@ -28,6 +28,10 @@
 #endif
 
 
+
+
+
+
 #ifndef moz_dont_include_mozalloc_for_cstdlib
 #  define moz_dont_include_mozalloc_for_cstdlib
 #endif
@@ -38,6 +42,10 @@
 
 #ifndef moz_dont_include_mozalloc_for_limits
 #  define moz_dont_include_mozalloc_for_limits
+#endif
+
+#ifndef moz_dont_include_mozalloc_for_iosfwd
+#  define moz_dont_include_mozalloc_for_iosfwd
 #endif
 
 
