@@ -3669,7 +3669,7 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
         
         friends.discard(ptype)
 
-        for friend in friends:
+        for friend in sorted(friends, key=lambda f: f.fullname()):
             self.actorForwardDecls.extend(
                 [_makeForwardDeclForActor(friend, self.prettyside), Whitespace.NL]
             )
