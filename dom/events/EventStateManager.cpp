@@ -1018,13 +1018,6 @@ static bool IsAccessKeyTarget(nsIContent* aContent, nsIFrame* aFrame,
 
   
   
-  if (aContent->IsAnyOfHTMLElements(nsGkAtoms::area, nsGkAtoms::label,
-                                    nsGkAtoms::legend)) {
-    return true;
-  }
-
-  
-  
   if (aContent->IsXULElement(nsGkAtoms::label)) {
     return true;
   }
