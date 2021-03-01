@@ -356,6 +356,15 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
     }
   }
 
+  
+  STARTUPINFOW currentStartupInfo;
+  GetStartupInfoW(&currentStartupInfo);
+  if ((currentStartupInfo.dwFlags & STARTF_TITLEISLINKNAME) &&
+      currentStartupInfo.lpTitle) {
+    siex.StartupInfo.dwFlags |= STARTF_TITLEISLINKNAME;
+    siex.StartupInfo.lpTitle = currentStartupInfo.lpTitle;
+  }
+
   PROCESS_INFORMATION pi = {};
   BOOL createOk;
 
