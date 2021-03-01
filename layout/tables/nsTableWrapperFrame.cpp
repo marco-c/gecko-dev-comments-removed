@@ -326,6 +326,8 @@ LogicalSize nsTableWrapperFrame::InnerTableShrinkWrapSize(
   
   
   
+  
+  
   const LogicalSize areaOccupiedByCaption(aWM);
   StyleSizeOverrides innerOverrides = ComputeSizeOverridesForInnerTable(
       aTableFrame, aSizeOverrides, bpSize, areaOccupiedByCaption);
@@ -437,14 +439,7 @@ nsIFrame::SizeComputationResult nsTableWrapperFrame::ComputeSize(
     auto size =
         ComputeAutoSize(aRenderingContext, aWM, aCBSize, aAvailableISize,
                         aMargin, aBorderPadding, aSizeOverrides, aFlags);
-    result.mLogicalSize.ISize(aWM) = size.ISize(aWM);
-
-    
-    
-    
-    
-    
-    
+    result.mLogicalSize = size;
   }
 
   return result;
