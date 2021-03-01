@@ -519,6 +519,23 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
 
 
 
+
+
+
+
+
+
+async function createAndAttachTargetForTab(tab) {
+  info("Creating and attaching to a local tab target");
+  const target = await TabTargetFactory.forTab(tab);
+  await target.attach();
+  return target;
+}
+
+
+
+
+
 function waitForPanelReload(currentToolId, target, panel) {
   if (currentToolId == "inspector") {
     const inspector = panel;
