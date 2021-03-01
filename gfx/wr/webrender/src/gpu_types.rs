@@ -741,8 +741,10 @@ pub struct ImageSource {
     pub p0: DevicePoint,
     pub p1: DevicePoint,
     
-    pub unused: f32,
-    pub user_data: [f32; 3],
+    
+    
+    
+    pub user_data: [f32; 4],
     pub uv_rect_kind: UvRectKind,
 }
 
@@ -756,12 +758,7 @@ impl ImageSource {
             self.p1.x,
             self.p1.y,
         ]);
-        request.push([
-            self.unused,
-            self.user_data[0],
-            self.user_data[1],
-            self.user_data[2],
-        ]);
+        request.push(self.user_data);
 
         
         if let UvRectKind::Quad { top_left, top_right, bottom_left, bottom_right } = self.uv_rect_kind {
