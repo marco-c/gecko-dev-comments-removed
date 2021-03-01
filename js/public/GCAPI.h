@@ -405,6 +405,13 @@ typedef enum JSGCParamKey {
 
 
   JSGC_NURSERY_TIMEOUT_FOR_IDLE_COLLECTION_MS = 46,
+
+  
+
+
+
+
+  JSGC_SYSTEM_PAGE_SIZE_KB = 47,
 } JSGCParamKey;
 
 
