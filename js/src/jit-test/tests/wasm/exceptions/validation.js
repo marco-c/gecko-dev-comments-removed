@@ -6,10 +6,13 @@ function wasmValid(mod) {
   assertEq(WebAssembly.validate(mod), true);
 }
 
-
-
 function wasmInvalid(mod, pattern) {
   assertEq(WebAssembly.validate(mod), false);
+  assertErrorMessage(
+    () => new WebAssembly.Module(mod),
+    WebAssembly.CompileError,
+    pattern
+  );
 }
 
 const emptyType = { args: [], ret: VoidCode };
