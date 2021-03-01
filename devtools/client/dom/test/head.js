@@ -64,8 +64,8 @@ async function addTestTab(url) {
 
 
 async function initDOMPanel(tab) {
-  const target = await TargetFactory.forTab(tab || gBrowser.selectedTab);
-  const toolbox = await gDevTools.showToolbox(target, "dom");
+  tab = tab || gBrowser.selectedTab;
+  const toolbox = await gDevTools.showToolboxForTab(tab, { toolId: "dom" });
   const panel = toolbox.getCurrentPanel();
   return panel;
 }

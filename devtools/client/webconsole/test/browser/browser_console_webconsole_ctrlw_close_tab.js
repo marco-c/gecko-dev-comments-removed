@@ -1,8 +1,8 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-// Check that Ctrl-W closes the Browser Console and that Ctrl-W closes the
-// current tab when using the Web Console - bug 871156.
+
+
+
+
 
 "use strict";
 
@@ -13,8 +13,7 @@ add_task(async function() {
 
   let hud = await openNewTabAndConsole(TEST_URI);
 
-  const target = await TargetFactory.forTab(gBrowser.selectedTab);
-  const toolbox = gDevTools.getToolbox(target);
+  const toolbox = await gDevTools.getToolboxForTab(gBrowser.selectedTab);
 
   const tabClosed = once(gBrowser.tabContainer, "TabClose");
   tabClosed.then(() => info("tab closed"));
@@ -36,7 +35,7 @@ add_task(async function() {
     info("toolbox destroyed");
   });
 
-  // Get out of the web console initialization.
+  
   executeSoon(() => {
     EventUtils.synthesizeKey("w", { accelKey: true });
   });

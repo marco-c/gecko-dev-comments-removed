@@ -17,12 +17,10 @@ add_task(async function() {
   
   Services.prefs.setCharPref("devtools.toolbox.zoomValue", "1.0");
   await addTab("about:blank");
-  const target = await TargetFactory.forTab(gBrowser.selectedTab);
-  const toolbox = await gDevTools.showToolbox(
-    target,
-    "styleeditor",
-    Toolbox.HostType.BOTTOM
-  );
+  const toolbox = await gDevTools.showToolboxForTab(gBrowser.selectedTab, {
+    toolId: "styleeditor",
+    hostType: Toolbox.HostType.BOTTOM,
+  });
 
   info("testing zoom keys");
 

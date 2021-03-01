@@ -101,7 +101,6 @@ add_task(async function() {
   ok(!snapshot.parent, "No events have been logged for the main process");
 
   const tab = await addTab(URL);
-  const target = await TargetFactory.forTab(tab);
 
   
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
@@ -113,14 +112,14 @@ add_task(async function() {
   });
 
   
-  await gDevTools.showToolbox(target, "inspector");
+  await gDevTools.showToolboxForTab(tab, { toolId: "inspector" });
 
   
-  await gDevTools.showToolbox(target, "jsdebugger");
-  await gDevTools.showToolbox(target, "styleeditor");
-  await gDevTools.showToolbox(target, "netmonitor");
-  await gDevTools.showToolbox(target, "storage");
-  await gDevTools.showToolbox(target, "netmonitor");
+  await gDevTools.showToolboxForTab(tab, { toolId: "jsdebugger" });
+  await gDevTools.showToolboxForTab(tab, { toolId: "styleeditor" });
+  await gDevTools.showToolboxForTab(tab, { toolId: "netmonitor" });
+  await gDevTools.showToolboxForTab(tab, { toolId: "storage" });
+  await gDevTools.showToolboxForTab(tab, { toolId: "netmonitor" });
 
   await checkResults();
 });
