@@ -11,8 +11,9 @@
 
 
 
+
 var gAllowedNotificationTypes =
-  "MediaWMFNeeded,MediaFFMpegNotFound,MediaUnsupportedLibavcodec,MediaDecodeError";
+  "MediaWMFNeeded,MediaFFMpegNotFound,MediaUnsupportedLibavcodec,MediaDecodeError,MediaCannotInitializePulseAudio,";
 
 
 
@@ -130,6 +131,17 @@ add_task(async function testDecodeError() {
   }
 });
 
+add_task(async function testAudioSinkFailedStartup() {
+  const tab = await createTab("about:blank");
+  await setAudioSinkFailedStartup(tab, {
+    type: "cannot-initialize-pulseaudio",
+    decoderDoctorReportId: "mediacannotinitializepulseaudio",
+    
+    formats: "*",
+  });
+  BrowserTestUtils.removeTab(tab);
+});
+
 
 
 
@@ -231,4 +243,23 @@ async function setDecodeError(tab, params) {
     }
   );
   ok(true, `finished check for ${params.error}`);
+}
+
+async function setAudioSinkFailedStartup(tab, params) {
+  const shouldReportNotification = gAllowedNotificationTypes.includes(
+    params.decoderDoctorReportId
+  );
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [params, shouldReportNotification],
+    async (params, shouldReportNotification) => {
+      const video = content.document.createElement("video");
+      const waitPromise = content._waitForReport(
+        params,
+        shouldReportNotification
+      );
+      SpecialPowers.wrap(video).setAudioSinkFailedStartup();
+      await waitPromise;
+    }
+  );
 }
