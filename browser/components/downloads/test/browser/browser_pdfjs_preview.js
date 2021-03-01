@@ -3,6 +3,10 @@
 
 let gDownloadDir;
 
+
+
+requestLongerTimeout(4);
+
 SimpleTest.requestFlakyTimeout(
   "Giving a chance for possible last-pb-context-exited to occur (Bug 1329912)"
 );
