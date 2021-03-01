@@ -242,50 +242,45 @@ add_task(async function test_datepicker_focus_change() {
 
 
 
+add_task(async function test_datepicker_keyboard_open() {
+  const inputValue = "2016-12-15";
+  const prevMonth = "2016-11-01";
+  await helper.openPicker(
+    `data:text/html,<input id=date type=date value=${inputValue}>`
+  );
+  let browser = helper.tab.linkedBrowser;
+  await verifyPickerPosition(browser, "date");
 
+  let closed = helper.promisePickerClosed();
 
+  BrowserTestUtils.synthesizeKey(" ", {}, browser);
 
+  await closed;
 
+  let ready = helper.waitForPickerReady();
 
+  BrowserTestUtils.synthesizeKey(" ", {}, browser);
 
+  await ready;
 
+  
+  
+  
+  
+  
+  BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
 
+  
+  
+  await BrowserTestUtils.waitForCondition(() => {
+    return (
+      helper.getElement(MONTH_YEAR).textContent ==
+      DATE_FORMAT(new Date(prevMonth))
+    );
+  }, "Should update date when updating months");
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  await helper.tearDown();
+});
 
 
 
