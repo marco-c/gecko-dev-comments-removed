@@ -138,14 +138,21 @@ static int copy_subcoefs(coef *coeff,
 
 
 
-    const uint16_t *const scan = dav1d_scans[tx][dav1d_tx_type_class[txtp]];
+
+    const enum TxClass tx_class = dav1d_tx_type_class[txtp];
+    const uint16_t *const scan = dav1d_scans[tx];
     const int sub_high = subsh > 0 ? subsh * 8 - 1 : 0;
     const int sub_low  = subsh > 1 ? sub_high - 8 : 0;
     int n, eob;
 
     for (n = 0, eob = 0; n < sw * sh; n++) {
-        const int rc = scan[n];
-        const int rcx = rc % sh, rcy = rc / sh;
+        int rc, rcx, rcy;
+        if (tx_class == TX_CLASS_2D)
+            rc = scan[n], rcx = rc % sh, rcy = rc / sh;
+        else if (tx_class == TX_CLASS_H)
+            rcx = n % sh, rcy = n / sh, rc = n;
+        else 
+            rcx = n / sw, rcy = n % sw, rc = rcy * sh + rcx;
 
         
         if (rcx > sub_high || rcy > sub_high) {
@@ -156,8 +163,18 @@ static int copy_subcoefs(coef *coeff,
 
     if (eob)
         eob += rnd() % (n - eob - 1);
-    for (n = eob + 1; n < sw * sh; n++)
-        coeff[scan[n]] = 0;
+    if (tx_class == TX_CLASS_2D)
+        for (n = eob + 1; n < sw * sh; n++)
+            coeff[scan[n]] = 0;
+    else if (tx_class == TX_CLASS_H)
+        for (n = eob + 1; n < sw * sh; n++)
+            coeff[n] = 0;
+    else  {
+        for (int rcx = eob / sw, rcy = eob % sw; rcx < sh; rcx++, rcy = -1)
+            while (++rcy < sw)
+                coeff[rcy * sh + rcx] = 0;
+        n = sw * sh;
+    }
     for (; n < 32 * 32; n++)
         coeff[n] = rnd();
     return eob;

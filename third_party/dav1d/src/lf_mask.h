@@ -40,11 +40,11 @@ typedef struct Av1FilterLUT {
 } Av1FilterLUT;
 
 typedef struct Av1RestorationUnit {
-    enum Dav1dRestorationType type;
+    uint8_t  type;
     int8_t filter_h[3];
     int8_t filter_v[3];
     uint8_t sgr_idx;
-    int16_t sgr_weights[2];
+    int8_t sgr_weights[2];
 } Av1RestorationUnit;
 
 
@@ -53,7 +53,7 @@ typedef struct Av1Filter {
     uint16_t filter_y[2 ][32][3][2];
     uint16_t filter_uv[2 ][32][2][2];
     int8_t cdef_idx[4]; 
-    uint16_t noskip_mask[32][2];
+    uint16_t noskip_mask[16][2]; 
 } Av1Filter;
 
 

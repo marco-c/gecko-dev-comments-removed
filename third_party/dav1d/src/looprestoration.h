@@ -46,29 +46,32 @@ typedef const pixel (*const_left_pixel_row)[4];
 typedef const void *const_left_pixel_row;
 #endif
 
+typedef union LooprestorationParams {
+    ALIGN(int16_t filter[2][8], 16);
+    struct {
+        uint32_t s0, s1;
+        int16_t w0, w1;
+    } sgr;
+} LooprestorationParams;
 
 
 
 
-#define decl_wiener_filter_fn(name) \
+
+
+
+
+#define decl_lr_filter_fn(name) \
 void (name)(pixel *dst, ptrdiff_t dst_stride, \
             const_left_pixel_row left, \
             const pixel *lpf, ptrdiff_t lpf_stride, \
-            int w, int h, const int16_t filter[2][8], \
+            int w, int h, const LooprestorationParams *params, \
             enum LrEdgeFlags edges HIGHBD_DECL_SUFFIX)
-typedef decl_wiener_filter_fn(*wienerfilter_fn);
-
-#define decl_selfguided_filter_fn(name) \
-void (name)(pixel *dst, ptrdiff_t dst_stride, \
-            const_left_pixel_row left, \
-            const pixel *lpf, ptrdiff_t lpf_stride, \
-            int w, int h, int sgr_idx, const int16_t sgr_w[2], \
-            const enum LrEdgeFlags edges HIGHBD_DECL_SUFFIX)
-typedef decl_selfguided_filter_fn(*selfguided_fn);
+typedef decl_lr_filter_fn(*looprestorationfilter_fn);
 
 typedef struct Dav1dLoopRestorationDSPContext {
-    wienerfilter_fn wiener[2]; 
-    selfguided_fn selfguided;
+    looprestorationfilter_fn wiener[2]; 
+    looprestorationfilter_fn sgr[3]; 
 } Dav1dLoopRestorationDSPContext;
 
 bitfn_decls(void dav1d_loop_restoration_dsp_init, Dav1dLoopRestorationDSPContext *c, int bpc);

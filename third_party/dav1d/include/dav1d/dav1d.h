@@ -45,6 +45,7 @@ typedef struct Dav1dRef Dav1dRef;
 
 #define DAV1D_MAX_FRAME_THREADS 256
 #define DAV1D_MAX_TILE_THREADS 64
+#define DAV1D_MAX_POSTFILTER_THREADS 256
 
 typedef struct Dav1dLogger {
     void *cookie; 
@@ -67,7 +68,8 @@ typedef struct Dav1dSettings {
     unsigned frame_size_limit; 
     Dav1dPicAllocator allocator; 
     Dav1dLogger logger; 
-    uint8_t reserved[32]; 
+    int n_postfilter_threads;
+    uint8_t reserved[28]; 
 } Dav1dSettings;
 
 

@@ -89,7 +89,7 @@ static inline void mask_edges_inter(uint16_t (*const masks)[32][3][2],
     const TxfmInfo *const t_dim = &dav1d_txfm_dimensions[max_tx];
     int y, x;
 
-    uint8_t txa[2 ][2 ][32 ][32 ];
+    ALIGN_STK_16(uint8_t, txa, 2 , [2 ][32 ][32 ]);
     for (int y_off = 0, y = 0; y < h4; y += t_dim->h, y_off++)
         for (int x_off = 0, x = 0; x < w4; x += t_dim->w, x_off++)
             decomp_tx((uint8_t(*)[2][32][32]) &txa[0][0][y][x],

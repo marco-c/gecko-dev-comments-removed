@@ -35,6 +35,8 @@
 typedef struct Dav1dFrameContext Dav1dFrameContext;
 typedef struct Dav1dTileState Dav1dTileState;
 typedef struct Dav1dTileContext Dav1dTileContext;
+typedef struct Dav1dPostFilterContext Dav1dPostFilterContext;
+typedef struct Dav1dTask Dav1dTask;
 
 #include "common/attributes.h"
 
@@ -76,6 +78,9 @@ struct Dav1dContext {
     Dav1dFrameContext *fc;
     unsigned n_fc;
 
+    Dav1dPostFilterContext *pfc;
+    unsigned n_pfc;
+
     
     
     struct Dav1dTileGroup *tile;
@@ -99,14 +104,22 @@ struct Dav1dContext {
     
     Dav1dData in;
     Dav1dPicture out;
+    
+    
+    atomic_int flush_mem, *flush;
     struct {
         Dav1dThreadPicture *out_delayed;
         unsigned next;
-        
-        
-        
-        atomic_int flush_mem, *flush;
     } frame_thread;
+
+    
+    struct PostFilterThreadData {
+        pthread_mutex_t lock;
+        pthread_cond_t cond;
+        struct Dav1dTask *tasks;
+        int frame_cnt;
+        int inited;
+    } postfilter_thread;
 
     
     Dav1dMemPool *segmap_pool;
@@ -182,6 +195,10 @@ struct Dav1dFrameContext {
         recon_b_intra_fn recon_b_intra;
         recon_b_inter_fn recon_b_inter;
         filter_sbrow_fn filter_sbrow;
+        filter_sbrow_fn filter_sbrow_deblock;
+        filter_sbrow_fn filter_sbrow_cdef;
+        filter_sbrow_fn filter_sbrow_resize;
+        filter_sbrow_fn filter_sbrow_lr;
         backup_ipred_edge_fn backup_ipred_edge;
         read_coef_blocks_fn read_coef_blocks;
     } bd_fn;
@@ -191,7 +208,7 @@ struct Dav1dFrameContext {
     ptrdiff_t b4_stride;
     int w4, h4, bw, bh, sb128w, sb128h, sbh, sb_shift, sb_step, sr_sb128w;
     uint16_t dq[DAV1D_MAX_SEGMENTS][3 ][2 ];
-    const uint8_t *qm[2 ][N_RECT_TX_SIZES][3 ];
+    const uint8_t *qm[N_RECT_TX_SIZES][3 ];
     BlockContext *a;
     int a_sz ;
     refmvs_frame rf;
@@ -238,6 +255,16 @@ struct Dav1dFrameContext {
         pixel *p[3], *sr_p[3];
         Av1Filter *mask_ptr, *prev_mask_ptr;
         int restore_planes; 
+
+        struct {
+            pthread_cond_t cond;
+            struct PostFilterThreadData *pftd;
+            struct Dav1dTask *tasks;
+            int num_tasks;
+            int npf;
+            int done;
+            int inited;
+        } thread;
     } lf;
 
     
@@ -351,6 +378,13 @@ struct Dav1dTileContext {
         struct FrameTileThreadData *fttd;
         int die;
     } tile_thread;
+};
+
+struct Dav1dPostFilterContext {
+    Dav1dContext *c;
+    struct thread_data td;
+    int flushed;
+    int die;
 };
 
 #endif 
