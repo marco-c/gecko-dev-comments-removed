@@ -25,8 +25,8 @@ const {
 
 loader.lazyRequireGetter(
   this,
-  "TargetFactory",
-  "devtools/client/framework/target",
+  "TabTargetFactory",
+  "devtools/client/framework/tab-target-factory",
   true
 );
 
@@ -548,7 +548,7 @@ class TargetList extends EventEmitter {
     await targetFront.once("target-destroyed");
 
     
-    const newTarget = await TargetFactory.forTab(localTab, client);
+    const newTarget = await TabTargetFactory.forTab(localTab, client);
 
     this.switchToTarget(newTarget);
   }
