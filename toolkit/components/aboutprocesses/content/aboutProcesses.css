@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+* License, v. 2.0. If a copy of the MPL was not distributed with this
+* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import url("chrome://global/skin/in-content/common.css");
 
@@ -22,10 +22,9 @@ body {
   inset-inline-start: 0;
   width: 100%;
   height: 100%;
-  min-width: 40em;
 }
 
-
+/* Avoid scrolling the header */
 #process-tbody {
   display: block;
   margin-top: 2em;
@@ -35,38 +34,20 @@ body {
   z-index: 1;
   height: 2em;
   border-bottom: 1px solid var(--in-content-border-color);
-  min-width: 40em;
+  width: 100%;
   background-color: var(--in-content-box-background);
 }
 tr {
-  display: table;
-  table-layout: fixed;
+  display: grid;
+  /* Flexible width for the name column, 15% width for the memory and CPU column,
+   * then fixed width (16px icon + 2*10px margin) for the actions column. */
+  grid-template-columns: 1fr 15% 15% 36px;
+  grid-auto-rows: 2em;
   width: 100%;
 }
 
-
-
-
-
-td:nth-child(2) {
-  width: 15%;
-}
-#process-tbody td:nth-child(2) {
+.cpu, .memory {
   text-align: end;
-}
-
-
-td:nth-child(3) {
-  width: 15%;
-}
-#process-tbody td:nth-child(3) {
-  text-align: end;
-}
-
-
-td:nth-child(4) {
-  width: 16px;
-  text-align: center;
 }
 
 #process-thead > tr {
@@ -80,14 +61,12 @@ td:nth-child(4) {
 #process-thead > tr > td:not(:first-child) {
   border-inline-start: 1px solid;
   border-image: linear-gradient(transparent 0%, transparent 20%, var(--in-content-box-border-color) 20%, var(--in-content-box-border-color) 80%, transparent 80%, transparent 100%) 1 1;
-  border-bottom: 1px solid var(--in-content-border-color);
 }
 td {
   padding: 5px 10px;
   min-height: 16px;
-  max-height: 16px;
+  max-height: 2em;
   color: var(--in-content-text-color);
-  max-width: 70vw;
   overflow: hidden;
   white-space: nowrap;
 }
@@ -109,14 +88,14 @@ td.type:dir(rtl), td.favicon:dir(rtl) {
 .twisty {
   position: relative;
 }
-
-
+/* Putting the background image in a positioned pseudo element lets us
+* use CSS transforms on the background image, which we need for rtl. */
 .twisty::before {
   content: url("chrome://global/skin/icons/twisty-collapsed.svg");
   position: absolute;
   display: block;
   line-height: 50%;
-  top: 4px; 
+  top: 4px; /* Half the image's height */
   inset-inline-start: -16px;
   width: 100%;
   -moz-context-properties: fill;
@@ -143,6 +122,17 @@ td.type:dir(rtl), td.favicon:dir(rtl) {
   background-color: var(--in-content-item-hover);
 }
 
+/* Tab names and thread summary text can extend into memory and CPU columns. */
+.window > :first-child,
+.thread-summary > :first-child {
+  grid-column: 1 / 4;
+}
+
+/* Thread names can extend into the memory column. */
+.thread > :first-child{
+  grid-column: 1 / 3;
+}
+
 .clickable {
   background-repeat: no-repeat;
   background-position: right 4px center;
@@ -155,10 +145,10 @@ td.type:dir(rtl), td.favicon:dir(rtl) {
   -moz-context-properties: fill;
   fill: currentColor;
 }
-
-
-
-
+/*
+  Linux has conventions opposite to Windows, macOS on the direction of arrows
+  when sorting.
+*/
 %ifdef XP_LINUX
 .asc {
   background-image: url(chrome://global/skin/icons/arrow-up-12.svg);
@@ -199,11 +189,11 @@ td.type:dir(rtl), td.favicon:dir(rtl) {
   opacity: 0.3;
 }
 
-
+/* icons */
 .close-icon {
   background: url("chrome://global/skin/icons/close.svg") no-repeat center;
-  opacity: 0;      
-  fill-opacity: 0; 
+  opacity: 0;      /* Start out as transparent */
+  fill-opacity: 0; /* Make SVG background transparent */
   -moz-context-properties: fill, fill-opacity;
   fill: currentColor;
 }
@@ -220,16 +210,16 @@ tr:is([selected], :hover):not(.killing) > .close-icon {
   background-color: var(--in-content-button-background-active);
 }
 
+/* column-name */
 
-
-
+/* When the process is reported as frozen, we display an hourglass before its name. */
 .process.hung > :first-child > :not(.twisty)::before {
   content: "⌛️";
 }
 
-
-
-
+/*
+  Show a separation between process groups.
+ */
 
 #process-tbody > tr.separate-from-previous-process-group {
   border-top: dotted 1px var(--in-content-box-border-color);

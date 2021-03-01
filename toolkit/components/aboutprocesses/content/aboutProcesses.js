@@ -568,7 +568,7 @@ var View = {
             deltaUnit: units.memory[formattedDelta.unit],
             deltaSign: data.deltaRamSize > 0 ? "+" : "-",
           },
-          classes: ["totalMemorySize"],
+          classes: ["memory"],
         });
       } else {
         this._addCell(row, {
@@ -577,7 +577,7 @@ var View = {
             total: formattedTotal.amount,
             totalUnit: units.memory[formattedTotal.unit],
           },
-          classes: ["totalMemorySize"],
+          classes: ["memory"],
         });
       }
     }
@@ -667,18 +667,6 @@ var View = {
     
     this._addCell(row, {
       content: "",
-      classes: ["totalRamSize"],
-    });
-
-    
-    this._addCell(row, {
-      content: "",
-      classes: ["cpu"],
-    });
-
-    
-    this._addCell(row, {
-      content: "",
       classes: ["action-icon"],
     });
 
@@ -741,18 +729,6 @@ var View = {
     }
 
     
-    this._addCell(row, {
-      content: "",
-      classes: ["totalRamSize"],
-    });
-
-    
-    this._addCell(row, {
-      content: "",
-      classes: ["cpu"],
-    });
-
-    
     let killButton = this._addCell(row, {
       content: "",
       classes: ["action-icon"],
@@ -802,12 +778,6 @@ var View = {
         tid: "" + data.tid ,
       },
       classes: ["name", "double_indent"],
-    });
-
-    
-    this._addCell(row, {
-      content: "",
-      classes: ["totalRamSize"],
     });
 
     
