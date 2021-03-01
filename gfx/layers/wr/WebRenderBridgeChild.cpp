@@ -16,6 +16,7 @@
 #include "mozilla/layers/PTextureChild.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/webrender/WebRenderAPI.h"
+#include "PDMFactory.h"
 
 namespace mozilla {
 namespace layers {
@@ -559,7 +560,9 @@ RefPtr<KnowsCompositor> WebRenderBridgeChild::GetForMedia() {
 
   
   
-  gfxPlatform::GetPlatform()->EnsureDevicesInitialized();
+  if (!PDMFactory::AllDecodersAreRemote()) {
+    gfxPlatform::GetPlatform()->EnsureDevicesInitialized();
+  }
 
   return MakeAndAddRef<KnowsCompositorMediaProxy>(
       GetTextureFactoryIdentifier());
