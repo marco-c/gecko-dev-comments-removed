@@ -8,7 +8,6 @@ function scopedCuImport(path) {
 const { loader, require } = scopedCuImport(
   "resource://devtools/shared/Loader.jsm"
 );
-const { TargetFactory } = require("devtools/client/framework/target");
 const { Utils: WebConsoleUtils } = require("devtools/client/webconsole/utils");
 let { gDevTools } = require("devtools/client/framework/devtools");
 let promise = require("promise");
@@ -22,22 +21,7 @@ let promise = require("promise");
 
 var openToolboxForTab = async function(tab, toolId, hostType) {
   info("Opening the toolbox");
-
-  let toolbox;
-  let target = await TargetFactory.forTab(tab);
-  await target.attach();
-
-  
-  toolbox = gDevTools.getToolbox(target);
-  if (toolbox) {
-    if (!toolId || (toolId && toolbox.getPanel(toolId))) {
-      info("Toolbox is already opened");
-      return toolbox;
-    }
-  }
-
-  
-  toolbox = await gDevTools.showToolbox(target, toolId, hostType);
+  const toolbox = await gDevTools.showToolboxForTab(tab, { toolId, hostType });
 
   
   await new Promise(resolve => waitForFocus(resolve, toolbox.win));
