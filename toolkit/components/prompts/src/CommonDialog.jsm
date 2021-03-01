@@ -120,18 +120,30 @@ CommonDialog.prototype = {
     infoTitle.appendChild(infoTitle.ownerDocument.createTextNode(title));
 
     
+    
     let contentSubDialogPromptEnabled = Services.prefs.getBoolPref(
       "prompts.contentPromptSubDialog"
     );
-    
-    let hideForTabPromptModal =
+    let isOldContentPrompt =
       !contentSubDialogPromptEnabled &&
       this.args.modalType == Ci.nsIPrompt.MODAL_TYPE_CONTENT;
+    
+    
+    let isOpenedWithTabDialog =
+      this.args.openedWithTabDialog &&
+      this.args.modalType == Ci.nsIPrompt.MODAL_TYPE_TAB &&
+      AppConstants.platform != "macosx";
 
+    
+    
+    
     infoTitle.hidden =
-      hideForTabPromptModal ||
-      (this.args.modalType != Ci.nsIPrompt.MODAL_TYPE_CONTENT &&
-        AppConstants.platform != "macosx");
+      isOldContentPrompt ||
+      isOpenedWithTabDialog ||
+      !(
+        AppConstants.platform == "macosx" ||
+        commonDialogEl?.ownerGlobal.docShell.chromeEventHandler
+      );
 
     if (commonDialogEl) {
       commonDialogEl.ownerDocument.title = title;
