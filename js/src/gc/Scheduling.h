@@ -340,8 +340,6 @@ struct Cell;
 
 namespace TuningDefaults {
 
-using mozilla::TimeDuration;
-
 
 static const size_t GCZoneAllocThresholdBase = 27 * 1024 * 1024;
 
@@ -413,8 +411,7 @@ static const uint32_t NurseryFreeThresholdForIdleCollection = ChunkSize / 4;
 static const double NurseryFreeThresholdForIdleCollectionFraction = 0.25;
 
 
-static const TimeDuration NurseryTimeoutForIdleCollection =
-    TimeDuration::FromSeconds(5.0);
+static const uint32_t NurseryTimeoutForIdleCollectionMS = 5000;
 
 
 static const double PretenureThreshold = 0.6;
