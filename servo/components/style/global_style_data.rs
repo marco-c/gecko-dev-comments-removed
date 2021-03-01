@@ -27,7 +27,7 @@ pub struct GlobalStyleData {
 
 pub struct StyleThreadPool {
     
-    pub num_threads: usize,
+    pub num_threads: Option<usize>,
 
     
     
@@ -160,7 +160,11 @@ lazy_static! {
         };
 
         StyleThreadPool {
-            num_threads,
+            num_threads: if num_threads > 0 {
+                Some(num_threads)
+            } else {
+                None
+            },
             style_thread_pool: RwLock::new(pool),
         }
     };

@@ -109,7 +109,11 @@ impl CssUrlData {
     
     
     pub fn is_fragment(&self) -> bool {
-        self.as_str().as_bytes().iter().next().map_or(false, |b| *b == b'#')
+        self.as_str()
+            .as_bytes()
+            .iter()
+            .next()
+            .map_or(false, |b| *b == b'#')
     }
 
     
@@ -291,9 +295,7 @@ impl SpecifiedImageUrl {
         cors_mode: CorsMode,
     ) -> Result<Self, ParseError<'i>> {
         Ok(SpecifiedImageUrl(SpecifiedUrl::parse_with_cors_mode(
-            context,
-            input,
-            cors_mode,
+            context, input, cors_mode,
         )?))
     }
 }

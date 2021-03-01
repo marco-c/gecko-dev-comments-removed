@@ -4,7 +4,7 @@
 
 
 
-#[cfg(feature = "servo")]
+#[cfg(feature = "servo-layout-2013")]
 use crate::computed_values::list_style_type::T as ListStyleType;
 #[cfg(feature = "gecko")]
 use crate::values::generics::CounterStyle;
@@ -123,13 +123,13 @@ pub struct GenericCounters<I>(
 );
 pub use self::GenericCounters as Counters;
 
-#[cfg(feature = "servo")]
+#[cfg(feature = "servo-layout-2013")]
 type CounterStyleType = ListStyleType;
 
 #[cfg(feature = "gecko")]
 type CounterStyleType = CounterStyle;
 
-#[cfg(feature = "servo")]
+#[cfg(feature = "servo-layout-2013")]
 #[inline]
 fn is_decimal(counter_type: &CounterStyleType) -> bool {
     *counter_type == ListStyleType::Decimal
@@ -191,9 +191,11 @@ pub enum GenericContentItem<ImageUrl> {
     
     String(crate::OwnedStr),
     
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     #[css(comma, function)]
     Counter(CustomIdent, #[css(skip_if = "is_decimal")] CounterStyleType),
     
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     #[css(comma, function)]
     Counters(
         CustomIdent,
@@ -201,12 +203,16 @@ pub enum GenericContentItem<ImageUrl> {
         #[css(skip_if = "is_decimal")] CounterStyleType,
     ),
     
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     OpenQuote,
     
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     CloseQuote,
     
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     NoOpenQuote,
     
+    #[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
     NoCloseQuote,
     
     #[cfg(feature = "gecko")]

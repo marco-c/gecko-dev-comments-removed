@@ -47,7 +47,7 @@ impl PrecomputedHash for Namespace {
 }
 
 
-#[derive(Hash, Deref)]
+#[derive(Deref, Hash)]
 pub struct WeakNamespace(WeakAtom);
 
 impl Deref for Namespace {

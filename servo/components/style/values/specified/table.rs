@@ -4,8 +4,6 @@
 
 
 
-use crate::parser::ParserContext;
-
 
 
 
@@ -15,7 +13,7 @@ use crate::parser::ParserContext;
 
 
 #[cfg(feature = "gecko")]
-fn caption_side_non_standard_enabled(_context: &ParserContext) -> bool {
+fn caption_side_non_standard_enabled(_: &crate::parser::ParserContext) -> bool {
     static_prefs::pref!("layout.css.caption-side-non-standard.enabled")
 }
 

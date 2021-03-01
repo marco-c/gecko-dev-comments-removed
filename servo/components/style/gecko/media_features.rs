@@ -307,7 +307,7 @@ fn eval_prefers_reduced_motion(device: &Device, query_value: Option<PrefersReduc
 
 
 
-#[derive(Clone, Copy, Debug, FromPrimitive, PartialEq, Parse, ToCss)]
+#[derive(Clone, Copy, Debug, FromPrimitive, Parse, PartialEq, ToCss)]
 #[repr(u8)]
 pub enum PrefersContrast {
     
@@ -331,7 +331,7 @@ fn eval_prefers_contrast(device: &Device, query_value: Option<PrefersContrast>) 
 
 
 
-#[derive(Clone, Copy, Debug, FromPrimitive, PartialEq, Parse, ToCss)]
+#[derive(Clone, Copy, Debug, FromPrimitive, Parse, PartialEq, ToCss)]
 #[repr(u8)]
 pub enum ForcedColors {
     

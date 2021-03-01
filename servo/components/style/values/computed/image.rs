@@ -15,7 +15,7 @@ use crate::values::computed::NumberOrPercentage;
 use crate::values::computed::{Angle, Color, Context};
 use crate::values::computed::{
     AngleOrPercentage, LengthPercentage, NonNegativeLength, NonNegativeLengthPercentage,
-    ToComputedValue, Resolution,
+    Resolution, ToComputedValue,
 };
 use crate::values::generics::image::{self as generic, GradientCompatMode};
 use crate::values::specified::image as specified;
@@ -26,7 +26,8 @@ use style_traits::{CssWriter, ToCss};
 
 
 
-pub type Image = generic::GenericImage<Gradient, MozImageRect, ComputedImageUrl, Color, Percentage, Resolution>;
+pub type Image =
+    generic::GenericImage<Gradient, MozImageRect, ComputedImageUrl, Color, Percentage, Resolution>;
 
 
 
@@ -115,7 +116,6 @@ impl ToComputedValue for specified::ImageSet {
         }
     }
 }
-
 
 
 #[cfg(feature = "gecko")]
