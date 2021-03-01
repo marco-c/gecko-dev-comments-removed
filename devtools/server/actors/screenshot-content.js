@@ -22,7 +22,6 @@ exports.ScreenshotContentActor = ActorClassWithSpec(screenshotContentSpec, {
   initialize: function(conn, targetActor) {
     Actor.prototype.initialize.call(this, conn);
     this.targetActor = targetActor;
-    this._lastScrollPosition = null;
   },
 
   _getRectForNode(node) {
@@ -53,8 +52,6 @@ exports.ScreenshotContentActor = ActorClassWithSpec(screenshotContentSpec, {
 
 
   prepareCapture({ fullpage, selector, nodeActorID }) {
-    this._lastScrollPosition = null;
-
     const { window } = this.targetActor;
     const windowDpr = window.devicePixelRatio;
     const windowZoom = getCurrentZoom(window);
@@ -95,11 +92,6 @@ exports.ScreenshotContentActor = ActorClassWithSpec(screenshotContentSpec, {
         window.scrollMaxY -
         window.scrollMinY -
         scrollbarHeight.value;
-
-      
-      
-      this._lastScrollPosition = [window.scrollX, window.scrollY];
-      window.scrollTo(0, 0);
     } else if (selector) {
       const node = window.document.querySelector(selector);
 
@@ -139,18 +131,5 @@ exports.ScreenshotContentActor = ActorClassWithSpec(screenshotContentSpec, {
       rect: { left, top, width, height },
       messages,
     };
-  },
-
-  
-
-
-
-
-
-  captureDone() {
-    if (this._lastScrollPosition) {
-      this.targetActor.window.scrollTo(...this._lastScrollPosition);
-      this._lastScrollPosition = null;
-    }
   },
 });

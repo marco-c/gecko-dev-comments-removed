@@ -112,11 +112,6 @@ async function captureScreenshot(targetFront, args) {
   const parentProcessScreenshotFront = await rootFront.getFront("screenshot");
   const captureResponse = await parentProcessScreenshotFront.capture(args);
 
-  
-  
-  
-  screenshotContentFront.captureDone();
-
   return {
     ...captureResponse,
     messages: (messages || []).concat(captureResponse.messages || []),
