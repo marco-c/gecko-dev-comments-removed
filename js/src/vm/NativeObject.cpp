@@ -1599,7 +1599,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
   Rooted<PropertyDescriptor> desc(cx, desc_);
 
   
-  if (!prop) {
+  if (prop.isNotFound()) {
     
     
     if (!obj->isExtensible() && !id.isPrivateName()) {
@@ -1905,7 +1905,7 @@ static bool DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj,
   if (!NativeLookupOwnPropertyNoResolve(cx, obj, id, &prop)) {
     return false;
   }
-  MOZ_ASSERT(!prop, "didn't expect to find an existing property");
+  MOZ_ASSERT(prop.isNotFound(), "didn't expect to find an existing property");
 #endif
 
   
@@ -1993,7 +1993,7 @@ bool js::NativeHasProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
     }
 
     
-    if (prop) {
+    if (prop.isFound()) {
       *foundp = true;
       return true;
     }
@@ -2038,7 +2038,7 @@ bool js::NativeGetOwnPropertyDescriptor(
   if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
     return false;
   }
-  if (!prop) {
+  if (prop.isNotFound()) {
     desc.object().set(nullptr);
     return true;
   }
@@ -2266,7 +2266,7 @@ static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
       return false;
     }
 
-    if (prop) {
+    if (prop.isFound()) {
       
       
       if (prop.isDenseElement()) {
@@ -2658,7 +2658,7 @@ bool js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
       return false;
     }
 
-    if (prop) {
+    if (prop.isFound()) {
       
       return SetExistingProperty(cx, id, v, receiver, pobj, prop, result);
     }
@@ -2739,7 +2739,7 @@ bool js::NativeDeleteProperty(JSContext* cx, HandleNativeObject obj,
   }
 
   
-  if (!prop) {
+  if (prop.isNotFound()) {
     
     
     return CallJSDeletePropertyOp(cx, obj->getClass()->getDelProperty(), obj,
