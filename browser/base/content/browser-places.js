@@ -1688,7 +1688,7 @@ var BookmarkingUI = {
 
     
     
-    menu.setAttribute("selectiontype", "none");
+    menu.setAttribute("selectiontype", "none|single");
 
     MozXULElement.insertFTLIfNeeded("browser/toolbarContextMenu.ftl");
     let menuItems = [
