@@ -553,6 +553,38 @@ DevTools.prototype = {
 
 
 
+
+
+
+  async showToolboxForTab(
+    tab,
+    { toolId, hostType, startTime, raise, reason, hostOptions } = {}
+  ) {
+    const target = await TargetFactory.forTab(tab);
+    return this.showToolbox(
+      target,
+      toolId,
+      hostType,
+      hostOptions,
+      startTime,
+      reason,
+      raise
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
   logToolboxOpenTime(toolbox, startTime) {
     const toolId = toolbox.currentToolId || toolbox.defaultToolId;
     const delay = Cu.now() - startTime;

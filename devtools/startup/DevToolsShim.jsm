@@ -316,7 +316,16 @@ const webExtensionsMethods = [
   "openBrowserConsole",
 ];
 
-for (const method of webExtensionsMethods) {
+
+
+
+const otherToolMethods = [
+  
+  
+  "showToolboxForTab",
+];
+
+for (const method of [...webExtensionsMethods, ...otherToolMethods]) {
   DevToolsShim[method] = function() {
     if (!this.isEnabled()) {
       throw new Error(
