@@ -19,12 +19,6 @@ const { gDevTools } = require("devtools/client/framework/devtools");
 
 loader.lazyRequireGetter(
   this,
-  "TargetFactory",
-  "devtools/client/framework/target",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "Toolbox",
   "devtools/client/framework/toolbox",
   true
@@ -104,17 +98,16 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
 
   
   async toggleToolboxCommand(gBrowser, startTime) {
-    const target = await TargetFactory.forTab(gBrowser.selectedTab);
-    const toolbox = gDevTools.getToolbox(target);
+    const toolbox = await gDevTools.getToolboxForTab(gBrowser.selectedTab);
 
     
     
     
     const isDocked = toolbox && toolbox.hostType != Toolbox.HostType.WINDOW;
     if (isDocked) {
-      gDevTools.closeToolbox(target);
+      gDevTools.closeToolboxForTab(gBrowser.selectedTab);
     } else {
-      gDevTools.showToolbox(target, null, null, null, startTime);
+      gDevTools.showToolboxForTab(gBrowser.selectedTab, { startTime });
     }
   },
 
@@ -235,8 +228,8 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
       return;
     }
 
-    const target = await TargetFactory.forTab(win.gBrowser.selectedTab);
-    const toolbox = gDevTools.getToolbox(target);
+    const tab = win.gBrowser.selectedTab;
+    const toolbox = await gDevTools.getToolboxForTab(tab);
     const toolDefinition = gDevTools.getToolDefinition(toolId);
 
     if (
@@ -259,15 +252,11 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
       gDevTools.emit("select-tool-command", toolId);
     } else {
       gDevTools
-        .showToolbox(
-          target,
-          toolId,
-          null,
-          null,
+        .showToolboxForTab(tab, {
+          raise: !toolDefinition.preventRaisingOnKey,
           startTime,
-          undefined,
-          !toolDefinition.preventRaisingOnKey
-        )
+          toolId,
+        })
         .then(newToolbox => {
           newToolbox.fireCustomKey(toolId);
           gDevTools.emit("select-tool-command", toolId);
@@ -468,42 +457,42 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     );
 
     async function slowScriptDebugHandler(tab, callback) {
-      const target = await TargetFactory.forTab(tab);
+      gDevTools
+        .showToolboxForTab(tab, { toolId: "jsdebugger" })
+        .then(toolbox => {
+          const threadFront = toolbox.threadFront;
 
-      gDevTools.showToolbox(target, "jsdebugger").then(toolbox => {
-        const threadFront = toolbox.threadFront;
-
-        
-        
-        switch (threadFront.state) {
-          case "paused":
-            
-            threadFront.resumeThenPause();
-            callback();
-            break;
-          case "attached":
-            
-            threadFront.interrupt().then(() => {
+          
+          
+          switch (threadFront.state) {
+            case "paused":
+              
               threadFront.resumeThenPause();
               callback();
-            });
-            break;
-          case "resuming":
-            
-            threadFront.once("resumed", () => {
+              break;
+            case "attached":
+              
               threadFront.interrupt().then(() => {
                 threadFront.resumeThenPause();
                 callback();
               });
-            });
-            break;
-          default:
-            throw Error(
-              "invalid thread front state in slow script debug handler: " +
-                threadFront.state
-            );
-        }
-      });
+              break;
+            case "resuming":
+              
+              threadFront.once("resumed", () => {
+                threadFront.interrupt().then(() => {
+                  threadFront.resumeThenPause();
+                  callback();
+                });
+              });
+              break;
+            default:
+              throw Error(
+                "invalid thread front state in slow script debug handler: " +
+                  threadFront.state
+              );
+          }
+        });
     }
 
     debugService.activationHandler = function(window) {
