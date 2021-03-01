@@ -4670,10 +4670,27 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType) {
                           
                         }
 
-                        QM_TRY(InitializeOrigin(
-                            aPersistenceType, metadata.mOriginMetadata,
-                            metadata.mTimestamp, metadata.mPersisted,
-                            childDirectory));
+                        QM_TRY(
+                            ToResult(InitializeOrigin(aPersistenceType,
+                                                      metadata.mOriginMetadata,
+                                                      metadata.mTimestamp,
+                                                      metadata.mPersisted,
+                                                      childDirectory))
+                                .orElse([&childDirectory](const nsresult rv)
+                                            -> Result<Ok, nsresult> {
+                                  if (IsDatabaseCorruptionError(rv)) {
+                                    
+                                    
+                                    
+                                    
+
+                                    QM_TRY(childDirectory->Remove(true));
+
+                                    return Ok{};
+                                  }
+
+                                  return Err(rv);
+                                }));
 
                         break;
                       }
