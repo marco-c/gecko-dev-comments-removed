@@ -820,8 +820,13 @@ pub struct RenderBackend {
     blob_image_handler: Option<Box<dyn BlobImageHandler>>,
 
     recycler: Recycler,
+
     #[cfg(feature = "capture")]
+    
+    
+    
     capture_config: Option<CaptureConfig>,
+
     #[cfg(feature = "replay")]
     loaded_resource_sequence_id: u32,
 
@@ -1263,6 +1268,10 @@ impl RenderBackend {
 
                 self.bookkeep_after_frames();
             },
+            #[cfg(feature = "capture")]
+            SceneBuilderResult::StopCaptureSequence => {
+                self.capture_config = None;
+            }
             SceneBuilderResult::GetGlyphDimensions(request) => {
                 let mut glyph_dimensions = Vec::with_capacity(request.glyph_indices.len());
                 if let Some(base) = self.resource_cache.get_font_instance(request.key) {

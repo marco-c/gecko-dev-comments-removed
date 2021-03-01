@@ -114,8 +114,6 @@ pub enum SceneBuilderRequest {
 
 pub enum SceneBuilderResult {
     Transactions(Vec<Box<BuiltTransaction>>, Option<Sender<SceneSwapResult>>),
-    #[cfg(feature = "capture")]
-    CapturedTransactions(Vec<Box<BuiltTransaction>>, CaptureConfig, Option<Sender<SceneSwapResult>>),
     ExternalEvent(ExternalEvent),
     FlushComplete(Sender<()>),
     DeleteDocument(DocumentId),
@@ -123,7 +121,18 @@ pub enum SceneBuilderResult {
     GetGlyphDimensions(GlyphDimensionRequest),
     GetGlyphIndices(GlyphIndexRequest),
     ShutDown(Option<Sender<()>>),
-    DocumentsForDebugger(String)
+    DocumentsForDebugger(String),
+
+    #[cfg(feature = "capture")]
+    
+    
+    
+    CapturedTransactions(Vec<Box<BuiltTransaction>>, CaptureConfig, Option<Sender<SceneSwapResult>>),
+
+    #[cfg(feature = "capture")]
+    
+    
+    StopCaptureSequence,
 }
 
 
@@ -367,6 +376,7 @@ impl SceneBuilderThread {
                     
                     
                     self.capture_config = None;
+                    self.send(SceneBuilderResult::StopCaptureSequence);
                 }
                 Ok(SceneBuilderRequest::DocumentsForDebugger) => {
                     let json = self.get_docs_for_debugger();
