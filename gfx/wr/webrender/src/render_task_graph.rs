@@ -623,19 +623,15 @@ impl RenderTaskGraphBuilder {
             }
             
             
-            let (target_rect, target_index) = task.get_target_rect();
+            let target_rect = task.get_target_rect();
 
             task.write_gpu_blocks(
                 target_rect,
-                target_index,
                 gpu_cache,
             );
 
             graph.task_data.push(
-                task.kind.write_task_data(
-                    target_rect,
-                    target_index,
-                )
+                task.kind.write_task_data(target_rect)
             );
         }
 

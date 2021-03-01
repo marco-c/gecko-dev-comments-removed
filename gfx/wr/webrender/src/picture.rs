@@ -638,8 +638,6 @@ pub enum ResolvedSurfaceTexture {
     TextureCache {
         
         texture: TextureSource,
-        
-        layer: i32,
     },
     Native {
         
@@ -662,7 +660,6 @@ impl SurfaceTextureDescriptor {
 
                 ResolvedSurfaceTexture::TextureCache {
                     texture: cache_item.texture_id,
-                    layer: cache_item.texture_layer,
                 }
             }
             SurfaceTextureDescriptor::Native { id } => {
