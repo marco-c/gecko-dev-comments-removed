@@ -4,6 +4,7 @@
 
 
 
+#include <unordered_map>
 #include <unordered_set>
 #include "NativeFontResourceMac.h"
 #include "UnscaledFontMac.h"
