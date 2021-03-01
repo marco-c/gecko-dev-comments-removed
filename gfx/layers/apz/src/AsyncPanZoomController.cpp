@@ -860,7 +860,7 @@ bool AsyncPanZoomController::ArePointerEventsConsumable(
         
         
         
-        (IsRootContent() && CanScrollDownwardsWithDynamicToolbar())));
+        (IsRootContent() && CanVerticalScrollWithDynamicToolbar())));
 
   bool pannable;
 
@@ -2226,11 +2226,11 @@ bool AsyncPanZoomController::CanScroll(ScrollDirection aDirection) const {
   return false;
 }
 
-bool AsyncPanZoomController::CanScrollDownwardsWithDynamicToolbar() const {
+bool AsyncPanZoomController::CanVerticalScrollWithDynamicToolbar() const {
   MOZ_ASSERT(IsRootContent());
 
   RecursiveMutexAutoLock lock(mRecursiveMutex);
-  return mY.CanScrollDownwardsWithDynamicToolbar();
+  return mY.CanVerticalScrollWithDynamicToolbar();
 }
 
 bool AsyncPanZoomController::CanScrollDownwards() const {
