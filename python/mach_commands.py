@@ -244,9 +244,6 @@ class MachCommands(MachCommandBase):
                 self.virtualenv_manager.install_pip_requirements(
                     test["requirements"],
                     quiet=True,
-                    
-                    
-                    legacy_resolver=True,
                 )
                 installed_requirements.add(test["requirements"])
 
