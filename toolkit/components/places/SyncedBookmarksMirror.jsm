@@ -2407,6 +2407,9 @@ class BookmarkObserverRecorder {
   async notifyBookmarkObservers() {
     MirrorLog.trace("Notifying bookmark observers");
     let observers = PlacesUtils.bookmarks.getObservers();
+    
+    
+    
     await Async.yieldingForEach(
       this.guidChangedArgs,
       args => {

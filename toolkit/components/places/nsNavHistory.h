@@ -238,6 +238,13 @@ class nsNavHistory final : public nsSupportsWeakReference,
 
   typedef nsDataHashtable<nsCStringHashKey, nsCString> StringHash;
 
+  
+
+
+
+
+  bool canNotify() { return mCanNotify; }
+
   enum RecentEventFlags {
     RECENT_TYPED = 1 << 0,      
     RECENT_ACTIVATED = 1 << 1,  
@@ -427,6 +434,9 @@ class nsNavHistory final : public nsSupportsWeakReference,
                          nsCOMArray<nsNavHistoryResultNode>* aResults);
 
   
+  nsMaybeWeakPtrArray<nsINavHistoryObserver> mObservers;
+
+  
   nsCOMPtr<nsIEffectiveTLDService> mTLDService;
   nsCOMPtr<nsIIDNService> mIDNService;
 
@@ -489,6 +499,9 @@ class nsNavHistory final : public nsSupportsWeakReference,
 
   int64_t mLastCachedStartOfDay;
   int64_t mLastCachedEndOfDay;
+
+  
+  bool mCanNotify;
 
   
   

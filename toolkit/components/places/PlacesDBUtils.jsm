@@ -103,7 +103,15 @@ var PlacesDBUtils = {
 
 
   async _refreshUI() {
-    PlacesObservers.notifyListeners([new PlacesPurgeCaches()]);
+    
+    let observers = [
+      ...PlacesUtils.history.getObservers(),
+      ...PlacesUtils.bookmarks.getObservers(),
+    ];
+    for (let observer of observers) {
+      observer.onBeginUpdateBatch();
+      observer.onEndUpdateBatch();
+    }
     return [];
   },
 
