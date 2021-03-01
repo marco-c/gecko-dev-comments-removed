@@ -200,7 +200,7 @@ class TabBase {
 
 
   get matchesHostPermission() {
-    return this.extension.allowedOrigins.matches(this._url);
+    return this.extension.allowedOrigins.matches(this._uri);
   }
 
   
@@ -239,11 +239,8 @@ class TabBase {
 
 
 
-
-  get uri() {
-    if (this.hasTabPermission) {
-      return this.browser.currentURI;
-    }
+  get _uri() {
+    return this.browser.currentURI;
   }
 
   
@@ -630,7 +627,7 @@ class TabBase {
         return false;
       }
       
-      if (queryInfo.url && !queryInfo.url.matches(this._url)) {
+      if (queryInfo.url && !queryInfo.url.matches(this._uri)) {
         return false;
       }
       if (queryInfo.title && !queryInfo.title.matches(this._title)) {
