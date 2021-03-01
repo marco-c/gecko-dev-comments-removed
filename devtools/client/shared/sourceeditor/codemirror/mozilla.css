@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
 :root {
@@ -13,9 +13,9 @@
   --breakpoint-active-color-hover: rgba(0,255,175,.7);
 }
 
-
-
-
+/* We don't want the focus style to be displayed on the CodeMirror scrollbars.
+ * See Bug 1590707.
+ */
 .CodeMirror-vscrollbar, .CodeMirror-hscrollbar {
   outline: none !important;
 }
@@ -81,8 +81,8 @@
   background-color: var(--breakpoint-active-color) !important;
 }
 
-
-
+/* Don't display the highlight color since the debug line
+   is already highlighted */
 .debug-line .CodeMirror-activeline-background {
   display: none;
 }
@@ -103,17 +103,17 @@
   background-repeat: repeat-x;
 }
 
-
-
+/* Search highlight style
+ * cm-searching is used in Style Editor, and cm-highlight in Debugger */
 .cm-searching,
 .cm-highlight {
   border-bottom: 1px solid var(--theme-contrast-border);
-  
-
+  /* Use the translucent yellow background, because we want the text selection
+     background (CodeMirror-selected) to show through this. */
   background-color: var(--theme-contrast-background-alpha);
 }
 
-
+/* CodeMirror dialogs styling */
 
 .CodeMirror-dialog {
   padding: 4px 3px;
@@ -124,7 +124,7 @@
   font: message-box;
 }
 
-
+/* Fold addon */
 
 .CodeMirror-foldmarker {
   display: inline-block;
@@ -140,7 +140,7 @@
 }
 
 .CodeMirror-foldgutter {
-  width: 16px; 
+  width: 16px; /* Same as breakpoints gutter above */
 }
 
 .CodeMirror-foldgutter-open,
@@ -152,7 +152,7 @@
   background-repeat: no-repeat;
   -moz-context-properties: fill;
   fill: var(--theme-icon-dimmed-color);
-  
+  /* make the icons smaller than regular twistys (10->8px) */
   background-size: 8px;
   cursor: pointer;
 }
@@ -258,13 +258,13 @@
   opacity: .7;
 }
 
-
+/* Override the background-color: white applied to filler elements in codemirror.css */
 .CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
   appearance: auto;
   -moz-default-appearance: scrollcorner;
 }
 
-
+/* Markup view and Event tooltip styles */
 
 .CodeMirror.cm-s-markup-view pre {
   font-size: var(--theme-code-font-size);
@@ -272,28 +272,34 @@
   min-height: 15px;
 }
 
-
+/* Make our own cursor-blink animation */
 @keyframes cursor-blink {
   0% {}
   50% { opacity: 0; }
   100% {}
 }
 
-.CodeMirror-cursor {
-  
-
-
-
-
-
+.CodeMirror-focused .CodeMirror-cursor {
+  /*
+   * We're using the --caret-blink-time custom property for the animation duration.
+   * It is set in editor.js when we setup the CodeMirror instance, and will map either
+   * to the value of the ui.caretBlinkTime preference, or to CodeMirror's default for
+   * cursorBlinkRate. (See Bug 1609567 for more information on why this is needed).
+   */
+  /*
+   * The animation should only be set when the editor is focused, otherwise the
+   * animation will continue even when devtools is in a background tab.
+   * This happens because the cursor is hidden using visiblity: hidden rather than
+   * display: none in codemirror.css. See bug 1661054 for details.
+   */
   animation: cursor-blink calc(var(--caret-blink-time, 0.53s) * 2) steps(1) infinite;
 }
 
 
-
-
-
-
+/*
+ * Always align CodeMirror lines to the left.
+ * See Bug 1651443 for more information.
+ */
 .CodeMirror-lines {
   text-align: left;
 }
