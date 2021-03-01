@@ -111,12 +111,8 @@ already_AddRefed<DataStorage> DataStorage::GetFromRawFileName(
     sDataStorages = new DataStorages();
     ClearOnShutdown(&sDataStorages);
   }
-  RefPtr<DataStorage> storage;
-  if (!sDataStorages->Get(aFilename, getter_AddRefs(storage))) {
-    storage = new DataStorage(aFilename);
-    sDataStorages->InsertOrUpdate(aFilename, RefPtr{storage});
-  }
-  return storage.forget();
+  return do_AddRef(sDataStorages->LookupOrInsertWith(
+      aFilename, [&] { return RefPtr{new DataStorage(aFilename)}; }));
 }
 
 
@@ -482,11 +478,8 @@ DataStorage::Reader::Run() {
       if (NS_SUCCEEDED(parseRV)) {
         
         
-        Entry newerEntry;
-        bool present = mDataStorage->mPersistentDataTable.Get(key, &newerEntry);
-        if (!present) {
-          mDataStorage->mPersistentDataTable.InsertOrUpdate(key, entry);
-        }
+        mDataStorage->mPersistentDataTable.LookupOrInsert(key,
+                                                          std::move(entry));
       }
     } while (true);
 
