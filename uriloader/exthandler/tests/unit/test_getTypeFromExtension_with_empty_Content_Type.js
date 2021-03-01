@@ -153,6 +153,24 @@ function registerMockWindowsRegKeyFactory() {
   
   let originalWindowsRegKeyCID = Cc[kWindowsRegKeyContractID].number;
 
+  
+  
+  
+  let oldSuffixListPref = Services.prefs.getBoolPref(
+    "network.notify.dnsSuffixList"
+  );
+  Services.prefs.setBoolPref("network.notify.dnsSuffixList", false);
+
+  let oldCheckForProxiesPref = Services.prefs.getBoolPref(
+    "network.notify.checkForProxies"
+  );
+  Services.prefs.setBoolPref("network.notify.checkForProxies", false);
+
+  let oldCheckForNRPTPref = Services.prefs.getBoolPref(
+    "network.notify.checkForNRPT"
+  );
+  Services.prefs.setBoolPref("network.notify.checkForNRPT", false);
+
   info("Create a mock RegKey factory");
   let originalRegKey = Cc["@mozilla.org/windows-registry-key;1"].createInstance(
     Ci.nsIWindowsRegKey
@@ -185,6 +203,19 @@ function registerMockWindowsRegKeyFactory() {
       "",
       kWindowsRegKeyContractID,
       null
+    );
+
+    Services.prefs.setBoolPref(
+      "network.notify.dnsSuffixList",
+      oldSuffixListPref
+    );
+    Services.prefs.setBoolPref(
+      "network.notify.checkForProxies",
+      oldCheckForProxiesPref
+    );
+    Services.prefs.setBoolPref(
+      "network.notify.checkForNRPT",
+      oldCheckForNRPTPref
     );
   });
 }
