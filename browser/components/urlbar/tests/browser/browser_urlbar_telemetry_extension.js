@@ -119,6 +119,8 @@ add_task(async function setup() {
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
 
+  UrlbarTestUtils.init(this);
+
   
   registerCleanupFunction(async function() {
     Services.telemetry.canRecordExtended = oldCanRecord;
