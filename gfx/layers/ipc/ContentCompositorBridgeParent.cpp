@@ -36,6 +36,7 @@
 #include "nsTArray.h"          
 #include "nsXULAppAPI.h"       
 #include "mozilla/Unused.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Telemetry.h"
 #ifdef MOZ_GECKO_PROFILER
@@ -348,10 +349,6 @@ void ContentCompositorBridgeParent::ShadowLayersUpdated(
     CompositorBridgeParent::SetShadowProperties(shadowRoot);
   }
   UpdateIndirectTree(id, shadowRoot, aInfo.targetConfig());
-
-  
-  state->mPluginData = aInfo.plugins().Clone();
-  state->mUpdatedPluginDataAvailable = true;
 
   state->mParent->NotifyShadowTreeTransaction(
       id, aInfo.isFirstPaint(), aInfo.focusTarget(), aInfo.scheduleComposite(),
