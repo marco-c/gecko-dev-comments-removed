@@ -188,6 +188,19 @@ var webrtcUI = {
   
 
 
+  browserHasStreams(aBrowser) {
+    for (let stream of this._streams) {
+      if (stream.topBrowsingContext.embedderElement == aBrowser) {
+        return true;
+      }
+    }
+
+    return false;
+  },
+
+  
+
+
 
   getCombinedStateForBrowser(aTopBrowsingContext) {
     function combine(x, y) {

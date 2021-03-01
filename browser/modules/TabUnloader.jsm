@@ -5,9 +5,125 @@
 
 "use strict";
 
+
+
+
+
+
+
 var EXPORTED_SYMBOLS = ["TabUnloader"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "webrtcUI",
+  "resource:///modules/webrtcUI.jsm"
+);
+
+
+
+
+const MIN_TABS_COUNT = 10;
+
+
+const NEVER_DISCARD = 100000;
+
+let criteriaTypes = [
+  ["isNonDiscardable", NEVER_DISCARD],
+  ["isLoading", 8],
+  ["usingPictureInPicture", 4],
+  ["playingMedia", 3],
+  ["usingWebRTC", 3],
+  ["isPinned", 2],
+];
+
+
+let CRITERIA_METHOD = 0;
+let CRITERIA_WEIGHT = 1;
+
+
+
+
+
+
+
+let DefaultTabUnloaderMethods = {
+  isNonDiscardable(tab, weight) {
+    if (tab.selected) {
+      return weight;
+    }
+
+    return !tab.linkedBrowser.isConnected ? -1 : 0;
+  },
+
+  isPinned(tab, weight) {
+    return tab.pinned ? weight : 0;
+  },
+
+  isLoading(tab, weight) {
+    return 0;
+  },
+
+  usingPictureInPicture(tab, weight) {
+    
+    return tab.pictureinpicture ? weight : 0;
+  },
+
+  playingMedia(tab, weight) {
+    return tab.soundPlaying ? weight : 0;
+  },
+
+  usingWebRTC(tab, weight) {
+    return webrtcUI.browserHasStreams(tab.linkedBrowser) ? weight : 0;
+  },
+
+  getMinTabCount() {
+    return MIN_TABS_COUNT;
+  },
+
+  *iterateTabs() {
+    for (let win of Services.wm.getEnumerator("navigator:browser")) {
+      for (let tab of win.gBrowser.tabs) {
+        yield { tab, gBrowser: win.gBrowser };
+      }
+    }
+  },
+
+  *iterateBrowsingContexts(bc) {
+    yield bc;
+    for (let childBC of bc.children) {
+      yield* this.iterateBrowsingContexts(childBC);
+    }
+  },
+
+  *iterateProcesses(tab) {
+    let bc = tab.linkedBrowser.browsingContext;
+
+    const iter = this.iterateBrowsingContexts(bc);
+    for (let childBC of iter) {
+      yield childBC.currentWindowGlobal.osPid;
+    }
+  },
+
+  
+
+
+
+
+
+  async calculateMemoryUsage(tabs, processMap) {
+    let parentProcessInfo = await ChromeUtils.requestProcInfo();
+    let childProcessInfoList = parentProcessInfo.children;
+    for (let childProcInfo of childProcessInfoList) {
+      let processInfo = processMap.get(childProcInfo.pid);
+      if (!processInfo) {
+        processMap.set(childProcInfo.pid, { count: 0, topCount: 0 });
+      }
+      processInfo.memory = childProcInfo.residentUniqueSize;
+    }
+  },
+};
 
 
 
@@ -26,7 +142,114 @@ var TabUnloader = {
 
   observe(subject, topic, data) {
     if (topic == "memory-pressure" && data != "heap-minimize") {
-      unloadLeastRecentlyUsedTab();
+      this.unloadLeastRecentlyUsedTab();
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async getSortedTabs(tabMethods = DefaultTabUnloaderMethods) {
+    let tabs = [];
+
+    let lowestWeight = 1000;
+    for (let tab of tabMethods.iterateTabs()) {
+      let weight = determineTabBaseWeight(tab, tabMethods);
+
+      
+      if (weight != -1) {
+        tab.weight = weight;
+        tabs.push(tab);
+        if (weight < lowestWeight) {
+          lowestWeight = weight;
+        }
+      }
+    }
+
+    tabs = tabs.sort((a, b) => {
+      if (a.weight != b.weight) {
+        return a.weight - b.weight;
+      }
+
+      return a.tab.lastAccessed - b.tab.lastAccessed;
+    });
+
+    
+    if (!tabs.length || tabs[0].weight == NEVER_DISCARD) {
+      return [];
+    }
+
+    
+    
+    
+    let higherWeightedCount = 0;
+    for (let idx = 0; idx < tabs.length; idx++) {
+      if (tabs[idx].weight != lowestWeight) {
+        higherWeightedCount = tabs.length - idx;
+        break;
+      }
+    }
+
+    
+    
+    
+    
+    let minCount = tabMethods.getMinTabCount();
+    if (higherWeightedCount < minCount) {
+      higherWeightedCount = minCount;
+    }
+
+    if (higherWeightedCount < tabs.length) {
+      let processMap = getAllProcesses(tabs, tabMethods);
+
+      let higherWeightedTabs = tabs.splice(-higherWeightedCount);
+
+      await adjustForResourceUse(tabs, processMap, tabMethods);
+      tabs = tabs.concat(higherWeightedTabs);
+    }
+
+    return tabs;
+  },
+
+  
+
+
+  async unloadLeastRecentlyUsedTab() {
+    let sortedTabs = await this.getSortedTabs();
+
+    for (let tabInfo of sortedTabs) {
+      if (tabInfo.weight == NEVER_DISCARD) {
+        return;
+      }
+
+      if (tabInfo.gBrowser.discardBrowser(tabInfo.tab)) {
+        return;
+      }
     }
   },
 
@@ -36,41 +259,144 @@ var TabUnloader = {
   ]),
 };
 
-function unloadLeastRecentlyUsedTab() {
-  let bgTabBrowsers = getSortedBackgroundTabBrowsers();
 
-  for (let tb of bgTabBrowsers) {
-    if (tb.browser.discardBrowser(tb.tab)) {
-      return;
+
+
+
+
+function determineTabBaseWeight(tab, tabMethods) {
+  let totalWeight = 0;
+
+  for (let criteriaType of criteriaTypes) {
+    let weight = tabMethods[criteriaType[CRITERIA_METHOD]](
+      tab.tab,
+      criteriaType[CRITERIA_WEIGHT]
+    );
+
+    
+    if (weight == -1) {
+      return -1;
     }
+
+    totalWeight += weight;
   }
+
+  return totalWeight;
 }
 
 
 
 
-function sortTabs(a, b) {
-  if (a.tab.soundPlaying != b.tab.soundPlaying) {
-    return a.tab.soundPlaying - b.tab.soundPlaying;
-  }
 
-  if (a.tab.pinned != b.tab.pinned) {
-    return a.tab.pinned - b.tab.pinned;
-  }
 
-  return a.tab.lastAccessed - b.tab.lastAccessed;
-}
 
-function getSortedBackgroundTabBrowsers() {
-  let bgTabBrowsers = [];
 
-  for (let win of Services.wm.getEnumerator("navigator:browser")) {
-    for (let tab of win.gBrowser.tabs) {
-      if (!tab.selected && tab.linkedBrowser.isConnected) {
-        bgTabBrowsers.push({ tab, browser: win.gBrowser });
+
+
+
+function getAllProcesses(tabs, tabMethods) {
+  
+  
+  
+  
+  
+  
+
+  let processMap = new Map();
+
+  for (let tab of tabs) {
+    let topLevel = true;
+    for (let pid of tabMethods.iterateProcesses(tab.tab)) {
+      let processInfo = processMap.get(pid);
+      if (processInfo) {
+        processInfo.count++;
+      } else {
+        processInfo = { count: 1, topCount: 0 };
+        processMap.set(pid, processInfo);
+      }
+
+      if (topLevel) {
+        topLevel = false;
+        processInfo.topCount = processInfo.topCount
+          ? processInfo.topCount + 1
+          : 1;
       }
     }
   }
 
-  return bgTabBrowsers.sort(sortTabs);
+  return processMap;
+}
+
+
+
+
+
+
+
+
+
+async function adjustForResourceUse(tabs, processMap, tabMethods) {
+  await tabMethods.calculateMemoryUsage(tabs, processMap);
+
+  let sortWeight = 0;
+  for (let tab of tabs) {
+    tab.sortWeight = ++sortWeight;
+
+    let topLevel = true;
+    let uniqueCount = 0;
+    let totalMemory = 0;
+    for (let pid of tabMethods.iterateProcesses(tab.tab)) {
+      let processInfo = processMap.get(pid);
+      let { count, topCount, memory } = processInfo;
+      if (count == 1) {
+        uniqueCount++;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      let perFrameMemory = memory / (topCount * 2 + (count - topCount));
+      if (topLevel) {
+        topLevel = false;
+        perFrameMemory *= 2;
+      }
+      totalMemory += perFrameMemory;
+    }
+
+    tab.uniqueCount = uniqueCount;
+    tab.memory = totalMemory;
+  }
+
+  tabs.sort((a, b) => {
+    return b.uniqueCount - a.uniqueCount;
+  });
+  sortWeight = 0;
+  for (let tab of tabs) {
+    tab.sortWeight += ++sortWeight;
+    if (tab.uniqueCount > 1) {
+      
+      
+      
+      tab.sortWeight -= tab.uniqueCount - 1;
+    }
+  }
+
+  tabs.sort((a, b) => {
+    return b.memory - a.memory;
+  });
+  sortWeight = 0;
+  for (let tab of tabs) {
+    tab.sortWeight += ++sortWeight;
+  }
+
+  tabs.sort((a, b) => {
+    if (a.sortWeight != b.sortWeight) {
+      return a.sortWeight - b.sortWeight;
+    }
+    return a.tab.lastAccessed - b.tab.lastAccessed;
+  });
 }
