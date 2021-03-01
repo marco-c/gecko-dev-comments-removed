@@ -125,7 +125,7 @@ TestHangReport.prototype = {
 };
 
 
-let buttonCount = AppConstants.MOZ_DEV_EDITION ? 3 : 2;
+let buttonCount = AppConstants.MOZ_DEV_EDITION ? 2 : 1;
 
 add_task(async function setup() {
   
@@ -184,6 +184,11 @@ add_task(async function waitForScriptTest() {
 
   let buttons = notification.currentNotification.getElementsByTagName("button");
   is(buttons.length, buttonCount, "proper number of buttons");
+  let toolbarbuttons = notification.currentNotification.getElementsByTagName(
+    "toolbarbutton"
+  );
+  is(toolbarbuttons.length, 1, "proper number of toolbarbuttons");
+  let closeButton = toolbarbuttons[0];
 
   await pushPrefs(["browser.hangNotification.waitPeriod", 1000]);
 
@@ -206,7 +211,7 @@ add_task(async function waitForScriptTest() {
   });
 
   
-  buttons[1].click();
+  closeButton.click();
 
   
   Services.obs.notifyObservers(hangReport, "process-hang-report");
@@ -258,7 +263,7 @@ add_task(async function terminatePluginTest() {
   let buttons = notification.currentNotification.getElementsByTagName("button");
   
   
-  is(buttons.length, 2, "proper number of buttons");
+  is(buttons.length, 1, "proper number of buttons");
 
   
   buttons[0].click();
