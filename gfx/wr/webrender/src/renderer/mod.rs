@@ -2375,7 +2375,7 @@ impl Renderer {
                             
                             
                             Some(RenderTargetInfo { has_depth: info.has_depth }),
-                            info.layer_count,
+                            1,
                         );
 
                         if info.is_shared_cache {

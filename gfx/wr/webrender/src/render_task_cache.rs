@@ -188,13 +188,11 @@ impl RenderTaskCache {
         
         
         
-        
-        let (texture_id, texture_layer, uv_rect, _, _, _) =
+        let (texture_id, uv_rect, _, _, _) =
             texture_cache.get_cache_location(&entry.handle);
 
         let surface = StaticRenderTaskSurface::TextureCache {
             texture: texture_id,
-            layer: texture_layer,
             target_kind,
         };
 
