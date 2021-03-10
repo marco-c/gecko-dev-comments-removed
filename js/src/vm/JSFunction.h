@@ -267,7 +267,6 @@ class JSFunction : public js::NativeObject {
 
   
   void setIsConstructor() { flags_.setIsConstructor(); }
-  void setIsClassConstructor() { flags_.setIsClassConstructor(); }
 
   
   void setArgCount(uint16_t nargs) { this->nargs_ = nargs; }
