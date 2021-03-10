@@ -162,7 +162,7 @@ static int sWindowWidth;
 static int sWindowHeight;
 static double sCSSToDevPixelScaling;
 
-static Maybe<PreXULSkeletonUIError> sDisabledReason;
+static Maybe<PreXULSkeletonUIError> sErrorReason;
 
 static const int kAnimationCSSPixelsPerFrame = 21;
 static const int kAnimationCSSExtraWindowSize = 300;
@@ -248,9 +248,9 @@ Result<UniquePtr<wchar_t[]>, PreXULSkeletonUIError> GetBinaryPath() {
 
 
 static bool PreXULSkeletonUIDisallowed() {
-  return sDisabledReason.isSome() &&
-         (*sDisabledReason == PreXULSkeletonUIError::Cmdline ||
-          *sDisabledReason == PreXULSkeletonUIError::EnvVars);
+  return sErrorReason.isSome() &&
+         (*sErrorReason == PreXULSkeletonUIError::Cmdline ||
+          *sErrorReason == PreXULSkeletonUIError::EnvVars);
 }
 
 static UniquePtr<wchar_t, LoadedCoTaskMemFreeDeleter> GetKnownFolderPath(
@@ -2072,13 +2072,13 @@ void CreateAndStorePreXULSkeletonUI(HINSTANCE hInstance, int argc,
   auto result = CreateAndStorePreXULSkeletonUIImpl(hInstance, argc, argv);
 
   if (result.isErr()) {
-    sDisabledReason.emplace(result.unwrapErr());
+    sErrorReason.emplace(result.unwrapErr());
   }
 }
 
 bool WasPreXULSkeletonUIMaximized() { return sMaximized; }
 
-Result<HWND, PreXULSkeletonUIError> ConsumePreXULSkeletonUIHandle() {
+HWND ConsumePreXULSkeletonUIHandle() {
   
   
   
@@ -2102,16 +2102,11 @@ Result<HWND, PreXULSkeletonUIError> ConsumePreXULSkeletonUIHandle() {
   delete sAnimatedRects;
   sAnimatedRects = nullptr;
 
-  
-  
-  
-  if (sDisabledReason.isSome()) {
-    return Err(*sDisabledReason);
-  }
-  if (!result) {
-    return Err(PreXULSkeletonUIError::Unknown);
-  }
   return result;
+}
+
+Maybe<PreXULSkeletonUIError> GetPreXULSkeletonUIErrorReason() {
+  return sErrorReason;
 }
 
 Result<Ok, PreXULSkeletonUIError> PersistPreXULSkeletonUIValues(
