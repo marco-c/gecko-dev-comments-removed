@@ -711,6 +711,16 @@ class UrlbarInput {
       allowInheritPrincipal: false,
     };
 
+    if (
+      urlOverride &&
+      result.type != UrlbarUtils.RESULT_TYPE.TIP &&
+      where == "current"
+    ) {
+      
+      
+      where = "tab";
+    }
+
     let selIndex = result.rowIndex;
     if (!result.payload.providesSearchMode) {
       this.view.close({ elementPicked: true });
