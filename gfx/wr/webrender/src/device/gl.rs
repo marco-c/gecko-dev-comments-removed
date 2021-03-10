@@ -939,10 +939,6 @@ pub struct Capabilities {
     
     pub supports_buffer_storage: bool,
     
-    
-    
-    pub supports_blit_to_texture_array: bool,
-    
     pub supports_advanced_blend_equation: bool,
     
     pub supports_dual_source_blending: bool,
@@ -1570,10 +1566,6 @@ impl Device {
 
         
         
-        let supports_blit_to_texture_array = !renderer_name.starts_with("Adreno");
-
-        
-        
         
         let supports_advanced_blend_equation =
             supports_extension(&extensions, "GL_KHR_blend_equation_advanced") &&
@@ -1695,7 +1687,6 @@ impl Device {
                 supports_copy_image_sub_data,
                 supports_color_buffer_float,
                 supports_buffer_storage,
-                supports_blit_to_texture_array,
                 supports_advanced_blend_equation,
                 supports_dual_source_blending,
                 supports_khr_debug,
