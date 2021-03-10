@@ -100,24 +100,6 @@ class UTF8Chars : public mozilla::Range<unsigned char> {
 
 
 
-
-class WTF8Chars : public mozilla::Range<unsigned char> {
-  typedef mozilla::Range<unsigned char> Base;
-
- public:
-  using CharT = unsigned char;
-
-  WTF8Chars() = default;
-  WTF8Chars(char* aBytes, size_t aLength)
-      : Base(reinterpret_cast<unsigned char*>(aBytes), aLength) {}
-  WTF8Chars(const char* aBytes, size_t aLength)
-      : Base(reinterpret_cast<unsigned char*>(const_cast<char*>(aBytes)),
-             aLength) {}
-};
-
-
-
-
 class UTF8CharsZ : public mozilla::RangedPtr<unsigned char> {
   typedef mozilla::RangedPtr<unsigned char> Base;
 
