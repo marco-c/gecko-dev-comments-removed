@@ -2272,9 +2272,17 @@ void ReflowInput::InitConstraints(
       AutoMaybeDisableFontInflation an(mFrame);
 
       const bool isBlockLevel =
-          (mStyleDisplay->DisplayOutside() == StyleDisplayOutside::Block ||
-           mStyleDisplay->DisplayOutside() ==
-               StyleDisplayOutside::TableCaption ||
+          ((!mStyleDisplay->IsInlineOutsideStyle() &&
+            
+            
+            
+            
+            
+            !(mFlags.mIsReplaced && (mStyleDisplay->IsInnerTableStyle() ||
+                                     mStyleDisplay->DisplayOutside() ==
+                                         StyleDisplayOutside::TableCaption))) ||
+           
+           
            mFrame->IsTableFrame()) &&
           
           
