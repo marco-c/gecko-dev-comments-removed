@@ -1386,23 +1386,6 @@ class SourceUnits {
   }
 
   
-
-
-
-
-  void ungetOptionalCRBeforeLF() {
-    MOZ_ASSERT(!isPoisoned(),
-               "shouldn't unget a '\\r' from poisoned SourceUnits");
-    MOZ_ASSERT(*ptr == Unit('\n'),
-               "function should only be called when a '\\n' was just "
-               "ungotten, and any '\\r' preceding it must also be "
-               "ungotten");
-    if (*(ptr - 1) == Unit('\r')) {
-      ptr--;
-    }
-  }
-
-  
   inline void ungetLineOrParagraphSeparator();
 
   void ungetCodeUnit() {
@@ -1633,24 +1616,6 @@ class TokenStreamCharsShared {
  public:
   CharBuffer& getCharBuffer() { return charBuffer; }
 };
-
-inline auto ToCharSpan(mozilla::Span<const mozilla::Utf8Unit> codeUnits) {
-  static_assert(alignof(char) == alignof(mozilla::Utf8Unit),
-                "must have equal alignment to reinterpret_cast<>");
-  static_assert(sizeof(char) == sizeof(mozilla::Utf8Unit),
-                "must have equal size to reinterpret_cast<>");
-
-  
-  
-  
-  
-  
-  
-  
-  
-  return mozilla::Span{reinterpret_cast<const char*>(codeUnits.data()),
-                       codeUnits.size()};
-}
 
 template <typename Unit>
 class TokenStreamCharsBase : public TokenStreamCharsShared {
