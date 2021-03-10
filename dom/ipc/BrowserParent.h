@@ -544,6 +544,12 @@ class BrowserParent final : public PBrowserParent,
   mozilla::ipc::IPCResult RecvClearNativeTouchSequence(
       const uint64_t& aObserverId);
 
+  mozilla::ipc::IPCResult RecvSynthesizeNativePenInput(
+      const uint32_t& aPointerId, const TouchPointerState& aPointerState,
+      const LayoutDeviceIntPoint& aPoint, const double& aPressure,
+      const uint32_t& aRotation, const int32_t& aTiltX, const int32_t& aTiltY,
+      const uint64_t& aObserverId);
+
   void SendMouseEvent(const nsAString& aType, float aX, float aY,
                       int32_t aButton, int32_t aClickCount, int32_t aModifiers);
 
@@ -954,6 +960,7 @@ class BrowserParent final : public PBrowserParent,
   
   
   bool mIsDestroyed : 1;
+  
   
   
   bool mRemoteTargetSetsCursor : 1;
