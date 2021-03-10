@@ -879,20 +879,15 @@ var gIdentityHandler = {
       return;
     }
 
-    
-    
-    
-    
+    this._refreshIdentityIcons();
+
     
     
     if (this._hasInvalidPageProxyState()) {
       gPermissionPanel.hidePermissionIcons();
-      return;
+    } else {
+      gPermissionPanel.refreshPermissionIcons();
     }
-
-    this._refreshIdentityIcons();
-
-    gPermissionPanel.refreshPermissionIcons();
 
     
     gProtectionsHandler._trackingProtectionIconContainer.classList.toggle(
