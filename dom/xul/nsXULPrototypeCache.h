@@ -6,9 +6,9 @@
 #ifndef nsXULPrototypeCache_h__
 #define nsXULPrototypeCache_h__
 
+#include "nsBaseHashtable.h"
 #include "nsCOMPtr.h"
 #include "nsIObserver.h"
-#include "nsJSThingHashtable.h"
 #include "nsInterfaceHashtable.h"
 #include "nsRefPtrHashtable.h"
 #include "nsURIHashKey.h"
@@ -113,7 +113,20 @@ class nsXULPrototypeCache : public nsIObserver {
   nsRefPtrHashtable<nsURIHashKey, nsXULPrototypeDocument>
       mPrototypeTable;  
   StyleSheetTable mStyleSheetTable;
-  nsJSThingHashtable<nsURIHashKey, JSScript*> mScriptTable;
+
+  class ScriptHashKey : public nsURIHashKey {
+   public:
+    explicit ScriptHashKey(const nsIURI* aKey) : nsURIHashKey(aKey) {}
+    ScriptHashKey(ScriptHashKey&&) = default;
+
+    
+    
+    enum { ALLOW_MEMMOVE = false };
+
+    JS::Heap<JSScript*> mScript;
+  };
+
+  nsTHashtable<ScriptHashKey> mScriptTable;
 
   
   nsTHashtable<nsURIHashKey> mStartupCacheURITable;
