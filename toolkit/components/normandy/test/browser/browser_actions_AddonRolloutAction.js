@@ -19,15 +19,15 @@ const { NormandyTestUtils } = ChromeUtils.import(
 
 decorate_task(
   AddonRollouts.withTestMock(),
-  ensureAddonCleanup,
+  ensureAddonCleanup(),
   withMockNormandyApi(),
   withStub(TelemetryEnvironment, "setExperimentActive"),
   withSendEventSpy(),
-  async function simple_recipe_enrollment(
-    mockApi,
+  async function simple_recipe_enrollment({
+    mockNormandyApi,
     setExperimentActiveStub,
-    sendEventSpy
-  ) {
+    sendEventSpy,
+  }) {
     const recipe = {
       id: 1,
       arguments: {
@@ -35,7 +35,7 @@ decorate_task(
         extensionApiId: 1,
       },
     };
-    mockApi.extensionDetails = {
+    mockNormandyApi.extensionDetails = {
       [recipe.arguments.extensionApiId]: extensionDetailsFactory({
         id: recipe.arguments.extensionApiId,
       }),
@@ -98,10 +98,10 @@ decorate_task(
 
 decorate_task(
   AddonRollouts.withTestMock(),
-  ensureAddonCleanup,
+  ensureAddonCleanup(),
   withMockNormandyApi(),
   withSendEventSpy(),
-  async function update_rollout(mockApi, sendEventSpy) {
+  async function update_rollout({ mockNormandyApi, sendEventSpy }) {
     
     const recipe = {
       id: 1,
@@ -110,7 +110,7 @@ decorate_task(
         extensionApiId: 1,
       },
     };
-    mockApi.extensionDetails = {
+    mockNormandyApi.extensionDetails = {
       [recipe.arguments.extensionApiId]: extensionDetailsFactory({
         id: recipe.arguments.extensionApiId,
       }),
@@ -190,10 +190,10 @@ decorate_task(
 
 decorate_task(
   AddonRollouts.withTestMock(),
-  ensureAddonCleanup,
+  ensureAddonCleanup(),
   withMockNormandyApi(),
   withSendEventSpy(),
-  async function rerun_recipe(mockApi, sendEventSpy) {
+  async function rerun_recipe({ mockNormandyApi, sendEventSpy }) {
     const recipe = {
       id: 1,
       arguments: {
@@ -201,7 +201,7 @@ decorate_task(
         extensionApiId: 1,
       },
     };
-    mockApi.extensionDetails = {
+    mockNormandyApi.extensionDetails = {
       [recipe.arguments.extensionApiId]: extensionDetailsFactory({
         id: recipe.arguments.extensionApiId,
       }),
@@ -266,10 +266,10 @@ decorate_task(
 
 decorate_task(
   AddonRollouts.withTestMock(),
-  ensureAddonCleanup,
+  ensureAddonCleanup(),
   withMockNormandyApi(),
   withSendEventSpy(),
-  async function conflicting_rollout(mockApi, sendEventSpy) {
+  async function conflicting_rollout({ mockNormandyApi, sendEventSpy }) {
     const recipe = {
       id: 1,
       arguments: {
@@ -277,7 +277,7 @@ decorate_task(
         extensionApiId: 1,
       },
     };
-    mockApi.extensionDetails = {
+    mockNormandyApi.extensionDetails = {
       [recipe.arguments.extensionApiId]: extensionDetailsFactory({
         id: recipe.arguments.extensionApiId,
       }),
@@ -362,10 +362,13 @@ decorate_task(
 
 decorate_task(
   AddonRollouts.withTestMock(),
-  ensureAddonCleanup,
+  ensureAddonCleanup(),
   withMockNormandyApi(),
   withSendEventSpy(),
-  async function enroll_failed_addon_id_changed(mockApi, sendEventSpy) {
+  async function enroll_failed_addon_id_changed({
+    mockNormandyApi,
+    sendEventSpy,
+  }) {
     const recipe = {
       id: 1,
       arguments: {
@@ -373,7 +376,7 @@ decorate_task(
         extensionApiId: 1,
       },
     };
-    mockApi.extensionDetails = {
+    mockNormandyApi.extensionDetails = {
       [recipe.arguments.extensionApiId]: extensionDetailsFactory({
         id: recipe.arguments.extensionApiId,
       }),
@@ -454,10 +457,13 @@ decorate_task(
 
 decorate_task(
   AddonRollouts.withTestMock(),
-  ensureAddonCleanup,
+  ensureAddonCleanup(),
   withMockNormandyApi(),
   withSendEventSpy(),
-  async function enroll_failed_upgrade_required(mockApi, sendEventSpy) {
+  async function enroll_failed_upgrade_required({
+    mockNormandyApi,
+    sendEventSpy,
+  }) {
     const recipe = {
       id: 1,
       arguments: {
@@ -465,7 +471,7 @@ decorate_task(
         extensionApiId: 1,
       },
     };
-    mockApi.extensionDetails = {
+    mockNormandyApi.extensionDetails = {
       [recipe.arguments.extensionApiId]: extensionDetailsFactory({
         id: recipe.arguments.extensionApiId,
         xpi: FIXTURE_ADDON_DETAILS["normandydriver-a-2.0"].url,
