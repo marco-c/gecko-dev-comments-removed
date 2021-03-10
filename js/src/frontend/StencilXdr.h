@@ -11,6 +11,7 @@
 
 #include "frontend/CompilationStencil.h"  
 #include "frontend/ObjLiteral.h"          
+#include "frontend/ParserAtom.h"          
 #include "frontend/Stencil.h"  
 #include "vm/SharedStencil.h"  
 #include "vm/Xdr.h"            
@@ -61,6 +62,13 @@ class StencilXDR {
   template <XDRMode mode>
   static XDRResult codeSharedDataContainer(XDRState<mode>* xdr,
                                            SharedDataContainer& sharedData);
+
+  template <XDRMode mode>
+  static XDRResult codeParserAtom(XDRState<mode>* xdr, ParserAtom** atomp);
+
+  template <XDRMode mode>
+  static XDRResult codeParserAtomSpan(XDRState<mode>* xdr,
+                                      ParserAtomSpan& parserAtomData);
 };
 
 } 
