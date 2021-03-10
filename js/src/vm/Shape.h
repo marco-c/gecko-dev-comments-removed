@@ -640,33 +640,8 @@ class MOZ_RAII AutoKeepShapeCaches {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class AccessorShape;
 class Shape;
-class UnownedBaseShape;
 struct StackBaseShape;
 
 
@@ -703,8 +678,10 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   ObjectFlags flags;
 
+#ifndef JS_64BIT
   
-  GCPtrUnownedBaseShape unowned_;
+  uint64_t padding_ = 0;
+#endif
 
   BaseShape(const BaseShape& base) = delete;
   BaseShape& operator=(const BaseShape& other) = delete;
@@ -715,17 +692,7 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   explicit inline BaseShape(const StackBaseShape& base);
 
   
-  ~BaseShape();
-
-  bool isOwned() const { return unowned_ != nullptr; }
-
-  static void copyFromUnowned(BaseShape& dest, UnownedBaseShape& src);
-  inline void adoptUnowned(UnownedBaseShape* other);
-
-  void setOwned(UnownedBaseShape* unowned) {
-    MOZ_ASSERT(unowned);
-    unowned_ = unowned;
-  }
+  ~BaseShape() = delete;
 
   ObjectFlags objectFlags() const { return flags; }
 
@@ -733,19 +700,7 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
 
 
-  static UnownedBaseShape* getUnowned(JSContext* cx, StackBaseShape& base);
-
-  
-  inline UnownedBaseShape* unowned();
-
-  
-  inline UnownedBaseShape* baseUnowned();
-
-  
-  inline UnownedBaseShape* toUnowned();
-
-  
-  void assertConsistency();
+  static BaseShape* get(JSContext* cx, StackBaseShape& base);
 
   
   static inline size_t offsetOfFlags() { return offsetof(BaseShape, flags); }
@@ -764,24 +719,8 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   }
 };
 
-class UnownedBaseShape : public BaseShape {};
 
-UnownedBaseShape* BaseShape::unowned() {
-  return isOwned() ? baseUnowned() : toUnowned();
-}
-
-UnownedBaseShape* BaseShape::toUnowned() {
-  MOZ_ASSERT(!isOwned() && !unowned_);
-  return static_cast<UnownedBaseShape*>(this);
-}
-
-UnownedBaseShape* BaseShape::baseUnowned() {
-  MOZ_ASSERT(isOwned() && unowned_);
-  return unowned_;
-}
-
-
-struct StackBaseShape : public DefaultHasher<WeakHeapPtr<UnownedBaseShape*>> {
+struct StackBaseShape : public DefaultHasher<WeakHeapPtr<BaseShape*>> {
   ObjectFlags flags;
   const JSClass* clasp;
 
@@ -798,22 +737,18 @@ struct StackBaseShape : public DefaultHasher<WeakHeapPtr<UnownedBaseShape*>> {
     MOZ_IMPLICIT Lookup(const StackBaseShape& base)
         : flags(base.flags), clasp(base.clasp) {}
 
-    MOZ_IMPLICIT Lookup(UnownedBaseShape* base)
-        : flags(base->objectFlags()), clasp(base->clasp()) {
-      MOZ_ASSERT(!base->isOwned());
-    }
+    MOZ_IMPLICIT Lookup(BaseShape* base)
+        : flags(base->objectFlags()), clasp(base->clasp()) {}
 
-    explicit Lookup(const WeakHeapPtr<UnownedBaseShape*>& base)
+    explicit Lookup(const WeakHeapPtr<BaseShape*>& base)
         : flags(base.unbarrieredGet()->objectFlags()),
-          clasp(base.unbarrieredGet()->clasp()) {
-      MOZ_ASSERT(!base.unbarrieredGet()->isOwned());
-    }
+          clasp(base.unbarrieredGet()->clasp()) {}
   };
 
   static HashNumber hash(const Lookup& lookup) {
     return mozilla::HashGeneric(lookup.flags.toRaw(), lookup.clasp);
   }
-  static inline bool match(const WeakHeapPtr<UnownedBaseShape*>& key,
+  static inline bool match(const WeakHeapPtr<BaseShape*>& key,
                            const Lookup& lookup) {
     return key.unbarrieredGet()->flags == lookup.flags &&
            key.unbarrieredGet()->clasp() == lookup.clasp;
@@ -847,9 +782,8 @@ struct DefaultHasher<jsid> {
 
 namespace js {
 
-using BaseShapeSet =
-    JS::WeakCache<JS::GCHashSet<WeakHeapPtr<UnownedBaseShape*>, StackBaseShape,
-                                SystemAllocPolicy>>;
+using BaseShapeSet = JS::WeakCache<
+    JS::GCHashSet<WeakHeapPtr<BaseShape*>, StackBaseShape, SystemAllocPolicy>>;
 
 class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   friend class ::JSObject;
@@ -971,15 +905,6 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
                   isDataProperty() == (p->maybeSlot() != maybeSlot()));
     parent = p;
   }
-
-  bool ensureOwnBaseShape(JSContext* cx) {
-    if (base()->isOwned()) {
-      return true;
-    }
-    return makeOwnBaseShape(cx);
-  }
-
-  bool makeOwnBaseShape(JSContext* cx);
 
   [[nodiscard]] MOZ_ALWAYS_INLINE bool maybeCreateCacheForLookup(JSContext* cx);
 
@@ -1113,7 +1038,7 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   inline Shape(const StackShape& other, uint32_t nfixed);
 
   
-  inline Shape(UnownedBaseShape* base, uint32_t nfixed);
+  inline Shape(BaseShape* base, uint32_t nfixed);
 
   
   Shape(const Shape& other) = delete;
@@ -1190,8 +1115,8 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
 
   bool matchesParamsAfterId(BaseShape* base, uint32_t aslot, unsigned aattrs,
                             GetterOp rawGetter, SetterOp rawSetter) const {
-    return base->unowned() == this->base()->unowned() && maybeSlot() == aslot &&
-           attrs == aattrs && getter() == rawGetter && setter() == rawSetter;
+    return base == this->base() && maybeSlot() == aslot && attrs == aattrs &&
+           getter() == rawGetter && setter() == rawSetter;
   }
 
   static bool isDataProperty(unsigned attrs, GetterOp getter, SetterOp setter) {
@@ -1292,6 +1217,7 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
  private:
   void setBase(BaseShape* base) {
     MOZ_ASSERT(base);
+    MOZ_ASSERT(inDictionary());
     setHeaderPtr(base);
   }
 
@@ -1427,11 +1353,9 @@ class MOZ_RAII AutoRooterGetterSetter {
 };
 
 struct EmptyShape : public js::Shape {
-  EmptyShape(UnownedBaseShape* base, uint32_t nfixed)
-      : js::Shape(base, nfixed) {}
+  EmptyShape(BaseShape* base, uint32_t nfixed) : js::Shape(base, nfixed) {}
 
-  static Shape* new_(JSContext* cx, Handle<UnownedBaseShape*> base,
-                     uint32_t nfixed);
+  static Shape* new_(JSContext* cx, Handle<BaseShape*> base, uint32_t nfixed);
 
   
 
@@ -1537,7 +1461,7 @@ using InitialShapeSet = JS::WeakCache<
 
 struct StackShape {
   
-  UnownedBaseShape* base;
+  BaseShape* base;
   jsid propid;
   GetterOp rawGetter;
   SetterOp rawSetter;
@@ -1545,7 +1469,7 @@ struct StackShape {
   uint8_t attrs;
   uint8_t mutableFlags;
 
-  explicit StackShape(UnownedBaseShape* base, jsid propid, uint32_t slot,
+  explicit StackShape(BaseShape* base, jsid propid, uint32_t slot,
                       unsigned attrs)
       : base(base),
         propid(propid),
@@ -1560,7 +1484,7 @@ struct StackShape {
   }
 
   explicit StackShape(Shape* shape)
-      : base(shape->base()->unowned()),
+      : base(shape->base()),
         propid(shape->propidRef()),
         rawGetter(shape->getter()),
         rawSetter(shape->setter()),
@@ -1637,7 +1561,7 @@ class MutableWrappedPtrOperations<StackShape, Wrapper>
     ss().updateGetterSetter(rawGetter, rawSetter);
   }
   void setSlot(uint32_t slot) { ss().setSlot(slot); }
-  void setBase(UnownedBaseShape* base) { ss().base = base; }
+  void setBase(BaseShape* base) { ss().base = base; }
   void setAttrs(uint8_t attrs) { ss().attrs = attrs; }
 };
 
@@ -1673,7 +1597,7 @@ class NurseryShapesRef : public gc::BufferableRef {
   void trace(JSTracer* trc) override;
 };
 
-inline Shape::Shape(UnownedBaseShape* base, uint32_t nfixed)
+inline Shape::Shape(BaseShape* base, uint32_t nfixed)
     : CellWithTenuredGCPointer(base),
       propid_(JSID_EMPTY),
       immutableFlags(SHAPE_INVALID_SLOT | (nfixed << FIXED_SLOTS_SHIFT)),
