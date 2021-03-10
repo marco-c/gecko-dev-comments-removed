@@ -5,6 +5,8 @@
 
 
 #include "mozilla/dom/JSActorManager.h"
+
+#include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/JSActorService.h"
 #include "mozilla/dom/PWindowGlobal.h"
 #include "mozilla/ipc/ProtocolUtils.h"
