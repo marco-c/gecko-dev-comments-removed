@@ -2829,7 +2829,7 @@ nsIFrame* Selection::GetSelectionAnchorGeometry(SelectionRegion aRegion,
   
   focusRect += focusFrame->GetOffsetTo(anchorFrame);
 
-  aRect->UnionRectEdges(anchorRect, focusRect);
+  *aRect = anchorRect.UnionEdges(focusRect);
   return anchorFrame;
 }
 

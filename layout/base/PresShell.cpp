@@ -3355,7 +3355,7 @@ static void AccumulateFrameBounds(nsIFrame* aContainerFrame, nsIFrame* aFrame,
     
     
     
-    aRect.UnionRectEdges(aRect, transformedBounds);
+    aRect = aRect.UnionEdges(transformedBounds);
   } else {
     aHaveRect = true;
     aRect = transformedBounds;
