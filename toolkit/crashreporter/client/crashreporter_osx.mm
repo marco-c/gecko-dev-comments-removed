@@ -122,12 +122,10 @@ static bool RestartApplication() {
 
   [mSubmitReportButton setTitle:Str(ST_CHECKSUBMIT)];
   [mIncludeURLButton setTitle:Str(ST_CHECKURL)];
-  [mEmailMeButton setTitle:Str(ST_CHECKEMAIL)];
   [mViewReportOkButton setTitle:Str(ST_OK)];
 
   [mCommentText setPlaceholder:Str(ST_COMMENTGRAYTEXT)];
   if (gRTLlayout) [mCommentText toggleBaseWritingDirection:self];
-  [[mEmailText cell] setPlaceholderString:Str(ST_EMAILGRAYTEXT)];
 
   if (gQueryParameters.isMember("URL")) {
     
@@ -280,14 +278,6 @@ static bool RestartApplication() {
   [self updateURL];
 }
 
-- (IBAction)emailMeClicked:(id)sender {
-  [self updateEmail];
-}
-
-- (void)controlTextDidChange:(NSNotification*)note {
-  [self updateEmail];
-}
-
 - (void)textDidChange:(NSNotification*)aNotification {
   
   if ([[[mCommentText textStorage] mutableString] length] > 0)
@@ -362,17 +352,17 @@ static bool RestartApplication() {
     [mRestartButton setKeyEquivalent:@"\r"];
   }
 
-  NSButton* checkboxes[] = {mSubmitReportButton, mIncludeURLButton, mEmailMeButton};
+  NSButton* checkboxes[] = {mSubmitReportButton, mIncludeURLButton};
 
-  for (int i = 0; i < 3; i++) {
-    NSRect frame = [checkboxes[i] frame];
-    [checkboxes[i] sizeToFit];
+  for (auto checkbox : checkboxes) {
+    NSRect frame = [checkbox frame];
+    [checkbox sizeToFit];
     if (gRTLlayout) {
       
       float oldWidth = frame.size.width;
-      frame = [checkboxes[i] frame];
+      frame = [checkbox frame];
       frame.origin.x += oldWidth - frame.size.width;
-      [checkboxes[i] setFrame:frame];
+      [checkbox setFrame:frame];
     }
     
     float neededWidth = frame.origin.x + frame.size.width + 20;
@@ -391,10 +381,10 @@ static bool RestartApplication() {
   
   
   
-  NSView* views[] = {mSubmitReportButton, mViewReportButton, mCommentScrollView, mIncludeURLButton,
-                     mEmailMeButton,      mEmailText,        mProgressIndicator, mProgressText};
-  for (unsigned int i = 0; i < sizeof(views) / sizeof(views[0]); i++) {
-    [views[i] setAutoresizingMask:NSViewMinYMargin];
+  NSView* views[] = {mSubmitReportButton, mViewReportButton,  mCommentScrollView,
+                     mIncludeURLButton,   mProgressIndicator, mProgressText};
+  for (auto view : views) {
+    [view setAutoresizingMask:NSViewMinYMargin];
   }
 }
 
@@ -444,10 +434,8 @@ static bool RestartApplication() {
 - (void)enableControls:(BOOL)enabled {
   [mViewReportButton setEnabled:enabled];
   [mIncludeURLButton setEnabled:enabled];
-  [mEmailMeButton setEnabled:enabled];
   [mCommentText setEnabled:enabled];
   [mCommentScrollView setHasVerticalScroller:enabled];
-  [self updateEmail];
 }
 
 - (void)updateSubmit {
@@ -473,14 +461,11 @@ static bool RestartApplication() {
 }
 
 - (void)updateEmail {
-  if ([mEmailMeButton state] == NSOnState && [mSubmitReportButton state] == NSOnState) {
-    NSString* email = [mEmailText stringValue];
-    gQueryParameters["Email"] = [email UTF8String];
-    [mEmailText setEnabled:YES];
-  } else {
-    gQueryParameters.removeMember("Email");
-    [mEmailText setEnabled:NO];
-  }
+  
+  
+  
+  [mEmailMeButton setHidden:YES];
+  [mEmailText setHidden:YES];
 }
 
 - (void)sendReport {
