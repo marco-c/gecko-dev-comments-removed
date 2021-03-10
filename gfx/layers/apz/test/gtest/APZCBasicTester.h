@@ -81,6 +81,16 @@ class APZCBasicTester : public APZCTesterBase {
     mcc->AdvanceBy(increment);
     apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
   }
+  
+
+
+  void SampleAnimationOneFrame() {
+    const TimeDuration increment = TimeDuration::FromMilliseconds(17);
+    ParentLayerPoint pointOut;
+    AsyncTransform viewTransformOut;
+    mcc->AdvanceBy(increment);
+    apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
+  }
 
   
 
