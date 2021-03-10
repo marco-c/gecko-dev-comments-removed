@@ -87,42 +87,44 @@ void BaseHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   }
 
   
-  auto entry = mTrackedURIs.LookupForAdd(aURI);
-  MOZ_DIAGNOSTIC_ASSERT(!entry || !entry.Data().mLinks.IsEmpty(),
-                        "An empty key was kept around in our hashtable!");
-  if (!entry) {
-    ScheduleVisitedQuery(aURI);
-  }
+  auto* const links =
+      mTrackedURIs.WithEntryHandle(aURI, [&](auto&& entry) -> ObservingLinks* {
+        MOZ_DIAGNOSTIC_ASSERT(!entry || !entry->mLinks.IsEmpty(),
+                              "An empty key was kept around in our hashtable!");
+        if (!entry) {
+          ScheduleVisitedQuery(aURI);
+        }
 
-  if (!aLink) {
-    
-    
-    
-    MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess(),
-                          "We should only ever get a null Link "
-                          "in the parent process!");
-    
-    if (!entry) {
-      entry.OrRemove();
-    }
+        if (!aLink) {
+          
+          
+          
+          MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess(),
+                                "We should only ever get a null Link "
+                                "in the parent process!");
+          return nullptr;
+        }
+
+        return &entry.OrInsertWith([] { return ObservingLinks{}; });
+      });
+
+  if (!links) {
     return;
   }
 
-  ObservingLinks& links = entry.OrInsert([] { return ObservingLinks{}; });
-
   
   
-  MOZ_DIAGNOSTIC_ASSERT(!links.mLinks.Contains(aLink),
+  MOZ_DIAGNOSTIC_ASSERT(!links->mLinks.Contains(aLink),
                         "Already tracking this Link object!");
   
   
-  MOZ_DIAGNOSTIC_ASSERT(links.mStatus != VisitedStatus::Visited,
+  MOZ_DIAGNOSTIC_ASSERT(links->mStatus != VisitedStatus::Visited,
                         "We don't keep tracking known-visited links");
 
-  links.mLinks.AppendElement(aLink);
+  links->mLinks.AppendElement(aLink);
 
   
-  switch (links.mStatus) {
+  switch (links->mStatus) {
     case VisitedStatus::Unknown:
       break;
     case VisitedStatus::Unvisited:
@@ -131,7 +133,7 @@ void BaseHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
       }
       [[fallthrough]];
     case VisitedStatus::Visited:
-      aLink->VisitedQueryFinished(links.mStatus == VisitedStatus::Visited);
+      aLink->VisitedQueryFinished(links->mStatus == VisitedStatus::Visited);
       break;
   }
 }
@@ -150,7 +152,7 @@ void BaseHistory::UnregisterVisitedCallback(nsIURI* aURI, Link* aLink) {
     return;
   }
 
-  ObserverArray& observers = entry.Data().mLinks;
+  ObserverArray& observers = entry->mLinks;
   if (!observers.RemoveElement(aLink)) {
     MOZ_ASSERT_UNREACHABLE("Trying to unregister node that wasn't registered!");
     return;

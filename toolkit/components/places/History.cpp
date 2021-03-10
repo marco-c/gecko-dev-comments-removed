@@ -1843,9 +1843,8 @@ History::VisitURI(nsIWidget* aWidget, nsIURI* aURI, nsIURI* aLastVisitedURI,
     auto entry = mRecentlyVisitedURIs.Lookup(aURI);
     
     
-    if (entry &&
-        (PR_Now() - entry.Data().mTime) < RECENTLY_VISITED_URIS_MAX_AGE) {
-      bool wasHidden = entry.Data().mHidden;
+    if (entry && (PR_Now() - entry->mTime) < RECENTLY_VISITED_URIS_MAX_AGE) {
+      bool wasHidden = entry->mHidden;
       
       
       AppendToRecentlyVisitedURIs(aURI, place.hidden);

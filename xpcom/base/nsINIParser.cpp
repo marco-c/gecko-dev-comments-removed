@@ -205,7 +205,7 @@ nsresult nsINIParser::SetString(const char* aSection, const char* aKey,
       return;
     }
 
-    INIValue* v = entry.Data().get();
+    INIValue* v = entry->get();
 
     
     
