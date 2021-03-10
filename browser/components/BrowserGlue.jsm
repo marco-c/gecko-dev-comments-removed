@@ -1380,16 +1380,23 @@ BrowserGlue.prototype = {
         "1.0",
         "resource://builtin-themes/proton-dark/"
       );
+
+      const kProtonLightThemeID = "firefox-compact-proton-light@mozilla.org";
+      AddonManager.maybeInstallBuiltinAddon(
+        kProtonLightThemeID,
+        "1.0",
+        "resource://builtin-themes/proton-light/"
+      );
       AsyncShutdown.profileChangeTeardown.addBlocker(
-        "Uninstall Proton Dark Mode",
+        "Uninstall Proton themes",
         async () => {
-          try {
-            let addon = await AddonManager.getAddonByID(kProtonDarkThemeID);
-            await addon.uninstall();
-          } catch (e) {
-            Cu.reportError(
-              "Failed to uninstall firefox-compact-proton-dark on shutdown"
-            );
+          for (let themeID of [kProtonDarkThemeID, kProtonLightThemeID]) {
+            try {
+              let addon = await AddonManager.getAddonByID(themeID);
+              await addon.uninstall();
+            } catch (e) {
+              Cu.reportError(`Failed to uninstall ${themeID} on shutdown`);
+            }
           }
         }
       );
