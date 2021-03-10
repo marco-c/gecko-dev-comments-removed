@@ -56,7 +56,6 @@ enum class TextureFlags : uint32_t {
   
   DEALLOCATE_CLIENT = 1 << 6,
   DEALLOCATE_SYNC = 1 << 6,  
-  DEALLOCATE_MAIN_THREAD = 1 << 8,
   
   
   
