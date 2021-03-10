@@ -230,9 +230,11 @@ var PlacesOrganizer = {
     }
 
     
-    document
-      .getElementById("placesContext")
-      .removeChild(document.getElementById("placesContext_show:info"));
+    let contextMenu = document.getElementById("placesContext");
+    contextMenu.removeChild(document.getElementById("placesContext_show:info"));
+    contextMenu.removeChild(
+      document.getElementById("placesContext_show_bookmark:info")
+    );
 
     if (!Services.policies.isAllowed("profileImport")) {
       document
