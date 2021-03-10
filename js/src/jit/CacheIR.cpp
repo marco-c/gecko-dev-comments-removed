@@ -602,14 +602,16 @@ static NativeGetPropCacheability CanAttachNativeGetProp(
   return CanAttachNone;
 }
 
-static void GuardGroupProto(CacheIRWriter& writer, JSObject* obj,
-                            ObjOperandId objId) {
-  
+static void GuardReceiverProto(CacheIRWriter& writer, JSObject* obj,
+                               ObjOperandId objId) {
   
   
 
-  ObjectGroup* group = obj->group();
-  writer.guardGroupForProto(objId, group);
+  if (JSObject* proto = obj->staticPrototype()) {
+    writer.guardProto(objId, proto);
+  } else {
+    writer.guardNullProto(objId);
+  }
 }
 
 
@@ -640,24 +642,6 @@ static void TestMatchingNativeReceiver(CacheIRWriter& writer, NativeObject* obj,
 static void TestMatchingProxyReceiver(CacheIRWriter& writer, ProxyObject* obj,
                                       ObjOperandId objId) {
   writer.guardShapeForClass(objId, obj->shape());
-}
-
-
-
-static void GeneratePrototypeGuardsForReceiver(CacheIRWriter& writer,
-                                               JSObject* obj,
-                                               ObjOperandId objId) {
-  
-  
-  
-  if (obj->hasUncacheableProto()) {
-    MOZ_ASSERT(obj->is<NativeObject>());
-    GuardGroupProto(writer, obj, objId);
-  }
-
-  
-  MOZ_ASSERT_IF(obj->is<TypedObject>() || obj->is<ProxyObject>(),
-                !obj->hasUncacheableProto());
 }
 
 static bool ProtoChainSupportsTeleporting(JSObject* obj, JSObject* holder) {
@@ -725,7 +709,6 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   
   
   
-  
 
   MOZ_ASSERT(holder);
   MOZ_ASSERT(obj != holder);
@@ -734,10 +717,6 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   
   JSObject* pobj = obj;
   if (!obj->isDelegate()) {
-    
-    
-    GeneratePrototypeGuardsForReceiver(writer, obj, objId);
-
     pobj = obj->staticPrototype();
   }
   MOZ_ASSERT(pobj->isDelegate());
@@ -751,10 +730,6 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   if (pobj == holder) {
     return;
   }
-
-  
-  
-  
 
   
   MOZ_ASSERT(pobj == obj || pobj == obj->staticPrototype());
@@ -774,8 +749,8 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
 static void GeneratePrototypeHoleGuards(CacheIRWriter& writer, JSObject* obj,
                                         ObjOperandId objId,
                                         bool alwaysGuardFirstProto) {
-  if (alwaysGuardFirstProto || obj->hasUncacheableProto()) {
-    GuardGroupProto(writer, obj, objId);
+  if (alwaysGuardFirstProto) {
+    GuardReceiverProto(writer, obj, objId);
   }
 
   JSObject* pobj = obj->staticPrototype();
@@ -783,10 +758,6 @@ static void GeneratePrototypeHoleGuards(CacheIRWriter& writer, JSObject* obj,
     ObjOperandId protoId = writer.loadObject(pobj);
 
     
-    if (pobj->hasUncacheableProto()) {
-      GuardGroupProto(writer, pobj, protoId);
-    }
-
     
     
     writer.guardShape(protoId, pobj->as<NativeObject>().lastProperty());
@@ -825,20 +796,15 @@ static bool UncacheableProtoOnChain(JSObject* obj) {
   }
 }
 
+
+
+
+
+
 static void ShapeGuardProtoChain(CacheIRWriter& writer, JSObject* obj,
                                  ObjOperandId objId) {
   while (true) {
     JSObject* proto = obj->staticPrototype();
-
-    
-    if (obj->hasUncacheableProto()) {
-      if (proto) {
-        writer.guardProto(objId, proto);
-      } else {
-        writer.guardNullProto(objId);
-      }
-    }
-
     if (!proto) {
       return;
     }
@@ -4130,7 +4096,7 @@ AttachDecision SetPropIRGenerator::tryAttachAddOrUpdateSparseElement(
   
   
   
-  GuardGroupProto(writer, obj, objId);
+  GuardReceiverProto(writer, obj, objId);
 
   
   
@@ -4979,9 +4945,6 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArray() {
   
   writer.guardShape(objId, obj->as<ArrayObject>().lastProperty());
   writer.guardArrayIsPacked(objId);
-  if (obj->hasUncacheableProto()) {
-    writer.guardProto(objId, arrProto);
-  }
 
   
   ObjOperandId arrProtoId = writer.loadObject(arrProto);
