@@ -2853,6 +2853,7 @@ GeckoDriver.prototype.acceptConnections = function(cmd) {
 
 
 
+
 GeckoDriver.prototype.quit = async function(cmd) {
   const quits = ["eConsiderQuit", "eAttemptQuit", "eForceQuit"];
 
@@ -2886,10 +2887,24 @@ GeckoDriver.prototype.quit = async function(cmd) {
   this.deleteSession();
 
   
+  const cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
+    Ci.nsISupportsPRBool
+  );
+  Services.obs.notifyObservers(cancelQuit, "quit-application-requested");
+
+  
+  if (cancelQuit.data) {
+    mode |= Ci.nsIAppStartup.eForceQuit;
+  }
+
+  
   let quitApplication = waitForObserverTopic("quit-application");
   Services.startup.quit(mode);
 
-  return { cause: (await quitApplication).data };
+  return {
+    cause: (await quitApplication).data,
+    forced: cancelQuit.data,
+  };
 };
 
 GeckoDriver.prototype.installAddon = function(cmd) {
