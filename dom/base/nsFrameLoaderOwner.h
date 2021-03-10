@@ -83,7 +83,7 @@ class nsFrameLoaderOwner : public nsISupports {
   void ReplaceFrameLoader(nsFrameLoader* aNewFrameLoader);
 
   void AttachFrameLoader(nsFrameLoader* aFrameLoader);
-  void DeattachFrameLoader(nsFrameLoader* aFrameLoader);
+  void DetachFrameLoader(nsFrameLoader* aFrameLoader);
   void FrameLoaderDestroying(nsFrameLoader* aFrameLoader);
 
  private:
@@ -115,6 +115,9 @@ class nsFrameLoaderOwner : public nsISupports {
   virtual ~nsFrameLoaderOwner() = default;
   RefPtr<nsFrameLoader> mFrameLoader;
 
+  
+  
+  
   mozilla::LinkedList<nsFrameLoader> mFrameLoaderList;
 };
 
