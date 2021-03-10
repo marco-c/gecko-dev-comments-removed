@@ -658,13 +658,6 @@ impl BlendMode {
     }
 }
 
-#[derive(PartialEq)]
-struct TargetSelector {
-    size: DeviceIntSize,
-    num_layers: usize,
-    format: ImageFormat,
-}
-
 
 struct DebugOverlayState {
     
@@ -2555,7 +2548,6 @@ impl Renderer {
             _ => panic!("bug: composite on non-picture?"),
         };
 
-        
         
         
         
