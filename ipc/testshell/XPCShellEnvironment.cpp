@@ -27,7 +27,6 @@
 
 #include "mozilla/Utf8.h"  
 #include "mozilla/XPCOM.h"
-#include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/ScriptSettings.h"
 
 #include "nsIPrincipal.h"
