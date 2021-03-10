@@ -52,6 +52,7 @@ struct CompilationStencil;
 struct CompilationAtomCache;
 struct BaseCompilationStencil;
 struct CompilationGCOutput;
+struct CompilationStencilMerger;
 class RegExpStencil;
 class BigIntStencil;
 class StencilXDR;
@@ -184,6 +185,8 @@ class RegExpStencil {
   
   uint32_t flags_;
 
+  friend struct CompilationStencilMerger;
+
  public:
   RegExpStencil() = default;
 
@@ -250,6 +253,7 @@ class BigIntStencil {
 
 class ScopeStencil {
   friend class StencilXDR;
+  friend struct CompilationStencilMerger;
 
   
   
@@ -753,6 +757,8 @@ class TaggedScriptThingIndex {
 
 
 class ScriptStencil {
+  friend struct CompilationStencilMerger;
+
  public:
   
   
@@ -855,6 +861,11 @@ class ScriptStencil {
   void setLazyFunctionEnclosingScopeIndex(ScopeIndex index) {
     lazyFunctionEnclosingScopeIndex_ = index;
     setHasLazyFunctionEnclosingScopeIndex();
+  }
+
+  void resetHasLazyFunctionEnclosingScopeIndexAfterStencilMerge() {
+    flags_ &= ~HasLazyFunctionEnclosingScopeIndexFlag;
+    lazyFunctionEnclosingScopeIndex_ = ScopeIndex::invalid();
   }
 
   ScopeIndex lazyFunctionEnclosingScopeIndex() const {
