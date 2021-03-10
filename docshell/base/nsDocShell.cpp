@@ -1213,10 +1213,9 @@ void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
     if (doc) {
       if (mBrowsingContext->IsTop()) {
         doc->NotifyPossibleTitleChange(false);
-        if (mScriptGlobal && mScriptGlobal->GetCurrentInnerWindowInternal()) {
-          
-          mScriptGlobal->GetCurrentInnerWindowInternal()->Thaw();
-        }
+      }
+      if (mScriptGlobal && mScriptGlobal->GetCurrentInnerWindowInternal()) {
+        mScriptGlobal->GetCurrentInnerWindowInternal()->Thaw(false);
       }
       nsCOMPtr<nsIChannel> channel = doc->GetChannel();
       if (channel) {
@@ -1229,8 +1228,7 @@ void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
       }
       RefPtr<PresShell> presShell = GetPresShell();
       if (presShell) {
-        
-        presShell->Thaw();
+        presShell->Thaw(false);
       }
     }
   } else if (!mFiredUnloadEvent) {
@@ -1239,16 +1237,12 @@ void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
     mFiredUnloadEvent = true;
     contentViewer->PageHide(false);
 
-    if (mBrowsingContext->IsTop()) {
-      if (mScriptGlobal && mScriptGlobal->GetCurrentInnerWindowInternal()) {
-        
-        mScriptGlobal->GetCurrentInnerWindowInternal()->Freeze();
-      }
+    if (mScriptGlobal && mScriptGlobal->GetCurrentInnerWindowInternal()) {
+      mScriptGlobal->GetCurrentInnerWindowInternal()->Freeze(false);
     }
     RefPtr<PresShell> presShell = GetPresShell();
     if (presShell) {
-      
-      presShell->Freeze();
+      presShell->Freeze(false);
     }
   }
 }

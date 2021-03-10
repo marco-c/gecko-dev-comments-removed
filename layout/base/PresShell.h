@@ -743,7 +743,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  void Freeze();
+  void Freeze(bool aIncludeSubDocuments = true);
   bool IsFrozen() { return mFrozen; }
 
   
@@ -751,7 +751,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  void Thaw();
+  void Thaw(bool aIncludeSubDocuments = true);
 
   void FireOrClearDelayedEvents(bool aFireEvents);
 
