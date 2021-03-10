@@ -105,6 +105,8 @@ class Accessible {
 
   bool IsCombobox() const { return HasGenericType(eCombobox); }
 
+  virtual bool IsLink() const = 0;
+
   
 
 

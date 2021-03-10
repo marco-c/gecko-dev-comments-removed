@@ -641,7 +641,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual bool IsLink() const;
+  virtual bool IsLink() const override;
 
   
 
