@@ -2831,8 +2831,8 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
   masm.bind(&resumeCatch);
   masm.loadPtr(Address(ReturnReg, offsetof(ResumeFromException, framePointer)),
                FramePointer);
-  masm.loadStackPtr(
-      Address(ReturnReg, offsetof(ResumeFromException, stackPointer)));
+  
+  
 
   
   
@@ -2846,6 +2846,10 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
   Register obj = masm.extractObject(val, scratch2);
   masm.loadPtr(Address(ReturnReg, offsetof(ResumeFromException, target)),
                scratch);
+  
+  masm.loadStackPtr(Address(ReturnReg, offsetof(ResumeFromException, stackPointer)));
+  
+  
   masm.movePtr(obj, WasmExceptionReg);
   masm.jump(scratch);
 
