@@ -74,16 +74,6 @@ class Transaction {
   mozilla::ipc::IPCResult CommitFromIPC(const MaybeDiscarded<Context>& aOwner,
                                         uint64_t aEpoch, ContentChild* aSource);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  void CommitWithoutSyncing(Context* aOwner);
-
  private:
   friend struct mozilla::ipc::IPDLParamTraits<Transaction<Context>>;
 

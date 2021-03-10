@@ -3880,9 +3880,9 @@ mozilla::ipc::IPCResult ContentParent::RecvCloneDocumentTreeInto(
     return IPC_OK();
   }
 
-  RemotenessChangeOptions options;
-  options.mRemoteType = cp->GetRemoteType();
-  target->ChangeRemoteness(options,  0)
+  target
+      ->ChangeRemoteness(cp->GetRemoteType(),  0,
+                          false,  0)
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [source = RefPtr{source}](BrowserParent* aBp) {

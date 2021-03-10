@@ -2338,8 +2338,7 @@ class Document : public nsINode,
 
 
   virtual bool CanSavePresentation(nsIRequest* aNewRequest,
-                                   uint16_t& aBFCacheCombo,
-                                   bool aIncludeSubdocuments);
+                                   uint16_t& aBFCacheCombo);
 
   virtual nsresult Init();
 

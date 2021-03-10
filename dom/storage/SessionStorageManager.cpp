@@ -50,8 +50,7 @@ void RecvPropagateBackgroundSessionStorageManager(
             sManagers->Get(aCurrentTopContextId)) {
       
       
-      
-      
+      MOZ_DIAGNOSTIC_ASSERT(!sManagers->Contains(aTargetTopContextId));
       sManagers->InsertOrUpdate(aTargetTopContextId, std::move(mgr));
     }
   }

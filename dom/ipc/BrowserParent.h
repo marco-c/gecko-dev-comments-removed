@@ -710,7 +710,6 @@ class BrowserParent final : public PBrowserParent,
   
   
   void SuspendProgressEvents() { mSuspendedProgressEvents = true; }
-  void ResumeProgressEvents() { mSuspendedProgressEvents = false; }
 
   bool CanCancelContentJS(nsIRemoteTab::NavigationType aNavigationType,
                           int32_t aNavigationIndex,

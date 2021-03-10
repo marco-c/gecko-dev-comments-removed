@@ -310,8 +310,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   nsresult PostHandleEvent(mozilla::EventChainPostVisitor& aVisitor) override;
 
-  void Suspend(bool aIncludeSubWindows = true);
-  void Resume(bool aIncludeSubWindows = true);
+  void Suspend();
+  void Resume();
   virtual bool IsSuspended() const override;
 
   
@@ -321,8 +321,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   
-  void Freeze(bool aIncludeSubWindows = true);
-  void Thaw(bool aIncludeSubWindows = true);
+  void Freeze();
+  void Thaw();
   virtual bool IsFrozen() const override;
   void SyncStateFromParentWindow();
 
@@ -1064,8 +1064,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
     return (aWindow->*aMethod)(aArgs...);
   }
 
-  void FreezeInternal(bool aIncludeSubWindows);
-  void ThawInternal(bool aIncludeSubWindows);
+  void FreezeInternal();
+  void ThawInternal();
 
   mozilla::CallState ShouldReportForServiceWorkerScopeInternal(
       const nsACString& aScope, bool* aResultOut);

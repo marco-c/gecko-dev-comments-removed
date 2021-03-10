@@ -36,8 +36,7 @@
 namespace mozilla {
 namespace dom {
 class CanonicalBrowsingContext;
-struct RemotenessChangeOptions;
-}  
+}
 namespace net {
 using ChildEndpointPromise =
     MozPromise<ipc::Endpoint<extensions::PStreamFilterChild>, bool, true>;
@@ -195,8 +194,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   static RefPtr<OpenPromise> ClaimParentLoad(DocumentLoadListener** aListener,
-                                             uint64_t aLoadIdent,
-                                             Maybe<uint64_t> aChannelId);
+                                             uint64_t aLoadIdent);
 
   
   
@@ -322,7 +320,9 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   bool MaybeTriggerProcessSwitch(bool* aWillSwitchToRemote);
   void TriggerProcessSwitch(dom::CanonicalBrowsingContext* aContext,
-                            const dom::RemotenessChangeOptions& aOptions);
+                            const nsCString& aRemoteType,
+                            bool aReplaceBrowsingContext,
+                            uint64_t aSpecificGroupId);
 
   
   
@@ -464,8 +464,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   nsTArray<StreamListenerFunction> mStreamListenerFunctions;
 
   nsCOMPtr<nsIChannel> mChannel;
-
-  Maybe<uint64_t> mDocumentChannelId;
 
   
   
