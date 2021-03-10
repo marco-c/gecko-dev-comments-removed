@@ -676,9 +676,6 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   enum Flag {
     
-    OWNED_SHAPE = 0x1,
-
-    
 
     
 
@@ -733,13 +730,13 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   
   ~BaseShape();
 
-  bool isOwned() const { return !!(flags & OWNED_SHAPE); }
+  bool isOwned() const { return unowned_ != nullptr; }
 
   static void copyFromUnowned(BaseShape& dest, UnownedBaseShape& src);
   inline void adoptUnowned(UnownedBaseShape* other);
 
   void setOwned(UnownedBaseShape* unowned) {
-    flags |= OWNED_SHAPE;
+    MOZ_ASSERT(unowned);
     unowned_ = unowned;
   }
 
