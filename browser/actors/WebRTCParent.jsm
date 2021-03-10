@@ -1198,12 +1198,8 @@ function prompt(aActor, aBrowser, aRequest) {
   
   
   if (notificationSilencingEnabled && sharingScreen) {
-    let [
-      silenceNotifications,
-      silenceNotificationsWarning,
-    ] = localization.formatMessagesSync([
+    let [silenceNotifications] = localization.formatMessagesSync([
       { id: "popup-silence-notifications-checkbox" },
-      { id: "popup-silence-notifications-checkbox-warning" },
     ]);
 
     options.checkbox = {
@@ -1211,7 +1207,6 @@ function prompt(aActor, aBrowser, aRequest) {
       checked: false,
       checkedState: {
         disableMainAction: false,
-        warningLabel: silenceNotificationsWarning.value,
       },
     };
   }
