@@ -38,11 +38,13 @@ class nsClassHashtable;
 
 
 
+
 template <class KeyClass, class DataType>
 using nsDataHashtable = nsBaseHashtable<KeyClass, DataType, DataType>;
 
 template <class KeyClass, class PtrType>
 class nsRefCountedHashtable;
+
 
 
 
@@ -64,7 +66,34 @@ using nsInterfaceHashtable =
 
 
 
+
 template <class KeyClass, class ClassType>
 using nsRefPtrHashtable = nsRefCountedHashtable<KeyClass, RefPtr<ClassType>>;
+
+namespace mozilla::detail {
+template <class KeyType>
+struct nsKeyClass;
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <class KeyType, class DataType>
+using nsTHashMap =
+    nsBaseHashtable<typename mozilla::detail::nsKeyClass<KeyType>::type,
+                    DataType, DataType>;
 
 #endif  
