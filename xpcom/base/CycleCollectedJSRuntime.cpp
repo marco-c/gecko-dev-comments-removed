@@ -428,11 +428,6 @@ void TraversalTracer::onChild(const JS::GCCellPtr& aThing) {
     
     
     JS_TraceShapeCycleCollectorChildren(this, aThing);
-  } else if (aThing.is<js::ObjectGroup>()) {
-    
-    
-    
-    JS_TraceObjectGroupCycleCollectorChildren(this, aThing);
   } else {
     JS::TraceChildren(this, aThing);
   }

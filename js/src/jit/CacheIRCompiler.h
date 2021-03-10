@@ -15,6 +15,10 @@
 #include "jit/SharedICRegisters.h"
 #include "js/ScalarType.h"  
 
+namespace JS {
+class BigInt;
+}
+
 namespace js {
 
 class TypedArrayObject;
@@ -810,8 +814,17 @@ class MOZ_RAII CacheIRCompiler {
                                                int32_t);
 
   [[nodiscard]] bool emitAtomicsReadModifyWriteResult(
-      ObjOperandId objId, IntPtrOperandId indexId, Int32OperandId valueId,
+      ObjOperandId objId, IntPtrOperandId indexId, uint32_t valueId,
       Scalar::Type elementType, AtomicsReadWriteModifyFn fn);
+
+  using AtomicsReadWriteModify64Fn = JS::BigInt* (*)(JSContext*,
+                                                     TypedArrayObject*, size_t,
+                                                     JS::BigInt*);
+
+  template <AtomicsReadWriteModify64Fn fn>
+  [[nodiscard]] bool emitAtomicsReadModifyWriteResult64(ObjOperandId objId,
+                                                        IntPtrOperandId indexId,
+                                                        uint32_t valueId);
 
   CACHE_IR_COMPILER_SHARED_GENERATED
 
@@ -860,10 +873,6 @@ class MOZ_RAII CacheIRCompiler {
   JS::Symbol* symbolStubField(uint32_t offset) {
     MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
     return (JS::Symbol*)readStubWord(offset, StubField::Type::Symbol);
-  }
-  ObjectGroup* groupStubField(uint32_t offset) {
-    MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
-    return (ObjectGroup*)readStubWord(offset, StubField::Type::ObjectGroup);
   }
   JS::Compartment* compartmentStubField(uint32_t offset) {
     MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
@@ -1104,6 +1113,7 @@ class MOZ_RAII AutoCallVM {
     leaveBaselineStubFrame();
   }
 
+  const AutoOutputRegister& output() const { return *output_; }
   ValueOperand outputValueReg() const { return output_->valueReg(); }
 };
 
