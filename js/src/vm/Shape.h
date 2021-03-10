@@ -635,11 +635,6 @@ class MOZ_RAII AutoKeepShapeCaches {
 
 
 
-
-
-
-
-
 class AccessorShape;
 class Shape;
 struct StackBaseShape;
@@ -677,10 +672,7 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
  private:
   JS::Realm* realm_;
-#ifndef JS_64BIT
-  
-  uint64_t padding_ = 0;
-#endif
+  GCPtr<TaggedProto> proto_;
 
   BaseShape(const BaseShape& base) = delete;
   BaseShape& operator=(const BaseShape& other) = delete;
@@ -699,13 +691,16 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   }
   JS::Compartment* maybeCompartment() const { return compartment(); }
 
+  TaggedProto proto() const { return proto_; }
+
   void setRealmForMergeRealms(JS::Realm* realm) { realm_ = realm; }
+  void setProtoForMergeRealms(TaggedProto proto) { proto_ = proto; }
 
   
 
 
 
-  static BaseShape* get(JSContext* cx, StackBaseShape& base);
+  static BaseShape* get(JSContext* cx, Handle<StackBaseShape> base);
 
   static const JS::TraceKind TraceKind = JS::TraceKind::BaseShape;
 
@@ -715,6 +710,10 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
   static constexpr size_t offsetOfRealm() {
     return offsetof(BaseShape, realm_);
+  }
+
+  static constexpr size_t offsetOfProto() {
+    return offsetof(BaseShape, proto_);
   }
 
  private:
@@ -731,29 +730,41 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 struct StackBaseShape : public DefaultHasher<WeakHeapPtr<BaseShape*>> {
   const JSClass* clasp;
   JS::Realm* realm;
+  TaggedProto proto;
 
-  inline StackBaseShape(const JSClass* clasp, JS::Realm* realm);
+  inline StackBaseShape(const JSClass* clasp, JS::Realm* realm,
+                        TaggedProto proto);
 
   struct Lookup {
     const JSClass* clasp;
     JS::Realm* realm;
+    TaggedProto proto;
 
     MOZ_IMPLICIT Lookup(const StackBaseShape& base)
-        : clasp(base.clasp), realm(base.realm) {}
+        : clasp(base.clasp), realm(base.realm), proto(base.proto) {}
 
     MOZ_IMPLICIT Lookup(BaseShape* base)
-        : clasp(base->clasp()), realm(base->realm()) {}
+        : clasp(base->clasp()), realm(base->realm()), proto(base->proto()) {}
   };
 
   static HashNumber hash(const Lookup& lookup) {
-    return mozilla::HashGeneric(lookup.clasp, lookup.realm);
+    HashNumber hash = MovableCellHasher<TaggedProto>::hash(lookup.proto);
+    return mozilla::AddToHash(hash,
+                              mozilla::HashGeneric(lookup.clasp, lookup.realm));
   }
   static inline bool match(const WeakHeapPtr<BaseShape*>& key,
                            const Lookup& lookup) {
     return key.unbarrieredGet()->clasp() == lookup.clasp &&
-           key.unbarrieredGet()->realm() == lookup.realm;
+           key.unbarrieredGet()->realm() == lookup.realm &&
+           key.unbarrieredGet()->proto() == lookup.proto;
   }
+
+  
+  void trace(JSTracer* trc);
 };
+
+template <typename Wrapper>
+class WrappedPtrOperations<StackBaseShape, Wrapper> {};
 
 static MOZ_ALWAYS_INLINE js::HashNumber HashId(jsid id) {
   
@@ -1038,8 +1049,10 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     return base()->maybeCompartment();
   }
 
-  static Shape* setObjectFlag(JSContext* cx, ObjectFlag flag, TaggedProto proto,
-                              Shape* last);
+  TaggedProto proto() const { return base()->proto(); }
+
+  static Shape* setObjectFlag(JSContext* cx, ObjectFlag flag, Shape* last);
+  static Shape* setProto(JSContext* cx, TaggedProto proto, Shape* last);
 
   ObjectFlags objectFlags() const { return objectFlags_; }
   bool hasObjectFlag(ObjectFlag flag) const {
@@ -1423,12 +1436,6 @@ struct InitialShapeEntry {
   WeakHeapPtr<Shape*> shape;
 
   
-
-
-
-  WeakHeapPtr<TaggedProto> proto;
-
-  
   struct Lookup {
     const JSClass* clasp;
     JS::Realm* realm;
@@ -1446,7 +1453,7 @@ struct InitialShapeEntry {
   };
 
   inline InitialShapeEntry();
-  inline InitialShapeEntry(Shape* shape, const TaggedProto& proto);
+  inline explicit InitialShapeEntry(Shape* shape);
 
   static HashNumber hash(const Lookup& lookup) {
     HashNumber hash = MovableCellHasher<TaggedProto>::hash(lookup.proto);
@@ -1460,7 +1467,7 @@ struct InitialShapeEntry {
            lookup.realm == shape->realm() &&
            lookup.nfixed == shape->numFixedSlots() &&
            lookup.objectFlags == shape->objectFlags() &&
-           key.proto.unbarrieredGet() == lookup.proto;
+           lookup.proto == shape->proto();
   }
   static void rekey(InitialShapeEntry& k, const InitialShapeEntry& newKey) {
     k = newKey;
@@ -1468,15 +1475,11 @@ struct InitialShapeEntry {
 
   bool needsSweep() {
     Shape* ushape = shape.unbarrieredGet();
-    TaggedProto uproto = proto.unbarrieredGet();
-    JSObject* protoObj = uproto.raw();
-    return (
-        gc::IsAboutToBeFinalizedUnbarriered(&ushape) ||
-        (uproto.isObject() && gc::IsAboutToBeFinalizedUnbarriered(&protoObj)));
+    return gc::IsAboutToBeFinalizedUnbarriered(&ushape);
   }
 
   bool operator==(const InitialShapeEntry& other) const {
-    return shape == other.shape && proto == other.proto;
+    return shape == other.shape;
   }
 };
 

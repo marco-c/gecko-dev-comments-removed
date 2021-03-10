@@ -169,6 +169,13 @@ class JSObject
   
   
   
+  
+  static bool setProtoUnchecked(JSContext* cx, JS::HandleObject obj,
+                                js::Handle<js::TaggedProto> proto);
+
+  
+  
+  
   inline bool isDelegate() const;
   static bool setDelegate(JSContext* cx, JS::HandleObject obj) {
     return setFlag(cx, obj, js::ObjectFlag::Delegate, GENERATE_SHAPE);
@@ -299,7 +306,7 @@ class JSObject
 
 
 
-  js::TaggedProto taggedProto() const { return group()->proto(); }
+  js::TaggedProto taggedProto() const { return shape()->proto(); }
 
   bool uninlinedIsProxyObject() const;
 
