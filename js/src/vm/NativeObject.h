@@ -753,8 +753,7 @@ class NativeObject : public JSObject {
 
   [[nodiscard]] static bool reshapeForShadowedProp(JSContext* cx,
                                                    HandleNativeObject obj);
-  static bool clearFlag(JSContext* cx, HandleNativeObject obj,
-                        BaseShape::Flag flag);
+  static bool clearFlag(JSContext* cx, HandleNativeObject obj, ObjectFlag flag);
 
   
   
@@ -817,18 +816,16 @@ class NativeObject : public JSObject {
   
   bool nonProxyIsExtensible() const = delete;
 
-  bool isExtensible() const {
-    return !hasAllFlags(js::BaseShape::NOT_EXTENSIBLE);
-  }
+  bool isExtensible() const { return !hasFlag(ObjectFlag::NotExtensible); }
 
   
 
 
 
-  bool isIndexed() const { return hasAllFlags(js::BaseShape::INDEXED); }
+  bool isIndexed() const { return hasFlag(ObjectFlag::Indexed); }
 
   static bool setHadElementsAccess(JSContext* cx, HandleNativeObject obj) {
-    return setFlags(cx, obj, js::BaseShape::HAD_ELEMENTS_ACCESS);
+    return setFlag(cx, obj, ObjectFlag::HadElementsAccess);
   }
 
   
@@ -836,11 +833,11 @@ class NativeObject : public JSObject {
 
 
   bool hadElementsAccess() const {
-    return hasAllFlags(js::BaseShape::HAD_ELEMENTS_ACCESS);
+    return hasFlag(ObjectFlag::HadElementsAccess);
   }
 
   bool hasInterestingSymbol() const {
-    return hasAllFlags(js::BaseShape::HAS_INTERESTING_SYMBOL);
+    return hasFlag(ObjectFlag::HasInterestingSymbol);
   }
 
   
@@ -1333,7 +1330,7 @@ class NativeObject : public JSObject {
     return getElementsHeader()->isSealed();
   }
   bool denseElementsAreFrozen() const {
-    return hasAllFlags(js::BaseShape::FROZEN_ELEMENTS);
+    return hasFlag(ObjectFlag::FrozenElements);
   }
 
   bool denseElementsArePacked() const {

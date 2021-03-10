@@ -146,8 +146,8 @@ bool ObjectElements::FreezeOrSeal(JSContext* cx, HandleNativeObject obj,
   }
 
   if (level == IntegrityLevel::Frozen) {
-    if (!JSObject::setFlags(cx, obj, BaseShape::FROZEN_ELEMENTS,
-                            JSObject::GENERATE_SHAPE)) {
+    if (!JSObject::setFlag(cx, obj, ObjectFlag::FrozenElements,
+                           JSObject::GENERATE_SHAPE)) {
       return false;
     }
   }
@@ -646,7 +646,7 @@ DenseElementResult NativeObject::maybeDensifySparseElements(
 
 
 
-  if (!NativeObject::clearFlag(cx, obj, BaseShape::INDEXED)) {
+  if (!NativeObject::clearFlag(cx, obj, ObjectFlag::Indexed)) {
     return DenseElementResult::Failure;
   }
 
