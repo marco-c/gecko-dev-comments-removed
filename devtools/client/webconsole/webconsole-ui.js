@@ -399,6 +399,17 @@ class WebConsoleUI {
         continue;
       }
 
+      
+      
+      
+      if (
+        (this.isBrowserToolboxConsole || this.isBrowserConsole) &&
+        resource.isAlreadyExistingResource &&
+        (resource.pageError?.private || resource.message?.private)
+      ) {
+        continue;
+      }
+
       if (resource.resourceType === TYPES.NETWORK_EVENT_STACKTRACE) {
         this.wrapper.networkDataProvider?.onStackTraceAvailable(resource);
         continue;
