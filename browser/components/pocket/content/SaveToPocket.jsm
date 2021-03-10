@@ -318,6 +318,12 @@ var SaveToPocket = {
     if (enabled) {
       win.document.documentElement.removeAttribute("pocketdisabled");
     } else {
+      
+      let savePageMenu = win.document.getElementById("context-pocket");
+      let saveLinkMenu = win.document.getElementById(
+        "context-savelinktopocket"
+      );
+      savePageMenu.hidden = saveLinkMenu.hidden = true;
       win.document.documentElement.setAttribute("pocketdisabled", "true");
     }
   },
