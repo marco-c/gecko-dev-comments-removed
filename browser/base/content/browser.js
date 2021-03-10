@@ -8994,10 +8994,6 @@ class TabDialogBox {
         }
       };
 
-      if (modalType == Ci.nsIPrompt.MODAL_TYPE_CONTENT) {
-        sizeTo = "limitheight";
-      }
-
       
       let dialog = dialogManager.open(
         aURL,

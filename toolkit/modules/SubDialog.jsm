@@ -108,8 +108,8 @@ SubDialog.prototype = {
     { features, closingCallback, closedCallback, sizeTo } = {},
     ...aParams
   ) {
-    if (["available", "limitheight"].includes(sizeTo)) {
-      this._box.setAttribute("sizeto", sizeTo);
+    if (sizeTo == "available") {
+      this._box.setAttribute("sizeto", "available");
     }
 
     
@@ -470,10 +470,6 @@ SubDialog.prototype = {
 
   resizeVertically() {
     let docEl = this._frame.contentDocument.documentElement;
-    function getDocHeight() {
-      let { scrollHeight } = docEl.ownerDocument.body || docEl;
-      return docEl.style.height || scrollHeight + "px";
-    }
 
     
     
@@ -497,27 +493,18 @@ SubDialog.prototype = {
     let frameSizeDifference =
       frameRect.top - boxRect.top + (boxRect.bottom - frameRect.bottom);
 
-    let contentPane =
-      this._frame.contentDocument.querySelector(".contentPane") ||
-      this._frame.contentDocument.querySelector("dialog");
-
-    let sizeTo = this._box.getAttribute("sizeto");
-    if (["available", "limitheight"].includes(sizeTo)) {
-      if (sizeTo == "limitheight") {
-        this._overlay.style.setProperty("--doc-height-px", getDocHeight());
-        contentPane?.classList.add("sizeDetermined");
-      } else {
-        
-        
-        this._box.style.setProperty("--box-top-px", `${boxRect.top}px`);
-      }
+    if (this._box.getAttribute("sizeto") == "available") {
+      
+      
+      this._box.style.setProperty("--box-top-px", `${boxRect.top}px`);
       return;
     }
 
     
     
     
-    let frameMinHeight = getDocHeight();
+    let { scrollHeight } = docEl.ownerDocument.body || docEl;
+    let frameMinHeight = docEl.style.height || scrollHeight + "px";
     let frameHeight = docEl.getAttribute("height")
       ? docEl.getAttribute("height") + "px"
       : frameMinHeight;
@@ -555,7 +542,9 @@ SubDialog.prototype = {
       
       frameHeight = maxHeight + "px";
       frameMinHeight = maxHeight + "px";
-
+      let contentPane =
+        this._frame.contentDocument.querySelector(".contentPane") ||
+        this._frame.contentDocument.querySelector("dialog");
       if (contentPane) {
         
         
