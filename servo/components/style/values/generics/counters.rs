@@ -148,18 +148,18 @@ fn is_decimal(counter_type: &CounterStyleType) -> bool {
     Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss, ToShmem,
 )]
 #[repr(u8)]
-pub enum GenericContent<ImageUrl> {
+pub enum GenericContent<Image> {
     
     Normal,
     
     None,
     
-    Items(#[css(iterable)] crate::OwnedSlice<GenericContentItem<ImageUrl>>),
+    Items(#[css(iterable)] crate::OwnedSlice<GenericContentItem<Image>>),
 }
 
 pub use self::GenericContent as Content;
 
-impl<ImageUrl> Content<ImageUrl> {
+impl<Image> Content<Image> {
     
     #[inline]
     pub fn is_items(&self) -> bool {
@@ -180,14 +180,13 @@ impl<ImageUrl> Content<ImageUrl> {
     Eq,
     MallocSizeOf,
     PartialEq,
-    SpecifiedValueInfo,
     ToComputedValue,
     ToCss,
     ToResolvedValue,
     ToShmem,
 )]
 #[repr(u8)]
-pub enum GenericContentItem<ImageUrl> {
+pub enum GenericContentItem<I> {
     
     String(crate::OwnedStr),
     
@@ -221,7 +220,7 @@ pub enum GenericContentItem<ImageUrl> {
     #[cfg(any(feature = "gecko", feature = "servo-layout-2020"))]
     Attr(Attr),
     
-    Url(ImageUrl),
+    Image(I),
 }
 
 pub use self::GenericContentItem as ContentItem;
