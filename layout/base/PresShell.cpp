@@ -8588,20 +8588,7 @@ PresShell::EventHandler::GetDocumentPrincipalToCompareWithBlacklist(
   if (NS_WARN_IF(!presContext)) {
     return nullptr;
   }
-  
-  
-  for (Document* document = presContext->Document();
-       document && document->IsContentDocument();
-       document = document->GetInProcessParentDocument()) {
-    
-    
-    nsIPrincipal* principal = document->NodePrincipal();
-    if (principal->GetIsNullPrincipal()) {
-      continue;
-    }
-    return principal;
-  }
-  return nullptr;
+  return presContext->Document()->GetPrincipalForPrefBasedHacks();
 }
 
 nsresult PresShell::EventHandler::DispatchEventToDOM(
