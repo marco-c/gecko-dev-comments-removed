@@ -49,8 +49,10 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<int> {
   
   GCPtr<TaggedProto> proto_;  
 
+#ifndef JS_64BIT
   
-  JS::Realm* realm_;  
+  uint64_t padding_ = 0;
+#endif
 
   
 
@@ -59,29 +61,19 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<int> {
     return offsetof(ObjectGroup, proto_);
   }
 
-  static inline uint32_t offsetOfRealm() {
-    return offsetof(ObjectGroup, realm_);
-  }
-
   friend class gc::GCRuntime;
 
   
   friend class js::jit::MacroAssembler;
 
  public:
-  inline ObjectGroup(TaggedProto proto, JS::Realm* realm);
+  inline explicit ObjectGroup(TaggedProto proto);
 
   const GCPtr<TaggedProto>& proto() const { return proto_; }
 
   GCPtr<TaggedProto>& proto() { return proto_; }
 
   void setProtoUnchecked(TaggedProto proto);
-
-  JS::Compartment* compartment() const {
-    return JS::GetCompartmentForRealm(realm_);
-  }
-  JS::Compartment* maybeCompartment() const { return compartment(); }
-  JS::Realm* realm() const { return realm_; }
 
   
 

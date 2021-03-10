@@ -3817,9 +3817,9 @@ static JSObject* CreateArrayPrototype(JSContext* cx, JSProtoKey key) {
     return nullptr;
   }
 
-  RootedShape shape(cx, EmptyShape::getInitialShape(cx, &ArrayObject::class_,
-                                                    TaggedProto(proto),
-                                                    gc::AllocKind::OBJECT0));
+  RootedShape shape(cx, EmptyShape::getInitialShape(
+                            cx, &ArrayObject::class_, cx->realm(),
+                            TaggedProto(proto), gc::AllocKind::OBJECT0));
   if (!shape) {
     return nullptr;
   }
@@ -3972,9 +3972,9 @@ static MOZ_ALWAYS_INLINE ArrayObject* NewArray(JSContext* cx, uint32_t length,
 
 
 
-  RootedShape shape(cx, EmptyShape::getInitialShape(cx, &ArrayObject::class_,
-                                                    TaggedProto(proto),
-                                                    gc::AllocKind::OBJECT0));
+  RootedShape shape(cx, EmptyShape::getInitialShape(
+                            cx, &ArrayObject::class_, cx->realm(),
+                            TaggedProto(proto), gc::AllocKind::OBJECT0));
   if (!shape) {
     return nullptr;
   }
@@ -4089,14 +4089,14 @@ ArrayObject* js::NewDenseFullyAllocatedArrayWithTemplate(
 }
 
 
-ArrayObject* js::NewArrayWithGroup(JSContext* cx, uint32_t length,
-                                   HandleObjectGroup group) {
+ArrayObject* js::NewArrayWithShape(JSContext* cx, uint32_t length,
+                                   HandleShape shape) {
   
   
   Maybe<AutoRealm> ar;
-  if (cx->realm() != group->realm()) {
-    MOZ_ASSERT(cx->compartment() == group->compartment());
-    ar.emplace(cx, group);
+  if (cx->realm() != shape->realm()) {
+    MOZ_ASSERT(cx->compartment() == shape->compartment());
+    ar.emplace(cx, shape);
   }
 
   return NewDenseFullyAllocatedArray(cx, length);

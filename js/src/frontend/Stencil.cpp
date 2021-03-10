@@ -927,9 +927,10 @@ static bool InstantiateFunctions(JSContext* cx, CompilationInput& input,
   if (!group) {
     return false;
   }
-  RootedShape shape(cx, EmptyShape::getInitialShape(
-                            cx, &JSFunction::class_, TaggedProto(proto),
-                             0, ObjectFlags()));
+  RootedShape shape(
+      cx, EmptyShape::getInitialShape(cx, &JSFunction::class_, cx->realm(),
+                                      TaggedProto(proto),
+                                       0, ObjectFlags()));
   if (!shape) {
     return false;
   }
