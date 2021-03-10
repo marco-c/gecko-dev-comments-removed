@@ -19,7 +19,9 @@ class InputData;
 namespace layers {
 
 class APZInputBridgeParent;
+class AsyncPanZoomController;
 struct ScrollableLayerGuid;
+struct TargetConfirmationFlags;
 
 enum class APZHandledResult : uint8_t {
   Unhandled = 0,         
@@ -44,6 +46,13 @@ struct APZEventResult {
 
   APZEventResult();
 
+  
+
+
+
+
+  APZEventResult(const RefPtr<AsyncPanZoomController>& aInitialTarget,
+                 TargetConfirmationFlags aFlags);
   
 
 
