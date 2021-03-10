@@ -85,7 +85,7 @@ void PlatformShutdown();
 
 
 
-void ProxyCreated(RemoteAccessible* aProxy, uint32_t aInterfaces);
+void ProxyCreated(RemoteAccessible* aProxy);
 
 
 
