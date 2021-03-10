@@ -433,7 +433,7 @@ pub struct Texture {
     
     
     
-    fbos: Vec<FBOId>,
+    fbo: Option<FBOId>,
     
     
     
@@ -451,7 +451,7 @@ pub struct Texture {
     
     
     
-    fbos_with_depth: Vec<FBOId>,
+    fbo_with_depth: Option<FBOId>,
     
     
     blit_workaround_buffer: Option<(RBOId, FBOId)>,
@@ -472,7 +472,7 @@ impl Texture {
     }
 
     pub fn supports_depth(&self) -> bool {
-        !self.fbos_with_depth.is_empty()
+        self.fbo_with_depth.is_some()
     }
 
     pub fn last_frame_used(&self) -> GpuFrameId {
@@ -484,7 +484,7 @@ impl Texture {
     }
 
     pub fn is_render_target(&self) -> bool {
-        !self.fbos.is_empty()
+        self.fbo.is_some()
     }
 
     
@@ -1204,9 +1204,9 @@ impl DrawTarget {
         with_depth: bool,
     ) -> Self {
         let fbo_id = if with_depth {
-            texture.fbos_with_depth[layer]
+            texture.fbo_with_depth.unwrap()
         } else {
-            texture.fbos[layer]
+            texture.fbo.unwrap()
         };
 
         DrawTarget::Texture {
@@ -1309,10 +1309,10 @@ pub enum ReadTarget {
 impl ReadTarget {
     pub fn from_texture(
         texture: &Texture,
-        layer: usize,
+        _layer: usize,
     ) -> Self {
         ReadTarget::Texture {
-            fbo_id: texture.fbos[layer],
+            fbo_id: texture.fbo.unwrap(),
         }
     }
 
@@ -2364,8 +2364,8 @@ impl Device {
             format,
             filter,
             active_swizzle: Cell::default(),
-            fbos: vec![],
-            fbos_with_depth: vec![],
+            fbo: None,
+            fbo_with_depth: None,
             blit_workaround_buffer: None,
             last_frame_used: self.frame_id,
             flags: TextureFlags::default(),
@@ -2546,22 +2546,22 @@ impl Device {
     
     
     pub fn invalidate_render_target(&mut self, texture: &Texture) {
-        let (fbos, attachments) = if texture.supports_depth() {
-            (&texture.fbos_with_depth,
+        let (fbo, attachments) = if texture.supports_depth() {
+            (&texture.fbo_with_depth,
              &[gl::COLOR_ATTACHMENT0, gl::DEPTH_ATTACHMENT] as &[gl::GLenum])
         } else {
-            (&texture.fbos, &[gl::COLOR_ATTACHMENT0] as &[gl::GLenum])
+            (&texture.fbo, &[gl::COLOR_ATTACHMENT0] as &[gl::GLenum])
         };
 
-        let original_bound_fbo = self.bound_draw_fbo;
-        for fbo_id in fbos.iter() {
+        if let Some(fbo_id) = fbo {
+            let original_bound_fbo = self.bound_draw_fbo;
             
             
             
             self.bind_external_draw_target(*fbo_id);
             self.gl.invalidate_framebuffer(gl::FRAMEBUFFER, attachments);
+            self.bind_external_draw_target(original_bound_fbo);
         }
-        self.bind_external_draw_target(original_bound_fbo);
     }
 
     
@@ -2591,56 +2591,47 @@ impl Device {
     }
 
     fn init_fbos(&mut self, texture: &mut Texture, with_depth: bool) {
-        let (fbos, depth_rb) = if with_depth {
+        let (fbo, depth_rb) = if with_depth {
             let depth_target = self.acquire_depth_target(texture.get_dimensions());
-            (&mut texture.fbos_with_depth, Some(depth_target))
+            (&mut texture.fbo_with_depth, Some(depth_target))
         } else {
-            (&mut texture.fbos, None)
+            (&mut texture.fbo, None)
         };
 
         
-        assert!(fbos.is_empty());
-        fbos.extend(self.gl.gen_framebuffers(1).into_iter().map(FBOId));
+        assert!(fbo.is_none());
+        let fbo_id = FBOId(*self.gl.gen_framebuffers(1).first().unwrap());
+        *fbo = Some(fbo_id);
 
         
         let original_bound_fbo = self.bound_draw_fbo;
-        for (fbo_index, &fbo_id) in fbos.iter().enumerate() {
-            self.bind_external_draw_target(fbo_id);
-            assert_eq!(fbo_index, 0);
-            self.gl.framebuffer_texture_2d(
+
+        self.bind_external_draw_target(fbo_id);
+
+        self.gl.framebuffer_texture_2d(
+            gl::DRAW_FRAMEBUFFER,
+            gl::COLOR_ATTACHMENT0,
+            texture.target,
+            texture.id,
+            0,
+        );
+
+        if let Some(depth_rb) = depth_rb {
+            self.gl.framebuffer_renderbuffer(
                 gl::DRAW_FRAMEBUFFER,
-                gl::COLOR_ATTACHMENT0,
-                texture.target,
-                texture.id,
-                0,
-            );
-
-            if let Some(depth_rb) = depth_rb {
-                self.gl.framebuffer_renderbuffer(
-                    gl::DRAW_FRAMEBUFFER,
-                    gl::DEPTH_ATTACHMENT,
-                    gl::RENDERBUFFER,
-                    depth_rb.0,
-                );
-            }
-
-            debug_assert_eq!(
-                self.gl.check_frame_buffer_status(gl::DRAW_FRAMEBUFFER),
-                gl::FRAMEBUFFER_COMPLETE,
-                "Incomplete framebuffer",
+                gl::DEPTH_ATTACHMENT,
+                gl::RENDERBUFFER,
+                depth_rb.0,
             );
         }
+
+        debug_assert_eq!(
+            self.gl.check_frame_buffer_status(gl::DRAW_FRAMEBUFFER),
+            gl::FRAMEBUFFER_COMPLETE,
+            "Incomplete framebuffer",
+        );
+
         self.bind_external_draw_target(original_bound_fbo);
-    }
-
-    fn deinit_fbos(&mut self, fbos: &mut Vec<FBOId>) {
-        if !fbos.is_empty() {
-            let fbo_ids: SmallVec<[gl::GLuint; 8]> = fbos
-                .drain(..)
-                .map(|FBOId(fbo_id)| fbo_id)
-                .collect();
-            self.gl.delete_framebuffers(&fbo_ids[..]);
-        }
     }
 
     fn acquire_depth_target(&mut self, dimensions: DeviceIntSize) -> RBOId {
@@ -2807,8 +2798,15 @@ impl Device {
     pub fn delete_texture(&mut self, mut texture: Texture) {
         debug_assert!(self.inside_frame);
         let had_depth = texture.supports_depth();
-        self.deinit_fbos(&mut texture.fbos);
-        self.deinit_fbos(&mut texture.fbos_with_depth);
+        if let Some(fbo) = texture.fbo {
+            self.gl.delete_framebuffers(&[fbo.0]);
+            texture.fbo = None;
+        }
+        if let Some(fbo) = texture.fbo_with_depth {
+            self.gl.delete_framebuffers(&[fbo.0]);
+            texture.fbo_with_depth = None;
+        }
+
         if had_depth {
             self.release_depth_target(texture.get_dimensions());
         }
