@@ -212,49 +212,25 @@ function ComputeTelemetryInfo(welcomeContent, experimentId, branchId) {
 }
 
 async function retrieveRenderContent() {
-  var _aboutWelcomeProps;
-
   
-  let aboutWelcomeProps = await window.AWGetWelcomeOverrideContent();
+  const featureConfig = await window.AWGetFeatureConfig();
+  let aboutWelcomeProps;
 
-  if ((_aboutWelcomeProps = aboutWelcomeProps) !== null && _aboutWelcomeProps !== void 0 && _aboutWelcomeProps.template) {
-    let {
-      messageId,
-      UTMTerm
-    } = ComputeTelemetryInfo(aboutWelcomeProps);
-    return {
-      aboutWelcomeProps,
-      messageId,
-      UTMTerm
-    };
-  } 
-
-
-  const {
-    slug,
-    branch
-  } = await window.AWGetExperimentData();
-  aboutWelcomeProps = branch !== null && branch !== void 0 && branch.feature ? branch.feature.value : {}; 
-  
-  
-  
-
-  const attribution = await window.AWGetAttributionData();
-
-  if (attribution !== null && attribution !== void 0 && attribution.template) {
-    var _aboutWelcomeProps2;
-
-    aboutWelcomeProps = { ...aboutWelcomeProps,
-      
-      template: (_aboutWelcomeProps2 = aboutWelcomeProps) !== null && _aboutWelcomeProps2 !== void 0 && _aboutWelcomeProps2.template ? aboutWelcomeProps.template : attribution.template,
+  if (!featureConfig.screens) {
+    const attribution = await window.AWGetAttributionData();
+    aboutWelcomeProps = {
+      template: attribution.template,
       ...attribution.extraProps
     };
+  } else {
+    
+    aboutWelcomeProps = featureConfig.screens ? featureConfig : {};
   }
 
   let {
     messageId,
     UTMTerm
-  } = ComputeTelemetryInfo(aboutWelcomeProps, slug, branch && branch.slug);
+  } = ComputeTelemetryInfo(aboutWelcomeProps, featureConfig.slug, featureConfig.branch && featureConfig.branch.slug);
   return {
     aboutWelcomeProps,
     messageId,

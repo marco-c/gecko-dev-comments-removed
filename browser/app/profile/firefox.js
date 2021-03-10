@@ -1467,7 +1467,7 @@ pref("trailhead.firstrun.newtab.triplets", "");
 
 pref("browser.aboutwelcome.enabled", true);
 
-pref("browser.aboutwelcome.overrideContent", "");
+pref("browser.aboutwelcome.screens", "");
 pref("browser.aboutwelcome.skipFocus", false);
 
 

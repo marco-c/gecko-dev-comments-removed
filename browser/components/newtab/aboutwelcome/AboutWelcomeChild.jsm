@@ -24,31 +24,19 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
   return new Logger("AboutWelcomeChild");
 });
 
+XPCOMUtils.defineLazyGetter(this, "aboutWelcomeFeature", () => {
+  const { ExperimentFeature } = ChromeUtils.import(
+    "resource://nimbus/ExperimentAPI.jsm"
+  );
+  return new ExperimentFeature("aboutwelcome");
+});
+
 XPCOMUtils.defineLazyGetter(this, "tippyTopProvider", () =>
   (async () => {
     const provider = new TippyTopProvider();
     await provider.init();
     return provider;
   })()
-);
-
-function _parseOverrideContent(value) {
-  let result = {};
-  try {
-    result = value ? JSON.parse(value) : {};
-  } catch (e) {
-    Cu.reportError(e);
-  }
-  return result;
-}
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "multiStageAboutWelcomeContent",
-  "browser.aboutwelcome.overrideContent",
-  "",
-  null,
-  _parseOverrideContent
 );
 
 const SEARCH_REGION_PREF = "browser.search.region";
@@ -164,18 +152,12 @@ class AboutWelcomeChild extends JSWindowActorChild {
   exportFunctions() {
     let window = this.contentWindow;
 
-    Cu.exportFunction(this.AWGetExperimentData.bind(this), window, {
-      defineAs: "AWGetExperimentData",
+    Cu.exportFunction(this.AWGetFeatureConfig.bind(this), window, {
+      defineAs: "AWGetFeatureConfig",
     });
 
     Cu.exportFunction(this.AWGetAttributionData.bind(this), window, {
       defineAs: "AWGetAttributionData",
-    });
-
-    
-    
-    Cu.exportFunction(this.AWGetWelcomeOverrideContent.bind(this), window, {
-      defineAs: "AWGetWelcomeOverrideContent",
     });
 
     Cu.exportFunction(this.AWGetFxAMetricsFlowURI.bind(this), window, {
@@ -225,16 +207,6 @@ class AboutWelcomeChild extends JSWindowActorChild {
   wrapPromise(promise) {
     return new this.contentWindow.Promise((resolve, reject) =>
       promise.then(resolve, reject)
-    );
-  }
-
-  
-
-
-  AWGetWelcomeOverrideContent() {
-    return Cu.cloneInto(
-      multiStageAboutWelcomeContent || {},
-      this.contentWindow
     );
   }
 
@@ -309,21 +281,31 @@ class AboutWelcomeChild extends JSWindowActorChild {
   
 
 
-  AWGetExperimentData() {
+  AWGetFeatureConfig() {
     
     
-    let experimentData = ExperimentAPI.getExperiment({
-      featureId: "aboutwelcome",
-    });
+    let experimentMetadata =
+      ExperimentAPI.getExperimentMetaData({
+        featureId: "aboutwelcome",
+      }) || {};
+    let featureConfig = aboutWelcomeFeature.getValue({ defaultValue: {} });
 
-    if (experimentData?.slug) {
+    if (experimentMetadata?.slug) {
       log.debug(
-        `Loading about:welcome with experiment: ${experimentData.slug}`
+        `Loading about:welcome with experiment: ${experimentMetadata.slug}`
       );
     } else {
       log.debug("Loading about:welcome without experiment");
     }
-    return Cu.cloneInto(experimentData || {}, this.contentWindow);
+    return Cu.cloneInto(
+      {
+        
+        template: "multistage",
+        ...experimentMetadata,
+        ...featureConfig,
+      },
+      this.contentWindow
+    );
   }
 
   AWGetFxAMetricsFlowURI() {
