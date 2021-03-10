@@ -38,13 +38,15 @@ APZEventResult::APZEventResult(
       
       
       
-      return Some(APZHandledResult::HandledByContent);
+      return Some(
+          APZHandledResult{APZHandledPlace::HandledByContent, aInitialTarget});
     }
 
     if (!aFlags.mDispatchToContent) {
       
       
-      return Some(APZHandledResult::HandledByRoot);
+      return Some(
+          APZHandledResult{APZHandledPlace::HandledByRoot, aInitialTarget});
     }
 
     
@@ -62,8 +64,9 @@ void APZEventResult::SetStatusAsConsumeDoDefault(
     const RefPtr<AsyncPanZoomController>& aTarget) {
   mStatus = nsEventStatus_eConsumeDoDefault;
   mHandledResult =
-      Some(aTarget->IsRootContent() ? APZHandledResult::HandledByRoot
-                                    : APZHandledResult::HandledByContent);
+      Some(aTarget && aTarget->IsRootContent()
+               ? APZHandledResult{APZHandledPlace::HandledByRoot, aTarget}
+               : APZHandledResult{APZHandledPlace::HandledByContent, aTarget});
 }
 
 void APZEventResult::SetStatusAsConsumeDoDefaultWithTargetConfirmationFlags(
@@ -84,9 +87,10 @@ void APZEventResult::SetStatusAsConsumeDoDefaultWithTargetConfirmationFlags(
     
     
     
-    mHandledResult = aFlags.mDispatchToContent
-                         ? Nothing()
-                         : Some(APZHandledResult::HandledByRoot);
+    mHandledResult =
+        aFlags.mDispatchToContent
+            ? Nothing()
+            : Some(APZHandledResult{APZHandledPlace::HandledByRoot, &aTarget});
   }
 }
 
@@ -252,25 +256,106 @@ APZEventResult APZInputBridge::ReceiveInputEvent(WidgetInputEvent& aEvent) {
   return result;
 }
 
+APZHandledResult::APZHandledResult(APZHandledPlace aPlace,
+                                   const AsyncPanZoomController* aTarget)
+    : mPlace(aPlace) {
+  MOZ_ASSERT(aTarget);
+  switch (aPlace) {
+    case APZHandledPlace::Unhandled:
+      break;
+    case APZHandledPlace::HandledByContent:
+      if (aTarget) {
+        mScrollableDirections = aTarget->ScrollableDirections();
+        mOverscrollDirections = aTarget->GetAllowedHandoffDirections();
+      }
+      break;
+    case APZHandledPlace::HandledByRoot: {
+      
+      
+      
+      
+      
+      const AsyncPanZoomController* target = aTarget;
+      while (target && !target->IsRootContent()) {
+        target = target->GetParent();
+      }
+
+      MOZ_ASSERT(target && target->IsRootContent());
+      if (target) {
+        mScrollableDirections = target->ScrollableDirections();
+        mOverscrollDirections = target->GetAllowedHandoffDirections();
+      }
+      break;
+    }
+    default:
+      MOZ_ASSERT_UNREACHABLE("Invalid APZHandledPlace");
+      break;
+  }
+}
+
+std::ostream& operator<<(std::ostream& aOut, const SideBits& aSideBits) {
+  if ((aSideBits & SideBits::eAll) == SideBits::eAll) {
+    aOut << "all";
+  } else {
+    AutoTArray<nsCString, 4> strings;
+    if (aSideBits & SideBits::eTop) {
+      strings.AppendElement("top"_ns);
+    }
+    if (aSideBits & SideBits::eRight) {
+      strings.AppendElement("right"_ns);
+    }
+    if (aSideBits & SideBits::eBottom) {
+      strings.AppendElement("bottom"_ns);
+    }
+    if (aSideBits & SideBits::eLeft) {
+      strings.AppendElement("left"_ns);
+    }
+    aOut << strings;
+  }
+  return aOut;
+}
+
 std::ostream& operator<<(std::ostream& aOut,
-                         const APZHandledResult& aHandledResult) {
-  switch (aHandledResult) {
-    case APZHandledResult::Unhandled:
+                         const ScrollDirections& aScrollDirections) {
+  if (aScrollDirections.contains(EitherScrollDirection)) {
+    aOut << "either";
+  } else if (aScrollDirections.contains(HorizontalScrollDirection)) {
+    aOut << "horizontal";
+  } else if (aScrollDirections.contains(VerticalScrollDirection)) {
+    aOut << "vertical";
+  } else {
+    aOut << "none";
+  }
+  return aOut;
+}
+
+std::ostream& operator<<(std::ostream& aOut,
+                         const APZHandledPlace& aHandledPlace) {
+  switch (aHandledPlace) {
+    case APZHandledPlace::Unhandled:
       aOut << "unhandled";
       break;
-    case APZHandledResult::HandledByRoot: {
+    case APZHandledPlace::HandledByRoot: {
       aOut << "handled-by-root";
       break;
     }
-    case APZHandledResult::HandledByContent: {
+    case APZHandledPlace::HandledByContent: {
       aOut << "handled-by-content";
       break;
     }
-    case APZHandledResult::Invalid: {
+    case APZHandledPlace::Invalid: {
       aOut << "INVALID";
       break;
     }
   }
+  return aOut;
+}
+
+std::ostream& operator<<(std::ostream& aOut,
+                         const APZHandledResult& aHandledResult) {
+  aOut << "handled: " << aHandledResult.mPlace << ", ";
+  aOut << "scrollable: " << aHandledResult.mScrollableDirections << ", ";
+  aOut << "overscroll: " << aHandledResult.mOverscrollDirections << std::endl;
   return aOut;
 }
 
