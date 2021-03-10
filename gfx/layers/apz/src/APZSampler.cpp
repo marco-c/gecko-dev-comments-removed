@@ -96,31 +96,8 @@ void APZSampler::SampleForWebRender(const Maybe<VsyncId>& aVsyncId,
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     SampleTime now = SampleTime::FromNow();
-    sampleTime =
-        (mSampleTime.IsNull() ||
-         (mSampleTime.Type() != SampleTime::eTest && mSampleTime < now))
-            ? now
-            : mSampleTime;
+    sampleTime = mSampleTime.IsNull() ? now : mSampleTime;
   }
   mApz->SampleForWebRender(aVsyncId, aTxn, sampleTime);
 }

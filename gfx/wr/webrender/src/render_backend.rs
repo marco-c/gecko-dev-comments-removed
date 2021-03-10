@@ -1437,7 +1437,7 @@ impl RenderBackend {
         
         
         
-        if requested_frame || has_built_scene {
+        if requested_frame {
             if let Some(ref sampler) = self.sampler {
                 frame_ops.append(&mut sampler.sample(document_id, generated_frame_id));
             }
