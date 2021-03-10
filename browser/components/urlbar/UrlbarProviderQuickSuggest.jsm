@@ -278,11 +278,18 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
 
+
   _updateExperimentState() {
     Services.telemetry.setEventRecordingEnabled(
       TELEMETRY_EVENT_CATEGORY,
       UrlbarPrefs.get(EXPERIMENT_PREF)
     );
+    
+    
+    
+    if (UrlbarPrefs.get(EXPERIMENT_PREF)) {
+      UrlbarQuickSuggest; 
+    }
   }
 
   
