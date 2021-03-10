@@ -603,6 +603,14 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gProtonDoorhangers",
+  "browser.proton.doorhangers.enabled",
+  false
+);
+
+
 
 XPCOMUtils.defineLazyGetter(this, "aboutWelcomeFeature", () => {
   const { ExperimentFeature } = ChromeUtils.import(
@@ -7538,6 +7546,7 @@ var IndexedDBPromptHelper = {
           Ci.nsIPermissionManager.ALLOW_ACTION
         );
       },
+      disableHighlight: gProtonDoorhangers,
     };
 
     var secondaryActions = [
@@ -7636,6 +7645,7 @@ var CanvasPermissionPromptHelper = {
           state && state.checkboxChecked
         );
       },
+      disableHighlight: gProtonDoorhangers,
     };
 
     let secondaryActions = [
@@ -7799,6 +7809,10 @@ var WebAuthnPromptHelper = {
         this._tid = 0;
       }
     };
+
+    if (gProtonDoorhangers) {
+      mainAction.disableHighlight = true;
+    }
 
     this._tid = tid;
     this._current = PopupNotifications.show(
