@@ -434,9 +434,12 @@ struct Texture {
     assert(!should_free());
     
     
+    
+    
     set_bpp();
     set_stride();
-    assert(new_stride >= buf_stride);
+    assert(new_stride >= size_t(bpp() * width) &&
+           new_stride % min(bpp(), sizeof(uint32_t)) == 0);
 
     buf = (char*)new_buf;
     buf_size = 0;
