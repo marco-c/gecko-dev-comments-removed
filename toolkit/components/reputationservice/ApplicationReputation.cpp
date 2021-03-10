@@ -1977,7 +1977,6 @@ nsresult ApplicationReputationService::QueryReputationInternal(
 
   
   RefPtr<PendingLookup> lookup(new PendingLookup(aQuery, aCallback));
-  NS_ENSURE_STATE(lookup);
 
   
   nsCOMPtr<nsIObserverService> observerService =
