@@ -55,13 +55,6 @@ class nsClassHashtable : public nsBaseHashtable<KeyClass, mozilla::UniquePtr<T>,
 
 
 
-  template <typename... Args>
-  UserDataType GetOrInsertNew(KeyType aKey, Args&&... aConstructionArgs);
-
-  
-
-
-
   bool Get(KeyType aKey, UserDataType* aData) const;
 
   
@@ -89,19 +82,6 @@ inline void ImplCycleCollectionTraverse(
 
 
 
-
-template <class KeyClass, class T>
-template <typename... Args>
-T* nsClassHashtable<KeyClass, T>::GetOrInsertNew(KeyType aKey,
-                                                 Args&&... aConstructionArgs) {
-  return this
-      ->LookupOrInsertWith(std::move(aKey),
-                           [&] {
-                             return mozilla::MakeUnique<T>(
-                                 std::forward<Args>(aConstructionArgs)...);
-                           })
-      .get();
-}
 
 template <class KeyClass, class T>
 bool nsClassHashtable<KeyClass, T>::Get(KeyType aKey, T** aRetVal) const {
