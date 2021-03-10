@@ -17,6 +17,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Rect;
 import android.os.SystemClock;
+import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
 import androidx.annotation.IntDef;
@@ -136,19 +137,57 @@ public class PanZoomController {
     @WrapForJNI
     public static final int OVERSCROLL_FLAG_VERTICAL = 1 << 1;
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
     @WrapForJNI
     public static class InputResultDetail {
-        protected InputResultDetail(final @InputResult int aHandledResult,
-                                    final @ScrollableDirections int aScrollableDirections,
-                                    final @OverscrollDirections int aOverscrollDirections) {
-            handledResult = aHandledResult;
-            scrollableDirections = aScrollableDirections;
-            overscrollDirections = aOverscrollDirections;
+        protected InputResultDetail(final @InputResult int handledResult,
+                                    final @ScrollableDirections int scrollableDirections,
+                                    final @OverscrollDirections int overscrollDirections) {
+            mHandledResult = handledResult;
+            mScrollableDirections = scrollableDirections;
+            mOverscrollDirections = overscrollDirections;
         }
 
-        public final @InputResult int handledResult;
-        public final @ScrollableDirections int scrollableDirections;
-        public final @OverscrollDirections int overscrollDirections;
+        
+
+
+
+        @AnyThread
+        public @InputResult int handledResult() {
+            return mHandledResult;
+        }
+        
+
+
+
+        @AnyThread
+        public @ScrollableDirections int scrollableDirections() {
+            return mScrollableDirections;
+        }
+        
+
+
+
+        @AnyThread
+        public @OverscrollDirections int overscrollDirections() {
+            return mOverscrollDirections;
+        }
+
+        private final @InputResult int mHandledResult;
+        private final @ScrollableDirections int mScrollableDirections;
+        private final @OverscrollDirections int mOverscrollDirections;
     }
 
     private SynthesizedEventState mPointerState;
@@ -474,16 +513,35 @@ public class PanZoomController {
 
 
 
+    @Deprecated @DeprecationSchedule(version = 90, id = "on-touch-event-for-result")
     public @NonNull GeckoResult<Integer> onTouchEventForResult(final @NonNull MotionEvent event) {
+        return onTouchEventForDetailResult(event).map(detail -> detail.handledResult());
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    public @NonNull GeckoResult<InputResultDetail> onTouchEventForDetailResult(final @NonNull MotionEvent event) {
         ThreadUtils.assertOnUiThread();
 
         if (!sTreatMouseAsTouch && event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE) {
-            return GeckoResult.fromValue(handleMouseEvent(event));
+            return GeckoResult.fromValue(
+                new InputResultDetail(handleMouseEvent(event), SCROLLABLE_FLAG_NONE, OVERSCROLL_FLAG_NONE));
         }
 
         final GeckoResult<InputResultDetail> result = new GeckoResult<>();
         handleMotionEvent(event, result);
-        return result.map(detail -> detail.handledResult);
+        return result;
     }
 
     

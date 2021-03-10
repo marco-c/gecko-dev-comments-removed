@@ -735,18 +735,45 @@ public class GeckoView extends FrameLayout {
 
 
 
+
+
+    @Deprecated @DeprecationSchedule(version = 90, id = "on-touch-event-for-result")
     public @NonNull GeckoResult<Integer> onTouchEventForResult(final @NonNull MotionEvent event) {
+        if (mSession == null) {
+            return GeckoResult.fromValue(PanZoomController.INPUT_RESULT_UNHANDLED);
+        }
+
+        return mSession.getPanZoomController().onTouchEventForDetailResult(event)
+                       .map(detail -> detail.handledResult());
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    public @NonNull GeckoResult<PanZoomController.InputResultDetail> onTouchEventForDetailResult(final @NonNull MotionEvent event) {
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
             requestFocus();
         }
 
         if (mSession == null) {
-            return GeckoResult.fromValue(PanZoomController.INPUT_RESULT_UNHANDLED);
+            return GeckoResult.fromValue(
+                new PanZoomController.InputResultDetail(PanZoomController.INPUT_RESULT_UNHANDLED,
+                                                        PanZoomController.SCROLLABLE_FLAG_NONE,
+                                                        PanZoomController.OVERSCROLL_FLAG_NONE));
         }
 
         
         
-        return mSession.getPanZoomController().onTouchEventForResult(event);
+        return mSession.getPanZoomController().onTouchEventForDetailResult(event);
     }
 
     @Override
