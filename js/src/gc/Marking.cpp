@@ -1249,6 +1249,8 @@ void Shape::traceChildren(JSTracer* trc) {
     }
   }
 
+  cache_.trace(trc);
+
   if (hasGetterObject()) {
     TraceManuallyBarrieredEdge(trc, &asAccessorShape().getterObj, "getter");
   }
@@ -1260,14 +1262,10 @@ inline void js::GCMarker::eagerlyMarkChildren(Shape* shape) {
   MOZ_ASSERT(shape->isMarked(markColor()));
 
   do {
-    
-    
-    
     BaseShape* base = shape->base();
     checkTraversedEdge(shape, base);
     if (mark(base)) {
-      MOZ_ASSERT(base->canSkipMarkingShapeCache(shape));
-      base->traceChildrenSkipShapeCache(this);
+      base->traceChildren(this);
     }
 
     markAndTraverseEdge(shape, shape->propidRef().get());
@@ -1278,6 +1276,11 @@ inline void js::GCMarker::eagerlyMarkChildren(Shape* shape) {
     if (shape->dictNext.isObject()) {
       markAndTraverseEdge(shape, shape->dictNext.toObject());
     }
+
+    
+    
+    
+    MOZ_ASSERT(shape->canSkipMarkingShapeCache());
 
     
     
