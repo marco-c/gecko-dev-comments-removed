@@ -516,6 +516,26 @@ function synthesizeNativeTouch(
   return true;
 }
 
+function sendBasicNativePointerInput(
+  utils,
+  aId,
+  aPointerType,
+  aState,
+  aX,
+  aY,
+  aObserver
+) {
+  switch (aPointerType) {
+    case "touch":
+      utils.sendNativeTouchPoint(aId, aState, aX, aY, 1, 90, aObserver);
+      break;
+    case "pen":
+      utils.sendNativePenInput(aId, aState, aX, aY, 1, 0, 0, 0, aObserver);
+      break;
+    default:
+      throw new Error(`Not supported: ${aPointerType}`);
+  }
+}
 
 
 
@@ -532,11 +552,17 @@ function synthesizeNativeTouch(
 
 
 
-function synthesizeNativeTouchSequences(
+
+
+
+
+
+function synthesizeNativePointerSequences(
   aTarget,
+  aPointerType,
   aPositions,
   aObserver = null,
-  aTouchIds = [0]
+  aPointerIds = [0]
 ) {
   
   
@@ -545,15 +571,15 @@ function synthesizeNativeTouchSequences(
     if (aPositions[i] == null) {
       throw new Error(`aPositions[${i}] was unexpectedly null`);
     }
-    if (aPositions[i].length != aTouchIds.length) {
+    if (aPositions[i].length != aPointerIds.length) {
       throw new Error(
         `aPositions[${i}] did not have the expected number of positions; ` +
-          `expected ${aTouchIds.length} touch points but found ${aPositions[i].length}`
+          `expected ${aPointerIds.length} pointers but found ${aPositions[i].length}`
       );
     }
-    for (let j = 0; j < aTouchIds.length; j++) {
+    for (let j = 0; j < aPointerIds.length; j++) {
       if (aPositions[i][j] != null) {
-        lastNonNullValue = i * aTouchIds.length + j;
+        lastNonNullValue = i * aPointerIds.length + j;
         
         
         
@@ -572,22 +598,22 @@ function synthesizeNativeTouchSequences(
   
   
   
-  var allNullRow = new Array(aTouchIds.length);
+  var allNullRow = new Array(aPointerIds.length);
   allNullRow.fill(null);
   aPositions.push(allNullRow);
 
   
   
-  var lastSynthesizeCall = lastNonNullValue + aTouchIds.length;
+  var lastSynthesizeCall = lastNonNullValue + aPointerIds.length;
 
   
-  var currentPositions = new Array(aTouchIds.length);
+  var currentPositions = new Array(aPointerIds.length);
   currentPositions.fill(null);
 
   var utils = utilsForTarget(aTarget);
   
   for (let i = 0; i < aPositions.length; i++) {
-    for (let j = 0; j < aTouchIds.length; j++) {
+    for (let j = 0; j < aPointerIds.length; j++) {
       if (aPositions[i][j] == null) {
         
         if (currentPositions[j] == null) {
@@ -595,27 +621,27 @@ function synthesizeNativeTouchSequences(
         } else {
           
           
-          var thisIndex = i * aTouchIds.length + j;
+          var thisIndex = i * aPointerIds.length + j;
           var observer = lastSynthesizeCall == thisIndex ? aObserver : null;
-          utils.sendNativeTouchPoint(
-            aTouchIds[j],
+          sendBasicNativePointerInput(
+            utils,
+            aPointerIds[j],
+            aPointerType,
             SpecialPowers.DOMWindowUtils.TOUCH_REMOVE,
             currentPositions[j].x,
             currentPositions[j].y,
-            1,
-            90,
             observer
           );
           currentPositions[j] = null;
         }
       } else {
-        utils.sendNativeTouchPoint(
-          aTouchIds[j],
+        sendBasicNativePointerInput(
+          utils,
+          aPointerIds[j],
+          aPointerType,
           SpecialPowers.DOMWindowUtils.TOUCH_CONTACT,
           aPositions[i][j].x,
           aPositions[i][j].y,
-          1,
-          90,
           null
         );
         currentPositions[j] = aPositions[i][j];
@@ -623,6 +649,49 @@ function synthesizeNativeTouchSequences(
     }
   }
   return true;
+}
+
+function synthesizeNativeTouchSequences(
+  aTarget,
+  aPositions,
+  aObserver = null,
+  aTouchIds = [0]
+) {
+  synthesizeNativePointerSequences(
+    aTarget,
+    "touch",
+    aPositions,
+    aObserver,
+    aTouchIds
+  );
+}
+
+function synthesizeNativePointerDrag(
+  aTarget,
+  aPointerType,
+  aX,
+  aY,
+  aDeltaX,
+  aDeltaY,
+  aObserver = null,
+  aPointerId = 0
+) {
+  var steps = Math.max(Math.abs(aDeltaX), Math.abs(aDeltaY));
+  var positions = [[{ x: aX, y: aY }]];
+  for (var i = 1; i < steps; i++) {
+    var dx = i * (aDeltaX / steps);
+    var dy = i * (aDeltaY / steps);
+    var pos = { x: aX + dx, y: aY + dy };
+    positions.push([pos]);
+  }
+  positions.push([{ x: aX + aDeltaX, y: aY + aDeltaY }]);
+  return synthesizeNativePointerSequences(
+    aTarget,
+    aPointerType,
+    positions,
+    aObserver,
+    [aPointerId]
+  );
 }
 
 
@@ -637,18 +706,43 @@ function synthesizeNativeTouchDrag(
   aObserver = null,
   aTouchId = 0
 ) {
-  var steps = Math.max(Math.abs(aDeltaX), Math.abs(aDeltaY));
-  var positions = [[{ x: aX, y: aY }]];
-  for (var i = 1; i < steps; i++) {
-    var dx = i * (aDeltaX / steps);
-    var dy = i * (aDeltaY / steps);
-    var pos = { x: aX + dx, y: aY + dy };
-    positions.push([pos]);
-  }
-  positions.push([{ x: aX + aDeltaX, y: aY + aDeltaY }]);
-  return synthesizeNativeTouchSequences(aTarget, positions, aObserver, [
-    aTouchId,
-  ]);
+  return synthesizeNativePointerDrag(
+    aTarget,
+    "touch",
+    aX,
+    aY,
+    aDeltaX,
+    aDeltaY,
+    aObserver,
+    aTouchId
+  );
+}
+
+function promiseNativePointerDrag(
+  aTarget,
+  aPointerType,
+  aX,
+  aY,
+  aDeltaX,
+  aDeltaY,
+  aPointerId = 0
+) {
+  return new Promise((resolve, reject) => {
+    try {
+      synthesizeNativePointerDrag(
+        aTarget,
+        aPointerType,
+        aX,
+        aY,
+        aDeltaX,
+        aDeltaY,
+        resolve,
+        aPointerId
+      );
+    } catch (err) {
+      reject(err);
+    }
+  });
 }
 
 
@@ -660,16 +754,20 @@ function promiseNativeTouchDrag(
   aDeltaY,
   aTouchId = 0
 ) {
-  return new Promise(resolve => {
-    synthesizeNativeTouchDrag(
-      aTarget,
-      aX,
-      aY,
-      aDeltaX,
-      aDeltaY,
-      resolve,
-      aTouchId
-    );
+  return new Promise((resolve, reject) => {
+    try {
+      synthesizeNativeTouchDrag(
+        aTarget,
+        aX,
+        aY,
+        aDeltaX,
+        aDeltaY,
+        resolve,
+        aTouchId
+      );
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
