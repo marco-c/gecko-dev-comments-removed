@@ -21,15 +21,11 @@ class nsMenuObjectX;
 
 #import <Cocoa/Cocoa.h>
 
-class nsMenuItemIconX : public mozilla::widget::IconLoader::Listener {
+class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
  public:
   nsMenuItemIconX(nsMenuObjectX* aMenuItem, nsIContent* aContent,
                   NSMenuItem* aNativeMenuItem);
-
-  NS_INLINE_DECL_REFCOUNTING(nsMenuItemIconX)
-
- private:
-  virtual ~nsMenuItemIconX();
+  ~nsMenuItemIconX();
 
  public:
   
@@ -38,12 +34,6 @@ class nsMenuItemIconX : public mozilla::widget::IconLoader::Listener {
 
   
   nsresult GetIconURI(nsIURI** aIconURI);
-
-  
-  
-  
-  
-  void Destroy();
 
   
   

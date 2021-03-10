@@ -40,11 +40,6 @@ nsMenuItemX::~nsMenuItemX() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   
-  if (mIcon) {
-    mIcon->Destroy();
-  }
-
-  
   
   [mNativeMenuItem autorelease];
 
@@ -123,10 +118,7 @@ nsresult nsMenuItemX::Create(nsMenuX* aParent, const nsString& aLabel, EMenuItem
     SetKeyEquiv();
   }
 
-  mIcon = new nsMenuItemIconX(this, mContent, mNativeMenuItem);
-  if (!mIcon) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  mIcon = MakeUnique<nsMenuItemIconX>(this, mContent, mNativeMenuItem);
 
   return NS_OK;
 
@@ -378,7 +370,6 @@ void nsMenuItemX::ObserveContentInserted(dom::Document* aDocument, nsIContent* a
 }
 
 void nsMenuItemX::SetupIcon() {
-  if (mIcon) {
-    mIcon->SetupIcon();
-  }
+  MOZ_RELEASE_ASSERT(mIcon, "should have been created by nsMenuItemX::Create");
+  mIcon->SetupIcon();
 }
