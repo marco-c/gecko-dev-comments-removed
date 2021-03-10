@@ -2375,7 +2375,7 @@ void EventStateManager::DispatchLegacyMouseScrollEvents(
   
   
   auto scrollAmountInCSSPixels =
-      CSSIntSize::FromAppUnits(aEvent->mScrollAmount);
+      CSSIntSize::FromAppUnitsRounded(aEvent->mScrollAmount);
 
   
   
@@ -5969,7 +5969,7 @@ void EventStateManager::DeltaAccumulator::InitLineOrPageDelta(
     
     
     auto scrollAmountInCSSPixels =
-        CSSIntSize::FromAppUnits(aEvent->mScrollAmount);
+        CSSIntSize::FromAppUnitsRounded(aEvent->mScrollAmount);
 
     aEvent->mLineOrPageDeltaX = RoundDown(mX) / scrollAmountInCSSPixels.width;
     aEvent->mLineOrPageDeltaY = RoundDown(mY) / scrollAmountInCSSPixels.height;
