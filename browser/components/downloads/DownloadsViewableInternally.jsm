@@ -151,10 +151,6 @@ let DownloadsViewableInternally = {
       extension: "avif",
       mimeTypes: ["image/avif"],
       initAvailable() {
-        
-        
-        
-        
         XPCOMUtils.defineLazyPreferenceGetter(
           this,
           "available",
