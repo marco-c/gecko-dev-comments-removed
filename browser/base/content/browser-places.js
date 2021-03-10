@@ -972,13 +972,13 @@ var BookmarksEventHandler = {
     let tooltipTitle = aEvent.target.querySelector(".places-tooltip-title");
     tooltipTitle.hidden = !title || title == url;
     if (!tooltipTitle.hidden) {
-      
-      tooltipTitle.value = title;
+      tooltipTitle.textContent = title;
     }
 
     let tooltipUrl = aEvent.target.querySelector(".places-tooltip-uri");
     tooltipUrl.hidden = !url;
     if (!tooltipUrl.hidden) {
+      
       tooltipUrl.value = url;
     }
 
