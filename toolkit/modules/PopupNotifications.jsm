@@ -88,10 +88,6 @@ function Notification(
   this.owner = owner;
   this.options = options || {};
 
-  if (!this.options.hasOwnProperty("opinionated")) {
-    this.options.opinionated = true;
-  }
-
   this._dismissed = false;
   
   this._checkboxChecked = null;
@@ -372,12 +368,6 @@ PopupNotifications.prototype = {
   },
 
   
-
-
-
-
-
-
 
 
 
@@ -1009,9 +999,6 @@ PopupNotifications.prototype = {
         "closebuttoncommand",
         `PopupNotifications._dismiss(event, true);`
       );
-
-      popupnotification.toggleAttribute("opinionated", n.options.opinionated);
-
       if (n.mainAction) {
         popupnotification.setAttribute("buttonlabel", n.mainAction.label);
         popupnotification.setAttribute(
