@@ -354,6 +354,40 @@ add_task(async function suffixMatch() {
   await cleanUpSuggestions();
 });
 
+add_task(async function remoteSuggestionsDupeSearchString() {
+  Services.prefs.setIntPref(MAX_FORM_HISTORY_PREF, 0);
+
+  
+  
+  
+  setSuggestionsFn(searchStr => {
+    let suffixes = ["foo", "bar"];
+    return [searchStr.trim(), searchStr.toUpperCase(), searchStr + " "].concat(
+      suffixes.map(s => searchStr + " " + s)
+    );
+  });
+
+  
+  
+  
+  let query = SEARCH_STRING + " ";
+  let context = createContext(query, { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        query,
+        engineName: ENGINE_NAME,
+        heuristic: true,
+      }),
+      ...makeRemoteSuggestionResults(context),
+    ],
+  });
+
+  await cleanUpSuggestions();
+  Services.prefs.clearUserPref(MAX_FORM_HISTORY_PREF);
+});
+
 add_task(async function queryIsNotASubstring() {
   Services.prefs.setBoolPref(SUGGEST_PREF, true);
 
@@ -1545,6 +1579,25 @@ add_task(async function formHistory() {
   
   
   
+  let query = firstSuggestion.toUpperCase() + " ";
+  context = createContext(query, { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        query,
+        engineName: ENGINE_NAME,
+        heuristic: true,
+      }),
+      ...makeRemoteSuggestionResults(context, {
+        suggestionPrefix: firstSuggestion.toUpperCase(),
+      }),
+    ],
+  });
+
+  
+  
+  
   let suggestionPrefix = "dupe";
   let dupeSuggestion = makeRemoteSuggestionResults(context, {
     suggestionPrefix,
@@ -1568,7 +1621,7 @@ add_task(async function formHistory() {
   await UrlbarTestUtils.formHistory.remove([dupeSuggestion]);
 
   
-  let formHistoryStrings = ["foo", "foobar", "fooquux"];
+  let formHistoryStrings = ["foo", "FOO ", "foobar", "fooquux"];
   await UrlbarTestUtils.formHistory.add(formHistoryStrings);
 
   
@@ -1634,10 +1687,12 @@ add_task(async function formHistory() {
   
   
   let engine = await Services.search.getDefault();
-  let [serpURL1] = UrlbarUtils.getSearchQueryUrl(engine, "foobar");
-  let [serpURL2] = UrlbarUtils.getSearchQueryUrl(engine, "food");
-  await PlacesTestUtils.addVisits([serpURL1, serpURL2]);
+  let serpURLs = ["foobar", "fooBAR ", "food"].map(
+    term => UrlbarUtils.getSearchQueryUrl(engine, term)[0]
+  );
+  await PlacesTestUtils.addVisits(serpURLs);
 
+  
   
   
   
@@ -1651,6 +1706,10 @@ add_task(async function formHistory() {
       makeVisitResult(context, {
         uri: "http://localhost:9000/search?terms=food",
         title: "test visit for http://localhost:9000/search?terms=food",
+      }),
+      makeVisitResult(context, {
+        uri: "http://localhost:9000/search?terms=fooBAR+",
+        title: "test visit for http://localhost:9000/search?terms=fooBAR+",
       }),
       makeVisitResult(context, {
         uri: "http://localhost:9000/search?terms=foobar",
