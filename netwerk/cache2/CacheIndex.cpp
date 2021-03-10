@@ -7,6 +7,7 @@
 #include "CacheLog.h"
 #include "CacheFileIOManager.h"
 #include "CacheFileMetadata.h"
+#include "CacheFileUtils.h"
 #include "CacheIndexIterator.h"
 #include "CacheIndexContextIterator.h"
 #include "nsThreadUtils.h"
@@ -110,6 +111,16 @@ class CacheIndexEntryAutoManage {
     if (entry && entry->IsInitialized() && !entry->IsRemoved()) {
       mOldRecord = entry->mRec.get();
       mOldFrecency = entry->mRec->mFrecency;
+    } else {
+      if (entry) {
+        
+        
+        
+        if (mIndex->mFrecencyArray.RecordExisted(entry->mRec.get())) {
+          MOZ_DIAGNOSTIC_ASSERT(false);
+          mIndex->mFrecencyArray.RemoveRecord(entry->mRec.get());
+        }
+      }
     }
   }
 
@@ -863,6 +874,7 @@ nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  CacheIndexRecord* removedRecord = nullptr;
   {
     CacheIndexEntryAutoManage entryMng(aHash, index);
 
@@ -893,6 +905,7 @@ nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash) {
       } else {
         if (entry) {
           if (!entry->IsDirty() && entry->IsFileEmpty()) {
+            removedRecord = entry->mRec.get();
             index->mIndex.RemoveEntry(entry);
             entry = nullptr;
           } else {
@@ -934,7 +947,13 @@ nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash) {
       updated->MarkFresh();
     }
   }
-
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  if (removedRecord) {
+    MOZ_DIAGNOSTIC_ASSERT(!index->mFrecencyArray.RecordExisted(removedRecord));
+  }
+#else
+  Unused << removedRecord;
+#endif
   index->StartUpdatingIndexIfNeeded();
   index->WriteIndexToDiskIfNeeded();
 
@@ -1627,7 +1646,7 @@ void CacheIndex::ProcessPendingOperations() {
     MOZ_ASSERT(update->IsFresh());
 
     CacheIndexEntry* entry = mIndex.GetEntry(*update->Hash());
-
+    CacheIndexRecord* removedRecord = nullptr;
     {
       CacheIndexEntryAutoManage emng(update->Hash(), this);
       emng.DoNotSearchInUpdates();
@@ -1641,6 +1660,7 @@ void CacheIndex::ProcessPendingOperations() {
             
             
             
+            removedRecord = entry->mRec.get();
             mIndex.RemoveEntry(entry);
             entry = nullptr;
           } else {
@@ -1661,7 +1681,13 @@ void CacheIndex::ProcessPendingOperations() {
         *entry = *update;
       }
     }
-
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    if (removedRecord) {
+      MOZ_DIAGNOSTIC_ASSERT(!mFrecencyArray.RecordExisted(removedRecord));
+    }
+#else
+    Unused << removedRecord;
+#endif
     iter.Remove();
   }
 
