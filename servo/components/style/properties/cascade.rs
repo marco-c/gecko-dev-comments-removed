@@ -386,13 +386,15 @@ where
 type DeclarationsToApplyUnlessOverriden = SmallVec<[PropertyDeclaration; 2]>;
 
 fn tweak_when_ignoring_colors(
-    builder: &StyleBuilder,
+    context: &computed::Context,
     longhand_id: LonghandId,
     origin: Origin,
     declaration: &mut Cow<PropertyDeclaration>,
     declarations_to_apply_unless_overriden: &mut DeclarationsToApplyUnlessOverriden,
 ) {
     use crate::values::specified::Color;
+    use crate::values::computed::ToComputedValue;
+    use cssparser::RGBA;
 
     if !longhand_id.ignored_when_document_colors_disabled() {
         return;
@@ -406,34 +408,16 @@ fn tweak_when_ignoring_colors(
     
     
     
-    if builder.pseudo.map_or(false, |p| p.is_color_swatch()) &&
+    if context.builder.pseudo.map_or(false, |p| p.is_color_swatch()) &&
         longhand_id == LonghandId::BackgroundColor
     {
         return;
     }
 
-    fn alpha_channel(color: &Color) -> u8 {
-        match *color {
-            
-            
-            
-            #[cfg(feature = "gecko")]
-            Color::InheritFromBodyQuirk | Color::System(..) => 255,
-            
-            
-            
-            
-            
-            
-            
-            
-            Color::CurrentColor => 255,
-            
-            
-            
-            Color::Complex { .. } => 255,
-            Color::Numeric { ref parsed, .. } => parsed.alpha,
-        }
+    fn alpha_channel(color: &Color, context: &computed::Context) -> u8 {
+        
+        let color = color.to_computed_value(context).to_rgba(RGBA::new(0, 0, 0, 255));
+        color.alpha
     }
 
     
@@ -447,9 +431,9 @@ fn tweak_when_ignoring_colors(
             
             
             
-            let alpha = alpha_channel(color);
+            let alpha = alpha_channel(color, context);
             if alpha != 0 {
-                let mut color = builder.device.default_background_color();
+                let mut color = context.builder.device.default_background_color();
                 color.alpha = alpha;
                 declarations_to_apply_unless_overriden
                     .push(PropertyDeclaration::BackgroundColor(color.into()))
@@ -457,14 +441,14 @@ fn tweak_when_ignoring_colors(
         },
         PropertyDeclaration::Color(ref color) => {
             
-            if alpha_channel(&color.0) == 0 {
+            if alpha_channel(&color.0, context) == 0 {
                 return;
             }
             
             
             
-            if builder.get_parent_inherited_text().clone_color().alpha == 0 {
-                let color = builder.device.default_color();
+            if context.builder.get_parent_inherited_text().clone_color().alpha == 0 {
+                let color = context.builder.device.default_color();
                 declarations_to_apply_unless_overriden.push(PropertyDeclaration::Color(
                     specified::ColorPropertyValue(color.into()),
                 ))
@@ -638,7 +622,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             
             if ignore_colors {
                 tweak_when_ignoring_colors(
-                    &self.context.builder,
+                    &self.context,
                     longhand_id,
                     origin,
                     &mut declaration,
