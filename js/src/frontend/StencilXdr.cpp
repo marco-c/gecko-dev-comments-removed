@@ -17,6 +17,7 @@
 #include "frontend/CompilationStencil.h"  
 #include "frontend/ScriptIndex.h"         
 #include "vm/JSScript.h"                  
+#include "vm/Scope.h"                     
 #include "vm/StencilEnums.h"              
 
 using namespace js;
@@ -31,45 +32,6 @@ template <>
 struct CanEncodeNameType<TaggedParserAtomIndex> {
   static constexpr bool value = true;
 };
-
-template <XDRMode mode, typename ScopeT>
- XDRResult StencilXDR::ScopeSpecificData(
-    XDRState<mode>* xdr, BaseParserScopeData*& baseScopeData) {
-  using SlotInfo = typename ScopeT::SlotInfo;
-  using ScopeDataT = typename ScopeT::ParserData;
-
-  static_assert(CanEncodeNameType<typename ScopeDataT::NameType>::value);
-  static_assert(CanCopyDataToDisk<ScopeDataT>::value,
-                "ScopeData cannot be bulk-copied to disk");
-
-  
-  
-  
-  
-  static_assert(offsetof(ScopeDataT, length) == 0,
-                "length should be the first field");
-  static_assert(offsetof(ScopeDataT, slotInfo) == sizeof(uint32_t),
-                "slotInfo should be the second field");
-  static_assert(offsetof(ScopeDataT, trailingNames) ==
-                    sizeof(uint32_t) + sizeof(SlotInfo),
-                "trailingNames should be the third field");
-
-  MOZ_TRY(xdr->align32());
-
-  uint32_t length;
-  if (mode == XDR_ENCODE) {
-    length = baseScopeData->length;
-  } else {
-    MOZ_TRY(xdr->peekRawUint32(&length));
-  }
-
-  uint32_t totalLength =
-      sizeof(uint32_t) + sizeof(SlotInfo) +
-      sizeof(AbstractBindingName<TaggedParserAtomIndex>) * length;
-  MOZ_TRY(xdr->borrowedData(&baseScopeData, totalLength));
-
-  return Ok();
-}
 
 template <XDRMode mode, typename T, size_t N, class AP>
 static XDRResult XDRVectorUninitialized(XDRState<mode>* xdr,
@@ -221,78 +183,50 @@ static XDRResult XDRStencilModuleMetadata(XDRState<mode>* xdr,
   return Ok();
 }
 
+template <typename ScopeT>
+ void AssertScopeSpecificDataIsEncodable() {
+  using ScopeDataT = typename ScopeT::ParserData;
+
+  static_assert(CanEncodeNameType<typename ScopeDataT::NameType>::value);
+  static_assert(CanCopyDataToDisk<ScopeDataT>::value,
+                "ScopeData cannot be bulk-copied to disk");
+}
+
 template <XDRMode mode>
  XDRResult StencilXDR::ScopeData(
     XDRState<mode>* xdr, ScopeStencil& stencil,
     BaseParserScopeData*& baseScopeData) {
   
-  
-  
-  
-  switch (stencil.kind_) {
-    
-    case ScopeKind::Function: {
-      
-      MOZ_TRY((StencilXDR::ScopeSpecificData<mode, FunctionScope>(
-          xdr, baseScopeData)));
-      break;
-    }
-
-    
-    case ScopeKind::FunctionBodyVar: {
-      MOZ_TRY(
-          (StencilXDR::ScopeSpecificData<mode, VarScope>(xdr, baseScopeData)));
-      break;
-    }
-
-    
-    case ScopeKind::Lexical:
-    case ScopeKind::SimpleCatch:
-    case ScopeKind::Catch:
-    case ScopeKind::NamedLambda:
-    case ScopeKind::StrictNamedLambda:
-    case ScopeKind::FunctionLexical:
-    case ScopeKind::ClassBody: {
-      MOZ_TRY((StencilXDR::ScopeSpecificData<mode, LexicalScope>(
-          xdr, baseScopeData)));
-      break;
-    }
-
-    
-    case ScopeKind::With: {
-      
-      break;
-    }
-
-    
-    case ScopeKind::Eval:
-    case ScopeKind::StrictEval: {
-      MOZ_TRY(
-          (StencilXDR::ScopeSpecificData<mode, EvalScope>(xdr, baseScopeData)));
-      break;
-    }
-
-    
-    case ScopeKind::Global:
-    case ScopeKind::NonSyntactic: {
-      MOZ_TRY((StencilXDR::ScopeSpecificData<mode, GlobalScope>(
-          xdr, baseScopeData)));
-      break;
-    }
-
-    
-    case ScopeKind::Module: {
-      MOZ_TRY((StencilXDR::ScopeSpecificData<mode, ModuleScope>(
-          xdr, baseScopeData)));
-      break;
-    }
-
-    
-    case ScopeKind::WasmInstance:
-    case ScopeKind::WasmFunction:
-    default:
-      MOZ_ASSERT_UNREACHABLE("XDR unrecognized ScopeKind.");
+  MOZ_ASSERT(stencil.kind_ != ScopeKind::WasmInstance);
+  MOZ_ASSERT(stencil.kind_ != ScopeKind::WasmFunction);
+  if (stencil.kind_ == ScopeKind::With) {
+    return Ok();
   }
+
+  MOZ_TRY(xdr->align32());
+
+  static_assert(offsetof(BaseParserScopeData, length) == 0,
+                "length should be the first field");
+  uint32_t length;
+  if (mode == XDR_ENCODE) {
+    length = baseScopeData->length;
+  } else {
+    MOZ_TRY(xdr->peekRawUint32(&length));
+  }
+
+  AssertScopeSpecificDataIsEncodable<FunctionScope>();
+  AssertScopeSpecificDataIsEncodable<VarScope>();
+  AssertScopeSpecificDataIsEncodable<LexicalScope>();
+  AssertScopeSpecificDataIsEncodable<EvalScope>();
+  AssertScopeSpecificDataIsEncodable<GlobalScope>();
+  AssertScopeSpecificDataIsEncodable<ModuleScope>();
+
+  
+  
+  
+  
+  uint32_t totalLength = SizeOfParserScopeData(stencil.kind_, length);
+  MOZ_TRY(xdr->borrowedData(&baseScopeData, totalLength));
 
   return Ok();
 }

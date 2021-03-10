@@ -37,6 +37,7 @@
 #include "js/UniquePtr.h"             
 #include "js/Utility.h"    
 #include "vm/JSScript.h"   
+#include "vm/Scope.h"      
 #include "vm/ScopeKind.h"  
 #include "vm/SharedStencil.h"  
 
@@ -138,7 +139,7 @@ bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
         }
 
         CopyBindingNames(cx, global.bindings, allAtoms,
-                         data->trailingNames.start());
+                         GetScopeDataTrailingNamesPointer(data));
 
         data->slotInfo.letStart = global.let_start;
         data->slotInfo.constStart = global.const_start;
@@ -162,7 +163,7 @@ bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
         }
 
         CopyBindingNames(cx, var.bindings, allAtoms,
-                         data->trailingNames.start());
+                         GetScopeDataTrailingNamesPointer(data));
 
         
         
@@ -190,7 +191,7 @@ bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
         }
 
         CopyBindingNames(cx, lexical.bindings, allAtoms,
-                         data->trailingNames.start());
+                         GetScopeDataTrailingNamesPointer(data));
 
         
         
@@ -218,7 +219,7 @@ bool ConvertScopeStencil(JSContext* cx, const SmooshResult& result,
         }
 
         CopyBindingNames(cx, function.bindings, allAtoms,
-                         data->trailingNames.start());
+                         GetScopeDataTrailingNamesPointer(data));
 
         
         

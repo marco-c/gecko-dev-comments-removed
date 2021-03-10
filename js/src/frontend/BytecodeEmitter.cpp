@@ -72,6 +72,7 @@
 #include "vm/JSFunction.h"          
 #include "vm/JSScript.h"  
 #include "vm/Opcodes.h"        
+#include "vm/Scope.h"          
 #include "vm/SharedStencil.h"  
 #include "vm/ThrowMsgKind.h"   
 #include "vm/WellKnownAtom.h"  
@@ -10401,7 +10402,8 @@ bool BytecodeEmitter::emitClass(
     
     MOZ_ASSERT(!constructorScope->isEmptyScope());
     MOZ_ASSERT(constructorScope->scopeBindings()->length == 1);
-    MOZ_ASSERT(constructorScope->scopeBindings()->trailingNames[0].name() ==
+    MOZ_ASSERT(GetScopeDataTrailingNames(constructorScope->scopeBindings())[0]
+                   .name() ==
                TaggedParserAtomIndex::WellKnown::dotInitializers());
 
     auto needsInitializer = [](ParseNode* propdef) {

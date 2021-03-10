@@ -60,6 +60,7 @@
 #include "vm/JSScript.h"
 #include "vm/ModuleBuilder.h"  
 #include "vm/RegExpObject.h"
+#include "vm/Scope.h"  
 #include "vm/SelfHosting.h"
 #include "vm/StringType.h"
 #include "vm/WellKnownAtom.h"  
@@ -1002,13 +1003,14 @@ static MOZ_ALWAYS_INLINE ParserBindingName* InitializeIndexedBindings(
 
 
 
+
 template <class Data, typename... Step>
 static MOZ_ALWAYS_INLINE void InitializeBindingData(
     Data* data, uint32_t count, const ParserBindingNameVector& firstBindings,
     Step&&... step) {
   MOZ_ASSERT(data->length == 0, "data shouldn't be filled yet");
 
-  ParserBindingName* start = data->trailingNames.start();
+  ParserBindingName* start = GetScopeDataTrailingNamesPointer(data);
   ParserBindingName* cursor = std::uninitialized_copy(
       firstBindings.begin(), firstBindings.end(), start);
 
