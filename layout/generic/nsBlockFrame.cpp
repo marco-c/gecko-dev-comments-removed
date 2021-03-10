@@ -1531,8 +1531,8 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   }
 
   nsRect areaBounds = nsRect(0, 0, aMetrics.Width(), aMetrics.Height());
-  ComputeOverflowAreas(areaBounds, reflowInput->mStyleDisplay,
-                       blockEndEdgeOfChildren, aMetrics.mOverflowAreas);
+  aMetrics.mOverflowAreas = ComputeOverflowAreas(
+      areaBounds, reflowInput->mStyleDisplay, blockEndEdgeOfChildren);
   
   aMetrics.mOverflowAreas.UnionWith(ocBounds);
   
@@ -2089,10 +2089,9 @@ static void ConsiderBlockEndEdgeOfChildren(const WritingMode aWritingMode,
   }
 }
 
-void nsBlockFrame::ComputeOverflowAreas(const nsRect& aBounds,
-                                        const nsStyleDisplay* aDisplay,
-                                        nscoord aBEndEdgeOfChildren,
-                                        OverflowAreas& aOverflowAreas) {
+OverflowAreas nsBlockFrame::ComputeOverflowAreas(const nsRect& aBounds,
+                                                 const nsStyleDisplay* aDisplay,
+                                                 nscoord aBEndEdgeOfChildren) {
   
   
   
@@ -2134,7 +2133,7 @@ void nsBlockFrame::ComputeOverflowAreas(const nsRect& aBounds,
          ToString(areas.ScrollableOverflow()).c_str());
 #endif
 
-  aOverflowAreas = areas;
+  return areas;
 }
 
 void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas) {
