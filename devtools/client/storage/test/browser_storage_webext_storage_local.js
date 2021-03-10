@@ -43,17 +43,23 @@ async function setupLocalDevToolsServerAndClient() {
 
 
 
-async function setupExtensionDebuggingToolbox(id) {
+async function setupExtensionDebuggingToolbox(id, options = {}) {
+  const { openToolbox = false } = options;
+
   const client = await setupLocalDevToolsServerAndClient();
-  const descriptor = await client.mainRoot.getAddon({ id });
-
-  const { toolbox, storage } = await openStoragePanel({
-    descriptor,
-    hostType: Toolbox.HostType.WINDOW,
-  });
-
-  const target = toolbox.target;
+  const front = await client.mainRoot.getAddon({ id });
+  const target = await front.getTarget();
   target.shouldCloseClient = true;
+
+  let toolbox;
+  let storage;
+  if (openToolbox) {
+    const res = await openStoragePanel({
+      target,
+      hostType: Toolbox.HostType.WINDOW,
+    });
+    ({ toolbox, storage } = res);
+  }
 
   return { target, toolbox, storage };
 }
