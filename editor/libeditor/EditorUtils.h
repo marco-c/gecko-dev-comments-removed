@@ -1102,18 +1102,13 @@ class EditorUtils final {
 
   static bool IsEditableContent(const nsIContent& aContent,
                                 EditorType aEditorType) {
-    if ((aEditorType == EditorType::HTML && !aContent.IsEditable()) ||
-        EditorUtils::IsPaddingBRElementForEmptyEditor(aContent)) {
+    if (aEditorType == EditorType::HTML && !aContent.IsEditable()) {
+      
+      
+      
       return false;
     }
-
-    
-    
-    if (aContent.IsElement()) {
-      return aEditorType == EditorType::HTML ? aContent.IsEditable() : true;
-    }
-    
-    return aContent.IsText();
+    return IsElementOrText(aContent);
   }
 
   
@@ -1125,8 +1120,7 @@ class EditorUtils final {
     if (aContent.IsText()) {
       return true;
     }
-    return aContent.IsElement() &&
-           !EditorUtils::IsPaddingBRElementForEmptyEditor(aContent);
+    return aContent.IsElement() && !IsPaddingBRElementForEmptyEditor(aContent);
   }
 
   
