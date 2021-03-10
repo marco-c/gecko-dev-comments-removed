@@ -798,7 +798,7 @@ RemoteAccessible* RemoteAccessible::ChildAtPoint(
     }
     
     
-    if (proxy->ChildrenCount() == 1) {
+    if (proxy->ChildCount() == 1) {
       proxy = proxy->RemoteChildAt(0);
       if (proxy->IsDoc()) {
         
