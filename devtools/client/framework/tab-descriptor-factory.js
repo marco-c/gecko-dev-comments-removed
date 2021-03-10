@@ -1,0 +1,113 @@
+
+
+
+
+"use strict";
+
+loader.lazyRequireGetter(
+  this,
+  "DevToolsServer",
+  "devtools/server/devtools-server",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "DevToolsClient",
+  "devtools/client/devtools-client",
+  true
+);
+
+
+const descriptors = new WeakMap();
+
+
+
+
+exports.TabDescriptorFactory = {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async createDescriptorForTab(tab) {
+    let descriptor = descriptors.get(tab);
+    if (descriptor) {
+      return descriptor;
+    }
+
+    const promise = this._createDescriptorForTab(tab);
+    
+    descriptors.set(tab, promise);
+    descriptor = await promise;
+    
+    descriptors.set(tab, descriptor);
+
+    descriptor.once("descriptor-destroyed", () => {
+      descriptors.delete(tab);
+    });
+    return descriptor;
+  },
+
+  async _createDescriptorForTab(tab) {
+    
+    this._ensureDevToolsServerInitialized();
+
+    
+    const client = new DevToolsClient(DevToolsServer.connectPipe());
+    await client.connect();
+
+    return client.mainRoot.getTab({ tab });
+  },
+
+  _ensureDevToolsServerInitialized() {
+    
+    
+    DevToolsServer.init();
+
+    
+    
+    
+    
+    
+    
+    DevToolsServer.registerAllActors();
+    
+    DevToolsServer.allowChromeProcess = true;
+  },
+
+  
+
+
+
+
+
+
+  async getDescriptorForTab(tab) {
+    
+    
+    
+    const descriptor = await descriptors.get(tab);
+    return descriptor;
+  },
+
+  
+
+
+
+
+  isKnownTab: function(tab) {
+    return descriptors.has(tab);
+  },
+};

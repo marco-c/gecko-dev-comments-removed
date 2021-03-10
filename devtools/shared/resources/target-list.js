@@ -22,14 +22,6 @@ const {
   LegacyWorkersWatcher,
 } = require("devtools/shared/resources/legacy-target-watchers/legacy-workers-watcher");
 
-
-loader.lazyRequireGetter(
-  this,
-  "TabTargetFactory",
-  "devtools/client/framework/tab-target-factory",
-  true
-);
-
 class TargetList extends EventEmitter {
   
 
@@ -539,10 +531,6 @@ class TargetList extends EventEmitter {
 
   async onLocalTabRemotenessChange(targetFront) {
     
-    const client = targetFront.client;
-    const localTab = targetFront.localTab;
-
-    
     
     
     
@@ -555,7 +543,7 @@ class TargetList extends EventEmitter {
     await targetFront.once("target-destroyed");
 
     
-    const newTarget = await TabTargetFactory.forTab(localTab, client);
+    const newTarget = await this.descriptorFront.getTarget();
 
     this.switchToTarget(newTarget);
   }

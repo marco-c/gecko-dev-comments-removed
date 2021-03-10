@@ -343,7 +343,7 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     gBrowser.selectedTab = gBrowser.addTrustedTab(url);
   },
 
-  async _getContentProcessTarget(processId) {
+  async _getContentProcessDescriptor(processId) {
     
     DevToolsServer.init();
     DevToolsServer.registerAllActors();
@@ -353,15 +353,7 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     const client = new DevToolsClient(transport);
 
     await client.connect();
-    const targetDescriptor = await client.mainRoot.getProcess(processId);
-    const target = await targetDescriptor.getTarget();
-    
-    
-    
-    target.on("target-destroyed", () => {
-      client.close();
-    });
-    return target;
+    return client.mainRoot.getProcess(processId);
   },
 
   
@@ -371,7 +363,7 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
 
 
 
-  openContentProcessToolbox(gBrowser) {
+  async openContentProcessToolbox(gBrowser) {
     const { childCount } = Services.ppmm;
     
     const mm = gBrowser.selectedBrowser.messageManager.processMessageManager;
@@ -384,22 +376,34 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
       }
     }
     if (processId) {
-      return this._getContentProcessTarget(processId)
-        .then(target => {
-          
-          return gDevTools.showToolbox(target, null, Toolbox.HostType.WINDOW);
-        })
-        .catch(e => {
-          console.error(
-            "Exception while opening the browser content toolbox:",
-            e
-          );
-        });
-    }
+      try {
+        const descriptor = await this._getContentProcessDescriptor(processId);
+        
+        const toolbox = await gDevTools.showToolbox(
+          descriptor,
+          null,
+          Toolbox.HostType.WINDOW
+        );
 
-    const msg = L10N.getStr("toolbox.noContentProcessForTab.message");
-    Services.prompt.alert(null, "", msg);
-    return Promise.reject(msg);
+        
+        
+        
+        toolbox.target.on("target-destroyed", () => {
+          toolbox.target.client.close();
+        });
+
+        return toolbox;
+      } catch (e) {
+        console.error(
+          "Exception while opening the browser content toolbox:",
+          e
+        );
+      }
+    } else {
+      const msg = L10N.getStr("toolbox.noContentProcessForTab.message");
+      Services.prompt.alert(null, "", msg);
+      throw new Error(msg);
+    }
   },
 
   
