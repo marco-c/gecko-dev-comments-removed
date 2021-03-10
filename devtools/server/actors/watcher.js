@@ -519,8 +519,15 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
     await Promise.all(
       Object.values(Targets.TYPES)
-        .filter(targetType =>
-          WatcherRegistry.isWatchingTargets(this, targetType)
+        .filter(
+          targetType =>
+            
+            
+            
+            
+            
+            WatcherRegistry.isWatchingTargets(this, targetType) ||
+            targetType === Targets.TYPES.FRAME
         )
         .map(async targetType => {
           const targetHelperModule = TARGET_HELPERS[targetType];
@@ -553,7 +560,12 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     WatcherRegistry.removeWatcherDataEntry(this, type, entries);
 
     Object.values(Targets.TYPES)
-      .filter(targetType => WatcherRegistry.isWatchingTargets(this, targetType))
+      .filter(
+        targetType =>
+          
+          WatcherRegistry.isWatchingTargets(this, targetType) ||
+          targetType === Targets.TYPES.FRAME
+      )
       .forEach(targetType => {
         const targetHelperModule = TARGET_HELPERS[targetType];
         targetHelperModule.removeWatcherDataEntry({
