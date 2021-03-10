@@ -8,13 +8,6 @@ var EXPORTED_SYMBOLS = ["RecommendedPreferences"];
 
 const RecommendedPreferences = {
   
-  
-  
-  
-  
-  "app.update.disabledForTesting": true,
-
-  
   "focusmanager.testmode": true,
 
   
