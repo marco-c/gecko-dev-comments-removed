@@ -61,10 +61,10 @@ function promiseOverflowAnimationEnd() {
 
 
 add_task(async function() {
-  let homeButton = document.getElementById("home-button");
+  let stopReloadButton = document.getElementById("stop-reload-button");
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
-  EventUtils.synthesizeMouseAtCenter(homeButton, {
+  EventUtils.synthesizeMouseAtCenter(stopReloadButton, {
     type: "contextmenu",
     button: 2,
   });
@@ -74,7 +74,7 @@ add_task(async function() {
   await contextMenu.hidePopup();
 
   await Promise.all([
-    promiseWidgetAnimationOut(homeButton),
+    promiseWidgetAnimationOut(stopReloadButton),
     promiseOverflowAnimationEnd(),
   ]);
   ok(true, "The widget and overflow animations should have both happened.");

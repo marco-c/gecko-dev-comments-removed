@@ -23,32 +23,4 @@ add_task(async function reset_should_not_keep_currentArea() {
   );
 });
 
-
-
-add_task(async function reset_should_not_keep_currentArea() {
-  const kButtonId = "sidebar-button";
-  
-  is(
-    CustomizableUI.getWidget(kButtonId).areaType,
-    CustomizableUI.TYPE_TOOLBAR,
-    "Button should know it's in the toolbar"
-  );
-  CustomizableUI.removeWidgetFromArea(kButtonId);
-  ok(
-    !CustomizableUI.getWidget(kButtonId).areaType,
-    "Button should know it's no longer in the toolbar"
-  );
-  CustomizableUI.reset();
-  is(
-    CustomizableUI.getWidget(kButtonId).areaType,
-    CustomizableUI.TYPE_TOOLBAR,
-    "Button should know it's in the toolbar again"
-  );
-  CustomizableUI.undoReset();
-  ok(
-    !CustomizableUI.getWidget(kButtonId).areaType,
-    "Button should know it's no longer in the toolbar again"
-  );
-});
-
 registerCleanupFunction(() => CustomizableUI.reset());

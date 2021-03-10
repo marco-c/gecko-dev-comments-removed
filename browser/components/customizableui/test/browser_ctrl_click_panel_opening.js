@@ -40,15 +40,11 @@ add_task(async function test_appMenu_libraryView() {
     return;
   }
 
-  if (PanelUI.protonAppMenuEnabled) {
-    ok(
-      true,
-      "Skipping test since this item does not exist in the Proton AppMenu"
-    );
-    return;
+  if (CustomizableUI.protonToolbarEnabled) {
+    CustomizableUI.addWidgetToArea("library-button", "nav-bar");
   }
-
   const button = document.getElementById("library-button");
+  await waitForElementShown(button);
 
   
   EventUtils.synthesizeMouseAtCenter(button, { ctrlKey: true });

@@ -16,8 +16,8 @@ const overflowPanel = document.getElementById("widget-overflow");
 add_task(async function home_button_context() {
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
-  let homeButton = document.getElementById("home-button");
-  EventUtils.synthesizeMouse(homeButton, 2, 2, {
+  let stopReloadButton = document.getElementById("stop-reload-button");
+  EventUtils.synthesizeMouse(stopReloadButton, 2, 2, {
     type: "contextmenu",
     button: 2,
   });
@@ -288,8 +288,8 @@ add_task(async function context_home_button_in_customize_mode() {
   await startCustomizing();
   let contextMenu = document.getElementById("toolbar-context-menu");
   let shownPromise = popupShown(contextMenu);
-  let homeButton = document.getElementById("wrapper-home-button");
-  EventUtils.synthesizeMouse(homeButton, 2, 2, {
+  let stopReloadButton = document.getElementById("wrapper-stop-reload-button");
+  EventUtils.synthesizeMouse(stopReloadButton, 2, 2, {
     type: "contextmenu",
     button: 2,
   });

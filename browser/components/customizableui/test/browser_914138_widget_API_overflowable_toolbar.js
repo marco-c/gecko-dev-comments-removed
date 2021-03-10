@@ -22,14 +22,21 @@ const kSearchBox = "search-container";
 var originalWindowWidth;
 
 
-add_task(async function() {
+add_task(async function subsequent_widget() {
   originalWindowWidth = window.outerWidth;
   createDummyXULButton(kTestBtn1, "Test");
   ok(
     !navbar.hasAttribute("overflowing"),
-    "Should start with a non-overflowing toolbar."
+    "Should start subsequent_widget with a non-overflowing toolbar."
   );
-  ok(CustomizableUI.inDefaultState, "Should start in default state.");
+  ok(
+    CustomizableUI.inDefaultState,
+    "Should start subsequent_widget in default state."
+  );
+  if (CustomizableUI.protonToolbarEnabled) {
+    CustomizableUI.addWidgetToArea(kSidebarBtn, "nav-bar");
+    await waitForElementShown(document.getElementById(kSidebarBtn));
+  }
 
   window.resizeTo(kForceOverflowWidthPx, window.outerHeight);
   await TestUtils.waitForCondition(() => {
@@ -111,18 +118,24 @@ add_task(async function() {
     CustomizableUI.removeWidgetFromArea(kTestBtn1);
     el.remove();
   }
+  if (CustomizableUI.protonToolbarEnabled) {
+    CustomizableUI.removeWidgetFromArea(kSidebarBtn);
+  }
   window.resizeTo(originalWindowWidth, window.outerHeight);
   await TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
 });
 
 
-add_task(async function() {
+add_task(async function remove_widget() {
   createDummyXULButton(kTestBtn2, "Test");
   ok(
     !navbar.hasAttribute("overflowing"),
-    "Should start with a non-overflowing toolbar."
+    "Should start remove_widget with a non-overflowing toolbar."
   );
-  ok(CustomizableUI.inDefaultState, "Should start in default state.");
+  ok(
+    CustomizableUI.inDefaultState,
+    "Should start remove_widget in default state."
+  );
   CustomizableUI.addWidgetToArea(kTestBtn2, navbar.id);
   ok(
     !navbar.hasAttribute("overflowing"),
@@ -172,13 +185,21 @@ add_task(async function() {
 });
 
 
-add_task(async function() {
+add_task(async function construct_widget() {
   originalWindowWidth = window.outerWidth;
   ok(
     !navbar.hasAttribute("overflowing"),
-    "Should start with a non-overflowing toolbar."
+    "Should start construct_widget with a non-overflowing toolbar."
   );
-  ok(CustomizableUI.inDefaultState, "Should start in default state.");
+  ok(
+    CustomizableUI.inDefaultState,
+    "Should start construct_widget in default state."
+  );
+
+  if (CustomizableUI.protonToolbarEnabled) {
+    CustomizableUI.addWidgetToArea(kSidebarBtn, "nav-bar");
+    await waitForElementShown(document.getElementById(kSidebarBtn));
+  }
 
   window.resizeTo(kForceOverflowWidthPx, window.outerHeight);
   await TestUtils.waitForCondition(() => {
@@ -229,6 +250,9 @@ add_task(async function() {
   testNode = document.getElementById(kTestBtn3);
   ok(!testNode, "Test button should be gone");
   CustomizableUI.destroyWidget(kTestBtn3);
+  if (CustomizableUI.protonToolbarEnabled) {
+    CustomizableUI.removeWidgetFromArea(kSidebarBtn);
+  }
   window.resizeTo(originalWindowWidth, window.outerHeight);
   await TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
 });
@@ -238,16 +262,28 @@ add_task(async function insertBeforeFirstItemInOverflow() {
 
   ok(
     !navbar.hasAttribute("overflowing"),
-    "Should start with a non-overflowing toolbar."
+    "Should start insertBeforeFirstItemInOverflow with a non-overflowing toolbar."
   );
-  ok(CustomizableUI.inDefaultState, "Should start in default state.");
+  ok(
+    CustomizableUI.inDefaultState,
+    "Should start insertBeforeFirstItemInOverflow in default state."
+  );
+
+  if (CustomizableUI.protonToolbarEnabled) {
+    CustomizableUI.addWidgetToArea(
+      kLibraryButton,
+      "nav-bar",
+      CustomizableUI.getWidgetIdsInArea("nav-bar").indexOf(kDownloadsBtn)
+    );
+  }
+  let libraryButton = document.getElementById(kLibraryButton);
+  await waitForElementShown(libraryButton);
   
   navbar
     .querySelectorAll("toolbarspring")
     .forEach(s => CustomizableUI.removeWidgetFromArea(s.id));
   let urlbar = document.getElementById("urlbar-container");
   urlbar.style.minWidth = urlbar.getBoundingClientRect().width + "px";
-  let libraryButton = document.getElementById(kLibraryButton);
   
   
   
@@ -300,6 +336,9 @@ add_task(async function insertBeforeFirstItemInOverflow() {
   testNode && testNode.remove();
 
   urlbar.style.removeProperty("min-width");
+  if (CustomizableUI.protonToolbarEnabled) {
+    CustomizableUI.removeWidgetFromArea(kLibraryButton);
+  }
   window.resizeTo(originalWindowWidth, window.outerHeight);
   await TestUtils.waitForCondition(() => !navbar.hasAttribute("overflowing"));
   await resetCustomization();
