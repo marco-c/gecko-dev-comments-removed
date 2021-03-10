@@ -62,23 +62,6 @@ class SharedSurfaceTextureData : public TextureData {
   mozilla::ipc::FileDescriptor GetAcquireFence() override;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }  
 }  
 

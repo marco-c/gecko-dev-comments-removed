@@ -86,7 +86,6 @@ struct TextureDeallocParams {
   RefPtr<LayersIPCChannel> allocator;
   bool clientDeallocation;
   bool syncDeallocation;
-  bool workAroundSharedSurfaceOwnershipIssue;
 };
 
 void DeallocateTextureClient(TextureDeallocParams params);
@@ -558,13 +557,8 @@ void DeallocateTextureClient(TextureDeallocParams params) {
     
     
     
-    
-    
-    
-    
-    bool shouldDeallocate = !params.workAroundSharedSurfaceOwnershipIssue;
-    DestroyTextureData(params.data, params.allocator, shouldDeallocate,
-                       false);  
+    DestroyTextureData(params.data, params.allocator,  true,
+                        false);
     return;
   }
 
@@ -591,22 +585,14 @@ void TextureClient::Destroy() {
   }
 
   TextureData* data = mData;
-  if (!mWorkaroundAnnoyingSharedSurfaceLifetimeIssues) {
-    mData = nullptr;
-  }
+  mData = nullptr;
 
   if (data || actor) {
     TextureDeallocParams params;
     params.actor = actor;
     params.allocator = mAllocator;
     params.clientDeallocation = !!(mFlags & TextureFlags::DEALLOCATE_CLIENT);
-    params.workAroundSharedSurfaceOwnershipIssue =
-        mWorkaroundAnnoyingSharedSurfaceOwnershipIssues;
-    if (mWorkaroundAnnoyingSharedSurfaceLifetimeIssues) {
-      params.data = nullptr;
-    } else {
-      params.data = data;
-    }
+    params.data = data;
     
     
     
@@ -1415,8 +1401,6 @@ TextureClient::TextureClient(TextureData* aData, TextureFlags aFlags,
       mIsReadLocked(false),
       mUpdated(false),
       mAddedToCompositableClient(false),
-      mWorkaroundAnnoyingSharedSurfaceLifetimeIssues(false),
-      mWorkaroundAnnoyingSharedSurfaceOwnershipIssues(false),
       mFwdTransactionId(0),
       mSerial(++sSerialCounter)
 #ifdef GFX_DEBUG_TRACK_CLIENTS_IN_POOL
