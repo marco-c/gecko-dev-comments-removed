@@ -1,28 +1,37 @@
-# -*- coding: utf-8 -*-
-""" monkeypatching and mocking functionality.  """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
+"""Monkeypatching and mocking functionality."""
 import os
 import re
 import sys
 import warnings
 from contextlib import contextmanager
-
-import six
+from typing import Any
+from typing import Generator
+from typing import List
+from typing import MutableMapping
+from typing import Optional
+from typing import Tuple
+from typing import TypeVar
+from typing import Union
 
 import pytest
+from _pytest.compat import final
+from _pytest.compat import overload
 from _pytest.fixtures import fixture
 from _pytest.pathlib import Path
 
 RE_IMPORT_ERROR_NAME = re.compile(r"^No module named (.*)$")
 
 
+K = TypeVar("K")
+V = TypeVar("V")
+
+
 @fixture
-def monkeypatch():
-    """The returned ``monkeypatch`` fixture provides these
-    helper methods to modify objects, dictionaries or os.environ::
+def monkeypatch() -> Generator["MonkeyPatch", None, None]:
+    """A convenient fixture for monkey-patching.
+
+    The fixture provides these methods to modify objects, dictionaries or
+    os.environ::
 
         monkeypatch.setattr(obj, name, value, raising=True)
         monkeypatch.delattr(obj, name, raising=True)
@@ -33,17 +42,16 @@ def monkeypatch():
         monkeypatch.syspath_prepend(path)
         monkeypatch.chdir(path)
 
-    All modifications will be undone after the requesting
-    test function or fixture has finished. The ``raising``
-    parameter determines if a KeyError or AttributeError
-    will be raised if the set/deletion operation has no target.
+    All modifications will be undone after the requesting test function or
+    fixture has finished. The ``raising`` parameter determines if a KeyError
+    or AttributeError will be raised if the set/deletion operation has no target.
     """
     mpatch = MonkeyPatch()
     yield mpatch
     mpatch.undo()
 
 
-def resolve(name):
+def resolve(name: str) -> object:
     
     parts = name.split(".")
 
@@ -62,29 +70,32 @@ def resolve(name):
         try:
             __import__(used)
         except ImportError as ex:
-            
             expected = str(ex).split()[-1]
             if expected == used:
                 raise
             else:
-                raise ImportError("import error in %s: %s" % (used, ex))
+                raise ImportError("import error in {}: {}".format(used, ex)) from ex
         found = annotated_getattr(found, part, used)
     return found
 
 
-def annotated_getattr(obj, name, ann):
+def annotated_getattr(obj: object, name: str, ann: str) -> object:
     try:
         obj = getattr(obj, name)
-    except AttributeError:
+    except AttributeError as e:
         raise AttributeError(
-            "%r object at %s has no attribute %r" % (type(obj).__name__, ann, name)
-        )
+            "{!r} object at {} has no attribute {!r}".format(
+                type(obj).__name__, ann, name
+            )
+        ) from e
     return obj
 
 
-def derive_importpath(import_path, raising):
-    if not isinstance(import_path, six.string_types) or "." not in import_path:
-        raise TypeError("must be absolute import path string, not %r" % (import_path,))
+def derive_importpath(import_path: str, raising: bool) -> Tuple[str, object]:
+    if not isinstance(import_path, str) or "." not in import_path:  
+        raise TypeError(
+            "must be absolute import path string, not {!r}".format(import_path)
+        )
     module, attr = import_path.rsplit(".", 1)
     target = resolve(module)
     if raising:
@@ -92,33 +103,39 @@ def derive_importpath(import_path, raising):
     return attr, target
 
 
-class Notset(object):
-    def __repr__(self):
+class Notset:
+    def __repr__(self) -> str:
         return "<notset>"
 
 
 notset = Notset()
 
 
-class MonkeyPatch(object):
-    """ Object returned by the ``monkeypatch`` fixture keeping a record of setattr/item/env/syspath changes.
-    """
+@final
+class MonkeyPatch:
+    """Object returned by the ``monkeypatch`` fixture keeping a record of
+    setattr/item/env/syspath changes."""
 
-    def __init__(self):
-        self._setattr = []
-        self._setitem = []
-        self._cwd = None
-        self._savesyspath = None
+    def __init__(self) -> None:
+        self._setattr = []  
+        self._setitem = (
+            []
+        )  
+        self._cwd = None  
+        self._savesyspath = None  
 
     @contextmanager
-    def context(self):
-        """
-        Context manager that returns a new :class:`MonkeyPatch` object which
-        undoes any patching done inside the ``with`` block upon exit:
+    def context(self) -> Generator["MonkeyPatch", None, None]:
+        """Context manager that returns a new :class:`MonkeyPatch` object
+        which undoes any patching done inside the ``with`` block upon exit.
+
+        Example:
 
         .. code-block:: python
 
             import functools
+
+
             def test_partial(monkeypatch):
                 with monkeypatch.context() as m:
                     m.setattr(functools, "partial", 3)
@@ -133,25 +150,41 @@ class MonkeyPatch(object):
         finally:
             m.undo()
 
-    def setattr(self, target, name, value=notset, raising=True):
-        """ Set attribute value on target, memorizing the old value.
-        By default raise AttributeError if the attribute did not exist.
+    @overload
+    def setattr(
+        self, target: str, name: object, value: Notset = ..., raising: bool = ...,
+    ) -> None:
+        ...
+
+    @overload  
+    def setattr(  
+        self, target: object, name: str, value: object, raising: bool = ...,
+    ) -> None:
+        ...
+
+    def setattr(  
+        self,
+        target: Union[str, object],
+        name: Union[object, str],
+        value: object = notset,
+        raising: bool = True,
+    ) -> None:
+        """Set attribute value on target, memorizing the old value.
 
         For convenience you can specify a string as ``target`` which
         will be interpreted as a dotted import path, with the last part
-        being the attribute name.  Example:
+        being the attribute name. For example,
         ``monkeypatch.setattr("os.getcwd", lambda: "/")``
         would set the ``getcwd`` function of the ``os`` module.
 
-        The ``raising`` value determines if the setattr should fail
-        if the attribute is not already present (defaults to True
-        which means it will raise).
+        Raises AttributeError if the attribute does not exist, unless
+        ``raising`` is set to False.
         """
         __tracebackhide__ = True
         import inspect
 
-        if value is notset:
-            if not isinstance(target, six.string_types):
+        if isinstance(value, Notset):
+            if not isinstance(target, str):
                 raise TypeError(
                     "use setattr(target, name, value) or "
                     "setattr(target, value) with target being a dotted "
@@ -159,10 +192,17 @@ class MonkeyPatch(object):
                 )
             value = name
             name, target = derive_importpath(target, raising)
+        else:
+            if not isinstance(name, str):
+                raise TypeError(
+                    "use setattr(target, name, value) with name being a string or "
+                    "setattr(target, value) with target being a dotted "
+                    "import string"
+                )
 
         oldval = getattr(target, name, notset)
         if raising and oldval is notset:
-            raise AttributeError("%r has no attribute %r" % (target, name))
+            raise AttributeError("{!r} has no attribute {!r}".format(target, name))
 
         
         if inspect.isclass(target):
@@ -170,22 +210,26 @@ class MonkeyPatch(object):
         self._setattr.append((target, name, oldval))
         setattr(target, name, value)
 
-    def delattr(self, target, name=notset, raising=True):
-        """ Delete attribute ``name`` from ``target``, by default raise
-        AttributeError it the attribute did not previously exist.
+    def delattr(
+        self,
+        target: Union[object, str],
+        name: Union[str, Notset] = notset,
+        raising: bool = True,
+    ) -> None:
+        """Delete attribute ``name`` from ``target``.
 
         If no ``name`` is specified and ``target`` is a string
         it will be interpreted as a dotted import path with the
         last part being the attribute name.
 
-        If ``raising`` is set to False, no exception will be raised if the
-        attribute is missing.
+        Raises AttributeError it the attribute does not exist, unless
+        ``raising`` is set to False.
         """
         __tracebackhide__ = True
         import inspect
 
-        if name is notset:
-            if not isinstance(target, six.string_types):
+        if isinstance(name, Notset):
+            if not isinstance(target, str):
                 raise TypeError(
                     "use delattr(target, name) or "
                     "delattr(target) with target being a dotted "
@@ -204,16 +248,16 @@ class MonkeyPatch(object):
             self._setattr.append((target, name, oldval))
             delattr(target, name)
 
-    def setitem(self, dic, name, value):
-        """ Set dictionary entry ``name`` to value. """
+    def setitem(self, dic: MutableMapping[K, V], name: K, value: V) -> None:
+        """Set dictionary entry ``name`` to value."""
         self._setitem.append((dic, name, dic.get(name, notset)))
         dic[name] = value
 
-    def delitem(self, dic, name, raising=True):
-        """ Delete ``name`` from dict. Raise KeyError if it doesn't exist.
+    def delitem(self, dic: MutableMapping[K, V], name: K, raising: bool = True) -> None:
+        """Delete ``name`` from dict.
 
-        If ``raising`` is set to False, no exception will be raised if the
-        key is missing.
+        Raises ``KeyError`` if it doesn't exist, unless ``raising`` is set to
+        False.
         """
         if name not in dic:
             if raising:
@@ -222,21 +266,15 @@ class MonkeyPatch(object):
             self._setitem.append((dic, name, dic.get(name, notset)))
             del dic[name]
 
-    def _warn_if_env_name_is_not_str(self, name):
-        """On Python 2, warn if the given environment variable name is not a native str (#4056)"""
-        if six.PY2 and not isinstance(name, str):
-            warnings.warn(
-                pytest.PytestWarning(
-                    "Environment variable name {!r} should be str".format(name)
-                )
-            )
+    def setenv(self, name: str, value: str, prepend: Optional[str] = None) -> None:
+        """Set environment variable ``name`` to ``value``.
 
-    def setenv(self, name, value, prepend=None):
-        """ Set environment variable ``name`` to ``value``.  If ``prepend``
-        is a character, read the current environment variable value
-        and prepend the ``value`` adjoined with the ``prepend`` character."""
+        If ``prepend`` is a character, read the current environment variable
+        value and prepend the ``value`` adjoined with the ``prepend``
+        character.
+        """
         if not isinstance(value, str):
-            warnings.warn(
+            warnings.warn(  
                 pytest.PytestWarning(
                     "Value of environment variable {name} type should be str, but got "
                     "{value!r} (type: {type}); converted to str implicitly".format(
@@ -248,21 +286,19 @@ class MonkeyPatch(object):
             value = str(value)
         if prepend and name in os.environ:
             value = value + prepend + os.environ[name]
-        self._warn_if_env_name_is_not_str(name)
         self.setitem(os.environ, name, value)
 
-    def delenv(self, name, raising=True):
-        """ Delete ``name`` from the environment. Raise KeyError if it does
-        not exist.
+    def delenv(self, name: str, raising: bool = True) -> None:
+        """Delete ``name`` from the environment.
 
-        If ``raising`` is set to False, no exception will be raised if the
-        environment variable is missing.
+        Raises ``KeyError`` if it does not exist, unless ``raising`` is set to
+        False.
         """
-        self._warn_if_env_name_is_not_str(name)
-        self.delitem(os.environ, name, raising=raising)
+        environ = os.environ  
+        self.delitem(environ, name, raising=raising)
 
-    def syspath_prepend(self, path):
-        """ Prepend ``path`` to ``sys.path`` list of import locations. """
+    def syspath_prepend(self, path) -> None:
+        """Prepend ``path`` to ``sys.path`` list of import locations."""
         from pkg_resources import fixup_namespace_packages
 
         if self._savesyspath is None:
@@ -279,13 +315,13 @@ class MonkeyPatch(object):
         
         
         
-        if sys.version_info >= (3, 3):
-            from importlib import invalidate_caches
+        from importlib import invalidate_caches
 
-            invalidate_caches()
+        invalidate_caches()
 
-    def chdir(self, path):
-        """ Change the current working directory to the specified path.
+    def chdir(self, path) -> None:
+        """Change the current working directory to the specified path.
+
         Path can be a string or a py.path.local object.
         """
         if self._cwd is None:
@@ -298,10 +334,11 @@ class MonkeyPatch(object):
         else:
             os.chdir(path)
 
-    def undo(self):
-        """ Undo previous changes.  This call consumes the
-        undo stack. Calling it a second time has no effect unless
-        you do more monkeypatching after the undo call.
+    def undo(self) -> None:
+        """Undo previous changes.
+
+        This call consumes the undo stack. Calling it a second time has no
+        effect unless you do more monkeypatching after the undo call.
 
         There is generally no need to call `undo()`, since it is
         called automatically during tear-down.
@@ -318,14 +355,14 @@ class MonkeyPatch(object):
             else:
                 delattr(obj, name)
         self._setattr[:] = []
-        for dictionary, name, value in reversed(self._setitem):
+        for dictionary, key, value in reversed(self._setitem):
             if value is notset:
                 try:
-                    del dictionary[name]
+                    del dictionary[key]
                 except KeyError:
                     pass  
             else:
-                dictionary[name] = value
+                dictionary[key] = value
         self._setitem[:] = []
         if self._savesyspath is not None:
             sys.path[:] = self._savesyspath

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 
 
@@ -16,11 +15,15 @@
 
 
 
-import datetime
 import os
 import sys
 
 from _pytest import __version__ as version
+from _pytest.compat import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import sphinx.application
+
 
 release = ".".join(version.split(".")[:2])
 
@@ -40,6 +43,7 @@ todo_include_todos = 1
 
 
 extensions = [
+    "pallets_sphinx_themes",
     "pygments_pytest",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
@@ -63,9 +67,8 @@ source_suffix = ".rst"
 master_doc = "contents"
 
 
-project = u"pytest"
-year = datetime.datetime.utcnow().year
-copyright = u"2015–2020, holger krekel and pytest-dev team"
+project = "pytest"
+copyright = "2015–2020, holger krekel and pytest-dev team"
 
 
 
@@ -81,7 +84,6 @@ copyright = u"2015–2020, holger krekel and pytest-dev team"
 
 
 exclude_patterns = [
-    "links.inc",
     "_build",
     "naming20.rst",
     "test/*",
@@ -95,7 +97,7 @@ exclude_patterns = [
 
 
 
-
+default_role = "literal"
 
 
 
@@ -117,6 +119,19 @@ pygments_style = "sphinx"
 
 
 
+linkcheck_ignore = [
+    "https://github.com/numpy/numpy/blob/master/doc/release/1.16.0-notes.rst#new-deprecations",
+    "https://blogs.msdn.microsoft.com/bharry/2017/06/28/testing-in-a-cloud-delivery-cadence/",
+    "http://pythontesting.net/framework/pytest-introduction/",
+    r"https://github.com/pytest-dev/pytest/issues/\d+",
+    r"https://github.com/pytest-dev/pytest/pull/\d+",
+]
+
+
+linkcheck_workers = 5
+
+
+
 
 sys.path.append(os.path.abspath("_themes"))
 html_theme_path = ["_themes"]
@@ -128,7 +143,7 @@ html_theme = "flask"
 
 
 
-html_theme_options = {"index_logo": None}
+
 
 
 
@@ -147,7 +162,7 @@ html_logo = "img/pytest1.png"
 
 
 
-html_favicon = "img/pytest1favi.ico"
+html_favicon = "img/favicon.png"
 
 
 
@@ -168,18 +183,18 @@ html_favicon = "img/pytest1favi.ico"
 
 html_sidebars = {
     "index": [
+        "slim_searchbox.html",
         "sidebarintro.html",
         "globaltoc.html",
         "links.html",
         "sourcelink.html",
-        "searchbox.html",
     ],
     "**": [
+        "slim_searchbox.html",
         "globaltoc.html",
         "relations.html",
         "links.html",
         "sourcelink.html",
-        "searchbox.html",
     ],
 }
 
@@ -193,7 +208,7 @@ html_sidebars = {
 html_domain_indices = True
 
 
-html_use_index = False
+html_use_index = True
 
 
 
@@ -233,8 +248,8 @@ latex_documents = [
     (
         "contents",
         "pytest.tex",
-        u"pytest Documentation",
-        u"holger krekel, trainer and consultant, http://merlinux.eu",
+        "pytest Documentation",
+        "holger krekel, trainer and consultant, http://merlinux.eu",
         "manual",
     )
 ]
@@ -266,16 +281,16 @@ latex_domain_indices = False
 
 
 
-man_pages = [("usage", "pytest", u"pytest usage", [u"holger krekel at merlinux eu"], 1)]
+man_pages = [("usage", "pytest", "pytest usage", ["holger krekel at merlinux eu"], 1)]
 
 
 
 
 
-epub_title = u"pytest"
-epub_author = u"holger krekel at merlinux eu"
-epub_publisher = u"holger krekel at merlinux eu"
-epub_copyright = u"2013-2020, holger krekel et alii"
+epub_title = "pytest"
+epub_author = "holger krekel at merlinux eu"
+epub_publisher = "holger krekel at merlinux eu"
+epub_copyright = "2013-2020, holger krekel et alii"
 
 
 
@@ -329,15 +344,57 @@ texinfo_documents = [
 
 
 
-intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
+intersphinx_mapping = {
+    "pluggy": ("https://pluggy.readthedocs.io/en/latest", None),
+    "python": ("https://docs.python.org/3", None),
+}
 
 
-def setup(app):
+def configure_logging(app: "sphinx.application.Sphinx") -> None:
+    """Configure Sphinx's WarningHandler to handle (expected) missing include."""
+    import sphinx.util.logging
+    import logging
+
+    class WarnLogFilter(logging.Filter):
+        def filter(self, record: logging.LogRecord) -> bool:
+            """Ignore warnings about missing include with "only" directive.
+
+            Ref: https://github.com/sphinx-doc/sphinx/issues/2150."""
+            if (
+                record.msg.startswith('Problems with "include" directive path:')
+                and "_changelog_towncrier_draft.rst" in record.msg
+            ):
+                return False
+            return True
+
+    logger = logging.getLogger(sphinx.util.logging.NAMESPACE)
+    warn_handler = [x for x in logger.handlers if x.level == logging.WARNING]
+    assert len(warn_handler) == 1, warn_handler
+    warn_handler[0].filters.insert(0, WarnLogFilter())
+
+
+def setup(app: "sphinx.application.Sphinx") -> None:
     
     
+    app.add_crossref_type(
+        "fixture",
+        "fixture",
+        objname="built-in fixture",
+        indextemplate="pair: %s; fixture",
+    )
+
     app.add_object_type(
         "confval",
         "confval",
         objname="configuration value",
         indextemplate="pair: %s; configuration value",
     )
+
+    app.add_object_type(
+        "globalvar",
+        "globalvar",
+        objname="global variable interpreted by pytest",
+        indextemplate="pair: %s; global variable interpreted by pytest",
+    )
+
+    configure_logging(app)

@@ -1,38 +1,45 @@
-# -*- coding: utf-8 -*-
-"""
-per-test stdout/stderr capturing mechanism.
-
-"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import collections
+"""Per-test stdout/stderr capturing mechanism."""
 import contextlib
+import functools
 import io
 import os
 import sys
 from io import UnsupportedOperation
 from tempfile import TemporaryFile
-
-import six
+from typing import Any
+from typing import AnyStr
+from typing import Generator
+from typing import Generic
+from typing import Iterator
+from typing import Optional
+from typing import TextIO
+from typing import Tuple
+from typing import Union
 
 import pytest
-from _pytest.compat import _PY3
-from _pytest.compat import CaptureIO
+from _pytest.compat import final
+from _pytest.compat import TYPE_CHECKING
+from _pytest.config import Config
+from _pytest.config.argparsing import Parser
+from _pytest.fixtures import SubRequest
+from _pytest.nodes import Collector
+from _pytest.nodes import Item
 
-patchsysdict = {0: "stdin", 1: "stdout", 2: "stderr"}
+if TYPE_CHECKING:
+    from typing_extensions import Literal
+
+    _CaptureMethod = Literal["fd", "sys", "no", "tee-sys"]
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: Parser) -> None:
     group = parser.getgroup("general")
     group._addoption(
         "--capture",
         action="store",
-        default="fd" if hasattr(os, "dup") else "sys",
+        default="fd",
         metavar="method",
-        choices=["fd", "sys", "no"],
-        help="per-test capturing method: one of fd|sys|no.",
+        choices=["fd", "sys", "no", "tee-sys"],
+        help="per-test capturing method: one of fd|sys|no|tee-sys.",
     )
     group._addoption(
         "-s",
@@ -43,8 +50,107 @@ def pytest_addoption(parser):
     )
 
 
+def _colorama_workaround() -> None:
+    """Ensure colorama is imported so that it attaches to the correct stdio
+    handles on Windows.
+
+    colorama uses the terminal on import time. So if something does the
+    first import of colorama while I/O capture is active, colorama will
+    fail in various ways.
+    """
+    if sys.platform.startswith("win32"):
+        try:
+            import colorama  
+        except ImportError:
+            pass
+
+
+def _readline_workaround() -> None:
+    """Ensure readline is imported so that it attaches to the correct stdio
+    handles on Windows.
+
+    Pdb uses readline support where available--when not running from the Python
+    prompt, the readline module is not imported until running the pdb REPL.  If
+    running pytest with the --pdb option this means the readline module is not
+    imported until after I/O capture has been started.
+
+    This is a problem for pyreadline, which is often used to implement readline
+    support on Windows, as it does not attach to the correct handles for stdout
+    and/or stdin if they have been redirected by the FDCapture mechanism.  This
+    workaround ensures that readline is imported before I/O capture is setup so
+    that it can attach to the actual stdin/out for the console.
+
+    See https://github.com/pytest-dev/pytest/pull/1281.
+    """
+    if sys.platform.startswith("win32"):
+        try:
+            import readline  
+        except ImportError:
+            pass
+
+
+def _py36_windowsconsoleio_workaround(stream: TextIO) -> None:
+    """Workaround for Windows Unicode console handling on Python>=3.6.
+
+    Python 3.6 implemented Unicode console handling for Windows. This works
+    by reading/writing to the raw console handle using
+    ``{Read,Write}ConsoleW``.
+
+    The problem is that we are going to ``dup2`` over the stdio file
+    descriptors when doing ``FDCapture`` and this will ``CloseHandle`` the
+    handles used by Python to write to the console. Though there is still some
+    weirdness and the console handle seems to only be closed randomly and not
+    on the first call to ``CloseHandle``, or maybe it gets reopened with the
+    same handle value when we suspend capturing.
+
+    The workaround in this case will reopen stdio with a different fd which
+    also means a different handle by replicating the logic in
+    "Py_lifecycle.c:initstdio/create_stdio".
+
+    :param stream:
+        In practice ``sys.stdout`` or ``sys.stderr``, but given
+        here as parameter for unittesting purposes.
+
+    See https://github.com/pytest-dev/py/issues/103.
+    """
+    if (
+        not sys.platform.startswith("win32")
+        or sys.version_info[:2] < (3, 6)
+        or hasattr(sys, "pypy_version_info")
+    ):
+        return
+
+    
+    if not hasattr(stream, "buffer"):  
+        return
+
+    buffered = hasattr(stream.buffer, "raw")
+    raw_stdout = stream.buffer.raw if buffered else stream.buffer  
+
+    if not isinstance(raw_stdout, io._WindowsConsoleIO):  
+        return
+
+    def _reopen_stdio(f, mode):
+        if not buffered and mode[0] == "w":
+            buffering = 0
+        else:
+            buffering = -1
+
+        return io.TextIOWrapper(
+            open(os.dup(f.fileno()), mode, buffering),  
+            f.encoding,
+            f.errors,
+            f.newlines,
+            f.line_buffering,
+        )
+
+    sys.stdin = _reopen_stdio(sys.stdin, "rb")
+    sys.stdout = _reopen_stdio(sys.stdout, "wb")
+    sys.stderr = _reopen_stdio(sys.stderr, "wb")
+
+
 @pytest.hookimpl(hookwrapper=True)
-def pytest_load_initial_conftests(early_config, parser, args):
+def pytest_load_initial_conftests(early_config: Config):
     ns = early_config.known_args_namespace
     if ns.capture == "fd":
         _py36_windowsconsoleio_workaround(sys.stdout)
@@ -67,134 +173,618 @@ def pytest_load_initial_conftests(early_config, parser, args):
         sys.stderr.write(err)
 
 
-class CaptureManager(object):
-    """
-    Capture plugin, manages that the appropriate capture method is enabled/disabled during collection and each
-    test phase (setup, call, teardown). After each of those points, the captured output is obtained and
-    attached to the collection/runtest report.
 
-    There are two levels of capture:
-    * global: which is enabled by default and can be suppressed by the ``-s`` option. This is always enabled/disabled
-      during collection and each test phase.
-    * fixture: when a test function or one of its fixture depend on the ``capsys`` or ``capfd`` fixtures. In this
-      case special handling is needed to ensure the fixtures take precedence over the global capture.
-    """
 
-    def __init__(self, method):
-        self._method = method
-        self._global_capturing = None
-        self._current_item = None
 
-    def __repr__(self):
-        return "<CaptureManager _method=%r _global_capturing=%r _current_item=%r>" % (
-            self._method,
-            self._global_capturing,
-            self._current_item,
+class EncodedFile(io.TextIOWrapper):
+    __slots__ = ()
+
+    @property
+    def name(self) -> str:
+        
+        
+        return repr(self.buffer)
+
+    @property
+    def mode(self) -> str:
+        
+        
+        return self.buffer.mode.replace("b", "")
+
+
+class CaptureIO(io.TextIOWrapper):
+    def __init__(self) -> None:
+        super().__init__(io.BytesIO(), encoding="UTF-8", newline="", write_through=True)
+
+    def getvalue(self) -> str:
+        assert isinstance(self.buffer, io.BytesIO)
+        return self.buffer.getvalue().decode("UTF-8")
+
+
+class TeeCaptureIO(CaptureIO):
+    def __init__(self, other: TextIO) -> None:
+        self._other = other
+        super().__init__()
+
+    def write(self, s: str) -> int:
+        super().write(s)
+        return self._other.write(s)
+
+
+class DontReadFromInput:
+    encoding = None
+
+    def read(self, *args):
+        raise OSError(
+            "pytest: reading from stdin while output is captured!  Consider using `-s`."
         )
 
-    def _getcapture(self, method):
-        if method == "fd":
-            return MultiCapture(out=True, err=True, Capture=FDCapture)
-        elif method == "sys":
-            return MultiCapture(out=True, err=True, Capture=SysCapture)
-        elif method == "no":
-            return MultiCapture(out=False, err=False, in_=False)
-        raise ValueError("unknown capturing method: %r" % method)  
+    readline = read
+    readlines = read
+    __next__ = read
 
-    def is_capturing(self):
+    def __iter__(self):
+        return self
+
+    def fileno(self) -> int:
+        raise UnsupportedOperation("redirected stdin is pseudofile, has no fileno()")
+
+    def isatty(self) -> bool:
+        return False
+
+    def close(self) -> None:
+        pass
+
+    @property
+    def buffer(self):
+        return self
+
+
+
+
+
+patchsysdict = {0: "stdin", 1: "stdout", 2: "stderr"}
+
+
+class NoCapture:
+    EMPTY_BUFFER = None
+    __init__ = start = done = suspend = resume = lambda *args: None
+
+
+class SysCaptureBinary:
+
+    EMPTY_BUFFER = b""
+
+    def __init__(self, fd: int, tmpfile=None, *, tee: bool = False) -> None:
+        name = patchsysdict[fd]
+        self._old = getattr(sys, name)
+        self.name = name
+        if tmpfile is None:
+            if name == "stdin":
+                tmpfile = DontReadFromInput()
+            else:
+                tmpfile = CaptureIO() if not tee else TeeCaptureIO(self._old)
+        self.tmpfile = tmpfile
+        self._state = "initialized"
+
+    def repr(self, class_name: str) -> str:
+        return "<{} {} _old={} _state={!r} tmpfile={!r}>".format(
+            class_name,
+            self.name,
+            hasattr(self, "_old") and repr(self._old) or "<UNSET>",
+            self._state,
+            self.tmpfile,
+        )
+
+    def __repr__(self) -> str:
+        return "<{} {} _old={} _state={!r} tmpfile={!r}>".format(
+            self.__class__.__name__,
+            self.name,
+            hasattr(self, "_old") and repr(self._old) or "<UNSET>",
+            self._state,
+            self.tmpfile,
+        )
+
+    def _assert_state(self, op: str, states: Tuple[str, ...]) -> None:
+        assert (
+            self._state in states
+        ), "cannot {} in state {!r}: expected one of {}".format(
+            op, self._state, ", ".join(states)
+        )
+
+    def start(self) -> None:
+        self._assert_state("start", ("initialized",))
+        setattr(sys, self.name, self.tmpfile)
+        self._state = "started"
+
+    def snap(self):
+        self._assert_state("snap", ("started", "suspended"))
+        self.tmpfile.seek(0)
+        res = self.tmpfile.buffer.read()
+        self.tmpfile.seek(0)
+        self.tmpfile.truncate()
+        return res
+
+    def done(self) -> None:
+        self._assert_state("done", ("initialized", "started", "suspended", "done"))
+        if self._state == "done":
+            return
+        setattr(sys, self.name, self._old)
+        del self._old
+        self.tmpfile.close()
+        self._state = "done"
+
+    def suspend(self) -> None:
+        self._assert_state("suspend", ("started", "suspended"))
+        setattr(sys, self.name, self._old)
+        self._state = "suspended"
+
+    def resume(self) -> None:
+        self._assert_state("resume", ("started", "suspended"))
+        if self._state == "started":
+            return
+        setattr(sys, self.name, self.tmpfile)
+        self._state = "started"
+
+    def writeorg(self, data) -> None:
+        self._assert_state("writeorg", ("started", "suspended"))
+        self._old.flush()
+        self._old.buffer.write(data)
+        self._old.buffer.flush()
+
+
+class SysCapture(SysCaptureBinary):
+    EMPTY_BUFFER = ""  
+
+    def snap(self):
+        res = self.tmpfile.getvalue()
+        self.tmpfile.seek(0)
+        self.tmpfile.truncate()
+        return res
+
+    def writeorg(self, data):
+        self._assert_state("writeorg", ("started", "suspended"))
+        self._old.write(data)
+        self._old.flush()
+
+
+class FDCaptureBinary:
+    """Capture IO to/from a given OS-level file descriptor.
+
+    snap() produces `bytes`.
+    """
+
+    EMPTY_BUFFER = b""
+
+    def __init__(self, targetfd: int) -> None:
+        self.targetfd = targetfd
+
+        try:
+            os.fstat(targetfd)
+        except OSError:
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            self.targetfd_invalid = os.open(
+                os.devnull, os.O_RDWR
+            )  
+            os.dup2(self.targetfd_invalid, targetfd)
+        else:
+            self.targetfd_invalid = None
+        self.targetfd_save = os.dup(targetfd)
+
+        if targetfd == 0:
+            self.tmpfile = open(os.devnull)
+            self.syscapture = SysCapture(targetfd)
+        else:
+            self.tmpfile = EncodedFile(
+                
+                TemporaryFile(buffering=0),  
+                encoding="utf-8",
+                errors="replace",
+                newline="",
+                write_through=True,
+            )
+            if targetfd in patchsysdict:
+                self.syscapture = SysCapture(targetfd, self.tmpfile)
+            else:
+                self.syscapture = NoCapture()
+
+        self._state = "initialized"
+
+    def __repr__(self) -> str:
+        return "<{} {} oldfd={} _state={!r} tmpfile={!r}>".format(
+            self.__class__.__name__,
+            self.targetfd,
+            self.targetfd_save,
+            self._state,
+            self.tmpfile,
+        )
+
+    def _assert_state(self, op: str, states: Tuple[str, ...]) -> None:
+        assert (
+            self._state in states
+        ), "cannot {} in state {!r}: expected one of {}".format(
+            op, self._state, ", ".join(states)
+        )
+
+    def start(self) -> None:
+        """Start capturing on targetfd using memorized tmpfile."""
+        self._assert_state("start", ("initialized",))
+        os.dup2(self.tmpfile.fileno(), self.targetfd)
+        self.syscapture.start()
+        self._state = "started"
+
+    def snap(self):
+        self._assert_state("snap", ("started", "suspended"))
+        self.tmpfile.seek(0)
+        res = self.tmpfile.buffer.read()
+        self.tmpfile.seek(0)
+        self.tmpfile.truncate()
+        return res
+
+    def done(self) -> None:
+        """Stop capturing, restore streams, return original capture file,
+        seeked to position zero."""
+        self._assert_state("done", ("initialized", "started", "suspended", "done"))
+        if self._state == "done":
+            return
+        os.dup2(self.targetfd_save, self.targetfd)
+        os.close(self.targetfd_save)
+        if self.targetfd_invalid is not None:
+            if self.targetfd_invalid != self.targetfd:
+                os.close(self.targetfd)
+            os.close(self.targetfd_invalid)
+        self.syscapture.done()
+        self.tmpfile.close()
+        self._state = "done"
+
+    def suspend(self) -> None:
+        self._assert_state("suspend", ("started", "suspended"))
+        if self._state == "suspended":
+            return
+        self.syscapture.suspend()
+        os.dup2(self.targetfd_save, self.targetfd)
+        self._state = "suspended"
+
+    def resume(self) -> None:
+        self._assert_state("resume", ("started", "suspended"))
+        if self._state == "started":
+            return
+        self.syscapture.resume()
+        os.dup2(self.tmpfile.fileno(), self.targetfd)
+        self._state = "started"
+
+    def writeorg(self, data):
+        """Write to original file descriptor."""
+        self._assert_state("writeorg", ("started", "suspended"))
+        os.write(self.targetfd_save, data)
+
+
+class FDCapture(FDCaptureBinary):
+    """Capture IO to/from a given OS-level file descriptor.
+
+    snap() produces text.
+    """
+
+    
+    EMPTY_BUFFER = ""  
+
+    def snap(self):
+        self._assert_state("snap", ("started", "suspended"))
+        self.tmpfile.seek(0)
+        res = self.tmpfile.read()
+        self.tmpfile.seek(0)
+        self.tmpfile.truncate()
+        return res
+
+    def writeorg(self, data):
+        """Write to original file descriptor."""
+        super().writeorg(data.encode("utf-8"))  
+
+
+
+
+
+
+
+
+
+
+@final
+@functools.total_ordering
+class CaptureResult(Generic[AnyStr]):
+    """The result of :method:`CaptureFixture.readouterr`."""
+
+    
+    if sys.version_info >= (3, 5, 3):
+        __slots__ = ("out", "err")
+
+    def __init__(self, out: AnyStr, err: AnyStr) -> None:
+        self.out = out  
+        self.err = err  
+
+    def __len__(self) -> int:
+        return 2
+
+    def __iter__(self) -> Iterator[AnyStr]:
+        return iter((self.out, self.err))
+
+    def __getitem__(self, item: int) -> AnyStr:
+        return tuple(self)[item]
+
+    def _replace(
+        self, *, out: Optional[AnyStr] = None, err: Optional[AnyStr] = None
+    ) -> "CaptureResult[AnyStr]":
+        return CaptureResult(
+            out=self.out if out is None else out, err=self.err if err is None else err
+        )
+
+    def count(self, value: AnyStr) -> int:
+        return tuple(self).count(value)
+
+    def index(self, value) -> int:
+        return tuple(self).index(value)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, (CaptureResult, tuple)):
+            return NotImplemented
+        return tuple(self) == tuple(other)
+
+    def __hash__(self) -> int:
+        return hash(tuple(self))
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, (CaptureResult, tuple)):
+            return NotImplemented
+        return tuple(self) < tuple(other)
+
+    def __repr__(self) -> str:
+        return "CaptureResult(out={!r}, err={!r})".format(self.out, self.err)
+
+
+class MultiCapture(Generic[AnyStr]):
+    _state = None
+    _in_suspended = False
+
+    def __init__(self, in_, out, err) -> None:
+        self.in_ = in_
+        self.out = out
+        self.err = err
+
+    def __repr__(self) -> str:
+        return "<MultiCapture out={!r} err={!r} in_={!r} _state={!r} _in_suspended={!r}>".format(
+            self.out, self.err, self.in_, self._state, self._in_suspended,
+        )
+
+    def start_capturing(self) -> None:
+        self._state = "started"
+        if self.in_:
+            self.in_.start()
+        if self.out:
+            self.out.start()
+        if self.err:
+            self.err.start()
+
+    def pop_outerr_to_orig(self) -> Tuple[AnyStr, AnyStr]:
+        """Pop current snapshot out/err capture and flush to orig streams."""
+        out, err = self.readouterr()
+        if out:
+            self.out.writeorg(out)
+        if err:
+            self.err.writeorg(err)
+        return out, err
+
+    def suspend_capturing(self, in_: bool = False) -> None:
+        self._state = "suspended"
+        if self.out:
+            self.out.suspend()
+        if self.err:
+            self.err.suspend()
+        if in_ and self.in_:
+            self.in_.suspend()
+            self._in_suspended = True
+
+    def resume_capturing(self) -> None:
+        self._state = "started"
+        if self.out:
+            self.out.resume()
+        if self.err:
+            self.err.resume()
+        if self._in_suspended:
+            self.in_.resume()
+            self._in_suspended = False
+
+    def stop_capturing(self) -> None:
+        """Stop capturing and reset capturing streams."""
+        if self._state == "stopped":
+            raise ValueError("was already stopped")
+        self._state = "stopped"
+        if self.out:
+            self.out.done()
+        if self.err:
+            self.err.done()
+        if self.in_:
+            self.in_.done()
+
+    def is_started(self) -> bool:
+        """Whether actively capturing -- not suspended or stopped."""
+        return self._state == "started"
+
+    def readouterr(self) -> CaptureResult[AnyStr]:
+        if self.out:
+            out = self.out.snap()
+        else:
+            out = ""
+        if self.err:
+            err = self.err.snap()
+        else:
+            err = ""
+        return CaptureResult(out, err)
+
+
+def _get_multicapture(method: "_CaptureMethod") -> MultiCapture[str]:
+    if method == "fd":
+        return MultiCapture(in_=FDCapture(0), out=FDCapture(1), err=FDCapture(2))
+    elif method == "sys":
+        return MultiCapture(in_=SysCapture(0), out=SysCapture(1), err=SysCapture(2))
+    elif method == "no":
+        return MultiCapture(in_=None, out=None, err=None)
+    elif method == "tee-sys":
+        return MultiCapture(
+            in_=None, out=SysCapture(1, tee=True), err=SysCapture(2, tee=True)
+        )
+    raise ValueError("unknown capturing method: {!r}".format(method))
+
+
+
+
+
+class CaptureManager:
+    """The capture plugin.
+
+    Manages that the appropriate capture method is enabled/disabled during
+    collection and each test phase (setup, call, teardown). After each of
+    those points, the captured output is obtained and attached to the
+    collection/runtest report.
+
+    There are two levels of capture:
+
+    * global: enabled by default and can be suppressed by the ``-s``
+      option. This is always enabled/disabled during collection and each test
+      phase.
+
+    * fixture: when a test function or one of its fixture depend on the
+      ``capsys`` or ``capfd`` fixtures. In this case special handling is
+      needed to ensure the fixtures take precedence over the global capture.
+    """
+
+    def __init__(self, method: "_CaptureMethod") -> None:
+        self._method = method
+        self._global_capturing = None  
+        self._capture_fixture = None  
+
+    def __repr__(self) -> str:
+        return "<CaptureManager _method={!r} _global_capturing={!r} _capture_fixture={!r}>".format(
+            self._method, self._global_capturing, self._capture_fixture
+        )
+
+    def is_capturing(self) -> Union[str, bool]:
         if self.is_globally_capturing():
             return "global"
-        capture_fixture = getattr(self._current_item, "_capture_fixture", None)
-        if capture_fixture is not None:
-            return (
-                "fixture %s" % self._current_item._capture_fixture.request.fixturename
-            )
+        if self._capture_fixture:
+            return "fixture %s" % self._capture_fixture.request.fixturename
         return False
 
     
 
-    def is_globally_capturing(self):
+    def is_globally_capturing(self) -> bool:
         return self._method != "no"
 
-    def start_global_capturing(self):
+    def start_global_capturing(self) -> None:
         assert self._global_capturing is None
-        self._global_capturing = self._getcapture(self._method)
+        self._global_capturing = _get_multicapture(self._method)
         self._global_capturing.start_capturing()
 
-    def stop_global_capturing(self):
+    def stop_global_capturing(self) -> None:
         if self._global_capturing is not None:
             self._global_capturing.pop_outerr_to_orig()
             self._global_capturing.stop_capturing()
             self._global_capturing = None
 
-    def resume_global_capture(self):
+    def resume_global_capture(self) -> None:
         
         
         if self._global_capturing is not None:
             self._global_capturing.resume_capturing()
 
-    def suspend_global_capture(self, in_=False):
-        cap = getattr(self, "_global_capturing", None)
-        if cap is not None:
-            cap.suspend_capturing(in_=in_)
+    def suspend_global_capture(self, in_: bool = False) -> None:
+        if self._global_capturing is not None:
+            self._global_capturing.suspend_capturing(in_=in_)
 
-    def suspend(self, in_=False):
+    def suspend(self, in_: bool = False) -> None:
         
-        self.suspend_fixture(self._current_item)
+        self.suspend_fixture()
         self.suspend_global_capture(in_)
 
-    def resume(self):
+    def resume(self) -> None:
         self.resume_global_capture()
-        self.resume_fixture(self._current_item)
+        self.resume_fixture()
 
-    def read_global_capture(self):
+    def read_global_capture(self) -> CaptureResult[str]:
+        assert self._global_capturing is not None
         return self._global_capturing.readouterr()
 
     
 
-    def activate_fixture(self, item):
-        """If the current item is using ``capsys`` or ``capfd``, activate them so they take precedence over
-        the global capture.
-        """
-        fixture = getattr(item, "_capture_fixture", None)
-        if fixture is not None:
-            fixture._start()
+    def set_fixture(self, capture_fixture: "CaptureFixture[Any]") -> None:
+        if self._capture_fixture:
+            current_fixture = self._capture_fixture.request.fixturename
+            requested_fixture = capture_fixture.request.fixturename
+            capture_fixture.request.raiseerror(
+                "cannot use {} and {} at the same time".format(
+                    requested_fixture, current_fixture
+                )
+            )
+        self._capture_fixture = capture_fixture
 
-    def deactivate_fixture(self, item):
-        """Deactivates the ``capsys`` or ``capfd`` fixture of this item, if any."""
-        fixture = getattr(item, "_capture_fixture", None)
-        if fixture is not None:
-            fixture.close()
+    def unset_fixture(self) -> None:
+        self._capture_fixture = None
 
-    def suspend_fixture(self, item):
-        fixture = getattr(item, "_capture_fixture", None)
-        if fixture is not None:
-            fixture._suspend()
+    def activate_fixture(self) -> None:
+        """If the current item is using ``capsys`` or ``capfd``, activate
+        them so they take precedence over the global capture."""
+        if self._capture_fixture:
+            self._capture_fixture._start()
 
-    def resume_fixture(self, item):
-        fixture = getattr(item, "_capture_fixture", None)
-        if fixture is not None:
-            fixture._resume()
+    def deactivate_fixture(self) -> None:
+        """Deactivate the ``capsys`` or ``capfd`` fixture of this item, if any."""
+        if self._capture_fixture:
+            self._capture_fixture.close()
+
+    def suspend_fixture(self) -> None:
+        if self._capture_fixture:
+            self._capture_fixture._suspend()
+
+    def resume_fixture(self) -> None:
+        if self._capture_fixture:
+            self._capture_fixture._resume()
 
     
 
     @contextlib.contextmanager
-    def global_and_fixture_disabled(self):
+    def global_and_fixture_disabled(self) -> Generator[None, None, None]:
         """Context manager to temporarily disable global and current fixture capturing."""
-        self.suspend()
+        do_fixture = self._capture_fixture and self._capture_fixture._is_started()
+        if do_fixture:
+            self.suspend_fixture()
+        do_global = self._global_capturing and self._global_capturing.is_started()
+        if do_global:
+            self.suspend_global_capture()
         try:
             yield
         finally:
-            self.resume()
+            if do_global:
+                self.resume_global_capture()
+            if do_fixture:
+                self.resume_fixture()
 
     @contextlib.contextmanager
-    def item_capture(self, when, item):
+    def item_capture(self, when: str, item: Item) -> Generator[None, None, None]:
         self.resume_global_capture()
-        self.activate_fixture(item)
+        self.activate_fixture()
         try:
             yield
         finally:
-            self.deactivate_fixture(item)
+            self.deactivate_fixture()
             self.suspend_global_capture(in_=False)
 
         out, err = self.read_global_capture()
@@ -204,7 +794,7 @@ class CaptureManager(object):
     
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_make_collect_report(self, collector):
+    def pytest_make_collect_report(self, collector: Collector):
         if isinstance(collector, pytest.File):
             self.resume_global_capture()
             outcome = yield
@@ -219,153 +809,48 @@ class CaptureManager(object):
             yield
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_protocol(self, item):
-        self._current_item = item
-        yield
-        self._current_item = None
-
-    @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_setup(self, item):
+    def pytest_runtest_setup(self, item: Item) -> Generator[None, None, None]:
         with self.item_capture("setup", item):
             yield
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_call(self, item):
+    def pytest_runtest_call(self, item: Item) -> Generator[None, None, None]:
         with self.item_capture("call", item):
             yield
 
     @pytest.hookimpl(hookwrapper=True)
-    def pytest_runtest_teardown(self, item):
+    def pytest_runtest_teardown(self, item: Item) -> Generator[None, None, None]:
         with self.item_capture("teardown", item):
             yield
 
     @pytest.hookimpl(tryfirst=True)
-    def pytest_keyboard_interrupt(self, excinfo):
+    def pytest_keyboard_interrupt(self) -> None:
         self.stop_global_capturing()
 
     @pytest.hookimpl(tryfirst=True)
-    def pytest_internalerror(self, excinfo):
+    def pytest_internalerror(self) -> None:
         self.stop_global_capturing()
 
 
-capture_fixtures = {"capfd", "capfdbinary", "capsys", "capsysbinary"}
+class CaptureFixture(Generic[AnyStr]):
+    """Object returned by the :py:func:`capsys`, :py:func:`capsysbinary`,
+    :py:func:`capfd` and :py:func:`capfdbinary` fixtures."""
 
-
-def _ensure_only_one_capture_fixture(request, name):
-    fixtures = set(request.fixturenames) & capture_fixtures - {name}
-    if fixtures:
-        fixtures = sorted(fixtures)
-        fixtures = fixtures[0] if len(fixtures) == 1 else fixtures
-        raise request.raiseerror(
-            "cannot use {} and {} at the same time".format(fixtures, name)
-        )
-
-
-@pytest.fixture
-def capsys(request):
-    """Enable text capturing of writes to ``sys.stdout`` and ``sys.stderr``.
-
-    The captured output is made available via ``capsys.readouterr()`` method
-    calls, which return a ``(out, err)`` namedtuple.
-    ``out`` and ``err`` will be ``text`` objects.
-    """
-    _ensure_only_one_capture_fixture(request, "capsys")
-    with _install_capture_fixture_on_item(request, SysCapture) as fixture:
-        yield fixture
-
-
-@pytest.fixture
-def capsysbinary(request):
-    """Enable bytes capturing of writes to ``sys.stdout`` and ``sys.stderr``.
-
-    The captured output is made available via ``capsysbinary.readouterr()``
-    method calls, which return a ``(out, err)`` namedtuple.
-    ``out`` and ``err`` will be ``bytes`` objects.
-    """
-    _ensure_only_one_capture_fixture(request, "capsysbinary")
-    
-    
-    if sys.version_info < (3,):
-        raise request.raiseerror("capsysbinary is only supported on Python 3")
-    with _install_capture_fixture_on_item(request, SysCaptureBinary) as fixture:
-        yield fixture
-
-
-@pytest.fixture
-def capfd(request):
-    """Enable text capturing of writes to file descriptors ``1`` and ``2``.
-
-    The captured output is made available via ``capfd.readouterr()`` method
-    calls, which return a ``(out, err)`` namedtuple.
-    ``out`` and ``err`` will be ``text`` objects.
-    """
-    _ensure_only_one_capture_fixture(request, "capfd")
-    if not hasattr(os, "dup"):
-        pytest.skip(
-            "capfd fixture needs os.dup function which is not available in this system"
-        )
-    with _install_capture_fixture_on_item(request, FDCapture) as fixture:
-        yield fixture
-
-
-@pytest.fixture
-def capfdbinary(request):
-    """Enable bytes capturing of writes to file descriptors ``1`` and ``2``.
-
-    The captured output is made available via ``capfd.readouterr()`` method
-    calls, which return a ``(out, err)`` namedtuple.
-    ``out`` and ``err`` will be ``byte`` objects.
-    """
-    _ensure_only_one_capture_fixture(request, "capfdbinary")
-    if not hasattr(os, "dup"):
-        pytest.skip(
-            "capfdbinary fixture needs os.dup function which is not available in this system"
-        )
-    with _install_capture_fixture_on_item(request, FDCaptureBinary) as fixture:
-        yield fixture
-
-
-@contextlib.contextmanager
-def _install_capture_fixture_on_item(request, capture_class):
-    """
-    Context manager which creates a ``CaptureFixture`` instance and "installs" it on
-    the item/node of the given request. Used by ``capsys`` and ``capfd``.
-
-    The CaptureFixture is added as attribute of the item because it needs to accessed
-    by ``CaptureManager`` during its ``pytest_runtest_*`` hooks.
-    """
-    request.node._capture_fixture = fixture = CaptureFixture(capture_class, request)
-    capmanager = request.config.pluginmanager.getplugin("capturemanager")
-    
-    
-    
-    capmanager.activate_fixture(request.node)
-    yield fixture
-    fixture.close()
-    del request.node._capture_fixture
-
-
-class CaptureFixture(object):
-    """
-    Object returned by :py:func:`capsys`, :py:func:`capsysbinary`, :py:func:`capfd` and :py:func:`capfdbinary`
-    fixtures.
-    """
-
-    def __init__(self, captureclass, request):
+    def __init__(self, captureclass, request: SubRequest) -> None:
         self.captureclass = captureclass
         self.request = request
-        self._capture = None
+        self._capture = None  
         self._captured_out = self.captureclass.EMPTY_BUFFER
         self._captured_err = self.captureclass.EMPTY_BUFFER
 
-    def _start(self):
+    def _start(self) -> None:
         if self._capture is None:
             self._capture = MultiCapture(
-                out=True, err=True, in_=False, Capture=self.captureclass
+                in_=None, out=self.captureclass(1), err=self.captureclass(2),
             )
             self._capture.start_capturing()
 
-    def close(self):
+    def close(self) -> None:
         if self._capture is not None:
             out, err = self._capture.pop_outerr_to_orig()
             self._captured_out += out
@@ -373,10 +858,13 @@ class CaptureFixture(object):
             self._capture.stop_capturing()
             self._capture = None
 
-    def readouterr(self):
-        """Read and return the captured output so far, resetting the internal buffer.
+    def readouterr(self) -> CaptureResult[AnyStr]:
+        """Read and return the captured output so far, resetting the internal
+        buffer.
 
-        :return: captured content as a namedtuple with ``out`` and ``err`` string attributes
+        :returns:
+            The captured content as a namedtuple with ``out`` and ``err``
+            string attributes.
         """
         captured_out, captured_err = self._captured_out, self._captured_err
         if self._capture is not None:
@@ -387,464 +875,96 @@ class CaptureFixture(object):
         self._captured_err = self.captureclass.EMPTY_BUFFER
         return CaptureResult(captured_out, captured_err)
 
-    def _suspend(self):
-        """Suspends this fixture's own capturing temporarily."""
+    def _suspend(self) -> None:
+        """Suspend this fixture's own capturing temporarily."""
         if self._capture is not None:
             self._capture.suspend_capturing()
 
-    def _resume(self):
-        """Resumes this fixture's own capturing temporarily."""
+    def _resume(self) -> None:
+        """Resume this fixture's own capturing temporarily."""
         if self._capture is not None:
             self._capture.resume_capturing()
 
+    def _is_started(self) -> bool:
+        """Whether actively capturing -- not disabled or closed."""
+        if self._capture is not None:
+            return self._capture.is_started()
+        return False
+
     @contextlib.contextmanager
-    def disabled(self):
-        """Temporarily disables capture while inside the 'with' block."""
+    def disabled(self) -> Generator[None, None, None]:
+        """Temporarily disable capturing while inside the ``with`` block."""
         capmanager = self.request.config.pluginmanager.getplugin("capturemanager")
         with capmanager.global_and_fixture_disabled():
             yield
 
 
-def safe_text_dupfile(f, mode, default_encoding="UTF8"):
-    """ return an open text file object that's a duplicate of f on the
-        FD-level if possible.
+
+
+
+@pytest.fixture
+def capsys(request: SubRequest) -> Generator[CaptureFixture[str], None, None]:
+    """Enable text capturing of writes to ``sys.stdout`` and ``sys.stderr``.
+
+    The captured output is made available via ``capsys.readouterr()`` method
+    calls, which return a ``(out, err)`` namedtuple.
+    ``out`` and ``err`` will be ``text`` objects.
     """
-    encoding = getattr(f, "encoding", None)
-    try:
-        fd = f.fileno()
-    except Exception:
-        if "b" not in getattr(f, "mode", "") and hasattr(f, "encoding"):
-            
-            return f
-    else:
-        newfd = os.dup(fd)
-        if "b" not in mode:
-            mode += "b"
-        f = os.fdopen(newfd, mode, 0)  
-    return EncodedFile(f, encoding or default_encoding)
+    capman = request.config.pluginmanager.getplugin("capturemanager")
+    capture_fixture = CaptureFixture[str](SysCapture, request)
+    capman.set_fixture(capture_fixture)
+    capture_fixture._start()
+    yield capture_fixture
+    capture_fixture.close()
+    capman.unset_fixture()
 
 
-class EncodedFile(object):
-    errors = "strict"  
+@pytest.fixture
+def capsysbinary(request: SubRequest) -> Generator[CaptureFixture[bytes], None, None]:
+    """Enable bytes capturing of writes to ``sys.stdout`` and ``sys.stderr``.
 
-    def __init__(self, buffer, encoding):
-        self.buffer = buffer
-        self.encoding = encoding
-
-    def write(self, obj):
-        if isinstance(obj, six.text_type):
-            obj = obj.encode(self.encoding, "replace")
-        elif _PY3:
-            raise TypeError(
-                "write() argument must be str, not {}".format(type(obj).__name__)
-            )
-        self.buffer.write(obj)
-
-    def writelines(self, linelist):
-        data = "".join(linelist)
-        self.write(data)
-
-    @property
-    def name(self):
-        """Ensure that file.name is a string."""
-        return repr(self.buffer)
-
-    @property
-    def mode(self):
-        return self.buffer.mode.replace("b", "")
-
-    def __getattr__(self, name):
-        return getattr(object.__getattribute__(self, "buffer"), name)
-
-
-CaptureResult = collections.namedtuple("CaptureResult", ["out", "err"])
-
-
-class MultiCapture(object):
-    out = err = in_ = None
-    _state = None
-
-    def __init__(self, out=True, err=True, in_=True, Capture=None):
-        if in_:
-            self.in_ = Capture(0)
-        if out:
-            self.out = Capture(1)
-        if err:
-            self.err = Capture(2)
-
-    def __repr__(self):
-        return "<MultiCapture out=%r err=%r in_=%r _state=%r _in_suspended=%r>" % (
-            self.out,
-            self.err,
-            self.in_,
-            self._state,
-            getattr(self, "_in_suspended", "<UNSET>"),
-        )
-
-    def start_capturing(self):
-        self._state = "started"
-        if self.in_:
-            self.in_.start()
-        if self.out:
-            self.out.start()
-        if self.err:
-            self.err.start()
-
-    def pop_outerr_to_orig(self):
-        """ pop current snapshot out/err capture and flush to orig streams. """
-        out, err = self.readouterr()
-        if out:
-            self.out.writeorg(out)
-        if err:
-            self.err.writeorg(err)
-        return out, err
-
-    def suspend_capturing(self, in_=False):
-        self._state = "suspended"
-        if self.out:
-            self.out.suspend()
-        if self.err:
-            self.err.suspend()
-        if in_ and self.in_:
-            self.in_.suspend()
-            self._in_suspended = True
-
-    def resume_capturing(self):
-        self._state = "resumed"
-        if self.out:
-            self.out.resume()
-        if self.err:
-            self.err.resume()
-        if hasattr(self, "_in_suspended"):
-            self.in_.resume()
-            del self._in_suspended
-
-    def stop_capturing(self):
-        """ stop capturing and reset capturing streams """
-        if self._state == "stopped":
-            raise ValueError("was already stopped")
-        self._state = "stopped"
-        if self.out:
-            self.out.done()
-        if self.err:
-            self.err.done()
-        if self.in_:
-            self.in_.done()
-
-    def readouterr(self):
-        """ return snapshot unicode value of stdout/stderr capturings. """
-        return CaptureResult(
-            self.out.snap() if self.out is not None else "",
-            self.err.snap() if self.err is not None else "",
-        )
-
-
-class NoCapture(object):
-    EMPTY_BUFFER = None
-    __init__ = start = done = suspend = resume = lambda *args: None
-
-
-class FDCaptureBinary(object):
-    """Capture IO to/from a given os-level filedescriptor.
-
-    snap() produces `bytes`
+    The captured output is made available via ``capsysbinary.readouterr()``
+    method calls, which return a ``(out, err)`` namedtuple.
+    ``out`` and ``err`` will be ``bytes`` objects.
     """
-
-    EMPTY_BUFFER = b""
-    _state = None
-
-    def __init__(self, targetfd, tmpfile=None):
-        self.targetfd = targetfd
-        try:
-            self.targetfd_save = os.dup(self.targetfd)
-        except OSError:
-            self.start = lambda: None
-            self.done = lambda: None
-        else:
-            if targetfd == 0:
-                assert not tmpfile, "cannot set tmpfile with stdin"
-                tmpfile = open(os.devnull, "r")
-                self.syscapture = SysCapture(targetfd)
-            else:
-                if tmpfile is None:
-                    f = TemporaryFile()
-                    with f:
-                        tmpfile = safe_text_dupfile(f, mode="wb+")
-                if targetfd in patchsysdict:
-                    self.syscapture = SysCapture(targetfd, tmpfile)
-                else:
-                    self.syscapture = NoCapture()
-            self.tmpfile = tmpfile
-            self.tmpfile_fd = tmpfile.fileno()
-
-    def __repr__(self):
-        return "<FDCapture %s oldfd=%s _state=%r>" % (
-            self.targetfd,
-            getattr(self, "targetfd_save", None),
-            self._state,
-        )
-
-    def start(self):
-        """ Start capturing on targetfd using memorized tmpfile. """
-        try:
-            os.fstat(self.targetfd_save)
-        except (AttributeError, OSError):
-            raise ValueError("saved filedescriptor not valid anymore")
-        os.dup2(self.tmpfile_fd, self.targetfd)
-        self.syscapture.start()
-        self._state = "started"
-
-    def snap(self):
-        self.tmpfile.seek(0)
-        res = self.tmpfile.read()
-        self.tmpfile.seek(0)
-        self.tmpfile.truncate()
-        return res
-
-    def done(self):
-        """ stop capturing, restore streams, return original capture file,
-        seeked to position zero. """
-        targetfd_save = self.__dict__.pop("targetfd_save")
-        os.dup2(targetfd_save, self.targetfd)
-        os.close(targetfd_save)
-        self.syscapture.done()
-        _attempt_to_close_capture_file(self.tmpfile)
-        self._state = "done"
-
-    def suspend(self):
-        self.syscapture.suspend()
-        os.dup2(self.targetfd_save, self.targetfd)
-        self._state = "suspended"
-
-    def resume(self):
-        self.syscapture.resume()
-        os.dup2(self.tmpfile_fd, self.targetfd)
-        self._state = "resumed"
-
-    def writeorg(self, data):
-        """ write to original file descriptor. """
-        if isinstance(data, six.text_type):
-            data = data.encode("utf8")  
-        os.write(self.targetfd_save, data)
+    capman = request.config.pluginmanager.getplugin("capturemanager")
+    capture_fixture = CaptureFixture[bytes](SysCaptureBinary, request)
+    capman.set_fixture(capture_fixture)
+    capture_fixture._start()
+    yield capture_fixture
+    capture_fixture.close()
+    capman.unset_fixture()
 
 
-class FDCapture(FDCaptureBinary):
-    """Capture IO to/from a given os-level filedescriptor.
+@pytest.fixture
+def capfd(request: SubRequest) -> Generator[CaptureFixture[str], None, None]:
+    """Enable text capturing of writes to file descriptors ``1`` and ``2``.
 
-    snap() produces text
+    The captured output is made available via ``capfd.readouterr()`` method
+    calls, which return a ``(out, err)`` namedtuple.
+    ``out`` and ``err`` will be ``text`` objects.
     """
-
-    EMPTY_BUFFER = str()
-
-    def snap(self):
-        res = super(FDCapture, self).snap()
-        enc = getattr(self.tmpfile, "encoding", None)
-        if enc and isinstance(res, bytes):
-            res = six.text_type(res, enc, "replace")
-        return res
+    capman = request.config.pluginmanager.getplugin("capturemanager")
+    capture_fixture = CaptureFixture[str](FDCapture, request)
+    capman.set_fixture(capture_fixture)
+    capture_fixture._start()
+    yield capture_fixture
+    capture_fixture.close()
+    capman.unset_fixture()
 
 
-class SysCapture(object):
+@pytest.fixture
+def capfdbinary(request: SubRequest) -> Generator[CaptureFixture[bytes], None, None]:
+    """Enable bytes capturing of writes to file descriptors ``1`` and ``2``.
 
-    EMPTY_BUFFER = str()
-    _state = None
-
-    def __init__(self, fd, tmpfile=None):
-        name = patchsysdict[fd]
-        self._old = getattr(sys, name)
-        self.name = name
-        if tmpfile is None:
-            if name == "stdin":
-                tmpfile = DontReadFromInput()
-            else:
-                tmpfile = CaptureIO()
-        self.tmpfile = tmpfile
-
-    def __repr__(self):
-        return "<SysCapture %s _old=%r, tmpfile=%r _state=%r>" % (
-            self.name,
-            self._old,
-            self.tmpfile,
-            self._state,
-        )
-
-    def start(self):
-        setattr(sys, self.name, self.tmpfile)
-        self._state = "started"
-
-    def snap(self):
-        res = self.tmpfile.getvalue()
-        self.tmpfile.seek(0)
-        self.tmpfile.truncate()
-        return res
-
-    def done(self):
-        setattr(sys, self.name, self._old)
-        del self._old
-        _attempt_to_close_capture_file(self.tmpfile)
-        self._state = "done"
-
-    def suspend(self):
-        setattr(sys, self.name, self._old)
-        self._state = "suspended"
-
-    def resume(self):
-        setattr(sys, self.name, self.tmpfile)
-        self._state = "resumed"
-
-    def writeorg(self, data):
-        self._old.write(data)
-        self._old.flush()
-
-
-class SysCaptureBinary(SysCapture):
-    EMPTY_BUFFER = b""
-
-    def snap(self):
-        res = self.tmpfile.buffer.getvalue()
-        self.tmpfile.seek(0)
-        self.tmpfile.truncate()
-        return res
-
-
-class DontReadFromInput(six.Iterator):
-    """Temporary stub class.  Ideally when stdin is accessed, the
-    capturing should be turned off, with possibly all data captured
-    so far sent to the screen.  This should be configurable, though,
-    because in automated test runs it is better to crash than
-    hang indefinitely.
+    The captured output is made available via ``capfd.readouterr()`` method
+    calls, which return a ``(out, err)`` namedtuple.
+    ``out`` and ``err`` will be ``byte`` objects.
     """
-
-    encoding = None
-
-    def read(self, *args):
-        raise IOError("reading from stdin while output is captured")
-
-    readline = read
-    readlines = read
-    __next__ = read
-
-    def __iter__(self):
-        return self
-
-    def fileno(self):
-        raise UnsupportedOperation("redirected stdin is pseudofile, has no fileno()")
-
-    def isatty(self):
-        return False
-
-    def close(self):
-        pass
-
-    @property
-    def buffer(self):
-        if sys.version_info >= (3, 0):
-            return self
-        else:
-            raise AttributeError("redirected stdin has no attribute buffer")
-
-
-def _colorama_workaround():
-    """
-    Ensure colorama is imported so that it attaches to the correct stdio
-    handles on Windows.
-
-    colorama uses the terminal on import time. So if something does the
-    first import of colorama while I/O capture is active, colorama will
-    fail in various ways.
-    """
-    if sys.platform.startswith("win32"):
-        try:
-            import colorama  
-        except ImportError:
-            pass
-
-
-def _readline_workaround():
-    """
-    Ensure readline is imported so that it attaches to the correct stdio
-    handles on Windows.
-
-    Pdb uses readline support where available--when not running from the Python
-    prompt, the readline module is not imported until running the pdb REPL.  If
-    running pytest with the --pdb option this means the readline module is not
-    imported until after I/O capture has been started.
-
-    This is a problem for pyreadline, which is often used to implement readline
-    support on Windows, as it does not attach to the correct handles for stdout
-    and/or stdin if they have been redirected by the FDCapture mechanism.  This
-    workaround ensures that readline is imported before I/O capture is setup so
-    that it can attach to the actual stdin/out for the console.
-
-    See https://github.com/pytest-dev/pytest/pull/1281
-    """
-    if sys.platform.startswith("win32"):
-        try:
-            import readline  
-        except ImportError:
-            pass
-
-
-def _py36_windowsconsoleio_workaround(stream):
-    """
-    Python 3.6 implemented unicode console handling for Windows. This works
-    by reading/writing to the raw console handle using
-    ``{Read,Write}ConsoleW``.
-
-    The problem is that we are going to ``dup2`` over the stdio file
-    descriptors when doing ``FDCapture`` and this will ``CloseHandle`` the
-    handles used by Python to write to the console. Though there is still some
-    weirdness and the console handle seems to only be closed randomly and not
-    on the first call to ``CloseHandle``, or maybe it gets reopened with the
-    same handle value when we suspend capturing.
-
-    The workaround in this case will reopen stdio with a different fd which
-    also means a different handle by replicating the logic in
-    "Py_lifecycle.c:initstdio/create_stdio".
-
-    :param stream: in practice ``sys.stdout`` or ``sys.stderr``, but given
-        here as parameter for unittesting purposes.
-
-    See https://github.com/pytest-dev/py/issues/103
-    """
-    if not sys.platform.startswith("win32") or sys.version_info[:2] < (3, 6):
-        return
-
-    
-    if not hasattr(stream, "buffer"):
-        return
-
-    buffered = hasattr(stream.buffer, "raw")
-    raw_stdout = stream.buffer.raw if buffered else stream.buffer
-
-    if not isinstance(raw_stdout, io._WindowsConsoleIO):
-        return
-
-    def _reopen_stdio(f, mode):
-        if not buffered and mode[0] == "w":
-            buffering = 0
-        else:
-            buffering = -1
-
-        return io.TextIOWrapper(
-            open(os.dup(f.fileno()), mode, buffering),
-            f.encoding,
-            f.errors,
-            f.newlines,
-            f.line_buffering,
-        )
-
-    sys.stdin = _reopen_stdio(sys.stdin, "rb")
-    sys.stdout = _reopen_stdio(sys.stdout, "wb")
-    sys.stderr = _reopen_stdio(sys.stderr, "wb")
-
-
-def _attempt_to_close_capture_file(f):
-    """Suppress IOError when closing the temporary file used for capturing streams in py27 (#2370)"""
-    if six.PY2:
-        try:
-            f.close()
-        except IOError:
-            pass
-    else:
-        f.close()
+    capman = request.config.pluginmanager.getplugin("capturemanager")
+    capture_fixture = CaptureFixture[bytes](FDCaptureBinary, request)
+    capman.set_fixture(capture_fixture)
+    capture_fixture._start()
+    yield capture_fixture
+    capture_fixture.close()
+    capman.unset_fixture()
