@@ -660,6 +660,7 @@ impl<'a> SceneBuilder<'a> {
                             info.stacking_context.clip_id,
                             info.stacking_context.raster_space,
                             info.stacking_context.flags,
+                            bc.pipeline_id,
                         );
 
                         self.rf_mapper.push_offset(info.origin.to_vector());
@@ -1737,6 +1738,7 @@ impl<'a> SceneBuilder<'a> {
         clip_id: Option<ClipId>,
         requested_raster_space: RasterSpace,
         flags: StackingContextFlags,
+        pipeline_id: PipelineId,
     ) -> StackingContextInfo {
         profile_scope!("push_stacking_context");
 
@@ -1844,7 +1846,7 @@ impl<'a> SceneBuilder<'a> {
         }
 
         let mut sc_info = StackingContextInfo {
-            pop_clip_root: false,
+            pop_hit_testing_clip: false,
             pop_stacking_context: false,
             pop_containing_block: false,
             set_tile_cache_barrier,
@@ -1857,30 +1859,35 @@ impl<'a> SceneBuilder<'a> {
         }
 
         
-        let clip_chain_id = match clip_id {
-            Some(clip_id) => self.clip_store.get_or_build_clip_chain_id(clip_id),
-            None => ClipChainId::NONE,
+        
+        
+        let clip_chain_id = if is_redundant {
+            ClipChainId::NONE
+        }  else {
+            
+            
+            
+            let clip_id = clip_id.unwrap_or(ClipId::root(pipeline_id));
+            self.clip_store.get_or_build_clip_chain_id(clip_id)
         };
 
         
         if let Some(clip_id) = clip_id {
-            sc_info.pop_clip_root = true;
-
-            
-            
-            
-            
-            
-            
-            
-            if is_redundant {
-                self.clip_store.push_clip_root(Some(clip_id), true);
-            } else {
-                self.clip_store.push_clip_root(None, false);
-            }
-
-            
             self.hit_testing_scene.push_clip(clip_id);
+            sc_info.pop_hit_testing_clip = true;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        if is_redundant {
+            self.clip_store.push_clip_root(clip_id, true);
+        } else {
+            self.clip_store.push_clip_root(None, false);
         }
 
         
@@ -1917,6 +1924,9 @@ impl<'a> SceneBuilder<'a> {
         self.raster_space_stack.pop().unwrap();
 
         
+        self.clip_store.pop_clip_root();
+
+        
         if info.pop_containing_block {
             self.containing_block_stack.pop().unwrap();
         }
@@ -1926,8 +1936,7 @@ impl<'a> SceneBuilder<'a> {
         }
 
         
-        if info.pop_clip_root {
-            self.clip_store.pop_clip_root();
+        if info.pop_hit_testing_clip {
             self.hit_testing_scene.pop_clip();
         }
 
@@ -3591,7 +3600,7 @@ struct ExtendedPrimitiveInstance {
 
 struct StackingContextInfo {
     
-    pop_clip_root: bool,
+    pop_hit_testing_clip: bool,
     
     pop_containing_block: bool,
     
