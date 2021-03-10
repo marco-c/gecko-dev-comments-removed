@@ -1369,9 +1369,10 @@ PK11_InitToken(PK11SlotInfo *slot, PRBool loadCerts)
     if (status != PR_SUCCESS)
         return SECFailure;
 
-    
-
-    (void)pk11_ReadProfileList(slot);
+    rv = pk11_ReadProfileList(slot);
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
 
     if (!(slot->isInternal) && (slot->hasRandom)) {
         
