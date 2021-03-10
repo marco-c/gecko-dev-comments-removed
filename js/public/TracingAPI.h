@@ -44,6 +44,7 @@ enum class TracerKind {
   GrayBuffering,
   ClearEdges,
   Sweeping,
+  Barrier,
 
   
   
@@ -54,7 +55,6 @@ enum class TracerKind {
   
   UnmarkGray,
   VerifyTraceProtoAndIface,
-  Barrier
 };
 
 enum class WeakMapTraceAction {
