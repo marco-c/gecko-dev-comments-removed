@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=829872
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 829872</title>
@@ -23,7 +23,7 @@
     is(elem.contentDocument, null, "null cross-origin contentDocument for " + desc);
     ok(await SpecialPowers.spawn(elem, [], () => this.content.eval('frameElement === null;')),
        "null cross-origin frameElement for " + desc);
-    if (!(elem instanceof HTMLFrameElement))
+    if (!(elem instanceof elem.ownerDocument.defaultView.HTMLFrameElement))
       is(elem.getSVGDocument(), null, "null cross-origin getSVGDocument() for " + desc);
   }
 
