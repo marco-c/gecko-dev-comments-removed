@@ -3351,7 +3351,9 @@
 
       
       try {
-        let tabsWithBeforeUnload = [];
+        let tabsWithBeforeUnloadPrompt = [];
+        let tabsWithoutBeforeUnload = [];
+        let beforeUnloadPromises = [];
         let lastToClose;
         let aParams = { animate, prewarmed: true };
 
@@ -3363,12 +3365,77 @@
               this._getSwitcher().warmupTab(toBlurTo);
             }
           } else if (this._hasBeforeUnload(tab)) {
-            tabsWithBeforeUnload.push(tab);
+            TelemetryStopwatch.start("FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS", tab);
+            
+            
+            
+            tab._pendingPermitUnload = true;
+            beforeUnloadPromises.push(
+              
+              
+              
+              tab.linkedBrowser.asyncPermitUnload("dontUnload").then(
+                ({ permitUnload }) => {
+                  tab._pendingPermitUnload = false;
+                  TelemetryStopwatch.finish(
+                    "FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS",
+                    tab
+                  );
+                  if (tab.closing) {
+                    
+                    
+                  } else if (permitUnload) {
+                    
+                    this.removeTab(tab, {
+                      animate,
+                      prewarmed: true,
+                      skipPermitUnload: true,
+                    });
+                  } else {
+                    
+                    tabsWithBeforeUnloadPrompt.push(tab);
+                  }
+                },
+                err => {
+                  console.log("error while calling asyncPermitUnload", err);
+                  tab._pendingPermitUnload = false;
+                  TelemetryStopwatch.finish(
+                    "FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS",
+                    tab
+                  );
+                }
+              )
+            );
           } else {
-            this.removeTab(tab, aParams);
+            tabsWithoutBeforeUnload.push(tab);
           }
         }
-        for (let tab of tabsWithBeforeUnload) {
+        
+        
+        
+        
+        for (let tab of tabsWithoutBeforeUnload) {
+          this.removeTab(tab, aParams);
+        }
+
+        
+        
+        
+        
+        let done = false;
+        Promise.all(beforeUnloadPromises).then(() => {
+          done = true;
+        });
+        Services.tm.spinEventLoopUntilOrShutdown(
+          "tabbrowser.js:removeTabs",
+          () => done || window.closed
+        );
+        if (!done) {
+          return;
+        }
+
+        
+        for (let tab of tabsWithBeforeUnloadPrompt) {
           this.removeTab(tab, aParams);
         }
 
