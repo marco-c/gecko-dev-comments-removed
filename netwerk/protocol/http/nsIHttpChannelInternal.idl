@@ -271,6 +271,13 @@ interface nsIHttpChannelInternal : nsISupports
 
 
 
+    [must_use] attribute boolean isOCSP;
+
+    
+
+
+
+
     [must_use] attribute unsigned long tlsFlags;
 
     [must_use] readonly attribute PRTime lastModifiedTime;
