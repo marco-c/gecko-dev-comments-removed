@@ -39,8 +39,7 @@ const {
 
 
 
-
-exports.descriptorFromURL = async function descriptorFromURL(url) {
+exports.targetFromURL = async function targetFromURL(url) {
   const client = await clientFromURL(url);
   const params = url.searchParams;
 
@@ -53,10 +52,11 @@ exports.descriptorFromURL = async function descriptorFromURL(url) {
 
   const id = params.get("id");
   const type = params.get("type");
+  const chrome = params.has("chrome");
 
-  let descriptorFront;
+  let target;
   try {
-    descriptorFront = await _descriptorFromURL(client, id, type);
+    target = await _targetFromURL(client, id, type, chrome);
   } catch (e) {
     if (!isCachedClient) {
       
@@ -66,47 +66,55 @@ exports.descriptorFromURL = async function descriptorFromURL(url) {
     throw e;
   }
 
-  return descriptorFront;
+  
+  
+  
+  
+  
+  target.shouldCloseClient = !isCachedClient;
+
+  return target;
 };
 
-async function _descriptorFromURL(client, id, type) {
+async function _targetFromURL(client, id, type, chrome) {
   if (!type) {
-    throw new Error("descriptorFromURL, missing type parameter");
+    throw new Error("targetFromURL, missing type parameter");
   }
 
-  let descriptorFront;
+  let front;
   if (type === "tab") {
     
     id = parseInt(id, 10);
     if (isNaN(id)) {
       throw new Error(
-        `descriptorFromURL, wrong tab id '${id}', should be a number`
+        `targetFromURL, wrong tab id '${id}', should be a number`
       );
     }
     try {
-      descriptorFront = await client.mainRoot.getTab({ outerWindowID: id });
+      const tabDescriptor = await client.mainRoot.getTab({ outerWindowID: id });
+      front = await tabDescriptor.getTarget();
     } catch (ex) {
       if (ex.message.startsWith("Protocol error (noTab)")) {
         throw new Error(
-          `descriptorFromURL, tab with outerWindowID '${id}' doesn't exist`
+          `targetFromURL, tab with outerWindowID '${id}' doesn't exist`
         );
       }
       throw ex;
     }
   } else if (type === "extension") {
-    descriptorFront = await client.mainRoot.getAddon({ id });
+    const addonDescriptor = await client.mainRoot.getAddon({ id });
 
-    if (!descriptorFront) {
-      throw new Error(
-        `descriptorFromURL, extension with id '${id}' doesn't exist`
-      );
+    if (!addonDescriptor) {
+      throw new Error(`targetFromURL, extension with id '${id}' doesn't exist`);
     }
-  } else if (type === "worker") {
-    descriptorFront = await client.mainRoot.getWorker(id);
 
-    if (!descriptorFront) {
+    front = await addonDescriptor.getTarget();
+  } else if (type === "worker") {
+    front = await client.mainRoot.getWorker(id);
+
+    if (!front) {
       throw new Error(
-        `descriptorFromURL, worker with id '${id}' doesn't exist`
+        `targetFromURL, worker with actor id '${id}' doesn't exist`
       );
     }
   } else if (type == "process") {
@@ -117,20 +125,25 @@ async function _descriptorFromURL(client, id, type) {
       if (isNaN(id)) {
         id = 0;
       }
-      descriptorFront = await client.mainRoot.getProcess(id);
+      const frontDescriptor = await client.mainRoot.getProcess(id);
+      front = await frontDescriptor.getTarget(id);
     } catch (ex) {
       if (ex.error == "noProcess") {
-        throw new Error(
-          `descriptorFromURL, process with id '${id}' doesn't exist`
-        );
+        throw new Error(`targetFromURL, process with id '${id}' doesn't exist`);
       }
       throw ex;
     }
   } else {
-    throw new Error(`descriptorFromURL, unsupported type '${type}' parameter`);
+    throw new Error(`targetFromURL, unsupported type '${type}' parameter`);
   }
 
-  return descriptorFront;
+  
+  
+  if (chrome) {
+    front.forceChrome();
+  }
+
+  return front;
 }
 
 
@@ -177,3 +190,5 @@ async function clientFromURL(url) {
   }
   return new DevToolsClient(transport);
 }
+
+exports.clientFromURL = clientFromURL;

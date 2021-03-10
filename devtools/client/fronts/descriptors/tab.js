@@ -221,7 +221,12 @@ class TabDescriptorFront extends DescriptorMixin(
         
         
         
-        const toolbox = gDevTools.getToolboxForDescriptor(this);
+        
+        const toolbox = gDevTools.getToolbox(this._targetFront);
+        
+        
+        
+        
         if (toolbox) {
           
           await toolbox.destroy();
