@@ -74,38 +74,56 @@ class RegExp final : public AllStatic {
       Isolate* isolate, Handle<JSRegExp> re, Handle<String> pattern,
       JSRegExp::Flags flags, uint32_t backtrack_limit);
 
+  
+  
+  
+  V8_WARN_UNUSED_RESULT static bool EnsureFullyCompiled(Isolate* isolate,
+                                                        Handle<JSRegExp> re,
+                                                        Handle<String> subject);
+
   enum CallOrigin : int {
     kFromRuntime = 0,
     kFromJs = 1,
+  };
+
+  enum class ExecQuirks {
+    kNone,
+    
+    
+    
+    
+    
+    kTreatMatchAtEndAsFailure,
   };
 
   
   
   V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static MaybeHandle<Object> Exec(
       Isolate* isolate, Handle<JSRegExp> regexp, Handle<String> subject,
-      int index, Handle<RegExpMatchInfo> last_match_info);
+      int index, Handle<RegExpMatchInfo> last_match_info,
+      ExecQuirks exec_quirks = ExecQuirks::kNone);
+
+  V8_EXPORT_PRIVATE V8_WARN_UNUSED_RESULT static MaybeHandle<Object>
+  ExperimentalOneshotExec(Isolate* isolate, Handle<JSRegExp> regexp,
+                          Handle<String> subject, int index,
+                          Handle<RegExpMatchInfo> last_match_info,
+                          ExecQuirks exec_quirks = ExecQuirks::kNone);
 
   
   static constexpr int kInternalRegExpFailure = 0;
   static constexpr int kInternalRegExpSuccess = 1;
   static constexpr int kInternalRegExpException = -1;
   static constexpr int kInternalRegExpRetry = -2;
+  static constexpr int kInternalRegExpFallbackToExperimental = -3;
+  static constexpr int kInternalRegExpSmallestResult = -3;
 
   enum IrregexpResult : int32_t {
     RE_FAILURE = kInternalRegExpFailure,
     RE_SUCCESS = kInternalRegExpSuccess,
     RE_EXCEPTION = kInternalRegExpException,
+    RE_RETRY = kInternalRegExpRetry,
+    RE_FALLBACK_TO_EXPERIMENTAL = kInternalRegExpFallbackToExperimental,
   };
-
-  
-  
-  
-  
-  
-  
-  
-  static int IrregexpPrepare(Isolate* isolate, Handle<JSRegExp> regexp,
-                             Handle<String> subject);
 
   
   
@@ -124,6 +142,16 @@ class RegExp final : public AllStatic {
                                                    RegExpNode* node);
 
   static const int kRegExpTooLargeToOptimize = 20 * KB;
+
+  V8_WARN_UNUSED_RESULT
+  static MaybeHandle<Object> ThrowRegExpException(Isolate* isolate,
+                                                  Handle<JSRegExp> re,
+                                                  Handle<String> pattern,
+                                                  RegExpError error);
+  static void ThrowRegExpException(Isolate* isolate, Handle<JSRegExp> re,
+                                   RegExpError error_text);
+
+  static bool IsUnmodifiedRegExp(Isolate* isolate, Handle<JSRegExp> regexp);
 };
 
 
