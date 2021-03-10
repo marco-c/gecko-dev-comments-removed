@@ -130,7 +130,7 @@ interface nsIThreadManager : nsISupports
 
 
 
-  void spinEventLoopUntil(in nsINestedEventLoopCondition condition);
+  void spinEventLoopUntil(in ACString aVeryGoodReasonToDoThis, in nsINestedEventLoopCondition condition);
 
   
 
@@ -139,7 +139,7 @@ interface nsIThreadManager : nsISupports
 
 
 
-  void spinEventLoopUntilOrShutdown(in nsINestedEventLoopCondition condition);
+  void spinEventLoopUntilOrShutdown(in ACString aVeryGoodReasonToDoThis, in nsINestedEventLoopCondition condition);
 
   
 

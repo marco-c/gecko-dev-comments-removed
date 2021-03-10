@@ -363,6 +363,7 @@ class GeckoViewNavigation extends GeckoViewModule {
 
     
     Services.tm.spinEventLoopUntil(
+      "GeckoViewNavigation.jsm:handleNewSession",
       () => this.window.closed || browser !== undefined
     );
     return browser || null;

@@ -507,9 +507,12 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
       
       const utils = window.windowUtils;
       utils.enterModalState();
-      Services.tm.spinEventLoopUntil(() => {
-        return setupFinished;
-      });
+      Services.tm.spinEventLoopUntil(
+        "devtools-browser.js:debugService.activationHandler",
+        () => {
+          return setupFinished;
+        }
+      );
       utils.leaveModalState();
     };
 
