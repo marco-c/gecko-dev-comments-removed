@@ -2661,20 +2661,6 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   mGeckoWindow->ReportMoveEvent();
 }
 
-- (NSArray<NSWindow*>*)customWindowsToEnterFullScreenForWindow:(NSWindow*)window {
-  return AlwaysUsesNativeFullScreen() ? @[ window ] : nil;
-}
-
-- (void)window:(NSWindow*)window
-    startCustomAnimationToEnterFullScreenOnScreen:(NSScreen*)screen
-                                     withDuration:(NSTimeInterval)duration {
-  
-  
-  
-  
-  [window setFrame:[screen frame] display:YES];
-}
-
 - (void)windowWillEnterFullScreen:(NSNotification*)notification {
   if (!mGeckoWindow) {
     return;
