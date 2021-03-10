@@ -751,42 +751,72 @@ class nsBaseHashtable
   }
 
  public:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  class Iterator : public PLDHashTable::Iterator {
+  class ConstIterator {
    public:
-    typedef PLDHashTable::Iterator Base;
+    explicit ConstIterator(nsBaseHashtable* aTable)
+        : mBaseIterator(&aTable->mTable) {}
+    ~ConstIterator() = default;
 
-    explicit Iterator(nsBaseHashtable* aTable) : Base(&aTable->mTable) {}
-    ~Iterator() = default;
-
-    KeyType Key() const { return static_cast<EntryType*>(Get())->GetKey(); }
-    UserDataType UserData() const {
-      return Converter::Unwrap(static_cast<EntryType*>(Get())->mData);
+    KeyType Key() const {
+      return static_cast<EntryType*>(mBaseIterator.Get())->GetKey();
     }
-    DataType& Data() const { return static_cast<EntryType*>(Get())->mData; }
+    UserDataType UserData() const {
+      return Converter::Unwrap(
+          static_cast<EntryType*>(mBaseIterator.Get())->mData);
+    }
+    const DataType& Data() const {
+      return static_cast<EntryType*>(mBaseIterator.Get())->mData;
+    }
 
-    Iterator() = delete;
-    Iterator(const Iterator&) = delete;
-    Iterator(Iterator&& aOther) = delete;
-    Iterator& operator=(const Iterator&) = delete;
-    Iterator& operator=(Iterator&&) = delete;
+    bool Done() const { return mBaseIterator.Done(); }
+    void Next() { mBaseIterator.Next(); }
+
+    ConstIterator() = delete;
+    ConstIterator(const ConstIterator&) = delete;
+    ConstIterator(ConstIterator&& aOther) = delete;
+    ConstIterator& operator=(const ConstIterator&) = delete;
+    ConstIterator& operator=(ConstIterator&&) = delete;
+
+   protected:
+    PLDHashTable::Iterator mBaseIterator;
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  class Iterator final : public ConstIterator {
+   public:
+    using ConstIterator::ConstIterator;
+
+    using ConstIterator::Data;
+    DataType& Data() {
+      return static_cast<EntryType*>(this->mBaseIterator.Get())->mData;
+    }
+
+    void Remove() { this->mBaseIterator.Remove(); }
   };
 
   Iterator Iter() { return Iterator(this); }
 
-  Iterator ConstIter() const {
-    return Iterator(const_cast<nsBaseHashtable*>(this));
+  ConstIterator ConstIter() const {
+    return ConstIterator(const_cast<nsBaseHashtable*>(this));
   }
+
+  
+
+
+
+
+
+  void Remove(ConstIterator& aIter) { aIter.mBaseIterator.Remove(); }
 
   using typename nsTHashtable<EntryType>::iterator;
   using typename nsTHashtable<EntryType>::const_iterator;
