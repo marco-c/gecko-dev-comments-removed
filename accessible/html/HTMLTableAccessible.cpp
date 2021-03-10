@@ -426,7 +426,16 @@ Relation HTMLTableAccessible::RelationByType(RelationType aType) const {
 
 LocalAccessible* HTMLTableAccessible::Caption() const {
   LocalAccessible* child = mChildren.SafeElementAt(0, nullptr);
-  return child && child->Role() == roles::CAPTION ? child : nullptr;
+  
+  
+  
+  
+  
+  return child && child->NativeRole() == roles::CAPTION &&
+                 (!child->HasStrongARIARole() ||
+                  child->IsARIARole(nsGkAtoms::caption))
+             ? child
+             : nullptr;
 }
 
 void HTMLTableAccessible::Summary(nsString& aSummary) {

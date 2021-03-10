@@ -74,6 +74,8 @@
       testRole("aria_region_has_labelledby", ROLE_REGION);
       testRole("aria_region_has_title", ROLE_REGION);
       testRole("aria_region_empty_name", ROLE_TEXT);
+      testRole("aria_region_as_table_with_caption", ROLE_REGION);
+      testRole("aria_region_as_table_with_miscaption", ROLE_TABLE);
       testRole("aria_row", ROLE_ROW);
       testRole("aria_rowheader", ROLE_ROWHEADER);
       testRole("aria_scrollbar", ROLE_SCROLLBAR);
@@ -304,6 +306,8 @@
   <span id="aria_region_has_labelledby" role="region" aria-labelledby="label"><span id="label" aria-label="label"></span>
   <span id="aria_region_has_title" role="region" title="title"></span>
   <span id="aria_region_empty_name" role="region" aria-label="" title="" aria-labelledby="empty"></span><span id="empty"></span>
+  <table id="aria_region_as_table_with_caption" role="region"><caption>hello</caption></table>
+  <table id="aria_region_as_table_with_miscaption" role="region"><caption role="option">hello</caption></table>
   <span id="aria_row" role="row"></span>
   <span id="aria_rowheader" role="rowheader"></span>
   <span id="aria_scrollbar" role="scrollbar"></span>
@@ -333,18 +337,18 @@
     <p>This is a paragraph inside the article.</p>
   </div>
 
-  
+  <!-- "live" roles -->
   <table role="log" id="log_table">
     <tr><td>Table based log</td></tr>
   </table>
   <h1 role="marquee" id="marquee_h1">marquee</h1>
   <div role="timer" id="timer_div">timer</div>
 
-  
+  <!-- landmarks -->
   <div role="application" id="application">application</div>
   <div role="form" id="form">form</div>
 
-  
+  <!-- weak landmarks -->
   <div role="banner" id="banner">banner</div>
   <div role="complementary" id="complementary">complementary</div>
   <div role="contentinfo" id="contentinfo">contentinfo</div>
@@ -352,7 +356,7 @@
   <div role="navigation" id="navigation">navigation</div>
   <div role="search" id="search">search</div>
 
-  
+  <!-- landmarks are tables -->
   <table role="application" id="application_table">application table
     <tr><td>hi<td></tr></table>
   <table role="banner" id="banner_table">banner table
@@ -368,43 +372,43 @@
   <table role="search" id="search_table">search table
     <tr><td>hi<td></tr></table>
 
-  
+  <!-- test gEmptyRoleMap -->
   <table role="button">
     <tr id="buttontable_row">
       <td id="buttontable_cell">cell</td>
     </tr>
   </table>
 
-  
-  
+  <!-- user agents must not map abstract roles to platform API -->
+  <!-- test abstract base type roles -->
   <div role="composite" id="composite">composite</div>
   <div role="landmark" id="landmark">landmark</div>
   <div role="roletype" id="roletype">roletype</div>
   <div role="structure" id="structure">structure</div>
   <div role="widget" id="widget">widget</div>
   <div role="window" id="window">window</div>
-  
+  <!-- test abstract input roles -->
   <div role="input" id="input">input</div>
   <div role="range" id="range">range</div>
   <div role="select" id="select">select</div>
-  
+  <!-- test abstract structure roles -->
   <div role="section" id="section">section</div>
   <div role="sectionhead" id="sectionhead">sectionhead</div>
 
-  
+  <!-- roles transformed by ARIA roles of ancestors -->
   <table role="grid">
     <tr>
       <td id="implicit_gridcell">foo</td>
     </tr>
   </table>
 
-  
+  <!-- roles transformed by ARIA state attributes -->
   <button aria-pressed="true" id="togglebutton">
 
-  
+  <!-- take the first known mappable role -->
   <div role="wiggly:worm abc123 button" id="unknown_roles">worm button</div>
 
-  
+  <!-- misc roles -->
   <div role="note" id="note">note</div>
   <div role="scrollbar" id="scrollbar">scrollbar</div>
 
