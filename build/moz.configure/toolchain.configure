@@ -1976,16 +1976,25 @@ def coverage_cflags(target, c_compiler, vc_path, build_env):
             "-coverage-no-function-names-in-data",
         ]
 
+    exclude = []
     if target.os == "WINNT" and c_compiler.type == "clang-cl":
         
-        vs_path = os.path.dirname(vc_path)
-
+        exclude.append("^.*[vV][sS]20[0-9]{2}.*$")
         
+        exclude.append("^.*[\\\\/]fetches[\\\\/].*$")
+    elif target.os == "OSX":
         
-        vs_path = os.path.realpath(vs_path)
+        exclude.append("^.*/fetches/.*$")
+    elif target.os == "GNU":
+        
+        exclude.append("^.*/fetches/.*$")
+        
+        exclude.append("^/usr/.*$")
 
+    if exclude:
+        exclude = ";".join(exclude)
         cflags += [
-            "-fprofile-exclude-files=^{}.*$".format(re.escape(vs_path)),
+            f"-fprofile-exclude-files={exclude}",
         ]
 
     response_file_path = os.path.join(build_env.topobjdir, "code_coverage_cflags")
