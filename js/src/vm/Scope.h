@@ -207,6 +207,11 @@ class AbstractBindingName<frontend::TaggedParserAtomIndex> {
 
 using BindingName = AbstractBindingName<JSAtom>;
 
+const size_t ScopeDataAlignBytes = size_t(1) << gc::CellFlagBitsReservedForGC;
+
+
+
+
 
 
 
@@ -306,30 +311,31 @@ class WrappedPtrOperations<Scope*, Wrapper> {
 
 
 
-class Scope : public gc::CellWithTenuredGCPointer<gc::TenuredCell, Scope> {
+class Scope : public gc::TenuredCellWithNonGCPointer<BaseScopeData> {
   friend class GCMarker;
   friend class frontend::ScopeStencil;
   friend class js::AbstractBindingIter<JSAtom>;
 
- public:
-  
-  Scope* enclosing() const { return headerPtr(); }
-
  protected:
+  
+  BaseScopeData* rawData() { return headerPtr(); }
+  const BaseScopeData* rawData() const { return headerPtr(); }
+
+  
+  const ScopeKind kind_;
+
   
   
   const HeapPtr<Shape*> environmentShape_;
 
   
-  BaseScopeData* data_ = nullptr;
-
-  
-  const ScopeKind kind_;
+  HeapPtr<Scope*> enclosingScope_;
 
   Scope(ScopeKind kind, Scope* enclosing, Shape* environmentShape)
-      : CellWithTenuredGCPointer(enclosing),
+      : TenuredCellWithNonGCPointer(nullptr),
+        kind_(kind),
         environmentShape_(environmentShape),
-        kind_(kind) {}
+        enclosingScope_(enclosing) {}
 
   static Scope* create(JSContext* cx, ScopeKind kind, HandleScope enclosing,
                        HandleShape envShape);
@@ -340,9 +346,6 @@ class Scope : public gc::CellWithTenuredGCPointer<gc::TenuredCell, Scope> {
       MutableHandle<typename ConcreteScope::RuntimeData*> data);
 
   Shape* maybeCloneEnvironmentShape(JSContext* cx);
-
-  BaseScopeData* rawData() { return data_; }
-  const BaseScopeData* rawData() const { return data_; }
 
   template <typename ConcreteScope>
   void initData(
@@ -389,6 +392,8 @@ class Scope : public gc::CellWithTenuredGCPointer<gc::TenuredCell, Scope> {
   ScopeKind kind() const { return kind_; }
 
   Shape* environmentShape() const { return environmentShape_; }
+
+  Scope* enclosing() const { return enclosingScope_; }
 
   static bool hasEnvironment(ScopeKind kind, bool environmentShape) {
     switch (kind) {
@@ -448,6 +453,7 @@ template <class DataT>
 inline size_t SizeOfScopeData(uint32_t numBindings) {
   using BindingT = AbstractBindingName<typename DataT::NameType>;
 
+#if JS_BITS_PER_WORD == 64
   static_assert(
       sizeof(DataT) == offsetof(DataT, trailingNames) + sizeof(BindingT),
       "Unexpected default number of inlined elements");
@@ -455,6 +461,29 @@ inline size_t SizeOfScopeData(uint32_t numBindings) {
   
   return sizeof(DataT) +
          ((numBindings ? numBindings - 1 : 0) * sizeof(BindingT));
+#else
+  
+  
+  
+  
+  static_assert(
+      sizeof(DataT) == offsetof(DataT, trailingNames) + sizeof(BindingT) ||
+          sizeof(DataT) ==
+              offsetof(DataT, trailingNames) + 2 * sizeof(BindingT),
+      "Unexpected default number of inlined elements");
+
+  if constexpr (sizeof(DataT) ==
+                offsetof(DataT, trailingNames) + sizeof(BindingT)) {
+    
+    
+    return sizeof(DataT) +
+           ((numBindings ? numBindings - 1 : 0) * sizeof(BindingT));
+  }
+
+  
+  return sizeof(DataT) +
+         ((numBindings > 2 ? numBindings - 2 : 0) * sizeof(BindingT));
+#endif
 }
 
 
@@ -522,7 +551,8 @@ class LexicalScope : public Scope {
     uint32_t length = 0;
   };
 
-  struct RuntimeData : public AbstractBaseScopeData<JSAtom> {
+  struct alignas(ScopeDataAlignBytes) RuntimeData
+      : public AbstractBaseScopeData<JSAtom> {
     SlotInfo slotInfo;
     AbstractTrailingNamesArray<JSAtom> trailingNames;
 
@@ -653,7 +683,8 @@ class FunctionScope : public Scope {
     void setHasParameterExprs() { flags |= HasParameterExprsFlag; }
   };
 
-  struct RuntimeData : public AbstractBaseScopeData<JSAtom> {
+  struct alignas(ScopeDataAlignBytes) RuntimeData
+      : public AbstractBaseScopeData<JSAtom> {
     
     
     
@@ -749,7 +780,8 @@ class VarScope : public Scope {
     uint32_t length = 0;
   };
 
-  struct RuntimeData : public AbstractBaseScopeData<JSAtom> {
+  struct alignas(ScopeDataAlignBytes) RuntimeData
+      : public AbstractBaseScopeData<JSAtom> {
     SlotInfo slotInfo;
     AbstractTrailingNamesArray<JSAtom> trailingNames;
 
@@ -835,7 +867,8 @@ class GlobalScope : public Scope {
     uint32_t length = 0;
   };
 
-  struct RuntimeData : public AbstractBaseScopeData<JSAtom> {
+  struct alignas(ScopeDataAlignBytes) RuntimeData
+      : public AbstractBaseScopeData<JSAtom> {
     SlotInfo slotInfo;
     AbstractTrailingNamesArray<JSAtom> trailingNames;
 
@@ -938,7 +971,8 @@ class EvalScope : public Scope {
     uint32_t length = 0;
   };
 
-  struct RuntimeData : public AbstractBaseScopeData<JSAtom> {
+  struct alignas(ScopeDataAlignBytes) RuntimeData
+      : public AbstractBaseScopeData<JSAtom> {
     SlotInfo slotInfo;
     AbstractTrailingNamesArray<JSAtom> trailingNames;
 
@@ -1034,7 +1068,8 @@ class ModuleScope : public Scope {
     uint32_t length = 0;
   };
 
-  struct RuntimeData : public AbstractBaseScopeData<JSAtom> {
+  struct alignas(ScopeDataAlignBytes) RuntimeData
+      : public AbstractBaseScopeData<JSAtom> {
     
     HeapPtr<ModuleObject*> module = {};
     SlotInfo slotInfo;
@@ -1106,7 +1141,8 @@ class WasmInstanceScope : public Scope {
     uint32_t length = 0;
   };
 
-  struct RuntimeData : public AbstractBaseScopeData<JSAtom> {
+  struct alignas(ScopeDataAlignBytes) RuntimeData
+      : public AbstractBaseScopeData<JSAtom> {
     
     HeapPtr<WasmInstanceObject*> instance = {};
     SlotInfo slotInfo;
@@ -1166,7 +1202,8 @@ class WasmFunctionScope : public Scope {
     uint32_t length = 0;
   };
 
-  struct RuntimeData : public AbstractBaseScopeData<JSAtom> {
+  struct alignas(ScopeDataAlignBytes) RuntimeData
+      : public AbstractBaseScopeData<JSAtom> {
     SlotInfo slotInfo;
     AbstractTrailingNamesArray<JSAtom> trailingNames;
 
