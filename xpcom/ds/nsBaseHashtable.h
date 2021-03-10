@@ -78,6 +78,26 @@ struct SmartPtrTraits<nsCOMPtr<Pointee>> {
 
 
 
+template <class T>
+T* PtrGetWeak(T* aPtr) {
+  return aPtr;
+}
+
+template <class T>
+T* PtrGetWeak(const RefPtr<T>& aPtr) {
+  return aPtr.get();
+}
+
+template <class T>
+T* PtrGetWeak(const nsCOMPtr<T>& aPtr) {
+  return aPtr.get();
+}
+
+template <class T>
+T* PtrGetWeak(const UniquePtr<T>& aPtr) {
+  return aPtr.get();
+}
+
 }  
 
 
@@ -124,6 +144,10 @@ class nsBaseHashtableET : public KeyClass {
   template <typename U>
   void SetData(U&& aData) {
     mData = std::forward<U>(aData);
+  }
+
+  decltype(auto) GetWeak() const {
+    return mozilla::detail::PtrGetWeak(GetData());
   }
 
  private:
