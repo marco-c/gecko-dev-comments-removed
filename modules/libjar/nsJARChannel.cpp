@@ -22,6 +22,7 @@
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TelemetryComms.h"
 #include "private/pprio.h"
@@ -823,6 +824,10 @@ nsJARChannel::SetContentLength(int64_t aContentLength) {
 
 static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
                                   nsresult aStatus, bool aCanceled) {
+  if (!StaticPrefs::network_jar_record_failure_reason()) {
+    return;
+  }
+
   
   
   auto findFilenameStart = [](const nsCString& aSpec) -> uint32_t {
@@ -853,6 +858,7 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
   
   
   bool isTest = fileName.Find("test_empty_file.zip!") != -1;
+  bool isOmniJa = StringBeginsWith(fileName, "omni.ja!"_ns);
 
   Telemetry::SetEventRecordingEnabled("zero_byte_load"_ns, true);
   Telemetry::EventID eventType = Telemetry::EventID::Zero_byte_load_Load_Others;
@@ -873,7 +879,7 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
     
     
     
-    if (!isTest && !StringBeginsWith(fileName, "omni.ja!"_ns)) {
+    if (!isTest && !isOmniJa) {
       return;
     }
     eventType = Telemetry::EventID::Zero_byte_load_Load_Js;
@@ -887,7 +893,7 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
     }
 
     
-    if (!StringBeginsWith(fileName, "omni.ja!"_ns)) {
+    if (!isOmniJa) {
       return;
     }
 
@@ -898,16 +904,36 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
     eventType = Telemetry::EventID::Zero_byte_load_Load_Json;
   } else if (StringEndsWith(fileName, ".html"_ns)) {
     eventType = Telemetry::EventID::Zero_byte_load_Load_Html;
+    
+    if (!isOmniJa) {
+      return;
+    }
+
+    
+    
+    if (fileName.EqualsLiteral("omni.ja!/chrome/browser/res/activity-stream/"
+                               "prerendered/activity-stream-noscripts.html") &&
+        aStatus == NS_ERROR_FAILURE) {
+      return;
+    }
   } else if (StringEndsWith(fileName, ".png"_ns)) {
     eventType = Telemetry::EventID::Zero_byte_load_Load_Png;
+    
+    if (!isOmniJa) {
+      return;
+    }
   } else if (StringEndsWith(fileName, ".svg"_ns)) {
     eventType = Telemetry::EventID::Zero_byte_load_Load_Svg;
+    
+    if (!isOmniJa) {
+      return;
+    }
   }
 
   
   
   if (!isTest && eventType == Telemetry::EventID::Zero_byte_load_Load_Others &&
-      !StringBeginsWith(fileName, "omni.ja!"_ns)) {
+      !isOmniJa) {
     return;
   }
 
@@ -919,6 +945,21 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
   if (!isTest &&
       (eventType == Telemetry::EventID::Zero_byte_load_Load_Ftl ||
        eventType == Telemetry::EventID::Zero_byte_load_Load_Json) &&
+      aStatus == NS_ERROR_FILE_NOT_FOUND) {
+    return;
+  }
+
+  
+  
+  if (fileName.EqualsLiteral(
+          "omni.ja!/chrome/browser/search-extensions/google/favicon.ico") &&
+      aStatus == NS_BINDING_ABORTED) {
+    return;
+  }
+
+  
+  
+  if (fileName.EqualsLiteral("omni.ja!/update.locale") &&
       aStatus == NS_ERROR_FILE_NOT_FOUND) {
     return;
   }
