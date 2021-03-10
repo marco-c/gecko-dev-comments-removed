@@ -38,6 +38,11 @@ class Tab {
   getActive() {
     return this.active;
   }
+
+  get userContextId() {
+    return this.browser.ownerGlobal.moduleManager.settings
+      .unsafeSessionContextId;
+  }
 }
 
 

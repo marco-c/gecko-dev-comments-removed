@@ -328,8 +328,7 @@ class Tab extends TabBase {
   }
 
   get cookieStoreId() {
-    
-    return this.window.moduleManager.settings.unsafeSessionContextId;
+    return getCookieStoreIdForTab(this, this.nativeTab);
   }
 
   get height() {
