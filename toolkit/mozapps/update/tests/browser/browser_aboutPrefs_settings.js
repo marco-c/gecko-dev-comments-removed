@@ -16,33 +16,12 @@ async function changeAndVerifyPref(tab, newConfigValue) {
     }
   );
 
-  
-  
-  
-  
-  
-  
-  
-  
   let configValueRead = await UpdateUtils.getAppUpdateAutoEnabled();
   is(
     configValueRead,
     newConfigValue,
     "Value returned should have matched the expected value"
   );
-
-  
-  if (AppConstants.platform == "win") {
-    let configFile = getUpdateDirFile(FILE_UPDATE_CONFIG_JSON);
-    let decoder = new TextDecoder();
-    let fileContents = await OS.File.read(configFile.path);
-    let saveObject = JSON.parse(decoder.decode(fileContents));
-    is(
-      saveObject["app.update.auto"],
-      newConfigValue,
-      "Value in file should match expected"
-    );
-  }
 
   await SpecialPowers.spawn(
     tab.linkedBrowser,

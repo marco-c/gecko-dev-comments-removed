@@ -3,25 +3,13 @@
 
 
 
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
-
-
-async function verifyPref(configFile, expectedValue) {
-  let decoder = new TextDecoder();
+async function verifyPref(expectedValue) {
   let configValue = await UpdateUtils.getAppUpdateAutoEnabled();
   Assert.equal(
     configValue,
     expectedValue,
     "Value returned by getAppUpdateAutoEnabled should have " +
       "matched the expected value"
-  );
-  let fileContents = await OS.File.read(configFile.path);
-  let saveObject = JSON.parse(decoder.decode(fileContents));
-  Assert.equal(
-    saveObject["app.update.auto"],
-    expectedValue,
-    "Value in update config file should match expected"
   );
 }
 
@@ -35,11 +23,11 @@ async function run_test() {
   Services.prefs.setBoolPref("app.update.auto.migrated", false);
   Services.prefs.setBoolPref("app.update.auto", false);
   Assert.ok(!configFile.exists(), "Config file should not exist yet");
-  await verifyPref(configFile, false);
+  await verifyPref(false);
 
   
   Services.prefs.setBoolPref("app.update.auto", true);
-  await verifyPref(configFile, false);
+  await verifyPref(false);
 
   
   
@@ -55,7 +43,7 @@ async function run_test() {
 
   
   await UpdateUtils.setAppUpdateAutoEnabled(false);
-  await verifyPref(configFile, false);
+  await verifyPref(false);
 
   
   Services.prefs.setBoolPref("app.update.auto.migrated", false);
@@ -65,11 +53,11 @@ async function run_test() {
     !configFile.exists(),
     "App update config file should have been removed"
   );
-  await verifyPref(configFile, true);
+  await verifyPref(true);
 
   
   await UpdateUtils.setAppUpdateAutoEnabled(false);
-  await verifyPref(configFile, false);
+  await verifyPref(false);
 
   doTestFinish();
 }
