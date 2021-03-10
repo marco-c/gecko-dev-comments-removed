@@ -12288,22 +12288,11 @@ void CodeGenerator::visitTypeOfV(LTypeOfV* lir) {
   const JSAtomState& names = gen->runtime->names();
   Label done;
 
-  OutOfLineTypeOfV* ool = nullptr;
-  if (lir->mir()->inputMaybeCallableOrEmulatesUndefined()) {
-    
-    
-    ool = new (alloc()) OutOfLineTypeOfV(lir);
-    addOutOfLineCode(ool, lir->mir());
-    masm.branchTestObject(Assembler::Equal, tag, ool->entry());
-  } else {
-    
-    
-    Label notObject;
-    masm.branchTestObject(Assembler::NotEqual, tag, &notObject);
-    masm.movePtr(ImmGCPtr(names.object), output);
-    masm.jump(&done);
-    masm.bind(&notObject);
-  }
+  
+  
+  auto* ool = new (alloc()) OutOfLineTypeOfV(lir);
+  addOutOfLineCode(ool, lir->mir());
+  masm.branchTestObject(Assembler::Equal, tag, ool->entry());
 
   Label notNumber;
   masm.branchTestNumber(Assembler::NotEqual, tag, &notNumber);
