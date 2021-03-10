@@ -37,13 +37,13 @@ class Element;
 
 @interface GeckoNSMenu : NSMenu {
 }
-- (BOOL)performSuperKeyEquivalent:(NSEvent*)theEvent;
+- (BOOL)performSuperKeyEquivalent:(NSEvent*)aEvent;
 @end
 
 
 @interface NativeMenuItemTarget : NSObject {
 }
-- (IBAction)menuItemHit:(id)sender;
+- (IBAction)menuItemHit:(id)aSender;
 @end
 
 
@@ -53,7 +53,7 @@ class Element;
 }
 - (id)target;
 - (SEL)action;
-- (void)_doNothing:(id)sender;
+- (void)_doNothing:(id)aSender;
 @end
 
 
@@ -61,16 +61,16 @@ class Element;
 
 @interface GeckoServicesNSMenu : NSMenu {
 }
-- (void)addItem:(NSMenuItem*)newItem;
+- (void)addItem:(NSMenuItem*)aNewItem;
 - (NSMenuItem*)addItemWithTitle:(NSString*)aString
                          action:(SEL)aSelector
-                  keyEquivalent:(NSString*)keyEquiv;
-- (void)insertItem:(NSMenuItem*)newItem atIndex:(NSInteger)index;
+                  keyEquivalent:(NSString*)aKeyEquiv;
+- (void)insertItem:(NSMenuItem*)aNewItem atIndex:(NSInteger)aIndex;
 - (NSMenuItem*)insertItemWithTitle:(NSString*)aString
                             action:(SEL)aSelector
-                     keyEquivalent:(NSString*)keyEquiv
-                           atIndex:(NSInteger)index;
-- (void)_overrideClassOfMenuItem:(NSMenuItem*)menuItem;
+                     keyEquivalent:(NSString*)aKeyEquiv
+                           atIndex:(NSInteger)aIndex;
+- (void)_overrideClassOfMenuItem:(NSMenuItem*)aMenuItem;
 @end
 
 
@@ -105,23 +105,24 @@ class nsMenuBarX : public nsMenuGroupOwnerX, public nsChangeObserver {
   nsMenuX* GetXULHelpMenu();
   void SetSystemHelpMenu();
   nsresult Paint();
-  void ForceUpdateNativeMenuAt(const nsAString& indexString);
+  void ForceUpdateNativeMenuAt(const nsAString& aIndexString);
   void ForceNativeMenuReload();  
   static void ResetNativeApplicationMenu();
   void SetNeedsRebuild();
   void ApplicationMenuOpened();
-  bool PerformKeyEquivalent(NSEvent* theEvent);
+  bool PerformKeyEquivalent(NSEvent* aEvent);
 
  protected:
   void ConstructNativeMenus();
   void ConstructFallbackNativeMenus();
   void InsertMenuAtIndex(mozilla::UniquePtr<nsMenuX>&& aMenu, uint32_t aIndex);
   void RemoveMenuAtIndex(uint32_t aIndex);
-  void HideItem(mozilla::dom::Document* inDoc, const nsAString& inID, nsIContent** outHiddenNode);
+  void HideItem(mozilla::dom::Document* aDocument, const nsAString& aID,
+                nsIContent** aOutHiddenNode);
   void AquifyMenuBar();
-  NSMenuItem* CreateNativeAppMenuItem(nsMenuX* inMenu, const nsAString& nodeID, SEL action, int tag,
-                                      NativeMenuItemTarget* target);
-  void CreateApplicationMenu(nsMenuX* inMenu);
+  NSMenuItem* CreateNativeAppMenuItem(nsMenuX* aMenu, const nsAString& aNodeID, SEL aAction,
+                                      int aTag, NativeMenuItemTarget* aTarget);
+  void CreateApplicationMenu(nsMenuX* aMenu);
 
   nsTArray<mozilla::UniquePtr<nsMenuX>> mMenuArray;
   nsIWidget* mParentWindow;  
