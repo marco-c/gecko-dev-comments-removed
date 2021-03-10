@@ -1,0 +1,9 @@
+
+
+
+
+"use strict";
+
+
+const pipOverrides = new PictureInPictureOverrides(AVAILABLE_PIP_OVERRIDES);
+pipOverrides.bootup();
