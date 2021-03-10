@@ -6,23 +6,25 @@
 
 var EXPORTED_SYMBOLS = ["RecommendedPreferences"];
 
-const RecommendedPreferences = {
+const RecommendedPreferences = new Map([
   
-  "focusmanager.testmode": true,
+  ["focusmanager.testmode", true],
 
   
   
   
   
-  "toolkit.startup.max_resumed_crashes": -1,
+  ["toolkit.startup.max_resumed_crashes", -1],
 
   
   
-  "browser.contentblocking.features.standard":
+  [
+    "browser.contentblocking.features.standard",
     "-tp,tpPrivate,cookieBehavior0,-cm,-fp",
-  "network.cookie.cookieBehavior": 0,
+  ],
+  ["network.cookie.cookieBehavior", 0],
 
   
   
-  "prompts.contentPromptSubDialog": false,
-};
+  ["prompts.contentPromptSubDialog", false],
+]);
