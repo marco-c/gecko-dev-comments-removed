@@ -612,9 +612,6 @@ function TargetMixin(parentClass) {
 
     async _destroyTarget() {
       
-      this.emit("close");
-
-      
       
       if (this._onThreadInitialized) {
         try {
