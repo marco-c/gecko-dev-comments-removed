@@ -67,14 +67,6 @@
 
 
 
-#define NS_NATIVEMENUSERVICE_CID                     \
-  {                                                  \
-    0x0B3FE5AA, 0xBC72, 0x4303, {                    \
-      0x85, 0xAE, 0x76, 0x36, 0x5D, 0xF1, 0x25, 0x1D \
-    }                                                \
-  }
-
-
 #define NS_POPUPMENU_CID                           \
   {                                                \
     0xf6cd4f21, 0x53af, 0x11d2, {                  \
