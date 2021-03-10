@@ -884,14 +884,24 @@ class OSXVsyncSource final : public VsyncSource {
         return;
       }
 
-      auto displayLink = mDisplayLink.Lock();
-      if (*displayLink &&
-          CVDisplayLinkGetCurrentCGDisplay(*displayLink) == aDisplay) {
+      if (!NS_IsMainThread()) {
+        return;
+      }
+
+      bool didReconfigureCurrentDisplayLinkDisplay = false;
+      {  
+        auto displayLink = mDisplayLink.Lock();
+        didReconfigureCurrentDisplayLinkDisplay =
+            *displayLink &&
+            CVDisplayLinkGetCurrentCGDisplay(*displayLink) == aDisplay;
+      }
+
+      if (didReconfigureCurrentDisplayLinkDisplay) {
         
         
         
-        CVDisplayLinkStop(*displayLink);
-        CVDisplayLinkStart(*displayLink);
+        DisableVsync();
+        EnableVsync();
       }
     }
 
