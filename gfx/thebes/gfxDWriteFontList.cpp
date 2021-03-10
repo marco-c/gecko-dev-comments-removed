@@ -1493,9 +1493,10 @@ void gfxDWriteFontList::InitSharedFontListForPlatform() {
 #ifdef MOZ_BUNDLED_FONTS
   
   
+  
   if (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() > 0 ||
       (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() < 0 &&
-       !IsWin8Point1OrLater())) {
+       !IsWin10OrLater())) {
     mBundledFonts = CreateBundledFontsCollection(factory);
   }
 #endif
@@ -1581,9 +1582,10 @@ nsresult gfxDWriteFontList::InitFontListForPlatform() {
   
   
   
+  
   if (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() > 0 ||
       (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() < 0 &&
-       !IsWin8Point1OrLater())) {
+       !IsWin10OrLater())) {
     mBundledFonts = CreateBundledFontsCollection(factory);
   }
   if (mBundledFonts) {
