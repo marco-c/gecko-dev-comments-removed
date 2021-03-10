@@ -3546,13 +3546,11 @@ class Document : public nsINode,
   void SetTooltipNode(nsINode* aNode) { 
   }
 
-  bool DontWarnAboutMutationEventsAndAllowSlowDOMMutations() {
-    return mDontWarnAboutMutationEventsAndAllowSlowDOMMutations;
+  bool DevToolsWatchingDOMMutations() const {
+    return mDevToolsWatchingDOMMutations;
   }
-  void SetDontWarnAboutMutationEventsAndAllowSlowDOMMutations(
-      bool aDontWarnAboutMutationEventsAndAllowSlowDOMMutations) {
-    mDontWarnAboutMutationEventsAndAllowSlowDOMMutations =
-        aDontWarnAboutMutationEventsAndAllowSlowDOMMutations;
+  void SetDevToolsWatchingDOMMutations(bool aValue) {
+    mDevToolsWatchingDOMMutations = aValue;
   }
 
   void MaybeWarnAboutZoom();
@@ -4323,13 +4321,6 @@ class Document : public nsINode,
 
   nsWeakPtr mDocumentLoadGroup;
 
-  bool mBlockAllMixedContent;
-  bool mBlockAllMixedContentPreloads;
-  bool mUpgradeInsecureRequests;
-  bool mUpgradeInsecurePreloads;
-
-  bool mDontWarnAboutMutationEventsAndAllowSlowDOMMutations;
-
   WeakPtr<nsDocShell> mDocumentContainer;
 
   NotNull<const Encoding*> mCharacterSet;
@@ -4426,6 +4417,12 @@ class Document : public nsINode,
   
   
   RefPtr<PermissionDelegateHandler> mPermissionDelegateHandler;
+
+  bool mBlockAllMixedContent : 1;
+  bool mBlockAllMixedContentPreloads : 1;
+  bool mUpgradeInsecureRequests : 1;
+  bool mUpgradeInsecurePreloads : 1;
+  bool mDevToolsWatchingDOMMutations : 1;
 
   
   bool mBidiEnabled : 1;
