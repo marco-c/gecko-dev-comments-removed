@@ -64,7 +64,7 @@ var Utils = {
       : gServerURL;
   },
 
-  CHANGES_PATH: "/buckets/monitor/collections/changes/records",
+  CHANGES_PATH: "/buckets/monitor/collections/changes/changeset",
 
   
 
@@ -132,31 +132,31 @@ var Utils = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async fetchLatestChanges(serverUrl, options = {}) {
     const { expectedTimestamp, lastEtag = "", filters = {} } = options;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
     let url = serverUrl + Utils.CHANGES_PATH;
-
-    
-    
-    const headers = {};
-    const params = { ...filters };
+    const params = {
+      ...filters,
+      _expected: expectedTimestamp ?? 0,
+    };
     if (lastEtag != "") {
-      headers["If-None-Match"] = lastEtag;
       params._since = lastEtag;
-    }
-    if (expectedTimestamp) {
-      params._expected = expectedTimestamp;
     }
     if (params) {
       url +=
@@ -165,52 +165,43 @@ var Utils = {
           .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
           .join("&");
     }
-    const response = await fetch(url, { headers });
+    const response = await fetch(url);
 
-    let changes = [];
-    
-    if (response.status != 304) {
-      if (response.status >= 500) {
+    if (response.status >= 500) {
+      throw new Error(`Server error ${response.status} ${response.statusText}`);
+    }
+
+    const is404FromCustomServer =
+      response.status == 404 &&
+      Services.prefs.prefHasUserValue("services.settings.server");
+
+    const ct = response.headers.get("Content-Type");
+    if (!is404FromCustomServer && (!ct || !ct.includes("application/json"))) {
+      throw new Error(`Unexpected content-type "${ct}"`);
+    }
+
+    let payload;
+    try {
+      payload = await response.json();
+    } catch (e) {
+      payload = e.message;
+    }
+
+    if (!payload.hasOwnProperty("changes")) {
+      
+      
+      
+      if (!is404FromCustomServer) {
         throw new Error(
-          `Server error ${response.status} ${response.statusText}`
+          `Server error ${url} ${response.status} ${
+            response.statusText
+          }: ${JSON.stringify(payload)}`
         );
       }
-
-      const is404FromCustomServer =
-        response.status == 404 &&
-        Services.prefs.prefHasUserValue("services.settings.server");
-
-      const ct = response.headers.get("Content-Type");
-      if (!is404FromCustomServer && (!ct || !ct.includes("application/json"))) {
-        throw new Error(`Unexpected content-type "${ct}"`);
-      }
-      let payload;
-      try {
-        payload = await response.json();
-      } catch (e) {
-        payload = e.message;
-      }
-
-      if (!payload.hasOwnProperty("data")) {
-        
-        
-        
-        if (!is404FromCustomServer) {
-          throw new Error(
-            `Server error ${response.status} ${
-              response.statusText
-            }: ${JSON.stringify(payload)}`
-          );
-        }
-      } else {
-        changes = payload.data;
-      }
     }
-    
-    
-    const currentEtag = response.headers.has("ETag")
-      ? response.headers.get("ETag")
-      : undefined;
+
+    const { changes = [], timestamp } = payload;
+
     let serverTimeMillis = Date.parse(response.headers.get("Date"));
     
     const cacheAgeSeconds = response.headers.has("Age")
@@ -233,7 +224,7 @@ var Utils = {
 
     return {
       changes,
-      currentEtag,
+      currentEtag: `"${timestamp}"`,
       serverTimeMillis,
       backoffSeconds,
       ageSeconds,
