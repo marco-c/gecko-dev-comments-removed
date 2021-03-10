@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_a11y_xpcAccessibleDocument_h_
 #define mozilla_a11y_xpcAccessibleDocument_h_
@@ -17,9 +17,9 @@
 namespace mozilla {
 namespace a11y {
 
-/**
- * XPCOM wrapper around DocAccessible class.
- */
+
+
+
 class xpcAccessibleDocument : public xpcAccessibleHyperText,
                               public nsIAccessibleDocument {
  public:
@@ -35,7 +35,7 @@ class xpcAccessibleDocument : public xpcAccessibleHyperText,
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  // nsIAccessibleDocument
+  
   NS_IMETHOD GetURL(nsAString& aURL) final;
   NS_IMETHOD GetTitle(nsAString& aTitle) final;
   NS_IMETHOD GetMimeType(nsAString& aType) final;
@@ -48,11 +48,10 @@ class xpcAccessibleDocument : public xpcAccessibleHyperText,
                                 nsIAccessibleDocument** aDocument) final;
   NS_IMETHOD GetVirtualCursor(nsIAccessiblePivot** aVirtualCursor) final;
 
-  /**
-   * Return XPCOM wrapper for the internal accessible.
-   */
-  xpcAccessibleGeneric* GetAccessible(LocalAccessible* aAccessible);
-  xpcAccessibleGeneric* GetXPCAccessible(RemoteAccessible* aProxy);
+  
+
+
+  xpcAccessibleGeneric* GetAccessible(Accessible* aAccessible);
 
   virtual void Shutdown() override;
 
@@ -61,15 +60,14 @@ class xpcAccessibleDocument : public xpcAccessibleHyperText,
 
  private:
   DocAccessible* Intl() {
-    if (LocalAccessible* acc = mIntl.AsAccessible()) {
+    if (LocalAccessible* acc = mIntl->AsLocal()) {
       return acc->AsDoc();
     }
 
     return nullptr;
   }
 
-  void NotifyOfShutdown(LocalAccessible* aAccessible) {
-    MOZ_ASSERT(!mRemote);
+  void NotifyOfShutdown(Accessible* aAccessible) {
     xpcAccessibleGeneric* xpcAcc = mCache.Get(aAccessible);
     if (xpcAcc) {
       xpcAcc->Shutdown();
@@ -77,22 +75,12 @@ class xpcAccessibleDocument : public xpcAccessibleHyperText,
 
     mCache.Remove(aAccessible);
     if (mCache.Count() == 0 && mRefCnt == 1) {
-      GetAccService()->RemoveFromXPCDocumentCache(
-          mIntl.AsAccessible()->AsDoc());
-    }
-  }
-
-  void NotifyOfShutdown(RemoteAccessible* aProxy) {
-    MOZ_ASSERT(mRemote);
-    xpcAccessibleGeneric* xpcAcc = mCache.Get(aProxy);
-    if (xpcAcc) {
-      xpcAcc->Shutdown();
-    }
-
-    mCache.Remove(aProxy);
-    if (mCache.Count() == 0 && mRefCnt == 1) {
-      GetAccService()->RemoveFromRemoteXPCDocumentCache(
-          mIntl.AsProxy()->AsDoc());
+      if (mIntl->IsLocal()) {
+        GetAccService()->RemoveFromXPCDocumentCache(mIntl->AsLocal()->AsDoc());
+      } else {
+        GetAccService()->RemoveFromRemoteXPCDocumentCache(
+            mIntl->AsRemote()->AsDoc());
+      }
     }
   }
 
@@ -109,17 +97,18 @@ class xpcAccessibleDocument : public xpcAccessibleHyperText,
   bool mRemote;
 };
 
-inline xpcAccessibleGeneric* ToXPC(LocalAccessible* aAccessible) {
+inline xpcAccessibleGeneric* ToXPC(Accessible* aAccessible) {
   if (!aAccessible) return nullptr;
 
   if (aAccessible->IsApplication()) return XPCApplicationAcc();
 
   xpcAccessibleDocument* xpcDoc =
-      GetAccService()->GetXPCDocument(aAccessible->Document());
+      aAccessible->IsLocal()
+          ? GetAccService()->GetXPCDocument(aAccessible->AsLocal()->Document())
+          : GetAccService()->GetXPCDocument(
+                aAccessible->AsRemote()->Document());
   return xpcDoc ? xpcDoc->GetAccessible(aAccessible) : nullptr;
 }
-
-xpcAccessibleGeneric* ToXPC(AccessibleOrProxy aAcc);
 
 inline xpcAccessibleHyperText* ToXPCText(HyperTextAccessible* aAccessible) {
   if (!aAccessible) return nullptr;
@@ -138,7 +127,7 @@ inline xpcAccessibleDocument* ToXPCDocument(DocAccessibleParent* aAccessible) {
   return GetAccService()->GetXPCDocument(aAccessible);
 }
 
-}  // namespace a11y
-}  // namespace mozilla
+}  
+}  
 
 #endif

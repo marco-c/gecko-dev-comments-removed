@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_a11y_xpcAccessibleTable_h_
 #define mozilla_a11y_xpcAccessibleTable_h_
@@ -13,13 +13,13 @@
 namespace mozilla {
 namespace a11y {
 
-/**
- * XPCOM wrapper around TableAccessible class.
- */
+
+
+
 class xpcAccessibleTable : public xpcAccessibleHyperText,
                            public nsIAccessibleTable {
  public:
-  explicit xpcAccessibleTable(LocalAccessible* aIntl)
+  explicit xpcAccessibleTable(Accessible* aIntl)
       : xpcAccessibleHyperText(aIntl) {}
 
   xpcAccessibleTable(RemoteAccessible* aProxy, uint32_t aInterfaces)
@@ -27,7 +27,7 @@ class xpcAccessibleTable : public xpcAccessibleHyperText,
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  // nsIAccessibleTable
+  
   NS_IMETHOD GetCaption(nsIAccessible** aCaption) final;
   NS_IMETHOD GetSummary(nsAString& aSummary) final;
   NS_IMETHOD GetColumnCount(int32_t* aColumnCount) final;
@@ -69,14 +69,14 @@ class xpcAccessibleTable : public xpcAccessibleHyperText,
 
  private:
   TableAccessible* Intl() {
-    return mIntl.IsAccessible() ? mIntl.AsAccessible()->AsTable() : nullptr;
+    return mIntl->IsLocal() ? mIntl->AsLocal()->AsTable() : nullptr;
   }
 
   xpcAccessibleTable(const xpcAccessibleTable&) = delete;
   xpcAccessibleTable& operator=(const xpcAccessibleTable&) = delete;
 };
 
-}  // namespace a11y
-}  // namespace mozilla
+}  
+}  
 
-#endif  // mozilla_a11y_xpcAccessibleTable_h_
+#endif  
