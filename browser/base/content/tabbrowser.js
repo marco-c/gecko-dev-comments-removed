@@ -71,6 +71,12 @@
         ],
       });
 
+      let tabTooltip = document.getElementById("tabbrowser-tab-tooltip");
+      if (gProtonTabs) {
+        tabTooltip.setAttribute("position", "after_start");
+        tabTooltip.setAttribute("anchortoclosest", "tab");
+      }
+
       
       
       
@@ -5240,7 +5246,7 @@
         label = this.getTabTooltip(tab);
       }
 
-      if (!gProton) {
+      if (!gProtonTabs) {
         event.target.setAttribute("label", label);
         return;
       }
