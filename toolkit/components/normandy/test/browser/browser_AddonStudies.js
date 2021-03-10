@@ -106,14 +106,14 @@ decorate_task(
       studyEndDate: new Date(2012, 1),
     }),
   ]),
-  withSendEventSpy,
+  withSendEventSpy(),
   withInstalledWebExtension(
     { id: "installed@example.com" },
      true
   ),
   async function testInit(
     [activeUninstalledStudy, activeInstalledStudy, inactiveStudy],
-    sendEventStub,
+    sendEventSpy,
     [addonId, addonFile]
   ) {
     await AddonStudies.init();
@@ -172,7 +172,7 @@ decorate_task(
     );
 
     
-    ok(sendEventStub.calledOnce, "no extra events should be generated");
+    ok(sendEventSpy.calledOnce, "no extra events should be generated");
 
     
     const addon = await AddonManager.getAddonByID(addonId);

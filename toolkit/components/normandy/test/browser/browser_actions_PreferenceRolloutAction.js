@@ -19,11 +19,11 @@ const { NormandyTestUtils } = ChromeUtils.import(
 
 decorate_task(
   withStub(TelemetryEnvironment, "setExperimentActive"),
-  withSendEventSpy,
+  withSendEventSpy(),
   PreferenceRollouts.withTestMock(),
   async function simple_recipe_enrollment(
     setExperimentActiveStub,
-    sendEventStub
+    sendEventSpy
   ) {
     const recipe = {
       id: 1,
@@ -103,7 +103,7 @@ decorate_task(
       "Rollout should have a UUID enrollmentId"
     );
 
-    sendEventStub.assertEvents([
+    sendEventSpy.assertEvents([
       [
         "enroll",
         "preference_rollout",
@@ -128,9 +128,9 @@ decorate_task(
 
 
 decorate_task(
-  withSendEventSpy,
+  withSendEventSpy(),
   PreferenceRollouts.withTestMock(),
-  async function update_enrollment(sendEventStub) {
+  async function update_enrollment(sendEventSpy) {
     
     const recipe = {
       id: 1,
@@ -217,7 +217,7 @@ decorate_task(
       "Rollout should be updated in db"
     );
 
-    sendEventStub.assertEvents([
+    sendEventSpy.assertEvents([
       [
         "enroll",
         "preference_rollout",
@@ -241,9 +241,9 @@ decorate_task(
 
 
 decorate_task(
-  withSendEventSpy,
+  withSendEventSpy(),
   PreferenceRollouts.withTestMock(),
-  async function ungraduate_enrollment(sendEventStub) {
+  async function ungraduate_enrollment(sendEventSpy) {
     Services.prefs.getDefaultBranch("").setIntPref("test.pref", 1);
     await PreferenceRollouts.add({
       slug: "test-rollout",
@@ -290,7 +290,7 @@ decorate_task(
       "Rollout should be updated in db"
     );
 
-    sendEventStub.assertEvents([
+    sendEventSpy.assertEvents([
       [
         "update",
         "preference_rollout",
@@ -306,9 +306,9 @@ decorate_task(
 
 
 decorate_task(
-  withSendEventSpy,
+  withSendEventSpy(),
   PreferenceRollouts.withTestMock(),
-  async function conflicting_recipes(sendEventStub) {
+  async function conflicting_recipes(sendEventSpy) {
     
     const recipe1 = {
       id: 1,
@@ -394,7 +394,7 @@ decorate_task(
       "Only recipe1's rollout should be stored in db"
     );
 
-    sendEventStub.assertEvents([
+    sendEventSpy.assertEvents([
       ["enroll", "preference_rollout", recipe1.arguments.slug],
       [
         "enrollFailed",
@@ -419,9 +419,9 @@ decorate_task(
 
 
 decorate_task(
-  withSendEventSpy,
+  withSendEventSpy(),
   PreferenceRollouts.withTestMock(),
-  async function wrong_preference_value(sendEventStub) {
+  async function wrong_preference_value(sendEventSpy) {
     Services.prefs.getDefaultBranch("").setCharPref("test.pref", "not an int");
     const recipe = {
       id: 1,
@@ -452,7 +452,7 @@ decorate_task(
       [],
       "no rollout is stored in the db"
     );
-    sendEventStub.assertEvents([
+    sendEventSpy.assertEvents([
       [
         "enrollFailed",
         "preference_rollout",
@@ -568,9 +568,9 @@ decorate_task(
 
 
 decorate_task(
-  withSendEventSpy,
+  withSendEventSpy(),
   PreferenceRollouts.withTestMock(),
-  async function(sendEventStub) {
+  async function(sendEventSpy) {
     const recipe = {
       id: 1,
       arguments: {
@@ -608,7 +608,7 @@ decorate_task(
       "the DB should have the correct value stored for previousValue"
     );
 
-    sendEventStub.assertEvents([
+    sendEventSpy.assertEvents([
       [
         "enroll",
         "preference_rollout",
@@ -622,9 +622,9 @@ decorate_task(
 
 decorate_task(
   withStub(TelemetryEnvironment, "setExperimentActive"),
-  withSendEventSpy,
+  withSendEventSpy(),
   PreferenceRollouts.withTestMock(),
-  async function no_op_new_recipe(setExperimentActiveStub, sendEventStub) {
+  async function no_op_new_recipe(setExperimentActiveStub, sendEventSpy) {
     Services.prefs.getDefaultBranch("").setIntPref("test.pref", 1);
 
     const recipe = {
@@ -656,7 +656,7 @@ decorate_task(
       "Rollout should not be stored in db"
     );
 
-    sendEventStub.assertEvents([
+    sendEventSpy.assertEvents([
       [
         "enrollFailed",
         "preference_rollout",
@@ -678,12 +678,9 @@ decorate_task(
 
 decorate_task(
   withStub(TelemetryEnvironment, "setExperimentActive"),
-  withSendEventSpy,
+  withSendEventSpy(),
   PreferenceRollouts.withTestMock({ graduationSet: new Set(["test-rollout"]) }),
-  async function graduationSetNewRecipe(
-    setExperimentActiveStub,
-    sendEventStub
-  ) {
+  async function graduationSetNewRecipe(setExperimentActiveStub, sendEventSpy) {
     Services.prefs.getDefaultBranch("").setIntPref("test.pref", 1);
 
     const recipe = {
@@ -715,7 +712,7 @@ decorate_task(
       "Rollout should not be stored in db"
     );
 
-    sendEventStub.assertEvents([]);
+    sendEventSpy.assertEvents([]);
     Assert.deepEqual(
       setExperimentActiveStub.args,
       [],

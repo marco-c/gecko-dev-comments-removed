@@ -47,44 +47,48 @@ class MockEventEmitter {
   }
 }
 
-function withStubbedHeartbeat(testFunction) {
-  return async function wrappedTestFunction(...args) {
-    const backstage = ChromeUtils.import(
-      "resource://normandy/actions/ShowHeartbeatAction.jsm",
-      null
-    );
-    const originalHeartbeat = backstage.Heartbeat;
-    const heartbeatInstanceStub = new MockHeartbeat();
-    const heartbeatClassStub = sinon.stub();
-    heartbeatClassStub.returns(heartbeatInstanceStub);
-    backstage.Heartbeat = heartbeatClassStub;
-
-    try {
-      await testFunction(
-        { heartbeatClassStub, heartbeatInstanceStub },
-        ...args
+function withStubbedHeartbeat() {
+  return function(testFunction) {
+    return async function wrappedTestFunction(...args) {
+      const backstage = ChromeUtils.import(
+        "resource://normandy/actions/ShowHeartbeatAction.jsm",
+        null
       );
-    } finally {
-      backstage.Heartbeat = originalHeartbeat;
-    }
+      const originalHeartbeat = backstage.Heartbeat;
+      const heartbeatInstanceStub = new MockHeartbeat();
+      const heartbeatClassStub = sinon.stub();
+      heartbeatClassStub.returns(heartbeatInstanceStub);
+      backstage.Heartbeat = heartbeatClassStub;
+
+      try {
+        await testFunction(
+          { heartbeatClassStub, heartbeatInstanceStub },
+          ...args
+        );
+      } finally {
+        backstage.Heartbeat = originalHeartbeat;
+      }
+    };
   };
 }
 
-function withClearStorage(testFunction) {
-  return async function wrappedTestFunction(...args) {
-    Storage.clearAllStorage();
-    try {
-      await testFunction(...args);
-    } finally {
+function withClearStorage() {
+  return function(testFunction) {
+    return async function wrappedTestFunction(...args) {
       Storage.clearAllStorage();
-    }
+      try {
+        await testFunction(...args);
+      } finally {
+        Storage.clearAllStorage();
+      }
+    };
   };
 }
 
 
 decorate_task(
-  withStubbedHeartbeat,
-  withClearStorage,
+  withStubbedHeartbeat(),
+  withClearStorage(),
   async function testHappyPath({ heartbeatClassStub, heartbeatInstanceStub }) {
     const recipe = heartbeatRecipeFactory();
     const action = new ShowHeartbeatAction();
@@ -137,8 +141,8 @@ decorate_task(
 
 
 decorate_task(
-  withStubbedHeartbeat,
-  withClearStorage,
+  withStubbedHeartbeat(),
+  withClearStorage(),
   async function testRepeatGeneral({ heartbeatClassStub }) {
     const allHeartbeatStorage = new Storage("normandy-heartbeat");
     await allHeartbeatStorage.setItem("lastShown", Date.now());
@@ -158,8 +162,8 @@ decorate_task(
 
 
 decorate_task(
-  withStubbedHeartbeat,
-  withClearStorage,
+  withStubbedHeartbeat(),
+  withClearStorage(),
   async function testRepeatUnrelated({ heartbeatClassStub }) {
     const allHeartbeatStorage = new Storage("normandy-heartbeat");
     await allHeartbeatStorage.setItem(
@@ -178,8 +182,8 @@ decorate_task(
 
 
 decorate_task(
-  withStubbedHeartbeat,
-  withClearStorage,
+  withStubbedHeartbeat(),
+  withClearStorage(),
   async function testRepeatTypeOnce({ heartbeatClassStub }) {
     const recipe = heartbeatRecipeFactory({
       arguments: { repeatOption: "once" },
@@ -197,8 +201,8 @@ decorate_task(
 
 
 decorate_task(
-  withStubbedHeartbeat,
-  withClearStorage,
+  withStubbedHeartbeat(),
+  withClearStorage(),
   async function testRepeatTypeXdays({ heartbeatClassStub }) {
     const recipe = heartbeatRecipeFactory({
       arguments: {
@@ -236,8 +240,8 @@ decorate_task(
 
 
 decorate_task(
-  withStubbedHeartbeat,
-  withClearStorage,
+  withStubbedHeartbeat(),
+  withClearStorage(),
   async function testRepeatTypeNag({ heartbeatClassStub }) {
     const recipe = heartbeatRecipeFactory({
       arguments: { repeatOption: "nag" },
@@ -390,8 +394,8 @@ add_task(async function postAnswerUrlUserIdIfRequested() {
 
 
 decorate_task(
-  withStubbedHeartbeat,
-  withClearStorage,
+  withStubbedHeartbeat(),
+  withClearStorage(),
   async function testGenerateSurveyId({ heartbeatClassStub }) {
     const recipeWithoutId = heartbeatRecipeFactory({
       arguments: { surveyId: "test-id", includeTelemetryUUID: false },
