@@ -9,6 +9,7 @@
 #include <functional>
 
 #include "mozilla/Maybe.h"
+#include "mozilla/MozPromise.h"
 #include "nsTArrayForwardDeclare.h"
 
 namespace mozilla {
@@ -36,7 +37,7 @@ void FlushFOGData(std::function<void(ipc::ByteBuf&&)>&& aResolver);
 
 
 void FlushAllChildData(
-    std::function<void(const nsTArray<ipc::ByteBuf>&&)>&& aResolver);
+    std::function<void(nsTArray<ipc::ByteBuf>&&)>&& aResolver);
 
 
 
@@ -49,6 +50,14 @@ void FOGData(ipc::ByteBuf&& buf);
 
 
 void SendFOGData(ipc::ByteBuf&& buf);
+
+
+
+
+
+
+
+RefPtr<GenericPromise> FlushAndUseFOGData();
 
 }  
 }  

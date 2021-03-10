@@ -50,4 +50,14 @@ interface nsIFOG : nsISupports
 
 
   void sendPing(in ACString aPingName);
+
+  
+
+
+
+
+
+
+  [implicit_jscontext]
+  Promise testFlushAllChildren();
 };
