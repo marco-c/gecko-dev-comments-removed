@@ -46,7 +46,7 @@ class TimingDistributionMetric {
 
 
 
-  void StopAndAccumulate(const TimerId&& aId) const {
+  void StopAndAccumulate(TimerId&& aId) const {
 #ifndef MOZ_GLEAN_ANDROID
     fog_timing_distribution_stop_and_accumulate(mId, aId);
 #endif
@@ -58,7 +58,7 @@ class TimingDistributionMetric {
 
 
 
-  void Cancel(const TimerId&& aId) const {
+  void Cancel(TimerId&& aId) const {
 #ifndef MOZ_GLEAN_ANDROID
     fog_timing_distribution_cancel(mId, aId);
 #endif
