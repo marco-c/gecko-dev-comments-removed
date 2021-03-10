@@ -8171,12 +8171,10 @@ nsWindow::GtkWindowDecoration nsWindow::GetSystemGtkWindowDecoration() {
   
   
   
-  if (sGtkWindowDecoration == GTK_DECORATION_SYSTEM) {
-    const char* csdOverride = getenv("GTK_CSD");
-    if (csdOverride && atoi(csdOverride)) {
-      sGtkWindowDecoration = GTK_DECORATION_CLIENT;
-      return sGtkWindowDecoration;
-    }
+  const char* csdOverride = getenv("GTK_CSD");
+  if (csdOverride && atoi(csdOverride)) {
+    sGtkWindowDecoration = GTK_DECORATION_CLIENT;
+    return sGtkWindowDecoration;
   }
 
   const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
@@ -8212,7 +8210,7 @@ nsWindow::GtkWindowDecoration nsWindow::GetSystemGtkWindowDecoration() {
       sGtkWindowDecoration = GTK_DECORATION_SYSTEM;
       
     } else if (strstr(currentDesktop, "Pantheon") != nullptr) {
-      sGtkWindowDecoration = GTK_DECORATION_SYSTEM;
+      sGtkWindowDecoration = GTK_DECORATION_CLIENT;
     } else if (strstr(currentDesktop, "LXQt") != nullptr) {
       sGtkWindowDecoration = GTK_DECORATION_SYSTEM;
     } else if (strstr(currentDesktop, "Deepin") != nullptr) {
