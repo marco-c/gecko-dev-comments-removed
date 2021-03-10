@@ -12,6 +12,8 @@
 #include "mozilla/dom/GamepadEventTypes.h"
 #include "mozilla/dom/SynchronizedSharedMemory.h"
 #include "mozilla/ipc/ProtocolUtils.h"
+#include "prthread.h"
+#include <atomic>
 #include <inttypes.h>
 #include <windows.h>
 
@@ -37,6 +39,42 @@ class GamepadStateReceiver::Impl {
         new Impl(std::move(*sharedState), std::move(eventHandle)));
   }
 
+  bool StartMonitoringThread(
+      const std::function<void(const GamepadChangeEvent&)>& aMonitorFn,
+      const std::function<void(uint32_t)>& aTestCommandFn) {
+    MOZ_ASSERT(!mMonitorThread);
+
+    mMonitorFn = aMonitorFn;
+    mTestCommandFn = aTestCommandFn;
+
+    
+    
+    mStopMonitoring.store(false, std::memory_order_release);
+
+    mMonitorThread = PR_CreateThread(
+        PR_USER_THREAD,
+        [](void* p) { static_cast<Impl*>(p)->MonitoringThread(); }, this,
+        PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+
+    return !!mMonitorThread;
+  }
+
+  void StopMonitoringThread() {
+    MOZ_ASSERT(mMonitorThread);
+
+    
+    
+    mStopMonitoring.store(true, std::memory_order_release);
+
+    
+    MOZ_ALWAYS_TRUE(::SetEvent(mEventHandle.Get()));
+
+    MOZ_ALWAYS_TRUE(PR_JoinThread(mMonitorThread) == PR_SUCCESS);
+    mMonitorThread = nullptr;
+    mMonitorFn = nullptr;
+    mTestCommandFn = nullptr;
+  }
+
   
   Impl(const Impl&) = delete;
   Impl& operator=(const Impl&) = delete;
@@ -44,14 +82,180 @@ class GamepadStateReceiver::Impl {
   Impl(Impl&&) = delete;
   Impl& operator=(Impl&&) = delete;
 
+  ~Impl() {
+    if (mMonitorThread) {
+      MOZ_ASSERT(false,
+                 "GamepadStateReceiver::~Impl() was called without "
+                 "calling StopMonitoringThread().");
+      StopMonitoringThread();
+    }
+  }
+
  private:
   explicit Impl(SharedState aSharedState,
                 UniqueHandle<NTEventHandleTraits> aEventHandle)
       : mSharedState(std::move(aSharedState)),
-        mEventHandle(std::move(aEventHandle)) {}
+        mEventHandle(std::move(aEventHandle)),
+        mMonitorThread(nullptr) {}
+
+  
+  
+  
+  
+  void DiffGamepadValues(
+      GamepadHandle handle, const GamepadProperties& props,
+      const GamepadValues& curValues, const GamepadValues& newValues,
+      const std::function<void(const GamepadChangeEvent&)>& aFn) {
+    
+    for (uint32_t i = 0; i < props.numAxes; ++i) {
+      if (curValues.axes[i] != newValues.axes[i]) {
+        GamepadAxisInformation axisInfo(i, newValues.axes[i]);
+        GamepadChangeEvent e(handle, axisInfo);
+        aFn(e);
+      }
+    }
+
+    
+    for (uint32_t i = 0; i < props.numButtons; ++i) {
+      if ((curValues.buttonValues[i] != newValues.buttonValues[i]) ||
+          (curValues.buttonPressedBits[i] != newValues.buttonPressedBits[i]) ||
+          (curValues.buttonTouchedBits[i] != newValues.buttonTouchedBits[i])) {
+        GamepadButtonInformation buttonInfo(i, newValues.buttonValues[i],
+                                            newValues.buttonPressedBits[i],
+                                            newValues.buttonTouchedBits[i]);
+        GamepadChangeEvent e(handle, buttonInfo);
+        aFn(e);
+      }
+    }
+
+    
+    for (uint32_t i = 0; i < props.numLights; ++i) {
+      if (curValues.lights[i] != newValues.lights[i]) {
+        GamepadLightIndicatorTypeInformation lightInfo(i, newValues.lights[i]);
+        GamepadChangeEvent e(handle, lightInfo);
+        aFn(e);
+      }
+    }
+
+    
+    for (uint32_t i = 0; i < props.numTouches; ++i) {
+      if (curValues.touches[i] != newValues.touches[i]) {
+        GamepadTouchInformation touchInfo(i, newValues.touches[i]);
+        GamepadChangeEvent e(handle, touchInfo);
+        aFn(e);
+      }
+    }
+
+    
+    if (curValues.pose != newValues.pose) {
+      GamepadPoseInformation poseInfo(newValues.pose);
+      GamepadChangeEvent e(handle, poseInfo);
+      aFn(e);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void DiffGamepadSlots(
+      uint32_t changeId, const GamepadSlot& curState,
+      const GamepadSlot& newState,
+      const std::function<void(const GamepadChangeEvent&)>& aFn) {
+    if (curState.handle == newState.handle) {
+      if (newState.handle != GamepadHandle{}) {
+        
+        DiffGamepadValues(newState.handle, newState.props, curState.values,
+                          newState.values, aFn);
+      }
+      return;
+    }
+
+    
+
+    
+    if (curState.handle != GamepadHandle{}) {
+      GamepadChangeEvent e(curState.handle, GamepadRemoved{});
+      aFn(e);
+    }
+
+    
+    if (newState.handle != GamepadHandle{}) {
+      GamepadAdded gamepadInfo(
+          NS_ConvertUTF8toUTF16(nsDependentCString(&newState.props.id[0])),
+          newState.props.mapping, newState.props.hand, 0,
+          newState.props.numButtons, newState.props.numAxes,
+          newState.props.numHaptics, newState.props.numLights,
+          newState.props.numTouches);
+
+      GamepadChangeEvent e(newState.handle, gamepadInfo);
+      aFn(e);
+
+      
+      
+      DiffGamepadValues(newState.handle, newState.props, GamepadValues{},
+                        newState.values, aFn);
+    }
+  }
+
+  void MonitoringThread() {
+    while (true) {
+      
+      
+      
+      if (::WaitForSingleObject(mEventHandle.Get(), INFINITE) !=
+          WAIT_OBJECT_0) {
+        break;
+      }
+
+      
+      if (mStopMonitoring.load(std::memory_order_acquire)) {
+        break;
+      }
+
+      
+      GamepadSystemState newSystemState;
+      mSharedState.RunWithLock(
+          [&](GamepadSystemState* p) { newSystemState = *p; });
+
+      
+      ValidateGamepadSystemState(&newSystemState);
+
+      if (mGamepadSystemState.changeId != newSystemState.changeId) {
+        
+        for (size_t i = 0; i < kMaxGamepads; ++i) {
+          DiffGamepadSlots(newSystemState.changeId,
+                           mGamepadSystemState.gamepadSlots[i],
+                           newSystemState.gamepadSlots[i], mMonitorFn);
+        }
+
+        if (mGamepadSystemState.testCommandTrigger !=
+            newSystemState.testCommandTrigger) {
+          if (mTestCommandFn) {
+            mTestCommandFn(newSystemState.testCommandId);
+          }
+        }
+
+        
+        mGamepadSystemState = newSystemState;
+      }
+    }
+  }
 
   SharedState mSharedState;
   UniqueHandle<NTEventHandleTraits> mEventHandle;
+  GamepadSystemState mGamepadSystemState;
+
+  std::atomic_bool mStopMonitoring;
+  std::function<void(const GamepadChangeEvent&)> mMonitorFn;
+  std::function<void(uint32_t)> mTestCommandFn;
+  PRThread* mMonitorThread;
 };
 
 
@@ -78,5 +282,19 @@ GamepadStateReceiver::GamepadStateReceiver() = default;
 
 GamepadStateReceiver::GamepadStateReceiver(UniquePtr<Impl> aImpl)
     : mImpl(std::move(aImpl)) {}
+
+bool GamepadStateReceiver::StartMonitoringThread(
+    const std::function<void(const GamepadChangeEvent&)>& aFn) {
+  return mImpl->StartMonitoringThread(aFn, nullptr);
+}
+bool GamepadStateReceiver::StartMonitoringThreadForTesting(
+    const std::function<void(const GamepadChangeEvent&)>& aMonitorFn,
+    const std::function<void(uint32_t)>& aTestCommandFn) {
+  return mImpl->StartMonitoringThread(aMonitorFn, aTestCommandFn);
+}
+
+void GamepadStateReceiver::StopMonitoringThread() {
+  mImpl->StopMonitoringThread();
+}
 
 }  

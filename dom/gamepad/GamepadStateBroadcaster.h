@@ -37,8 +37,14 @@ class IProtocol;
 
 namespace mozilla::dom {
 
+class GamepadChangeEvent;
+class GamepadTestHelper;
+
 
 class GamepadStateBroadcastReceiverInfo;
+
+
+
 
 
 
@@ -90,6 +96,33 @@ class GamepadStateBroadcaster {
   void RemoveReceiver(const mozilla::ipc::IProtocol* aActor);
 
   
+  void AddGamepad(GamepadHandle aHandle, const char* aID,
+                  GamepadMappingType aMapping, GamepadHand aHand,
+                  uint32_t aNumButtons, uint32_t aNumAxes, uint32_t aNumHaptics,
+                  uint32_t aNumLights, uint32_t aNumTouches);
+
+  
+  void RemoveGamepad(GamepadHandle aHandle);
+
+  
+  void NewAxisMoveEvent(GamepadHandle aHandle, uint32_t aAxis, double aValue);
+
+  
+  void NewButtonEvent(GamepadHandle aHandle, uint32_t aButton, bool aPressed,
+                      bool aTouched, double aValue);
+
+  
+  void NewLightIndicatorTypeEvent(GamepadHandle aHandle, uint32_t aLight,
+                                  GamepadLightIndicatorType aType);
+
+  
+  void NewPoseEvent(GamepadHandle aHandle, const GamepadPoseState& aState);
+
+  
+  void NewMultiTouchEvent(GamepadHandle aHandle, uint32_t aTouchArrayIndex,
+                          const GamepadTouchState& aState);
+
+  
   GamepadStateBroadcaster(GamepadStateBroadcaster&& aOther);
   GamepadStateBroadcaster& operator=(GamepadStateBroadcaster&& aOther);
 
@@ -106,6 +139,9 @@ class GamepadStateBroadcaster {
   explicit GamepadStateBroadcaster(UniquePtr<Impl> aImpl);
 
   UniquePtr<Impl> mImpl;
+
+  friend class GamepadTestHelper;
+  void SendTestCommand(uint32_t aCommandId);
 };
 
 }  

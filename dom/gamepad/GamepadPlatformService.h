@@ -146,6 +146,8 @@ class GamepadPlatformService final {
 
   std::map<GamepadHandle, GamepadAdded> mGamepadAdded;
 
+  
+  
   Maybe<GamepadStateBroadcaster> mMaybeGamepadStateBroadcaster;
 };
 

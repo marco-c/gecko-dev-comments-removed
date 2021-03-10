@@ -80,6 +80,9 @@ void GamepadMonitoringState::Set(bool aIsMonitoring) {
   }
 }
 
+
+
+
 GamepadPlatformService::GamepadPlatformService()
     : mNextGamepadHandleValue(1),
       mMutex("mozilla::dom::GamepadPlatformService"),
@@ -112,6 +115,12 @@ void GamepadPlatformService::NotifyGamepadChange(GamepadHandle aHandle,
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
 
+  
+  
+  
+  
+  MOZ_ASSERT(!mMaybeGamepadStateBroadcaster);
+
   GamepadChangeEventBody body(aInfo);
   GamepadChangeEvent e(aHandle, body);
 
@@ -136,13 +145,20 @@ GamepadHandle GamepadPlatformService::AddGamepad(
   GamepadHandle gamepadHandle{mNextGamepadHandleValue++,
                               GamepadHandleKind::GamepadPlatformManager};
 
-  
-  GamepadAdded a(NS_ConvertUTF8toUTF16(nsDependentCString(aID)), aMapping,
-                 aHand, 0, aNumButtons, aNumAxes, aHaptics, aNumLightIndicator,
-                 aNumTouchEvents);
+  if (mMaybeGamepadStateBroadcaster) {
+    mMaybeGamepadStateBroadcaster->AddGamepad(
+        gamepadHandle, aID, aMapping, aHand, aNumButtons, aNumAxes, aHaptics,
+        aNumLightIndicator, aNumTouchEvents);
+  } else {
+    
+    GamepadAdded a(NS_ConvertUTF8toUTF16(nsDependentCString(aID)), aMapping,
+                   aHand, 0, aNumButtons, aNumAxes, aHaptics,
+                   aNumLightIndicator, aNumTouchEvents);
 
-  mGamepadAdded.emplace(gamepadHandle, a);
-  NotifyGamepadChange<GamepadAdded>(gamepadHandle, a);
+    mGamepadAdded.emplace(gamepadHandle, a);
+    NotifyGamepadChange<GamepadAdded>(gamepadHandle, a);
+  }
+
   return gamepadHandle;
 }
 
@@ -151,9 +167,14 @@ void GamepadPlatformService::RemoveGamepad(GamepadHandle aHandle) {
   
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
-  GamepadRemoved a;
-  NotifyGamepadChange<GamepadRemoved>(aHandle, a);
-  mGamepadAdded.erase(aHandle);
+
+  if (mMaybeGamepadStateBroadcaster) {
+    mMaybeGamepadStateBroadcaster->RemoveGamepad(aHandle);
+  } else {
+    GamepadRemoved a;
+    NotifyGamepadChange<GamepadRemoved>(aHandle, a);
+    mGamepadAdded.erase(aHandle);
+  }
 }
 
 void GamepadPlatformService::NewButtonEvent(GamepadHandle aHandle,
@@ -163,8 +184,14 @@ void GamepadPlatformService::NewButtonEvent(GamepadHandle aHandle,
   
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
-  GamepadButtonInformation a(aButton, aValue, aPressed, aTouched);
-  NotifyGamepadChange<GamepadButtonInformation>(aHandle, a);
+
+  if (mMaybeGamepadStateBroadcaster) {
+    mMaybeGamepadStateBroadcaster->NewButtonEvent(aHandle, aButton, aPressed,
+                                                  aTouched, aValue);
+  } else {
+    GamepadButtonInformation a(aButton, aValue, aPressed, aTouched);
+    NotifyGamepadChange<GamepadButtonInformation>(aHandle, a);
+  }
 }
 
 void GamepadPlatformService::NewButtonEvent(GamepadHandle aHandle,
@@ -205,8 +232,12 @@ void GamepadPlatformService::NewAxisMoveEvent(GamepadHandle aHandle,
   
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
-  GamepadAxisInformation a(aAxis, aValue);
-  NotifyGamepadChange<GamepadAxisInformation>(aHandle, a);
+  if (mMaybeGamepadStateBroadcaster) {
+    mMaybeGamepadStateBroadcaster->NewAxisMoveEvent(aHandle, aAxis, aValue);
+  } else {
+    GamepadAxisInformation a(aAxis, aValue);
+    NotifyGamepadChange<GamepadAxisInformation>(aHandle, a);
+  }
 }
 
 void GamepadPlatformService::NewLightIndicatorTypeEvent(
@@ -215,8 +246,13 @@ void GamepadPlatformService::NewLightIndicatorTypeEvent(
   
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
-  GamepadLightIndicatorTypeInformation a(aLight, aType);
-  NotifyGamepadChange<GamepadLightIndicatorTypeInformation>(aHandle, a);
+  if (mMaybeGamepadStateBroadcaster) {
+    mMaybeGamepadStateBroadcaster->NewLightIndicatorTypeEvent(aHandle, aLight,
+                                                              aType);
+  } else {
+    GamepadLightIndicatorTypeInformation a(aLight, aType);
+    NotifyGamepadChange<GamepadLightIndicatorTypeInformation>(aHandle, a);
+  }
 }
 
 void GamepadPlatformService::NewPoseEvent(GamepadHandle aHandle,
@@ -225,8 +261,13 @@ void GamepadPlatformService::NewPoseEvent(GamepadHandle aHandle,
   
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
-  GamepadPoseInformation a(aState);
-  NotifyGamepadChange<GamepadPoseInformation>(aHandle, a);
+
+  if (mMaybeGamepadStateBroadcaster) {
+    mMaybeGamepadStateBroadcaster->NewPoseEvent(aHandle, aState);
+  } else {
+    GamepadPoseInformation a(aState);
+    NotifyGamepadChange<GamepadPoseInformation>(aHandle, a);
+  }
 }
 
 void GamepadPlatformService::NewMultiTouchEvent(
@@ -237,8 +278,13 @@ void GamepadPlatformService::NewMultiTouchEvent(
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
 
-  GamepadTouchInformation a(aTouchArrayIndex, aState);
-  NotifyGamepadChange<GamepadTouchInformation>(aHandle, a);
+  if (mMaybeGamepadStateBroadcaster) {
+    mMaybeGamepadStateBroadcaster->NewMultiTouchEvent(aHandle, aTouchArrayIndex,
+                                                      aState);
+  } else {
+    GamepadTouchInformation a(aTouchArrayIndex, aState);
+    NotifyGamepadChange<GamepadTouchInformation>(aHandle, a);
+  }
 }
 
 void GamepadPlatformService::ResetGamepadIndexes() {
@@ -273,11 +319,13 @@ void GamepadPlatformService::AddChannelParent(
 
     
     
-    if (mChannelParents.Length() > 1) {
-      for (const auto& evt : mGamepadAdded) {
-        GamepadChangeEventBody body(evt.second);
-        GamepadChangeEvent e(evt.first, body);
-        aParent->DispatchUpdateEvent(e);
+    if (!mMaybeGamepadStateBroadcaster) {
+      if (mChannelParents.Length() > 1) {
+        for (const auto& evt : mGamepadAdded) {
+          GamepadChangeEventBody body(evt.second);
+          GamepadChangeEvent e(evt.first, body);
+          aParent->DispatchUpdateEvent(e);
+        }
       }
     }
   }
