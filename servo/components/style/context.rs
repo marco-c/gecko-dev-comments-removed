@@ -117,21 +117,6 @@ impl Default for StyleSystemOptions {
     }
 }
 
-impl StyleSystemOptions {
-    #[cfg(feature = "servo")]
-    
-    pub fn is_nightly(&self) -> bool {
-        false
-    }
-
-    #[cfg(feature = "gecko")]
-    
-    #[inline]
-    pub fn is_nightly(&self) -> bool {
-        structs::GECKO_IS_NIGHTLY
-    }
-}
-
 
 
 
