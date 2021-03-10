@@ -11,8 +11,6 @@ from mod_pywebsocket import common
 from mod_pywebsocket.stream import Stream
 from mod_pywebsocket.stream import StreamOptions
 from mod_pywebsocket import util
-from six.moves import map
-from six.moves import range
 
 
 
