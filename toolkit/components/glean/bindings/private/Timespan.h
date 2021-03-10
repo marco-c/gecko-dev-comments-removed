@@ -26,7 +26,11 @@ class TimespanMetric {
 
 
 
-  void Start() const { fog_timespan_start(mId); }
+  void Start() const {
+#ifndef MOZ_GLEAN_ANDROID
+    fog_timespan_start(mId);
+#endif
+  }
 
   
 
@@ -36,7 +40,11 @@ class TimespanMetric {
 
 
 
-  void Stop() const { fog_timespan_stop(mId); }
+  void Stop() const {
+#ifndef MOZ_GLEAN_ANDROID
+    fog_timespan_stop(mId);
+#endif
+  }
 
   
 
@@ -56,10 +64,15 @@ class TimespanMetric {
 
 
   Maybe<int64_t> TestGetValue(const nsACString& aPingName = nsCString()) const {
+#ifdef MOZ_GLEAN_ANDROID
+    Unused << mId;
+    return Nothing();
+#else
     if (!fog_timespan_test_has_value(mId, &aPingName)) {
       return Nothing();
     }
     return Some(fog_timespan_test_get_value(mId, &aPingName));
+#endif
   }
 
  private:

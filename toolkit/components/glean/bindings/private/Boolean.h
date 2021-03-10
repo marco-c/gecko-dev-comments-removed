@@ -24,7 +24,11 @@ class BooleanMetric {
 
 
 
-  void Set(bool value) const { fog_boolean_set(mId, int(value)); }
+  void Set(bool value) const {
+#ifndef MOZ_GLEAN_ANDROID
+    fog_boolean_set(mId, int(value));
+#endif
+  }
 
   
 
@@ -44,10 +48,15 @@ class BooleanMetric {
 
 
   Maybe<bool> TestGetValue(const nsACString& aPingName = nsCString()) const {
+#ifdef MOZ_GLEAN_ANDROID
+    Unused << mId;
+    return Nothing();
+#else
     if (!fog_boolean_test_has_value(mId, &aPingName)) {
       return Nothing();
     }
     return Some(fog_boolean_test_get_value(mId, &aPingName));
+#endif
   }
 
  private:

@@ -25,12 +25,20 @@ class UuidMetric {
 
 
 
-  void Set(const nsACString& aValue) const { fog_uuid_set(mId, &aValue); }
+  void Set(const nsACString& aValue) const {
+#ifndef MOZ_GLEAN_ANDROID
+    fog_uuid_set(mId, &aValue);
+#endif
+  }
 
   
 
 
-  void GenerateAndSet() const { fog_uuid_generate_and_set(mId); }
+  void GenerateAndSet() const {
+#ifndef MOZ_GLEAN_ANDROID
+    fog_uuid_generate_and_set(mId);
+#endif
+  }
 
   
 
@@ -51,12 +59,17 @@ class UuidMetric {
 
   Maybe<nsCString> TestGetValue(
       const nsACString& aPingName = nsCString()) const {
+#ifdef MOZ_GLEAN_ANDROID
+    Unused << mId;
+    return Nothing();
+#else
     if (!fog_uuid_test_has_value(mId, &aPingName)) {
       return Nothing();
     }
     nsCString ret;
     fog_uuid_test_get_value(mId, &aPingName, &ret);
     return Some(ret);
+#endif
   }
 
  private:
