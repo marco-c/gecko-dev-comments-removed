@@ -9,10 +9,10 @@
 #include "mozilla/Assertions.h"       
 #include "mozilla/ReverseIterator.h"  
 
-#include "frontend/AbstractScopePtr.h"    
-#include "frontend/CompilationStencil.h"  
-#include "frontend/SharedContext.h"       
-#include "vm/BytecodeUtil.h"              
+#include "frontend/AbstractScopePtr.h"  
+#include "frontend/CompilationStencil.h"
+#include "frontend/SharedContext.h"  
+#include "vm/BytecodeUtil.h"         
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"     
 #include "vm/RegExpObject.h"  
@@ -51,7 +51,7 @@ mozilla::Maybe<ScopeIndex> GCThingList::getScopeIndex(size_t index) const {
 
 bool js::frontend::EmitScriptThingsVector(
     JSContext* cx, const CompilationInput& input,
-    const CompilationStencil& stencil, CompilationGCOutput& gcOutput,
+    const BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput,
     mozilla::Span<const TaggedScriptThingIndex> things,
     mozilla::Span<JS::GCCellPtr> output) {
   MOZ_ASSERT(things.size() <= INDEX_LIMIT);

@@ -12,7 +12,6 @@
 #include "mozilla/Casting.h"          
 #include "mozilla/Maybe.h"            
 #include "mozilla/MemoryReporting.h"  
-#include "mozilla/Span.h"             
 
 #include <algorithm>    
 #include <stddef.h>     
@@ -58,7 +57,6 @@ class GenericPrinter;
 
 namespace frontend {
 struct CompilationAtomCache;
-struct CompilationStencilMerger;
 class ScopeStencil;
 class ParserAtom;
 }  
@@ -196,10 +194,6 @@ class AbstractBindingName<frontend::TaggedParserAtomIndex> {
   AbstractBindingName<JSAtom> copyWithNewAtom(JSAtom* newName) const {
     return AbstractBindingName<JSAtom>(newName, closedOver(),
                                        isTopLevelFunction());
-  }
-
-  void updateNameAfterStencilMerge(TaggedParserAtomIndex name) {
-    bits_ = (bits_ & FlagMask) | name.rawData();
   }
 
  private:
@@ -1763,16 +1757,6 @@ static inline size_t GetOffsetOfParserScopeDataTrailingNames(ScopeKind kind) {
 inline size_t SizeOfParserScopeData(ScopeKind kind, uint32_t length) {
   return GetOffsetOfParserScopeDataTrailingNames(kind) +
          sizeof(AbstractBindingName<frontend::TaggedParserAtomIndex>) * length;
-}
-
-inline mozilla::Span<AbstractBindingName<frontend::TaggedParserAtomIndex>>
-GetParserScopeDataTrailingNames(
-    ScopeKind kind,
-    AbstractBaseScopeData<frontend::TaggedParserAtomIndex>* data) {
-  return mozilla::Span(
-      reinterpret_cast<AbstractBindingName<frontend::TaggedParserAtomIndex>*>(
-          uintptr_t(data) + GetOffsetOfParserScopeDataTrailingNames(kind)),
-      data->length);
 }
 
 }  

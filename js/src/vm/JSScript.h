@@ -79,6 +79,7 @@ class DebugScript;
 
 namespace frontend {
 struct CompilationStencil;
+struct BaseCompilationStencil;
 struct CompilationGCOutput;
 }  
 
@@ -1018,13 +1019,40 @@ class ScriptSource {
   
   bool hasEncoder() const { return bool(xdrEncoder_); }
 
-  [[nodiscard]] bool startIncrementalEncoding(
-      JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-      UniquePtr<frontend::ExtensibleCompilationStencil>&& initial);
+  
+  
+  
+  
+  
+  bool xdrEncodeInitialStencil(
+      JSContext* cx, frontend::CompilationInput& input,
+      const frontend::CompilationStencil& stencil,
+      UniquePtr<XDRIncrementalStencilEncoder>& xdrEncoder);
 
-  [[nodiscard]] bool addDelazificationToIncrementalEncoding(
-      JSContext* cx, const frontend::CompilationStencil& stencil);
+  
+  
+  
+  
+  
+  bool xdrEncodeStencils(JSContext* cx, frontend::CompilationInput& input,
+                         const frontend::CompilationStencil& stencil,
+                         UniquePtr<XDRIncrementalStencilEncoder>& xdrEncoder);
 
+  void setIncrementalEncoder(XDRIncrementalStencilEncoder* xdrEncoder);
+
+  
+  
+  bool xdrEncodeFunctionStencil(
+      JSContext* cx, const frontend::BaseCompilationStencil& stencil);
+
+ private:
+  
+  
+  bool xdrEncodeFunctionStencilWith(
+      JSContext* cx, const frontend::BaseCompilationStencil& stencil,
+      UniquePtr<XDRIncrementalStencilEncoder>& xdrEncoder);
+
+ public:
   
   
   
@@ -1329,11 +1357,12 @@ class alignas(uintptr_t) PrivateScriptData final : public TrailingArray {
   static bool Clone(JSContext* cx, js::HandleScript src, js::HandleScript dst,
                     js::MutableHandle<JS::GCVector<js::Scope*>> scopes);
 
-  static bool InitFromStencil(JSContext* cx, js::HandleScript script,
-                              const js::frontend::CompilationInput& input,
-                              const js::frontend::CompilationStencil& stencil,
-                              js::frontend::CompilationGCOutput& gcOutput,
-                              const js::frontend::ScriptIndex scriptIndex);
+  static bool InitFromStencil(
+      JSContext* cx, js::HandleScript script,
+      const js::frontend::CompilationInput& input,
+      const js::frontend::BaseCompilationStencil& stencil,
+      js::frontend::CompilationGCOutput& gcOutput,
+      const js::frontend::ScriptIndex scriptIndex);
 
   void trace(JSTracer* trc);
 
@@ -1841,7 +1870,7 @@ class JSScript : public js::BaseScript {
   friend bool js::PrivateScriptData::InitFromStencil(
       JSContext* cx, js::HandleScript script,
       const js::frontend::CompilationInput& input,
-      const js::frontend::CompilationStencil& stencil,
+      const js::frontend::BaseCompilationStencil& stencil,
       js::frontend::CompilationGCOutput& gcOutput,
       const js::frontend::ScriptIndex scriptIndex);
 
@@ -1869,7 +1898,7 @@ class JSScript : public js::BaseScript {
  public:
   static bool fullyInitFromStencil(
       JSContext* cx, const js::frontend::CompilationInput& input,
-      const js::frontend::CompilationStencil& stencil,
+      const js::frontend::BaseCompilationStencil& stencil,
       js::frontend::CompilationGCOutput& gcOutput, js::HandleScript script,
       const js::frontend::ScriptIndex scriptIndex);
 
