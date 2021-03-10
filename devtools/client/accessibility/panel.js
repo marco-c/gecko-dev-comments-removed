@@ -50,9 +50,10 @@ const EVENTS = {
 
 
 
-function AccessibilityPanel(iframeWindow, toolbox) {
+function AccessibilityPanel(iframeWindow, toolbox, commands) {
   this.panelWin = iframeWindow;
   this._toolbox = toolbox;
+  this._commands = commands;
 
   this.onTabNavigated = this.onTabNavigated.bind(this);
   this.onTargetUpdated = this.onTargetUpdated.bind(this);

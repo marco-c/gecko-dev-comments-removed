@@ -22,9 +22,11 @@ class PerformancePanel {
 
 
 
-  constructor(iframeWindow, toolbox) {
+
+  constructor(iframeWindow, toolbox, commands) {
     this.panelWin = iframeWindow;
     this.toolbox = toolbox;
+    this.commands = commands;
 
     const EventEmitter = require("devtools/shared/event-emitter");
     EventEmitter.decorate(this);

@@ -4,6 +4,8 @@
 
 "use strict";
 
+const { createCommandsDictionary } = require("devtools/shared/commands/index");
+
 
 
 
@@ -23,6 +25,13 @@ function DescriptorMixin(parentClass) {
 
     get client() {
       return this._client;
+    }
+
+    async getCommands() {
+      if (!this._commands) {
+        this._commands = createCommandsDictionary(this);
+      }
+      return this._commands;
     }
   }
   return Descriptor;

@@ -110,12 +110,15 @@ const NON_ORIGINAL_L10N_IDS = new Map([
 
 
 
+
+
 class StorageUI {
-  constructor(panelWin, toolbox) {
+  constructor(panelWin, toolbox, commands) {
     EventEmitter.decorate(this);
     this._window = panelWin;
     this._panelDoc = panelWin.document;
     this._toolbox = toolbox;
+    this._commands = commands;
     this.sidebarToggledOpen = null;
     this.shouldLoadMoreItems = true;
 

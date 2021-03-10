@@ -60,8 +60,17 @@ class WebConsole {
 
 
 
-  constructor(toolbox, iframeWindow, chromeWindow, isBrowserConsole = false) {
+
+
+  constructor(
+    toolbox,
+    commands,
+    iframeWindow,
+    chromeWindow,
+    isBrowserConsole = false
+  ) {
     this.toolbox = toolbox;
+    this.commands = commands;
     this.iframeWindow = iframeWindow;
     this.chromeWindow = chromeWindow;
     this.hudId = "hud_" + ++gHudId;

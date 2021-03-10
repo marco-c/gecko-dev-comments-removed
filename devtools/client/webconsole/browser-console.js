@@ -41,10 +41,11 @@ class BrowserConsole extends WebConsole {
 
 
 
-  constructor(target, iframeWindow, chromeWindow) {
-    super(null, iframeWindow, chromeWindow, true);
+  constructor(target, commands, iframeWindow, chromeWindow) {
+    super(null, commands, iframeWindow, chromeWindow, true);
 
     this._browserConsoleTarget = target;
+    this._descriptorFront = target.descriptorFront;
     this._targetList = new TargetList(target.descriptorFront);
     this._resourceWatcher = new ResourceWatcher(this._targetList);
     this._telemetry = new Telemetry();

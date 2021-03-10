@@ -237,6 +237,7 @@ function Toolbox(
   this.telemetry = new Telemetry();
 
   this.descriptorFront = descriptorFront;
+
   this.targetList = new TargetList(descriptorFront);
   this.targetList.on(
     "target-thread-wrong-order-on-resume",
@@ -777,6 +778,12 @@ Toolbox.prototype = {
           this._URL
         );
       });
+
+      
+      
+      
+      
+      this.commands = await this.descriptorFront.getCommands();
 
       
       
@@ -2479,7 +2486,7 @@ Toolbox.prototype = {
         
         
         
-        let built = definition.build(iframe.contentWindow, this);
+        let built = definition.build(iframe.contentWindow, this, this.commands);
 
         if (!(typeof built.then == "function")) {
           const panel = built;

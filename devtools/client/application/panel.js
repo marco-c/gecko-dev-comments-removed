@@ -17,9 +17,12 @@ class ApplicationPanel {
 
 
 
-  constructor(panelWin, toolbox) {
+
+
+  constructor(panelWin, toolbox, commands) {
     this.panelWin = panelWin;
     this.toolbox = toolbox;
+    this.commands = commands;
   }
 
   async open() {

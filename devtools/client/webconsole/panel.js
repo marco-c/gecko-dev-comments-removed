@@ -16,9 +16,10 @@ loader.lazyGetter(this, "EventEmitter", () =>
 
 
 
-function WebConsolePanel(iframeWindow, toolbox) {
+function WebConsolePanel(iframeWindow, toolbox, commands) {
   this._frameWindow = iframeWindow;
   this._toolbox = toolbox;
+  this._commands = commands;
   EventEmitter.decorate(this);
 }
 
@@ -67,6 +68,7 @@ WebConsolePanel.prototype = {
       
       this.hud = new WebConsole(
         this._toolbox,
+        this._commands,
         webConsoleUIWindow,
         chromeWindow
       );
