@@ -1,0 +1,9 @@
+"use strict";
+
+add_task(async function() {
+  
+  await testGreen(
+    "http://mochi.test:8888/browser/browser/components/shell/test/headless_cross_origin.html",
+    screenshotPath
+  );
+});
