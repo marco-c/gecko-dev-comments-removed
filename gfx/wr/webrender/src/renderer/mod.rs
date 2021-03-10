@@ -4882,12 +4882,10 @@ impl Renderer {
         let fb_height = device_size.height;
         let surface_origin_is_top_left = draw_target.surface_origin_is_top_left();
 
-        let num_layers: i32 = textures.iter()
-            .map(|texture| texture.get_layer_count())
-            .sum();
+        let num_textures = textures.len() as i32;
 
-        if num_layers * (size + spacing) > fb_width {
-            let factor = fb_width as f32 / (num_layers * (size + spacing)) as f32;
+        if num_textures * (size + spacing) > fb_width {
+            let factor = fb_width as f32 / (num_textures * (size + spacing)) as f32;
             size = (size as f32 * factor) as i32;
             spacing = (spacing as f32 * factor) as i32;
         }
@@ -4903,7 +4901,7 @@ impl Renderer {
         
         
         
-        textures.sort_by_key(|t| t.layer_size_in_bytes());
+        textures.sort_by_key(|t| t.size_in_bytes());
 
         let mut i = 0;
         for texture in textures.iter() {
