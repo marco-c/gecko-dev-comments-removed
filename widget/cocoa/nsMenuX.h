@@ -32,9 +32,9 @@ class nsIWidget;
 
 
 
-class nsMenuX : public nsMenuObjectX, public nsChangeObserver {
+class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
  public:
-  nsMenuX();
+  nsMenuX(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aContent);
   virtual ~nsMenuX();
 
   
@@ -79,19 +79,19 @@ class nsMenuX : public nsMenuObjectX, public nsChangeObserver {
 
   nsTArray<mozilla::UniquePtr<nsMenuObjectX>> mMenuObjectsArray;
   nsString mLabel;
-  uint32_t mVisibleItemsCount;         
-  nsMenuObjectX* mParent;              
-  nsMenuGroupOwnerX* mMenuGroupOwner;  
+  uint32_t mVisibleItemsCount = 0;               
+  nsMenuObjectX* mParent = nullptr;              
+  nsMenuGroupOwnerX* mMenuGroupOwner = nullptr;  
   mozilla::UniquePtr<nsMenuItemIconX> mIcon;
-  GeckoNSMenu* mNativeMenu;     
-  MenuDelegate* mMenuDelegate;  
+  GeckoNSMenu* mNativeMenu = nil;     
+  MenuDelegate* mMenuDelegate = nil;  
   
-  NSMenuItem* mNativeMenuItem;  
-  bool mIsEnabled;
-  bool mDestroyHandlerCalled;
-  bool mNeedsRebuild;
-  bool mConstructed;
-  bool mVisible;
+  NSMenuItem* mNativeMenuItem = nil;  
+  bool mIsEnabled = true;
+  bool mDestroyHandlerCalled = false;
+  bool mNeedsRebuild = true;
+  bool mConstructed = false;
+  bool mVisible = true;
 };
 
 #endif  

@@ -78,75 +78,44 @@ int32_t nsMenuX::sIndexingMenuLevel = 0;
 @end
 
 
+static void SwizzleDynamicIndexingMethods() {
+  if (gMenuMethodsSwizzled) {
+    return;
+  }
+
+  nsToolkit::SwizzleMethods([NSMenu class], @selector(_addItem:toTable:),
+                            @selector(nsMenuX_NSMenu_addItem:toTable:), true);
+  nsToolkit::SwizzleMethods([NSMenu class], @selector(_removeItem:fromTable:),
+                            @selector(nsMenuX_NSMenu_removeItem:fromTable:), true);
+  
+  
+  
+  
+  dlopen("/System/Library/PrivateFrameworks/Shortcut.framework/Shortcut", RTLD_LAZY);
+  Class SCTGRLIndexClass = ::NSClassFromString(@"SCTGRLIndex");
+  nsToolkit::SwizzleMethods(SCTGRLIndexClass, @selector(indexMenuBarDynamically),
+                            @selector(nsMenuX_SCTGRLIndex_indexMenuBarDynamically));
+
+  gMenuMethodsSwizzled = true;
+}
 
 
 
-nsMenuX::nsMenuX()
-    : mVisibleItemsCount(0),
-      mParent(nullptr),
-      mMenuGroupOwner(nullptr),
-      mNativeMenu(nil),
-      mNativeMenuItem(nil),
-      mIsEnabled(true),
-      mDestroyHandlerCalled(false),
-      mNeedsRebuild(true),
-      mConstructed(false),
-      mVisible(true) {
+
+
+nsMenuX::nsMenuX(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aContent)
+    : mParent(aParent), mMenuGroupOwner(aMenuGroupOwner) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  if (!gMenuMethodsSwizzled) {
-    nsToolkit::SwizzleMethods([NSMenu class], @selector(_addItem:toTable:),
-                              @selector(nsMenuX_NSMenu_addItem:toTable:), true);
-    nsToolkit::SwizzleMethods([NSMenu class], @selector(_removeItem:fromTable:),
-                              @selector(nsMenuX_NSMenu_removeItem:fromTable:), true);
-    
-    
-    
-    
-    dlopen("/System/Library/PrivateFrameworks/Shortcut.framework/Shortcut", RTLD_LAZY);
-    Class SCTGRLIndexClass = ::NSClassFromString(@"SCTGRLIndex");
-    nsToolkit::SwizzleMethods(SCTGRLIndexClass, @selector(indexMenuBarDynamically),
-                              @selector(nsMenuX_SCTGRLIndex_indexMenuBarDynamically));
+  MOZ_COUNT_CTOR(nsMenuX);
 
-    gMenuMethodsSwizzled = true;
-  }
+  SwizzleDynamicIndexingMethods();
 
   mMenuDelegate = [[MenuDelegate alloc] initWithGeckoMenu:this];
 
   if (!nsMenuBarX::sNativeEventTarget) {
     nsMenuBarX::sNativeEventTarget = [[NativeMenuItemTarget alloc] init];
   }
-
-  MOZ_COUNT_CTOR(nsMenuX);
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
-nsMenuX::~nsMenuX() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  RemoveAll();
-
-  [mNativeMenu setDelegate:nil];
-  [mNativeMenu release];
-  [mMenuDelegate release];
-  
-  
-  [mNativeMenuItem autorelease];
-
-  
-  if (mContent) {
-    mMenuGroupOwner->UnregisterForContentChanges(mContent);
-  }
-
-  MOZ_COUNT_DTOR(nsMenuX);
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
-nsresult nsMenuX::Create(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
-                         nsIContent* aContent) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   mContent = aContent;
   if (mContent->IsElement()) {
@@ -155,11 +124,9 @@ nsresult nsMenuX::Create(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOw
   mNativeMenu = CreateMenuWithGeckoString(mLabel);
 
   
-  mMenuGroupOwner = aMenuGroupOwner;  
   NS_ASSERTION(mMenuGroupOwner, "No menu owner given, must have one");
   mMenuGroupOwner->RegisterForContentChanges(mContent, this);
 
-  mParent = aParent;
   
 
 #ifdef DEBUG
@@ -195,7 +162,27 @@ nsresult nsMenuX::Create(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOw
 
   mIcon = MakeUnique<nsMenuItemIconX>(this, mContent, mNativeMenuItem);
 
-  return NS_OK;
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+nsMenuX::~nsMenuX() {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  RemoveAll();
+
+  [mNativeMenu setDelegate:nil];
+  [mNativeMenu release];
+  [mMenuDelegate release];
+  
+  
+  [mNativeMenuItem autorelease];
+
+  
+  if (mContent) {
+    mMenuGroupOwner->UnregisterForContentChanges(mContent);
+  }
+
+  MOZ_COUNT_DTOR(nsMenuX);
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -510,15 +497,7 @@ void nsMenuX::LoadMenuItem(nsIContent* inMenuItemContent) {
 }
 
 void nsMenuX::LoadSubMenu(nsIContent* inMenuContent) {
-  auto menu = MakeUnique<nsMenuX>();
-  if (!menu) {
-    return;
-  }
-
-  nsresult rv = menu->Create(this, mMenuGroupOwner, inMenuContent);
-  if (NS_FAILED(rv)) {
-    return;
-  }
+  auto menu = MakeUnique<nsMenuX>(this, mMenuGroupOwner, inMenuContent);
 
   
   
@@ -730,10 +709,7 @@ void nsMenuX::ObserveContentInserted(dom::Document* aDocument, nsIContent* aCont
   SetRebuild(true);
 }
 
-nsresult nsMenuX::SetupIcon() {
-  MOZ_RELEASE_ASSERT(mIcon, "should have been created by nsMenuX::Create");
-  return mIcon->SetupIcon();
-}
+nsresult nsMenuX::SetupIcon() { return mIcon->SetupIcon(); }
 
 
 
