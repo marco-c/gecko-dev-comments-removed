@@ -193,6 +193,13 @@ class TargetList extends EventEmitter {
   }
 
   _onTargetDestroyed(targetFront, isTargetSwitching = false) {
+    
+    
+    
+    
+    if (targetFront == this.targetFront) {
+      isTargetSwitching = true;
+    }
     this._destroyListeners.emit(targetFront.targetType, {
       targetFront,
       isTargetSwitching,

@@ -224,6 +224,16 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
         actor = null;
       }
 
+      
+      
+      
+      
+      
+      
+      if (onDestroy) {
+        onDestroy(mm);
+      }
+
       if (childTransport) {
         
         
@@ -244,10 +254,6 @@ function connectToFrame(connection, frame, onDestroy, { addonId } = {}) {
         
         
         resolve(null);
-      }
-
-      if (onDestroy) {
-        onDestroy(mm);
       }
 
       

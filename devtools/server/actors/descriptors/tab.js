@@ -142,6 +142,14 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
           error: "tabDestroyed",
           message: "Tab destroyed while performing a TabDescriptorActor update",
         });
+
+        
+        
+        
+        
+        if (this.watcher && this.targetActorForm) {
+          this.watcher.notifyTargetDestroyed(this.targetActorForm);
+        }
       };
 
       try {
@@ -156,7 +164,7 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
           this._browser,
           onDestroy
         );
-
+        this.targetActorForm = connectForm;
         resolve(connectForm);
       } catch (e) {
         reject({
