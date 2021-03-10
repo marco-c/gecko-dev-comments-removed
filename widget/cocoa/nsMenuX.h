@@ -51,15 +51,21 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
 
   
   nsresult Create(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aNode);
-  uint32_t GetItemCount();
+
+  
   nsMenuObjectX* GetItemAt(uint32_t aPos);
-  nsresult GetVisibleItemCount(uint32_t& aCount);
+  uint32_t GetItemCount();
+
+  
   nsMenuObjectX* GetVisibleItemAt(uint32_t aPos);
+  nsresult GetVisibleItemCount(uint32_t& aCount);
+
   nsEventStatus MenuOpened();
   void MenuClosed();
   void SetRebuild(bool aMenuEvent);
   NSMenuItem* NativeMenuItem();
   nsresult SetupIcon();
+  nsIContent* Content() { return mContent; }
 
   static bool IsXULHelpMenu(nsIContent* aMenuContent);
 
@@ -77,7 +83,11 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   void LoadSubMenu(nsIContent* aMenuContent);
   GeckoNSMenu* CreateMenuWithGeckoString(nsString& aMenuTitle);
 
+  nsCOMPtr<nsIContent> mContent;  
+
+  
   nsTArray<mozilla::UniquePtr<nsMenuObjectX>> mMenuObjectsArray;
+
   nsString mLabel;
   uint32_t mVisibleItemsCount = 0;               
   nsMenuObjectX* mParent = nullptr;              
