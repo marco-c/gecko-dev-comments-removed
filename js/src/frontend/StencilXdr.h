@@ -7,10 +7,12 @@
 #ifndef frontend_StencilXdr_h
 #define frontend_StencilXdr_h
 
+#include "mozilla/RefPtr.h"  
+
 #include "frontend/ObjLiteral.h"  
-#include "frontend/Stencil.h"     
-#include "vm/Scope.h"             
-#include "vm/Xdr.h"               
+#include "frontend/Stencil.h"  
+#include "vm/SharedStencil.h"  
+#include "vm/Xdr.h"            
 
 namespace js {
 namespace frontend {
@@ -41,14 +43,14 @@ struct CanCopyDataToDisk {
 class StencilXDR {
  public:
   template <XDRMode mode>
+  static XDRResult codeBigInt(XDRState<mode>* xdr, BigIntStencil& stencil);
+
+  template <XDRMode mode>
   static XDRResult ScopeData(XDRState<mode>* xdr, ScopeStencil& stencil,
                              BaseParserScopeData*& baseScopeData);
 
   template <XDRMode mode>
   static XDRResult ObjLiteral(XDRState<mode>* xdr, ObjLiteralStencil& stencil);
-
-  template <XDRMode mode>
-  static XDRResult BigInt(XDRState<mode>* xdr, BigIntStencil& stencil);
 
   template <XDRMode mode>
   static XDRResult SharedData(js::XDRState<mode>* xdr,
