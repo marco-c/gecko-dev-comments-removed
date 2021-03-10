@@ -1155,8 +1155,6 @@ pub enum DrawTarget {
         
         dimensions: DeviceIntSize,
         
-        layer: LayerIndex,
-        
         with_depth: bool,
         
         blit_workaround_buffer: Option<(RBOId, FBOId)>,
@@ -1200,7 +1198,6 @@ impl DrawTarget {
 
     pub fn from_texture(
         texture: &Texture,
-        layer: usize,
         with_depth: bool,
     ) -> Self {
         let fbo_id = if with_depth {
@@ -1213,7 +1210,6 @@ impl DrawTarget {
             dimensions: texture.get_dimensions(),
             fbo_id,
             with_depth,
-            layer,
             blit_workaround_buffer: texture.blit_workaround_buffer,
             id: texture.id,
             target: texture.target,
@@ -1309,7 +1305,6 @@ pub enum ReadTarget {
 impl ReadTarget {
     pub fn from_texture(
         texture: &Texture,
-        _layer: usize,
     ) -> Self {
         ReadTarget::Texture {
             fbo_id: texture.fbo.unwrap(),
@@ -2524,22 +2519,20 @@ impl Device {
                 );
             }
         } else {
-            for i in 0..depth as LayerIndex {
-                let src_offset = FramebufferIntPoint::new(src_x as i32, src_y as i32);
-                let dest_offset = FramebufferIntPoint::new(dest_x as i32, dest_y as i32);
-                let size = FramebufferIntSize::new(width as i32, height as i32);
+            let src_offset = FramebufferIntPoint::new(src_x as i32, src_y as i32);
+            let dest_offset = FramebufferIntPoint::new(dest_x as i32, dest_y as i32);
+            let size = FramebufferIntSize::new(width as i32, height as i32);
 
-                self.blit_render_target(
-                    ReadTarget::from_texture(src_texture, src_z + i),
-                    FramebufferIntRect::new(src_offset, size),
-                    DrawTarget::from_texture(dest_texture, dest_z + i, false),
-                    FramebufferIntRect::new(dest_offset, size),
-                    
-                    
-                    
-                    TextureFilter::Nearest,
-                );
-            }
+            self.blit_render_target(
+                ReadTarget::from_texture(src_texture),
+                FramebufferIntRect::new(src_offset, size),
+                DrawTarget::from_texture(dest_texture, false),
+                FramebufferIntRect::new(dest_offset, size),
+                
+                
+                
+                TextureFilter::Nearest,
+            );
         }
     }
 
@@ -2714,60 +2707,9 @@ impl Device {
 
         self.bind_read_target(src_target);
 
-        match dest_target {
-            DrawTarget::Texture { layer, blit_workaround_buffer, dimensions, id, target, .. } if layer != 0 &&
-                !self.capabilities.supports_blit_to_texture_array =>
-            {
-                
-                let (_rbo, fbo) = blit_workaround_buffer.expect("Blit workaround buffer has not been initialized.");
+        self.bind_draw_target(dest_target);
 
-                
-                self.bind_draw_target_impl(fbo);
-                self.blit_render_target_impl(
-                    src_rect,
-                    dest_rect,
-                    filter
-                );
-
-                
-                
-                
-                
-                let dest_bounds = DeviceIntRect::new(
-                    DeviceIntPoint::new(
-                        dest_rect.min_x().min(dest_rect.max_x()),
-                        dest_rect.min_y().min(dest_rect.max_y()),
-                    ),
-                    DeviceIntSize::new(
-                        dest_rect.size.width.abs(),
-                        dest_rect.size.height.abs(),
-                    ),
-                ).intersection(&dimensions.into()).unwrap_or_else(DeviceIntRect::zero);
-
-                self.bind_read_target_impl(fbo, DeviceIntPoint::zero());
-                self.bind_texture_impl(
-                    DEFAULT_TEXTURE,
-                    id,
-                    target,
-                    None, 
-                );
-
-                
-                self.gl.copy_tex_sub_image_3d(
-                    target, 0,
-                    dest_bounds.origin.x, dest_bounds.origin.y,
-                    layer as _,
-                    dest_bounds.origin.x, dest_bounds.origin.y,
-                    dest_bounds.size.width, dest_bounds.size.height,
-                );
-
-            }
-            _ => {
-                self.bind_draw_target(dest_target);
-
-                self.blit_render_target_impl(src_rect, dest_rect, filter);
-            }
-        }
+        self.blit_render_target_impl(src_rect, dest_rect, filter);
     }
 
     
