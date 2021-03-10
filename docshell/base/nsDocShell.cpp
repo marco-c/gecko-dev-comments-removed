@@ -1484,31 +1484,15 @@ bool nsDocShell::SetCurrentURI(nsIURI* aURI, nsIRequest* aRequest,
     mHasLoadedNonBlankURI = true;
   }
 
-  bool isRoot = mBrowsingContext->IsTop();
-  bool isSubFrame = false;  
-
-  if (mozilla::SessionHistoryInParent()) {
-    if (mLoadingEntry) {
-      isSubFrame = mLoadingEntry->mInfo.IsSubFrame();
-    } else {
-      isSubFrame = !mBrowsingContext->IsTop() && mActiveEntry;
-    }
-    MOZ_LOG(gSHLog, LogLevel::Debug,
-            ("nsDocShell %p SetCurrentURI, isSubFrame=%d", this, isSubFrame));
-  } else {
-    if (mLSHE) {
-      isSubFrame = mLSHE->GetIsSubFrame();
-    }
-  }
-
-  if (!isSubFrame && !isRoot) {
-    
-
-
-
-
+  
+  
+  
+  if (!(mLoadingEntry || mLSHE) && !mHasLoadedNonBlankURI && !aRequest &&
+      aLocationFlags == 0 && !mBrowsingContext->IsTop()) {
     return false;
   }
+
+  MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
 
   if (aFireOnLocationChange) {
     FireOnLocationChange(this, aRequest, aURI, aLocationFlags);
@@ -5939,14 +5923,15 @@ nsDocShell::OnStateChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
 NS_IMETHODIMP
 nsDocShell::OnLocationChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
                              nsIURI* aURI, uint32_t aFlags) {
-  if (XRE_IsParentProcess()) {
-    
-    
-    
-    
-    if (!(aFlags & nsIWebProgressListener::LOCATION_CHANGE_SAME_DOCUMENT)) {
-      GetBrowsingContext()->Canonical()->UpdateSecurityState();
-    }
+  
+  
+  
+  
+  bool isTopLevel = false;
+  if (XRE_IsParentProcess() &&
+      !(aFlags & nsIWebProgressListener::LOCATION_CHANGE_SAME_DOCUMENT) &&
+      NS_SUCCEEDED(aProgress->GetIsTopLevel(&isTopLevel)) && isTopLevel) {
+    GetBrowsingContext()->Canonical()->UpdateSecurityState();
   }
   return NS_OK;
 }
@@ -11522,12 +11507,7 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
   
   if (!aEqualURIs && !mIsBeingDestroyed) {
     aDocument->SetDocumentURI(aNewURI);
-    
-    
-    SetCurrentURI(aNewURI, nullptr, false, LOCATION_CHANGE_SAME_DOCUMENT);
-    if (mLoadType != LOAD_ERROR_PAGE) {
-      FireDummyOnLocationChange();
-    }
+    SetCurrentURI(aNewURI, nullptr, true, LOCATION_CHANGE_SAME_DOCUMENT);
 
     AddURIVisit(aNewURI, aCurrentURI, 0);
 
