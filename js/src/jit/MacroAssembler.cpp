@@ -825,8 +825,6 @@ void MacroAssembler::initGCThing(Register obj, Register temp,
                                  bool initContents) {
   
 
-  storePtr(ImmGCPtr(nullptr), Address(obj, JSObject::offsetOfGroup()));
-
   storePtr(ImmGCPtr(templateObj.shape()),
            Address(obj, JSObject::offsetOfShape()));
 

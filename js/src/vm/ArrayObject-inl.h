@@ -38,7 +38,6 @@ namespace js {
   }
 
   ArrayObject* aobj = static_cast<ArrayObject*>(obj);
-  aobj->initGroup(nullptr);
   aobj->initShape(shape);
   
   if (!nDynamicSlots) {

@@ -73,22 +73,16 @@ bool SetImmutablePrototype(JSContext* cx, JS::HandleObject obj,
 
 
 
-
-
-
-
-
-
-
-
 class JSObject
-    : public js::gc::CellWithTenuredGCPointer<js::gc::Cell, js::ObjectGroup> {
+    : public js::gc::CellWithTenuredGCPointer<js::gc::Cell, js::Shape> {
  public:
   
-  js::ObjectGroup* group() const { return headerPtr(); }
+  js::Shape* shape() const { return headerPtr(); }
 
- protected:
-  js::GCPtrShape shape_;
+#ifndef JS_64BIT
+  
+  uint32_t padding_;
+#endif
 
  private:
   friend class js::DictionaryShapeLink;
@@ -103,7 +97,7 @@ class JSObject
                                         bool* succeeded);
 
  public:
-  const JSClass* getClass() const { return shape_->getObjectClass(); }
+  const JSClass* getClass() const { return shape()->getObjectClass(); }
   bool hasClass(const JSClass* c) const { return getClass() == c; }
 
   js::LookupPropertyOp getOpsLookupProperty() const {
@@ -134,8 +128,6 @@ class JSObject
     return getClass()->getOpsFunToString();
   }
 
-  void initGroup(js::ObjectGroup* group) { initHeaderPtr(group); }
-
   JS::Compartment* compartment() const { return shape()->compartment(); }
   JS::Compartment* maybeCompartment() const { return compartment(); }
 
@@ -143,13 +135,12 @@ class JSObject
     
     
     MOZ_ASSERT(Cell::zone() == shape->zone());
-    shape_.init(shape);
+    initHeaderPtr(shape);
   }
   void setShape(js::Shape* shape) {
     MOZ_ASSERT(maybeCCWRealm() == shape->realm());
-    shape_ = shape;
+    setHeaderPtr(shape);
   }
-  js::Shape* shape() const { return shape_; }
 
   static JSObject* fromShapeFieldPointer(uintptr_t p) {
     return reinterpret_cast<JSObject*>(p - JSObject::offsetOfShape());
@@ -505,21 +496,22 @@ class JSObject
 #endif
 
   
-  static const size_t MAX_BYTE_SIZE =
+#ifdef JS_64BIT
+  static constexpr size_t MAX_BYTE_SIZE =
+      3 * sizeof(void*) + 16 * sizeof(JS::Value);
+#else
+  static constexpr size_t MAX_BYTE_SIZE =
       4 * sizeof(void*) + 16 * sizeof(JS::Value);
+#endif
 
  protected:
-  
-  MOZ_ALWAYS_INLINE js::GCPtrShape* shapePtr() { return &(this->shape_); }
-
   
   
   
   
   friend class js::jit::MacroAssembler;
 
-  static constexpr size_t offsetOfGroup() { return offsetOfHeaderPtr(); }
-  static constexpr size_t offsetOfShape() { return offsetof(JSObject, shape_); }
+  static constexpr size_t offsetOfShape() { return offsetOfHeaderPtr(); }
 
  private:
   JSObject() = delete;
