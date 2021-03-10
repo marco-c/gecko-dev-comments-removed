@@ -778,19 +778,6 @@ static void TestMatchingHolder(CacheIRWriter& writer, JSObject* obj,
                                     obj->as<NativeObject>().lastProperty());
 }
 
-static bool UncacheableProtoOnChain(JSObject* obj) {
-  while (true) {
-    if (obj->hasUncacheableProto()) {
-      return true;
-    }
-
-    obj = obj->staticPrototype();
-    if (!obj) {
-      return false;
-    }
-  }
-}
-
 
 
 
@@ -1234,15 +1221,6 @@ AttachDecision GetPropIRGenerator::tryAttachCrossCompartmentWrapper(
         CanAttachNativeGetProp(cx_, unwrapped, id, &holder, &shape, pc_);
     if (canCache != CanAttachReadSlot) {
       return AttachDecision::NoAction;
-    }
-
-    if (!holder) {
-      
-      
-      
-      if (UncacheableProtoOnChain(unwrapped)) {
-        return AttachDecision::NoAction;
-      }
     }
   }
 
