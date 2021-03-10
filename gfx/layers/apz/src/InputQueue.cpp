@@ -75,8 +75,22 @@ APZEventResult InputQueue::ReceiveInputEvent(
       
       
       APZEventResult result(aTarget, aFlags);
-      result.mStatus =
+      nsEventStatus status =
           aTarget->HandleInputEvent(aEvent, aTarget->GetTransformToThis());
+      switch (status) {
+        case nsEventStatus_eIgnore:
+          result.SetStatusAsIgnore();
+          break;
+        case nsEventStatus_eConsumeNoDefault:
+          result.SetStatusAsConsumeNoDefault();
+          break;
+        case nsEventStatus_eConsumeDoDefault:
+          result.SetStatusAsConsumeDoDefault(aTarget);
+          break;
+        default:
+          MOZ_ASSERT_UNREACHABLE("An invalid status");
+          break;
+      }
       return result;
     }
   }
@@ -88,7 +102,7 @@ APZEventResult InputQueue::ReceiveTouchInput(
     const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors) {
   APZEventResult result(aTarget, aFlags);
 
-  TouchBlockState* block = nullptr;
+  RefPtr<TouchBlockState> block;
   bool waitingForContentResponse = false;
   if (aEvent.mType == MultiTouchInput::MULTITOUCH_START) {
     nsTArray<TouchBehaviorFlags> currentBehaviors;
@@ -106,8 +120,8 @@ APZEventResult InputQueue::ReceiveTouchInput(
     }
 
     block = StartNewTouchBlock(aTarget, aFlags, false);
-    INPQ_LOG("started new touch block %p id %" PRIu64 " for target %p\n", block,
-             block->GetBlockId(), aTarget.get());
+    INPQ_LOG("started new touch block %p id %" PRIu64 " for target %p\n",
+             block.get(), block->GetBlockId(), aTarget.get());
 
     
     
@@ -128,7 +142,7 @@ APZEventResult InputQueue::ReceiveTouchInput(
       if (StaticPrefs::layout_css_touch_action_enabled()) {
         block->SetAllowedTouchBehaviors(currentBehaviors);
       }
-      INPQ_LOG("block %p tagged as fast-motion\n", block);
+      INPQ_LOG("block %p tagged as fast-motion\n", block.get());
     } else if (aTouchBehaviors) {
       
       
@@ -152,7 +166,7 @@ APZEventResult InputQueue::ReceiveTouchInput(
     }
 
     INPQ_LOG("received new touch event (type=%d) in block %p\n", aEvent.mType,
-             block);
+             block.get());
   }
 
   result.mInputBlockId = block->GetBlockId();
@@ -167,38 +181,21 @@ APZEventResult InputQueue::ReceiveTouchInput(
   
   
   if (block->IsDuringFastFling()) {
-    INPQ_LOG("dropping event due to block %p being in fast motion\n", block);
-    result.mStatus = nsEventStatus_eConsumeNoDefault;
+    INPQ_LOG("dropping event due to block %p being in fast motion\n",
+             block.get());
+    result.SetStatusAsConsumeNoDefault();
   } else if (target && target->ArePointerEventsConsumable(block, aEvent)) {
     if (block->UpdateSlopState(aEvent, true)) {
-      INPQ_LOG("dropping event due to block %p being in slop\n", block);
-      result.mStatus = nsEventStatus_eConsumeNoDefault;
+      INPQ_LOG("dropping event due to block %p being in slop\n", block.get());
+      result.SetStatusAsConsumeNoDefault();
     } else {
-      if (!target->IsRootContent() &&
-          block->GetOverscrollHandoffChain()
-              ->ScrollingDownWillMoveDynamicToolbar(target)) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        INPQ_LOG(
-            "changing handledByRootApzc from Some(HandledByContent) to %s\n",
-            aFlags.mDispatchToContent ? "Nothing()" : "Some(HandledByRoot)");
-        result.mHandledResult = aFlags.mDispatchToContent
-                                    ? Nothing()
-                                    : Some(APZHandledResult::HandledByRoot);
-      }
-      result.mStatus = nsEventStatus_eConsumeDoDefault;
+      result.SetStatusAsConsumeDoDefaultWithTargetConfirmationFlags(
+          *block, aFlags, *target);
     }
   } else if (block->UpdateSlopState(aEvent, false)) {
-    INPQ_LOG("dropping event due to block %p being in mini-slop\n", block);
-    result.mStatus = nsEventStatus_eConsumeNoDefault;
+    INPQ_LOG("dropping event due to block %p being in mini-slop\n",
+             block.get());
+    result.SetStatusAsConsumeNoDefault();
   }
   mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent, *block));
   ProcessQueue();
@@ -236,7 +233,7 @@ APZEventResult InputQueue::ReceiveMouseInput(
   
   bool newBlock = DragTracker::StartsDrag(aEvent);
 
-  DragBlockState* block = newBlock ? nullptr : mActiveDragBlock.get();
+  RefPtr<DragBlockState> block = newBlock ? nullptr : mActiveDragBlock.get();
   if (block && block->HasReceivedMouseUp()) {
     block = nullptr;
   }
@@ -266,7 +263,7 @@ APZEventResult InputQueue::ReceiveMouseInput(
     INPQ_LOG(
         "started new drag block %p id %" PRIu64
         "for %sconfirmed target %p; on scrollbar: %d; on scrollthumb: %d\n",
-        block, block->GetBlockId(), aFlags.mTargetConfirmed ? "" : "un",
+        block.get(), block->GetBlockId(), aFlags.mTargetConfirmed ? "" : "un",
         aTarget.get(), aFlags.mHitScrollbar, aFlags.mHitScrollThumb);
 
     mActiveDragBlock = block;
@@ -288,7 +285,7 @@ APZEventResult InputQueue::ReceiveMouseInput(
 
   
   
-  result.mStatus = nsEventStatus_eConsumeDoDefault;
+  result.SetStatusAsConsumeDoDefault(*block);
   return result;
 }
 
@@ -297,7 +294,7 @@ APZEventResult InputQueue::ReceiveScrollWheelInput(
     TargetConfirmationFlags aFlags, const ScrollWheelInput& aEvent) {
   APZEventResult result(aTarget, aFlags);
 
-  WheelBlockState* block = mActiveWheelBlock.get();
+  RefPtr<WheelBlockState> block = mActiveWheelBlock.get();
   
   
   if (block &&
@@ -311,7 +308,7 @@ APZEventResult InputQueue::ReceiveScrollWheelInput(
     block = new WheelBlockState(aTarget, aFlags, aEvent);
     INPQ_LOG("started new scroll wheel block %p id %" PRIu64
              " for %starget %p\n",
-             block, block->GetBlockId(),
+             block.get(), block->GetBlockId(),
              aFlags.mTargetConfirmed ? "confirmed " : "", aTarget.get());
 
     mActiveWheelBlock = block;
@@ -319,7 +316,7 @@ APZEventResult InputQueue::ReceiveScrollWheelInput(
     CancelAnimationsForNewBlock(block, ExcludeWheel);
     MaybeRequestContentResponse(aTarget, block);
   } else {
-    INPQ_LOG("received new wheel event in block %p\n", block);
+    INPQ_LOG("received new wheel event in block %p\n", block.get());
   }
 
   result.mInputBlockId = block->GetBlockId();
@@ -338,7 +335,7 @@ APZEventResult InputQueue::ReceiveScrollWheelInput(
 
   ProcessQueue();
 
-  result.mStatus = nsEventStatus_eConsumeDoDefault;
+  result.SetStatusAsConsumeDoDefault(*block);
   return result;
 }
 
@@ -347,7 +344,7 @@ APZEventResult InputQueue::ReceiveKeyboardInput(
     TargetConfirmationFlags aFlags, const KeyboardInput& aEvent) {
   APZEventResult result(aTarget, aFlags);
 
-  KeyboardBlockState* block = mActiveKeyboardBlock.get();
+  RefPtr<KeyboardBlockState> block = mActiveKeyboardBlock.get();
 
   
   
@@ -358,11 +355,11 @@ APZEventResult InputQueue::ReceiveKeyboardInput(
   if (!block) {
     block = new KeyboardBlockState(aTarget);
     INPQ_LOG("started new keyboard block %p id %" PRIu64 " for target %p\n",
-             block, block->GetBlockId(), aTarget.get());
+             block.get(), block->GetBlockId(), aTarget.get());
 
     mActiveKeyboardBlock = block;
   } else {
-    INPQ_LOG("received new keyboard event in block %p\n", block);
+    INPQ_LOG("received new keyboard event in block %p\n", block.get());
   }
 
   result.mInputBlockId = block->GetBlockId();
@@ -373,9 +370,11 @@ APZEventResult InputQueue::ReceiveKeyboardInput(
 
   
   
-  result.mStatus = StaticPrefs::apz_keyboard_passive_listeners()
-                       ? nsEventStatus_eConsumeDoDefault
-                       : nsEventStatus_eConsumeNoDefault;
+  if (StaticPrefs::apz_keyboard_passive_listeners()) {
+    result.SetStatusAsConsumeDoDefault(*block);
+  } else {
+    result.SetStatusAsConsumeNoDefault();
+  }
   return result;
 }
 
@@ -400,17 +399,17 @@ APZEventResult InputQueue::ReceivePanGestureInput(
   if (aEvent.mType == PanGestureInput::PANGESTURE_MAYSTART ||
       aEvent.mType == PanGestureInput::PANGESTURE_CANCELLED) {
     
-    result.mStatus = nsEventStatus_eConsumeDoDefault;
+    result.SetStatusAsConsumeDoDefault(aTarget);
     return result;
   }
 
-  PanGestureBlockState* block = nullptr;
+  RefPtr<PanGestureBlockState> block;
   if (aEvent.mType != PanGestureInput::PANGESTURE_START) {
     block = mActivePanGestureBlock.get();
   }
 
   PanGestureInput event = aEvent;
-  result.mStatus = nsEventStatus_eConsumeDoDefault;
+  result.SetStatusAsConsumeDoDefault(aTarget);
 
   if (!block || block->WasInterrupted()) {
     if (event.mType != PanGestureInput::PANGESTURE_START) {
@@ -424,7 +423,7 @@ APZEventResult InputQueue::ReceivePanGestureInput(
     }
     block = new PanGestureBlockState(aTarget, aFlags, event);
     INPQ_LOG("started new pan gesture block %p id %" PRIu64 " for target %p\n",
-             block, block->GetBlockId(), aTarget.get());
+             block.get(), block->GetBlockId(), aTarget.get());
 
     if (aFlags.mTargetConfirmed &&
         event
@@ -438,7 +437,7 @@ APZEventResult InputQueue::ReceivePanGestureInput(
 
       
       
-      result.mStatus = nsEventStatus_eIgnore;
+      result.SetStatusAsIgnore();
     }
 
     mActivePanGestureBlock = block;
@@ -447,7 +446,7 @@ APZEventResult InputQueue::ReceivePanGestureInput(
     MaybeRequestContentResponse(aTarget, block);
   } else {
     INPQ_LOG("received new pan event (type=%d) in block %p\n", aEvent.mType,
-             block);
+             block.get());
   }
 
   result.mInputBlockId = block->GetBlockId();
@@ -468,25 +467,25 @@ APZEventResult InputQueue::ReceivePinchGestureInput(
     TargetConfirmationFlags aFlags, const PinchGestureInput& aEvent) {
   APZEventResult result(aTarget, aFlags);
 
-  PinchGestureBlockState* block = nullptr;
+  RefPtr<PinchGestureBlockState> block;
   if (aEvent.mType != PinchGestureInput::PINCHGESTURE_START) {
     block = mActivePinchGestureBlock.get();
   }
 
-  result.mStatus = nsEventStatus_eConsumeDoDefault;
+  result.SetStatusAsConsumeDoDefault(aTarget);
 
   if (!block || block->WasInterrupted()) {
     if (aEvent.mType != PinchGestureInput::PINCHGESTURE_START) {
       
       
-      INPQ_LOG("pinchgesture block %p was interrupted %d\n", block,
+      INPQ_LOG("pinchgesture block %p was interrupted %d\n", block.get(),
                block ? block->WasInterrupted() : 0);
       return result;
     }
     block = new PinchGestureBlockState(aTarget, aFlags);
     INPQ_LOG("started new pinch gesture block %p id %" PRIu64
              " for target %p\n",
-             block, block->GetBlockId(), aTarget.get());
+             block.get(), block->GetBlockId(), aTarget.get());
 
     mActivePinchGestureBlock = block;
     block->SetNeedsToWaitForContentResponse(true);
@@ -495,7 +494,7 @@ APZEventResult InputQueue::ReceivePinchGestureInput(
     MaybeRequestContentResponse(aTarget, block);
   } else {
     INPQ_LOG("received new pinch event (type=%d) in block %p\n", aEvent.mType,
-             block);
+             block.get());
   }
 
   result.mInputBlockId = block->GetBlockId();
