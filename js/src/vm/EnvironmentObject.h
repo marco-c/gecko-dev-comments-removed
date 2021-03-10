@@ -257,6 +257,8 @@ extern PropertyName* EnvironmentCoordinateNameSlow(JSScript* script,
 
 
 
+
+
 class EnvironmentObject : public NativeObject {
  protected:
   
@@ -510,6 +512,7 @@ class WasmFunctionCallObject : public EnvironmentObject {
 };
 
 class LexicalEnvironmentObject : public EnvironmentObject {
+ protected:
   
   
   
@@ -523,7 +526,7 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   static constexpr uint32_t RESERVED_SLOTS = 2;
   static constexpr ObjectFlags OBJECT_FLAGS = {ObjectFlag::NotExtensible};
 
- private:
+ protected:
   static LexicalEnvironmentObject* createTemplateObject(JSContext* cx,
                                                         HandleShape shape,
                                                         HandleObject enclosing,
@@ -535,6 +538,7 @@ class LexicalEnvironmentObject : public EnvironmentObject {
     initReservedSlot(THIS_VALUE_OR_SCOPE_SLOT, ObjectValue(*thisObj));
   }
 
+ private:
   void initScopeUnchecked(LexicalScope* scope) {
     initReservedSlot(THIS_VALUE_OR_SCOPE_SLOT, PrivateGCThingValue(scope));
   }
@@ -553,8 +557,6 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   static LexicalEnvironmentObject* createForFrame(JSContext* cx,
                                                   Handle<LexicalScope*> scope,
                                                   AbstractFramePtr frame);
-  static LexicalEnvironmentObject* createGlobal(JSContext* cx,
-                                                Handle<GlobalObject*> global);
   static LexicalEnvironmentObject* createNonSyntactic(JSContext* cx,
                                                       HandleObject enclosing,
                                                       HandleObject thisv);
@@ -582,12 +584,6 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   
   bool isGlobal() const { return enclosingEnvironment().is<GlobalObject>(); }
 
-  GlobalObject& global() const {
-    return enclosingEnvironment().as<GlobalObject>();
-  }
-
-  void setWindowProxyThisObject(JSObject* obj);
-
   
   
   bool isExtensible() const;
@@ -599,10 +595,6 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   
   
   JSObject* thisObject() const;
-
-  static constexpr size_t offsetOfThisValueOrScopeSlot() {
-    return getFixedSlotOffset(THIS_VALUE_OR_SCOPE_SLOT);
-  }
 };
 
 class NamedLambdaObject : public LexicalEnvironmentObject {
@@ -620,6 +612,24 @@ class NamedLambdaObject : public LexicalEnvironmentObject {
 
   
   static size_t lambdaSlot();
+};
+
+
+
+class GlobalLexicalEnvironmentObject : public LexicalEnvironmentObject {
+ public:
+  static GlobalLexicalEnvironmentObject* create(JSContext* cx,
+                                                Handle<GlobalObject*> global);
+
+  GlobalObject& global() const {
+    return enclosingEnvironment().as<GlobalObject>();
+  }
+
+  void setWindowProxyThisObject(JSObject* obj);
+
+  static constexpr size_t offsetOfThisValueSlot() {
+    return getFixedSlotOffset(THIS_VALUE_OR_SCOPE_SLOT);
+  }
 };
 
 
@@ -1092,6 +1102,12 @@ inline bool JSObject::is<js::EnvironmentObject>() const {
 }
 
 template <>
+inline bool JSObject::is<js::GlobalLexicalEnvironmentObject>() const {
+  return is<js::LexicalEnvironmentObject>() &&
+         as<js::LexicalEnvironmentObject>().isGlobal();
+}
+
+template <>
 bool JSObject::is<js::DebugEnvironmentProxy>() const;
 
 namespace js {
@@ -1122,8 +1138,7 @@ inline bool IsExtensibleLexicalEnvironment(JSObject* env) {
 }
 
 inline bool IsGlobalLexicalEnvironment(JSObject* env) {
-  return env->is<LexicalEnvironmentObject>() &&
-         env->as<LexicalEnvironmentObject>().isGlobal();
+  return env->is<GlobalLexicalEnvironmentObject>();
 }
 
 inline bool IsNSVOLexicalEnvironment(JSObject* env) {

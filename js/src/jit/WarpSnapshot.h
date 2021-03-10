@@ -567,7 +567,7 @@ class WarpSnapshot : public TempObject {
 
   
   
-  WarpGCPtr<LexicalEnvironmentObject*> globalLexicalEnv_;
+  WarpGCPtr<GlobalLexicalEnvironmentObject*> globalLexicalEnv_;
   WarpGCPtr<JSObject*> globalLexicalEnvThis_;
 
   const WarpBailoutInfo bailoutInfo_;
@@ -596,7 +596,7 @@ class WarpSnapshot : public TempObject {
   WarpScriptSnapshot* rootScript() { return scriptSnapshots_.getFirst(); }
   const WarpScriptSnapshotList& scripts() const { return scriptSnapshots_; }
 
-  LexicalEnvironmentObject* globalLexicalEnv() const {
+  GlobalLexicalEnvironmentObject* globalLexicalEnv() const {
     return globalLexicalEnv_;
   }
   JSObject* globalLexicalEnvThis() const { return globalLexicalEnvThis_; }
