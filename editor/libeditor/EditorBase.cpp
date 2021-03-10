@@ -662,9 +662,7 @@ bool EditorBase::IsSelectionEditable() {
     
     
     nsCOMPtr<nsINode> anchorNode = SelectionRefPtr()->GetAnchorNode();
-    return anchorNode && anchorNode->IsContent() &&
-           EditorUtils::IsEditableContent(*anchorNode->AsContent(),
-                                          GetEditorType());
+    return anchorNode && anchorNode->IsContent() && anchorNode->IsEditable();
   }
 
   nsINode* anchorNode = SelectionRefPtr()->GetAnchorNode();
