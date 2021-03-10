@@ -248,8 +248,9 @@ static bool EvalKernel(JSContext* cx, HandleValue v, EvalType evalType,
   
   
   
-  MOZ_ASSERT_IF(evalType != DIRECT_EVAL,
-                cx->global() == &env->as<LexicalEnvironmentObject>().global());
+  MOZ_ASSERT_IF(
+      evalType != DIRECT_EVAL,
+      cx->global() == &env->as<GlobalLexicalEnvironmentObject>().global());
 
   RootedLinearString linearStr(cx, str->ensureLinear(cx));
   if (!linearStr) {

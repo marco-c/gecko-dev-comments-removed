@@ -45,6 +45,7 @@ class JitRealm;
 class AutoRestoreRealmDebugMode;
 class GlobalObject;
 class LexicalEnvironmentObject;
+class GlobalLexicalEnvironmentObject;
 class MapObject;
 class ScriptSourceObject;
 class SetObject;
@@ -307,7 +308,7 @@ class JS::Realm : public JS::shadow::Realm {
 
   
   
-  js::WeakHeapPtr<js::LexicalEnvironmentObject*> lexicalEnv_;
+  js::WeakHeapPtr<js::GlobalLexicalEnvironmentObject*> lexicalEnv_;
 
   
   js::ObjectRealm objects_;
@@ -524,7 +525,8 @@ class JS::Realm : public JS::shadow::Realm {
     return global_.unbarrieredGet();
   }
 
-  inline js::LexicalEnvironmentObject* unbarrieredLexicalEnvironment() const;
+  inline js::GlobalLexicalEnvironmentObject* unbarrieredLexicalEnvironment()
+      const;
 
   
   inline bool globalIsAboutToBeFinalized();
@@ -533,7 +535,7 @@ class JS::Realm : public JS::shadow::Realm {
   inline bool hasLiveGlobal() const;
 
   inline void initGlobal(js::GlobalObject& global,
-                         js::LexicalEnvironmentObject& lexicalEnv);
+                         js::GlobalLexicalEnvironmentObject& lexicalEnv);
 
   
 
