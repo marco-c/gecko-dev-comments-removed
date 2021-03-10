@@ -650,6 +650,10 @@ class Document : public nsINode,
   
   nsIPrincipal* PartitionedPrincipal() final { return mPartitionedPrincipal; }
 
+  
+  
+  nsIPrincipal* GetPrincipalForPrefBasedHacks() const;
+
   void ClearActiveStoragePrincipal() { mActiveStoragePrincipal = nullptr; }
 
   
