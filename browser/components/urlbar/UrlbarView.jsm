@@ -1087,6 +1087,15 @@ class UrlbarView {
       item.appendChild(helpButton);
       item._elements.set("helpButton", helpButton);
       item._content.setAttribute("selectable", "true");
+
+      
+      
+      
+      
+      
+      
+      item.setAttribute("role", "presentation");
+      item._content.setAttribute("role", "option");
     }
   }
 
@@ -1209,6 +1218,7 @@ class UrlbarView {
         this._createRowContent(item, result);
       }
     }
+    item._content.id = item.id + "-inner";
 
     if (
       result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
@@ -1438,6 +1448,8 @@ class UrlbarView {
 
     if (item._elements.has("helpButton")) {
       item.setAttribute("has-help", "true");
+      let helpButton = item._elements.get("helpButton");
+      helpButton.id = item.id + "-help";
     } else {
       item.removeAttribute("has-help");
     }
