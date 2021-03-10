@@ -4,6 +4,11 @@
 
 
 
+#ifdef MOZ_WIDGET_GTK
+#  include <gdk/gdkx.h>
+#  include <gtk/gtk.h>
+#endif
+
 #include "BrowserChild.h"
 #include "ContentChild.h"
 #include "GeckoProfiler.h"
@@ -281,9 +286,7 @@
 #include "private/pprio.h"
 
 #ifdef MOZ_WIDGET_GTK
-#  include "mozilla/WidgetUtilsGtk.h"
 #  include "nsAppRunner.h"
-#  include <gtk/gtk.h>
 #endif
 
 #ifdef MOZ_CODE_COVERAGE
@@ -724,7 +727,8 @@ bool ContentChild::Init(MessageLoop* aIOLoop, base::ProcessId aParentPid,
 
 #ifdef MOZ_X11
 #  ifdef MOZ_WIDGET_GTK
-  if (GdkIsX11Display() && !gfxPlatform::IsHeadless()) {
+  if (GDK_IS_X11_DISPLAY(gdk_display_get_default()) &&
+      !gfxPlatform::IsHeadless()) {
     
     
     int xSocketFd = ConnectionNumber(DefaultXDisplay());
