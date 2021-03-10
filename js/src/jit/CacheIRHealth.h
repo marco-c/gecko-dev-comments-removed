@@ -17,6 +17,8 @@ namespace js {
 namespace jit {
 
 class ICEntry;
+class ICStub;
+class ICCacheIRStub;
 
 
 
@@ -58,8 +60,14 @@ class CacheIRHealth {
   
   Happiness spewStubHealth(AutoStructuredSpewer& spew, ICCacheIRStub* stub);
   
-  Happiness spewICEntryHealth(AutoStructuredSpewer& spew, HandleScript script,
-                              jit::ICEntry* entry, jsbytecode* pc, JSOp op);
+  
+  bool spewNonFallbackICInformation(AutoStructuredSpewer& spew,
+                                    ICStub* firstStub,
+                                    Happiness* entryHappiness);
+  
+  bool spewICEntryHealth(AutoStructuredSpewer& spew, HandleScript script,
+                         ICEntry* entry, jsbytecode* pc, JSOp op,
+                         Happiness* entryHappiness);
 
  public:
   
