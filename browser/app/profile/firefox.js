@@ -366,6 +366,9 @@ pref("browser.urlbar.openintab", false);
 pref("browser.urlbar.richSuggestions.tail", true);
 
 
+pref("browser.urlbar.sponsoredTopSites", false);
+
+
 
 
 

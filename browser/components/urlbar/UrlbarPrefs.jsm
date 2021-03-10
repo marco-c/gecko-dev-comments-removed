@@ -206,6 +206,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["trimURLs", true],
 
   
+  ["sponsoredTopSites", false],
+
+  
   ["usepreloadedtopurls.enabled", false],
 
   
