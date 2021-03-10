@@ -51,20 +51,10 @@ nsMenuItemIconX::nsMenuItemIconX(nsMenuObjectX* aMenuItem, nsIContent* aContent,
 }
 
 nsMenuItemIconX::~nsMenuItemIconX() {
-  Destroy();
-  MOZ_COUNT_DTOR(nsMenuItemIconX);
-}
-
-
-
-
-void nsMenuItemIconX::Destroy() {
   if (mIconLoader) {
     mIconLoader->Destroy();
-    mIconLoader = nullptr;
   }
-  mMenuObject = nullptr;
-  mNativeMenuItem = nil;
+  MOZ_COUNT_DTOR(nsMenuItemIconX);
 }
 
 nsresult nsMenuItemIconX::SetupIcon() {

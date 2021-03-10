@@ -74,8 +74,7 @@ class nsMenuItemX : public nsMenuObjectX, public nsChangeObserver {
   nsMenuX* mMenuParent;                
   nsMenuGroupOwnerX* mMenuGroupOwner;  
   RefPtr<mozilla::dom::Element> mCommandElement;
-  
-  RefPtr<nsMenuItemIconX> mIcon;
+  mozilla::UniquePtr<nsMenuItemIconX> mIcon;  
   bool mIsChecked;
 };
 

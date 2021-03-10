@@ -125,11 +125,6 @@ nsMenuX::nsMenuX()
 nsMenuX::~nsMenuX() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  
-  if (mIcon) {
-    mIcon->Destroy();
-  }
-
   RemoveAll();
 
   [mNativeMenu setDelegate:nil];
@@ -198,7 +193,7 @@ nsresult nsMenuX::Create(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOw
   
   MenuConstruct();
 
-  mIcon = new nsMenuItemIconX(this, mContent, mNativeMenuItem);
+  mIcon = MakeUnique<nsMenuItemIconX>(this, mContent, mNativeMenuItem);
 
   return NS_OK;
 
@@ -745,12 +740,7 @@ void nsMenuX::ObserveContentInserted(dom::Document* aDocument, nsIContent* aCont
 }
 
 nsresult nsMenuX::SetupIcon() {
-  
-  
-  if (!mIcon) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
+  MOZ_RELEASE_ASSERT(mIcon, "should have been created by nsMenuX::Create");
   return mIcon->SetupIcon();
 }
 
