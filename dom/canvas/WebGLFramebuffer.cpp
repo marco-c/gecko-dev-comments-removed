@@ -118,9 +118,14 @@ bool WebGLFBAttachPoint::IsComplete(WebGLContext* webgl,
         return attachedMipLevel < tex->ImmutableLevelCount();
       }
 
+      
       if (!texCompleteness->levels) return false;
 
-      const auto baseLevel = tex->BaseMipmapLevel();
+      const auto baseLevel = tex->Es3_level_base();
+      if (attachedMipLevel == baseLevel) return true;
+
+      
+      if (!texCompleteness->mipmapComplete) return false;
       const auto maxLevel = baseLevel + texCompleteness->levels - 1;
       return baseLevel <= attachedMipLevel && attachedMipLevel <= maxLevel;
     }();
