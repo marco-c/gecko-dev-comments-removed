@@ -308,7 +308,7 @@ const int32_t kLocalStorageArchiveVersion = 4;
 
 const char kProfileDoChangeTopic[] = "profile-do-change";
 
-const int32_t kCacheVersion = 1;
+const int32_t kCacheVersion = 2;
 
 
 
@@ -400,8 +400,9 @@ nsresult CreateCacheTables(mozIStorageConnection* aConnection) {
   QM_TRY(
       aConnection->ExecuteSimpleSQL("CREATE TABLE origin"
                                     "( repository_id INTEGER NOT NULL"
-                                    ", origin TEXT NOT NULL"
+                                    ", suffix TEXT"
                                     ", group_ TEXT NOT NULL"
+                                    ", origin TEXT NOT NULL"
                                     ", client_usages TEXT NOT NULL"
                                     ", usage INTEGER NOT NULL"
                                     ", last_access_time INTEGER NOT NULL"
@@ -424,33 +425,55 @@ nsresult CreateCacheTables(mozIStorageConnection* aConnection) {
   return NS_OK;
 }
 
+nsresult InvalidateCache(mozIStorageConnection& aConnection) {
+  AssertIsOnIOThread();
+
+  static constexpr auto kDeleteCacheQuery = "DELETE FROM origin;"_ns;
+  static constexpr auto kSetInvalidFlagQuery = "UPDATE cache SET valid = 0"_ns;
+
+  
+  QM_TRY(([&]() -> Result<Ok, nsresult> {
+    mozStorageTransaction transaction(&aConnection, false);
+
+    QM_TRY(transaction.Start());
+    QM_TRY(aConnection.ExecuteSimpleSQL(kDeleteCacheQuery));
+    QM_TRY(aConnection.ExecuteSimpleSQL(kSetInvalidFlagQuery));
+    QM_TRY(transaction.Commit());
+
+    return Ok{};
+  }()
+                       .orElse([&](const nsresult rv) -> Result<Ok, nsresult> {
+                         QM_TRY(aConnection.ExecuteSimpleSQL(
+                             kSetInvalidFlagQuery));
+
+                         return Ok{};
+                       })));
+
+  return NS_OK;
+}
 
 
+nsresult UpgradeCacheFrom1To2(mozIStorageConnection* aConnection) {
+  AssertIsOnIOThread();
+  MOZ_ASSERT(aConnection);
 
+  QM_TRY(aConnection->ExecuteSimpleSQL(
+      "ALTER TABLE origin ADD COLUMN suffix TEXT"_ns));
 
+  QM_TRY(InvalidateCache(*aConnection));
 
+#ifdef DEBUG
+  {
+    QM_TRY_INSPECT(const int32_t& cacheVersion, LoadCacheVersion(*aConnection));
 
+    MOZ_ASSERT(cacheVersion == 1);
+  }
+#endif
 
+  QM_TRY(SaveCacheVersion(aConnection, 2));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return NS_OK;
+}
 
 Result<bool, nsresult> MaybeCreateOrUpgradeCache(
     mozIStorageConnection& aConnection) {
@@ -505,14 +528,13 @@ Result<bool, nsresult> MaybeCreateOrUpgradeCache(
       }
     } else {
       
-      static_assert(kCacheVersion == 1,
+      static_assert(kCacheVersion == 2,
                     "Upgrade function needed due to cache version increase.");
 
       while (cacheVersion != kCacheVersion) {
-        
-
-
-        {
+        if (cacheVersion == 1) {
+          QM_TRY(UpgradeCacheFrom1To2(&aConnection));
+        } else {
           QM_FAIL(Err(NS_ERROR_FAILURE), []() {
             QM_WARNING(
                 "Unable to initialize cache, no upgrade path is "
@@ -530,34 +552,6 @@ Result<bool, nsresult> MaybeCreateOrUpgradeCache(
   }
 
   return cacheUsable;
-}
-
-nsresult InvalidateCache(mozIStorageConnection& aConnection) {
-  AssertIsOnIOThread();
-
-  static constexpr auto kDeleteCacheQuery = "DELETE FROM origin;"_ns;
-  static constexpr auto kSetInvalidFlagQuery = "UPDATE cache SET valid = 0"_ns;
-
-  
-  QM_TRY(([&]() -> Result<Ok, nsresult> {
-    mozStorageTransaction transaction(
-        &aConnection, false, mozIStorageConnection::TRANSACTION_IMMEDIATE);
-
-    QM_TRY(transaction.Start());
-    QM_TRY(aConnection.ExecuteSimpleSQL(kDeleteCacheQuery));
-    QM_TRY(aConnection.ExecuteSimpleSQL(kSetInvalidFlagQuery));
-    QM_TRY(transaction.Commit());
-
-    return Ok{};
-  }()
-                       .orElse([&](const nsresult rv) -> Result<Ok, nsresult> {
-                         QM_TRY(aConnection.ExecuteSimpleSQL(
-                             kSetInvalidFlagQuery));
-
-                         return Ok{};
-                       })));
-
-  return NS_OK;
 }
 
 Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateWebAppsStoreConnection(
@@ -944,20 +938,23 @@ class GroupInfo final {
 
   GroupInfoPair* mGroupInfoPair;
   PersistenceType mPersistenceType;
+  
   nsCString mGroup;
   uint64_t mUsage;
 };
 
-class GroupInfoPair {
-  friend class QuotaManager;
-  friend class QuotaObject;
 
+
+class GroupInfoPair {
  public:
-  MOZ_COUNTED_DEFAULT_CTOR(GroupInfoPair)
+  explicit GroupInfoPair(const nsACString& aSuffix) : mSuffix(aSuffix) {
+    MOZ_COUNT_CTOR(GroupInfoPair);
+  }
 
   MOZ_COUNTED_DTOR(GroupInfoPair)
 
- private:
+  const nsCString& Suffix() const { return mSuffix; }
+
   RefPtr<GroupInfo> LockedGetGroupInfo(PersistenceType aPersistenceType) {
     AssertCurrentThreadOwnsQuotaMutex();
     MOZ_ASSERT(aPersistenceType != PERSISTENCE_TYPE_PERSISTENT);
@@ -990,9 +987,11 @@ class GroupInfoPair {
     return mTemporaryStorageGroupInfo || mDefaultStorageGroupInfo;
   }
 
+ private:
   RefPtr<GroupInfo>& GetGroupInfoForPersistenceType(
       PersistenceType aPersistenceType);
 
+  const nsCString mSuffix;
   RefPtr<GroupInfo> mTemporaryStorageGroupInfo;
   RefPtr<GroupInfo> mDefaultStorageGroupInfo;
 };
@@ -1824,9 +1823,6 @@ Result<bool, nsresult> MaybeUpdateGroupForOrigin(
                                                     originNoSuffix)),
            Err(NS_ERROR_FAILURE));
 
-    nsCString suffix;
-    originAttributes.CreateSuffix(suffix);
-
     RefPtr<MozURL> url;
     QM_TRY(MozURL::Init(getter_AddRefs(url), originNoSuffix), QM_PROPAGATE,
            [&originNoSuffix](const nsresult) {
@@ -1837,7 +1833,7 @@ Result<bool, nsresult> MaybeUpdateGroupForOrigin(
     QM_TRY_INSPECT(const auto& baseDomain,
                    MOZ_TO_RESULT_INVOKE_TYPED(nsAutoCString, *url, BaseDomain));
 
-    const nsCString upToDateGroup = baseDomain + suffix;
+    const nsCString upToDateGroup = baseDomain + aOriginMetadata.mSuffix;
 
     if (aOriginMetadata.mGroup != upToDateGroup) {
       aOriginMetadata.mGroup = upToDateGroup;
@@ -3495,12 +3491,10 @@ uint64_t QuotaManager::CollectOriginsForEviction(
 
     for (const auto& originInfo : inactiveOrigins) {
       
-      
-      
       auto lock = DirectoryLockImpl::CreateForEviction(
           WrapNotNullUnchecked(this), originInfo->mGroupInfo->mPersistenceType,
-          OriginMetadata{""_ns, originInfo->mGroupInfo->mGroup,
-                         originInfo->mOrigin});
+          OriginMetadata{originInfo->mGroupInfo->mGroupInfoPair->Suffix(),
+                         originInfo->mGroupInfo->mGroup, originInfo->mOrigin});
 
       lock->AcquireImmediately();
 
@@ -3805,8 +3799,8 @@ void QuotaManager::InitQuotaForOrigin(PersistenceType aPersistenceType,
 
   MutexAutoLock lock(mQuotaMutex);
 
-  RefPtr<GroupInfo> groupInfo =
-      LockedGetOrCreateGroupInfo(aPersistenceType, aOriginMetadata.mGroup);
+  RefPtr<GroupInfo> groupInfo = LockedGetOrCreateGroupInfo(
+      aPersistenceType, aOriginMetadata.mSuffix, aOriginMetadata.mGroup);
 
   groupInfo->LockedAddOriginInfo(MakeNotNull<RefPtr<OriginInfo>>(
       groupInfo, aOriginMetadata.mOrigin, aClientUsages, aUsageBytes,
@@ -3821,8 +3815,8 @@ void QuotaManager::EnsureQuotaForOrigin(PersistenceType aPersistenceType,
 
   MutexAutoLock lock(mQuotaMutex);
 
-  RefPtr<GroupInfo> groupInfo =
-      LockedGetOrCreateGroupInfo(aPersistenceType, aOriginMetadata.mGroup);
+  RefPtr<GroupInfo> groupInfo = LockedGetOrCreateGroupInfo(
+      aPersistenceType, aOriginMetadata.mSuffix, aOriginMetadata.mGroup);
 
   RefPtr<OriginInfo> originInfo =
       groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
@@ -3845,8 +3839,8 @@ void QuotaManager::NoteOriginDirectoryCreated(
 
   MutexAutoLock lock(mQuotaMutex);
 
-  RefPtr<GroupInfo> groupInfo =
-      LockedGetOrCreateGroupInfo(aPersistenceType, aOriginMetadata.mGroup);
+  RefPtr<GroupInfo> groupInfo = LockedGetOrCreateGroupInfo(
+      aPersistenceType, aOriginMetadata.mSuffix, aOriginMetadata.mGroup);
 
   RefPtr<OriginInfo> originInfo =
       groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
@@ -4018,11 +4012,12 @@ nsresult QuotaManager::LoadQuota() {
   auto LoadQuotaFromCache = [&]() -> nsresult {
     QM_TRY_INSPECT(
         const auto& stmt,
-        MOZ_TO_RESULT_INVOKE_TYPED(
-            nsCOMPtr<mozIStorageStatement>, mStorageConnection, CreateStatement,
-            "SELECT repository_id, origin, group_, client_usages, usage, "
-            "last_access_time, accessed, persisted "
-            "FROM origin"_ns));
+        MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<mozIStorageStatement>,
+                                   mStorageConnection, CreateStatement,
+                                   "SELECT repository_id, suffix, group_, "
+                                   "origin, client_usages, usage, "
+                                   "last_access_time, accessed, persisted "
+                                   "FROM origin"_ns));
 
     auto autoRemoveQuota = MakeScopeExit([&] { RemoveQuota(); });
 
@@ -4040,12 +4035,16 @@ nsresult QuotaManager::LoadQuota() {
           OriginMetadata originMetadata;
 
           QM_TRY_UNWRAP(
-              originMetadata.mOrigin,
+              originMetadata.mSuffix,
               MOZ_TO_RESULT_INVOKE_TYPED(nsCString, stmt, GetUTF8String, 1));
 
           QM_TRY_UNWRAP(
               originMetadata.mGroup,
               MOZ_TO_RESULT_INVOKE_TYPED(nsCString, stmt, GetUTF8String, 2));
+
+          QM_TRY_UNWRAP(
+              originMetadata.mOrigin,
+              MOZ_TO_RESULT_INVOKE_TYPED(nsCString, stmt, GetUTF8String, 3));
 
           QM_TRY_INSPECT(const bool& updated,
                          MaybeUpdateGroupForOrigin(originMetadata));
@@ -4062,19 +4061,19 @@ nsresult QuotaManager::LoadQuota() {
 
           QM_TRY_INSPECT(
               const auto& clientUsagesText,
-              MOZ_TO_RESULT_INVOKE_TYPED(nsCString, stmt, GetUTF8String, 3));
+              MOZ_TO_RESULT_INVOKE_TYPED(nsCString, stmt, GetUTF8String, 4));
 
           ClientUsageArray clientUsages;
           QM_TRY(clientUsages.Deserialize(clientUsagesText));
 
           QM_TRY_INSPECT(const int64_t& usage,
-                         MOZ_TO_RESULT_INVOKE(stmt, GetInt64, 4));
-          QM_TRY_INSPECT(const int64_t& lastAccessTime,
                          MOZ_TO_RESULT_INVOKE(stmt, GetInt64, 5));
+          QM_TRY_INSPECT(const int64_t& lastAccessTime,
+                         MOZ_TO_RESULT_INVOKE(stmt, GetInt64, 6));
           QM_TRY_INSPECT(const int64_t& accessed,
-                         MOZ_TO_RESULT_INVOKE(stmt, GetInt32, 6));
-          QM_TRY_INSPECT(const int64_t& persisted,
                          MOZ_TO_RESULT_INVOKE(stmt, GetInt32, 7));
+          QM_TRY_INSPECT(const int64_t& persisted,
+                         MOZ_TO_RESULT_INVOKE(stmt, GetInt32, 8));
 
           if (accessed) {
             QM_TRY_INSPECT(
@@ -4103,6 +4102,10 @@ nsresult QuotaManager::LoadQuota() {
                    Err(NS_ERROR_FAILURE));
 
             QM_TRY(OkIf(persisted == metadata.mPersisted),
+                   Err(NS_ERROR_FAILURE));
+
+            QM_TRY(OkIf(originMetadata.mSuffix ==
+                        metadata.mOriginMetadata.mSuffix),
                    Err(NS_ERROR_FAILURE));
 
             QM_TRY(
@@ -4255,12 +4258,12 @@ void QuotaManager::UnloadQuota() {
                 MOZ_TO_RESULT_INVOKE_TYPED(
                     nsCOMPtr<mozIStorageStatement>, mStorageConnection,
                     CreateStatement,
-                    "INSERT INTO origin (repository_id, origin, group_, "
-                    "client_usages, usage, last_access_time, accessed, "
-                    "persisted) "
-                    "VALUES (:repository_id, :origin, :group_, "
-                    ":client_usages, "
-                    ":usage, :last_access_time, :accessed, :persisted)"_ns),
+                    "INSERT INTO origin (repository_id, suffix, group_, "
+                    "origin, client_usages, usage, last_access_time, "
+                    "accessed, persisted) "
+                    "VALUES (:repository_id, :suffix, :group_, :origin, "
+                    ":client_usages, :usage, :last_access_time, :accessed, "
+                    ":persisted)"_ns),
                 QM_VOID);
           }
 
@@ -6694,11 +6697,12 @@ void QuotaManager::LockedRemoveQuotaForOrigin(
 }
 
 already_AddRefed<GroupInfo> QuotaManager::LockedGetOrCreateGroupInfo(
-    PersistenceType aPersistenceType, const nsACString& aGroup) {
+    PersistenceType aPersistenceType, const nsACString& aSuffix,
+    const nsACString& aGroup) {
   mQuotaMutex.AssertCurrentThreadOwns();
   MOZ_ASSERT(aPersistenceType != PERSISTENCE_TYPE_PERSISTENT);
 
-  GroupInfoPair* const pair = mGroupInfoPairs.GetOrInsertNew(aGroup);
+  GroupInfoPair* const pair = mGroupInfoPairs.GetOrInsertNew(aGroup, aSuffix);
 
   RefPtr<GroupInfo> groupInfo = pair->LockedGetGroupInfo(aPersistenceType);
   if (!groupInfo) {
@@ -6886,11 +6890,10 @@ void QuotaManager::ClearOrigins(
                        doomedOriginInfo->mGroupInfo->mPersistenceType});
 
       
-      
-      
-      LockedRemoveQuotaForOrigin(doomedOriginInfo->mGroupInfo->mPersistenceType,
-                                 {""_ns, doomedOriginInfo->mGroupInfo->mGroup,
-                                  doomedOriginInfo->mOrigin});
+      LockedRemoveQuotaForOrigin(
+          doomedOriginInfo->mGroupInfo->mPersistenceType,
+          {doomedOriginInfo->mGroupInfo->mGroupInfoPair->Suffix(),
+           doomedOriginInfo->mGroupInfo->mGroup, doomedOriginInfo->mOrigin});
     }
   }
 
@@ -7080,8 +7083,10 @@ nsresult OriginInfo::LockedBindToStatement(
   QM_TRY(aStatement->BindInt32ByName("repository_id"_ns,
                                      mGroupInfo->mPersistenceType));
 
-  QM_TRY(aStatement->BindUTF8StringByName("origin"_ns, mOrigin));
+  QM_TRY(aStatement->BindUTF8StringByName(
+      "suffix"_ns, mGroupInfo->mGroupInfoPair->Suffix()));
   QM_TRY(aStatement->BindUTF8StringByName("group_"_ns, mGroupInfo->mGroup));
+  QM_TRY(aStatement->BindUTF8StringByName("origin"_ns, mOrigin));
 
   nsCString clientUsagesText;
   mClientUsages.Serialize(clientUsagesText);
