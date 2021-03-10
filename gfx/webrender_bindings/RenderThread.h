@@ -262,9 +262,7 @@ class RenderThread final {
   void ClearSharedSurfacePool();
 
   
-  void HandleDeviceReset(const char* aWhere,
-                         layers::CompositorBridgeParent* aBridge,
-                         GLenum aReason);
+  void HandleDeviceReset(const char* aWhere, GLenum aReason);
   
   bool IsHandlingDeviceReset();
   

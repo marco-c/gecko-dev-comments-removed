@@ -500,7 +500,7 @@ bool RenderCompositorANGLE::BeginFrame() {
     if (!mSyncObject->Synchronize( true)) {
       
       RenderThread::Get()->HandleDeviceReset(
-          "SyncObject", nullptr, LOCAL_GL_UNKNOWN_CONTEXT_RESET_ARB);
+          "SyncObject", LOCAL_GL_UNKNOWN_CONTEXT_RESET_ARB);
       return false;
     }
   }
