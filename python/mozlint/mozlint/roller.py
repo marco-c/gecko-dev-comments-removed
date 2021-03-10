@@ -193,6 +193,8 @@ class LintRoller(object):
 
         for linter in chain(*[self.parse(p) for p in paths]):
             
+            linter["local_exclude"] = linter.get("exclude", [])[:]
+            
             linter.setdefault("exclude", []).extend(self.exclude)
             self.linters.append(linter)
 
