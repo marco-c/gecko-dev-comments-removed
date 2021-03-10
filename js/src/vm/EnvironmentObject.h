@@ -259,6 +259,8 @@ extern PropertyName* EnvironmentCoordinateNameSlow(JSScript* script,
 
 
 
+
+
 class EnvironmentObject : public NativeObject {
  protected:
   
@@ -557,9 +559,6 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   static LexicalEnvironmentObject* createForFrame(JSContext* cx,
                                                   Handle<LexicalScope*> scope,
                                                   AbstractFramePtr frame);
-  static LexicalEnvironmentObject* createNonSyntactic(JSContext* cx,
-                                                      HandleObject enclosing,
-                                                      HandleObject thisv);
   static LexicalEnvironmentObject* createHollowForDebug(
       JSContext* cx, Handle<LexicalScope*> scope);
 
@@ -630,6 +629,14 @@ class GlobalLexicalEnvironmentObject : public LexicalEnvironmentObject {
   static constexpr size_t offsetOfThisValueSlot() {
     return getFixedSlotOffset(THIS_VALUE_OR_SCOPE_SLOT);
   }
+};
+
+
+class NonSyntacticLexicalEnvironmentObject : public LexicalEnvironmentObject {
+ public:
+  static NonSyntacticLexicalEnvironmentObject* create(JSContext* cx,
+                                                      HandleObject enclosing,
+                                                      HandleObject thisv);
 };
 
 
@@ -1105,6 +1112,12 @@ template <>
 inline bool JSObject::is<js::GlobalLexicalEnvironmentObject>() const {
   return is<js::LexicalEnvironmentObject>() &&
          as<js::LexicalEnvironmentObject>().isGlobal();
+}
+
+template <>
+inline bool JSObject::is<js::NonSyntacticLexicalEnvironmentObject>() const {
+  return is<js::LexicalEnvironmentObject>() &&
+         !as<js::LexicalEnvironmentObject>().isSyntactic();
 }
 
 template <>

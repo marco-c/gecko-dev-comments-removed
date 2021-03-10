@@ -988,8 +988,10 @@ GlobalLexicalEnvironmentObject* GlobalLexicalEnvironmentObject::create(
 }
 
 
-LexicalEnvironmentObject* LexicalEnvironmentObject::createNonSyntactic(
-    JSContext* cx, HandleObject enclosing, HandleObject thisv) {
+NonSyntacticLexicalEnvironmentObject*
+NonSyntacticLexicalEnvironmentObject::create(JSContext* cx,
+                                             HandleObject enclosing,
+                                             HandleObject thisv) {
   MOZ_ASSERT(enclosing);
   MOZ_ASSERT(!IsSyntacticEnvironment(enclosing));
 
@@ -998,9 +1000,8 @@ LexicalEnvironmentObject* LexicalEnvironmentObject::createNonSyntactic(
     return nullptr;
   }
 
-  LexicalEnvironmentObject* env =
-      LexicalEnvironmentObject::createTemplateObject(cx, shape, enclosing,
-                                                     gc::TenuredHeap);
+  auto* env = static_cast<NonSyntacticLexicalEnvironmentObject*>(
+      createTemplateObject(cx, shape, enclosing, gc::TenuredHeap));
   if (!env) {
     return nullptr;
   }
@@ -1351,8 +1352,8 @@ void EnvironmentIter::settle() {
       if (env_->is<LexicalEnvironmentObject>()) {
         
         
-        MOZ_ASSERT(!env_->as<LexicalEnvironmentObject>().isSyntactic() ||
-                   env_->as<LexicalEnvironmentObject>().isGlobal());
+        MOZ_ASSERT(env_->is<NonSyntacticLexicalEnvironmentObject>() ||
+                   env_->is<GlobalLexicalEnvironmentObject>());
       } else if (env_->is<WithEnvironmentObject>()) {
         MOZ_ASSERT(!env_->as<WithEnvironmentObject>().isSyntactic());
       } else {
@@ -1375,7 +1376,6 @@ JSObject& EnvironmentIter::enclosingEnvironment() const {
 }
 
 bool EnvironmentIter::hasNonSyntacticEnvironmentObject() const {
-  
   
   
   
