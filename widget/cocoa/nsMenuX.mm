@@ -383,9 +383,6 @@ void nsMenuX::MenuConstruct() {
   mDidFirePopupHidden = false;
 
   
-  
-
-  
   nsCOMPtr<nsIContent> menuPopup = GetMenuPopupContent();
   if (!menuPopup) {
     gConstructingMenu = false;
@@ -404,7 +401,6 @@ void nsMenuX::MenuConstruct() {
 
   gConstructingMenu = false;
   mNeedsRebuild = false;
-  
 }
 
 void nsMenuX::SetRebuild(bool aNeedsRebuild) {
@@ -463,8 +459,6 @@ void nsMenuX::LoadMenuItem(nsIContent* aMenuItemContent) {
   if (aMenuItemContent->IsElement()) {
     aMenuItemContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::label, menuitemName);
   }
-
-  
 
   EMenuItemType itemType = eRegularMenuItemType;
   if (aMenuItemContent->IsXULElement(nsGkAtoms::menuseparator)) {
