@@ -15,6 +15,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryChecking.h"
 
+#include <algorithm>  
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -125,6 +126,10 @@ static inline void PoisonImpl(void* ptr, uint8_t value, size_t num) {
   
   
 #if defined(DEBUG)
+  if (!num) {
+    return;
+  }
+
   uintptr_t poison;
   memset(&poison, value, sizeof(poison));
 #  if defined(JS_PUNBOX64)
@@ -134,12 +139,24 @@ static inline void PoisonImpl(void* ptr, uint8_t value, size_t num) {
 
 #  if defined(JS_NUNBOX32)
   
-  uintptr_t begin_count = uintptr_t(ptr) % sizeof(JS::Value);
+  
+  
+  
+  
+  
+  
+  
+  
+  uintptr_t begin_count = std::min(num, uintptr_t(ptr) % sizeof(JS::Value));
   if (begin_count) {
     uint8_t* begin = static_cast<uint8_t*>(ptr);
     mozilla::PodSet(begin, value, begin_count);
     ptr = begin + begin_count;
     num -= begin_count;
+
+    if (!num) {
+      return;
+    }
   }
 #  endif
 
