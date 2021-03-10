@@ -1694,6 +1694,12 @@ PR_IMPLEMENT(PRStatus) PR_SetCurrentThreadName(const char *name)
         return PR_SUCCESS;
     }
 
+#if defined(DARWIN)
+    
+
+
+#define SETNAME_LENGTH_CONSTRAINT 63
+#else
     
 
 
@@ -1701,6 +1707,7 @@ PR_IMPLEMENT(PRStatus) PR_SetCurrentThreadName(const char *name)
 
 
 #define SETNAME_LENGTH_CONSTRAINT 15
+#endif
 #define SETNAME_FRAGMENT1_LENGTH (SETNAME_LENGTH_CONSTRAINT >> 1)
 #define SETNAME_FRAGMENT2_LENGTH \
     (SETNAME_LENGTH_CONSTRAINT - SETNAME_FRAGMENT1_LENGTH - 1)
