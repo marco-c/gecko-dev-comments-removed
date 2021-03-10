@@ -322,20 +322,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   bool IsResizeSuppressed() const { return mResizeSuppressed; }
 
   
-
-
-
-
-
-
-
-
-
-
-
-  static bool GetJankLevels(mozilla::Vector<uint64_t>& aJank);
-
-  
   TransactionId GetTransactionId(bool aThrottle) override;
   TransactionId LastTransactionId() const override;
   void NotifyTransactionCompleted(TransactionId aTransactionId) override;
@@ -617,17 +603,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   friend class mozilla::RefreshDriverTimer;
 
   static void Shutdown();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static bool IsJankCritical();
 };
 
 #endif 

@@ -132,24 +132,6 @@ namespace {
 
 
 
-
-
-
-
-
-
-static uint64_t sActiveVsyncTimers = 0;
-
-
-
-
-
-
-uint64_t sJankLevels[12];
-
-
-
-
 static uint32_t sRefreshDriverCount = 0;
 
 
@@ -654,7 +636,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
             Telemetry::FX_REFRESH_DRIVER_CHROME_FRAME_DELAY_MS, sample);
         Telemetry::Accumulate(
             Telemetry::FX_REFRESH_DRIVER_SYNC_SCROLL_FRAME_DELAY_MS, sample);
-        RecordJank(sample);
       } else if (mVsyncRate != TimeDuration::Forever()) {
         TimeDuration contentDelay = (TimeStamp::Now() - mLastTick) - mVsyncRate;
         if (contentDelay.ToMilliseconds() < 0) {
@@ -668,7 +649,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
             Telemetry::FX_REFRESH_DRIVER_CONTENT_FRAME_DELAY_MS, sample);
         Telemetry::Accumulate(
             Telemetry::FX_REFRESH_DRIVER_SYNC_SCROLL_FRAME_DELAY_MS, sample);
-        RecordJank(sample);
       } else {
         
         
@@ -677,15 +657,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         }
       }
 #endif
-    }
-
-    void RecordJank(uint32_t aJankMS) {
-      uint32_t duration = 1 ;
-      for (size_t i = 0;
-           i < mozilla::ArrayLength(sJankLevels) && duration < aJankMS;
-           ++i, duration *= 2) {
-        sJankLevels[i]++;
-      }
     }
 
     void TickRefreshDriver(VsyncId aId, TimeStamp aVsyncTimestamp) {
@@ -761,7 +732,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
   }
 
   void StartTimer() override {
-    
     MOZ_ASSERT(NS_IsMainThread());
 
     mLastFireTime = TimeStamp::Now();
@@ -772,12 +742,9 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       mVsyncChild->AddChildRefreshTimer(mVsyncObserver);
       mVsyncObserver->OnTimerStart();
     }
-
-    ++sActiveVsyncTimers;
   }
 
   void StopTimer() override {
-    
     MOZ_ASSERT(NS_IsMainThread());
 
     if (mVsyncDispatcher) {
@@ -785,9 +752,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     } else if (mVsyncChild) {
       mVsyncChild->RemoveChildRefreshTimer(mVsyncObserver);
     }
-
-    MOZ_ASSERT(sActiveVsyncTimers > 0);
-    --sActiveVsyncTimers;
   }
 
   void ScheduleNextTick(TimeStamp aNowTime) override {
@@ -981,8 +945,6 @@ static StaticRefPtr<InactiveRefreshDriverTimer> sThrottledRateTimer;
 
 void nsRefreshDriver::CreateVsyncRefreshTimer() {
   MOZ_ASSERT(NS_IsMainThread());
-
-  PodArrayZero(sJankLevels);
 
   if (gfxPlatform::IsInLayoutAsapMode()) {
     return;
@@ -2792,18 +2754,6 @@ void nsRefreshDriver::Disconnect() {
       Shutdown();
     }
   }
-}
-
-
-bool nsRefreshDriver::IsJankCritical() {
-  MOZ_ASSERT(NS_IsMainThread());
-  return sActiveVsyncTimers > 0;
-}
-
-
-bool nsRefreshDriver::GetJankLevels(Vector<uint64_t>& aJank) {
-  aJank.clear();
-  return aJank.append(sJankLevels, ArrayLength(sJankLevels));
 }
 
 #undef LOG
