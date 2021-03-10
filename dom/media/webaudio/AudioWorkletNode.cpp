@@ -14,7 +14,6 @@
 #include "js/experimental/TypedData.h"  
 #include "mozilla/dom/AudioWorkletNodeBinding.h"
 #include "mozilla/dom/AudioParamMapBinding.h"
-#include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ErrorEvent.h"
 #include "mozilla/dom/Worklet.h"
