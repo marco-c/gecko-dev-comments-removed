@@ -1,5 +1,6 @@
 use std::ffi::CString;
 
+
 pub struct DlDescription(pub(crate) CString);
 
 impl std::fmt::Debug for DlDescription {
@@ -7,6 +8,7 @@ impl std::fmt::Debug for DlDescription {
         std::fmt::Debug::fmt(&self.0, f)
     }
 }
+
 
 pub struct WindowsError(pub(crate) std::io::Error);
 
@@ -16,39 +18,71 @@ impl std::fmt::Debug for WindowsError {
     }
 }
 
+
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum Error {
     
-    DlOpen { desc: DlDescription },
+    DlOpen {
+        
+        desc: DlDescription
+    },
     
     DlOpenUnknown,
     
-    DlSym { desc: DlDescription },
+    DlSym {
+        
+        desc: DlDescription
+    },
     
     DlSymUnknown,
     
-    DlClose { desc: DlDescription },
+    DlClose {
+        
+        desc: DlDescription
+    },
     
     DlCloseUnknown,
     
-    LoadLibraryW { source: WindowsError },
+    LoadLibraryExW {
+        
+        source: WindowsError
+    },
     
-    LoadLibraryWUnknown,
+    LoadLibraryExWUnknown,
     
-    GetProcAddress { source: WindowsError },
+    GetModuleHandleExW {
+        
+        source: WindowsError
+    },
+    
+    GetModuleHandleExWUnknown,
+    
+    GetProcAddress {
+        
+        source: WindowsError
+    },
     
     GetProcAddressUnknown,
     
-    FreeLibrary { source: WindowsError },
+    FreeLibrary {
+        
+        source: WindowsError
+    },
     
     FreeLibraryUnknown,
     
     IncompatibleSize,
     
-    CreateCString { source: std::ffi::NulError },
+    CreateCString {
+        
+        source: std::ffi::NulError
+    },
     
-    CreateCStringWithTrailing { source: std::ffi::FromBytesWithNulError },
+    CreateCStringWithTrailing {
+        
+        source: std::ffi::FromBytesWithNulError
+    },
 }
 
 impl std::error::Error for Error {
@@ -57,7 +91,7 @@ impl std::error::Error for Error {
         match *self {
             CreateCString { ref source } => Some(source),
             CreateCStringWithTrailing { ref source } => Some(source),
-            LoadLibraryW { ref source } => Some(&source.0),
+            LoadLibraryExW { ref source } => Some(&source.0),
             GetProcAddress { ref source } => Some(&source.0),
             FreeLibrary { ref source } => Some(&source.0),
             _ => None,
@@ -75,9 +109,12 @@ impl std::fmt::Display for Error {
             DlSymUnknown => write!(f, "dlsym failed, but system did not report the error"),
             DlClose { ref desc } => write!(f, "{}", desc.0.to_string_lossy()),
             DlCloseUnknown => write!(f, "dlclose failed, but system did not report the error"),
-            LoadLibraryW { .. } => write!(f, "LoadLibraryW failed"),
-            LoadLibraryWUnknown =>
-                write!(f, "LoadLibraryW failed, but system did not report the error"),
+            LoadLibraryExW { .. } => write!(f, "LoadLibraryExW failed"),
+            LoadLibraryExWUnknown =>
+                write!(f, "LoadLibraryExW failed, but system did not report the error"),
+            GetModuleHandleExW { .. } => write!(f, "GetModuleHandleExW failed"),
+            GetModuleHandleExWUnknown =>
+                write!(f, "GetModuleHandleExWUnknown failed, but system did not report the error"),
             GetProcAddress { .. } => write!(f, "GetProcAddress failed"),
             GetProcAddressUnknown =>
                 write!(f, "GetProcAddress failed, but system did not report the error"),
@@ -89,26 +126,5 @@ impl std::fmt::Display for Error {
                 write!(f, "could not create a C string from bytes with trailing null"),
             IncompatibleSize => write!(f, "requested type cannot possibly work"),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn error_send() {
-        fn assert_send<T: Send>() {}
-        assert_send::<super::Error>();
-    }
-
-    #[test]
-    fn error_sync() {
-        fn assert_sync<T: Sync>() {}
-        assert_sync::<super::Error>();
-    }
-
-    #[test]
-    fn error_display() {
-        fn assert_display<T: std::fmt::Display>() {}
-        assert_display::<super::Error>();
     }
 }

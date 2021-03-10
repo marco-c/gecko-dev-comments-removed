@@ -14,6 +14,13 @@
 
 
 
+
+
+
+
+
+
+
 #include "spirv_cross_c.h"
 
 #if SPIRV_CROSS_C_API_CPP
@@ -492,6 +499,10 @@ spvc_result spvc_compiler_options_set_uint(spvc_compiler_options options, spvc_c
 	case SPVC_COMPILER_OPTION_HLSL_ENABLE_16BIT_TYPES:
 		options->hlsl.enable_16bit_types = value != 0;
 		break;
+
+	case SPVC_COMPILER_OPTION_HLSL_FLATTEN_MATRIX_VERTEX_INPUT_SEMANTICS:
+		options->hlsl.flatten_matrix_vertex_input_semantics = value != 0;
+		break;
 #endif
 
 #if SPIRV_CROSS_C_API_MSL
@@ -599,8 +610,8 @@ spvc_result spvc_compiler_options_set_uint(spvc_compiler_options options, spvc_c
 		options->msl.enable_base_index_zero = value != 0;
 		break;
 
-	case SPVC_COMPILER_OPTION_MSL_IOS_FRAMEBUFFER_FETCH_SUBPASS:
-		options->msl.ios_use_framebuffer_fetch_subpasses = value != 0;
+	case SPVC_COMPILER_OPTION_MSL_FRAMEBUFFER_FETCH_SUBPASS:
+		options->msl.use_framebuffer_fetch_subpasses = value != 0;
 		break;
 
 	case SPVC_COMPILER_OPTION_MSL_INVARIANT_FP_MATH:
@@ -657,6 +668,38 @@ spvc_result spvc_compiler_options_set_uint(spvc_compiler_options options, spvc_c
 
 	case SPVC_COMPILER_OPTION_MSL_VERTEX_INDEX_TYPE:
 		options->msl.vertex_index_type = static_cast<CompilerMSL::Options::IndexType>(value);
+		break;
+
+	case SPVC_COMPILER_OPTION_MSL_MULTIVIEW_LAYERED_RENDERING:
+		options->msl.multiview_layered_rendering = value != 0;
+		break;
+
+	case SPVC_COMPILER_OPTION_MSL_ARRAYED_SUBPASS_INPUT:
+		options->msl.arrayed_subpass_input = value != 0;
+		break;
+
+	case SPVC_COMPILER_OPTION_MSL_R32UI_LINEAR_TEXTURE_ALIGNMENT:
+		options->msl.r32ui_linear_texture_alignment = value;
+		break;
+
+	case SPVC_COMPILER_OPTION_MSL_R32UI_ALIGNMENT_CONSTANT_ID:
+		options->msl.r32ui_alignment_constant_id = value;
+		break;
+
+	case SPVC_COMPILER_OPTION_MSL_IOS_USE_SIMDGROUP_FUNCTIONS:
+		options->msl.ios_use_simdgroup_functions = value != 0;
+		break;
+
+	case SPVC_COMPILER_OPTION_MSL_EMULATE_SUBGROUPS:
+		options->msl.emulate_subgroups = value != 0;
+		break;
+
+	case SPVC_COMPILER_OPTION_MSL_FIXED_SUBGROUP_SIZE:
+		options->msl.fixed_subgroup_size = value;
+		break;
+
+	case SPVC_COMPILER_OPTION_MSL_FORCE_SAMPLE_RATE_SHADING:
+		options->msl.force_sample_rate_shading = value != 0;
 		break;
 #endif
 
@@ -1228,6 +1271,42 @@ spvc_bool spvc_compiler_msl_is_resource_used(spvc_compiler compiler, SpvExecutio
 	(void)binding;
 	compiler->context->report_error("MSL function used on a non-MSL backend.");
 	return SPVC_FALSE;
+#endif
+}
+
+spvc_result spvc_compiler_msl_set_combined_sampler_suffix(spvc_compiler compiler, const char *suffix)
+{
+#if SPIRV_CROSS_C_API_MSL
+	if (compiler->backend != SPVC_BACKEND_MSL)
+	{
+		compiler->context->report_error("MSL function used on a non-MSL backend.");
+		return SPVC_ERROR_INVALID_ARGUMENT;
+	}
+
+	auto &msl = *static_cast<CompilerMSL *>(compiler->compiler.get());
+	msl.set_combined_sampler_suffix(suffix);
+	return SPVC_SUCCESS;
+#else
+	(void)suffix;
+	compiler->context->report_error("MSL function used on a non-MSL backend.");
+	return SPVC_ERROR_INVALID_ARGUMENT;
+#endif
+}
+
+const char *spvc_compiler_msl_get_combined_sampler_suffix(spvc_compiler compiler)
+{
+#if SPIRV_CROSS_C_API_MSL
+	if (compiler->backend != SPVC_BACKEND_MSL)
+	{
+		compiler->context->report_error("MSL function used on a non-MSL backend.");
+		return "";
+	}
+
+	auto &msl = *static_cast<CompilerMSL *>(compiler->compiler.get());
+	return msl.get_combined_sampler_suffix();
+#else
+	compiler->context->report_error("MSL function used on a non-MSL backend.");
+	return "";
 #endif
 }
 

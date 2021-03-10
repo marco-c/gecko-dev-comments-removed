@@ -14,6 +14,13 @@
 
 
 
+
+
+
+
+
+
+
 #ifndef SPIRV_CROSS_UTIL_HPP
 #define SPIRV_CROSS_UTIL_HPP
 

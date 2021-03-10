@@ -14,6 +14,13 @@
 
 
 
+
+
+
+
+
+
+
 #ifndef SPIRV_CROSS_MSL_HPP
 #define SPIRV_CROSS_MSL_HPP
 
@@ -66,11 +73,16 @@ struct MSLShaderInput
 
 
 
+
+
+
+
 struct MSLResourceBinding
 {
 	spv::ExecutionModel stage = spv::ExecutionModelMax;
 	uint32_t desc_set = 0;
 	uint32_t binding = 0;
+	uint32_t count = 0;
 	uint32_t msl_buffer = 0;
 	uint32_t msl_texture = 0;
 	uint32_t msl_sampler = 0;
@@ -250,6 +262,9 @@ static const uint32_t kArgumentBufferBinding = ~(3u);
 static const uint32_t kMaxArgumentBuffers = 8;
 
 
+static const uint32_t kArrayCopyMultidimMax = 6;
+
+
 class CompilerMSL : public CompilerGLSL
 {
 public:
@@ -265,6 +280,8 @@ public:
 		Platform platform = macOS;
 		uint32_t msl_version = make_msl_version(1, 2);
 		uint32_t texel_buffer_texture_width = 4096; 
+		uint32_t r32ui_linear_texture_alignment = 4;
+		uint32_t r32ui_alignment_constant_id = 65535;
 		uint32_t swizzle_buffer_index = 30;
 		uint32_t indirect_params_buffer_index = 29;
 		uint32_t shader_output_buffer_index = 28;
@@ -290,6 +307,7 @@ public:
 		bool swizzle_texture_samples = false;
 		bool tess_domain_origin_lower_left = false;
 		bool multiview = false;
+		bool multiview_layered_rendering = true;
 		bool view_index_from_device_index = false;
 		bool dispatch_base = false;
 		bool texture_1D_as_2D = false;
@@ -309,7 +327,7 @@ public:
 		bool ios_support_base_vertex_instance = false;
 
 		
-		bool ios_use_framebuffer_fetch_subpasses = false;
+		bool use_framebuffer_fetch_subpasses = false;
 
 		
 		bool invariant_float_math = false;
@@ -347,6 +365,34 @@ public:
 		
 		bool vertex_for_tessellation = false;
 
+		
+		
+		
+		
+		bool arrayed_subpass_input = false;
+
+		
+		
+		
+		bool ios_use_simdgroup_functions = false;
+
+		
+		
+		
+		
+		bool emulate_subgroups = false;
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		uint32_t fixed_subgroup_size = 0;
+
 		enum class IndexType
 		{
 			None = 0,
@@ -361,6 +407,11 @@ public:
 		
 		
 		IndexType vertex_index_type = IndexType::None;
+
+		
+		
+		
+		bool force_sample_rate_shading = false;
 
 		bool is_ios() const
 		{
@@ -546,6 +597,9 @@ public:
 	
 	void set_fragment_output_components(uint32_t location, uint32_t components);
 
+	void set_combined_sampler_suffix(const char *suffix);
+	const char *get_combined_sampler_suffix() const;
+
 protected:
 	
 	
@@ -585,12 +639,20 @@ protected:
 		SPVFuncImplTextureSwizzle,
 		SPVFuncImplGatherSwizzle,
 		SPVFuncImplGatherCompareSwizzle,
+		SPVFuncImplSubgroupBroadcast,
+		SPVFuncImplSubgroupBroadcastFirst,
 		SPVFuncImplSubgroupBallot,
 		SPVFuncImplSubgroupBallotBitExtract,
 		SPVFuncImplSubgroupBallotFindLSB,
 		SPVFuncImplSubgroupBallotFindMSB,
 		SPVFuncImplSubgroupBallotBitCount,
 		SPVFuncImplSubgroupAllEqual,
+		SPVFuncImplSubgroupShuffle,
+		SPVFuncImplSubgroupShuffleXor,
+		SPVFuncImplSubgroupShuffleUp,
+		SPVFuncImplSubgroupShuffleDown,
+		SPVFuncImplQuadBroadcast,
+		SPVFuncImplQuadSwap,
 		SPVFuncImplReflectScalar,
 		SPVFuncImplRefractScalar,
 		SPVFuncImplFaceForwardScalar,
@@ -614,8 +676,6 @@ protected:
 		SPVFuncImplConvertYCbCrBT601,
 		SPVFuncImplConvertYCbCrBT2020,
 		SPVFuncImplDynamicImageSampler,
-
-		SPVFuncImplArrayCopyMultidimMax = 6
 	};
 
 	
@@ -651,7 +711,7 @@ protected:
 	std::string variable_decl(const SPIRType &type, const std::string &name, uint32_t id = 0) override;
 
 	std::string image_type_glsl(const SPIRType &type, uint32_t id = 0) override;
-	std::string sampler_type(const SPIRType &type);
+	std::string sampler_type(const SPIRType &type, uint32_t id);
 	std::string builtin_to_glsl(spv::BuiltIn builtin, spv::StorageClass storage) override;
 	std::string to_func_call_arg(const SPIRFunction::Parameter &arg, uint32_t id) override;
 	std::string to_name(uint32_t id, bool allow_alias = true) const override;
@@ -674,6 +734,12 @@ protected:
 	void replace_illegal_names() override;
 	void declare_undefined_values() override;
 	void declare_constant_arrays();
+
+	void replace_illegal_entry_point_names();
+	void sync_entry_point_aliases_and_names();
+
+	static const std::unordered_set<std::string> &get_reserved_keyword_set();
+	static const std::unordered_set<std::string> &get_illegal_func_names();
 
 	
 	void declare_complex_constant_arrays();
@@ -735,6 +801,7 @@ protected:
 	void emit_specialization_constants_and_structs();
 	void emit_interface_block(uint32_t ib_var_id);
 	bool maybe_emit_array_assignment(uint32_t id_lhs, uint32_t id_rhs);
+	uint32_t get_resource_array_size(uint32_t id) const;
 
 	void fix_up_shader_inputs_outputs();
 
@@ -749,6 +816,7 @@ protected:
 	std::string to_sampler_expression(uint32_t id);
 	std::string to_swizzle_expression(uint32_t id);
 	std::string to_buffer_size_expression(uint32_t id);
+	bool is_sample_rate() const;
 	bool is_direct_input_builtin(spv::BuiltIn builtin);
 	std::string builtin_qualifier(spv::BuiltIn builtin);
 	std::string builtin_type_decl(spv::BuiltIn builtin, uint32_t id = 0);
@@ -826,6 +894,8 @@ protected:
 	uint32_t builtin_subgroup_size_id = 0;
 	uint32_t builtin_dispatch_base_id = 0;
 	uint32_t builtin_stage_input_size_id = 0;
+	uint32_t builtin_local_invocation_index_id = 0;
+	uint32_t builtin_workgroup_size_id = 0;
 	uint32_t swizzle_buffer_id = 0;
 	uint32_t buffer_size_buffer_id = 0;
 	uint32_t view_mask_buffer_id = 0;
@@ -834,14 +904,15 @@ protected:
 
 	bool does_shader_write_sample_mask = false;
 
-	void bitcast_to_builtin_store(uint32_t target_id, std::string &expr, const SPIRType &expr_type) override;
-	void bitcast_from_builtin_load(uint32_t source_id, std::string &expr, const SPIRType &expr_type) override;
+	void cast_to_builtin_store(uint32_t target_id, std::string &expr, const SPIRType &expr_type) override;
+	void cast_from_builtin_load(uint32_t source_id, std::string &expr, const SPIRType &expr_type) override;
 	void emit_store_statement(uint32_t lhs_expression, uint32_t rhs_expression) override;
 
 	void analyze_sampled_image_usage();
 
 	void prepare_access_chain_for_scalar_access(std::string &expr, const SPIRType &type, spv::StorageClass storage,
 	                                            bool &is_packed) override;
+	void fix_up_interpolant_access_chain(const uint32_t *ops, uint32_t length);
 	bool emit_tessellation_access_chain(const uint32_t *ops, uint32_t length);
 	bool emit_tessellation_io_load(uint32_t result_type, uint32_t id, uint32_t ptr);
 	bool is_out_of_bounds_tessellation_level(uint32_t id_lhs);
@@ -900,6 +971,8 @@ protected:
 	bool used_swizzle_buffer = false;
 	bool added_builtin_tess_level = false;
 	bool needs_subgroup_invocation_id = false;
+	bool needs_subgroup_size = false;
+	bool needs_sample_id = false;
 	std::string qual_pos_var_name;
 	std::string stage_in_var_name = "in";
 	std::string stage_out_var_name = "out";
@@ -925,6 +998,7 @@ protected:
 	std::unordered_set<uint32_t> buffers_requiring_array_length;
 	SmallVector<uint32_t> buffer_arrays;
 	std::unordered_set<uint32_t> atomic_image_vars; 
+	std::unordered_set<uint32_t> pull_model_inputs;
 
 	
 	std::map<SetBindingPair, std::pair<uint32_t, uint32_t>> buffers_requiring_dynamic_offset;
@@ -943,6 +1017,7 @@ protected:
 	uint32_t get_target_components_for_fragment_location(uint32_t location) const;
 	uint32_t build_extended_vector_type(uint32_t type_id, uint32_t components,
 	                                    SPIRType::BaseType basetype = SPIRType::Unknown);
+	uint32_t build_msl_interpolant_type(uint32_t type_id, bool is_noperspective);
 
 	bool suppress_missing_prototypes = false;
 
@@ -951,6 +1026,7 @@ protected:
 	void activate_argument_buffer_resources();
 
 	bool type_is_msl_framebuffer_fetch(const SPIRType &type) const;
+	bool is_supported_argument_buffer_type(const SPIRType &type) const;
 
 	
 	struct OpCodePreprocessor : OpcodeHandler
@@ -971,6 +1047,8 @@ protected:
 		bool uses_atomics = false;
 		bool uses_resource_write = false;
 		bool needs_subgroup_invocation_id = false;
+		bool needs_subgroup_size = false;
+		bool needs_sample_id = false;
 	};
 
 	

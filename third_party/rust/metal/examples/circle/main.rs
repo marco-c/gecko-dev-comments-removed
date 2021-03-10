@@ -8,7 +8,7 @@ use winit::{
 
 use cocoa::{appkit::NSView, base::id as cocoa_id};
 
-use objc::runtime::YES;
+use objc::{rc::autoreleasepool, runtime::YES};
 
 use std::mem;
 
@@ -61,7 +61,7 @@ fn main() {
     
     
     
-    let layer = CoreAnimationLayer::new();
+    let layer = MetalLayer::new();
     layer.set_device(&device);
     layer.set_pixel_format(MTLPixelFormat::BGRA8Unorm);
     layer.set_presents_with_transaction(false);
@@ -87,56 +87,59 @@ fn main() {
     };
 
     event_loop.run(move |event, _, control_flow| {
-        
-        
-        
-        *control_flow = ControlFlow::Wait;
+        autoreleasepool(|| {
+            
+            
+            
+            *control_flow = ControlFlow::Wait;
 
-        match event {
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
-            } => {
-                println!("The close button was pressed; stopping");
-                *control_flow = ControlFlow::Exit
+            match event {
+                Event::WindowEvent {
+                    event: WindowEvent::CloseRequested,
+                    ..
+                } => {
+                    println!("The close button was pressed; stopping");
+                    *control_flow = ControlFlow::Exit
+                }
+                Event::MainEventsCleared => {
+                    
+                    window.request_redraw();
+                }
+                Event::RedrawRequested(_) => {
+                    
+                    
+                    
+                    let drawable = match layer.next_drawable() {
+                        Some(drawable) => drawable,
+                        None => return,
+                    };
+
+                    
+                    let command_buffer = command_queue.new_command_buffer();
+
+                    
+                    let render_pass_descriptor = RenderPassDescriptor::new();
+                    prepare_render_pass_descriptor(&render_pass_descriptor, drawable.texture());
+
+                    
+                    let encoder =
+                        command_buffer.new_render_command_encoder(&render_pass_descriptor);
+                    encoder.set_render_pipeline_state(&pipeline_state);
+                    
+                    encoder.set_vertex_buffer(0, Some(&vbuf), 0);
+                    
+                    encoder.draw_primitives(MTLPrimitiveType::TriangleStrip, 0, 1080);
+                    encoder.end_encoding();
+
+                    
+                    command_buffer.present_drawable(&drawable);
+
+                    
+                    command_buffer.commit();
+                }
+                _ => (),
             }
-            Event::MainEventsCleared => {
-                
-                window.request_redraw();
-            }
-            Event::RedrawRequested(_) => {
-                
-                
-                
-                let drawable = match layer.next_drawable() {
-                    Some(drawable) => drawable,
-                    None => return,
-                };
-
-                
-                let command_buffer = command_queue.new_command_buffer();
-
-                
-                let render_pass_descriptor = RenderPassDescriptor::new();
-                prepare_render_pass_descriptor(&render_pass_descriptor, drawable.texture());
-
-                
-                let encoder = command_buffer.new_render_command_encoder(&render_pass_descriptor);
-                encoder.set_render_pipeline_state(&pipeline_state);
-                
-                encoder.set_vertex_buffer(0, Some(&vbuf), 0);
-                
-                encoder.draw_primitives(MTLPrimitiveType::TriangleStrip, 0, 1080);
-                encoder.end_encoding();
-
-                
-                command_buffer.present_drawable(&drawable);
-
-                
-                command_buffer.commit();
-            }
-            _ => (),
-        }
+        });
     });
 }
 

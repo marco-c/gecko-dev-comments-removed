@@ -1,10 +1,8 @@
 
 
-use crate::queue::QueueType;
-use crate::Backend;
+use crate::{queue::QueueType, Backend};
 
-use std::any::Any;
-use std::fmt::Debug;
+use std::{any::Any, fmt::Debug};
 
 
 
@@ -34,7 +32,7 @@ pub struct QueueGroup<B: Backend> {
     
     pub family: QueueFamilyId,
     
-    pub queues: Vec<B::CommandQueue>,
+    pub queues: Vec<B::Queue>,
 }
 
 impl<B: Backend> QueueGroup<B> {
@@ -49,7 +47,7 @@ impl<B: Backend> QueueGroup<B> {
     
     
     
-    pub fn add_queue(&mut self, queue: B::CommandQueue) {
+    pub fn add_queue(&mut self, queue: B::Queue) {
         self.queues.push(queue);
     }
 }
