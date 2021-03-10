@@ -24,6 +24,8 @@ class Accessible {
  public:
   virtual Accessible* Parent() const = 0;
 
+  virtual role Role() const = 0;
+
   
 
 
