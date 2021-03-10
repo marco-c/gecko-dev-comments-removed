@@ -4341,23 +4341,7 @@ nsresult nsIFrame::HandleEvent(nsPresContext* aPresContext,
     } else if (aEvent->mMessage == eMouseUp || aEvent->mMessage == eTouchEnd) {
       HandleRelease(aPresContext, aEvent, aEventStatus);
     }
-    return NS_OK;
   }
-
-  
-  
-  
-  
-  if (aEvent->mMessage == eMouseDown) {
-    WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
-    if (mouseEvent && mouseEvent->mButton == MouseButton::eMiddle) {
-      if (*aEventStatus == nsEventStatus_eConsumeNoDefault) {
-        return NS_OK;
-      }
-      return MoveCaretToEventPoint(aPresContext, mouseEvent, aEventStatus);
-    }
-  }
-
   return NS_OK;
 }
 
@@ -4562,6 +4546,14 @@ nsIFrame::HandlePress(nsPresContext* aPresContext, WidgetGUIEvent* aEvent,
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  
+  int16_t isEditor = presShell->GetSelectionFlags();
+  
+  
+  isEditor = isEditor == nsISelectionDisplay::DISPLAY_ALL;
+
   WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
 
   if (!mouseEvent->IsAlt()) {
@@ -4579,35 +4571,6 @@ nsIFrame::HandlePress(nsPresContext* aPresContext, WidgetGUIEvent* aEvent,
     }
   }
 
-  return MoveCaretToEventPoint(aPresContext, mouseEvent, aEventStatus);
-}
-
-nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
-                                         WidgetMouseEvent* aMouseEvent,
-                                         nsEventStatus* aEventStatus) {
-  MOZ_ASSERT(aPresContext);
-  MOZ_ASSERT(aMouseEvent);
-  MOZ_ASSERT(aMouseEvent->mMessage == eMouseDown);
-  MOZ_ASSERT(aMouseEvent->mButton == MouseButton::ePrimary ||
-             aMouseEvent->mButton == MouseButton::eMiddle);
-  MOZ_ASSERT(aEventStatus);
-
-  mozilla::PresShell* presShell = aPresContext->GetPresShell();
-  if (!presShell) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  int16_t isEditor = presShell->GetSelectionFlags();
-  
-  
-  isEditor = isEditor == nsISelectionDisplay::DISPLAY_ALL;
-
-  
-  bool isPrimaryButtonDown = aMouseEvent->mButton == MouseButton::ePrimary;
-
   
   
   StyleUserSelect selectStyle;
@@ -4616,155 +4579,141 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
     return NS_OK;
   }
 
-  if (isPrimaryButtonDown) {
-    
-    
-    
-    
-    
-    if (!PresShell::GetCapturingContent()) {
-      nsIScrollableFrame* scrollFrame =
-          nsLayoutUtils::GetNearestScrollableFrame(
-              this, nsLayoutUtils::SCROLLABLE_SAME_DOC |
-                        nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN);
-      if (scrollFrame) {
-        nsIFrame* capturingFrame = do_QueryFrame(scrollFrame);
-        PresShell::SetCapturingContent(capturingFrame->GetContent(),
-                                       CaptureFlags::IgnoreAllowedState);
-      }
+  bool useFrameSelection = (selectStyle == StyleUserSelect::Text);
+
+  
+  
+  
+  
+  
+  if (!PresShell::GetCapturingContent()) {
+    nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetNearestScrollableFrame(
+        this, nsLayoutUtils::SCROLLABLE_SAME_DOC |
+                  nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN);
+    if (scrollFrame) {
+      nsIFrame* capturingFrame = do_QueryFrame(scrollFrame);
+      PresShell::SetCapturingContent(capturingFrame->GetContent(),
+                                     CaptureFlags::IgnoreAllowedState);
     }
   }
 
   
   
-  const nsFrameSelection* frameselection =
-      selectStyle == StyleUserSelect::Text ? GetConstFrameSelection()
-                                           : presShell->ConstFrameSelection();
+  const nsFrameSelection* frameselection = nullptr;
+  if (useFrameSelection)
+    frameselection = GetConstFrameSelection();
+  else
+    frameselection = presShell->ConstFrameSelection();
 
   if (!frameselection || frameselection->GetDisplaySelection() ==
-                             nsISelectionController::SELECTION_OFF) {
+                             nsISelectionController::SELECTION_OFF)
     return NS_OK;  
-  }
 
 #ifdef XP_MACOSX
-  
-  
-  if (aMouseEvent->IsControl()) {
-    return NS_OK;
-  }
-  bool control = aMouseEvent->IsMeta();
+  if (mouseEvent->IsControl())
+    return NS_OK;  
+  bool control = mouseEvent->IsMeta();
 #else
-  bool control = aMouseEvent->IsControl();
+  bool control = mouseEvent->IsControl();
 #endif
 
   RefPtr<nsFrameSelection> fc = const_cast<nsFrameSelection*>(frameselection);
-  if (isPrimaryButtonDown && aMouseEvent->mClickCount > 1) {
+  if (mouseEvent->mClickCount > 1) {
     
     
     fc->SetDragState(true);
-    return HandleMultiplePress(aPresContext, aMouseEvent, aEventStatus,
-                               control);
+    return HandleMultiplePress(aPresContext, mouseEvent, aEventStatus, control);
   }
 
-  nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(aMouseEvent,
+  nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(mouseEvent,
                                                             RelativeTo{this});
   ContentOffsets offsets = GetContentOffsetsFromPoint(pt, SKIP_HIDDEN);
 
-  if (!offsets.content) {
-    return NS_ERROR_FAILURE;
-  }
+  if (!offsets.content) return NS_ERROR_FAILURE;
 
-  if (isPrimaryButtonDown) {
-    
-    
-    nsCOMPtr<nsIContent> parentContent;
-    int32_t contentOffset;
-    TableSelectionMode target;
-    nsresult rv = GetDataForTableSelection(
-        frameselection, presShell, aMouseEvent, getter_AddRefs(parentContent),
-        &contentOffset, &target);
-    if (NS_SUCCEEDED(rv) && parentContent) {
-      fc->SetDragState(true);
-      return fc->HandleTableSelection(parentContent, contentOffset, target,
-                                      aMouseEvent);
-    }
+  
+  nsCOMPtr<nsIContent> parentContent;
+  int32_t contentOffset;
+  TableSelectionMode target;
+  nsresult rv;
+  rv = GetDataForTableSelection(frameselection, presShell, mouseEvent,
+                                getter_AddRefs(parentContent), &contentOffset,
+                                &target);
+  if (NS_SUCCEEDED(rv) && parentContent) {
+    fc->SetDragState(true);
+    return fc->HandleTableSelection(parentContent, contentOffset, target,
+                                    mouseEvent);
   }
 
   fc->SetDelayedCaretData(0);
 
-  if (isPrimaryButtonDown) {
+  
+  
+  
+  
+
+  if (GetContent() && GetContent()->IsMaybeSelected()) {
+    bool inSelection = false;
+    UniquePtr<SelectionDetails> details = frameselection->LookUpSelection(
+        offsets.content, 0, offsets.EndOffset(), false);
+
     
     
     
     
 
-    if (GetContent() && GetContent()->IsMaybeSelected()) {
-      bool inSelection = false;
-      UniquePtr<SelectionDetails> details = frameselection->LookUpSelection(
-          offsets.content, 0, offsets.EndOffset(), false);
-
+    for (SelectionDetails* curDetail = details.get(); curDetail;
+         curDetail = curDetail->mNext.get()) {
       
       
       
       
-
-      for (SelectionDetails* curDetail = details.get(); curDetail;
-           curDetail = curDetail->mNext.get()) {
-        
-        
-        
-        
-        
-        
-        if (curDetail->mSelectionType != SelectionType::eSpellCheck &&
-            curDetail->mSelectionType != SelectionType::eFind &&
-            curDetail->mSelectionType != SelectionType::eURLSecondary &&
-            curDetail->mSelectionType != SelectionType::eURLStrikeout &&
-            curDetail->mStart <= offsets.StartOffset() &&
-            offsets.EndOffset() <= curDetail->mEnd) {
-          inSelection = true;
-        }
-      }
-
-      if (inSelection) {
-        fc->SetDragState(false);
-        fc->SetDelayedCaretData(aMouseEvent);
-        return NS_OK;
+      
+      
+      if (curDetail->mSelectionType != SelectionType::eSpellCheck &&
+          curDetail->mSelectionType != SelectionType::eFind &&
+          curDetail->mSelectionType != SelectionType::eURLSecondary &&
+          curDetail->mSelectionType != SelectionType::eURLStrikeout &&
+          curDetail->mStart <= offsets.StartOffset() &&
+          offsets.EndOffset() <= curDetail->mEnd) {
+        inSelection = true;
       }
     }
 
-    fc->SetDragState(true);
+    if (inSelection) {
+      fc->SetDragState(false);
+      fc->SetDelayedCaretData(mouseEvent);
+      return NS_OK;
+    }
   }
+
+  fc->SetDragState(true);
 
   
   
   const nsFrameSelection::FocusMode focusMode = [&]() {
     
     
-    if (aMouseEvent->IsShift()) {
+    if (mouseEvent->IsShift()) {
       return nsFrameSelection::FocusMode::kExtendSelection;
     }
 
-    if (isPrimaryButtonDown && control) {
+    if (control) {
       return nsFrameSelection::FocusMode::kMultiRangeSelection;
     }
 
     return nsFrameSelection::FocusMode::kCollapseToNewPoint;
   }();
 
-  nsresult rv = fc->HandleClick(
-      MOZ_KnownLive(offsets.content) , offsets.StartOffset(),
-      offsets.EndOffset(), focusMode, offsets.associate);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  rv = fc->HandleClick(MOZ_KnownLive(offsets.content) ,
+                       offsets.StartOffset(), offsets.EndOffset(), focusMode,
+                       offsets.associate);
 
-  
-  if (isPrimaryButtonDown && offsets.offset != offsets.secondaryOffset) {
-    fc->MaintainSelection();
-  }
+  if (NS_FAILED(rv)) return rv;
 
-  if (isPrimaryButtonDown && isEditor && !aMouseEvent->IsShift() &&
+  if (offsets.offset != offsets.secondaryOffset) fc->MaintainSelection();
+
+  if (isEditor && !mouseEvent->IsShift() &&
       (offsets.EndOffset() - offsets.StartOffset()) == 1) {
     
     
@@ -4774,7 +4723,7 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
     fc->SetDragState(false);
   }
 
-  return NS_OK;
+  return rv;
 }
 
 nsresult nsIFrame::SelectByTypeAtPoint(nsPresContext* aPresContext,

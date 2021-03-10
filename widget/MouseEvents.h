@@ -202,20 +202,18 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   WidgetMouseEvent()
       : mReason(eReal),
         mContextMenuTrigger(eNormal),
-        mClickCount(0),
         mIgnoreRootScrollFrame(false),
-        mUseLegacyNonPrimaryDispatch(false),
-        mClickEventPrevented(false) {}
+        mClickCount(0),
+        mUseLegacyNonPrimaryDispatch(false) {}
 
   WidgetMouseEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget,
                    EventClassID aEventClassID, Reason aReason)
       : WidgetMouseEventBase(aIsTrusted, aMessage, aWidget, aEventClassID),
         mReason(aReason),
         mContextMenuTrigger(eNormal),
-        mClickCount(0),
         mIgnoreRootScrollFrame(false),
-        mUseLegacyNonPrimaryDispatch(false),
-        mClickEventPrevented(false) {}
+        mClickCount(0),
+        mUseLegacyNonPrimaryDispatch(false) {}
 
  public:
   virtual WidgetMouseEvent* AsMouseEvent() override { return this; }
@@ -226,10 +224,9 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
       : WidgetMouseEventBase(aIsTrusted, aMessage, aWidget, eMouseEventClass),
         mReason(aReason),
         mContextMenuTrigger(aContextMenuTrigger),
-        mClickCount(0),
         mIgnoreRootScrollFrame(false),
-        mUseLegacyNonPrimaryDispatch(false),
-        mClickEventPrevented(false) {
+        mClickCount(0),
+        mUseLegacyNonPrimaryDispatch(false) {
     if (aMessage == eContextMenu) {
       mButton = (mContextMenuTrigger == eNormal) ? MouseButton::eSecondary
                                                  : MouseButton::ePrimary;
@@ -280,29 +277,25 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   Maybe<ExitFrom> mExitFrom;
 
   
+  bool mIgnoreRootScrollFrame;
+
+  
   
   
   uint32_t mClickCount;
 
   
-  bool mIgnoreRootScrollFrame;
-
-  
   
   bool mUseLegacyNonPrimaryDispatch;
-
-  
-  bool mClickEventPrevented;
 
   void AssignMouseEventData(const WidgetMouseEvent& aEvent, bool aCopyTargets) {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
     AssignPointerHelperData(aEvent,  true);
 
     mExitFrom = aEvent.mExitFrom;
-    mClickCount = aEvent.mClickCount;
     mIgnoreRootScrollFrame = aEvent.mIgnoreRootScrollFrame;
+    mClickCount = aEvent.mClickCount;
     mUseLegacyNonPrimaryDispatch = aEvent.mUseLegacyNonPrimaryDispatch;
-    mClickEventPrevented = aEvent.mClickEventPrevented;
   }
 
   

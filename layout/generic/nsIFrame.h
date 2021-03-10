@@ -2175,20 +2175,6 @@ class nsIFrame : public nsQueryFrame {
   HandlePress(nsPresContext* aPresContext, mozilla::WidgetGUIEvent* aEvent,
               nsEventStatus* aEventStatus);
 
-  
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult MoveCaretToEventPoint(
-      nsPresContext* aPresContext, mozilla::WidgetMouseEvent* aMouseEvent,
-      nsEventStatus* aEventStatus);
-
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD HandleMultiplePress(
       nsPresContext* aPresContext, mozilla::WidgetGUIEvent* aEvent,
       nsEventStatus* aEventStatus, bool aControlHeld);
