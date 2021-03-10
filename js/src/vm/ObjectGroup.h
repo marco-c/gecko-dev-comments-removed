@@ -42,12 +42,10 @@ enum NewObjectKind {
   TenuredObject
 };
 
-class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
- public:
-  
-  const JSClass* clasp() const { return headerPtr(); }
 
- private:
+
+
+class ObjectGroup : public gc::TenuredCellWithNonGCPointer<int> {
   
   GCPtr<TaggedProto> proto_;  
 
@@ -57,8 +55,6 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   
 
  private:
-  static inline uint32_t offsetOfClasp() { return offsetOfHeaderPtr(); }
-
   static inline uint32_t offsetOfProto() {
     return offsetof(ObjectGroup, proto_);
   }
@@ -73,7 +69,7 @@ class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   friend class js::jit::MacroAssembler;
 
  public:
-  inline ObjectGroup(const JSClass* clasp, TaggedProto proto, JS::Realm* realm);
+  inline ObjectGroup(TaggedProto proto, JS::Realm* realm);
 
   const GCPtr<TaggedProto>& proto() const { return proto_; }
 
