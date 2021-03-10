@@ -5201,85 +5201,93 @@ var XULBrowserWindow = {
   onLocationChange(aWebProgress, aRequest, aLocationURI, aFlags, aIsSimulated) {
     var location = aLocationURI ? aLocationURI.spec : "";
 
+    UpdateBackForwardCommands(gBrowser.webNavigation);
+
+    Services.obs.notifyObservers(
+      aWebProgress,
+      "touchbar-location-change",
+      location
+    );
+
+    
+    
+    
+
+    if (!aWebProgress.isTopLevel) {
+      return;
+    }
+
     this.hideOverLinkImmediately = true;
     this.setOverLink("");
     this.hideOverLinkImmediately = false;
 
-    
-    
-    
-    
-
-    if (aWebProgress.isTopLevel) {
-      let isSameDocument =
-        aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT;
-      if (
-        (location == "about:blank" &&
-          BrowserUIUtils.checkEmptyPageOrigin(gBrowser.selectedBrowser)) ||
-        location == ""
-      ) {
-        
-        
-        this.reloadCommand.setAttribute("disabled", "true");
-      } else {
-        this.reloadCommand.removeAttribute("disabled");
-      }
-
+    let isSameDocument =
+      aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT;
+    if (
+      (location == "about:blank" &&
+        BrowserUIUtils.checkEmptyPageOrigin(gBrowser.selectedBrowser)) ||
+      location == ""
+    ) {
       
       
-      
-      
-      gURLBar.setURI(aLocationURI, aIsSimulated);
-
-      BookmarkingUI.onLocationChange();
-      
-      if (gBookmarksToolbar2h2020 && !isSameDocument) {
-        let bookmarksToolbar = gNavToolbox.querySelector("#PersonalToolbar");
-        setToolbarVisibility(
-          bookmarksToolbar,
-          gBookmarksToolbarVisibility,
-          false,
-          false
-        );
-      }
-
-      gPermissionPanel.onLocationChange();
-
-      gProtectionsHandler.onLocationChange();
-
-      BrowserPageActions.onLocationChange();
-
-      SafeBrowsingNotificationBox.onLocationChange(aLocationURI);
-
-      UrlbarProviderSearchTips.onLocationChange(
-        window,
-        aLocationURI,
-        aWebProgress,
-        aFlags
-      );
-
-      gTabletModePageCounter.inc();
-
-      this._updateElementsForContentType();
-
-      
-      
-      if (
-        location == "about:blank" &&
-        gBrowser.selectedTab.hasAttribute("customizemode")
-      ) {
-        gCustomizeMode.enter();
-      } else if (
-        CustomizationHandler.isEnteringCustomizeMode ||
-        CustomizationHandler.isCustomizing()
-      ) {
-        gCustomizeMode.exit();
-      }
-
-      CFRPageActions.updatePageActions(gBrowser.selectedBrowser);
+      this.reloadCommand.setAttribute("disabled", "true");
+    } else {
+      this.reloadCommand.removeAttribute("disabled");
     }
-    Services.obs.notifyObservers(null, "touchbar-location-change", location);
-    UpdateBackForwardCommands(gBrowser.webNavigation);
+
+    
+    
+    
+    
+    gURLBar.setURI(aLocationURI, aIsSimulated);
+
+    BookmarkingUI.onLocationChange();
+    
+    if (gBookmarksToolbar2h2020 && !isSameDocument) {
+      let bookmarksToolbar = gNavToolbox.querySelector("#PersonalToolbar");
+      setToolbarVisibility(
+        bookmarksToolbar,
+        gBookmarksToolbarVisibility,
+        false,
+        false
+      );
+    }
+
+    gPermissionPanel.onLocationChange();
+
+    gProtectionsHandler.onLocationChange();
+
+    BrowserPageActions.onLocationChange();
+
+    SafeBrowsingNotificationBox.onLocationChange(aLocationURI);
+
+    UrlbarProviderSearchTips.onLocationChange(
+      window,
+      aLocationURI,
+      aWebProgress,
+      aFlags
+    );
+
+    gTabletModePageCounter.inc();
+
+    this._updateElementsForContentType();
+
+    
+    
+    if (
+      location == "about:blank" &&
+      gBrowser.selectedTab.hasAttribute("customizemode")
+    ) {
+      gCustomizeMode.enter();
+    } else if (
+      CustomizationHandler.isEnteringCustomizeMode ||
+      CustomizationHandler.isCustomizing()
+    ) {
+      gCustomizeMode.exit();
+    }
+
+    CFRPageActions.updatePageActions(gBrowser.selectedBrowser);
+
     AboutReaderParent.updateReaderButton(gBrowser.selectedBrowser);
 
     if (!gMultiProcessBrowser) {
