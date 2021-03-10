@@ -287,9 +287,7 @@ void EventListenerManager::AddEventListenerInternal(
     mMayHaveMutationListeners = true;
     
     if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
-      nsCOMPtr<Document> doc = window->GetExtantDoc();
-      if (doc &&
-          !(aFlags.mInSystemGroup && doc->DevToolsWatchingDOMMutations())) {
+      if (Document* doc = window->GetExtantDoc()) {
         doc->WarnOnceAbout(DeprecatedOperations::eMutationEvent);
       }
       
