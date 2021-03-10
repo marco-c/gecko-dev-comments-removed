@@ -4183,7 +4183,15 @@ const BrowserSearch = {
 
 
   updateOpenSearchBadge() {
-    BrowserPageActions.addSearchEngine.updateEngines();
+    
+    
+    if (gProton && gURLBar.addSearchEngineHelper) {
+      gURLBar.addSearchEngineHelper.setEnginesFromBrowser(
+        gBrowser.selectedBrowser
+      );
+    } else {
+      BrowserPageActions.addSearchEngine.updateEngines();
+    }
 
     var searchBar = this.searchBar;
     if (!searchBar) {
