@@ -372,6 +372,22 @@ class LocalAccessible : public nsISupports, public Accessible {
   virtual void RelocateChild(uint32_t aNewIndex, LocalAccessible* aChild);
 
   
+
+  virtual Accessible* Parent() const override { return LocalParent(); }
+
+  virtual Accessible* ChildAt(uint32_t aIndex) const override {
+    return LocalChildAt(aIndex);
+  }
+
+  virtual Accessible* NextSibling() const override {
+    return LocalNextSibling();
+  }
+
+  virtual Accessible* PrevSibling() const override {
+    return LocalPrevSibling();
+  }
+
+  
   
 
   
@@ -387,7 +403,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual uint32_t ChildCount() const;
+  virtual uint32_t ChildCount() const override;
 
   
 
@@ -399,12 +415,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual int32_t IndexInParent() const;
-
-  
-
-
-  bool HasChildren() const { return !!LocalChildAt(0); }
+  virtual int32_t IndexInParent() const override;
 
   
 
