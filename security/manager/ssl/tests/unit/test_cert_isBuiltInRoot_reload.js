@@ -72,6 +72,26 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "use strict";
 
 function run_test() {
@@ -104,14 +124,13 @@ function run_test() {
 
   
   
-  const geoTrustCertDBKey = `AAAAAAAAAAAAAAAQAAAAmzyy9EgK
-    AOL+6yQ7XmA+w2swgZgxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1HZW9UcnVzdCBJ
-    bmMuMTkwNwYDVQQLEzAoYykgMjAwNyBHZW9UcnVzdCBJbmMuIC0gRm9yIGF1dGhv
-    cml6ZWQgdXNlIG9ubHkxNjA0BgNVBAMTLUdlb1RydXN0IFByaW1hcnkgQ2VydGlm
-    aWNhdGlvbiBBdXRob3JpdHkgLSBHMg==`;
-  let geoTrustCert = certdb.findCertByDBKey(geoTrustCertDBKey);
-  ok(geoTrustCert, "Should be able to find GeoTrust root");
-  ok(geoTrustCert.isBuiltInRoot, "GeoTrust root is a built-in");
+  const naverCertDBKey = `AAAAAAAAAAAAAAAUAAAAawGUMB6iC93
+    1xTMqsUNEcfjWUE0NMGkxCzAJBgNVBAYTAktSMSYwJAYDVQQKDB1OQVZFUiBCVVN
+    JTkVTUyBQTEFURk9STSBDb3JwLjEyMDAGA1UEAwwpTkFWRVIgR2xvYmFsIFJvb3Q
+    gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHk=`;
+  let naverCert = certdb.findCertByDBKey(naverCertDBKey);
+  ok(naverCert, "Should be able to find NAVER root");
+  ok(naverCert.isBuiltInRoot, "NAVER root is a built-in");
 
   
   
