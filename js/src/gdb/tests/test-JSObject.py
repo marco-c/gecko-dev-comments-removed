@@ -11,8 +11,9 @@ run_fragment("JSObject.simple")
 
 
 
-assert_pretty("glob", "(JSObject *)  [object global] delegate")
+assert_pretty("glob", "(JSObject *)  [object global]")
 assert_pretty("plain", "(JSObject *)  [object Object]")
+assert_pretty("objectProto", "(JSObject *)  [object Object] delegate")
 assert_pretty("func", '(JSObject *)  [object Function "dys"]')
 assert_pretty("anon", "(JSObject *)  [object Function <unnamed>]")
 assert_pretty("funcPtr", '(JSFunction *)  [object Function "formFollows"]')
