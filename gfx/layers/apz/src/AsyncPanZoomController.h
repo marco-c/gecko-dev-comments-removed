@@ -527,6 +527,9 @@ class AsyncPanZoomController {
   bool CanScroll(ScrollDirection aDirection) const;
 
   
+  SideBits ScrollableDirections() const;
+
+  
   
   
   
