@@ -35,6 +35,8 @@ namespace jit {
 
 #define VMFUNCTION_LIST(_)                                                     \
   _(AddOrUpdateSparseElementHelper, js::AddOrUpdateSparseElementHelper)        \
+  _(ArgumentsObjectCreateForInlinedIon,                                        \
+    js::ArgumentsObject::createForInlinedIon)                                  \
   _(ArgumentsObjectCreateForIon, js::ArgumentsObject::createForIon)            \
   _(ArrayConstructorOneArg, js::ArrayConstructorOneArg)                        \
   _(ArrayJoin, js::jit::ArrayJoin)                                             \
@@ -42,6 +44,14 @@ namespace jit {
   _(ArraySliceDense, js::ArraySliceDense)                                      \
   _(AsyncFunctionAwait, js::AsyncFunctionAwait)                                \
   _(AsyncFunctionResolve, js::AsyncFunctionResolve)                            \
+  _(AtomicsAdd64, js::jit::AtomicsAdd64)                                       \
+  _(AtomicsAnd64, js::jit::AtomicsAnd64)                                       \
+  _(AtomicsCompareExchange64, js::jit::AtomicsCompareExchange64)               \
+  _(AtomicsExchange64, js::jit::AtomicsExchange64)                             \
+  _(AtomicsLoad64, js::jit::AtomicsLoad64)                                     \
+  _(AtomicsOr64, js::jit::AtomicsOr64)                                         \
+  _(AtomicsSub64, js::jit::AtomicsSub64)                                       \
+  _(AtomicsXor64, js::jit::AtomicsXor64)                                       \
   _(BaselineCompileFromBaselineInterpreter,                                    \
     js::jit::BaselineCompileFromBaselineInterpreter)                           \
   _(BaselineDebugPrologue, js::jit::DebugPrologue)                             \
