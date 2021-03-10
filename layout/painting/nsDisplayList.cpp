@@ -852,15 +852,9 @@ void nsDisplayListBuilder::SetIsRelativeToLayoutViewport() {
 }
 
 void nsDisplayListBuilder::UpdateShouldBuildAsyncZoomContainer() {
-  Document* document = mReferenceFrame->PresContext()->Document();
-  
-  
-  
-  bool disableZoomingForFullscreen =
-      document->Fullscreen() &&
-      !document->GetPresShell()->UsesMobileViewportSizing();
+  const Document* document = mReferenceFrame->PresContext()->Document();
   mBuildAsyncZoomContainer = !mIsRelativeToLayoutViewport &&
-                             !disableZoomingForFullscreen &&
+                             !document->Fullscreen() &&
                              nsLayoutUtils::AllowZoomingForDocument(document);
 }
 
