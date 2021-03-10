@@ -28,6 +28,7 @@ class nsIDocShellTreeItem;
 class nsILayoutHistoryState;
 class nsIPrincipal;
 class nsDocShellEditorData;
+class nsFrameLoader;
 class nsIMutableArray;
 class nsSHistory;
 
@@ -96,6 +97,10 @@ class SHEntrySharedParentState : public SHEntrySharedState {
   uint64_t GetId() const { return mId; }
   void ChangeId(uint64_t aId);
 
+  void SetFrameLoader(nsFrameLoader* aFrameLoader);
+
+  nsFrameLoader* GetFrameLoader();
+
   void NotifyListenersContentViewerEvicted();
 
   SHEntrySharedParentState();
@@ -129,6 +134,8 @@ class SHEntrySharedParentState : public SHEntrySharedState {
   
   
   nsWeakPtr mSHistory;
+
+  RefPtr<nsFrameLoader> mFrameLoader;
 
   bool mSticky = true;
   bool mDynamicallyCreated = false;
