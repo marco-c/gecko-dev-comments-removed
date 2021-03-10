@@ -260,6 +260,10 @@ const RECOMMENDED_PREFS = new Map([
   ["privacy.trackingprotection.enabled", false],
 
   
+  
+  ["prompts.contentPromptSubDialog", false],
+
+  
   ["security.certerrors.mitm.priming.enabled", false],
 
   
