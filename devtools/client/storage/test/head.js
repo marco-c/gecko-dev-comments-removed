@@ -148,10 +148,12 @@ async function openTabAndSetupStorage(url, options = {}) {
 
 
 
-var openStoragePanel = async function({ tab, target, hostType } = {}) {
+var openStoragePanel = async function({ tab, descriptor, hostType } = {}) {
   info("Opening the storage inspector");
-  if (!target) {
-    target = await TabTargetFactory.forTab(tab || gBrowser.selectedTab);
+  if (!descriptor) {
+    descriptor = await TabDescriptorFactory.createDescriptorForTab(
+      tab || gBrowser.selectedTab
+    );
   }
 
   let storage, toolbox;
@@ -159,7 +161,7 @@ var openStoragePanel = async function({ tab, target, hostType } = {}) {
   
   
   
-  toolbox = gDevTools.getToolbox(target);
+  toolbox = gDevTools.getToolboxForDescriptor(descriptor);
   if (toolbox) {
     storage = toolbox.getPanel("storage");
     if (storage) {
@@ -176,7 +178,7 @@ var openStoragePanel = async function({ tab, target, hostType } = {}) {
   }
 
   info("Opening the toolbox");
-  toolbox = await gDevTools.showToolbox(target, "storage", hostType);
+  toolbox = await gDevTools.showToolbox(descriptor, "storage", hostType);
   storage = toolbox.getPanel("storage");
   gPanelWindow = storage.panelWindow;
   gUI = storage.UI;

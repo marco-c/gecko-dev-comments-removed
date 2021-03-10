@@ -82,61 +82,42 @@ async function showErrorPage(doc, errorMessage) {
 
 async function initToolbox(url, host) {
   const { gDevTools } = require("devtools/client/framework/devtools");
+
   const {
-    targetFromURL,
-  } = require("devtools/client/framework/target-from-url");
+    descriptorFromURL,
+  } = require("devtools/client/framework/descriptor-from-url");
   const { Toolbox } = require("devtools/client/framework/toolbox");
-  const { DevToolsServer } = require("devtools/server/devtools-server");
-  const { DevToolsClient } = require("devtools/client/devtools-client");
 
   
   const tool = url.searchParams.get("tool");
 
   try {
-    let target;
+    let descriptor;
     if (url.searchParams.has("target")) {
-      
-      
-      
-
-      
-      let iframe = host.wrappedJSObject
-        ? host.wrappedJSObject.target
-        : host.target;
-      if (!iframe) {
-        throw new Error("Unable to find the targeted iframe to debug");
-      }
-
-      
-      
-      iframe = XPCNativeWrapper(iframe);
-
-      
-      
-      const tab = { linkedBrowser: iframe };
-
-      DevToolsServer.init();
-      DevToolsServer.registerAllActors();
-      const client = new DevToolsClient(DevToolsServer.connectPipe());
-
-      await client.connect();
-      
-      const tabDescriptor = await client.mainRoot.getTab({ tab });
-      target = await tabDescriptor.getTarget();
-      
-      target.shouldCloseClient = true;
+      descriptor = await _createTestOnlyDescriptor(host);
     } else {
-      target = await targetFromURL(url);
-      const toolbox = gDevTools.getToolbox(target);
+      descriptor = await descriptorFromURL(url);
+      const toolbox = gDevTools.getToolboxForDescriptor(descriptor);
       if (toolbox && toolbox.isDestroying()) {
         
         
-        
         await toolbox.destroy();
-        target = await targetFromURL(url);
       }
     }
 
+    const options = { customIframe: host };
+    const newToolbox = await gDevTools.showToolbox(
+      descriptor,
+      tool,
+      Toolbox.HostType.PAGE,
+      options
+    );
+
+    
+    
+    
+    
+    const target = newToolbox.target;
     
     const onTargetDestroyed = function() {
       target.off("close", onTargetDestroyed);
@@ -148,13 +129,61 @@ async function initToolbox(url, host) {
     };
     target.on("close", onTargetDestroyed);
 
-    const options = { customIframe: host };
-    await gDevTools.showToolbox(target, tool, Toolbox.HostType.PAGE, options);
+    
+    
+    
+    
+    
+    const isCachedClient = url.searchParams.get("remoteId");
+    target.shouldCloseClient = !isCachedClient;
   } catch (error) {
     
     console.error("Exception while loading the toolbox", error);
     showErrorPage(host.contentDocument, `${error}`);
   }
+}
+
+
+
+
+
+
+
+
+async function _createTestOnlyDescriptor(host) {
+  const { DevToolsServer } = require("devtools/server/devtools-server");
+  const { DevToolsClient } = require("devtools/client/devtools-client");
+
+  
+  let iframe = host.wrappedJSObject ? host.wrappedJSObject.target : host.target;
+  if (!iframe) {
+    throw new Error("Unable to find the targeted iframe to debug");
+  }
+
+  
+  
+  iframe = XPCNativeWrapper(iframe);
+
+  
+  
+  const tab = { linkedBrowser: iframe };
+
+  DevToolsServer.init();
+  DevToolsServer.registerAllActors();
+  const client = new DevToolsClient(DevToolsServer.connectPipe());
+
+  await client.connect();
+  
+  const descriptor = await client.mainRoot.getTab({ tab });
+
+  
+  
+  
+  const target = await descriptor.getTarget();
+  
+  target.shouldCloseClient = true;
+
+  return descriptor;
 }
 
 

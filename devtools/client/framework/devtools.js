@@ -13,8 +13,8 @@ const {
 
 loader.lazyRequireGetter(
   this,
-  "TabTargetFactory",
-  "devtools/client/framework/tab-target-factory",
+  "TabDescriptorFactory",
+  "devtools/client/framework/tab-descriptor-factory",
   true
 );
 loader.lazyRequireGetter(
@@ -473,8 +473,12 @@ DevTools.prototype = {
 
 
 
+
+
+
+
   async showToolbox(
-    target,
+    descriptor,
     toolId,
     hostType,
     hostOptions,
@@ -482,7 +486,7 @@ DevTools.prototype = {
     reason = "toolbox_show",
     shouldRaiseToolbox = true
   ) {
-    let toolbox = this._toolboxes.get(target);
+    let toolbox = this._toolboxes.get(descriptor);
 
     if (toolbox) {
       if (hostType != null && toolbox.hostType != hostType) {
@@ -502,19 +506,19 @@ DevTools.prototype = {
       
       
       
-      const promise = this._creatingToolboxes.get(target);
+      const promise = this._creatingToolboxes.get(descriptor);
       if (promise) {
         return promise;
       }
-      const toolboxPromise = this.createToolbox(
-        target,
+      const toolboxPromise = this._createToolbox(
+        descriptor,
         toolId,
         hostType,
         hostOptions
       );
-      this._creatingToolboxes.set(target, toolboxPromise);
+      this._creatingToolboxes.set(descriptor, toolboxPromise);
       toolbox = await toolboxPromise;
-      this._creatingToolboxes.delete(target);
+      this._creatingToolboxes.delete(descriptor);
 
       if (startTime) {
         this.logToolboxOpenTime(toolbox, startTime);
@@ -560,9 +564,9 @@ DevTools.prototype = {
     tab,
     { toolId, hostType, startTime, raise, reason, hostOptions } = {}
   ) {
-    const target = await TabTargetFactory.forTab(tab);
+    const descriptor = await this.createDescriptorForTab(tab);
     return this.showToolbox(
-      target,
+      descriptor,
       toolId,
       hostType,
       hostOptions,
@@ -626,16 +630,16 @@ DevTools.prototype = {
     return toolId;
   },
 
-  async createToolbox(target, toolId, hostType, hostOptions) {
-    const manager = new ToolboxHostManager(
-      target.descriptorFront,
-      hostType,
-      hostOptions
-    );
+  
+
+
+
+  async _createToolbox(descriptor, toolId, hostType, hostOptions) {
+    const manager = new ToolboxHostManager(descriptor, hostType, hostOptions);
 
     const toolbox = await manager.create(toolId);
 
-    this._toolboxes.set(target, toolbox);
+    this._toolboxes.set(descriptor, toolbox);
 
     this.emit("toolbox-created", toolbox);
 
@@ -644,15 +648,8 @@ DevTools.prototype = {
     });
 
     toolbox.once("destroyed", () => {
-      this._toolboxes.delete(target);
+      this._toolboxes.delete(descriptor);
       this.emit("toolbox-destroyed", toolbox);
-    });
-    
-    
-    toolbox.on("switch-target", newTarget => {
-      this._toolboxes.delete(target);
-      this._toolboxes.set(newTarget, toolbox);
-      target = newTarget;
     });
 
     await toolbox.open();
@@ -670,28 +667,8 @@ DevTools.prototype = {
 
 
 
-  getToolbox(target) {
-    return this._toolboxes.get(target);
-  },
-
-  
-
-
-
-
-
-
-
-  async closeToolbox(target) {
-    let toolbox = await this._creatingToolboxes.get(target);
-    if (!toolbox) {
-      toolbox = this._toolboxes.get(target);
-    }
-    if (!toolbox) {
-      return false;
-    }
-    await toolbox.destroy();
-    return true;
+  getToolboxForDescriptor(descriptor) {
+    return this._toolboxes.get(descriptor);
   },
 
   
@@ -699,13 +676,28 @@ DevTools.prototype = {
 
 
   async getToolboxForTab(tab) {
-    const target = await TabTargetFactory.forTab(tab);
-    return this._toolboxes.get(target);
+    const descriptor = await TabDescriptorFactory.getDescriptorForTab(tab);
+    return this.getToolboxForDescriptor(descriptor);
   },
 
+  
+
+
+
+
+
+
   async closeToolboxForTab(tab) {
-    const target = await TabTargetFactory.forTab(tab);
-    return this.closeToolbox(target);
+    const descriptor = await TabDescriptorFactory.getDescriptorForTab(tab);
+
+    let toolbox = await this._creatingToolboxes.get(descriptor);
+    if (!toolbox) {
+      toolbox = this._toolboxes.get(descriptor);
+    }
+    if (!toolbox) {
+      return;
+    }
+    await toolbox.destroy();
   },
 
   
@@ -716,7 +708,7 @@ DevTools.prototype = {
 
 
   createDescriptorForTab: function(tab) {
-    return TabTargetFactory.createDescriptorForTab(tab);
+    return TabDescriptorFactory.createDescriptorForTab(tab);
   },
 
   
