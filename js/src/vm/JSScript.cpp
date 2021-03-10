@@ -3719,10 +3719,6 @@ bool JSScript::fullyInitFromStencil(
   
   
   
-  
-  
-  
-  
   Rooted<UniquePtr<PrivateScriptData>> lazyData(cx);
 
 #ifndef JS_CODEGEN_NONE
