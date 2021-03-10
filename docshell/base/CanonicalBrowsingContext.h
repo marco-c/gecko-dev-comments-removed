@@ -46,7 +46,7 @@ class WindowGlobalParent;
 
 
 
-struct RemotenessChangeState {
+struct RemotenessChangeOptions {
   nsCString mRemoteType;
   bool mReplaceBrowsingContext = false;
   uint64_t mSpecificGroupId = 0;
@@ -217,7 +217,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   using RemotenessPromise = MozPromise<RefPtr<BrowserParent>, nsresult, false>;
   RefPtr<RemotenessPromise> ChangeRemoteness(
-      const RemotenessChangeState& aState, uint64_t aPendingSwitchId);
+      const RemotenessChangeOptions& aOptions, uint64_t aPendingSwitchId);
 
   
   
@@ -256,7 +256,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   void ReplacedBy(CanonicalBrowsingContext* aNewContext,
-                  const RemotenessChangeState& aState);
+                  const RemotenessChangeOptions& aRemotenessOptions);
 
   bool HasHistoryEntry(nsISHEntry* aEntry);
 
@@ -302,7 +302,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     PendingRemotenessChange(CanonicalBrowsingContext* aTarget,
                             RemotenessPromise::Private* aPromise,
                             uint64_t aPendingSwitchId,
-                            const RemotenessChangeState& aState);
+                            const RemotenessChangeOptions& aOptions);
 
     void Cancel(nsresult aRv);
 
@@ -321,7 +321,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     RefPtr<BrowsingContextGroup> mSpecificGroup;
 
     uint64_t mPendingSwitchId;
-    RemotenessChangeState mState;
+    RemotenessChangeOptions mOptions;
   };
 
   friend class net::DocumentLoadListener;
