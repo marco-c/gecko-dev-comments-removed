@@ -149,17 +149,17 @@ var AddonStudies = {
 
 
 
-  withStudies(studies = []) {
+  withStudies(addonStudies = []) {
     return function wrapper(testFunction) {
-      return async function wrappedTestFunction(...args) {
+      return async function wrappedTestFunction(args) {
         const oldStudies = await AddonStudies.getAll();
         let db = await getDatabase();
         await AddonStudies.clear();
         const store = getStore(db, "readwrite");
-        await Promise.all(studies.map(study => store.add(study)));
+        await Promise.all(addonStudies.map(study => store.add(study)));
 
         try {
-          await testFunction(...args, studies);
+          await testFunction({ ...args, addonStudies });
         } finally {
           db = await getDatabase();
           await AddonStudies.clear();
