@@ -7,37 +7,32 @@ use crate::{
     device::{DeviceError, RenderPassContext},
     hub::Resource,
     id::{DeviceId, PipelineLayoutId, ShaderModuleId},
-    validation::StageError,
-    Label, LifeGuard, Stored,
+    validation, Label, LifeGuard, Stored,
 };
 use std::borrow::Cow;
 use thiserror::Error;
-use wgt::{BufferAddress, IndexFormat, InputStepMode};
 
 #[derive(Debug)]
-#[cfg_attr(feature = "trace", derive(serde::Serialize))]
-#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
 pub enum ShaderModuleSource<'a> {
     SpirV(Cow<'a, [u32]>),
     Wgsl(Cow<'a, str>),
-    
-    
-    
+    Naga(naga::Module),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
 #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
 pub struct ShaderModuleDescriptor<'a> {
     pub label: Label<'a>,
-    pub source: ShaderModuleSource<'a>,
+    #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
+    pub flags: wgt::ShaderFlags,
 }
 
 #[derive(Debug)]
 pub struct ShaderModule<B: hal::Backend> {
     pub(crate) raw: B::ShaderModule,
     pub(crate) device_id: Stored<DeviceId>,
-    pub(crate) module: Option<naga::Module>,
+    pub(crate) interface: Option<validation::Interface>,
     #[cfg(debug_assertions)]
     pub(crate) label: String,
 }
@@ -59,10 +54,14 @@ impl<B: hal::Backend> Resource for ShaderModule<B> {
 
 #[derive(Clone, Debug, Error)]
 pub enum CreateShaderModuleError {
+    #[error("Failed to parse WGSL")]
+    Parsing,
     #[error(transparent)]
     Device(#[from] DeviceError),
     #[error(transparent)]
     Validation(#[from] naga::proc::ValidationError),
+    #[error("missing required device features {0:?}")]
+    MissingFeature(wgt::Features),
 }
 
 
@@ -101,7 +100,7 @@ pub struct ComputePipelineDescriptor<'a> {
     
     pub layout: Option<PipelineLayoutId>,
     
-    pub compute_stage: ProgrammableStageDescriptor<'a>,
+    pub stage: ProgrammableStageDescriptor<'a>,
 }
 
 #[derive(Clone, Debug, Error)]
@@ -113,7 +112,7 @@ pub enum CreateComputePipelineError {
     #[error("unable to derive an implicit layout")]
     Implicit(#[from] ImplicitLayoutError),
     #[error(transparent)]
-    Stage(StageError),
+    Stage(validation::StageError),
 }
 
 #[derive(Debug)]
@@ -136,24 +135,35 @@ impl<B: hal::Backend> Resource for ComputePipeline<B> {
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
 #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
-pub struct VertexBufferDescriptor<'a> {
+pub struct VertexBufferLayout<'a> {
     
-    pub stride: BufferAddress,
+    pub array_stride: wgt::BufferAddress,
     
-    pub step_mode: InputStepMode,
+    pub step_mode: wgt::InputStepMode,
     
-    pub attributes: Cow<'a, [wgt::VertexAttributeDescriptor]>,
+    pub attributes: Cow<'a, [wgt::VertexAttribute]>,
 }
 
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
 #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
-pub struct VertexStateDescriptor<'a> {
+pub struct VertexState<'a> {
     
-    pub index_format: IndexFormat,
+    pub stage: ProgrammableStageDescriptor<'a>,
     
-    pub vertex_buffers: Cow<'a, [VertexBufferDescriptor<'a>]>,
+    pub buffers: Cow<'a, [VertexBufferLayout<'a>]>,
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "trace", derive(serde::Serialize))]
+#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+pub struct FragmentState<'a> {
+    
+    pub stage: ProgrammableStageDescriptor<'a>,
+    
+    pub targets: Cow<'a, [wgt::ColorTargetState]>,
 }
 
 
@@ -165,39 +175,25 @@ pub struct RenderPipelineDescriptor<'a> {
     
     pub layout: Option<PipelineLayoutId>,
     
-    pub vertex_stage: ProgrammableStageDescriptor<'a>,
+    pub vertex: VertexState<'a>,
     
-    pub fragment_stage: Option<ProgrammableStageDescriptor<'a>>,
+    #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
+    pub primitive: wgt::PrimitiveState,
     
-    pub rasterization_state: Option<wgt::RasterizationStateDescriptor>,
+    #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
+    pub depth_stencil: Option<wgt::DepthStencilState>,
     
-    pub primitive_topology: wgt::PrimitiveTopology,
+    #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
+    pub multisample: wgt::MultisampleState,
     
-    pub color_states: Cow<'a, [wgt::ColorStateDescriptor]>,
-    
-    pub depth_stencil_state: Option<wgt::DepthStencilStateDescriptor>,
-    
-    pub vertex_state: VertexStateDescriptor<'a>,
-    
-    
-    pub sample_count: u32,
-    
-    
-    pub sample_mask: u32,
-    
-    
-    
-    
-    
-    
-    pub alpha_to_coverage_enabled: bool,
+    pub fragment: Option<FragmentState<'a>>,
 }
 
 #[derive(Clone, Debug, Error)]
 pub enum CreateRenderPipelineError {
     #[error(transparent)]
     Device(#[from] DeviceError),
-    #[error("pipelie layout is invalid")]
+    #[error("pipeline layout is invalid")]
     InvalidLayout,
     #[error("unable to derive an implicit layout")]
     Implicit(#[from] ImplicitLayoutError),
@@ -207,12 +203,26 @@ pub enum CreateRenderPipelineError {
     IncompatibleOutputFormat { index: u8 },
     #[error("invalid sample count {0}")]
     InvalidSampleCount(u32),
+    #[error("the number of vertex buffers {given} exceeds the limit {limit}")]
+    TooManyVertexBuffers { given: u32, limit: u32 },
+    #[error("the total number of vertex attributes {given} exceeds the limit {limit}")]
+    TooManyVertexAttributes { given: u32, limit: u32 },
+    #[error("vertex buffer {index} stride {given} exceeds the limit {limit}")]
+    VertexStrideTooLarge { index: u32, given: u32, limit: u32 },
     #[error("vertex buffer {index} stride {stride} does not respect `VERTEX_STRIDE_ALIGNMENT`")]
-    UnalignedVertexStride { index: u32, stride: BufferAddress },
+    UnalignedVertexStride {
+        index: u32,
+        stride: wgt::BufferAddress,
+    },
     #[error("vertex attribute at location {location} has invalid offset {offset}")]
     InvalidVertexAttributeOffset {
         location: wgt::ShaderLocation,
-        offset: BufferAddress,
+        offset: wgt::BufferAddress,
+    },
+    #[error("strip index format was not set to None but to {strip_index_format:?} while using the non-strip topology {topology:?}")]
+    StripIndexFormatForNonStripTopology {
+        strip_index_format: Option<wgt::IndexFormat>,
+        topology: wgt::PrimitiveTopology,
     },
     #[error("missing required device features {0:?}")]
     MissingFeature(wgt::Features),
@@ -220,7 +230,7 @@ pub enum CreateRenderPipelineError {
     Stage {
         flag: wgt::ShaderStage,
         #[source]
-        error: StageError,
+        error: validation::StageError,
     },
 }
 
@@ -240,8 +250,8 @@ pub struct RenderPipeline<B: hal::Backend> {
     pub(crate) device_id: Stored<DeviceId>,
     pub(crate) pass_context: RenderPassContext,
     pub(crate) flags: PipelineFlags,
-    pub(crate) index_format: IndexFormat,
-    pub(crate) vertex_strides: Vec<(BufferAddress, InputStepMode)>,
+    pub(crate) strip_index_format: Option<wgt::IndexFormat>,
+    pub(crate) vertex_strides: Vec<(wgt::BufferAddress, wgt::InputStepMode)>,
     pub(crate) life_guard: LifeGuard,
 }
 

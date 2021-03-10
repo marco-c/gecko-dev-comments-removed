@@ -109,6 +109,8 @@ pub enum PrimitiveAssemblerDesc<'a, B: Backend> {
 #[derive(Debug)]
 pub struct GraphicsPipelineDesc<'a, B: Backend> {
     
+    pub label: Option<&'a str>,
+    
     pub primitive_assembler: PrimitiveAssemblerDesc<'a, B>,
     
     pub rasterizer: Rasterizer,
@@ -151,6 +153,7 @@ impl<'a, B: Backend> GraphicsPipelineDesc<'a, B> {
         subpass: pass::Subpass<'a, B>,
     ) -> Self {
         GraphicsPipelineDesc {
+            label: None,
             primitive_assembler,
             rasterizer,
             fragment,

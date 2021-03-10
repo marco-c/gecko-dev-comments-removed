@@ -1,15 +1,59 @@
-extern crate winapi;
-use self::winapi::shared::minwindef::{WORD, DWORD, HMODULE, FARPROC};
-use self::winapi::shared::ntdef::WCHAR;
-use self::winapi::shared::winerror;
-use self::winapi::um::{errhandlingapi, libloaderapi};
 
+
+#[cfg(all(docsrs, not(windows)))]
+mod windows_imports {
+    pub(super) enum WORD {}
+    pub(super) struct DWORD;
+    pub(super) enum HMODULE {}
+    pub(super) enum FARPROC {}
+
+    pub(super) mod consts {
+        use super::DWORD;
+        pub(crate) const LOAD_IGNORE_CODE_AUTHZ_LEVEL: DWORD = DWORD;
+        pub(crate) const LOAD_LIBRARY_AS_DATAFILE: DWORD = DWORD;
+        pub(crate) const LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE: DWORD = DWORD;
+        pub(crate) const LOAD_LIBRARY_AS_IMAGE_RESOURCE: DWORD = DWORD;
+        pub(crate) const LOAD_LIBRARY_SEARCH_APPLICATION_DIR: DWORD = DWORD;
+        pub(crate) const LOAD_LIBRARY_SEARCH_DEFAULT_DIRS: DWORD = DWORD;
+        pub(crate) const LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR: DWORD = DWORD;
+        pub(crate) const LOAD_LIBRARY_SEARCH_SYSTEM32: DWORD = DWORD;
+        pub(crate) const LOAD_LIBRARY_SEARCH_USER_DIRS: DWORD = DWORD;
+        pub(crate) const LOAD_WITH_ALTERED_SEARCH_PATH: DWORD = DWORD;
+        pub(crate) const LOAD_LIBRARY_REQUIRE_SIGNED_TARGET: DWORD = DWORD;
+        pub(crate) const LOAD_LIBRARY_SAFE_CURRENT_DIRS: DWORD = DWORD;
+    }
+}
+#[cfg(any(not(docsrs), windows))]
+mod windows_imports {
+    extern crate winapi;
+    pub(super) use self::winapi::shared::minwindef::{WORD, DWORD, HMODULE, FARPROC};
+    pub(super) use self::winapi::shared::ntdef::WCHAR;
+    pub(super) use self::winapi::um::{errhandlingapi, libloaderapi};
+    pub(super) use std::os::windows::ffi::{OsStrExt, OsStringExt};
+    pub(super) const SEM_FAILCE: DWORD = 1;
+
+    pub(super) mod consts {
+        pub(crate) use super::winapi::um::libloaderapi::{
+            LOAD_IGNORE_CODE_AUTHZ_LEVEL,
+            LOAD_LIBRARY_AS_DATAFILE,
+            LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE,
+            LOAD_LIBRARY_AS_IMAGE_RESOURCE,
+            LOAD_LIBRARY_SEARCH_APPLICATION_DIR,
+            LOAD_LIBRARY_SEARCH_DEFAULT_DIRS,
+            LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR,
+            LOAD_LIBRARY_SEARCH_SYSTEM32,
+            LOAD_LIBRARY_SEARCH_USER_DIRS,
+            LOAD_WITH_ALTERED_SEARCH_PATH,
+            LOAD_LIBRARY_REQUIRE_SIGNED_TARGET,
+            LOAD_LIBRARY_SAFE_CURRENT_DIRS,
+        };
+    }
+}
+
+use self::windows_imports::*;
 use util::{ensure_compatible_types, cstr_cow_from_bytes};
-
 use std::ffi::{OsStr, OsString};
 use std::{fmt, io, marker, mem, ptr};
-use std::os::windows::ffi::{OsStrExt, OsStringExt};
-use std::sync::atomic::{AtomicBool, Ordering};
 
 
 pub struct Library(HMODULE);
@@ -34,8 +78,30 @@ impl Library {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<Library, crate::Error> {
+    pub unsafe fn new<P: AsRef<OsStr>>(filename: P) -> Result<Library, crate::Error> {
         Library::load_with_flags(filename, 0)
     }
 
@@ -45,26 +111,101 @@ impl Library {
     
     
     
-    pub fn load_with_flags<P: AsRef<OsStr>>(filename: P, flags: DWORD) -> Result<Library, crate::Error> {
-        let wide_filename: Vec<u16> = filename.as_ref().encode_wide().chain(Some(0)).collect();
-        let _guard = ErrorModeGuard::new();
+    
+    
+    
+    pub fn this() -> Result<Library, crate::Error> {
+        unsafe {
+            let mut handle: HMODULE = std::ptr::null_mut();
+            with_get_last_error(|source| crate::Error::GetModuleHandleExW { source }, || {
+                let result = libloaderapi::GetModuleHandleExW(0, std::ptr::null_mut(), &mut handle);
+                if result == 0 {
+                    None
+                } else {
+                    Some(Library(handle))
+                }
+            }).map_err(|e| e.unwrap_or(crate::Error::GetModuleHandleExWUnknown))
+        }
+    }
 
-        let ret = with_get_last_error(|source| crate::Error::LoadLibraryW { source }, || {
-            
-            
-            let handle = unsafe { libloaderapi::LoadLibraryExW(wide_filename.as_ptr(), std::ptr::null_mut(), flags) };
-            if handle.is_null()  {
-                None
-            } else {
-                Some(Library(handle))
-            }
-        }).map_err(|e| e.unwrap_or(crate::Error::LoadLibraryWUnknown));
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn open_already_loaded<P: AsRef<OsStr>>(filename: P) -> Result<Library, crate::Error> {
+        let wide_filename: Vec<u16> = filename.as_ref().encode_wide().chain(Some(0)).collect();
+
+        let ret = unsafe {
+            let mut handle: HMODULE = std::ptr::null_mut();
+            with_get_last_error(|source| crate::Error::GetModuleHandleExW { source }, || {
+                
+                
+                let result = libloaderapi::GetModuleHandleExW(0, wide_filename.as_ptr(), &mut handle);
+                if result == 0 {
+                    None
+                } else {
+                    Some(Library(handle))
+                }
+            }).map_err(|e| e.unwrap_or(crate::Error::GetModuleHandleExWUnknown))
+        };
+
         drop(wide_filename); 
                              
         ret
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn load_with_flags<P: AsRef<OsStr>>(filename: P, flags: DWORD) -> Result<Library, crate::Error> {
+        let wide_filename: Vec<u16> = filename.as_ref().encode_wide().chain(Some(0)).collect();
+        let _guard = ErrorModeGuard::new();
+
+        let ret = with_get_last_error(|source| crate::Error::LoadLibraryExW { source }, || {
+            
+            
+            let handle =
+                libloaderapi::LoadLibraryExW(wide_filename.as_ptr(), std::ptr::null_mut(), flags);
+            if handle.is_null()  {
+                None
+            } else {
+                Some(Library(handle))
+            }
+        }).map_err(|e| e.unwrap_or(crate::Error::LoadLibraryExWUnknown));
+        drop(wide_filename); 
+                             
+        ret
+    }
+
     
     
     
@@ -128,19 +269,30 @@ impl Library {
     
     
     
+    
     pub unsafe fn from_raw(handle: HMODULE) -> Library {
         Library(handle)
     }
 
     
+    
+    
+    
+    
+    
     pub fn close(self) -> Result<(), crate::Error> {
-        with_get_last_error(|source| crate::Error::FreeLibrary { source }, || {
+        let result = with_get_last_error(|source| crate::Error::FreeLibrary { source }, || {
             if unsafe { libloaderapi::FreeLibrary(self.0) == 0 } {
                 None
             } else {
                 Some(())
             }
-        }).map_err(|e| e.unwrap_or(crate::Error::FreeLibraryUnknown))
+        }).map_err(|e| e.unwrap_or(crate::Error::FreeLibraryUnknown));
+        
+        
+        
+        std::mem::forget(self);
+        result
     }
 }
 
@@ -217,7 +369,7 @@ impl<T> ::std::ops::Deref for Symbol<T> {
     fn deref(&self) -> &T {
         unsafe {
             
-            mem::transmute(&self.pointer)
+            &*(&self.pointer as *const *mut _ as *const T)
         }
     }
 }
@@ -228,50 +380,23 @@ impl<T> fmt::Debug for Symbol<T> {
     }
 }
 
-
-static USE_ERRORMODE: AtomicBool = AtomicBool::new(false);
 struct ErrorModeGuard(DWORD);
 
 impl ErrorModeGuard {
+    #[allow(clippy::if_same_then_else)]
     fn new() -> Option<ErrorModeGuard> {
-        const SEM_FAILCE: DWORD = 1;
         unsafe {
-            if !USE_ERRORMODE.load(Ordering::Acquire) {
-                let mut previous_mode = 0;
-                let success = errhandlingapi::SetThreadErrorMode(SEM_FAILCE, &mut previous_mode) != 0;
-                if !success && errhandlingapi::GetLastError() == winerror::ERROR_CALL_NOT_IMPLEMENTED {
-                    USE_ERRORMODE.store(true, Ordering::Release);
-                } else if !success {
-                    
-                    
-                    
-                    
-                    
-                    return None;
-                } else if previous_mode == SEM_FAILCE {
-                    return None;
-                } else {
-                    return Some(ErrorModeGuard(previous_mode));
-                }
-            }
-            match errhandlingapi::SetErrorMode(SEM_FAILCE) {
-                SEM_FAILCE => {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    None
-                }
-                a => Some(ErrorModeGuard(a))
+            let mut previous_mode = 0;
+            if errhandlingapi::SetThreadErrorMode(SEM_FAILCE, &mut previous_mode) == 0 {
+                
+                
+                
+                
+                None
+            } else if previous_mode == SEM_FAILCE {
+                None
+            } else {
+                Some(ErrorModeGuard(previous_mode))
             }
         }
     }
@@ -280,11 +405,7 @@ impl ErrorModeGuard {
 impl Drop for ErrorModeGuard {
     fn drop(&mut self) {
         unsafe {
-            if !USE_ERRORMODE.load(Ordering::Relaxed) {
-                errhandlingapi::SetThreadErrorMode(self.0, ptr::null_mut());
-            } else {
-                errhandlingapi::SetErrorMode(self.0);
-            }
+            errhandlingapi::SetThreadErrorMode(self.0, ptr::null_mut());
         }
     }
 }
@@ -302,31 +423,114 @@ where F: FnOnce() -> Option<T> {
     })
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn works_getlasterror() {
-        let lib = Library::new("kernel32.dll").unwrap();
-        let gle: Symbol<unsafe extern "system" fn() -> DWORD> = unsafe {
-            lib.get(b"GetLastError").unwrap()
-        };
-        unsafe {
-            errhandlingapi::SetLastError(42);
-            assert_eq!(errhandlingapi::GetLastError(), gle())
-        }
-    }
 
-    #[test]
-    fn works_getlasterror0() {
-        let lib = Library::new("kernel32.dll").unwrap();
-        let gle: Symbol<unsafe extern "system" fn() -> DWORD> = unsafe {
-            lib.get(b"GetLastError\0").unwrap()
-        };
-        unsafe {
-            errhandlingapi::SetLastError(42);
-            assert_eq!(errhandlingapi::GetLastError(), gle())
-        }
-    }
-}
+
+
+
+
+pub const LOAD_IGNORE_CODE_AUTHZ_LEVEL: DWORD = consts::LOAD_IGNORE_CODE_AUTHZ_LEVEL;
+
+
+
+
+
+
+
+
+
+pub const LOAD_LIBRARY_AS_DATAFILE: DWORD = consts::LOAD_LIBRARY_AS_DATAFILE;
+
+
+
+
+
+
+
+
+pub const LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE: DWORD = consts::LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE;
+
+
+
+
+
+
+
+
+
+
+
+pub const LOAD_LIBRARY_AS_IMAGE_RESOURCE: DWORD = consts::LOAD_LIBRARY_AS_IMAGE_RESOURCE;
+
+
+
+
+
+
+
+pub const LOAD_LIBRARY_SEARCH_APPLICATION_DIR: DWORD = consts::LOAD_LIBRARY_SEARCH_APPLICATION_DIR;
+
+
+
+
+
+
+
+
+
+pub const LOAD_LIBRARY_SEARCH_DEFAULT_DIRS: DWORD = consts::LOAD_LIBRARY_SEARCH_DEFAULT_DIRS;
+
+
+
+
+
+
+
+
+
+
+pub const LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR: DWORD = consts::LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR;
+
+
+
+
+
+
+
+pub const LOAD_LIBRARY_SEARCH_SYSTEM32: DWORD = consts::LOAD_LIBRARY_SEARCH_SYSTEM32;
+
+
+
+
+
+
+
+
+
+pub const LOAD_LIBRARY_SEARCH_USER_DIRS: DWORD = consts::LOAD_LIBRARY_SEARCH_USER_DIRS;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub const LOAD_WITH_ALTERED_SEARCH_PATH: DWORD = consts::LOAD_WITH_ALTERED_SEARCH_PATH;
+
+
+
+
+pub const LOAD_LIBRARY_REQUIRE_SIGNED_TARGET: DWORD = consts::LOAD_LIBRARY_REQUIRE_SIGNED_TARGET;
+
+
+
+
+
+pub const LOAD_LIBRARY_SAFE_CURRENT_DIRS: DWORD = consts::LOAD_LIBRARY_SAFE_CURRENT_DIRS;

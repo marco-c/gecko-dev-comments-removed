@@ -6,7 +6,12 @@
 
 
 
+
+
+
+
 #![allow(broken_intra_doc_links)]
+#![warn(missing_docs)]
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -36,18 +41,29 @@ pub const VERTEX_STRIDE_ALIGNMENT: BufferAddress = 4;
 
 pub const PUSH_CONSTANT_ALIGNMENT: u32 = 4;
 
+pub const QUERY_SET_MAX_QUERIES: u32 = 8192;
+
+pub const QUERY_SIZE: u32 = 8;
+
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum Backend {
+    
     Empty = 0,
+    
     Vulkan = 1,
+    
     Metal = 2,
+    
     Dx12 = 3,
+    
     Dx11 = 4,
+    
     Gl = 5,
+    
     BrowserWebGpu = 6,
 }
 
@@ -159,14 +175,50 @@ bitflags::bitflags! {
         /// Enables BCn family of compressed textures. All BCn textures use 4x4 pixel blocks
         /// with 8 or 16 bytes per block.
         ///
-        /// Compressed textures sacrifice some quality in exchange for signifigantly reduced
+        /// Compressed textures sacrifice some quality in exchange for significantly reduced
         /// bandwidth usage.
+        ///
+        /// Support for this feature guarantees availability of [`TextureUsage::COPY_SRC | TextureUsage::COPY_DST | TextureUsage::SAMPLED`] for BCn formats.
+        /// [`Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES`] may enable additional usages.
         ///
         /// Supported Platforms:
         /// - desktops
         ///
         /// This is a web and native feature.
         const TEXTURE_COMPRESSION_BC = 0x0000_0000_0000_0002;
+        /// Enables use of Timestamp Queries. These queries tell the current gpu timestamp when
+        /// all work before the query is finished. Call [`CommandEncoder::write_timestamp`],
+        /// [`RenderPassEncoder::write_timestamp`], or [`ComputePassEncoder::write_timestamp`] to
+        /// write out a timestamp.
+        ///
+        /// They must be resolved using [`CommandEncoder::resolve_query_sets`] into a buffer,
+        /// then the result must be multiplied by the timestamp period [`Device::get_timestamp_period`]
+        /// to get the timestamp in nanoseconds. Multiple timestamps can then be diffed to get the
+        /// time for operations between them to finish.
+        ///
+        /// Due to gfx-hal limitations, this is only supported on vulkan for now.
+        ///
+        /// Supported Platforms:
+        /// - Vulkan (works)
+        /// - DX12 (future)
+        ///
+        /// This is a web and native feature.
+        const TIMESTAMP_QUERY = 0x0000_0000_0000_0004;
+        /// Enables use of Pipeline Statistics Queries. These queries tell the count of various operations
+        /// performed between the start and stop call. Call [`RenderPassEncoder::begin_pipeline_statistics_query`] to start
+        /// a query, then call [`RenderPassEncoder::end_pipeline_statistics_query`] to stop one.
+        ///
+        /// They must be resolved using [`CommandEncoder::resolve_query_sets`] into a buffer.
+        /// The rules on how these resolve into buffers are detailed in the documentation for [`PipelineStatisticsTypes`].
+        ///
+        /// Due to gfx-hal limitations, this is only supported on vulkan for now.
+        ///
+        /// Supported Platforms:
+        /// - Vulkan (works)
+        /// - DX12 (future)
+        ///
+        /// This is a web and native feature.
+        const PIPELINE_STATISTICS_QUERY = 0x0000_0000_0000_0008;
         /// Webgpu only allows the MAP_READ and MAP_WRITE buffer usage to be matched with
         /// COPY_DST and COPY_SRC respectively. This removes this requirement.
         ///
@@ -296,7 +348,7 @@ bitflags::bitflags! {
         ///
         /// This is a web and native feature.
         const ADDRESS_MODE_CLAMP_TO_BORDER = 0x0000_0000_0100_0000;
-        /// Allows the user to set a non-fill polygon mode in [`RasterizationStateDescriptor::polygon_mode`]
+        /// Allows the user to set a non-fill polygon mode in [`PrimitiveState::polygon_mode`]
         ///
         /// This allows drawing polygons/triangles as lines (wireframe) or points instead of filled
         ///
@@ -306,6 +358,66 @@ bitflags::bitflags! {
         ///
         /// This is a native only feature.
         const NON_FILL_POLYGON_MODE = 0x0000_0000_0200_0000;
+        /// Enables ETC family of compressed textures. All ETC textures use 4x4 pixel blocks.
+        /// ETC2 RGB and RGBA1 are 8 bytes per block. RTC2 RGBA8 and EAC are 16 bytes per block.
+        ///
+        /// Compressed textures sacrifice some quality in exchange for significantly reduced
+        /// bandwidth usage.
+        ///
+        /// Support for this feature guarantees availability of [`TextureUsage::COPY_SRC | TextureUsage::COPY_DST | TextureUsage::SAMPLED`] for ETC2 formats.
+        /// [`Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES`] may enable additional usages.
+        ///
+        /// Supported Platforms:
+        /// - Intel/Vulkan
+        /// - Mobile (some)
+        ///
+        /// This is a native-only feature.
+        const TEXTURE_COMPRESSION_ETC2 = 0x0000_0000_0400_0000;
+        /// Enables ASTC family of compressed textures. ASTC textures use pixel blocks varying from 4x4 to 12x12.
+        /// Blocks are always 16 bytes.
+        ///
+        /// Compressed textures sacrifice some quality in exchange for significantly reduced
+        /// bandwidth usage.
+        ///
+        /// Support for this feature guarantees availability of [`TextureUsage::COPY_SRC | TextureUsage::COPY_DST | TextureUsage::SAMPLED`] for ASTC formats.
+        /// [`Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES`] may enable additional usages.
+        ///
+        /// Supported Platforms:
+        /// - Intel/Vulkan
+        /// - Mobile (some)
+        ///
+        /// This is a native-only feature.
+        const TEXTURE_COMPRESSION_ASTC_LDR = 0x0000_0000_0800_0000;
+        /// Enables device specific texture format features.
+        ///
+        /// See `TextureFormatFeatures` for a listing of the features in question.
+        ///
+        /// By default only texture format properties as defined by the WebGPU specification are allowed.
+        /// Enabling this feature flag extends the features of each format to the ones supported by the current device.
+        /// Note that without this flag, read/write storage access is not allowed at all.
+        ///
+        /// This extension does not enable additional formats.
+        ///
+        /// This is a native-only feature.
+        const TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES = 0x0000_0000_1000_0000;
+        /// Enables 64-bit floating point types in SPIR-V shaders.
+        ///
+        /// Note: even when supported by GPU hardware, 64-bit floating point operations are
+        /// frequently between 16 and 64 _times_ slower than equivelent operations on 32-bit floats.
+        ///
+        /// Supported Platforms:
+        /// - Vulkan
+        ///
+        /// This is a native-only feature.
+        const SHADER_FLOAT64 = 0x0000_0000_2000_0000;
+        /// Enables using 64-bit types for vertex attributes.
+        ///
+        /// Requires SHADER_FLOAT64.
+        ///
+        /// Supported Platforms: N/A
+        ///
+        /// This is a native-only feature.
+        const VERTEX_ATTRIBUTE_64BIT = 0x0000_0000_4000_0000;
         /// Features which are part of the upstream WebGPU standard.
         const ALL_WEBGPU = 0x0000_0000_0000_FFFF;
         /// Features that are only available when targeting native (not web).
@@ -331,6 +443,20 @@ bitflags::bitflags! {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct Limits {
     
+    
+    pub max_texture_dimension_1d: u32,
+    
+    
+    pub max_texture_dimension_2d: u32,
+    
+    
+    
+    pub max_texture_dimension_3d: u32,
+    
+    
+    
+    pub max_texture_array_layers: u32,
+    
     pub max_bind_groups: u32,
     
     pub max_dynamic_uniform_buffers_per_pipeline_layout: u32,
@@ -349,6 +475,18 @@ pub struct Limits {
     
     pub max_uniform_buffer_binding_size: u32,
     
+    pub max_storage_buffer_binding_size: u32,
+    
+    
+    pub max_vertex_buffers: u32,
+    
+    
+    
+    pub max_vertex_attributes: u32,
+    
+    
+    pub max_vertex_buffer_array_stride: u32,
+    
     
     
     
@@ -363,6 +501,10 @@ pub struct Limits {
 impl Default for Limits {
     fn default() -> Self {
         Self {
+            max_texture_dimension_1d: 8192,
+            max_texture_dimension_2d: 8192,
+            max_texture_dimension_3d: 2048,
+            max_texture_array_layers: 2048,
             max_bind_groups: 4,
             max_dynamic_uniform_buffers_per_pipeline_layout: 8,
             max_dynamic_storage_buffers_per_pipeline_layout: 4,
@@ -372,9 +514,48 @@ impl Default for Limits {
             max_storage_textures_per_shader_stage: 4,
             max_uniform_buffers_per_shader_stage: 12,
             max_uniform_buffer_binding_size: 16384,
+            max_storage_buffer_binding_size: 128 << 20,
+            max_vertex_buffers: 8,
+            max_vertex_attributes: 16,
+            max_vertex_buffer_array_stride: 2048,
             max_push_constant_size: 0,
         }
     }
+}
+
+
+#[repr(u8)]
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "trace", derive(serde::Serialize))]
+#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+pub enum DeviceType {
+    
+    Other,
+    
+    IntegratedGpu,
+    
+    DiscreteGpu,
+    
+    VirtualGpu,
+    
+    Cpu,
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "trace", derive(serde::Serialize))]
+#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+pub struct AdapterInfo {
+    
+    pub name: String,
+    
+    pub vendor: usize,
+    
+    pub device: usize,
+    
+    pub device_type: DeviceType,
+    
+    pub backend: Backend,
 }
 
 
@@ -391,18 +572,15 @@ pub struct DeviceDescriptor<L> {
     
     
     pub limits: Limits,
-    
-    
-    pub shader_validation: bool,
 }
 
 impl<L> DeviceDescriptor<L> {
+    
     pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> DeviceDescriptor<K> {
         DeviceDescriptor {
             label: fun(&self.label),
             features: self.features,
             limits: self.limits.clone(),
-            shader_validation: self.shader_validation,
         }
     }
 }
@@ -422,8 +600,30 @@ bitflags::bitflags! {
         const VERTEX = 1;
         /// Binding is visible from the fragment shader of a render pipeline.
         const FRAGMENT = 2;
+        /// Binding is visible from the vertex and fragment shaders of a render pipeline.
+        const VERTEX_FRAGMENT = Self::VERTEX.bits | Self::FRAGMENT.bits;
         /// Binding is visible from the compute shader of a compute pipeline.
         const COMPUTE = 4;
+    }
+}
+
+bitflags::bitflags! {
+    /// Flags controlling the shader processing.
+    ///
+    /// Note: These flags are internal tweaks, they don't affect the API.
+    #[repr(transparent)]
+    #[derive(Default)]
+    #[cfg_attr(feature = "trace", derive(serde::Serialize))]
+    #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+    pub struct ShaderFlags: u32 {
+        /// If enabled, `wgpu` will parse the shader with `Naga`
+        /// and validate it both internally and with regards to
+        /// the given pipeline interface.
+        const VALIDATION = 1;
+        /// If enabled, `wgpu` will attempt to operate on `Naga`'s internal
+        /// representation of the shader module for both validation and translation
+        /// into the backend shader language, on backends where `gfx-hal` supports this.
+        const EXPERIMENTAL_TRANSLATION = 2;
     }
 }
 
@@ -472,18 +672,31 @@ impl TextureViewDimension {
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum BlendFactor {
+    
     Zero = 0,
+    
     One = 1,
+    
     SrcColor = 2,
+    
     OneMinusSrcColor = 3,
+    
     SrcAlpha = 4,
+    
     OneMinusSrcAlpha = 5,
+    
     DstColor = 6,
+    
     OneMinusDstColor = 7,
+    
     DstAlpha = 8,
+    
     OneMinusDstAlpha = 9,
+    
     SrcAlphaSaturated = 10,
+    
     BlendColor = 11,
+    
     OneMinusBlendColor = 12,
 }
 
@@ -495,10 +708,15 @@ pub enum BlendFactor {
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum BlendOperation {
+    
     Add = 0,
+    
     Subtract = 1,
+    
     ReverseSubtract = 2,
+    
     Min = 3,
+    
     Max = 4,
 }
 
@@ -509,25 +727,30 @@ impl Default for BlendOperation {
 }
 
 
-
-
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct BlendDescriptor {
+pub struct BlendComponent {
+    
     pub src_factor: BlendFactor,
+    
     pub dst_factor: BlendFactor,
+    
+    
     pub operation: BlendOperation,
 }
 
-impl BlendDescriptor {
-    pub const REPLACE: Self = BlendDescriptor {
+impl BlendComponent {
+    
+    pub const REPLACE: Self = BlendComponent {
         src_factor: BlendFactor::One,
         dst_factor: BlendFactor::Zero,
         operation: BlendOperation::Add,
     };
 
+    
+    
     pub fn uses_color(&self) -> bool {
         match (self.src_factor, self.dst_factor) {
             (BlendFactor::BlendColor, _)
@@ -539,10 +762,24 @@ impl BlendDescriptor {
     }
 }
 
-impl Default for BlendDescriptor {
+impl Default for BlendComponent {
     fn default() -> Self {
         Self::REPLACE
     }
+}
+
+
+
+
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct BlendState {
+    
+    pub color: BlendComponent,
+    
+    pub alpha: BlendComponent,
 }
 
 
@@ -550,24 +787,23 @@ impl Default for BlendDescriptor {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct ColorStateDescriptor {
+pub struct ColorTargetState {
     
     
     pub format: TextureFormat,
     
-    pub alpha_blend: BlendDescriptor,
+    #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
+    pub blend: Option<BlendState>,
     
-    pub color_blend: BlendDescriptor,
-    
+    #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
     pub write_mask: ColorWrite,
 }
 
-impl From<TextureFormat> for ColorStateDescriptor {
+impl From<TextureFormat> for ColorTargetState {
     fn from(format: TextureFormat) -> Self {
         Self {
             format,
-            alpha_blend: BlendDescriptor::REPLACE,
-            color_blend: BlendDescriptor::REPLACE,
+            blend: None,
             write_mask: ColorWrite::ALL,
         }
     }
@@ -599,9 +835,15 @@ pub enum PrimitiveTopology {
     TriangleStrip = 4,
 }
 
+impl Default for PrimitiveTopology {
+    fn default() -> Self {
+        PrimitiveTopology::TriangleList
+    }
+}
+
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum FrontFace {
@@ -623,27 +865,19 @@ impl Default for FrontFace {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub enum CullMode {
+pub enum Face {
     
-    None = 0,
+    Front = 0,
     
-    Front = 1,
-    
-    Back = 2,
-}
-
-impl Default for CullMode {
-    fn default() -> Self {
-        Self::None
-    }
+    Back = 1,
 }
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum PolygonMode {
@@ -663,23 +897,102 @@ impl Default for PolygonMode {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct RasterizationStateDescriptor {
+pub struct PrimitiveState {
+    
+    pub topology: PrimitiveTopology,
+    
+    
+    #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
+    pub strip_index_format: Option<IndexFormat>,
+    
+    #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
     pub front_face: FrontFace,
-    pub cull_mode: CullMode,
+    
+    #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
+    pub cull_mode: Option<Face>,
     
     
     
+    #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
     pub polygon_mode: PolygonMode,
+}
+
+
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct MultisampleState {
+    
+    
+    pub count: u32,
+    
+    
+    pub mask: u64,
     
     
     
-    pub clamp_depth: bool,
-    pub depth_bias: i32,
-    pub depth_bias_slope_scale: f32,
-    pub depth_bias_clamp: f32,
+    
+    
+    
+    pub alpha_to_coverage_enabled: bool,
+}
+
+impl Default for MultisampleState {
+    fn default() -> Self {
+        MultisampleState {
+            count: 1,
+            mask: !0,
+            alpha_to_coverage_enabled: false,
+        }
+    }
+}
+
+bitflags::bitflags! {
+    /// Feature flags for a texture format.
+    #[repr(transparent)]
+    #[cfg_attr(feature = "trace", derive(Serialize))]
+    #[cfg_attr(feature = "replay", derive(Deserialize))]
+    pub struct TextureFormatFeatureFlags: u32 {
+        /// When used as a STORAGE texture, then a texture with this format can be bound with `StorageTextureAccess::ReadWrite`.
+        const STORAGE_READ_WRITE = 1;
+        /// When used as a STORAGE texture, then a texture with this format can be written to with atomics. TODO: No access flag exposed as of writing
+        const STORAGE_ATOMICS = 2;
+    }
+}
+
+
+
+
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub struct TextureFormatFeatures {
+    
+    pub allowed_usages: TextureUsage,
+    
+    pub flags: TextureFormatFeatureFlags,
+    
+    
+    pub filterable: bool,
+}
+
+
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub struct TextureFormatInfo {
+    
+    pub required_features: Features,
+    
+    pub sample_type: TextureSampleType,
+    
+    pub block_dimensions: (u8, u8),
+    
+    pub block_size: u8,
+    
+    pub srgb: bool,
+    
+    pub guaranteed_format_features: TextureFormatFeatures,
 }
 
 
@@ -877,6 +1190,351 @@ pub enum TextureFormat {
     
     
     Bc7RgbaUnormSrgb = 51,
+    
+    
+    
+    
+    Etc2RgbUnorm = 52,
+    
+    
+    
+    
+    Etc2RgbUnormSrgb = 53,
+    
+    
+    
+    
+    Etc2RgbA1Unorm = 54,
+    
+    
+    
+    
+    Etc2RgbA1UnormSrgb = 55,
+    
+    
+    
+    
+    Etc2RgbA8Unorm = 56,
+    
+    
+    
+    
+    Etc2RgbA8UnormSrgb = 57,
+    
+    
+    
+    
+    EacRUnorm = 58,
+    
+    
+    
+    
+    EacRSnorm = 59,
+    
+    
+    
+    
+    EtcRgUnorm = 60,
+    
+    
+    
+    
+    EtcRgSnorm = 61,
+    
+    
+    
+    
+    Astc4x4RgbaUnorm = 62,
+    
+    
+    
+    
+    Astc4x4RgbaUnormSrgb = 63,
+    
+    
+    
+    
+    Astc5x4RgbaUnorm = 64,
+    
+    
+    
+    
+    Astc5x4RgbaUnormSrgb = 65,
+    
+    
+    
+    
+    Astc5x5RgbaUnorm = 66,
+    
+    
+    
+    
+    Astc5x5RgbaUnormSrgb = 67,
+    
+    
+    
+    
+    Astc6x5RgbaUnorm = 68,
+    
+    
+    
+    
+    Astc6x5RgbaUnormSrgb = 69,
+    
+    
+    
+    
+    Astc6x6RgbaUnorm = 70,
+    
+    
+    
+    
+    Astc6x6RgbaUnormSrgb = 71,
+    
+    
+    
+    
+    Astc8x5RgbaUnorm = 72,
+    
+    
+    
+    
+    Astc8x5RgbaUnormSrgb = 73,
+    
+    
+    
+    
+    Astc8x6RgbaUnorm = 74,
+    
+    
+    
+    
+    Astc8x6RgbaUnormSrgb = 75,
+    
+    
+    
+    
+    Astc10x5RgbaUnorm = 76,
+    
+    
+    
+    
+    Astc10x5RgbaUnormSrgb = 77,
+    
+    
+    
+    
+    Astc10x6RgbaUnorm = 78,
+    
+    
+    
+    
+    Astc10x6RgbaUnormSrgb = 79,
+    
+    
+    
+    
+    Astc8x8RgbaUnorm = 80,
+    
+    
+    
+    
+    Astc8x8RgbaUnormSrgb = 81,
+    
+    
+    
+    
+    Astc10x8RgbaUnorm = 82,
+    
+    
+    
+    
+    Astc10x8RgbaUnormSrgb = 83,
+    
+    
+    
+    
+    Astc10x10RgbaUnorm = 84,
+    
+    
+    
+    
+    Astc10x10RgbaUnormSrgb = 85,
+    
+    
+    
+    
+    Astc12x10RgbaUnorm = 86,
+    
+    
+    
+    
+    Astc12x10RgbaUnormSrgb = 87,
+    
+    
+    
+    
+    Astc12x12RgbaUnorm = 88,
+    
+    
+    
+    
+    Astc12x12RgbaUnormSrgb = 89,
+}
+
+impl TextureFormat {
+    
+    pub fn describe(&self) -> TextureFormatInfo {
+        
+        let native = Features::empty();
+        let bc = Features::TEXTURE_COMPRESSION_BC;
+        let etc2 = Features::TEXTURE_COMPRESSION_ETC2;
+        let astc_ldr = Features::TEXTURE_COMPRESSION_ASTC_LDR;
+
+        
+        let uint = TextureSampleType::Uint;
+        let sint = TextureSampleType::Sint;
+        let nearest = TextureSampleType::Float { filterable: false };
+        let float = TextureSampleType::Float { filterable: true };
+        let depth = TextureSampleType::Depth;
+
+        
+        let linear = false;
+        let srgb = true;
+
+        
+        let basic = TextureUsage::COPY_SRC | TextureUsage::COPY_DST | TextureUsage::SAMPLED;
+        let attachment = basic | TextureUsage::RENDER_ATTACHMENT;
+        let storage = basic | TextureUsage::STORAGE;
+        let all_flags = TextureUsage::all();
+
+        
+        let (required_features, sample_type, srgb, block_dimensions, block_size, allowed_usages) =
+            match self {
+                
+                Self::R8Unorm => (native, float, linear, (1, 1), 1, attachment),
+                Self::R8Snorm => (native, float, linear, (1, 1), 1, basic),
+                Self::R8Uint => (native, uint, linear, (1, 1), 1, attachment),
+                Self::R8Sint => (native, sint, linear, (1, 1), 1, attachment),
+
+                
+                Self::R16Uint => (native, uint, linear, (1, 1), 2, attachment),
+                Self::R16Sint => (native, sint, linear, (1, 1), 2, attachment),
+                Self::R16Float => (native, float, linear, (1, 1), 2, attachment),
+                Self::Rg8Unorm => (native, float, linear, (1, 1), 2, attachment),
+                Self::Rg8Snorm => (native, float, linear, (1, 1), 2, attachment),
+                Self::Rg8Uint => (native, uint, linear, (1, 1), 2, attachment),
+                Self::Rg8Sint => (native, sint, linear, (1, 1), 2, basic),
+
+                
+                Self::R32Uint => (native, uint, linear, (1, 1), 4, all_flags),
+                Self::R32Sint => (native, sint, linear, (1, 1), 4, all_flags),
+                Self::R32Float => (native, nearest, linear, (1, 1), 4, all_flags),
+                Self::Rg16Uint => (native, uint, linear, (1, 1), 4, attachment),
+                Self::Rg16Sint => (native, sint, linear, (1, 1), 4, attachment),
+                Self::Rg16Float => (native, float, linear, (1, 1), 4, attachment),
+                Self::Rgba8Unorm => (native, float, linear, (1, 1), 4, all_flags),
+                Self::Rgba8UnormSrgb => (native, float, srgb, (1, 1), 4, attachment),
+                Self::Rgba8Snorm => (native, float, linear, (1, 1), 4, storage),
+                Self::Rgba8Uint => (native, uint, linear, (1, 1), 4, all_flags),
+                Self::Rgba8Sint => (native, sint, linear, (1, 1), 4, all_flags),
+                Self::Bgra8Unorm => (native, float, linear, (1, 1), 4, attachment),
+                Self::Bgra8UnormSrgb => (native, float, srgb, (1, 1), 4, attachment),
+
+                
+                Self::Rgb10a2Unorm => (native, float, linear, (1, 1), 4, attachment),
+                Self::Rg11b10Float => (native, float, linear, (1, 1), 4, basic),
+
+                
+                Self::Rg32Uint => (native, uint, linear, (1, 1), 8, all_flags),
+                Self::Rg32Sint => (native, sint, linear, (1, 1), 8, all_flags),
+                Self::Rg32Float => (native, nearest, linear, (1, 1), 8, all_flags),
+                Self::Rgba16Uint => (native, uint, linear, (1, 1), 8, all_flags),
+                Self::Rgba16Sint => (native, sint, linear, (1, 1), 8, all_flags),
+                Self::Rgba16Float => (native, float, linear, (1, 1), 8, all_flags),
+
+                
+                Self::Rgba32Uint => (native, uint, linear, (1, 1), 16, all_flags),
+                Self::Rgba32Sint => (native, sint, linear, (1, 1), 16, all_flags),
+                Self::Rgba32Float => (native, nearest, linear, (1, 1), 16, all_flags),
+
+                
+                Self::Depth32Float => (native, depth, linear, (1, 1), 4, attachment),
+                Self::Depth24Plus => (native, depth, linear, (1, 1), 4, attachment),
+                Self::Depth24PlusStencil8 => (native, depth, linear, (1, 1), 4, attachment),
+
+                
+                Self::Bc1RgbaUnorm => (bc, float, linear, (4, 4), 8, basic),
+                Self::Bc1RgbaUnormSrgb => (bc, float, srgb, (4, 4), 8, basic),
+                Self::Bc2RgbaUnorm => (bc, float, linear, (4, 4), 16, basic),
+                Self::Bc2RgbaUnormSrgb => (bc, float, srgb, (4, 4), 16, basic),
+                Self::Bc3RgbaUnorm => (bc, float, linear, (4, 4), 16, basic),
+                Self::Bc3RgbaUnormSrgb => (bc, float, srgb, (4, 4), 16, basic),
+                Self::Bc4RUnorm => (bc, float, linear, (4, 4), 8, basic),
+                Self::Bc4RSnorm => (bc, float, linear, (4, 4), 8, basic),
+                Self::Bc5RgUnorm => (bc, float, linear, (4, 4), 16, basic),
+                Self::Bc5RgSnorm => (bc, float, linear, (4, 4), 16, basic),
+                Self::Bc6hRgbUfloat => (bc, float, linear, (4, 4), 16, basic),
+                Self::Bc6hRgbSfloat => (bc, float, linear, (4, 4), 16, basic),
+                Self::Bc7RgbaUnorm => (bc, float, linear, (4, 4), 16, basic),
+                Self::Bc7RgbaUnormSrgb => (bc, float, srgb, (4, 4), 16, basic),
+
+                
+                Self::Etc2RgbUnorm => (etc2, float, linear, (4, 4), 8, basic),
+                Self::Etc2RgbUnormSrgb => (etc2, float, srgb, (4, 4), 8, basic),
+                Self::Etc2RgbA1Unorm => (etc2, float, linear, (4, 4), 8, basic),
+                Self::Etc2RgbA1UnormSrgb => (etc2, float, srgb, (4, 4), 8, basic),
+                Self::Etc2RgbA8Unorm => (etc2, float, linear, (4, 4), 16, basic),
+                Self::Etc2RgbA8UnormSrgb => (etc2, float, srgb, (4, 4), 16, basic),
+                Self::EacRUnorm => (etc2, float, linear, (4, 4), 8, basic),
+                Self::EacRSnorm => (etc2, float, linear, (4, 4), 8, basic),
+                Self::EtcRgUnorm => (etc2, float, linear, (4, 4), 16, basic),
+                Self::EtcRgSnorm => (etc2, float, linear, (4, 4), 16, basic),
+
+                
+                Self::Astc4x4RgbaUnorm => (astc_ldr, float, linear, (4, 4), 16, basic),
+                Self::Astc4x4RgbaUnormSrgb => (astc_ldr, float, srgb, (4, 4), 16, basic),
+                Self::Astc5x4RgbaUnorm => (astc_ldr, float, linear, (5, 4), 16, basic),
+                Self::Astc5x4RgbaUnormSrgb => (astc_ldr, float, srgb, (5, 4), 16, basic),
+                Self::Astc5x5RgbaUnorm => (astc_ldr, float, linear, (5, 5), 16, basic),
+                Self::Astc5x5RgbaUnormSrgb => (astc_ldr, float, srgb, (5, 5), 16, basic),
+                Self::Astc6x5RgbaUnorm => (astc_ldr, float, linear, (6, 5), 16, basic),
+                Self::Astc6x5RgbaUnormSrgb => (astc_ldr, float, srgb, (6, 5), 16, basic),
+                Self::Astc6x6RgbaUnorm => (astc_ldr, float, linear, (6, 6), 16, basic),
+                Self::Astc6x6RgbaUnormSrgb => (astc_ldr, float, srgb, (6, 6), 16, basic),
+                Self::Astc8x5RgbaUnorm => (astc_ldr, float, linear, (8, 5), 16, basic),
+                Self::Astc8x5RgbaUnormSrgb => (astc_ldr, float, srgb, (8, 5), 16, basic),
+                Self::Astc8x6RgbaUnorm => (astc_ldr, float, linear, (8, 6), 16, basic),
+                Self::Astc8x6RgbaUnormSrgb => (astc_ldr, float, srgb, (8, 6), 16, basic),
+                Self::Astc10x5RgbaUnorm => (astc_ldr, float, linear, (10, 5), 16, basic),
+                Self::Astc10x5RgbaUnormSrgb => (astc_ldr, float, srgb, (10, 5), 16, basic),
+                Self::Astc10x6RgbaUnorm => (astc_ldr, float, linear, (10, 6), 16, basic),
+                Self::Astc10x6RgbaUnormSrgb => (astc_ldr, float, srgb, (10, 6), 16, basic),
+                Self::Astc8x8RgbaUnorm => (astc_ldr, float, linear, (8, 8), 16, basic),
+                Self::Astc8x8RgbaUnormSrgb => (astc_ldr, float, srgb, (8, 8), 16, basic),
+                Self::Astc10x8RgbaUnorm => (astc_ldr, float, linear, (10, 8), 16, basic),
+                Self::Astc10x8RgbaUnormSrgb => (astc_ldr, float, srgb, (10, 8), 16, basic),
+                Self::Astc10x10RgbaUnorm => (astc_ldr, float, linear, (10, 10), 16, basic),
+                Self::Astc10x10RgbaUnormSrgb => (astc_ldr, float, srgb, (10, 10), 16, basic),
+                Self::Astc12x10RgbaUnorm => (astc_ldr, float, linear, (12, 10), 16, basic),
+                Self::Astc12x10RgbaUnormSrgb => (astc_ldr, float, srgb, (12, 10), 16, basic),
+                Self::Astc12x12RgbaUnorm => (astc_ldr, float, linear, (12, 12), 16, basic),
+                Self::Astc12x12RgbaUnormSrgb => (astc_ldr, float, srgb, (12, 12), 16, basic),
+            };
+
+        TextureFormatInfo {
+            required_features,
+            sample_type,
+            block_dimensions,
+            block_size,
+            srgb,
+            guaranteed_format_features: TextureFormatFeatures {
+                allowed_usages,
+                flags: TextureFormatFeatureFlags::empty(),
+                filterable: sample_type == TextureSampleType::Float { filterable: true },
+            },
+        }
+    }
 }
 
 bitflags::bitflags! {
@@ -906,30 +1564,33 @@ impl Default for ColorWrite {
     }
 }
 
+
 #[repr(C)]
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct StencilStateDescriptor {
+pub struct StencilState {
     
-    pub front: StencilStateFaceDescriptor,
+    pub front: StencilFaceState,
     
-    pub back: StencilStateFaceDescriptor,
+    pub back: StencilFaceState,
     
     pub read_mask: u32,
     
     pub write_mask: u32,
 }
 
-impl StencilStateDescriptor {
+impl StencilState {
+    
     pub fn is_enabled(&self) -> bool {
-        (self.front != StencilStateFaceDescriptor::IGNORE
-            || self.back != StencilStateFaceDescriptor::IGNORE)
+        (self.front != StencilFaceState::IGNORE || self.back != StencilFaceState::IGNORE)
             && (self.read_mask != 0 || self.write_mask != 0)
     }
+    
     pub fn is_read_only(&self) -> bool {
         self.write_mask == 0
     }
+    
     pub fn needs_ref_value(&self) -> bool {
         self.front.compare.needs_ref_value() || self.back.compare.needs_ref_value()
     }
@@ -937,10 +1598,31 @@ impl StencilStateDescriptor {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct DepthStencilStateDescriptor {
+pub struct DepthBiasState {
+    
+    pub constant: i32,
+    
+    pub slope_scale: f32,
+    
+    pub clamp: f32,
+}
+
+impl DepthBiasState {
+    
+    pub fn is_enabled(&self) -> bool {
+        self.constant != 0 || self.slope_scale != 0.0
+    }
+}
+
+
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct DepthStencilState {
     
     
     pub format: TextureFormat,
@@ -948,13 +1630,25 @@ pub struct DepthStencilStateDescriptor {
     pub depth_write_enabled: bool,
     
     pub depth_compare: CompareFunction,
-    pub stencil: StencilStateDescriptor,
+    
+    #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
+    pub stencil: StencilState,
+    
+    #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
+    pub bias: DepthBiasState,
+    
+    
+    
+    #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
+    pub clamp_depth: bool,
 }
 
-impl DepthStencilStateDescriptor {
+impl DepthStencilState {
+    
     pub fn is_depth_enabled(&self) -> bool {
         self.depth_compare != CompareFunction::Always || self.depth_write_enabled
     }
+    
     pub fn is_read_only(&self) -> bool {
         !self.depth_write_enabled && self.stencil.is_read_only()
     }
@@ -963,8 +1657,7 @@ impl DepthStencilStateDescriptor {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-#[cfg_attr(feature = "trace", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub enum IndexFormat {
     
     Uint16 = 0,
@@ -1015,7 +1708,7 @@ impl Default for StencilOperation {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct StencilStateFaceDescriptor {
+pub struct StencilFaceState {
     
     pub compare: CompareFunction,
     
@@ -1026,8 +1719,9 @@ pub struct StencilStateFaceDescriptor {
     pub pass_op: StencilOperation,
 }
 
-impl StencilStateFaceDescriptor {
-    pub const IGNORE: Self = StencilStateFaceDescriptor {
+impl StencilFaceState {
+    
+    pub const IGNORE: Self = StencilFaceState {
         compare: CompareFunction::Always,
         fail_op: StencilOperation::Keep,
         depth_fail_op: StencilOperation::Keep,
@@ -1035,7 +1729,7 @@ impl StencilStateFaceDescriptor {
     };
 }
 
-impl Default for StencilStateFaceDescriptor {
+impl Default for StencilFaceState {
     fn default() -> Self {
         Self::IGNORE
     }
@@ -1066,6 +1760,7 @@ pub enum CompareFunction {
 }
 
 impl CompareFunction {
+    
     pub fn needs_ref_value(self) -> bool {
         match self {
             Self::Never | Self::Always => false,
@@ -1086,6 +1781,12 @@ pub enum InputStepMode {
     Instance = 1,
 }
 
+impl Default for InputStepMode {
+    fn default() -> Self {
+        InputStepMode::Vertex
+    }
+}
+
 
 
 
@@ -1093,11 +1794,11 @@ pub enum InputStepMode {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct VertexAttributeDescriptor {
-    
-    pub offset: BufferAddress,
+pub struct VertexAttribute {
     
     pub format: VertexFormat,
+    
+    pub offset: BufferAddress,
     
     pub shader_location: ShaderLocation,
 }
@@ -1109,93 +1810,105 @@ pub struct VertexAttributeDescriptor {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum VertexFormat {
     
-    Uchar2 = 0,
+    Uint8x2 = 0,
     
-    Uchar4 = 1,
+    Uint8x4 = 1,
     
-    Char2 = 2,
+    Sint8x2 = 2,
     
-    Char4 = 3,
+    Sint8x4 = 3,
     
-    Uchar2Norm = 4,
+    Unorm8x2 = 4,
     
-    Uchar4Norm = 5,
+    Unorm8x4 = 5,
     
-    Char2Norm = 6,
+    Snorm8x2 = 6,
     
-    Char4Norm = 7,
+    Snorm8x4 = 7,
     
-    Ushort2 = 8,
+    Uint16x2 = 8,
     
-    Ushort4 = 9,
+    Uint16x4 = 9,
     
-    Short2 = 10,
+    Sint16x2 = 10,
     
-    Short4 = 11,
+    Sint16x4 = 11,
     
-    Ushort2Norm = 12,
+    Unorm16x2 = 12,
     
-    Ushort4Norm = 13,
+    Unorm16x4 = 13,
     
-    Short2Norm = 14,
+    Snorm16x2 = 14,
     
-    Short4Norm = 15,
+    Snorm16x4 = 15,
     
-    Half2 = 16,
+    Float16x2 = 16,
     
-    Half4 = 17,
+    Float16x4 = 17,
     
-    Float = 18,
+    Float32 = 18,
     
-    Float2 = 19,
+    Float32x2 = 19,
     
-    Float3 = 20,
+    Float32x3 = 20,
     
-    Float4 = 21,
+    Float32x4 = 21,
     
-    Uint = 22,
+    Uint32 = 22,
     
-    Uint2 = 23,
+    Uint32x2 = 23,
     
-    Uint3 = 24,
+    Uint32x3 = 24,
     
-    Uint4 = 25,
+    Uint32x4 = 25,
     
-    Int = 26,
+    Sint32 = 26,
     
-    Int2 = 27,
+    Sint32x2 = 27,
     
-    Int3 = 28,
+    Sint32x3 = 28,
     
-    Int4 = 29,
+    Sint32x4 = 29,
+    
+    Float64 = 30,
+    
+    Float64x2 = 31,
+    
+    Float64x3 = 32,
+    
+    Float64x4 = 33,
 }
 
 impl VertexFormat {
+    
     pub const fn size(&self) -> u64 {
         match self {
-            Self::Uchar2 | Self::Char2 | Self::Uchar2Norm | Self::Char2Norm => 2,
-            Self::Uchar4
-            | Self::Char4
-            | Self::Uchar4Norm
-            | Self::Char4Norm
-            | Self::Ushort2
-            | Self::Short2
-            | Self::Ushort2Norm
-            | Self::Short2Norm
-            | Self::Half2
-            | Self::Float
-            | Self::Uint
-            | Self::Int => 4,
-            Self::Ushort4
-            | Self::Short4
-            | Self::Ushort4Norm
-            | Self::Short4Norm
-            | Self::Half4
-            | Self::Float2
-            | Self::Uint2
-            | Self::Int2 => 8,
-            Self::Float3 | Self::Uint3 | Self::Int3 => 12,
-            Self::Float4 | Self::Uint4 | Self::Int4 => 16,
+            Self::Uint8x2 | Self::Sint8x2 | Self::Unorm8x2 | Self::Snorm8x2 => 2,
+            Self::Uint8x4
+            | Self::Sint8x4
+            | Self::Unorm8x4
+            | Self::Snorm8x4
+            | Self::Uint16x2
+            | Self::Sint16x2
+            | Self::Unorm16x2
+            | Self::Snorm16x2
+            | Self::Float16x2
+            | Self::Float32
+            | Self::Uint32
+            | Self::Sint32 => 4,
+            Self::Uint16x4
+            | Self::Sint16x4
+            | Self::Unorm16x4
+            | Self::Snorm16x4
+            | Self::Float16x4
+            | Self::Float32x2
+            | Self::Uint32x2
+            | Self::Sint32x2
+            | Self::Float64 => 8,
+            Self::Float32x3 | Self::Uint32x3 | Self::Sint32x3 => 12,
+            Self::Float32x4 | Self::Uint32x4 | Self::Sint32x4 | Self::Float64x2 => 16,
+            Self::Float64x3 => 24,
+            Self::Float64x4 => 32,
         }
     }
 }
@@ -1259,6 +1972,7 @@ pub struct BufferDescriptor<L> {
 }
 
 impl<L> BufferDescriptor<L> {
+    
     pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> BufferDescriptor<K> {
         BufferDescriptor {
             label: fun(&self.label),
@@ -1280,6 +1994,7 @@ pub struct CommandEncoderDescriptor<L> {
 }
 
 impl<L> CommandEncoderDescriptor<L> {
+    
     pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> CommandEncoderDescriptor<K> {
         CommandEncoderDescriptor {
             label: fun(&self.label),
@@ -1363,10 +2078,16 @@ pub struct SwapChainDescriptor {
 #[repr(C)]
 #[derive(Debug)]
 pub enum SwapChainStatus {
+    
     Good,
+    
+    
     Suboptimal,
+    
     Timeout,
+    
     Outdated,
+    
     Lost,
 }
 
@@ -1377,12 +2098,17 @@ pub enum SwapChainStatus {
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Color {
+    
     pub r: f64,
+    
     pub g: f64,
+    
     pub b: f64,
+    
     pub a: f64,
 }
 
+#[allow(missing_docs)]
 impl Color {
     pub const TRANSPARENT: Self = Self {
         r: 0.0,
@@ -1442,12 +2168,16 @@ pub enum TextureDimension {
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct Origin3d {
+    
     pub x: u32,
+    
     pub y: u32,
+    
     pub z: u32,
 }
 
 impl Origin3d {
+    
     pub const ZERO: Self = Self { x: 0, y: 0, z: 0 };
 }
 
@@ -1463,9 +2193,12 @@ impl Default for Origin3d {
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct Extent3d {
+    
     pub width: u32,
+    
     pub height: u32,
-    pub depth: u32,
+    
+    pub depth_or_array_layers: u32,
 }
 
 impl Default for Extent3d {
@@ -1473,8 +2206,102 @@ impl Default for Extent3d {
         Self {
             width: 1,
             height: 1,
-            depth: 1,
+            depth_or_array_layers: 1,
         }
+    }
+}
+
+impl Extent3d {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn physical_size(&self, format: TextureFormat) -> Self {
+        let (block_width, block_height) = format.describe().block_dimensions;
+        let block_width = block_width as u32;
+        let block_height = block_height as u32;
+
+        let width = ((self.width + block_width - 1) / block_width) * block_width;
+        let height = ((self.height + block_height - 1) / block_height) * block_height;
+
+        Self {
+            width,
+            height,
+            depth_or_array_layers: self.depth_or_array_layers,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn max_mips(&self) -> u8 {
+        let max_dim = self.width.max(self.height.max(self.depth_or_array_layers));
+        let max_levels = 32 - max_dim.leading_zeros();
+
+        max_levels as u8
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn at_mip_level(&self, level: u8) -> Option<Self> {
+        let mip_count = self.max_mips();
+
+        if level >= mip_count {
+            return None;
+        }
+
+        Some(Self {
+            width: u32::max(1, self.width >> level as u32),
+            height: u32::max(1, self.height >> level as u32),
+            depth_or_array_layers: u32::max(1, self.depth_or_array_layers >> level as u32),
+        })
     }
 }
 
@@ -1502,6 +2329,7 @@ pub struct TextureDescriptor<L> {
 }
 
 impl<L> TextureDescriptor<L> {
+    
     pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> TextureDescriptor<K> {
         TextureDescriptor {
             label: fun(&self.label),
@@ -1611,10 +2439,12 @@ pub struct PushConstantRange {
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CommandBufferDescriptor<L> {
+    
     pub label: L,
 }
 
 impl<L> CommandBufferDescriptor<L> {
+    
     pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> CommandBufferDescriptor<K> {
         CommandBufferDescriptor {
             label: fun(&self.label),
@@ -1633,6 +2463,7 @@ pub struct RenderBundleDescriptor<L> {
 }
 
 impl<L> RenderBundleDescriptor<L> {
+    
     pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> RenderBundleDescriptor<K> {
         RenderBundleDescriptor {
             label: fun(&self.label),
@@ -1730,10 +2561,11 @@ pub enum TextureSampleType {
     
     
     
-    
-    
-    
-    Float { filterable: bool },
+    Float {
+        
+        
+        filterable: bool,
+    },
     
     
     
@@ -1766,69 +2598,6 @@ impl Default for TextureSampleType {
     }
 }
 
-impl From<TextureFormat> for TextureSampleType {
-    fn from(format: TextureFormat) -> Self {
-        match format {
-            TextureFormat::R8Uint
-            | TextureFormat::R16Uint
-            | TextureFormat::Rg8Uint
-            | TextureFormat::R32Uint
-            | TextureFormat::Rg16Uint
-            | TextureFormat::Rgba8Uint
-            | TextureFormat::Rg32Uint
-            | TextureFormat::Rgba16Uint
-            | TextureFormat::Rgba32Uint => Self::Uint,
-
-            TextureFormat::R8Sint
-            | TextureFormat::R16Sint
-            | TextureFormat::Rg8Sint
-            | TextureFormat::R32Sint
-            | TextureFormat::Rg16Sint
-            | TextureFormat::Rgba8Sint
-            | TextureFormat::Rg32Sint
-            | TextureFormat::Rgba16Sint
-            | TextureFormat::Rgba32Sint => Self::Sint,
-
-            TextureFormat::R32Float | TextureFormat::Rg32Float | TextureFormat::Rgba32Float => {
-                Self::Float { filterable: false }
-            }
-
-            TextureFormat::R8Unorm
-            | TextureFormat::R8Snorm
-            | TextureFormat::R16Float
-            | TextureFormat::Rg8Unorm
-            | TextureFormat::Rg8Snorm
-            | TextureFormat::Rg16Float
-            | TextureFormat::Rg11b10Float
-            | TextureFormat::Rgba8Snorm
-            | TextureFormat::Rgba16Float
-            | TextureFormat::Rgba8Unorm
-            | TextureFormat::Rgba8UnormSrgb
-            | TextureFormat::Bgra8Unorm
-            | TextureFormat::Bgra8UnormSrgb
-            | TextureFormat::Rgb10a2Unorm
-            | TextureFormat::Bc1RgbaUnorm
-            | TextureFormat::Bc1RgbaUnormSrgb
-            | TextureFormat::Bc2RgbaUnorm
-            | TextureFormat::Bc2RgbaUnormSrgb
-            | TextureFormat::Bc3RgbaUnorm
-            | TextureFormat::Bc3RgbaUnormSrgb
-            | TextureFormat::Bc4RUnorm
-            | TextureFormat::Bc4RSnorm
-            | TextureFormat::Bc5RgUnorm
-            | TextureFormat::Bc5RgSnorm
-            | TextureFormat::Bc6hRgbSfloat
-            | TextureFormat::Bc6hRgbUfloat
-            | TextureFormat::Bc7RgbaUnorm
-            | TextureFormat::Bc7RgbaUnormSrgb => Self::Float { filterable: true },
-
-            TextureFormat::Depth32Float
-            | TextureFormat::Depth24Plus
-            | TextureFormat::Depth24PlusStencil8 => Self::Depth,
-        }
-    }
-}
-
 
 
 
@@ -1850,6 +2619,14 @@ pub enum StorageTextureAccess {
     
     
     WriteOnly,
+    
+    
+    
+    
+    
+    
+    
+    ReadWrite,
 }
 
 
@@ -1865,16 +2642,17 @@ pub enum StorageTextureAccess {
 pub enum BindingType {
     
     Buffer {
+        
         ty: BufferBindingType,
         
         
-        #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
+        #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
         has_dynamic_offset: bool,
         
         
         
         
-        #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
+        #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
         min_binding_size: Option<BufferSize>,
     },
     
@@ -1930,6 +2708,7 @@ pub enum BindingType {
 }
 
 impl BindingType {
+    
     pub fn has_dynamic_offset(&self) -> bool {
         match *self {
             Self::Buffer {
@@ -1957,7 +2736,7 @@ pub struct BindGroupLayoutEntry {
     
     
     
-    #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
+    #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
     pub count: Option<NonZeroU32>,
 }
 
@@ -1984,7 +2763,7 @@ pub struct TextureCopyView<T> {
     
     pub mip_level: u32,
     
-    #[cfg_attr(any(feature = "replay", feature = "trace"), serde(default))]
+    #[cfg_attr(any(feature = "trace", feature = "replay"), serde(default))]
     pub origin: Origin3d,
 }
 
@@ -1994,7 +2773,124 @@ pub struct TextureCopyView<T> {
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
 #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
 pub enum SamplerBorderColor {
+    
     TransparentBlack,
+    
     OpaqueBlack,
+    
     OpaqueWhite,
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "trace", derive(serde::Serialize))]
+#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+pub struct QuerySetDescriptor {
+    
+    pub ty: QueryType,
+    
+    
+    pub count: u32,
+}
+
+
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "trace", derive(serde::Serialize))]
+#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+pub enum QueryType {
+    
+    
+    
+    
+    
+    
+    PipelineStatistics(PipelineStatisticsTypes),
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Timestamp,
+}
+
+bitflags::bitflags! {
+    /// Flags for which pipeline data should be recorded.
+    ///
+    /// The amount of values written when resolved depends
+    /// on the amount of flags. If 3 flags are enabled, 3
+    /// 64-bit values will be writen per-query.
+    ///
+    /// The order they are written is the order they are declared
+    /// in this bitflags. If you enabled `CLIPPER_PRIMITIVES_OUT`
+    /// and `COMPUTE_SHADER_INVOCATIONS`, it would write 16 bytes,
+    /// the first 8 bytes being the primative out value, the last 8
+    /// bytes being the compute shader invocation count.
+    #[repr(transparent)]
+    #[cfg_attr(feature = "trace", derive(Serialize))]
+    #[cfg_attr(feature = "replay", derive(Deserialize))]
+    pub struct PipelineStatisticsTypes : u8 {
+        /// Amount of times the vertex shader is ran. Accounts for
+        /// the vertex cache when doing indexed rendering.
+        const VERTEX_SHADER_INVOCATIONS = 0x01;
+        /// Amount of times the clipper is invoked. This
+        /// is also the amount of triangles output by the vertex shader.
+        const CLIPPER_INVOCATIONS = 0x02;
+        /// Amount of primitives that are not culled by the clipper.
+        /// This is the amount of triangles that are actually on screen
+        /// and will be rasterized and rendered.
+        const CLIPPER_PRIMITIVES_OUT = 0x04;
+        /// Amount of times the fragment shader is ran. Accounts for
+        /// fragment shaders running in 2x2 blocks in order to get
+        /// derivatives.
+        const FRAGMENT_SHADER_INVOCATIONS = 0x08;
+        /// Amount of times a compute shader is invoked. This will
+        /// be equivilent to the dispatch count times the workgroup size.
+        const COMPUTE_SHADER_INVOCATIONS = 0x10;
+    }
+}
+
+
+#[repr(C)]
+#[derive(Clone, Debug)]
+pub struct DrawIndirectArgs {
+    
+    pub vertex_count: u32,
+    
+    pub instance_count: u32,
+    
+    pub first_vertex: u32,
+    
+    pub first_instance: u32,
+}
+
+
+#[repr(C)]
+#[derive(Clone, Debug)]
+pub struct DrawIndexedIndirectArgs {
+    
+    pub index_count: u32,
+    
+    pub instance_count: u32,
+    
+    pub first_index: u32,
+    
+    pub base_vertex: i32,
+    
+    pub first_instance: u32,
+}
+
+
+#[repr(C)]
+#[derive(Clone, Debug)]
+pub struct DispatchIndirectArgs {
+    
+    pub group_size_x: u32,
+    
+    pub group_size_y: u32,
+    
+    pub group_size_z: u32,
 }

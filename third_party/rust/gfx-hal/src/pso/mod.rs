@@ -16,48 +16,26 @@ pub use self::{
 };
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, thiserror::Error)]
 pub enum CreationError {
     
+    #[error("Implementation specific error occurred")]
     Other,
     
+    #[error("Pipeline kind is not supported")]
     UnsupportedPipeline,
     
+    #[error("Invalid subpass: {0:?}")]
     InvalidSubpass(pass::SubpassId),
     
-    Shader(device::ShaderError),
+    #[error("Invalid entry point: {0:}")]
+    MissingEntryPoint(String),
     
-    OutOfMemory(device::OutOfMemory),
-}
-
-impl From<device::OutOfMemory> for CreationError {
-    fn from(err: device::OutOfMemory) -> Self {
-        CreationError::OutOfMemory(err)
-    }
-}
-
-impl std::fmt::Display for CreationError {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CreationError::OutOfMemory(err) => write!(fmt, "Failed to create pipeline: {}", err),
-            CreationError::Other => write!(fmt, "Failed to create pipeline: Unsupported usage: Implementation specific error occurred"),
-            CreationError::UnsupportedPipeline => write!(fmt, "Failed to create pipeline: pipeline type is not supported"),
-            CreationError::InvalidSubpass(subpass) => write!(fmt, "Failed to create pipeline: Invalid subpass: {}", subpass),
-            CreationError::Shader(err) => write!(fmt, "Failed to create pipeline: {}", err),
-        }
-    }
-}
-
-impl std::error::Error for CreationError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            CreationError::OutOfMemory(err) => Some(err),
-            CreationError::Shader(err) => Some(err),
-            CreationError::InvalidSubpass(_) => None,
-            CreationError::Other => None,
-            CreationError::UnsupportedPipeline => None,
-        }
-    }
+    #[error("Specialization failed: {0:}")]
+    InvalidSpecialization(String),
+    
+    #[error(transparent)]
+    OutOfMemory(#[from] device::OutOfMemory),
 }
 
 bitflags!(
@@ -133,6 +111,17 @@ bitflags!(
         const ALL      = 0x7FFFFFFF;
     }
 );
+
+impl From<naga::ShaderStage> for ShaderStageFlags {
+    fn from(stage: naga::ShaderStage) -> Self {
+        use naga::ShaderStage as Ss;
+        match stage {
+            Ss::Vertex => Self::VERTEX,
+            Ss::Fragment => Self::FRAGMENT,
+            Ss::Compute => Self::COMPUTE,
+        }
+    }
+}
 
 
 #[derive(Debug)]

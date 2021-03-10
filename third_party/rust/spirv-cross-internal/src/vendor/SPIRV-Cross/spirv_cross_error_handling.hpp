@@ -14,6 +14,13 @@
 
 
 
+
+
+
+
+
+
+
 #ifndef SPIRV_CROSS_ERROR_HANDLING
 #define SPIRV_CROSS_ERROR_HANDLING
 

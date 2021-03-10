@@ -16,8 +16,6 @@
 mod clear;
 mod structs;
 
-use std::{any::Any, borrow::Borrow, fmt, ops::Range};
-
 use crate::{
     buffer,
     image::{Filter, Layout, SubresourceRange},
@@ -25,6 +23,8 @@ use crate::{
     pass, pso, query, Backend, DrawCount, IndexCount, IndexType, InstanceCount, TaskCount,
     VertexCount, VertexOffset, WorkGroupCount,
 };
+
+use std::{any::Any, fmt, ops::Range};
 
 pub use self::clear::*;
 pub use self::structs::*;
@@ -70,6 +70,15 @@ pub enum SubpassContents {
     
     
     SecondaryBuffers,
+}
+
+
+#[derive(Debug)]
+pub struct RenderAttachmentInfo<'a, B: Backend> {
+    
+    pub image_view: &'a B::ImageView,
+    
+    pub clear_value: ClearValue,
 }
 
 #[allow(missing_docs)]
@@ -127,8 +136,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         dependencies: Dependencies,
         barriers: T,
     ) where
-        T: IntoIterator,
-        T::Item: Borrow<Barrier<'a, B>>;
+        T: Iterator<Item = Barrier<'a, B>>;
 
     
     unsafe fn fill_buffer(&mut self, buffer: &B::Buffer, range: buffer::SubRange, data: u32);
@@ -144,19 +152,14 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         value: ClearValue,
         subresource_ranges: T,
     ) where
-        T: IntoIterator,
-        T::Item: Borrow<SubresourceRange>;
+        T: Iterator<Item = SubresourceRange>;
 
     
     
     unsafe fn clear_attachments<T, U>(&mut self, clears: T, rects: U)
     where
-        T: IntoIterator,
-        T::Item: Borrow<AttachmentClear>,
-        T::IntoIter: ExactSizeIterator,
-        U: IntoIterator,
-        U::Item: Borrow<pso::ClearRect>,
-        U::IntoIter: ExactSizeIterator;
+        T: Iterator<Item = AttachmentClear>,
+        U: Iterator<Item = pso::ClearRect>;
 
     
     
@@ -168,9 +171,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         dst_layout: Layout,
         regions: T,
     ) where
-        T: IntoIterator,
-        T::Item: Borrow<ImageResolve>,
-        T::IntoIter: ExactSizeIterator;
+        T: Iterator<Item = ImageResolve>;
 
     
     
@@ -183,9 +184,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         filter: Filter,
         regions: T,
     ) where
-        T: IntoIterator,
-        T::Item: Borrow<ImageBlit>,
-        T::IntoIter: ExactSizeIterator;
+        T: Iterator<Item = ImageBlit>;
 
     
     
@@ -211,11 +210,9 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
     
-    unsafe fn bind_vertex_buffers<I, T>(&mut self, first_binding: pso::BufferIndex, buffers: I)
+    unsafe fn bind_vertex_buffers<'a, T>(&mut self, first_binding: pso::BufferIndex, buffers: T)
     where
-        I: IntoIterator<Item = (T, buffer::SubRange)>,
-        T: Borrow<B::Buffer>,
-        I::IntoIter: ExactSizeIterator;
+        T: Iterator<Item = (&'a B::Buffer, buffer::SubRange)>;
 
     
     
@@ -236,9 +233,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     unsafe fn set_viewports<T>(&mut self, first_viewport: u32, viewports: T)
     where
-        T: IntoIterator,
-        T::Item: Borrow<pso::Viewport>,
-        T::IntoIter: ExactSizeIterator;
+        T: Iterator<Item = pso::Viewport>;
 
     
     
@@ -259,9 +254,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     unsafe fn set_scissors<T>(&mut self, first_scissor: u32, rects: T)
     where
-        T: IntoIterator,
-        T::Item: Borrow<pso::Rect>,
-        T::IntoIter: ExactSizeIterator;
+        T: Iterator<Item = pso::Rect>;
 
     
     
@@ -298,18 +291,15 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
     
-    
-    unsafe fn begin_render_pass<T>(
+    unsafe fn begin_render_pass<'a, T>(
         &mut self,
         render_pass: &B::RenderPass,
         framebuffer: &B::Framebuffer,
         render_area: pso::Rect,
-        clear_values: T,
+        attachments: T,
         first_subpass: SubpassContents,
     ) where
-        T: IntoIterator,
-        T::Item: Borrow<ClearValue>,
-        T::IntoIter: ExactSizeIterator;
+        T: Iterator<Item = RenderAttachmentInfo<'a, B>>;
 
     
     unsafe fn next_subpass(&mut self, contents: SubpassContents);
@@ -330,19 +320,15 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
 
     
     
-    unsafe fn bind_graphics_descriptor_sets<I, J>(
+    unsafe fn bind_graphics_descriptor_sets<'a, I, J>(
         &mut self,
         layout: &B::PipelineLayout,
         first_set: usize,
         sets: I,
         offsets: J,
     ) where
-        I: IntoIterator,
-        I::Item: Borrow<B::DescriptorSet>,
-        I::IntoIter: ExactSizeIterator,
-        J: IntoIterator,
-        J::Item: Borrow<DescriptorSetOffset>,
-        J::IntoIter: ExactSizeIterator;
+        I: Iterator<Item = &'a B::DescriptorSet>,
+        J: Iterator<Item = DescriptorSetOffset>;
 
     
     
@@ -357,19 +343,15 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
 
     
     
-    unsafe fn bind_compute_descriptor_sets<I, J>(
+    unsafe fn bind_compute_descriptor_sets<'a, I, J>(
         &mut self,
         layout: &B::PipelineLayout,
         first_set: usize,
         sets: I,
         offsets: J,
     ) where
-        I: IntoIterator,
-        I::Item: Borrow<B::DescriptorSet>,
-        I::IntoIter: ExactSizeIterator,
-        J: IntoIterator,
-        J::Item: Borrow<DescriptorSetOffset>,
-        J::IntoIter: ExactSizeIterator;
+        I: Iterator<Item = &'a B::DescriptorSet>,
+        J: Iterator<Item = DescriptorSetOffset>;
 
     
     
@@ -396,9 +378,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     unsafe fn copy_buffer<T>(&mut self, src: &B::Buffer, dst: &B::Buffer, regions: T)
     where
-        T: IntoIterator,
-        T::Item: Borrow<BufferCopy>,
-        T::IntoIter: ExactSizeIterator;
+        T: Iterator<Item = BufferCopy>;
 
     
     
@@ -412,9 +392,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         dst_layout: Layout,
         regions: T,
     ) where
-        T: IntoIterator,
-        T::Item: Borrow<ImageCopy>,
-        T::IntoIter: ExactSizeIterator;
+        T: Iterator<Item = ImageCopy>;
 
     
     unsafe fn copy_buffer_to_image<T>(
@@ -424,9 +402,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         dst_layout: Layout,
         regions: T,
     ) where
-        T: IntoIterator,
-        T::Item: Borrow<BufferImageCopy>,
-        T::IntoIter: ExactSizeIterator;
+        T: Iterator<Item = BufferImageCopy>;
 
     
     unsafe fn copy_image_to_buffer<T>(
@@ -436,9 +412,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         dst: &B::Buffer,
         regions: T,
     ) where
-        T: IntoIterator,
-        T::Item: Borrow<BufferImageCopy>,
-        T::IntoIter: ExactSizeIterator;
+        T: Iterator<Item = BufferImageCopy>;
 
     
     
@@ -474,7 +448,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         buffer: &B::Buffer,
         offset: buffer::Offset,
         draw_count: DrawCount,
-        stride: u32,
+        stride: buffer::Stride,
     );
 
     
@@ -489,7 +463,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         buffer: &B::Buffer,
         offset: buffer::Offset,
         draw_count: DrawCount,
-        stride: u32,
+        stride: buffer::Stride,
     );
 
     
@@ -507,7 +481,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         _count_buffer: &B::Buffer,
         _count_buffer_offset: buffer::Offset,
         _max_draw_count: u32,
-        _stride: u32,
+        _stride: buffer::Stride,
     );
 
     
@@ -525,7 +499,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         _count_buffer: &B::Buffer,
         _count_buffer_offset: buffer::Offset,
         _max_draw_count: u32,
-        _stride: u32,
+        _stride: buffer::Stride,
     );
 
     
@@ -537,7 +511,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         buffer: &B::Buffer,
         offset: buffer::Offset,
         draw_count: DrawCount,
-        stride: u32,
+        stride: buffer::Stride,
     );
 
     
@@ -551,7 +525,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         count_buffer: &B::Buffer,
         count_buffer_offset: buffer::Offset,
         max_draw_count: DrawCount,
-        stride: u32,
+        stride: buffer::Stride,
     );
 
     
@@ -572,12 +546,8 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         stages: Range<pso::PipelineStage>,
         barriers: J,
     ) where
-        I: IntoIterator,
-        I::Item: Borrow<B::Event>,
-        I::IntoIter: ExactSizeIterator,
-        J: IntoIterator,
-        J::Item: Borrow<Barrier<'a, B>>,
-        J::IntoIter: ExactSizeIterator;
+        I: Iterator<Item = &'a B::Event>,
+        J: Iterator<Item = Barrier<'a, B>>;
 
     
     
@@ -597,7 +567,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         queries: Range<query::Id>,
         buffer: &B::Buffer,
         offset: buffer::Offset,
-        stride: buffer::Offset,
+        stride: buffer::Stride,
         flags: query::ResultFlags,
     );
 
@@ -630,11 +600,9 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
     );
 
     
-    unsafe fn execute_commands<'a, T, I>(&mut self, cmd_buffers: I)
+    unsafe fn execute_commands<'a, T>(&mut self, cmd_buffers: T)
     where
-        T: 'a + Borrow<B::CommandBuffer>,
-        I: IntoIterator<Item = &'a T>,
-        I::IntoIter: ExactSizeIterator;
+        T: Iterator<Item = &'a B::CommandBuffer>;
 
     
     unsafe fn insert_debug_marker(&mut self, name: &str, color: u32);

@@ -1,29 +1,38 @@
+#[cfg(windows)]
+extern crate winapi;
+
 extern crate libloading;
 use libloading::{Symbol, Library};
 
-const LIBPATH: &'static str = concat!(env!("OUT_DIR"), "/libtest_helpers.dll");
+const LIBPATH: &'static str = "target/libtest_helpers.module";
 
 fn make_helpers() {
     static ONCE: ::std::sync::Once = ::std::sync::Once::new();
     ONCE.call_once(|| {
-        let mut outpath = String::from(if let Some(od) = option_env!("OUT_DIR") { od } else { return });
-        let rustc = option_env!("RUSTC").unwrap_or_else(|| { "rustc".into() });
-        outpath.push_str(&"/libtest_helpers.dll"); 
-        let _ = ::std::process::Command::new(rustc)
+        let rustc = std::env::var_os("RUSTC").unwrap_or_else(|| { "rustc".into() });
+        let mut cmd = ::std::process::Command::new(rustc);
+        cmd
             .arg("src/test_helpers.rs")
             .arg("-o")
-            .arg(outpath)
-            .arg("-O")
-            .output()
-            .expect("could not compile the test helpers!");
+            .arg(LIBPATH);
+        if let Some(target) = std::env::var_os("TARGET") {
+            cmd.arg("--target").arg(target);
+        } else {
+            eprintln!("WARNING: $TARGET NOT SPECIFIED! BUILDING HELPER MODULE FOR NATIVE TARGET.");
+        }
+        assert!(cmd
+            .status()
+            .expect("could not compile the test helpers!")
+            .success()
+        );
     });
 }
 
 #[test]
 fn test_id_u32() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
     unsafe {
+        let lib = Library::new(LIBPATH).unwrap();
         let f: Symbol<unsafe extern fn(u32) -> u32> = lib.get(b"test_identity_u32\0").unwrap();
         assert_eq!(42, f(42));
     }
@@ -41,8 +50,8 @@ struct S {
 #[test]
 fn test_id_struct() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
     unsafe {
+        let lib = Library::new(LIBPATH).unwrap();
         let f: Symbol<unsafe extern fn(S) -> S> = lib.get(b"test_identity_struct\0").unwrap();
         assert_eq!(S { a: 1, b: 2, c: 3, d: 4 }, f(S { a: 1, b: 2, c: 3, d: 4 }));
     }
@@ -51,8 +60,8 @@ fn test_id_struct() {
 #[test]
 fn test_0_no_0() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
     unsafe {
+        let lib = Library::new(LIBPATH).unwrap();
         let f: Symbol<unsafe extern fn(S) -> S> = lib.get(b"test_identity_struct\0").unwrap();
         let f2: Symbol<unsafe extern fn(S) -> S> = lib.get(b"test_identity_struct").unwrap();
         assert_eq!(*f, *f2);
@@ -61,14 +70,16 @@ fn test_0_no_0() {
 
 #[test]
 fn wrong_name_fails() {
-    Library::new(concat!(env!("OUT_DIR"), "/libtest_help")).err().unwrap();
+    unsafe {
+        Library::new("target/this_location_is_definitely_non existent:^~").err().unwrap();
+    }
 }
 
 #[test]
 fn missing_symbol_fails() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
     unsafe {
+        let lib = Library::new(LIBPATH).unwrap();
         lib.get::<*mut ()>(b"test_does_not_exist").err().unwrap();
         lib.get::<*mut ()>(b"test_does_not_exist\0").err().unwrap();
     }
@@ -77,8 +88,8 @@ fn missing_symbol_fails() {
 #[test]
 fn interior_null_fails() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
     unsafe {
+        let lib = Library::new(LIBPATH).unwrap();
         lib.get::<*mut ()>(b"test_does\0_not_exist").err().unwrap();
         lib.get::<*mut ()>(b"test\0_does_not_exist\0").err().unwrap();
     }
@@ -87,8 +98,8 @@ fn interior_null_fails() {
 #[test]
 fn test_incompatible_type() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
     unsafe {
+        let lib = Library::new(LIBPATH).unwrap();
         assert!(match lib.get::<()>(b"test_identity_u32\0") {
            Err(libloading::Error::IncompatibleSize) => true,
            _ => false,
@@ -102,8 +113,8 @@ fn test_incompatible_type_named_fn() {
     unsafe fn get<'a, T>(l: &'a Library, _: T) -> Result<Symbol<'a, T>, libloading::Error> {
         l.get::<T>(b"test_identity_u32\0")
     }
-    let lib = Library::new(LIBPATH).unwrap();
     unsafe {
+        let lib = Library::new(LIBPATH).unwrap();
         assert!(match get(&lib, test_incompatible_type_named_fn) {
            Err(libloading::Error::IncompatibleSize) => true,
            _ => false,
@@ -114,8 +125,8 @@ fn test_incompatible_type_named_fn() {
 #[test]
 fn test_static_u32() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
     unsafe {
+        let lib = Library::new(LIBPATH).unwrap();
         let var: Symbol<*mut u32> = lib.get(b"TEST_STATIC_U32\0").unwrap();
         **var = 42;
         let help: Symbol<unsafe extern fn() -> u32> = lib.get(b"test_get_static_u32\0").unwrap();
@@ -126,8 +137,8 @@ fn test_static_u32() {
 #[test]
 fn test_static_ptr() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
     unsafe {
+        let lib = Library::new(LIBPATH).unwrap();
         let var: Symbol<*mut *mut ()> = lib.get(b"TEST_STATIC_PTR\0").unwrap();
         **var = *var as *mut _;
         let works: Symbol<unsafe extern fn() -> bool> =
@@ -136,20 +147,110 @@ fn test_static_ptr() {
     }
 }
 
-#[cfg(any(windows, target_os="linux"))]
-#[cfg(test_nightly)]
 #[test]
-fn test_tls_static() {
+
+
+
+
+#[cfg(not(all(target_arch="x86", target_os="windows", target_env="gnu")))]
+fn manual_close_many_times() {
     make_helpers();
-    let lib = Library::new(LIBPATH).unwrap();
-    unsafe {
-        let var: Symbol<*mut u32> = lib.get(b"TEST_THREAD_LOCAL\0").unwrap();
-        **var = 84;
-        let help: Symbol<unsafe extern fn() -> u32> = lib.get(b"test_get_thread_local\0").unwrap();
-        assert_eq!(84, help());
+    let join_handles: Vec<_> = (0..16).map(|_| {
+        std::thread::spawn(|| unsafe {
+            for _ in 0..10000 {
+                let lib = Library::new(LIBPATH).expect("open library");
+                let _: Symbol<unsafe extern fn(u32) -> u32> =
+                    lib.get(b"test_identity_u32").expect("get fn");
+                lib.close().expect("close is successful");
+            }
+        })
+    }).collect();
+    for handle in join_handles {
+        handle.join().expect("thread should succeed");
     }
-    ::std::thread::spawn(move || unsafe {
-        let help: Symbol<unsafe extern fn() -> u32> = lib.get(b"test_get_thread_local\0").unwrap();
-        assert_eq!(0, help());
-    }).join().unwrap();
+}
+
+
+#[cfg(unix)]
+#[test]
+fn library_this_get() {
+    use libloading::os::unix::Library;
+    make_helpers();
+    
+    unsafe {
+        let _lib = Library::new(LIBPATH).unwrap();
+        let this = Library::this();
+        
+        assert!(this.get::<unsafe extern "C" fn()>(b"test_identity_u32").is_err());
+        
+        assert!(this.get::<unsafe extern "C" fn()>(b"freopen").is_ok());
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn library_this() {
+    use libloading::os::windows::Library;
+    make_helpers();
+    unsafe {
+        
+        let _lib = Library::new(LIBPATH).unwrap();
+        let this = Library::this().expect("this library");
+        
+        
+        assert!(this.get::<unsafe extern "C" fn()>(b"test_identity_u32").is_err());
+        
+        assert!(this.get::<unsafe extern "C" fn()>(b"GetLastError").is_err());
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn works_getlasterror() {
+    use winapi::um::errhandlingapi;
+    use winapi::shared::minwindef::DWORD;
+    use libloading::os::windows::{Library, Symbol};
+
+    unsafe {
+        let lib = Library::new("kernel32.dll").unwrap();
+        let gle: Symbol<unsafe extern "system" fn() -> DWORD> = lib.get(b"GetLastError").unwrap();
+        errhandlingapi::SetLastError(42);
+        assert_eq!(errhandlingapi::GetLastError(), gle())
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn works_getlasterror0() {
+    use winapi::um::errhandlingapi;
+    use winapi::shared::minwindef::DWORD;
+    use libloading::os::windows::{Library, Symbol};
+
+    unsafe {
+        let lib = Library::new("kernel32.dll").unwrap();
+        let gle: Symbol<unsafe extern "system" fn() -> DWORD> = lib.get(b"GetLastError\0").unwrap();
+        errhandlingapi::SetLastError(42);
+        assert_eq!(errhandlingapi::GetLastError(), gle())
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn library_open_already_loaded() {
+    use libloading::os::windows::Library;
+
+    
+    const LIBPATH: &str = "Msftedit.dll";
+
+    
+    assert!(match Library::open_already_loaded(LIBPATH) {
+        Err(libloading::Error::GetModuleHandleExW { .. }) => true,
+        _ => false,
+    });
+
+    unsafe {
+        let _lib = Library::new(LIBPATH).unwrap();
+        
+        assert!(Library::open_already_loaded(LIBPATH).is_ok());
+    }
 }
