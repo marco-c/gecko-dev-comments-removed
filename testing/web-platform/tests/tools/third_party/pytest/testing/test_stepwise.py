@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-import sys
-
 import pytest
 
 
@@ -78,6 +75,16 @@ def broken_testdir(testdir):
     return testdir
 
 
+def _strip_resource_warnings(lines):
+    
+    
+    return [
+        x
+        for x in lines
+        if not x.startswith(("Exception ignored in:", "ResourceWarning"))
+    ]
+
+
 def test_run_without_stepwise(stepwise_testdir):
     result = stepwise_testdir.runpytest("-v", "--strict-markers", "--fail")
 
@@ -91,7 +98,7 @@ def test_fail_and_continue_with_stepwise(stepwise_testdir):
     result = stepwise_testdir.runpytest(
         "-v", "--strict-markers", "--stepwise", "--fail"
     )
-    assert not result.stderr.str()
+    assert _strip_resource_warnings(result.stderr.lines) == []
 
     stdout = result.stdout.str()
     
@@ -101,7 +108,7 @@ def test_fail_and_continue_with_stepwise(stepwise_testdir):
 
     
     result = stepwise_testdir.runpytest("-v", "--strict-markers", "--stepwise")
-    assert not result.stderr.str()
+    assert _strip_resource_warnings(result.stderr.lines) == []
 
     stdout = result.stdout.str()
     
@@ -119,7 +126,7 @@ def test_run_with_skip_option(stepwise_testdir):
         "--fail",
         "--fail-last",
     )
-    assert not result.stderr.str()
+    assert _strip_resource_warnings(result.stderr.lines) == []
 
     stdout = result.stdout.str()
     
@@ -132,7 +139,7 @@ def test_run_with_skip_option(stepwise_testdir):
 def test_fail_on_errors(error_testdir):
     result = error_testdir.runpytest("-v", "--strict-markers", "--stepwise")
 
-    assert not result.stderr.str()
+    assert _strip_resource_warnings(result.stderr.lines) == []
     stdout = result.stdout.str()
 
     assert "test_error ERROR" in stdout
@@ -143,7 +150,7 @@ def test_change_testfile(stepwise_testdir):
     result = stepwise_testdir.runpytest(
         "-v", "--strict-markers", "--stepwise", "--fail", "test_a.py"
     )
-    assert not result.stderr.str()
+    assert _strip_resource_warnings(result.stderr.lines) == []
 
     stdout = result.stdout.str()
     assert "test_fail_on_flag FAILED" in stdout
@@ -153,7 +160,7 @@ def test_change_testfile(stepwise_testdir):
     result = stepwise_testdir.runpytest(
         "-v", "--strict-markers", "--stepwise", "test_b.py"
     )
-    assert not result.stderr.str()
+    assert _strip_resource_warnings(result.stderr.lines) == []
 
     stdout = result.stdout.str()
     assert "test_success PASSED" in stdout
@@ -167,14 +174,16 @@ def test_stop_on_collection_errors(broken_testdir, broken_first):
     if broken_first:
         files.reverse()
     result = broken_testdir.runpytest("-v", "--strict-markers", "--stepwise", *files)
-    result.stdout.fnmatch_lines("*errors during collection*")
+    result.stdout.fnmatch_lines("*error during collection*")
 
 
-def test_xfail_handling(testdir):
+def test_xfail_handling(testdir, monkeypatch):
     """Ensure normal xfail is ignored, and strict xfail interrupts the session in sw mode
 
     (#5547)
     """
+    monkeypatch.setattr("sys.dont_write_bytecode", True)
+
     contents = """
         import pytest
         def test_a(): pass
@@ -208,10 +217,6 @@ def test_xfail_handling(testdir):
         ]
     )
 
-    
-    
-    if not sys.dont_write_bytecode:
-        testdir.tmpdir.join("__pycache__").remove()
     testdir.makepyfile(contents.format(assert_value="0", strict="True"))
     result = testdir.runpytest("--sw", "-v")
     result.stdout.fnmatch_lines(
