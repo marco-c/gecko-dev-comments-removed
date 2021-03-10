@@ -853,11 +853,11 @@ inline bool IsPackedArray(JSObject* obj) {
   return true;
 }
 
-MOZ_ALWAYS_INLINE bool AddDataPropertyNonDelegate(JSContext* cx,
-                                                  HandlePlainObject obj,
-                                                  HandleId id, HandleValue v) {
+MOZ_ALWAYS_INLINE bool AddDataPropertyNonPrototype(JSContext* cx,
+                                                   HandlePlainObject obj,
+                                                   HandleId id, HandleValue v) {
   MOZ_ASSERT(!JSID_IS_INT(id));
-  MOZ_ASSERT(!obj->isDelegate());
+  MOZ_ASSERT(!obj->isUsedAsPrototype());
 
   
   

@@ -646,7 +646,7 @@ struct StackBaseShape;
 
 
 enum class ObjectFlag : uint16_t {
-  Delegate = 1 << 0,
+  IsUsedAsPrototype = 1 << 0,
   NotExtensible = 1 << 1,
   Indexed = 1 << 2,
   HasInterestingSymbol = 1 << 3,

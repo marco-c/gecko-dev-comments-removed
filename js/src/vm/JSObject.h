@@ -165,9 +165,19 @@ class JSObject
   
   
   
-  inline bool isDelegate() const;
-  static bool setDelegate(JSContext* cx, JS::HandleObject obj) {
-    return setFlag(cx, obj, js::ObjectFlag::Delegate, GENERATE_SHAPE);
+  
+  
+  
+  
+  
+  
+  
+  
+  bool isUsedAsPrototype() const {
+    return hasFlag(js::ObjectFlag::IsUsedAsPrototype);
+  }
+  static bool setIsUsedAsPrototype(JSContext* cx, JS::HandleObject obj) {
+    return setFlag(cx, obj, js::ObjectFlag::IsUsedAsPrototype, GENERATE_SHAPE);
   }
 
   inline bool isBoundFunction() const;
@@ -208,6 +218,7 @@ class JSObject
   
   inline bool hasUncacheableProto() const;
   static bool setUncacheableProto(JSContext* cx, JS::HandleObject obj) {
+    MOZ_ASSERT(obj->isUsedAsPrototype());
     MOZ_ASSERT(obj->hasStaticPrototype(),
                "uncacheability as a concept is only applicable to static "
                "(not dynamically-computed) prototypes");

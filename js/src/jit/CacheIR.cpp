@@ -645,7 +645,7 @@ static void TestMatchingProxyReceiver(CacheIRWriter& writer, ProxyObject* obj,
 static bool ProtoChainSupportsTeleporting(JSObject* obj, JSObject* holder) {
   
   
-  MOZ_ASSERT(obj->isDelegate());
+  MOZ_ASSERT(obj->isUsedAsPrototype());
 
   
   
@@ -714,7 +714,7 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   
   
   JSObject* pobj = obj->staticPrototype();
-  MOZ_ASSERT(pobj->isDelegate());
+  MOZ_ASSERT(pobj->isUsedAsPrototype());
 
   
   if (ProtoChainSupportsTeleporting(pobj, holder)) {
