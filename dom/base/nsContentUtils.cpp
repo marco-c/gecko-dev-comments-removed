@@ -4617,21 +4617,13 @@ void nsContentUtils::MaybeFireNodeRemoved(nsINode* aChild, nsINode* aParent) {
     
     
     
-    if (!aChild->IsInNativeAnonymousSubtree() &&
+    if (!(aChild->IsContent() &&
+          aChild->AsContent()->IsInNativeAnonymousSubtree()) &&
         !sDOMNodeRemovedSuppressCount) {
       NS_ERROR("Want to fire DOMNodeRemoved event, but it's not safe");
       WarnScriptWasIgnored(aChild->OwnerDoc());
     }
     return;
-  }
-
-  {
-    Document* doc = aParent->OwnerDoc();
-    if (MOZ_UNLIKELY(doc->DevToolsWatchingDOMMutations()) &&
-        aChild->IsInComposedDoc() && !aChild->ChromeOnlyAccess()) {
-      DispatchChromeEvent(doc, aChild, u"devtoolschildremoved"_ns,
-                          CanBubble::eNo, Cancelable::eNo);
-    }
   }
 
   if (HasMutationListeners(aChild, NS_EVENT_BITS_MUTATION_NODEREMOVED,
