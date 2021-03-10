@@ -10,8 +10,8 @@
 #include "nsWrapperCache.h"
 #include "nsCOMPtr.h"
 
-#include "nsPIDOMWindow.h"               
-#include "mozilla/dom/ScriptSettings.h"  
+#include "nsPIDOMWindow.h"  
+#include "mozilla/dom/AutoEntryScript.h"
 #include "nsIGlobalObject.h"
 #include "js/RootingAPI.h"  
 #include "js/Value.h"
