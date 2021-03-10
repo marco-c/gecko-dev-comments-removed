@@ -40,6 +40,13 @@ class RemoteAccessible : public RemoteAccessibleBase<RemoteAccessible> {
   }
 };
 
+
+
+
+inline RemoteAccessible* Accessible::AsRemote() {
+  return IsRemote() ? static_cast<RemoteAccessible*>(this) : nullptr;
+}
+
 }  
 }  
 
