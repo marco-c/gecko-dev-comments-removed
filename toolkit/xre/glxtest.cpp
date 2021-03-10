@@ -1200,7 +1200,7 @@ int childgltest() {
   int pci_count = get_pci_status();
 
 #ifdef MOZ_WAYLAND
-  if (!IsWaylandDisabled()) {
+  if (IsWaylandEnabled()) {
     wayland_egltest();
   } else
 #endif
