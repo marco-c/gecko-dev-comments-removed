@@ -17,10 +17,9 @@
 #include "jstypes.h"  
 
 #include "js/Class.h"  
-#include "js/Realm.h"               
-#include "js/RootingAPI.h"          
-#include "js/shadow/ObjectGroup.h"  
-#include "js/Value.h"               
+#include "js/Realm.h"       
+#include "js/RootingAPI.h"  
+#include "js/Value.h"       
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSObject;
