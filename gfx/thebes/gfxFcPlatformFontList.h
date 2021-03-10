@@ -361,7 +361,7 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
   
   
   
-  nsDataHashtable<nsCStringHashKey, CopyableTArray<FamilyAndGeneric>>
+  nsDataHashtable<nsCStringHashKey, nsTArray<FamilyAndGeneric>>
       mFcSubstituteCache;
 
   nsCOMPtr<nsITimer> mCheckFontUpdatesTimer;
