@@ -699,7 +699,7 @@ struct nsGridContainerFrame::GridItemInfo {
     bool isAuto = size.IsAuto() ||
                   (isInlineAxis ==
                        aContainerWM.IsOrthogonalTo(mFrame->GetWritingMode()) &&
-                   size.BehavesLikeInitialValueOnBlockAxis());
+                   size.IsExtremumLength());
     
     
     
@@ -715,7 +715,7 @@ struct nsGridContainerFrame::GridItemInfo {
     isAuto = minSize.IsAuto() ||
              (isInlineAxis ==
                   aContainerWM.IsOrthogonalTo(mFrame->GetWritingMode()) &&
-              minSize.BehavesLikeInitialValueOnBlockAxis());
+              minSize.IsExtremumLength());
     return isAuto &&
            mFrame->StyleDisplay()->mOverflowX == StyleOverflow::Visible;
   }
@@ -5366,7 +5366,7 @@ static nscoord MinSize(const GridItemInfo& aGridItem,
   
   
   
-  if (axis != ourInlineAxis && sizeStyle.BehavesLikeInitialValueOnBlockAxis()) {
+  if (axis != ourInlineAxis && sizeStyle.IsExtremumLength()) {
     sizeStyle = StyleSize::Auto();
   }
 
@@ -5405,9 +5405,8 @@ static nscoord MinSize(const GridItemInfo& aGridItem,
   
   const bool inInlineAxis = axis == ourInlineAxis;
   const bool isAuto =
-      style.IsAuto() ||
-      (!inInlineAxis && style.BehavesLikeInitialValueOnBlockAxis());
-  if ((inInlineAxis && nsIFrame::ToExtremumLength(style)) ||
+      style.IsAuto() || (!inInlineAxis && style.IsExtremumLength());
+  if ((inInlineAxis && style.IsExtremumLength()) ||
       (isAuto && child->StyleDisplay()->mOverflowX == StyleOverflow::Visible)) {
     
     MOZ_ASSERT(isAuto || sz == NS_UNCONSTRAINEDSIZE);

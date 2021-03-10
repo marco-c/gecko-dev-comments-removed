@@ -140,36 +140,38 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
     prefCoord = std::max(c, minCoord);
   } else if (iSize.ConvertsToPercentage()) {
     prefPercent = iSize.ToPercentage();
-  } else if (aIsCell) {
-    switch (iSize.tag) {
-      case StyleSize::Tag::MaxContent:
+  } else if (iSize.IsExtremumLength() && aIsCell) {
+    switch (iSize.AsExtremumLength()) {
+      case StyleExtremumLength::MaxContent:
         
         
         break;
-      case StyleSize::Tag::MinContent:
+      case StyleExtremumLength::MinContent:
         prefCoord = minCoord;
         break;
-      case StyleSize::Tag::MozAvailable:
-      case StyleSize::Tag::MozFitContent:
-      case StyleSize::Tag::Auto:
-      case StyleSize::Tag::LengthPercentage:
+      case StyleExtremumLength::MozFitContent:
+      case StyleExtremumLength::MozAvailable:
         break;
+      default:
+        MOZ_ASSERT_UNREACHABLE("unexpected enumerated value");
     }
   }
 
   StyleMaxSize maxISize = stylePos->MaxISize(aWM);
-  if (nsIFrame::ToExtremumLength(maxISize)) {
-    if (!aIsCell || maxISize.IsMozAvailable()) {
+  if (maxISize.IsExtremumLength()) {
+    if (!aIsCell ||
+        maxISize.AsExtremumLength() == StyleExtremumLength::MozAvailable) {
       maxISize = StyleMaxSize::None();
-    } else if (maxISize.IsMozFitContent()) {
+    } else if (maxISize.AsExtremumLength() ==
+               StyleExtremumLength::MozFitContent) {
       
-      maxISize = StyleMaxSize::MaxContent();
+      maxISize = StyleMaxSize::ExtremumLength(StyleExtremumLength::MaxContent);
     }
   }
   
   
   const LogicalSize zeroSize(aWM);
-  if (maxISize.ConvertsToLength() || !maxISize.IsNone()) {
+  if (maxISize.ConvertsToLength() || maxISize.IsExtremumLength()) {
     nscoord c = aFrame
                     ->ComputeISizeValue(aRenderingContext, aWM, zeroSize,
                                         zeroSize, 0, maxISize)
@@ -184,16 +186,17 @@ static CellISizeInfo GetISizeInfo(gfxContext* aRenderingContext,
   }
 
   StyleSize minISize = stylePos->MinISize(aWM);
-  if (nsIFrame::ToExtremumLength(maxISize)) {
-    if (!aIsCell || minISize.IsMozAvailable()) {
+  if (minISize.IsExtremumLength()) {
+    if (!aIsCell ||
+        minISize.AsExtremumLength() == StyleExtremumLength::MozAvailable) {
       minISize = StyleSize::LengthPercentage(LengthPercentage::Zero());
-    } else if (minISize.IsMozFitContent()) {
+    } else if (minISize.AsExtremumLength() ==
+               StyleExtremumLength::MozFitContent) {
       
-      minISize = StyleSize::MinContent();
+      minISize = StyleSize::ExtremumLength(StyleExtremumLength::MinContent);
     }
   }
-
-  if (minISize.ConvertsToLength() || !minISize.IsAuto()) {
+  if (minISize.ConvertsToLength() || minISize.IsExtremumLength()) {
     nscoord c = aFrame
                     ->ComputeISizeValue(aRenderingContext, aWM, zeroSize,
                                         zeroSize, 0, minISize)
