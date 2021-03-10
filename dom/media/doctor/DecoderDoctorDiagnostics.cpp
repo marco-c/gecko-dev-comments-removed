@@ -75,6 +75,10 @@ class DecoderDoctorDocumentWatcher : public nsITimerCallback, public nsINamed {
   void EnsureTimerIsStarted();
 
   void SynthesizeAnalysis();
+  
+  
+  void SynthesizeFakeAnalysis();
+  bool ShouldSynthesizeFakeAnalysis() const;
 
   
   
@@ -572,6 +576,27 @@ static const char* GetLinkStatusString() {
 #endif
 }
 
+void DecoderDoctorDocumentWatcher::SynthesizeFakeAnalysis() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsAutoCString errorType;
+  Preferences::GetCString("media.decoder-doctor.testing.fake-error", errorType);
+  MOZ_ASSERT(!errorType.IsEmpty());
+  for (const auto& id : sAllNotificationsAndReportStringIds) {
+    if (strcmp(id->mReportStringId, errorType.get()) == 0) {
+      if (id->mNotificationType ==
+          dom::DecoderDoctorNotificationType::Decode_error) {
+        ReportAnalysis(mDocument, *id, false , u"*"_ns,
+                       NS_ERROR_DOM_MEDIA_DECODE_ERR, true );
+      } else {
+        ReportAnalysis(mDocument, *id, false , u"*"_ns, NS_OK,
+                       false );
+      }
+      return;
+    }
+  }
+}
+
 void DecoderDoctorDocumentWatcher::SynthesizeAnalysis() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -853,6 +878,15 @@ void DecoderDoctorDocumentWatcher::AddDiagnostics(
   EnsureTimerIsStarted();
 }
 
+bool DecoderDoctorDocumentWatcher::ShouldSynthesizeFakeAnalysis() const {
+  if (!StaticPrefs::media_decoder_doctor_testing()) {
+    return false;
+  }
+  nsAutoCString errorType;
+  Preferences::GetCString("media.decoder-doctor.testing.fake-error", errorType);
+  return !errorType.IsEmpty();
+}
+
 NS_IMETHODIMP
 DecoderDoctorDocumentWatcher::Notify(nsITimer* timer) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -869,7 +903,11 @@ DecoderDoctorDocumentWatcher::Notify(nsITimer* timer) {
     
     mDiagnosticsHandled = mDiagnosticsSequence.Length();
 
-    SynthesizeAnalysis();
+    if (ShouldSynthesizeFakeAnalysis()) {
+      SynthesizeFakeAnalysis();
+    } else {
+      SynthesizeAnalysis();
+    }
 
     
     
