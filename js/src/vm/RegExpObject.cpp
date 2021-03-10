@@ -591,10 +591,14 @@ bool RegExpShared::compileIfNecessary(JSContext* cx,
     
     
     codeKind = RegExpShared::CodeKind::Bytecode;
-    if (IsNativeRegExpEnabled() &&
-        (re->markedForTierUp() || input->length() > 1000)) {
+    if (re->markedForTierUp() || input->length() > 1000) {
       codeKind = RegExpShared::CodeKind::Jitcode;
     }
+  }
+
+  
+  if (!IsNativeRegExpEnabled() && codeKind == RegExpShared::CodeKind::Jitcode) {
+    codeKind = RegExpShared::CodeKind::Bytecode;
   }
 
   bool needsCompile = false;
@@ -669,6 +673,14 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
           return RegExpRunStatus_Error;
         }
         if (interruptRetries++ < maxInterruptRetries) {
+          
+          
+          
+          
+          if (!compileIfNecessary(cx, re, input,
+                                  RegExpShared::CodeKind::Jitcode)) {
+            return RegExpRunStatus_Error;
+          }
           continue;
         }
       }
