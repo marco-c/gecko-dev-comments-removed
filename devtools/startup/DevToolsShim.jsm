@@ -9,7 +9,7 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-XPCOMUtils.defineLazyGetter(this, "DevtoolsStartup", () => {
+XPCOMUtils.defineLazyGetter(this, "DevToolsStartup", () => {
   return Cc["@mozilla.org/devtools/startup-clh;1"].getService(
     Ci.nsICommandLineHandler
   ).wrappedJSObject;
@@ -192,7 +192,7 @@ const DevToolsShim = {
   },
 
   isDevToolsUser() {
-    return DevtoolsStartup.isDevToolsUser();
+    return DevToolsStartup.isDevToolsUser();
   },
 
   
@@ -211,7 +211,7 @@ const DevToolsShim = {
   inspectA11Y: function(tab, domReference) {
     if (!this.isEnabled()) {
       if (!this.isDisabledByPolicy()) {
-        DevtoolsStartup.openInstallPage("ContextMenu");
+        DevToolsStartup.openInstallPage("ContextMenu");
       }
       return Promise.resolve();
     }
@@ -241,7 +241,7 @@ const DevToolsShim = {
   inspectNode: function(tab, domReference) {
     if (!this.isEnabled()) {
       if (!this.isDisabledByPolicy()) {
-        DevtoolsStartup.openInstallPage("ContextMenu");
+        DevToolsStartup.openInstallPage("ContextMenu");
       }
       return Promise.resolve();
     }
@@ -301,7 +301,7 @@ const DevToolsShim = {
     }
 
     if (!this.isInitialized()) {
-      DevtoolsStartup.initDevTools(reason);
+      DevToolsStartup.initDevTools(reason);
     }
   },
 };
