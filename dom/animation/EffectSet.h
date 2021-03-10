@@ -112,38 +112,29 @@ class EffectSet {
   
   
   
+  
+  
+  
   class Iterator {
    public:
-    explicit Iterator(EffectSet& aEffectSet)
-        : mEffectSet(aEffectSet),
-          mHashIterator(aEffectSet.mEffects.Iter()),
-          mIsEndIterator(false) {
-#ifdef DEBUG
-      mEffectSet.mActiveIterators++;
-#endif
-    }
+    explicit Iterator(EffectSet& aEffectSet) : Iterator(aEffectSet, false) {}
 
-    Iterator(Iterator&& aOther)
-        : mEffectSet(aOther.mEffectSet),
-          mHashIterator(std::move(aOther.mHashIterator)),
-          mIsEndIterator(aOther.mIsEndIterator) {
-#ifdef DEBUG
-      mEffectSet.mActiveIterators++;
-#endif
-    }
+    Iterator() = delete;
+    Iterator(const Iterator&) = delete;
+    Iterator(Iterator&&) = delete;
+    Iterator& operator=(const Iterator&) = delete;
+    Iterator& operator=(Iterator&&) = delete;
 
     static Iterator EndIterator(EffectSet& aEffectSet) {
-      Iterator result(aEffectSet);
-      result.mIsEndIterator = true;
-      return result;
+      return {aEffectSet, true};
     }
 
-    ~Iterator() {
 #ifdef DEBUG
+    ~Iterator() {
       MOZ_ASSERT(mEffectSet.mActiveIterators > 0);
       mEffectSet.mActiveIterators--;
-#endif
     }
+#endif
 
     bool operator!=(const Iterator& aOther) const {
       if (Done() || aOther.Done()) {
@@ -164,15 +155,24 @@ class EffectSet {
     }
 
    private:
-    Iterator() = delete;
-    Iterator(const Iterator&) = delete;
-    Iterator& operator=(const Iterator&) = delete;
-    Iterator& operator=(const Iterator&&) = delete;
+    Iterator(EffectSet& aEffectSet, bool aIsEndIterator)
+        :
+#ifdef DEBUG
+          mEffectSet(aEffectSet),
+#endif
+          mHashIterator(aEffectSet.mEffects.ConstIter()),
+          mIsEndIterator(aIsEndIterator) {
+#ifdef DEBUG
+      mEffectSet.mActiveIterators++;
+#endif
+    }
 
     bool Done() const { return mIsEndIterator || mHashIterator.Done(); }
 
+#ifdef DEBUG
     EffectSet& mEffectSet;
-    OwningEffectSet::Iterator mHashIterator;
+#endif
+    OwningEffectSet::ConstIterator mHashIterator;
     bool mIsEndIterator;
   };
 
