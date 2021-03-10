@@ -9,6 +9,7 @@
 #include "nsIObserver.h"
 #include "nsITimer.h"
 #include "nsID.h"
+#include "nsTHashMap.h"
 #include "mozilla/dom/ChromeUtilsBinding.h"  
 #include "mozilla/dom/DOMTypes.h"            
 #include "mozilla/PerformanceTypes.h"
@@ -97,7 +98,7 @@ class PerformanceMetricsCollector final {
   RefPtr<RequestMetricsPromise> RequestMetricsInternal();
   nsresult DataReceivedInternal(const nsID& aUUID,
                                 const nsTArray<dom::PerformanceInfo>& aMetrics);
-  nsDataHashtable<nsIDHashKey, UniquePtr<AggregatedResults>> mAggregatedResults;
+  nsTHashMap<nsID, UniquePtr<AggregatedResults>> mAggregatedResults;
 };
 
 }  
