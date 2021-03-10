@@ -4469,8 +4469,10 @@ function FillHistoryMenu(aParent) {
   const tooltipCurrent = gNavigatorBundle.getString("tabHistory.current");
   const tooltipForward = gNavigatorBundle.getString("tabHistory.goForward");
 
-  function updateSessionHistory(sessionHistory, initial) {
-    let count = sessionHistory.entries.length;
+  function updateSessionHistory(sessionHistory, initial, ssInParent) {
+    let count = ssInParent
+      ? sessionHistory.count
+      : sessionHistory.entries.length;
 
     if (!initial) {
       if (count <= 1) {
@@ -4502,7 +4504,9 @@ function FillHistoryMenu(aParent) {
     let existingIndex = 0;
 
     for (let j = end - 1; j >= start; j--) {
-      let entry = sessionHistory.entries[j];
+      let entry = ssInParent
+        ? sessionHistory.getEntryAtIndex(j)
+        : sessionHistory.entries[j];
       
       
       if (
@@ -4514,7 +4518,7 @@ function FillHistoryMenu(aParent) {
       ) {
         continue;
       }
-      let uri = entry.url;
+      let uri = ssInParent ? entry.URI.spec : entry.url;
 
       let item =
         existingIndex < children.length
@@ -4565,20 +4569,22 @@ function FillHistoryMenu(aParent) {
     }
   }
 
-  let sessionHistory = SessionStore.getSessionHistory(
-    gBrowser.selectedTab,
-    updateSessionHistory
-  );
-  if (!sessionHistory) {
-    return false;
+  let sessionHistory = gBrowser.selectedBrowser.browsingContext.sessionHistory;
+  if (sessionHistory) {
+    
+    if (sessionHistory.count <= 1) {
+      return false;
+    }
+
+    updateSessionHistory(sessionHistory, true, true);
+  } else {
+    sessionHistory = SessionStore.getSessionHistory(
+      gBrowser.selectedTab,
+      updateSessionHistory
+    );
+    updateSessionHistory(sessionHistory, true, false);
   }
 
-  
-  if (sessionHistory.entries.length <= 1) {
-    return false;
-  }
-
-  updateSessionHistory(sessionHistory, true);
   return true;
 }
 
