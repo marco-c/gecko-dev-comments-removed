@@ -1861,11 +1861,6 @@ void nsFrameLoader::StartDestroy(bool aForProcessSwitch) {
   
   if (auto* browserParent = GetBrowserParent()) {
     browserParent->RemoveWindowListeners();
-    if (aForProcessSwitch) {
-      
-      
-      browserParent->SuspendProgressEvents();
-    }
   }
 
   nsCOMPtr<Document> doc;

@@ -706,11 +706,6 @@ class BrowserParent final : public PBrowserParent,
                           uint32_t aPresShellId);
   void StopApzAutoscroll(nsViewID aScrollId, uint32_t aPresShellId);
 
-  
-  
-  void SuspendProgressEvents() { mSuspendedProgressEvents = true; }
-  void ResumeProgressEvents() { mSuspendedProgressEvents = false; }
-
   bool CanCancelContentJS(nsIRemoteTab::NavigationType aNavigationType,
                           int32_t aNavigationIndex,
                           nsIURI* aNavigationURI) const;
@@ -985,11 +980,6 @@ class BrowserParent final : public PBrowserParent,
   
   
   bool mIsMouseEnterIntoWidgetEventSuppressed : 1;
-
-  
-  
-  
-  bool mSuspendedProgressEvents : 1;
 };
 
 struct MOZ_STACK_CLASS BrowserParent::AutoUseNewTab final {

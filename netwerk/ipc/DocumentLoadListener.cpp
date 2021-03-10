@@ -1754,15 +1754,6 @@ void DocumentLoadListener::TriggerProcessSwitch(
   
   mDoingProcessSwitch = true;
 
-  RefPtr<WindowGlobalParent> wgp = aContext->GetCurrentWindowGlobal();
-  if (wgp && wgp->IsProcessRoot()) {
-    if (RefPtr<BrowserParent> browserParent = wgp->GetBrowserParent()) {
-      
-      
-      
-      browserParent->SuspendProgressEvents();
-    }
-  }
   DisconnectListeners(NS_BINDING_ABORTED, NS_BINDING_ABORTED, true);
 
   LOG(("Process Switch: Calling ChangeRemoteness"));
