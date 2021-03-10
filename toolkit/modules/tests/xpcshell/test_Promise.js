@@ -982,7 +982,10 @@ tests.push(
     let shouldExitNestedEventLoop = false;
 
     function event_loop() {
-      Services.tm.spinEventLoopUntil(() => shouldExitNestedEventLoop);
+      Services.tm.spinEventLoopUntil(
+        "Test(test_Promise.js:make_promise_test)",
+        () => shouldExitNestedEventLoop
+      );
     }
 
     
