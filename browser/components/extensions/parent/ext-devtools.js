@@ -321,7 +321,7 @@ this.devtools = class extends ExtensionAPI {
     
     this.pageDefinition = null;
 
-    this.onToolboxCreated = this.onToolboxCreated.bind(this);
+    this.onToolboxReady = this.onToolboxReady.bind(this);
     this.onToolboxDestroy = this.onToolboxDestroy.bind(this);
 
     
@@ -380,7 +380,7 @@ this.devtools = class extends ExtensionAPI {
       this.pageDefinition.build();
     }
 
-    DevToolsShim.on("toolbox-created", this.onToolboxCreated);
+    DevToolsShim.on("toolbox-ready", this.onToolboxReady);
     DevToolsShim.on("toolbox-destroy", this.onToolboxDestroy);
     this._initialized = true;
   }
@@ -393,7 +393,7 @@ this.devtools = class extends ExtensionAPI {
       return;
     }
 
-    DevToolsShim.off("toolbox-created", this.onToolboxCreated);
+    DevToolsShim.off("toolbox-ready", this.onToolboxReady);
     DevToolsShim.off("toolbox-destroy", this.onToolboxDestroy);
 
     
@@ -419,7 +419,7 @@ this.devtools = class extends ExtensionAPI {
     };
   }
 
-  onToolboxCreated(toolbox) {
+  onToolboxReady(toolbox) {
     if (
       !toolbox.descriptorFront.isLocalTab ||
       !this.extension.canAccessWindow(
