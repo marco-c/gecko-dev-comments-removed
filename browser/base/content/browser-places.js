@@ -2068,7 +2068,7 @@ var BookmarkingUI = {
     
     let menuItemL10nId = isStarred
       ? "menu-bookmark-edit"
-      : "menu-bookmark-this-page";
+      : "menu-bookmark-current-tab";
 
     let menuItem = document.getElementById("menu_bookmarkThisPage");
     if (menuItem) {

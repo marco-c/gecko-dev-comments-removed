@@ -98,7 +98,7 @@ add_task(async function bookmark() {
 
     
     let bookmarkButton = document.getElementById("pageAction-panel-bookmark");
-    Assert.equal(bookmarkButton.label, "Bookmark This Page");
+    Assert.equal(bookmarkButton.label, "Bookmark Current Tab");
     Assert.ok(!bookmarkButton.hasAttribute("starred"));
 
     
@@ -163,7 +163,7 @@ add_task(async function bookmark() {
     await promisePageActionPanelOpen();
 
     
-    Assert.equal(bookmarkButton.label, "Bookmark This Page");
+    Assert.equal(bookmarkButton.label, "Bookmark Current Tab");
     Assert.ok(!bookmarkButton.hasAttribute("starred"));
 
     
