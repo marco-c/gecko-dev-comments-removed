@@ -16869,23 +16869,6 @@ nsIPrincipal* Document::EffectiveStoragePrincipal() const {
   return mActiveStoragePrincipal = mPartitionedPrincipal;
 }
 
-nsIPrincipal* Document::GetPrincipalForPrefBasedHacks() const {
-  
-  
-  for (const Document* document = this;
-       document && document->IsContentDocument();
-       document = document->GetInProcessParentDocument()) {
-    
-    
-    nsIPrincipal* principal = document->NodePrincipal();
-    if (principal->GetIsNullPrincipal()) {
-      continue;
-    }
-    return principal;
-  }
-  return nullptr;
-}
-
 void Document::SetIsInitialDocument(bool aIsInitialDocument) {
   mIsInitialDocumentInWindow = aIsInitialDocument;
 

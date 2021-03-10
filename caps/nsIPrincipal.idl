@@ -308,15 +308,22 @@ interface nsIPrincipal : nsISerializable
 
 
 
-    [infallible]
     boolean schemeIs(in string scheme);
+
+    
+    %{C++
+      inline bool SchemeIs(const char* aScheme) {
+        bool ret;
+        SchemeIs(aScheme, &ret);
+        return ret;
+      }
+    %}
 
     
 
 
 
-    [infallible]
-    boolean isURIInPrefList(in string pref);
+    bool isURIInPrefList(in string pref);
 
     
 
