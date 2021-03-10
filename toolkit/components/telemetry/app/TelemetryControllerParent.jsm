@@ -312,6 +312,8 @@ var Impl = {
     "TelemetryController: Waiting for clients."
   ),
   
+  _shutdownState: "Shutdown not started.",
+  
   _connectionsBarrier: new AsyncShutdown.Barrier(
     "TelemetryController: Waiting for pending ping activity"
   ),
@@ -942,51 +944,71 @@ var Impl = {
       return;
     }
 
+    let start = TelemetryUtils.monotonicNow();
+    let now = () => " " + (TelemetryUtils.monotonicNow() - start);
+    this._shutdownStep = "_cleanupOnShutdown begin " + now();
+
     this._detachObservers();
 
     
     try {
       if (this._delayedNewPingTask) {
+        this._shutdownStep = "awaiting delayed new ping task" + now();
         await this._delayedNewPingTask.finalize();
       }
 
+      this._shutdownStep = "Update" + now();
       UpdatePing.shutdown();
 
+      this._shutdownStep = "Event" + now();
       TelemetryEventPing.shutdown();
+      this._shutdownStep = "Ecosystem" + now();
       EcosystemTelemetry.shutdown();
+      this._shutdownStep = "Prio" + now();
       await TelemetryPrioPing.shutdown();
 
       
       
       if (this._fnSyncPingShutdown) {
+        this._shutdownStep = "Sync" + now();
         this._fnSyncPingShutdown();
       }
 
       
+      this._shutdownStep = "Policy" + now();
       TelemetryReportingPolicy.shutdown();
+      this._shutdownStep = "Environment" + now();
       TelemetryEnvironment.shutdown();
 
       
+      this._shutdownStep = "TelemetrySend" + now();
       await TelemetrySend.shutdown();
 
       
+      this._shutdownStep = "Health ping" + now();
       await TelemetryHealthPing.shutdown();
 
+      this._shutdownStep = "TelemetrySession" + now();
       await TelemetrySession.shutdown();
+      this._shutdownStep = "Services.telemetry" + now();
       await Services.telemetry.shutdown();
 
       
+      this._shutdownStep = "await shutdown barrier" + now();
       await this._shutdownBarrier.wait();
 
       
+      this._shutdownStep = "await connections barrier" + now();
       await this._connectionsBarrier.wait();
 
       if (AppConstants.platform !== "android") {
         
+        this._shutdownStep = "Flush pingsender batch" + now();
         TelemetrySend.flushPingSenderBatch();
       }
 
       
+      this._shutdownStep = "await TelemetryStorage" + now();
       await TelemetryStorage.shutdown();
     } finally {
       
@@ -1073,6 +1095,7 @@ var Impl = {
       connectionsBarrier: this._connectionsBarrier.state,
       sendModule: TelemetrySend.getShutdownState(),
       haveDelayedNewProfileTask: !!this._delayedNewPingTask,
+      shutdownStep: this._shutdownStep,
     };
   },
 
