@@ -46,6 +46,15 @@ class WindowGlobalParent;
 
 
 
+struct RemotenessChangeState {
+  nsCString mRemoteType;
+  bool mReplaceBrowsingContext = false;
+  uint64_t mSpecificGroupId = 0;
+  bool mTryUseBFCache = false;
+};
+
+
+
 
 class CanonicalBrowsingContext final : public BrowsingContext {
  public:
@@ -206,10 +215,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   using RemotenessPromise = MozPromise<RefPtr<BrowserParent>, nsresult, false>;
-  RefPtr<RemotenessPromise> ChangeRemoteness(const nsACString& aRemoteType,
-                                             uint64_t aPendingSwitchId,
-                                             bool aReplaceBrowsingContext,
-                                             uint64_t aSpecificGroupId);
+  RefPtr<RemotenessPromise> ChangeRemoteness(
+      const RemotenessChangeState& aState, uint64_t aPendingSwitchId);
 
   
   
@@ -247,7 +254,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   
-  void ReplacedBy(CanonicalBrowsingContext* aNewContext);
+  void ReplacedBy(CanonicalBrowsingContext* aNewContext,
+                  const RemotenessChangeState& aState);
 
   bool HasHistoryEntry(nsISHEntry* aEntry);
 
@@ -293,7 +301,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     PendingRemotenessChange(CanonicalBrowsingContext* aTarget,
                             RemotenessPromise::Private* aPromise,
                             uint64_t aPendingSwitchId,
-                            bool aReplaceBrowsingContext);
+                            const RemotenessChangeState& aState);
 
     void Cancel(nsresult aRv);
 
@@ -312,7 +320,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     RefPtr<BrowsingContextGroup> mSpecificGroup;
 
     uint64_t mPendingSwitchId;
-    bool mReplaceBrowsingContext;
+    RemotenessChangeState mState;
   };
 
   friend class net::DocumentLoadListener;
