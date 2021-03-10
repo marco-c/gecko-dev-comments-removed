@@ -145,7 +145,7 @@ void HTMLAreaAccessible::Description(nsString& aDescription) {
 
 
 
-LocalAccessible* HTMLAreaAccessible::ChildAtPoint(
+LocalAccessible* HTMLAreaAccessible::LocalChildAtPoint(
     int32_t aX, int32_t aY, EWhichChildAtPoint aWhichChild) {
   
   return this;

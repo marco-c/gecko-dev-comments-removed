@@ -151,7 +151,7 @@ role XULTreeAccessible::NativeRole() const {
 
 
 
-LocalAccessible* XULTreeAccessible::ChildAtPoint(
+LocalAccessible* XULTreeAccessible::LocalChildAtPoint(
     int32_t aX, int32_t aY, EWhichChildAtPoint aWhichChild) {
   nsIFrame* frame = GetFrame();
   if (!frame) return nullptr;
@@ -174,7 +174,7 @@ LocalAccessible* XULTreeAccessible::ChildAtPoint(
   
   
   if (cellInfo.mRow == -1 || !cellInfo.mCol) {
-    return AccessibleWrap::ChildAtPoint(aX, aY, aWhichChild);
+    return AccessibleWrap::LocalChildAtPoint(aX, aY, aWhichChild);
   }
 
   LocalAccessible* child = GetTreeItemAccessible(cellInfo.mRow);

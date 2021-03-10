@@ -302,8 +302,8 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
 
-  virtual LocalAccessible* ChildAtPoint(int32_t aX, int32_t aY,
-                                        EWhichChildAtPoint aWhichChild);
+  virtual LocalAccessible* LocalChildAtPoint(int32_t aX, int32_t aY,
+                                             EWhichChildAtPoint aWhichChild);
 
   
 

@@ -472,8 +472,8 @@ LocalAccessible* LocalAccessible::FocusedChild() {
   return nullptr;
 }
 
-LocalAccessible* LocalAccessible::ChildAtPoint(int32_t aX, int32_t aY,
-                                               EWhichChildAtPoint aWhichChild) {
+LocalAccessible* LocalAccessible::LocalChildAtPoint(
+    int32_t aX, int32_t aY, EWhichChildAtPoint aWhichChild) {
   
   
   LocalAccessible* fallbackAnswer = nullptr;
@@ -586,7 +586,8 @@ LocalAccessible* LocalAccessible::ChildAtPoint(int32_t aX, int32_t aY,
     if (childRect.Contains(aX, aY) &&
         (child->State() & states::INVISIBLE) == 0) {
       if (aWhichChild == EWhichChildAtPoint::DeepestChild) {
-        return child->ChildAtPoint(aX, aY, EWhichChildAtPoint::DeepestChild);
+        return child->LocalChildAtPoint(aX, aY,
+                                        EWhichChildAtPoint::DeepestChild);
       }
 
       return child;
