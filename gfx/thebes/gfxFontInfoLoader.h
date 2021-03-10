@@ -85,7 +85,7 @@ class FontInfoData {
   
   const nsTArray<nsCString>* GetOtherFamilyNames(
       const nsACString& aFamilyName) {
-    return mOtherFamilyNames.GetValue(aFamilyName);
+    return mOtherFamilyNames.Lookup(aFamilyName).DataPtrOrNull();
   }
 
   nsTArray<nsCString> mFontFamiliesToLoad;

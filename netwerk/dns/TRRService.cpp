@@ -796,7 +796,7 @@ bool TRRService::IsDomainBlocked(const nsACString& aHost,
 
   
   nsAutoCString hashkey(aHost + aOriginSuffix);
-  if (int32_t* val = bl->GetValue(hashkey)) {
+  if (auto val = bl->Lookup(hashkey)) {
     int32_t until = *val + mBlocklistDurationSeconds;
     int32_t expire = NowInSeconds();
     if (until > expire) {
@@ -805,7 +805,7 @@ bool TRRService::IsDomainBlocked(const nsACString& aHost,
     }
 
     
-    bl->Remove(hashkey);
+    val.Remove();
   }
   return false;
 }
