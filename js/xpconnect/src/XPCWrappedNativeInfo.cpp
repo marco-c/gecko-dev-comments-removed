@@ -338,7 +338,7 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
 
   
   
-  int size = sizeof(XPCNativeInterface);
+  size_t size = sizeof(XPCNativeInterface);
   if (realTotalCount > 1) {
     size += (realTotalCount - 1) * sizeof(XPCNativeMember);
   }
