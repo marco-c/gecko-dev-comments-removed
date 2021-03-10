@@ -596,62 +596,68 @@ GeckoDriver.prototype.newSession = async function(cmd) {
     logger.info("Preemptively starting accessibility service in Chrome");
   }
 
-  let waitForWindow = function() {
-    let windowTypes;
-    switch (this.appId) {
-      case APP_ID_THUNDERBIRD:
-        windowTypes = ["mail:3pane"];
-        break;
-      default:
-        
-        
-        windowTypes = ["navigator:browser", "navigator:geckoview"];
-        break;
-    }
-    let win;
-    for (let windowType of windowTypes) {
-      win = Services.wm.getMostRecentWindow(windowType);
-      if (win) {
-        break;
-      }
-    }
-    if (!win) {
-      
-      let checkTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-      checkTimer.initWithCallback(
-        waitForWindow.bind(this),
-        100,
-        Ci.nsITimer.TYPE_ONE_SHOT
-      );
-    } else if (win.document.readyState != "complete") {
-      
-      let listener = ev => {
-        
-        
-        if (ev.target != win.document) {
-          return;
-        }
-        win.removeEventListener("load", listener);
-        waitForWindow.call(this);
-      };
-      win.addEventListener("load", listener, true);
-    } else {
-      if (MarionettePrefs.clickToStart) {
-        Services.prompt.alert(
-          win,
-          "",
-          "Click to start execution of marionette tests"
-        );
-      }
-      this.addBrowser(win);
-      this.mainFrame = win;
-    }
-  };
-
   registerCommandsActor();
   registerEventsActor();
 
-  waitForWindow.call(this);
+  
+  await new Promise(resolve => {
+    const waitForWindow = () => {
+      let windowTypes;
+      switch (this.appId) {
+        case APP_ID_THUNDERBIRD:
+          windowTypes = ["mail:3pane"];
+          break;
+        default:
+          
+          
+          windowTypes = ["navigator:browser", "navigator:geckoview"];
+          break;
+      }
+
+      let win;
+      for (const windowType of windowTypes) {
+        win = Services.wm.getMostRecentWindow(windowType);
+        if (win) {
+          break;
+        }
+      }
+
+      if (!win) {
+        
+        let checkTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+        checkTimer.initWithCallback(
+          waitForWindow,
+          100,
+          Ci.nsITimer.TYPE_ONE_SHOT
+        );
+      } else if (win.document.readyState != "complete") {
+        
+        let listener = ev => {
+          
+          
+          if (ev.target != win.document) {
+            return;
+          }
+          win.removeEventListener("load", listener);
+          waitForWindow();
+        };
+        win.addEventListener("load", listener, true);
+      } else {
+        if (MarionettePrefs.clickToStart) {
+          Services.prompt.alert(
+            win,
+            "",
+            "Click to start execution of marionette tests"
+          );
+        }
+        this.addBrowser(win);
+        this.mainFrame = win;
+        resolve();
+      }
+    };
+
+    waitForWindow();
+  });
 
   for (let win of this.windows) {
     const tabBrowser = browser.getTabBrowser(win);
