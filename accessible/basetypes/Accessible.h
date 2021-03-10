@@ -78,6 +78,12 @@ class Accessible {
 
   bool IsCombobox() const { return HasGenericType(eCombobox); }
 
+  
+
+
+
+  bool IsTextRole();
+
   bool IsGenericHyperText() const { return mType == eHyperTextType; }
 
   bool IsHTMLBr() const { return mType == eHTMLBRType; }

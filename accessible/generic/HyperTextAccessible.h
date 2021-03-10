@@ -145,12 +145,6 @@ class HyperTextAccessible : public AccessibleWrap {
   DOMPoint OffsetToDOMPoint(int32_t aOffset) const;
 
   
-
-
-
-  bool IsTextRole();
-
-  
   
 
   
