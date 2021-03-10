@@ -275,10 +275,8 @@ class LIRGeneratorShared {
   
   
   inline LBoxAllocation useBoxOrTypedOrConstant(MDefinition* mir,
-                                                bool useConstant,
-                                                bool useAtStart = false);
-  inline LBoxAllocation useBoxOrTyped(MDefinition* mir,
-                                      bool useAtStart = false);
+                                                bool useConstant);
+  inline LBoxAllocation useBoxOrTyped(MDefinition* mir);
 
   
   inline LInt64Allocation useInt64(MDefinition* mir, LUse::Policy policy,
