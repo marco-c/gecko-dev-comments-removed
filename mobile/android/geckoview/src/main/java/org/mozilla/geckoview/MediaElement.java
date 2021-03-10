@@ -22,6 +22,11 @@ import java.util.Locale;
 
 
 
+
+
+
+
+@Deprecated @DeprecationSchedule(version = 91, id = "media-element")
 @AnyThread
 public class MediaElement {
     @Retention(RetentionPolicy.SOURCE)

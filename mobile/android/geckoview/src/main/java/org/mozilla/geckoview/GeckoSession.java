@@ -2577,6 +2577,11 @@ public class GeckoSession {
 
 
 
+
+
+
+
+    @Deprecated @DeprecationSchedule(version = 91, id = "media-element")
     @AnyThread
     public void setMediaDelegate(final @Nullable MediaDelegate delegate) {
         mMediaHandler.setDelegate(delegate, this);
@@ -2586,6 +2591,11 @@ public class GeckoSession {
 
 
 
+
+
+
+
+    @Deprecated @DeprecationSchedule(version = 91, id = "media-element")
     @AnyThread
     public @Nullable MediaDelegate getMediaDelegate() {
         return mMediaHandler.getDelegate();
@@ -5964,6 +5974,11 @@ public class GeckoSession {
     
 
 
+
+
+
+
+    @Deprecated @DeprecationSchedule(version = 91, id = "media-element")
     public interface MediaDelegate {
 
         class RecordingDevice {
@@ -6047,6 +6062,11 @@ public class GeckoSession {
 
 
 
+
+
+
+
+        @Deprecated @DeprecationSchedule(version = 91, id = "media-element")
         @UiThread
         default void onMediaAdd(@NonNull GeckoSession session, @NonNull MediaElement element) {}
 
@@ -6055,6 +6075,11 @@ public class GeckoSession {
 
 
 
+
+
+
+
+        @Deprecated @DeprecationSchedule(version = 91, id = "media-element")
         @UiThread
         default void onMediaRemove(@NonNull GeckoSession session, @NonNull MediaElement element) {}
 
