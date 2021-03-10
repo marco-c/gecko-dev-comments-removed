@@ -4885,6 +4885,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   }
 
   bool scrollOffsetUpdated = false;
+  bool smoothScrollRequested = false;
   for (const auto& scrollUpdate : aScrollMetadata.GetScrollUpdates()) {
     APZC_LOG("%p processing scroll update %s\n", this,
              ToString(scrollUpdate).c_str());
@@ -4908,7 +4909,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
 
     if (scrollUpdate.GetMode() == ScrollMode::Smooth ||
         scrollUpdate.GetMode() == ScrollMode::SmoothMsd) {
-      scrollOffsetUpdated = true;
+      smoothScrollRequested = true;
 
       
       
@@ -5077,6 +5078,12 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     for (auto& sampledState : mSampledState) {
       sampledState.ClampVisualScrollOffset(Metrics());
     }
+  }
+
+  if (smoothScrollRequested && !scrollOffsetUpdated) {
+    mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
+    
+    needContentRepaint = true;
   }
 
   
