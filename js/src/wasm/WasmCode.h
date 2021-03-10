@@ -750,6 +750,11 @@ class Code : public ShareableBase<Code> {
 
   
 
+  void disassemble(JSContext* cx, Tier tier, int kindSelection,
+                   PrintCallback printString) const;
+
+  
+
   void addSizeOfMiscIfNotSeen(MallocSizeOf mallocSizeOf,
                               Metadata::SeenSet* seenMetadata,
                               Code::SeenSet* seenCode, size_t* code,
