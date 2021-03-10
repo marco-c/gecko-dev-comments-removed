@@ -150,8 +150,6 @@ class nsNavHistoryResult final
 
   void InvalidateTree();
 
-  bool mBatchInProgress;
-
   nsMaybeWeakPtrArray<nsINavHistoryResultObserver> mObservers;
   bool mSuppressNotifications;
 
@@ -175,10 +173,20 @@ class nsNavHistoryResult final
 
   void OnMobilePrefChanged();
 
+  bool IsBatching() const { return mBatchInProgress > 0; };
+
   static void OnMobilePrefChangedCallback(const char* prefName, void* self);
 
  protected:
   virtual ~nsNavHistoryResult();
+
+ private:
+  
+  
+  
+  
+  
+  uint32_t mBatchInProgress;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsNavHistoryResult, NS_NAVHISTORYRESULT_IID)
