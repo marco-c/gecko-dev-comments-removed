@@ -1920,7 +1920,15 @@ impl Device {
         
         let being_profiled = profiler::thread_is_being_profiled();
         let using_wrapper = self.base_gl.is_some();
-        if being_profiled && !using_wrapper {
+
+        
+        
+        
+        
+        if cfg!(any(target_arch = "arm", target_arch = "aarch64"))
+            && being_profiled
+            && !using_wrapper
+        {
             fn note(name: &str, duration: Duration) {
                 profiler::add_text_marker(cstr!("OpenGL Calls"), name, duration);
             }
