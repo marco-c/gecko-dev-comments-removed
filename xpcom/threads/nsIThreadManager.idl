@@ -67,21 +67,6 @@ interface nsIThreadManager : nsISupports
 
 
 
-  nsIThread newThread(in unsigned long creationFlags, [optional] in unsigned long stackSize);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
   [noscript] nsIThread newNamedThread(in ACString name, [optional] in unsigned long stackSize);
 
   
