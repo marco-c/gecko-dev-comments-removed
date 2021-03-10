@@ -762,6 +762,7 @@ let JSWINDOWACTORS = {
   
   
   if (
+    !Services.startup.showedPreXULSkeletonUI &&
     Services.prefs.getCharPref(
       "extensions.activeThemeID",
       "default-theme@mozilla.org"
