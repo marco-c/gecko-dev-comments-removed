@@ -636,8 +636,22 @@ nsRect LocalAccessible::RelativeBounds(nsIFrame** aBoundingFrame) const {
     }
 
     *aBoundingFrame = nsLayoutUtils::GetContainingBlockForClientRect(frame);
-    return nsLayoutUtils::GetAllInFlowRectsUnion(
+    nsRect unionRect = nsLayoutUtils::GetAllInFlowRectsUnion(
         frame, *aBoundingFrame, nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS);
+
+    if (unionRect.IsEmpty()) {
+      
+      
+      
+      
+      
+      
+      nsRect overflow = frame->InkOverflowRectRelativeToSelf();
+      nsLayoutUtils::TransformRect(frame, *aBoundingFrame, overflow);
+      return overflow;
+    }
+
+    return unionRect;
   }
 
   return nsRect();
