@@ -24,6 +24,25 @@ async function testContentBounds(browser, acc, expectedWidth, expectedHeight) {
 
 
 
+addAccessibleTask(
+  `
+  <div id="a1" style="height:100px; width:100px; background:green;"></div>
+  <div id="a2" style="height:100px; width:100px; background:green;"><div style="height:300px; max-width: 300px; background:blue;"></div></div>
+  <div id="a3" style="height:0; width:0;"><div style="height:200px; width:200px; background:green;"></div></div>
+  `,
+  async function(browser, accDoc) {
+    const a1 = findAccessibleChildByID(accDoc, "a1");
+    const a2 = findAccessibleChildByID(accDoc, "a2");
+    const a3 = findAccessibleChildByID(accDoc, "a3");
+    await testContentBounds(browser, a1, 100, 100);
+    await testContentBounds(browser, a2, 100, 100);
+    await testContentBounds(browser, a3, 200, 200);
+  }
+);
+
+
+
+
 
 addAccessibleTask(
   `
@@ -31,7 +50,32 @@ addAccessibleTask(
 <div id="a" style="height:0; width:0;"></div>
 `,
   async function(browser, accDoc) {
-    let a = findAccessibleChildByID(accDoc, "a");
+    const a = findAccessibleChildByID(accDoc, "a");
     await testContentBounds(browser, a, 0, 0);
+  }
+);
+
+
+
+
+
+addAccessibleTask(
+  `
+<input type="radio" id="radio" style="left: -671091em; position: absolute;">
+`,
+  async function(browser, accDoc) {
+    const radio = findAccessibleChildByID(accDoc, "radio");
+    const contentDPR = await getContentDPR(browser);
+    const [x, y, width, height] = getBounds(radio, contentDPR);
+    ok(x < 0, "X coordinate should be negative");
+    ok(y > 0, "Y coordinate should be positive");
+    ok(width > 0, "Width should be positive");
+    ok(height > 0, "Height should be positive");
+    
+    
+    
+    
+    
+    
   }
 );
