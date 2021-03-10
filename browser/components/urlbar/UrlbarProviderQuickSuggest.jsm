@@ -25,11 +25,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 const EXPERIMENT_PREF = "quicksuggest.enabled";
 const SUGGEST_PREF = "suggest.quicksuggest";
-const ONBOARDING_COUNT_PREF = "quicksuggest.onboardingCount";
-const ONBOARDING_MAX_COUNT_PREF = "quicksuggest.onboardingMaxCount";
 
 const NONSPONSORED_ACTION_TEXT = "Firefox Suggests";
-const ONBOARDING_TEXT = "Learn more about Firefox Suggests";
+const HELP_TITLE = "Learn more about Firefox Suggests";
 
 const TELEMETRY_SCALAR_IMPRESSION =
   "contextual.services.quicksuggest.impression";
@@ -133,16 +131,12 @@ class ProviderQuickSuggest extends UrlbarProvider {
       sponsoredBlockId: suggestion.block_id,
       sponsoredAdvertiser: suggestion.advertiser,
       isSponsored: true,
+      helpUrl: this.helpUrl,
+      helpTitle: HELP_TITLE,
     };
 
     if (!suggestion.isSponsored) {
       payload.sponsoredText = NONSPONSORED_ACTION_TEXT;
-    }
-
-    
-    if (this._onboardingCount < this._onboardingMaxCount) {
-      payload.helpUrl = this.helpUrl;
-      payload.helpTitle = ONBOARDING_TEXT;
     }
 
     let result = new UrlbarResult(
@@ -194,11 +188,6 @@ class ProviderQuickSuggest extends UrlbarProvider {
     if (!lastResult?.payload.isSponsored) {
       Cu.reportError(`Last result is not a quick suggest`);
       return;
-    }
-
-    
-    if (this._onboardingCount < this._onboardingMaxCount) {
-      this._onboardingCount++;
     }
 
     
@@ -308,18 +297,6 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
   
   _helpUrl = undefined;
-
-  get _onboardingCount() {
-    return UrlbarPrefs.get(ONBOARDING_COUNT_PREF);
-  }
-
-  set _onboardingCount(value) {
-    UrlbarPrefs.set(ONBOARDING_COUNT_PREF, value);
-  }
-
-  get _onboardingMaxCount() {
-    return UrlbarPrefs.get(ONBOARDING_MAX_COUNT_PREF);
-  }
 }
 
 var UrlbarProviderQuickSuggest = new ProviderQuickSuggest();

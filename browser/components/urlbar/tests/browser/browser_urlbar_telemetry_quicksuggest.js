@@ -44,7 +44,6 @@ const TELEMETRY_EVENT_CATEGORY = "contextservices.quicksuggest";
 
 const EXPERIMENT_PREF = "browser.urlbar.quicksuggest.enabled";
 const SUGGEST_PREF = "suggest.quicksuggest";
-const ONBOARDING_COUNT_PREF = "quicksuggest.onboardingCount";
 
 
 let spy;
@@ -199,7 +198,6 @@ add_task(async function click_mouse() {
 
 
 add_task(async function help_keyboard() {
-  UrlbarPrefs.clear(ONBOARDING_COUNT_PREF);
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     spy.resetHistory();
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -210,7 +208,7 @@ add_task(async function help_keyboard() {
     let index = 1;
     let result = await assertIsQuickSuggest(index);
     let helpButton = result.element.row._elements.get("helpButton");
-    Assert.ok(helpButton, "The result has an onboarding help button");
+    Assert.ok(helpButton, "The result has a help button");
     let helpLoadPromise = BrowserTestUtils.browserLoaded(
       gBrowser.selectedBrowser
     );
@@ -231,7 +229,6 @@ add_task(async function help_keyboard() {
 
 
 add_task(async function help_mouse() {
-  UrlbarPrefs.clear(ONBOARDING_COUNT_PREF);
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     spy.resetHistory();
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -242,7 +239,7 @@ add_task(async function help_mouse() {
     let index = 1;
     let result = await assertIsQuickSuggest(index);
     let helpButton = result.element.row._elements.get("helpButton");
-    Assert.ok(helpButton, "The result has an onboarding help button");
+    Assert.ok(helpButton, "The result has a help button");
     let helpLoadPromise = BrowserTestUtils.browserLoaded(
       gBrowser.selectedBrowser
     );
