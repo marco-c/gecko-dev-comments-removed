@@ -20,9 +20,4 @@ function _pdfPaintHandler() {
   );
 }
 
-addEventListener(
-  "DOMContentLoaded",
-  
-  contentLoadHandlerCallback(_pdfPaintHandler),
-  true
-);
+addEventListener("DOMContentLoaded", _pdfPaintHandler, true);
