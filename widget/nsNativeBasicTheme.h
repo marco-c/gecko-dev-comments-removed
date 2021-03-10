@@ -99,7 +99,7 @@ static const CSSCoord kMeterHeight = 12.0f;
 
 
 
-static const CSSCoord kCheckboxRadioBorderWidth = 2.0f;
+static constexpr CSSCoord kCheckboxRadioBorderWidth = 2.0f;
 
 }  
 }  
@@ -305,7 +305,8 @@ class nsNativeBasicTheme : protected nsNativeTheme, public nsITheme {
                      const EventStates&, DPIRatio);
   void PaintArrow(DrawTarget&, const LayoutDeviceRect&,
                   const float aArrowPolygonX[], const float aArrowPolygonY[],
-                  const int32_t aArrowNumPoints, const sRGBColor aFillColor);
+                  const float aArrowPolygonSize, const int32_t aArrowNumPoints,
+                  const sRGBColor aFillColor);
   void PaintMenulistArrowButton(nsIFrame*, DrawTarget&, const LayoutDeviceRect&,
                                 const EventStates&);
   void PaintSpinnerButton(nsIFrame*, DrawTarget&, const LayoutDeviceRect&,
