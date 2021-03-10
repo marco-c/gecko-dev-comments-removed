@@ -594,6 +594,16 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gProtonPlacesTooltip",
+  "browser.proton.places-tooltip.enabled",
+  false
+);
+
+
+
 XPCOMUtils.defineLazyGetter(this, "aboutWelcomeFeature", () => {
   const { ExperimentFeature } = ChromeUtils.import(
     "resource://nimbus/ExperimentAPI.jsm"
