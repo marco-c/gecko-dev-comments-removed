@@ -17,6 +17,9 @@
 #include "vm/Xdr.h"            
 
 namespace js {
+
+class LifoAlloc;
+
 namespace frontend {
 
 
@@ -67,7 +70,7 @@ class StencilXDR {
   static XDRResult codeParserAtom(XDRState<mode>* xdr, ParserAtom** atomp);
 
   template <XDRMode mode>
-  static XDRResult codeParserAtomSpan(XDRState<mode>* xdr,
+  static XDRResult codeParserAtomSpan(XDRState<mode>* xdr, LifoAlloc& alloc,
                                       ParserAtomSpan& parserAtomData);
 
   template <XDRMode mode>
