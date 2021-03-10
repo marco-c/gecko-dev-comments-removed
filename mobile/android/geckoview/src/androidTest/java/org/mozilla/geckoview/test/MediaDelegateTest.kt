@@ -1,6 +1,6 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
+
 
 package org.mozilla.geckoview.test
 
@@ -16,10 +16,10 @@ import org.junit.Assume.assumeThat
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
 import org.mozilla.geckoview.test.util.Callbacks
-import org.mozilla.geckoview.GeckoSession.MediaDelegate.RecordingDevice
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
+@Suppress("DEPRECATION")
 class MediaDelegateTest : BaseSessionTest() {
 
     private fun requestRecordingPermission(allowAudio: Boolean, allowCamera: Boolean) {
@@ -59,15 +59,15 @@ class MediaDelegateTest : BaseSessionTest() {
         mainSession.delegateDuringNextWait(object : Callbacks.MediaDelegate {
             @GeckoSessionTestRule.AssertCalled(count = 1)
             override fun onRecordingStatusChanged(session: GeckoSession,
-                                                devices:  Array<RecordingDevice>) {
+                                                devices:  Array<org.mozilla.geckoview.GeckoSession.MediaDelegate.RecordingDevice>) {
                 var audioActive = false
                 var cameraActive = false
                 for (device in devices) {
-                    if (device.type == RecordingDevice.Type.MICROPHONE) {
-                        audioActive = device.status != RecordingDevice.Status.INACTIVE
+                    if (device.type == org.mozilla.geckoview.GeckoSession.MediaDelegate.RecordingDevice.Type.MICROPHONE) {
+                        audioActive = device.status != org.mozilla.geckoview.GeckoSession.MediaDelegate.RecordingDevice.Status.INACTIVE
                     }
-                    if (device.type == RecordingDevice.Type.CAMERA) {
-                        cameraActive = device.status != RecordingDevice.Status.INACTIVE
+                    if (device.type == org.mozilla.geckoview.GeckoSession.MediaDelegate.RecordingDevice.Type.CAMERA) {
+                        cameraActive = device.status != org.mozilla.geckoview.GeckoSession.MediaDelegate.RecordingDevice.Status.INACTIVE
                     }
                 }
 
@@ -98,7 +98,7 @@ class MediaDelegateTest : BaseSessionTest() {
             return
         }
 
-        // Stop the stream and check active flag and id
+        
         val isActive = mainSession.waitForJS(
                 """$code
                    this.stream.then(stream => {
@@ -115,7 +115,7 @@ class MediaDelegateTest : BaseSessionTest() {
     }
 
     @Test fun testDeviceRecordingEventAudio() {
-        // disable test on debug Bug 1555656
+        
         assumeThat(sessionRule.env.isDebugBuild, Matchers.equalTo(false))
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
@@ -143,7 +143,7 @@ class MediaDelegateTest : BaseSessionTest() {
     }
 
     @Test fun testDeviceRecordingEventAudioAndVideo() {
-        // disabled test on debug builds Bug 1554189
+        
         assumeThat(sessionRule.env.isDebugBuild, Matchers.equalTo(false))
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
