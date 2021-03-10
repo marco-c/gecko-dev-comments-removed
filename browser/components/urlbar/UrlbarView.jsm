@@ -914,6 +914,11 @@ class UrlbarView {
       return true;
     }
     let row = this._rows.children[rowIndex];
+    
+    
+    if (result.suggestedIndex !== row.result.suggestedIndex) {
+      return false;
+    }
     let resultIsSearchSuggestion = this._resultIsSearchSuggestion(result);
     
     if (
