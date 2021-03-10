@@ -54,7 +54,6 @@ static const ProtocolAssociation appProtocols[] = {
     
   { "http",   true     },
   { "https",  true     },
-  { "ftp",    false },
   { "chrome", false }
     
 };
