@@ -119,7 +119,7 @@ NSMenuItem* nsMenuUtilsX::GetStandardEditMenuItem() {
                                                                  action:nil
                                                           keyEquivalent:@""] autorelease];
   NSMenu* standardEditMenu = [[NSMenu alloc] initWithTitle:@"Edit"];
-  [standardEditMenuItem setSubmenu:standardEditMenu];
+  standardEditMenuItem.submenu = standardEditMenu;
   [standardEditMenu release];
 
   
@@ -200,7 +200,7 @@ int nsMenuUtilsX::CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuOb
       if (currMenu == aChild) {
         return insertionPoint;  
       }
-      if (currMenu && [currMenu->NativeMenuItem() menu]) {
+      if (currMenu && currMenu->NativeMenuItem().menu) {
         insertionPoint++;
       }
     }
@@ -226,7 +226,7 @@ int nsMenuUtilsX::CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuOb
       } else {
         nativeItem = (NSMenuItem*)(currItem->NativeData());
       }
-      if ([nativeItem menu]) {
+      if (nativeItem.menu) {
         insertionPoint++;
       }
     }
@@ -236,20 +236,20 @@ int nsMenuUtilsX::CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuOb
 
 NSMenuItem* nsMenuUtilsX::NativeMenuItemWithLocation(NSMenu* aRootMenu, NSString* aLocationString,
                                                      bool aIsMenuBar) {
-  NSArray* indexes = [aLocationString componentsSeparatedByString:@"|"];
-  unsigned int pathLength = [indexes count];
+  NSArray<NSString*>* indexes = [aLocationString componentsSeparatedByString:@"|"];
+  unsigned int pathLength = indexes.count;
   if (pathLength == 0) {
     return nil;
   }
 
   NSMenu* currentSubmenu = aRootMenu;
   for (unsigned int depth = 0; depth < pathLength; depth++) {
-    NSInteger targetIndex = [[indexes objectAtIndex:depth] integerValue];
+    NSInteger targetIndex = [indexes objectAtIndex:depth].integerValue;
     if (aIsMenuBar && depth == 0) {
       
       targetIndex++;
     }
-    int itemCount = [currentSubmenu numberOfItems];
+    int itemCount = currentSubmenu.numberOfItems;
     if (targetIndex < itemCount) {
       NSMenuItem* menuItem = [currentSubmenu itemAtIndex:targetIndex];
       
@@ -257,8 +257,8 @@ NSMenuItem* nsMenuUtilsX::NativeMenuItemWithLocation(NSMenu* aRootMenu, NSString
         return menuItem;
       }
       
-      if ([menuItem hasSubmenu]) {
-        currentSubmenu = [menuItem submenu];
+      if (menuItem.hasSubmenu) {
+        currentSubmenu = menuItem.submenu;
       } else {
         return nil;
       }
