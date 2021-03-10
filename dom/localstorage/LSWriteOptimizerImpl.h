@@ -17,26 +17,24 @@ void LSWriteOptimizer<T, U>::InsertItem(const nsAString& aKey, const T& aValue,
                                         int64_t aDelta) {
   AssertIsOnOwningThread();
 
-  WriteInfo* existingWriteInfo;
-  UniquePtr<WriteInfo> newWriteInfo;
-  if (mWriteInfos.Get(aKey, &existingWriteInfo) &&
-      existingWriteInfo->GetType() == WriteInfo::DeleteItem) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  mWriteInfos.WithEntryHandle(aKey, [&](auto&& entry) {
+    if (entry && entry.Data()->GetType() == WriteInfo::DeleteItem) {
+      
+      
+      
+      
+      
+      
+      
+      
 
-    newWriteInfo = MakeUnique<UpdateItemInfo>(NextSerialNumber(), aKey, aValue,
-                                               true);
-  } else {
-    newWriteInfo = MakeUnique<InsertItemInfo>(NextSerialNumber(), aKey, aValue);
-  }
-  mWriteInfos.InsertOrUpdate(aKey, std::move(newWriteInfo));
+      entry.Update(MakeUnique<UpdateItemInfo>(NextSerialNumber(), aKey, aValue,
+                                               true));
+    } else {
+      entry.InsertOrUpdate(
+          MakeUnique<InsertItemInfo>(NextSerialNumber(), aKey, aValue));
+    }
+  });
 
   mTotalDelta += aDelta;
 }
@@ -46,16 +44,16 @@ void LSWriteOptimizer<T, U>::UpdateItem(const nsAString& aKey, const T& aValue,
                                         int64_t aDelta) {
   AssertIsOnOwningThread();
 
-  WriteInfo* existingWriteInfo;
-  UniquePtr<WriteInfo> newWriteInfo;
-  if (mWriteInfos.Get(aKey, &existingWriteInfo) &&
-      existingWriteInfo->GetType() == WriteInfo::InsertItem) {
-    newWriteInfo = MakeUnique<InsertItemInfo>(NextSerialNumber(), aKey, aValue);
-  } else {
-    newWriteInfo = MakeUnique<UpdateItemInfo>(NextSerialNumber(), aKey, aValue,
-                                               false);
-  }
-  mWriteInfos.InsertOrUpdate(aKey, std::move(newWriteInfo));
+  mWriteInfos.WithEntryHandle(aKey, [&](auto&& entry) {
+    if (entry && entry.Data()->GetType() == WriteInfo::InsertItem) {
+      entry.Update(
+          MakeUnique<InsertItemInfo>(NextSerialNumber(), aKey, aValue));
+    } else {
+      entry.InsertOrUpdate(
+          MakeUnique<UpdateItemInfo>(NextSerialNumber(), aKey, aValue,
+                                      false));
+    }
+  });
 
   mTotalDelta += aDelta;
 }
