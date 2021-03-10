@@ -19,7 +19,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/StaticPresData.h"
 #include "mozilla/SVGTextFrame.h"
 #include "mozilla/SVGUtils.h"
@@ -1773,9 +1772,6 @@ static nscoord LetterSpacing(nsIFrame* aFrame,
   }
 
   if (SVGUtils::IsInSVGTextSubtree(aFrame)) {
-    if (!StaticPrefs::svg_text_spacing_enabled()) {
-      return 0;
-    }
     
     
     
@@ -1802,9 +1798,6 @@ static nscoord WordSpacing(nsIFrame* aFrame, const gfxTextRun* aTextRun,
     
     
     
-    if (!StaticPrefs::svg_text_spacing_enabled()) {
-      return 0;
-    }
     auto spacing = aStyleText->mWordSpacing;
     spacing.ScaleLengthsBy(GetSVGFontSizeScaleFactor(aFrame));
     return spacing.Resolve([&] { return GetSpaceWidthAppUnits(aTextRun); });
@@ -1818,11 +1811,6 @@ static nscoord WordSpacing(nsIFrame* aFrame, const gfxTextRun* aTextRun,
 
 static gfx::ShapedTextFlags GetSpacingFlags(
     nsIFrame* aFrame, const nsStyleText* aStyleText = nullptr) {
-  if (SVGUtils::IsInSVGTextSubtree(aFrame) &&
-      !StaticPrefs::svg_text_spacing_enabled()) {
-    return gfx::ShapedTextFlags();
-  }
-
   const nsStyleText* styleText = aFrame->StyleText();
   const auto& ls = styleText->mLetterSpacing;
   const auto& ws = styleText->mWordSpacing;
