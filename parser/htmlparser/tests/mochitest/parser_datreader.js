@@ -202,7 +202,7 @@ function addLevels(walker, buf, indent) {
       
       
       
-      if (walker.currentNode instanceof HTMLTemplateElement) {
+      if (walker.currentNode.constructor.name === "HTMLTemplateElement") {
         buf += indent + "  content\n";
         
         var templateWalker = createFragmentWalker(walker.currentNode.content);

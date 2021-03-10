@@ -202,6 +202,10 @@ function getTargetRect(aTarget) {
   
   
   if (aTarget instanceof Window) {
+    return rect;
+  }
+  if (aTarget.Window && aTarget instanceof aTarget.Window) {
+    
     
     return rect;
   }
