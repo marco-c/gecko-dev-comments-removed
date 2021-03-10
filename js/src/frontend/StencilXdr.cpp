@@ -412,10 +412,10 @@ XDRResult XDRSharedDataContainer(XDRState<mode>* xdr,
 }
 
 template <XDRMode mode>
-XDRResult XDRBaseCompilationStencilSpanSize(
+XDRResult XDRCompilationStencilSpanSize(
     XDRState<mode>* xdr, uint32_t* scriptSize, uint32_t* gcThingSize,
-    uint32_t* scopeSize, uint32_t* regExpSize, uint32_t* bigIntSize,
-    uint32_t* objLiteralSize) {
+    uint32_t* scopeSize, uint32_t* scriptExtraSize, uint32_t* regExpSize,
+    uint32_t* bigIntSize, uint32_t* objLiteralSize) {
   
   
   
@@ -424,13 +424,8 @@ XDRResult XDRBaseCompilationStencilSpanSize(
   enum XDRSpanSizeKind {
     
     
-    Base8Kind,
-
-    
-    
     All8Kind,
 
-    
     
     
     All32Kind,
@@ -438,15 +433,12 @@ XDRResult XDRBaseCompilationStencilSpanSize(
 
   uint8_t sizeKind = All32Kind;
   if (mode == XDR_ENCODE) {
-    uint32_t mask_base = (*scriptSize) | (*gcThingSize) | (*scopeSize);
-    uint32_t mask_ext = (*regExpSize) | (*bigIntSize) | (*objLiteralSize);
+    uint32_t mask = (*scriptSize) | (*gcThingSize) | (*scopeSize) |
+                    (*scriptExtraSize) | (*regExpSize) | (*bigIntSize) |
+                    (*objLiteralSize);
 
-    if (mask_base <= 0xff) {
-      if (mask_ext == 0x00) {
-        sizeKind = Base8Kind;
-      } else if (mask_ext <= 0xFF) {
-        sizeKind = All8Kind;
-      }
+    if (mask <= 0xff) {
+      sizeKind = All8Kind;
     }
   }
   MOZ_TRY(xdr->codeUint8(&sizeKind));
@@ -455,6 +447,7 @@ XDRResult XDRBaseCompilationStencilSpanSize(
     MOZ_TRY(xdr->codeUint32(scriptSize));
     MOZ_TRY(xdr->codeUint32(gcThingSize));
     MOZ_TRY(xdr->codeUint32(scopeSize));
+    MOZ_TRY(xdr->codeUint32(scriptExtraSize));
     MOZ_TRY(xdr->codeUint32(regExpSize));
     MOZ_TRY(xdr->codeUint32(bigIntSize));
     MOZ_TRY(xdr->codeUint32(objLiteralSize));
@@ -462,6 +455,7 @@ XDRResult XDRBaseCompilationStencilSpanSize(
     uint8_t scriptSize8 = 0;
     uint8_t gcThingSize8 = 0;
     uint8_t scopeSize8 = 0;
+    uint8_t scriptExtraSize8 = 0;
     uint8_t regExpSize8 = 0;
     uint8_t bigIntSize8 = 0;
     uint8_t objLiteralSize8 = 0;
@@ -470,6 +464,7 @@ XDRResult XDRBaseCompilationStencilSpanSize(
       scriptSize8 = uint8_t(*scriptSize);
       gcThingSize8 = uint8_t(*gcThingSize);
       scopeSize8 = uint8_t(*scopeSize);
+      scriptExtraSize8 = uint8_t(*scriptExtraSize);
       regExpSize8 = uint8_t(*regExpSize);
       bigIntSize8 = uint8_t(*bigIntSize);
       objLiteralSize8 = uint8_t(*objLiteralSize);
@@ -478,21 +473,16 @@ XDRResult XDRBaseCompilationStencilSpanSize(
     MOZ_TRY(xdr->codeUint8(&scriptSize8));
     MOZ_TRY(xdr->codeUint8(&gcThingSize8));
     MOZ_TRY(xdr->codeUint8(&scopeSize8));
-
-    if (sizeKind == All8Kind) {
-      MOZ_TRY(xdr->codeUint8(&regExpSize8));
-      MOZ_TRY(xdr->codeUint8(&bigIntSize8));
-      MOZ_TRY(xdr->codeUint8(&objLiteralSize8));
-    } else {
-      MOZ_ASSERT(regExpSize8 == 0);
-      MOZ_ASSERT(bigIntSize8 == 0);
-      MOZ_ASSERT(objLiteralSize8 == 0);
-    }
+    MOZ_TRY(xdr->codeUint8(&scriptExtraSize8));
+    MOZ_TRY(xdr->codeUint8(&regExpSize8));
+    MOZ_TRY(xdr->codeUint8(&bigIntSize8));
+    MOZ_TRY(xdr->codeUint8(&objLiteralSize8));
 
     if (mode == XDR_DECODE) {
       *scriptSize = scriptSize8;
       *gcThingSize = gcThingSize8;
       *scopeSize = scopeSize8;
+      *scriptExtraSize = scriptExtraSize8;
       *regExpSize = regExpSize8;
       *bigIntSize = bigIntSize8;
       *objLiteralSize = objLiteralSize8;
@@ -503,11 +493,17 @@ XDRResult XDRBaseCompilationStencilSpanSize(
 }
 
 template <XDRMode mode>
-XDRResult XDRBaseCompilationStencil(XDRState<mode>* xdr,
-                                    BaseCompilationStencil& stencil) {
+XDRResult XDRCompilationStencil(XDRState<mode>* xdr,
+                                CompilationStencil& stencil) {
+  MOZ_ASSERT(!stencil.asmJS);
+
+  if (mode == XDR_DECODE) {
+    stencil.hasExternalDependency = true;
+  }
+
   MOZ_TRY(xdr->codeUint32(&stencil.functionKey));
 
-  uint32_t scriptSize, gcThingSize, scopeSize;
+  uint32_t scriptSize, gcThingSize, scopeSize, scriptExtraSize;
   uint32_t regExpSize, bigIntSize, objLiteralSize;
   if (mode == XDR_ENCODE) {
     scriptSize = stencil.scriptData.size();
@@ -515,13 +511,15 @@ XDRResult XDRBaseCompilationStencil(XDRState<mode>* xdr,
     scopeSize = stencil.scopeData.size();
     MOZ_ASSERT(scopeSize == stencil.scopeNames.size());
 
+    scriptExtraSize = stencil.scriptExtra.size();
+
     regExpSize = stencil.regExpData.size();
     bigIntSize = stencil.bigIntData.size();
     objLiteralSize = stencil.objLiteralData.size();
   }
-  MOZ_TRY(XDRBaseCompilationStencilSpanSize(xdr, &scriptSize, &gcThingSize,
-                                            &scopeSize, &regExpSize,
-                                            &bigIntSize, &objLiteralSize));
+  MOZ_TRY(XDRCompilationStencilSpanSize(
+      xdr, &scriptSize, &gcThingSize, &scopeSize, &scriptExtraSize, &regExpSize,
+      &bigIntSize, &objLiteralSize));
 
   
   
@@ -551,30 +549,9 @@ XDRResult XDRBaseCompilationStencil(XDRState<mode>* xdr,
   MOZ_TRY(XDRSpanContent(xdr, stencil.gcThingData, gcThingSize));
 
   
-
   MOZ_TRY(XDRSpanContent(xdr, stencil.scriptData, scriptSize));
 
-  return Ok();
-}
-
-template XDRResult XDRBaseCompilationStencil(XDRState<XDR_ENCODE>* xdr,
-                                             BaseCompilationStencil& stencil);
-
-template XDRResult XDRBaseCompilationStencil(XDRState<XDR_DECODE>* xdr,
-                                             BaseCompilationStencil& stencil);
-
-template <XDRMode mode>
-XDRResult XDRCompilationStencil(XDRState<mode>* xdr,
-                                CompilationStencil& stencil) {
-  MOZ_ASSERT(!stencil.asmJS);
-
-  if (mode == XDR_DECODE) {
-    stencil.hasExternalDependency = true;
-  }
-
-  MOZ_TRY(XDRBaseCompilationStencil(xdr, stencil));
-
-  MOZ_TRY(XDRSpanContent(xdr, stencil.scriptExtra));
+  MOZ_TRY(XDRSpanContent(xdr, stencil.scriptExtra, scriptExtraSize));
 
   
   MOZ_ASSERT(stencil.isInitialStencil());
