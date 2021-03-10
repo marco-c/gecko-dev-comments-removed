@@ -930,8 +930,7 @@ void TRR::ReportStatus(nsresult aStatusCode) {
   
   if (UseDefaultServer() && aStatusCode != NS_ERROR_ABORT) {
     
-    gTRRService->TRRIsOkay(NS_SUCCEEDED(aStatusCode) ? TRRService::OKAY_NORMAL
-                                                     : TRRService::OKAY_BAD);
+    gTRRService->TRRIsOkay(aStatusCode);
   }
 }
 
