@@ -28,7 +28,6 @@ class nsMenuObjectX {
   virtual ~nsMenuObjectX() {}
   virtual nsMenuObjectTypeX MenuObjectType() = 0;
   virtual void* NativeData() = 0;
-  nsIContent* Content() { return mContent; }
 
   
 
@@ -36,9 +35,6 @@ class nsMenuObjectX {
 
 
   virtual void IconUpdated() {}
-
- protected:
-  nsCOMPtr<nsIContent> mContent;
 };
 
 
