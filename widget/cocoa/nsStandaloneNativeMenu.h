@@ -27,7 +27,7 @@ class nsStandaloneNativeMenu : public nsMenuGroupOwnerX,
   }
   virtual void IconUpdated() override;
 
-  nsMenuX* GetMenuXObject() { return mMenu.get(); }
+  nsMenuX* GetMenuXObject() { return mMenu; }
 
   
   
@@ -37,7 +37,7 @@ class nsStandaloneNativeMenu : public nsMenuGroupOwnerX,
  protected:
   virtual ~nsStandaloneNativeMenu();
 
-  mozilla::UniquePtr<nsMenuX> mMenu;
+  nsMenuX* mMenu;
   NSStatusItem* mContainerStatusBarItem;
 };
 

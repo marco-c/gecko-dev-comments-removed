@@ -32,9 +32,9 @@ class nsIWidget;
 
 
 
-class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
+class nsMenuX : public nsMenuObjectX, public nsChangeObserver {
  public:
-  nsMenuX(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aContent);
+  nsMenuX();
   virtual ~nsMenuX();
 
   
@@ -51,21 +51,15 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
 
   
   nsresult Create(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aNode);
-
-  
-  nsMenuObjectX* GetItemAt(uint32_t aPos);
   uint32_t GetItemCount();
-
-  
-  nsMenuObjectX* GetVisibleItemAt(uint32_t aPos);
+  nsMenuObjectX* GetItemAt(uint32_t aPos);
   nsresult GetVisibleItemCount(uint32_t& aCount);
-
+  nsMenuObjectX* GetVisibleItemAt(uint32_t aPos);
   nsEventStatus MenuOpened();
   void MenuClosed();
   void SetRebuild(bool aMenuEvent);
   NSMenuItem* NativeMenuItem();
   nsresult SetupIcon();
-  nsIContent* Content() { return mContent; }
 
   static bool IsXULHelpMenu(nsIContent* aMenuContent);
 
@@ -74,35 +68,31 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   nsresult RemoveAll();
   nsresult SetEnabled(bool aIsEnabled);
   nsresult GetEnabled(bool* aIsEnabled);
-  already_AddRefed<nsIContent> GetMenuPopupContent();
+  void GetMenuPopupContent(nsIContent** aResult);
   bool OnOpen();
   bool OnClose();
-  void AddMenuItem(mozilla::UniquePtr<nsMenuItemX>&& aMenuItem);
-  void AddMenu(mozilla::UniquePtr<nsMenuX>&& aMenu);
-  void LoadMenuItem(nsIContent* aMenuItemContent);
-  void LoadSubMenu(nsIContent* aMenuContent);
-  GeckoNSMenu* CreateMenuWithGeckoString(nsString& aMenuTitle);
+  nsresult AddMenuItem(nsMenuItemX* aMenuItem);
+  nsMenuX* AddMenu(mozilla::UniquePtr<nsMenuX> aMenu);
+  void LoadMenuItem(nsIContent* inMenuItemContent);
+  void LoadSubMenu(nsIContent* inMenuContent);
+  GeckoNSMenu* CreateMenuWithGeckoString(nsString& menuTitle);
 
-  nsCOMPtr<nsIContent> mContent;  
-
-  
   nsTArray<mozilla::UniquePtr<nsMenuObjectX>> mMenuObjectsArray;
-
   nsString mLabel;
-  uint32_t mVisibleItemsCount = 0;               
-  nsMenuObjectX* mParent = nullptr;              
-  nsMenuGroupOwnerX* mMenuGroupOwner = nullptr;  
-  mozilla::UniquePtr<nsMenuItemIconX> mIcon;
-  GeckoNSMenu* mNativeMenu = nil;     
-  MenuDelegate* mMenuDelegate = nil;  
+  uint32_t mVisibleItemsCount;         
+  nsMenuObjectX* mParent;              
+  nsMenuGroupOwnerX* mMenuGroupOwner;  
   
-  NSMenuItem* mNativeMenuItem = nil;  
-  bool mIsEnabled = true;
-  bool mDidFirePopupHiding = false;
-  bool mDidFirePopupHidden = false;
-  bool mNeedsRebuild = true;
-  bool mConstructed = false;
-  bool mVisible = true;
+  RefPtr<nsMenuItemIconX> mIcon;  
+  GeckoNSMenu* mNativeMenu;       
+  MenuDelegate* mMenuDelegate;    
+  
+  NSMenuItem* mNativeMenuItem;  
+  bool mIsEnabled;
+  bool mDestroyHandlerCalled;
+  bool mNeedsRebuild;
+  bool mConstructed;
+  bool mVisible;
 };
 
 #endif  

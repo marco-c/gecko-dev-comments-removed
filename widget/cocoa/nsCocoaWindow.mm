@@ -2130,12 +2130,13 @@ void nsCocoaWindow::ResumeCompositor() {
   Unused << bc->SetExplicitActive(ExplicitActiveStatus::Active);
 }
 
-void nsCocoaWindow::SetMenuBar(RefPtr<nsMenuBarX>&& aMenuBar) {
+void nsCocoaWindow::SetMenuBar(nsMenuBarX* aMenuBar) {
+  if (mMenuBar) mMenuBar->SetParent(nullptr);
   if (!mWindow) {
     mMenuBar = nullptr;
     return;
   }
-  mMenuBar = std::move(aMenuBar);
+  mMenuBar = aMenuBar;
 
   
   
