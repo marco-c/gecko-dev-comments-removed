@@ -239,19 +239,6 @@ impl CacheTextureId {
     pub const INVALID: CacheTextureId = CacheTextureId(!0);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-pub type LayerIndex = usize;
-
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
