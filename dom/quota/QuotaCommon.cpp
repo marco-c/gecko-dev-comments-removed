@@ -383,6 +383,12 @@ void LogError(const nsLiteralCString& aModule, const nsACString& aExpr,
         res.AppendElement(EventExtraEntry{"result"_ns, nsCString{rvName}});
       }
 
+      
+      
+      
+      
+      
+      
       static Atomic<int32_t> sSequenceNumber{0};
 
       res.AppendElement(
