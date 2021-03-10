@@ -156,6 +156,15 @@ class TabDescriptorFront extends DescriptorMixin(
     
     
     this._targetFront = null;
+
+    
+    
+    
+    
+    
+    if (!this.traits.emitDescriptorDestroyed || !this.isLocalTab) {
+      this.destroy();
+    }
   }
 
   
