@@ -470,8 +470,28 @@ struct SharedDataContainer {
 #endif
 };
 
+struct ExtensibleCompilationStencil;
 
-struct BaseCompilationStencil {
+
+
+
+
+
+
+
+
+
+
+
+struct CompilationStencil {
+  static constexpr ScriptIndex TopLevelIndex = ScriptIndex(0);
+
+  static constexpr size_t LifoAllocChunkSize = 512;
+
+  
+  
+  bool hasExternalDependency = false;
+
   
   
   using FunctionKey = uint32_t;
@@ -481,6 +501,11 @@ struct BaseCompilationStencil {
   
   
   mozilla::Span<ScriptStencil> scriptData;
+
+  
+  
+  mozilla::Span<ScriptStencilExtra> scriptExtra;
+
   mozilla::Span<TaggedScriptThingIndex> gcThingData;
 
   
@@ -508,61 +533,6 @@ struct BaseCompilationStencil {
   FunctionKey functionKey = NullFunctionKey;
 
   
-
-  BaseCompilationStencil() = default;
-
-  static FunctionKey toFunctionKey(const SourceExtent& extent) {
-    
-    
-    auto result = extent.sourceStart + 1;
-    MOZ_ASSERT(result != NullFunctionKey);
-    return result;
-  }
-
-  bool isInitialStencil() const { return functionKey == NullFunctionKey; }
-
-  inline CompilationStencil& asCompilationStencil();
-  inline const CompilationStencil& asCompilationStencil() const;
-
-  
-  
-  
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-    return sharedData.sizeOfExcludingThis(mallocSizeOf);
-  }
-
-#if defined(DEBUG) || defined(JS_JITSPEW)
-  void dump() const;
-  void dump(js::JSONPrinter& json) const;
-  void dumpFields(js::JSONPrinter& json) const;
-
-  void dumpAtom(TaggedParserAtomIndex index) const;
-#endif
-};
-
-struct ExtensibleCompilationStencil;
-
-
-
-
-
-
-
-
-
-
-
-
-struct CompilationStencil : public BaseCompilationStencil {
-  static constexpr ScriptIndex TopLevelIndex = ScriptIndex(0);
-
-  static constexpr size_t LifoAllocChunkSize = 512;
-
-  
-  
-  bool hasExternalDependency = false;
-
-  
   
   
   
@@ -586,10 +556,6 @@ struct CompilationStencil : public BaseCompilationStencil {
 
   
   
-  mozilla::Span<ScriptStencilExtra> scriptExtra;
-
-  
-  
   RefPtr<StencilAsmJSContainer> asmJS;
 
   
@@ -598,9 +564,19 @@ struct CompilationStencil : public BaseCompilationStencil {
   explicit CompilationStencil(ScriptSource* source)
       : alloc(LifoAllocChunkSize), source(source) {}
 
-  [[nodiscard]] static bool instantiateBaseStencilAfterPreparation(
-      JSContext* cx, CompilationInput& input,
-      const BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput);
+  static FunctionKey toFunctionKey(const SourceExtent& extent) {
+    
+    
+    auto result = extent.sourceStart + 1;
+    MOZ_ASSERT(result != NullFunctionKey);
+    return result;
+  }
+
+  bool isInitialStencil() const { return functionKey == NullFunctionKey; }
+
+  [[nodiscard]] static bool instantiateStencilAfterPreparation(
+      JSContext* cx, CompilationInput& input, const CompilationStencil& stencil,
+      CompilationGCOutput& gcOutput);
 
   [[nodiscard]] static bool prepareForInstantiate(
       JSContext* cx, CompilationInput& input, const CompilationStencil& stencil,
@@ -624,7 +600,7 @@ struct CompilationStencil : public BaseCompilationStencil {
   CompilationStencil& operator=(CompilationStencil&&) = delete;
 
   static inline ScriptStencilIterable functionScriptStencils(
-      const BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput);
+      const CompilationStencil& stencil, CompilationGCOutput& gcOutput);
 
   void setFunctionKey(BaseScript* lazy) {
     functionKey = toFunctionKey(lazy->extent());
@@ -646,30 +622,19 @@ struct CompilationStencil : public BaseCompilationStencil {
   void dump() const;
   void dump(js::JSONPrinter& json) const;
   void dumpFields(js::JSONPrinter& json) const;
+
+  void dumpAtom(TaggedParserAtomIndex index) const;
 #endif
 };
 
-inline CompilationStencil& BaseCompilationStencil::asCompilationStencil() {
-  MOZ_ASSERT(isInitialStencil(),
-             "cast from BaseCompilationStencil to CompilationStencil is "
-             "allowed only for initial stencil");
-  return *static_cast<CompilationStencil*>(this);
-}
 
-inline const CompilationStencil& BaseCompilationStencil::asCompilationStencil()
-    const {
-  MOZ_ASSERT(isInitialStencil(),
-             "cast from BaseCompilationStencil to CompilationStencil is "
-             "allowed only for initial stencil");
-  return *static_cast<const CompilationStencil*>(this);
-}
 
 
 
 
 
 struct ExtensibleCompilationStencil {
-  using FunctionKey = BaseCompilationStencil::FunctionKey;
+  using FunctionKey = CompilationStencil::FunctionKey;
 
   
   
@@ -703,7 +668,7 @@ struct ExtensibleCompilationStencil {
   
   ParserAtomsTable parserAtoms;
 
-  FunctionKey functionKey = BaseCompilationStencil::NullFunctionKey;
+  FunctionKey functionKey = CompilationStencil::NullFunctionKey;
 
   ExtensibleCompilationStencil(JSContext* cx, CompilationInput& input);
 
@@ -753,11 +718,11 @@ struct ExtensibleCompilationStencil {
   }
 
   void setFunctionKey(BaseScript* lazy) {
-    functionKey = BaseCompilationStencil::toFunctionKey(lazy->extent());
+    functionKey = CompilationStencil::toFunctionKey(lazy->extent());
   }
 
   bool isInitialStencil() const {
-    return functionKey == BaseCompilationStencil::NullFunctionKey;
+    return functionKey == CompilationStencil::NullFunctionKey;
   }
 
   
@@ -844,7 +809,7 @@ inline size_t CompilationStencil::sizeOfExcludingThis(
   size_t asmJSSize = asmJS ? asmJS->sizeOfIncludingThis(mallocSizeOf) : 0;
 
   return alloc.sizeOfExcludingThis(mallocSizeOf) + moduleMetadataSize +
-         asmJSSize + BaseCompilationStencil::sizeOfExcludingThis(mallocSizeOf);
+         asmJSSize + sharedData.sizeOfExcludingThis(mallocSizeOf);
 }
 
 inline size_t ExtensibleCompilationStencil::sizeOfExcludingThis(
@@ -939,17 +904,17 @@ class ScriptStencilIterable {
 
   class Iterator {
     size_t index_ = 0;
-    const BaseCompilationStencil& stencil_;
+    const CompilationStencil& stencil_;
     CompilationGCOutput& gcOutput_;
 
-    Iterator(const BaseCompilationStencil& stencil,
-             CompilationGCOutput& gcOutput, size_t index)
+    Iterator(const CompilationStencil& stencil, CompilationGCOutput& gcOutput,
+             size_t index)
         : index_(index), stencil_(stencil), gcOutput_(gcOutput) {
       MOZ_ASSERT(index == stencil.scriptData.size());
     }
 
    public:
-    explicit Iterator(const BaseCompilationStencil& stencil,
+    explicit Iterator(const CompilationStencil& stencil,
                       CompilationGCOutput& gcOutput)
         : stencil_(stencil), gcOutput_(gcOutput) {
       skipTopLevelNonFunction();
@@ -991,22 +956,22 @@ class ScriptStencilIterable {
       const ScriptStencil& script = stencil_.scriptData[index];
       const ScriptStencilExtra* scriptExtra = nullptr;
       if (stencil_.isInitialStencil()) {
-        scriptExtra = &stencil_.asCompilationStencil().scriptExtra[index];
+        scriptExtra = &stencil_.scriptExtra[index];
       }
       return ScriptAndFunction(script, scriptExtra, gcOutput_.functions[index],
                                index);
     }
 
-    static Iterator end(const BaseCompilationStencil& stencil,
+    static Iterator end(const CompilationStencil& stencil,
                         CompilationGCOutput& gcOutput) {
       return Iterator(stencil, gcOutput, stencil.scriptData.size());
     }
   };
 
-  const BaseCompilationStencil& stencil_;
+  const CompilationStencil& stencil_;
   CompilationGCOutput& gcOutput_;
 
-  explicit ScriptStencilIterable(const BaseCompilationStencil& stencil,
+  explicit ScriptStencilIterable(const CompilationStencil& stencil,
                                  CompilationGCOutput& gcOutput)
       : stencil_(stencil), gcOutput_(gcOutput) {}
 
@@ -1016,7 +981,7 @@ class ScriptStencilIterable {
 };
 
 inline ScriptStencilIterable CompilationStencil::functionScriptStencils(
-    const BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput) {
+    const CompilationStencil& stencil, CompilationGCOutput& gcOutput) {
   return ScriptStencilIterable(stencil, gcOutput);
 }
 
