@@ -286,23 +286,12 @@ var PrintUtils = {
 
 
 
-
-
-  startPrintWindow(aTrigger, aBrowsingContext, aOptions) {
+  startPrintWindow(aBrowsingContext, aOptions) {
     const printInitiationTime = Date.now();
     let openWindowInfo, printSelectionOnly, printFrameOnly;
     if (aOptions) {
       ({ openWindowInfo, printSelectionOnly, printFrameOnly } = aOptions);
     }
-
-    
-    
-    
-    
-    if (!openWindowInfo || openWindowInfo.isForWindowDotPrint) {
-      Services.telemetry.keyedScalarAdd("printing.trigger", aTrigger, 1);
-    }
-
     let browser = null;
     if (openWindowInfo) {
       browser = document.createXULElement("browser");
@@ -462,13 +451,7 @@ var PrintUtils = {
 
 
 
-
-
-  printPreview(aTrigger, aListenerObj) {
-    if (aTrigger) {
-      Services.telemetry.keyedScalarAdd("printing.trigger", aTrigger, 1);
-    }
-
+  printPreview(aListenerObj) {
     if (PRINT_TAB_MODAL) {
       let browsingContext = gBrowser.selectedBrowser.browsingContext;
       let focusedBc = Services.focus.focusedContentBrowsingContext;
