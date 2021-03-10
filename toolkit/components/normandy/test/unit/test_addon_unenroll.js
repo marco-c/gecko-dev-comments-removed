@@ -16,6 +16,9 @@ const { TelemetryEvents } = ChromeUtils.import(
 const { AddonManager } = ChromeUtils.import(
   "resource://gre/modules/AddonManager.jsm"
 );
+const { NormandyTestUtils } = ChromeUtils.import(
+  "resource://testing-common/NormandyTestUtils.jsm"
+);
 const { AddonStudies } = ChromeUtils.import(
   "resource://normandy/lib/AddonStudies.jsm"
 );
@@ -23,13 +26,13 @@ const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
 );
 
-
-load("utils.js");
-
 NormandyTestUtils.init({ add_task });
 const { decorate_task } = NormandyTestUtils;
 
 const global = this;
+
+
+load("utils.js");
 
 add_task(async () => {
   ExtensionTestUtils.init(global);
@@ -47,9 +50,14 @@ add_task(async () => {
 });
 
 decorate_task(
-  withMockApiServer(),
+  withMockApiServer,
   AddonStudies.withStudies([]),
-  async function test_addon_unenroll({ server: apiServer }) {
+  async function test_addon_unenroll(
+    _serverUrl,
+    _preferences,
+    apiServer,
+    _studies
+  ) {
     const ID = "study@tests.mozilla.org";
 
     
@@ -216,9 +224,14 @@ decorate_task(
 
 
 decorate_task(
-  withMockApiServer(),
+  withMockApiServer,
   AddonStudies.withStudies([]),
-  async function test_addon_unenroll({ server: apiServer }) {
+  async function test_addon_unenroll(
+    _serverUrl,
+    _preferences,
+    apiServer,
+    _studies
+  ) {
     const ID = "study@tests.mozilla.org";
 
     
