@@ -642,10 +642,17 @@ void MatchGlob::Init(JSContext* aCx, const nsAString& aGlob,
   nsAutoString escaped;
   escaped.Append('^');
 
+  
+  
+  bool emittedFirstStar = false;
+
   for (uint32_t i = 0; i < mGlob.Length(); i++) {
     auto c = mGlob[i];
     if (c == '*') {
-      escaped.AppendLiteral(".*");
+      if (!emittedFirstStar) {
+        escaped.AppendLiteral(".*");
+        emittedFirstStar = true;
+      }
     } else if (c == '?' && aAllowQuestion) {
       escaped.Append('.');
     } else {
@@ -653,6 +660,9 @@ void MatchGlob::Init(JSContext* aCx, const nsAString& aGlob,
         escaped.Append('\\');
       }
       escaped.Append(c);
+
+      
+      emittedFirstStar = false;
     }
   }
 

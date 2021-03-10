@@ -467,6 +467,33 @@ add_task(async function test_MatchGlob() {
   fail({ url: moz, pattern: ["*.ORG/"] });
 });
 
+add_task(async function test_MatchGlob_redundant_wildcards_backtracking() {
+  {
+    
+    let title = `Monster${"*".repeat(99)}Mash`;
+
+    let start = Date.now();
+    let glob = new MatchGlob(title);
+    let matches = glob.matches(title);
+    let duration = Date.now() - start;
+
+    ok(matches, `Expected match: ${title}, ${title}`);
+    ok(duration < 10, `Matching duration: ${duration}ms`);
+  }
+  {
+    
+    let title = `Monster${"?*".repeat(99)}Mash`;
+
+    let start = Date.now();
+    let glob = new MatchGlob(title);
+    let matches = glob.matches(title);
+    let duration = Date.now() - start;
+
+    ok(matches, `Expected match: ${title}, ${title}`);
+    ok(duration < 10, `Matching duration: ${duration}ms`);
+  }
+});
+
 add_task(async function test_MatchPattern_subsumes() {
   function test(oldPat, newPat) {
     let m = new MatchPatternSet(oldPat);
