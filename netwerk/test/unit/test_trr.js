@@ -1088,7 +1088,7 @@ add_task(async function test25d() {
 });
 
 
-add_task({ skip_if: () => true }, async function test25e() {
+add_task(async function test25e() {
   dns.clearCache(true);
   Services.prefs.setIntPref("network.trr.mode", 3); 
   Services.prefs.setCharPref(
