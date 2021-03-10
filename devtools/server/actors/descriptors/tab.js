@@ -62,6 +62,9 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
       traits: {
         
         watcher: true,
+        
+        
+        emitDescriptorDestroyed: true,
       },
       url: this._getUrl(),
     };
