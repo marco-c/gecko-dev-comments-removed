@@ -22,14 +22,6 @@ namespace a11y {
 
 class AccessibleOrProxy {
  public:
-  
-  
-  MOZ_IMPLICIT AccessibleOrProxy(Accessible* aAcc)
-      : mBits(aAcc ? (aAcc->IsRemote()
-                          ? reinterpret_cast<uintptr_t>(aAcc->AsRemote()) |
-                                IS_PROXY
-                          : reinterpret_cast<uintptr_t>(aAcc->AsLocal()))
-                   : 0) {}
   MOZ_IMPLICIT AccessibleOrProxy(LocalAccessible* aAcc)
       : mBits(reinterpret_cast<uintptr_t>(aAcc)) {}
   MOZ_IMPLICIT AccessibleOrProxy(RemoteAccessible* aProxy)
