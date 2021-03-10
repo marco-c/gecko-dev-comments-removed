@@ -67,9 +67,6 @@ function FinderParent(browser) {
 let gSound = null;
 
 FinderParent.prototype = {
-  
-  destroy() {},
-
   get browsingContext() {
     return this._browser.browsingContext;
   },
