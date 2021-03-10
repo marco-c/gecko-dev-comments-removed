@@ -38,8 +38,17 @@ class IProtocol;
 
 namespace mozilla::dom {
 
+class GamepadChangeEvent;
+class GamepadTestHelper;
+
 
 class GamepadStateBroadcastReceiverInfo;
+
+
+
+
+
+
 
 
 
@@ -67,6 +76,23 @@ class GamepadStateReceiver {
       const GamepadStateBroadcastReceiverInfo& aReceiverInfo);
 
   
+  
+  
+  
+  
+  
+  
+  bool StartMonitoringThread(
+      const std::function<void(const GamepadChangeEvent&)>& aFn);
+
+  
+  
+  
+  
+  
+  void StopMonitoringThread();
+
+  
   GamepadStateReceiver(GamepadStateReceiver&& aOther) noexcept;
   GamepadStateReceiver& operator=(GamepadStateReceiver&& aOther) noexcept;
 
@@ -83,6 +109,11 @@ class GamepadStateReceiver {
   explicit GamepadStateReceiver(UniquePtr<Impl> aImpl);
 
   UniquePtr<Impl> mImpl;
+
+  friend class GamepadTestHelper;
+  bool StartMonitoringThreadForTesting(
+      const std::function<void(const GamepadChangeEvent&)>& aMonitorFn,
+      const std::function<void(uint32_t)>& aTestCommandFn);
 };
 
 }  
