@@ -264,8 +264,8 @@ extern bool GenerateEntryStubs(jit::MacroAssembler& masm,
 extern void GenerateTrapExitMachineState(jit::MachineState* machine,
                                          size_t* numWords);
 
-extern bool GenerateProvisionalJitEntryStub(MacroAssembler& masm,
-                                            Offsets* offsets);
+extern bool GenerateProvisionalLazyJitEntryStub(MacroAssembler& masm,
+                                                Offsets* offsets);
 
 
 

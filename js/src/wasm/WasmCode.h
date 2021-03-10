@@ -617,6 +617,35 @@ class CodeTier {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class JumpTables {
   using TablePointer = mozilla::UniquePtr<void*[], JS::FreePolicy>;
 

@@ -617,18 +617,6 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
   masm.bind(&functionBody);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   if (tier1FuncIndex) {
     Register scratch = ABINonArgReg0;
     masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, jumpTable)), scratch);

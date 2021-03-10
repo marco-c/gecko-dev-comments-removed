@@ -1663,6 +1663,8 @@ static bool EnsureEntryStubs(const Instance& instance, uint32_t funcIndex,
   
   
   
+  
+  
 
   auto stubs = instance.code(tier).lazyStubs().lock();
   *interpEntry = stubs->lookupInterpEntry(fe.funcIndex());
@@ -1700,9 +1702,10 @@ static bool EnsureEntryStubs(const Instance& instance, uint32_t funcIndex,
   return true;
 }
 
-static bool GetInterpEntry(JSContext* cx, Instance& instance,
-                           uint32_t funcIndex, CallArgs args,
-                           void** interpEntry, const FuncType** funcType) {
+static bool GetInterpEntryAndEnsureStubs(JSContext* cx, Instance& instance,
+                                         uint32_t funcIndex, CallArgs args,
+                                         void** interpEntry,
+                                         const FuncType** funcType) {
   const FuncExport* funcExport;
   if (!EnsureEntryStubs(instance, funcIndex, &funcExport, interpEntry)) {
     return false;
@@ -1711,15 +1714,17 @@ static bool GetInterpEntry(JSContext* cx, Instance& instance,
 #ifdef DEBUG
   
   
+  
+  
   if (!funcExport->hasEagerStubs() && funcExport->canHaveJitEntry()) {
     if (!EnsureBuiltinThunksInitialized()) {
       return false;
     }
     JSFunction& callee = args.callee().as<JSFunction>();
-    void* provisionalJitEntryStub = ProvisionalJitEntryStub();
-    MOZ_ASSERT(provisionalJitEntryStub);
+    void* provisionalLazyJitEntryStub = ProvisionalLazyJitEntryStub();
+    MOZ_ASSERT(provisionalLazyJitEntryStub);
     MOZ_ASSERT(callee.isWasmWithJitEntry());
-    MOZ_ASSERT(*callee.wasmJitEntry() != provisionalJitEntryStub);
+    MOZ_ASSERT(*callee.wasmJitEntry() != provisionalLazyJitEntryStub);
   }
 #endif
 
@@ -1868,7 +1873,8 @@ bool Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args) {
 
   void* interpEntry;
   const FuncType* funcType;
-  if (!GetInterpEntry(cx, *this, funcIndex, args, &interpEntry, &funcType)) {
+  if (!GetInterpEntryAndEnsureStubs(cx, *this, funcIndex, args, &interpEntry,
+                                    &funcType)) {
     return false;
   }
 
