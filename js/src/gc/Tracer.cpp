@@ -96,7 +96,7 @@ void js::gc::TraceIncomingCCWs(JSTracer* trc,
 
 void gc::TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape) {
   do {
-    MOZ_ASSERT(shape->base());
+    shape->base()->traceChildren(trc);
 
     
 
