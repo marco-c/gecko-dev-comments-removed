@@ -205,13 +205,6 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::GetISupports(
 
 already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
     JSContext* cx, const nsXPTInterfaceInfo* aInfo) {
-  int i;
-  uint16_t totalCount;
-  uint16_t realTotalCount = 0;
-  XPCNativeMember* cur;
-  RootedString str(cx);
-  RootedId interfaceName(cx);
-
   
   
   
@@ -240,9 +233,9 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
     }
   }
 
-  uint16_t methodCount = aInfo->MethodCount();
-  uint16_t constCount = aInfo->ConstantCount();
-  totalCount = methodCount + constCount;
+  const uint16_t methodCount = aInfo->MethodCount();
+  const uint16_t constCount = aInfo->ConstantCount();
+  const uint16_t totalCount = methodCount + constCount;
 
   static const uint16_t MAX_LOCAL_MEMBER_COUNT = 16;
   XPCNativeMember local_members[MAX_LOCAL_MEMBER_COUNT];
@@ -258,7 +251,8 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
   
   
 
-  for (i = 0; i < methodCount; i++) {
+  uint16_t realTotalCount = 0;
+  for (unsigned int i = 0; i < methodCount; i++) {
     const nsXPTMethodInfo& info = aInfo->Method(i);
 
     
@@ -280,7 +274,7 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
       MOZ_ASSERT(realTotalCount, "bad setter");
       
       
-      cur = &members[realTotalCount - 1];
+      XPCNativeMember* cur = &members[realTotalCount - 1];
       MOZ_ASSERT(cur->GetName() == name, "bad setter");
       MOZ_ASSERT(cur->IsReadOnlyAttribute(), "bad setter");
       MOZ_ASSERT(cur->GetIndex() == i - 1, "bad setter");
@@ -292,7 +286,7 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
         NS_WARNING("Too many members in interface");
         return nullptr;
       }
-      cur = &members[realTotalCount];
+      XPCNativeMember* cur = &members[realTotalCount];
       cur->SetName(name);
       if (info.IsGetter()) {
         cur->SetReadOnlyAttribute(i);
@@ -304,14 +298,14 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
     }
   }
 
-  for (i = 0; i < constCount; i++) {
+  for (unsigned int i = 0; i < constCount; i++) {
     RootedValue constant(cx);
     nsCString namestr;
     if (NS_FAILED(aInfo->GetConstant(i, &constant, getter_Copies(namestr)))) {
       return nullptr;
     }
 
-    str = JS_AtomizeAndPinString(cx, namestr.get());
+    RootedString str(cx, JS_AtomizeAndPinString(cx, namestr.get()));
     if (!str) {
       NS_ERROR("bad constant name");
       return nullptr;
@@ -324,7 +318,7 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
       NS_WARNING("Too many members in interface");
       return nullptr;
     }
-    cur = &members[realTotalCount];
+    XPCNativeMember* cur = &members[realTotalCount];
     cur->SetName(name);
     cur->SetConstant(i);
     cur->SetIndexInInterface(realTotalCount);
@@ -332,12 +326,15 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
   }
 
   const char* bytes = aInfo->Name();
-  if (nullptr == bytes ||
-      nullptr == (str = JS_AtomizeAndPinString(cx, bytes))) {
+  if (!bytes) {
+    return nullptr;
+  }
+  RootedString str(cx, JS_AtomizeAndPinString(cx, bytes));
+  if (!str) {
     return nullptr;
   }
 
-  interfaceName = PropertyKey::fromPinnedString(str);
+  RootedId interfaceName(cx, PropertyKey::fromPinnedString(str));
 
   
   
