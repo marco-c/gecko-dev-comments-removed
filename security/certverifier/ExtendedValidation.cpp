@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ExtendedValidation.h"
 
@@ -22,96 +22,96 @@ namespace mozilla {
 namespace psm {
 
 struct EVInfo {
-  
+  // See bug 1338873 about making these fields const.
   const char* dottedOid;
   const char*
-      oidName;  
-                
+      oidName;  // Set this to null to signal an invalid structure,
+                // (We can't have an empty list, so we'll use a dummy entry)
   unsigned char sha256Fingerprint[SHA256_LENGTH];
   const char* issuerBase64;
   const char* serialBase64;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// HOWTO enable additional CA root certificates for EV:
+//
+// For each combination of "root certificate" and "policy OID",
+// one entry must be added to the array named kEVInfos.
+//
+// We use the combination of "issuer name" and "serial number" to
+// uniquely identify the certificate. In order to avoid problems
+// because of encodings when comparing certificates, we don't
+// use plain text representation, we rather use the original encoding
+// as it can be found in the root certificate (in base64 format).
+//
+// We can use the NSS utility named "pp" to extract the encoding.
+//
+// Build standalone NSS including the NSS tools, then run
+//   pp -t certificate-identity -i the-cert-filename
+//
+// You will need the output from sections "Issuer", "Fingerprint (SHA-256)",
+// "Issuer DER Base64" and "Serial DER Base64".
+//
+// The new section consists of the following components:
+//
+// - a comment that should contain the human readable issuer name
+//   of the certificate, as printed by the pp tool
+// - the EV policy OID that is associated to the EV grant
+// - a text description of the EV policy OID. The array can contain
+//   multiple entries with the same OID.
+//   Please make sure to use the identical OID text description for
+//   all entries with the same policy OID (use the text search
+//   feature of your text editor to find duplicates).
+//   When adding a new policy OID that is not yet contained in the array,
+//   please make sure that your new description is different from
+//   all the other descriptions (again use the text search feature
+//   to be sure).
+// - the SHA-256 fingerprint
+// - the "Issuer DER Base64" as printed by the pp tool.
+//   Remove all whitespaces. If you use multiple lines, make sure that
+//   only the final line will be followed by a comma.
+// - the "Serial DER Base64" (as printed by pp)
+//
+// After adding an entry, test it locally against the test site that
+// has been provided by the CA. Note that you must use a version of NSS
+// where the root certificate has already been added and marked as trusted
+// for issuing SSL server certificates (at least).
+//
+// If you are able to connect to the site without certificate errors,
+// but you don't see the EV status indicator, then most likely the CA
+// has a problem in their infrastructure. The most common problems are
+// related to the CA's OCSP infrastructure, either they use an incorrect
+// OCSP signing certificate, or OCSP for the intermediate certificates
+// isn't working, or OCSP isn't working at all.
 
 #ifdef DEBUG
 static const size_t NUM_TEST_EV_ROOTS = 2;
 #endif
 
 static const struct EVInfo kEVInfos[] = {
-
-  
-  
+// clang-format off
+  // IMPORTANT! When extending this list, if you add another entry that uses
+  // the same dottedOid as an existing entry, use the same oidName.
 #ifdef DEBUG
-  
-  
-  
-  
-  
-  
+  // Debug EV certificates should all use the following OID:
+  // 1.3.6.1.4.1.13769.666.666.666.1.500.9.1.
+  // (multiple entries with the same OID is ok)
+  // If you add or remove debug EV certs you must also modify NUM_TEST_EV_ROOTS
+  // so that the correct number of certs are skipped as these debug EV certs
+  // are NOT part of the default trust store.
   {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // This is the PSM xpcshell testing EV certificate. It can be generated
+    // using pycert.py and the following specification:
+    //
+    // issuer:evroot
+    // subject:evroot
+    // subjectKey:ev
+    // issuerKey:ev
+    // validity:20150101-20350101
+    // extension:basicConstraints:cA,
+    // extension:keyUsage:keyCertSign,cRLSign
+    //
+    // If this ever needs to change, re-generate the certificate and update the
+    // following entry with the new fingerprint, issuer, and serial number.
     "1.3.6.1.4.1.13769.666.666.666.1.500.9.1",
     "DEBUGtesting EV OID",
     { 0x70, 0xED, 0xCB, 0x5A, 0xCE, 0x02, 0xC7, 0xC5, 0x0B, 0xA3, 0xD2, 0xD7,
@@ -121,20 +121,20 @@ static const struct EVInfo kEVInfos[] = {
     "IZSHsVgzcvhPgdfrgdMGlpSfMeg=",
   },
   {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // This is an RSA root with an inadequate key size. It is used to test that
+    // minimum key sizes are enforced when verifying for EV. It can be
+    // generated using pycert.py and the following specification:
+    //
+    // issuer:ev_root_rsa_2040
+    // subject:ev_root_rsa_2040
+    // issuerKey:evRSA2040
+    // subjectKey:evRSA2040
+    // validity:20150101-20350101
+    // extension:basicConstraints:cA,
+    // extension:keyUsage:cRLSign,keyCertSign
+    //
+    // If this ever needs to change, re-generate the certificate and update the
+    // following entry with the new fingerprint, issuer, and serial number.
     "1.3.6.1.4.1.13769.666.666.666.1.500.9.1",
     "DEBUGtesting EV OID",
     { 0x40, 0xAB, 0x5D, 0xA5, 0x89, 0x15, 0xA9, 0x4B, 0x82, 0x87, 0xB8, 0xA6,
@@ -145,7 +145,7 @@ static const struct EVInfo kEVInfos[] = {
   },
 #endif
   {
-    
+    // CN=Cybertrust Global Root,O=Cybertrust, Inc
     "1.3.6.1.4.1.6334.1.100.1",
     "Cybertrust EV OID",
     { 0x96, 0x0A, 0xDF, 0x00, 0x63, 0xE9, 0x63, 0x56, 0x75, 0x0C, 0x29,
@@ -156,7 +156,7 @@ static const struct EVInfo kEVInfos[] = {
     "BAAAAAABD4WqLUg=",
   },
   {
-    
+    // CN=SwissSign Gold CA - G2,O=SwissSign AG,C=CH
     "2.16.756.1.89.1.2.1.1",
     "SwissSign EV OID",
     { 0x62, 0xDD, 0x0B, 0xE9, 0xB9, 0xF5, 0x0A, 0x16, 0x3E, 0xA0, 0xF8,
@@ -167,7 +167,7 @@ static const struct EVInfo kEVInfos[] = {
     "ALtAHEP1Xk+w",
   },
   {
-    
+    // CN=XRamp Global Certification Authority,O=XRamp Security Services Inc,OU=www.xrampsecurity.com,C=US
     "2.16.840.1.114404.1.1.2.4.1",
     "Trustwave EV OID",
     { 0xCE, 0xCD, 0xDC, 0x90, 0x50, 0x99, 0xD8, 0xDA, 0xDF, 0xC5, 0xB1,
@@ -179,7 +179,7 @@ static const struct EVInfo kEVInfos[] = {
     "UJRs7Bjq1ZxN1ZfvdY+grQ==",
   },
   {
-    
+    // CN=SecureTrust CA,O=SecureTrust Corporation,C=US
     "2.16.840.1.114404.1.1.2.4.1",
     "Trustwave EV OID",
     { 0xF1, 0xC1, 0xB5, 0x0A, 0xE5, 0xA2, 0x0D, 0xD8, 0x03, 0x0E, 0xC9,
@@ -190,7 +190,7 @@ static const struct EVInfo kEVInfos[] = {
     "DPCOXAgWpa1Cf/DrJxhZ0A==",
   },
   {
-    
+    // CN=Secure Global CA,O=SecureTrust Corporation,C=US
     "2.16.840.1.114404.1.1.2.4.1",
     "Trustwave EV OID",
     { 0x42, 0x00, 0xF5, 0x04, 0x3A, 0xC8, 0x59, 0x0E, 0xBB, 0x52, 0x7D,
@@ -201,7 +201,7 @@ static const struct EVInfo kEVInfos[] = {
     "B1YipOjUiolN9BPI8PjqpQ==",
   },
   {
-    
+    // CN=COMODO ECC Certification Authority,O=COMODO CA Limited,L=Salford,ST=Greater Manchester,C=GB
     "1.3.6.1.4.1.6449.1.2.1.5.1",
     "Comodo EV OID",
     { 0x17, 0x93, 0x92, 0x7A, 0x06, 0x14, 0x54, 0x97, 0x89, 0xAD, 0xCE,
@@ -213,7 +213,7 @@ static const struct EVInfo kEVInfos[] = {
     "H0evqmIAcFBUTAGem2OZKg==",
   },
   {
-    
+    // CN=COMODO Certification Authority,O=COMODO CA Limited,L=Salford,ST=Greater Manchester,C=GB
     "1.3.6.1.4.1.6449.1.2.1.5.1",
     "Comodo EV OID",
     { 0x0C, 0x2C, 0xD6, 0x3D, 0xF7, 0x80, 0x6F, 0xA3, 0x99, 0xED, 0xE8,
@@ -225,7 +225,7 @@ static const struct EVInfo kEVInfos[] = {
     "ToEtioJl4AsC7j41AkblPQ==",
   },
   {
-    
+    // OU=Go Daddy Class 2 Certification Authority,O=\"The Go Daddy Group, Inc.\",C=US
     "2.16.840.1.114413.1.7.23.3",
     "Go Daddy EV OID a",
     { 0xC3, 0x84, 0x6B, 0xF2, 0x4B, 0x9E, 0x93, 0xCA, 0x64, 0x27, 0x4C,
@@ -237,7 +237,7 @@ static const struct EVInfo kEVInfos[] = {
     "AA==",
   },
   {
-    
+    // CN=Go Daddy Root Certificate Authority - G2,O="GoDaddy.com, Inc.",L=Scottsdale,ST=Arizona,C=US
     "2.16.840.1.114413.1.7.23.3",
     "Go Daddy EV OID a",
     { 0x45, 0x14, 0x0B, 0x32, 0x47, 0xEB, 0x9C, 0xC8, 0xC5, 0xB4, 0xF0,
@@ -249,7 +249,7 @@ static const struct EVInfo kEVInfos[] = {
     "AA==",
   },
   {
-    
+    // OU=Starfield Class 2 Certification Authority,O=\"Starfield Technologies, Inc.\",C=US
     "2.16.840.1.114414.1.7.23.3",
     "Go Daddy EV OID b",
     { 0x14, 0x65, 0xFA, 0x20, 0x53, 0x97, 0xB8, 0x76, 0xFA, 0xA6, 0xF0,
@@ -261,7 +261,7 @@ static const struct EVInfo kEVInfos[] = {
     "AA==",
   },
   {
-    
+    // CN=Starfield Root Certificate Authority - G2,O="Starfield Technologies, Inc.",L=Scottsdale,ST=Arizona,C=US
     "2.16.840.1.114414.1.7.23.3",
     "Go Daddy EV OID b",
     { 0x2C, 0xE1, 0xCB, 0x0B, 0xF9, 0xD2, 0xF9, 0xE1, 0x02, 0x99, 0x3F,
@@ -274,7 +274,7 @@ static const struct EVInfo kEVInfos[] = {
     "AA==",
   },
   {
-    
+    // CN=DigiCert High Assurance EV Root CA,OU=www.digicert.com,O=DigiCert Inc,C=US
     "2.16.840.1.114412.2.1",
     "DigiCert EV OID",
     { 0x74, 0x31, 0xE5, 0xF4, 0xC3, 0xC1, 0xCE, 0x46, 0x90, 0x77, 0x4F,
@@ -286,7 +286,7 @@ static const struct EVInfo kEVInfos[] = {
     "AqxcJmoLQJuPC3nyrkYldw==",
   },
   {
-    
+    // CN=QuoVadis Root CA 2,O=QuoVadis Limited,C=BM
     "1.3.6.1.4.1.8024.0.2.100.1.2",
     "Quo Vadis EV OID",
     { 0x85, 0xA0, 0xDD, 0x7D, 0xD7, 0x20, 0xAD, 0xB7, 0xFF, 0x05, 0xF8,
@@ -297,7 +297,7 @@ static const struct EVInfo kEVInfos[] = {
     "BQk=",
   },
   {
-    
+    // CN=Network Solutions Certificate Authority,O=Network Solutions L.L.C.,C=US
     "1.3.6.1.4.1.782.1.2.1.8.1",
     "Network Solutions EV OID",
     { 0x15, 0xF0, 0xBA, 0x00, 0xA3, 0xAC, 0x7A, 0xF3, 0xAC, 0x88, 0x4C,
@@ -309,7 +309,7 @@ static const struct EVInfo kEVInfos[] = {
     "V8szb8JcFuZHFhfjkDFo4A==",
   },
   {
-    
+    // CN=Entrust Root Certification Authority,OU="(c) 2006 Entrust, Inc.",OU=www.entrust.net/CPS is incorporated by reference,O="Entrust, Inc.",C=US
     "2.16.840.1.114028.10.1.2",
     "Entrust EV OID",
     { 0x73, 0xC1, 0x76, 0x43, 0x4F, 0x1B, 0xC6, 0xD5, 0xAD, 0xF4, 0x5B,
@@ -322,7 +322,7 @@ static const struct EVInfo kEVInfos[] = {
     "RWtQVA==",
   },
   {
-    
+    // CN=Entrust Root Certification Authority - G4,OU="(c) 2015 Entrust, Inc. - for authorized use only",OU=See www.entrust.net/legal-terms,O="Entrust, Inc.",C=US
     "2.16.840.1.114028.10.1.2",
     "Entrust EV OID",
     { 0xDB, 0x35, 0x17, 0xD1, 0xF6, 0x73, 0x2A, 0x2D, 0x5A, 0xB9, 0x7C,
@@ -336,7 +336,7 @@ static const struct EVInfo kEVInfos[] = {
     "ANm1Q3+vqTkPAAAAAFVlrVg=",
   },
   {
-    
+    // CN=GlobalSign Root CA,OU=Root CA,O=GlobalSign nv-sa,C=BE
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0xEB, 0xD4, 0x10, 0x40, 0xE4, 0xBB, 0x3E, 0xC7, 0x42, 0xC9, 0xE3,
@@ -347,7 +347,7 @@ static const struct EVInfo kEVInfos[] = {
     "BAAAAAABFUtaw5Q=",
   },
   {
-    
+    // CN=GlobalSign,O=GlobalSign,OU=GlobalSign Root CA - R3
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0xCB, 0xB5, 0x22, 0xD7, 0xB7, 0xF1, 0x27, 0xAD, 0x6A, 0x01, 0x13,
@@ -358,7 +358,7 @@ static const struct EVInfo kEVInfos[] = {
     "BAAAAAABIVhTCKI=",
   },
   {
-    
+    // CN=Buypass Class 3 Root CA,O=Buypass AS-983163327,C=NO
     "2.16.578.1.26.1.3.3",
     "Buypass EV OID",
     { 0xED, 0xF7, 0xEB, 0xBC, 0xA2, 0x7A, 0x2A, 0x38, 0x4D, 0x38, 0x7B,
@@ -369,7 +369,7 @@ static const struct EVInfo kEVInfos[] = {
     "Ag==",
   },
   {
-    
+    // CN=AffirmTrust Commercial,O=AffirmTrust,C=US
     "1.3.6.1.4.1.34697.2.1",
     "AffirmTrust EV OID a",
     { 0x03, 0x76, 0xAB, 0x1D, 0x54, 0xC5, 0xF9, 0x80, 0x3C, 0xE4, 0xB2,
@@ -380,7 +380,7 @@ static const struct EVInfo kEVInfos[] = {
     "d3cGJyapsXw=",
   },
   {
-    
+    // CN=AffirmTrust Networking,O=AffirmTrust,C=US
     "1.3.6.1.4.1.34697.2.2",
     "AffirmTrust EV OID b",
     { 0x0A, 0x81, 0xEC, 0x5A, 0x92, 0x97, 0x77, 0xF1, 0x45, 0x90, 0x4A,
@@ -391,7 +391,7 @@ static const struct EVInfo kEVInfos[] = {
     "fE8EORzUmS0=",
   },
   {
-    
+    // CN=AffirmTrust Premium,O=AffirmTrust,C=US
     "1.3.6.1.4.1.34697.2.3",
     "AffirmTrust EV OID c",
     { 0x70, 0xA7, 0x3F, 0x7F, 0x37, 0x6B, 0x60, 0x07, 0x42, 0x48, 0x90,
@@ -402,7 +402,7 @@ static const struct EVInfo kEVInfos[] = {
     "bYwURrGmCu4=",
   },
   {
-    
+    // CN=AffirmTrust Premium ECC,O=AffirmTrust,C=US
     "1.3.6.1.4.1.34697.2.4",
     "AffirmTrust EV OID d",
     { 0xBD, 0x71, 0xFD, 0xF6, 0xDA, 0x97, 0xE4, 0xCF, 0x62, 0xD1, 0x64,
@@ -413,7 +413,7 @@ static const struct EVInfo kEVInfos[] = {
     "dJclisc/elQ=",
   },
   {
-    
+    // CN=Certum Trusted Network CA,OU=Certum Certification Authority,O=Unizeto Technologies S.A.,C=PL
     "1.2.616.1.113527.2.5.1.1",
     "Certum EV OID",
     { 0x5C, 0x58, 0x46, 0x8D, 0x55, 0xF5, 0x8E, 0x49, 0x7E, 0x74, 0x39,
@@ -425,7 +425,7 @@ static const struct EVInfo kEVInfos[] = {
     "BETA",
   },
   {
-    
+    // CN=Certum Trusted Network CA 2,OU=Certum Certification Authority,O=Unizeto Technologies S.A.,C=PL
     "1.2.616.1.113527.2.5.1.1",
     "Certum EV OID",
     { 0xB6, 0x76, 0xF2, 0xED, 0xDA, 0xE8, 0x77, 0x5C, 0xD3, 0x6C, 0xB0,
@@ -437,7 +437,7 @@ static const struct EVInfo kEVInfos[] = {
     "IdbQSk8lD8kyN/yqXhKN6Q==",
   },
   {
-    
+    // CN=Izenpe.com,O=IZENPE S.A.,C=ES
     "1.3.6.1.4.1.14777.6.1.1",
     "Izenpe EV OID 1",
     { 0x25, 0x30, 0xCC, 0x8E, 0x98, 0x32, 0x15, 0x02, 0xBA, 0xD9, 0x6F,
@@ -448,7 +448,7 @@ static const struct EVInfo kEVInfos[] = {
     "ALC3WhZIX7/hy/WL1xnmfQ==",
   },
   {
-    
+    // CN=Izenpe.com,O=IZENPE S.A.,C=ES
     "1.3.6.1.4.1.14777.6.1.2",
     "Izenpe EV OID 2",
     { 0x25, 0x30, 0xCC, 0x8E, 0x98, 0x32, 0x15, 0x02, 0xBA, 0xD9, 0x6F,
@@ -459,7 +459,7 @@ static const struct EVInfo kEVInfos[] = {
     "ALC3WhZIX7/hy/WL1xnmfQ==",
   },
   {
-    
+    // CN=T-TeleSec GlobalRoot Class 3,OU=T-Systems Trust Center,O=T-Systems Enterprise Services GmbH,C=DE
     "1.3.6.1.4.1.7879.13.24.1",
     "T-Systems EV OID",
     { 0xFD, 0x73, 0xDA, 0xD3, 0x1C, 0x64, 0x4F, 0xF1, 0xB4, 0x3B, 0xEF,
@@ -471,7 +471,7 @@ static const struct EVInfo kEVInfos[] = {
     "AQ==",
   },
   {
-    
+    // CN=TWCA Root Certification Authority,OU=Root CA,O=TAIWAN-CA,C=TW
     "1.3.6.1.4.1.40869.1.1.22.3",
     "TWCA EV OID",
     { 0xBF, 0xD8, 0x8F, 0xE1, 0x10, 0x1C, 0x41, 0xAE, 0x3E, 0x80, 0x1B,
@@ -483,7 +483,7 @@ static const struct EVInfo kEVInfos[] = {
     "AQ==",
   },
   {
-    
+    // CN=D-TRUST Root Class 3 CA 2 EV 2009,O=D-Trust GmbH,C=DE
     "1.3.6.1.4.1.4788.2.202.1",
     "D-TRUST EV OID",
     { 0xEE, 0xC5, 0x49, 0x6B, 0x98, 0x8C, 0xE9, 0x86, 0x25, 0xB9, 0x34,
@@ -494,7 +494,7 @@ static const struct EVInfo kEVInfos[] = {
     "CYP0",
   },
   {
-    
+    // CN = Autoridad de Certificacion Firmaprofesional CIF A62634068, C = ES
     "1.3.6.1.4.1.13177.10.1.3.10",
     "Firmaprofesional EV OID",
     { 0x04, 0x04, 0x80, 0x28, 0xBF, 0x1F, 0x28, 0x64, 0xD4, 0x8F, 0x9A,
@@ -505,7 +505,7 @@ static const struct EVInfo kEVInfos[] = {
     "U+w77vuySF8=",
   },
   {
-    
+    // CN = TWCA Global Root CA, OU = Root CA, O = TAIWAN-CA, C = TW
     "1.3.6.1.4.1.40869.1.1.22.3",
     "TWCA EV OID",
     { 0x59, 0x76, 0x90, 0x07, 0xF7, 0x68, 0x5D, 0x0F, 0xCD, 0x50, 0x87,
@@ -516,7 +516,7 @@ static const struct EVInfo kEVInfos[] = {
     "DL4=",
   },
   {
-    
+    // CN = E-Tugra Certification Authority, OU = E-Tugra Sertifikasyon Merkezi, O = E-Tuğra EBG Bilişim Teknolojileri ve Hizmetleri A.Ş., L = Ankara, C = TR
     "2.16.792.3.0.4.1.1.4",
     "ETugra EV OID",
     { 0xB0, 0xBF, 0xD5, 0x2B, 0xB0, 0xD7, 0xD9, 0xBD, 0x92, 0xBF, 0x5D,
@@ -529,7 +529,7 @@ static const struct EVInfo kEVInfos[] = {
     "amg+nFGby1M=",
   },
   {
-    
+    // CN=Actalis Authentication Root CA,O=Actalis S.p.A./03358520967,L=Milan,C=IT
     "1.3.159.1.17.1",
     "Actalis EV OID",
     { 0x55, 0x92, 0x60, 0x84, 0xEC, 0x96, 0x3A, 0x64, 0xB9, 0x6E, 0x2A,
@@ -541,7 +541,7 @@ static const struct EVInfo kEVInfos[] = {
     "VwoRl0LE48w=",
   },
   {
-    
+    // CN=DigiCert Assured ID Root G2,OU=www.digicert.com,O=DigiCert Inc,C=US
     "2.16.840.1.114412.2.1",
     "DigiCert EV OID",
     { 0x7D, 0x05, 0xEB, 0xB6, 0x82, 0x33, 0x9F, 0x8C, 0x94, 0x51, 0xEE,
@@ -553,7 +553,7 @@ static const struct EVInfo kEVInfos[] = {
     "C5McOtY5Z+pnI7/Dr5r0Sw==",
   },
   {
-    
+    // CN=DigiCert Assured ID Root G3,OU=www.digicert.com,O=DigiCert Inc,C=US
     "2.16.840.1.114412.2.1",
     "DigiCert EV OID",
     { 0x7E, 0x37, 0xCB, 0x8B, 0x4C, 0x47, 0x09, 0x0C, 0xAB, 0x36, 0x55,
@@ -565,7 +565,7 @@ static const struct EVInfo kEVInfos[] = {
     "C6Fa+h3foLVJRK/NJKBs7A==",
   },
   {
-    
+    // CN=DigiCert Global Root G2,OU=www.digicert.com,O=DigiCert Inc,C=US
     "2.16.840.1.114412.2.1",
     "DigiCert EV OID",
     { 0xCB, 0x3C, 0xCB, 0xB7, 0x60, 0x31, 0xE5, 0xE0, 0x13, 0x8F, 0x8D,
@@ -577,7 +577,7 @@ static const struct EVInfo kEVInfos[] = {
     "Azrx5qcRqaC7KGSxHQn65Q==",
   },
   {
-    
+    // CN=DigiCert Global Root G3,OU=www.digicert.com,O=DigiCert Inc,C=US
     "2.16.840.1.114412.2.1",
     "DigiCert EV OID",
     { 0x31, 0xAD, 0x66, 0x48, 0xF8, 0x10, 0x41, 0x38, 0xC7, 0x38, 0xF3,
@@ -589,7 +589,7 @@ static const struct EVInfo kEVInfos[] = {
     "BVVWvPJepDU1w6QP1atFcg==",
   },
   {
-    
+    // CN=DigiCert Trusted Root G4,OU=www.digicert.com,O=DigiCert Inc,C=US
     "2.16.840.1.114412.2.1",
     "DigiCert EV OID",
     { 0x55, 0x2F, 0x7B, 0xDC, 0xF1, 0xA7, 0xAF, 0x9E, 0x6C, 0xE6, 0x72,
@@ -601,7 +601,7 @@ static const struct EVInfo kEVInfos[] = {
     "BZsbV56OITLiOQe9p3d1XA==",
   },
   {
-    
+    // CN=QuoVadis Root CA 2 G3,O=QuoVadis Limited,C=BM
     "1.3.6.1.4.1.8024.0.2.100.1.2",
     "QuoVadis EV OID",
     { 0x8F, 0xE4, 0xFB, 0x0A, 0xF9, 0x3A, 0x4D, 0x0D, 0x67, 0xDB, 0x0B,
@@ -612,7 +612,7 @@ static const struct EVInfo kEVInfos[] = {
     "RFc0JFuBiZs18s64KztbpybwdSg=",
   },
   {
-    
+    // CN=COMODO RSA Certification Authority,O=COMODO CA Limited,L=Salford,ST=Greater Manchester,C=GB
     "1.3.6.1.4.1.6449.1.2.1.5.1",
     "Comodo EV OID",
     { 0x52, 0xF0, 0xE1, 0xC4, 0xE5, 0x8E, 0xC6, 0x29, 0x29, 0x1B, 0x60,
@@ -624,7 +624,7 @@ static const struct EVInfo kEVInfos[] = {
     "TKr5yttjb+Af907YWwOGnQ==",
   },
   {
-    
+    // CN=USERTrust RSA Certification Authority,O=The USERTRUST Network,L=Jersey City,ST=New Jersey,C=US
     "1.3.6.1.4.1.6449.1.2.1.5.1",
     "Comodo EV OID",
     { 0xE7, 0x93, 0xC9, 0xB0, 0x2F, 0xD8, 0xAA, 0x13, 0xE2, 0x1C, 0x31,
@@ -636,7 +636,7 @@ static const struct EVInfo kEVInfos[] = {
     "Af1tMPyjylGoG7xkDjUDLQ==",
   },
   {
-    
+    // CN=USERTrust ECC Certification Authority,O=The USERTRUST Network,L=Jersey City,ST=New Jersey,C=US
     "1.3.6.1.4.1.6449.1.2.1.5.1",
     "Comodo EV OID",
     { 0x4F, 0xF4, 0x60, 0xD5, 0x4B, 0x9C, 0x86, 0xDA, 0xBF, 0xBC, 0xFC,
@@ -648,7 +648,7 @@ static const struct EVInfo kEVInfos[] = {
     "XIuZxVqUxdJxVt7NiYDMJg==",
   },
   {
-    
+    // CN=GlobalSign,O=GlobalSign,OU=GlobalSign ECC Root CA - R5
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x17, 0x9F, 0xBC, 0x14, 0x8A, 0x3D, 0xD0, 0x0F, 0xD2, 0x4E, 0xA1,
@@ -659,7 +659,7 @@ static const struct EVInfo kEVInfos[] = {
     "YFlJ4CYuu1X5CneKcflK2Gw=",
   },
   {
-    
+    // CN=GlobalSign,O=GlobalSign,OU=GlobalSign Root CA - R6
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x2C, 0xAB, 0xEA, 0xFE, 0x37, 0xD0, 0x6C, 0xA2, 0x2A, 0xBA, 0x73,
@@ -670,7 +670,7 @@ static const struct EVInfo kEVInfos[] = {
     "Rea7A4Mzw4VlSOb/RVE=",
   },
   {
-    
+    // CN=Entrust.net Certification Authority (2048),OU=(c) 1999 Entrust.net Limited,OU=www.entrust.net/CPS_2048 incorp. by ref. (limits liab.),O=Entrust.net
     "2.16.840.1.114028.10.1.2",
     "Entrust EV OID",
     { 0x6D, 0xC4, 0x71, 0x72, 0xE0, 0x1C, 0xBC, 0xB0, 0xBF, 0x62, 0x58,
@@ -683,7 +683,7 @@ static const struct EVInfo kEVInfos[] = {
     "OGPe+A==",
   },
   {
-    
+    // CN=Staat der Nederlanden EV Root CA,O=Staat der Nederlanden,C=NL
     "2.16.528.1.1003.1.2.7",
     "Staat der Nederlanden EV OID",
     { 0x4D, 0x24, 0x91, 0x41, 0x4C, 0xFE, 0x95, 0x67, 0x46, 0xEC, 0x4C,
@@ -694,7 +694,7 @@ static const struct EVInfo kEVInfos[] = {
     "AJiWjQ==",
   },
   {
-    
+    // CN=Entrust Root Certification Authority - G2,OU="(c) 2009 Entrust, Inc. - for authorized use only",OU=See www.entrust.net/legal-terms,O="Entrust, Inc.",C=US
     "2.16.840.1.114028.10.1.2",
     "Entrust EV OID",
     { 0x43, 0xDF, 0x57, 0x74, 0xB0, 0x3E, 0x7F, 0xEF, 0x5F, 0xE4, 0x0D,
@@ -708,7 +708,7 @@ static const struct EVInfo kEVInfos[] = {
     "SlOMKA==",
   },
   {
-    
+    // CN=Entrust Root Certification Authority - EC1,OU="(c) 2012 Entrust, Inc. - for authorized use only",OU=See www.entrust.net/legal-terms,O="Entrust, Inc.",C=US
     "2.16.840.1.114028.10.1.2",
     "Entrust EV OID",
     { 0x02, 0xED, 0x0E, 0xB2, 0x8C, 0x14, 0xDA, 0x45, 0x16, 0x5C, 0x56,
@@ -722,7 +722,7 @@ static const struct EVInfo kEVInfos[] = {
     "AKaLeSkAAAAAUNCR+Q==",
   },
   {
-    
+    // CN=CFCA EV ROOT,O=China Financial Certification Authority,C=CN
     "2.16.156.112554.3",
     "CFCA EV OID",
     { 0x5C, 0xC3, 0xD7, 0x8E, 0x4E, 0x1D, 0x5E, 0x45, 0x54, 0x7A, 0x04,
@@ -733,7 +733,7 @@ static const struct EVInfo kEVInfos[] = {
     "GErM1g==",
   },
   {
-    
+    // OU=Security Communication RootCA2,O="SECOM Trust Systems CO.,LTD.",C=JP
     "1.2.392.200091.100.721.1",
     "SECOM EV OID",
     { 0x51, 0x3B, 0x2C, 0xEC, 0xB8, 0x10, 0xD4, 0xCD, 0xE5, 0xDD, 0x85,
@@ -744,7 +744,7 @@ static const struct EVInfo kEVInfos[] = {
     "AA==",
   },
   {
-    
+    // CN=OISTE WISeKey Global Root GB CA,OU=OISTE Foundation Endorsed,O=WISeKey,C=CH
     "2.16.756.5.14.7.4.8",
     "WISeKey EV OID",
     { 0x6B, 0x9C, 0x08, 0xE8, 0x6E, 0xB0, 0xF7, 0x67, 0xCF, 0xAD, 0x65,
@@ -756,7 +756,7 @@ static const struct EVInfo kEVInfos[] = {
     "drEgUnTwhYdGs/gjGvbCwA==",
   },
   {
-    
+    // CN=Amazon Root CA 1,O=Amazon,C=US
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x8E, 0xCD, 0xE6, 0x88, 0x4F, 0x3D, 0x87, 0xB1, 0x12, 0x5B, 0xA3,
@@ -767,7 +767,7 @@ static const struct EVInfo kEVInfos[] = {
     "Bmyfz5m/jAo54vB4ikPmljZbyg==",
   },
   {
-    
+    // CN=Amazon Root CA 2,O=Amazon,C=US
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x1B, 0xA5, 0xB2, 0xAA, 0x8C, 0x65, 0x40, 0x1A, 0x82, 0x96, 0x01,
@@ -778,7 +778,7 @@ static const struct EVInfo kEVInfos[] = {
     "Bmyf0pY1hp8KD+WGePhbJruKNw==",
   },
   {
-    
+    // CN=Amazon Root CA 3,O=Amazon,C=US
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x18, 0xCE, 0x6C, 0xFE, 0x7B, 0xF1, 0x4E, 0x60, 0xB2, 0xE3, 0x47,
@@ -789,7 +789,7 @@ static const struct EVInfo kEVInfos[] = {
     "Bmyf1XSXNmY/Owua2eiedgPySg==",
   },
   {
-    
+    // CN=Amazon Root CA 4,O=Amazon,C=US
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0xE3, 0x5D, 0x28, 0x41, 0x9E, 0xD0, 0x20, 0x25, 0xCF, 0xA6, 0x90,
@@ -800,7 +800,7 @@ static const struct EVInfo kEVInfos[] = {
     "Bmyf18G7EEwpQ+Vxe3ssyBrBDg==",
   },
   {
-    
+    // CN=Starfield Services Root Certificate Authority - G2,O="Starfield Technologies, Inc.",L=Scottsdale,ST=Arizona,C=US
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x56, 0x8D, 0x69, 0x05, 0xA2, 0xC8, 0x87, 0x08, 0xA4, 0xB3, 0x02,
@@ -813,7 +813,7 @@ static const struct EVInfo kEVInfos[] = {
     "AA==",
   },
   {
-    
+    // CN=GDCA TrustAUTH R5 ROOT,O="GUANG DONG CERTIFICATE AUTHORITY CO.,LTD.",C=CN
     "1.2.156.112559.1.1.6.1",
     "GDCA EV OID",
     { 0xBF, 0xFF, 0x8F, 0xD0, 0x44, 0x33, 0x48, 0x7D, 0x6A, 0x8A, 0xA6,
@@ -825,7 +825,7 @@ static const struct EVInfo kEVInfos[] = {
     "fQmX/vBH6no=",
   },
   {
-    
+    // CN=SSL.com EV Root Certification Authority ECC,O=SSL Corporation,L=Houston,ST=Texas,C=US
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x22, 0xA2, 0xC1, 0xF7, 0xBD, 0xED, 0x70, 0x4C, 0xC1, 0xE7, 0x01,
@@ -837,7 +837,7 @@ static const struct EVInfo kEVInfos[] = {
     "LCmcWxbtBZU=",
   },
   {
-    
+    // CN=SSL.com EV Root Certification Authority RSA R2,O=SSL Corporation,L=Houston,ST=Texas,C=US
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x2E, 0x7B, 0xF1, 0x6C, 0xC2, 0x24, 0x85, 0xA7, 0xBB, 0xE2, 0xAA,
@@ -849,7 +849,7 @@ static const struct EVInfo kEVInfos[] = {
     "VrYpzTS8ePY=",
   },
   {
-    
+    // CN=UCA Extended Validation Root,O=UniTrust,C=CN
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0xD4, 0x3A, 0xF9, 0xB3, 0x54, 0x73, 0x75, 0x5C, 0x96, 0x84, 0xFC,
@@ -860,7 +860,7 @@ static const struct EVInfo kEVInfos[] = {
     "T9Irj/VkyDOeTzRYZiNwYA==",
   },
   {
-    
+    // CN=Hongkong Post Root CA 3,O=Hongkong Post,L=Hong Kong,ST=Hong Kong,C=HK
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x5A, 0x2F, 0xC0, 0x3F, 0x0C, 0x83, 0xB0, 0x90, 0xBB, 0xFA, 0x40,
@@ -872,7 +872,7 @@ static const struct EVInfo kEVInfos[] = {
     "CBZfikyl7ADJk0DfxMauI7gcWqQ=",
   },
   {
-    
+    // CN=emSign Root CA - G1,O=eMudhra Technologies Limited,OU=emSign PKI,C=IN
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x40, 0xF6, 0xAF, 0x03, 0x46, 0xA9, 0x9A, 0xA1, 0xCD, 0x1D, 0x55,
@@ -884,7 +884,7 @@ static const struct EVInfo kEVInfos[] = {
     "MfXkYgxsWO3W2A==",
   },
   {
-    
+    // CN=emSign ECC Root CA - G3,O=eMudhra Technologies Limited,OU=emSign PKI,C=IN
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x86, 0xA1, 0xEC, 0xBA, 0x08, 0x9C, 0x4A, 0x8D, 0x3B, 0xBE, 0x27,
@@ -896,7 +896,7 @@ static const struct EVInfo kEVInfos[] = {
     "PPYHqWhwDtqLhA==",
   },
   {
-    
+    // CN=emSign Root CA - C1,O=eMudhra Inc,OU=emSign PKI,C=US
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x12, 0x56, 0x09, 0xAA, 0x30, 0x1D, 0xA0, 0xA2, 0x49, 0xB9, 0x7A,
@@ -907,7 +907,7 @@ static const struct EVInfo kEVInfos[] = {
     "AK7PALrEzzL4Q7I=",
     },
   {
-    
+    // CN=emSign ECC Root CA - C3,O=eMudhra Inc,OU=emSign PKI,C=US
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0xBC, 0x4D, 0x80, 0x9B, 0x15, 0x18, 0x9D, 0x78, 0xDB, 0x3E, 0x1D,
@@ -918,7 +918,7 @@ static const struct EVInfo kEVInfos[] = {
     "e3G2gla4EnycqA==",
   },
   {
-    
+    // OU=certSIGN ROOT CA G2,O=CERTSIGN SA,C=RO
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x65, 0x7C, 0xFE, 0x2F, 0xA7, 0x3F, 0xAA, 0x38, 0x46, 0x25, 0x71,
@@ -929,7 +929,7 @@ static const struct EVInfo kEVInfos[] = {
     "EQA0tk7GNi02",
   },
   {
-    
+    // CN=IdenTrust Commercial Root CA 1,O=IdenTrust,C=US
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x5D, 0x56, 0x49, 0x9B, 0xE4, 0xD2, 0xE0, 0x8B, 0xCF, 0xCA, 0xD0,
@@ -940,7 +940,7 @@ static const struct EVInfo kEVInfos[] = {
     "CgFCgAAAAUUjyES1AAAAAg==",
   },
   {
-    
+    // CN=Trustwave Global Certification Authority,O="Trustwave Holdings, Inc.",L=Chicago,ST=Illinois,C=US
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x97, 0x55, 0x20, 0x15, 0xF5, 0xDD, 0xFC, 0x3C, 0x87, 0x88, 0xC0, 0x06, 0x94, 0x45, 0x55, 0x40, 0x88, 0x94, 0x45, 0x00, 0x84, 0xF1, 0x00, 0x86, 0x70, 0x86, 0xBC, 0x1A, 0x2B, 0xB5, 0x8D, 0xC8 },
@@ -950,7 +950,7 @@ static const struct EVInfo kEVInfos[] = {
     "BfcOhtpJ80Y1Lrqy",
   },
   {
-    
+    // CN=Trustwave Global ECC P256 Certification Authority,O="Trustwave Holdings, Inc.",L=Chicago,ST=Illinois,C=US
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x94, 0x5B, 0xBC, 0x82, 0x5E, 0xA5, 0x54, 0xF4, 0x89, 0xD1, 0xFD, 0x51, 0xA7, 0x3D, 0xDF, 0x2E, 0xA6, 0x24, 0xAC, 0x70, 0x19, 0xA0, 0x52, 0x05, 0x22, 0x5C, 0x22, 0xA7, 0x8C, 0xCF, 0xA8, 0xB4 },
@@ -961,7 +961,7 @@ static const struct EVInfo kEVInfos[] = {
     "DWpfCD8oXD5Rld9d",
   },
   {
-    
+    // CN=Trustwave Global ECC P384 Certification Authority,O="Trustwave Holdings, Inc.",L=Chicago,ST=Illinois,C=US
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x55, 0x90, 0x38, 0x59, 0xC8, 0xC0, 0xC3, 0xEB, 0xB8, 0x75, 0x9E, 0xCE, 0x4E, 0x25, 0x57, 0x22, 0x5F, 0xF5, 0x75, 0x8B, 0xBD, 0x38, 0xEB, 0xD4, 0x82, 0x76, 0x60, 0x1E, 0x1B, 0xD5, 0x80, 0x97 },
@@ -972,7 +972,7 @@ static const struct EVInfo kEVInfos[] = {
     "CL2Fl2yZJ6SAaEc7",
   },
   {
-    
+    // CN=GlobalSign Root R46,O=GlobalSign nv-sa,C=BE
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0x4F, 0xA3, 0x12, 0x6D, 0x8D, 0x3A, 0x11, 0xD1, 0xC4, 0x85, 0x5A, 0x4F, 0x80, 0x7C, 0xBA, 0xD6, 0xCF, 0x91, 0x9D, 0x3A, 0x5A, 0x88, 0xB0, 0x3B, 0xEA, 0x2C, 0x63, 0x72, 0xD9, 0x3C, 0x40, 0xC9 },
@@ -981,7 +981,7 @@ static const struct EVInfo kEVInfos[] = {
     "EdK7udcjGJ5AXwqdLdDfJWfR",
   },
   {
-    
+    // CN=GlobalSign Root E46,O=GlobalSign nv-sa,C=BE
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",
     { 0xCB, 0xB9, 0xC4, 0x4D, 0x84, 0xB8, 0x04, 0x3E, 0x10, 0x50, 0xEA, 0x31, 0xA6, 0x9F, 0x51, 0x49, 0x55, 0xD7, 0xBF, 0xD2, 0xE2, 0xC6, 0xB4, 0x93, 0x01, 0x01, 0x9A, 0xD6, 0x1D, 0x9F, 0x50, 0x58 },
@@ -989,7 +989,17 @@ static const struct EVInfo kEVInfos[] = {
     "VQQDExNHbG9iYWxTaWduIFJvb3QgRTQ2",
     "EdK7ujNu1LzmJGjFDYQdmOhD",
   },
-    
+  {
+    // "CN=AC RAIZ FNMT-RCM SERVIDORES SEGUROS,OID.2.5.4.97=VATES-Q2826004J,OU=Ceres,O=FNMT-RCM,C=E
+    "2.23.140.1.1",
+    "CA/Browser Forum EV OID",
+    { 0x55, 0x41, 0x53, 0xB1, 0x3D, 0x2C, 0xF9, 0xDD, 0xB7, 0x53, 0xBF, 0xBE, 0x1A, 0x4E, 0x0A, 0xE0, 0x8D, 0x0A, 0xA4, 0x18, 0x70, 0x58, 0xFE, 0x60, 0xA2, 0xB8, 0x62, 0xB2, 0xE4, 0xB8, 0x7B, 0xCB },
+    "MHgxCzAJBgNVBAYTAkVTMREwDwYDVQQKDAhGTk1ULVJDTTEOMAwGA1UECwwFQ2Vy"
+    "ZXMxGDAWBgNVBGEMD1ZBVEVTLVEyODI2MDA0SjEsMCoGA1UEAwwjQUMgUkFJWiBG"
+    "Tk1ULVJDTSBTRVJWSURPUkVTIFNFR1VST1M=",
+    "YvYybOXE42hcG2LdnC6dlQ==",
+  },
+    // clang-format on
 };
 
 static SECOidTag sEVInfoOIDTags[ArrayLength(kEVInfos)];
@@ -1046,9 +1056,9 @@ bool CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
   for (size_t i = 0; i < ArrayLength(kEVInfos); ++i) {
     const EVInfo& entry = kEVInfos[i];
 
-    
-    
-    
+    // This check ensures that only the specific roots we approve for EV get
+    // that status, and not certs (roots or otherwise) that happen to have an
+    // OID that's already been approved for EV.
     if (!ArrayEqual(fingerprint, entry.sha256Fingerprint)) {
       continue;
     }
@@ -1086,11 +1096,11 @@ nsresult LoadExtendedValidationInfo() {
 
     SECStatus srv;
 #ifdef DEBUG
-    
-    
-    
-    
-    
+    // This section of code double-checks that we calculated the correct
+    // certificate hash given the issuer and serial number and that it is
+    // actually present in our loaded root certificates module. It is
+    // unnecessary to check this in non-debug builds since we will safely fall
+    // back to DV if the EV information is incorrect.
     nsAutoCString derIssuer;
     nsresult rv =
         Base64Decode(nsDependentCString(entry.issuerBase64), derIssuer);
@@ -1117,13 +1127,13 @@ nsresult LoadExtendedValidationInfo() {
 
     UniqueCERTCertificate cert(CERT_FindCertByIssuerAndSN(nullptr, &ias));
 
-    
-    
-    
+    // If an entry is missing in the NSS root database, it may be because the
+    // root database is out of sync with what we expect (e.g. a different
+    // version of system NSS is installed).
     if (!cert) {
-      
-      
-      
+      // The entries for the debug EV roots are at indices 0 through
+      // NUM_TEST_EV_ROOTS - 1. Since they're not built-in, they probably
+      // haven't been loaded yet.
       MOZ_ASSERT(i < NUM_TEST_EV_ROOTS, "Could not find built-in EV root");
     } else {
       unsigned char certFingerprint[SHA256_LENGTH];
@@ -1140,7 +1150,7 @@ nsresult LoadExtendedValidationInfo() {
       }
     }
 #endif
-    
+    // This is the code that actually enables these roots for EV.
     ScopedAutoSECItem evOIDItem;
     srv = SEC_StringToOID(nullptr, &evOIDItem, entry.dottedOid, 0);
     MOZ_ASSERT(srv == SECSuccess, "SEC_StringToOID failed");
@@ -1156,12 +1166,12 @@ nsresult LoadExtendedValidationInfo() {
   return NS_OK;
 }
 
-
-
+// Helper function for GetFirstEVPolicy(): returns the first suitable policy
+// from the given list of policies.
 bool GetFirstEVPolicyFromPolicyList(
     const UniqueCERTCertificatePolicies& policies,
-     mozilla::pkix::CertPolicyId& policy,
-     SECOidTag& policyOidTag) {
+    /*out*/ mozilla::pkix::CertPolicyId& policy,
+    /*out*/ SECOidTag& policyOidTag) {
   for (size_t i = 0; policies->policyInfos[i]; i++) {
     const CERTPolicyInfo* policyInfo = policies->policyInfos[i];
     SECOidTag policyInfoOID = policyInfo->oid;
@@ -1189,8 +1199,8 @@ bool GetFirstEVPolicyFromPolicyList(
 }
 
 bool GetFirstEVPolicy(CERTCertificate& cert,
-                       mozilla::pkix::CertPolicyId& policy,
-                       SECOidTag& policyOidTag) {
+                      /*out*/ mozilla::pkix::CertPolicyId& policy,
+                      /*out*/ SECOidTag& policyOidTag) {
   if (!cert.extensions) {
     return false;
   }
@@ -1216,5 +1226,5 @@ bool GetFirstEVPolicy(CERTCertificate& cert,
   return false;
 }
 
-}  
-}  
+}  // namespace psm
+}  // namespace mozilla
