@@ -3359,8 +3359,7 @@ bool gfxPlatform::FallbackFromAcceleration(FeatureStatus aStatus,
     return true;
   }
 
-  if (StaticPrefs::gfx_webrender_fallback_basic_AtStartup() &&
-      !FissionAutostart()) {
+  if (StaticPrefs::gfx_webrender_fallback_basic_AtStartup()) {
     
     gfxCriticalNote << "Fallback (SW-)WR to Basic";
     if (gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE)) {

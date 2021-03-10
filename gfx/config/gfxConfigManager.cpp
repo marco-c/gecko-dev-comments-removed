@@ -13,7 +13,6 @@
 #include "gfxConfig.h"
 #include "gfxPlatform.h"
 #include "nsIGfxInfo.h"
-#include "nsIXULRuntime.h"  
 #include "nsPrintfCString.h"
 #include "nsXULAppAPI.h"
 
@@ -126,8 +125,6 @@ void gfxConfigManager::ConfigureWebRenderSoftware() {
   
   if (mWrSoftwareForceEnabled) {
     mFeatureWrSoftware->UserForceEnable("Force enabled by pref");
-  } else if (FissionAutostart()) {
-    mFeatureWrSoftware->UserForceEnable("Force enabled by fission");
   } else if (mWrForceDisabled || mWrEnvForceDisabled) {
     
     
