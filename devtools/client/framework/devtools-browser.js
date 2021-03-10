@@ -358,7 +358,7 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     
     
     
-    target.on("target-destroyed", () => {
+    target.on("close", () => {
       client.close();
     });
     return target;

@@ -27,6 +27,8 @@ class WorkerDescriptorFront extends DescriptorMixin(
     
     
     
+    
+    
     this.once("worker-close", this.destroy.bind(this));
   }
 

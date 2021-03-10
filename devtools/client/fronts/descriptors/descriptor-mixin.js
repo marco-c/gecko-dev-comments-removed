@@ -21,13 +21,6 @@ function DescriptorMixin(parentClass) {
       super(client, targetFront, parentFront);
 
       this._client = client;
-
-      
-      
-      this.on(
-        "descriptor-destroyed",
-        this.destroy.bind(this, { isServerDestroyEvent: true })
-      );
     }
 
     get client() {

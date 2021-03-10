@@ -138,14 +138,15 @@ async function initToolbox(url, host) {
     }
 
     
-    const { descriptorFront } = target;
-    descriptorFront.once("descriptor-destroyed", function() {
+    const onTargetDestroyed = function() {
+      target.off("close", onTargetDestroyed);
       
       if (host.contentDocument) {
         const error = new Error("Debug target was disconnected");
         showErrorPage(host.contentDocument, `${error}`);
       }
-    });
+    };
+    target.on("close", onTargetDestroyed);
 
     const options = { customIframe: host };
     await gDevTools.showToolbox(target, tool, Toolbox.HostType.PAGE, options);

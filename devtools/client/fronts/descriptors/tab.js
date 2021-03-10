@@ -58,25 +58,7 @@ class TabDescriptorFront extends DescriptorMixin(
     this.traits = json.traits || {};
   }
 
-  
-
-
-
-
-
-  destroy({ isServerDestroyEvent = false } = {}) {
-    if (this.isDestroyed()) {
-      return;
-    }
-
-    
-    
-    
-    
-    
-    if (!isServerDestroyEvent) {
-      this.emit("descriptor-destroyed");
-    }
+  destroy() {
     if (this.isLocalTab) {
       this._teardownLocalTabListeners();
     }
@@ -156,15 +138,6 @@ class TabDescriptorFront extends DescriptorMixin(
     
     
     this._targetFront = null;
-
-    
-    
-    
-    
-    
-    if (!this.traits.emitDescriptorDestroyed || !this.isLocalTab) {
-      this.destroy();
-    }
   }
 
   

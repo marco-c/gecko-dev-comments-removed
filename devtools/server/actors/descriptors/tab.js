@@ -62,9 +62,6 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
       traits: {
         
         watcher: true,
-        
-        
-        emitDescriptorDestroyed: true,
       },
       url: this._getUrl(),
     };
@@ -210,7 +207,6 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
   },
 
   destroy() {
-    this.emit("descriptor-destroyed");
     this._browser = null;
 
     Actor.prototype.destroy.call(this);

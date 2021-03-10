@@ -47,7 +47,7 @@ exports.TabTargetFactory = {
     target = await promise;
     
     targets.set(tab, target);
-    target.once("target-destroyed", () => {
+    target.once("close", () => {
       targets.delete(tab);
     });
     return target;
@@ -107,6 +107,8 @@ exports.TabTargetFactory = {
   },
 
   
+
+
 
 
 
