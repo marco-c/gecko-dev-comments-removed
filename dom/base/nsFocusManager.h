@@ -363,6 +363,9 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
+  bool AdjustInProcessWindowFocus(
+      mozilla::dom::BrowsingContext* aBrowsingContext, bool aCheckPermission,
+      bool aIsVisible);
   void AdjustWindowFocus(mozilla::dom::BrowsingContext* aBrowsingContext,
                          bool aCheckPermission, bool aIsVisible);
 

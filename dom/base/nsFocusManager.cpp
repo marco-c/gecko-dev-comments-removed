@@ -1896,24 +1896,14 @@ mozilla::dom::BrowsingContext* nsFocusManager::GetCommonAncestor(
   return parent;
 }
 
-void nsFocusManager::AdjustWindowFocus(BrowsingContext* aBrowsingContext,
-                                       bool aCheckPermission, bool aIsVisible) {
+bool nsFocusManager::AdjustInProcessWindowFocus(
+    BrowsingContext* aBrowsingContext, bool aCheckPermission, bool aIsVisible) {
   BrowsingContext* bc = aBrowsingContext;
+  bool needToNotifyOtherProcess = false;
   while (bc) {
     
     
     nsCOMPtr<Element> frameElement = bc->GetEmbedderElement();
-
-    if (!frameElement && XRE_IsContentProcess()) {
-      
-      
-      mozilla::dom::ContentChild* contentChild =
-          mozilla::dom::ContentChild::GetSingleton();
-      MOZ_ASSERT(contentChild);
-      contentChild->SendAdjustWindowFocus(bc, aIsVisible);
-      return;
-    }
-
     BrowsingContext* parent = bc->GetParent();
     if (!parent && XRE_IsParentProcess()) {
       CanonicalBrowsingContext* canonical = bc->Canonical();
@@ -1925,15 +1915,20 @@ void nsFocusManager::AdjustWindowFocus(BrowsingContext* aBrowsingContext,
     }
     bc = parent;
     if (!bc) {
-      return;
+      break;
     }
+    if (!frameElement && XRE_IsContentProcess()) {
+      needToNotifyOtherProcess = true;
+      continue;
+    }
+
     nsCOMPtr<nsPIDOMWindowOuter> window = bc->GetDOMWindow();
     MOZ_ASSERT(window);
     
     
     
     if (IsWindowVisible(window) != aIsVisible) {
-      return;
+      break;
     }
 
     
@@ -1941,10 +1936,24 @@ void nsFocusManager::AdjustWindowFocus(BrowsingContext* aBrowsingContext,
     
     if (aCheckPermission && !nsContentUtils::LegacyIsCallerNativeCode() &&
         !nsContentUtils::CanCallerAccess(window->GetCurrentInnerWindow())) {
-      return;
+      break;
     }
 
     window->SetFocusedElement(frameElement);
+  }
+  return needToNotifyOtherProcess;
+}
+
+void nsFocusManager::AdjustWindowFocus(BrowsingContext* aBrowsingContext,
+                                       bool aCheckPermission, bool aIsVisible) {
+  if (AdjustInProcessWindowFocus(aBrowsingContext, aCheckPermission,
+                                 aIsVisible)) {
+    
+    
+    mozilla::dom::ContentChild* contentChild =
+        mozilla::dom::ContentChild::GetSingleton();
+    MOZ_ASSERT(contentChild);
+    contentChild->SendAdjustWindowFocus(aBrowsingContext, aIsVisible);
   }
 }
 
