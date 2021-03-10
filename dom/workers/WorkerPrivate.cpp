@@ -2377,6 +2377,12 @@ already_AddRefed<WorkerPrivate> WorkerPrivate::Constructor(
 
   MOZ_ASSERT(runtimeService);
 
+  
+  if (runtimeService->IsShuttingDown()) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return nullptr;
+  }
+
   nsILoadInfo::CrossOriginOpenerPolicy agentClusterCoop =
       nsILoadInfo::OPENER_POLICY_UNSAFE_NONE;
   nsID agentClusterId;
