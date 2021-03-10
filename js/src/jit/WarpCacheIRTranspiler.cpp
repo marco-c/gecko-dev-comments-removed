@@ -4543,9 +4543,8 @@ bool WarpCacheIRTranspiler::emitCallGetterResult(CallKind kind,
   WrappedFunction* wrappedTarget =
       maybeWrappedFunction(getter, kind, nargs, flags);
 
-  jsbytecode* pc = loc_.toRawBytecode();
-  bool ignoresRval = BytecodeIsPopped(pc);
-  CallInfo callInfo(alloc(), pc,  false, ignoresRval);
+  bool ignoresRval = loc_.resultIsPopped();
+  CallInfo callInfo(alloc(),  false, ignoresRval);
   callInfo.initForGetterCall(getter, receiver);
 
   MCall* call = makeCall(callInfo,  false, wrappedTarget);
@@ -4616,8 +4615,7 @@ bool WarpCacheIRTranspiler::emitCallSetter(CallKind kind,
   WrappedFunction* wrappedTarget =
       maybeWrappedFunction(setter, kind, nargs, flags);
 
-  jsbytecode* pc = loc_.toRawBytecode();
-  CallInfo callInfo(alloc(), pc,  false,
+  CallInfo callInfo(alloc(),  false,
                      true);
   callInfo.initForSetterCall(setter, receiver, rhs);
 
