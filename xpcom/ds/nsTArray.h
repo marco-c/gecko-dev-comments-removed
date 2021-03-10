@@ -739,44 +739,69 @@ struct nsTArray_RelocateUsingMoveConstructor {
   
   
   
+  
+  
   static void RelocateOverlappingRegion(void* aDest, void* aSrc, size_t aCount,
                                         size_t aElemSize) {
-    ElemType* destElem = static_cast<ElemType*>(aDest);
-    ElemType* srcElem = static_cast<ElemType*>(aSrc);
-    ElemType* destElemEnd = destElem + aCount;
-    ElemType* srcElemEnd = srcElem + aCount;
-    if (destElem == srcElem) {
-      return;  
-    }
+    ElemType* destBegin = static_cast<ElemType*>(aDest);
+    ElemType* srcBegin = static_cast<ElemType*>(aSrc);
 
     
-    if (srcElemEnd > destElem && srcElemEnd < destElemEnd) {
-      while (destElemEnd != destElem) {
-        --destElemEnd;
-        --srcElemEnd;
-        traits::Construct(destElemEnd, std::move(*srcElemEnd));
-        traits::Destruct(srcElemEnd);
-      }
+    
+    if (destBegin == srcBegin) {
+      return;
+    }
+
+    ElemType* srcEnd = srcBegin + aCount;
+    ElemType* destEnd = destBegin + aCount;
+
+    
+    if (srcEnd > destBegin && srcEnd < destEnd) {
+      RelocateRegionBackward(srcBegin, srcEnd, destEnd);
     } else {
-      RelocateNonOverlappingRegion(aDest, aSrc, aCount, aElemSize);
+      RelocateRegionForward(srcBegin, srcEnd, destBegin);
     }
   }
 
   static void RelocateNonOverlappingRegion(void* aDest, void* aSrc,
                                            size_t aCount, size_t aElemSize) {
-    ElemType* destElem = static_cast<ElemType*>(aDest);
-    ElemType* srcElem = static_cast<ElemType*>(aSrc);
-    ElemType* destElemEnd = destElem + aCount;
+    ElemType* destBegin = static_cast<ElemType*>(aDest);
+    ElemType* srcBegin = static_cast<ElemType*>(aSrc);
+    ElemType* srcEnd = srcBegin + aCount;
 #ifdef DEBUG
-    ElemType* srcElemEnd = srcElem + aCount;
-    MOZ_ASSERT(srcElemEnd <= destElem || srcElemEnd > destElemEnd);
+    ElemType* destEnd = destBegin + aCount;
+    MOZ_ASSERT(srcEnd <= destBegin || srcBegin >= destEnd);
 #endif
-    while (destElem != destElemEnd) {
-      traits::Construct(destElem, std::move(*srcElem));
-      traits::Destruct(srcElem);
+    RelocateRegionForward(srcBegin, srcEnd, destBegin);
+  }
+
+ private:
+  static void RelocateRegionForward(ElemType* srcBegin, ElemType* srcEnd,
+                                    ElemType* destBegin) {
+    ElemType* srcElem = srcBegin;
+    ElemType* destElem = destBegin;
+
+    while (srcElem != srcEnd) {
+      RelocateElement(srcElem, destElem);
       ++destElem;
       ++srcElem;
     }
+  }
+
+  static void RelocateRegionBackward(ElemType* srcBegin, ElemType* srcEnd,
+                                     ElemType* destEnd) {
+    ElemType* srcElem = srcEnd;
+    ElemType* destElem = destEnd;
+    while (srcElem != srcBegin) {
+      --destElem;
+      --srcElem;
+      RelocateElement(srcElem, destElem);
+    }
+  }
+
+  static void RelocateElement(ElemType* srcElem, ElemType* destElem) {
+    traits::Construct(destElem, std::move(*srcElem));
+    traits::Destruct(srcElem);
   }
 };
 
