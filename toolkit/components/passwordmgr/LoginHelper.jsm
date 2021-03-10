@@ -31,7 +31,7 @@ class ImportRowProcessor {
   uniqueLoginIdentifiers = new Set();
   originToRows = new Map();
   summary = [];
-  mandatoryFields = ["origin", "username", "password"];
+  mandatoryFields = ["origin", "password"];
 
   
 

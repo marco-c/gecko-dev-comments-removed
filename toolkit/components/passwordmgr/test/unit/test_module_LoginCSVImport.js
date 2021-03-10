@@ -484,6 +484,38 @@ add_task(async function test_import_from_chrome_csv() {
 
 
 
+add_task(async function test_import_login_without_username() {
+  let csvFilePath = await setupCsv([
+    "url,username,password",
+    "https://example.com/login,,secret_password",
+  ]);
+
+  await LoginCSVImport.importFromCSV(csvFilePath);
+
+  LoginTestUtils.checkLogins(
+    [
+      TestData.formLogin({
+        formActionOrigin: "",
+        httpRealm: null,
+        origin: "https://example.com",
+        password: "secret_password",
+        passwordField: "",
+        timesUsed: 1,
+        username: "",
+        usernameField: "",
+      }),
+    ],
+    "Check that a Login is added without an username",
+    (a, e) =>
+      a.equals(e) &&
+      checkMetaInfo(a, e, ["timesUsed"]) &&
+      checkLoginNewlyCreated(a)
+  );
+});
+
+
+
+
 
 add_task(async function test_import_from_keepassxc_csv() {
   let csvFilePath = await setupCsv([
@@ -640,7 +672,7 @@ add_task(async function test_import_summary_contains_unchanged_login() {
 
 
 add_task(async function test_import_summary_contains_missing_fields_errors() {
-  const missingFieldsToCheck = ["url", "username", "password"];
+  const missingFieldsToCheck = ["url", "password"];
   const sourceObject = {
     url: "https://invalid.password.example.com",
     username: "jane@example.com",
