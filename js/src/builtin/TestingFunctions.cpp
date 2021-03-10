@@ -5190,10 +5190,8 @@ static bool EvalStencilXDR(JSContext* cx, uint32_t argc, Value* vp) {
 
   
   Rooted<frontend::CompilationGCOutput> output(cx);
-  Rooted<frontend::CompilationGCOutput> outputForDelazification(cx);
   if (!frontend::CompilationStencil::instantiateStencils(
-          cx, input.get(), stencil, output.get(),
-          outputForDelazification.address())) {
+          cx, input.get(), stencil, output.get())) {
     return false;
   }
 
