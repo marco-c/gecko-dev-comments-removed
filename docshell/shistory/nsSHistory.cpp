@@ -263,7 +263,6 @@ void nsSHistory::EvictContentViewerForEntry(nsISHEntry* aEntry) {
 nsSHistory::nsSHistory(BrowsingContext* aRootBC)
     : mRootBC(aRootBC),
       mHasOngoingUpdate(false),
-      mIsRemote(false),
       mIndex(-1),
       mRequestedIndex(-1),
       mRootDocShellID(aRootBC->GetHistoryID()) {
@@ -1510,12 +1509,6 @@ void nsSHistory::GloballyEvictContentViewers() {
   nsTArray<EntryAndDistance> entries;
 
   for (auto shist : gSHistoryList) {
-    
-    
-    if (shist->mIsRemote) {
-      continue;
-    }
-
     
     
     
