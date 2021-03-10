@@ -4182,6 +4182,31 @@ bool IsWaylandEnabled() {
 }
 #endif
 
+#if defined(MOZ_UPDATER) && !defined(MOZ_WIDGET_ANDROID)
+bool ShouldProcessUpdates() {
+  
+  
+
+  
+  
+  
+  
+  
+  const char* BROWSER_TOOLBOX_WINDOW_URL =
+      "chrome://devtools/content/framework/browser-toolbox/window.html";
+
+  const char* chromeParam = nullptr;
+  if (ARG_FOUND == CheckArg("chrome", &chromeParam, CheckArgFlag::None)) {
+    if (!chromeParam || !strcmp(BROWSER_TOOLBOX_WINDOW_URL, chromeParam)) {
+      NS_WARNING("!ShouldProcessUpdates(): launching devtools");
+      return false;
+    }
+  }
+
+  return true;
+}
+#endif
+
 namespace mozilla::startup {
 Result<nsCOMPtr<nsIFile>, nsresult> GetIncompleteStartupFile(nsIFile* aProfLD) {
   nsCOMPtr<nsIFile> crashFile;
@@ -4537,56 +4562,66 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 #endif
 
 #if defined(MOZ_UPDATER) && !defined(MOZ_WIDGET_ANDROID)
-  
-  nsCOMPtr<nsIFile> updRoot;
-  bool persistent;
-  rv = mDirProvider.GetFile(XRE_UPDATE_ROOT_DIR, &persistent,
-                            getter_AddRefs(updRoot));
-  
-  if (NS_FAILED(rv)) {
-    updRoot = mDirProvider.GetAppDir();
-  }
-
-  
-  
-  if (EnvHasValue("MOZ_TEST_PROCESS_UPDATES")) {
+  if (ShouldProcessUpdates()) {
     
+    nsCOMPtr<nsIFile> updRoot;
+    bool persistent;
+    rv = mDirProvider.GetFile(XRE_UPDATE_ROOT_DIR, &persistent,
+                              getter_AddRefs(updRoot));
     
-    
-    const char* logFile = nullptr;
-    if (ARG_FOUND == CheckArg("dump-args", &logFile)) {
-      FILE* logFP = fopen(logFile, "wb");
-      if (logFP) {
-        for (int i = 1; i < gRestartArgc; ++i) {
-          fprintf(logFP, "%s\n", gRestartArgv[i]);
-        }
-        fclose(logFP);
-      }
+    if (NS_FAILED(rv)) {
+      updRoot = mDirProvider.GetAppDir();
     }
-    *aExitFlag = true;
-    return 0;
-  }
 
-  
-  
-  
-  
-  
-  if (CheckArg("test-process-updates")) {
-    SaveToEnv("MOZ_TEST_PROCESS_UPDATES=1");
-  }
-  nsCOMPtr<nsIFile> exeFile, exeDir;
-  rv = mDirProvider.GetFile(XRE_EXECUTABLE_FILE, &persistent,
-                            getter_AddRefs(exeFile));
-  NS_ENSURE_SUCCESS(rv, 1);
-  rv = exeFile->GetParent(getter_AddRefs(exeDir));
-  NS_ENSURE_SUCCESS(rv, 1);
-  ProcessUpdates(mDirProvider.GetGREDir(), exeDir, updRoot, gRestartArgc,
-                 gRestartArgv, mAppData->version);
-  if (EnvHasValue("MOZ_TEST_PROCESS_UPDATES")) {
-    SaveToEnv("MOZ_TEST_PROCESS_UPDATES=");
-    *aExitFlag = true;
-    return 0;
+    
+    
+    if (EnvHasValue("MOZ_TEST_PROCESS_UPDATES")) {
+      
+      
+      
+      const char* logFile = nullptr;
+      if (ARG_FOUND == CheckArg("dump-args", &logFile)) {
+        FILE* logFP = fopen(logFile, "wb");
+        if (logFP) {
+          for (int i = 1; i < gRestartArgc; ++i) {
+            fprintf(logFP, "%s\n", gRestartArgv[i]);
+          }
+          fclose(logFP);
+        }
+      }
+      *aExitFlag = true;
+      return 0;
+    }
+
+    
+    
+    
+    
+    
+    if (CheckArg("test-process-updates")) {
+      SaveToEnv("MOZ_TEST_PROCESS_UPDATES=1");
+    }
+    nsCOMPtr<nsIFile> exeFile, exeDir;
+    rv = mDirProvider.GetFile(XRE_EXECUTABLE_FILE, &persistent,
+                              getter_AddRefs(exeFile));
+    NS_ENSURE_SUCCESS(rv, 1);
+    rv = exeFile->GetParent(getter_AddRefs(exeDir));
+    NS_ENSURE_SUCCESS(rv, 1);
+    ProcessUpdates(mDirProvider.GetGREDir(), exeDir, updRoot, gRestartArgc,
+                   gRestartArgv, mAppData->version);
+    if (EnvHasValue("MOZ_TEST_PROCESS_UPDATES")) {
+      SaveToEnv("MOZ_TEST_PROCESS_UPDATES=");
+      *aExitFlag = true;
+      return 0;
+    }
+  } else {
+    if (CheckArg("test-process-updates") ||
+        EnvHasValue("MOZ_TEST_PROCESS_UPDATES")) {
+      
+      
+      
+      SaveToEnv("MOZ_TEST_PROCESS_UPDATES=!ShouldProcessUpdates()");
+    }
   }
 #endif
 
