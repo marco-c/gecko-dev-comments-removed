@@ -825,6 +825,8 @@ class OriginInfo final {
     return mPersisted;
   }
 
+  OriginMetadata FlattenToOriginMetadata() const;
+
   nsresult LockedBindToStatement(mozIStorageStatement* aStatement) const;
 
  private:
@@ -3486,12 +3488,9 @@ uint64_t QuotaManager::CollectOriginsForEviction(
     
 
     for (const auto& originInfo : inactiveOrigins) {
-      
       auto lock = DirectoryLockImpl::CreateForEviction(
           WrapNotNullUnchecked(this), originInfo->mGroupInfo->mPersistenceType,
-          OriginMetadata{originInfo->mGroupInfo->mGroupInfoPair->Suffix(),
-                         originInfo->mGroupInfo->mGroupInfoPair->Group(),
-                         originInfo->mOrigin});
+          originInfo->FlattenToOriginMetadata());
 
       lock->AcquireImmediately();
 
@@ -6887,12 +6886,8 @@ void QuotaManager::ClearOrigins(
           OriginParams{doomedOriginInfo->mOrigin,
                        doomedOriginInfo->mGroupInfo->mPersistenceType});
 
-      
-      LockedRemoveQuotaForOrigin(
-          doomedOriginInfo->mGroupInfo->mPersistenceType,
-          {doomedOriginInfo->mGroupInfo->mGroupInfoPair->Suffix(),
-           doomedOriginInfo->mGroupInfo->mGroupInfoPair->Group(),
-           doomedOriginInfo->mOrigin});
+      LockedRemoveQuotaForOrigin(doomedOriginInfo->mGroupInfo->mPersistenceType,
+                                 doomedOriginInfo->FlattenToOriginMetadata());
     }
   }
 
@@ -7072,6 +7067,11 @@ OriginInfo::OriginInfo(GroupInfo* aGroupInfo, const nsACString& aOrigin,
 #endif
 
   MOZ_COUNT_CTOR(OriginInfo);
+}
+
+OriginMetadata OriginInfo::FlattenToOriginMetadata() const {
+  return {mGroupInfo->mGroupInfoPair->Suffix(),
+          mGroupInfo->mGroupInfoPair->Group(), mOrigin};
 }
 
 nsresult OriginInfo::LockedBindToStatement(
