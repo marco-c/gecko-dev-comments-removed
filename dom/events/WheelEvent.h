@@ -49,27 +49,11 @@ class WheelEvent : public MouseEvent {
  protected:
   ~WheelEvent() = default;
 
-  double ToWebExposedDelta(const WidgetWheelEvent&, double aDelta,
+  double ToWebExposedDelta(WidgetWheelEvent&, double aDelta,
                            nscoord aLineOrPageAmount, CallerType);
 
  private:
   int32_t mAppUnitsPerDevPixel;
-  enum class DeltaModeCheckingState : uint8_t {
-    
-    Unknown,
-    
-    Unchecked,
-    
-    Checked,
-  };
-
-  
-  
-  
-  
-  
-  DeltaModeCheckingState mDeltaModeCheckingState =
-      DeltaModeCheckingState::Unknown;
 };
 
 }  

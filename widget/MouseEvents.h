@@ -513,6 +513,23 @@ class WidgetWheelEvent : public WidgetMouseEventBase {
   double mDeltaY;
   double mDeltaZ;
 
+  enum class DeltaModeCheckingState : uint8_t {
+    
+    Unknown,
+    
+    Unchecked,
+    
+    Checked,
+  };
+
+  
+  
+  
+  
+  
+  DeltaModeCheckingState mDeltaModeCheckingState =
+      DeltaModeCheckingState::Unknown;
+
   
   
   
