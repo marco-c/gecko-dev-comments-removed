@@ -301,6 +301,17 @@ class XDRState : public XDRCoderBase {
     return Ok();
   }
 
+  
+  XDRResult peekRawUint32(uint32_t* n) {
+    MOZ_ASSERT(mode == XDR_DECODE);
+    const uint8_t* ptr = buf->peek(sizeof(*n));
+    if (!ptr) {
+      return fail(JS::TranscodeResult::Failure_BadDecode);
+    }
+    *n = *reinterpret_cast<const uint32_t*>(ptr);
+    return Ok();
+  }
+
   XDRResult codeUint8(uint8_t* n) {
     if (mode == XDR_ENCODE) {
       uint8_t* ptr = buf->write(sizeof(*n));
