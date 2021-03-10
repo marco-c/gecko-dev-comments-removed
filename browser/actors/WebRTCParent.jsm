@@ -45,6 +45,13 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIOSPermissionRequest"
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gProtonDoorhangersEnabled",
+  "browser.proton.doorhangers.enabled",
+  false
+);
+
 
 
 
@@ -1221,11 +1228,13 @@ function prompt(aActor, aBrowser, aRequest) {
   }
   let anchorId = "webRTC-share" + iconType + "-notification-icon";
 
-  let iconClass = iconType.toLowerCase();
-  if (iconClass == "devices") {
-    iconClass = "camera";
+  if (!gProtonDoorhangersEnabled) {
+    let iconClass = iconType.toLowerCase();
+    if (iconClass == "devices") {
+      iconClass = "camera";
+    }
+    options.popupIconClass = iconClass + "-icon";
   }
-  options.popupIconClass = iconClass + "-icon";
 
   if (aRequest.secondOrigin) {
     options.secondName = webrtcUI.getHostOrExtensionName(
