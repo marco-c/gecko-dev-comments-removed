@@ -1350,7 +1350,7 @@ SHEntrySharedParentState* SessionHistoryEntry::SharedInfo() const {
 void SessionHistoryEntry::SetFrameLoader(nsFrameLoader* aFrameLoader) {
   MOZ_ASSERT_IF(aFrameLoader, !SharedInfo()->mFrameLoader);
   
-  MOZ_RELEASE_ASSERT(!aFrameLoader || StaticPrefs::fission_bfcacheInParent());
+  MOZ_RELEASE_ASSERT(!aFrameLoader || mozilla::BFCacheInParent());
   SharedInfo()->mFrameLoader = aFrameLoader;
   if (aFrameLoader) {
     

@@ -183,7 +183,7 @@ void CanonicalBrowsingContext::ReplacedBy(
 
   if (mSessionHistory) {
     mSessionHistory->SetBrowsingContext(aNewContext);
-    if (StaticPrefs::fission_bfcacheInParent()) {
+    if (mozilla::BFCacheInParent()) {
       
       mSessionHistory->SetEpoch(0, Nothing());
     }

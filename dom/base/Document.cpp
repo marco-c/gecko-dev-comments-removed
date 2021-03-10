@@ -10785,7 +10785,7 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest,
     }
   }
 
-  if (!StaticPrefs::fission_bfcacheInParent()) {
+  if (!mozilla::BFCacheInParent()) {
     
     if (RefPtr<BrowsingContext> browsingContext = GetBrowsingContext()) {
       for (auto& child : browsingContext->Children()) {
