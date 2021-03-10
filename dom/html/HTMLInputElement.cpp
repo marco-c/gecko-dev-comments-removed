@@ -1115,16 +1115,16 @@ nsresult HTMLInputElement::Clone(dom::NodeInfo* aNodeInfo,
       }
       break;
     case VALUE_MODE_DEFAULT_ON:
-      if (mCheckedChanged) {
-        
-        
-        it->DoSetChecked(mChecked, false, true);
-        
-        it->mShouldInitChecked = false;
-      }
-      break;
     case VALUE_MODE_DEFAULT:
       break;
+  }
+
+  if (mCheckedChanged) {
+    
+    
+    it->DoSetChecked(mChecked, false, true);
+    
+    it->mShouldInitChecked = false;
   }
 
   it->DoneCreatingElement();
