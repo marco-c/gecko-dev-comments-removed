@@ -2975,8 +2975,6 @@ extern const char* TokenKindToDesc(TokenKind tt);
 }  
 }  
 
-extern JS_FRIEND_API int js_fgets(char* buf, int size, FILE* file);
-
 #ifdef DEBUG
 extern const char* TokenKindToString(js::frontend::TokenKind tt);
 #endif
