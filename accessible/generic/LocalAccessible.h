@@ -308,6 +308,12 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
+  virtual Accessible* ChildAtPoint(int32_t aX, int32_t aY,
+                                   EWhichChildAtPoint aWhichChild) override;
+
+  
+
+
   virtual LocalAccessible* FocusedChild();
 
   
