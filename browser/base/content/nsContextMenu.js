@@ -955,6 +955,7 @@ class nsContextMenu {
   initPasswordManagerItems() {
     let showFill = false;
     let showGenerate = false;
+    let showManage = false;
     let enableGeneration = Services.logins.isLoggedIn;
     try {
       
@@ -963,6 +964,7 @@ class nsContextMenu {
         return;
       }
       showFill = true;
+      showManage = true;
 
       
       
@@ -1026,14 +1028,15 @@ class nsContextMenu {
     } finally {
       this.showItem("fill-login", showFill);
       this.showItem("fill-login-generated-password", showGenerate);
+      this.showItem("manage-saved-logins", showManage);
       this.setItemAttr(
         "fill-login-generated-password",
         "disabled",
         !enableGeneration
       );
       this.showItem(
-        "fill-login-and-generated-password-separator",
-        showFill || showGenerate
+        "passwordmgr-items-separator",
+        showFill || showGenerate || showManage
       );
     }
   }
