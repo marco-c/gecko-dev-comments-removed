@@ -93,6 +93,16 @@ class nsBaseHashtableET : public KeyClass {
 
 
 
+
+
+
+
+
+
+
+
+
+
 template <class KeyClass, class DataType, class UserDataType,
           class Converter = nsDefaultConverter<DataType, UserDataType>>
 class nsBaseHashtable
