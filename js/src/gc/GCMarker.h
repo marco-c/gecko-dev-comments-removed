@@ -38,7 +38,7 @@ struct Cell;
 
 using BarrierBuffer = Vector<JS::GCCellPtr, 0, SystemAllocPolicy>;
 
-struct EphemeronEdgeTableHashPolicy {
+struct WeakKeyTableHashPolicy {
   using Lookup = Cell*;
   static HashNumber hash(const Lookup& v,
                          const mozilla::HashCodeScrambler& hcs) {
@@ -49,22 +49,22 @@ struct EphemeronEdgeTableHashPolicy {
   static void makeEmpty(Cell** vp) { *vp = nullptr; }
 };
 
+struct WeakMarkable {
+  WeakMapBase* weakmap;
+  Cell* key;
 
+  WeakMarkable(WeakMapBase* weakmapArg, Cell* keyArg)
+      : weakmap(weakmapArg), key(keyArg) {}
 
-
-
-
-struct EphemeronEdge {
-  CellColor color;
-  Cell* target;
-
-  EphemeronEdge(CellColor color_, Cell* cell) : color(color_), target(cell) {}
+  bool operator==(const WeakMarkable& other) const {
+    return weakmap == other.weakmap && key == other.key;
+  }
 };
 
-using EphemeronEdgeVector = Vector<EphemeronEdge, 2, js::SystemAllocPolicy>;
+using WeakEntryVector = Vector<WeakMarkable, 2, js::SystemAllocPolicy>;
 
-using EphemeronEdgeTable =
-    OrderedHashMap<Cell*, EphemeronEdgeVector, EphemeronEdgeTableHashPolicy,
+using WeakKeyTable =
+    OrderedHashMap<Cell*, WeakEntryVector, WeakKeyTableHashPolicy,
                    js::SystemAllocPolicy>;
 
 
@@ -342,6 +342,13 @@ class GCMarker final : public JSTracer {
   void delayMarkingChildren(gc::Cell* cell);
 
   
+  void forgetWeakKey(js::gc::WeakKeyTable& weakKeys, WeakMapBase* map,
+                     gc::Cell* keyOrDelegate, gc::Cell* keyToRemove);
+
+  
+  void forgetWeakMap(WeakMapBase* map, Zone* zone);
+
+  
   void severWeakDelegate(JSObject* key, JSObject* delegate);
 
   
@@ -377,10 +384,7 @@ class GCMarker final : public JSTracer {
   bool shouldCheckCompartments() { return strictCompartmentChecking; }
 #endif
 
-  
-  
-  
-  void markEphemeronEdges(gc::EphemeronEdgeVector& edges);
+  void markEphemeronValues(gc::Cell* markedCell, gc::WeakEntryVector& entry);
 
   size_t getMarkCount() const { return markCount; }
   void clearMarkCount() { markCount = 0; }

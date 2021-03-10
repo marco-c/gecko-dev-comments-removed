@@ -164,10 +164,9 @@ JS::Zone::Zone(JSRuntime* rt, Kind kind)
       crossZoneStringWrappers_(this),
       gcGrayRoots_(this),
       weakCaches_(this),
-      gcEphemeronEdges_(this, SystemAllocPolicy(),
-                        rt->randomHashCodeScrambler()),
-      gcNurseryEphemeronEdges_(this, SystemAllocPolicy(),
-                               rt->randomHashCodeScrambler()),
+      gcWeakKeys_(this, SystemAllocPolicy(), rt->randomHashCodeScrambler()),
+      gcNurseryWeakKeys_(this, SystemAllocPolicy(),
+                         rt->randomHashCodeScrambler()),
       typeDescrObjects_(this, this),
       markedAtoms_(this),
       atomCache_(this),
@@ -215,8 +214,7 @@ Zone::~Zone() {
 
 bool Zone::init() {
   regExps_.ref() = make_unique<RegExpZone>(this);
-  return regExps_.ref() && gcEphemeronEdges().init() &&
-         gcNurseryEphemeronEdges().init();
+  return regExps_.ref() && gcWeakKeys().init() && gcNurseryWeakKeys().init();
 }
 
 void Zone::setNeedsIncrementalBarrier(bool needs) {
@@ -243,7 +241,7 @@ void Zone::changeGCState(GCState prev, GCState next) {
 }
 
 template <class Pred>
-static void EraseIf(js::gc::EphemeronEdgeVector& entries, Pred pred) {
+static void EraseIf(js::gc::WeakEntryVector& entries, Pred pred) {
   auto* begin = entries.begin();
   auto* const end = entries.end();
 
@@ -258,22 +256,21 @@ static void EraseIf(js::gc::EphemeronEdgeVector& entries, Pred pred) {
   entries.shrinkBy(removed);
 }
 
-static void SweepEphemeronEdgesWhileMinorSweeping(
-    js::gc::EphemeronEdgeVector& entries) {
-  EraseIf(entries, [](js::gc::EphemeronEdge& edge) -> bool {
-    return IsAboutToBeFinalizedDuringMinorSweep(&edge.target);
+static void SweepWeakEntryVectorWhileMinorSweeping(
+    js::gc::WeakEntryVector& entries) {
+  EraseIf(entries, [](js::gc::WeakMarkable& markable) -> bool {
+    return IsAboutToBeFinalizedDuringMinorSweep(&markable.key);
   });
 }
 
 void Zone::sweepAfterMinorGC(JSTracer* trc) {
-  sweepEphemeronTablesAfterMinorGC();
+  sweepWeakKeysAfterMinorGC();
   crossZoneStringWrappers().sweepAfterMinorGC(trc);
 }
 
-void Zone::sweepEphemeronTablesAfterMinorGC() {
-  for (EphemeronEdgeTable::Range r = gcNurseryEphemeronEdges().all();
-       !r.empty(); r.popFront()) {
-    
+void Zone::sweepWeakKeysAfterMinorGC() {
+  for (WeakKeyTable::Range r = gcNurseryWeakKeys().all(); !r.empty();
+       r.popFront()) {
     
     
     
@@ -293,17 +290,17 @@ void Zone::sweepEphemeronTablesAfterMinorGC() {
 
     
     
-    EphemeronEdgeVector& entries = r.front().value;
-    SweepEphemeronEdgesWhileMinorSweeping(entries);
+    WeakEntryVector& entries = r.front().value;
+    SweepWeakEntryVectorWhileMinorSweeping(entries);
 
     
-    auto* entry = gcEphemeronEdges().get(key);
+    auto entry = gcWeakKeys().get(key);
     if (!entry) {
-      if (!gcEphemeronEdges().put(key, gc::EphemeronEdgeVector())) {
+      if (!gcWeakKeys().put(key, gc::WeakEntryVector())) {
         AutoEnterOOMUnsafeRegion oomUnsafe;
         oomUnsafe.crash("Failed to tenure weak keys entry");
       }
-      entry = gcEphemeronEdges().get(key);
+      entry = gcWeakKeys().get(key);
     }
 
     for (auto& markable : entries) {
@@ -328,15 +325,15 @@ void Zone::sweepEphemeronTablesAfterMinorGC() {
     
     
     
-    auto* p = delegate->zone()->gcEphemeronEdges().get(delegate);
+    auto p = delegate->zone()->gcWeakKeys().get(delegate);
     if (p) {
-      SweepEphemeronEdgesWhileMinorSweeping(p->value);
+      SweepWeakEntryVectorWhileMinorSweeping(p->value);
     }
   }
 
-  if (!gcNurseryEphemeronEdges().clear()) {
+  if (!gcNurseryWeakKeys().clear()) {
     AutoEnterOOMUnsafeRegion oomUnsafe;
-    oomUnsafe.crash("OOM while clearing gcNurseryEphemeronEdges.");
+    oomUnsafe.crash("OOM while clearing gcNurseryWeakKeys.");
   }
 }
 
