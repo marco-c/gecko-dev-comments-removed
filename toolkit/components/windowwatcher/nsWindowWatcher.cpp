@@ -1245,6 +1245,9 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   }
 
   if (uriToLoad && aNavigate) {
+    
+    
+    
     loadState->SetLoadFlags(
         windowIsNew
             ? static_cast<uint32_t>(nsIWebNavigation::LOAD_FLAGS_FIRST_LOAD)
