@@ -17,6 +17,7 @@ class JSLinearString;
 namespace js {
 class BaseScript;
 class BaseShape;
+class ObjectGroup;
 class RegExpShared;
 class Shape;
 class Scope;
@@ -48,12 +49,15 @@ enum class TraceKind {
   
   Shape = 0x04,
 
-  BaseShape = 0x05,
+  
+  
+  ObjectGroup = 0x05,
 
   
   Null = 0x06,
 
   
+  BaseShape,
   JitCode,
   Script,
   Scope,
@@ -89,6 +93,7 @@ struct MapTypeToTraceKind {
   D(JitCode,      js::jit::JitCode, true,           false)       \
   D(Scope,        js::Scope,        true,           true)        \
   D(Object,       JSObject,         true,           true)        \
+  D(ObjectGroup,  js::ObjectGroup,  true,           false)       \
   D(Script,       js::BaseScript,   true,           true)        \
   D(Shape,        js::Shape,        true,           false)       \
   D(String,       JSString,         false,          false)       \

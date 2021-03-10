@@ -16,6 +16,7 @@ namespace js {
 
 class ArrayObject;
 class GlobalObject;
+class ObjectGroup;
 
 
 extern JSObject* InitStringClass(JSContext* cx, Handle<GlobalObject*> global);

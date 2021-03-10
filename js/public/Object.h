@@ -17,9 +17,10 @@
 #include "jstypes.h"  
 
 #include "js/Class.h"  
-#include "js/Realm.h"       
-#include "js/RootingAPI.h"  
-#include "js/Value.h"       
+#include "js/Realm.h"               
+#include "js/RootingAPI.h"          
+#include "js/shadow/ObjectGroup.h"  
+#include "js/Value.h"               
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSObject;
@@ -44,7 +45,7 @@ extern JS_PUBLIC_API bool GetBuiltinClass(JSContext* cx, Handle<JSObject*> obj,
 
 
 inline const JSClass* GetClass(const JSObject* obj) {
-  return reinterpret_cast<const shadow::Object*>(obj)->shape->base->clasp;
+  return reinterpret_cast<const shadow::Object*>(obj)->group->clasp;
 }
 
 
@@ -55,7 +56,7 @@ inline const JSClass* GetClass(const JSObject* obj) {
 
 
 static MOZ_ALWAYS_INLINE Compartment* GetCompartment(JSObject* obj) {
-  Realm* realm = reinterpret_cast<shadow::Object*>(obj)->shape->base->realm;
+  Realm* realm = reinterpret_cast<shadow::Object*>(obj)->group->realm;
   return GetCompartmentForRealm(realm);
 }
 

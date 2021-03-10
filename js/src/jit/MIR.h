@@ -963,6 +963,7 @@ using CompilerFunction = CompilerGCPointer<JSFunction*>;
 using CompilerBaseScript = CompilerGCPointer<BaseScript*>;
 using CompilerPropertyName = CompilerGCPointer<PropertyName*>;
 using CompilerShape = CompilerGCPointer<Shape*>;
+using CompilerObjectGroup = CompilerGCPointer<ObjectGroup*>;
 
 
 
@@ -9447,6 +9448,52 @@ class MGuardFunctionScript : public MUnaryInstruction,
     MOZ_ASSERT(!flags_.isSelfHostedOrIntrinsic());
     return AliasSet::None();
   }
+};
+
+
+class MGuardObjectGroup : public MUnaryInstruction,
+                          public SingleObjectPolicy::Data {
+  CompilerObjectGroup group_;
+  bool bailOnEquality_;
+
+  MGuardObjectGroup(MDefinition* obj, ObjectGroup* group, bool bailOnEquality)
+      : MUnaryInstruction(classOpcode, obj),
+        group_(group),
+        bailOnEquality_(bailOnEquality) {
+    setGuard();
+    setMovable();
+    setResultType(MIRType::Object);
+  }
+
+ public:
+  INSTRUCTION_HEADER(GuardObjectGroup)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, object))
+
+  const ObjectGroup* group() const { return group_; }
+  bool bailOnEquality() const { return bailOnEquality_; }
+  bool congruentTo(const MDefinition* ins) const override {
+    if (!ins->isGuardObjectGroup()) {
+      return false;
+    }
+    if (group() != ins->toGuardObjectGroup()->group()) {
+      return false;
+    }
+    if (bailOnEquality() != ins->toGuardObjectGroup()->bailOnEquality()) {
+      return false;
+    }
+    return congruentIfOperandsEqual(ins);
+  }
+  AliasSet getAliasSet() const override {
+    return AliasSet::Load(AliasSet::ObjectFields);
+  }
+  AliasType mightAlias(const MDefinition* def) const override {
+    
+    if (def->isAddAndStoreSlot() || def->isAllocateAndStoreSlot()) {
+      return AliasType::NoAlias;
+    }
+    return AliasType::MayAlias;
+  };
 };
 
 

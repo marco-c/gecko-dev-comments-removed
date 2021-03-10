@@ -29,9 +29,9 @@ inline AutoKeepShapeCaches::~AutoKeepShapeCaches() {
   cx_->zone()->setKeepShapeCaches(prev_);
 }
 
-inline StackBaseShape::StackBaseShape(const JSClass* clasp, JS::Realm* realm,
-                                      TaggedProto proto)
-    : clasp(clasp), realm(realm), proto(proto) {}
+inline StackBaseShape::StackBaseShape(const JSClass* clasp,
+                                      ObjectFlags objectFlags)
+    : flags(objectFlags), clasp(clasp) {}
 
 MOZ_ALWAYS_INLINE Shape* Shape::search(JSContext* cx, jsid id) {
   return search(cx, this, id);
@@ -265,7 +265,8 @@ template <class ObjectSubclass>
 
   
   
-  EmptyShape::insertInitialShape(cx, shape);
+  RootedObject proto(cx, obj->staticPrototype());
+  EmptyShape::insertInitialShape(cx, shape, proto);
   return true;
 }
 

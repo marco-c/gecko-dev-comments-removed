@@ -58,18 +58,15 @@ inline void NativeObject::removeLastProperty(JSContext* cx) {
 
 inline bool NativeObject::canRemoveLastProperty() {
   
-  
-  
-  
-  
+
+
+
+
+
+
   MOZ_ASSERT(!inDictionaryMode());
   Shape* previous = lastProperty()->previous().get();
-  if (previous->objectFlags() != lastProperty()->objectFlags() ||
-      previous->proto() != lastProperty()->proto()) {
-    return false;
-  }
-  MOZ_ASSERT(lastProperty()->base() == previous->base());
-  return true;
+  return previous->objectFlags() == lastProperty()->objectFlags();
 }
 
 inline void NativeObject::initDenseElementHole(uint32_t index) {
@@ -450,10 +447,10 @@ inline bool NativeObject::isInWholeCellBuffer() const {
 
  inline JS::Result<NativeObject*, JS::OOM> NativeObject::create(
     JSContext* cx, js::gc::AllocKind kind, js::gc::InitialHeap heap,
-    js::HandleShape shape) {
-  debugCheckNewObject(shape, kind, heap);
+    js::HandleShape shape, js::HandleObjectGroup group) {
+  debugCheckNewObject(group, shape, kind, heap);
 
-  const JSClass* clasp = shape->getObjectClass();
+  const JSClass* clasp = group->clasp();
   MOZ_ASSERT(clasp->isNativeObject());
   MOZ_ASSERT(!clasp->isJSFunction(), "should use JSFunction::create");
 
@@ -466,6 +463,7 @@ inline bool NativeObject::isInWholeCellBuffer() const {
   }
 
   NativeObject* nobj = static_cast<NativeObject*>(obj);
+  nobj->initGroup(group);
   nobj->initShape(shape);
   
   if (!nDynamicSlots) {

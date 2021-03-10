@@ -524,7 +524,7 @@ bool js::SetIntegrityLevel(JSContext* cx, HandleObject obj,
     
     RootedShape last(
         cx, EmptyShape::getInitialShape(
-                cx, nobj->getClass(), nobj->realm(), nobj->taggedProto(),
+                cx, nobj->getClass(), nobj->taggedProto(),
                 nobj->numFixedSlots(), nobj->lastProperty()->objectFlags()));
     if (!last) {
       return false;
@@ -755,10 +755,11 @@ bool js::TestIntegrityLevel(JSContext* cx, HandleObject obj,
 
 
 
-static inline JSObject* NewObject(JSContext* cx, Handle<TaggedProto> proto,
-                                  const JSClass* clasp, gc::AllocKind kind,
-                                  NewObjectKind newKind,
+static inline JSObject* NewObject(JSContext* cx, HandleObjectGroup group,
+                                  gc::AllocKind kind, NewObjectKind newKind,
                                   ObjectFlags objectFlags = {}) {
+  const JSClass* clasp = group->clasp();
+
   MOZ_ASSERT(clasp != &ArrayObject::class_);
   MOZ_ASSERT_IF(clasp == &JSFunction::class_,
                 kind == gc::AllocKind::FUNCTION ||
@@ -771,26 +772,25 @@ static inline JSObject* NewObject(JSContext* cx, Handle<TaggedProto> proto,
                       ? GetGCKindSlots(gc::GetGCObjectKind(clasp), clasp)
                       : GetGCKindSlots(kind, clasp);
 
-  RootedShape shape(
-      cx, EmptyShape::getInitialShape(cx, clasp, cx->realm(), proto, nfixed,
-                                      objectFlags));
+  RootedShape shape(cx, EmptyShape::getInitialShape(cx, clasp, group->proto(),
+                                                    nfixed, objectFlags));
   if (!shape) {
     return nullptr;
   }
 
-  gc::InitialHeap heap = GetInitialHeap(newKind, clasp);
+  gc::InitialHeap heap = GetInitialHeap(newKind, group);
 
   JSObject* obj;
   if (clasp->isJSFunction()) {
     JS_TRY_VAR_OR_RETURN_NULL(cx, obj,
-                              JSFunction::create(cx, kind, heap, shape));
+                              JSFunction::create(cx, kind, heap, shape, group));
   } else if (MOZ_LIKELY(clasp->isNativeObject())) {
-    JS_TRY_VAR_OR_RETURN_NULL(cx, obj,
-                              NativeObject::create(cx, kind, heap, shape));
+    JS_TRY_VAR_OR_RETURN_NULL(
+        cx, obj, NativeObject::create(cx, kind, heap, shape, group));
   } else {
     MOZ_ASSERT(IsTypedObjectClass(clasp));
-    JS_TRY_VAR_OR_RETURN_NULL(cx, obj,
-                              TypedObject::create(cx, kind, heap, shape));
+    JS_TRY_VAR_OR_RETURN_NULL(
+        cx, obj, TypedObject::create(cx, kind, heap, shape, group));
   }
 
   probes::CreateObject(cx, obj);
@@ -837,8 +837,12 @@ JSObject* js::NewObjectWithGivenTaggedProto(JSContext* cx, const JSClass* clasp,
     }
   }
 
-  RootedObject obj(
-      cx, NewObject(cx, proto, clasp, allocKind, newKind, objectFlags));
+  RootedObjectGroup group(cx, ObjectGroup::defaultNewGroup(cx, clasp, proto));
+  if (!group) {
+    return nullptr;
+  }
+
+  RootedObject obj(cx, NewObject(cx, group, allocKind, newKind, objectFlags));
   if (!obj) {
     return nullptr;
   }
@@ -899,8 +903,13 @@ JSObject* js::NewObjectWithClassProto(JSContext* cx, const JSClass* clasp,
     return nullptr;
   }
 
-  Rooted<TaggedProto> taggedProto(cx, TaggedProto(proto));
-  JSObject* obj = NewObject(cx, taggedProto, clasp, allocKind, newKind);
+  RootedObjectGroup group(
+      cx, ObjectGroup::defaultNewGroup(cx, clasp, TaggedProto(proto)));
+  if (!group) {
+    return nullptr;
+  }
+
+  JSObject* obj = NewObject(cx, group, allocKind, newKind);
   if (!obj) {
     return nullptr;
   }
@@ -1185,8 +1194,7 @@ static bool InitializePropertiesFromCompatibleNativeObject(
     
     
     
-    shape = EmptyShape::getInitialShape(cx, dst->getClass(), dst->realm(),
-                                        dst->taggedProto(),
+    shape = EmptyShape::getInitialShape(cx, dst->getClass(), dst->taggedProto(),
                                         dst->numFixedSlots(), ObjectFlags());
     if (!shape) {
       return false;
@@ -1739,6 +1747,12 @@ NativeObject* js::InitClass(JSContext* cx, HandleObject obj,
                                        static_fs, ctorp);
 }
 
+void JSObject::fixupAfterMovingGC() {
+  if (IsForwarded(group())) {
+    setGroupRaw(Forwarded(group()));
+  }
+}
+
 static bool ReshapeForProtoMutation(JSContext* cx, HandleObject obj) {
   
   
@@ -1759,27 +1773,18 @@ static bool ReshapeForProtoMutation(JSContext* cx, HandleObject obj) {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (!obj->isDelegate()) {
-    return true;
-  }
 
   RootedObject pobj(cx, obj);
 
   while (pobj && pobj->is<NativeObject>()) {
-    if (!pobj->hasUncacheableProto()) {
-      if (!JSObject::setUncacheableProto(cx, pobj)) {
-        return false;
-      }
+    if (!JSObject::setUncacheableProto(cx, pobj)) {
+      return false;
     }
+
+    if (!obj->isDelegate()) {
+      break;
+    }
+
     pobj = pobj->staticPrototype();
   }
 
@@ -1801,7 +1806,19 @@ static bool SetProto(JSContext* cx, HandleObject obj,
     }
   }
 
-  return JSObject::setProtoUnchecked(cx, obj, proto);
+  RootedObjectGroup oldGroup(cx, obj->group());
+
+  ObjectGroup* newGroup;
+  {
+    AutoRealm ar(cx, oldGroup);
+    newGroup = ObjectGroup::defaultNewGroup(cx, obj->getClass(), proto);
+    if (!newGroup) {
+      return false;
+    }
+  }
+
+  obj->setGroup(newGroup);
+  return true;
 }
 
 
@@ -3202,8 +3219,8 @@ void JSObject::dump(js::GenericPrinter& out) const {
   const JSClass* clasp = obj->getClass();
   out.printf("  class %p %s\n", clasp, clasp->name);
 
-  const Shape* shape = obj->shape();
-  out.printf("  shape %p\n", shape);
+  const ObjectGroup* group = obj->group();
+  out.printf("  group %p\n", group);
 
   out.put("  flags:");
   if (obj->isDelegate()) out.put(" delegate");
@@ -3621,9 +3638,11 @@ JS::ubi::Node::Size JS::ubi::Concrete<JSObject>::size(
 const char16_t JS::ubi::Concrete<JSObject>::concreteTypeName[] = u"JSObject";
 
 void JSObject::traceChildren(JSTracer* trc) {
-  TraceCellHeaderEdge(trc, this, "shape");
+  TraceCellHeaderEdge(trc, this, "group");
 
-  const JSClass* clasp = getClass();
+  TraceEdge(trc, shapePtr(), "shape");
+
+  const JSClass* clasp = group()->clasp();
   if (clasp->isNativeObject()) {
     NativeObject* nobj = &as<NativeObject>();
 
@@ -3762,10 +3781,13 @@ bool js::Unbox(JSContext* cx, HandleObject obj, MutableHandleValue vp) {
 
 #ifdef DEBUG
 
-void JSObject::debugCheckNewObject(Shape* shape, js::gc::AllocKind allocKind,
+void JSObject::debugCheckNewObject(ObjectGroup* group, Shape* shape,
+                                   js::gc::AllocKind allocKind,
                                    js::gc::InitialHeap heap) {
-  const JSClass* clasp = shape->getObjectClass();
+  const JSClass* clasp = group->clasp();
   MOZ_ASSERT(clasp != &ArrayObject::class_);
+
+  MOZ_ASSERT_IF(shape, clasp == shape->getObjectClass());
 
   if (!ClassCanHaveFixedData(clasp)) {
     MOZ_ASSERT(shape);
@@ -3793,7 +3815,7 @@ void JSObject::debugCheckNewObject(Shape* shape, js::gc::AllocKind allocKind,
                     CanNurseryAllocateFinalizedClass(clasp) ||
                     clasp->isProxyObject());
 
-  MOZ_ASSERT(!shape->realm()->hasObjectPendingMetadata());
+  MOZ_ASSERT(!group->realm()->hasObjectPendingMetadata());
 
   
   

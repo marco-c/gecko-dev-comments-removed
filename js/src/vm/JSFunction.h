@@ -133,7 +133,7 @@ class JSFunction : public js::NativeObject {
  public:
   static inline JS::Result<JSFunction*, JS::OOM> create(
       JSContext* cx, js::gc::AllocKind kind, js::gc::InitialHeap heap,
-      js::HandleShape shape);
+      js::HandleShape shape, js::HandleObjectGroup group);
 
   
   bool needsCallObject() const;

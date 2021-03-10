@@ -50,9 +50,11 @@ inline NativeObject* NewObjectCache::newObjectFromHit(JSContext* cx,
   NativeObject* templateObj =
       reinterpret_cast<NativeObject*>(&entry->templateObject);
 
+  ObjectGroup* group = templateObj->group();
+
   
   
-  if (templateObj->shape()->realm() != cx->realm()) {
+  if (group->realm() != cx->realm()) {
     return nullptr;
   }
 
@@ -60,16 +62,15 @@ inline NativeObject* NewObjectCache::newObjectFromHit(JSContext* cx,
     return nullptr;
   }
 
-  const JSClass* clasp = templateObj->getClass();
   NativeObject* obj = static_cast<NativeObject*>(AllocateObject<NoGC>(
-      cx, entry->kind,  0, heap, clasp));
+      cx, entry->kind,  0, heap, group->clasp()));
   if (!obj) {
     return nullptr;
   }
 
   copyCachedToObject(obj, templateObj, entry->kind);
 
-  if (clasp->shouldDelayMetadataBuilder()) {
+  if (group->clasp()->shouldDelayMetadataBuilder()) {
     cx->realm()->setObjectPendingMetadata(cx, obj);
   } else {
     obj = static_cast<NativeObject*>(SetNewObjectMetadata(cx, obj));

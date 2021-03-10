@@ -254,13 +254,6 @@ void TraceCrossCompartmentEdge(JSTracer* trc, JSObject* src,
 
 
 template <typename T>
-void TraceSameZoneCrossCompartmentEdge(JSTracer* trc,
-                                       const WriteBarriered<T>* dst,
-                                       const char* name);
-
-
-
-template <typename T>
 void TraceWeakMapKeyEdgeInternal(JSTracer* trc, Zone* weakMapZone, T** thingp,
                                  const char* name);
 
@@ -295,6 +288,7 @@ namespace gc {
 
 
 void TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape);
+void TraceCycleCollectorChildren(JS::CallbackTracer* trc, ObjectGroup* group);
 
 
 
@@ -327,6 +321,10 @@ inline js::BaseScript* DispatchToOnEdge(GenericTracer* trc,
 }
 inline js::Shape* DispatchToOnEdge(GenericTracer* trc, js::Shape* shape) {
   return trc->onShapeEdge(shape);
+}
+inline js::ObjectGroup* DispatchToOnEdge(GenericTracer* trc,
+                                         js::ObjectGroup* group) {
+  return trc->onObjectGroupEdge(group);
 }
 inline js::BaseShape* DispatchToOnEdge(GenericTracer* trc,
                                        js::BaseShape* base) {

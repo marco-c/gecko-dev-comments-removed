@@ -80,9 +80,11 @@ typedef GCHashSet<EvalCacheEntry, EvalCacheHashPolicy, SystemAllocPolicy>
 
 
 class NewObjectCache {
-  static constexpr unsigned MAX_OBJ_SIZE = sizeof(JSObject_Slots16);
+  
+  static const unsigned MAX_OBJ_SIZE = 4 * sizeof(void*) + 16 * sizeof(Value);
 
   static void staticAsserts() {
+    static_assert(NewObjectCache::MAX_OBJ_SIZE == sizeof(JSObject_Slots16));
     static_assert(gc::AllocKind::OBJECT_LAST ==
                   gc::AllocKind::OBJECT16_BACKGROUND);
   }
@@ -158,7 +160,7 @@ class NewObjectCache {
                          NativeObject* obj);
 
   
-  void invalidateEntriesForShape(Shape* shape);
+  void invalidateEntriesForShape(Shape* shape, JSObject* proto);
 
  private:
   EntryIndex makeIndex(const JSClass* clasp, gc::Cell* key,
@@ -199,6 +201,7 @@ class NewObjectCache {
     js_memcpy(dst, src, gc::Arena::thingSize(kind));
 
     
+    dst->initGroup(src->group());
     dst->initShape(src->shape());
   }
 };

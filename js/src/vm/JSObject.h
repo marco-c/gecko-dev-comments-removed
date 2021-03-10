@@ -73,16 +73,22 @@ bool SetImmutablePrototype(JSContext* cx, JS::HandleObject obj,
 
 
 
+
+
+
+
+
+
+
+
 class JSObject
-    : public js::gc::CellWithTenuredGCPointer<js::gc::Cell, js::Shape> {
+    : public js::gc::CellWithTenuredGCPointer<js::gc::Cell, js::ObjectGroup> {
  public:
   
-  js::Shape* shape() const { return headerPtr(); }
+  js::ObjectGroup* group() const { return headerPtr(); }
 
-#ifndef JS_64BIT
-  
-  uint32_t padding_;
-#endif
+ protected:
+  js::GCPtrShape shape_;
 
  private:
   friend class js::DictionaryShapeLink;
@@ -96,8 +102,10 @@ class JSObject
   friend bool js::SetImmutablePrototype(JSContext* cx, JS::HandleObject obj,
                                         bool* succeeded);
 
+  void setGroupRaw(js::ObjectGroup* group) { setHeaderPtr(group); }
+
  public:
-  const JSClass* getClass() const { return shape()->getObjectClass(); }
+  const JSClass* getClass() const { return group()->clasp(); }
   bool hasClass(const JSClass* c) const { return getClass() == c; }
 
   js::LookupPropertyOp getOpsLookupProperty() const {
@@ -128,19 +136,22 @@ class JSObject
     return getClass()->getOpsFunToString();
   }
 
-  JS::Compartment* compartment() const { return shape()->compartment(); }
+  void initGroup(js::ObjectGroup* group) { initHeaderPtr(group); }
+
+  JS::Compartment* compartment() const { return group()->compartment(); }
   JS::Compartment* maybeCompartment() const { return compartment(); }
 
   void initShape(js::Shape* shape) {
     
     
-    MOZ_ASSERT(Cell::zone() == shape->zone());
-    initHeaderPtr(shape);
+    MOZ_ASSERT(zone() == shape->zone());
+    shape_.init(shape);
   }
   void setShape(js::Shape* shape) {
-    MOZ_ASSERT(maybeCCWRealm() == shape->realm());
-    setHeaderPtr(shape);
+    MOZ_ASSERT(zone() == shape->zone());
+    shape_ = shape;
   }
+  js::Shape* shape() const { return shape_; }
 
   static JSObject* fromShapeFieldPointer(uintptr_t p) {
     return reinterpret_cast<JSObject*>(p - JSObject::offsetOfShape());
@@ -154,13 +165,6 @@ class JSObject
   bool hasFlag(js::ObjectFlag flag) const {
     return shape()->hasObjectFlag(flag);
   }
-
-  
-  
-  
-  
-  static bool setProtoUnchecked(JSContext* cx, JS::HandleObject obj,
-                                js::Handle<js::TaggedProto> proto);
 
   
   
@@ -205,7 +209,6 @@ class JSObject
   
   
   
-  
   inline bool hasUncacheableProto() const;
   static bool setUncacheableProto(JSContext* cx, JS::HandleObject obj) {
     MOZ_ASSERT(obj->hasStaticPrototype(),
@@ -225,21 +228,21 @@ class JSObject
 
   void traceChildren(JSTracer* trc);
 
-  void fixupAfterMovingGC() {}
+  void fixupAfterMovingGC();
 
   static const JS::TraceKind TraceKind = JS::TraceKind::Object;
 
   MOZ_ALWAYS_INLINE JS::Zone* zone() const {
-    MOZ_ASSERT_IF(!isTenured(), nurseryZone() == shape()->zone());
-    return shape()->zone();
+    MOZ_ASSERT_IF(!isTenured(), nurseryZone() == group()->zone());
+    return group()->zone();
   }
   MOZ_ALWAYS_INLINE JS::shadow::Zone* shadowZone() const {
     return JS::shadow::Zone::from(zone());
   }
   MOZ_ALWAYS_INLINE JS::Zone* zoneFromAnyThread() const {
     MOZ_ASSERT_IF(!isTenured(),
-                  nurseryZoneFromAnyThread() == shape()->zoneFromAnyThread());
-    return shape()->zoneFromAnyThread();
+                  nurseryZoneFromAnyThread() == group()->zoneFromAnyThread());
+    return group()->zoneFromAnyThread();
   }
   MOZ_ALWAYS_INLINE JS::shadow::Zone* shadowZoneFromAnyThread() const {
     return JS::shadow::Zone::from(zoneFromAnyThread());
@@ -267,10 +270,12 @@ class JSObject
   size_t sizeOfIncludingThisInNursery() const;
 
 #ifdef DEBUG
-  static void debugCheckNewObject(js::Shape* shape, js::gc::AllocKind allocKind,
+  static void debugCheckNewObject(js::ObjectGroup* group, js::Shape* shape,
+                                  js::gc::AllocKind allocKind,
                                   js::gc::InitialHeap heap);
 #else
-  static void debugCheckNewObject(js::Shape* shape, js::gc::AllocKind allocKind,
+  static void debugCheckNewObject(js::ObjectGroup* group, js::Shape* shape,
+                                  js::gc::AllocKind allocKind,
                                   js::gc::InitialHeap heap) {}
 #endif
 
@@ -294,7 +299,7 @@ class JSObject
 
 
 
-  js::TaggedProto taggedProto() const { return shape()->proto(); }
+  js::TaggedProto taggedProto() const { return group()->proto(); }
 
   bool uninlinedIsProxyObject() const;
 
@@ -323,6 +328,8 @@ class JSObject
   
   
   inline bool staticPrototypeIsImmutable() const;
+
+  inline void setGroup(js::ObjectGroup* group);
 
   
 
@@ -356,14 +363,14 @@ class JSObject
 
   JS::Realm* nonCCWRealm() const {
     MOZ_ASSERT(!js::UninlinedIsCrossCompartmentWrapper(this));
-    return shape()->realm();
+    return group()->realm();
   }
   bool hasSameRealmAs(JSContext* cx) const;
 
   
   
   
-  JS::Realm* maybeCCWRealm() const { return shape()->realm(); }
+  JS::Realm* maybeCCWRealm() const { return group()->realm(); }
 
   
 
@@ -496,22 +503,21 @@ class JSObject
 #endif
 
   
-#ifdef JS_64BIT
-  static constexpr size_t MAX_BYTE_SIZE =
-      3 * sizeof(void*) + 16 * sizeof(JS::Value);
-#else
-  static constexpr size_t MAX_BYTE_SIZE =
+  static const size_t MAX_BYTE_SIZE =
       4 * sizeof(void*) + 16 * sizeof(JS::Value);
-#endif
 
  protected:
+  
+  MOZ_ALWAYS_INLINE js::GCPtrShape* shapePtr() { return &(this->shape_); }
+
   
   
   
   
   friend class js::jit::MacroAssembler;
 
-  static constexpr size_t offsetOfShape() { return offsetOfHeaderPtr(); }
+  static constexpr size_t offsetOfGroup() { return offsetOfHeaderPtr(); }
+  static constexpr size_t offsetOfShape() { return offsetof(JSObject, shape_); }
 
  private:
   JSObject() = delete;

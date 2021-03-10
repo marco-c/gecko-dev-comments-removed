@@ -39,6 +39,7 @@ class TemplateObject {
 
   
   
+  inline gc::Cell* group() const;
   inline gc::Cell* shape() const;
 };
 
