@@ -25,6 +25,7 @@
 #include "js/AllocPolicy.h"      
 #include "js/TypeDecls.h"        
 #include "js/UniquePtr.h"        
+#include "util/EnumFlags.h"      
 #include "util/TrailingArray.h"  
 #include "vm/StencilEnums.h"  
 
@@ -213,55 +214,30 @@ struct SourceExtent {
   uint32_t column = 0;  
 };
 
-
-
-template <typename EnumType>
-class ScriptFlagBase {
- protected:
-  
-  
-  uint32_t flags_ = 0;
-
+class ImmutableScriptFlags : public EnumFlags<ImmutableScriptFlagsEnum> {
  public:
-  ScriptFlagBase() = default;
-  explicit ScriptFlagBase(uint32_t rawFlags) : flags_(rawFlags) {}
+  ImmutableScriptFlags() = default;
 
-  [[nodiscard]] bool hasFlag(EnumType flag) const {
-    return flags_ & static_cast<uint32_t>(flag);
-  }
-  void setFlag(EnumType flag) { flags_ |= static_cast<uint32_t>(flag); }
-  void clearFlag(EnumType flag) { flags_ &= ~static_cast<uint32_t>(flag); }
-  void setFlag(EnumType flag, bool b) {
-    if (b) {
-      setFlag(flag);
-    } else {
-      clearFlag(flag);
-    }
-  }
+  explicit ImmutableScriptFlags(FieldType rawFlags) : EnumFlags(rawFlags) {}
 
-  operator uint32_t() const { return flags_; }
-
-  ScriptFlagBase& operator|=(const uint32_t rhs) {
-    flags_ |= rhs;
-    return *this;
-  }
+  operator FieldType() const { return flags_; }
 };
 
-class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
- public:
-  using ScriptFlagBase<ImmutableScriptFlagsEnum>::ScriptFlagBase;
-
-  void operator=(uint32_t flag) { flags_ = flag; }
-};
-
-class MutableScriptFlags : public ScriptFlagBase<MutableScriptFlagsEnum> {
+class MutableScriptFlags : public EnumFlags<MutableScriptFlagsEnum> {
  public:
   MutableScriptFlags() = default;
 
-  MutableScriptFlags& operator&=(const uint32_t rhs) {
+  MutableScriptFlags& operator&=(const FieldType rhs) {
     flags_ &= rhs;
     return *this;
   }
+
+  MutableScriptFlags& operator|=(const FieldType rhs) {
+    flags_ |= rhs;
+    return *this;
+  }
+
+  operator FieldType() const { return flags_; }
 };
 
 
