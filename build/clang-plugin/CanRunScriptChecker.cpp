@@ -54,9 +54,8 @@
 
 void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
   auto Refcounted = qualType(hasDeclaration(cxxRecordDecl(isRefCounted())));
-  auto StackSmartPtr =
-      ignoreTrivials(declRefExpr(to(varDecl(hasAutomaticStorageDuration(),
-                                            hasType(isSmartPtrToRefCounted())))));
+  auto StackSmartPtr = ignoreTrivials(declRefExpr(to(varDecl(
+      hasAutomaticStorageDuration(), hasType(isSmartPtrToRefCounted())))));
   auto ConstMemberOfThisSmartPtr =
       memberExpr(hasType(isSmartPtrToRefCounted()), hasType(isConstQualified()),
                  hasObjectExpression(cxxThisExpr()));
@@ -83,6 +82,10 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
       
       declRefExpr(to(parmVarDecl())));
 
+  auto KnownLiveMemberOfParam =
+      memberExpr(hasKnownLiveAnnotation(),
+                 hasObjectExpression(ignoreTrivials(KnownLiveParam)));
+
   
   
   auto KnownLiveBase = anyOf(
@@ -92,6 +95,8 @@ void CanRunScriptChecker::registerMatchers(MatchFinder *AstMatcher) {
       MozKnownLiveCall,
       
       KnownLiveParam,
+      
+      KnownLiveMemberOfParam,
       
       declRefExpr(to(varDecl(isConstexpr()))));
 

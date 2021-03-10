@@ -3796,7 +3796,7 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
                 
                 if (keyEvent->mKeyCode != NS_VK_SPACE &&
                     aVisitor.mPresContext) {
-                  MaybeSubmitForm(MOZ_KnownLive(aVisitor.mPresContext));
+                  MaybeSubmitForm(aVisitor.mPresContext);
 
                   break;  
                 }
@@ -3874,7 +3874,7 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
                mType == NS_FORM_INPUT_NUMBER || IsDateTimeInputType(mType))) {
             FireChangeEventIfNeeded();
             if (aVisitor.mPresContext) {
-              rv = MaybeSubmitForm(MOZ_KnownLive(aVisitor.mPresContext));
+              rv = MaybeSubmitForm(aVisitor.mPresContext);
               NS_ENSURE_SUCCESS(rv, rv);
             }
           }

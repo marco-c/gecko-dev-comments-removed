@@ -162,8 +162,8 @@ nsresult HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
         
         EventFlags eventFlags;
         eventFlags.mMultipleActionsPrevented = true;
-        DispatchClickEvent(MOZ_KnownLive(aVisitor.mPresContext), mouseEvent,
-                           content, false, &eventFlags, &status);
+        DispatchClickEvent(aVisitor.mPresContext, mouseEvent, content, false,
+                           &eventFlags, &status);
         
         
         mouseEvent->mFlags.mMultipleActionsPrevented = true;

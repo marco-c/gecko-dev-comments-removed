@@ -68,9 +68,7 @@ class MOZ_STACK_CLASS EventChainVisitor {
 
 
 
-
-
-  nsPresContext* const mPresContext;
+  MOZ_KNOWN_LIVE nsPresContext* const mPresContext;
 
   
 
@@ -307,7 +305,7 @@ class MOZ_STACK_CLASS EventChainPostVisitor final
   
   MOZ_CAN_RUN_SCRIPT
   explicit EventChainPostVisitor(EventChainVisitor& aOther)
-      : EventChainVisitor(MOZ_KnownLive(aOther.mPresContext), aOther.mEvent,
+      : EventChainVisitor(aOther.mPresContext, aOther.mEvent,
                           MOZ_KnownLive(aOther.mDOMEvent),
                           aOther.mEventStatus) {}
 };
