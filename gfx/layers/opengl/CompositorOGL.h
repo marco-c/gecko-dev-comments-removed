@@ -130,6 +130,8 @@ class CompositorOGL final : public Compositor {
   already_AddRefed<DataTextureSource> CreateDataTextureSourceAround(
       gfx::DataSourceSurface* aSurface) override;
 
+  bool Initialize(GLContext* aGLContext, nsCString* const out_failureReason);
+
   bool Initialize(nsCString* const out_failureReason) override;
 
   void Destroy() override;
@@ -285,6 +287,7 @@ class CompositorOGL final : public Compositor {
   
   LayoutDeviceIntSize mWidgetSize;
   RefPtr<GLContext> mGLContext;
+  bool mOwnsGLContext = true;
   RefPtr<SurfacePoolHandle> mSurfacePoolHandle;
   UniquePtr<GLBlitTextureImageHelper> mBlitTextureImageHelper;
   gfx::Matrix4x4 mProjMatrix;
