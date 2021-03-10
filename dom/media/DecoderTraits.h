@@ -63,8 +63,6 @@ class DecoderTraits {
   
   static bool IsMatroskaType(const MediaContainerType& aType);
 
-  static bool IsSupportedType(const MediaContainerType& aType);
-
   
   static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
       const MediaContainerType& aType);
