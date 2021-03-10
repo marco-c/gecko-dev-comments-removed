@@ -13591,9 +13591,7 @@ nsresult Maintenance::DirectoryWork() {
 
               IDB_TRY_INSPECT(
                   const auto& metadata,
-                  quotaManager
-                      ->GetDirectoryMetadataWithOriginMetadata2WithRestore(
-                          originDir),
+                  quotaManager->LoadFullOriginMetadataWithRestore(originDir),
                   
                   Ok{});
 
