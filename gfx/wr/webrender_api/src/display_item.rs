@@ -713,9 +713,14 @@ pub struct ReferenceFrameDisplayListItem {
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub enum ReferenceFrameKind {
     
-    Zoom,
-    
-    Transform,
+    Transform {
+        
+        
+        is_2d_scale_translation: bool,
+        
+        
+        should_snap: bool,
+    },
     
     Perspective {
         scrolling_relative_to: Option<ExternalScrollId>,
@@ -1652,7 +1657,10 @@ impl_default_for_enums! {
     ComponentTransferFuncType => Identity,
     ClipMode => Clip,
     ClipId => ClipId::invalid(),
-    ReferenceFrameKind => Transform,
+    ReferenceFrameKind => Transform {
+        is_2d_scale_translation: false,
+        should_snap: false,
+    },
     Rotation => Degree0,
     TransformStyle => Flat,
     RasterSpace => Local(f32::default()),
