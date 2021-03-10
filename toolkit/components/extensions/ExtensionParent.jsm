@@ -733,7 +733,7 @@ class DevToolsExtensionPageContextParent extends ExtensionPageContextParent {
       return;
     }
 
-    const descriptorFront = await DevToolsShim.createDescriptorForTab(
+    const descriptorFront = await DevToolsShim.createDescriptorForTabForWebExtension(
       targetFront.localTab
     );
 
