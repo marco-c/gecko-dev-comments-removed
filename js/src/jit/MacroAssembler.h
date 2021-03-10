@@ -1569,34 +1569,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                                      Register shape,
                                                      Label* label);
 
-  inline void branchTestObjGroup(Condition cond, Register obj,
-                                 const ObjectGroup* group, Register scratch,
-                                 Register spectreRegToZero, Label* label);
-  inline void branchTestObjGroupNoSpectreMitigations(Condition cond,
-                                                     Register obj,
-                                                     const ObjectGroup* group,
-                                                     Label* label);
-
-  inline void branchTestObjGroup(Condition cond, Register obj, Register group,
-                                 Register scratch, Register spectreRegToZero,
-                                 Label* label);
-  inline void branchTestObjGroupNoSpectreMitigations(Condition cond,
-                                                     Register obj,
-                                                     Register group,
-                                                     Label* label);
-
-  void branchTestObjGroup(Condition cond, Register obj, const Address& group,
-                          Register scratch, Register spectreRegToZero,
-                          Label* label);
-  void branchTestObjGroupNoSpectreMitigations(Condition cond, Register obj,
-                                              const Address& group,
-                                              Register scratch, Label* label);
-
   
   inline void branchTestObjShapeUnsafe(Condition cond, Register obj,
                                        Register shape, Label* label);
-  inline void branchTestObjGroupUnsafe(Condition cond, Register obj,
-                                       const ObjectGroup* group, Label* label);
 
   void branchTestObjTypeDescr(Condition cond, Register obj, Register descr,
                               Register scratch, Register spectreRegToZero,
@@ -3817,9 +3792,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
  public:
   
   
-  void loadObjGroupUnsafe(Register obj, Register dest) {
-    loadPtr(Address(obj, JSObject::offsetOfGroup()), dest);
-  }
   void loadObjClassUnsafe(Register obj, Register dest) {
     loadPtr(Address(obj, JSObject::offsetOfShape()), dest);
     loadPtr(Address(dest, Shape::offsetOfBaseShape()), dest);
