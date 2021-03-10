@@ -12,21 +12,4 @@
 
 #include "nsHashKeys.h"
 
-
-
-
-
-
-
-
-
-
-
-
-template <class KeyClass, class DataType>
-class nsDataHashtable : public nsBaseHashtable<KeyClass, DataType, DataType> {
- public:
-  using nsBaseHashtable<KeyClass, DataType, DataType>::nsBaseHashtable;
-};
-
 #endif  

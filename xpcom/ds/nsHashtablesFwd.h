@@ -24,8 +24,16 @@ class nsBaseHashtable;
 template <class KeyClass, class T>
 class nsClassHashtable;
 
+
+
+
+
+
+
+
+
 template <class KeyClass, class DataType>
-class nsDataHashtable;
+using nsDataHashtable = nsBaseHashtable<KeyClass, DataType, DataType>;
 
 template <class KeyClass, class Interface>
 class nsInterfaceHashtable;
