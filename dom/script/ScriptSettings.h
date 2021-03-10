@@ -9,23 +9,15 @@
 #ifndef mozilla_dom_ScriptSettings_h
 #define mozilla_dom_ScriptSettings_h
 
-#include "MainThreadUtils.h"
 #include "xpcpublic.h"
 
 #include "mozilla/dom/JSExecutionManager.h"
 #include "mozilla/Maybe.h"
 
 #include "jsapi.h"
-#include "js/Debug.h"
 #include "js/Warnings.h"  
 
-#ifdef MOZ_GECKO_PROFILER
-#  include "GeckoProfiler.h"
-#endif
-
-class JSFunction;
 class JSObject;
-class JSScript;
 class nsIGlobalObject;
 class nsIPrincipal;
 class nsPIDOMWindowInner;
@@ -49,16 +41,6 @@ class Document;
 
 void InitScriptSettings();
 void DestroyScriptSettings();
-
-
-
-
-
-
-
-
-void UseEntryScriptProfiling();
-void UnuseEntryScriptProfiling();
 
 
 
@@ -315,87 +297,6 @@ class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
 
   AutoJSAPI(const AutoJSAPI&) = delete;
   AutoJSAPI& operator=(const AutoJSAPI&) = delete;
-};
-
-
-
-
-
-
-
-
-
-class MOZ_STACK_CLASS AutoEntryScript : public AutoJSAPI {
- public:
-  
-  
-  AutoEntryScript(nsIGlobalObject* aGlobalObject, const char* aReason,
-                  bool aIsMainThread = NS_IsMainThread());
-
-  
-  
-  
-  
-  
-  
-  AutoEntryScript(JSObject* aObject, const char* aReason,
-                  bool aIsMainThread = NS_IsMainThread());
-
-  ~AutoEntryScript();
-
-  void SetWebIDLCallerPrincipal(nsIPrincipal* aPrincipal) {
-    mWebIDLCallerPrincipal = aPrincipal;
-  }
-
- private:
-  
-  class DocshellEntryMonitor final : public JS::dbg::AutoEntryMonitor {
-   public:
-    DocshellEntryMonitor(JSContext* aCx, const char* aReason);
-
-    
-    
-    
-    
-    
-    void Entry(JSContext* aCx, JSFunction* aFunction,
-               JS::Handle<JS::Value> aAsyncStack,
-               const char* aAsyncCause) override {
-      Entry(aCx, aFunction, nullptr, aAsyncStack, aAsyncCause);
-    }
-
-    void Entry(JSContext* aCx, JSScript* aScript,
-               JS::Handle<JS::Value> aAsyncStack,
-               const char* aAsyncCause) override {
-      Entry(aCx, nullptr, aScript, aAsyncStack, aAsyncCause);
-    }
-
-    void Exit(JSContext* aCx) override;
-
-   private:
-    void Entry(JSContext* aCx, JSFunction* aFunction, JSScript* aScript,
-               JS::Handle<JS::Value> aAsyncStack, const char* aAsyncCause);
-
-    const char* mReason;
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  nsIPrincipal* MOZ_NON_OWNING_REF mWebIDLCallerPrincipal;
-  friend nsIPrincipal* GetWebIDLCallerPrincipal();
-
-  Maybe<DocshellEntryMonitor> mDocShellEntryMonitor;
-  Maybe<xpc::AutoScriptActivity> mScriptActivity;
-  JS::AutoHideScriptedCaller mCallerOverride;
-#ifdef MOZ_GECKO_PROFILER
-  AutoProfilerLabel mAutoProfilerLabel;
-#endif
-  AutoRequestJSThreadExecution mJSThreadExecution;
 };
 
 
