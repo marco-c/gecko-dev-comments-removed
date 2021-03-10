@@ -12,14 +12,16 @@ const TYPES = {
   CSS_MESSAGE: "css-message",
   DOCUMENT_EVENT: "document-event",
   ERROR_MESSAGE: "error-message",
-  LOCAL_STORAGE: "local-storage",
   PLATFORM_MESSAGE: "platform-message",
   NETWORK_EVENT: "network-event",
-  SESSION_STORAGE: "session-storage",
   STYLESHEET: "stylesheet",
   NETWORK_EVENT_STACKTRACE: "network-event-stacktrace",
   SOURCE: "source",
   THREAD_STATE: "thread-state",
+  
+  CACHE_STORAGE: "Cache",
+  LOCAL_STORAGE: "local-storage",
+  SESSION_STORAGE: "session-storage",
 };
 exports.TYPES = TYPES;
 
@@ -33,6 +35,9 @@ exports.TYPES = TYPES;
 
 
 const FrameTargetResources = augmentResourceDictionary({
+  [TYPES.CACHE_STORAGE]: {
+    path: "devtools/server/actors/resources/storage-cache",
+  },
   [TYPES.CONSOLE_MESSAGE]: {
     path: "devtools/server/actors/resources/console-messages",
   },
