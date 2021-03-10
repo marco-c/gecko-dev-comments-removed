@@ -362,11 +362,6 @@ inline gc::InitialHeap GetInitialHeap(NewObjectKind newKind,
   return gc::DefaultHeap;
 }
 
-inline gc::InitialHeap GetInitialHeap(NewObjectKind newKind,
-                                      ObjectGroup* group) {
-  return GetInitialHeap(newKind, group->clasp());
-}
-
 
 
 
