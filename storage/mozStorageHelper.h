@@ -10,6 +10,7 @@
 #include "nsString.h"
 #include "mozilla/DebugOnly.h"
 
+#include "mozilla/storage/SQLiteMutex.h"
 #include "mozIStorageConnection.h"
 #include "mozIStorageStatement.h"
 #include "mozIStoragePendingStatement.h"
@@ -54,39 +55,59 @@
 
 
 
+
 class mozStorageTransaction {
+  using SQLiteMutexAutoLock = mozilla::storage::SQLiteMutexAutoLock;
+
  public:
   mozStorageTransaction(
       mozIStorageConnection* aConnection, bool aCommitOnComplete,
       int32_t aType = mozIStorageConnection::TRANSACTION_DEFAULT,
       bool aAsyncCommit = false)
       : mConnection(aConnection),
+        mNestingLevel(0),
         mHasTransaction(false),
         mCommitOnComplete(aCommitOnComplete),
         mCompleted(false),
         mAsyncCommit(aAsyncCommit) {
     if (mConnection) {
-      nsAutoCString query("BEGIN");
-      int32_t type = aType;
-      if (type == mozIStorageConnection::TRANSACTION_DEFAULT) {
-        MOZ_ALWAYS_SUCCEEDS(mConnection->GetDefaultTransactionType(&type));
-      }
-      switch (type) {
-        case mozIStorageConnection::TRANSACTION_IMMEDIATE:
-          query.AppendLiteral(" IMMEDIATE");
-          break;
-        case mozIStorageConnection::TRANSACTION_EXCLUSIVE:
-          query.AppendLiteral(" EXCLUSIVE");
-          break;
-        case mozIStorageConnection::TRANSACTION_DEFERRED:
-          query.AppendLiteral(" DEFERRED");
-          break;
-        default:
-          MOZ_ASSERT(false, "Unknown transaction type");
-      }
+      SQLiteMutexAutoLock lock(mConnection->GetSharedDBMutex());
+
       
       
-      mHasTransaction = NS_SUCCEEDED(mConnection->ExecuteSimpleSQL(query));
+      
+      TransactionStarted(lock);
+
+      nsAutoCString query;
+
+      if (TopLevelTransaction(lock)) {
+        query.Assign("BEGIN");
+        int32_t type = aType;
+        if (type == mozIStorageConnection::TRANSACTION_DEFAULT) {
+          MOZ_ALWAYS_SUCCEEDS(mConnection->GetDefaultTransactionType(&type));
+        }
+        switch (type) {
+          case mozIStorageConnection::TRANSACTION_IMMEDIATE:
+            query.AppendLiteral(" IMMEDIATE");
+            break;
+          case mozIStorageConnection::TRANSACTION_EXCLUSIVE:
+            query.AppendLiteral(" EXCLUSIVE");
+            break;
+          case mozIStorageConnection::TRANSACTION_DEFERRED:
+            query.AppendLiteral(" DEFERRED");
+            break;
+          default:
+            MOZ_ASSERT(false, "Unknown transaction type");
+        }
+      } else {
+        query.Assign("SAVEPOINT sp"_ns + IntToCString(mNestingLevel));
+      }
+
+      
+      
+      if (NS_FAILED(mConnection->ExecuteSimpleSQL(query))) {
+        TransactionFinished(lock);
+      }
     }
   }
 
@@ -111,20 +132,39 @@ class mozStorageTransaction {
 
   nsresult Commit() {
     if (!mConnection || mCompleted || !mHasTransaction) return NS_OK;
+
+    SQLiteMutexAutoLock lock(mConnection->GetSharedDBMutex());
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    MOZ_DIAGNOSTIC_ASSERT(CurrentTransaction(lock));
+#else
+    if (!CurrentTransaction(lock)) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+#endif
+
     mCompleted = true;
 
-    
-    
     nsresult rv;
-    if (mAsyncCommit) {
-      nsCOMPtr<mozIStoragePendingStatement> ps;
-      rv = mConnection->ExecuteSimpleSQLAsync("COMMIT"_ns, nullptr,
-                                              getter_AddRefs(ps));
+
+    if (TopLevelTransaction(lock)) {
+      
+      
+      if (mAsyncCommit) {
+        nsCOMPtr<mozIStoragePendingStatement> ps;
+        rv = mConnection->ExecuteSimpleSQLAsync("COMMIT"_ns, nullptr,
+                                                getter_AddRefs(ps));
+      } else {
+        rv = mConnection->ExecuteSimpleSQL("COMMIT"_ns);
+      }
     } else {
-      rv = mConnection->ExecuteSimpleSQL("COMMIT"_ns);
+      rv = mConnection->ExecuteSimpleSQL("RELEASE sp"_ns +
+                                         IntToCString(mNestingLevel));
     }
 
-    if (NS_SUCCEEDED(rv)) mHasTransaction = false;
+    if (NS_SUCCEEDED(rv)) {
+      TransactionFinished(lock);
+    }
 
     return rv;
   }
@@ -136,23 +176,79 @@ class mozStorageTransaction {
 
   nsresult Rollback() {
     if (!mConnection || mCompleted || !mHasTransaction) return NS_OK;
+
+    SQLiteMutexAutoLock lock(mConnection->GetSharedDBMutex());
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    MOZ_DIAGNOSTIC_ASSERT(CurrentTransaction(lock));
+#else
+    if (!CurrentTransaction(lock)) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+#endif
+
     mCompleted = true;
 
-    
-    
     nsresult rv;
-    do {
-      rv = mConnection->ExecuteSimpleSQL("ROLLBACK"_ns);
-      if (rv == NS_ERROR_STORAGE_BUSY) (void)PR_Sleep(PR_INTERVAL_NO_WAIT);
-    } while (rv == NS_ERROR_STORAGE_BUSY);
 
-    if (NS_SUCCEEDED(rv)) mHasTransaction = false;
+    if (TopLevelTransaction(lock)) {
+      
+      
+      do {
+        rv = mConnection->ExecuteSimpleSQL("ROLLBACK"_ns);
+        if (rv == NS_ERROR_STORAGE_BUSY) (void)PR_Sleep(PR_INTERVAL_NO_WAIT);
+      } while (rv == NS_ERROR_STORAGE_BUSY);
+    } else {
+      const auto nestingLevelCString = IntToCString(mNestingLevel);
+      rv = mConnection->ExecuteSimpleSQL(
+          "ROLLBACK TO sp"_ns + nestingLevelCString + "; RELEASE sp"_ns +
+          nestingLevelCString);
+    }
+
+    if (NS_SUCCEEDED(rv)) {
+      TransactionFinished(lock);
+    }
 
     return rv;
   }
 
  protected:
+  void TransactionStarted(const SQLiteMutexAutoLock& aProofOfLock) {
+    MOZ_ASSERT(mConnection);
+    MOZ_ASSERT(!mHasTransaction);
+    MOZ_ASSERT(mNestingLevel == 0);
+    mHasTransaction = true;
+    mNestingLevel = mConnection->IncreaseTransactionNestingLevel(aProofOfLock);
+  }
+
+  bool CurrentTransaction(const SQLiteMutexAutoLock& aProofOfLock) const {
+    MOZ_ASSERT(mConnection);
+    MOZ_ASSERT(mHasTransaction);
+    MOZ_ASSERT(mNestingLevel > 0);
+    return mNestingLevel ==
+           mConnection->GetTransactionNestingLevel(aProofOfLock);
+  }
+
+  bool TopLevelTransaction(const SQLiteMutexAutoLock& aProofOfLock) const {
+    MOZ_ASSERT(mConnection);
+    MOZ_ASSERT(mHasTransaction);
+    MOZ_ASSERT(mNestingLevel > 0);
+    MOZ_ASSERT(CurrentTransaction(aProofOfLock));
+    return mNestingLevel == 1;
+  }
+
+  void TransactionFinished(const SQLiteMutexAutoLock& aProofOfLock) {
+    MOZ_ASSERT(mConnection);
+    MOZ_ASSERT(mHasTransaction);
+    MOZ_ASSERT(mNestingLevel > 0);
+    MOZ_ASSERT(CurrentTransaction(aProofOfLock));
+    mConnection->DecreaseTransactionNestingLevel(aProofOfLock);
+    mNestingLevel = 0;
+    mHasTransaction = false;
+  }
+
   nsCOMPtr<mozIStorageConnection> mConnection;
+  uint32_t mNestingLevel;
   bool mHasTransaction;
   bool mCommitOnComplete;
   bool mCompleted;
