@@ -254,6 +254,13 @@ void TraceCrossCompartmentEdge(JSTracer* trc, JSObject* src,
 
 
 template <typename T>
+void TraceSameZoneCrossCompartmentEdge(JSTracer* trc,
+                                       const WriteBarriered<T>* dst,
+                                       const char* name);
+
+
+
+template <typename T>
 void TraceWeakMapKeyEdgeInternal(JSTracer* trc, Zone* weakMapZone, T** thingp,
                                  const char* name);
 
