@@ -18,7 +18,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/layers/LayersTypes.h"
@@ -72,6 +71,7 @@ class Shmem;
 #endif  
 namespace dom {
 class BrowserChild;
+enum class CallerType : uint32_t;
 }  
 namespace plugins {
 class PluginWidgetChild;
