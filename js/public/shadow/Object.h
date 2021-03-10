@@ -26,16 +26,16 @@ class JS_PUBLIC_API Value;
 
 namespace shadow {
 
-struct ObjectGroup;
-
 
 
 
 
 
 struct Object {
-  shadow::ObjectGroup* group;
   shadow::Shape* shape;
+#ifndef JS_64BIT
+  uint32_t padding_;
+#endif
   Value* slots;
   void* _1;
 
