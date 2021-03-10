@@ -24,11 +24,13 @@ GeckoCustom::get_boundsInCSSPixels(int32_t* aX, int32_t* aY, int32_t* aWidth,
                                    int32_t* aHeight) {
   nsIntRect bounds = mAcc->BoundsInCSSPixels();
   if (!bounds.IsEmpty()) {
-    *aX = bounds.X();
-    *aY = bounds.Y();
     *aWidth = bounds.Width();
     *aHeight = bounds.Height();
   }
+  
+  
+  *aX = bounds.X();
+  *aY = bounds.Y();
 
   return S_OK;
 }
