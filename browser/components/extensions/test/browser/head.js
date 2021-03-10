@@ -61,6 +61,9 @@ const { CustomizableUI } = ChromeUtils.import(
 const { Preferences } = ChromeUtils.import(
   "resource://gre/modules/Preferences.jsm"
 );
+const { ClientEnvironmentBase } = ChromeUtils.import(
+  "resource://gre/modules/components-utils/ClientEnvironment.jsm"
+);
 
 XPCOMUtils.defineLazyGetter(this, "Management", () => {
   const { Management } = ChromeUtils.import(
@@ -934,4 +937,20 @@ async function getIncognitoWindow(url = "about:privatebrowsing") {
   let details = await data;
   await windowWatcher.unload();
   return { win, details };
+}
+
+
+
+
+
+
+
+
+
+function backgroundColorSetOnRoot() {
+  const os = ClientEnvironmentBase.os;
+  if (!os.isWindows) {
+    return false;
+  }
+  return os.windowsVersion < 10;
 }
