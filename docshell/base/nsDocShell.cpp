@@ -6951,7 +6951,6 @@ bool nsDocShell::CanSavePresentation(uint32_t aLoadType,
   
   
   
-  
   if (aLoadType != LOAD_NORMAL && aLoadType != LOAD_HISTORY &&
       aLoadType != LOAD_LINK && aLoadType != LOAD_STOP_CONTENT &&
       aLoadType != LOAD_STOP_CONTENT_AND_REPLACE &&
