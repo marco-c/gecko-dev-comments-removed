@@ -619,6 +619,11 @@ class ExtensibleLexicalEnvironmentObject : public LexicalEnvironmentObject {
  public:
   JSObject* thisObject() const;
 
+  
+  
+  
+  static ExtensibleLexicalEnvironmentObject* forVarEnvironment(JSObject* obj);
+
  protected:
   void initThisObject(JSObject* obj) {
     MOZ_ASSERT(isGlobal() || !isSyntactic());
