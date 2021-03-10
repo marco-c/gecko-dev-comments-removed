@@ -1,12 +1,12 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+/*
+ * JavaScript bytecode interpreter.
+ */
 
 #include "vm/Interpreter-inl.h"
 
@@ -34,18 +34,18 @@
 #include "jit/Jit.h"
 #include "jit/JitRuntime.h"
 #include "js/CharacterEncoding.h"
-#include "js/experimental/JitInfo.h"  
-#include "js/friend/ErrorMessages.h"  
-#include "js/friend/StackLimits.h"    
-#include "js/friend/WindowProxy.h"    
+#include "js/experimental/JitInfo.h"  // JSJitInfo
+#include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
+#include "js/friend/StackLimits.h"    // js::CheckRecursionLimit
+#include "js/friend/WindowProxy.h"    // js::IsWindowProxy
 #include "util/CheckedArithmetic.h"
 #include "util/StringBuffer.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
 #include "vm/BigIntType.h"
-#include "vm/BytecodeUtil.h"        
-#include "vm/EqualityOperations.h"  
-#include "vm/FunctionFlags.h"       
+#include "vm/BytecodeUtil.h"        // JSDVG_SEARCH_STACK
+#include "vm/EqualityOperations.h"  // js::StrictlyEqual
+#include "vm/FunctionFlags.h"       // js::FunctionFlags
 #include "vm/GeneratorObject.h"
 #include "vm/Instrumentation.h"
 #include "vm/Iteration.h"
@@ -56,13 +56,13 @@
 #include "vm/JSScript.h"
 #include "vm/Opcodes.h"
 #include "vm/PIC.h"
-#include "vm/PlainObject.h"  
+#include "vm/PlainObject.h"  // js::PlainObject
 #include "vm/Printer.h"
 #include "vm/Scope.h"
 #include "vm/Shape.h"
-#include "vm/SharedStencil.h"  
+#include "vm/SharedStencil.h"  // GCThingIndex
 #include "vm/StringType.h"
-#include "vm/ThrowMsgKind.h"  
+#include "vm/ThrowMsgKind.h"  // ThrowMsgKind
 #include "vm/TraceLogging.h"
 
 #include "builtin/Boolean-inl.h"
@@ -74,7 +74,7 @@
 #include "vm/JSScript-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/ObjectOperations-inl.h"
-#include "vm/PlainObject-inl.h"  
+#include "vm/PlainObject-inl.h"  // js::CopyInitializerObject, js::CreateThis
 #include "vm/Probes-inl.h"
 #include "vm/Stack-inl.h"
 
@@ -129,13 +129,13 @@ bool js::GetFunctionThis(JSContext* cx, AbstractFramePtr frame,
 
   RootedValue thisv(cx, frame.thisArgument());
 
-  
-  
-  
-  
-  
-  
-  
+  // If there is a NSVO on environment chain, use it as basis for fallback
+  // global |this|. This gives a consistent definition of global lexical
+  // |this| between function and global contexts.
+  //
+  // NOTE: If only non-syntactic WithEnvironments are on the chain, we use the
+  // global lexical |this| value. This is for compatibility with the Subscript
+  // Loader.
   if (frame.script()->hasNonSyntacticScope() && thisv.isNullOrUndefined()) {
     RootedObject env(cx, frame.environmentChain());
     while (true) {
@@ -144,8 +144,8 @@ bool js::GetFunctionThis(JSContext* cx, AbstractFramePtr frame,
         return true;
       }
       if (!env->enclosingEnvironment()) {
-        
-        
+        // This can only happen in Debugger eval frames: in that case we
+        // don't always have a global lexical env, see EvaluateInEnv.
         MOZ_ASSERT(env->is<GlobalObject>());
         res.setObject(*GetThisObject(env));
         return true;
@@ -172,8 +172,8 @@ void js::GetNonSyntacticGlobalThis(JSContext* cx, HandleObject envChain,
       return;
     }
     if (!env->enclosingEnvironment()) {
-      
-      
+      // This can only happen in Debugger eval frames: in that case we
+      // don't always have a global lexical env, see EvaluateInEnv.
       MOZ_ASSERT(env->is<GlobalObject>());
       res.setObject(*GetThisObject(env));
       return;
@@ -190,7 +190,7 @@ bool js::Debug_CheckSelfHosted(JSContext* cx, HandleValue fun) {
   RootedObject funObj(cx, UncheckedUnwrap(&fun.toObject()));
   MOZ_ASSERT(funObj->as<JSFunction>().isSelfHostedOrIntrinsic());
 
-  
+  // This is purely to police self-hosted code. There is no actual operation.
   return true;
 }
 
@@ -214,7 +214,7 @@ static inline bool GetPropertyOperation(JSContext* cx, InterpreterFrame* fp,
     return true;
   }
 
-  
+  // Copy lval, because it might alias vp.
   RootedValue v(cx, lval);
   return GetProperty(cx, v, name, vp);
 }
@@ -224,20 +224,20 @@ static inline bool GetNameOperation(JSContext* cx, InterpreterFrame* fp,
   RootedObject envChain(cx, fp->environmentChain());
   RootedPropertyName name(cx, fp->script()->getName(pc));
 
-  
-
-
-
-
-
-
-
-
+  /*
+   * Skip along the env chain to the enclosing global object. This is
+   * used for GNAME opcodes where the bytecode emitter has determined a
+   * name access must be on the global. It also insulates us from bugs
+   * in the emitter: type inference will assume that GNAME opcodes are
+   * accessing the global object, and the inferred behavior should match
+   * the actual behavior even if the id could be found on the env chain
+   * before the global object.
+   */
   if (IsGlobalOp(JSOp(*pc)) && !fp->script()->hasNonSyntacticScope()) {
     envChain = &cx->global()->lexicalEnvironment();
   }
 
-  
+  /* Kludge to allow (typeof foo == "undefined") tests. */
   JSOp op2 = JSOp(pc[JSOpLength_GetName]);
   if (op2 == JSOp::Typeof) {
     return GetEnvironmentName<GetNameMode::TypeOf>(cx, envChain, name, vp);
@@ -325,9 +325,9 @@ static bool MaybeCreateThisForConstructor(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
-  
-  
-  
+  // Ensure the callee still has a non-lazy script. We normally don't relazify
+  // in active compartments, but the .prototype lookup might have called the
+  // relazifyFunctions testing function that doesn't have this restriction.
   return JSFunction::getOrCreateScript(cx, callee);
 }
 
@@ -350,9 +350,9 @@ InterpreterFrame* RunState::pushInterpreterFrame(JSContext* cx) {
   return asExecute()->pushInterpreterFrame(cx);
 }
 
-
-
-
+// MSVC with PGO inlines a lot of functions in RunScript, resulting in large
+// stack frames and stack overflow issues, see bug 1167883. Turn off PGO to
+// avoid this.
 #ifdef _MSC_VER
 #  pragma optimize("g", off)
 #endif
@@ -364,7 +364,7 @@ bool js::RunScript(JSContext* cx, RunState& state) {
   MOZ_ASSERT_IF(cx->runtime()->hasJitRuntime(),
                 !cx->runtime()->jitRuntime()->disallowArbitraryCode());
 
-  
+  // Since any script can conceivably GC, make sure it's safe to do so.
   cx->verifyIsSafeToGC();
 
   MOZ_ASSERT(cx->realm() == state.script()->realm());
@@ -452,15 +452,15 @@ MOZ_ALWAYS_INLINE bool CallJSNativeConstructor(JSContext* cx, Native native,
     return false;
   }
 
-  
-
-
-
-
-
-
-
-
+  /*
+   * Native constructors must return non-primitive values on success.
+   * Although it is legal, if a constructor returns the callee, there is a
+   * 99.9999% chance it is a bug. If any valid code actually wants the
+   * constructor to return the callee, the assertion can be removed or
+   * (another) conjunct can be added to the antecedent.
+   *
+   * Exception: (new Object(Object)) returns the callee.
+   */
   MOZ_ASSERT_IF((!callee->is<JSFunction>() ||
                  callee->as<JSFunction>().native() != obj_construct),
                 args.rval().isObject() && callee != &args.rval().toObject());
@@ -468,16 +468,16 @@ MOZ_ALWAYS_INLINE bool CallJSNativeConstructor(JSContext* cx, Native native,
   return true;
 }
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * Find a function reference and its 'this' value implicit first parameter
+ * under argc arguments on cx's stack, and call the function.  Push missing
+ * required arguments, allocate declared local variables, and pop everything
+ * when done.  Then push the return value.
+ *
+ * Note: This function DOES NOT call GetThisValue to munge |args.thisv()| if
+ *       necessary.  The caller (usually the interpreter) must have performed
+ *       this step already!
+ */
 bool js::InternalCallOrConstruct(JSContext* cx, const CallArgs& args,
                                  MaybeConstruct construct, CallReason reason) {
   MOZ_ASSERT(args.length() <= ARGS_LENGTH_MAX);
@@ -487,7 +487,7 @@ bool js::InternalCallOrConstruct(JSContext* cx, const CallArgs& args,
     return ReportIsNotFunction(cx, args.calleev(), skipForCallee, construct);
   }
 
-  
+  /* Invoke non-functions. */
   if (MOZ_UNLIKELY(!args.callee().is<JSFunction>())) {
     MOZ_ASSERT_IF(construct, !args.callee().isConstructor());
 
@@ -506,7 +506,7 @@ bool js::InternalCallOrConstruct(JSContext* cx, const CallArgs& args,
     return CallJSNative(cx, call, reason, args);
   }
 
-  
+  /* Invoke native functions. */
   RootedFunction fun(cx, &args.callee().as<JSFunction>());
   if (fun->isNativeFun()) {
     MOZ_ASSERT_IF(construct, !fun->isConstructor());
@@ -520,7 +520,7 @@ bool js::InternalCallOrConstruct(JSContext* cx, const CallArgs& args,
     return CallJSNative(cx, native, reason, args);
   }
 
-  
+  // Self-hosted builtins are considered native by the onNativeCall hook.
   if (fun->isSelfHostedBuiltin()) {
     NativeResumeMode resumeMode = DebugAPI::onNativeCall(cx, args, reason);
     if (resumeMode != NativeResumeMode::Continue) {
@@ -532,17 +532,17 @@ bool js::InternalCallOrConstruct(JSContext* cx, const CallArgs& args,
     return false;
   }
 
-  
+  /* Run function until JSOp::RetRval, JSOp::Return or error. */
   InvokeState state(cx, args, construct);
 
-  
-  
+  // Create |this| if we're constructing. Switch to the callee's realm to
+  // ensure this object has the correct realm.
   AutoRealm ar(cx, state.script());
   if (construct && !MaybeCreateThisForConstructor(cx, args)) {
     return false;
   }
 
-  
+  // Calling class constructors throws an error from the callee's realm.
   if (construct != CONSTRUCT && fun->isClassConstructor()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_CANT_CALL_CLASS_CONSTRUCTOR);
@@ -561,9 +561,9 @@ static bool InternalCall(JSContext* cx, const AnyInvokeArgs& args,
              "must pass calling arguments to a calling attempt");
 
   if (args.thisv().isObject()) {
-    
-    
-    
+    // We must call the thisValue hook in case we are not called from the
+    // interpreter, where a prior bytecode has computed an appropriate
+    // |this| already.  But don't do that if fval is a DOM function.
     HandleValue fval = args.calleev();
     if (!fval.isObject() || !fval.toObject().is<JSFunction>() ||
         !fval.toObject().as<JSFunction>().isNativeFun() ||
@@ -584,13 +584,13 @@ bool js::CallFromStack(JSContext* cx, const CallArgs& args) {
   return InternalCall(cx, static_cast<const AnyInvokeArgs&>(args));
 }
 
-
-
+// ES7 rev 0c1bd3004329336774cbc90de727cd0cf5f11e93
+// 7.3.12 Call.
 bool js::Call(JSContext* cx, HandleValue fval, HandleValue thisv,
               const AnyInvokeArgs& args, MutableHandleValue rval,
               CallReason reason) {
-  
-  
+  // Explicitly qualify these methods to bypass AnyInvokeArgs's deliberate
+  // shadowing.
   args.CallArgs::setCallee(fval);
   args.CallArgs::setThis(thisv);
 
@@ -607,7 +607,7 @@ static bool InternalConstruct(JSContext* cx, const AnyConstructArgs& args) {
              "must pass constructing arguments to a construction attempt");
   MOZ_ASSERT(!JSFunction::class_.getConstruct());
 
-  
+  // Callers are responsible for enforcing these preconditions.
   MOZ_ASSERT(IsConstructor(args.calleev()),
              "trying to construct a value that isn't a constructor");
   MOZ_ASSERT(IsConstructor(args.CallArgs::newTarget()),
@@ -643,19 +643,19 @@ static bool InternalConstruct(JSContext* cx, const AnyConstructArgs& args) {
   return CallJSNativeConstructor(cx, construct, args);
 }
 
-
+// Check that |callee|, the callee in a |new| expression, is a constructor.
 static bool StackCheckIsConstructorCalleeNewTarget(JSContext* cx,
                                                    HandleValue callee,
                                                    HandleValue newTarget) {
-  
+  // Calls from the stack could have any old non-constructor callee.
   if (!IsConstructor(callee)) {
     ReportValueError(cx, JSMSG_NOT_CONSTRUCTOR, JSDVG_SEARCH_STACK, callee,
                      nullptr);
     return false;
   }
 
-  
-  
+  // The new.target has already been vetted by previous calls, or is the callee.
+  // We can just assert that it's a constructor.
   MOZ_ASSERT(IsConstructor(newTarget));
 
   return true;
@@ -675,7 +675,7 @@ bool js::Construct(JSContext* cx, HandleValue fval,
                    MutableHandleObject objp) {
   MOZ_ASSERT(args.thisv().isMagic(JS_IS_CONSTRUCTING));
 
-  
+  // Explicitly qualify to bypass AnyConstructArgs's deliberate shadowing.
   args.CallArgs::setCallee(fval);
   args.CallArgs::newTarget().set(newTarget);
 
@@ -710,8 +710,8 @@ bool js::InternalConstructWithProvidedThis(JSContext* cx, HandleValue fval,
 
 bool js::CallGetter(JSContext* cx, HandleValue thisv, HandleValue getter,
                     MutableHandleValue rval) {
-  
-  
+  // Invoke could result in another try to get or set the same id again, see
+  // bug 355497.
   if (!CheckRecursionLimit(cx)) {
     return false;
   }
@@ -777,8 +777,8 @@ bool js::ExecuteKernel(JSContext* cx, HandleScript script,
 
 bool js::Execute(JSContext* cx, HandleScript script, HandleObject envChain,
                  MutableHandleValue rval) {
-  
-
+  /* The env chain is something we control, so we know it can't
+     have any outer objects on it. */
   MOZ_ASSERT(!IsWindowProxy(envChain));
 
   if (script->isModule()) {
@@ -792,7 +792,7 @@ bool js::Execute(JSContext* cx, HandleScript script, HandleObject envChain,
         "interesting envchains");
   }
 
-  
+  /* Ensure the env chain is all same-compartment and terminates in a global. */
 #ifdef DEBUG
   JSObject* s = envChain;
   do {
@@ -802,17 +802,17 @@ bool js::Execute(JSContext* cx, HandleScript script, HandleObject envChain,
 #endif
 
   return ExecuteKernel(cx, script, envChain, NullHandleValue,
-                       NullFramePtr() , rval);
+                       NullFramePtr() /* evalInFrame */, rval);
 }
 
-
-
-
+/*
+ * ES6 (4-25-16) 12.10.4 InstanceofOperator
+ */
 extern bool JS::InstanceofOperator(JSContext* cx, HandleObject obj,
                                    HandleValue v, bool* bp) {
-  
+  /* Step 1. is handled by caller. */
 
-  
+  /* Step 2. */
   RootedValue hasInstance(cx);
   RootedId id(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().hasInstance));
   if (!GetProperty(cx, obj, obj, id, &hasInstance)) {
@@ -824,7 +824,7 @@ extern bool JS::InstanceofOperator(JSContext* cx, HandleObject obj,
       return ReportIsNotFunction(cx, hasInstance);
     }
 
-    
+    /* Step 3. */
     RootedValue rval(cx);
     if (!Call(cx, hasInstance, obj, v, &rval)) {
       return false;
@@ -833,13 +833,13 @@ extern bool JS::InstanceofOperator(JSContext* cx, HandleObject obj,
     return true;
   }
 
-  
+  /* Step 4. */
   if (!obj->isCallable()) {
     RootedValue val(cx, ObjectValue(*obj));
     return ReportIsNotFunction(cx, val);
   }
 
-  
+  /* Step 5. */
   return OrdinaryHasInstance(cx, obj, v, bp);
 }
 
@@ -923,10 +923,10 @@ JSObject* js::FunWithProtoOperation(JSContext* cx, HandleFunction fun,
   return CloneFunctionObject(cx, fun, parent, proto);
 }
 
-
-
-
-
+/*
+ * Enter the new with environment using an object at sp[-1] and associate the
+ * depth of the with block with sp + stackIndex.
+ */
 bool js::EnterWithOperation(JSContext* cx, AbstractFramePtr frame,
                             HandleValue val, Handle<WithScope*> scope) {
   RootedObject obj(cx);
@@ -963,7 +963,8 @@ static void PopEnvironment(JSContext* cx, EnvironmentIter& ei) {
         DebugEnvironments::onPopLexical(cx, ei);
       }
       if (ei.scope().hasEnvironment()) {
-        ei.initialFrame().popOffEnvironmentChain<LexicalEnvironmentObject>();
+        ei.initialFrame()
+            .popOffEnvironmentChain<BlockLexicalEnvironmentObject>();
       }
       break;
     case ScopeKind::With:
@@ -1005,8 +1006,8 @@ static void PopEnvironment(JSContext* cx, EnvironmentIter& ei) {
   }
 }
 
-
-
+// Unwind environment chain and iterator to match the env corresponding to
+// the given bytecode position.
 void js::UnwindEnvironment(JSContext* cx, EnvironmentIter& ei, jsbytecode* pc) {
   if (!ei.withinInitialFrame()) {
     return;
@@ -1015,14 +1016,14 @@ void js::UnwindEnvironment(JSContext* cx, EnvironmentIter& ei, jsbytecode* pc) {
   RootedScope scope(cx, ei.initialFrame().script()->innermostScope(pc));
 
 #ifdef DEBUG
-  
-  
-  
-  
-  
-  
-  
-  
+  // A frame's environment chain cannot be unwound to anything enclosing the
+  // body scope of a script.  This includes the parameter defaults
+  // environment and the decl env object. These environments, once pushed
+  // onto the environment chain, are expected to be there for the duration
+  // of the frame.
+  //
+  // Attempting to unwind to the parameter defaults code in a script is a
+  // bug; that section of code has no try-catch blocks.
   JSScript* script = ei.initialFrame().script();
   for (uint32_t i = 0; i < script->bodyScopeIndex(); i++) {
     MOZ_ASSERT(scope != script->getScope(GCThingIndex(i)));
@@ -1034,27 +1035,27 @@ void js::UnwindEnvironment(JSContext* cx, EnvironmentIter& ei, jsbytecode* pc) {
   }
 }
 
-
-
-
-
-
-
-
+// Unwind all environments. This is needed because block scopes may cover the
+// first bytecode at a script's main(). e.g.,
+//
+//     function f() { { let i = 0; } }
+//
+// will have no pc location distinguishing the first block scope from the
+// outermost function scope.
 void js::UnwindAllEnvironmentsInFrame(JSContext* cx, EnvironmentIter& ei) {
   for (; ei.withinInitialFrame(); ei++) {
     PopEnvironment(cx, ei);
   }
 }
 
-
-
-
-
-
-
-
-
+// Compute the pc needed to unwind the environment to the beginning of a try
+// block. We cannot unwind to *after* the JSOp::Try, because that might be the
+// first opcode of an inner scope, with the same problem as above. e.g.,
+//
+// try { { let x; } }
+//
+// will have no pc location distinguishing the try block scope from the inner
+// let block scope.
 jsbytecode* js::UnwindEnvironmentToTryPc(JSScript* script, const TryNote* tn) {
   jsbytecode* pc = script->offsetToPC(tn->start);
   if (tn->kind() == TryNoteKind::Catch || tn->kind() == TryNoteKind::Finally) {
@@ -1069,11 +1070,11 @@ jsbytecode* js::UnwindEnvironmentToTryPc(JSScript* script, const TryNote* tn) {
 
 static void SettleOnTryNote(JSContext* cx, const TryNote* tn,
                             EnvironmentIter& ei, InterpreterRegs& regs) {
-  
+  // Unwind the environment to the beginning of the JSOp::Try.
   UnwindEnvironment(cx, ei, UnwindEnvironmentToTryPc(regs.fp()->script(), tn));
 
-  
-  
+  // Set pc to the first bytecode after the the try note to point
+  // to the beginning of catch or finally.
   regs.pc = regs.fp()->script()->offsetToPC(tn->start + tn->length);
   regs.sp = regs.spForStackDepth(tn->stackDepth);
 }
@@ -1098,8 +1099,8 @@ class TryNoteIterInterpreter : public TryNoteIter<InterpreterTryNoteFilter> {
 
 static void UnwindIteratorsForUncatchableException(
     JSContext* cx, const InterpreterRegs& regs) {
-  
-  
+  // c.f. the regular (catchable) TryNoteIterInterpreter loop in
+  // ProcessTryNotes.
   for (TryNoteIterInterpreter tni(cx, regs); !tni.done(); ++tni) {
     const TryNote* tn = *tni;
     switch (tn->kind()) {
@@ -1129,7 +1130,7 @@ static HandleErrorContinuation ProcessTryNotes(JSContext* cx,
 
     switch (tn->kind()) {
       case TryNoteKind::Catch:
-        
+        /* Catch cannot intercept the closing of a generator. */
         if (cx->isClosingGenerator()) {
           break;
         }
@@ -1142,7 +1143,7 @@ static HandleErrorContinuation ProcessTryNotes(JSContext* cx,
         return FinallyContinuation;
 
       case TryNoteKind::ForIn: {
-        
+        /* This is similar to JSOp::EndIter in the interpreter loop. */
         MOZ_ASSERT(tn->stackDepth <= regs.stackDepth());
         Value* sp = regs.spForStackDepth(tn->stackDepth);
         JSObject* obj = &sp[-1].toObject();
@@ -1151,8 +1152,8 @@ static HandleErrorContinuation ProcessTryNotes(JSContext* cx,
       }
 
       case TryNoteKind::Destructuring: {
-        
-        
+        // Whether the destructuring iterator is done is at the top of the
+        // stack. The iterator object is second from the top.
         MOZ_ASSERT(tn->stackDepth > 1);
         Value* sp = regs.spForStackDepth(tn->stackDepth);
         RootedValue doneValue(cx, sp[-1]);
@@ -1172,8 +1173,8 @@ static HandleErrorContinuation ProcessTryNotes(JSContext* cx,
       case TryNoteKind::Loop:
         break;
 
-      
-      
+      // TryNoteKind::ForOfIterClose is handled internally by the try note
+      // iterator.
       default:
         MOZ_CRASH("Invalid try note");
     }
@@ -1184,10 +1185,10 @@ static HandleErrorContinuation ProcessTryNotes(JSContext* cx,
 
 bool js::HandleClosingGeneratorReturn(JSContext* cx, AbstractFramePtr frame,
                                       bool ok) {
-  
-
-
-
+  /*
+   * Propagate the exception or error to the caller unless the exception
+   * is an asynchronous return from a generator.
+   */
   if (cx->isClosingGenerator()) {
     cx->clearPendingException();
     ok = true;
@@ -1204,8 +1205,8 @@ static HandleErrorContinuation HandleError(JSContext* cx,
 
   if (regs.fp()->script()->hasScriptCounts()) {
     PCCounts* counts = regs.fp()->script()->getThrowCounts(regs.pc);
-    
-    
+    // If we failed to allocate, then skip the increment and continue to
+    // handle the exception.
     if (counts) {
       counts->numExec()++;
     }
@@ -1216,15 +1217,15 @@ static HandleErrorContinuation HandleError(JSContext* cx,
 
 again:
   if (cx->isExceptionPending()) {
-    
+    /* Call debugger throw hooks. */
     if (!cx->isClosingGenerator()) {
       if (!DebugAPI::onExceptionUnwind(cx, regs.fp())) {
         if (!cx->isExceptionPending()) {
           goto again;
         }
       }
-      
-      
+      // Ensure that the debugger hasn't returned 'true' while clearing the
+      // exception state.
       MOZ_ASSERT(cx->isExceptionPending());
     }
 
@@ -1236,8 +1237,8 @@ again:
         goto again;
       case CatchContinuation:
       case FinallyContinuation:
-        
-        
+        // No need to increment the PCCounts number of execution here, as
+        // the interpreter increments any PCCounts if present.
         MOZ_ASSERT_IF(regs.fp()->script()->hasScriptCounts(),
                       regs.fp()->script()->maybeGetPCCounts(regs.pc));
         return res;
@@ -1247,7 +1248,7 @@ again:
   } else {
     UnwindIteratorsForUncatchableException(cx, regs);
 
-    
+    // We may be propagating a forced return from a debugger hook function.
     if (MOZ_UNLIKELY(cx->isPropagatingForcedReturn())) {
       cx->clearPropagatingForcedReturn();
       ok = true;
@@ -1256,8 +1257,8 @@ again:
 
   ok = DebugAPI::onLeaveFrame(cx, regs.fp(), regs.pc, ok);
 
-  
-  
+  // After this point, we will pop the frame regardless. Settle the frame on
+  // the end of the script.
   regs.setToEndOfScript();
 
   return ok ? SuccessfulReturnContinuation : ErrorReturnContinuation;
@@ -1296,43 +1297,43 @@ again:
 #define POP_COPY_TO(v) (v) = *--REGS.sp
 #define POP_RETURN_VALUE() REGS.fp()->setReturnValue(*--REGS.sp)
 
-
-
-
-
+/*
+ * Same for JSOp::SetName and JSOp::SetProp, which differ only slightly but
+ * remain distinct for the decompiler.
+ */
 static_assert(JSOpLength_SetName == JSOpLength_SetProp);
 
-
+/* See TRY_BRANCH_AFTER_COND. */
 static_assert(JSOpLength_JumpIfTrue == JSOpLength_JumpIfFalse);
 static_assert(uint8_t(JSOp::JumpIfTrue) == uint8_t(JSOp::JumpIfFalse) + 1);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Compute the implicit |this| value used by a call expression with an
+ * unqualified name reference. The environment the binding was found on is
+ * passed as argument, env.
+ *
+ * The implicit |this| is |undefined| for all environment types except
+ * WithEnvironmentObject. This is the case for |with(...) {...}| expressions or
+ * if the embedding uses a non-syntactic WithEnvironmentObject.
+ *
+ * NOTE: A non-syntactic WithEnvironmentObject may have a corresponding
+ * extensible LexicalEnviornmentObject, but it will not be considered as an
+ * implicit |this|. This is for compatibility with the Gecko subscript loader.
+ */
 static inline Value ComputeImplicitThis(JSObject* env) {
-  
+  // Fast-path for GlobalObject
   if (env->is<GlobalObject>()) {
     return UndefinedValue();
   }
 
-  
+  // WithEnvironmentObjects have an actual implicit |this|
   if (env->is<WithEnvironmentObject>()) {
     return ObjectValue(*GetThisObjectOfWith(env));
   }
 
-  
-  
-  
+  // Debugger environments need special casing, as despite being
+  // non-syntactic, they wrap syntactic environments and should not be
+  // treated like other embedding-specific non-syntactic environments.
   if (env->is<DebugEnvironmentProxy>()) {
     return ComputeImplicitThis(&env->as<DebugEnvironmentProxy>().environment());
   }
@@ -1378,7 +1379,7 @@ static MOZ_ALWAYS_INLINE bool AddOperation(JSContext* cx,
     if (rIsString) {
       rstr = rhs.toString();
     } else {
-      
+      // Save/restore lstr in case of GC activity under ToString.
       lhs.setString(lstr);
       rstr = ToString<CanGC>(cx, rhs);
       if (!rstr) {
@@ -1573,9 +1574,9 @@ static MOZ_ALWAYS_INLINE bool BitLshOperation(JSContext* cx,
     return BigInt::lshValue(cx, lhs, rhs, out);
   }
 
-  
-  
-  
+  // Signed left-shift is undefined on overflow, so |lhs << (rhs & 31)| won't
+  // work.  Instead, convert to unsigned space (where overflow is treated
+  // modularly), perform the operation there, then convert back.
   uint32_t left = static_cast<uint32_t>(lhs.toInt32());
   uint8_t right = rhs.toInt32() & 31;
   out.setInt32(mozilla::WrapToSigned(left << right));
@@ -1622,20 +1623,20 @@ static MOZ_ALWAYS_INLINE bool UrshOperation(JSContext* cx,
   return true;
 }
 
-
-
-
-
-
-
-
+// BigInt proposal 3.2.4 Abstract Relational Comparison
+// Returns Nothing when at least one operand is a NaN, or when
+// ToNumeric or StringToBigInt can't interpret a string as a numeric
+// value. (These cases correspond to a NaN result in the spec.)
+// Otherwise, return a boolean to indicate whether lhs is less than
+// rhs. The operands must be primitives; the caller is responsible for
+// evaluating them in the correct order.
 static MOZ_ALWAYS_INLINE bool LessThanImpl(JSContext* cx,
                                            MutableHandleValue lhs,
                                            MutableHandleValue rhs,
                                            mozilla::Maybe<bool>& res) {
-  
+  // Steps 1 and 2 are performed by the caller.
 
-  
+  // Step 3.
   if (lhs.isString() && rhs.isString()) {
     JSString* l = lhs.toString();
     JSString* r = rhs.toString();
@@ -1647,27 +1648,27 @@ static MOZ_ALWAYS_INLINE bool LessThanImpl(JSContext* cx,
     return true;
   }
 
-  
+  // Step 4a.
   if (lhs.isBigInt() && rhs.isString()) {
     return BigInt::lessThan(cx, lhs, rhs, res);
   }
 
-  
+  // Step 4b.
   if (lhs.isString() && rhs.isBigInt()) {
     return BigInt::lessThan(cx, lhs, rhs, res);
   }
 
-  
+  // Steps 4c and 4d.
   if (!ToNumeric(cx, lhs) || !ToNumeric(cx, rhs)) {
     return false;
   }
 
-  
+  // Steps 4e-j.
   if (lhs.isBigInt() || rhs.isBigInt()) {
     return BigInt::lessThan(cx, lhs, rhs, res);
   }
 
-  
+  // Step 4e for Number operands.
   MOZ_ASSERT(lhs.isNumber() && rhs.isNumber());
   double lhsNum = lhs.toNumber();
   double rhsNum = rhs.toNumber();
@@ -1782,14 +1783,14 @@ static MOZ_ALWAYS_INLINE bool GreaterThanOrEqualOperation(
 static MOZ_ALWAYS_INLINE bool SetObjectElementOperation(
     JSContext* cx, HandleObject obj, HandleId id, HandleValue value,
     HandleValue receiver, bool strict) {
-  
-  
-  
+  // receiver != obj happens only at super[expr], where we expect to find the
+  // property. People probably aren't building hashtables with |super|
+  // anyway.
 
-  
-  
-  
-  
+  // Set the HadElementsAccess flag on the object if needed. This flag is
+  // used to do more eager dictionary-mode conversion for objects that are
+  // used as hashmaps. Set this flag only for objects with many properties,
+  // to avoid unnecessary Shape changes.
   if (obj->is<NativeObject>() && JSID_IS_ATOM(id) &&
       !obj->as<NativeObject>().inDictionaryMode() &&
       !obj->as<NativeObject>().hadElementsAccess() &&
@@ -1811,14 +1812,14 @@ static MOZ_ALWAYS_INLINE void InitElemArrayOperation(JSContext* cx,
                                                      HandleValue val) {
   MOZ_ASSERT(JSOp(*pc) == JSOp::InitElemArray);
 
-  
-  
+  // The dense elements must have been initialized up to this index. The JIT
+  // implementation also depends on this.
   uint32_t index = GET_UINT32(pc);
   MOZ_ASSERT(index < arr->getDenseCapacity());
   MOZ_ASSERT(index == arr->getDenseInitializedLength());
 
-  
-  
+  // Bump the initialized length even for hole values to ensure the
+  // index == initLength invariant holds for later InitElemArray ops.
   arr->setDenseInitializedLength(index + 1);
 
   if (val.isMagic(JS_ELEMENTS_HOLE)) {
@@ -1828,15 +1829,15 @@ static MOZ_ALWAYS_INLINE void InitElemArrayOperation(JSContext* cx,
   }
 }
 
-
-
-
-
-
-
-
-
-
+/*
+ * As an optimization, the interpreter creates a handful of reserved Rooted<T>
+ * variables at the beginning, thus inserting them into the Rooted list once
+ * upon entry. ReservedRooted "borrows" a reserved Rooted variable and uses it
+ * within a local scope, resetting the value to nullptr (or the appropriate
+ * equivalent for T) at scope end. This avoids inserting/removing the Rooted
+ * from the rooter list, while preventing stale values from being kept alive
+ * unnecessarily.
+ */
 
 template <typename T>
 class ReservedRooted : public RootedBase<T, ReservedRooted<T>> {
@@ -1906,11 +1907,11 @@ void js::ReportInNotObjectError(JSContext* cx, HandleValue lref, int lindex,
 
 static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
                                                               RunState& state) {
-
-
-
-
-
+/*
+ * Define macros for an interpreter loop. Opcode dispatch is done by
+ * indirect goto (aka a threaded interpreter), which is technically
+ * non-standard but is supported by all of our supported compilers.
+ */
 #define INTERPRETER_LOOP()
 #define CASE(OP) label_##OP:
 #define DEFAULT() \
@@ -1919,8 +1920,8 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
 
 #define LABEL(X) (&&label_##X)
 
-  
-  
+  // Use addresses instead of offsets to optimize for runtime speed over
+  // load-time relocation overhead.
   static const void* const addresses[EnableInterruptsPseudoOpcode + 1] = {
 #define OPCODE_LABEL(op, ...) LABEL(op),
       FOR_EACH_OPCODE(OPCODE_LABEL)
@@ -1932,22 +1933,22 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
 #undef TRAILING_LABEL
   };
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /*
+   * Increment REGS.pc by N, load the opcode at that position,
+   * and jump to the code to execute it.
+   *
+   * When Debugger puts a script in single-step mode, all js::Interpret
+   * invocations that might be presently running that script must have
+   * interrupts enabled. It's not practical to simply check
+   * script->stepModeEnabled() at each point some callee could have changed
+   * it, because there are so many places js::Interpret could possibly cause
+   * JavaScript to run: each place an object might be coerced to a primitive
+   * or a number, for example. So instead, we expose a simple mechanism to
+   * let Debugger tweak the affected js::Interpret frames when an onStep
+   * handler is added: calling activation.enableInterruptsUnconditionally()
+   * will enable interrupts, and activation.opMask() is or'd with the opcode
+   * to implement a simple alternate dispatch.
+   */
 #define ADVANCE_AND_DISPATCH(N)                  \
   JS_BEGIN_MACRO                                 \
     REGS.pc += (N);                              \
@@ -1955,25 +1956,25 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     DISPATCH_TO(*REGS.pc | activation.opMask()); \
   JS_END_MACRO
 
-  
-
-
+  /*
+   * Shorthand for the common sequence at the end of a fixed-size opcode.
+   */
 #define END_CASE(OP) ADVANCE_AND_DISPATCH(JSOpLength_##OP);
 
-  
-
-
-
+  /*
+   * Prepare to call a user-supplied branch handler, and abort the script
+   * if it returns false.
+   */
 #define CHECK_BRANCH()                      \
   JS_BEGIN_MACRO                            \
     if (!CheckForInterrupt(cx)) goto error; \
   JS_END_MACRO
 
-  
-
-
-
-
+  /*
+   * This is a simple wrapper around ADVANCE_AND_DISPATCH which also does
+   * a CHECK_BRANCH() if n is not positive, which possibly indicates that it
+   * is the backedge of a loop.
+   */
 #define BRANCH(n)                  \
   JS_BEGIN_MACRO                   \
     int32_t nlen = (n);            \
@@ -1981,9 +1982,9 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     ADVANCE_AND_DISPATCH(nlen);    \
   JS_END_MACRO
 
-  
-
-
+  /*
+   * Initialize code coverage vectors.
+   */
 #define INIT_COVERAGE()                                \
   JS_BEGIN_MACRO                                       \
     if (!script->hasScriptCounts()) {                  \
@@ -1993,9 +1994,9 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     }                                                  \
   JS_END_MACRO
 
-  
-
-
+  /*
+   * Increment the code coverage counter associated with the given pc.
+   */
 #define COUNT_COVERAGE_PC(PC)                          \
   JS_BEGIN_MACRO                                       \
     if (script->hasScriptCounts()) {                   \
@@ -2041,7 +2042,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
   ActivationEntryMonitor entryMonitor(cx, entryFrame);
   InterpreterActivation activation(state, cx, entryFrame);
 
-  
+  /* The script is used frequently, so keep a local copy. */
   RootedScript script(cx);
   SET_SCRIPT(REGS.fp()->script());
 
@@ -2050,13 +2051,13 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
   TraceLogStartEvent(logger, scriptEvent);
   TraceLogStartEvent(logger, TraceLogger_Interpreter);
 
-  
-
-
-
-
-
-
+  /*
+   * Pool of rooters for use in this interpreter frame. References to these
+   * are used for local variables within interpreter cases. This avoids
+   * creating new rooters each time an interpreter case is entered, and also
+   * correctness pitfalls due to incorrect compilation of destructor calls
+   * around computed gotos.
+   */
   RootedValue rootValue0(cx), rootValue1(cx);
   RootedString rootString0(cx), rootString1(cx);
   RootedObject rootObject0(cx), rootObject1(cx), rootObject2(cx);
@@ -2069,7 +2070,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
   Rooted<Scope*> rootScope0(cx);
   DebugOnly<uint32_t> blockDepth;
 
-  
+  /* State communicated between non-local jumps: */
   bool interpReturnOK;
   bool frameHalfInitialized;
 
@@ -2081,11 +2082,11 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     goto error;
   }
 
-  
+  // Increment the coverage for the main entry point.
   INIT_COVERAGE();
   COUNT_COVERAGE_MAIN();
 
-  
+  // Enter the interpreter loop starting at the current pc.
   ADVANCE_AND_DISPATCH(0);
 
   INTERPRETER_LOOP() {
@@ -2124,12 +2125,12 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
         activation.clearInterruptsMask();
       }
 
-      
+      /* Commence executing the actual opcode. */
       SANITY_CHECKS();
       DISPATCH_TO(op);
     }
 
-    
+    /* Various 1-byte no-ops. */
     CASE(Nop)
     CASE(Try)
     CASE(NopDestructuring)
@@ -2145,7 +2146,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     CASE(LoopHead) {
       COUNT_COVERAGE();
 
-      
+      // Attempt on-stack replacement into the Baseline Interpreter.
       if (jit::IsBaselineInterpreterEnabled()) {
         script->incWarmUpCounter();
 
@@ -2164,16 +2165,16 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
                 jit::EnterBaselineInterpreterAtBranch(cx, REGS.fp(), REGS.pc);
           }
 
-          
+          // We failed to call into baseline at all, so treat as an error.
           if (maybeOsr == jit::JitExec_Aborted) {
             goto error;
           }
 
           interpReturnOK = (maybeOsr == jit::JitExec_Ok);
 
-          
-          
-          
+          // Pop the profiler frame pushed by the interpreter.  (The compiled
+          // version of the function popped a copy of the frame pushed by the
+          // OSR trampoline.)
           if (wasProfiler) {
             cx->geckoProfiler().exit(cx, script);
           }
@@ -2191,13 +2192,13 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     END_CASE(Lineno)
 
     CASE(ForceInterpreter) {
-      
+      // Ensure pattern matching still works.
       MOZ_ASSERT(script->hasForceInterpreterOp());
     }
     END_CASE(ForceInterpreter)
 
     CASE(Undefined) {
-      
+      // If this ever changes, change what JSOp::GImplicitThis does too.
       PUSH_UNDEFINED();
     }
     END_CASE(Undefined)
@@ -2243,13 +2244,13 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
 
     CASE(Return) {
       POP_RETURN_VALUE();
-      
+      /* FALL THROUGH */
     }
     CASE(RetRval) {
-      
-
-
-
+      /*
+       * When the inlined frame exits with an exception or an error, ok will be
+       * false after the inline_return label.
+       */
       CHECK_BRANCH();
 
     successful_return_continuation:
@@ -2261,8 +2262,8 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     prologue_return_continuation:
 
       if (activation.entryFrame() != REGS.fp()) {
-        
-        
+        // Stop the engine. (No details about which engine exactly, could be
+        // interpreter, Baseline or IonMonkey.)
         TraceLogStopEvent(logger, TraceLogger_Engine);
         TraceLogStopEvent(logger, TraceLogger_Scripts);
 
@@ -2289,7 +2290,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
         MOZ_ASSERT(IsInvokePC(REGS.pc));
         MOZ_ASSERT(cx->realm() == script->realm());
 
-        
+        /* Resume execution in the calling frame. */
         if (MOZ_LIKELY(interpReturnOK)) {
           if (JSOp(*REGS.pc) == JSOp::Resume) {
             ADVANCE_AND_DISPATCH(JSOpLength_Resume);
@@ -2301,8 +2302,8 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
 
         goto error;
       } else {
-        
-        
+        // Stack should be empty for the outer frame, unless we executed the
+        // first |await| expression in an async function.
         MOZ_ASSERT(REGS.stackDepth() == 0 ||
                    (JSOp(*REGS.pc) == JSOp::Await &&
                     !REGS.fp()->isResumedGenerator()));
@@ -2312,7 +2313,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
 
     CASE(Default) {
       REGS.sp--;
-      
+      /* FALL THROUGH */
     }
     CASE(Goto) { BRANCH(GET_JUMP_OFFSET(REGS.pc)); }
 
@@ -2416,7 +2417,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     END_CASE(HasOwn)
 
     CASE(CheckPrivateField) {
-      
+      /* Load the object being initialized into lval/val. */
       HandleValue val = REGS.stackHandleAt(-2);
       HandleValue idval = REGS.stackHandleAt(-1);
 
@@ -2520,7 +2521,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
       }
       ReservedRooted<PropertyName*> name(&rootName0, script->getName(REGS.pc));
 
-      
+      // Assigning to an undeclared name adds a property to the global object.
       ReservedRooted<JSObject*> env(&rootObject1);
       if (!LookupNameUnqualified(cx, name, envChain, &env)) {
         goto error;
@@ -3064,9 +3065,9 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
 
       MutableHandleValue res = REGS.stackHandleAt(-3);
 
-      
-      
-      
+      // Since we have asserted that obj has to be an object, it cannot be
+      // either optimized arguments, or indeed any primitive. This simplifies
+      // our task some.
       if (!GetObjectElementOperation(cx, JSOp(*REGS.pc), obj, receiver, rval,
                                      res)) {
         goto error;
@@ -3147,7 +3148,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
       if (REGS.fp()->hasPushedGeckoProfilerFrame()) {
         cx->geckoProfiler().updatePC(cx, script, REGS.pc);
       }
-      
+      /* FALL THROUGH */
     }
 
     CASE(SpreadEval)
@@ -3184,7 +3185,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     CASE(FunApply) {
       CallArgs args = CallArgsFromSp(GET_ARGC(REGS.pc), REGS.sp);
       GuardFunApplyArgumentsOptimization(cx, REGS.fp(), args);
-      
+      /* FALL THROUGH */
     }
 
     CASE(New)
@@ -3222,9 +3223,9 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
       JSFunction* maybeFun;
       bool isFunction = IsFunctionObject(args.calleev(), &maybeFun);
 
-      
-      
-      
+      // Use the slow path if the callee is not an interpreted function, if we
+      // have to throw an exception, or if we might have to invoke the
+      // OnNativeCall hook for a self-hosted builtin.
       if (!isFunction || !maybeFun->isInterpreted() ||
           (construct && !maybeFun->isConstructor()) ||
           (!construct && maybeFun->isClassConstructor()) ||
@@ -3258,9 +3259,9 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
           goto error;
         }
 
-        
-        
-        
+        // Enter the callee's realm if this is a cross-realm call. Use
+        // MakeScopeExit to leave this realm on all error/JIT-return paths
+        // below.
         const bool isCrossRealm = cx->realm() != funScript->realm();
         if (isCrossRealm) {
           cx->enterRealmOf(funScript);
@@ -3298,8 +3299,8 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
         if (!activation.pushInlineFrame(args, funScript, construct)) {
           goto error;
         }
-        leaveRealmGuard.release();  
-                                    
+        leaveRealmGuard.release();  // We leave the callee's realm when we
+                                    // call popInlineFrame.
       }
 
       SET_SCRIPT(REGS.fp()->script());
@@ -3318,11 +3319,11 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
         goto error;
       }
 
-      
+      // Increment the coverage for the main entry point.
       INIT_COVERAGE();
       COUNT_COVERAGE_MAIN();
 
-      
+      /* Load first op and dispatch it (safe since JSOp::RetRval). */
       ADVANCE_AND_DISPATCH(0);
     }
 
@@ -3360,7 +3361,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
         Value v = ComputeImplicitThis(env);
         PUSH_COPY(v);
       } else {
-        
+        // Treat it like JSOp::Undefined.
         PUSH_UNDEFINED();
       }
       static_assert(JSOpLength_ImplicitThis == JSOpLength_GImplicitThis,
@@ -3454,10 +3455,10 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     END_CASE(CallSiteObj)
 
     CASE(RegExp) {
-      
-
-
-
+      /*
+       * Push a regexp object cloned from the regexp literal object mapped by
+       * the bytecode at pc.
+       */
       ReservedRooted<JSObject*> re(&rootObject0, script->getRegExp(REGS.pc));
       JSObject* obj = CloneRegExpObject(cx, re.as<RegExpObject>());
       if (!obj) {
@@ -3486,17 +3487,17 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
       jsbytecode* pc2 = REGS.pc;
       int32_t len = GET_JUMP_OFFSET(pc2);
 
-      
-
-
-
-
+      /*
+       * ECMAv2+ forbids conversion of discriminant, so we will skip to the
+       * default case if the discriminant isn't already an int jsval.  (This
+       * opcode is emitted only for dense int-domain switches.)
+       */
       const Value& rref = *--REGS.sp;
       int32_t i;
       if (rref.isInt32()) {
         i = rref.toInt32();
       } else {
-        
+        /* Use mozilla::NumberEqualsInt32 to treat -0 (double) as 0. */
         if (!rref.isDouble() || !NumberEqualsInt32(rref.toDouble(), &i)) {
           ADVANCE_AND_DISPATCH(len);
         }
@@ -3649,12 +3650,12 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
                    next == JSOp::CheckThisReinit || next == JSOp::CheckLexical);
       }
 
-      
-
-
-
-
-
+      /*
+       * Skip the same-compartment assertion if the local will be immediately
+       * popped. We do not guarantee sync for dead locals when coming in from
+       * the method JIT, and a GetLocal followed by Pop is not considered to
+       * be a use of the variable.
+       */
       if (JSOp(REGS.pc[JSOpLength_GetLocal]) != JSOp::Pop) {
         cx->debugOnlyCheck(REGS.sp[-1]);
       }
@@ -3681,7 +3682,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     END_CASE(GlobalOrEvalDeclInstantiation)
 
     CASE(Lambda) {
-      
+      /* Load the specified function object literal. */
       ReservedRooted<JSFunction*> fun(&rootFunction0,
                                       script->getFunction(REGS.pc));
       JSObject* obj = Lambda(cx, fun, REGS.fp()->environmentChain());
@@ -3695,7 +3696,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     END_CASE(Lambda)
 
     CASE(LambdaArrow) {
-      
+      /* Load the specified function object literal. */
       ReservedRooted<JSFunction*> fun(&rootFunction0,
                                       script->getFunction(REGS.pc));
       ReservedRooted<Value> newTarget(&rootValue1, REGS.sp[-1]);
@@ -3891,11 +3892,11 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
                     "initprop and initlockedprop must be the same size");
       static_assert(JSOpLength_InitProp == JSOpLength_InitHiddenProp,
                     "initprop and inithiddenprop must be the same size");
-      
+      /* Load the property's initial value into rval. */
       MOZ_ASSERT(REGS.stackDepth() >= 2);
       ReservedRooted<Value> rval(&rootValue0, REGS.sp[-1]);
 
-      
+      /* Load the object being initialized into lval/obj. */
       ReservedRooted<JSObject*> obj(&rootObject0, &REGS.sp[-2].toObject());
 
       ReservedRooted<PropertyName*> name(&rootName0, script->getName(REGS.pc));
@@ -3957,18 +3958,18 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     }
 
     CASE(Retsub) {
-      
+      /* Pop [exception or hole, retsub pc-index]. */
       Value rval, lval;
       POP_COPY_TO(rval);
       POP_COPY_TO(lval);
       MOZ_ASSERT(lval.isBoolean());
       if (lval.toBoolean()) {
-        
-
-
-
-
-
+        /*
+         * Exception was pending during finally, throw it *before* we adjust
+         * pc, because pc indexes into script->trynotes.  This turns out not
+         * to be necessary, but it seems clearer.  And it points out a FIXME:
+         * 350509, due to Igor Bukanov.
+         */
         ReservedRooted<Value> v(&rootValue0, rval);
         cx->setPendingExceptionAndCaptureStack(v);
         goto error;
@@ -3998,7 +3999,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
       ReservedRooted<Value> v(&rootValue0);
       POP_COPY_TO(v);
       MOZ_ALWAYS_FALSE(ThrowOperation(cx, v));
-      
+      /* let the code at error try to catch the exception. */
       goto error;
     }
 
@@ -4028,7 +4029,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     CASE(PushLexicalEnv) {
       ReservedRooted<Scope*> scope(&rootScope0, script->getScope(REGS.pc));
 
-      
+      // Create block environment and push on scope chain.
       if (!REGS.fp()->pushLexicalEnvironment(cx, scope.as<LexicalScope>())) {
         goto error;
       }
@@ -4037,7 +4038,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
 
     CASE(PopLexicalEnv) {
 #ifdef DEBUG
-      
+      // Pop block from scope chain.
       Scope* scope = script->lookupScope(REGS.pc);
       MOZ_ASSERT(scope);
       MOZ_ASSERT(scope->is<LexicalScope>());
@@ -4048,8 +4049,8 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
         DebugEnvironments::onPopLexical(cx, REGS.fp(), REGS.pc);
       }
 
-      
-      REGS.fp()->popOffEnvironmentChain<LexicalEnvironmentObject>();
+      // Pop block from scope chain.
+      REGS.fp()->popOffEnvironmentChain<BlockLexicalEnvironmentObject>();
     }
     END_CASE(PopLexicalEnv)
 
@@ -4059,8 +4060,8 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
       MOZ_ASSERT(
           !script->lookupScope(REGS.pc)->as<LexicalScope>().hasEnvironment());
 
-      
-      
+      // FIXME: This opcode should not be necessary.  The debugger shouldn't
+      // need help from bytecode to do its job.  See bug 927782.
 
       if (MOZ_UNLIKELY(cx->realm()->isDebuggee())) {
         DebugEnvironments::onPopLexical(cx, REGS.fp(), REGS.pc);
@@ -4174,8 +4175,8 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
         ReservedRooted<Value> val(&rootValue0, REGS.sp[-2]);
         ReservedRooted<Value> resumeKindVal(&rootValue1, REGS.sp[-1]);
 
-        
-        
+        // popInlineFrame expects there to be an additional value on the stack
+        // to pop off, so leave "gen" on the stack.
         REGS.sp -= 1;
 
         if (!AbstractGeneratorObject::resume(cx, activation, gen, val,
@@ -4199,7 +4200,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
             MOZ_ASSERT_IF(
                 REGS.fp()
                     ->callee()
-                    .isGenerator(),  
+                    .isGenerator(),  // as opposed to an async function
                 gen->isClosed());
           }
           goto error;
@@ -4209,8 +4210,8 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     }
 
     CASE(AfterYield) {
-      
-      
+      // AbstractGeneratorObject::resume takes care of setting the frame's
+      // debuggee flag.
       MOZ_ASSERT_IF(REGS.fp()->script()->isDebuggee(), REGS.fp()->isDebuggee());
       COUNT_COVERAGE();
     }
@@ -4245,7 +4246,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     CASE(FunWithProto) {
       ReservedRooted<JSObject*> proto(&rootObject1, &REGS.sp[-1].toObject());
 
-      
+      /* Load the specified function object literal. */
       ReservedRooted<JSFunction*> fun(&rootFunction0,
                                       script->getFunction(REGS.pc));
 
@@ -4272,11 +4273,11 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     CASE(InitHomeObject) {
       MOZ_ASSERT(REGS.stackDepth() >= 2);
 
-      
+      /* Load the function to be initialized */
       JSFunction* func = &REGS.sp[-2].toObject().as<JSFunction>();
       MOZ_ASSERT(func->allowSuperProperty());
 
-      
+      /* Load the home object */
       JSObject* obj = &REGS.sp[-1].toObject();
       MOZ_ASSERT(obj->is<PlainObject>() || obj->is<JSFunction>());
 
@@ -4428,7 +4429,7 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
       goto error;
     }
 
-  } 
+  } /* interpreter loop */
 
   MOZ_CRASH("Interpreter loop exited via fallthrough");
 
@@ -4445,10 +4446,10 @@ error:
       ADVANCE_AND_DISPATCH(0);
 
     case FinallyContinuation: {
-      
-
-
-
+      /*
+       * Push (true, exception) pair for finally to indicate that [retsub]
+       * should rethrow the exception.
+       */
       ReservedRooted<Value> exception(&rootValue0);
       if (!cx->getPendingException(&exception)) {
         interpReturnOK = false;
@@ -4476,10 +4477,10 @@ exit:
   TraceLogStopEvent(logger, TraceLogger_Engine);
   TraceLogStopEvent(logger, scriptEvent);
 
-  
-
-
-
+  /*
+   * This path is used when it's guaranteed the method can be finished
+   * inside the JIT.
+   */
 leave_on_safe_point:
 
   if (interpReturnOK) {
@@ -4503,14 +4504,14 @@ bool js::ThrowOperation(JSContext* cx, HandleValue v) {
 bool js::GetProperty(JSContext* cx, HandleValue v, HandlePropertyName name,
                      MutableHandleValue vp) {
   if (name == cx->names().length) {
-    
+    // Fast path for strings, arrays and arguments.
     if (GetLengthProperty(v, vp)) {
       return true;
     }
   }
 
-  
-  
+  // Optimize common cases like (2).toString() or "foo".valueOf() to not
+  // create a wrapper object.
   if (v.isPrimitive() && !v.isNullOrUndefined()) {
     JSObject* proto;
 
@@ -4593,8 +4594,8 @@ JSObject* js::LambdaArrow(JSContext* cx, HandleFunction fun,
 }
 
 JSObject* js::BindVarOperation(JSContext* cx, JSObject* envChain) {
-  
-  
+  // Note: BindVarOperation has an unused cx argument because the JIT callVM
+  // machinery requires this.
   return &GetVariablesObject(envChain);
 }
 
@@ -4622,7 +4623,7 @@ bool js::GetAndClearExceptionAndStack(JSContext* cx, MutableHandleValue res,
   stack.set(cx->getPendingExceptionStack());
   cx->clearPendingException();
 
-  
+  // Allow interrupting deeply nested exception handling.
   return CheckForInterrupt(cx);
 }
 
@@ -4820,7 +4821,7 @@ bool js::DeleteNameOperation(JSContext* cx, HandlePropertyName name,
   }
 
   if (!scope) {
-    
+    // Return true for non-existent names.
     res.setBoolean(true);
     return true;
   }
@@ -4835,7 +4836,7 @@ bool js::DeleteNameOperation(JSContext* cx, HandlePropertyName name,
   res.setBoolean(status);
 
   if (status) {
-    
+    // Deleting a name from the global object removes it from [[VarNames]].
     if (pobj == scope && scope->is<GlobalObject>()) {
       scope->as<GlobalObject>().realm()->removeFromVarNames(name);
     }
@@ -4866,7 +4867,7 @@ unsigned js::GetInitDataPropAttrs(JSOp op) {
       return JSPROP_PERMANENT | JSPROP_READONLY;
     case JSOp::InitHiddenProp:
     case JSOp::InitHiddenElem:
-      
+      // Non-enumerable, but writable and configurable
       return 0;
     default:;
   }
@@ -4926,8 +4927,8 @@ bool js::SpreadCallOperation(JSContext* cx, HandleScript script, jsbytecode* pc,
   JSOp op = JSOp(*pc);
   bool constructing = op == JSOp::SpreadNew || op == JSOp::SpreadSuperCall;
 
-  
-  
+  // {Construct,Invoke}Args::init does this too, but this gives us a better
+  // error message.
   if (length > ARGS_LENGTH_MAX) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               constructing ? JSMSG_TOO_MANY_CON_SPREADARGS
@@ -4935,10 +4936,10 @@ bool js::SpreadCallOperation(JSContext* cx, HandleScript script, jsbytecode* pc,
     return false;
   }
 
-  
-  
-  
-  
+  // Do our own checks for the callee being a function, as Invoke uses the
+  // expression decompiler to decompile the callee stack operand based on
+  // the number of arguments. Spread operations have the callee at sp - 3
+  // when not constructing, and sp - 4 when constructing.
   if (callee.isPrimitive()) {
     return ReportIsNotFunction(cx, callee, 2 + constructing,
                                constructing ? CONSTRUCT : NO_CONSTRUCT);
@@ -4949,8 +4950,8 @@ bool js::SpreadCallOperation(JSContext* cx, HandleScript script, jsbytecode* pc,
                                constructing ? CONSTRUCT : NO_CONSTRUCT);
   }
 
-  
-  
+  // The object must be an array with dense elements and no holes. Baseline's
+  // optimized spread call stubs rely on this.
   MOZ_ASSERT(IsPackedArray(aobj));
 
   if (constructing) {
@@ -5002,14 +5003,14 @@ bool js::SpreadCallOperation(JSContext* cx, HandleScript script, jsbytecode* pc,
 }
 
 bool js::OptimizeSpreadCall(JSContext* cx, HandleValue arg, bool* optimized) {
-  
-  
-  
-  
-  
-  
-  
-  
+  // Optimize spread call by skipping spread operation when following
+  // conditions are met:
+  //   * the argument is an array
+  //   * the array has no hole
+  //   * array[@@iterator] is not modified
+  //   * the array's prototype is Array.prototype
+  //   * Array.prototype[@@iterator] is not modified
+  //   * %ArrayIteratorPrototype%.next is not modified
   if (!arg.isObject()) {
     *optimized = false;
     return true;
@@ -5031,8 +5032,8 @@ bool js::OptimizeSpreadCall(JSContext* cx, HandleValue arg, bool* optimized) {
 
 JSObject* js::NewObjectOperation(JSContext* cx, HandleScript script,
                                  jsbytecode* pc,
-                                 NewObjectKind newKind ) {
-  
+                                 NewObjectKind newKind /* = GenericObject */) {
+  // Extract the template object, if one exists, and copy it.
   if (JSOp(*pc) == JSOp::NewObject) {
     RootedPlainObject baseObject(cx, &script->getObject(pc)->as<PlainObject>());
     return CopyTemplateObject(cx, baseObject, newKind);
@@ -5064,7 +5065,7 @@ JSObject* js::CreateThisWithTemplate(JSContext* cx,
 
 ArrayObject* js::NewArrayOperation(
     JSContext* cx, uint32_t length,
-    NewObjectKind newKind ) {
+    NewObjectKind newKind /* = GenericObject */) {
   return NewDenseFullyAllocatedArray(cx, length, nullptr, newKind);
 }
 

@@ -1,27 +1,27 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "vm/Stack-inl.h"
 
-#include "mozilla/Maybe.h"  
+#include "mozilla/Maybe.h"  // mozilla::Maybe
 
-#include <algorithm>  
-#include <iterator>   
-#include <stddef.h>   
-#include <stdint.h>   
-#include <utility>    
+#include <algorithm>  // std::max
+#include <iterator>   // std::size
+#include <stddef.h>   // size_t
+#include <stdint.h>   // uint8_t, uint32_t
+#include <utility>    // std::move
 
 #include "debugger/DebugAPI.h"
 #include "gc/Marking.h"
-#include "gc/Tracer.h"  
+#include "gc/Tracer.h"  // js::TraceRoot
 #include "jit/JitcodeMap.h"
 #include "jit/JitRuntime.h"
-#include "js/friend/ErrorMessages.h"  
-#include "js/Value.h"                 
-#include "vm/FrameIter.h"             
+#include "js/friend/ErrorMessages.h"  // JSMSG_*
+#include "js/Value.h"                 // JS::Value
+#include "vm/FrameIter.h"             // js::FrameIter
 #include "vm/JSContext.h"
 #include "vm/Opcodes.h"
 #include "wasm/WasmInstance.h"
@@ -38,7 +38,7 @@ using mozilla::Maybe;
 
 using JS::Value;
 
-
+/*****************************************************************************/
 
 void InterpreterFrame::initExecuteFrame(JSContext* cx, HandleScript script,
                                         AbstractFramePtr evalInFramePrev,
@@ -111,9 +111,10 @@ static inline void AssertScopeMatchesEnvironment(Scope* scope,
         case ScopeKind::StrictNamedLambda:
         case ScopeKind::FunctionLexical:
         case ScopeKind::ClassBody:
-          MOZ_ASSERT(&env->as<LexicalEnvironmentObject>().scope() ==
+          MOZ_ASSERT(&env->as<BlockLexicalEnvironmentObject>().scope() ==
                      si.scope());
-          env = &env->as<LexicalEnvironmentObject>().enclosingEnvironment();
+          env =
+              &env->as<BlockLexicalEnvironmentObject>().enclosingEnvironment();
           break;
 
         case ScopeKind::With:
@@ -154,12 +155,12 @@ static inline void AssertScopeMatchesEnvironment(Scope* scope,
     }
   }
 
-  
-  
-  
-  
-  
-  
+  // In the case of a non-syntactic env chain, the immediate parent of the
+  // outermost non-syntactic env may be the global lexical env, or, if
+  // called from Debugger, a DebugEnvironmentProxy.
+  //
+  // In the case of a syntactic env chain, the outermost env is always a
+  // GlobalObject.
   MOZ_ASSERT(env->is<GlobalObject>() || IsGlobalLexicalEnvironment(env) ||
              env->is<DebugEnvironmentProxy>());
 #endif
@@ -168,8 +169,8 @@ static inline void AssertScopeMatchesEnvironment(Scope* scope,
 static inline void AssertScopeMatchesEnvironment(InterpreterFrame* fp,
                                                  jsbytecode* pc) {
 #ifdef DEBUG
-  
-  
+  // If we OOMed before fully initializing the environment chain, the scope
+  // and environment will definitely mismatch.
   if (fp->script()->initialEnvironmentShape() && fp->hasInitialEnvironment()) {
     AssertScopeMatchesEnvironment(fp->script()->innermostScope(pc),
                                   fp->environmentChain());
@@ -191,8 +192,8 @@ bool InterpreterFrame::prologue(JSContext* cx) {
     return probes::EnterScript(cx, script, nullptr, this);
   }
 
-  
-  
+  // At this point, we've yet to push any environments. Check that they
+  // match the enclosing scope.
   AssertScopeMatchesEnvironment(script->enclosingScope(), environmentChain());
 
   if (callee().needsFunctionEnvironmentObjects() &&
@@ -213,8 +214,8 @@ void InterpreterFrame::epilogue(JSContext* cx, jsbytecode* pc) {
   probes::ExitScript(cx, script, script->function(),
                      hasPushedGeckoProfilerFrame());
 
-  
-  
+  // Check that the scope matches the environment at the point of leaving
+  // the frame.
   AssertScopeMatchesEnvironment(this, pc);
 
   EnvironmentIter ei(cx, this, pc);
@@ -262,8 +263,8 @@ bool InterpreterFrame::pushVarEnvironment(JSContext* cx, HandleScope scope) {
 
 bool InterpreterFrame::pushLexicalEnvironment(JSContext* cx,
                                               Handle<LexicalScope*> scope) {
-  LexicalEnvironmentObject* env =
-      LexicalEnvironmentObject::createForFrame(cx, scope, this);
+  BlockLexicalEnvironmentObject* env =
+      BlockLexicalEnvironmentObject::createForFrame(cx, scope, this);
   if (!env) {
     return false;
   }
@@ -273,9 +274,10 @@ bool InterpreterFrame::pushLexicalEnvironment(JSContext* cx,
 }
 
 bool InterpreterFrame::freshenLexicalEnvironment(JSContext* cx) {
-  Rooted<LexicalEnvironmentObject*> env(
-      cx, &envChain_->as<LexicalEnvironmentObject>());
-  LexicalEnvironmentObject* fresh = LexicalEnvironmentObject::clone(cx, env);
+  Rooted<BlockLexicalEnvironmentObject*> env(
+      cx, &envChain_->as<BlockLexicalEnvironmentObject>());
+  BlockLexicalEnvironmentObject* fresh =
+      BlockLexicalEnvironmentObject::clone(cx, env);
   if (!fresh) {
     return false;
   }
@@ -285,9 +287,10 @@ bool InterpreterFrame::freshenLexicalEnvironment(JSContext* cx) {
 }
 
 bool InterpreterFrame::recreateLexicalEnvironment(JSContext* cx) {
-  Rooted<LexicalEnvironmentObject*> env(
-      cx, &envChain_->as<LexicalEnvironmentObject>());
-  LexicalEnvironmentObject* fresh = LexicalEnvironmentObject::recreate(cx, env);
+  Rooted<BlockLexicalEnvironmentObject*> env(
+      cx, &envChain_->as<BlockLexicalEnvironmentObject>());
+  BlockLexicalEnvironmentObject* fresh =
+      BlockLexicalEnvironmentObject::recreate(cx, env);
   if (!fresh) {
     return false;
   }
@@ -311,16 +314,16 @@ void InterpreterFrame::trace(JSTracer* trc, Value* sp, jsbytecode* pc) {
   MOZ_ASSERT(sp >= slots());
 
   if (hasArgs()) {
-    
-    
-    
+    // Trace the callee and |this|. When we're doing a moving GC, we
+    // need to fix up the callee pointer before we use it below, under
+    // numFormalArgs() and script().
     TraceRootRange(trc, 2, argv_ - 2, "fp callee and this");
 
-    
+    // Trace arguments.
     unsigned argc = std::max(numActualArgs(), numFormalArgs());
     TraceRootRange(trc, argc + isConstructing(), argv_, "fp argv");
   } else {
-    
+    // Trace newTarget.
     TraceRoot(trc, ((Value*)this) - 1, "stack newTarget");
   }
 
@@ -329,18 +332,18 @@ void InterpreterFrame::trace(JSTracer* trc, Value* sp, jsbytecode* pc) {
   size_t nlivefixed = script->calculateLiveFixed(pc);
 
   if (nfixed == nlivefixed) {
-    
+    // All locals are live.
     traceValues(trc, 0, sp - slots());
   } else {
-    
+    // Trace operand stack.
     traceValues(trc, nfixed, sp - slots());
 
-    
+    // Clear dead block-scoped locals.
     while (nfixed > nlivefixed) {
       unaliasedLocal(--nfixed).setUndefined();
     }
 
-    
+    // Trace live locals.
     traceValues(trc, 0, nlivefixed);
   }
 
@@ -373,13 +376,13 @@ void js::TraceInterpreterActivations(JSContext* cx, JSTracer* trc) {
   }
 }
 
+/*****************************************************************************/
 
-
-
-
+// Unlike the other methods of this class, this method is defined here so that
+// we don't have to #include jsautooplen.h in vm/Stack.h.
 void InterpreterRegs::setToEndOfScript() { sp = fp()->base(); }
 
-
+/*****************************************************************************/
 
 InterpreterFrame* InterpreterStack::pushInvokeFrame(
     JSContext* cx, const CallArgs& args, MaybeConstruct constructing) {
@@ -405,7 +408,7 @@ InterpreterFrame* InterpreterStack::pushExecuteFrame(
     HandleObject envChain, AbstractFramePtr evalInFrame) {
   LifoAlloc::Mark mark = allocator_.mark();
 
-  unsigned nvars = 1  + script->nslots();
+  unsigned nvars = 1 /* newTarget */ + script->nslots();
   uint8_t* buffer =
       allocateFrame(cx, sizeof(InterpreterFrame) + nvars * sizeof(Value));
   if (!buffer) {
@@ -421,7 +424,7 @@ InterpreterFrame* InterpreterStack::pushExecuteFrame(
   return fp;
 }
 
-
+/*****************************************************************************/
 
 InterpreterFrameIterator& InterpreterFrameIterator::operator++() {
   MOZ_ASSERT(!done());
@@ -453,7 +456,7 @@ JS::ProfilingFrameIterator::ProfilingFrameIterator(
     return;
   }
 
-  
+  // If profiler sampling is not enabled, skip.
   if (!cx->isProfilerSamplingEnabled()) {
     return;
   }
@@ -492,7 +495,7 @@ void JS::ProfilingFrameIterator::operator++() {
 }
 
 void JS::ProfilingFrameIterator::settleFrames() {
-  
+  // Handle transition frames (see comment in JitFrameIter::operator++).
   if (isJSJit() && !jsJitIter().done() &&
       jsJitIter().frameType() == jit::FrameType::WasmToJSJit) {
     wasm::Frame* fp = (wasm::Frame*)jsJitIter().fp();
@@ -506,9 +509,9 @@ void JS::ProfilingFrameIterator::settleFrames() {
   if (isWasm() && wasmIter().done() && wasmIter().unwoundIonCallerFP()) {
     uint8_t* fp = wasmIter().unwoundIonCallerFP();
     iteratorDestroy();
-    
-    
-    
+    // Using this ctor will skip the first ion->wasm frame, which is
+    // needed because the profiling iterator doesn't know how to unwind
+    // when the callee has no script.
     new (storage())
         jit::JSJitProfilingFrameIterator((jit::CommonFrameLayout*)fp);
     kind_ = Kind::JSJit;
@@ -536,13 +539,13 @@ void JS::ProfilingFrameIterator::iteratorConstruct(const RegisterState& state) {
 
   jit::JitActivation* activation = activation_->asJit();
 
-  
-  
-  
-  
-  
-  
-  
+  // We want to know if we should start with a wasm profiling frame iterator
+  // or not. To determine this, there are three possibilities:
+  // - we've exited to C++ from wasm, in which case the activation
+  //   exitFP low bit is tagged and we can test hasWasmExitFP().
+  // - we're in wasm code, so we can do a lookup on PC.
+  // - in all the other cases, we're not in wasm or we haven't exited from
+  //   wasm.
   if (activation->hasWasmExitFP() || wasm::InCompiledCode(state.pc)) {
     new (storage()) wasm::ProfilingFrameIterator(*activation, state);
     kind_ = Kind::Wasm;
@@ -559,9 +562,9 @@ void JS::ProfilingFrameIterator::iteratorConstruct() {
 
   jit::JitActivation* activation = activation_->asJit();
 
-  
-  
-  
+  // The same reasoning as in the above iteratorConstruct variant applies
+  // here, except that it's even simpler: since this activation is higher up
+  // on the stack, it can only have exited to C++, through wasm or ion.
   if (activation->hasWasmExitFP()) {
     new (storage()) wasm::ProfilingFrameIterator(*activation);
     kind_ = Kind::Wasm;
@@ -621,26 +624,26 @@ JS::ProfilingFrameIterator::getPhysicalFrameAndEntry(
     frame.label = nullptr;
     frame.endStackAddress = activation_->asJit()->jsOrWasmExitFP();
     frame.interpreterScript = nullptr;
-    
+    // TODO: get the realm ID of wasm frames. Bug 1596235.
     frame.realmID = 0;
     return mozilla::Some(frame);
   }
 
   MOZ_ASSERT(isJSJit());
 
-  
+  // Look up an entry for the return address.
   void* returnAddr = jsJitIter().resumePCinCurrentFrame();
   jit::JitcodeGlobalTable* table =
       cx_->runtime()->jitRuntime()->getJitcodeGlobalTable();
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // NB:
+  // The following lookups should be infallible, but the ad-hoc stackwalking
+  // code rots easily and corner cases where frames can't be looked up
+  // occur too often (e.g. once every day).
+  //
+  // The calls to `lookup*` below have been changed from infallible ones to
+  // fallible ones.  The proper solution to this problem is to fix all
+  // the jitcode to use frame-pointers and reliably walk the stack with those.
   const jit::JitcodeGlobalEntry* lookedUpEntry = nullptr;
   if (samplePositionInProfilerBuffer_) {
     lookedUpEntry = table->lookupForSampler(returnAddr, cx_->runtime(),
@@ -649,7 +652,7 @@ JS::ProfilingFrameIterator::getPhysicalFrameAndEntry(
     lookedUpEntry = table->lookup(returnAddr);
   }
 
-  
+  // Failed to look up a jitcode entry for the given address, ignore.
   if (!lookedUpEntry) {
     return mozilla::Nothing();
   }
@@ -658,7 +661,7 @@ JS::ProfilingFrameIterator::getPhysicalFrameAndEntry(
   MOZ_ASSERT(entry->isIon() || entry->isBaseline() ||
              entry->isBaselineInterpreter() || entry->isDummy());
 
-  
+  // Dummy frames produce no stack frames.
   if (entry->isDummy()) {
     return mozilla::Nothing();
   }
@@ -699,7 +702,7 @@ uint32_t JS::ProfilingFrameIterator::extractStack(Frame* frames,
   jit::JitcodeGlobalEntry entry;
   Maybe<Frame> physicalFrame = getPhysicalFrameAndEntry(&entry);
 
-  
+  // Dummy frames produce no stack frames.
   if (physicalFrame.isNothing()) {
     return 0;
   }
@@ -715,7 +718,7 @@ uint32_t JS::ProfilingFrameIterator::extractStack(Frame* frames,
     return 1;
   }
 
-  
+  // Extract the stack for the entry.  Assume maximum inlining depth is <64
   const char* labels[64];
   uint32_t depth = entry.callStackAtAddr(cx_->runtime(),
                                          jsJitIter().resumePCinCurrentFrame(),

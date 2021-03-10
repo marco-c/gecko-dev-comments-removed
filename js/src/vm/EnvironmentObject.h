@@ -263,6 +263,9 @@ extern PropertyName* EnvironmentCoordinateNameSlow(JSScript* script,
 
 
 
+
+
+
 class EnvironmentObject : public NativeObject {
  protected:
   
@@ -515,6 +518,9 @@ class WasmFunctionCallObject : public EnvironmentObject {
   }
 };
 
+
+
+
 class LexicalEnvironmentObject : public EnvironmentObject {
  protected:
   
@@ -536,46 +542,7 @@ class LexicalEnvironmentObject : public EnvironmentObject {
                                                         HandleObject enclosing,
                                                         gc::InitialHeap heap);
 
- private:
-  void initScopeUnchecked(LexicalScope* scope) {
-    initReservedSlot(THIS_VALUE_OR_SCOPE_SLOT, PrivateGCThingValue(scope));
-  }
-
-  void initScope(LexicalScope* scope) {
-    MOZ_ASSERT(!isGlobal());
-    MOZ_ASSERT(isSyntactic());
-    initScopeUnchecked(scope);
-  }
-
  public:
-  static LexicalEnvironmentObject* create(JSContext* cx,
-                                          Handle<LexicalScope*> scope,
-                                          HandleObject enclosing,
-                                          gc::InitialHeap heap);
-  static LexicalEnvironmentObject* createForFrame(JSContext* cx,
-                                                  Handle<LexicalScope*> scope,
-                                                  AbstractFramePtr frame);
-  static LexicalEnvironmentObject* createHollowForDebug(
-      JSContext* cx, Handle<LexicalScope*> scope);
-
-  
-  
-  static LexicalEnvironmentObject* clone(JSContext* cx,
-                                         Handle<LexicalEnvironmentObject*> env);
-
-  
-  
-  static LexicalEnvironmentObject* recreate(
-      JSContext* cx, Handle<LexicalEnvironmentObject*> env);
-
-  
-  
-  LexicalScope& scope() const {
-    Value v = getReservedSlot(THIS_VALUE_OR_SCOPE_SLOT);
-    MOZ_ASSERT(!isExtensible() && v.isPrivateGCThing());
-    return *static_cast<LexicalScope*>(v.toGCThing());
-  }
-
   
   bool isGlobal() const { return enclosingEnvironment().is<GlobalObject>(); }
 
@@ -588,7 +555,49 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   bool isSyntactic() const { return !isExtensible() || isGlobal(); }
 };
 
-class NamedLambdaObject : public LexicalEnvironmentObject {
+
+
+
+
+class BlockLexicalEnvironmentObject : public LexicalEnvironmentObject {
+ public:
+  static constexpr ObjectFlags OBJECT_FLAGS = {ObjectFlag::NotExtensible};
+
+  static BlockLexicalEnvironmentObject* create(JSContext* cx,
+                                               Handle<LexicalScope*> scope,
+                                               HandleObject enclosing,
+                                               gc::InitialHeap heap);
+
+  static BlockLexicalEnvironmentObject* createForFrame(
+      JSContext* cx, Handle<LexicalScope*> scope, AbstractFramePtr frame);
+
+  static BlockLexicalEnvironmentObject* createHollowForDebug(
+      JSContext* cx, Handle<LexicalScope*> scope);
+
+  
+  
+  static BlockLexicalEnvironmentObject* clone(
+      JSContext* cx, Handle<BlockLexicalEnvironmentObject*> env);
+
+  
+  
+  static BlockLexicalEnvironmentObject* recreate(
+      JSContext* cx, Handle<BlockLexicalEnvironmentObject*> env);
+
+  
+  LexicalScope& scope() const {
+    Value v = getReservedSlot(THIS_VALUE_OR_SCOPE_SLOT);
+    MOZ_ASSERT(!isExtensible() && v.isPrivateGCThing());
+    return *static_cast<LexicalScope*>(v.toGCThing());
+  }
+
+ private:
+  void initScope(LexicalScope* scope) {
+    initReservedSlot(THIS_VALUE_OR_SCOPE_SLOT, PrivateGCThingValue(scope));
+  }
+};
+
+class NamedLambdaObject : public BlockLexicalEnvironmentObject {
   static NamedLambdaObject* create(JSContext* cx, HandleFunction callee,
                                    HandleFunction replacement,
                                    HandleObject enclosing,
@@ -1116,6 +1125,12 @@ inline bool JSObject::is<js::EnvironmentObject>() const {
 }
 
 template <>
+inline bool JSObject::is<js::BlockLexicalEnvironmentObject>() const {
+  return is<js::LexicalEnvironmentObject>() &&
+         !as<js::LexicalEnvironmentObject>().isExtensible();
+}
+
+template <>
 inline bool JSObject::is<js::ExtensibleLexicalEnvironmentObject>() const {
   return is<js::LexicalEnvironmentObject>() &&
          as<js::LexicalEnvironmentObject>().isExtensible();
@@ -1135,9 +1150,8 @@ inline bool JSObject::is<js::NonSyntacticLexicalEnvironmentObject>() const {
 
 template <>
 inline bool JSObject::is<js::NamedLambdaObject>() const {
-  return is<js::LexicalEnvironmentObject>() &&
-         !is<js::ExtensibleLexicalEnvironmentObject>() &&
-         as<js::LexicalEnvironmentObject>().scope().isNamedLambda();
+  return is<js::BlockLexicalEnvironmentObject>() &&
+         as<js::BlockLexicalEnvironmentObject>().scope().isNamedLambda();
 }
 
 template <>
