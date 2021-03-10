@@ -55,6 +55,7 @@ class RegExpStack;
 #define V8_WARN_UNUSED_RESULT [[nodiscard]]
 #define V8_EXPORT_PRIVATE
 #define V8_FALLTHROUGH [[fallthrough]]
+#define V8_NODISCARD [[nodiscard]]
 
 #define FATAL(x) MOZ_CRASH(x)
 #define UNREACHABLE() MOZ_CRASH("unreachable code")
@@ -73,6 +74,8 @@ class RegExpStack;
 #define DCHECK_IMPLIES(lhs, rhs) MOZ_ASSERT_IF(lhs, rhs)
 #define CHECK MOZ_RELEASE_ASSERT
 #define CHECK_LE(lhs, rhs) MOZ_RELEASE_ASSERT((lhs) <= (rhs))
+#define CHECK_GE(lhs, rhs) MOZ_RELEASE_ASSERT((lhs) >= (rhs))
+#define CONSTEXPR_DCHECK MOZ_ASSERT
 
 template <class T>
 static constexpr inline T Min(T t1, T t2) {
@@ -134,7 +137,7 @@ static const Address kNullAddress = 0;
 
 
 using uc16 = char16_t;
-using uc32 = int32_t;
+using uc32 = uint32_t;
 
 namespace base {
 
@@ -218,6 +221,11 @@ inline uint64_t CountTrailingZeros(uint64_t value) {
 
 inline size_t RoundUpToPowerOfTwo32(size_t value) {
   return mozilla::RoundUpPow2(value);
+}
+
+template <typename T>
+constexpr bool IsPowerOfTwo(T value) {
+  return value > 0 && (value & (value - 1)) == 0;
 }
 
 }  
@@ -460,7 +468,6 @@ using PseudoHandle = mozilla::UniquePtr<T, JS::FreePolicy>;
 
 
 
-
 template <typename lchar, typename rchar>
 inline int CompareCharsUnsigned(const lchar* lhs, const rchar* rhs,
                                 size_t chars) {
@@ -501,6 +508,32 @@ inline int CompareChars(const lchar* lhs, const rchar* rhs, size_t chars) {
                                   chars);
     }
   }
+}
+
+
+template <typename lchar, typename rchar>
+inline bool CompareCharsEqualUnsigned(const lchar* lhs, const rchar* rhs,
+                                      size_t chars) {
+  STATIC_ASSERT(std::is_unsigned<lchar>::value);
+  STATIC_ASSERT(std::is_unsigned<rchar>::value);
+  if (sizeof(*lhs) == sizeof(*rhs)) {
+    
+    
+    return memcmp(lhs, rhs, chars * sizeof(*lhs)) == 0;
+  }
+  for (const lchar* limit = lhs + chars; lhs < limit; ++lhs, ++rhs) {
+    if (*lhs != *rhs) return false;
+  }
+  return true;
+}
+
+template <typename lchar, typename rchar>
+inline bool CompareCharsEqual(const lchar* lhs, const rchar* rhs,
+                              size_t chars) {
+  using ulchar = typename std::make_unsigned<lchar>::type;
+  using urchar = typename std::make_unsigned<rchar>::type;
+  return CompareCharsEqualUnsigned(reinterpret_cast<const ulchar*>(lhs),
+                                   reinterpret_cast<const urchar*>(rhs), chars);
 }
 
 
@@ -763,7 +796,7 @@ inline Handle<T> handle(T object, Isolate* isolate) {
 
 
 
-using DisallowHeapAllocation = JS::AutoAssertNoGC;
+using DisallowGarbageCollection = JS::AutoAssertNoGC;
 
 
 
@@ -775,9 +808,9 @@ using DisallowHeapAllocation = JS::AutoAssertNoGC;
 
 
 
-class AllowHeapAllocation {
+class AllowGarbageCollection {
  public:
-  AllowHeapAllocation() {}
+  AllowGarbageCollection() {}
 };
 
 
@@ -796,6 +829,7 @@ class String : public HeapObject {
   static const int32_t kMaxOneByteCharCode = unibrow::Latin1::kMaxChar;
   static const uint32_t kMaxOneByteCharCodeU = unibrow::Latin1::kMaxChar;
   static const int kMaxUtf16CodeUnit = 0xffff;
+  static const uint32_t kMaxUtf16CodeUnitU = kMaxUtf16CodeUnit;
   static const uc32 kMaxCodePoint = 0x10ffff;
 
   MOZ_ALWAYS_INLINE int length() const { return str()->length(); }
@@ -805,7 +839,7 @@ class String : public HeapObject {
   
   class FlatContent {
    public:
-    FlatContent(JSLinearString* string, const DisallowHeapAllocation& no_gc)
+    FlatContent(JSLinearString* string, const DisallowGarbageCollection& no_gc)
         : string_(string), no_gc_(no_gc) {}
     inline bool IsOneByte() const { return string_->hasLatin1Chars(); }
     inline bool IsTwoByte() const { return !string_->hasLatin1Chars(); }
@@ -825,7 +859,7 @@ class String : public HeapObject {
     const JSLinearString* string_;
     const JS::AutoAssertNoGC& no_gc_;
   };
-  FlatContent GetFlatContent(const DisallowHeapAllocation& no_gc) {
+  FlatContent GetFlatContent(const DisallowGarbageCollection& no_gc) {
     MOZ_ASSERT(IsFlat());
     return FlatContent(&str()->asLinear(), no_gc);
   }
@@ -849,12 +883,12 @@ class String : public HeapObject {
   std::unique_ptr<char[]> ToCString();
 
   template <typename Char>
-  Vector<const Char> GetCharVector(const DisallowHeapAllocation& no_gc);
+  Vector<const Char> GetCharVector(const DisallowGarbageCollection& no_gc);
 };
 
 template <>
 inline Vector<const uint8_t> String::GetCharVector(
-    const DisallowHeapAllocation& no_gc) {
+    const DisallowGarbageCollection& no_gc) {
   String::FlatContent flat = GetFlatContent(no_gc);
   MOZ_ASSERT(flat.IsOneByte());
   return flat.ToOneByteVector();
@@ -862,7 +896,7 @@ inline Vector<const uint8_t> String::GetCharVector(
 
 template <>
 inline Vector<const uc16> String::GetCharVector(
-    const DisallowHeapAllocation& no_gc) {
+    const DisallowGarbageCollection& no_gc) {
   String::FlatContent flat = GetFlatContent(no_gc);
   MOZ_ASSERT(flat.IsTwoByte());
   return flat.ToUC16Vector();
