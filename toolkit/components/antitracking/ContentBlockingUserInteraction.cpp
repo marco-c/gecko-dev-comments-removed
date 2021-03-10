@@ -18,7 +18,7 @@ namespace mozilla {
 
 
 void ContentBlockingUserInteraction::Observe(nsIPrincipal* aPrincipal) {
-  if (!aPrincipal) {
+  if (!aPrincipal || aPrincipal->IsSystemPrincipal()) {
     
     return;
   }
