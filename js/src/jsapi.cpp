@@ -3594,7 +3594,8 @@ JS::CompileOptions::CompileOptions(JSContext* cx)
   forceStrictMode_ = cx->options().strictMode();
 
   
-  forceFullParse_ = coverage::IsLCovEnabled();
+  forceFullParse_ = cx->realm()->behaviors().disableLazyParsing() ||
+                    coverage::IsLCovEnabled();
 
   
   
