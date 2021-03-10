@@ -1,6 +1,6 @@
-
-
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <!DOCTYPE html>
 <html>
   <head>
@@ -17,10 +17,10 @@
     <table id="process-table">
       <thead id="process-thead">
         <tr>
-          <td class="clickable" id="column-name" data-l10n-id="about-processes-column-name"></td>
-          <td class="clickable" id="column-memory-resident" data-l10n-id="about-processes-column-memory-resident"></td> 
-          <td class="clickable" id="column-cpu-total" data-l10n-id="about-processes-column-cpu-total"></td>
-          <td id="column-kill" data-l10n-id="about-processes-column-action">⚙</td>
+          <th class="clickable" id="column-name" data-l10n-id="about-processes-column-name"></th>
+          <th class="clickable" id="column-memory-resident" data-l10n-id="about-processes-column-memory-resident"></th> <!-- Memory usage. -->
+          <th class="clickable" id="column-cpu-total" data-l10n-id="about-processes-column-cpu-total"></th><!--CPU (User and Kernel)-->
+          <th id="column-kill" data-l10n-id="about-processes-column-action">⚙</th><!-- Kill button. -->
         </tr>
       </thead>
       <tbody id="process-tbody"></tbody>
