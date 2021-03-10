@@ -515,7 +515,6 @@ void JitValuePreWriteBarrier(JSRuntime* rt, Value* vp);
 void JitStringPreWriteBarrier(JSRuntime* rt, JSString** stringp);
 void JitObjectPreWriteBarrier(JSRuntime* rt, JSObject** objp);
 void JitShapePreWriteBarrier(JSRuntime* rt, Shape** shapep);
-void JitObjectGroupPreWriteBarrier(JSRuntime* rt, ObjectGroup** groupp);
 
 bool ObjectIsCallable(JSObject* obj);
 bool ObjectIsConstructor(JSObject* obj);
@@ -640,6 +639,29 @@ AtomicsReadWriteModifyFn AtomicsSub(Scalar::Type elementType);
 AtomicsReadWriteModifyFn AtomicsAnd(Scalar::Type elementType);
 AtomicsReadWriteModifyFn AtomicsOr(Scalar::Type elementType);
 AtomicsReadWriteModifyFn AtomicsXor(Scalar::Type elementType);
+
+BigInt* AtomicsLoad64(JSContext* cx, TypedArrayObject* typedArray,
+                      size_t index);
+
+void AtomicsStore64(TypedArrayObject* typedArray, size_t index, BigInt* value);
+
+BigInt* AtomicsCompareExchange64(JSContext* cx, TypedArrayObject* typedArray,
+                                 size_t index, BigInt* expected,
+                                 BigInt* replacement);
+
+BigInt* AtomicsExchange64(JSContext* cx, TypedArrayObject* typedArray,
+                          size_t index, BigInt* value);
+
+BigInt* AtomicsAdd64(JSContext* cx, TypedArrayObject* typedArray, size_t index,
+                     BigInt* value);
+BigInt* AtomicsAnd64(JSContext* cx, TypedArrayObject* typedArray, size_t index,
+                     BigInt* value);
+BigInt* AtomicsOr64(JSContext* cx, TypedArrayObject* typedArray, size_t index,
+                    BigInt* value);
+BigInt* AtomicsSub64(JSContext* cx, TypedArrayObject* typedArray, size_t index,
+                     BigInt* value);
+BigInt* AtomicsXor64(JSContext* cx, TypedArrayObject* typedArray, size_t index,
+                     BigInt* value);
 
 
 void AssumeUnreachable(const char* output);

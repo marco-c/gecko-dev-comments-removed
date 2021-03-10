@@ -497,8 +497,7 @@ enum class MIRType : uint8_t {
   RefOrNull,     
   StackResults,  
   Shape,         
-  ObjectGroup,   
-  Last = ObjectGroup
+  Last = Shape
 };
 
 static inline MIRType MIRTypeFromValueType(JSValueType type) {
@@ -637,8 +636,6 @@ static inline const char* StringFromMIRType(MIRType type) {
       return "StackResults";
     case MIRType::Shape:
       return "Shape";
-    case MIRType::ObjectGroup:
-      return "ObjectGroup";
     case MIRType::Simd128:
       return "Simd128";
   }
