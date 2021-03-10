@@ -180,16 +180,16 @@ nsresult nsMenuItemX::DispatchDOMEvent(const nsString& eventName, bool* preventD
 
 
 
-void nsMenuItemX::UncheckRadioSiblings(nsIContent* inCheckedContent) {
+void nsMenuItemX::UncheckRadioSiblings(nsIContent* aCheckedContent) {
   nsAutoString myGroupName;
-  if (inCheckedContent->IsElement()) {
-    inCheckedContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::name, myGroupName);
+  if (aCheckedContent->IsElement()) {
+    aCheckedContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::name, myGroupName);
   }
   if (!myGroupName.Length()) {  
     return;
   }
 
-  nsCOMPtr<nsIContent> parent = inCheckedContent->GetParent();
+  nsCOMPtr<nsIContent> parent = aCheckedContent->GetParent();
   if (!parent) {
     return;
   }
@@ -197,7 +197,7 @@ void nsMenuItemX::UncheckRadioSiblings(nsIContent* inCheckedContent) {
   
   for (nsIContent* sibling = parent->GetFirstChild(); sibling;
        sibling = sibling->GetNextSibling()) {
-    if (sibling != inCheckedContent && sibling->IsElement()) {  
+    if (sibling != aCheckedContent && sibling->IsElement()) {  
       
       if (sibling->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name, myGroupName,
                                             eCaseMatters)) {
