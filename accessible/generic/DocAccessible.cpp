@@ -593,18 +593,20 @@ void DocAccessible::ScrollTimerCallback(nsITimer* aTimer, void* aClosure) {
 
 void DocAccessible::HandleScroll(nsINode* aTarget) {
   const uint32_t kScrollEventInterval = 100;
-  TimeStamp now = TimeStamp::Now();
-  TimeStamp lastDispatch;
   
   
-  if (!mLastScrollingDispatch.Get(aTarget, &lastDispatch) ||
-      (now - lastDispatch).ToMilliseconds() >= kScrollEventInterval) {
-    
-    if (HasLoadState(eTreeConstructed)) {
-      DispatchScrollingEvent(aTarget, nsIAccessibleEvent::EVENT_SCROLLING);
+  mLastScrollingDispatch.WithEntryHandle(aTarget, [&](auto&& lastDispatch) {
+    const TimeStamp now = TimeStamp::Now();
+
+    if (!lastDispatch ||
+        (now - lastDispatch.Data()).ToMilliseconds() >= kScrollEventInterval) {
+      
+      if (HasLoadState(eTreeConstructed)) {
+        DispatchScrollingEvent(aTarget, nsIAccessibleEvent::EVENT_SCROLLING);
+      }
+      lastDispatch.InsertOrUpdate(now);
     }
-    mLastScrollingDispatch.InsertOrUpdate(aTarget, now);
-  }
+  });
 
   
   
