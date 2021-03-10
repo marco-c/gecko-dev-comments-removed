@@ -75,7 +75,7 @@ add_task(async function() {
     ",,"
   );
   let allowlistedCert = constructCertFromFile(
-    "test_sanctions/gspe72-4-ssl-ls-apple-com.pem"
+    "test_sanctions/cds-apple-com.pem"
   );
 
   
