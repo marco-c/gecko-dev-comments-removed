@@ -23,14 +23,27 @@ class Zone {
  public:
   Zone(js::LifoAlloc& alloc) : lifoAlloc_(alloc) {}
 
-  void* New(size_t size) {
+  template <typename T, typename... Args>
+  T* New(Args&&... args) {
     js::LifoAlloc::AutoFallibleScope fallible(&lifoAlloc_);
     js::AutoEnterOOMUnsafeRegion oomUnsafe;
-    void* result = lifoAlloc_.alloc(size);
-    if (!result) {
-      oomUnsafe.crash("Irregexp Zone::new");
+    void* memory = lifoAlloc_.alloc(sizeof(T));
+    if (!memory) {
+      oomUnsafe.crash("Irregexp Zone::New");
     }
-    return result;
+    return new (memory) T(std::forward<Args>(args)...);
+  }
+
+  
+  template <typename T>
+  T* NewArray(size_t length) {
+    js::LifoAlloc::AutoFallibleScope fallible(&lifoAlloc_);
+    js::AutoEnterOOMUnsafeRegion oomUnsafe;
+    void* memory = lifoAlloc_.alloc(length * sizeof(T));
+    if (!memory) {
+      oomUnsafe.crash("Irregexp Zone::New");
+    }
+    return static_cast<T*>(memory);
   }
 
   void DeleteAll() { lifoAlloc_.freeAll(); }
@@ -47,11 +60,14 @@ class Zone {
 
 
 
-
 class ZoneObject {
  public:
   
-  void* operator new(size_t size, Zone* zone) { return zone->New(size); }
+  
+  void* operator new(size_t size, Zone* zone) = delete;
+
+  
+  void* operator new(size_t size, void* ptr) { return ptr; }
 
   
   
@@ -71,27 +87,19 @@ class ZoneObject {
 
 
 
-
-
-
 template <typename T>
-class ZoneList final {
+class ZoneList final : public ZoneObject {
  public:
   
   
-  ZoneList(int capacity, Zone* zone) { Initialize(capacity, zone); }
-  
-  ZoneList(std::initializer_list<T> list, Zone* zone) {
-    Initialize(static_cast<int>(list.size()), zone);
-    for (auto& i : list) Add(i, zone);
+  ZoneList(int capacity, Zone* zone) : capacity_(capacity) {
+    data_ = (capacity_ > 0) ? zone->NewArray<T>(capacity_) : nullptr;
   }
   
-  ZoneList(const ZoneList<T>& other, Zone* zone) {
-    Initialize(other.length(), zone);
+  ZoneList(const ZoneList<T>& other, Zone* zone)
+      : ZoneList(other.length(), zone) {
     AddAll(other, zone);
   }
-
-  void* operator new(size_t size, Zone* zone) { return zone->New(size); }
 
   
   
@@ -120,13 +128,6 @@ class ZoneList final {
 
   Vector<const T> ToConstVector() const {
     return Vector<const T>(data_, length_);
-  }
-
-  inline void Initialize(int capacity, Zone* zone) {
-    MOZ_ASSERT(capacity >= 0);
-    data_ = (capacity > 0) ? NewData(capacity, zone) : nullptr;
-    capacity_ = capacity;
-    length_ = 0;
   }
 
   
@@ -224,13 +225,9 @@ class ZoneList final {
   void operator delete(void* pointer, Zone* zone) { MOZ_CRASH("unreachable"); }
 
  private:
-  T* data_;
-  int capacity_;
-  int length_;
-
-  inline T* NewData(int n, Zone* zone) {
-    return static_cast<T*>(zone->New(n * sizeof(T)));
-  }
+  T* data_ = nullptr;
+  int capacity_ = 0;
+  int length_ = 0;
 
   
   
@@ -249,7 +246,8 @@ class ZoneList final {
   
   void Resize(int new_capacity, Zone* zone) {
     MOZ_ASSERT(length_ <= new_capacity);
-    T* new_data = NewData(new_capacity, zone);
+    static_assert(std::is_trivially_copyable<T>::value);
+    T* new_data = zone->NewArray<T>(new_capacity);
     if (length_ > 0) {
       memcpy(new_data, data_, length_ * sizeof(T));
     }
@@ -261,7 +259,6 @@ class ZoneList final {
   ZoneList() = delete;
   ZoneList(const ZoneList&) = delete;
 };
-
 
 
 template <typename T>
@@ -286,7 +283,7 @@ class ZoneAllocator {
   template <typename U>
   friend class ZoneAllocator;
 
-  T* allocate(size_t n) { return static_cast<T*>(zone_->New(n * sizeof(T))); }
+  T* allocate(size_t n) { return zone_->NewArray<T>(n); }
   void deallocate(T* p, size_t) {}  
 
   bool operator==(ZoneAllocator const& other) const {
