@@ -16,6 +16,7 @@
 #include "gc/RelocationOverlay.h"
 #include "js/Id.h"
 #include "js/Value.h"
+#include "vm/StringType.h"
 #include "vm/TaggedProto.h"
 
 #include "gc/Nursery-inl.h"
@@ -133,6 +134,27 @@ inline bool IsAboutToBeFinalizedDuringMinorSweep(Cell** cellp) {
   }
 
   return !Nursery::getForwardedPointer(cellp);
+}
+
+
+
+
+inline void PreWriteBarrierDuringFlattening(JSString* str) {
+  MOZ_ASSERT(str);
+  MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
+
+  if (IsInsideNursery(str) || str->isPermanentAndMayBeShared()) {
+    return;
+  }
+
+  auto* cell = reinterpret_cast<TenuredCell*>(str);
+  JS::shadow::Zone* zone = cell->shadowZoneFromAnyThread();
+
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(zone->runtimeFromAnyThread()));
+
+  if (zone->needsIncrementalBarrier()) {
+    PerformIncrementalBarrierDuringFlattening(str);
+  }
 }
 
 #ifdef JSGC_HASH_TABLE_CHECKS
