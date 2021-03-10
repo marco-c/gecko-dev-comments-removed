@@ -43,6 +43,9 @@ static AVIF_TEST_DIRS: &[&str] = &["tests", "av1-avif/testFiles"];
 static AVIF_CORRUPT_IMAGES: &str = "tests/corrupt";
 
 
+static VIDEO_H263_3GP: &str = "tests/bbb_sunflower_QCIF_30fps_h263_noaudio_1f.3gp";
+
+
 #[test]
 fn public_api() {
     let mut fd = File::open(MINI_MP4).expect("Unknown file");
@@ -96,6 +99,9 @@ fn public_api() {
                         }
                         mp4::VideoCodecSpecific::AV1Config(ref _av1c) => {
                             "AV1"
+                        }
+                        mp4::VideoCodecSpecific::H263Config(ref _h263) => {
+                            "H263"
                         }
                     },
                     "AVC"
@@ -763,5 +769,31 @@ fn public_avif_read_samples() {
             let input = &mut File::open(path).expect("Unknow file");
             mp4::read_avif(input).expect("read_avif failed");
         }
+    }
+}
+
+#[test]
+fn public_video_h263() {
+    let mut fd = File::open(VIDEO_H263_3GP).expect("Unknown file");
+    let mut buf = Vec::new();
+    fd.read_to_end(&mut buf).expect("File error");
+
+    let mut c = Cursor::new(&buf);
+    let context = mp4::read_mp4(&mut c).expect("read_mp4 failed");
+    for track in context.tracks {
+        let stsd = track.stsd.expect("expected an stsd");
+        let v = match stsd.descriptions.first().expect("expected a SampleEntry") {
+            mp4::SampleEntry::Video(ref v) => v,
+            _ => panic!("expected a VideoSampleEntry"),
+        };
+        assert_eq!(v.codec_type, mp4::CodecType::H263);
+        assert_eq!(v.width, 176);
+        assert_eq!(v.height, 144);
+        let _codec_specific = match v.codec_specific {
+            mp4::VideoCodecSpecific::H263Config(_) => true,
+            _ => {
+                panic!("expected a H263Config",);
+            }
+        };
     }
 }
