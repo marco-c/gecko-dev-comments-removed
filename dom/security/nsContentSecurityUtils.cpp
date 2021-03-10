@@ -1,10 +1,10 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* A namespace class for static content security utilities. */
 
 #include "nsContentSecurityUtils.h"
 
@@ -26,10 +26,10 @@
 #endif
 
 #include "FramingChecker.h"
-#include "js/Array.h"  
+#include "js/Array.h"  // JS::GetArrayLength
 #include "js/ContextOptions.h"
 #include "js/RegExp.h"
-#include "js/RegExpFlags.h"  
+#include "js/RegExpFlags.h"  // JS::RegExpFlags
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
@@ -54,20 +54,20 @@ extern Atomic<bool, mozilla::Relaxed> sJSHacksChecked;
 extern Atomic<bool, mozilla::Relaxed> sJSHacksPresent;
 extern Atomic<bool, mozilla::Relaxed> sTelemetryEventEnabled;
 
-
-
+// Helper function for IsConsideredSameOriginForUIR which makes
+// Principals of scheme 'http' return Principals of scheme 'https'.
 static already_AddRefed<nsIPrincipal> MakeHTTPPrincipalHTTPS(
     nsIPrincipal* aPrincipal) {
   nsCOMPtr<nsIPrincipal> principal = aPrincipal;
-  
-  
+  // if the principal is not http, then it can also not be upgraded
+  // to https.
   if (!principal->SchemeIs("http")) {
     return principal.forget();
   }
 
   nsAutoCString spec;
   aPrincipal->GetAsciiSpec(spec);
-  
+  // replace http with https
   spec.ReplaceLiteral(0, 4, "https");
 
   nsCOMPtr<nsIURI> newURI;
@@ -83,27 +83,27 @@ static already_AddRefed<nsIPrincipal> MakeHTTPPrincipalHTTPS(
   return principal.forget();
 }
 
-
+/* static */
 bool nsContentSecurityUtils::IsConsideredSameOriginForUIR(
     nsIPrincipal* aTriggeringPrincipal, nsIPrincipal* aResultPrincipal) {
   MOZ_ASSERT(aTriggeringPrincipal);
   MOZ_ASSERT(aResultPrincipal);
-  
-  
-  
-  
-  
-  
-  
+  // we only have to make sure that the following truth table holds:
+  // aTriggeringPrincipal         | aResultPrincipal             | Result
+  // ----------------------------------------------------------------
+  // http://example.com/foo.html  | http://example.com/bar.html  | true
+  // http://example.com/foo.html  | https://example.com/bar.html | true
+  // https://example.com/foo.html | https://example.com/bar.html | true
+  // https://example.com/foo.html | http://example.com/bar.html  | true
 
-  
+  // fast path if both principals are same-origin
   if (aTriggeringPrincipal->Equals(aResultPrincipal)) {
     return true;
   }
 
-  
-  
-  
+  // in case a principal uses a scheme of 'http' then we just upgrade to
+  // 'https' and use the principal equals comparison operator to check
+  // for same-origin.
   nsCOMPtr<nsIPrincipal> compareTriggeringPrincipal =
       MakeHTTPPrincipalHTTPS(aTriggeringPrincipal);
 
@@ -113,18 +113,18 @@ bool nsContentSecurityUtils::IsConsideredSameOriginForUIR(
   return compareTriggeringPrincipal->Equals(compareResultPrincipal);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Performs a Regular Expression match, optionally returning the results.
+ * This function is not safe to use OMT.
+ *
+ * @param aPattern      The regex pattern
+ * @param aString       The string to compare against
+ * @param aOnlyMatch    Whether we want match results or only a true/false for
+ * the match
+ * @param aMatchResult  Out param for whether or not the pattern matched
+ * @param aRegexResults Out param for the matches of the regex, if requested
+ * @returns nsresult indicating correct function operation or error
+ */
 nsresult RegexEval(const nsAString& aPattern, const nsAString& aString,
                    bool aOnlyMatch, bool& aMatchResult,
                    nsTArray<nsString>* aRegexResults = nullptr) {
@@ -137,9 +137,9 @@ nsresult RegexEval(const nsAString& aPattern, const nsAString& aString,
   JSContext* cx = jsapi.cx();
   mozilla::AutoDisableJSInterruptCallback disabler(cx);
 
-  
-  
-  
+  // We can use the junk scope here, because we're just using it for regexp
+  // evaluation, not actual script execution, and we disable statics so that the
+  // evaluation does not interact with the execution global.
   JSAutoRealm ar(cx, xpc::PrivilegedJunkScope());
 
   JS::RootedObject regexp(
@@ -159,12 +159,12 @@ nsresult RegexEval(const nsAString& aPattern, const nsAString& aString,
   }
 
   if (regexResult.isNull()) {
-    
+    // On no match, ExecuteRegExpNoStatics returns Null
     return NS_OK;
   }
   if (aOnlyMatch) {
-    
-    
+    // On match, with aOnlyMatch = true, ExecuteRegExpNoStatics returns boolean
+    // true.
     MOZ_ASSERT(regexResult.isBoolean() && regexResult.toBoolean());
     aMatchResult = true;
     return NS_OK;
@@ -173,7 +173,7 @@ nsresult RegexEval(const nsAString& aPattern, const nsAString& aString,
     return NS_ERROR_INVALID_ARG;
   }
 
-  
+  // Now we know we have a result, and we need to extract it so we can read it.
   uint32_t length;
   JS::RootedObject regexResultObj(cx, &regexResult.toObject());
   if (!JS::GetArrayLength(cx, regexResultObj, &length)) {
@@ -201,10 +201,10 @@ nsresult RegexEval(const nsAString& aPattern, const nsAString& aString,
   return NS_OK;
 }
 
-
-
-
-
+/*
+ * Telemetry Events extra data only supports 80 characters, so we optimize the
+ * filename to be smaller and collect more data.
+ */
 nsString OptimizeFileName(const nsAString& aFileName) {
   nsString optimizedName(aFileName);
 
@@ -225,22 +225,22 @@ nsString OptimizeFileName(const nsAString& aFileName) {
   return optimizedName;
 }
 
+/*
+ * FilenameToFilenameType takes a fileName and returns a Pair of strings.
+ * The First entry is a string indicating the type of fileName
+ * The Second entry is a Maybe<string> that can contain additional details to
+ * report.
+ *
+ * The reason we use strings (instead of an int/enum) is because the Telemetry
+ * Events API only accepts strings.
+ *
+ * Function is a static member of the class to enable gtests.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
+/* static */
 FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
     const nsString& fileName, bool collectAdditionalExtensionData) {
-  
+  // These are strings because the Telemetry Events API only accepts strings
   static constexpr auto kChromeURI = "chromeuri"_ns;
   static constexpr auto kResourceURI = "resourceuri"_ns;
   static constexpr auto kBlobUri = "bloburi"_ns;
@@ -265,7 +265,7 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
     return FilenameTypeAndDetails(kOther, Nothing());
   }
 
-  
+  // resource:// and chrome://
   if (StringBeginsWith(fileName, u"chrome://"_ns)) {
     return FilenameTypeAndDetails(kChromeURI, Some(fileName));
   }
@@ -273,7 +273,7 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
     return FilenameTypeAndDetails(kResourceURI, Some(fileName));
   }
 
-  
+  // blob: and data:
   if (StringBeginsWith(fileName, u"blob:"_ns)) {
     return FilenameTypeAndDetails(kBlobUri, Nothing());
   }
@@ -282,14 +282,14 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
   }
 
   if (!NS_IsMainThread()) {
-    
+    // We can't do Regex matching off the main thread; so just report.
     return FilenameTypeAndDetails(kOtherWorker, Nothing());
   }
 
-  
+  // Extension
   bool regexMatch;
   nsTArray<nsString> regexResults;
-  nsresult rv = RegexEval(kExtensionRegex, fileName,  false,
+  nsresult rv = RegexEval(kExtensionRegex, fileName, /* aOnlyMatch = */ false,
                           regexMatch, &regexResults);
   if (NS_FAILED(rv)) {
     return FilenameTypeAndDetails(kRegexFailure, Nothing());
@@ -304,8 +304,8 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
                                   Some(OptimizeFileName(extensionNameAndPath)));
   }
 
-  
-  rv = RegexEval(kSingleFileRegex, fileName,  true,
+  // Single File
+  rv = RegexEval(kSingleFileRegex, fileName, /* aOnlyMatch = */ true,
                  regexMatch);
   if (NS_FAILED(rv)) {
     return FilenameTypeAndDetails(kRegexFailure, Nothing());
@@ -314,8 +314,8 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
     return FilenameTypeAndDetails(kSingleString, Some(fileName));
   }
 
-  
-  rv = RegexEval(kUCJSRegex, fileName,  true, regexMatch);
+  // Suspected userChromeJS script
+  rv = RegexEval(kUCJSRegex, fileName, /* aOnlyMatch = */ true, regexMatch);
   if (NS_FAILED(rv)) {
     return FilenameTypeAndDetails(kRegexFailure, Nothing());
   }
@@ -346,14 +346,14 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
         nsCOMPtr<nsIURI> uri;
         nsresult rv = NS_NewURI(getter_AddRefs(uri), fileName);
         if (NS_FAILED(rv)) {
-          
+          // Return after adding ://[ so we know we failed here.
           return FilenameTypeAndDetails(kSanitizedWindowsURL,
                                         Some(sanitizedPathAndScheme));
         }
 
         mozilla::extensions::URLInfo url(uri);
         if (NS_IsMainThread()) {
-          
+          // EPS is only usable on main thread
           auto* policy =
               ExtensionPolicyService::GetSingleton().GetByHost(url.Host());
           if (policy) {
@@ -413,45 +413,45 @@ class EvalUsageNotificationRunnable final : public Runnable {
   uint32_t mColumnNumber;
 };
 
-
+/* static */
 bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
                                            bool aIsSystemPrincipal,
                                            const nsAString& aScript) {
-  
-  
-  
+  // This allowlist contains files that are permanently allowed to use
+  // eval()-like functions. It will ideally be restricted to files that are
+  // exclusively used in testing contexts.
   static nsLiteralCString evalAllowlist[] = {
-      
+      // Test-only third-party library
       "resource://testing-common/sinon-7.2.7.js"_ns,
-      
+      // Test-only third-party library
       "resource://testing-common/ajv-4.1.1.js"_ns,
-      
+      // Test-only utility
       "resource://testing-common/content-task.js"_ns,
 
-      
+      // Tracked by Bug 1584605
       "resource:///modules/translation/cld-worker.js"_ns,
 
-      
-      
-      
-      
-      
+      // require.js implements a script loader for workers. It uses eval
+      // to load the script; but injection is only possible in situations
+      // that you could otherwise control script that gets executed, so
+      // it is okay to allow eval() as it adds no additional attack surface.
+      // Bug 1584564 tracks requiring safe usage of require.js
       "resource://gre/modules/workers/require.js"_ns,
 
-      
+      // The Browser Toolbox/Console
       "debugger"_ns,
   };
 
-  
-  
-  
+  // We also permit two specific idioms in eval()-like contexts. We'd like to
+  // elminate these too; but there are in-the-wild Mozilla privileged extensions
+  // that use them.
   static constexpr auto sAllowedEval1 = u"this"_ns;
   static constexpr auto sAllowedEval2 =
       u"function anonymous(\n) {\nreturn this\n}"_ns;
 
   if (MOZ_LIKELY(!aIsSystemPrincipal && !XRE_IsE10sParentProcess())) {
-    
-    
+    // We restrict eval in the system principal and parent process.
+    // Other uses (like web content and null principal) are allowed.
     return true;
   }
 
@@ -477,28 +477,28 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     return true;
   }
 
-  
-  
-  
-  
-  
+  // We can only perform the check of this preference on the Main Thread
+  // (because a String-based preference check is only safe on Main Thread.)
+  // In theory, it would be possible that a separate thread could get here
+  // before the main thread, resulting in the other thread not being able to
+  // perform this check, but the odds of that are small (and probably zero.)
   if (MOZ_UNLIKELY(!sJSHacksChecked) && NS_IsMainThread()) {
-    
-    
-    
-    
+    // This preference is a file used for autoconfiguration of Firefox
+    // by administrators. It has also been (ab)used by the userChromeJS
+    // project to run legacy-style 'extensions', some of which use eval,
+    // all of which run in the System Principal context.
     nsAutoString jsConfigPref;
     Preferences::GetString("general.config.filename", jsConfigPref);
     if (!jsConfigPref.IsEmpty()) {
       sJSHacksPresent = true;
     }
 
-    
-    
-    
+    // This preference is required by bootstrapLoader.xpi, which is an
+    // alternate way to load legacy-style extensions. It only works on
+    // DevEdition/Nightly.
     bool xpinstallSignatures;
     Preferences::GetBool("xpinstall.signatures.required", &xpinstallSignatures);
-    if (xpinstallSignatures) {
+    if (!xpinstallSignatures) {
       sJSHacksPresent = true;
     }
 
@@ -522,7 +522,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     return true;
   }
 
-  
+  // We permit these two common idioms to get access to the global JS object
   if (!aScript.IsEmpty() &&
       (aScript == sAllowedEval1 || aScript == sAllowedEval2)) {
     MOZ_LOG(
@@ -533,8 +533,8 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     return true;
   }
 
-  
-  
+  // Check the allowlist for the provided filename. getFilename is a helper
+  // function
   nsAutoCString fileName;
   uint32_t lineNumber = 0, columnNumber = 0;
   nsJSUtils::GetCallingLocation(cx, fileName, &lineNumber, &columnNumber);
@@ -544,9 +544,9 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
 
   NS_ConvertUTF8toUTF16 fileNameA(fileName);
   for (const nsLiteralCString& allowlistEntry : evalAllowlist) {
-    
-    
-    
+    // checking if current filename begins with entry, because JS Engine
+    // gives us additional stuff for code inside eval or Function ctor
+    // e.g., "require.js > Function"
     if (StringBeginsWith(fileName, allowlistEntry)) {
       MOZ_LOG(sCSMLog, LogLevel::Debug,
               ("Allowing eval() %s because the containing "
@@ -557,7 +557,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     }
   }
 
-  
+  // Send Telemetry and Log to the Console
   uint64_t windowID = nsJSUtils::GetCurrentlyRunningCodeInnerWindowID(cx);
   if (NS_IsMainThread()) {
     nsContentSecurityUtils::NotifyEvalUsage(aIsSystemPrincipal, fileNameA,
@@ -568,18 +568,18 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     NS_DispatchToMainThread(runnable);
   }
 
-  
+  // Log to MOZ_LOG
   MOZ_LOG(sCSMLog, LogLevel::Warning,
           ("Blocking eval() %s from file %s and script "
            "provided %s",
            (aIsSystemPrincipal ? "with System Principal" : "in parent process"),
            fileName.get(), NS_ConvertUTF16toUTF8(aScript).get()));
 
-  
+  // Maybe Crash
 #ifdef DEBUG
-  
-  
-  
+  // MOZ_CRASH_UNSAFE_PRINTF gives us at most 1024 characters to print.
+  // The given string literal leaves us with ~950, so I'm leaving
+  // each 475 for fileName and aScript each.
   if (fileName.Length() > 475) {
     fileName.SetLength(475);
   }
@@ -597,13 +597,13 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
   return false;
 }
 
-
+/* static */
 void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
                                              NS_ConvertUTF8toUTF16& aFileNameA,
                                              uint64_t aWindowID,
                                              uint32_t aLineNumber,
                                              uint32_t aColumnNumber) {
-  
+  // Send Telemetry
   Telemetry::EventID eventType =
       aIsSystemPrincipal ? Telemetry::EventID::Security_Evalusage_Systemcontext
                          : Telemetry::EventID::Security_Evalusage_Parentprocess;
@@ -625,7 +625,7 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
   Telemetry::RecordEvent(eventType, mozilla::Some(fileNameTypeAndDetails.first),
                          extra);
 
-  
+  // Report an error to console
   nsCOMPtr<nsIConsoleService> console(
       do_GetService(NS_CONSOLESERVICE_CONTRACTID));
   if (!console) {
@@ -658,14 +658,14 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
   rv = error->InitWithWindowID(message, aFileNameA, u""_ns, aLineNumber,
                                aColumnNumber, nsIScriptError::errorFlag,
                                "BrowserEvalUsage", aWindowID,
-                               true );
+                               true /* From chrome context */);
   if (NS_FAILED(rv)) {
     return;
   }
   console->LogMessage(error);
 }
 
-
+/* static */
 nsresult nsContentSecurityUtils::GetHttpChannelFromPotentialMultiPart(
     nsIChannel* aChannel, nsIHttpChannel** aHttpChannel) {
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
@@ -696,8 +696,8 @@ nsresult ParseCSPAndEnforceFrameAncestorCheck(
     nsIChannel* aChannel, nsIContentSecurityPolicy** aOutCSP) {
   MOZ_ASSERT(aChannel);
 
-  
-  
+  // CSP can only hang off an http channel, if this channel is not
+  // an http channel then there is nothing to do here.
   nsCOMPtr<nsIHttpChannel> httpChannel;
   nsresult rv = nsContentSecurityUtils::GetHttpChannelFromPotentialMultiPart(
       aChannel, getter_AddRefs(httpChannel));
@@ -711,8 +711,8 @@ nsresult ParseCSPAndEnforceFrameAncestorCheck(
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   ExtContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
-  
-  
+  // frame-ancestor check only makes sense for subdocument and object loads,
+  // if this is not a load of such type, there is nothing to do here.
   if (contentType != ExtContentPolicy::TYPE_SUBDOCUMENT &&
       contentType != ExtContentPolicy::TYPE_OBJECT) {
     return NS_OK;
@@ -726,7 +726,7 @@ nsresult ParseCSPAndEnforceFrameAncestorCheck(
   Unused << httpChannel->GetResponseHeader(
       "content-security-policy-report-only"_ns, tCspROHeaderValue);
 
-  
+  // if there are no CSP values, then there is nothing to do here.
   if (tCspHeaderValue.IsEmpty() && tCspROHeaderValue.IsEmpty()) {
     return NS_OK;
   }
@@ -755,30 +755,30 @@ nsresult ParseCSPAndEnforceFrameAncestorCheck(
     return rv;
   }
 
-  
+  // ----- if there's a full-strength CSP header, apply it.
   if (!cspHeaderValue.IsEmpty()) {
     rv = CSP_AppendCSPFromHeader(csp, cspHeaderValue, false);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  
+  // ----- if there's a report-only CSP header, apply it.
   if (!cspROHeaderValue.IsEmpty()) {
     rv = CSP_AppendCSPFromHeader(csp, cspROHeaderValue, true);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  
+  // ----- Enforce frame-ancestor policy on any applied policies
   bool safeAncestry = false;
-  
+  // PermitsAncestry sends violation reports when necessary
   rv = csp->PermitsAncestry(loadInfo, &safeAncestry);
 
   if (NS_FAILED(rv) || !safeAncestry) {
-    
+    // stop!  ERROR page!
     aChannel->Cancel(NS_ERROR_CSP_FRAME_ANCESTOR_VIOLATION);
     return NS_ERROR_CSP_FRAME_ANCESTOR_VIOLATION;
   }
 
-  
+  // return the CSP for x-frame-options check
   csp.forget(aOutCSP);
 
   return NS_OK;
@@ -788,12 +788,12 @@ void EnforceXFrameOptionsCheck(nsIChannel* aChannel,
                                nsIContentSecurityPolicy* aCsp) {
   MOZ_ASSERT(aChannel);
   if (!FramingChecker::CheckFrameOptions(aChannel, aCsp)) {
-    
+    // stop!  ERROR page!
     aChannel->Cancel(NS_ERROR_XFO_VIOLATION);
   }
 }
 
-
+/* static */
 void nsContentSecurityUtils::PerformCSPFrameAncestorAndXFOCheck(
     nsIChannel* aChannel) {
   nsCOMPtr<nsIContentSecurityPolicy> csp;
@@ -803,31 +803,31 @@ void nsContentSecurityUtils::PerformCSPFrameAncestorAndXFOCheck(
     return;
   }
 
-  
-  
-  
+  // X-Frame-Options needs to be enforced after CSP frame-ancestors
+  // checks because if frame-ancestors is present, then x-frame-options
+  // will be discarded
   EnforceXFrameOptionsCheck(aChannel, csp);
 }
 
 #if defined(DEBUG)
-
+/* static */
 void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // We want to get to a point where all about: pages ship with a CSP. This
+  // assertion ensures that we can not deploy new about: pages without a CSP.
+  // Please note that any about: page should not use inline JS or inline CSS,
+  // and instead should load JS and CSS from an external file (*.js, *.css)
+  // which allows us to apply a strong CSP omitting 'unsafe-inline'. Ideally,
+  // the CSP allows precisely the resources that need to be loaded; but it
+  // should at least be as strong as:
+  // <meta http-equiv="Content-Security-Policy" content="default-src chrome:;
+  // object-src 'none'"/>
 
-  
+  // Check if we should skip the assertion
   if (StaticPrefs::dom_security_skip_about_page_has_csp_assert()) {
     return;
   }
 
-  
+  // Check if we are loading an about: URI at all
   nsCOMPtr<nsIURI> documentURI = aDocument->GetDocumentURI();
   if (!documentURI->SchemeIs("about")) {
     return;
@@ -872,8 +872,8 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
     }
   }
 
-  
-  
+  // Check if we should skip the allowlist and assert right away. Please note
+  // that this pref can and should only be set for automated testing.
   if (StaticPrefs::dom_security_skip_about_page_csp_allowlist_and_assert()) {
     NS_ASSERTION(foundDefaultSrc, "about: page must have a CSP");
     return;
@@ -883,18 +883,18 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   documentURI->GetSpec(aboutSpec);
   ToLowerCase(aboutSpec);
 
-  
-  
+  // This allowlist contains about: pages that are permanently allowed to
+  // render without a CSP applied.
   static nsLiteralCString sAllowedAboutPagesWithNoCSP[] = {
-    
+    // about:blank is a special about page -> no CSP
     "about:blank"_ns,
-    
+    // about:srcdoc is a special about page -> no CSP
     "about:srcdoc"_ns,
-    
+    // about:sync-log displays plain text only -> no CSP
     "about:sync-log"_ns,
-    
+    // about:printpreview displays plain text only -> no CSP
     "about:printpreview"_ns,
-    
+    // about:logo just displays the firefox logo -> no CSP
     "about:logo"_ns,
 #  if defined(ANDROID)
     "about:config"_ns,
@@ -902,9 +902,9 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   };
 
   for (const nsLiteralCString& allowlistEntry : sAllowedAboutPagesWithNoCSP) {
-    
-    
-    
+    // please note that we perform a substring match here on purpose,
+    // so we don't have to deal and parse out all the query arguments
+    // the various about pages rely on.
     if (StringBeginsWith(aboutSpec, allowlistEntry)) {
       return;
     }
@@ -915,7 +915,7 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   MOZ_ASSERT(foundObjectSrc,
              "about: page must contain a CSP denying object-src");
 
-  
+  // preferences and downloads allow legacy inline scripts through hash src.
   MOZ_ASSERT(!foundScriptSrc ||
                  StringBeginsWith(aboutSpec, "about:preferences"_ns) ||
                  StringBeginsWith(aboutSpec, "about:downloads"_ns) ||
@@ -931,8 +931,8 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   MOZ_ASSERT(!foundWorkerSrc,
              "about: page must not contain a CSP including worker-src");
 
-  
-  
+  // addons, preferences, debugging, newinstall, ion, devtools all have
+  // to allow some remote web resources
   MOZ_ASSERT(!foundWebScheme ||
                  StringBeginsWith(aboutSpec, "about:preferences"_ns) ||
                  StringBeginsWith(aboutSpec, "about:addons"_ns) ||
@@ -948,10 +948,10 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
              "about: page must not contain a CSP including a web scheme");
 
   if (aDocument->IsExtensionPage()) {
-    
-    
-    
-    
+    // Extensions have two CSP policies applied where the baseline CSP
+    // includes 'unsafe-eval' and 'unsafe-inline', hence we have to skip
+    // the 'unsafe-eval' and 'unsafe-inline' assertions for extension
+    // pages.
     return;
   }
 
@@ -959,15 +959,15 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
              "about: page must not contain a CSP including 'unsafe-eval'");
 
   static nsLiteralCString sLegacyUnsafeInlineAllowList[] = {
-      
-      
+      // Bug 1579160: Remove 'unsafe-inline' from style-src within
+      // about:preferences
       "about:preferences"_ns,
-      
+      // Bug 1571346: Remove 'unsafe-inline' from style-src within about:addons
       "about:addons"_ns,
-      
-      
-      
-      
+      // Bug 1584485: Remove 'unsafe-inline' from style-src within:
+      // * about:newtab
+      // * about:welcome
+      // * about:home
       "about:newtab"_ns,
       "about:welcome"_ns,
       "about:home"_ns,
@@ -975,9 +975,9 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
 
   for (const nsLiteralCString& aUnsafeInlineEntry :
        sLegacyUnsafeInlineAllowList) {
-    
-    
-    
+    // please note that we perform a substring match here on purpose,
+    // so we don't have to deal and parse out all the query arguments
+    // the various about pages rely on.
     if (StringBeginsWith(aboutSpec, aUnsafeInlineEntry)) {
       return;
     }
@@ -988,41 +988,41 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
 }
 #endif
 
-
+/* static */
 bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
                                                     bool aIsSystemRealm) {
-  
+  // If the pref is permissive, allow everything
   if (StaticPrefs::security_allow_parent_unrestricted_js_loads()) {
     return true;
   }
 
-  
+  // If we're not in the parent process allow everything (presently)
   if (!XRE_IsE10sParentProcess()) {
     return true;
   }
 
-  
-  
-  
-  
-  
+  // We can only perform the check of this preference on the Main Thread
+  // (because a String-based preference check is only safe on Main Thread.)
+  // In theory, it would be possible that a separate thread could get here
+  // before the main thread, resulting in the other thread not being able to
+  // perform this check, but the odds of that are small (and probably zero.)
   if (MOZ_UNLIKELY(!sJSHacksChecked) && NS_IsMainThread()) {
-    
-    
-    
-    
+    // This preference is a file used for autoconfiguration of Firefox
+    // by administrators. It has also been (ab)used by the userChromeJS
+    // project to run legacy-style 'extensions', some of which use eval,
+    // all of which run in the System Principal context.
     nsAutoString jsConfigPref;
     Preferences::GetString("general.config.filename", jsConfigPref);
     if (!jsConfigPref.IsEmpty()) {
       sJSHacksPresent = true;
     }
 
-    
-    
-    
+    // This preference is required by bootstrapLoader.xpi, which is an
+    // alternate way to load legacy-style extensions. It only works on
+    // DevEdition/Nightly.
     bool xpinstallSignatures;
     Preferences::GetBool("xpinstall.signatures.required", &xpinstallSignatures);
-    if (xpinstallSignatures) {
+    if (!xpinstallSignatures) {
       sJSHacksPresent = true;
     }
 
@@ -1048,33 +1048,33 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
 
   NS_ConvertUTF8toUTF16 filenameU(aFilename);
   if (StringBeginsWith(filenameU, u"chrome://"_ns)) {
-    
+    // If it's a chrome:// url, allow it
     return true;
   }
   if (StringBeginsWith(filenameU, u"resource://"_ns)) {
-    
+    // If it's a resource:// url, allow it
     return true;
   }
   if (StringBeginsWith(filenameU, u"file://"_ns)) {
-    
+    // We will temporarily allow all file:// URIs through for now
     return true;
   }
   if (StringBeginsWith(filenameU, u"jar:file://"_ns)) {
-    
+    // We will temporarily allow all jar URIs through for now
     return true;
   }
   if (filenameU.Equals(u"about:sync-log"_ns)) {
-    
-    
+    // about:sync-log runs in the parent process and displays a directory
+    // listing. The listing has inline javascript that executes on load.
     return true;
   }
 
-  
+  // Log to MOZ_LOG
   MOZ_LOG(sCSMLog, LogLevel::Info,
           ("ValidateScriptFilename System:%i %s\n", (aIsSystemRealm ? 1 : 0),
            aFilename));
 
-  
+  // Send Telemetry
   FilenameTypeAndDetails fileNameTypeAndDetails =
       FilenameToFilenameType(filenameU, true);
 
@@ -1097,13 +1097,13 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
   Telemetry::RecordEvent(eventType, mozilla::Some(fileNameTypeAndDetails.first),
                          extra);
 
-  
-  
-  
+  // Presently we are not enforcing any restrictions for the script filename,
+  // we're only reporting Telemetry. In the future we will assert in debug
+  // builds and return false to prevent execution in non-debug builds.
   return true;
 }
 
-
+/* static */
 void nsContentSecurityUtils::LogMessageToConsole(nsIHttpChannel* aChannel,
                                                  const char* aMsg) {
   nsCOMPtr<nsIURI> uri;
@@ -1136,7 +1136,7 @@ void nsContentSecurityUtils::LogMessageToConsole(nsIHttpChannel* aChannel,
       localizedMsg, nsIScriptError::warningFlag, "Security"_ns, windowID, uri);
 }
 
-
+/* static */
 long nsContentSecurityUtils::ClassifyDownload(
     nsIChannel* aChannel, const nsAutoCString& aMimeTypeGuess) {
   MOZ_ASSERT(aChannel, "IsDownloadAllowed without channel?");
@@ -1150,19 +1150,19 @@ long nsContentSecurityUtils::ClassifyDownload(
   if (!loadingPrincipal) {
     loadingPrincipal = loadInfo->TriggeringPrincipal();
   }
-  
+  // Creating a fake Loadinfo that is just used for the MCB check.
   nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new mozilla::net::LoadInfo(
       loadingPrincipal, loadInfo->TriggeringPrincipal(), nullptr,
       nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
       nsIContentPolicy::TYPE_FETCH);
 
   int16_t decission = nsIContentPolicy::ACCEPT;
-  nsMixedContentBlocker::ShouldLoad(false,  
-                                    contentLocation,   
-                                    secCheckLoadInfo,  
-                                    aMimeTypeGuess,    
-                                    false,             
-                                    &decission         
+  nsMixedContentBlocker::ShouldLoad(false,  //  aHadInsecureImageRedirect
+                                    contentLocation,   //  aContentLocation,
+                                    secCheckLoadInfo,  //  aLoadinfo
+                                    aMimeTypeGuess,    //  aMimeGuess,
+                                    false,             //  aReportError
+                                    &decission         // aDecision
   );
   Telemetry::Accumulate(mozilla::Telemetry::MIXED_CONTENT_DOWNLOADS,
                         decission != nsIContentPolicy::ACCEPT);
