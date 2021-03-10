@@ -76,7 +76,7 @@ if not (CONFIG["OS_TARGET"] == "WINNT" and CONFIG["CPU_ARCH"] == "aarch64"):
     UNIFIED_SOURCES += ["TestThreadUtils.cpp"]
 
 
-if not (CONFIG["MOZ_DEBUG"] and CONFIG["OS_TARGET"] == "Darwin"):
+if CONFIG["OS_TARGET"] != "Darwin":
     UNIFIED_SOURCES += ["TestExpirationTracker.cpp"]
 
 
