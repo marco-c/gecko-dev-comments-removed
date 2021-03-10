@@ -344,12 +344,16 @@ void gc::GCRuntime::endVerifyPreBarriers() {
 
   MOZ_ASSERT(!JS::IsGenerationalGCEnabled(rt));
 
+  
+  
+  SliceBudget budget = SliceBudget::unlimited();
+  marker.traceBarrieredCells(budget);
+
+  
+  
   AutoPrepareForTracing prep(rt->mainContextFromOwnThread());
 
   bool compartmentCreated = false;
-
-  SliceBudget budget = SliceBudget::unlimited();
-  marker.traceBarrieredCells(budget);
 
   
   for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
