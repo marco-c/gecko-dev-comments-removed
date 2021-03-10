@@ -394,37 +394,6 @@ var UrlbarTestUtils = {
 
 
 
-
-
-  async withContextMenu(win, task) {
-    let textBox = win.gURLBar.querySelector("moz-input-box");
-    let cxmenu = textBox.menupopup;
-    let openPromise = BrowserTestUtils.waitForEvent(cxmenu, "popupshown");
-    this.EventUtils.synthesizeMouseAtCenter(
-      win.gURLBar.inputField,
-      {
-        type: "contextmenu",
-        button: 2,
-      },
-      win
-    );
-    await openPromise;
-    try {
-      await task(cxmenu);
-    } finally {
-      
-      if (cxmenu.state == "open" || cxmenu.state == "showing") {
-        let closePromise = BrowserTestUtils.waitForEvent(cxmenu, "popuphidden");
-        cxmenu.hidePopup();
-        await closePromise;
-      }
-    }
-  },
-
-  
-
-
-
   isPopupOpen(win) {
     return win.gURLBar.view.isOpen;
   },
