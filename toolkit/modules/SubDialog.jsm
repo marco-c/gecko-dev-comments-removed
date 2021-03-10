@@ -108,8 +108,8 @@ SubDialog.prototype = {
     { features, closingCallback, closedCallback, sizeTo } = {},
     ...aParams
   ) {
-    if (sizeTo == "available") {
-      this._box.setAttribute("sizeto", "available");
+    if (["available", "limitheight"].includes(sizeTo)) {
+      this._box.setAttribute("sizeto", sizeTo);
     }
 
     
@@ -470,6 +470,10 @@ SubDialog.prototype = {
 
   resizeVertically() {
     let docEl = this._frame.contentDocument.documentElement;
+    function getDocHeight() {
+      let { scrollHeight } = docEl.ownerDocument.body || docEl;
+      return docEl.style.height || scrollHeight + "px";
+    }
 
     
     
@@ -493,18 +497,22 @@ SubDialog.prototype = {
     let frameSizeDifference =
       frameRect.top - boxRect.top + (boxRect.bottom - frameRect.bottom);
 
-    if (this._box.getAttribute("sizeto") == "available") {
-      
-      
-      this._box.style.setProperty("--box-top-px", `${boxRect.top}px`);
+    let sizeTo = this._box.getAttribute("sizeto");
+    if (["available", "limitheight"].includes(sizeTo)) {
+      if (sizeTo == "limitheight") {
+        this._overlay.style.setProperty("--doc-height-px", getDocHeight());
+      } else {
+        
+        
+        this._box.style.setProperty("--box-top-px", `${boxRect.top}px`);
+      }
       return;
     }
 
     
     
     
-    let { scrollHeight } = docEl.ownerDocument.body || docEl;
-    let frameMinHeight = docEl.style.height || scrollHeight + "px";
+    let frameMinHeight = getDocHeight();
     let frameHeight = docEl.getAttribute("height")
       ? docEl.getAttribute("height") + "px"
       : frameMinHeight;
