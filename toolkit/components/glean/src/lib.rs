@@ -19,6 +19,15 @@
 
 
 
+
+
+
+
+
+#![cfg(not(target_os = "android"))]
+
+
+
 pub extern crate fog;
 
 #[macro_use]
