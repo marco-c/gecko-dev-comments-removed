@@ -10335,20 +10335,9 @@ nsGlobalWindowInner* nsContentUtils::CallerInnerWindow() {
     AutoJSAPI jsapi;
     MOZ_ALWAYS_TRUE(jsapi.Init(scope));
     JSContext* cx = jsapi.cx();
-
-    JS::Rooted<JSObject*> scopeProto(cx);
-    bool ok = JS_GetPrototype(cx, scope, &scopeProto);
-    NS_ENSURE_TRUE(ok, nullptr);
-    if (scopeProto && xpc::IsSandboxPrototypeProxy(scopeProto) &&
-        
-        
-        
-        
-        (scopeProto = js::CheckedUnwrapDynamic(
-             scopeProto, cx,  false))) {
-      global = xpc::NativeGlobal(scopeProto);
-      NS_ENSURE_TRUE(global, nullptr);
-    }
+    
+    
+    return xpc::SandboxWindowOrNull(scope, cx);
   }
 
   

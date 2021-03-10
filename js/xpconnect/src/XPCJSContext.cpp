@@ -699,19 +699,11 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
   
   RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
   RefPtr<nsGlobalWindowInner> win = WindowOrNull(global);
-  if (!win && IsSandbox(global)) {
+  if (!win) {
     
     
     
-    JS::Rooted<JSObject*> proto(cx);
-    if (!JS_GetPrototype(cx, global, &proto)) {
-      return false;
-    }
-    if (proto && xpc::IsSandboxPrototypeProxy(proto) &&
-        (proto = js::CheckedUnwrapDynamic(proto, cx,
-                                           false))) {
-      win = WindowGlobalOrNull(proto);
-    }
+    win = SandboxWindowOrNull(global, cx);
   }
 
   if (!win) {

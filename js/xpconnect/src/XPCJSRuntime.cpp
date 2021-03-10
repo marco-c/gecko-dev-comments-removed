@@ -611,6 +611,26 @@ nsGlobalWindowInner* WindowGlobalOrNull(JSObject* aObj) {
   return WindowOrNull(glob);
 }
 
+nsGlobalWindowInner* SandboxWindowOrNull(JSObject* aObj, JSContext* aCx) {
+  MOZ_ASSERT(aObj);
+
+  if (!IsSandbox(aObj)) {
+    return nullptr;
+  }
+
+  
+  JSObject* proto = GetStaticPrototype(aObj);
+  if (!proto || !IsSandboxPrototypeProxy(proto)) {
+    return nullptr;
+  }
+
+  proto = js::CheckedUnwrapDynamic(proto, aCx,  false);
+  if (!proto) {
+    return nullptr;
+  }
+  return WindowOrNull(proto);
+}
+
 nsGlobalWindowInner* CurrentWindowOrNull(JSContext* cx) {
   JSObject* glob = JS::CurrentGlobalOrNull(cx);
   return glob ? WindowOrNull(glob) : nullptr;

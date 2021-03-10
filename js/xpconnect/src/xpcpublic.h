@@ -556,6 +556,13 @@ nsGlobalWindowInner* WindowGlobalOrNull(JSObject* aObj);
 
 
 
+
+nsGlobalWindowInner* SandboxWindowOrNull(JSObject* aObj, JSContext* aCx);
+
+
+
+
+
 nsGlobalWindowInner* CurrentWindowOrNull(JSContext* cx);
 
 class MOZ_RAII AutoScriptActivity {
