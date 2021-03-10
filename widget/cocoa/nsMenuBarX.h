@@ -97,8 +97,7 @@ class nsMenuBarX : public nsMenuGroupOwnerX, public nsChangeObserver {
   nsMenuObjectTypeX MenuObjectType() override { return eMenuBarObjectType; }
 
   
-  nsresult Create(nsIWidget* aParent, mozilla::dom::Element* aElement);
-  void SetParent(nsIWidget* aParent);
+  nsresult Create(mozilla::dom::Element* aElement);
   uint32_t GetMenuCount();
   bool MenuContainsAppMenu();
   nsMenuX* GetMenuAt(uint32_t aIndex);
@@ -125,7 +124,6 @@ class nsMenuBarX : public nsMenuGroupOwnerX, public nsChangeObserver {
   void CreateApplicationMenu(nsMenuX* aMenu);
 
   nsTArray<mozilla::UniquePtr<nsMenuX>> mMenuArray;
-  nsIWidget* mParentWindow;  
   GeckoNSMenu* mNativeMenu;  
   bool mNeedsRebuild;
   ApplicationMenuDelegate* mApplicationMenuDelegate;
