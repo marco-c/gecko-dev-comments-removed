@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
   --info-icon-url: url("chrome://global/skin/icons/info.svg");
@@ -12,16 +12,16 @@
   --close-icon-size: 32px;
 }
 
-
-
+/* MessageBar colors by message type */
+/* Colors from: https://design.firefox.com/photon/components/message-bars.html#type-specific-style */
 
 :host {
-  
+  /* Colors used by default, and for [type=generic] message bars.*/
   background-color: var(--in-content-box-info-background);
   color: var(--in-content-text-color);
 
   --message-bar-icon-url: var(--info-icon-url);
-  
+  /* The default values of --in-content-button* are sufficient, even for dark themes */
 }
 
 :host([type=warning]) {
@@ -58,17 +58,17 @@
   border-radius: 4px;
 }
 
-
+/* Make the host to behave as a block by default, but allow hidden to hide it. */
 :host(:not([hidden])) {
   display: block;
 }
 
 ::slotted(button) {
-  
+  /* Enforce micro-button width. */
   min-width: -moz-fit-content !important;
 }
 
-
+/* MessageBar Grid Layout */
 
 .container {
   background: inherit;
@@ -80,7 +80,7 @@
   border-radius: 4px;
 
   display: flex;
-  
+  /* Ensure that the message bar shadow dom elements are vertically aligned. */
   align-items: center;
 }
 
@@ -91,13 +91,13 @@
 .content {
   margin: 0 4px;
   display: flex;
-  
+  /* Ensure that the message bar content is vertically aligned. */
   align-items: center;
-  
+  /* Ensure that the message bar content is wrapped. */
   word-break: break-word;
 }
 
-
+/* MessageBar icon style */
 
 .icon {
   padding: 4px;
@@ -114,13 +114,13 @@
   content: var(--message-bar-icon-url);
 }
 
-
-
+/* Use a spacer to position the close button at the end, but also support
+ * centering if required. */
 .spacer {
   flex-grow: 1;
 }
 
-
+/* Close icon styles */
 
 :host(:not([dismissable])) .close {
   display: none;
@@ -130,9 +130,8 @@
   background-image: var(--close-icon-url);
   background-repeat: no-repeat;
   background-position: center center;
-  -moz-context-properties: fill, fill-opacity;
+  -moz-context-properties: fill;
   fill: currentColor;
-  fill-opacity: 0;
   min-width: auto;
   min-height: auto;
   width: var(--close-icon-size);

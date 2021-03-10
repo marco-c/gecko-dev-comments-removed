@@ -1,13 +1,13 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
  .overlay {
   position: fixed;
   z-index: 1;
   inset: 0;
-  
-
+  /* TODO: this color is used in the about:preferences overlay, but
+           why isn't it declared as a variable? */
   background-color: rgba(0,0,0,0.5);
   display: flex;
 }
@@ -24,7 +24,7 @@
   background: var(--in-content-page-background);
   color: var(--in-content-page-color);
   box-shadow: var(--shadow-30);
-  
+  /* show a border in high contrast mode */
   outline: 1px solid transparent;
 }
 
@@ -52,9 +52,8 @@
 }
 
 .dismiss-icon {
-  -moz-context-properties: fill, fill-opacity;
+  -moz-context-properties: fill;
   fill: currentColor;
-  fill-opacity: 0;
 }
 
 .warning-icon {

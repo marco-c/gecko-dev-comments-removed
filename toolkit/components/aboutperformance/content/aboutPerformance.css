@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import url("chrome://global/skin/in-content/common.css");
 
@@ -24,7 +24,7 @@ body {
   min-width: 40em;
 }
 
-
+/* Avoid scrolling the header */
 #dispatch-tbody {
   display: block;
   margin-top: 2em;
@@ -58,21 +58,21 @@ td:nth-child(5) {
   width: 20px;
 }
 
-
+/* Show action icons on selected or hovered rows */
 tr:is([selected], :hover) > td > .action-icon {
   padding: 1px 10px;
   opacity: 1;
 }
-
-
-
-
-
+/* The action icons have a relative position, so that we can use
+ * absolutely positioned ::before and ::after pseudo elements.
+ * ::before is used to display the square background on hover/active
+ * ::after is used to display the icons as a background that can be
+ * flipped using a CSS transform in RTL mode. */
 .action-icon {
   position: relative;
   opacity: 0;
 }
-
+/* Ensure both pseudo elements have the same size and position. */
 .action-icon::before, .action-icon::after {
   height: 200%;
   position: absolute;
@@ -81,7 +81,7 @@ tr:is([selected], :hover) > td > .action-icon {
   padding-inline: 13px;
 }
 
-
+/* square background */
 .action-icon::before {
   content: "";
   background-color: currentColor;
@@ -94,11 +94,10 @@ tr:is([selected], :hover) > td > .action-icon {
   opacity: 0.2;
 }
 
-
+/* icons */
 .action-icon::after {
-  -moz-context-properties: fill, fill-opacity;
+  -moz-context-properties: fill;
   fill: currentColor;
-  fill-opacity: 0;
   background-repeat: no-repeat;
   background-position: center;
   line-height: 100%;
@@ -163,14 +162,14 @@ td {
   padding-inline: 18px;
   position: relative;
 }
-
-
+/* Putting the background image in a positioned pseudo element lets us
+ * use CSS transforms on the background image, which we need for rtl. */
 .twisty::before {
   content: url("chrome://global/skin/icons/twisty-collapsed.svg");
   position: absolute;
   display: block;
   line-height: 50%;
-  top: 4px; 
+  top: 4px; /* Half the image's height */
   width: 100%;
   inset-inline-start: 0;
   text-align: center;

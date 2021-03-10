@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import url("chrome://global/skin/in-content/info-pages.css");
 
@@ -16,11 +16,11 @@ html.private {
   --in-content-button-background-active: rgba(12,12,13,.15);
 }
 
-
-
-
-
-
+/**
+ * When the showBanner class is applied, the banner is displayed at the top
+ * of the page, and we need to adjust the padding, so that the banner is
+ * spread across the full page width.
+ */
 body.showBanner {
   padding: 0 0 40px;
   min-height: 0;
@@ -235,11 +235,11 @@ p {
 
 .search-banner-close-button {
   float: inline-end;
-  
+  /* min-width and min-height override values set on button elements. */
   min-width: 28px;
   min-height: 28px;
-  
-
+  /* Forcing height and line-height ensure the button hover is displayed correctly
+     as a square box (and focus box). No text gets displayed here so that's ok. */
   height: 28px;
   line-height: 0;
   margin: 16px;
@@ -249,10 +249,9 @@ p {
 }
 
 .search-banner-close-image {
-  -moz-context-properties: fill, fill-opacity;
+  -moz-context-properties: fill;
   fill: currentColor;
-  fill-opacity: 0;
-  width: 28px;
+  width: 22px;
 }
 
 #private-browsing-vpn-link {
