@@ -159,6 +159,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
           [Resources.TYPES.SOURCE]: hasBrowserElement,
           [Resources.TYPES.THREAD_STATE]: hasBrowserElement,
           [Resources.TYPES.SERVER_SENT_EVENT]: hasBrowserElement,
+          [Resources.TYPES.WEBSOCKET]: hasBrowserElement,
         },
         
         
