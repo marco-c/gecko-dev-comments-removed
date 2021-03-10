@@ -399,11 +399,13 @@ void gfxConfigManager::ConfigureWebRender() {
       mGfxInfo->GetAdapterDeviceID(adapter);
       
       
+      
       if (adapter.Find("Mali-T6",  true) >= 0 ||
-          adapter.Find("Mali-T7",  true) >= 0) {
-        mFeatureWrPartial->Disable(FeatureStatus::Blocked,
-                                   "Partial present blocked on Mali-Txxx",
-                                   "FEATURE_FAILURE_PARTIAL_PRESENT_MALI"_ns);
+          adapter.Find("Mali-T7",  true) >= 0 ||
+          adapter.Find("Adreno (TM) 3",  true) >= 0) {
+        mFeatureWrPartial->Disable(
+            FeatureStatus::Blocked, "Partial present blocked",
+            "FEATURE_FAILURE_PARTIAL_PRESENT_BLOCKED"_ns);
       }
     }
   }
