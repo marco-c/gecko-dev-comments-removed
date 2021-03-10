@@ -32,10 +32,9 @@ class IdleTaskRunner final : public CancelableIdleRunnable {
   
   
   
-  
   static already_AddRefed<IdleTaskRunner> Create(
       const CallbackType& aCallback, const char* aRunnableName,
-      uint32_t aMaxDelay, int64_t aNonIdleBudget, bool aRepeating,
+      uint32_t aMaxDelay, int64_t aMinimumUsefulBudget, bool aRepeating,
       const MayStopProcessingCallbackType& aMayStopProcessing);
 
   NS_IMETHOD Run() override;
@@ -47,8 +46,7 @@ class IdleTaskRunner final : public CancelableIdleRunnable {
   void SetTimer(uint32_t aDelay, nsIEventTarget* aTarget) override;
 
   
-  
-  void SetBudget(int64_t aBudget);
+  void SetMinimumUsefulBudget(int64_t aMinimumUsefulBudget);
 
   nsresult Cancel() override;
   void Schedule(bool aAllowIdleDispatch);
@@ -56,7 +54,7 @@ class IdleTaskRunner final : public CancelableIdleRunnable {
  private:
   explicit IdleTaskRunner(
       const CallbackType& aCallback, const char* aRunnableName,
-      uint32_t aMaxDelay, int64_t aNonIdleBudget, bool aRepeating,
+      uint32_t aMaxDelay, int64_t aMinimumUsefulBudget, bool aRepeating,
       const MayStopProcessingCallbackType& aMayStopProcessing);
   ~IdleTaskRunner();
   void CancelTimer();
@@ -75,8 +73,7 @@ class IdleTaskRunner final : public CancelableIdleRunnable {
   TimeStamp mDeadline;
 
   
-  
-  TimeDuration mBudget;
+  TimeDuration mMinimumUsefulBudget;
 
   bool mRepeating;
   bool mTimerActive;
