@@ -1013,9 +1013,9 @@ static bool EnsureConstructor(JSContext* cx, Handle<GlobalObject*> global,
     return false;
   }
 
-  MOZ_ASSERT(global->getPrototype(key).toObject().isDelegate(),
-             "standard class prototype wasn't a delegate from birth");
-  return true;
+  
+  RootedObject proto(cx, &global->getPrototype(key).toObject());
+  return JSObject::setDelegate(cx, proto);
 }
 
 

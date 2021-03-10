@@ -256,15 +256,6 @@ template <class ObjectSubclass>
 
   
   
-  
-  
-  
-  if (obj->isDelegate()) {
-    return true;
-  }
-
-  
-  
   EmptyShape::insertInitialShape(cx, shape);
   return true;
 }
