@@ -84,7 +84,7 @@ class PreferenceExperimentAction extends BaseStudyAction {
       }
 
       case BaseAction.suitability.CAPABILITES_MISMATCH: {
-        if (experiment) {
+        if (experiment && !experiment.expired) {
           await PreferenceExperiments.stop(slug, {
             resetValue: true,
             reason: "capability-mismatch",
@@ -146,7 +146,7 @@ class PreferenceExperimentAction extends BaseStudyAction {
       }
 
       case BaseAction.suitability.FILTER_MISMATCH: {
-        if (experiment) {
+        if (experiment && !experiment.expired) {
           await PreferenceExperiments.stop(slug, {
             resetValue: true,
             reason: "filter-mismatch",
@@ -163,7 +163,7 @@ class PreferenceExperimentAction extends BaseStudyAction {
       }
 
       case BaseAction.suitability.ARGUMENTS_INVALID: {
-        if (experiment) {
+        if (experiment && !experiment.expired) {
           await PreferenceExperiments.stop(slug, {
             resetValue: true,
             reason: "arguments-invalid",
@@ -249,7 +249,7 @@ class PreferenceExperimentAction extends BaseStudyAction {
 
 
   async _considerTemporaryError({ experiment, reason }) {
-    if (!experiment) {
+    if (!experiment || experiment.expired) {
       return;
     }
 
