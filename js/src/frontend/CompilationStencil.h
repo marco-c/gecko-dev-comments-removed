@@ -530,6 +530,8 @@ struct BaseCompilationStencil {
 #endif
 };
 
+struct ExtensibleCompilationStencil;
+
 
 
 
@@ -628,6 +630,9 @@ struct CompilationStencil : public BaseCompilationStencil {
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
   }
+
+  
+  [[nodiscard]] bool steal(JSContext* cx, ExtensibleCompilationStencil&& other);
 
 #ifdef DEBUG
   void assertNoExternalDependency() const;
@@ -751,7 +756,8 @@ struct ExtensibleCompilationStencil {
     return functionKey == BaseCompilationStencil::NullFunctionKey;
   }
 
-  [[nodiscard]] bool finish(JSContext* cx, CompilationStencil& stencil);
+  
+  [[nodiscard]] bool steal(JSContext* cx, CompilationStencil&& other);
 
   inline size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
