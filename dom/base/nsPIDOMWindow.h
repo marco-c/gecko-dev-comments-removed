@@ -301,8 +301,8 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   
   
-  void Suspend();
-  void Resume();
+  void Suspend(bool aIncludeSubWindows = true);
+  void Resume(bool aIncludeSubWindows = true);
 
   
   bool GetWasSuspendedByGroup() const { return mWasSuspendedByGroup; }
