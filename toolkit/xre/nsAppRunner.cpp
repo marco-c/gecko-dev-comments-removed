@@ -242,11 +242,6 @@
 #include "mozilla/mozalloc_oom.h"
 #include "SafeMode.h"
 
-#ifdef MOZ_THUNDERBIRD
-#  include "nsIPK11TokenDB.h"
-#  include "nsIPK11Token.h"
-#endif
-
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasks.h"
 #  include "nsIPowerManagerService.h"
@@ -5016,22 +5011,6 @@ nsresult XREMain::XRE_mainRun() {
     NS_ENSURE_TRUE(appStartup, NS_ERROR_FAILURE);
 
     mDirProvider.DoStartup();
-
-#ifdef MOZ_THUNDERBIRD
-    if (Preferences::GetBool("security.prompt_for_master_password_on_startup",
-                             false)) {
-      
-      
-      
-      
-      nsCOMPtr<nsIPK11TokenDB> db =
-          do_GetService("@mozilla.org/security/pk11tokendb;1");
-      nsCOMPtr<nsIPK11Token> token;
-      if (NS_SUCCEEDED(db->GetInternalKeyToken(getter_AddRefs(token)))) {
-        Unused << token->Login(false);
-      }
-    }
-#endif
 
     
     
