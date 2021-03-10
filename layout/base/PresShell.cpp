@@ -4844,6 +4844,8 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
   
   
   
+  
+  
   for (nsPresContext* ctx = GetPresContext(); ctx;
        ctx = ctx->GetParentPresContext()) {
     PresShell* shell = ctx->PresShell();
@@ -4884,7 +4886,7 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
   
   
   
-  info->mRootOffset = ancestorFrame->GetOffsetTo(rootFrame);
+  info->mRootOffset = ancestorFrame->GetBoundingClientRect().TopLeft();
   rangeRect.MoveBy(info->mRootOffset);
   aSurfaceRect.UnionRect(aSurfaceRect, rangeRect);
 

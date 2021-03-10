@@ -1287,6 +1287,11 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+  nsRect GetBoundingClientRect();
+
+  
+
+
 
 
   inline nsPoint GetNormalPosition(bool* aHasProperty = nullptr) const;

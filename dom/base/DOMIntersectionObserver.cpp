@@ -636,10 +636,7 @@ void DOMIntersectionObserver::Update(Document* aDocument,
 
       
       
-      targetRect = nsLayoutUtils::GetAllInFlowRectsUnion(
-          targetFrame,
-          nsLayoutUtils::GetContainingBlockForClientRect(targetFrame),
-          nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS);
+      targetRect = targetFrame->GetBoundingClientRect();
 
       
       
