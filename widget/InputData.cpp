@@ -625,9 +625,6 @@ double PinchGestureInput::ComputeDeltaY(nsIWidget* aWidget) const {
   
   
 
-  
-  
-
   return (mPreviousSpan - mCurrentSpan) *
          (aWidget ? aWidget->GetDefaultScaleInternal() : 1.f);
 #endif
