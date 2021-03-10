@@ -84,7 +84,7 @@ async function assertIsQuickSuggest({
     actionText = "Sponsored";
   } else {
     url = `${TEST_URL}?q=nonsponsored`;
-    actionText = "Firefox Suggests";
+    actionText = "Firefox Suggest";
   }
   Assert.equal(result.url, url, "Result URL");
   Assert.equal(
