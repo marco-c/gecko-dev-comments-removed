@@ -4,50 +4,40 @@
 
 
 
+"use strict";
+
 add_task(async function test_backgroundtask_update_sync_manager() {
   
   
   
   
   
-  let exitCode = await do_backgroundtask("update_sync_manager");
-  Assert.equal(80, exitCode);
+  
+  
+  let syncManager = Cc["@mozilla.org/updates/update-sync-manager;1"].getService(
+    Ci.nsIUpdateSyncManager
+  );
+
+  let file = do_get_profile();
+  file.append("customExePath1");
+  file.append("customExe");
 
   
-  let dirProvider = {
-    getFile: function AGP_DP_getFile(aProp, aPersistent) {
-      
-      
-      aPersistent.value = false;
-      
-      if (aProp == "XREExeF") {
-        let file = do_get_profile();
-        file.append("customExePath");
-        return file;
-      }
-      return null;
-    },
-    QueryInterface: ChromeUtils.generateQI(["nsIDirectoryServiceProvider"]),
-  };
-  let ds = Services.dirsvc.QueryInterface(Ci.nsIDirectoryService);
-  ds.QueryInterface(Ci.nsIProperties).undefine("XREExeF");
-  ds.registerProvider(dirProvider);
+  syncManager.resetLock(file);
 
-  try {
-    
-    
-    let syncManager = Cc[
-      "@mozilla.org/updates/update-sync-manager;1"
-    ].getService(Ci.nsIUpdateSyncManager);
-    syncManager.resetLock();
+  let exitCode = await do_backgroundtask("update_sync_manager", {
+    extraArgs: [file.path],
+  });
+  Assert.equal(80, exitCode, "Another instance is running");
 
-    
-    
-    
-    
-    exitCode = await do_backgroundtask("update_sync_manager");
-    Assert.equal(81, exitCode);
-  } finally {
-    ds.unregisterProvider(dirProvider);
-  }
+  
+  
+  file = do_get_profile();
+  file.append("customExePath2");
+  file.append("customExe");
+
+  exitCode = await do_backgroundtask("update_sync_manager", {
+    extraArgs: [file.path],
+  });
+  Assert.equal(81, exitCode, "No other instance is running");
 });
