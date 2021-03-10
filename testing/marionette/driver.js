@@ -651,17 +651,7 @@ GeckoDriver.prototype.newSession = async function(cmd) {
   registerCommandsActor();
   registerEventsActor();
 
-  if (!MarionettePrefs.contentListener) {
-    waitForWindow.call(this);
-  } else if (this.appId != APP_ID_FIREFOX && this.curBrowser === null) {
-    
-    
-    let win = this.getCurrentWindow();
-    this.addBrowser(win);
-    this.whenBrowserStarted(win, false);
-  } else {
-    throw new error.WebDriverError("Session already running");
-  }
+  waitForWindow.call(this);
 
   for (let win of this.windows) {
     const tabBrowser = browser.getTabBrowser(win);
