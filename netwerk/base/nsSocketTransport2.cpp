@@ -1376,45 +1376,45 @@ nsresult nsSocketTransport::InitiateSocket() {
         PR_GetError() != PR_OPERATION_NOT_SUPPORTED_ERROR) {
       SOCKET_LOG(("  Couldn't set reuse port socket option: %d\n", status));
     }
+  }
 
-    
-    
-    
-    opt.option = PR_SockOpt_NoDelay;
-    opt.value.no_delay = true;
+  
+  
+  
+  opt.option = PR_SockOpt_NoDelay;
+  opt.value.no_delay = true;
+  PR_SetSocketOption(fd, &opt);
+
+  
+  
+  
+  int32_t sndBufferSize;
+  mSocketTransportService->GetSendBufferSize(&sndBufferSize);
+  if (sndBufferSize > 0) {
+    opt.option = PR_SockOpt_SendBufferSize;
+    opt.value.send_buffer_size = sndBufferSize;
     PR_SetSocketOption(fd, &opt);
+  }
 
-    
-    
-    
-    int32_t sndBufferSize;
-    mSocketTransportService->GetSendBufferSize(&sndBufferSize);
-    if (sndBufferSize > 0) {
-      opt.option = PR_SockOpt_SendBufferSize;
-      opt.value.send_buffer_size = sndBufferSize;
-      PR_SetSocketOption(fd, &opt);
-    }
-
-    if (mQoSBits) {
-      opt.option = PR_SockOpt_IpTypeOfService;
-      opt.value.tos = mQoSBits;
-      PR_SetSocketOption(fd, &opt);
-    }
+  if (mQoSBits) {
+    opt.option = PR_SockOpt_IpTypeOfService;
+    opt.value.tos = mQoSBits;
+    PR_SetSocketOption(fd, &opt);
+  }
 
 #if defined(XP_WIN)
-    
-    
-    
-    
-    
-    
-    
-    opt.option = PR_SockOpt_Linger;
-    opt.value.linger.polarity = 1;
-    opt.value.linger.linger = 0;
-    PR_SetSocketOption(fd, &opt);
+  
+  
+  
+  
+  
+  
+  
+  opt.option = PR_SockOpt_Linger;
+  opt.value.linger.polarity = 1;
+  opt.value.linger.linger = 0;
+  PR_SetSocketOption(fd, &opt);
 #endif
-  }
 
   
   rv = mSocketTransportService->AttachSocket(fd, this);
