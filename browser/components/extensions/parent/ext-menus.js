@@ -288,29 +288,6 @@ var gMenuBuilder = {
     return children;
   },
 
-  removeSeparatorIfNoTopLevelItems() {
-    
-    let isNonExtensionSeparator = item =>
-      item.nodeName === "menuseparator" && !item.id;
-
-    
-    
-    let isExtensionMenuItemSibling = item =>
-      item && this.itemsToCleanUp.has(item) && !isNonExtensionSeparator(item);
-
-    for (let item of this.itemsToCleanUp) {
-      if (isNonExtensionSeparator(item)) {
-        if (
-          !isExtensionMenuItemSibling(item.previousElementSibling) &&
-          !isExtensionMenuItemSibling(item.nextElementSibling)
-        ) {
-          item.remove();
-          this.itemsToCleanUp.delete(item);
-        }
-      }
-    }
-  },
-
   buildSingleElement(item, contextData) {
     let doc = contextData.menu.ownerDocument;
     let element;
@@ -552,7 +529,8 @@ var gMenuBuilder = {
     if (root) {
       this.createAndInsertTopLevelElements(root, contextData, nextSibling);
     }
-    this.removeSeparatorIfNoTopLevelItems();
+
+    this.xulMenu.showHideSeparators?.();
   },
 
   
@@ -586,6 +564,10 @@ var gMenuBuilder = {
       if (!this.itemsToCleanUp.has(item)) {
         item.hidden = true;
       }
+    }
+
+    if (this.xulMenu.showHideSeparators) {
+      this.xulMenu.showHideSeparators();
     }
   },
 

@@ -215,16 +215,16 @@ add_task(async () => {
       menu = await getMacAccessible(menu);
       let menuChildren = menu.getAttributeValue("AXChildren");
       
-      const expectedChildCount = hasContainers ? 15 : 14;
+      const expectedChildCount = hasContainers ? 16 : 15;
       is(
         menuChildren.length,
         expectedChildCount,
-        "Context menu on link contains 14 or 15 items depending on release"
+        "Context menu on link contains 15 or 16 items depending on release"
       );
       
       
       
-      const splitterIndicies = hasContainers ? [4, 10, 12] : [3, 9, 11];
+      const splitterIndicies = hasContainers ? [4, 9, 11, 13] : [3, 8, 10, 12];
       for (let i = 0; i < menuChildren.length; i++) {
         if (splitterIndicies.includes(i)) {
           is(
