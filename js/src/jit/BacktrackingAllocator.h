@@ -32,13 +32,13 @@ namespace jit {
 
 class Requirement {
  public:
-  enum Kind { NONE, REGISTER, FIXED, MUST_REUSE_INPUT };
+  enum Kind { NONE, REGISTER, FIXED };
 
   Requirement() : kind_(NONE) {}
 
   explicit Requirement(Kind kind) : kind_(kind) {
     
-    MOZ_ASSERT(kind != FIXED && kind != MUST_REUSE_INPUT);
+    MOZ_ASSERT(kind != FIXED);
   }
 
   explicit Requirement(LAllocation fixed) : kind_(FIXED), allocation_(fixed) {
@@ -55,7 +55,6 @@ class Requirement {
   [[nodiscard]] bool merge(const Requirement& newRequirement) {
     
     
-    MOZ_ASSERT(newRequirement.kind() != Requirement::MUST_REUSE_INPUT);
 
     if (newRequirement.kind() == Requirement::FIXED) {
       if (kind() == Requirement::FIXED) {
