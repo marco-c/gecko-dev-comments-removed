@@ -260,70 +260,73 @@ Maybe<wr::FontInstanceKey> WebRenderBridgeChild::GetFontKeyForScaledFont(
   MOZ_ASSERT(aScaledFont);
   MOZ_ASSERT(aScaledFont->CanSerialize());
 
-  wr::FontInstanceKey instanceKey = {wr::IdNamespace{0}, 0};
-  if (mFontInstanceKeys.Get(aScaledFont, &instanceKey)) {
-    return Some(instanceKey);
-  }
+  return mFontInstanceKeys.WithEntryHandle(
+      aScaledFont, [&](auto&& entry) -> Maybe<wr::FontInstanceKey> {
+        if (!entry) {
+          Maybe<wr::IpcResourceUpdateQueue> resources =
+              aResources ? Nothing() : Some(wr::IpcResourceUpdateQueue(this));
+          aResources = resources.ptrOr(aResources);
 
-  Maybe<wr::IpcResourceUpdateQueue> resources =
-      aResources ? Nothing() : Some(wr::IpcResourceUpdateQueue(this));
-  aResources = resources.ptrOr(aResources);
+          Maybe<wr::FontKey> fontKey = GetFontKeyForUnscaledFont(
+              aScaledFont->GetUnscaledFont(), aResources);
+          if (fontKey.isNothing()) {
+            return Nothing();
+          }
 
-  Maybe<wr::FontKey> fontKey =
-      GetFontKeyForUnscaledFont(aScaledFont->GetUnscaledFont(), aResources);
-  if (fontKey.isNothing()) {
-    return Nothing();
-  }
+          wr::FontInstanceKey instanceKey = GetNextFontInstanceKey();
 
-  instanceKey = GetNextFontInstanceKey();
+          Maybe<wr::FontInstanceOptions> options;
+          Maybe<wr::FontInstancePlatformOptions> platformOptions;
+          std::vector<FontVariation> variations;
+          aScaledFont->GetWRFontInstanceOptions(&options, &platformOptions,
+                                                &variations);
 
-  Maybe<wr::FontInstanceOptions> options;
-  Maybe<wr::FontInstancePlatformOptions> platformOptions;
-  std::vector<FontVariation> variations;
-  aScaledFont->GetWRFontInstanceOptions(&options, &platformOptions,
-                                        &variations);
+          aResources->AddFontInstance(
+              instanceKey, fontKey.value(), aScaledFont->GetSize(),
+              options.ptrOr(nullptr), platformOptions.ptrOr(nullptr),
+              Range<const FontVariation>(variations.data(), variations.size()));
+          if (resources.isSome()) {
+            UpdateResources(resources.ref());
+          }
 
-  aResources->AddFontInstance(
-      instanceKey, fontKey.value(), aScaledFont->GetSize(),
-      options.ptrOr(nullptr), platformOptions.ptrOr(nullptr),
-      Range<const FontVariation>(variations.data(), variations.size()));
-  if (resources.isSome()) {
-    UpdateResources(resources.ref());
-  }
+          entry.Insert(instanceKey);
+        }
 
-  mFontInstanceKeys.InsertOrUpdate(aScaledFont, instanceKey);
-
-  return Some(instanceKey);
+        return Some(*entry);
+      });
 }
 
 Maybe<wr::FontKey> WebRenderBridgeChild::GetFontKeyForUnscaledFont(
     gfx::UnscaledFont* aUnscaled, wr::IpcResourceUpdateQueue* aResources) {
   MOZ_ASSERT(!mDestroyed);
 
-  wr::FontKey fontKey = {wr::IdNamespace{0}, 0};
-  if (!mFontKeys.Get(aUnscaled, &fontKey)) {
-    Maybe<wr::IpcResourceUpdateQueue> resources =
-        aResources ? Nothing() : Some(wr::IpcResourceUpdateQueue(this));
+  return mFontKeys.WithEntryHandle(
+      aUnscaled, [&](auto&& entry) -> Maybe<wr::FontKey> {
+        if (!entry) {
+          Maybe<wr::IpcResourceUpdateQueue> resources =
+              aResources ? Nothing() : Some(wr::IpcResourceUpdateQueue(this));
 
-    FontFileDataSink sink = {&fontKey, this, resources.ptrOr(aResources)};
-    
-    
-    
-    
-    
-    if (!aUnscaled->GetFontDescriptor(WriteFontDescriptor, &sink) &&
-        !aUnscaled->GetFontFileData(WriteFontFileData, &sink)) {
-      return Nothing();
-    }
+          wr::FontKey fontKey = {wr::IdNamespace{0}, 0};
+          FontFileDataSink sink = {&fontKey, this, resources.ptrOr(aResources)};
+          
+          
+          
+          
+          
+          if (!aUnscaled->GetFontDescriptor(WriteFontDescriptor, &sink) &&
+              !aUnscaled->GetFontFileData(WriteFontFileData, &sink)) {
+            return Nothing();
+          }
 
-    if (resources.isSome()) {
-      UpdateResources(resources.ref());
-    }
+          if (resources.isSome()) {
+            UpdateResources(resources.ref());
+          }
 
-    mFontKeys.InsertOrUpdate(aUnscaled, fontKey);
-  }
+          entry.Insert(fontKey);
+        }
 
-  return Some(fontKey);
+        return Some(*entry);
+      });
 }
 
 void WebRenderBridgeChild::RemoveExpiredFontKeys(
