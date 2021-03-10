@@ -265,8 +265,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   
   
-  js::ZoneOrGCTaskData<js::gc::WeakKeyTable> gcWeakKeys_;
-  js::ZoneOrGCTaskData<js::gc::WeakKeyTable> gcNurseryWeakKeys_;
+  js::ZoneOrGCTaskData<js::gc::EphemeronEdgeTable> gcEphemeronEdges_;
+  js::ZoneOrGCTaskData<js::gc::EphemeronEdgeTable> gcNurseryEphemeronEdges_;
 
   
   
@@ -543,18 +543,21 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   void beforeClearDelegateInternal(JSObject* wrapper, JSObject* delegate);
   void afterAddDelegateInternal(JSObject* wrapper);
-  js::gc::WeakKeyTable& gcWeakKeys() { return gcWeakKeys_.ref(); }
-  js::gc::WeakKeyTable& gcNurseryWeakKeys() { return gcNurseryWeakKeys_.ref(); }
+  js::gc::EphemeronEdgeTable& gcEphemeronEdges() {
+    return gcEphemeronEdges_.ref();
+  }
+  js::gc::EphemeronEdgeTable& gcNurseryEphemeronEdges() {
+    return gcNurseryEphemeronEdges_.ref();
+  }
 
-  js::gc::WeakKeyTable& gcWeakKeys(const js::gc::Cell* cell) {
-    return cell->isTenured() ? gcWeakKeys() : gcNurseryWeakKeys();
+  js::gc::EphemeronEdgeTable& gcEphemeronEdges(const js::gc::Cell* cell) {
+    return cell->isTenured() ? gcEphemeronEdges() : gcNurseryEphemeronEdges();
   }
 
   
   
   js::gc::IncrementalProgress enterWeakMarkingMode(js::GCMarker* marker,
                                                    js::SliceBudget& budget);
-  void checkWeakMarkingMode();
 
   
   
@@ -681,7 +684,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   bool isQueuedForBackgroundSweep() { return isOnList(); }
 
-  void sweepWeakKeysAfterMinorGC();
+  void sweepEphemeronTablesAfterMinorGC();
 
   FinalizationRegistrySet& finalizationRegistries() {
     return finalizationRegistries_.ref();

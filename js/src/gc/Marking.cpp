@@ -761,64 +761,31 @@ struct ImplicitEdgeHolderType<BaseScript*> {
   using Type = BaseScript*;
 };
 
-void GCMarker::markEphemeronValues(gc::Cell* markedCell,
-                                   WeakEntryVector& values) {
-  DebugOnly<size_t> initialLen = values.length();
+void GCMarker::markEphemeronEdges(EphemeronEdgeVector& edges) {
+  DebugOnly<size_t> initialLength = edges.length();
 
-  for (const auto& markable : values) {
-    markable.weakmap->markKey(this, markedCell, markable.key);
+  for (auto& edge : edges) {
+    gc::AutoSetMarkColor autoColor(*this,
+                                   std::min(edge.color, CellColor(color)));
+    ApplyGCThingTyped(edge.target, edge.target->getTraceKind(),
+                      [this](auto t) { traverse(t); });
   }
 
   
   
-  
-  MOZ_ASSERT(values.length() == initialLen);
-}
-
-void GCMarker::forgetWeakKey(js::gc::WeakKeyTable& weakKeys, WeakMapBase* map,
-                             gc::Cell* keyOrDelegate, gc::Cell* keyToRemove) {
-  
-  
-  
-  
-  
-  
-  
-  
-  auto p = weakKeys.get(keyOrDelegate);
-
-  
-  
-  
-  if (p) {
-    
-    for (auto r = p->value.all(); !r.empty(); r.popFront()) {
-      MOZ_ASSERT(r.front().weakmap->mapColor);
-    }
-
-    p->value.eraseIfEqual(WeakMarkable(map, keyToRemove));
-  }
-}
-
-void GCMarker::forgetWeakMap(WeakMapBase* map, Zone* zone) {
-  for (auto table : {&zone->gcNurseryWeakKeys(), &zone->gcWeakKeys()}) {
-    for (auto p = table->all(); !p.empty(); p.popFront()) {
-      p.front().value.eraseIf([map](const WeakMarkable& markable) -> bool {
-        return markable.weakmap == map;
-      });
-    }
-  }
+  MOZ_ASSERT(edges.length() == initialLength);
 }
 
 
 void GCMarker::severWeakDelegate(JSObject* key, JSObject* delegate) {
   JS::Zone* zone = delegate->zone();
   if (!zone->needsIncrementalBarrier()) {
-    MOZ_ASSERT(!zone->gcWeakKeys(delegate).get(delegate),
-               "non-collecting zone should not have populated gcWeakKeys");
+    MOZ_ASSERT(
+        !zone->gcEphemeronEdges(delegate).get(delegate),
+        "non-collecting zone should not have populated gcEphemeronEdges");
     return;
   }
-  auto p = zone->gcWeakKeys(delegate).get(delegate);
+  auto* p = zone->gcEphemeronEdges(delegate).get(delegate);
   if (!p) {
     return;
   }
@@ -829,57 +796,31 @@ void GCMarker::severWeakDelegate(JSObject* key, JSObject* delegate) {
   
   
   
-  
-  js::Vector<WeakMapBase*, 10, SystemAllocPolicy> severedKeyMaps;
-  p->value.eraseIf(
-      [key, &severedKeyMaps](const WeakMarkable& markable) -> bool {
-        if (markable.key != key) {
-          return false;
-        }
-        AutoEnterOOMUnsafeRegion oomUnsafe;
-        if (!severedKeyMaps.append(markable.weakmap)) {
-          oomUnsafe.crash("OOM while recording all weakmaps with severed key");
-        }
-        return true;
-      });
-
-  for (WeakMapBase* weakmap : severedKeyMaps) {
-    if (weakmap->zone()->needsIncrementalBarrier()) {
-      weakmap->postSeverDelegate(this, key);
-    }
-  }
+  EphemeronEdgeVector& edges = p->value;
+  gc::AutoSetMarkColor autoColor(
+      *this, gc::detail::GetEffectiveColor(runtime(), delegate));
+  markEphemeronEdges(edges);
 }
 
 
 void GCMarker::restoreWeakDelegate(JSObject* key, JSObject* delegate) {
   if (!key->zone()->needsIncrementalBarrier() ||
       !delegate->zone()->needsIncrementalBarrier()) {
-    MOZ_ASSERT(!key->zone()->gcWeakKeys(key).get(key),
-               "non-collecting zone should not have populated gcWeakKeys");
+    MOZ_ASSERT(
+        !key->zone()->gcEphemeronEdges(key).has(key),
+        "non-collecting zone should not have populated gcEphemeronEdges");
     return;
   }
-  auto p = key->zone()->gcWeakKeys(key).get(key);
+  auto* p = key->zone()->gcEphemeronEdges(key).get(key);
   if (!p) {
     return;
   }
 
-  js::Vector<WeakMapBase*, 10, SystemAllocPolicy> maps;
-  p->value.eraseIf([key, &maps](const WeakMarkable& markable) -> bool {
-    if (markable.key != key) {
-      return false;
-    }
-    AutoEnterOOMUnsafeRegion oomUnsafe;
-    if (!maps.append(markable.weakmap)) {
-      oomUnsafe.crash("OOM while recording all weakmaps with severed key");
-    }
-    return true;
-  });
-
-  for (WeakMapBase* weakmap : maps) {
-    if (weakmap->zone()->needsIncrementalBarrier()) {
-      weakmap->postRestoreDelegate(this, key, delegate);
-    }
-  }
+  
+  EphemeronEdgeVector& edges = p->value;
+  gc::AutoSetMarkColor autoColor(*this,
+                                 gc::detail::GetEffectiveColor(runtime(), key));
+  markEphemeronEdges(edges);
 }
 
 template <typename T>
@@ -892,18 +833,19 @@ void GCMarker::markImplicitEdgesHelper(T markedThing) {
   MOZ_ASSERT(zone->isGCMarking());
   MOZ_ASSERT(!zone->isGCSweeping());
 
-  auto p = zone->gcWeakKeys().get(markedThing);
+  auto p = zone->gcEphemeronEdges().get(markedThing);
   if (!p) {
     return;
   }
-  WeakEntryVector& markables = p->value;
+  EphemeronEdgeVector& edges = p->value;
 
   
   
   AutoClearTracingSource acts(this);
 
-  markEphemeronValues(markedThing, markables);
-  markables.clear();  
+  CellColor thingColor = gc::detail::GetEffectiveColor(runtime(), markedThing);
+  gc::AutoSetMarkColor autoColor(*this, thingColor);
+  markEphemeronEdges(edges);
 }
 
 template <>
@@ -2438,10 +2380,10 @@ void GCMarker::stop() {
   setMainStackColor(MarkColor::Black);
   AutoEnterOOMUnsafeRegion oomUnsafe;
   for (GCZonesIter zone(runtime()); !zone.done(); zone.next()) {
-    if (!zone->gcWeakKeys().clear()) {
+    if (!zone->gcEphemeronEdges().clear()) {
       oomUnsafe.crash("clearing weak keys in GCMarker::stop()");
     }
-    if (!zone->gcNurseryWeakKeys().clear()) {
+    if (!zone->gcNurseryEphemeronEdges().clear()) {
       oomUnsafe.crash("clearing (nursery) weak keys in GCMarker::stop()");
     }
   }
@@ -2582,41 +2524,26 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
     return IncrementalProgress::Finished;
   }
 
-  MOZ_ASSERT(gcNurseryWeakKeys().count() == 0);
+  MOZ_ASSERT(gcNurseryEphemeronEdges().count() == 0);
 
   
   
   
-  gc::WeakKeyTable::Range r = gcWeakKeys().all();
+  gc::EphemeronEdgeTable::Range r = gcEphemeronEdges().all();
   while (!r.empty()) {
-    gc::Cell* key = r.front().key;
-    gc::CellColor keyColor =
-        gc::detail::GetEffectiveColor(marker->runtime(), key);
-    if (keyColor) {
-      MOZ_ASSERT(key == r.front().key);
-      auto& markables = r.front().value;
+    gc::Cell* src = r.front().key;
+    gc::CellColor srcColor =
+        gc::detail::GetEffectiveColor(marker->runtime(), src);
+    if (srcColor) {
+      MOZ_ASSERT(src == r.front().key);
+      auto& edges = r.front().value;
       r.popFront();  
-      size_t end = markables.length();
-      for (size_t i = 0; i < end; i++) {
-        WeakMarkable& v = markables[i];
-        
-        
-        
-        v.weakmap->markKey(marker, key, v.key);
-        budget.step();
+      if (edges.length() > 0) {
+        gc::AutoSetMarkColor autoColor(*marker, srcColor);
+        marker->markEphemeronEdges(edges);
+        budget.step(edges.length());
         if (budget.isOverBudget()) {
           return NotFinished;
-        }
-      }
-
-      if (keyColor == gc::CellColor::Black) {
-        
-        
-        if (end == markables.length()) {
-          bool found;
-          gcWeakKeys().remove(key, &found);
-        } else {
-          markables.erase(markables.begin(), &markables[end]);
         }
       }
     } else {
@@ -2626,17 +2553,6 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
 
   return IncrementalProgress::Finished;
 }
-
-#ifdef DEBUG
-void JS::Zone::checkWeakMarkingMode() {
-  for (auto r = gcWeakKeys().all(); !r.empty(); r.popFront()) {
-    for (auto markable : r.front().value) {
-      MOZ_ASSERT(markable.weakmap->mapColor,
-                 "unmarked weakmaps in weak keys table");
-    }
-  }
-}
-#endif
 
 void GCMarker::leaveWeakMarkingMode() {
   MOZ_ASSERT(state == MarkingState::WeakMarking ||
