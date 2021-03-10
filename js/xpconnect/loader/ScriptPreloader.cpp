@@ -5,6 +5,7 @@
 
 
 #include "ScriptPreloader-inl.h"
+#include "mozilla/Monitor.h"
 #include "mozilla/ScriptPreloader.h"
 #include "mozilla/loader/ScriptCacheActors.h"
 
@@ -1209,6 +1210,17 @@ JSScript* ScriptPreloader::CachedScript::GetJSScript(
   JS::RootedScript script(cx);
   if (JS::DecodeScript(cx, options, Range(), &script) ==
       JS::TranscodeResult::Ok) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mCache.mMonitor.AssertNotCurrentThreadOwns();
+    MonitorAutoLock mal(mCache.mMonitor);
     mScript.Set(script);
 
     if (mCache.mSaveComplete) {
