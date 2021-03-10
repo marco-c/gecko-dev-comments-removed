@@ -160,7 +160,7 @@ class NewObjectCache {
                          NativeObject* obj);
 
   
-  void invalidateEntriesForShape(Shape* shape, JSObject* proto);
+  void invalidateEntriesForShape(Shape* shape);
 
  private:
   EntryIndex makeIndex(const JSClass* clasp, gc::Cell* key,

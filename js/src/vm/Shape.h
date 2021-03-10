@@ -1406,8 +1406,7 @@ struct EmptyShape : public js::Shape {
 
 
 
-  static void insertInitialShape(JSContext* cx, HandleShape shape,
-                                 HandleObject proto);
+  static void insertInitialShape(JSContext* cx, HandleShape shape);
 
   
 

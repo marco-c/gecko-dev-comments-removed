@@ -265,8 +265,7 @@ template <class ObjectSubclass>
 
   
   
-  RootedObject proto(cx, obj->staticPrototype());
-  EmptyShape::insertInitialShape(cx, shape, proto);
+  EmptyShape::insertInitialShape(cx, shape);
   return true;
 }
 
