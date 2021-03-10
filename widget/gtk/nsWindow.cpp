@@ -241,7 +241,8 @@ static gboolean leave_notify_event_cb(GtkWidget* widget,
                                       GdkEventCrossing* event);
 static gboolean motion_notify_event_cb(GtkWidget* widget,
                                        GdkEventMotion* event);
-static gboolean button_press_event_cb(GtkWidget* widget, GdkEventButton* event);
+MOZ_CAN_RUN_SCRIPT static gboolean button_press_event_cb(GtkWidget* widget,
+                                                         GdkEventButton* event);
 static gboolean button_release_event_cb(GtkWidget* widget,
                                         GdkEventButton* event);
 static gboolean focus_in_event_cb(GtkWidget* widget, GdkEventFocus* event);
@@ -6453,13 +6454,46 @@ bool nsWindow::CheckForRollup(gdouble aMouseX, gdouble aMouseY, bool aIsWheel,
 
 bool nsWindow::DragInProgress(void) {
   nsCOMPtr<nsIDragService> dragService = do_GetService(kCDragServiceCID);
-
-  if (!dragService) return false;
+  if (!dragService) {
+    return false;
+  }
 
   nsCOMPtr<nsIDragSession> currentDragSession;
   dragService->GetCurrentSession(getter_AddRefs(currentDragSession));
 
   return currentDragSession != nullptr;
+}
+
+
+
+
+
+MOZ_CAN_RUN_SCRIPT static void WaylandDragWorkaround(GdkEventButton* aEvent) {
+  static int buttonPressCountWithDrag = 0;
+
+  
+  
+  if (aEvent->button != 1 || aEvent->type != GDK_BUTTON_PRESS) {
+    return;
+  }
+
+  nsCOMPtr<nsIDragService> dragService = do_GetService(kCDragServiceCID);
+  if (!dragService) {
+    return;
+  }
+  nsCOMPtr<nsIDragSession> currentDragSession;
+  dragService->GetCurrentSession(getter_AddRefs(currentDragSession));
+
+  if (currentDragSession != nullptr) {
+    buttonPressCountWithDrag++;
+    if (buttonPressCountWithDrag > 1) {
+      NS_WARNING(
+          "Quit unfinished Wayland Drag and Drop operation. Buggy Wayland "
+          "compositor?");
+      buttonPressCountWithDrag = 0;
+      dragService->EndDragSession(false, 0);
+    }
+  }
 }
 
 static bool is_mouse_in_window(GdkWindow* aWindow, gdouble aMouseX,
@@ -6901,6 +6935,10 @@ static gboolean button_press_event_cb(GtkWidget* widget,
   if (!window) return FALSE;
 
   window->OnButtonPressEvent(event);
+
+  if (gfxPlatformGtk::GetPlatform()->IsWaylandDisplay()) {
+    WaylandDragWorkaround(event);
+  }
 
   return TRUE;
 }
