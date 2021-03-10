@@ -87,7 +87,6 @@ class DtoaCache {
 
 class NewProxyCache {
   struct Entry {
-    ObjectGroup* group;
     Shape* shape;
   };
   static const size_t NumEntries = 4;
@@ -95,23 +94,22 @@ class NewProxyCache {
 
  public:
   MOZ_ALWAYS_INLINE bool lookup(const JSClass* clasp, TaggedProto proto,
-                                ObjectGroup** group, Shape** shape) const {
+                                Shape** shape) const {
     if (!entries_) {
       return false;
     }
     for (size_t i = 0; i < NumEntries; i++) {
       const Entry& entry = entries_[i];
-      if (entry.group && entry.shape->getObjectClass() == clasp &&
-          entry.group->protoDeprecated() == proto) {
-        *group = entry.group;
+      if (entry.shape && entry.shape->getObjectClass() == clasp &&
+          entry.shape->proto() == proto) {
         *shape = entry.shape;
         return true;
       }
     }
     return false;
   }
-  void add(ObjectGroup* group, Shape* shape) {
-    MOZ_ASSERT(group && shape);
+  void add(Shape* shape) {
+    MOZ_ASSERT(shape);
     if (!entries_) {
       entries_.reset(js_pod_calloc<Entry>(NumEntries));
       if (!entries_) {
@@ -122,7 +120,6 @@ class NewProxyCache {
         entries_[i] = entries_[i - 1];
       }
     }
-    entries_[0].group = group;
     entries_[0].shape = shape;
   }
   void purge() { entries_.reset(); }
