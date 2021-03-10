@@ -50,6 +50,7 @@ class ResourceWatcher {
     
     
     this._existingLegacyListeners = new WeakMap();
+    this._processingExistingResources = new Set();
 
     this._notifyWatchers = this._notifyWatchers.bind(this);
     this._throttledNotifyWatchers = throttle(this._notifyWatchers, 100);
@@ -406,6 +407,12 @@ class ResourceWatcher {
 
       
       
+      resource.isAlreadyExistingResource = this._processingExistingResources.has(
+        resourceType
+      );
+
+      
+      
       if (!resource.targetFront) {
         resource.targetFront = targetFront;
       }
@@ -703,6 +710,8 @@ class ResourceWatcher {
       }
     }
 
+    this._processingExistingResources.add(resourceType);
+
     
     
     if (this.hasResourceWatcherSupport(resourceType)) {
@@ -712,6 +721,7 @@ class ResourceWatcher {
         resourceType
       );
       if (!shouldRunLegacyListeners) {
+        this._processingExistingResources.delete(resourceType);
         return;
       }
     }
@@ -726,6 +736,7 @@ class ResourceWatcher {
       promises.push(this._watchResourcesForTarget(target, resourceType));
     }
     await Promise.all(promises);
+    this._processingExistingResources.delete(resourceType);
   }
 
   
