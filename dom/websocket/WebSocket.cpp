@@ -206,6 +206,7 @@ class WebSocketImpl final : public nsIInterfaceRequestor,
   
   
   
+  
   nsCString mScriptFile;
   uint32_t mScriptLine;
   uint32_t mScriptColumn;
@@ -1159,7 +1160,7 @@ class AsyncOpenRunnable final : public WebSocketMainThreadRunnable {
 
     uint64_t windowID = 0;
     if (WindowContext* wc = aWindow->GetWindowContext()) {
-      windowID = wc->TopWindowContext()->InnerWindowId();
+      windowID = wc->InnerWindowId();
     }
 
     mErrorCode = mImpl->AsyncOpen(principal, windowID, nullptr, ""_ns,
@@ -1374,7 +1375,7 @@ already_AddRefed<WebSocket> WebSocket::ConstructorCommon(
 
     uint64_t windowID = 0;
     if (WindowContext* wc = ownerWindow->GetWindowContext()) {
-      windowID = wc->TopWindowContext()->InnerWindowId();
+      windowID = wc->InnerWindowId();
     }
 
     aRv = webSocket->mImpl->AsyncOpen(principal, windowID, aTransportProvider,
@@ -1521,7 +1522,9 @@ nsresult WebSocketImpl::Init(JSContext* aCx, nsIPrincipal* aLoadingPrincipal,
   
   
   if (aCx) {
-    mInnerWindowID = nsJSUtils::GetCurrentlyRunningCodeInnerWindowID(aCx);
+    if (nsPIDOMWindowInner* ownerWindow = mWebSocket->GetOwner()) {
+      mInnerWindowID = ownerWindow->WindowID();
+    }
   }
 
   mPrivateBrowsing = !!aPrincipal->OriginAttributesRef().mPrivateBrowsingId;
