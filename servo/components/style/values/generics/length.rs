@@ -1,17 +1,16 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-//! Generic types for CSS values related to length.
+
+
+
+
 
 use crate::parser::{Parse, ParserContext};
 #[cfg(feature = "gecko")]
-use crate::values::computed::ExtremumLength;
 use crate::Zero;
 use cssparser::Parser;
 use style_traits::ParseError;
 
-/// A `<length-percentage> | auto` value.
+
 #[allow(missing_docs)]
 #[derive(
     Animate,
@@ -38,19 +37,19 @@ pub enum GenericLengthPercentageOrAuto<LengthPercent> {
 pub use self::GenericLengthPercentageOrAuto as LengthPercentageOrAuto;
 
 impl<LengthPercentage> LengthPercentageOrAuto<LengthPercentage> {
-    /// `auto` value.
+    
     #[inline]
     pub fn auto() -> Self {
         LengthPercentageOrAuto::Auto
     }
 
-    /// Whether this is the `auto` value.
+    
     #[inline]
     pub fn is_auto(&self) -> bool {
         matches!(*self, LengthPercentageOrAuto::Auto)
     }
 
-    /// A helper function to parse this with quirks or not and so forth.
+    
     pub fn parse_with<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -73,7 +72,7 @@ impl<LengthPercentage> LengthPercentageOrAuto<LengthPercentage>
 where
     LengthPercentage: Clone,
 {
-    /// Resolves `auto` values by calling `f`.
+    
     #[inline]
     pub fn auto_is(&self, f: impl FnOnce() -> LengthPercentage) -> LengthPercentage {
         match self {
@@ -82,7 +81,7 @@ where
         }
     }
 
-    /// Returns the non-`auto` value, if any.
+    
     #[inline]
     pub fn non_auto(&self) -> Option<LengthPercentage> {
         match self {
@@ -91,7 +90,7 @@ where
         }
     }
 
-    /// Maps the length of this value.
+    
     pub fn map<T>(&self, f: impl FnOnce(LengthPercentage) -> T) -> LengthPercentageOrAuto<T> {
         match self {
             LengthPercentageOrAuto::LengthPercentage(l) => {
@@ -124,12 +123,12 @@ impl<LengthPercentage: Parse> Parse for LengthPercentageOrAuto<LengthPercentage>
     }
 }
 
-/// A generic value for the `width`, `height`, `min-width`, or `min-height` property.
-///
-/// Unlike `max-width` or `max-height` properties, a Size can be `auto`,
-/// and cannot be `none`.
-///
-/// Note that it only accepts non-negative values.
+
+
+
+
+
+
 #[allow(missing_docs)]
 #[derive(
     Animate,
@@ -151,28 +150,33 @@ impl<LengthPercentage: Parse> Parse for LengthPercentageOrAuto<LengthPercentage>
 pub enum GenericSize<LengthPercent> {
     LengthPercentage(LengthPercent),
     Auto,
-    #[cfg(feature = "gecko")]
     #[animation(error)]
-    ExtremumLength(ExtremumLength),
+    MaxContent,
+    #[animation(error)]
+    MinContent,
+    #[animation(error)]
+    MozFitContent,
+    #[animation(error)]
+    MozAvailable,
 }
 
 pub use self::GenericSize as Size;
 
 impl<LengthPercentage> Size<LengthPercentage> {
-    /// `auto` value.
+    
     #[inline]
     pub fn auto() -> Self {
         Size::Auto
     }
 
-    /// Returns whether we're the auto value.
+    
     #[inline]
     pub fn is_auto(&self) -> bool {
         matches!(*self, Size::Auto)
     }
 }
 
-/// A generic value for the `max-width` or `max-height` property.
+
 #[allow(missing_docs)]
 #[derive(
     Animate,
@@ -194,22 +198,29 @@ impl<LengthPercentage> Size<LengthPercentage> {
 pub enum GenericMaxSize<LengthPercent> {
     LengthPercentage(LengthPercent),
     None,
-    #[cfg(feature = "gecko")]
     #[animation(error)]
-    ExtremumLength(ExtremumLength),
+    #[parse(aliases = "-moz-max-content")]
+    MaxContent,
+    #[animation(error)]
+    #[parse(aliases = "-moz-min-content")]
+    MinContent,
+    #[animation(error)]
+    MozFitContent,
+    #[animation(error)]
+    MozAvailable,
 }
 
 pub use self::GenericMaxSize as MaxSize;
 
 impl<LengthPercentage> MaxSize<LengthPercentage> {
-    /// `none` value.
+    
     #[inline]
     pub fn none() -> Self {
         MaxSize::None
     }
 }
 
-/// A generic `<length>` | `<number>` value for the `-moz-tab-size` property.
+
 #[derive(
     Animate,
     Clone,
@@ -229,12 +240,12 @@ impl<LengthPercentage> MaxSize<LengthPercentage> {
 )]
 #[repr(C, u8)]
 pub enum GenericLengthOrNumber<L, N> {
-    /// A number.
-    ///
-    /// NOTE: Numbers need to be before lengths, in order to parse them
-    /// first, since `0` should be a number, not the `0px` length.
+    
+    
+    
+    
     Number(N),
-    /// A length.
+    
     Length(L),
 }
 
@@ -253,7 +264,7 @@ impl<L, N: Zero> Zero for LengthOrNumber<L, N> {
     }
 }
 
-/// A generic `<length-percentage>` | normal` value.
+
 #[derive(
     Animate,
     Clone,
@@ -281,7 +292,7 @@ pub enum GenericLengthPercentageOrNormal<LengthPercent> {
 pub use self::GenericLengthPercentageOrNormal as LengthPercentageOrNormal;
 
 impl<LengthPercent> LengthPercentageOrNormal<LengthPercent> {
-    /// Returns the normal value.
+    
     #[inline]
     pub fn normal() -> Self {
         LengthPercentageOrNormal::Normal

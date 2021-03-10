@@ -169,7 +169,7 @@ static nscoord AddChecked(nscoord aFirst, nscoord aSecond) {
 
 
 static inline bool IsAutoOrEnumOnBSize(const StyleSize& aSize, bool aIsInline) {
-  return aSize.IsAuto() || (!aIsInline && aSize.IsExtremumLength());
+  return aSize.IsAuto() || (!aIsInline && !aSize.IsLengthPercentage());
 }
 
 
@@ -1346,8 +1346,7 @@ FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
         
         styleFlexBaseSize.emplace(StyleSize::Auto());
       } else {
-        styleFlexBaseSize.emplace(
-            StyleSize::ExtremumLength(StyleExtremumLength::MaxContent));
+        styleFlexBaseSize.emplace(StyleSize::MaxContent());
       }
     } else if (flexBasis.IsSize() && !flexBasis.IsAuto()) {
       
@@ -4473,11 +4472,14 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   
   
   
+  
+  
+  
   WritingMode wm = aReflowInput.GetWritingMode();
   const nsStylePosition* stylePos = StylePosition();
   const auto& bsize = stylePos->BSize(wm);
   if (bsize.HasPercent() || (StyleDisplay()->IsAbsolutelyPositionedStyle() &&
-                             (bsize.IsAuto() || bsize.IsExtremumLength()) &&
+                             (bsize.IsAuto() || !bsize.IsLengthPercentage()) &&
                              !stylePos->mOffset.GetBStart(wm).IsAuto() &&
                              !stylePos->mOffset.GetBEnd(wm).IsAuto())) {
     AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);

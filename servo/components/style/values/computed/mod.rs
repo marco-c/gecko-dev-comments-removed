@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-//! Computed values.
+
+
+
+
 
 use self::transform::DirectionVector;
 use super::animated::ToAnimatedValue;
@@ -61,7 +61,7 @@ pub use self::font::{FontVariantAlternates, FontWeight};
 pub use self::font::{FontVariantEastAsian, FontVariationSettings};
 pub use self::font::{MathDepth, MozScriptMinSize, MozScriptSizeMultiplier, XLang, XTextZoom};
 pub use self::image::{Gradient, Image, LineDirection, MozImageRect};
-pub use self::length::{CSSPixelLength, ExtremumLength, NonNegativeLength};
+pub use self::length::{CSSPixelLength, NonNegativeLength};
 pub use self::length::{Length, LengthOrNumber, LengthPercentage, NonNegativeLengthOrNumber};
 pub use self::length::{LengthOrAuto, LengthPercentageOrAuto, MaxSize, Size};
 pub use self::length::{NonNegativeLengthPercentage, NonNegativeLengthPercentageOrAuto};
@@ -134,59 +134,59 @@ pub mod transform;
 pub mod ui;
 pub mod url;
 
-/// A `Context` is all the data a specified value could ever need to compute
-/// itself and be transformed to a computed value.
+
+
 pub struct Context<'a> {
-    /// Values accessed through this need to be in the properties "computed
-    /// early": color, text-decoration, font-size, display, position, float,
-    /// border-*-style, outline-style, font-family, writing-mode...
+    
+    
+    
     pub builder: StyleBuilder<'a>,
 
-    /// A cached computed system font value, for use by gecko.
-    ///
-    /// See properties/longhands/font.mako.rs
+    
+    
+    
     #[cfg(feature = "gecko")]
     pub cached_system_font: Option<properties::longhands::system_font::ComputedSystemFont>,
 
-    /// A dummy option for servo so initializing a computed::Context isn't
-    /// painful.
-    ///
-    /// TODO(emilio): Make constructors for Context, and drop this.
+    
+    
+    
+    
     #[cfg(feature = "servo")]
     pub cached_system_font: Option<()>,
 
-    /// A font metrics provider, used to access font metrics to implement
-    /// font-relative units.
+    
+    
     pub font_metrics_provider: &'a dyn FontMetricsProvider,
 
-    /// Whether or not we are computing the media list in a media query
+    
     pub in_media_query: bool,
 
-    /// The quirks mode of this context.
+    
     pub quirks_mode: QuirksMode,
 
-    /// Whether this computation is being done for a SMIL animation.
-    ///
-    /// This is used to allow certain properties to generate out-of-range
-    /// values, which SMIL allows.
+    
+    
+    
+    
     pub for_smil_animation: bool,
 
-    /// The property we are computing a value for, if it is a non-inherited
-    /// property.  None if we are computed a value for an inherited property
-    /// or not computing for a property at all (e.g. in a media query
-    /// evaluation).
+    
+    
+    
+    
     pub for_non_inherited_property: Option<LonghandId>,
 
-    /// The conditions to cache a rule node on the rule cache.
-    ///
-    /// FIXME(emilio): Drop the refcell.
+    
+    
+    
     pub rule_cache_conditions: RefCell<&'a mut RuleCacheConditions>,
 }
 
 impl<'a> Context<'a> {
-    /// Creates a suitable context for media query evaluation, in which
-    /// font-relative units compute against the system_font, and executes `f`
-    /// with it.
+    
+    
+    
     pub fn for_media_query_evaluation<F, R>(device: &Device, quirks_mode: QuirksMode, f: F) -> R
     where
         F: FnOnce(&Context) -> R,
@@ -208,34 +208,34 @@ impl<'a> Context<'a> {
         f(&context)
     }
 
-    /// The current device.
+    
     pub fn device(&self) -> &Device {
         self.builder.device
     }
 
-    /// The current viewport size, used to resolve viewport units.
+    
     pub fn viewport_size_for_viewport_unit_resolution(&self) -> default::Size2D<Au> {
         self.builder
             .device
             .au_viewport_size_for_viewport_unit_resolution()
     }
 
-    /// The default computed style we're getting our reset style from.
+    
     pub fn default_style(&self) -> &ComputedValues {
         self.builder.default_style()
     }
 
-    /// The current style.
+    
     pub fn style(&self) -> &StyleBuilder {
         &self.builder
     }
 
-    /// Apply text-zoom if enabled.
+    
     #[cfg(feature = "gecko")]
     pub fn maybe_zoom_text(&self, size: CSSPixelLength) -> CSSPixelLength {
-        // We disable zoom for <svg:text> by unsetting the
-        // -x-text-zoom property, which leads to a false value
-        // in mAllowZoomAndMinSize
+        
+        
+        
         if self.style().get_font().gecko.mAllowZoomAndMinSize {
             self.device().zoom_text(size)
         } else {
@@ -243,14 +243,14 @@ impl<'a> Context<'a> {
         }
     }
 
-    /// (Servo doesn't do text-zoom)
+    
     #[cfg(feature = "servo")]
     pub fn maybe_zoom_text(&self, size: CSSPixelLength) -> CSSPixelLength {
         size
     }
 }
 
-/// An iterator over a slice of computed values
+
 #[derive(Clone)]
 pub struct ComputedVecIter<'a, 'cx, 'cx_a: 'cx, S: ToComputedValue + 'a> {
     cx: &'cx Context<'cx_a>,
@@ -258,7 +258,7 @@ pub struct ComputedVecIter<'a, 'cx, 'cx_a: 'cx, S: ToComputedValue + 'a> {
 }
 
 impl<'a, 'cx, 'cx_a: 'cx, S: ToComputedValue + 'a> ComputedVecIter<'a, 'cx, 'cx_a, S> {
-    /// Construct an iterator from a slice of specified values and a context
+    
     pub fn new(cx: &'cx Context<'cx_a>, values: &'a [S]) -> Self {
         ComputedVecIter {
             cx: cx,
@@ -292,26 +292,26 @@ impl<'a, 'cx, 'cx_a: 'cx, S: ToComputedValue + 'a> Iterator for ComputedVecIter<
     }
 }
 
-/// A trait to represent the conversion between computed and specified values.
-///
-/// This trait is derivable with `#[derive(ToComputedValue)]`. The derived
-/// implementation just calls `ToComputedValue::to_computed_value` on each field
-/// of the passed value. The deriving code assumes that if the type isn't
-/// generic, then the trait can be implemented as simple `Clone::clone` calls,
-/// this means that a manual implementation with `ComputedValue = Self` is bogus
-/// if it returns anything else than a clone.
+
+
+
+
+
+
+
+
 pub trait ToComputedValue {
-    /// The computed value type we're going to be converted to.
+    
     type ComputedValue;
 
-    /// Convert a specified value to a computed value, using itself and the data
-    /// inside the `Context`.
+    
+    
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue;
 
-    /// Convert a computed value to specified value form.
-    ///
-    /// This will be used for recascading during animation.
-    /// Such from_computed_valued values should recompute to the same value.
+    
+    
+    
+    
     fn from_computed_value(computed: &Self::ComputedValue) -> Self;
 }
 
@@ -461,11 +461,11 @@ where
     }
 }
 
-// NOTE(emilio): This is implementable more generically, but it's unlikely
-// what you want there, as it forces you to have an extra allocation.
-//
-// We could do that if needed, ideally with specialization for the case where
-// ComputedValue = T. But we don't need it for now.
+
+
+
+
+
 impl<T> ToComputedValue for Arc<T>
 where
     T: ToComputedValue<ComputedValue = T>,
@@ -483,7 +483,7 @@ where
     }
 }
 
-// Same caveat as above applies.
+
 impl<T> ToComputedValue for ArcSlice<T>
 where
     T: ToComputedValue<ComputedValue = T>,
@@ -566,14 +566,14 @@ impl ToComputedValue for specified::AngleOrPercentage {
     }
 }
 
-/// A `<number>` value.
+
 pub type Number = CSSFloat;
 
 impl IsParallelTo for (Number, Number, Number) {
     fn is_parallel_to(&self, vector: &DirectionVector) -> bool {
         use euclid::approxeq::ApproxEq;
-        // If a and b is parallel, the angle between them is 0deg, so
-        // a x b = |a|*|b|*sin(0)*n = 0 * n, |a x b| == 0.
+        
+        
         let self_vector = DirectionVector::new(self.0, self.1, self.2);
         self_vector
             .cross(*vector)
@@ -582,7 +582,7 @@ impl IsParallelTo for (Number, Number, Number) {
     }
 }
 
-/// A wrapper of Number, but the value >= 0.
+
 pub type NonNegativeNumber = NonNegative<CSSFloat>;
 
 impl ToAnimatedValue for NonNegativeNumber {
@@ -625,7 +625,7 @@ impl One for NonNegativeNumber {
     }
 }
 
-/// A wrapper of Number, but the value between 0 and 1
+
 pub type ZeroToOneNumber = ZeroToOne<CSSFloat>;
 
 impl ToAnimatedValue for ZeroToOneNumber {
@@ -649,7 +649,7 @@ impl From<CSSFloat> for ZeroToOneNumber {
     }
 }
 
-/// A wrapper of Number, but the value >= 1.
+
 pub type GreaterThanOrEqualToOneNumber = GreaterThanOrEqualToOne<CSSFloat>;
 
 impl ToAnimatedValue for GreaterThanOrEqualToOneNumber {
@@ -739,11 +739,11 @@ impl ToComputedValue for specified::NumberOrPercentage {
     }
 }
 
-/// A non-negative <number-percentage>.
+
 pub type NonNegativeNumberOrPercentage = NonNegative<NumberOrPercentage>;
 
 impl NonNegativeNumberOrPercentage {
-    /// Returns the `100%` value.
+    
     #[inline]
     pub fn hundred_percent() -> Self {
         NonNegative(NumberOrPercentage::Percentage(Percentage::hundred()))
@@ -764,13 +764,13 @@ impl ToAnimatedValue for NonNegativeNumberOrPercentage {
     }
 }
 
-/// A type used for opacity.
+
 pub type Opacity = CSSFloat;
 
-/// A `<integer>` value.
+
 pub type Integer = CSSInteger;
 
-/// A wrapper of Integer, but only accept a value >= 1.
+
 pub type PositiveInteger = GreaterThanOrEqualToOne<CSSInteger>;
 
 impl ToAnimatedValue for PositiveInteger {
@@ -794,37 +794,37 @@ impl From<CSSInteger> for PositiveInteger {
     }
 }
 
-/// A computed positive `<integer>` value or `none`.
+
 pub type PositiveIntegerOrNone = Either<PositiveInteger, None_>;
 
-/// rect(...) | auto
+
 pub type ClipRect = generics::GenericClipRect<LengthOrAuto>;
 
-/// rect(...) | auto
+
 pub type ClipRectOrAuto = generics::GenericClipRectOrAuto<ClipRect>;
 
-/// The computed value of a grid `<track-breadth>`
+
 pub type TrackBreadth = GenericTrackBreadth<LengthPercentage>;
 
-/// The computed value of a grid `<track-size>`
+
 pub type TrackSize = GenericTrackSize<LengthPercentage>;
 
-/// The computed value of a grid `<track-size>+`
+
 pub type ImplicitGridTracks = GenericImplicitGridTracks<TrackSize>;
 
-/// The computed value of a grid `<track-list>`
-/// (could also be `<auto-track-list>` or `<explicit-track-list>`)
+
+
 pub type TrackList = GenericTrackList<LengthPercentage, Integer>;
 
-/// The computed value of a `<grid-line>`.
+
 pub type GridLine = GenericGridLine<Integer>;
 
-/// `<grid-template-rows> | <grid-template-columns>`
+
 pub type GridTemplateComponent = GenericGridTemplateComponent<LengthPercentage, Integer>;
 
 impl ClipRect {
-    /// Given a border box, resolves the clip rect against the border box
-    /// in the same space the border box is in
+    
+    
     pub fn for_border_rect<T: Copy + From<Length> + Add<Output = T> + Sub<Output = T>, U>(
         &self,
         border_box: Rect<T, U>,

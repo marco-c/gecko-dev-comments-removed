@@ -3376,24 +3376,16 @@ static inline bool IsNonAutoNonZeroBSize(const StyleSize& aCoord) {
   
   
   
-  
-  if (aCoord.IsAuto() || aCoord.IsExtremumLength()) {
+  if (aCoord.BehavesLikeInitialValueOnBlockAxis()) {
     return false;
   }
-  if (aCoord.IsLengthPercentage()) {
-    
-    
-    
-    
-    return aCoord.AsLengthPercentage().Resolve(nscoord_MAX) > 0 ||
-           aCoord.AsLengthPercentage().Resolve(0) > 0;
-  }
-  MOZ_ASSERT(false, "unexpected unit for height or min-height");
-  return true;
-}
-
-static bool BehavesLikeInitialValueOnBlockAxis(const StyleSize& aCoord) {
-  return aCoord.IsAuto() || aCoord.IsExtremumLength();
+  MOZ_ASSERT(aCoord.IsLengthPercentage());
+  
+  
+  
+  
+  return aCoord.AsLengthPercentage().Resolve(nscoord_MAX) > 0 ||
+         aCoord.AsLengthPercentage().Resolve(0) > 0;
 }
 
 
@@ -3417,7 +3409,7 @@ bool nsBlockFrame::IsSelfEmpty() {
   
   
   
-  if (BehavesLikeInitialValueOnBlockAxis(position->BSize(wm)) &&
+  if (position->BSize(wm).BehavesLikeInitialValueOnBlockAxis() &&
       position->mAspectRatio.HasFiniteRatio()) {
     return false;
   }

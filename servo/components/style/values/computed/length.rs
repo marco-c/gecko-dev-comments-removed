@@ -185,7 +185,10 @@ impl Size {
             GenericSize::Auto => false,
             GenericSize::LengthPercentage(ref lp) => lp.is_definitely_zero(),
             #[cfg(feature = "gecko")]
-            GenericSize::ExtremumLength(..) => false,
+            GenericSize::MinContent |
+            GenericSize::MaxContent |
+            GenericSize::MozFitContent |
+            GenericSize::MozAvailable => false
         }
     }
 }
@@ -494,37 +497,6 @@ pub type NonNegativeLengthPercentageOrNormal =
 
 
 pub type NonNegativeLengthOrNumber = GenericLengthOrNumber<NonNegativeLength, NonNegativeNumber>;
-
-
-
-#[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    FromPrimitive,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToAnimatedValue,
-    ToAnimatedZero,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
-#[repr(u8)]
-pub enum ExtremumLength {
-    #[parse(aliases = "-moz-max-content")]
-    MaxContent,
-    #[parse(aliases = "-moz-min-content")]
-    MinContent,
-    MozFitContent,
-    MozAvailable,
-}
 
 
 pub type Size = GenericSize<NonNegativeLengthPercentage>;

@@ -1,10 +1,10 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-//! [Length values][length].
-//!
-//! [length]: https://drafts.csswg.org/css-values/#lengths
+
+
+
+
+
+
 
 use super::{AllowQuirks, Number, Percentage, ToComputedValue};
 use crate::computed_value_flags::ComputedValueFlags;
@@ -32,49 +32,49 @@ pub use super::image::Image;
 pub use super::image::{EndingShape as GradientEndingShape, Gradient};
 pub use crate::values::specified::calc::CalcLengthPercentage;
 
-/// Number of app units per pixel
+
 pub const AU_PER_PX: CSSFloat = 60.;
-/// Number of app units per inch
+
 pub const AU_PER_IN: CSSFloat = AU_PER_PX * 96.;
-/// Number of app units per centimeter
+
 pub const AU_PER_CM: CSSFloat = AU_PER_IN / 2.54;
-/// Number of app units per millimeter
+
 pub const AU_PER_MM: CSSFloat = AU_PER_IN / 25.4;
-/// Number of app units per quarter
+
 pub const AU_PER_Q: CSSFloat = AU_PER_MM / 4.;
-/// Number of app units per point
+
 pub const AU_PER_PT: CSSFloat = AU_PER_IN / 72.;
-/// Number of app units per pica
+
 pub const AU_PER_PC: CSSFloat = AU_PER_PT * 12.;
 
-/// A font relative length.
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub enum FontRelativeLength {
-    /// A "em" value: https://drafts.csswg.org/css-values/#em
+    
     #[css(dimension)]
     Em(CSSFloat),
-    /// A "ex" value: https://drafts.csswg.org/css-values/#ex
+    
     #[css(dimension)]
     Ex(CSSFloat),
-    /// A "ch" value: https://drafts.csswg.org/css-values/#ch
+    
     #[css(dimension)]
     Ch(CSSFloat),
-    /// A "rem" value: https://drafts.csswg.org/css-values/#rem
+    
     #[css(dimension)]
     Rem(CSSFloat),
 }
 
-/// A source to resolve font-relative units against
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum FontBaseSize {
-    /// Use the font-size of the current element.
+    
     CurrentStyle,
-    /// Use the inherited font-size.
+    
     InheritedStyle,
 }
 
 impl FontBaseSize {
-    /// Calculate the actual size for a given context
+    
     pub fn resolve(&self, context: &Context) -> computed::Length {
         match *self {
             FontBaseSize::CurrentStyle => context.style().get_font().clone_font_size().size(),
@@ -86,7 +86,7 @@ impl FontBaseSize {
 }
 
 impl FontRelativeLength {
-    /// Return true if this is a zero value.
+    
     fn is_zero(&self) -> bool {
         match *self {
             FontRelativeLength::Em(v) |
@@ -117,8 +117,8 @@ impl FontRelativeLength {
             (&Ex(one), &Ex(other)) => Ex(one + other),
             (&Ch(one), &Ch(other)) => Ch(one + other),
             (&Rem(one), &Rem(other)) => Rem(one + other),
-            // See https://github.com/rust-lang/rust/issues/68867. rustc isn't
-            // able to figure it own on its own so we help.
+            
+            
             _ => unsafe {
                 match *self {
                     Em(..) | Ex(..) | Ch(..) | Rem(..) => {},
@@ -128,7 +128,7 @@ impl FontRelativeLength {
         })
     }
 
-    /// Computes the font-relative length.
+    
     pub fn to_computed_value(
         &self,
         context: &Context,
@@ -138,13 +138,13 @@ impl FontRelativeLength {
         (reference_size * length).normalized()
     }
 
-    /// Return reference font size.
-    ///
-    /// We use the base_size flag to pass a different size for computing
-    /// font-size and unconstrained font-size.
-    ///
-    /// This returns a pair, the first one is the reference font size, and the
-    /// second one is the unpacked relative length.
+    
+    
+    
+    
+    
+    
+    
     fn reference_font_size_and_length(
         &self,
         context: &Context,
@@ -183,16 +183,16 @@ impl FontRelativeLength {
                     context.rule_cache_conditions.borrow_mut().set_uncacheable();
                 }
                 context.builder.add_flags(font_metrics_flag);
-                // The x-height is an intrinsically horizontal metric.
+                
                 let metrics =
                     query_font_metrics(context, base_size, FontMetricsOrientation::Horizontal);
                 let reference_size = metrics.x_height.unwrap_or_else(|| {
-                    // https://drafts.csswg.org/css-values/#ex
-                    //
-                    //     In the cases where it is impossible or impractical to
-                    //     determine the x-height, a value of 0.5em must be
-                    //     assumed.
-                    //
+                    
+                    
+                    
+                    
+                    
+                    
                     reference_font_size * 0.5
                 });
                 (reference_size, length)
@@ -202,26 +202,26 @@ impl FontRelativeLength {
                     context.rule_cache_conditions.borrow_mut().set_uncacheable();
                 }
                 context.builder.add_flags(font_metrics_flag);
-                // https://drafts.csswg.org/css-values/#ch:
-                //
-                //     Equal to the used advance measure of the “0” (ZERO,
-                //     U+0030) glyph in the font used to render it. (The advance
-                //     measure of a glyph is its advance width or height,
-                //     whichever is in the inline axis of the element.)
-                //
+                
+                
+                
+                
+                
+                
+                
                 let metrics =
                     query_font_metrics(context, base_size, FontMetricsOrientation::MatchContext);
                 let reference_size = metrics.zero_advance_measure.unwrap_or_else(|| {
-                    // https://drafts.csswg.org/css-values/#ch
-                    //
-                    //     In the cases where it is impossible or impractical to
-                    //     determine the measure of the “0” glyph, it must be
-                    //     assumed to be 0.5em wide by 1em tall. Thus, the ch
-                    //     unit falls back to 0.5em in the general case, and to
-                    //     1em when it would be typeset upright (i.e.
-                    //     writing-mode is vertical-rl or vertical-lr and
-                    //     text-orientation is upright).
-                    //
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     let wm = context.style().writing_mode;
                     if wm.is_vertical() && wm.is_upright() {
                         reference_font_size
@@ -232,12 +232,12 @@ impl FontRelativeLength {
                 (reference_size, length)
             },
             FontRelativeLength::Rem(length) => {
-                // https://drafts.csswg.org/css-values/#rem:
-                //
-                //     When specified on the font-size property of the root
-                //     element, the rem units refer to the property's initial
-                //     value.
-                //
+                
+                
+                
+                
+                
+                
                 let reference_size = if context.builder.is_root_element || context.in_media_query {
                     reference_font_size
                 } else {
@@ -249,27 +249,27 @@ impl FontRelativeLength {
     }
 }
 
-/// A viewport-relative length.
-///
-/// <https://drafts.csswg.org/css-values/#viewport-relative-lengths>
+
+
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub enum ViewportPercentageLength {
-    /// A vw unit: https://drafts.csswg.org/css-values/#vw
+    
     #[css(dimension)]
     Vw(CSSFloat),
-    /// A vh unit: https://drafts.csswg.org/css-values/#vh
+    
     #[css(dimension)]
     Vh(CSSFloat),
-    /// <https://drafts.csswg.org/css-values/#vmin>
+    
     #[css(dimension)]
     Vmin(CSSFloat),
-    /// <https://drafts.csswg.org/css-values/#vmax>
+    
     #[css(dimension)]
     Vmax(CSSFloat),
 }
 
 impl ViewportPercentageLength {
-    /// Return true if this is a zero value.
+    
     fn is_zero(&self) -> bool {
         match *self {
             ViewportPercentageLength::Vw(v) |
@@ -300,8 +300,8 @@ impl ViewportPercentageLength {
             (&Vh(one), &Vh(other)) => Vh(one + other),
             (&Vmin(one), &Vmin(other)) => Vmin(one + other),
             (&Vmax(one), &Vmax(other)) => Vmax(one + other),
-            // See https://github.com/rust-lang/rust/issues/68867. rustc isn't
-            // able to figure it own on its own so we help.
+            
+            
             _ => unsafe {
                 match *self {
                     Vw(..) | Vh(..) | Vmin(..) | Vmax(..) => {},
@@ -311,7 +311,7 @@ impl ViewportPercentageLength {
         })
     }
 
-    /// Computes the given viewport-relative length for the given viewport size.
+    
     pub fn to_computed_value(&self, viewport_size: Size2D<Au>) -> CSSPixelLength {
         let (factor, length) = match *self {
             ViewportPercentageLength::Vw(length) => (length, viewport_size.width),
@@ -324,53 +324,53 @@ impl ViewportPercentageLength {
             },
         };
 
-        // FIXME: Bug 1396535, we need to fix the extremely small viewport length for transform.
-        // See bug 989802. We truncate so that adding multiple viewport units
-        // that add up to 100 does not overflow due to rounding differences
+        
+        
+        
         let trunc_scaled = ((length.0 as f64) * factor as f64 / 100.).trunc();
         Au::from_f64_au(trunc_scaled).into()
     }
 }
 
-/// HTML5 "character width", as defined in HTML5 § 14.5.4.
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub struct CharacterWidth(pub i32);
 
 impl CharacterWidth {
-    /// Computes the given character width.
+    
     pub fn to_computed_value(&self, reference_font_size: computed::Length) -> computed::Length {
-        // This applies the *converting a character width to pixels* algorithm
-        // as specified in HTML5 § 14.5.4.
-        //
-        // TODO(pcwalton): Find these from the font.
+        
+        
+        
+        
         let average_advance = reference_font_size * 0.5;
         let max_advance = reference_font_size;
         average_advance * (self.0 as CSSFloat - 1.0) + max_advance
     }
 }
 
-/// Represents an absolute length with its unit
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub enum AbsoluteLength {
-    /// An absolute length in pixels (px)
+    
     #[css(dimension)]
     Px(CSSFloat),
-    /// An absolute length in inches (in)
+    
     #[css(dimension)]
     In(CSSFloat),
-    /// An absolute length in centimeters (cm)
+    
     #[css(dimension)]
     Cm(CSSFloat),
-    /// An absolute length in millimeters (mm)
+    
     #[css(dimension)]
     Mm(CSSFloat),
-    /// An absolute length in quarter-millimeters (q)
+    
     #[css(dimension)]
     Q(CSSFloat),
-    /// An absolute length in points (pt)
+    
     #[css(dimension)]
     Pt(CSSFloat),
-    /// An absolute length in pica (pc)
+    
     #[css(dimension)]
     Pc(CSSFloat),
 }
@@ -400,7 +400,7 @@ impl AbsoluteLength {
         }
     }
 
-    /// Convert this into a pixel value.
+    
     #[inline]
     pub fn to_px(&self) -> CSSFloat {
         use std::f32;
@@ -471,30 +471,30 @@ impl Add<AbsoluteLength> for AbsoluteLength {
     }
 }
 
-/// A `<length>` without taking `calc` expressions into account
-///
-/// <https://drafts.csswg.org/css-values/#lengths>
+
+
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
 pub enum NoCalcLength {
-    /// An absolute length
-    ///
-    /// <https://drafts.csswg.org/css-values/#absolute-length>
+    
+    
+    
     Absolute(AbsoluteLength),
 
-    /// A font-relative length:
-    ///
-    /// <https://drafts.csswg.org/css-values/#font-relative-lengths>
+    
+    
+    
     FontRelative(FontRelativeLength),
 
-    /// A viewport-relative length.
-    ///
-    /// <https://drafts.csswg.org/css-values/#viewport-relative-lengths>
+    
+    
+    
     ViewportPercentage(ViewportPercentageLength),
 
-    /// HTML5 "character width", as defined in HTML5 § 14.5.4.
-    ///
-    /// This cannot be specified by the user directly and is only generated by
-    /// `Stylist::synthesize_rules_for_legacy_attributes()`.
+    
+    
+    
+    
     #[css(function)]
     ServoCharacterWidth(CharacterWidth),
 }
@@ -514,7 +514,7 @@ impl Mul<CSSFloat> for NoCalcLength {
 }
 
 impl NoCalcLength {
-    /// Returns whether the value of this length without unit is less than zero.
+    
     pub fn is_negative(&self) -> bool {
         match *self {
             NoCalcLength::Absolute(v) => v.is_negative(),
@@ -524,7 +524,7 @@ impl NoCalcLength {
         }
     }
 
-    /// Parse a given absolute or relative dimension.
+    
     pub fn parse_dimension(
         context: &ParserContext,
         value: CSSFloat,
@@ -560,7 +560,7 @@ impl NoCalcLength {
         })
     }
 
-    /// Try to sume two lengths if compatible into the left hand side.
+    
     pub(crate) fn try_sum(&self, other: &Self) -> Result<Self, ()> {
         use self::NoCalcLength::*;
 
@@ -577,8 +577,8 @@ impl NoCalcLength {
             (&ServoCharacterWidth(ref one), &ServoCharacterWidth(ref other)) => {
                 ServoCharacterWidth(CharacterWidth(one.0 + other.0))
             },
-            // See https://github.com/rust-lang/rust/issues/68867. rustc isn't
-            // able to figure it own on its own so we help.
+            
+            
             _ => unsafe {
                 match *self {
                     Absolute(..) |
@@ -591,7 +591,7 @@ impl NoCalcLength {
         })
     }
 
-    /// Get a px value without context.
+    
     #[inline]
     pub fn to_computed_pixel_length_without_context(&self) -> Result<CSSFloat, ()> {
         match *self {
@@ -600,7 +600,7 @@ impl NoCalcLength {
         }
     }
 
-    /// Get an absolute length from a px value.
+    
     #[inline]
     pub fn from_px(px_value: CSSFloat) -> NoCalcLength {
         NoCalcLength::Absolute(AbsoluteLength::Px(px_value))
@@ -626,8 +626,8 @@ impl PartialOrd for NoCalcLength {
             (&ServoCharacterWidth(ref one), &ServoCharacterWidth(ref other)) => {
                 one.0.partial_cmp(&other.0)
             },
-            // See https://github.com/rust-lang/rust/issues/68867. rustc isn't
-            // able to figure it own on its own so we help.
+            
+            
             _ => unsafe {
                 match *self {
                     Absolute(..) |
@@ -656,17 +656,17 @@ impl Zero for NoCalcLength {
     }
 }
 
-/// An extension to `NoCalcLength` to parse `calc` expressions.
-/// This is commonly used for the `<length>` values.
-///
-/// <https://drafts.csswg.org/css-values/#lengths>
+
+
+
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum Length {
-    /// The internal length type that cannot parse `calc`
+    
     NoCalc(NoCalcLength),
-    /// A calc expression.
-    ///
-    /// <https://drafts.csswg.org/css-values/#calc-notation>
+    
+    
+    
     Calc(Box<CalcLengthPercentage>),
 }
 
@@ -702,8 +702,8 @@ impl PartialOrd for FontRelativeLength {
             (&Ex(ref one), &Ex(ref other)) => one.partial_cmp(other),
             (&Ch(ref one), &Ch(ref other)) => one.partial_cmp(other),
             (&Rem(ref one), &Rem(ref other)) => one.partial_cmp(other),
-            // See https://github.com/rust-lang/rust/issues/68867. rustc isn't
-            // able to figure it own on its own so we help.
+            
+            
             _ => unsafe {
                 match *self {
                     Em(..) | Ex(..) | Ch(..) | Rem(..) => {},
@@ -755,8 +755,8 @@ impl PartialOrd for ViewportPercentageLength {
             (&Vh(ref one), &Vh(ref other)) => one.partial_cmp(other),
             (&Vmin(ref one), &Vmin(ref other)) => one.partial_cmp(other),
             (&Vmax(ref one), &Vmax(ref other)) => one.partial_cmp(other),
-            // See https://github.com/rust-lang/rust/issues/68867. rustc isn't
-            // able to figure it own on its own so we help.
+            
+            
             _ => unsafe {
                 match *self {
                     Vw(..) | Vh(..) | Vmin(..) | Vmax(..) => {},
@@ -805,7 +805,7 @@ impl Length {
         }
     }
 
-    /// Parse a non-negative length
+    
     #[inline]
     pub fn parse_non_negative<'i, 't>(
         context: &ParserContext,
@@ -814,7 +814,7 @@ impl Length {
         Self::parse_non_negative_quirky(context, input, AllowQuirks::No)
     }
 
-    /// Parse a non-negative length, allowing quirks.
+    
     #[inline]
     pub fn parse_non_negative_quirky<'i, 't>(
         context: &ParserContext,
@@ -829,7 +829,7 @@ impl Length {
         )
     }
 
-    /// Get an absolute length from a px value.
+    
     #[inline]
     pub fn from_px(px_value: CSSFloat) -> Length {
         Length::NoCalc(NoCalcLength::from_px(px_value))
@@ -851,8 +851,8 @@ impl Zero for Length {
     }
 
     fn is_zero(&self) -> bool {
-        // FIXME(emilio): Seems a bit weird to treat calc() unconditionally as
-        // non-zero here?
+        
+        
         match *self {
             Length::NoCalc(ref l) => l.is_zero(),
             Length::Calc(..) => false,
@@ -861,7 +861,7 @@ impl Zero for Length {
 }
 
 impl Length {
-    /// Parses a length, with quirks.
+    
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -871,7 +871,7 @@ impl Length {
     }
 }
 
-/// A wrapper of Length, whose value must be >= 0.
+
 pub type NonNegativeLength = NonNegative<Length>;
 
 impl Parse for NonNegativeLength {
@@ -899,13 +899,13 @@ impl From<Length> for NonNegativeLength {
 }
 
 impl NonNegativeLength {
-    /// Get an absolute length from a px value.
+    
     #[inline]
     pub fn from_px(px_value: CSSFloat) -> Self {
         Length::from_px(px_value.max(0.)).into()
     }
 
-    /// Parses a non-negative length, optionally with quirks.
+    
     #[inline]
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
@@ -920,10 +920,10 @@ impl NonNegativeLength {
     }
 }
 
-/// A `<length-percentage>` value. This can be either a `<length>`, a
-/// `<percentage>`, or a combination of both via `calc()`.
-///
-/// https://drafts.csswg.org/css-values-4/#typedef-length-percentage
+
+
+
+
 #[allow(missing_docs)]
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum LengthPercentage {
@@ -952,7 +952,7 @@ impl From<Percentage> for LengthPercentage {
     #[inline]
     fn from(pc: Percentage) -> Self {
         if pc.is_calc() {
-            // FIXME(emilio): Hard-coding the clamping mode is suspect.
+            
             LengthPercentage::Calc(Box::new(CalcLengthPercentage {
                 clamping_mode: AllowedNumericType::All,
                 node: CalcNode::Leaf(calc::Leaf::Percentage(pc.get())),
@@ -982,7 +982,7 @@ impl Parse for LengthPercentage {
 
 impl LengthPercentage {
     #[inline]
-    /// Returns a `0%` value.
+    
     pub fn zero_percent() -> LengthPercentage {
         LengthPercentage::Percentage(computed::Percentage::zero())
     }
@@ -1030,8 +1030,8 @@ impl LengthPercentage {
         }
     }
 
-    /// Parses allowing the unitless length quirk.
-    /// <https://quirks.spec.whatwg.org/#the-unitless-length-quirk>
+    
+    
     #[inline]
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
@@ -1041,10 +1041,10 @@ impl LengthPercentage {
         Self::parse_internal(context, input, AllowedNumericType::All, allow_quirks)
     }
 
-    /// Parse a non-negative length.
-    ///
-    /// FIXME(emilio): This should be not public and we should use
-    /// NonNegativeLengthPercentage instead.
+    
+    
+    
+    
     #[inline]
     pub fn parse_non_negative<'i, 't>(
         context: &ParserContext,
@@ -1053,7 +1053,7 @@ impl LengthPercentage {
         Self::parse_non_negative_quirky(context, input, AllowQuirks::No)
     }
 
-    /// Parse a non-negative length, with quirks.
+    
     #[inline]
     pub fn parse_non_negative_quirky<'i, 't>(
         context: &ParserContext,
@@ -1083,18 +1083,18 @@ impl Zero for LengthPercentage {
     }
 }
 
-/// A specified type for `<length-percentage> | auto`.
+
 pub type LengthPercentageOrAuto = generics::LengthPercentageOrAuto<LengthPercentage>;
 
 impl LengthPercentageOrAuto {
-    /// Returns a value representing `0%`.
+    
     #[inline]
     pub fn zero_percent() -> Self {
         generics::LengthPercentageOrAuto::LengthPercentage(LengthPercentage::zero_percent())
     }
 
-    /// Parses a length or a percentage, allowing the unitless length quirk.
-    /// <https://quirks.spec.whatwg.org/#the-unitless-length-quirk>
+    
+    
     #[inline]
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
@@ -1107,12 +1107,12 @@ impl LengthPercentageOrAuto {
     }
 }
 
-/// A wrapper of LengthPercentageOrAuto, whose value must be >= 0.
+
 pub type NonNegativeLengthPercentageOrAuto =
     generics::LengthPercentageOrAuto<NonNegativeLengthPercentage>;
 
 impl NonNegativeLengthPercentageOrAuto {
-    /// Returns a value representing `0%`.
+    
     #[inline]
     pub fn zero_percent() -> Self {
         generics::LengthPercentageOrAuto::LengthPercentage(
@@ -1120,8 +1120,8 @@ impl NonNegativeLengthPercentageOrAuto {
         )
     }
 
-    /// Parses a non-negative length-percentage, allowing the unitless length
-    /// quirk.
+    
+    
     #[inline]
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
@@ -1134,10 +1134,10 @@ impl NonNegativeLengthPercentageOrAuto {
     }
 }
 
-/// A wrapper of LengthPercentage, whose value must be >= 0.
+
 pub type NonNegativeLengthPercentage = NonNegative<LengthPercentage>;
 
-/// Either a NonNegativeLengthPercentage or the `normal` keyword.
+
 pub type NonNegativeLengthPercentageOrNormal =
     GenericLengthPercentageOrNormal<NonNegativeLengthPercentage>;
 
@@ -1160,13 +1160,13 @@ impl Parse for NonNegativeLengthPercentage {
 
 impl NonNegativeLengthPercentage {
     #[inline]
-    /// Returns a `0%` value.
+    
     pub fn zero_percent() -> Self {
         NonNegative(LengthPercentage::zero_percent())
     }
 
-    /// Parses a length or a percentage, allowing the unitless length quirk.
-    /// <https://quirks.spec.whatwg.org/#the-unitless-length-quirk>
+    
+    
     #[inline]
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
@@ -1177,16 +1177,16 @@ impl NonNegativeLengthPercentage {
     }
 }
 
-/// Either a `<length>` or the `auto` keyword.
-///
-/// Note that we use LengthPercentage just for convenience, since it pretty much
-/// is everything we care about, but we could just add a similar LengthOrAuto
-/// instead if we think getting rid of this weirdness is worth it.
+
+
+
+
+
 pub type LengthOrAuto = generics::LengthPercentageOrAuto<Length>;
 
 impl LengthOrAuto {
-    /// Parses a length, allowing the unitless length quirk.
-    /// <https://quirks.spec.whatwg.org/#the-unitless-length-quirk>
+    
+    
     #[inline]
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
@@ -1199,13 +1199,13 @@ impl LengthOrAuto {
     }
 }
 
-/// Either a non-negative `<length>` or the `auto` keyword.
+
 pub type NonNegativeLengthOrAuto = generics::LengthPercentageOrAuto<NonNegativeLength>;
 
-/// Either a `<length>` or a `<number>`.
+
 pub type LengthOrNumber = GenericLengthOrNumber<Length, Number>;
 
-/// A specified value for `min-width`, `min-height`, `width` or `height` property.
+
 pub type Size = GenericSize<NonNegativeLengthPercentage>;
 
 impl Parse for Size {
@@ -1217,36 +1217,48 @@ impl Parse for Size {
     }
 }
 
+macro_rules! parse_size_non_length {
+    ($size:ident, $input:expr, $auto_or_none:expr => $auto_or_none_ident:ident) => {{
+        let size = $input.try_parse(|input| {
+            Ok(try_match_ident_ignore_ascii_case! { input,
+                #[cfg(feature = "gecko")]
+                "min-content" | "-moz-min-content" => $size::MinContent,
+                #[cfg(feature = "gecko")]
+                "max-content" | "-moz-max-content" => $size::MaxContent,
+                #[cfg(feature = "gecko")]
+                "-moz-fit-content" => $size::MozFitContent,
+                #[cfg(feature = "gecko")]
+                "-moz-available" => $size::MozAvailable,
+                $auto_or_none => $size::$auto_or_none_ident,
+            })
+        });
+        if size.is_ok() {
+            return size;
+        }
+    }};
+}
+
 impl Size {
-    /// Parses, with quirks.
+    
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         allow_quirks: AllowQuirks,
     ) -> Result<Self, ParseError<'i>> {
-        #[cfg(feature = "gecko")]
-        {
-            if let Ok(l) = input.try_parse(computed::ExtremumLength::parse) {
-                return Ok(GenericSize::ExtremumLength(l));
-            }
-        }
-
-        if input.try_parse(|i| i.expect_ident_matching("auto")).is_ok() {
-            return Ok(GenericSize::Auto);
-        }
+        parse_size_non_length!(Size, input, "auto" => Auto);
 
         let length = NonNegativeLengthPercentage::parse_quirky(context, input, allow_quirks)?;
         Ok(GenericSize::LengthPercentage(length))
     }
 
-    /// Returns `0%`.
+    
     #[inline]
     pub fn zero_percent() -> Self {
         GenericSize::LengthPercentage(NonNegativeLengthPercentage::zero_percent())
     }
 }
 
-/// A specified value for `max-width` or `max-height` property.
+
 pub type MaxSize = GenericMaxSize<NonNegativeLengthPercentage>;
 
 impl Parse for MaxSize {
@@ -1259,27 +1271,18 @@ impl Parse for MaxSize {
 }
 
 impl MaxSize {
-    /// Parses, with quirks.
+    
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         allow_quirks: AllowQuirks,
     ) -> Result<Self, ParseError<'i>> {
-        #[cfg(feature = "gecko")]
-        {
-            if let Ok(l) = input.try_parse(computed::ExtremumLength::parse) {
-                return Ok(GenericMaxSize::ExtremumLength(l));
-            }
-        }
-
-        if input.try_parse(|i| i.expect_ident_matching("none")).is_ok() {
-            return Ok(GenericMaxSize::None);
-        }
+        parse_size_non_length!(MaxSize, input, "none" => None);
 
         let length = NonNegativeLengthPercentage::parse_quirky(context, input, allow_quirks)?;
         Ok(GenericMaxSize::LengthPercentage(length))
     }
 }
 
-/// A specified non-negative `<length>` | `<number>`.
+
 pub type NonNegativeLengthOrNumber = GenericLengthOrNumber<NonNegativeLength, NonNegativeNumber>;
