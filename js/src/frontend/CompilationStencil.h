@@ -389,9 +389,13 @@ struct SharedDataContainer {
 
   ~SharedDataContainer();
 
-  bool initVector(JSContext* cx);
-  bool initMap(JSContext* cx);
+  [[nodiscard]] bool initVector(JSContext* cx);
+  [[nodiscard]] bool initMap(JSContext* cx);
 
+ private:
+  [[nodiscard]] bool convertFromSingleToMap(JSContext* cx);
+
+ public:
   bool isEmpty() const { return (data_) == SingleTag; }
   bool isSingle() const { return (data_ & TagMask) == SingleTag; }
   bool isVector() const { return (data_ & TagMask) == VectorTag; }
@@ -430,15 +434,22 @@ struct SharedDataContainer {
     return reinterpret_cast<SharedDataContainer*>(data_ & ~TagMask);
   }
 
-  bool prepareStorageFor(JSContext* cx, size_t nonLazyScriptCount,
-                         size_t allScriptCount);
+  [[nodiscard]] bool prepareStorageFor(JSContext* cx, size_t nonLazyScriptCount,
+                                       size_t allScriptCount);
 
   
   js::SharedImmutableScriptData* get(ScriptIndex index) const;
 
   
-  bool addAndShare(JSContext* cx, ScriptIndex index,
-                   js::SharedImmutableScriptData* data);
+  [[nodiscard]] bool addAndShare(JSContext* cx, ScriptIndex index,
+                                 js::SharedImmutableScriptData* data);
+
+  
+  
+  
+  
+  [[nodiscard]] bool addExtraWithoutShare(JSContext* cx, ScriptIndex index,
+                                          js::SharedImmutableScriptData* data);
 
   
   
@@ -1040,6 +1051,52 @@ inline ScriptStencilIterable CompilationStencil::functionScriptStencils(
     const BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput) {
   return ScriptStencilIterable(stencil, gcOutput);
 }
+
+
+
+struct CompilationStencilMerger {
+ private:
+  using FunctionKey = ExtensibleCompilationStencil::FunctionKey;
+
+  
+  
+  
+  
+  
+  UniquePtr<ExtensibleCompilationStencil> initial_;
+
+  
+  using FunctionKeyToScriptIndexMap =
+      HashMap<FunctionKey, ScriptIndex, mozilla::DefaultHasher<FunctionKey>,
+              js::SystemAllocPolicy>;
+  FunctionKeyToScriptIndexMap functionKeyToInitialScriptIndex_;
+
+  [[nodiscard]] bool buildFunctionKeyToIndex(JSContext* cx);
+
+  ScriptIndex getInitialScriptIndexFor(
+      const ExtensibleCompilationStencil& delazification) const;
+
+  
+  
+  using AtomIndexMap = Vector<TaggedParserAtomIndex, 0, js::SystemAllocPolicy>;
+
+  [[nodiscard]] bool buildAtomIndexMap(
+      JSContext* cx, const ExtensibleCompilationStencil& delazification,
+      AtomIndexMap& atomIndexMap);
+
+ public:
+  CompilationStencilMerger() = default;
+
+  
+  [[nodiscard]] bool setInitial(
+      JSContext* cx, UniquePtr<ExtensibleCompilationStencil>&& initial);
+
+  
+  [[nodiscard]] bool addDelazification(
+      JSContext* cx, const ExtensibleCompilationStencil& delazification);
+
+  ExtensibleCompilationStencil& getResult() const { return *initial_; }
+};
 
 }  
 }  
