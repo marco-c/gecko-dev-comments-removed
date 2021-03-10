@@ -118,6 +118,14 @@ class UrlbarResult {
       case UrlbarUtils.RESULT_TYPE.URL:
       case UrlbarUtils.RESULT_TYPE.OMNIBOX:
       case UrlbarUtils.RESULT_TYPE.REMOTE_TAB:
+        if (this.payload.qsSuggestion) {
+          return [
+            
+            
+            this.payload.qsSuggestion + " — " + this.payload.title,
+            this.payloadHighlights.qsSuggestion,
+          ];
+        }
         return this.payload.title
           ? [this.payload.title, this.payloadHighlights.title]
           : [this.payload.url || "", this.payloadHighlights.url || []];
