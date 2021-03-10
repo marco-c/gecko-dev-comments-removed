@@ -1889,9 +1889,6 @@ class MOZ_RAII NewObjectIRGenerator : public IRGenerator {
 };
 
 
-extern bool IsWindowProxyForScriptGlobal(JSScript* script, JSObject* obj);
-
-
 extern JS::XrayJitInfo* GetXrayJitInfo();
 
 }  
