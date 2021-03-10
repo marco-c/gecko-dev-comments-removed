@@ -28,6 +28,7 @@ TEST(storage_transaction_helper, Commit)
   
   {
     mozStorageTransaction transaction(db, false);
+    do_check_success(transaction.Start());
     do_check_true(has_transaction(db));
     (void)db->ExecuteSimpleSQL("CREATE TABLE test (id INTEGER PRIMARY KEY)"_ns);
     (void)transaction.Commit();
@@ -47,6 +48,7 @@ TEST(storage_transaction_helper, Rollback)
   
   {
     mozStorageTransaction transaction(db, true);
+    do_check_success(transaction.Start());
     do_check_true(has_transaction(db));
     (void)db->ExecuteSimpleSQL("CREATE TABLE test (id INTEGER PRIMARY KEY)"_ns);
     (void)transaction.Rollback();
@@ -66,6 +68,7 @@ TEST(storage_transaction_helper, AutoCommit)
   
   {
     mozStorageTransaction transaction(db, true);
+    do_check_success(transaction.Start());
     do_check_true(has_transaction(db));
     (void)db->ExecuteSimpleSQL("CREATE TABLE test (id INTEGER PRIMARY KEY)"_ns);
   }
@@ -85,6 +88,7 @@ TEST(storage_transaction_helper, AutoRollback)
   
   {
     mozStorageTransaction transaction(db, false);
+    do_check_success(transaction.Start());
     do_check_true(has_transaction(db));
     (void)db->ExecuteSimpleSQL("CREATE TABLE test (id INTEGER PRIMARY KEY)"_ns);
   }
@@ -100,6 +104,7 @@ TEST(storage_transaction_helper, null_database_connection)
   
   
   mozStorageTransaction transaction(nullptr, false);
+  do_check_success(transaction.Start());
   do_check_true(NS_SUCCEEDED(transaction.Commit()));
   do_check_true(NS_SUCCEEDED(transaction.Rollback()));
 }
@@ -118,6 +123,7 @@ TEST(storage_transaction_helper, async_Commit)
   {
     mozStorageTransaction transaction(
         db, false, mozIStorageConnection::TRANSACTION_DEFERRED, true);
+    do_check_success(transaction.Start());
     do_check_true(has_transaction(db));
     (void)db->ExecuteSimpleSQL("CREATE TABLE test (id INTEGER PRIMARY KEY)"_ns);
     (void)transaction.Commit();
@@ -146,12 +152,14 @@ TEST(storage_transaction_helper, Nesting)
 
   {
     mozStorageTransaction transaction(db, false);
+    do_check_success(transaction.Start());
     do_check_true(has_transaction(db));
     do_check_success(
         db->ExecuteSimpleSQL("CREATE TABLE test (id INTEGER PRIMARY KEY)"_ns));
 
     {
       mozStorageTransaction nestedTransaction(db, false);
+      do_check_success(nestedTransaction.Start());
       do_check_true(has_transaction(db));
       do_check_success(db->ExecuteSimpleSQL(
           "CREATE TABLE nested_test (id INTEGER PRIMARY KEY)"_ns));

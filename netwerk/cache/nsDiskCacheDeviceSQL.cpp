@@ -760,6 +760,9 @@ nsApplicationCache::AddNamespaces(nsIArray* namespaces) {
 
   mozStorageTransaction transaction(mDevice->mDB, false);
 
+  
+  Unused << NS_WARN_IF(NS_FAILED(transaction.Start()));
+
   uint32_t length;
   nsresult rv = namespaces->GetLength(&length);
   NS_ENSURE_SUCCESS(rv, rv);

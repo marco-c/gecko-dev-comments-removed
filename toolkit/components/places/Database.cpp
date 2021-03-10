@@ -700,6 +700,8 @@ nsresult Database::EnsureFaviconsDatabaseAttached(
     
     
     mozStorageTransaction transaction(conn, false);
+    
+    Unused << NS_WARN_IF(NS_FAILED(transaction.Start()));
     rv = conn->ExecuteSimpleSQL(CREATE_MOZ_ICONS);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = conn->ExecuteSimpleSQL(CREATE_IDX_MOZ_ICONS_ICONURLHASH);
@@ -893,6 +895,9 @@ nsresult Database::TryToCloneTablesFromCorruptDatabase(
   mozStorageTransaction transaction(conn, false);
 
   
+  Unused << NS_WARN_IF(NS_FAILED(transaction.Start()));
+
+  
   nsCOMPtr<mozIStorageStatement> stmt;
   (void)conn->CreateStatement("PRAGMA corrupt.user_version"_ns,
                               getter_AddRefs(stmt));
@@ -1082,6 +1087,9 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
   
   
   mozStorageTransaction transaction(mMainConn, false);
+
+  
+  Unused << NS_WARN_IF(NS_FAILED(transaction.Start()));
 
   if (databaseInitialized) {
     

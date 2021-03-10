@@ -9,6 +9,7 @@
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/ScopeExit.h"
 
 #include "mozilla/storage/SQLiteMutex.h"
 #include "mozIStorageConnection.h"
@@ -65,51 +66,12 @@ class mozStorageTransaction {
       int32_t aType = mozIStorageConnection::TRANSACTION_DEFAULT,
       bool aAsyncCommit = false)
       : mConnection(aConnection),
+        mType(aType),
         mNestingLevel(0),
         mHasTransaction(false),
         mCommitOnComplete(aCommitOnComplete),
         mCompleted(false),
-        mAsyncCommit(aAsyncCommit) {
-    if (mConnection) {
-      SQLiteMutexAutoLock lock(mConnection->GetSharedDBMutex());
-
-      
-      
-      
-      TransactionStarted(lock);
-
-      nsAutoCString query;
-
-      if (TopLevelTransaction(lock)) {
-        query.Assign("BEGIN");
-        int32_t type = aType;
-        if (type == mozIStorageConnection::TRANSACTION_DEFAULT) {
-          MOZ_ALWAYS_SUCCEEDS(mConnection->GetDefaultTransactionType(&type));
-        }
-        switch (type) {
-          case mozIStorageConnection::TRANSACTION_IMMEDIATE:
-            query.AppendLiteral(" IMMEDIATE");
-            break;
-          case mozIStorageConnection::TRANSACTION_EXCLUSIVE:
-            query.AppendLiteral(" EXCLUSIVE");
-            break;
-          case mozIStorageConnection::TRANSACTION_DEFERRED:
-            query.AppendLiteral(" DEFERRED");
-            break;
-          default:
-            MOZ_ASSERT(false, "Unknown transaction type");
-        }
-      } else {
-        query.Assign("SAVEPOINT sp"_ns + IntToCString(mNestingLevel));
-      }
-
-      
-      
-      if (NS_FAILED(mConnection->ExecuteSimpleSQL(query))) {
-        TransactionFinished(lock);
-      }
-    }
-  }
+        mAsyncCommit(aAsyncCommit) {}
 
   ~mozStorageTransaction() {
     if (mConnection && mHasTransaction && !mCompleted) {
@@ -128,9 +90,74 @@ class mozStorageTransaction {
   
 
 
+  nsresult Start() {
+    
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(!mHasTransaction);
+
+    
+
+    
+    
+    if (!mConnection || mCompleted) {
+      return NS_OK;
+    }
+
+    SQLiteMutexAutoLock lock(mConnection->GetSharedDBMutex());
+
+    
+    
+    
+    TransactionStarted(lock);
+
+    
+    
+    auto autoFinishTransaction =
+        mozilla::MakeScopeExit([&] { TransactionFinished(lock); });
+
+    nsAutoCString query;
+
+    if (TopLevelTransaction(lock)) {
+      query.Assign("BEGIN");
+      int32_t type = mType;
+      if (type == mozIStorageConnection::TRANSACTION_DEFAULT) {
+        MOZ_ALWAYS_SUCCEEDS(mConnection->GetDefaultTransactionType(&type));
+      }
+      switch (type) {
+        case mozIStorageConnection::TRANSACTION_IMMEDIATE:
+          query.AppendLiteral(" IMMEDIATE");
+          break;
+        case mozIStorageConnection::TRANSACTION_EXCLUSIVE:
+          query.AppendLiteral(" EXCLUSIVE");
+          break;
+        case mozIStorageConnection::TRANSACTION_DEFERRED:
+          query.AppendLiteral(" DEFERRED");
+          break;
+        default:
+          MOZ_ASSERT(false, "Unknown transaction type");
+      }
+    } else {
+      query.Assign("SAVEPOINT sp"_ns + IntToCString(mNestingLevel));
+    }
+
+    nsresult rv = mConnection->ExecuteSimpleSQL(query);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    autoFinishTransaction.release();
+
+    return NS_OK;
+  }
+
+  
+
+
 
 
   nsresult Commit() {
+    
+    
     if (!mConnection || mCompleted || !mHasTransaction) return NS_OK;
 
     SQLiteMutexAutoLock lock(mConnection->GetSharedDBMutex());
@@ -162,11 +189,11 @@ class mozStorageTransaction {
                                          IntToCString(mNestingLevel));
     }
 
-    if (NS_SUCCEEDED(rv)) {
-      TransactionFinished(lock);
-    }
+    NS_ENSURE_SUCCESS(rv, rv);
 
-    return rv;
+    TransactionFinished(lock);
+
+    return NS_OK;
   }
 
   
@@ -175,6 +202,8 @@ class mozStorageTransaction {
 
 
   nsresult Rollback() {
+    
+    
     if (!mConnection || mCompleted || !mHasTransaction) return NS_OK;
 
     SQLiteMutexAutoLock lock(mConnection->GetSharedDBMutex());
@@ -205,11 +234,11 @@ class mozStorageTransaction {
           nestingLevelCString);
     }
 
-    if (NS_SUCCEEDED(rv)) {
-      TransactionFinished(lock);
-    }
+    NS_ENSURE_SUCCESS(rv, rv);
 
-    return rv;
+    TransactionFinished(lock);
+
+    return NS_OK;
   }
 
  protected:
@@ -248,6 +277,7 @@ class mozStorageTransaction {
   }
 
   nsCOMPtr<mozIStorageConnection> mConnection;
+  int32_t mType;
   uint32_t mNestingLevel;
   bool mHasTransaction;
   bool mCommitOnComplete;

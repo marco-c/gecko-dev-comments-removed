@@ -454,6 +454,9 @@ void CookiePersistentStorage::RemoveCookiesWithOriginAttributes(
     const OriginAttributesPattern& aPattern, const nsACString& aBaseDomain) {
   mozStorageTransaction transaction(mDBConn, false);
 
+  
+  Unused << NS_WARN_IF(NS_FAILED(transaction.Start()));
+
   CookieStorage::RemoveCookiesWithOriginAttributes(aPattern, aBaseDomain);
 
   DebugOnly<nsresult> rv = transaction.Commit();
@@ -464,6 +467,9 @@ void CookiePersistentStorage::RemoveCookiesFromExactHost(
     const nsACString& aHost, const nsACString& aBaseDomain,
     const OriginAttributesPattern& aPattern) {
   mozStorageTransaction transaction(mDBConn, false);
+
+  
+  Unused << NS_WARN_IF(NS_FAILED(transaction.Start()));
 
   CookieStorage::RemoveCookiesFromExactHost(aHost, aBaseDomain, aPattern);
 
@@ -831,6 +837,9 @@ CookiePersistentStorage::OpenDBResult CookiePersistentStorage::TryInitDB(
 
     
     mozStorageTransaction transaction(mSyncConn, true);
+
+    
+    Unused << NS_WARN_IF(NS_FAILED(transaction.Start()));
 
     switch (dbSchemaVersion) {
       
@@ -1978,6 +1987,9 @@ nsresult CookiePersistentStorage::RunInTransaction(
   }
 
   mozStorageTransaction transaction(mDBConn, true);
+
+  
+  Unused << NS_WARN_IF(NS_FAILED(transaction.Start()));
 
   if (NS_FAILED(aCallback->Callback())) {
     Unused << transaction.Rollback();
