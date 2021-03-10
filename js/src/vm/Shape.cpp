@@ -126,10 +126,7 @@ void Shape::insertIntoDictionaryBefore(DictionaryShapeLink next) {
 
 void Shape::handoffTableTo(Shape* shape) {
   MOZ_ASSERT(inDictionary() && shape->inDictionary());
-
-  if (this == shape) {
-    return;
-  }
+  MOZ_ASSERT(this != shape);
 
   ShapeTable* table = cache_.getTablePointer();
   shape->setTable(table);
@@ -1191,12 +1188,14 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
     return true;
   }
 
+  const bool removingLastProperty = (shape == obj->lastProperty());
+
   
 
 
 
   if (!obj->inDictionaryMode() &&
-      (shape != obj->lastProperty() || !obj->canRemoveLastProperty())) {
+      (!removingLastProperty || !obj->canRemoveLastProperty())) {
     if (!toDictionaryMode(cx, obj)) {
       return false;
     }
@@ -1221,20 +1220,6 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
       return false;
     }
     new (spare) Shape(shape->base(), 0);
-    if (shape == obj->lastProperty()) {
-      
-
-
-
-
-      RootedShape previous(cx, obj->lastProperty()->parent);
-      StackBaseShape base(obj->lastProperty()->base());
-      BaseShape* nbase = BaseShape::get(cx, base);
-      if (!nbase) {
-        return false;
-      }
-      previous->setBase(nbase);
-    }
   }
 
   
@@ -1273,11 +1258,19 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
 
     {
       
-      Shape* oldLastProp = obj->lastProperty();
+      MOZ_ASSERT(removingLastProperty == (shape == obj->lastProperty()));
       shape->removeFromDictionary(obj);
 
       
-      oldLastProp->handoffTableTo(obj->lastProperty());
+      
+      
+      
+      
+      if (removingLastProperty) {
+        MOZ_ASSERT(obj->lastProperty() != shape);
+        shape->handoffTableTo(obj->lastProperty());
+        obj->lastProperty()->setBase(shape->base());
+      }
     }
 
     

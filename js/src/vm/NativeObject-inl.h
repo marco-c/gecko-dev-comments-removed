@@ -58,15 +58,17 @@ inline void NativeObject::removeLastProperty(JSContext* cx) {
 
 inline bool NativeObject::canRemoveLastProperty() {
   
-
-
-
-
-
-
+  
+  
+  
+  
   MOZ_ASSERT(!inDictionaryMode());
   Shape* previous = lastProperty()->previous().get();
-  return previous->objectFlags() == lastProperty()->objectFlags();
+  if (previous->objectFlags() != lastProperty()->objectFlags()) {
+    return false;
+  }
+  MOZ_ASSERT(lastProperty()->base() == previous->base());
+  return true;
 }
 
 inline void NativeObject::initDenseElementHole(uint32_t index) {
