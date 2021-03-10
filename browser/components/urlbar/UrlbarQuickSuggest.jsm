@@ -69,11 +69,11 @@ class Suggestions {
   async query(phrase) {
     log.info("Handling query for", phrase);
     phrase = phrase.toLowerCase();
-    let index = this._tree.get(phrase);
-    if (!index || !this._results.has(index)) {
+    let match = this._tree.get(phrase);
+    if (!match.result || !this._results.has(match.result)) {
       return null;
     }
-    let result = this._results.get(index);
+    let result = this._results.get(match.result);
     let d = new Date();
     let pad = number => number.toString().padStart(2, "0");
     let date =
@@ -81,7 +81,7 @@ class Suggestions {
       `${pad(d.getDate())}${pad(d.getHours())}`;
     let icon = await this.fetchIcon(result.icon);
     return {
-      title: result.title,
+      title: match.fullKeyword + " — " + result.title,
       url: result.url.replace("%YYYYMMDDHH%", date),
       click_url: result.click_url.replace("%YYYYMMDDHH%", date),
       
@@ -241,27 +241,54 @@ class KeywordTree {
   
 
 
-  get(phrase) {
+  get(query) {
     let tree = this.tree;
+    let phrase = query.trim();
     
-    loop: while (phrase.length) {
+    let result = null;
+    
+    let fullKeyword = "";
+    
+    
+    let matched = false;
+    
+    loop: while (true) {
+      matched = false;
       for (const [key, child] of tree.entries()) {
+        if (key == RESULT_KEY) {
+          continue;
+        }
         
         
         
         
-        if (phrase.startsWith(key) || key.startsWith(phrase)) {
+        if (!result && (phrase.startsWith(key) || key.startsWith(phrase))) {
+          matched = true;
           phrase = phrase.slice(key.length);
           if (!phrase.length) {
-            return child.get(RESULT_KEY) || null;
+            result = child.get(RESULT_KEY) || null;
+            if (!result) {
+              return { result };
+            }
+          }
+        }
+        if (result || matched) {
+          fullKeyword += key;
+          
+          if (
+            (result && key.includes(" ")) ||
+            (child.size == 1 && child.get(RESULT_KEY))
+          ) {
+            return { result, fullKeyword: fullKeyword.trim() };
           }
           tree = child;
           continue loop;
         }
       }
-      return null;
+      if (!result) {
+        return { result };
+      }
     }
-    return null;
   }
 
   
