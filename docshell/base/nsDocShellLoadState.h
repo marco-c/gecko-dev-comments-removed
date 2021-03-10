@@ -182,7 +182,11 @@ class nsDocShellLoadState final {
     return mSourceBrowsingContext;
   }
 
-  void SetSourceBrowsingContext(BrowsingContext* aSourceBrowsingContext);
+  void SetSourceBrowsingContext(BrowsingContext*);
+
+  void SetAllowFocusMove(bool aAllow) { mAllowFocusMove = aAllow; }
+
+  bool AllowFocusMove() const { return mAllowFocusMove; }
 
   const MaybeDiscarded<BrowsingContext>& TargetBrowsingContext() const {
     return mTargetBrowsingContext;
@@ -452,6 +456,9 @@ class nsDocShellLoadState final {
 
   
   bool mHasValidUserGestureActivation;
+
+  
+  bool mAllowFocusMove;
 
   
   
