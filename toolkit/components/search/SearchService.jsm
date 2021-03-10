@@ -1919,7 +1919,10 @@ SearchService.prototype = {
     }
 
     if (engineToRemove == this.defaultEngine) {
-      this._currentEngine = null;
+      this._findAndSetNewDefaultEngine({
+        privateMode: false,
+        excludeEngineName: engineToRemove.name,
+      });
     }
 
     
@@ -1931,7 +1934,10 @@ SearchService.prototype = {
       this._separatePrivateDefault &&
       engineToRemove == this.defaultPrivateEngine
     ) {
-      this._currentPrivateEngine = null;
+      this._findAndSetNewDefaultEngine({
+        privateMode: true,
+        excludeEngineName: engineToRemove.name,
+      });
     }
 
     if (engineToRemove._isAppProvided) {
@@ -2069,70 +2075,112 @@ SearchService.prototype = {
 
 
 
-  _getEngineDefault(privateMode) {
-    this._ensureInitialized();
-    const currentEngine = privateMode
+
+
+
+
+
+
+
+
+
+
+
+
+  _findAndSetNewDefaultEngine({ privateMode, excludeEngineName = "" }) {
+    const currentEngineProp = privateMode
       ? "_currentPrivateEngine"
       : "_currentEngine";
-    if (!this[currentEngine]) {
-      const attributeName = privateMode ? "private" : "current";
-      let name = this._settings.getAttribute(attributeName);
-      let engine = this.getEngineByName(name);
-      if (
-        engine &&
-        (engine.isAppProvided ||
-          this._settings.getVerifiedAttribute(attributeName))
-      ) {
+
+    
+    let newDefault = privateMode
+      ? this.originalPrivateDefaultEngine
+      : this.originalDefaultEngine;
+
+    if (
+      !newDefault ||
+      newDefault.hidden ||
+      newDefault.name == excludeEngineName
+    ) {
+      
+      let firstVisible = this._getSortedEngines(false).find(
+        e => e.name != excludeEngineName
+      );
+      if (firstVisible) {
+        newDefault = firstVisible;
         
         
-        
-        this[currentEngine] = engine;
+      } else if (newDefault) {
+        if (newDefault.name == excludeEngineName) {
+          logConsole.error(
+            "Could not find an engine to fallback to, using the same engine."
+          );
+        }
+        newDefault.hidden = false;
       }
-      if (!name) {
-        this[currentEngine] = privateMode
-          ? this.originalPrivateDefaultEngine
-          : this.originalDefaultEngine;
-      }
+    }
+    if (!newDefault) {
+      return null;
     }
 
     
-    if (!this[currentEngine] || this[currentEngine].hidden) {
-      
-      let originalDefault = privateMode
-        ? this.originalPrivateDefaultEngine
-        : this.originalDefaultEngine;
-      if (!originalDefault || originalDefault.hidden) {
-        
-        let firstVisible = this._getSortedEngines(false)[0];
-        if (firstVisible && !firstVisible.hidden) {
-          if (privateMode) {
-            this.defaultPrivateEngine = firstVisible;
-          } else {
-            this.defaultEngine = firstVisible;
-          }
-          return firstVisible;
-        }
-        
-        if (originalDefault) {
-          originalDefault.hidden = false;
-        }
-      }
-      if (!originalDefault) {
-        return null;
-      }
-
-      
-      
-      
-      
-      if (privateMode) {
-        this.defaultPrivateEngine = originalDefault;
-      } else {
-        this.defaultEngine = originalDefault;
-      }
+    
+    
+    
+    if (privateMode) {
+      this.defaultPrivateEngine = newDefault;
+    } else {
+      this.defaultEngine = newDefault;
     }
 
-    return this[currentEngine];
+    return this[currentEngineProp];
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _getEngineDefault(privateMode) {
+    this._ensureInitialized();
+    const currentEngineProp = privateMode
+      ? "_currentPrivateEngine"
+      : "_currentEngine";
+
+    if (this[currentEngineProp] && !this[currentEngineProp].hidden) {
+      return this[currentEngineProp];
+    }
+
+    
+    const attributeName = privateMode ? "private" : "current";
+    let name = this._settings.getAttribute(attributeName);
+    let engine = this.getEngineByName(name);
+    if (
+      engine &&
+      (engine.isAppProvided ||
+        this._settings.getVerifiedAttribute(attributeName))
+    ) {
+      
+      
+      
+      this[currentEngineProp] = engine;
+    }
+    if (!name) {
+      this[currentEngineProp] = privateMode
+        ? this.originalPrivateDefaultEngine
+        : this.originalDefaultEngine;
+    }
+
+    if (this[currentEngineProp] && !this[currentEngineProp].hidden) {
+      return this[currentEngineProp];
+    }
+    
+    return this._findAndSetNewDefaultEngine({ privateMode });
   },
 
   
