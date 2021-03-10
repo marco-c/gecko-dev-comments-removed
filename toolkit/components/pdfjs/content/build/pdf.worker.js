@@ -33,27 +33,7 @@
 return  (() => { 
  	"use strict";
  	var __webpack_modules__ = ([
-
- ((__unused_webpack_module, exports, __w_pdfjs_require__) => {
-
-
-
-Object.defineProperty(exports, "__esModule", ({
-  value: true
-}));
-Object.defineProperty(exports, "WorkerMessageHandler", ({
-  enumerable: true,
-  get: function () {
-    return _worker.WorkerMessageHandler;
-  }
-}));
-
-var _worker = __w_pdfjs_require__(1);
-
-const pdfjsVersion = '2.8.117';
-const pdfjsBuild = '3d80c21a8';
-
- }),
+,
 
  ((__unused_webpack_module, exports, __w_pdfjs_require__) => {
 
@@ -145,7 +125,7 @@ class WorkerMessageHandler {
     var WorkerTasks = [];
     const verbosity = (0, _util.getVerbosityLevel)();
     const apiVersion = docParams.apiVersion;
-    const workerVersion = '2.8.117';
+    const workerVersion = '2.8.126';
 
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
@@ -43691,10 +43671,29 @@ class PDFWorkerStreamRangeReader {
  	}
  	
 
- 	
- 	
- 	
- 	return __w_pdfjs_require__(0);
+var __webpack_exports__ = {};
+
+(() => {
+var exports = __webpack_exports__;
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+Object.defineProperty(exports, "WorkerMessageHandler", ({
+  enumerable: true,
+  get: function () {
+    return _worker.WorkerMessageHandler;
+  }
+}));
+
+var _worker = __w_pdfjs_require__(1);
+
+const pdfjsVersion = '2.8.126';
+const pdfjsBuild = 'fafe03984';
+})();
+
+ 	return __webpack_exports__;
  })()
 ;
 });
