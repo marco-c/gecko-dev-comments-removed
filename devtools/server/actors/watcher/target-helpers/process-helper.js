@@ -96,21 +96,28 @@ function onMessageManagerClose(messageManager, topic, data) {
 function closeWatcherTransports(watcher) {
   for (let i = 0; i < Services.ppmm.childCount; i++) {
     const messageManager = Services.ppmm.getChildAt(i);
-    let list = actors.get(messageManager);
-    if (!list || list.length == 0) {
+    const targetActorDescriptions = actors.get(messageManager);
+    if (!targetActorDescriptions || targetActorDescriptions.length == 0) {
       continue;
     }
-    list = list.filter(item => item.watcher != watcher);
-    for (const item of list) {
-      
-      
-      item.childTransport.close();
-      watcher.conn.cancelForwarding(item.prefix);
+
+    
+    const matchingTargetActorDescriptions = targetActorDescriptions.filter(
+      item => item.watcher === watcher
+    );
+    for (const { prefix, childTransport } of matchingTargetActorDescriptions) {
+      childTransport.close();
+      watcher.conn.cancelForwarding(prefix);
     }
-    if (list.length == 0) {
+
+    
+    const remainingTargetActorDescriptions = targetActorDescriptions.filter(
+      item => item.watcher !== watcher
+    );
+    if (remainingTargetActorDescriptions.length == 0) {
       actors.delete(messageManager);
     } else {
-      actors.set(messageManager, list);
+      actors.set(messageManager, remainingTargetActorDescriptions);
     }
   }
 }
