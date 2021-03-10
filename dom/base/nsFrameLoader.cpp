@@ -2066,8 +2066,11 @@ void nsFrameLoader::SetOwnerContent(Element* aContent) {
     mOwnerContent->RemoveMutationObserver(this);
   }
 
+  
+  
+  
   if (RefPtr<nsFrameLoaderOwner> owner = do_QueryObject(mOwnerContent)) {
-    owner->DeattachFrameLoader(this);
+    owner->DetachFrameLoader(this);
   }
 
   mOwnerContent = aContent;
