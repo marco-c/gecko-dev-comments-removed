@@ -3469,6 +3469,10 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
   
   
   
+  
+  
+  
+  
   aStyle |= NSWindowStyleMaskFullSizeContentView;
 
   
@@ -3522,46 +3526,6 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
     [mTitlebarGradientView removeFromSuperview];
     [mTitlebarGradientView release];
     mTitlebarGradientView = nil;
-  }
-}
-
-
-
-
-
-- (NSRect)contentRectForFrameRect:(NSRect)aRect {
-  return aRect;
-}
-
-- (NSRect)contentRectForFrameRect:(NSRect)aRect styleMask:(NSUInteger)aMask {
-  return aRect;
-}
-
-- (NSRect)frameRectForContentRect:(NSRect)aRect {
-  return aRect;
-}
-
-- (NSRect)frameRectForContentRect:(NSRect)aRect styleMask:(NSUInteger)aMask {
-  return aRect;
-}
-
-- (void)setContentView:(NSView*)aView {
-  [super setContentView:aView];
-
-  if (!([self styleMask] & NSWindowStyleMaskFullSizeContentView)) {
-    
-    
-    
-    
-    NSView* frameView = [aView superview];
-    [aView removeFromSuperview];
-    if ([frameView respondsToSelector:@selector(_addKnownSubview:positioned:relativeTo:)]) {
-      
-      
-      [frameView _addKnownSubview:aView positioned:NSWindowBelow relativeTo:nil];
-    } else {
-      [frameView addSubview:aView positioned:NSWindowBelow relativeTo:nil];
-    }
   }
 }
 
