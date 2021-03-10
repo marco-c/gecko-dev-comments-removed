@@ -56,7 +56,7 @@ function checkLcov(fun) {
   
   
   
-  var g = newGlobal({ disableLazyParsing: true });
+  var g = newGlobal();
   g.eval(source);
   var lcovResRaw = getLcovInfo(g);
 
