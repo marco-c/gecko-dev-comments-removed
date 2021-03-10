@@ -801,8 +801,8 @@ add_task(async function testEnrollmentPings() {
   await TelemetryStorage.testClearPendingPings();
 
   
-  
-  await TelemetryStorage.runCleanPingArchiveTask();
+  let beginPingCount = (await TelemetryArchive.promiseArchivedPingList())
+    .length;
 
   await BrowserTestUtils.withNewTab(
     {
@@ -855,6 +855,13 @@ add_task(async function testEnrollmentPings() {
           });
       });
 
+      
+      
+      
+      
+      
+      
+      joinButton.getBoundingClientRect();
       joinButton.click();
 
       await joinDialogOpen;
@@ -870,7 +877,7 @@ add_task(async function testEnrollmentPings() {
       let pings;
       await TestUtils.waitForCondition(async function() {
         pings = await TelemetryArchive.promiseArchivedPingList();
-        return pings.length >= 2;
+        return pings.length - beginPingCount >= 2;
       }, "Wait until we have at least 2 pings in the telemetry archive");
 
       let pingDetails = [];
