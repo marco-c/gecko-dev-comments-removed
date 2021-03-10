@@ -190,6 +190,25 @@ modal.DialogObserver = class {
     }
     this.callbacks.delete(callback);
   }
+
+  
+
+
+
+
+
+  async dialogClosed(win) {
+    return new Promise(resolve => {
+      const dialogClosed = (action, dialog, window) => {
+        if (action == modal.ACTION_CLOSED && window == win) {
+          this.remove(dialogClosed);
+          resolve();
+        }
+      };
+
+      this.add(dialogClosed);
+    });
+  }
 };
 
 
