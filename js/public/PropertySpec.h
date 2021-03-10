@@ -339,6 +339,14 @@ struct JSPropertySpec {
   }
 };
 
+
+
+
+
+
+
+static_assert(sizeof(JSPropertySpec) == 6 * sizeof(uintptr_t));
+
 #define JS_CHECK_ACCESSOR_FLAGS(flags)                                     \
   (static_cast<std::enable_if_t<((flags) & ~(JSPROP_ENUMERATE |            \
                                              JSPROP_PERMANENT)) == 0>>(0), \
