@@ -698,6 +698,36 @@ static inline void prepare_row(Texture& colortex, int y, int startx, int endx,
 
 
 
+template <typename T>
+static ALWAYS_INLINE auto perpDot(T a, T b) {
+  return a.x * b.y - a.y * b.x;
+}
+
+
+
+template <typename T>
+static ALWAYS_INLINE bool checkIfEdgesFlipped(T l0, T l1, T r0, T r1) {
+  
+  
+  if (l0.x > r0.x) {
+    return true;
+  }
+  
+  
+  float side = perpDot(l1 - l0, r1 - r0);
+  if (side <= 0.0f) {
+    
+    
+    return false;
+  }
+  
+  
+  float t = perpDot(r0 - l0, r1 - r0);
+  return t >= 0.0f && t < side;
+}
+
+
+
 
 
 
@@ -820,7 +850,7 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
   Edge left(y, l0, l1, interp_outs[l0i], interp_outs[l1i], l1i);
   Edge right(y, r0, r1, interp_outs[r0i], interp_outs[r1i], r0i);
   
-  bool flipped = l0.x > r0.x || l1.x > r1.x;
+  bool flipped = checkIfEdgesFlipped(l0, l1, r0, r1);
   if (flipped) swap(left, right);
   
   P* fbuf = (P*)colortex.sample_ptr(0, int(y));
@@ -1084,7 +1114,7 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
   Edge left(y, l0, l1, interp_outs[l0i], interp_outs[l1i], l1i);
   Edge right(y, r0, r1, interp_outs[r0i], interp_outs[r1i], r0i);
   
-  bool flipped = l0.x > r0.x || l1.x > r1.x;
+  bool flipped = checkIfEdgesFlipped(l0, l1, r0, r1);
   if (flipped) swap(left, right);
   
   P* fbuf = (P*)colortex.sample_ptr(0, int(y));
