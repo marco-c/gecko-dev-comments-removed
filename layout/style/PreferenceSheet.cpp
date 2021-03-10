@@ -158,7 +158,17 @@ void PreferenceSheet::Initialize() {
   }
 
   Telemetry::ScalarSet(Telemetry::ScalarID::A11Y_THEME, useDocumentColorPref,
-                       UseAccessibilityTheme(false));
+                       sContentPrefs.mUseAccessibilityTheme);
+  if (!sContentPrefs.mUseDocumentColors) {
+    
+    
+    
+    
+    Telemetry::ScalarSet(Telemetry::ScalarID::A11Y_HCM_FOREGROUND,
+                         sContentPrefs.mDefaultColor);
+    Telemetry::ScalarSet(Telemetry::ScalarID::A11Y_HCM_BACKGROUND,
+                         sContentPrefs.mDefaultBackgroundColor);
+  }
 
   Telemetry::ScalarSet(Telemetry::ScalarID::A11Y_BACKPLATE,
                        StaticPrefs::browser_display_permit_backplate());
