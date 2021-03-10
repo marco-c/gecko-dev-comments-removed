@@ -730,23 +730,17 @@ already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
   
   
   
-  
-  
-  
-  
   if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
     bool useGlxVsync = false;
 
     nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
     nsString adapterDriverVendor;
     gfxInfo->GetAdapterDriverVendor(adapterDriverVendor);
-    nsString windowProtocol;
-    gfxInfo->GetWindowProtocol(windowProtocol);
 
-    useGlxVsync =
-        (windowProtocol.Find("xwayland") == -1) &&
-        (!gfxVars::UseEGL() || (adapterDriverVendor.Find("mesa") != -1)) &&
-        gl::sGLXLibrary.SupportsVideoSync();
+    
+    if (!gfxVars::UseEGL() || (adapterDriverVendor.Find("mesa") != -1)) {
+      useGlxVsync = gl::sGLXLibrary.SupportsVideoSync();
+    }
     if (useGlxVsync) {
       RefPtr<VsyncSource> vsyncSource = new GtkVsyncSource();
       VsyncSource::Display& display = vsyncSource->GetGlobalDisplay();
