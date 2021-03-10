@@ -12,16 +12,6 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/BrowserUtils.jsm"
 );
 
-try {
-  docShell
-    .QueryInterface(Ci.nsIInterfaceRequestor)
-    .getInterface(Ci.nsIBrowserChild)
-    .beginSendingWebProgressEventsToParent();
-} catch (e) {
-  
-  
-}
-
 
 
 sendAsyncMessage("Content:BrowserChildReady", {
