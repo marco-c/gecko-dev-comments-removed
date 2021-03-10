@@ -713,10 +713,7 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
 
   
   
-  JSObject* pobj = obj;
-  if (!obj->isDelegate()) {
-    pobj = obj->staticPrototype();
-  }
+  JSObject* pobj = obj->staticPrototype();
   MOZ_ASSERT(pobj->isDelegate());
 
   
@@ -730,8 +727,8 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   }
 
   
-  MOZ_ASSERT(pobj == obj || pobj == obj->staticPrototype());
-  ObjOperandId protoId = (pobj == obj) ? objId : writer.loadProto(objId);
+  MOZ_ASSERT(pobj == obj->staticPrototype());
+  ObjOperandId protoId = writer.loadProto(objId);
 
   
   while (pobj != holder) {
