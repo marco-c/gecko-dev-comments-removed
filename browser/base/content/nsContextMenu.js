@@ -620,10 +620,12 @@ class nsContextMenu {
     var showInspectA11Y =
       showInspect &&
       Services.prefs.getBoolPref("devtools.accessibility.enabled", false) &&
-      this.inTabBrowser &&
       Services.prefs.getBoolPref("devtools.enabled", true) &&
-      Services.prefs.getBoolPref("devtools.accessibility.enabled", true) &&
-      !Services.prefs.getBoolPref("devtools.policy.disabled", false);
+      (Services.prefs.getBoolPref("devtools.everOpened", false) ||
+        
+        
+        
+        nsContextMenu.DevToolsShim.isDevToolsUser());
 
     this.showItem("context-viewsource", shouldShow);
     this.showItem("inspect-separator", showInspect);

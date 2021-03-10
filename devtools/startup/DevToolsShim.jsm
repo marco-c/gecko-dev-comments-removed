@@ -191,6 +191,10 @@ const DevToolsShim = {
     this._gDevTools.restoreDevToolsSession(session);
   },
 
+  isDevToolsUser() {
+    return DevtoolsStartup.isDevToolsUser();
+  },
+
   
 
 
