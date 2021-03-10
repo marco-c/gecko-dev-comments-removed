@@ -122,7 +122,9 @@ def report_invocation_metrics(telemetry, command):
         
         
         return
-    metrics.mach.argv.set(filter_args(command, sys.argv, instance))
+    metrics.mach.argv.set(
+        filter_args(command, sys.argv, instance.topsrcdir, instance.topobjdir)
+    )
 
 
 def is_applicable_telemetry_environment():
