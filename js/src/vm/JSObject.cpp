@@ -1775,18 +1775,27 @@ static bool ReshapeForProtoMutation(JSContext* cx, HandleObject obj) {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (!obj->isDelegate()) {
+    return true;
+  }
 
   RootedObject pobj(cx, obj);
 
   while (pobj && pobj->is<NativeObject>()) {
-    if (!JSObject::setUncacheableProto(cx, pobj)) {
-      return false;
+    if (!pobj->hasUncacheableProto()) {
+      if (!JSObject::setUncacheableProto(cx, pobj)) {
+        return false;
+      }
     }
-
-    if (!obj->isDelegate()) {
-      break;
-    }
-
     pobj = pobj->staticPrototype();
   }
 
