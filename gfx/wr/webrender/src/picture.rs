@@ -6027,19 +6027,29 @@ impl PicturePrimitive {
             let parent_device_pixel_scale = state.current_surface().device_pixel_scale;
             let surface_spatial_node_index = self.spatial_node_index;
 
-            
-            let has_svg_filter = if let PictureCompositeMode::SvgFilter(..) = composite_mode {
-                true
-            } else {
-                false
-            };
-
             let surface_to_parent_transform = frame_context.spatial_tree
                 .get_relative_transform(surface_spatial_node_index, parent_raster_node_index);
 
             
             
-            let establishes_raster_root = has_svg_filter || surface_to_parent_transform.is_perspective();
+            let establishes_raster_root = match composite_mode {
+                PictureCompositeMode::TileCache { .. } => {
+                    
+                    
+                    false
+                }
+                PictureCompositeMode::SvgFilter(..) => {
+                    
+                    true
+                }
+                PictureCompositeMode::MixBlend(..) |
+                PictureCompositeMode::Filter(..) |
+                PictureCompositeMode::ComponentTransferFilter(..) |
+                PictureCompositeMode::Blit(..) => {
+                    
+                    surface_to_parent_transform.is_perspective()
+                }
+            };
 
             let (raster_spatial_node_index, device_pixel_scale) = if establishes_raster_root {
                 
