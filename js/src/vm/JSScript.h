@@ -1015,40 +1015,13 @@ class ScriptSource {
   
   bool hasEncoder() const { return bool(xdrEncoder_); }
 
-  
-  
-  
-  
-  
-  bool xdrEncodeInitialStencil(
-      JSContext* cx, frontend::CompilationInput& input,
-      const frontend::CompilationStencil& stencil,
-      UniquePtr<XDRIncrementalStencilEncoder>& xdrEncoder);
+  [[nodiscard]] bool startIncrementalEncoding(
+      JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+      UniquePtr<frontend::ExtensibleCompilationStencil>&& initial);
 
-  
-  
-  
-  
-  
-  bool xdrEncodeStencils(JSContext* cx, frontend::CompilationInput& input,
-                         const frontend::CompilationStencil& stencil,
-                         UniquePtr<XDRIncrementalStencilEncoder>& xdrEncoder);
+  [[nodiscard]] bool addDelazificationToIncrementalEncoding(
+      JSContext* cx, frontend::ExtensibleCompilationStencil& stencil);
 
-  void setIncrementalEncoder(XDRIncrementalStencilEncoder* xdrEncoder);
-
-  
-  
-  bool xdrEncodeFunctionStencil(
-      JSContext* cx, const frontend::BaseCompilationStencil& stencil);
-
- private:
-  
-  
-  bool xdrEncodeFunctionStencilWith(
-      JSContext* cx, const frontend::BaseCompilationStencil& stencil,
-      UniquePtr<XDRIncrementalStencilEncoder>& xdrEncoder);
-
- public:
   
   
   
