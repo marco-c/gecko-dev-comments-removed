@@ -2312,12 +2312,6 @@ add_task(async function test_changeThrottling() {
     return TelemetrySession.getPayload().info.subsessionCounter;
   };
 
-  const PREF_TEST = "toolkit.telemetry.test.pref1";
-  const PREFS_TO_WATCH = new Map([
-    [PREF_TEST, { what: TelemetryEnvironment.RECORD_PREF_STATE }],
-  ]);
-  Preferences.reset(PREF_TEST);
-
   let now = fakeNow(2050, 1, 2, 0, 0, 0);
   gMonotonicNow = fakeMonotonicNow(
     gMonotonicNow + 10 * MILLISECONDS_PER_MINUTE
@@ -2326,10 +2320,7 @@ add_task(async function test_changeThrottling() {
   Assert.equal(getSubsessionCount(), 1);
 
   
-  await TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
-
-  
-  Preferences.set(PREF_TEST, 1);
+  TelemetrySession.testOnEnvironmentChange("test", {});
   Assert.equal(getSubsessionCount(), 1);
 
   
@@ -2337,13 +2328,13 @@ add_task(async function test_changeThrottling() {
   gMonotonicNow = fakeMonotonicNow(
     gMonotonicNow + 5 * MILLISECONDS_PER_MINUTE + 1
   );
-  Preferences.set(PREF_TEST, 2);
+  TelemetrySession.testOnEnvironmentChange("test", {});
   Assert.equal(getSubsessionCount(), 2);
 
   
   now = fakeNow(futureDate(now, 1 * MILLISECONDS_PER_MINUTE));
   gMonotonicNow = fakeMonotonicNow(gMonotonicNow + 1 * MILLISECONDS_PER_MINUTE);
-  Preferences.set(PREF_TEST, 3);
+  TelemetrySession.testOnEnvironmentChange("test", {});
   Assert.equal(getSubsessionCount(), 2);
 
   
@@ -2351,11 +2342,8 @@ add_task(async function test_changeThrottling() {
   gMonotonicNow = fakeMonotonicNow(
     gMonotonicNow + 4 * MILLISECONDS_PER_MINUTE + 1
   );
-  Preferences.set(PREF_TEST, 4);
+  TelemetrySession.testOnEnvironmentChange("test", {});
   Assert.equal(getSubsessionCount(), 3);
-
-  
-  TelemetryEnvironment.unregisterChangeListener("testWatchPrefs_throttling");
 });
 
 add_task(async function stopServer() {
