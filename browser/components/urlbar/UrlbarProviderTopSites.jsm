@@ -122,10 +122,6 @@ class ProviderTopSites extends UrlbarProvider {
     
     sites = sites.filter(site => site);
 
-    if (!UrlbarPrefs.get("sponsoredTopSites")) {
-      sites = sites.filter(site => !site.sponsored_position);
-    }
-
     
     
     
