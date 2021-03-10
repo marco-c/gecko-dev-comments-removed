@@ -69,19 +69,34 @@ modal.findModalDialogs = function(context) {
   
   
   if (context.tab && context.tabBrowser.getTabDialogBox) {
-    let contentBrowser = context.contentBrowser;
-    let dialogManager = context.tabBrowser
-      .getTabDialogBox(contentBrowser)
-      .getTabDialogManager();
-    let dialogs = dialogManager._dialogs.filter(
-      dialog => dialog._openedURL === COMMON_DIALOG
-    );
+    const contentBrowser = context.contentBrowser;
+    const dialogBox = context.tabBrowser.getTabDialogBox(contentBrowser);
 
-    if (dialogs.length) {
-      return new modal.Dialog(
-        () => context,
-        Cu.getWeakReference(dialogs[0]._frame.contentWindow)
+    function checkForPrompts(dialogManager) {
+      const dialogs = dialogManager._dialogs.filter(
+        dialog => dialog._openedURL === COMMON_DIALOG
       );
+
+      if (dialogs.length) {
+        return new modal.Dialog(
+          () => context,
+          Cu.getWeakReference(dialogs[0]._frame.contentWindow)
+        );
+      }
+
+      return null;
+    }
+
+    
+    
+    let dialog = checkForPrompts(dialogBox.getTabDialogManager());
+    if (!dialog) {
+      
+      dialog = checkForPrompts(dialogBox.getContentDialogManager());
+    }
+
+    if (dialog) {
+      return dialog;
     }
   }
 
