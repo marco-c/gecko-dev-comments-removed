@@ -28,6 +28,7 @@
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"  
 #include "mozilla/dom/MouseEvent.h"
