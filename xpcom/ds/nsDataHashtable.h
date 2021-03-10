@@ -7,9 +7,13 @@
 #ifndef nsDataHashtable_h__
 #define nsDataHashtable_h__
 
-#include "nsHashKeys.h"
 #include "nsBaseHashtable.h"
-#include "mozilla/Maybe.h"
+
+
+#include "nsHashKeys.h"
+
+
+
 
 
 
@@ -21,29 +25,8 @@
 
 template <class KeyClass, class DataType>
 class nsDataHashtable : public nsBaseHashtable<KeyClass, DataType, DataType> {
- private:
-  typedef nsBaseHashtable<KeyClass, DataType, DataType> BaseClass;
-
  public:
-  using typename BaseClass::EntryType;
-  using typename BaseClass::KeyType;
-
-  nsDataHashtable() = default;
-  explicit nsDataHashtable(uint32_t aInitLength) : BaseClass(aInitLength) {}
-
-  
-
-
-
-
-
-
-  [[nodiscard]] DataType* GetValue(KeyType aKey) {
-    if (EntryType* ent = this->GetEntry(aKey)) {
-      return ent->GetModifiableData();
-    }
-    return nullptr;
-  }
+  using nsBaseHashtable<KeyClass, DataType, DataType>::nsBaseHashtable;
 };
 
 #endif  
