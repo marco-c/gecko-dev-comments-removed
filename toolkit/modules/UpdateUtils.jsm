@@ -1,6 +1,7 @@
 
 
 
+"use strict";
 
 var EXPORTED_SYMBOLS = ["UpdateUtils"];
 
@@ -29,6 +30,8 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/WindowsRegistry.jsm"
 );
 
+const PER_INSTALLATION_PREFS_PLATFORMS = ["win"];
+
 
 
 
@@ -36,16 +39,6 @@ const FILE_UPDATE_CONFIG_JSON = "update-config.json";
 const FILE_UPDATE_LOCALE = "update.locale";
 const PREF_APP_DISTRIBUTION = "distribution.id";
 const PREF_APP_DISTRIBUTION_VERSION = "distribution.version";
-
-
-const PREF_APP_UPDATE_AUTO = "app.update.auto";
-const PREF_APP_UPDATE_AUTO_MIGRATED = "app.update.auto.migrated";
-
-
-const CONFIG_APP_UPDATE_AUTO = "app.update.auto";
-
-
-const DEFAULT_APP_UPDATE_AUTO = true;
 
 var UpdateUtils = {
   _locale: undefined,
@@ -173,80 +166,181 @@ var UpdateUtils = {
 
 
 
-  getAppUpdateAutoEnabled() {
-    if (Services.policies) {
-      if (!Services.policies.isAllowed("app-auto-updates-off")) {
-        
-        return Promise.resolve(true);
+  async getAppUpdateAutoEnabled() {
+    return this.readUpdateConfigSetting("app.update.auto");
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async setAppUpdateAutoEnabled(enabledValue) {
+    return this.writeUpdateConfigSetting("app.update.auto", !!enabledValue);
+  },
+
+  
+
+
+
+
+
+
+  appUpdateAutoSettingIsLocked() {
+    return appUpdateSettingIsLocked("app.update.auto");
+  },
+
+  
+
+
+
+  PER_INSTALLATION_PREFS_SUPPORTED: PER_INSTALLATION_PREFS_PLATFORMS.includes(
+    AppConstants.platform
+  ),
+
+  
+
+
+  PER_INSTALLATION_PREF_TYPE_BOOL: "boolean",
+  PER_INSTALLATION_PREF_TYPE_ASCII_STRING: "ascii",
+  PER_INSTALLATION_PREF_TYPE_INT: "integer",
+
+  
+
+
+
+
+
+
+
+
+  PER_INSTALLATION_PREFS: null,
+
+  
+
+
+
+
+
+  initPerInstallPrefs() {
+    
+    
+    
+    
+    
+    if (!UpdateUtils.PER_INSTALLATION_PREFS_SUPPORTED) {
+      let initialConfig = {};
+      for (const [prefName, pref] of Object.entries(
+        UpdateUtils.PER_INSTALLATION_PREFS
+      )) {
+        const prefTypeFns = TYPE_SPECIFIC_PREF_FNS[pref.type];
+
+        try {
+          let initialValue = prefTypeFns.getProfilePref(prefName);
+          initialConfig[prefName] = initialValue;
+        } catch (e) {}
+
+        Services.prefs.addObserver(prefName, async (subject, topic, data) => {
+          let config = { ...gUpdateConfigCache };
+          config[prefName] = await UpdateUtils.readUpdateConfigSetting(
+            prefName
+          );
+          maybeUpdateConfigChanged(config);
+        });
       }
-      if (!Services.policies.isAllowed("app-auto-updates-on")) {
-        
-        return Promise.resolve(false);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      maybeUpdateConfigChanged(initialConfig);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  readUpdateConfigSetting(prefName) {
+    if (!(prefName in this.PER_INSTALLATION_PREFS)) {
+      return Promise.reject(
+        `UpdateUtils.readUpdateConfigSetting: Unknown per-installation ` +
+          `pref '${prefName}'`
+      );
+    }
+
+    const pref = this.PER_INSTALLATION_PREFS[prefName];
+    const prefTypeFns = TYPE_SPECIFIC_PREF_FNS[pref.type];
+
+    if (Services.policies && "policyFn" in pref) {
+      let policyValue = pref.policyFn();
+      if (policyValue !== null) {
+        return Promise.resolve(policyValue);
       }
     }
-    if (AppConstants.platform != "win") {
+
+    if (!this.PER_INSTALLATION_PREFS_SUPPORTED) {
       
-      let prefValue = Services.prefs.getBoolPref(
-        PREF_APP_UPDATE_AUTO,
-        DEFAULT_APP_UPDATE_AUTO
-      );
+      let prefValue = prefTypeFns.getProfilePref(prefName, pref.defaultValue);
       return Promise.resolve(prefValue);
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let readPromise = updateAutoIOPromise
-      .catch(() => {})
-      .then(async () => {
-        try {
-          let configValue = await readUpdateAutoConfig();
-          
-          
-          
-          Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO_MIGRATED, true);
-          return configValue;
-        } catch (e) {
-          
-          
-          Services.console.logStringMessage(
-            "UpdateUtils.getAppUpdateAutoEnabled - Unable to read app update " +
-              "configuration file. Exception: " +
-              e
-          );
-          let valueMigrated = Services.prefs.getBoolPref(
-            PREF_APP_UPDATE_AUTO_MIGRATED,
-            false
-          );
-          if (!valueMigrated) {
-            Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO_MIGRATED, true);
-            let prefValue = Services.prefs.getBoolPref(
-              PREF_APP_UPDATE_AUTO,
-              DEFAULT_APP_UPDATE_AUTO
-            );
-            try {
-              let writtenValue = await writeUpdateAutoConfig(prefValue);
-              Services.prefs.clearUserPref(PREF_APP_UPDATE_AUTO);
-              return writtenValue;
-            } catch (e) {
-              Cu.reportError(
-                "UpdateUtils.getAppUpdateAutoEnabled - Migration " +
-                  "failed. Exception: " +
-                  e
-              );
-            }
-          }
-        }
-        
-        return DEFAULT_APP_UPDATE_AUTO;
-      })
-      .then(maybeUpdateAutoConfigChanged);
-    updateAutoIOPromise = readPromise;
+
+    let readPromise = updateConfigIOPromise
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      .then(
+        () => {},
+        () => {}
+      )
+      .then(readUpdateConfig)
+      .then(maybeUpdateConfigChanged)
+      .then(config => {
+        return readEffectiveValue(config, prefName);
+      });
+    updateConfigIOPromise = readPromise;
     return readPromise;
   },
 
@@ -275,41 +369,86 @@ var UpdateUtils = {
 
 
 
-  setAppUpdateAutoEnabled(enabledValue) {
-    if (this.appUpdateAutoSettingIsLocked()) {
+
+
+
+
+
+
+
+  writeUpdateConfigSetting(prefName, value, options) {
+    if (!(prefName in this.PER_INSTALLATION_PREFS)) {
       return Promise.reject(
-        "setAppUpdateAutoEnabled: Unable to change value of setting because " +
-          "it is locked by policy"
+        `UpdateUtils.writeUpdateConfigSetting: Unknown per-installation ` +
+          `pref '${prefName}'`
       );
     }
-    if (AppConstants.platform != "win") {
-      
-      let prefValue = !!enabledValue;
-      Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO, prefValue);
-      
-      
-      
-      
-      return Promise.resolve(prefValue);
+
+    if (appUpdateSettingIsLocked(prefName)) {
+      return Promise.reject(
+        `UpdateUtils.writeUpdateConfigSetting: Unable to change value of ` +
+          `setting '${prefName}' because it is locked by policy`
+      );
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let writePromise = updateAutoIOPromise
-      .catch(() => {})
-      .then(async () => {
+
+    if (!options) {
+      options = {};
+    }
+
+    const pref = this.PER_INSTALLATION_PREFS[prefName];
+    const prefTypeFns = TYPE_SPECIFIC_PREF_FNS[pref.type];
+
+    if (!prefTypeFns.isValid(value)) {
+      return Promise.reject(
+        `UpdateUtils.writeUpdateConfigSetting: Attempted to change pref ` +
+          `'${prefName} to invalid value: ${JSON.stringify(value)}`
+      );
+    }
+
+    if (!this.PER_INSTALLATION_PREFS_SUPPORTED) {
+      
+      if (options.setDefaultOnly) {
+        prefTypeFns.setProfileDefaultPref(prefName, value);
+      } else {
+        prefTypeFns.setProfilePref(prefName, value);
+      }
+      
+      
+      
+      
+      return Promise.resolve(value);
+    }
+
+    let writePromise = updateConfigIOPromise
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      .then(
+        () => {},
+        () => {}
+      )
+      
+      
+      
+      .then(readUpdateConfig)
+      .then(async config => {
+        setConfigValue(config, prefName, value, {
+          setDefaultOnly: !!options.setDefaultOnly,
+        });
+
         try {
-          return await writeUpdateAutoConfig(enabledValue);
+          await writeUpdateConfig(config);
+          return config;
         } catch (e) {
           Cu.reportError(
-            "UpdateUtils.setAppUpdateAutoEnabled - App update " +
-              "configuration file write failed. Exception: " +
+            "UpdateUtils.writeUpdateConfigSetting: App update configuration " +
+              "file write failed. Exception: " +
               e
           );
           
@@ -317,76 +456,436 @@ var UpdateUtils = {
           throw e;
         }
       })
-      .then(maybeUpdateAutoConfigChanged);
-    updateAutoIOPromise = writePromise;
+      .then(maybeUpdateConfigChanged)
+      .then(() => {
+        
+        
+        
+        return value;
+      });
+    updateConfigIOPromise = writePromise;
     return writePromise;
   },
+};
 
-  
-
-
-
+const PER_INSTALLATION_DEFAULTS_BRANCH = "__DEFAULTS__";
 
 
 
-  appUpdateAutoSettingIsLocked() {
-    return (
-      Services.policies &&
-      (!Services.policies.isAllowed("app-auto-updates-off") ||
-        !Services.policies.isAllowed("app-auto-updates-on"))
-    );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+UpdateUtils.PER_INSTALLATION_PREFS = {
+  "app.update.auto": {
+    type: UpdateUtils.PER_INSTALLATION_PREF_TYPE_BOOL,
+    defaultValue: true,
+    migrate: true,
+    observerTopic: "auto-update-config-change",
+    policyFn: () => {
+      if (!Services.policies.isAllowed("app-auto-updates-off")) {
+        
+        return true;
+      }
+      if (!Services.policies.isAllowed("app-auto-updates-on")) {
+        
+        return false;
+      }
+      return null;
+    },
+  },
+};
+
+const TYPE_SPECIFIC_PREF_FNS = {
+  [UpdateUtils.PER_INSTALLATION_PREF_TYPE_BOOL]: {
+    getProfilePref: Services.prefs.getBoolPref,
+    setProfilePref: Services.prefs.setBoolPref,
+    setProfileDefaultPref: (pref, value) => {
+      let defaults = Services.prefs.getDefaultBranch("");
+      defaults.setBoolPref(pref, value);
+    },
+    isValid: value => typeof value == "boolean",
+  },
+  [UpdateUtils.PER_INSTALLATION_PREF_TYPE_ASCII_STRING]: {
+    getProfilePref: Services.prefs.getCharPref,
+    setProfilePref: Services.prefs.setCharPref,
+    setProfileDefaultPref: (pref, value) => {
+      let defaults = Services.prefs.getDefaultBranch("");
+      defaults.setCharPref(pref, value);
+    },
+    isValid: value => typeof value == "string",
+  },
+  [UpdateUtils.PER_INSTALLATION_PREF_TYPE_INT]: {
+    getProfilePref: Services.prefs.getIntPref,
+    setProfilePref: Services.prefs.setIntPref,
+    setProfileDefaultPref: (pref, value) => {
+      let defaults = Services.prefs.getDefaultBranch("");
+      defaults.setIntPref(pref, value);
+    },
+    isValid: value => Number.isInteger(value),
   },
 };
 
 
 
 
-var updateAutoIOPromise = Promise.resolve();
-var updateAutoSettingCachedVal = null;
 
-async function readUpdateAutoConfig() {
-  let configFile = FileUtils.getDir("UpdRootD", [], true);
-  configFile.append(FILE_UPDATE_CONFIG_JSON);
-  let binaryData = await OS.File.read(configFile.path);
-  let jsonData = new TextDecoder().decode(binaryData);
-  let configData = JSON.parse(jsonData);
-  return !!configData[CONFIG_APP_UPDATE_AUTO];
-}
 
-async function writeUpdateAutoConfig(enabledValue) {
-  let enabledBoolValue = !!enabledValue;
-  let configFile = FileUtils.getDir("UpdRootD", [], true);
-  configFile.append(FILE_UPDATE_CONFIG_JSON);
-  let configObject = { [CONFIG_APP_UPDATE_AUTO]: enabledBoolValue };
-  await OS.File.writeAtomic(configFile.path, JSON.stringify(configObject));
-  return enabledBoolValue;
+var updateConfigIOPromise = Promise.resolve();
+
+
+
+
+
+function getPrefMigratedPref(prefName) {
+  return prefName + ".migrated";
 }
 
 
 
-function maybeUpdateAutoConfigChanged(newValue) {
-  if (newValue !== updateAutoSettingCachedVal) {
-    updateAutoSettingCachedVal = newValue;
-    Services.obs.notifyObservers(
-      null,
-      "auto-update-config-change",
-      newValue.toString()
+
+
+function updateConfigNeedsMigration() {
+  for (const [prefName, pref] of Object.entries(
+    UpdateUtils.PER_INSTALLATION_PREFS
+  )) {
+    if (pref.migrate) {
+      let migratedPrefName = getPrefMigratedPref(prefName);
+      let migrated = Services.prefs.getBoolPref(migratedPrefName, false);
+      if (!migrated) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function setUpdateConfigMigrationDone() {
+  for (const [prefName, pref] of Object.entries(
+    UpdateUtils.PER_INSTALLATION_PREFS
+  )) {
+    if (pref.migrate) {
+      let migratedPrefName = getPrefMigratedPref(prefName);
+      Services.prefs.setBoolPref(migratedPrefName, true);
+    }
+  }
+}
+
+
+
+
+function onMigrationSuccessful() {
+  for (const [prefName, pref] of Object.entries(
+    UpdateUtils.PER_INSTALLATION_PREFS
+  )) {
+    if (pref.migrate) {
+      Services.prefs.clearUserPref(prefName);
+    }
+  }
+}
+
+function makeMigrationUpdateConfig() {
+  let config = makeDefaultUpdateConfig();
+
+  for (const [prefName, pref] of Object.entries(
+    UpdateUtils.PER_INSTALLATION_PREFS
+  )) {
+    if (!pref.migrate) {
+      continue;
+    }
+    let migratedPrefName = getPrefMigratedPref(prefName);
+    let alreadyMigrated = Services.prefs.getBoolPref(migratedPrefName, false);
+    if (alreadyMigrated) {
+      continue;
+    }
+
+    const prefTypeFns = TYPE_SPECIFIC_PREF_FNS[pref.type];
+    const prefValue = prefTypeFns.getProfilePref(prefName, null);
+    if (prefValue !== null) {
+      setConfigValue(config, prefName, prefValue);
+    }
+  }
+
+  return config;
+}
+
+function makeDefaultUpdateConfig() {
+  let config = {};
+
+  for (const [prefName, pref] of Object.entries(
+    UpdateUtils.PER_INSTALLATION_PREFS
+  )) {
+    setConfigValue(config, prefName, pref.defaultValue, {
+      setDefaultOnly: true,
+    });
+  }
+
+  return config;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function setConfigValue(config, prefName, prefValue, options) {
+  if (!options) {
+    options = {};
+  }
+
+  if (options.setDefaultOnly) {
+    if (!(PER_INSTALLATION_DEFAULTS_BRANCH in config)) {
+      config[PER_INSTALLATION_DEFAULTS_BRANCH] = {};
+    }
+    config[PER_INSTALLATION_DEFAULTS_BRANCH][prefName] = prefValue;
+  } else if (prefValue != readDefaultValue(config, prefName)) {
+    config[prefName] = prefValue;
+  } else {
+    delete config[prefName];
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function readEffectiveValue(config, prefName) {
+  if (!(prefName in UpdateUtils.PER_INSTALLATION_PREFS)) {
+    throw new Error(
+      `readEffectiveValue: Unknown per-installation pref '${prefName}'`
     );
   }
-  return newValue;
-}
+  const pref = UpdateUtils.PER_INSTALLATION_PREFS[prefName];
+  const prefTypeFns = TYPE_SPECIFIC_PREF_FNS[pref.type];
 
-
-
-if (AppConstants.platform != "win") {
-  Services.prefs.addObserver(
-    PREF_APP_UPDATE_AUTO,
-    async (subject, topic, data) => {
-      let value = await UpdateUtils.getAppUpdateAutoEnabled();
-      maybeUpdateAutoConfigChanged(value);
+  if (prefName in config) {
+    if (prefTypeFns.isValid(config[prefName])) {
+      return config[prefName];
     }
-  );
+    Cu.reportError(
+      `readEffectiveValue: Got invalid value for update config's` +
+        ` '${prefName}' value: "${config[prefName]}"`
+    );
+  }
+  return readDefaultValue(config, prefName);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+function readDefaultValue(config, prefName) {
+  if (!(prefName in UpdateUtils.PER_INSTALLATION_PREFS)) {
+    throw new Error(
+      `readDefaultValue: Unknown per-installation pref '${prefName}'`
+    );
+  }
+  const pref = UpdateUtils.PER_INSTALLATION_PREFS[prefName];
+  const prefTypeFns = TYPE_SPECIFIC_PREF_FNS[pref.type];
+
+  if (PER_INSTALLATION_DEFAULTS_BRANCH in config) {
+    let defaults = config[PER_INSTALLATION_DEFAULTS_BRANCH];
+    if (prefName in defaults) {
+      if (prefTypeFns.isValid(defaults[prefName])) {
+        return defaults[prefName];
+      }
+      Cu.reportError(
+        `readEffectiveValue: Got invalid default value for update` +
+          ` config's '${prefName}' value: "${defaults[prefName]}"`
+      );
+    }
+  }
+  return pref.defaultValue;
+}
+
+
+
+
+
+function appUpdateSettingIsLocked(prefName) {
+  if (!(prefName in UpdateUtils.PER_INSTALLATION_PREFS)) {
+    return Promise.reject(
+      `appUpdateSettingIsLocked: Unknown per-installation pref '${prefName}'`
+    );
+  }
+
+  
+  if (!Services.policies) {
+    return false;
+  }
+
+  const pref = UpdateUtils.PER_INSTALLATION_PREFS[prefName];
+  if (!pref.policyFn) {
+    return false;
+  }
+  const policyValue = pref.policyFn();
+  return policyValue !== null;
+}
+
+
+
+
+
+
+
+
+
+async function readUpdateConfig() {
+  try {
+    let configFile = FileUtils.getDir("UpdRootD", [], true);
+    configFile.append(FILE_UPDATE_CONFIG_JSON);
+    let binaryData = await OS.File.read(configFile.path);
+
+    
+    
+    setUpdateConfigMigrationDone();
+
+    let jsonData = new TextDecoder().decode(binaryData);
+    let config = JSON.parse(jsonData);
+    return config;
+  } catch (e) {
+    if (e instanceof OS.File.Error && e.becauseNoSuchFile) {
+      if (updateConfigNeedsMigration()) {
+        const migrationConfig = makeMigrationUpdateConfig();
+        setUpdateConfigMigrationDone();
+        try {
+          await writeUpdateConfig(migrationConfig);
+          onMigrationSuccessful();
+          return migrationConfig;
+        } catch (e) {
+          Cu.reportError("readUpdateConfig: Migration failed: " + e);
+        }
+      }
+    } else {
+      
+      
+      
+      setUpdateConfigMigrationDone();
+
+      Cu.reportError(
+        "readUpdateConfig: Unable to read app update configuration file. " +
+          "Exception: " +
+          e
+      );
+    }
+    return makeDefaultUpdateConfig();
+  }
+}
+
+
+
+
+
+
+
+
+
+async function writeUpdateConfig(config) {
+  let configFile = FileUtils.getDir("UpdRootD", [], true);
+  configFile.append(FILE_UPDATE_CONFIG_JSON);
+  await OS.File.writeAtomic(configFile.path, JSON.stringify(config));
+  return config;
+}
+
+var gUpdateConfigCache;
+
+
+
+
+
+
+
+function maybeUpdateConfigChanged(config) {
+  if (!gUpdateConfigCache) {
+    
+    
+    gUpdateConfigCache = config;
+    return config;
+  }
+
+  for (const [prefName, pref] of Object.entries(
+    UpdateUtils.PER_INSTALLATION_PREFS
+  )) {
+    let newPrefValue = readEffectiveValue(config, prefName);
+    let oldPrefValue = readEffectiveValue(gUpdateConfigCache, prefName);
+    if (newPrefValue != oldPrefValue) {
+      Services.obs.notifyObservers(
+        null,
+        pref.observerTopic,
+        newPrefValue.toString()
+      );
+    }
+  }
+
+  gUpdateConfigCache = config;
+  return config;
+}
+
+
+
+
+UpdateUtils.initPerInstallPrefs();
 
 
 function getDistributionPrefValue(aPrefName) {
