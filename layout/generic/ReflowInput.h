@@ -407,8 +407,6 @@ struct ReflowInput : public SizeComputationInput {
   const nsStylePadding* mStylePadding = nullptr;
   const nsStyleText* mStyleText = nullptr;
 
-  bool IsFloating() const;
-
   
   
   nsIPercentBSizeObserver* mPercentBSizeObserver = nullptr;
