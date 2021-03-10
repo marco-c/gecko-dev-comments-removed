@@ -273,23 +273,29 @@ class GCMarker final : public JSTracer {
 
   
   template <typename T>
-  void traverse(T thing);
+  void markAndTraverse(T* thing);
+
+  
+  
+  
+  template <typename T>
+  void traverse(T* thing);
 
   
   template <typename S, typename T>
-  void traverseEdge(S source, T* target);
+  void markAndTraverseEdge(S source, T* target);
   template <typename S, typename T>
-  void traverseEdge(S source, const T& target);
+  void markAndTraverseEdge(S source, const T& target);
 
   
   
   template <typename S>
-  void traverseObjectEdge(S source, JSObject* target) {
-    traverseEdge(source, target);
+  void markAndTraverseObjectEdge(S source, JSObject* target) {
+    markAndTraverseEdge(source, target);
   }
   template <typename S>
-  void traverseStringEdge(S source, JSString* target) {
-    traverseEdge(source, target);
+  void markAndTraverseStringEdge(S source, JSString* target) {
+    markAndTraverseEdge(source, target);
   }
 
   template <typename S, typename T>
@@ -401,12 +407,19 @@ class GCMarker final : public JSTracer {
   
   inline void repush(JSObject* obj);
 
+  
   template <typename T>
-  void markAndTraceChildren(T* thing);
+  void traceChildren(T* thing);
+
+  
+  
   template <typename T>
-  void markAndPush(T* thing);
+  void scanChildren(T* thing);
+
+  
   template <typename T>
-  void markAndScan(T* thing);
+  void pushThing(T* thing);
+
   template <typename T>
   void markImplicitEdgesHelper(T oldThing);
   void eagerlyMarkChildren(JSLinearString* str);
