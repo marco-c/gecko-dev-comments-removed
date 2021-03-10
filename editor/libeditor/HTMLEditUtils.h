@@ -208,6 +208,19 @@ class HTMLEditUtils final {
   
 
 
+  static bool IsSplittableNode(const nsIContent& aContent) {
+    if (aContent.IsElement()) {
+      
+      
+      
+      return HTMLEditUtils::IsContainerNode(aContent);
+    }
+    return aContent.IsText() && aContent.Length() > 0;
+  }
+
+  
+
+
 
 
   static bool IsNonListSingleLineContainer(nsINode& aNode);

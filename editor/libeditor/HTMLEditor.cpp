@@ -4252,22 +4252,31 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
 
   nsCOMPtr<nsIContent> newLeftNodeOfMostAncestor;
   EditorDOMPoint atStartOfRightNode(aStartOfDeepestRightNode);
+  SplitNodeResult lastSplitNodeResult(atStartOfRightNode);
   while (true) {
     
     
     
     
-    if (NS_WARN_IF(!atStartOfRightNode.GetContainerAsContent())) {
+    nsIContent* currentRightNode = atStartOfRightNode.GetContainerAsContent();
+    if (NS_WARN_IF(!currentRightNode)) {
       return SplitNodeResult(NS_ERROR_FAILURE);
     }
     
     
-    if (NS_WARN_IF(atStartOfRightNode.GetContainer() != &aMostAncestorToSplit &&
+    if (NS_WARN_IF(currentRightNode != &aMostAncestorToSplit &&
                    !atStartOfRightNode.GetContainerParentAsContent())) {
       return SplitNodeResult(NS_ERROR_FAILURE);
     }
-
-    nsIContent* currentRightNode = atStartOfRightNode.GetContainerAsContent();
+    
+    
+    if (!HTMLEditUtils::IsSplittableNode(*currentRightNode)) {
+      if (currentRightNode == &aMostAncestorToSplit) {
+        return lastSplitNodeResult;
+      }
+      atStartOfRightNode.Set(currentRightNode);
+      continue;
+    }
 
     
     
@@ -4283,9 +4292,10 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
         return SplitNodeResult(error.StealNSResult());
       }
 
+      lastSplitNodeResult = SplitNodeResult(newLeftNode, currentRightNode);
       if (currentRightNode == &aMostAncestorToSplit) {
         
-        return SplitNodeResult(newLeftNode, &aMostAncestorToSplit);
+        return lastSplitNodeResult;
       }
 
       
@@ -4294,8 +4304,9 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
     
     
     else if (!atStartOfRightNode.IsStartOfContainer()) {
+      lastSplitNodeResult = SplitNodeResult(currentRightNode, nullptr);
       if (currentRightNode == &aMostAncestorToSplit) {
-        return SplitNodeResult(&aMostAncestorToSplit, nullptr);
+        return lastSplitNodeResult;
       }
 
       
@@ -4307,11 +4318,13 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
     
     
     else {
+      lastSplitNodeResult = SplitNodeResult(nullptr, currentRightNode);
       if (currentRightNode == &aMostAncestorToSplit) {
-        return SplitNodeResult(nullptr, &aMostAncestorToSplit);
+        return lastSplitNodeResult;
       }
 
       
+      lastSplitNodeResult = SplitNodeResult(atStartOfRightNode);
       atStartOfRightNode.Set(currentRightNode);
     }
   }
