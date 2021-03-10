@@ -1199,6 +1199,71 @@ void nsSHistory::LoadURIOrBFCache(LoadEntryResult& aLoadEntry) {
     RefPtr<nsFrameLoader> frameLoader = she->GetFrameLoader();
     if (canonicalBC->Group()->Toplevels().Length() == 1 && frameLoader &&
         (!currentShe || she->SharedInfo() != currentShe->SharedInfo())) {
+      auto restore = [canonicalBC, loadState,
+                      she](const nsTArray<bool> aCanSaves) {
+        bool canSave = !aCanSaves.Contains(false);
+        MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
+                ("nsSHistory::LoadURIOrBFCache "
+                 "saving presentation=%i",
+                 canSave));
+
+        nsCOMPtr<nsFrameLoaderOwner> frameLoaderOwner =
+            do_QueryInterface(canonicalBC->GetEmbedderElement());
+        if (frameLoaderOwner) {
+          RefPtr<nsFrameLoader> fl = she->GetFrameLoader();
+          if (fl) {
+            she->SetFrameLoader(nullptr);
+            RefPtr<BrowsingContext> loadingBC =
+                fl->GetMaybePendingBrowsingContext();
+            if (loadingBC) {
+              RefPtr<nsFrameLoader> currentFrameLoader =
+                  frameLoaderOwner->GetFrameLoader();
+              
+              
+              if (canSave && canonicalBC->GetActiveSessionHistoryEntry()) {
+                canonicalBC->GetActiveSessionHistoryEntry()->SetFrameLoader(
+                    currentFrameLoader);
+                Unused << canonicalBC->SetIsInBFCache(true);
+              }
+
+              
+              canonicalBC->SetActiveSessionHistoryEntry(she);
+              loadingBC->Canonical()->SetActiveSessionHistoryEntry(nullptr);
+              RemotenessChangeOptions options;
+              canonicalBC->ReplacedBy(loadingBC->Canonical(), options);
+              frameLoaderOwner->ReplaceFrameLoader(fl);
+
+              
+              
+              if (!canSave && currentFrameLoader) {
+                currentFrameLoader->Destroy();
+              }
+              
+              
+              loadingBC->Canonical()->GetSessionHistory()->UpdateIndex();
+              loadingBC->Canonical()->HistoryCommitIndexAndLength();
+              Unused << loadingBC->SetIsInBFCache(false);
+              
+              
+              
+              return;
+            }
+          }
+        }
+
+        
+        canonicalBC->LoadURI(loadState, false);
+      };
+
+      if (currentShe && !currentShe->GetSaveLayoutStateFlag()) {
+        
+        
+        nsTArray<bool> canSaves;
+        canSaves.AppendElement(false);
+        restore(std::move(canSaves));
+        return;
+      }
+
       nsTArray<RefPtr<PContentParent::CanSavePresentationPromise>>
           canSavePromises;
       canonicalBC->Group()->EachParent([&](ContentParent* aParent) {
@@ -1210,72 +1275,13 @@ void nsSHistory::LoadURIOrBFCache(LoadEntryResult& aLoadEntry) {
       
       PContentParent::CanSavePresentationPromise::All(
           GetCurrentSerialEventTarget(), canSavePromises)
-          ->Then(
-              GetMainThreadSerialEventTarget(), __func__,
-              [canonicalBC, loadState, she](const nsTArray<bool> aCanSaves) {
-                bool canSave = !aCanSaves.Contains(false);
-                MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
-                        ("nsSHistory::LoadURIOrBFCache "
-                         "saving presentation=%i",
-                         canSave));
-
-                nsCOMPtr<nsFrameLoaderOwner> frameLoaderOwner =
-                    do_QueryInterface(canonicalBC->GetEmbedderElement());
-                if (frameLoaderOwner) {
-                  RefPtr<nsFrameLoader> fl = she->GetFrameLoader();
-                  if (fl) {
-                    she->SetFrameLoader(nullptr);
-                    RefPtr<BrowsingContext> loadingBC =
-                        fl->GetMaybePendingBrowsingContext();
-                    if (loadingBC) {
-                      RefPtr<nsFrameLoader> currentFrameLoader =
-                          frameLoaderOwner->GetFrameLoader();
-                      
-                      
-                      if (canSave &&
-                          canonicalBC->GetActiveSessionHistoryEntry()) {
-                        canonicalBC->GetActiveSessionHistoryEntry()
-                            ->SetFrameLoader(currentFrameLoader);
-                        Unused << canonicalBC->SetIsInBFCache(true);
-                      }
-
-                      
-                      canonicalBC->SetActiveSessionHistoryEntry(she);
-                      loadingBC->Canonical()->SetActiveSessionHistoryEntry(
-                          nullptr);
-                      RemotenessChangeOptions options;
-                      canonicalBC->ReplacedBy(loadingBC->Canonical(), options);
-                      frameLoaderOwner->ReplaceFrameLoader(fl);
-
-                      
-                      
-                      if (!canSave && currentFrameLoader) {
-                        currentFrameLoader->Destroy();
-                      }
-                      
-                      
-                      loadingBC->Canonical()
-                          ->GetSessionHistory()
-                          ->UpdateIndex();
-                      loadingBC->Canonical()->HistoryCommitIndexAndLength();
-                      Unused << loadingBC->SetIsInBFCache(false);
-                      
-                      
-                      
-                      return;
-                    }
-                  }
-                }
-
-                
-                canonicalBC->LoadURI(loadState, false);
-              },
-              [canonicalBC, loadState](mozilla::ipc::ResponseRejectReason) {
-                MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
-                        ("nsSHistory::LoadURIOrBFCache "
-                         "error in trying to save presentation"));
-                canonicalBC->LoadURI(loadState, false);
-              });
+          ->Then(GetMainThreadSerialEventTarget(), __func__, std::move(restore),
+                 [canonicalBC, loadState](mozilla::ipc::ResponseRejectReason) {
+                   MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
+                           ("nsSHistory::LoadURIOrBFCache "
+                            "error in trying to save presentation"));
+                   canonicalBC->LoadURI(loadState, false);
+                 });
       return;
     }
     if (frameLoader) {
