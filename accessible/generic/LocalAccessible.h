@@ -1026,13 +1026,12 @@ class LocalAccessible : public nsISupports, public Accessible {
     eIsNotInDocument = 1 << 1,  
     eSharedNode = 1 << 2,  
     eNotNodeMapEntry = 1 << 3,   
-    eHasNumericValue = 1 << 4,   
-    eGroupInfoDirty = 1 << 5,    
-    eKidsMutating = 1 << 6,      
-    eIgnoreDOMUIEvent = 1 << 7,  
-    eRelocated = 1 << 8,         
-    eNoKidsFromDOM = 1 << 9,     
-    eHasTextKids = 1 << 10,      
+    eGroupInfoDirty = 1 << 4,    
+    eKidsMutating = 1 << 5,      
+    eIgnoreDOMUIEvent = 1 << 6,  
+    eRelocated = 1 << 7,         
+    eNoKidsFromDOM = 1 << 8,     
+    eHasTextKids = 1 << 9,       
 
     eLastStateFlag = eHasTextKids
   };

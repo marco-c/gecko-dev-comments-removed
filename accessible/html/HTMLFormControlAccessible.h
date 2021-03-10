@@ -140,7 +140,7 @@ class HTMLSpinnerAccessible final : public HTMLTextFieldAccessible {
  public:
   HTMLSpinnerAccessible(nsIContent* aContent, DocAccessible* aDoc)
       : HTMLTextFieldAccessible(aContent, aDoc) {
-    mStateFlags |= eHasNumericValue;
+    mGenericTypes |= eNumericValue;
   }
 
   
@@ -161,7 +161,7 @@ class HTMLRangeAccessible : public LeafAccessible {
  public:
   HTMLRangeAccessible(nsIContent* aContent, DocAccessible* aDoc)
       : LeafAccessible(aContent, aDoc) {
-    mStateFlags |= eHasNumericValue;
+    mGenericTypes |= eNumericValue;
   }
 
   
@@ -267,7 +267,8 @@ class HTMLProgressAccessible : public LeafAccessible {
       : LeafAccessible(aContent, aDoc) {
     
     
-    mStateFlags |= eHasNumericValue | eIgnoreDOMUIEvent;
+    mStateFlags |= eIgnoreDOMUIEvent;
+    mGenericTypes |= eNumericValue;
     mType = eProgressType;
   }
 
@@ -300,7 +301,8 @@ class HTMLMeterAccessible : public LeafAccessible {
       : LeafAccessible(aContent, aDoc) {
     
     
-    mStateFlags |= eHasNumericValue | eIgnoreDOMUIEvent;
+    mStateFlags |= eIgnoreDOMUIEvent;
+    mGenericTypes |= eNumericValue;
     mType = eProgressType;
   }
 
