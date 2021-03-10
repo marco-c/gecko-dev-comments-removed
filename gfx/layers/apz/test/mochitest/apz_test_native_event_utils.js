@@ -65,7 +65,7 @@ function nativeHorizontalWheelEventMsg() {
 
 
 function windowForTarget(aTarget) {
-  if (aTarget.Window && aTarget instanceof aTarget.Window) {
+  if (aTarget instanceof Window) {
     return aTarget;
   }
   return aTarget.ownerDocument.defaultView;
@@ -73,7 +73,7 @@ function windowForTarget(aTarget) {
 
 
 function elementForTarget(aTarget) {
-  if (aTarget.Window && aTarget instanceof aTarget.Window) {
+  if (aTarget instanceof Window) {
     return aTarget.document.documentElement;
   }
   return aTarget;
@@ -202,10 +202,6 @@ function getTargetRect(aTarget) {
   
   
   if (aTarget instanceof Window) {
-    return rect;
-  }
-  if (aTarget.Window && aTarget instanceof aTarget.Window) {
-    
     
     return rect;
   }
