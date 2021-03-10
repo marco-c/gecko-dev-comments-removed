@@ -77,10 +77,16 @@ var ReaderMode = {
   DEBUG: 0,
 
   
+  enterTime: undefined,
+  leaveTime: undefined,
+
+  
 
 
 
   enterReaderMode(docShell, win) {
+    this.enterTime = Date.now();
+
     Services.telemetry.recordEvent("readermode", "view", "on", null, {
       subcategory: "feature",
     });
@@ -110,8 +116,22 @@ var ReaderMode = {
 
 
   leaveReaderMode(docShell, win) {
+    this.leaveTime = Date.now();
+
+    
+    let timeSpentInReaderMode = Math.floor(
+      (this.leaveTime - this.enterTime) / 1000
+    );
+
+    
+    let scrollPosition = Math.floor(
+      ((win.scrollY + win.innerHeight) / win.document.body.clientHeight) * 100
+    );
+
     Services.telemetry.recordEvent("readermode", "view", "off", null, {
       subcategory: "feature",
+      reader_time: `${timeSpentInReaderMode}`,
+      scroll_position: `${scrollPosition}`,
     });
 
     let url = win.document.location.href;
