@@ -201,23 +201,20 @@ BrowserElementChild.prototype = {
     let origModalDepth = win.modalDepth;
 
     debug("Nested event loop - begin");
-    Services.tm.spinEventLoopUntil(
-      "BrowserElementChildPreload.js:_waitForResult",
-      () => {
-        
-        
-        
-        if (this._tryGetInnerWindowID(win) !== innerWindowID) {
-          debug(
-            "_waitForResult: Inner window ID changed " +
-              "while in nested event loop."
-          );
-          return true;
-        }
-
-        return win.modalDepth !== origModalDepth || this._shuttingDown;
+    Services.tm.spinEventLoopUntil(() => {
+      
+      
+      
+      if (this._tryGetInnerWindowID(win) !== innerWindowID) {
+        debug(
+          "_waitForResult: Inner window ID changed " +
+            "while in nested event loop."
+        );
+        return true;
       }
-    );
+
+      return win.modalDepth !== origModalDepth || this._shuttingDown;
+    });
     debug("Nested event loop - finish");
 
     if (win.modalDepth == 0) {

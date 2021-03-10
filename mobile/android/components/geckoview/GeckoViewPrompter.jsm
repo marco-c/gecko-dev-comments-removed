@@ -86,7 +86,6 @@ class GeckoViewPrompter {
 
       
       Services.tm.spinEventLoopUntil(
-        "GeckoViewPrompter.jsm:showPrompt",
         () => this._domWin.closed || result !== undefined
       );
     } finally {

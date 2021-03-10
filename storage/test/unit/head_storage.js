@@ -94,7 +94,7 @@ function asyncCleanup() {
   });
 
   let tm = Cc["@mozilla.org/thread-manager;1"].getService();
-  tm.spinEventLoopUntil("Test(head_storage.js:asyncCleanup)", () => closed);
+  tm.spinEventLoopUntil(() => closed);
 
   
   
