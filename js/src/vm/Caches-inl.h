@@ -50,11 +50,9 @@ inline NativeObject* NewObjectCache::newObjectFromHit(JSContext* cx,
   NativeObject* templateObj =
       reinterpret_cast<NativeObject*>(&entry->templateObject);
 
-  ObjectGroup* group = templateObj->group();
-
   
   
-  if (group->realm() != cx->realm()) {
+  if (templateObj->shape()->realm() != cx->realm()) {
     return nullptr;
   }
 

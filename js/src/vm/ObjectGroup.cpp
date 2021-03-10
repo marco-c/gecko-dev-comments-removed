@@ -47,22 +47,15 @@ static ObjectGroup* MakeGroup(JSContext* cx, Handle<TaggedProto> proto) {
   if (!group) {
     return nullptr;
   }
-  new (group) ObjectGroup(proto, cx->realm());
+  new (group) ObjectGroup(proto);
 
   return group;
 }
 
-ObjectGroup::ObjectGroup(TaggedProto proto, JS::Realm* realm)
-    : TenuredCellWithNonGCPointer(nullptr), proto_(proto), realm_(realm) {
+ObjectGroup::ObjectGroup(TaggedProto proto)
+    : TenuredCellWithNonGCPointer(nullptr), proto_(proto) {
   
   MOZ_ASSERT_IF(proto.isObject(), !IsWindow(proto.toObject()));
-
-#ifdef DEBUG
-  GlobalObject* global = realm->unsafeUnbarrieredMaybeGlobal();
-  if (global) {
-    AssertTargetIsNotGray(global);
-  }
-#endif
 }
 
 void ObjectGroup::setProtoUnchecked(TaggedProto proto) {
