@@ -316,12 +316,6 @@ class JS::Realm : public JS::shadow::Realm {
 
   
   
-  js::ObjectGroupRealm objectGroups_;
-  friend js::ObjectGroupRealm& js::ObjectGroupRealm::getForNewObject(
-      JSContext* cx);
-
-  
-  
   
   
   
@@ -570,12 +564,6 @@ class JS::Realm : public JS::shadow::Realm {
   void purge();
 
   void fixupAfterMovingGC(JSTracer* trc);
-
-#ifdef JSGC_HASH_TABLE_CHECKS
-  void checkObjectGroupTablesAfterMovingGC() {
-    objectGroups_.checkTablesAfterMovingGC();
-  }
-#endif
 
   
   [[nodiscard]] bool addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name);
