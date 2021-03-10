@@ -107,9 +107,8 @@ class WorkerDescriptorFront extends DescriptorMixin(
   }
 
   async detach() {
-    let response;
     try {
-      response = await super.detach();
+      await super.detach();
 
       if (this.registration) {
         
@@ -120,8 +119,6 @@ class WorkerDescriptorFront extends DescriptorMixin(
     } catch (e) {
       this.logDetachError(e, "worker");
     }
-
-    return response;
   }
 
   async _getRegistrationIfActive() {
