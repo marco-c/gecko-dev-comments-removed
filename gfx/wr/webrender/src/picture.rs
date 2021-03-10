@@ -6038,13 +6038,13 @@ impl PicturePrimitive {
                     
                     false
                 }
-                PictureCompositeMode::SvgFilter(..) => {
+                PictureCompositeMode::SvgFilter(..) |
+                PictureCompositeMode::MixBlend(..) |
+                PictureCompositeMode::ComponentTransferFilter(..) => {
                     
                     true
                 }
-                PictureCompositeMode::MixBlend(..) |
                 PictureCompositeMode::Filter(..) |
-                PictureCompositeMode::ComponentTransferFilter(..) |
                 PictureCompositeMode::Blit(..) => {
                     
                     surface_to_parent_transform.is_perspective()
