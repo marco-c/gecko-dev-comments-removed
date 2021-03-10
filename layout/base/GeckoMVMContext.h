@@ -23,7 +23,7 @@ class EventTarget;
 
 
 
-class GeckoMVMContext : public MVMContext {
+class GeckoMVMContext final : public MVMContext {
  public:
   explicit GeckoMVMContext(dom::Document* aDocument, PresShell* aPresShell);
   void AddEventListener(const nsAString& aType, nsIDOMEventListener* aListener,
