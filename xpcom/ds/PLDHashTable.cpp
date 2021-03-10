@@ -287,11 +287,13 @@ PLDHashTable::~PLDHashTable() {
   }
 
   
-  mEntryStore.ForEachSlot(Capacity(), mEntrySize, [&](const Slot& aSlot) {
-    if (aSlot.IsLive()) {
-      mOps->clearEntry(this, aSlot.ToEntry());
-    }
-  });
+  if (mOps->clearEntry) {
+    mEntryStore.ForEachSlot(Capacity(), mEntrySize, [&](const Slot& aSlot) {
+      if (aSlot.IsLive()) {
+        mOps->clearEntry(this, aSlot.ToEntry());
+      }
+    });
+  }
 
   
 }
@@ -566,9 +568,11 @@ void PLDHashTable::RawRemove(Slot& aSlot) {
   MOZ_ASSERT(aSlot.IsLive());
 
   
-  PLDHashEntryHdr* entry = aSlot.ToEntry();
   PLDHashNumber keyHash = aSlot.KeyHash();
-  mOps->clearEntry(this, entry);
+  if (mOps->clearEntry) {
+    PLDHashEntryHdr* entry = aSlot.ToEntry();
+    mOps->clearEntry(this, entry);
+  }
   if (keyHash & kCollisionFlag) {
     aSlot.MarkRemoved();
     mRemovedCount++;

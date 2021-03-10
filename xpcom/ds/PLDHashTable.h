@@ -778,9 +778,9 @@ struct PLDHashTableOps {
   PLDHashHashKey hashKey;
   PLDHashMatchEntry matchEntry;
   PLDHashMoveEntry moveEntry;
-  PLDHashClearEntry clearEntry;
 
   
+  PLDHashClearEntry clearEntry;
   PLDHashInitEntry initEntry;
 };
 
