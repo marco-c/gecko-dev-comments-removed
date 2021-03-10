@@ -10,7 +10,7 @@ const {
   WatchedDataHelpers,
 } = require("devtools/server/actors/watcher/WatchedDataHelpers.jsm");
 const { SUPPORTED_DATA } = WatchedDataHelpers;
-const { BREAKPOINTS } = SUPPORTED_DATA;
+const { BREAKPOINTS, XHR_BREAKPOINTS } = SUPPORTED_DATA;
 
 
 
@@ -39,6 +39,32 @@ const BreakpointListActor = ActorClassWithSpec(breakpointListSpec, {
   removeBreakpoint(location, options) {
     return this.watcherActor.removeDataEntry(BREAKPOINTS, [
       { location, options },
+    ]);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  setXHRBreakpoint(path, method) {
+    return this.watcherActor.addDataEntry(XHR_BREAKPOINTS, [{ path, method }]);
+  },
+
+  
+
+
+
+
+  removeXHRBreakpoint(path, method) {
+    return this.watcherActor.removeDataEntry(XHR_BREAKPOINTS, [
+      { path, method },
     ]);
   },
 });

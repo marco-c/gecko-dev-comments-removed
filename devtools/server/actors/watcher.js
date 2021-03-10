@@ -169,6 +169,11 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         
         
         "target-configuration": true,
+        
+        
+        
+        
+        "set-xhr-breakpoints": true,
       },
     };
   },

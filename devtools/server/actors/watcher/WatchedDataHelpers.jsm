@@ -14,6 +14,7 @@ var EXPORTED_SYMBOLS = ["WatchedDataHelpers"];
 
 const SUPPORTED_DATA = {
   BREAKPOINTS: "breakpoints",
+  XHR_BREAKPOINTS: "xhr-breakpoints",
   RESOURCES: "resources",
   TARGET_CONFIGURATION: "target-configuration",
   TARGETS: "targets",
@@ -57,6 +58,19 @@ const DATA_KEY_FUNCTION = {
     
     
     return key;
+  },
+  [SUPPORTED_DATA.XHR_BREAKPOINTS]: function({ path, method }) {
+    if (typeof path != "string") {
+      throw new Error(
+        `XHR Breakpoints expect to have path string, got ${typeof path} instead.`
+      );
+    }
+    if (typeof method != "string") {
+      throw new Error(
+        `XHR Breakpoints expect to have method string, got ${typeof method} instead.`
+      );
+    }
+    return `${path}:${method}`;
   },
 };
 

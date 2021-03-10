@@ -10,8 +10,13 @@ const Resources = require("devtools/server/actors/resources/index");
 const {
   WatchedDataHelpers,
 } = require("devtools/server/actors/watcher/WatchedDataHelpers.jsm");
-const { RESOURCES, BREAKPOINTS } = WatchedDataHelpers.SUPPORTED_DATA;
 const { STATES: THREAD_STATES } = require("devtools/server/actors/thread");
+const {
+  RESOURCES,
+  BREAKPOINTS,
+  TARGET_CONFIGURATION,
+  XHR_BREAKPOINTS,
+} = WatchedDataHelpers.SUPPORTED_DATA;
 
 module.exports = function(targetType, targetActorSpec, implementation) {
   const proto = {
@@ -58,7 +63,7 @@ module.exports = function(targetType, targetActorSpec, implementation) {
             )
           );
         }
-      } else if (type == "target-configuration") {
+      } else if (type == TARGET_CONFIGURATION) {
         
         
         if (typeof this.updateTargetConfiguration == "function") {
@@ -68,6 +73,29 @@ module.exports = function(targetType, targetActorSpec, implementation) {
           }
           this.updateTargetConfiguration(options);
         }
+      } else if (type == XHR_BREAKPOINTS) {
+        
+        
+        
+        
+        if (typeof this.attach == "function") {
+          this.attach();
+        }
+
+        
+        
+        if (
+          this.threadActor.state == "detached" &&
+          !this.targetType.endsWith("worker")
+        ) {
+          await this.threadActor.attach();
+        }
+
+        await Promise.all(
+          entries.map(({ path, method }) =>
+            this.threadActor.setXHRBreakpoint(path, method)
+          )
+        );
       }
     },
 
@@ -78,8 +106,12 @@ module.exports = function(targetType, targetActorSpec, implementation) {
         for (const { location } of entries) {
           this.threadActor.removeBreakpoint(location);
         }
-      } else if (type == "target-configuration") {
+      } else if (type == TARGET_CONFIGURATION) {
         
+      } else if (type == XHR_BREAKPOINTS) {
+        for (const { path, method } of entries) {
+          this.threadActor.removeXHRBreakpoint(path, method);
+        }
       }
 
       return Promise.resolve();
