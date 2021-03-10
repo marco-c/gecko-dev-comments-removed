@@ -1007,15 +1007,15 @@ struct CompilationStencilMerger {
   [[nodiscard]] bool buildFunctionKeyToIndex(JSContext* cx);
 
   ScriptIndex getInitialScriptIndexFor(
-      const ExtensibleCompilationStencil& delazification) const;
+      const CompilationStencil& delazification) const;
 
   
   
   using AtomIndexMap = Vector<TaggedParserAtomIndex, 0, js::SystemAllocPolicy>;
 
-  [[nodiscard]] bool buildAtomIndexMap(
-      JSContext* cx, const ExtensibleCompilationStencil& delazification,
-      AtomIndexMap& atomIndexMap);
+  [[nodiscard]] bool buildAtomIndexMap(JSContext* cx,
+                                       const CompilationStencil& delazification,
+                                       AtomIndexMap& atomIndexMap);
 
  public:
   CompilationStencilMerger() = default;
@@ -1026,7 +1026,7 @@ struct CompilationStencilMerger {
 
   
   [[nodiscard]] bool addDelazification(
-      JSContext* cx, const ExtensibleCompilationStencil& delazification);
+      JSContext* cx, const CompilationStencil& delazification);
 
   ExtensibleCompilationStencil& getResult() const { return *initial_; }
 };
