@@ -7,10 +7,12 @@
 #ifndef nsBaseHashtable_h__
 #define nsBaseHashtable_h__
 
+#include <functional>
 #include <utility>
 
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/Result.h"
 #include "nsDebug.h"
 #include "nsTHashtable.h"
 
@@ -230,6 +232,31 @@ class nsBaseHashtable
     return WithEntryHandle(aKey, [&aFunc](auto entryHandle) -> DataType& {
       return entryHandle.OrInsertWith(std::forward<F>(aFunc));
     });
+  }
+
+  
+
+
+
+
+  template <typename F>
+  [[nodiscard]] auto TryLookupOrInsertWith(const KeyType& aKey, F&& aFunc) {
+    return WithEntryHandle(
+        aKey,
+        [&aFunc](auto entryHandle)
+            -> mozilla::Result<std::reference_wrapper<DataType>,
+                               typename std::invoke_result_t<F>::err_type> {
+          if (entryHandle) {
+            return std::ref(entryHandle.Data());
+          }
+
+          
+          auto res = std::forward<F>(aFunc)();
+          if (res.isErr()) {
+            return res.propagateErr();
+          }
+          return std::ref(entryHandle.Insert(res.unwrap()));
+        });
   }
 
   
