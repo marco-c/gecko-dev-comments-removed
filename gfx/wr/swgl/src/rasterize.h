@@ -31,28 +31,35 @@
 
 
 
+
+
+
+constexpr uint32_t MAX_DEPTH_VALUE = 0xFFFFFF;
+
+constexpr uint32_t MAX_DEPTH_RUN = 255 & ~3;
+
 struct DepthRun {
   
   
   
   
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  uint16_t depth;
-  uint16_t count;
+  uint32_t depth : 24;
+  uint32_t count : 8;
 #else
-  uint16_t count;
-  uint16_t depth;
+  uint32_t count : 8;
+  uint32_t depth : 24;
 #endif
 
   DepthRun() = default;
-  DepthRun(uint16_t depth, uint16_t count) : depth(depth), count(count) {}
+  DepthRun(uint32_t depth, uint8_t count) : depth(depth), count(count) {}
 
   
   bool is_flat() const { return !count; }
 
   
   template <int FUNC>
-  ALWAYS_INLINE bool compare(uint16_t src) const {
+  ALWAYS_INLINE bool compare(uint32_t src) const {
     switch (FUNC) {
       case GL_LEQUAL:
         return src <= depth;
@@ -66,6 +73,22 @@ struct DepthRun {
     }
   }
 };
+
+
+static ALWAYS_INLINE void set_depth_runs(DepthRun* runs, uint32_t depth,
+                                         uint32_t width) {
+  
+  
+  for (; width >= MAX_DEPTH_RUN;
+       runs += MAX_DEPTH_RUN, width -= MAX_DEPTH_RUN) {
+    *runs = DepthRun(depth, MAX_DEPTH_RUN);
+  }
+  
+  
+  if (width > 0) {
+    *runs = DepthRun(depth, width);
+  }
+}
 
 
 
@@ -128,7 +151,7 @@ struct DepthCursor {
   
   
   template <int FUNC>
-  int skip_failed(uint16_t val) {
+  int skip_failed(uint32_t val) {
     assert(valid());
     DepthRun* prev = start;
     while (cur < end) {
@@ -143,7 +166,7 @@ struct DepthCursor {
 
   
   
-  ALWAYS_INLINE int skip_failed(uint16_t val, GLenum func) {
+  ALWAYS_INLINE int skip_failed(uint32_t val, GLenum func) {
     switch (func) {
       case GL_LEQUAL:
         return skip_failed<GL_LEQUAL>(val);
@@ -162,7 +185,7 @@ struct DepthCursor {
   
   
   template <int FUNC, bool MASK>
-  int check_passed(uint16_t val) {
+  int check_passed(uint32_t val) {
     assert(valid());
     DepthRun* prev = cur;
     while (cur < end) {
@@ -201,7 +224,7 @@ struct DepthCursor {
         prev->count = start - prev;
       }
       
-      *start = DepthRun(val, passed);
+      set_depth_runs(start, val, passed);
     }
     start = cur;
     return passed;
@@ -210,7 +233,7 @@ struct DepthCursor {
   
   
   template <bool MASK>
-  ALWAYS_INLINE int check_passed(uint16_t val, GLenum func) {
+  ALWAYS_INLINE int check_passed(uint32_t val, GLenum func) {
     switch (func) {
       case GL_LEQUAL:
         return check_passed<GL_LEQUAL, MASK>(val);
@@ -222,37 +245,37 @@ struct DepthCursor {
     }
   }
 
-  ALWAYS_INLINE int check_passed(uint16_t val, GLenum func, bool mask) {
+  ALWAYS_INLINE int check_passed(uint32_t val, GLenum func, bool mask) {
     return mask ? check_passed<true>(val, func)
                 : check_passed<false>(val, func);
   }
 
   
-  ALWAYS_INLINE void fill(uint16_t depth) {
+  ALWAYS_INLINE void fill(uint32_t depth) {
     check_passed<GL_ALWAYS, true>(depth);
   }
 };
 
 
 
-void Texture::init_depth_runs(uint16_t depth) {
+void Texture::init_depth_runs(uint32_t depth) {
   if (!buf) return;
   DepthRun* runs = (DepthRun*)buf;
   for (int y = 0; y < height; y++) {
-    runs[0] = DepthRun(depth, width);
+    set_depth_runs(runs, depth, width);
     runs += stride() / sizeof(DepthRun);
   }
   set_cleared(true);
 }
 
 
-static ALWAYS_INLINE void fill_depth_run(DepthRun* dst, size_t n,
-                                         uint16_t depth) {
-  fill_n((uint32_t*)dst, n, uint32_t(depth));
+static ALWAYS_INLINE void fill_flat_depth(DepthRun* dst, size_t n,
+                                          uint32_t depth) {
+  fill_n((uint32_t*)dst, n, depth);
 }
 
 
-void Texture::fill_depth_runs(uint16_t depth, const IntRect& scissor) {
+void Texture::fill_depth_runs(uint32_t depth, const IntRect& scissor) {
   if (!buf) return;
   assert(cleared());
   IntRect bb = bounds().intersection(scissor - offset);
@@ -261,10 +284,10 @@ void Texture::fill_depth_runs(uint16_t depth, const IntRect& scissor) {
     if (bb.width() >= width) {
       
       
-      runs[0] = DepthRun(depth, width);
+      set_depth_runs(runs, depth, width);
     } else if (runs->is_flat()) {
       
-      fill_depth_run(&runs[bb.x0], bb.width(), depth);
+      fill_flat_depth(&runs[bb.x0], bb.width(), depth);
     } else {
       
       
@@ -320,7 +343,7 @@ static ALWAYS_INLINE bool check_depth(I32 src, DepthRun* zbuf, ZMask& outmask,
 }
 
 static ALWAYS_INLINE I32 packDepth() {
-  return cast(fragment_shader->gl_FragCoord.z * 0xFFFF);
+  return cast(fragment_shader->gl_FragCoord.z * MAX_DEPTH_VALUE);
 }
 
 static ALWAYS_INLINE void discard_depth(I32 src, DepthRun* zbuf, I32 mask) {
@@ -547,7 +570,7 @@ static void flatten_depth_runs(DepthRun* runs, size_t width) {
   }
   while (width > 0) {
     size_t n = runs->count;
-    fill_depth_run(runs, n, runs->depth);
+    fill_flat_depth(runs, n, runs->depth);
     runs += n;
     width -= n;
   }
@@ -556,7 +579,7 @@ static void flatten_depth_runs(DepthRun* runs, size_t width) {
 
 
 template <typename P>
-static ALWAYS_INLINE void draw_depth_span(uint16_t z, P* buf,
+static ALWAYS_INLINE void draw_depth_span(uint32_t z, P* buf,
                                           DepthCursor& cursor) {
   for (;;) {
     
@@ -662,7 +685,7 @@ static ALWAYS_INLINE void draw_span(P* buf, DepthRun* depth, int span, Z z) {
 template <typename P>
 static inline void prepare_row(Texture& colortex, int y, int startx, int endx,
                                bool use_discard, DepthRun* depth,
-                               uint16_t z = 0, DepthCursor* cursor = nullptr) {
+                               uint32_t z = 0, DepthCursor* cursor = nullptr) {
   assert(colortex.delay_clear > 0);
   
   uint32_t& mask = colortex.cleared_rows[y / 32];
@@ -735,7 +758,7 @@ static ALWAYS_INLINE bool checkIfEdgesFlipped(T l0, T l1, T r0, T r1) {
 
 
 template <typename P>
-static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
+static inline void draw_quad_spans(int nump, Point2D p[4], uint32_t z,
                                    Interpolants interp_outs[4],
                                    Texture& colortex, Texture& depthtex,
                                    const ClipRect& clipRect) {
@@ -1534,7 +1557,7 @@ static void draw_quad(int nump, Texture& colortex, Texture& depthtex) {
   }
   
   
-  uint16_t z = uint16_t(0xFFFF * screenZ);
+  uint32_t z = uint32_t(MAX_DEPTH_VALUE * screenZ);
   fragment_shader->gl_FragCoord.z = screenZ;
   fragment_shader->gl_FragCoord.w = w;
 
