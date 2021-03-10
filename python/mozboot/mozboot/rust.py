@@ -90,9 +90,9 @@ def unquote(s):
 
 def rustup_latest_version():
     """Query the latest version of the rustup installer."""
-    import urllib2
+    import requests
 
-    f = urllib2.urlopen(RUSTUP_MANIFEST)
+    r = requests.get(RUSTUP_MANIFEST)
     
     
     
@@ -101,8 +101,9 @@ def rustup_latest_version():
     
     
     
-    for line in f:
-        key, value = map(str.strip, line.split(b"=", 2))
+    for line in r.iter_lines():
+        line = line.decode("utf-8")
+        key, value = map(str.strip, line.split("=", 2))
         if key == "schema-version":
             schema = int(unquote(value))
             if schema != 1:
@@ -128,9 +129,9 @@ def make_checksums(version, validate=False):
     hashes = []
     for platform in RUSTUP_HASHES.keys():
         if validate:
-            print("Checking %s... " % platform, end="")
+            print("Checking %s... " % platform, end="", flush=True)
         else:
-            print("Fetching %s... " % platform, end="")
+            print("Fetching %s... " % platform, end="", flush=True)
         checksum = http_download_and_hash(rustup_url(platform, version))
         if validate and checksum != rustup_hash(platform):
             print(
@@ -148,10 +149,6 @@ if __name__ == "__main__":
 
     
     
-    sys.stdout = os.fdopen(sys.stdout.fileno(), "w", 0)
-
-    
-    
     
     
     
@@ -166,7 +163,7 @@ if __name__ == "__main__":
             print(USAGE)
             sys.exit(1)
 
-    print("Checking latest installer version... ", end="")
+    print("Checking latest installer version... ", end="", flush=True)
     version = rustup_latest_version()
     if not version:
         print("ERROR: Could not query current rustup installer version.")
