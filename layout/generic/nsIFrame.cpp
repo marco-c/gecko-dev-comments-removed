@@ -566,7 +566,8 @@ static bool IsFontSizeInflationContainer(nsIFrame* aFrame,
   bool isInline =
       (nsStyleDisplay::IsInlineFlow(aFrame->GetDisplay()) ||
        RubyUtils::IsRubyBox(frameType) ||
-       (aFrame->IsFloating() && frameType == LayoutFrameType::Letter) ||
+       (aStyleDisplay->IsFloatingStyle() &&
+        frameType == LayoutFrameType::Letter) ||
        
        
        
