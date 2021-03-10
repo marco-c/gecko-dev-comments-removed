@@ -9,7 +9,6 @@
 
 #include "mozilla/dom/GamepadBinding.h"
 #include "mozilla/dom/GamepadHandle.h"
-#include "mozilla/dom/GamepadStateBroadcaster.h"
 
 #include <map>
 #include "mozilla/Mutex.h"
@@ -145,10 +144,6 @@ class GamepadPlatformService final {
   Mutex mMutex;
 
   std::map<GamepadHandle, GamepadAdded> mGamepadAdded;
-
-  
-  
-  Maybe<GamepadStateBroadcaster> mMaybeGamepadStateBroadcaster;
 };
 
 }  
