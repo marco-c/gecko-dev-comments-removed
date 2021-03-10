@@ -936,21 +936,28 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
       mRunningState = Err(rv);
     }
 
-    (rv == NS_ERROR_ABORT || rv == NS_ERROR_DOM_SECURITY_ERR
-         ? mEncoder->Cancel()
-         : mEncoder->Stop())
-        ->Then(mEncoderThread, __func__,
-               [encoder = mEncoder](
-                   const GenericNonExclusivePromise::ResolveOrRejectValue&
-                       aValue) {
-                 MOZ_DIAGNOSTIC_ASSERT(aValue.IsResolve());
-                 return encoder->RequestData();
-               })
+    RefPtr<MediaEncoder::BlobPromise> blobPromise;
+    if (!mEncoder) {
+      blobPromise = MediaEncoder::BlobPromise::CreateAndReject(NS_OK, __func__);
+    } else {
+      blobPromise =
+          (rv == NS_ERROR_ABORT || rv == NS_ERROR_DOM_SECURITY_ERR
+               ? mEncoder->Cancel()
+               : mEncoder->Stop())
+              ->Then(mEncoderThread, __func__,
+                     [encoder = mEncoder](
+                         const GenericNonExclusivePromise::ResolveOrRejectValue&
+                             aValue) {
+                       MOZ_DIAGNOSTIC_ASSERT(aValue.IsResolve());
+                       return encoder->RequestData();
+                     });
+    }
+
+    blobPromise
         ->Then(
             mMainThread, __func__,
-            [this, self = RefPtr<Session>(this), encoder = mEncoder, rv,
-             needsStartEvent](
-                const MediaEncoder::BlobPromise::ResolveOrRejectValue& aRrv) {
+            [this, self = RefPtr<Session>(this), rv, needsStartEvent](
+                const MediaEncoder::BlobPromise::ResolveOrRejectValue& aRv) {
               if (mRecorder->mSessions.LastElement() == this) {
                 
                 
@@ -968,7 +975,7 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
 
               
               RefPtr<BlobImpl> blobImpl;
-              if (rv == NS_ERROR_DOM_SECURITY_ERR || aRrv.IsReject()) {
+              if (rv == NS_ERROR_DOM_SECURITY_ERR || aRv.IsReject()) {
                 
                 
                 
@@ -976,7 +983,7 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
                 
                 blobImpl = new EmptyBlobImpl(mMimeType);
               } else {
-                blobImpl = aRrv.ResolveValue();
+                blobImpl = aRv.ResolveValue();
               }
               if (NS_FAILED(mRecorder->CreateAndDispatchBlobEvent(blobImpl))) {
                 
