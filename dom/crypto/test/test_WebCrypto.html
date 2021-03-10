@@ -7,16 +7,16 @@
 <link rel="stylesheet" href="./test_WebCrypto.css"/>
 <script src="/tests/SimpleTest/SimpleTest.js"></script>
 
-
+<!-- Utilities for manipulating ABVs -->
 <script src="util.js"></script>
 
-
+<!-- A simple wrapper around IndexedDB -->
 <script src="simpledb.js"></script>
 
-
+<!-- Test vectors drawn from the literature -->
 <script src="./test-vectors.js"></script>
 
-
+<!-- General testing framework -->
 <script src="./test-array.js"></script>
 
 <script>/* <![CDATA[*/
@@ -1126,7 +1126,7 @@ TestArray.addTest(
 
     return Promise.all([p1, p2, p3]).then(complete(that, keys => {
       return keys.every(key => {
-        if (key instanceof CryptoKey) {
+        if (key instanceof frames[0].CryptoKey) {
           return checkPrototypes(key, "CryptoKey");
         }
 
