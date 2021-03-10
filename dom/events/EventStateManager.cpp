@@ -3232,6 +3232,30 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         }
       }
 
+      
+      
+      
+      if (mouseEvent->mClickEventPrevented) {
+        RefPtr<EventStateManager> esm =
+            ESMFromContentOrThis(aOverrideClickTarget);
+        switch (mouseEvent->mButton) {
+          case MouseButton::ePrimary:
+            esm->mLastLeftMouseDownContent = nullptr;
+            esm->mLClickCount = 0;
+            break;
+          case MouseButton::eSecondary:
+            esm->mLastMiddleMouseDownContent = nullptr;
+            esm->mMClickCount = 0;
+            break;
+          case MouseButton::eMiddle:
+            esm->mLastRightMouseDownContent = nullptr;
+            esm->mRClickCount = 0;
+            break;
+          default:
+            break;
+        }
+      }
+
       nsCOMPtr<nsIContent> activeContent;
       
       
@@ -3920,8 +3944,10 @@ static CursorImage ComputeCustomCursor(nsPresContext* aPresContext,
   
   bool loading = false;
   for (const auto& image : style.StyleUI()->mCursor.images.AsSpan()) {
+    MOZ_ASSERT(image.image.IsImageRequestType(),
+               "Cursor image should only parse url() type");
     uint32_t status;
-    imgRequestProxy* req = image.url.GetImage();
+    imgRequestProxy* req = image.image.GetImageRequest();
     if (!req || NS_FAILED(req->GetImageStatus(&status))) {
       continue;
     }
@@ -4914,11 +4940,14 @@ nsresult EventStateManager::SetClickCount(WidgetMouseEvent* aEvent,
   switch (aEvent->mButton) {
     case MouseButton::ePrimary:
       if (aEvent->mMessage == eMouseDown) {
-        mLastLeftMouseDownContent = mouseContent;
+        mLastLeftMouseDownContent =
+            !aEvent->mClickEventPrevented ? mouseContent : nullptr;
       } else if (aEvent->mMessage == eMouseUp) {
         aEvent->mClickTarget =
-            nsContentUtils::GetCommonAncestorUnderInteractiveContent(
-                mouseContent, mLastLeftMouseDownContent);
+            !aEvent->mClickEventPrevented
+                ? nsContentUtils::GetCommonAncestorUnderInteractiveContent(
+                      mouseContent, mLastLeftMouseDownContent)
+                : nullptr;
         if (aEvent->mClickTarget) {
           aEvent->mClickCount = mLClickCount;
           mLClickCount = 0;
@@ -4931,11 +4960,14 @@ nsresult EventStateManager::SetClickCount(WidgetMouseEvent* aEvent,
 
     case MouseButton::eMiddle:
       if (aEvent->mMessage == eMouseDown) {
-        mLastMiddleMouseDownContent = mouseContent;
+        mLastMiddleMouseDownContent =
+            !aEvent->mClickEventPrevented ? mouseContent : nullptr;
       } else if (aEvent->mMessage == eMouseUp) {
         aEvent->mClickTarget =
-            nsContentUtils::GetCommonAncestorUnderInteractiveContent(
-                mouseContent, mLastMiddleMouseDownContent);
+            !aEvent->mClickEventPrevented
+                ? nsContentUtils::GetCommonAncestorUnderInteractiveContent(
+                      mouseContent, mLastMiddleMouseDownContent)
+                : nullptr;
         if (aEvent->mClickTarget) {
           aEvent->mClickCount = mMClickCount;
           mMClickCount = 0;
@@ -4948,11 +4980,14 @@ nsresult EventStateManager::SetClickCount(WidgetMouseEvent* aEvent,
 
     case MouseButton::eSecondary:
       if (aEvent->mMessage == eMouseDown) {
-        mLastRightMouseDownContent = mouseContent;
+        mLastRightMouseDownContent =
+            !aEvent->mClickEventPrevented ? mouseContent : nullptr;
       } else if (aEvent->mMessage == eMouseUp) {
         aEvent->mClickTarget =
-            nsContentUtils::GetCommonAncestorUnderInteractiveContent(
-                mouseContent, mLastRightMouseDownContent);
+            !aEvent->mClickEventPrevented
+                ? nsContentUtils::GetCommonAncestorUnderInteractiveContent(
+                      mouseContent, mLastRightMouseDownContent)
+                : nullptr;
         if (aEvent->mClickTarget) {
           aEvent->mClickCount = mRClickCount;
           mRClickCount = 0;
@@ -4981,6 +5016,10 @@ bool EventStateManager::EventCausesClickEvents(
   
   
   if (!aMouseEvent.mClickCount || !aMouseEvent.mClickTarget) {
+    return false;
+  }
+  
+  if (aMouseEvent.mClickEventPrevented) {
     return false;
   }
   
@@ -5196,19 +5235,7 @@ nsresult EventStateManager::HandleMiddleClickPaste(
   }
 
   
-  nsCOMPtr<nsIContent> container;
-  int32_t offset;
-  nsLayoutUtils::GetContainerAndOffsetAtEvent(
-      aPresShell, aMouseEvent, getter_AddRefs(container), &offset);
-  if (container) {
-    
-    
-    
-    
-    DebugOnly<nsresult> rv = selection->CollapseInLimiter(container, offset);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "Failed to collapse Selection at middle clicked");
-  }
+  
 
   int32_t clipboardType = nsIClipboard::kGlobalClipboard;
   nsresult rv = NS_OK;

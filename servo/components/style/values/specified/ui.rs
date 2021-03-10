@@ -7,17 +7,17 @@
 use crate::parser::{Parse, ParserContext};
 use crate::values::generics::ui as generics;
 use crate::values::specified::color::Color;
-use crate::values::specified::url::SpecifiedImageUrl;
+use crate::values::specified::image::Image;
 use crate::values::specified::Number;
 use cssparser::Parser;
 use std::fmt::{self, Write};
-use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use style_traits::{CssWriter, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss};
 
 
 pub type Cursor = generics::GenericCursor<CursorImage>;
 
 
-pub type CursorImage = generics::GenericCursorImage<SpecifiedImageUrl, Number>;
+pub type CursorImage = generics::GenericCursorImage<Image, Number>;
 
 impl Parse for Cursor {
     
@@ -47,7 +47,7 @@ impl Parse for CursorImage {
     ) -> Result<Self, ParseError<'i>> {
         use crate::Zero;
 
-        let url = SpecifiedImageUrl::parse(context, input)?;
+        let image = Image::parse_only_url(context, input)?;
         let mut has_hotspot = false;
         let mut hotspot_x = Number::zero();
         let mut hotspot_y = Number::zero();
@@ -59,13 +59,17 @@ impl Parse for CursorImage {
         }
 
         Ok(Self {
-            url,
+            image,
             has_hotspot,
             hotspot_x,
             hotspot_y,
         })
     }
 }
+
+
+
+impl SpecifiedValueInfo for CursorImage {}
 
 
 #[derive(
