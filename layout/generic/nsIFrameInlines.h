@@ -71,13 +71,14 @@ bool nsIFrame::IsStickyPositioned() const {
 
 bool nsIFrame::IsAbsolutelyPositioned(
     const nsStyleDisplay* aStyleDisplay) const {
-  const nsStyleDisplay* disp = StyleDisplayWithOptionalParam(aStyleDisplay);
-  return disp->IsAbsolutelyPositioned(this);
+  return HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
+         StyleDisplayWithOptionalParam(aStyleDisplay)
+             ->IsAbsolutelyPositioned(this);
 }
 
 inline bool nsIFrame::IsTrueOverflowContainer() const {
   return HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER) &&
-         !(HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) && IsAbsolutelyPositioned());
+         !IsAbsolutelyPositioned();
   
   
   

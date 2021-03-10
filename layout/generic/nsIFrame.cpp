@@ -7626,8 +7626,7 @@ nsIFrame* nsIFrame::GetContainingBlock(
   
   
   nsIFrame* f;
-  if (IsAbsolutelyPositioned(aStyleDisplay) &&
-      HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+  if (IsAbsolutelyPositioned(aStyleDisplay)) {
     f = GetParent();  
   } else {
     f = GetNearestBlockContainer(GetParent());

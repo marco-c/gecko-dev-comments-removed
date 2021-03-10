@@ -7207,8 +7207,7 @@ nsLineBox* nsBlockFrame::GetFirstLineContaining(nscoord y) {
 
 void nsBlockFrame::ChildIsDirty(nsIFrame* aChild) {
   
-  if (aChild->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
-      aChild->IsAbsolutelyPositioned()) {
+  if (aChild->IsAbsolutelyPositioned()) {
     
   } else if (aChild == GetOutsideMarker()) {
     
