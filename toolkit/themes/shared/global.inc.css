@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* all localizable skin settings shall live here */
 @import url("chrome://global/locale/intl.css");
 @import url("chrome://global/content/widgets.css");
 
@@ -11,7 +11,7 @@
 @namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 @namespace html url("http://www.w3.org/1999/xhtml");
 
-
+/* General styles */
 
 *|*.plain {
   appearance: none;
@@ -26,13 +26,13 @@ html|textarea {
   font: inherit;
 }
 
-
+/* Textbox context menu */
 
 .textbox-contextmenu:-moz-locale-dir(rtl) {
   direction: rtl;
 }
 
-
+/* Autoscroll popup */
 
 .autoscroller {
   border: none;
@@ -43,7 +43,7 @@ html|textarea {
   background-repeat: no-repeat;
   appearance: none;
   -moz-window-shadow: none;
-  
+  /* Set pointer-events: none; so that mousemove events can be handled by AutoScrollChild.jsm. */
   pointer-events: none;
 }
 
@@ -55,7 +55,7 @@ html|textarea {
   background-image: url("chrome://global/skin/icons/autoscroll-horizontal.svg");
 }
 
-
+/* Panel footers */
 
 .panel-footer {
   background-color: var(--arrowpanel-dimmed);
@@ -64,7 +64,7 @@ html|textarea {
 .panel-footer > xul|button {
   appearance: none;
   border-top: 1px solid var(--panel-separator-color);
-  
+  /* !important overrides :hover and :active colors from button.css: */
   color: inherit !important;
   min-width: 0;
   margin: 0;
@@ -90,16 +90,16 @@ html|textarea {
   box-shadow: 0 1px 0 hsla(210,4%,10%,.05) inset;
 }
 
-.panel-footer > xul|button:not([disabled])[default] {
+.panel-footer[opinionated] > xul|button:not([disabled])[default] {
   color: white !important;
   background-color: #0060df;
 }
 
-.panel-footer > xul|button:not([disabled])[default]:hover {
+.panel-footer[opinionated] > xul|button:not([disabled])[default]:hover {
   background-color: #003eaa;
 }
 
-.panel-footer > xul|button:not([disabled])[default]:hover:active {
+.panel-footer[opinionated] > xul|button:not([disabled])[default]:hover:active {
   background-color: #002275;
 }
 
