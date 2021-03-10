@@ -620,39 +620,6 @@ var AddonTestUtils = {
     }
   },
 
-  
-
-
-
-
-
-
-
-  awaitPromise(promise) {
-    let done = false;
-    let result;
-    let error;
-    promise
-      .then(
-        val => {
-          result = val;
-        },
-        err => {
-          error = err;
-        }
-      )
-      .then(() => {
-        done = true;
-      });
-
-    Services.tm.spinEventLoopUntil(() => done);
-
-    if (error !== undefined) {
-      throw error;
-    }
-    return result;
-  },
-
   createAppInfo(ID, name, version, platformVersion = "1.0") {
     AppInfo.updateAppInfo({
       ID,

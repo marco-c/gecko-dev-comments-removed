@@ -528,7 +528,7 @@ function write_fake_failedprofilelocks_file() {
 add_task(async function test_setup() {
   
   do_get_profile();
-  loadAddonManager(APP_ID, APP_NAME, APP_VERSION, PLATFORM_VERSION);
+  await loadAddonManager(APP_ID, APP_NAME, APP_VERSION, PLATFORM_VERSION);
   finishAddonManagerStartup();
   fakeIntlReady();
   
