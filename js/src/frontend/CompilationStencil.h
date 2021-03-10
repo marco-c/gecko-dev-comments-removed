@@ -51,6 +51,7 @@ namespace frontend {
 struct CompilationInput;
 struct CompilationStencil;
 struct CompilationGCOutput;
+struct StencilDelazificationSet;
 class ScriptStencilIterable;
 
 
@@ -388,13 +389,9 @@ struct SharedDataContainer {
 
   ~SharedDataContainer();
 
-  [[nodiscard]] bool initVector(JSContext* cx);
-  [[nodiscard]] bool initMap(JSContext* cx);
+  bool initVector(JSContext* cx);
+  bool initMap(JSContext* cx);
 
- private:
-  [[nodiscard]] bool convertFromSingleToMap(JSContext* cx);
-
- public:
   bool isEmpty() const { return (data_) == SingleTag; }
   bool isSingle() const { return (data_ & TagMask) == SingleTag; }
   bool isVector() const { return (data_ & TagMask) == VectorTag; }
@@ -433,22 +430,15 @@ struct SharedDataContainer {
     return reinterpret_cast<SharedDataContainer*>(data_ & ~TagMask);
   }
 
-  [[nodiscard]] bool prepareStorageFor(JSContext* cx, size_t nonLazyScriptCount,
-                                       size_t allScriptCount);
+  bool prepareStorageFor(JSContext* cx, size_t nonLazyScriptCount,
+                         size_t allScriptCount);
 
   
   js::SharedImmutableScriptData* get(ScriptIndex index) const;
 
   
-  [[nodiscard]] bool addAndShare(JSContext* cx, ScriptIndex index,
-                                 js::SharedImmutableScriptData* data);
-
-  
-  
-  
-  
-  [[nodiscard]] bool addExtraWithoutShare(JSContext* cx, ScriptIndex index,
-                                          js::SharedImmutableScriptData* data);
+  bool addAndShare(JSContext* cx, ScriptIndex index,
+                   js::SharedImmutableScriptData* data);
 
   
   
@@ -470,28 +460,8 @@ struct SharedDataContainer {
 #endif
 };
 
-struct ExtensibleCompilationStencil;
 
-
-
-
-
-
-
-
-
-
-
-
-struct CompilationStencil {
-  static constexpr ScriptIndex TopLevelIndex = ScriptIndex(0);
-
-  static constexpr size_t LifoAllocChunkSize = 512;
-
-  
-  
-  bool hasExternalDependency = false;
-
+struct BaseCompilationStencil {
   
   
   using FunctionKey = uint32_t;
@@ -501,11 +471,6 @@ struct CompilationStencil {
   
   
   mozilla::Span<ScriptStencil> scriptData;
-
-  
-  
-  mozilla::Span<ScriptStencilExtra> scriptExtra;
-
   mozilla::Span<TaggedScriptThingIndex> gcThingData;
 
   
@@ -533,6 +498,59 @@ struct CompilationStencil {
   FunctionKey functionKey = NullFunctionKey;
 
   
+
+  BaseCompilationStencil() = default;
+
+  static FunctionKey toFunctionKey(const SourceExtent& extent) {
+    
+    
+    auto result = extent.sourceStart + 1;
+    MOZ_ASSERT(result != NullFunctionKey);
+    return result;
+  }
+
+  bool isInitialStencil() const { return functionKey == NullFunctionKey; }
+
+  inline CompilationStencil& asCompilationStencil();
+  inline const CompilationStencil& asCompilationStencil() const;
+
+  
+  
+  
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return sharedData.sizeOfExcludingThis(mallocSizeOf);
+  }
+
+#if defined(DEBUG) || defined(JS_JITSPEW)
+  void dump() const;
+  void dump(js::JSONPrinter& json) const;
+  void dumpFields(js::JSONPrinter& json) const;
+
+  void dumpAtom(TaggedParserAtomIndex index) const;
+#endif
+};
+
+
+
+
+
+
+
+
+
+
+
+
+struct CompilationStencil : public BaseCompilationStencil {
+  static constexpr ScriptIndex TopLevelIndex = ScriptIndex(0);
+
+  static constexpr size_t LifoAllocChunkSize = 512;
+
+  
+  
+  bool hasExternalDependency = false;
+
+  
   
   
   
@@ -556,7 +574,15 @@ struct CompilationStencil {
 
   
   
+  mozilla::Span<ScriptStencilExtra> scriptExtra;
+
+  
+  
   RefPtr<StencilAsmJSContainer> asmJS;
+
+  
+  
+  UniquePtr<StencilDelazificationSet> delazificationSet;
 
   
 
@@ -564,27 +590,19 @@ struct CompilationStencil {
   explicit CompilationStencil(ScriptSource* source)
       : alloc(LifoAllocChunkSize), source(source) {}
 
-  static FunctionKey toFunctionKey(const SourceExtent& extent) {
-    
-    
-    auto result = extent.sourceStart + 1;
-    MOZ_ASSERT(result != NullFunctionKey);
-    return result;
-  }
-
-  bool isInitialStencil() const { return functionKey == NullFunctionKey; }
-
-  [[nodiscard]] static bool instantiateStencilAfterPreparation(
-      JSContext* cx, CompilationInput& input, const CompilationStencil& stencil,
-      CompilationGCOutput& gcOutput);
+  [[nodiscard]] static bool instantiateBaseStencilAfterPreparation(
+      JSContext* cx, CompilationInput& input,
+      const BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput);
 
   [[nodiscard]] static bool prepareForInstantiate(
       JSContext* cx, CompilationInput& input, const CompilationStencil& stencil,
-      CompilationGCOutput& gcOutput);
+      CompilationGCOutput& gcOutput,
+      CompilationGCOutput* gcOutputForDelazification = nullptr);
 
   [[nodiscard]] static bool instantiateStencils(
       JSContext* cx, CompilationInput& input, const CompilationStencil& stencil,
-      CompilationGCOutput& gcOutput);
+      CompilationGCOutput& gcOutput,
+      CompilationGCOutput* gcOutputForDelazification = nullptr);
 
   [[nodiscard]] bool serializeStencils(JSContext* cx, CompilationInput& input,
                                        JS::TranscodeBuffer& buf,
@@ -600,7 +618,7 @@ struct CompilationStencil {
   CompilationStencil& operator=(CompilationStencil&&) = delete;
 
   static inline ScriptStencilIterable functionScriptStencils(
-      const CompilationStencil& stencil, CompilationGCOutput& gcOutput);
+      const BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput);
 
   void setFunctionKey(BaseScript* lazy) {
     functionKey = toFunctionKey(lazy->extent());
@@ -611,9 +629,6 @@ struct CompilationStencil {
     return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
   }
 
-  
-  [[nodiscard]] bool steal(JSContext* cx, ExtensibleCompilationStencil&& other);
-
 #ifdef DEBUG
   void assertNoExternalDependency() const;
 #endif
@@ -622,19 +637,30 @@ struct CompilationStencil {
   void dump() const;
   void dump(js::JSONPrinter& json) const;
   void dumpFields(js::JSONPrinter& json) const;
-
-  void dumpAtom(TaggedParserAtomIndex index) const;
 #endif
 };
 
+inline CompilationStencil& BaseCompilationStencil::asCompilationStencil() {
+  MOZ_ASSERT(isInitialStencil(),
+             "cast from BaseCompilationStencil to CompilationStencil is "
+             "allowed only for initial stencil");
+  return *static_cast<CompilationStencil*>(this);
+}
 
+inline const CompilationStencil& BaseCompilationStencil::asCompilationStencil()
+    const {
+  MOZ_ASSERT(isInitialStencil(),
+             "cast from BaseCompilationStencil to CompilationStencil is "
+             "allowed only for initial stencil");
+  return *static_cast<const CompilationStencil*>(this);
+}
 
 
 
 
 
 struct ExtensibleCompilationStencil {
-  using FunctionKey = CompilationStencil::FunctionKey;
+  using FunctionKey = BaseCompilationStencil::FunctionKey;
 
   
   
@@ -668,7 +694,7 @@ struct ExtensibleCompilationStencil {
   
   ParserAtomsTable parserAtoms;
 
-  FunctionKey functionKey = CompilationStencil::NullFunctionKey;
+  FunctionKey functionKey = BaseCompilationStencil::NullFunctionKey;
 
   ExtensibleCompilationStencil(JSContext* cx, CompilationInput& input);
 
@@ -718,15 +744,14 @@ struct ExtensibleCompilationStencil {
   }
 
   void setFunctionKey(BaseScript* lazy) {
-    functionKey = CompilationStencil::toFunctionKey(lazy->extent());
+    functionKey = BaseCompilationStencil::toFunctionKey(lazy->extent());
   }
 
   bool isInitialStencil() const {
-    return functionKey == CompilationStencil::NullFunctionKey;
+    return functionKey == BaseCompilationStencil::NullFunctionKey;
   }
 
-  
-  [[nodiscard]] bool steal(JSContext* cx, CompilationStencil&& other);
+  [[nodiscard]] bool finish(JSContext* cx, CompilationStencil& stencil);
 
   inline size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
@@ -802,14 +827,44 @@ class MOZ_STACK_CLASS BorrowingCompilationStencil : public CompilationStencil {
 
 
 
+
+struct StencilDelazificationSet {
+  Vector<BaseCompilationStencil, 0, js::SystemAllocPolicy> delazifications;
+  Vector<ScriptIndex, 0, js::SystemAllocPolicy> delazificationIndices;
+
+  size_t maxScriptDataLength = 0;
+  size_t maxScopeDataLength = 0;
+  size_t maxParserAtomDataLength = 0;
+
+  bool hasDelazificationIndices() {
+    MOZ_ASSERT(!delazifications.empty());
+    return !delazificationIndices.empty();
+  }
+
+  [[nodiscard]] bool buildDelazificationIndices(
+      JSContext* cx, const CompilationStencil& stencil);
+
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mallocSizeOf(this) +
+           delazifications.sizeOfExcludingThis(mallocSizeOf) +
+           delazificationIndices.sizeOfExcludingThis(mallocSizeOf);
+  }
+};
+
+
+
 inline size_t CompilationStencil::sizeOfExcludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
   size_t moduleMetadataSize =
       moduleMetadata ? moduleMetadata->sizeOfIncludingThis(mallocSizeOf) : 0;
   size_t asmJSSize = asmJS ? asmJS->sizeOfIncludingThis(mallocSizeOf) : 0;
+  size_t delazificationSetSize =
+      delazificationSet ? delazificationSet->sizeOfIncludingThis(mallocSizeOf)
+                        : 0;
 
   return alloc.sizeOfExcludingThis(mallocSizeOf) + moduleMetadataSize +
-         asmJSSize + sharedData.sizeOfExcludingThis(mallocSizeOf);
+         asmJSSize + delazificationSetSize +
+         BaseCompilationStencil::sizeOfExcludingThis(mallocSizeOf);
 }
 
 inline size_t ExtensibleCompilationStencil::sizeOfExcludingThis(
@@ -904,17 +959,17 @@ class ScriptStencilIterable {
 
   class Iterator {
     size_t index_ = 0;
-    const CompilationStencil& stencil_;
+    const BaseCompilationStencil& stencil_;
     CompilationGCOutput& gcOutput_;
 
-    Iterator(const CompilationStencil& stencil, CompilationGCOutput& gcOutput,
-             size_t index)
+    Iterator(const BaseCompilationStencil& stencil,
+             CompilationGCOutput& gcOutput, size_t index)
         : index_(index), stencil_(stencil), gcOutput_(gcOutput) {
       MOZ_ASSERT(index == stencil.scriptData.size());
     }
 
    public:
-    explicit Iterator(const CompilationStencil& stencil,
+    explicit Iterator(const BaseCompilationStencil& stencil,
                       CompilationGCOutput& gcOutput)
         : stencil_(stencil), gcOutput_(gcOutput) {
       skipTopLevelNonFunction();
@@ -956,22 +1011,22 @@ class ScriptStencilIterable {
       const ScriptStencil& script = stencil_.scriptData[index];
       const ScriptStencilExtra* scriptExtra = nullptr;
       if (stencil_.isInitialStencil()) {
-        scriptExtra = &stencil_.scriptExtra[index];
+        scriptExtra = &stencil_.asCompilationStencil().scriptExtra[index];
       }
       return ScriptAndFunction(script, scriptExtra, gcOutput_.functions[index],
                                index);
     }
 
-    static Iterator end(const CompilationStencil& stencil,
+    static Iterator end(const BaseCompilationStencil& stencil,
                         CompilationGCOutput& gcOutput) {
       return Iterator(stencil, gcOutput, stencil.scriptData.size());
     }
   };
 
-  const CompilationStencil& stencil_;
+  const BaseCompilationStencil& stencil_;
   CompilationGCOutput& gcOutput_;
 
-  explicit ScriptStencilIterable(const CompilationStencil& stencil,
+  explicit ScriptStencilIterable(const BaseCompilationStencil& stencil,
                                  CompilationGCOutput& gcOutput)
       : stencil_(stencil), gcOutput_(gcOutput) {}
 
@@ -981,55 +1036,9 @@ class ScriptStencilIterable {
 };
 
 inline ScriptStencilIterable CompilationStencil::functionScriptStencils(
-    const CompilationStencil& stencil, CompilationGCOutput& gcOutput) {
+    const BaseCompilationStencil& stencil, CompilationGCOutput& gcOutput) {
   return ScriptStencilIterable(stencil, gcOutput);
 }
-
-
-
-struct CompilationStencilMerger {
- private:
-  using FunctionKey = ExtensibleCompilationStencil::FunctionKey;
-
-  
-  
-  
-  
-  
-  UniquePtr<ExtensibleCompilationStencil> initial_;
-
-  
-  using FunctionKeyToScriptIndexMap =
-      HashMap<FunctionKey, ScriptIndex, mozilla::DefaultHasher<FunctionKey>,
-              js::SystemAllocPolicy>;
-  FunctionKeyToScriptIndexMap functionKeyToInitialScriptIndex_;
-
-  [[nodiscard]] bool buildFunctionKeyToIndex(JSContext* cx);
-
-  ScriptIndex getInitialScriptIndexFor(
-      const CompilationStencil& delazification) const;
-
-  
-  
-  using AtomIndexMap = Vector<TaggedParserAtomIndex, 0, js::SystemAllocPolicy>;
-
-  [[nodiscard]] bool buildAtomIndexMap(JSContext* cx,
-                                       const CompilationStencil& delazification,
-                                       AtomIndexMap& atomIndexMap);
-
- public:
-  CompilationStencilMerger() = default;
-
-  
-  [[nodiscard]] bool setInitial(
-      JSContext* cx, UniquePtr<ExtensibleCompilationStencil>&& initial);
-
-  
-  [[nodiscard]] bool addDelazification(
-      JSContext* cx, const CompilationStencil& delazification);
-
-  ExtensibleCompilationStencil& getResult() const { return *initial_; }
-};
 
 }  
 }  

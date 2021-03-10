@@ -71,14 +71,15 @@ CompileGlobalScriptToExtensibleStencil(
 
 
 
-[[nodiscard]] extern bool PrepareForInstantiate(
+extern bool PrepareForInstantiate(
     JSContext* cx, CompilationInput& input, const CompilationStencil& stencil,
-    CompilationGCOutput& gcOutput);
+    CompilationGCOutput& gcOutput,
+    CompilationGCOutput* gcOutputForDelazification = nullptr);
 
-[[nodiscard]] extern bool InstantiateStencils(JSContext* cx,
-                                              CompilationInput& input,
-                                              const CompilationStencil& stencil,
-                                              CompilationGCOutput& gcOutput);
+extern bool InstantiateStencils(
+    JSContext* cx, CompilationInput& input, const CompilationStencil& stencil,
+    CompilationGCOutput& gcOutput,
+    CompilationGCOutput* gcOutputForDelazification = nullptr);
 
 extern JSScript* CompileGlobalScript(JSContext* cx,
                                      const JS::ReadOnlyCompileOptions& options,
