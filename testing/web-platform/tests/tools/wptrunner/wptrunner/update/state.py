@@ -1,5 +1,5 @@
 import os
-import pickle
+from six.moves import cPickle as pickle  
 
 here = os.path.abspath(os.path.dirname(__file__))
 

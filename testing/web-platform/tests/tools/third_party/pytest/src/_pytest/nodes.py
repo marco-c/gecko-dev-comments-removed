@@ -1,56 +1,25 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import os
 import warnings
-from functools import lru_cache
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import Iterable
-from typing import Iterator
-from typing import List
-from typing import Optional
-from typing import Set
-from typing import Tuple
-from typing import TypeVar
-from typing import Union
 
 import py
+import six
 
 import _pytest._code
-from _pytest._code import getfslineno
-from _pytest._code.code import ExceptionInfo
-from _pytest._code.code import TerminalRepr
-from _pytest.compat import cached_property
-from _pytest.compat import overload
-from _pytest.compat import TYPE_CHECKING
-from _pytest.config import Config
-from _pytest.config import ConftestImportFailure
-from _pytest.deprecated import FSCOLLECTOR_GETHOOKPROXY_ISINITPATH
-from _pytest.fixtures import FixtureDef
-from _pytest.fixtures import FixtureLookupError
-from _pytest.mark.structures import Mark
-from _pytest.mark.structures import MarkDecorator
+from _pytest.compat import getfslineno
 from _pytest.mark.structures import NodeKeywords
 from _pytest.outcomes import fail
-from _pytest.pathlib import absolutepath
-from _pytest.pathlib import Path
-from _pytest.store import Store
-
-if TYPE_CHECKING:
-    from typing import Type
-
-    
-    from _pytest.main import Session
-    from _pytest.warning_types import PytestWarning
-    from _pytest._code.code import _TracebackStyle
-
 
 SEP = "/"
 
 tracebackcutdir = py.path.local(_pytest.__file__).dirpath()
 
 
-@lru_cache(maxsize=None)
-def _splitnode(nodeid: str) -> Tuple[str, ...]:
+def _splitnode(nodeid):
     """Split a nodeid into constituent 'parts'.
 
     Node IDs are strings, and can be things like:
@@ -63,26 +32,21 @@ def _splitnode(nodeid: str) -> Tuple[str, ...]:
         []
         ['testing', 'code']
         ['testing', 'code', 'test_excinfo.py']
-        ['testing', 'code', 'test_excinfo.py', 'TestFormattedExcinfo']
+        ['testing', 'code', 'test_excinfo.py', 'TestFormattedExcinfo', '()']
     """
     if nodeid == "":
         
-        
-        return ()
+        return []
     parts = nodeid.split(SEP)
     
-    
     parts[-1:] = parts[-1].split("::")
-    
-    
-    return tuple(parts)
+    return parts
 
 
-def ischildnode(baseid: str, nodeid: str) -> bool:
+def ischildnode(baseid, nodeid):
     """Return True if the nodeid is a child node of the baseid.
 
-    E.g. 'foo/bar::Baz' is a child of 'foo', 'foo/bar' and 'foo/bar::Baz',
-    but not of 'foo/blorp'.
+    E.g. 'foo/bar::Baz' is a child of 'foo', 'foo/bar' and 'foo/bar::Baz', but not of 'foo/blorp'
     """
     base_parts = _splitnode(baseid)
     node_parts = _splitnode(nodeid)
@@ -91,52 +55,13 @@ def ischildnode(baseid: str, nodeid: str) -> bool:
     return node_parts[: len(base_parts)] == base_parts
 
 
-_NodeType = TypeVar("_NodeType", bound="Node")
-
-
-class NodeMeta(type):
-    def __call__(self, *k, **kw):
-        msg = (
-            "Direct construction of {name} has been deprecated, please use {name}.from_parent.\n"
-            "See "
-            "https://docs.pytest.org/en/stable/deprecations.html#node-construction-changed-to-node-from-parent"
-            " for more details."
-        ).format(name=self.__name__)
-        fail(msg, pytrace=False)
-
-    def _create(self, *k, **kw):
-        return super().__call__(*k, **kw)
-
-
-class Node(metaclass=NodeMeta):
-    """Base class for Collector and Item, the components of the test
-    collection tree.
-
-    Collector subclasses have children; Items are leaf nodes.
-    """
-
-    
-    
-    __slots__ = (
-        "name",
-        "parent",
-        "config",
-        "session",
-        "fspath",
-        "_nodeid",
-        "_store",
-        "__dict__",
-    )
+class Node(object):
+    """ base class for Collector and Item the test collection tree.
+    Collector subclasses have children, Items are terminal nodes."""
 
     def __init__(
-        self,
-        name: str,
-        parent: "Optional[Node]" = None,
-        config: Optional[Config] = None,
-        session: "Optional[Session]" = None,
-        fspath: Optional[py.path.local] = None,
-        nodeid: Optional[str] = None,
-    ) -> None:
+        self, name, parent=None, config=None, session=None, fspath=None, nodeid=None
+    ):
         
         self.name = name
 
@@ -144,20 +69,10 @@ class Node(metaclass=NodeMeta):
         self.parent = parent
 
         
-        if config:
-            self.config = config  
-        else:
-            if not parent:
-                raise TypeError("config or parent must be provided")
-            self.config = parent.config
+        self.config = config or parent.config
 
         
-        if session:
-            self.session = session
-        else:
-            if not parent:
-                raise TypeError("session or parent must be provided")
-            self.session = parent.session
+        self.session = session or parent.session
 
         
         self.fspath = fspath or getattr(parent, "fspath", None)
@@ -166,69 +81,45 @@ class Node(metaclass=NodeMeta):
         self.keywords = NodeKeywords(self)
 
         
-        self.own_markers = []  
+        self.own_markers = []
 
         
-        self.extra_keyword_matches = set()  
+        self.extra_keyword_matches = set()
 
         
-        self._name2pseudofixturedef = {}  
+        self._name2pseudofixturedef = {}
 
         if nodeid is not None:
             assert "::()" not in nodeid
             self._nodeid = nodeid
         else:
-            if not self.parent:
-                raise TypeError("nodeid or parent must be provided")
             self._nodeid = self.parent.nodeid
             if self.name != "()":
                 self._nodeid += "::" + self.name
 
-        
-        
-        self._store = Store()
-
-    @classmethod
-    def from_parent(cls, parent: "Node", **kw):
-        """Public constructor for Nodes.
-
-        This indirection got introduced in order to enable removing
-        the fragile logic from the node constructors.
-
-        Subclasses can use ``super().from_parent(...)`` when overriding the
-        construction.
-
-        :param parent: The parent node of this Node.
-        """
-        if "config" in kw:
-            raise TypeError("config is not a valid argument for from_parent")
-        if "session" in kw:
-            raise TypeError("session is not a valid argument for from_parent")
-        return cls._create(parent=parent, **kw)
-
     @property
     def ihook(self):
-        """fspath-sensitive hook proxy used to call pytest hooks."""
+        """ fspath sensitive hook proxy used to call pytest hooks"""
         return self.session.gethookproxy(self.fspath)
 
-    def __repr__(self) -> str:
-        return "<{} {}>".format(self.__class__.__name__, getattr(self, "name", None))
+    def __repr__(self):
+        return "<%s %s>" % (self.__class__.__name__, getattr(self, "name", None))
 
-    def warn(self, warning: "PytestWarning") -> None:
-        """Issue a warning for this Node.
+    def warn(self, warning):
+        """Issue a warning for this item.
 
-        Warnings will be displayed after the test session, unless explicitly suppressed.
+        Warnings will be displayed after the test session, unless explicitly suppressed
 
-        :param Warning warning:
-            The warning instance to issue. Must be a subclass of PytestWarning.
+        :param Warning warning: the warning instance to issue. Must be a subclass of PytestWarning.
 
-        :raises ValueError: If ``warning`` instance is not a subclass of PytestWarning.
+        :raise ValueError: if ``warning`` instance is not a subclass of PytestWarning.
 
         Example usage:
 
         .. code-block:: python
 
             node.warn(PytestWarning("some message"))
+
         """
         from _pytest.warning_types import PytestWarning
 
@@ -239,141 +130,125 @@ class Node(metaclass=NodeMeta):
                 )
             )
         path, lineno = get_fslocation_from_item(self)
-        assert lineno is not None
         warnings.warn_explicit(
-            warning, category=None, filename=str(path), lineno=lineno + 1,
+            warning,
+            category=None,
+            filename=str(path),
+            lineno=lineno + 1 if lineno is not None else None,
         )
 
     
-
     @property
-    def nodeid(self) -> str:
-        """A ::-separated string denoting its collection tree address."""
+    def nodeid(self):
+        """ a ::-separated string denoting its collection tree address. """
         return self._nodeid
 
-    def __hash__(self) -> int:
-        return hash(self._nodeid)
+    def __hash__(self):
+        return hash(self.nodeid)
 
-    def setup(self) -> None:
+    def setup(self):
         pass
 
-    def teardown(self) -> None:
+    def teardown(self):
         pass
 
-    def listchain(self) -> List["Node"]:
-        """Return list of all parent collectors up to self, starting from
-        the root of collection tree."""
+    def listchain(self):
+        """ return list of all parent collectors up to self,
+            starting from root of collection tree. """
         chain = []
-        item = self  
+        item = self
         while item is not None:
             chain.append(item)
             item = item.parent
         chain.reverse()
         return chain
 
-    def add_marker(
-        self, marker: Union[str, MarkDecorator], append: bool = True
-    ) -> None:
-        """Dynamically add a marker object to the node.
+    def add_marker(self, marker, append=True):
+        """dynamically add a marker object to the node.
 
-        :param append:
-            Whether to append the marker, or prepend it.
+        :type marker: ``str`` or ``pytest.mark.*``  object
+        :param marker:
+            ``append=True`` whether to append the marker,
+            if ``False`` insert at position ``0``.
         """
-        from _pytest.mark import MARK_GEN
+        from _pytest.mark import MarkDecorator, MARK_GEN
 
-        if isinstance(marker, MarkDecorator):
-            marker_ = marker
-        elif isinstance(marker, str):
-            marker_ = getattr(MARK_GEN, marker)
-        else:
+        if isinstance(marker, six.string_types):
+            marker = getattr(MARK_GEN, marker)
+        elif not isinstance(marker, MarkDecorator):
             raise ValueError("is not a string or pytest.mark.* Marker")
-        self.keywords[marker_.name] = marker_
+        self.keywords[marker.name] = marker
         if append:
-            self.own_markers.append(marker_.mark)
+            self.own_markers.append(marker.mark)
         else:
-            self.own_markers.insert(0, marker_.mark)
+            self.own_markers.insert(0, marker.mark)
 
-    def iter_markers(self, name: Optional[str] = None) -> Iterator[Mark]:
-        """Iterate over all markers of the node.
+    def iter_markers(self, name=None):
+        """
+        :param name: if given, filter the results by the name attribute
 
-        :param name: If given, filter the results by the name attribute.
+        iterate over all markers of the node
         """
         return (x[1] for x in self.iter_markers_with_node(name=name))
 
-    def iter_markers_with_node(
-        self, name: Optional[str] = None
-    ) -> Iterator[Tuple["Node", Mark]]:
-        """Iterate over all markers of the node.
+    def iter_markers_with_node(self, name=None):
+        """
+        :param name: if given, filter the results by the name attribute
 
-        :param name: If given, filter the results by the name attribute.
-        :returns: An iterator of (node, mark) tuples.
+        iterate over all markers of the node
+        returns sequence of tuples (node, mark)
         """
         for node in reversed(self.listchain()):
             for mark in node.own_markers:
                 if name is None or getattr(mark, "name", None) == name:
                     yield node, mark
 
-    @overload
-    def get_closest_marker(self, name: str) -> Optional[Mark]:
-        ...
+    def get_closest_marker(self, name, default=None):
+        """return the first marker matching the name, from closest (for example function) to farther level (for example
+        module level).
 
-    @overload  
-    def get_closest_marker(self, name: str, default: Mark) -> Mark:  
-        ...
-
-    def get_closest_marker(  
-        self, name: str, default: Optional[Mark] = None
-    ) -> Optional[Mark]:
-        """Return the first marker matching the name, from closest (for
-        example function) to farther level (for example module level).
-
-        :param default: Fallback return value if no marker was found.
-        :param name: Name to filter by.
+        :param default: fallback return value of no marker was found
+        :param name: name to filter by
         """
         return next(self.iter_markers(name=name), default)
 
-    def listextrakeywords(self) -> Set[str]:
-        """Return a set of all extra keywords in self and any parents."""
-        extra_keywords = set()  
+    def listextrakeywords(self):
+        """ Return a set of all extra keywords in self and any parents."""
+        extra_keywords = set()
         for item in self.listchain():
             extra_keywords.update(item.extra_keyword_matches)
         return extra_keywords
 
-    def listnames(self) -> List[str]:
+    def listnames(self):
         return [x.name for x in self.listchain()]
 
-    def addfinalizer(self, fin: Callable[[], object]) -> None:
-        """Register a function to be called when this node is finalized.
+    def addfinalizer(self, fin):
+        """ register a function to be called when this node is finalized.
 
         This method can only be called when this node is active
         in a setup chain, for example during self.setup().
         """
         self.session._setupstate.addfinalizer(fin, self)
 
-    def getparent(self, cls: "Type[_NodeType]") -> Optional[_NodeType]:
-        """Get the next parent node (including self) which is an instance of
-        the given class."""
-        current = self  
+    def getparent(self, cls):
+        """ get the next parent node (including ourself)
+        which is an instance of the given class"""
+        current = self
         while current and not isinstance(current, cls):
             current = current.parent
-        assert current is None or isinstance(current, cls)
         return current
 
-    def _prunetraceback(self, excinfo: ExceptionInfo[BaseException]) -> None:
+    def _prunetraceback(self, excinfo):
         pass
 
-    def _repr_failure_py(
-        self,
-        excinfo: ExceptionInfo[BaseException],
-        style: "Optional[_TracebackStyle]" = None,
-    ) -> TerminalRepr:
-        if isinstance(excinfo.value, ConftestImportFailure):
-            excinfo = ExceptionInfo(excinfo.value.excinfo)
-        if isinstance(excinfo.value, fail.Exception):
+    def _repr_failure_py(self, excinfo, style=None):
+        if excinfo.errisinstance(fail.Exception):
             if not excinfo.value.pytrace:
-                style = "value"
-        if isinstance(excinfo.value, FixtureLookupError):
+                return six.text_type(excinfo.value)
+        fm = self.session._fixturemanager
+        if excinfo.errisinstance(fm.FixtureLookupError):
             return excinfo.value.formatrepr()
+        tbfilter = True
         if self.config.getoption("fulltrace", False):
             style = "long"
         else:
@@ -381,6 +256,7 @@ class Node(metaclass=NodeMeta):
             self._prunetraceback(excinfo)
             if len(excinfo.traceback) == 0:
                 excinfo.traceback = tb
+            tbfilter = False  
             if style == "auto":
                 style = "long"
         
@@ -395,14 +271,9 @@ class Node(metaclass=NodeMeta):
         else:
             truncate_locals = True
 
-        
-        
-        
-        
-        
-        
         try:
-            abspath = Path(os.getcwd()) != self.config.invocation_params.dir
+            os.getcwd()
+            abspath = False
         except OSError:
             abspath = True
 
@@ -411,68 +282,48 @@ class Node(metaclass=NodeMeta):
             abspath=abspath,
             showlocals=self.config.getoption("showlocals", False),
             style=style,
-            tbfilter=False,  
+            tbfilter=tbfilter,
             truncate_locals=truncate_locals,
         )
 
-    def repr_failure(
-        self,
-        excinfo: ExceptionInfo[BaseException],
-        style: "Optional[_TracebackStyle]" = None,
-    ) -> Union[str, TerminalRepr]:
-        """Return a representation of a collection or test failure.
-
-        :param excinfo: Exception information for the failure.
-        """
-        return self._repr_failure_py(excinfo, style)
+    repr_failure = _repr_failure_py
 
 
-def get_fslocation_from_item(
-    node: "Node",
-) -> Tuple[Union[str, py.path.local], Optional[int]]:
-    """Try to extract the actual location from a node, depending on available attributes:
+def get_fslocation_from_item(item):
+    """Tries to extract the actual location from an item, depending on available attributes:
 
-    * "location": a pair (path, lineno)
-    * "obj": a Python object that the node wraps.
+    * "fslocation": a pair (path, lineno)
+    * "obj": a Python object that the item wraps.
     * "fspath": just a path
 
-    :rtype: A tuple of (str|py.path.local, int) with filename and line number.
+    :rtype: a tuple of (str|LocalPath, int) with filename and line number.
     """
-    
-    location = getattr(
-        node, "location", None
-    )  
-    if location is not None:
-        return location[:2]
-    obj = getattr(node, "obj", None)
+    result = getattr(item, "location", None)
+    if result is not None:
+        return result[:2]
+    obj = getattr(item, "obj", None)
     if obj is not None:
         return getfslineno(obj)
-    return getattr(node, "fspath", "unknown location"), -1
+    return getattr(item, "fspath", "unknown location"), -1
 
 
 class Collector(Node):
-    """Collector instances create children through collect() and thus
-    iteratively build a tree."""
+    """ Collector instances create children through collect()
+        and thus iteratively build a tree.
+    """
 
     class CollectError(Exception):
-        """An error during collection, contains a custom message."""
+        """ an error during collection, contains a custom message. """
 
-    def collect(self) -> Iterable[Union["Item", "Collector"]]:
-        """Return a list of children (items and collectors) for this
-        collection node."""
+    def collect(self):
+        """ returns a list of children (items and collectors)
+            for this collection node.
+        """
         raise NotImplementedError("abstract")
 
-    
-    def repr_failure(  
-        self, excinfo: ExceptionInfo[BaseException]
-    ) -> Union[str, TerminalRepr]:
-        """Return a representation of a collection failure.
-
-        :param excinfo: Exception information for the failure.
-        """
-        if isinstance(excinfo.value, self.CollectError) and not self.config.getoption(
-            "fulltrace", False
-        ):
+    def repr_failure(self, excinfo):
+        """ represent a collection failure. """
+        if excinfo.errisinstance(self.CollectError):
             exc = excinfo.value
             return str(exc.args[0])
 
@@ -484,7 +335,7 @@ class Collector(Node):
 
         return self._repr_failure_py(excinfo, style=tbstyle)
 
-    def _prunetraceback(self, excinfo: ExceptionInfo[BaseException]) -> None:
+    def _prunetraceback(self, excinfo):
         if hasattr(self, "fspath"):
             traceback = excinfo.traceback
             ntraceback = traceback.cut(path=self.fspath)
@@ -500,14 +351,8 @@ def _check_initialpaths_for_relpath(session, fspath):
 
 
 class FSCollector(Collector):
-    def __init__(
-        self,
-        fspath: py.path.local,
-        parent=None,
-        config: Optional[Config] = None,
-        session: Optional["Session"] = None,
-        nodeid: Optional[str] = None,
-    ) -> None:
+    def __init__(self, fspath, parent=None, config=None, session=None, nodeid=None):
+        fspath = py.path.local(fspath)  
         name = fspath.basename
         if parent is not None:
             rel = fspath.relto(parent.fspath)
@@ -526,58 +371,34 @@ class FSCollector(Collector):
             if nodeid and os.sep != SEP:
                 nodeid = nodeid.replace(os.sep, SEP)
 
-        super().__init__(name, parent, config, session, nodeid=nodeid, fspath=fspath)
-
-    @classmethod
-    def from_parent(cls, parent, *, fspath, **kw):
-        """The public constructor."""
-        return super().from_parent(parent=parent, fspath=fspath, **kw)
-
-    def gethookproxy(self, fspath: py.path.local):
-        warnings.warn(FSCOLLECTOR_GETHOOKPROXY_ISINITPATH, stacklevel=2)
-        return self.session.gethookproxy(fspath)
-
-    def isinitpath(self, path: py.path.local) -> bool:
-        warnings.warn(FSCOLLECTOR_GETHOOKPROXY_ISINITPATH, stacklevel=2)
-        return self.session.isinitpath(path)
+        super(FSCollector, self).__init__(
+            name, parent, config, session, nodeid=nodeid, fspath=fspath
+        )
 
 
 class File(FSCollector):
-    """Base class for collecting tests from a file.
-
-    :ref:`non-python tests`.
-    """
+    """ base class for collecting tests from a file. """
 
 
 class Item(Node):
-    """A basic test invocation item.
-
-    Note that for a single function there might be multiple test invocation items.
+    """ a basic test invocation item. Note that for a single function
+    there might be multiple test invocation items.
     """
 
     nextitem = None
 
-    def __init__(
-        self,
-        name,
-        parent=None,
-        config: Optional[Config] = None,
-        session: Optional["Session"] = None,
-        nodeid: Optional[str] = None,
-    ) -> None:
-        super().__init__(name, parent, config, session, nodeid=nodeid)
-        self._report_sections = []  
+    def __init__(self, name, parent=None, config=None, session=None, nodeid=None):
+        super(Item, self).__init__(name, parent, config, session, nodeid=nodeid)
+        self._report_sections = []
 
         
         
-        self.user_properties = []  
+        self.user_properties = []
 
-    def runtest(self) -> None:
-        raise NotImplementedError("runtest must be implemented by Item subclass")
-
-    def add_report_section(self, when: str, key: str, content: str) -> None:
-        """Add a new report section, similar to what's done internally to add
-        stdout and stderr captured output::
+    def add_report_section(self, when, key, content):
+        """
+        Adds a new report section, similar to what's done internally to add stdout and
+        stderr captured output::
 
             item.add_report_section("call", "stdout", "report section contents")
 
@@ -586,19 +407,23 @@ class Item(Node):
         :param str key:
             Name of the section, can be customized at will. Pytest uses ``"stdout"`` and
             ``"stderr"`` internally.
+
         :param str content:
             The full contents as a string.
         """
         if content:
             self._report_sections.append((when, key, content))
 
-    def reportinfo(self) -> Tuple[Union[py.path.local, str], Optional[int], str]:
+    def reportinfo(self):
         return self.fspath, None, ""
 
-    @cached_property
-    def location(self) -> Tuple[str, Optional[int], str]:
-        location = self.reportinfo()
-        fspath = absolutepath(str(location[0]))
-        relfspath = self.session._node_location_to_relpath(fspath)
-        assert type(location[2]) is str
-        return (relfspath, location[1], location[2])
+    @property
+    def location(self):
+        try:
+            return self._location
+        except AttributeError:
+            location = self.reportinfo()
+            fspath = self.session._node_location_to_relpath(location[0])
+            location = (fspath, location[1], str(location[2]))
+            self._location = location
+            return location

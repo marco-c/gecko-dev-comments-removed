@@ -1,8 +1,36 @@
-"""Run testsuites written for nose."""
+# -*- coding: utf-8 -*-
+""" run test suites written for nose. """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+import sys
+
+import six
+
+import pytest
 from _pytest import python
+from _pytest import runner
 from _pytest import unittest
 from _pytest.config import hookimpl
-from _pytest.nodes import Item
+
+
+def get_skip_exceptions():
+    skip_classes = set()
+    for module_name in ("unittest", "unittest2", "nose"):
+        mod = sys.modules.get(module_name)
+        if hasattr(mod, "SkipTest"):
+            skip_classes.add(mod.SkipTest)
+    return tuple(skip_classes)
+
+
+def pytest_runtest_makereport(item, call):
+    if call.excinfo and call.excinfo.errisinstance(get_skip_exceptions()):
+        
+        call2 = runner.CallInfo.from_call(
+            lambda: pytest.skip(six.text_type(call.excinfo.value)), call.when
+        )
+        call.excinfo = call2.excinfo
 
 
 @hookimpl(trylast=True)
@@ -19,9 +47,12 @@ def teardown_nose(item):
     if is_potential_nosetest(item):
         if not call_optional(item.obj, "teardown"):
             call_optional(item.parent.obj, "teardown")
+        
+        
+        
 
 
-def is_potential_nosetest(item: Item) -> bool:
+def is_potential_nosetest(item):
     
     
     return isinstance(item, python.Function) and not isinstance(
