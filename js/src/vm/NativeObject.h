@@ -815,15 +815,6 @@ class NativeObject : public JSObject {
   }
 
   
-
-
-
-  bool hasAllFlags(js::BaseShape::Flag flags) const {
-    MOZ_ASSERT(flags);
-    return shape()->hasAllObjectFlags(flags);
-  }
-
-  
   bool nonProxyIsExtensible() const = delete;
 
   bool isExtensible() const {
