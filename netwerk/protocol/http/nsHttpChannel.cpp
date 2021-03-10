@@ -8782,7 +8782,6 @@ nsresult nsHttpChannel::ContinueDoAuthRetry(
     const std::function<nsresult(nsHttpChannel*, nsresult)>&
         aContinueOnStopRequestFunc) {
   LOG(("nsHttpChannel::ContinueDoAuthRetry [this=%p]\n", this));
-
   StoreIsPending(true);
 
   
@@ -8791,9 +8790,16 @@ nsresult nsHttpChannel::ContinueDoAuthRetry(
   
   if (mUploadStream) {
     nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(mUploadStream);
+    nsresult rv = NS_ERROR_NO_INTERFACE;
     if (seekable) {
-      seekable->Seek(nsISeekableStream::NS_SEEK_SET, 0);
+      rv = seekable->Seek(nsISeekableStream::NS_SEEK_SET, 0);
     }
+
+    
+    
+    
+    
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   
