@@ -6,6 +6,11 @@
 
 
 
+
+
+
+
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToShmem)]
 #[repr(C)]
 pub struct ComplexColorRatios {
@@ -25,56 +30,49 @@ impl ComplexColorRatios {
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToShmem)]
-#[repr(C, u8)]
-pub enum GenericColor<RGBA> {
+#[repr(C)]
+pub struct GenericColor<RGBA> {
     
-    Numeric(RGBA),
-
-    
-    CurrentColor,
-
+    pub color: RGBA,
     
     
-    Complex {
-        
-        color: RGBA,
-        
-        ratios: ComplexColorRatios,
-    },
+    pub ratios: ComplexColorRatios,
 }
 
 pub use self::GenericColor as Color;
 
+impl Color<cssparser::RGBA> {
+    
+    pub fn currentcolor() -> Self {
+        Color {
+            color: cssparser::RGBA::transparent(),
+            ratios: ComplexColorRatios::CURRENT_COLOR,
+        }
+    }
+}
+
 impl<RGBA> Color<RGBA> {
     
-    pub fn with_ratios(color: RGBA, ratios: ComplexColorRatios) -> Self {
-        if ratios == ComplexColorRatios::NUMERIC {
-            Color::Numeric(color)
-        } else if ratios == ComplexColorRatios::CURRENT_COLOR {
-            Color::CurrentColor
-        } else {
-            Color::Complex { color, ratios }
-        }
+    pub fn new(color: RGBA, ratios: ComplexColorRatios) -> Self {
+        Self { color, ratios }
     }
 
     
     pub fn rgba(color: RGBA) -> Self {
-        Color::Numeric(color)
-    }
-
-    
-    pub fn currentcolor() -> Self {
-        Color::CurrentColor
+        Self {
+            color,
+            ratios: ComplexColorRatios::NUMERIC,
+        }
     }
 
     
     pub fn is_numeric(&self) -> bool {
-        matches!(*self, Color::Numeric(..))
+        self.ratios == ComplexColorRatios::NUMERIC
     }
 
     
     pub fn is_currentcolor(&self) -> bool {
-        matches!(*self, Color::CurrentColor)
+        self.ratios == ComplexColorRatios::CURRENT_COLOR
     }
 }
 

@@ -35,16 +35,13 @@ impl RGBA {
     #[inline]
     pub fn new(red: f32, green: f32, blue: f32, alpha: f32) -> Self {
         RGBA {
-            red: red,
-            green: green,
-            blue: blue,
-            alpha: alpha,
+            red,
+            green,
+            blue,
+            alpha,
         }
     }
 }
-
-
-
 
 impl Animate for RGBA {
     #[inline]
@@ -57,15 +54,11 @@ impl Animate for RGBA {
         }
 
         alpha = alpha.min(1.);
-        let red =
-            (self.red * self.alpha).animate(&(other.red * other.alpha), procedure)? * 1. / alpha;
-        let green = (self.green * self.alpha).animate(&(other.green * other.alpha), procedure)? *
-            1. /
-            alpha;
-        let blue =
-            (self.blue * self.alpha).animate(&(other.blue * other.alpha), procedure)? * 1. / alpha;
-
-        Ok(RGBA::new(red, green, blue, alpha))
+        let red = (self.red * self.alpha).animate(&(other.red * other.alpha), procedure)?;
+        let green = (self.green * self.alpha).animate(&(other.green * other.alpha), procedure)?;
+        let blue = (self.blue * self.alpha).animate(&(other.blue * other.alpha), procedure)?;
+        let inv = 1. / alpha;
+        Ok(RGBA::new(red * inv, green * inv, blue * inv, alpha))
     }
 }
 
@@ -97,21 +90,34 @@ pub type Color = GenericColor<RGBA>;
 
 impl Color {
     fn effective_intermediate_rgba(&self) -> RGBA {
-        match *self {
-            GenericColor::Numeric(color) => color,
-            GenericColor::CurrentColor => RGBA::transparent(),
-            GenericColor::Complex { color, ratios } => RGBA {
-                alpha: color.alpha * ratios.bg,
-                ..color.clone()
-            },
+        if self.ratios.bg == 0. {
+            return RGBA::transparent();
+        }
+
+        if self.ratios.bg == 1. {
+            return self.color;
+        }
+
+        RGBA {
+            alpha: self.color.alpha * self.ratios.bg,
+            ..self.color
         }
     }
 
-    fn effective_ratios(&self) -> ComplexColorRatios {
-        match *self {
-            GenericColor::Numeric(..) => ComplexColorRatios::NUMERIC,
-            GenericColor::CurrentColor => ComplexColorRatios::CURRENT_COLOR,
-            GenericColor::Complex { ratios, .. } => ratios,
+    fn scaled_rgba(&self) -> RGBA {
+        if self.ratios.bg == 0. {
+            return RGBA::transparent();
+        }
+
+        if self.ratios.bg == 1. {
+            return self.color;
+        }
+
+        RGBA {
+            red: self.color.red * self.ratios.bg,
+            green: self.color.green * self.ratios.bg,
+            blue: self.color.blue * self.ratios.bg,
+            alpha: self.color.alpha * self.ratios.bg,
         }
     }
 }
@@ -119,140 +125,140 @@ impl Color {
 impl Animate for Color {
     #[inline]
     fn animate(&self, other: &Self, procedure: Procedure) -> Result<Self, ()> {
-        use self::GenericColor::*;
+        let self_numeric = self.is_numeric();
+        let other_numeric = other.is_numeric();
 
-        
-        
-        let (this_weight, other_weight) = procedure.weights();
+        if self_numeric && other_numeric {
+            return Ok(Self::rgba(self.color.animate(&other.color, procedure)?));
+        }
 
-        Ok(match (*self, *other, procedure) {
-            
-            (CurrentColor, CurrentColor, Procedure::Interpolate { .. }) => CurrentColor,
-            
-            (Numeric(c1), Numeric(c2), _) => Numeric(c1.animate(&c2, procedure)?),
-            
-            (CurrentColor, Numeric(color), _) => Self::with_ratios(
-                color,
-                ComplexColorRatios {
-                    bg: other_weight as f32,
-                    fg: this_weight as f32,
-                },
-            ),
-            (Numeric(color), CurrentColor, _) => Self::with_ratios(
-                color,
-                ComplexColorRatios {
-                    bg: this_weight as f32,
-                    fg: other_weight as f32,
-                },
-            ),
+        let self_currentcolor = self.is_currentcolor();
+        let other_currentcolor = other.is_currentcolor();
 
-            
-            (CurrentColor, CurrentColor, _) => Self::with_ratios(
+        if self_currentcolor && other_currentcolor {
+            let (self_weight, other_weight) = procedure.weights();
+            return Ok(Self::new(
                 RGBA::transparent(),
                 ComplexColorRatios {
                     bg: 0.,
-                    fg: (this_weight + other_weight) as f32,
+                    fg: (self_weight + other_weight) as f32,
                 },
-            ),
+            ));
+        }
 
-            
-            _ => {
-                
-                fn scaled_rgba(color: &Color) -> RGBA {
-                    match *color {
-                        GenericColor::Numeric(color) => color,
-                        GenericColor::CurrentColor => RGBA::transparent(),
-                        GenericColor::Complex { color, ratios } => RGBA {
-                            red: color.red * ratios.bg,
-                            green: color.green * ratios.bg,
-                            blue: color.blue * ratios.bg,
-                            alpha: color.alpha * ratios.bg,
-                        },
-                    }
-                }
+        
+        
+        if (self_currentcolor && other_numeric) || (self_numeric && other_currentcolor) {
+            let (self_weight, other_weight) = procedure.weights();
+            return Ok(if self_numeric {
+                Self::new(
+                    self.color,
+                    ComplexColorRatios {
+                        bg: self_weight as f32,
+                        fg: other_weight as f32,
+                    },
+                )
+            } else {
+                Self::new(
+                    other.color,
+                    ComplexColorRatios {
+                        bg: other_weight as f32,
+                        fg: self_weight as f32,
+                    },
+                )
+            });
+        }
 
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let bg_color1 = self.scaled_rgba();
+        let bg_color2 = other.scaled_rgba();
 
-                
-                
-                
-                let bg_color1 = scaled_rgba(self);
-                let bg_color2 = scaled_rgba(other);
-                
-                let bg_color = bg_color1.animate(&bg_color2, procedure)?;
+        
+        let bg_color = bg_color1.animate(&bg_color2, procedure)?;
 
-                
-                
-                let ComplexColorRatios { fg: fg1, .. } = self.effective_ratios();
-                let ComplexColorRatios { fg: fg2, .. } = other.effective_ratios();
-                
-                let fg = fg1.animate(&fg2, procedure)?;
+        
+        
+        let fg = self.ratios.fg.animate(&other.ratios.fg, procedure)?;
 
-                Self::with_ratios(bg_color, ComplexColorRatios { bg: 1., fg })
-            },
-        })
+        Ok(Self::new(bg_color, ComplexColorRatios { bg: 1., fg }))
     }
 }
 
 impl ComputeSquaredDistance for Color {
     #[inline]
     fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
-        use self::GenericColor::*;
-
         
-        Ok(match (*self, *other) {
-            (CurrentColor, CurrentColor) => SquaredDistance::from_sqrt(0.),
-            (Numeric(c1), Numeric(c2)) => c1.compute_squared_distance(&c2)?,
-            (CurrentColor, Numeric(color)) | (Numeric(color), CurrentColor) => {
-                
-                color.compute_squared_distance(&RGBA::transparent())? +
-                    SquaredDistance::from_sqrt(1.)
-            },
-            (_, _) => {
-                let self_color = self.effective_intermediate_rgba();
-                let other_color = other.effective_intermediate_rgba();
-                let self_ratios = self.effective_ratios();
-                let other_ratios = other.effective_ratios();
+        let self_numeric = self.is_numeric();
+        let other_numeric = other.is_numeric();
 
-                self_color.compute_squared_distance(&other_color)? +
-                    self_ratios.bg.compute_squared_distance(&other_ratios.bg)? +
-                    self_ratios.fg.compute_squared_distance(&other_ratios.fg)?
-            },
-        })
+        if self_numeric && other_numeric {
+            return self.color.compute_squared_distance(&other.color);
+        }
+
+        let self_currentcolor = self.is_currentcolor();
+        let other_currentcolor = other.is_currentcolor();
+        if self_currentcolor && other_currentcolor {
+            return Ok(SquaredDistance::from_sqrt(0.));
+        }
+
+        if (self_currentcolor && other_numeric) || (self_numeric && other_currentcolor) {
+            let color = if self_numeric {
+                &self.color
+            } else {
+                &other.color
+            };
+            
+            return Ok(color.compute_squared_distance(&RGBA::transparent())? +
+                SquaredDistance::from_sqrt(1.));
+        }
+
+        let self_color = self.effective_intermediate_rgba();
+        let other_color = other.effective_intermediate_rgba();
+        let self_ratios = self.ratios;
+        let other_ratios = other.ratios;
+
+        Ok(self_color.compute_squared_distance(&other_color)? +
+            self_ratios.bg.compute_squared_distance(&other_ratios.bg)? +
+            self_ratios.fg.compute_squared_distance(&other_ratios.fg)?)
     }
 }
 

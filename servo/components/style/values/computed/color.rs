@@ -29,13 +29,18 @@ impl Color {
     
     
     pub fn to_rgba(&self, fg_color: RGBA) -> RGBA {
-        let (color, ratios) = match *self {
-            
-            
-            GenericColor::Numeric(color) => return color,
-            GenericColor::CurrentColor => return fg_color,
-            GenericColor::Complex { color, ratios } => (color, ratios),
-        };
+        
+        
+        if self.is_numeric() {
+            return self.color;
+        }
+
+        if self.is_currentcolor() {
+            return fg_color;
+        }
+
+        let ratios = &self.ratios;
+        let color = &self.color;
 
         
         
@@ -59,13 +64,14 @@ impl Color {
         if a <= 0. {
             return RGBA::transparent();
         }
-        let a = f32::min(a, 1.);
+        let a = a.min(1.);
 
-        let inverse_a = 1. / a;
-        let r = (p1 * r1 + p2 * r2) * inverse_a;
-        let g = (p1 * g1 + p2 * g2) * inverse_a;
-        let b = (p1 * b1 + p2 * b2) * inverse_a;
-        return RGBA::from_floats(r, g, b, a);
+        let inv = 1. / a;
+
+        let r = (p1 * r1 + p2 * r2) * inv;
+        let g = (p1 * g1 + p2 * g2) * inv;
+        let b = (p1 * b1 + p2 * b2) * inv;
+        RGBA::from_floats(r, g, b, a)
     }
 }
 
@@ -74,11 +80,13 @@ impl ToCss for Color {
     where
         W: fmt::Write,
     {
-        match *self {
-            GenericColor::Numeric(color) => color.to_css(dest),
-            GenericColor::CurrentColor => CSSParserColor::CurrentColor.to_css(dest),
-            _ => Ok(()),
+        if self.is_currentcolor() {
+            return CSSParserColor::CurrentColor.to_css(dest);
         }
+        if self.is_numeric() {
+            return self.color.to_css(dest);
+        }
+        Ok(())
     }
 }
 
