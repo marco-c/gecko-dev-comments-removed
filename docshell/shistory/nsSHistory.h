@@ -154,6 +154,7 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   };
 
   static void LoadURIs(nsTArray<LoadEntryResult>& aLoadResults);
+  static void LoadURIOrBFCache(LoadEntryResult& aLoadEntry);
 
   
   
