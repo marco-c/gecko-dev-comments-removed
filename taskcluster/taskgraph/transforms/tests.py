@@ -417,7 +417,7 @@ test_description_schema = Schema(
         
         
         Optional("fission-run-on-projects"): optionally_keyed_by(
-            "test-platform", Any([text_type], "built-projects")
+            "test-name", "test-platform", Any([text_type], "built-projects")
         ),
         
         Optional("tier"): optionally_keyed_by("test-platform", Any(int, "default")),
