@@ -4,7 +4,7 @@
 
 
 
-if CONFIG["MOZ_GLEAN"]:
+if not CONFIG["MOZ_GLEAN_ANDROID"]:
     UNIFIED_SOURCES += [
         "TestFog.cpp",
         "TestFogIPC.cpp",
