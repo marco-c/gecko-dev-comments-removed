@@ -2926,6 +2926,9 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
       
       if (currentStatus == Killing) {
         
+        ReportUseCounters();
+
+        
         
         PromiseDebugging::FlushUncaughtRejections();
 
@@ -3583,9 +3586,6 @@ void WorkerPrivate::ClearMainEventQueue(WorkerRanOrNot aRanOrNot) {
     MOZ_ASSERT(currentThread);
 
     NS_ProcessPendingEvents(currentThread);
-
-    
-    ReportUseCounters();
   }
 
   if (globalScope) {
