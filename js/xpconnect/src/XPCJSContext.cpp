@@ -619,7 +619,6 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
 
   nsString addonId;
   const char* prefName;
-  bool runningContentJS = false;
   auto principal = BasePrincipal::Cast(nsContentUtils::SubjectPrincipal(cx));
   bool chrome = principal->Is<SystemPrincipal>();
   if (chrome) {
@@ -633,7 +632,6 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
   } else {
     prefName = PREF_MAX_SCRIPT_RUN_TIME_CONTENT;
     limit = StaticPrefs::dom_max_script_run_time();
-    runningContentJS = true;
   }
 
   
@@ -662,7 +660,11 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
 
   
   
-  if (runningContentJS && XRE_IsContentProcess() &&
+  
+  
+  
+  
+  if (XRE_IsContentProcess() &&
       StaticPrefs::dom_max_script_run_time_require_critical_input()) {
     
     
