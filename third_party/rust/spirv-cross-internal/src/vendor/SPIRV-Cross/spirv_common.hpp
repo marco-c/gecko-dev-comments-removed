@@ -14,13 +14,6 @@
 
 
 
-
-
-
-
-
-
-
 #ifndef SPIRV_CROSS_COMMON_HPP
 #define SPIRV_CROSS_COMMON_HPP
 
@@ -364,6 +357,28 @@ public:
 		return TypedID<U>(*this);
 	}
 
+	bool operator==(const TypedID &other) const
+	{
+		return id == other.id;
+	}
+
+	bool operator!=(const TypedID &other) const
+	{
+		return id != other.id;
+	}
+
+	template <Types type>
+	bool operator==(const TypedID<type> &other) const
+	{
+		return id == uint32_t(other);
+	}
+
+	template <Types type>
+	bool operator!=(const TypedID<type> &other) const
+	{
+		return id != uint32_t(other);
+	}
+
 private:
 	uint32_t id = 0;
 };
@@ -386,6 +401,26 @@ public:
 	operator uint32_t() const
 	{
 		return id;
+	}
+
+	bool operator==(const TypedID &other) const
+	{
+		return id == other.id;
+	}
+
+	bool operator!=(const TypedID &other) const
+	{
+		return id != other.id;
+	}
+
+	bool operator==(const TypedID<TypeNone> &other) const
+	{
+		return id == uint32_t(other);
+	}
+
+	bool operator!=(const TypedID<TypeNone> &other) const
+	{
+		return id != uint32_t(other);
 	}
 
 private:
@@ -523,7 +558,6 @@ struct SPIRType : IVariant
 
 		
 		ControlPointArray,
-		Interpolant,
 		Char
 	};
 
@@ -729,9 +763,7 @@ struct SPIRBlock : IVariant
 
 		Return, 
 		Unreachable, 
-		Kill, 
-		IgnoreIntersection, 
-		TerminateRay 
+		Kill 
 	};
 
 	enum Merge
@@ -1583,13 +1615,6 @@ enum ExtendedDecorations
 	
 	SPIRVCrossDecorationTessIOOriginalInputTypeID,
 
-	
-	
-	
-	
-	
-	SPIRVCrossDecorationInterpolantComponentExpr,
-
 	SPIRVCrossDecorationCount
 };
 
@@ -1609,7 +1634,6 @@ struct Meta
 		uint32_t offset = 0;
 		uint32_t xfb_buffer = 0;
 		uint32_t xfb_stride = 0;
-		uint32_t stream = 0;
 		uint32_t array_stride = 0;
 		uint32_t matrix_stride = 0;
 		uint32_t input_attachment = 0;

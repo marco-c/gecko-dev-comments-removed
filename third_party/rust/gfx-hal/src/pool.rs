@@ -1,8 +1,10 @@
 
 
-use crate::{command::Level, Backend, PseudoVec};
+use crate::command::Level;
+use crate::{Backend, PseudoVec};
 
-use std::{any::Any, fmt};
+use std::any::Any;
+use std::fmt;
 
 bitflags!(
     /// Command pool creation flags.
@@ -59,5 +61,5 @@ pub trait CommandPool<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     unsafe fn free<I>(&mut self, buffers: I)
     where
-        I: Iterator<Item = B::CommandBuffer>;
+        I: IntoIterator<Item = B::CommandBuffer>;
 }

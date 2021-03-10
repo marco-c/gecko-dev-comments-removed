@@ -46,7 +46,9 @@ extern crate bitflags;
 #[macro_use]
 extern crate serde;
 
-use std::{any::Any, fmt, hash::Hash};
+use std::any::Any;
+use std::fmt;
+use std::hash::Hash;
 
 pub mod adapter;
 pub mod buffer;
@@ -70,7 +72,7 @@ pub mod prelude {
         device::Device,
         pool::CommandPool,
         pso::DescriptorPool,
-        queue::{Queue, QueueFamily},
+        queue::{CommandQueue, QueueFamily},
         window::{PresentationSurface, Surface},
         Instance,
     };
@@ -105,13 +107,11 @@ bitflags! {
         /// Bit mask of Vulkan Core/Extension features.
         const CORE_MASK = 0xFFFF_FFFF_FFFF_FFFF;
         /// Bit mask of Vulkan Portability features.
-        const PORTABILITY_MASK  = 0xFFFF << 64;
+        const PORTABILITY_MASK  = 0x0000_FFFF_0000_0000_0000_0000;
         /// Bit mask for extra WebGPU features.
-        const WEBGPU_MASK = 0xFFFF << 80;
+        const WEBGPU_MASK = 0xFFFF_0000_0000_0000_0000_0000;
         /// Bit mask for all extensions.
-        const EXTENSIONS_MASK = 0xFFFF_FFFF << 96;
-
-        // Bits for Vulkan Core/Extension features
+        const EXTENSIONS_MASK = 0xFFFF_FFFF_0000_0000_0000_0000_0000_0000;
 
         /// Support for robust buffer access.
         /// Buffer access by SPIR-V shaders is checked against the buffer/image boundaries.
@@ -240,13 +240,8 @@ bitflags! {
         const STORAGE_TEXTURE_DESCRIPTOR_INDEXING = 0x0400_0000_0000_0000;
         /// Allow descriptor arrays to be unsized in shaders
         const UNSIZED_DESCRIPTOR_ARRAY = 0x0800_0000_0000_0000;
-        /// Mask for all the features associated with descriptor indexing.
-        const DESCRIPTOR_INDEXING_MASK = Features::SAMPLED_TEXTURE_DESCRIPTOR_INDEXING.bits | Features::STORAGE_TEXTURE_DESCRIPTOR_INDEXING.bits | Features::UNSIZED_DESCRIPTOR_ARRAY.bits;
-
         /// Enable draw_indirect_count and draw_indexed_indirect_count
         const DRAW_INDIRECT_COUNT = 0x1000_0000_0000_0000;
-
-        // Bits for Vulkan Portability features
 
         /// Support triangle fan primitive topology.
         const TRIANGLE_FAN = 0x0001 << 64;
@@ -260,115 +255,24 @@ bitflags! {
         const SAMPLER_BORDER_COLOR = 0x0010 << 64;
         /// Can create comparison samplers in regular descriptor sets.
         const MUTABLE_COMPARISON_SAMPLER = 0x0020 << 64;
-        /// Can create non-normalized samplers in regular descriptor sets.
-        const MUTABLE_UNNORMALIZED_SAMPLER = 0x0040 << 64;
-
-        // Bits for WebGPU features
 
         /// Make the NDC coordinate system pointing Y up, to match D3D and Metal.
         const NDC_Y_UP = 0x0001 << 80;
 
-        // Bits for Extensions
-
         /// Supports task shader stage.
-        const TASK_SHADER = 0x0000_0001 << 96;
+        const TASK_SHADER = 0x0001 << 96;
         /// Supports mesh shader stage.
-        const MESH_SHADER = 0x0000_0002 << 96;
-        /// Mask for all the features associated with mesh shader stages.
-        const MESH_SHADER_MASK = Features::TASK_SHADER.bits | Features::MESH_SHADER.bits;
+        const MESH_SHADER = 0x0002 << 96;
     }
 }
 
 bitflags! {
-    /// Features that the device doesn't support natively, but is able to emulate
-    /// at some performance cost.
-    #[derive(Default)]
+    /// Features that the device supports natively, but is able to emulate.
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-    pub struct PerformanceCaveats: u32 {
-        /// Emulate indexed, instanced drawing with base vertex and instance.
+    pub struct Hints: u32 {
+        /// Support indexed, instanced drawing with base vertex and instance.
         const BASE_VERTEX_INSTANCE_DRAWING = 0x0001;
     }
-}
-
-bitflags! {
-    /// Dynamic pipeline states.
-    #[derive(Default)]
-    #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-    pub struct DynamicStates: u32 {
-        /// Supports `BakedStates::viewport == None`
-        const VIEWPORT = 0x0001;
-        /// Supports `BakedStates::scissor == None`
-        const SCISSOR = 0x0002;
-        /// Supports `Rasterizer::line_width == State::Dynamic(_)`
-        const LINE_WIDTH = 0x0004;
-        /// Supports `BakedStates::blend_color == None`
-        const BLEND_COLOR = 0x0008;
-        /// Supports `Rasterizer::depth_bias == Some(State::Dynamic(_))`
-        const DEPTH_BIAS = 0x0010;
-        /// Supports `BakedStates::depth_bounds == None`
-        const DEPTH_BOUNDS = 0x0020;
-        /// Supports `StencilTest::read_masks == State::Dynamic(_)`
-        const STENCIL_READ_MASK = 0x0100;
-        /// Supports `StencilTest::write_masks == State::Dynamic(_)`
-        const STENCIL_WRITE_MASK = 0x0200;
-        /// Supports `StencilTest::reference_values == State::Dynamic(_)`
-        const STENCIL_REFERENCE = 0x0400;
-    }
-}
-
-
-
-
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct PhysicalDeviceProperties {
-    
-    pub limits: Limits,
-    
-    pub descriptor_indexing: DescriptorIndexingProperties,
-    
-    pub mesh_shader: MeshShaderProperties,
-    
-    pub performance_caveats: PerformanceCaveats,
-    
-    pub dynamic_pipeline_states: DynamicStates,
-}
-
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct DescriptorLimits {
-    
-    pub max_per_stage_descriptor_samplers: u32,
-    
-    pub max_per_stage_descriptor_uniform_buffers: u32,
-    
-    pub max_per_stage_descriptor_storage_buffers: u32,
-    
-    pub max_per_stage_descriptor_sampled_images: u32,
-    
-    pub max_per_stage_descriptor_storage_images: u32,
-    
-    pub max_per_stage_descriptor_input_attachments: u32,
-    
-    pub max_per_stage_resources: u32,
-    
-    pub max_descriptor_set_samplers: u32,
-    
-    pub max_descriptor_set_uniform_buffers: u32,
-    
-    pub max_descriptor_set_uniform_buffers_dynamic: u32,
-    
-    pub max_descriptor_set_storage_buffers: u32,
-    
-    pub max_descriptor_set_storage_buffers_dynamic: u32,
-    
-    pub max_descriptor_set_sampled_images: u32,
-    
-    pub max_descriptor_set_storage_images: u32,
-    
-    pub max_descriptor_set_input_attachments: u32,
 }
 
 
@@ -402,7 +306,36 @@ pub struct Limits {
     
     pub max_framebuffer_layers: usize,
     
-    pub descriptor_limits: DescriptorLimits,
+    pub max_per_stage_descriptor_samplers: usize,
+    
+    pub max_per_stage_descriptor_uniform_buffers: usize,
+    
+    pub max_per_stage_descriptor_storage_buffers: usize,
+    
+    pub max_per_stage_descriptor_sampled_images: usize,
+    
+    pub max_per_stage_descriptor_storage_images: usize,
+    
+    pub max_per_stage_descriptor_input_attachments: usize,
+    
+    pub max_per_stage_resources: usize,
+
+    
+    pub max_descriptor_set_samplers: usize,
+    
+    pub max_descriptor_set_uniform_buffers: usize,
+    
+    pub max_descriptor_set_uniform_buffers_dynamic: usize,
+    
+    pub max_descriptor_set_storage_buffers: usize,
+    
+    pub max_descriptor_set_storage_buffers_dynamic: usize,
+    
+    pub max_descriptor_set_sampled_images: usize,
+    
+    pub max_descriptor_set_storage_images: usize,
+    
+    pub max_descriptor_set_input_attachments: usize,
 
     
     pub max_vertex_input_attributes: usize,
@@ -479,8 +412,6 @@ pub struct Limits {
     
     pub framebuffer_stencil_sample_counts: image::NumSamples,
     
-    pub timestamp_compute_and_graphics: bool,
-    
     pub max_color_attachments: usize,
     
     pub standard_sample_locations: bool,
@@ -494,30 +425,7 @@ pub struct Limits {
 
     
     pub min_vertex_input_binding_stride_alignment: buffer::Offset,
-}
 
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct DescriptorIndexingProperties {
-    
-    pub shader_uniform_buffer_array_non_uniform_indexing_native: bool,
-    
-    pub shader_sampled_image_array_non_uniform_indexing_native: bool,
-    
-    pub shader_storage_buffer_array_non_uniform_indexing_native: bool,
-    
-    pub shader_storage_image_array_non_uniform_indexing_native: bool,
-    
-    pub shader_input_attachment_array_non_uniform_indexing_native: bool,
-    
-    pub quad_divergent_implicit_lod: bool,
-}
-
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct MeshShaderProperties {
     
     pub max_draw_mesh_tasks_count: u32,
     
@@ -570,9 +478,16 @@ pub enum IndexType {
 
 
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, thiserror::Error)]
-#[error("Backend is not supported on this platform")]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct UnsupportedBackend;
+
+impl fmt::Display for UnsupportedBackend {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "UnsupportedBackend")
+    }
+}
+
+impl std::error::Error for UnsupportedBackend {}
 
 
 
@@ -651,8 +566,8 @@ impl From<usize> for MemoryTypeId {
 struct PseudoVec<T>(Option<T>);
 
 impl<T> Extend<T> for PseudoVec<T> {
-    fn extend<I: IntoIterator<Item = T>>(&mut self, into_iter: I) {
-        let mut iter = into_iter.into_iter();
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        let mut iter = iter.into_iter();
         self.0 = iter.next();
         assert!(iter.next().is_none());
     }
@@ -675,7 +590,7 @@ pub trait Backend: 'static + Sized + Eq + Clone + Hash + fmt::Debug + Any + Send
     
     type QueueFamily: queue::QueueFamily;
     
-    type Queue: queue::Queue<Self>;
+    type CommandQueue: queue::CommandQueue<Self>;
     
     type CommandBuffer: command::CommandBuffer<Self>;
 

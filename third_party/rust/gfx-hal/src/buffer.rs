@@ -11,9 +11,6 @@ use crate::{device::OutOfMemory, format::Format};
 pub type Offset = u64;
 
 
-pub type Stride = u32;
-
-
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SubRange {
@@ -40,27 +37,89 @@ impl SubRange {
 pub type State = Access;
 
 
-#[derive(Clone, Debug, PartialEq, thiserror::Error)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum CreationError {
     
-    #[error(transparent)]
-    OutOfMemory(#[from] OutOfMemory),
+    OutOfMemory(OutOfMemory),
+
     
     
     
-    #[error("Unsupported usage: {0:?}")]
-    UnsupportedUsage(Usage),
+    UnsupportedUsage {
+        
+        usage: Usage,
+    },
+}
+
+impl From<OutOfMemory> for CreationError {
+    fn from(error: OutOfMemory) -> Self {
+        CreationError::OutOfMemory(error)
+    }
+}
+
+impl std::fmt::Display for CreationError {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CreationError::OutOfMemory(err) => write!(fmt, "Failed to create buffer: {}", err),
+            CreationError::UnsupportedUsage { usage } => write!(
+                fmt,
+                "Failed to create buffer: Unsupported usage: {:?}",
+                usage
+            ),
+        }
+    }
+}
+
+impl std::error::Error for CreationError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            CreationError::OutOfMemory(err) => Some(err),
+            _ => None,
+        }
+    }
 }
 
 
-#[derive(Clone, Debug, PartialEq, thiserror::Error)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ViewCreationError {
     
-    #[error(transparent)]
-    OutOfMemory(#[from] OutOfMemory),
+    OutOfMemory(OutOfMemory),
+
     
-    #[error("Unsupported format: {0:?}")]
     UnsupportedFormat(Option<Format>),
+}
+
+impl From<OutOfMemory> for ViewCreationError {
+    fn from(error: OutOfMemory) -> Self {
+        ViewCreationError::OutOfMemory(error)
+    }
+}
+
+impl std::fmt::Display for ViewCreationError {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ViewCreationError::OutOfMemory(err) => {
+                write!(fmt, "Failed to create buffer view: {}", err)
+            }
+            ViewCreationError::UnsupportedFormat(Some(format)) => write!(
+                fmt,
+                "Failed to create buffer view: Unsupported format {:?}",
+                format
+            ),
+            ViewCreationError::UnsupportedFormat(None) => {
+                write!(fmt, "Failed to create buffer view: Unspecified format")
+            }
+        }
+    }
+}
+
+impl std::error::Error for ViewCreationError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            ViewCreationError::OutOfMemory(err) => Some(err),
+            _ => None,
+        }
+    }
 }
 
 bitflags!(

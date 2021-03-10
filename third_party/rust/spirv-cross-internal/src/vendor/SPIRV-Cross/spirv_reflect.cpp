@@ -14,13 +14,6 @@
 
 
 
-
-
-
-
-
-
-
 #include "spirv_reflect.hpp"
 #include "spirv_glsl.hpp"
 #include <iomanip>
@@ -654,7 +647,7 @@ void CompilerReflection::emit_specialization_constants()
 		return;
 
 	json_stream->emit_json_key_array("specialization_constants");
-	for (const auto &spec_const : specialization_constants)
+	for (const auto spec_const : specialization_constants)
 	{
 		auto &c = get<SPIRConstant>(spec_const.id);
 		auto type = get<SPIRType>(c.constant_type);

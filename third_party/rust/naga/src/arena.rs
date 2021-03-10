@@ -45,7 +45,7 @@ impl<T> Ord for Handle<T> {
 }
 impl<T> fmt::Debug for Handle<T> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "[{}]", self.index)
+        write!(formatter, "Handle({})", self.index)
     }
 }
 impl<T> hash::Hash for Handle<T> {
@@ -81,6 +81,7 @@ impl<T> Handle<T> {
 
 
 
+#[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 #[cfg_attr(
@@ -96,11 +97,6 @@ pub struct Arena<T> {
 impl<T> Default for Arena<T> {
     fn default() -> Self {
         Self::new()
-    }
-}
-impl<T: fmt::Debug> fmt::Debug for Arena<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_map().entries(self.iter()).finish()
     }
 }
 
@@ -122,18 +118,8 @@ impl<T> Arena<T> {
 
     
     
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = (Handle<T>, &T)> {
+    pub fn iter(&self) -> impl Iterator<Item = (Handle<T>, &T)> {
         self.data.iter().enumerate().map(|(i, v)| {
-            let position = i + 1;
-            let index = unsafe { Index::new_unchecked(position as u32) };
-            (Handle::new(index), v)
-        })
-    }
-
-    
-    
-    pub fn iter_mut(&mut self) -> impl DoubleEndedIterator<Item = (Handle<T>, &mut T)> {
-        self.data.iter_mut().enumerate().map(|(i, v)| {
             let position = i + 1;
             let index = unsafe { Index::new_unchecked(position as u32) };
             (Handle::new(index), v)

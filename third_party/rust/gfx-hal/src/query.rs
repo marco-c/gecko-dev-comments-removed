@@ -5,20 +5,37 @@
 
 
 
-use crate::{device::OutOfMemory, Backend};
+use crate::device::OutOfMemory;
+use crate::Backend;
 
 
 pub type Id = u32;
 
 
-#[derive(Clone, Debug, PartialEq, thiserror::Error)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum CreationError {
     
-    #[error(transparent)]
-    OutOfMemory(#[from] OutOfMemory),
+    OutOfMemory(OutOfMemory),
+
     
-    #[error("Unsupported type: {0:?}")]
     Unsupported(Type),
+}
+
+impl From<OutOfMemory> for CreationError {
+    fn from(error: OutOfMemory) -> Self {
+        CreationError::OutOfMemory(error)
+    }
+}
+
+impl std::fmt::Display for CreationError {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CreationError::OutOfMemory(err) => write!(fmt, "Failed to create query: {}", err),
+            CreationError::Unsupported(ty) => {
+                write!(fmt, "Failed to create query: Unsupported type: {:?}", ty)
+            }
+        }
+    }
 }
 
 

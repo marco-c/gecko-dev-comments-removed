@@ -8,13 +8,13 @@
 
 
 
+use std::{any::Any, fmt};
+
 use crate::{
     device, format, image, memory,
     queue::{QueueGroup, QueuePriority},
-    Backend, Features, PhysicalDeviceProperties,
+    Backend, Features, Hints, Limits,
 };
-
-use std::{any::Any, fmt};
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -120,8 +120,10 @@ pub trait PhysicalDevice<B: Backend>: fmt::Debug + Any + Send + Sync {
     fn features(&self) -> Features;
 
     
+    fn hints(&self) -> Hints;
+
     
-    fn properties(&self) -> PhysicalDeviceProperties;
+    fn limits(&self) -> Limits;
 
     
     fn is_valid_cache(&self, _cache: &[u8]) -> bool {

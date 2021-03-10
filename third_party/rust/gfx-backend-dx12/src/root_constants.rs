@@ -6,7 +6,7 @@
 
 
 use hal::pso;
-use std::{cmp::Ordering, ops::Range};
+use std::{borrow::Borrow, cmp::Ordering, ops::Range};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct RootConstant {
@@ -57,7 +57,8 @@ impl Ord for RootConstant {
 
 pub fn split<I>(ranges: I) -> Vec<RootConstant>
 where
-    I: IntoIterator<Item = (pso::ShaderStageFlags, Range<u32>)>,
+    I: IntoIterator,
+    I::Item: Borrow<(pso::ShaderStageFlags, Range<u32>)>,
 {
     
     
@@ -119,11 +120,13 @@ where
 
 fn into_vec<I>(ranges: I) -> Vec<RootConstant>
 where
-    I: IntoIterator<Item = (pso::ShaderStageFlags, Range<u32>)>,
+    I: IntoIterator,
+    I::Item: Borrow<(pso::ShaderStageFlags, Range<u32>)>,
 {
     ranges
         .into_iter()
-        .map(|(stages, ref range)| {
+        .map(|borrowable| {
+            let &(stages, ref range) = borrowable.borrow();
             debug_assert_eq!(range.start % 4, 0);
             debug_assert_eq!(range.end % 4, 0);
             RootConstant {
@@ -140,9 +143,8 @@ mod tests {
 
     #[test]
     fn test_single() {
-        
-        let range = Some((pso::ShaderStageFlags::VERTEX, 0..12));
-        assert_eq!(into_vec(range.clone()), split(range));
+        let range = &[(pso::ShaderStageFlags::VERTEX, 0..12)];
+        assert_eq!(into_vec(range), split(range));
     }
 
     #[test]
@@ -150,7 +152,7 @@ mod tests {
         
         
         
-        let ranges = vec![
+        let ranges = &[
             (pso::ShaderStageFlags::VERTEX, 0..12),
             (pso::ShaderStageFlags::FRAGMENT, 8..16),
         ];
@@ -177,7 +179,7 @@ mod tests {
         
         
         
-        let ranges = vec![
+        let ranges = &[
             (pso::ShaderStageFlags::VERTEX, 0..20),
             (pso::ShaderStageFlags::FRAGMENT, 8..16),
         ];
@@ -204,7 +206,7 @@ mod tests {
         
         
         
-        let ranges = vec![
+        let ranges = &[
             (pso::ShaderStageFlags::VERTEX, 0..20),
             (pso::ShaderStageFlags::FRAGMENT, 0..16),
         ];
@@ -227,7 +229,7 @@ mod tests {
         
         
         
-        let ranges = vec![
+        let ranges = &[
             (pso::ShaderStageFlags::VERTEX, 0..16),
             (pso::ShaderStageFlags::FRAGMENT, 0..16),
         ];
@@ -244,16 +246,16 @@ mod tests {
         
         
         
-        let ranges = vec![
+        let ranges = &[
             (pso::ShaderStageFlags::VERTEX, 0..12),
             (pso::ShaderStageFlags::FRAGMENT, 12..16),
         ];
-        assert_eq!(into_vec(ranges.clone()), split(ranges));
+        assert_eq!(into_vec(ranges), split(ranges));
     }
 
     #[test]
     fn test_complex() {
-        let ranges = vec![
+        let ranges = &[
             (pso::ShaderStageFlags::VERTEX, 8..40),
             (pso::ShaderStageFlags::FRAGMENT, 0..20),
             (pso::ShaderStageFlags::GEOMETRY, 24..40),

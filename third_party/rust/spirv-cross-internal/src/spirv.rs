@@ -342,7 +342,6 @@ pub struct ShaderResources {
 }
 
 #[derive(Debug, Clone)]
-#[non_exhaustive]
 pub enum Type {
     
     Unknown,
@@ -423,7 +422,6 @@ pub enum Type {
     ControlPointArray,
     AccelerationStructure,
     RayQuery,
-    Interpolant,
 }
 
 

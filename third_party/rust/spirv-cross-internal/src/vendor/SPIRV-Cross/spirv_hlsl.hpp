@@ -14,13 +14,6 @@
 
 
 
-
-
-
-
-
-
-
 #ifndef SPIRV_HLSL_HPP
 #define SPIRV_HLSL_HPP
 
@@ -131,12 +124,6 @@ public:
 		
 		
 		bool enable_16bit_types = false;
-
-		
-		
-		
-		
-		bool flatten_matrix_vertex_input_semantics = false;
 	};
 
 	explicit CompilerHLSL(std::vector<uint32_t> spirv_)
@@ -244,7 +231,6 @@ private:
 	std::string to_resource_binding(const SPIRVariable &var);
 	std::string to_resource_binding_sampler(const SPIRVariable &var);
 	std::string to_resource_register(HLSLBindingFlagBits flag, char space, uint32_t binding, uint32_t set);
-	std::string to_initializer_expression(const SPIRVariable &var) override;
 	void emit_sampled_image_op(uint32_t result_type, uint32_t result_id, uint32_t image_id, uint32_t samp_id) override;
 	void emit_access_chain(const Instruction &instruction);
 	void emit_load(const Instruction &instruction);

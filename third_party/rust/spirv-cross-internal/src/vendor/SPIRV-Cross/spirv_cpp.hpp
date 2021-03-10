@@ -14,13 +14,6 @@
 
 
 
-
-
-
-
-
-
-
 #ifndef SPIRV_CROSS_CPP_HPP
 #define SPIRV_CROSS_CPP_HPP
 

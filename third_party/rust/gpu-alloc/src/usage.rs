@@ -126,42 +126,28 @@ fn one_usage(usage: UsageFlags, memory_types: &[MemoryType]) -> MemoryForOneUsag
 fn compatible(usage: UsageFlags, flags: MemoryPropertyFlags) -> bool {
     type Flags = MemoryPropertyFlags;
     if flags.contains(Flags::LAZILY_ALLOCATED) || flags.contains(Flags::PROTECTED) {
-        
         false
     } else if usage.intersects(UsageFlags::HOST_ACCESS | UsageFlags::UPLOAD | UsageFlags::DOWNLOAD)
     {
-        
         flags.contains(Flags::HOST_VISIBLE)
     } else {
         true
     }
 }
 
-
-
 fn priority(usage: UsageFlags, flags: MemoryPropertyFlags) -> u32 {
     type Flags = MemoryPropertyFlags;
 
-    
-    
     let device_local: bool = flags.contains(Flags::DEVICE_LOCAL)
         ^ (usage.is_empty() || usage.contains(UsageFlags::FAST_DEVICE_ACCESS));
 
-    assert!(
-        flags.contains(Flags::HOST_VISIBLE)
-            || !usage
-                .intersects(UsageFlags::HOST_ACCESS | UsageFlags::UPLOAD | UsageFlags::DOWNLOAD)
-    );
+    let host_visible: bool = flags.contains(Flags::HOST_VISIBLE)
+        && !usage.intersects(UsageFlags::HOST_ACCESS | UsageFlags::UPLOAD | UsageFlags::DOWNLOAD);
 
-    
-    
     let cached: bool = flags.contains(Flags::HOST_CACHED) ^ usage.contains(UsageFlags::DOWNLOAD);
 
-    
-    
     let coherent: bool = flags.contains(Flags::HOST_COHERENT)
         ^ (usage.intersects(UsageFlags::UPLOAD | UsageFlags::DOWNLOAD));
 
-    
-    device_local as u32 * 4 + cached as u32 * 2 + coherent as u32
+    device_local as u32 * 8 + host_visible as u32 * 4 + cached as u32 * 2 + coherent as u32
 }

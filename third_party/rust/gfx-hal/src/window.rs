@@ -54,6 +54,7 @@
 
 
 
+
 use crate::{device, format::Format, image, Backend};
 
 use std::{
@@ -70,25 +71,70 @@ pub const DEFAULT_USAGE: image::Usage = image::Usage::COLOR_ATTACHMENT;
 pub const DEFAULT_IMAGE_COUNT: SwapImageIndex = 3;
 
 
-#[derive(Clone, Debug, PartialEq, thiserror::Error)]
-#[error("Surface lost")]
-pub struct SurfaceLost;
+#[derive(Clone, Debug, PartialEq)]
+pub enum CreationError {
+    
+    OutOfMemory(device::OutOfMemory),
+    
+    DeviceLost(device::DeviceLost),
+    
+    SurfaceLost(device::SurfaceLost),
+    
+    WindowInUse(device::WindowInUse),
+}
 
+impl From<device::OutOfMemory> for CreationError {
+    fn from(error: device::OutOfMemory) -> Self {
+        CreationError::OutOfMemory(error)
+    }
+}
 
-#[derive(Clone, Debug, PartialEq, thiserror::Error)]
-pub enum SwapchainError {
-    
-    #[error(transparent)]
-    OutOfMemory(#[from] device::OutOfMemory),
-    
-    #[error(transparent)]
-    DeviceLost(#[from] device::DeviceLost),
-    
-    #[error(transparent)]
-    SurfaceLost(#[from] SurfaceLost),
-    
-    #[error("Window is in use")]
-    WindowInUse,
+impl From<device::DeviceLost> for CreationError {
+    fn from(error: device::DeviceLost) -> Self {
+        CreationError::DeviceLost(error)
+    }
+}
+
+impl From<device::SurfaceLost> for CreationError {
+    fn from(error: device::SurfaceLost) -> Self {
+        CreationError::SurfaceLost(error)
+    }
+}
+
+impl From<device::WindowInUse> for CreationError {
+    fn from(error: device::WindowInUse) -> Self {
+        CreationError::WindowInUse(error)
+    }
+}
+
+impl std::fmt::Display for CreationError {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CreationError::OutOfMemory(err) => {
+                write!(fmt, "Failed to create or configure swapchain: {}", err)
+            }
+            CreationError::DeviceLost(err) => {
+                write!(fmt, "Failed to create or configure swapchain: {}", err)
+            }
+            CreationError::SurfaceLost(err) => {
+                write!(fmt, "Failed to create or configure swapchain: {}", err)
+            }
+            CreationError::WindowInUse(err) => {
+                write!(fmt, "Failed to create or configure swapchain: {}", err)
+            }
+        }
+    }
+}
+
+impl std::error::Error for CreationError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            CreationError::OutOfMemory(err) => Some(err),
+            CreationError::DeviceLost(err) => Some(err),
+            CreationError::SurfaceLost(err) => Some(err),
+            CreationError::WindowInUse(err) => Some(err),
+        }
+    }
 }
 
 
@@ -213,7 +259,7 @@ pub trait PresentationSurface<B: Backend>: Surface<B> {
         &mut self,
         device: &B::Device,
         config: SwapchainConfig,
-    ) -> Result<(), SwapchainError>;
+    ) -> Result<(), CreationError>;
 
     
     
@@ -338,15 +384,6 @@ impl SwapchainConfig {
     }
 
     
-    pub fn framebuffer_attachment(&self) -> image::FramebufferAttachment {
-        image::FramebufferAttachment {
-            usage: self.image_usage,
-            view_caps: image::ViewCapabilities::empty(),
-            format: self.format,
-        }
-    }
-
-    
     
     
     
@@ -419,54 +456,108 @@ impl SwapchainConfig {
 pub struct Suboptimal;
 
 
-#[derive(Clone, Debug, PartialEq, thiserror::Error)]
-#[error("Swapchain is out of date and needs to be re-created")]
-pub struct OutOfDate;
-
-
-#[derive(Clone, Debug, PartialEq, thiserror::Error)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum AcquireError {
     
-    #[error(transparent)]
-    OutOfMemory(#[from] device::OutOfMemory),
+    OutOfMemory(device::OutOfMemory),
     
-    #[error("No image ready (timeout: {timeout:})")]
-    NotReady {
-        
-        timeout: bool,
-    },
+    NotReady,
     
-    #[error(transparent)]
-    OutOfDate(#[from] OutOfDate),
+    Timeout,
     
-    #[error(transparent)]
-    SurfaceLost(#[from] SurfaceLost),
+    OutOfDate,
     
-    #[error(transparent)]
-    DeviceLost(#[from] device::DeviceLost),
+    SurfaceLost(device::SurfaceLost),
+    
+    DeviceLost(device::DeviceLost),
+}
+
+impl std::fmt::Display for AcquireError {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AcquireError::OutOfMemory(err) => write!(fmt, "Failed to acqure image: {}", err),
+            AcquireError::NotReady => write!(
+                fmt,
+                "Failed to acqure image: No image ready (timeout wasn't specified)"
+            ),
+            AcquireError::Timeout => {
+                write!(fmt, "Failed to acqure image: No image ready (timeout)")
+            }
+            AcquireError::OutOfDate => write!(
+                fmt,
+                "Failed to acqure image: Swapchain is out of date and needs to be re-created"
+            ),
+            AcquireError::SurfaceLost(err) => write!(fmt, "Failed to acqure image: {}", err),
+            AcquireError::DeviceLost(err) => write!(fmt, "Failed to acqure image: {}", err),
+        }
+    }
+}
+
+impl std::error::Error for AcquireError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            AcquireError::OutOfMemory(err) => Some(err),
+            AcquireError::SurfaceLost(err) => Some(err),
+            AcquireError::DeviceLost(err) => Some(err),
+            _ => None,
+        }
+    }
 }
 
 
-#[derive(Clone, Debug, PartialEq, thiserror::Error)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum PresentError {
     
-    #[error(transparent)]
-    OutOfMemory(#[from] device::OutOfMemory),
+    OutOfMemory(device::OutOfMemory),
     
-    #[error(transparent)]
-    OutOfDate(#[from] OutOfDate),
+    OutOfDate,
     
-    #[error(transparent)]
-    SurfaceLost(#[from] SurfaceLost),
+    SurfaceLost(device::SurfaceLost),
     
-    #[error(transparent)]
-    DeviceLost(#[from] device::DeviceLost),
+    DeviceLost(device::DeviceLost),
+}
+
+impl std::fmt::Display for PresentError {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PresentError::OutOfMemory(err) => write!(fmt, "Failed to present image: {}", err),
+            PresentError::OutOfDate => write!(
+                fmt,
+                "Failed to present image: Swapchain is out of date and needs to be re-created"
+            ),
+            PresentError::SurfaceLost(err) => write!(fmt, "Failed to present image: {}", err),
+            PresentError::DeviceLost(err) => write!(fmt, "Failed to present image: {}", err),
+        }
+    }
+}
+
+impl std::error::Error for PresentError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            PresentError::OutOfMemory(err) => Some(err),
+            PresentError::SurfaceLost(err) => Some(err),
+            PresentError::DeviceLost(err) => Some(err),
+            _ => None,
+        }
+    }
 }
 
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, thiserror::Error)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum InitError {
     
-    #[error("Specified window handle is unsupported")]
     UnsupportedWindowHandle,
 }
+
+impl std::fmt::Display for InitError {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InitError::UnsupportedWindowHandle => write!(
+                fmt,
+                "Failed to create surface: Specified window handle is unsupported"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for InitError {}

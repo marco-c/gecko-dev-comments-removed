@@ -4,12 +4,6 @@
 
 
 
-#![warn(
-    trivial_casts,
-    trivial_numeric_casts,
-    unused_extern_crates,
-    unused_qualifications
-)]
 #![allow(
     clippy::new_without_default,
     clippy::unneeded_field_pattern,
@@ -41,6 +35,21 @@ use serde::Serialize;
 pub type FastHashMap<K, T> = HashMap<K, T, BuildHasherDefault<fxhash::FxHasher>>;
 
 pub type FastHashSet<K> = HashSet<K, BuildHasherDefault<fxhash::FxHasher>>;
+
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+pub struct Header {
+    
+    
+    
+    pub version: (u8, u8, u8),
+    
+    
+    
+    pub generator: u32,
+}
 
 
 
@@ -131,22 +140,19 @@ pub enum BuiltIn {
     BaseVertex,
     ClipDistance,
     InstanceIndex,
-    PointSize,
     Position,
     VertexIndex,
     
+    PointSize,
     FragCoord,
-    FragDepth,
     FrontFacing,
     SampleIndex,
-    SampleMaskIn,
-    SampleMaskOut,
+    FragDepth,
     
     GlobalInvocationId,
     LocalInvocationId,
     LocalInvocationIndex,
     WorkGroupId,
-    WorkGroupSize,
 }
 
 
@@ -198,6 +204,19 @@ pub enum ArraySize {
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
+pub enum MemberOrigin {
+    
+    Empty,
+    
+    BuiltIn(BuiltIn),
+    
+    Offset(u32),
+}
+
+
+#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum Interpolation {
     
     
@@ -225,7 +244,7 @@ pub enum Interpolation {
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct StructMember {
     pub name: Option<String>,
-    pub span: Option<NonZeroU32>,
+    pub origin: MemberOrigin,
     pub ty: Handle<Type>,
 }
 
@@ -248,7 +267,6 @@ bitflags::bitflags! {
     /// Flags describing an image.
     #[cfg_attr(feature = "serialize", derive(Serialize))]
     #[cfg_attr(feature = "deserialize", derive(Deserialize))]
-    #[derive(Default)]
     pub struct StorageAccess: u32 {
         /// Storage can be used as a source for load ops.
         const LOAD = 0x1;
@@ -367,10 +385,7 @@ pub enum TypeInner {
         stride: Option<NonZeroU32>,
     },
     
-    Struct {
-        block: bool,
-        members: Vec<StructMember>,
-    },
+    Struct { members: Vec<StructMember> },
     
     Image {
         dim: ImageDimension,
@@ -389,32 +404,19 @@ pub struct Constant {
     pub name: Option<String>,
     pub specialization: Option<u32>,
     pub inner: ConstantInner,
+    pub ty: Handle<Type>,
 }
 
 
-#[derive(Debug, PartialEq, Clone, PartialOrd)]
+#[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
-pub enum ScalarValue {
+pub enum ConstantInner {
     Sint(i64),
     Uint(u64),
     Float(f64),
     Bool(bool),
-}
-
-
-#[derive(Debug, PartialEq, Clone)]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[cfg_attr(feature = "deserialize", derive(Deserialize))]
-pub enum ConstantInner {
-    Scalar {
-        width: Bytes,
-        value: ScalarValue,
-    },
-    Composite {
-        ty: Handle<Type>,
-        components: Vec<Handle<Constant>>,
-    },
+    Composite(Vec<Handle<Constant>>),
 }
 
 
@@ -428,6 +430,18 @@ pub enum Binding {
     Location(u32),
     
     Resource { group: u32, binding: u32 },
+}
+
+bitflags::bitflags! {
+    /// Indicates how a global variable is used.
+    #[cfg_attr(feature = "serialize", derive(Serialize))]
+    #[cfg_attr(feature = "deserialize", derive(Deserialize))]
+    pub struct GlobalUse: u8 {
+        /// Data will be read from the variable.
+        const LOAD = 0x1;
+        /// Data will be written to the variable.
+        const STORE = 0x2;
+    }
 }
 
 
@@ -506,19 +520,9 @@ pub enum BinaryOperator {
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
-pub enum DerivativeAxis {
-    X,
-    Y,
-    Width,
-}
-
-
-#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[cfg_attr(feature = "deserialize", derive(Deserialize))]
-pub enum RelationalFunction {
-    All,
+pub enum IntrinsicFunction {
     Any,
+    All,
     IsNan,
     IsInf,
     IsFinite,
@@ -529,61 +533,23 @@ pub enum RelationalFunction {
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
-pub enum MathFunction {
+pub enum DerivativeAxis {
+    X,
+    Y,
+    Width,
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+pub enum FunctionOrigin {
+    Local(Handle<Function>),
     
-    Abs,
-    Min,
-    Max,
-    Clamp,
     
-    Cos,
-    Cosh,
-    Sin,
-    Sinh,
-    Tan,
-    Tanh,
-    Acos,
-    Asin,
-    Atan,
-    Atan2,
     
-    Ceil,
-    Floor,
-    Round,
-    Fract,
-    Trunc,
-    Modf,
-    Frexp,
-    Ldexp,
     
-    Exp,
-    Exp2,
-    Log,
-    Log2,
-    Pow,
-    
-    Dot,
-    Outer,
-    Cross,
-    Distance,
-    Length,
-    Normalize,
-    FaceForward,
-    Reflect,
-    
-    Sign,
-    Fma,
-    Mix,
-    Step,
-    SmoothStep,
-    Sqrt,
-    InverseSqrt,
-    Inverse,
-    Transpose,
-    Determinant,
-    
-    CountOneBits,
-    ReverseBits,
+    External(String),
 }
 
 
@@ -595,35 +561,10 @@ pub enum SampleLevel {
     Zero,
     Exact(Handle<Expression>),
     Bias(Handle<Expression>),
-    Gradient {
-        x: Handle<Expression>,
-        y: Handle<Expression>,
-    },
 }
-
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[cfg_attr(feature = "deserialize", derive(Deserialize))]
-pub enum ImageQuery {
-    
-    Size {
-        
-        level: Option<Handle<Expression>>,
-    },
-    
-    NumLevels,
-    
-    NumLayers,
-    
-    NumSamples,
-}
-
-
 
 
 #[derive(Clone, Debug)]
-#[cfg_attr(test, derive(PartialEq))]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum Expression {
@@ -657,8 +598,6 @@ pub enum Expression {
         image: Handle<Expression>,
         sampler: Handle<Expression>,
         coordinate: Handle<Expression>,
-        array_index: Option<Handle<Expression>>,
-        offset: Option<Handle<Constant>>,
         level: SampleLevel,
         depth_ref: Option<Handle<Expression>>,
     },
@@ -666,16 +605,10 @@ pub enum Expression {
     ImageLoad {
         image: Handle<Expression>,
         coordinate: Handle<Expression>,
-        array_index: Option<Handle<Expression>>,
         
         
         
         index: Option<Handle<Expression>>,
-    },
-    
-    ImageQuery {
-        image: Handle<Expression>,
-        query: ImageQuery,
     },
     
     Unary {
@@ -696,23 +629,16 @@ pub enum Expression {
         reject: Handle<Expression>,
     },
     
-    Derivative {
-        axis: DerivativeAxis,
-        
-        expr: Handle<Expression>,
-    },
-    
-    Relational {
-        fun: RelationalFunction,
+    Intrinsic {
+        fun: IntrinsicFunction,
         argument: Handle<Expression>,
     },
     
-    Math {
-        fun: MathFunction,
-        arg: Handle<Expression>,
-        arg1: Option<Handle<Expression>>,
-        arg2: Option<Handle<Expression>>,
-    },
+    Transpose(Handle<Expression>),
+    
+    DotProduct(Handle<Expression>, Handle<Expression>),
+    
+    CrossProduct(Handle<Expression>, Handle<Expression>),
     
     As {
         
@@ -723,8 +649,14 @@ pub enum Expression {
         convert: bool,
     },
     
+    Derivative {
+        axis: DerivativeAxis,
+        
+        expr: Handle<Expression>,
+    },
+    
     Call {
-        function: Handle<Function>,
+        origin: FunctionOrigin,
         arguments: Vec<Handle<Expression>>,
     },
     
@@ -736,18 +668,10 @@ pub type Block = Vec<Statement>;
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
-pub struct SwitchCase {
-    
-    pub value: i32,
-    
-    pub body: Block,
-    
-    
-    pub fall_through: bool,
-}
+pub struct FallThrough;
 
 
 
@@ -766,7 +690,7 @@ pub enum Statement {
     
     Switch {
         selector: Handle<Expression>, 
-        cases: Vec<SwitchCase>,
+        cases: FastHashMap<i32, (Block, Option<FallThrough>)>,
         default: Block,
     },
     
@@ -785,18 +709,6 @@ pub enum Statement {
         pointer: Handle<Expression>,
         value: Handle<Expression>,
     },
-    
-    ImageStore {
-        image: Handle<Expression>,
-        coordinate: Handle<Expression>,
-        array_index: Option<Handle<Expression>>,
-        value: Handle<Expression>,
-    },
-    
-    Call {
-        function: Handle<Function>,
-        arguments: Vec<Handle<Expression>>,
-    },
 }
 
 
@@ -811,7 +723,7 @@ pub struct FunctionArgument {
 }
 
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct Function {
@@ -821,6 +733,10 @@ pub struct Function {
     pub arguments: Vec<FunctionArgument>,
     
     pub return_type: Option<Handle<Type>>,
+    
+    
+    
+    pub global_usage: Vec<GlobalUse>,
     
     pub local_variables: Arena<LocalVariable>,
     
@@ -853,10 +769,12 @@ pub struct EntryPoint {
 
 
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct Module {
+    
+    pub header: Header,
     
     pub types: Arena<Type>,
     

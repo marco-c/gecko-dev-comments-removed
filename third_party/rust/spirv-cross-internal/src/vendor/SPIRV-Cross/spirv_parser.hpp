@@ -14,13 +14,6 @@
 
 
 
-
-
-
-
-
-
-
 #ifndef SPIRV_CROSS_PARSER_HPP
 #define SPIRV_CROSS_PARSER_HPP
 

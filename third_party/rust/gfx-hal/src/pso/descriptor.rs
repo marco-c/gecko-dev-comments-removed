@@ -16,11 +16,11 @@
 
 
 
+use std::{borrow::Borrow, fmt, iter};
+
 use crate::{
     buffer::SubRange, device::OutOfMemory, image::Layout, pso::ShaderStageFlags, Backend, PseudoVec,
 };
-
-use std::{fmt, iter};
 
 
 pub type DescriptorSetIndex = u16;
@@ -137,24 +137,46 @@ pub struct DescriptorRangeDesc {
 }
 
 
-#[derive(Clone, Debug, PartialEq, thiserror::Error)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum AllocationError {
     
     
     
-    #[error(transparent)]
-    OutOfMemory(#[from] OutOfMemory),
+    OutOfMemory(OutOfMemory),
     
     
-    #[error("Out of pool memory")]
     OutOfPoolMemory,
     
-    #[error("Pool is fragmented")]
     FragmentedPool,
     
-    #[error("Incompatible layout")]
     IncompatibleLayout,
 }
+
+impl std::fmt::Display for AllocationError {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AllocationError::OutOfMemory(OutOfMemory::Host) => {
+                write!(fmt, "Failed to allocate descriptor set: Out of host memory")
+            }
+            AllocationError::OutOfMemory(OutOfMemory::Device) => write!(
+                fmt,
+                "Failed to allocate descriptor set: Out of device memory"
+            ),
+            AllocationError::OutOfPoolMemory => {
+                write!(fmt, "Failed to allocate descriptor set: Out of pool memory")
+            }
+            AllocationError::FragmentedPool => {
+                write!(fmt, "Failed to allocate descriptor set: Pool is fragmented")
+            }
+            AllocationError::IncompatibleLayout => write!(
+                fmt,
+                "Failed to allocate descriptor set: Incompatible layout"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for AllocationError {}
 
 
 pub trait DescriptorPool<B: Backend>: Send + Sync + fmt::Debug {
@@ -169,7 +191,7 @@ pub trait DescriptorPool<B: Backend>: Send + Sync + fmt::Debug {
     
     
     
-    unsafe fn allocate_one(
+    unsafe fn allocate_set(
         &mut self,
         layout: &B::DescriptorSetLayout,
     ) -> Result<B::DescriptorSet, AllocationError> {
@@ -190,13 +212,14 @@ pub trait DescriptorPool<B: Backend>: Send + Sync + fmt::Debug {
     
     
     
-    unsafe fn allocate<'a, I, E>(&mut self, layouts: I, list: &mut E) -> Result<(), AllocationError>
+    unsafe fn allocate<I, E>(&mut self, layouts: I, list: &mut E) -> Result<(), AllocationError>
     where
-        I: Iterator<Item = &'a B::DescriptorSetLayout>,
+        I: IntoIterator,
+        I::Item: Borrow<B::DescriptorSetLayout>,
         E: Extend<B::DescriptorSet>,
     {
         for layout in layouts {
-            let set = self.allocate_one(layout)?;
+            let set = self.allocate_set(layout.borrow())?;
             list.extend(iter::once(set));
         }
         Ok(())
@@ -205,7 +228,7 @@ pub trait DescriptorPool<B: Backend>: Send + Sync + fmt::Debug {
     
     unsafe fn free<I>(&mut self, descriptor_sets: I)
     where
-        I: Iterator<Item = B::DescriptorSet>;
+        I: IntoIterator<Item = B::DescriptorSet>;
 
     
     
@@ -218,12 +241,13 @@ pub trait DescriptorPool<B: Backend>: Send + Sync + fmt::Debug {
 
 
 #[derive(Debug)]
-pub struct DescriptorSetWrite<'a, B: Backend, I>
+pub struct DescriptorSetWrite<'a, B: Backend, WI>
 where
-    I: Iterator<Item = Descriptor<'a, B>>,
+    WI: IntoIterator,
+    WI::Item: Borrow<Descriptor<'a, B>>,
 {
     
-    pub set: &'a mut B::DescriptorSet,
+    pub set: &'a B::DescriptorSet,
     
     
     
@@ -234,7 +258,7 @@ where
     
     pub array_offset: DescriptorArrayIndex,
     
-    pub descriptors: I,
+    pub descriptors: WI,
 }
 
 
@@ -254,7 +278,7 @@ pub enum Descriptor<'a, B: Backend> {
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct DescriptorSetCopy<'a, B: Backend> {
     
     pub src_set: &'a B::DescriptorSet,
@@ -268,7 +292,7 @@ pub struct DescriptorSetCopy<'a, B: Backend> {
     
     pub src_array_offset: DescriptorArrayIndex,
     
-    pub dst_set: &'a mut B::DescriptorSet,
+    pub dst_set: &'a B::DescriptorSet,
     
     
     

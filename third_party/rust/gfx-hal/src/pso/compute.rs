@@ -9,8 +9,6 @@ use crate::{
 #[derive(Debug)]
 pub struct ComputePipelineDesc<'a, B: Backend> {
     
-    pub label: Option<&'a str>,
-    
     pub shader: EntryPoint<'a, B>,
     
     pub layout: &'a B::PipelineLayout,
@@ -24,7 +22,6 @@ impl<'a, B: Backend> ComputePipelineDesc<'a, B> {
     
     pub fn new(shader: EntryPoint<'a, B>, layout: &'a B::PipelineLayout) -> Self {
         ComputePipelineDesc {
-            label: None,
             shader,
             layout,
             flags: PipelineCreationFlags::empty(),

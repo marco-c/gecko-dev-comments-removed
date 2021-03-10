@@ -14,13 +14,6 @@
 
 
 
-
-
-
-
-
-
-
 #include "spirv_parser.hpp"
 #include <assert.h>
 
@@ -630,15 +623,10 @@ void Parser::parse(const Instruction &instruction)
 	{
 		uint32_t id = ops[0];
 
-		
-		
-		
-		auto *base = maybe_get<SPIRType>(ops[2]);
+		auto &base = get<SPIRType>(ops[2]);
 		auto &ptrbase = set<SPIRType>(id);
 
-		if (base)
-			ptrbase = *base;
-
+		ptrbase = base;
 		ptrbase.pointer = true;
 		ptrbase.pointer_depth++;
 		ptrbase.storage = static_cast<StorageClass>(ops[1]);
@@ -646,7 +634,7 @@ void Parser::parse(const Instruction &instruction)
 		if (ptrbase.storage == StorageClassAtomicCounter)
 			ptrbase.basetype = SPIRType::AtomicCounter;
 
-		if (base && base->forward_pointer)
+		if (base.forward_pointer)
 			forward_pointer_fixups.push_back({ id, ops[2] });
 
 		ptrbase.parent_type = ops[2];
@@ -727,7 +715,7 @@ void Parser::parse(const Instruction &instruction)
 		break;
 	}
 
-	case OpTypeRayQueryKHR:
+	case OpTypeRayQueryProvisionalKHR:
 	{
 		uint32_t id = ops[0];
 		auto &type = set<SPIRType>(id);
@@ -991,22 +979,6 @@ void Parser::parse(const Instruction &instruction)
 		current_block = nullptr;
 		break;
 	}
-
-	case OpTerminateRayKHR:
-		
-		if (!current_block)
-			SPIRV_CROSS_THROW("Trying to end a non-existing block.");
-		current_block->terminator = SPIRBlock::TerminateRay;
-		current_block = nullptr;
-		break;
-
-	case OpIgnoreIntersectionKHR:
-		
-		if (!current_block)
-			SPIRV_CROSS_THROW("Trying to end a non-existing block.");
-		current_block->terminator = SPIRBlock::IgnoreIntersection;
-		current_block = nullptr;
-		break;
 
 	case OpReturn:
 	{

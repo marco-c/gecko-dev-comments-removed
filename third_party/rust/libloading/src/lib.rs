@@ -33,17 +33,10 @@
 
 
 
-#![deny(
-    missing_docs,
-    clippy::all,
-    unreachable_pub,
-    unused,
-)]
-#![cfg_attr(docsrs, deny(broken_intra_doc_links))]
-#![cfg_attr(docsrs, feature(doc_cfg))]
 
-use std::env::consts::{DLL_PREFIX, DLL_SUFFIX};
-use std::ffi::{OsStr, OsString};
+
+
+use std::ffi::OsStr;
 use std::fmt;
 use std::ops;
 use std::marker;
@@ -121,17 +114,10 @@ impl Library {
     
     
     
-    
-    
-    
-    
-    pub unsafe fn new<P: AsRef<OsStr>>(filename: P) -> Result<Library, Error> {
+    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<Library, Error> {
         imp::Library::new(filename).map(From::from)
     }
 
-    
-    
-    
     
     
     
@@ -200,8 +186,6 @@ impl Library {
     
     
     
-    
-    
     pub fn close(self) -> Result<(), Error> {
         self.0.close()
     }
@@ -237,13 +221,15 @@ unsafe impl Sync for Library {}
 
 
 
+
+
+
 pub struct Symbol<'lib, T: 'lib> {
     inner: imp::Symbol<T>,
     pd: marker::PhantomData<&'lib T>
 }
 
 impl<'lib, T> Symbol<'lib, T> {
-    
     
     
     
@@ -285,8 +271,8 @@ impl<'lib, T> Symbol<'lib, T> {
     
     
     
-    pub unsafe fn from_raw<L>(sym: imp::Symbol<T>, library: &'lib L) -> Symbol<'lib, T> {
-        let _ = library; 
+    
+    pub unsafe fn from_raw<L>(sym: imp::Symbol<T>, _: &'lib L) -> Symbol<'lib, T> {
         Symbol {
             inner: sym,
             pd: marker::PhantomData
@@ -340,29 +326,3 @@ impl<'lib, T> fmt::Debug for Symbol<'lib, T> {
 
 unsafe impl<'lib, T: Send> Send for Symbol<'lib, T> {}
 unsafe impl<'lib, T: Sync> Sync for Symbol<'lib, T> {}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn library_filename<S: AsRef<OsStr>>(name: S) -> OsString {
-    let name = name.as_ref();
-    let mut string = OsString::with_capacity(name.len() + DLL_PREFIX.len() + DLL_SUFFIX.len());
-    string.push(DLL_PREFIX);
-    string.push(name);
-    string.push(DLL_SUFFIX);
-    string
-}

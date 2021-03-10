@@ -145,112 +145,6 @@ impl ComputePipelineDescriptorRef {
         }
     }
 
-    
-    pub fn max_total_threads_per_threadgroup(&self) -> NSUInteger {
-        unsafe { msg_send![self, maxTotalThreadsPerThreadgroup] }
-    }
-
-    
-    pub fn set_max_total_threads_per_threadgroup(&self, max_total_threads: NSUInteger) {
-        unsafe { msg_send![self, setMaxTotalThreadsPerThreadgroup: max_total_threads] }
-    }
-
-    
-    pub fn support_indirect_command_buffers(&self) -> bool {
-        unsafe {
-            match msg_send![self, supportIndirectCommandBuffers] {
-                YES => true,
-                NO => false,
-                _ => unreachable!(),
-            }
-        }
-    }
-
-    
-    pub fn set_support_indirect_command_buffers(&self, support: bool) {
-        unsafe { msg_send![self, setSupportIndirectCommandBuffers: support] }
-    }
-
-    
-    pub fn support_adding_binary_functions(&self) -> bool {
-        unsafe {
-            match msg_send![self, supportAddingBinaryFunctions] {
-                YES => true,
-                NO => false,
-                _ => unreachable!(),
-            }
-        }
-    }
-
-    
-    pub fn set_support_adding_binary_functions(&self, support: bool) {
-        unsafe { msg_send![self, setSupportAddingBinaryFunctions: support] }
-    }
-
-    
-    pub fn max_call_stack_depth(&self) -> NSUInteger {
-        unsafe { msg_send![self, maxCallStackDepth] }
-    }
-
-    
-    pub fn set_max_call_stack_depth(&self, depth: NSUInteger) {
-        unsafe { msg_send![self, setMaxCallStackDepth: depth] }
-    }
-
-    
-    
-    pub fn insert_libraries(&self) -> Vec<DynamicLibrary> {
-        unsafe {
-            let libraries: *mut Object = msg_send![self, insertLibraries];
-            let count: NSUInteger = msg_send![libraries, count];
-            let ret = (0..count)
-                .map(|i| {
-                    let lib = msg_send![libraries, objectAtIndex: i];
-                    DynamicLibrary::from_ptr(lib)
-                })
-                .collect();
-            ret
-        }
-    }
-
-    
-    pub fn set_insert_libraries(&self, libraries: &[&DynamicLibraryRef]) {
-        let ns_array = Array::<DynamicLibrary>::from_slice(libraries);
-        unsafe { msg_send![self, setInsertLibraries: ns_array] }
-    }
-
-    
-    
-    pub fn binary_archives(&self) -> Vec<BinaryArchive> {
-        unsafe {
-            let archives: *mut Object = msg_send![self, binaryArchives];
-            let count: NSUInteger = msg_send![archives, count];
-            let ret = (0..count)
-                .map(|i| {
-                    let a = msg_send![archives, objectAtIndex: i];
-                    BinaryArchive::from_ptr(a)
-                })
-                .collect();
-            ret
-        }
-    }
-
-    
-    pub fn set_binary_archives(&self, archives: &[&BinaryArchiveRef]) {
-        let ns_array = Array::<BinaryArchive>::from_slice(archives);
-        unsafe { msg_send![self, setBinaryArchives: ns_array] }
-    }
-
-    
-    pub fn linked_functions(&self) -> &LinkedFunctionsRef {
-        unsafe { msg_send![self, linkedFunctions] }
-    }
-
-    
-    pub fn set_linked_functions(&self, functions: &LinkedFunctionsRef) {
-        unsafe { msg_send![self, setLinkedFunctions: functions] }
-    }
-
     pub fn stage_input_descriptor(&self) -> Option<&StageInputOutputDescriptorRef> {
         unsafe { msg_send![self, stageInputDescriptor] }
     }
@@ -284,7 +178,14 @@ impl ComputePipelineStateRef {
         }
     }
 
-    pub fn max_total_threads_per_threadgroup(&self) -> NSUInteger {
+    pub fn set_label(&self, label: &str) {
+        unsafe {
+            let nslabel = crate::nsstring_from_str(label);
+            let () = msg_send![self, setLabel: nslabel];
+        }
+    }
+
+    pub fn max_total_threads_per_group(&self) -> NSUInteger {
         unsafe { msg_send![self, maxTotalThreadsPerThreadgroup] }
     }
 
@@ -295,41 +196,6 @@ impl ComputePipelineStateRef {
     pub fn static_threadgroup_memory_length(&self) -> NSUInteger {
         unsafe { msg_send![self, staticThreadgroupMemoryLength] }
     }
-
-    
-    pub fn imageblock_memory_length_for_dimensions(&self, dimensions: MTLSize) -> NSUInteger {
-        unsafe { msg_send![self, imageblockMemoryLengthForDimensions: dimensions] }
-    }
-
-    
-    pub fn support_indirect_command_buffers(&self) -> bool {
-        unsafe {
-            match msg_send![self, supportIndirectCommandBuffers] {
-                YES => true,
-                NO => false,
-                _ => unreachable!(),
-            }
-        }
-    }
-
-    
-    pub fn function_handle_with_function(
-        &self,
-        function: &FunctionRef,
-    ) -> Option<&FunctionHandleRef> {
-        unsafe { msg_send![self, functionHandleWithFunction: function] }
-    }
-
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
 }
 
 pub enum MTLStageInputOutputDescriptor {}

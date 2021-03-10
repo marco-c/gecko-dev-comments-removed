@@ -14,7 +14,7 @@ use crate::{
     window::{PresentError, PresentationSurface, Suboptimal},
     Backend,
 };
-use std::{any::Any, fmt};
+use std::{any::Any, borrow::Borrow, fmt, iter};
 
 pub use self::family::{QueueFamily, QueueFamilyId, QueueGroup};
 
@@ -60,11 +60,24 @@ pub type QueuePriority = f32;
 
 
 
+#[derive(Debug)]
+pub struct Submission<Ic, Iw, Is> {
+    
+    pub command_buffers: Ic,
+    
+    pub wait_semaphores: Iw,
+    
+    pub signal_semaphores: Is,
+}
 
 
 
 
-pub trait Queue<B: Backend>: fmt::Debug + Any + Send + Sync {
+
+
+
+
+pub trait CommandQueue<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
     
@@ -80,18 +93,33 @@ pub trait Queue<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
     
+    unsafe fn submit<'a, T, Ic, S, Iw, Is>(
+        &mut self,
+        submission: Submission<Ic, Iw, Is>,
+        fence: Option<&B::Fence>,
+    ) where
+        T: 'a + Borrow<B::CommandBuffer>,
+        Ic: IntoIterator<Item = &'a T>,
+        S: 'a + Borrow<B::Semaphore>,
+        Iw: IntoIterator<Item = (&'a S, pso::PipelineStage)>,
+        Is: IntoIterator<Item = &'a S>;
+
     
-    
-    unsafe fn submit<'a, Ic, Iw, Is>(
+    unsafe fn submit_without_semaphores<'a, T, Ic>(
         &mut self,
         command_buffers: Ic,
-        wait_semaphores: Iw,
-        signal_semaphores: Is,
-        fence: Option<&mut B::Fence>,
+        fence: Option<&B::Fence>,
     ) where
-        Ic: Iterator<Item = &'a B::CommandBuffer>,
-        Iw: Iterator<Item = (&'a B::Semaphore, pso::PipelineStage)>,
-        Is: Iterator<Item = &'a B::Semaphore>;
+        T: 'a + Borrow<B::CommandBuffer>,
+        Ic: IntoIterator<Item = &'a T>,
+    {
+        let submission = Submission {
+            command_buffers,
+            wait_semaphores: iter::empty(),
+            signal_semaphores: iter::empty(),
+        };
+        self.submit::<_, _, B::Semaphore, _, _>(submission, fence)
+    }
 
     
     
@@ -103,12 +131,9 @@ pub trait Queue<B: Backend>: fmt::Debug + Any + Send + Sync {
         &mut self,
         surface: &mut B::Surface,
         image: <B::Surface as PresentationSurface<B>>::SwapchainImage,
-        wait_semaphore: Option<&mut B::Semaphore>,
+        wait_semaphore: Option<&B::Semaphore>,
     ) -> Result<Option<Suboptimal>, PresentError>;
 
     
-    fn wait_idle(&mut self) -> Result<(), OutOfMemory>;
-
-    
-    fn timestamp_period(&self) -> f32;
+    fn wait_idle(&self) -> Result<(), OutOfMemory>;
 }

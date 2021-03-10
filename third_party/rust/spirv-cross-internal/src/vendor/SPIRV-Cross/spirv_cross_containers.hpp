@@ -14,13 +14,6 @@
 
 
 
-
-
-
-
-
-
-
 #ifndef SPIRV_CROSS_CONTAINERS_HPP
 #define SPIRV_CROSS_CONTAINERS_HPP
 
@@ -217,10 +210,6 @@ public:
 		for (size_t i = 0; i < count; i++, arg_list_begin++)
 			new (&this->ptr[i]) T(*arg_list_begin);
 		this->buffer_size = count;
-	}
-
-	SmallVector(std::initializer_list<T> init) SPIRV_CROSS_NOEXCEPT : SmallVector(init.begin(), init.end())
-	{
 	}
 
 	SmallVector(SmallVector &&other) SPIRV_CROSS_NOEXCEPT : SmallVector()

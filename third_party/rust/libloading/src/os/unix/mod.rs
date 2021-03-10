@@ -1,21 +1,9 @@
-
-
-#[cfg(all(docsrs, not(unix)))]
-mod unix_imports {
-}
-#[cfg(any(not(docsrs), unix))]
-mod unix_imports {
-    pub(super) use std::os::unix::ffi::OsStrExt;
-}
-
-use self::unix_imports::*;
 use util::{ensure_compatible_types, cstr_cow_from_bytes};
+
 use std::ffi::{CStr, OsStr};
 use std::{fmt, marker, mem, ptr};
 use std::os::raw;
-pub use self::consts::*;
-
-mod consts;
+use std::os::unix::ffi::OsStrExt;
 
 
 
@@ -103,35 +91,11 @@ impl Library {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[inline]
-    pub unsafe fn new<P: AsRef<OsStr>>(filename: P) -> Result<Library, crate::Error> {
-        Library::open(Some(filename), RTLD_LAZY | RTLD_LOCAL)
+    pub fn new<P: AsRef<OsStr>>(filename: P) -> Result<Library, crate::Error> {
+        Library::open(Some(filename), RTLD_NOW)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -140,11 +104,7 @@ impl Library {
     
     #[inline]
     pub fn this() -> Library {
-        unsafe {
-            
-            
-            Library::open(None::<&OsStr>, RTLD_LAZY | RTLD_LOCAL).expect("this should never fail")
-        }
+        Library::open(None::<&OsStr>, RTLD_NOW).expect("this should never fail")
     }
 
     
@@ -155,28 +115,22 @@ impl Library {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub unsafe fn open<P>(filename: Option<P>, flags: raw::c_int) -> Result<Library, crate::Error>
+    pub fn open<P>(filename: Option<P>, flags: raw::c_int) -> Result<Library, crate::Error>
     where P: AsRef<OsStr> {
         let filename = match filename {
             None => None,
             Some(ref f) => Some(cstr_cow_from_bytes(f.as_ref().as_bytes())?),
         };
         with_dlerror(|desc| crate::Error::DlOpen { desc }, move || {
-            let result = dlopen(match filename {
-                None => ptr::null(),
-                Some(ref f) => f.as_ptr()
-            }, flags);
-            
-            drop(filename);
+            let result = unsafe {
+                let r = dlopen(match filename {
+                    None => ptr::null(),
+                    Some(ref f) => f.as_ptr()
+                }, flags);
+                
+                drop(filename);
+                r
+            };
             if result.is_null() {
                 None
             } else {
@@ -240,29 +194,20 @@ impl Library {
     
     
     
+    
+    
+    
     #[inline(always)]
     pub unsafe fn get<T>(&self, symbol: &[u8]) -> Result<Symbol<T>, crate::Error> {
-        extern crate cfg_if;
-        cfg_if::cfg_if! {
-            // These targets are known to have MT-safe `dlerror`.
-            if #[cfg(any(
-                target_os = "linux",
-                target_os = "android",
-                target_os = "openbsd",
-                target_os = "macos",
-                target_os = "ios",
-                target_os = "solaris",
-                target_os = "illumos",
-                target_os = "redox",
-                target_os = "fuchsia"
-            ))] {
-                self.get_singlethreaded(symbol)
-            } else {
-                self.get_impl(symbol, || Err(crate::Error::DlSymUnknown))
-            }
+        #[cfg(mtsafe_dlerror)]
+        { return self.get_singlethreaded(symbol); }
+        #[cfg(not(mtsafe_dlerror))]
+        {
+            return self.get_impl(symbol, || Err(crate::Error::DlSymUnknown));
         }
     }
 
+    
     
     
     
@@ -311,12 +256,10 @@ impl Library {
     
     pub unsafe fn from_raw(handle: *mut raw::c_void) -> Library {
         Library {
-            handle
+            handle: handle
         }
     }
 
-    
-    
     
     
     
@@ -333,9 +276,6 @@ impl Library {
                 None
             }
         }).map_err(|e| e.unwrap_or(crate::Error::DlCloseUnknown));
-        
-        
-        
         std::mem::forget(self);
         result
     }
@@ -401,7 +341,7 @@ impl<T> ::std::ops::Deref for Symbol<T> {
     fn deref(&self) -> &T {
         unsafe {
             
-            &*(&self.pointer as *const *mut _ as *const T)
+            mem::transmute(&self.pointer)
         }
     }
 }
@@ -429,8 +369,7 @@ impl<T> fmt::Debug for Symbol<T> {
 }
 
 
-#[cfg_attr(any(target_os = "linux", target_os = "android"), link(name="dl"))]
-#[cfg_attr(any(target_os = "freebsd", target_os = "dragonfly"), link(name="c"))]
+
 extern {
     fn dlopen(filename: *const raw::c_char, flags: raw::c_int) -> *mut raw::c_void;
     fn dlclose(handle: *mut raw::c_void) -> raw::c_int;
@@ -439,10 +378,23 @@ extern {
     fn dladdr(addr: *mut raw::c_void, info: *mut DlInfo) -> raw::c_int;
 }
 
+#[cfg(not(target_os="android"))]
+const RTLD_NOW: raw::c_int = 2;
+#[cfg(target_os="android")]
+const RTLD_NOW: raw::c_int = 0;
+
 #[repr(C)]
 struct DlInfo {
   dli_fname: *const raw::c_char,
   dli_fbase: *mut raw::c_void,
   dli_sname: *const raw::c_char,
   dli_saddr: *mut raw::c_void
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn this() {
+        super::Library::this();
+    }
 }

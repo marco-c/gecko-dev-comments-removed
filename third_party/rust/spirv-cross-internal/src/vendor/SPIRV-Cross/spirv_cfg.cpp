@@ -14,13 +14,6 @@
 
 
 
-
-
-
-
-
-
-
 #include "spirv_cfg.hpp"
 #include "spirv_cross.hpp"
 #include <algorithm>

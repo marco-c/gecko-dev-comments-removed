@@ -1,5 +1,0 @@
-#[path = "../../tracing/tests/support/mod.rs"]
-
-#[allow(clippy::module_inception)]
-mod support;
-pub use self::support::*;

@@ -14,13 +14,6 @@
 
 
 
-
-
-
-
-
-
-
 #include "spirv_cpp.hpp"
 
 using namespace spv;

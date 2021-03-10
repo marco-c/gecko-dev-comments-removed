@@ -14,13 +14,6 @@
 
 
 
-
-
-
-
-
-
-
 #ifndef SPIRV_CROSS_PARSED_IR_HPP
 #define SPIRV_CROSS_PARSED_IR_HPP
 
@@ -146,7 +139,6 @@ public:
 	void mark_used_as_array_length(ID id);
 	uint32_t increase_bound_by(uint32_t count);
 	Bitset get_buffer_block_flags(const SPIRVariable &var) const;
-	Bitset get_buffer_block_type_flags(const SPIRType &type) const;
 
 	void add_typed_id(Types type, ID id);
 	void remove_typed_id(Types type, ID id);
@@ -221,8 +213,6 @@ public:
 	static void sanitize_underscores(std::string &str);
 	static void sanitize_identifier(std::string &str, bool member, bool allow_reserved_prefixes);
 	static bool is_globally_reserved_identifier(std::string &str, bool allow_reserved_prefixes);
-
-	uint32_t get_spirv_version() const;
 
 private:
 	template <typename T>

@@ -139,19 +139,6 @@ impl<'a, T> UninitializedSliceMemoryGuard<'a, T> {
 
     
     
-    
-    
-    
-    
-    #[inline]
-    pub fn init_with_dyn_iter(self, iter: impl Iterator<Item = T>) -> Result<SliceMemoryGuard<'a, T>, Vec<T>> {
-        unsafe {
-            SliceMemoryGuard::new_from_iter(self.memory, iter)
-        }
-    }
-
-    
-    
     #[inline]
     pub fn borrow(&mut self) -> UninitializedSliceMemoryGuard<T> {
         unsafe {
