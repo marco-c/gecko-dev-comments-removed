@@ -2373,9 +2373,18 @@ void EventStateManager::DispatchLegacyMouseScrollEvents(
 
   
   
+  nsIFrame* scrollFrame = ComputeScrollTargetAndMayAdjustWheelEvent(
+      aTargetFrame, aEvent, COMPUTE_LEGACY_MOUSE_SCROLL_EVENT_TARGET);
+
+  nsIScrollableFrame* scrollTarget = do_QueryFrame(scrollFrame);
+  nsPresContext* pc =
+      scrollFrame ? scrollFrame->PresContext() : aTargetFrame->PresContext();
+
   
-  auto scrollAmountInCSSPixels =
-      CSSIntSize::FromAppUnits(aEvent->mScrollAmount);
+  nsSize scrollAmount = GetScrollAmount(pc, aEvent, scrollTarget);
+  nsIntSize scrollAmountInCSSPixels(
+      nsPresContext::AppUnitsToIntCSSPixels(scrollAmount.width),
+      nsPresContext::AppUnitsToIntCSSPixels(scrollAmount.height));
 
   
   
@@ -5928,15 +5937,6 @@ void EventStateManager::DeltaAccumulator::InitLineOrPageDelta(
   mHandlingDeltaMode = aEvent->mDeltaMode;
   mIsNoLineOrPageDeltaDevice = aEvent->mIsNoLineOrPageDelta;
 
-  {
-    nsIFrame* frame = aESM->ComputeScrollTarget(
-        aTargetFrame, aEvent, COMPUTE_LEGACY_MOUSE_SCROLL_EVENT_TARGET);
-    nsPresContext* pc =
-        frame ? frame->PresContext() : aTargetFrame->PresContext();
-    nsIScrollableFrame* scrollTarget = do_QueryFrame(frame);
-    aEvent->mScrollAmount = aESM->GetScrollAmount(pc, aEvent, scrollTarget);
-  }
-
   
   
   
@@ -5969,8 +5969,15 @@ void EventStateManager::DeltaAccumulator::InitLineOrPageDelta(
     
     
     
-    auto scrollAmountInCSSPixels =
-        CSSIntSize::FromAppUnits(aEvent->mScrollAmount);
+    nsIFrame* frame = aESM->ComputeScrollTarget(
+        aTargetFrame, aEvent, COMPUTE_LEGACY_MOUSE_SCROLL_EVENT_TARGET);
+    nsPresContext* pc =
+        frame ? frame->PresContext() : aTargetFrame->PresContext();
+    nsIScrollableFrame* scrollTarget = do_QueryFrame(frame);
+    nsSize scrollAmount = aESM->GetScrollAmount(pc, aEvent, scrollTarget);
+    nsIntSize scrollAmountInCSSPixels(
+        nsPresContext::AppUnitsToIntCSSPixels(scrollAmount.width),
+        nsPresContext::AppUnitsToIntCSSPixels(scrollAmount.height));
 
     aEvent->mLineOrPageDeltaX = RoundDown(mX) / scrollAmountInCSSPixels.width;
     aEvent->mLineOrPageDeltaY = RoundDown(mY) / scrollAmountInCSSPixels.height;

@@ -517,12 +517,6 @@ class WidgetWheelEvent : public WidgetMouseEventBase {
   
   
   
-  nsSize mScrollAmount;
-
-  
-  
-  
-  
   
   
   
@@ -615,7 +609,6 @@ class WidgetWheelEvent : public WidgetMouseEventBase {
     mDeltaY = aEvent.mDeltaY;
     mDeltaZ = aEvent.mDeltaZ;
     mDeltaMode = aEvent.mDeltaMode;
-    mScrollAmount = aEvent.mScrollAmount;
     mCustomizedByUserPrefs = aEvent.mCustomizedByUserPrefs;
     mMayHaveMomentum = aEvent.mMayHaveMomentum;
     mIsMomentum = aEvent.mIsMomentum;
