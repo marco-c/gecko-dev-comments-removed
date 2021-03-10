@@ -1651,14 +1651,6 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         "FEATURE_FAILURE_BUG_1137716", "Nvidia driver > 8.17.12.6901");
 
     
-
-    APPEND_TO_DRIVER_BLOCKLIST2(
-        OperatingSystem::Windows, DeviceFamily::IntelGMAX4500HD,
-        nsIGfxInfo::FEATURE_DIRECT3D_11_ANGLE,
-        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_LESS_THAN,
-        GfxDriverInfo::allDriverVersions, "FEATURE_FAILURE_BUG_1153381");
-
-    
     APPEND_TO_DRIVER_BLOCKLIST2(
         OperatingSystem::WindowsXP, DeviceFamily::IntelGMAX4500HD,
         nsIGfxInfo::FEATURE_WEBGL_ANGLE, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
