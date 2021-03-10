@@ -6,6 +6,7 @@
 #ifndef _LocalAccessible_H_
 #define _LocalAccessible_H_
 
+#include "mozilla/a11y/Accessible.h"
 #include "mozilla/a11y/AccTypes.h"
 #include "mozilla/a11y/RelationType.h"
 #include "mozilla/a11y/Role.h"
@@ -130,7 +131,7 @@ typedef nsRefPtrHashtable<nsPtrHashKey<const void>, LocalAccessible>
     }                                                \
   }
 
-class LocalAccessible : public nsISupports {
+class LocalAccessible : public nsISupports, public Accessible {
  public:
   LocalAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
@@ -216,18 +217,6 @@ class LocalAccessible : public nsISupports {
 
 
   mozilla::a11y::role Role() const;
-
-  
-
-
-  bool HasARIARole() const;
-  bool IsARIARole(nsAtom* aARIARole) const;
-  bool HasStrongARIARole() const;
-
-  
-
-
-  const nsRoleMapEntry* ARIARoleMap() const;
 
   
 
@@ -671,11 +660,6 @@ class LocalAccessible : public nsISupports {
 
   bool IsXULTree() const { return mType == eXULTreeType; }
   XULTreeAccessible* AsXULTree();
-
-  
-
-
-  bool HasGenericType(AccGenericType aType) const;
 
   
   
@@ -1168,22 +1152,12 @@ class LocalAccessible : public nsISupports {
 
   static const uint8_t kStateFlagsBits = 11;
   static const uint8_t kContextFlagsBits = 3;
-  static const uint8_t kTypeBits = 6;
-  static const uint8_t kGenericTypesBits = 16;
-
-  
-
-
-
-  uint8_t mRoleMapEntryIndex;
 
   
 
 
   mutable uint32_t mStateFlags : kStateFlagsBits;
   uint32_t mContextFlags : kContextFlagsBits;
-  uint32_t mType : kTypeBits;
-  uint32_t mGenericTypes : kGenericTypesBits;
   uint32_t mReorderEventTarget : 1;
   uint32_t mShowEventTarget : 1;
   uint32_t mHideEventTarget : 1;
