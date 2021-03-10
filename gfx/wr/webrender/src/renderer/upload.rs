@@ -651,7 +651,6 @@ impl UploadTexturePool {
             
             
             Some(RenderTargetInfo { has_depth: false }),
-            1,
         )
     }
 
