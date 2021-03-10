@@ -185,10 +185,9 @@ class nsContextMenu {
 
     
     
-    this.bgImageURL = context.bgImageURL;
     this.imageDescURL = context.imageDescURL;
     this.imageInfo = context.imageInfo;
-    this.mediaURL = context.mediaURL;
+    this.mediaURL = context.mediaURL || context.bgImageURL;
     this.webExtBrowserType = context.webExtBrowserType;
 
     this.canSpellCheck = context.canSpellCheck;
@@ -533,10 +532,22 @@ class nsContextMenu {
 
     
     
-    this.showItem(
-      "context-viewimage",
-      (this.onImage && (!this.inSyntheticDoc || this.inFrame)) || this.onCanvas
-    );
+    
+    let showViewImage =
+      (this.onImage && (!this.inSyntheticDoc || this.inFrame)) || this.onCanvas;
+    let showBGImage =
+      this.hasBGImage &&
+      !this.hasMultipleBGImages &&
+      !this.inSyntheticDoc &&
+      !this.inPDFViewer &&
+      !this.isContentSelected &&
+      !this.onImage &&
+      !this.onCanvas &&
+      !this.onVideo &&
+      !this.onAudio &&
+      !this.onLink &&
+      !this.onTextInput;
+    this.showItem("context-viewimage", showViewImage || showBGImage);
 
     
     this.showItem("context-saveimage", this.onLoadedImage || this.onCanvas);
@@ -547,11 +558,13 @@ class nsContextMenu {
     this.showItem("context-copyimage-contents", this.onImage);
 
     
-    this.showItem("context-copyimage", this.onImage);
+    this.showItem("context-copyimage", this.onImage || showBGImage);
 
     
-    this.showItem("context-sendimage", this.onImage);
+    this.showItem("context-sendimage", this.onImage || showBGImage);
 
+    
+    
     this.showItem(
       "context-viewimagedesc",
       this.onImage && this.imageDescURL !== ""
@@ -637,17 +650,6 @@ class nsContextMenu {
       this.onVideo && (!this.inSyntheticDoc || this.inFrame)
     );
     this.setItemAttr("context-viewvideo", "disabled", !this.mediaURL);
-
-    
-    
-    this.showItem(
-      "context-viewbgimage",
-      shouldShow &&
-        !this.hasMultipleBGImages &&
-        !this.inSyntheticDoc &&
-        !this.inPDFViewer
-    );
-    document.getElementById("context-viewbgimage").disabled = !this.hasBGImage;
   }
 
   initMiscItems() {
