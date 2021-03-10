@@ -833,7 +833,11 @@ gfxMacPlatformFontList::gfxMacPlatformFontList()
     
     
     if (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() != 0) {
+      TimeStamp start = TimeStamp::Now();
       ActivateBundledFonts();
+      TimeStamp end = TimeStamp::Now();
+      Telemetry::Accumulate(Telemetry::FONTLIST_BUNDLEDFONTS_ACTIVATE,
+                            (end - start).ToMilliseconds());
     }
 #endif
 
