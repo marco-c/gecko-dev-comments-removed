@@ -9,7 +9,8 @@
 
 #include "mozilla/RefPtr.h"  
 
-#include "frontend/ObjLiteral.h"  
+#include "frontend/CompilationStencil.h"  
+#include "frontend/ObjLiteral.h"          
 #include "frontend/Stencil.h"  
 #include "vm/SharedStencil.h"  
 #include "vm/Xdr.h"            
@@ -54,8 +55,12 @@ class StencilXDR {
                                  BaseParserScopeData*& baseScopeData);
 
   template <XDRMode mode>
-  static XDRResult SharedData(js::XDRState<mode>* xdr,
-                              RefPtr<SharedImmutableScriptData>& sisd);
+  static XDRResult codeSharedData(XDRState<mode>* xdr,
+                                  RefPtr<SharedImmutableScriptData>& sisd);
+
+  template <XDRMode mode>
+  static XDRResult codeSharedDataContainer(XDRState<mode>* xdr,
+                                           SharedDataContainer& sharedData);
 };
 
 } 
