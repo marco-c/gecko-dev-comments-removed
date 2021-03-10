@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "LocalAccessible-inl.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
@@ -114,8 +114,8 @@ xpcAccessible::GetChildAt(int32_t aChildIndex, nsIAccessible** aChild) {
 
   if (IntlGeneric().IsNull()) return NS_ERROR_FAILURE;
 
-  // If child index is negative, then return last child.
-  // XXX: do we really need this?
+  
+  
   if (aChildIndex < 0) aChildIndex = IntlGeneric().ChildCount() - 1;
 
   AccessibleOrProxy child = IntlGeneric().ChildAt(aChildIndex);
@@ -409,9 +409,9 @@ xpcAccessible::GetNativeInterface(nsISupports** aNativeInterface) {
 #ifdef MOZ_WIDGET_COCOA
   NS_ENSURE_ARG_POINTER(aNativeInterface);
 
-  // We don't cache or store this instance anywhere so each get returns a
-  // different instance. So `acc.nativeInterface != acc.nativeInterface`. This
-  // just seems simpler and more robust for now.
+  
+  
+  
   nsCOMPtr<nsISupports> macIface = static_cast<nsIAccessibleMacInterface*>(
       new xpcAccessibleMacInterface(IntlGeneric()));
   macIface.swap(*aNativeInterface);
@@ -606,7 +606,7 @@ xpcAccessible::GetChildAtPoint(int32_t aX, int32_t aY,
   if (IntlGeneric().IsNull()) return NS_ERROR_FAILURE;
 
   NS_IF_ADDREF(*aAccessible = ToXPC(IntlGeneric().ChildAtPoint(
-                   aX, aY, LocalAccessible::eDirectChild)));
+                   aX, aY, Accessible::EWhichChildAtPoint::DirectChild)));
 
   return NS_OK;
 }
@@ -620,7 +620,7 @@ xpcAccessible::GetDeepestChildAtPoint(int32_t aX, int32_t aY,
   if (IntlGeneric().IsNull()) return NS_ERROR_FAILURE;
 
   NS_IF_ADDREF(*aAccessible = ToXPC(IntlGeneric().ChildAtPoint(
-                   aX, aY, LocalAccessible::eDeepestChild)));
+                   aX, aY, Accessible::EWhichChildAtPoint::DeepestChild)));
 
   return NS_OK;
 }
@@ -637,7 +637,7 @@ xpcAccessible::GetDeepestChildAtPointInProcess(int32_t aX, int32_t aY,
   }
 
   NS_IF_ADDREF(*aAccessible = ToXPC(Intl()->ChildAtPoint(
-                   aX, aY, LocalAccessible::eDeepestChild)));
+                   aX, aY, Accessible::EWhichChildAtPoint::DeepestChild)));
   return NS_OK;
 }
 

@@ -566,7 +566,9 @@ LocalAccessible* LocalAccessible::ChildAtPoint(int32_t aX, int32_t aY,
 
     
     
-    if (parent == this && aWhichChild == eDirectChild) return child;
+    if (parent == this && aWhichChild == EWhichChildAtPoint::DirectChild) {
+      return child;
+    }
 
     child = parent;
   }
@@ -583,8 +585,8 @@ LocalAccessible* LocalAccessible::ChildAtPoint(int32_t aX, int32_t aY,
     nsIntRect childRect = child->Bounds();
     if (childRect.Contains(aX, aY) &&
         (child->State() & states::INVISIBLE) == 0) {
-      if (aWhichChild == eDeepestChild) {
-        return child->ChildAtPoint(aX, aY, eDeepestChild);
+      if (aWhichChild == EWhichChildAtPoint::DeepestChild) {
+        return child->ChildAtPoint(aX, aY, EWhichChildAtPoint::DeepestChild);
       }
 
       return child;

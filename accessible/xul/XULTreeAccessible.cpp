@@ -178,7 +178,7 @@ LocalAccessible* XULTreeAccessible::ChildAtPoint(
   }
 
   LocalAccessible* child = GetTreeItemAccessible(cellInfo.mRow);
-  if (aWhichChild == eDeepestChild && child) {
+  if (aWhichChild == EWhichChildAtPoint::DeepestChild && child) {
     
     RefPtr<XULTreeItemAccessibleBase> treeitem = do_QueryObject(child);
 

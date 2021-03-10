@@ -297,11 +297,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  enum EWhichChildAtPoint { eDirectChild, eDeepestChild };
-
-  
-
-
 
 
 

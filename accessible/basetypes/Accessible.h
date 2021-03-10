@@ -58,6 +58,11 @@ class Accessible {
   
 
 
+  enum class EWhichChildAtPoint { DirectChild, DeepestChild };
+
+  
+
+
   const nsRoleMapEntry* ARIARoleMap() const;
 
   

@@ -819,7 +819,7 @@ RemoteAccessible* RemoteAccessible::ChildAtPoint(
       if (childDoc->IsTopLevelInContentProcess()) {
         
         
-        if (aWhichChild == LocalAccessible::eDirectChild) {
+        if (aWhichChild == Accessible::EWhichChildAtPoint::DirectChild) {
           
           nsIntRect docRect = target->Bounds();
           if (docRect.Contains(aX, aY)) {
@@ -840,7 +840,7 @@ RemoteAccessible* RemoteAccessible::ChildAtPoint(
     auto useDoc = static_cast<DocAccessibleParent*>(resultDoc);
     target = resultDoc ? useDoc->GetAccessible(resultID) : nullptr;
   } while (target && target->mOuterDoc &&
-           aWhichChild == LocalAccessible::eDeepestChild);
+           aWhichChild == Accessible::EWhichChildAtPoint::DeepestChild);
   return target;
 }
 
