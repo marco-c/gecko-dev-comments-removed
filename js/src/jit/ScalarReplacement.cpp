@@ -1291,11 +1291,11 @@ bool ArgumentsReplacer::escapes(MInstruction* ins) {
 
       
       case MDefinition::Opcode::ArgumentsObjectLength:
+      case MDefinition::Opcode::GetArgumentsObjectArg:
         break;
 
       
       
-      case MDefinition::Opcode::GetArgumentsObjectArg:
       case MDefinition::Opcode::LoadArgumentsObjectArg:
       case MDefinition::Opcode::ApplyArgsObj:
         if (!args_->isCreateArgumentsObject()) {
@@ -1419,17 +1419,31 @@ void ArgumentsReplacer::visitGetArgumentsObjectArg(
   }
 
   
-  MOZ_ASSERT(!isInlinedArguments());
+  
+  
+  MDefinition* getArg;
+  if (isInlinedArguments()) {
+    
+    auto* actualArgs = args_->toCreateInlinedArgumentsObject();
+    if (ins->argno() < actualArgs->numActuals()) {
+      getArg = actualArgs->getArg(ins->argno())->toInstruction();
+    } else {
+      
+      
+      auto* undef = MConstant::New(alloc(), UndefinedValue());
+      ins->block()->insertBefore(ins, undef);
+      getArg = undef;
+    }
+  } else {
+    
+    auto* index = MConstant::New(alloc(), Int32Value(ins->argno()));
+    ins->block()->insertBefore(ins, index);
 
-  
-  
-  
-  auto* index = MConstant::New(alloc(), Int32Value(ins->argno()));
-  ins->block()->insertBefore(ins, index);
-
-  auto* loadArg = MGetFrameArgument::New(alloc(), index);
-  ins->block()->insertBefore(ins, loadArg);
-  ins->replaceAllUsesWith(loadArg);
+    auto* loadArg = MGetFrameArgument::New(alloc(), index);
+    ins->block()->insertBefore(ins, loadArg);
+    getArg = loadArg;
+  }
+  ins->replaceAllUsesWith(getArg);
 
   
   ins->block()->discard(ins);
