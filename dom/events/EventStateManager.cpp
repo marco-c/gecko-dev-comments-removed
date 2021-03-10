@@ -3232,6 +3232,30 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         }
       }
 
+      
+      
+      
+      if (mouseEvent->mClickEventPrevented) {
+        RefPtr<EventStateManager> esm =
+            ESMFromContentOrThis(aOverrideClickTarget);
+        switch (mouseEvent->mButton) {
+          case MouseButton::ePrimary:
+            esm->mLastLeftMouseDownContent = nullptr;
+            esm->mLClickCount = 0;
+            break;
+          case MouseButton::eSecondary:
+            esm->mLastMiddleMouseDownContent = nullptr;
+            esm->mMClickCount = 0;
+            break;
+          case MouseButton::eMiddle:
+            esm->mLastRightMouseDownContent = nullptr;
+            esm->mRClickCount = 0;
+            break;
+          default:
+            break;
+        }
+      }
+
       nsCOMPtr<nsIContent> activeContent;
       
       
@@ -4917,11 +4941,14 @@ nsresult EventStateManager::SetClickCount(WidgetMouseEvent* aEvent,
   switch (aEvent->mButton) {
     case MouseButton::ePrimary:
       if (aEvent->mMessage == eMouseDown) {
-        mLastLeftMouseDownContent = mouseContent;
+        mLastLeftMouseDownContent =
+            !aEvent->mClickEventPrevented ? mouseContent : nullptr;
       } else if (aEvent->mMessage == eMouseUp) {
         aEvent->mClickTarget =
-            nsContentUtils::GetCommonAncestorUnderInteractiveContent(
-                mouseContent, mLastLeftMouseDownContent);
+            !aEvent->mClickEventPrevented
+                ? nsContentUtils::GetCommonAncestorUnderInteractiveContent(
+                      mouseContent, mLastLeftMouseDownContent)
+                : nullptr;
         if (aEvent->mClickTarget) {
           aEvent->mClickCount = mLClickCount;
           mLClickCount = 0;
@@ -4934,11 +4961,14 @@ nsresult EventStateManager::SetClickCount(WidgetMouseEvent* aEvent,
 
     case MouseButton::eMiddle:
       if (aEvent->mMessage == eMouseDown) {
-        mLastMiddleMouseDownContent = mouseContent;
+        mLastMiddleMouseDownContent =
+            !aEvent->mClickEventPrevented ? mouseContent : nullptr;
       } else if (aEvent->mMessage == eMouseUp) {
         aEvent->mClickTarget =
-            nsContentUtils::GetCommonAncestorUnderInteractiveContent(
-                mouseContent, mLastMiddleMouseDownContent);
+            !aEvent->mClickEventPrevented
+                ? nsContentUtils::GetCommonAncestorUnderInteractiveContent(
+                      mouseContent, mLastMiddleMouseDownContent)
+                : nullptr;
         if (aEvent->mClickTarget) {
           aEvent->mClickCount = mMClickCount;
           mMClickCount = 0;
@@ -4951,11 +4981,14 @@ nsresult EventStateManager::SetClickCount(WidgetMouseEvent* aEvent,
 
     case MouseButton::eSecondary:
       if (aEvent->mMessage == eMouseDown) {
-        mLastRightMouseDownContent = mouseContent;
+        mLastRightMouseDownContent =
+            !aEvent->mClickEventPrevented ? mouseContent : nullptr;
       } else if (aEvent->mMessage == eMouseUp) {
         aEvent->mClickTarget =
-            nsContentUtils::GetCommonAncestorUnderInteractiveContent(
-                mouseContent, mLastRightMouseDownContent);
+            !aEvent->mClickEventPrevented
+                ? nsContentUtils::GetCommonAncestorUnderInteractiveContent(
+                      mouseContent, mLastRightMouseDownContent)
+                : nullptr;
         if (aEvent->mClickTarget) {
           aEvent->mClickCount = mRClickCount;
           mRClickCount = 0;
@@ -4984,6 +5017,10 @@ bool EventStateManager::EventCausesClickEvents(
   
   
   if (!aMouseEvent.mClickCount || !aMouseEvent.mClickTarget) {
+    return false;
+  }
+  
+  if (aMouseEvent.mClickEventPrevented) {
     return false;
   }
   

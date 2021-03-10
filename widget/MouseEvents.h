@@ -202,18 +202,20 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   WidgetMouseEvent()
       : mReason(eReal),
         mContextMenuTrigger(eNormal),
-        mIgnoreRootScrollFrame(false),
         mClickCount(0),
-        mUseLegacyNonPrimaryDispatch(false) {}
+        mIgnoreRootScrollFrame(false),
+        mUseLegacyNonPrimaryDispatch(false),
+        mClickEventPrevented(false) {}
 
   WidgetMouseEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget,
                    EventClassID aEventClassID, Reason aReason)
       : WidgetMouseEventBase(aIsTrusted, aMessage, aWidget, aEventClassID),
         mReason(aReason),
         mContextMenuTrigger(eNormal),
-        mIgnoreRootScrollFrame(false),
         mClickCount(0),
-        mUseLegacyNonPrimaryDispatch(false) {}
+        mIgnoreRootScrollFrame(false),
+        mUseLegacyNonPrimaryDispatch(false),
+        mClickEventPrevented(false) {}
 
  public:
   virtual WidgetMouseEvent* AsMouseEvent() override { return this; }
@@ -224,9 +226,10 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
       : WidgetMouseEventBase(aIsTrusted, aMessage, aWidget, eMouseEventClass),
         mReason(aReason),
         mContextMenuTrigger(aContextMenuTrigger),
-        mIgnoreRootScrollFrame(false),
         mClickCount(0),
-        mUseLegacyNonPrimaryDispatch(false) {
+        mIgnoreRootScrollFrame(false),
+        mUseLegacyNonPrimaryDispatch(false),
+        mClickEventPrevented(false) {
     if (aMessage == eContextMenu) {
       mButton = (mContextMenuTrigger == eNormal) ? MouseButton::eSecondary
                                                  : MouseButton::ePrimary;
@@ -277,25 +280,29 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   Maybe<ExitFrom> mExitFrom;
 
   
-  bool mIgnoreRootScrollFrame;
-
-  
   
   
   uint32_t mClickCount;
 
   
+  bool mIgnoreRootScrollFrame;
+
+  
   
   bool mUseLegacyNonPrimaryDispatch;
+
+  
+  bool mClickEventPrevented;
 
   void AssignMouseEventData(const WidgetMouseEvent& aEvent, bool aCopyTargets) {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
     AssignPointerHelperData(aEvent,  true);
 
     mExitFrom = aEvent.mExitFrom;
-    mIgnoreRootScrollFrame = aEvent.mIgnoreRootScrollFrame;
     mClickCount = aEvent.mClickCount;
+    mIgnoreRootScrollFrame = aEvent.mIgnoreRootScrollFrame;
     mUseLegacyNonPrimaryDispatch = aEvent.mUseLegacyNonPrimaryDispatch;
+    mClickEventPrevented = aEvent.mClickEventPrevented;
   }
 
   
