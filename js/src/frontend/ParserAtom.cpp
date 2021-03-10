@@ -320,6 +320,56 @@ TaggedParserAtomIndex ParserAtomsTable::internLatin1(
   return internChar16Seq<Latin1Char>(cx, addPtr, lookup.hash(), seq, length);
 }
 
+bool IsWide(const InflatedChar16Sequence<char16_t>& seq) {
+  InflatedChar16Sequence<char16_t> seqCopy = seq;
+  while (seqCopy.hasMore()) {
+    char16_t ch = seqCopy.next();
+    if (ch > MAX_LATIN1_CHAR) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+template <typename AtomCharT>
+TaggedParserAtomIndex ParserAtomsTable::internExternalParserAtomImpl(
+    JSContext* cx, const ParserAtom* atom) {
+  InflatedChar16Sequence<AtomCharT> seq(atom->chars<AtomCharT>(),
+                                        atom->length());
+  SpecificParserAtomLookup<AtomCharT> lookup(seq, atom->hash());
+
+  
+  auto addPtr = entryMap_.lookupForAdd(lookup);
+  if (addPtr) {
+    return addPtr->value();
+  }
+
+  return internChar16Seq<AtomCharT>(cx, addPtr, atom->hash(), seq,
+                                    atom->length());
+}
+
+TaggedParserAtomIndex ParserAtomsTable::internExternalParserAtom(
+    JSContext* cx, const ParserAtom* atom) {
+  if (atom->hasLatin1Chars()) {
+    return internExternalParserAtomImpl<JS::Latin1Char>(cx, atom);
+  }
+  return internExternalParserAtomImpl<char16_t>(cx, atom);
+}
+
+bool ParserAtomsTable::addPlaceholder(JSContext* cx) {
+  ParserAtomIndex index = ParserAtomIndex(entries_.length());
+  if (size_t(index) >= TaggedParserAtomIndex::IndexLimit) {
+    ReportAllocationOverflow(cx);
+    return false;
+  }
+  if (!entries_.append(nullptr)) {
+    js::ReportOutOfMemory(cx);
+    return false;
+  }
+  return true;
+}
+
 ParserAtomSpanBuilder::ParserAtomSpanBuilder(JSRuntime* rt,
                                              ParserAtomSpan& entries)
     : wellKnownTable_(*rt->commonParserNames), entries_(entries) {}
@@ -413,19 +463,7 @@ TaggedParserAtomIndex ParserAtomsTable::internChar16(JSContext* cx,
   }
 
   
-  
-  bool wide = false;
-  InflatedChar16Sequence<char16_t> seqCopy = seq;
-  while (seqCopy.hasMore()) {
-    char16_t ch = seqCopy.next();
-    if (ch > MAX_LATIN1_CHAR) {
-      wide = true;
-      break;
-    }
-  }
-
-  
-  return wide
+  return IsWide(seq)
              ? internChar16Seq<char16_t>(cx, addPtr, lookup.hash(), seq, length)
              : internChar16Seq<Latin1Char>(cx, addPtr, lookup.hash(), seq,
                                            length);
