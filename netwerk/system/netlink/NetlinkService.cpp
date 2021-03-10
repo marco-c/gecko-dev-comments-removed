@@ -757,48 +757,46 @@ void NetlinkService::OnLinkMessage(struct nlmsghdr* aNlh) {
     return;
   }
 
-  uint32_t linkIndex = link->GetIndex();
-  nsAutoCString linkName;
-  link->GetName(linkName);
+  const uint32_t linkIndex = link->GetIndex();
+  mLinks.WithEntryHandle(linkIndex, [&](auto&& entry) {
+    nsAutoCString linkName;
+    link->GetName(linkName);
 
-  LinkInfo* linkInfo = nullptr;
-  mLinks.Get(linkIndex, &linkInfo);
+    if (aNlh->nlmsg_type == RTM_NEWLINK) {
+      if (!entry) {
+        LOG(("Creating new link [index=%u, name=%s, flags=%u, type=%u]",
+             linkIndex, linkName.get(), link->GetFlags(), link->GetType()));
+        entry.Insert(MakeUnique<LinkInfo>(std::move(link)));
+      } else {
+        LOG(("Updating link [index=%u, name=%s, flags=%u, type=%u]", linkIndex,
+             linkName.get(), link->GetFlags(), link->GetType()));
 
-  if (aNlh->nlmsg_type == RTM_NEWLINK) {
-    if (!linkInfo) {
-      LOG(("Creating new link [index=%u, name=%s, flags=%u, type=%u]",
-           linkIndex, linkName.get(), link->GetFlags(), link->GetType()));
-      linkInfo =
-          mLinks
-              .InsertOrUpdate(linkIndex, MakeUnique<LinkInfo>(std::move(link)))
-              .get();
-    } else {
-      LOG(("Updating link [index=%u, name=%s, flags=%u, type=%u]", linkIndex,
-           linkName.get(), link->GetFlags(), link->GetType()));
+        auto* linkInfo = entry->get();
 
-      
-      if (linkInfo->mLink->GetFlags() & IFF_UP &&
-          !(link->GetFlags() & IFF_UP)) {
-        LOG(("  link went down"));
         
-        
-        linkInfo->mDefaultRoutes.Clear();
-        linkInfo->mNeighbors.Clear();
+        if (linkInfo->mLink->GetFlags() & IFF_UP &&
+            !(link->GetFlags() & IFF_UP)) {
+          LOG(("  link went down"));
+          
+          
+          linkInfo->mDefaultRoutes.Clear();
+          linkInfo->mNeighbors.Clear();
+        }
+
+        linkInfo->mLink = std::move(link);
+        linkInfo->UpdateStatus();
       }
-
-      linkInfo->mLink = std::move(link);
-      linkInfo->UpdateStatus();
-    }
-  } else {
-    if (!linkInfo) {
-      
-      LOG(("Link info doesn't exist [index=%u, name=%s]", linkIndex,
-           linkName.get()));
     } else {
-      LOG(("Removing link [index=%u, name=%s]", linkIndex, linkName.get()));
-      mLinks.Remove(linkIndex);
+      if (!entry) {
+        
+        LOG(("Link info doesn't exist [index=%u, name=%s]", linkIndex,
+             linkName.get()));
+      } else {
+        LOG(("Removing link [index=%u, name=%s]", linkIndex, linkName.get()));
+        entry.Remove();
+      }
     }
-  }
+  });
 }
 
 void NetlinkService::OnAddrMessage(struct nlmsghdr* aNlh) {
@@ -886,6 +884,7 @@ void NetlinkService::OnAddrMessage(struct nlmsghdr* aNlh) {
 
   
   if (mInitialScanFinished) {
+    
     
     mSendNetworkChangeEvent = true;
     TriggerNetworkIDCalculation();

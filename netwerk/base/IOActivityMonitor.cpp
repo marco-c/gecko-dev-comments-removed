@@ -399,27 +399,30 @@ nsresult IOActivityMonitor::MonitorFile(PRFileDesc* aFd, const char* aPath) {
 bool IOActivityMonitor::IncrementActivity(const nsACString& aLocation,
                                           uint32_t aRx, uint32_t aTx) {
   mLock.AssertCurrentThreadOwns();
-  if (auto entry = mActivities.Lookup(aLocation)) {
-    
-    entry.Data().mTx += aTx;
-    entry.Data().mRx += aRx;
+  return mActivities.WithEntryHandle(aLocation, fallible, [&](auto&& entry) {
+    if (!entry) return false;
+
+    if (*entry) {
+      
+      entry->Data().mTx += aTx;
+      entry->Data().mRx += aRx;
+    } else {
+      
+      
+      
+      
+      MOZ_ASSERT(mActivities.Count() <= MAX_ACTIVITY_ENTRIES);
+
+      dom::IOActivityDataDictionary activity;
+      activity.mLocation.Assign(aLocation);
+      activity.mTx = aTx;
+      activity.mRx = aRx;
+
+      entry->Insert(std::move(activity));
+    }
+
     return true;
-  }
-  
-  
-  
-  
-  MOZ_ASSERT(mActivities.Count() < MAX_ACTIVITY_ENTRIES);
-
-  dom::IOActivityDataDictionary activity;
-  activity.mLocation.Assign(aLocation);
-  activity.mTx = aTx;
-  activity.mRx = aRx;
-
-  if (NS_WARN_IF(!mActivities.InsertOrUpdate(aLocation, activity, fallible))) {
-    return false;
-  }
-  return true;
+  });
 }
 
 nsresult IOActivityMonitor::Write(const nsACString& aLocation,
