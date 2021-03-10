@@ -51,7 +51,6 @@ namespace frontend {
 struct CompilationInput;
 struct CompilationStencil;
 struct CompilationGCOutput;
-struct StencilDelazificationSet;
 class ScriptStencilIterable;
 
 
@@ -594,10 +593,6 @@ struct CompilationStencil : public BaseCompilationStencil {
   RefPtr<StencilAsmJSContainer> asmJS;
 
   
-  
-  UniquePtr<StencilDelazificationSet> delazificationSet;
-
-  
 
   
   explicit CompilationStencil(ScriptSource* source)
@@ -844,44 +839,14 @@ class MOZ_STACK_CLASS BorrowingCompilationStencil : public CompilationStencil {
 
 
 
-
-struct StencilDelazificationSet {
-  Vector<BaseCompilationStencil, 0, js::SystemAllocPolicy> delazifications;
-  Vector<ScriptIndex, 0, js::SystemAllocPolicy> delazificationIndices;
-
-  size_t maxScriptDataLength = 0;
-  size_t maxScopeDataLength = 0;
-  size_t maxParserAtomDataLength = 0;
-
-  bool hasDelazificationIndices() {
-    MOZ_ASSERT(!delazifications.empty());
-    return !delazificationIndices.empty();
-  }
-
-  [[nodiscard]] bool buildDelazificationIndices(
-      JSContext* cx, const CompilationStencil& stencil);
-
-  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-    return mallocSizeOf(this) +
-           delazifications.sizeOfExcludingThis(mallocSizeOf) +
-           delazificationIndices.sizeOfExcludingThis(mallocSizeOf);
-  }
-};
-
-
-
 inline size_t CompilationStencil::sizeOfExcludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
   size_t moduleMetadataSize =
       moduleMetadata ? moduleMetadata->sizeOfIncludingThis(mallocSizeOf) : 0;
   size_t asmJSSize = asmJS ? asmJS->sizeOfIncludingThis(mallocSizeOf) : 0;
-  size_t delazificationSetSize =
-      delazificationSet ? delazificationSet->sizeOfIncludingThis(mallocSizeOf)
-                        : 0;
 
   return alloc.sizeOfExcludingThis(mallocSizeOf) + moduleMetadataSize +
-         asmJSSize + delazificationSetSize +
-         BaseCompilationStencil::sizeOfExcludingThis(mallocSizeOf);
+         asmJSSize + BaseCompilationStencil::sizeOfExcludingThis(mallocSizeOf);
 }
 
 inline size_t ExtensibleCompilationStencil::sizeOfExcludingThis(

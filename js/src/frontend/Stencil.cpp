@@ -1262,56 +1262,7 @@ bool CompilationStencil::instantiateStencils(
     return false;
   }
 
-  if (!instantiateBaseStencilAfterPreparation(cx, input, stencil, gcOutput)) {
-    return false;
-  }
-
-  if (stencil.delazificationSet) {
-    MOZ_ASSERT(gcOutputForDelazification);
-
-    CompilationAtomCache::AtomCacheVector reusableAtomCache;
-    input.atomCache.releaseBuffer(reusableAtomCache);
-
-    size_t numDelazifications =
-        stencil.delazificationSet->delazifications.length();
-    for (size_t i = 0; i < numDelazifications; i++) {
-      auto& delazification = stencil.delazificationSet->delazifications[i];
-      auto index = stencil.delazificationSet->delazificationIndices[i];
-
-      JSFunction* fun = gcOutput.functions[index];
-      MOZ_ASSERT(fun);
-
-      BaseScript* lazy = fun->baseScript();
-      MOZ_ASSERT(!lazy->hasBytecode());
-
-      if (!lazy->isReadyForDelazification()) {
-        MOZ_ASSERT(false, "Delazification target is not ready. Bad XDR?");
-        continue;
-      }
-
-      Rooted<CompilationInput> delazificationInput(
-          cx, CompilationInput(input.options));
-      delazificationInput.get().initFromLazy(lazy, input.source);
-
-      delazificationInput.get().atomCache.stealBuffer(reusableAtomCache);
-
-      if (!instantiateBaseStencilAfterPreparation(cx, delazificationInput.get(),
-                                                  delazification,
-                                                  *gcOutputForDelazification)) {
-        return false;
-      }
-
-      
-      gcOutputForDelazification->functions.clear();
-      gcOutputForDelazification->scopes.clear();
-
-      delazificationInput.get().atomCache.releaseBuffer(reusableAtomCache);
-    }
-
-    input.atomCache.stealBuffer(reusableAtomCache);
-  }
-
-  return true;
+  return instantiateBaseStencilAfterPreparation(cx, input, stencil, gcOutput);
 }
 
 
@@ -1402,85 +1353,18 @@ bool CompilationStencil::instantiateBaseStencilAfterPreparation(
   return true;
 }
 
-bool StencilDelazificationSet::buildDelazificationIndices(
-    JSContext* cx, const CompilationStencil& stencil) {
-  
-  MOZ_ASSERT(!stencil.scriptData[0].isFunction());
-
-  MOZ_ASSERT(!delazifications.empty());
-  MOZ_ASSERT(delazificationIndices.empty());
-
-  if (!delazificationIndices.resize(delazifications.length())) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  HashMap<BaseCompilationStencil::FunctionKey, size_t> keyToIndex(cx);
-  if (!keyToIndex.reserve(delazifications.length())) {
-    return false;
-  }
-
-  for (size_t i = 0; i < delazifications.length(); i++) {
-    const auto& delazification = delazifications[i];
-    auto key = delazification.functionKey;
-    keyToIndex.putNewInfallible(key, i);
-
-    if (maxScriptDataLength < delazification.scriptData.size()) {
-      maxScriptDataLength = delazification.scriptData.size();
-    }
-    if (maxScopeDataLength < delazification.scopeData.size()) {
-      maxScopeDataLength = delazification.scopeData.size();
-    }
-    if (maxParserAtomDataLength < delazification.parserAtomData.size()) {
-      maxParserAtomDataLength = delazification.parserAtomData.size();
-    }
-  }
-
-  MOZ_ASSERT(keyToIndex.count() == delazifications.length());
-
-  for (size_t i = 1; i < stencil.scriptData.size(); i++) {
-    auto key =
-        BaseCompilationStencil::toFunctionKey(stencil.scriptExtra[i].extent);
-    auto ptr = keyToIndex.lookup(key);
-    if (!ptr) {
-      continue;
-    }
-    delazificationIndices[ptr->value()] = ScriptIndex(i);
-  }
-
-  return true;
-}
-
 
 bool CompilationStencil::prepareForInstantiate(
     JSContext* cx, CompilationInput& input, const CompilationStencil& stencil,
     CompilationGCOutput& gcOutput,
     CompilationGCOutput* gcOutputForDelazification) {
-  size_t maxParserAtomDataLength = stencil.parserAtomData.size();
-
   
   if (!gcOutput.ensureReserved(cx, stencil.scriptData.size(),
                                stencil.scopeData.size())) {
     return false;
   }
 
-  
-  if (auto* data = stencil.delazificationSet.get()) {
-    MOZ_ASSERT(data->hasDelazificationIndices());
-    MOZ_ASSERT(gcOutputForDelazification);
-
-    if (!gcOutputForDelazification->ensureReserved(
-            cx, data->maxScriptDataLength, data->maxScopeDataLength)) {
-      return false;
-    }
-
-    if (data->maxParserAtomDataLength > maxParserAtomDataLength) {
-      maxParserAtomDataLength = data->maxParserAtomDataLength;
-    }
-  }
-
-  
-  return input.atomCache.allocate(cx, maxParserAtomDataLength);
+  return input.atomCache.allocate(cx, stencil.parserAtomData.size());
 }
 
 bool CompilationStencil::serializeStencils(JSContext* cx,
@@ -1794,11 +1678,6 @@ void CompilationStencil::assertNoExternalDependency() const {
   for (const auto* data : parserAtomData) {
     MOZ_ASSERT_IF(data, alloc.contains(data));
   }
-
-  
-  
-  
-  MOZ_ASSERT(!delazificationSet);
 }
 
 void ExtensibleCompilationStencil::assertNoExternalDependency() const {
