@@ -2323,12 +2323,9 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeSelectionStyle(
 
 template <typename SizeOrMaxSize>
 static inline bool IsIntrinsicKeyword(const SizeOrMaxSize& aSize) {
-  if (!aSize.IsExtremumLength()) {
-    return false;
-  }
-
   
-  return aSize.AsExtremumLength() != StyleExtremumLength::MozAvailable;
+  return aSize.IsMaxContent() || aSize.IsMinContent() ||
+         aSize.IsMozFitContent();
 }
 
 bool nsIFrame::CanBeDynamicReflowRoot() const {
@@ -6433,7 +6430,7 @@ nsIFrame::ISizeComputationResult nsIFrame::ComputeISizeValue(
     gfxContext* aRenderingContext, const WritingMode aWM,
     const LogicalSize& aContainingBlockSize,
     const LogicalSize& aContentEdgeToBoxSizing, nscoord aBoxSizingToMarginEdge,
-    StyleExtremumLength aSize, ComputeSizeFlags aFlags) {
+    ExtremumLength aSize, ComputeSizeFlags aFlags) {
   
   
   AutoMaybeDisableFontInflation an(this);
@@ -6441,20 +6438,20 @@ nsIFrame::ISizeComputationResult nsIFrame::ComputeISizeValue(
   
   
   Maybe<nscoord> intrinsicSizeFromAspectRatio =
-      aSize == StyleExtremumLength::MozAvailable
+      aSize == ExtremumLength::MozAvailable
           ? Nothing()
           : ComputeInlineSizeFromAspectRatio(aWM, aContainingBlockSize,
                                              aContentEdgeToBoxSizing, aFlags);
   nscoord result;
   switch (aSize) {
-    case StyleExtremumLength::MaxContent:
+    case ExtremumLength::MaxContent:
       result = intrinsicSizeFromAspectRatio ? *intrinsicSizeFromAspectRatio
                                             : GetPrefISize(aRenderingContext);
       NS_ASSERTION(result >= 0, "inline-size less than zero");
       return {result, intrinsicSizeFromAspectRatio
                           ? AspectRatioUsage::ToComputeISize
                           : AspectRatioUsage::None};
-    case StyleExtremumLength::MinContent:
+    case ExtremumLength::MinContent:
       result = intrinsicSizeFromAspectRatio ? *intrinsicSizeFromAspectRatio
                                             : GetMinISize(aRenderingContext);
       NS_ASSERTION(result >= 0, "inline-size less than zero");
@@ -6468,7 +6465,7 @@ nsIFrame::ISizeComputationResult nsIFrame::ComputeISizeValue(
       return {result, intrinsicSizeFromAspectRatio
                           ? AspectRatioUsage::ToComputeISize
                           : AspectRatioUsage::None};
-    case StyleExtremumLength::MozFitContent: {
+    case ExtremumLength::MozFitContent: {
       nscoord pref = NS_UNCONSTRAINEDSIZE;
       nscoord min = 0;
       if (intrinsicSizeFromAspectRatio) {
@@ -6490,7 +6487,7 @@ nsIFrame::ISizeComputationResult nsIFrame::ComputeISizeValue(
       NS_ASSERTION(result >= 0, "inline-size less than zero");
       return {result};
     }
-    case StyleExtremumLength::MozAvailable:
+    case ExtremumLength::MozAvailable:
       return {aContainingBlockSize.ISize(aWM) -
               (aBoxSizingToMarginEdge + aContentEdgeToBoxSizing.ISize(aWM))};
   }

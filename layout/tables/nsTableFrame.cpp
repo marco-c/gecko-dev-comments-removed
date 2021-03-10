@@ -3749,9 +3749,7 @@ bool nsTableFrame::IsAutoLayout() {
   
   
   const auto& iSize = StylePosition()->ISize(GetWritingMode());
-  return iSize.IsAuto() ||
-         (iSize.IsExtremumLength() &&
-          iSize.AsExtremumLength() == StyleExtremumLength::MaxContent);
+  return iSize.IsAuto() || iSize.IsMaxContent();
 }
 
 #ifdef DEBUG_FRAME_DUMP
