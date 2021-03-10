@@ -216,7 +216,7 @@ const NormandyTestUtils = {
         for (const recipe of recipes) {
           if (!recipe.id || recipeIds.has(recipe.id)) {
             throw new Error(
-              "To use withMockRecipeCollection, each recipe must have a unique ID"
+              "To use withMockRecipeCollection each recipe must have a unique ID"
             );
           }
           recipeIds.add(recipe.id);
@@ -243,7 +243,7 @@ const NormandyTestUtils = {
             for (const recipe of newRecipes) {
               if (!recipe.id || recipeIds.has(recipe)) {
                 throw new Error(
-                  "To use withMockRecipeCollection, each recipe must have a unique ID"
+                  "To use withMockRecipeCollection each recipe must have a unique ID"
                 );
               }
             }

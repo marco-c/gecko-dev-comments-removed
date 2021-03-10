@@ -50,7 +50,7 @@ add_task(async () => {
 });
 
 decorate_task(
-  withMockApiServer,
+  withMockApiServer(),
   AddonStudies.withStudies([]),
   async function test_addon_unenroll(
     _serverUrl,
@@ -224,7 +224,7 @@ decorate_task(
 
 
 decorate_task(
-  withMockApiServer,
+  withMockApiServer(),
   AddonStudies.withStudies([]),
   async function test_addon_unenroll(
     _serverUrl,
