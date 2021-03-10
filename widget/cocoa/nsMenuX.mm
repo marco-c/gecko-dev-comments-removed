@@ -372,7 +372,7 @@ void nsMenuX::MenuClosed() {
     nsIContent* dispatchTo = popupContent ? popupContent : mContent;
     EventDispatcher::Dispatch(dispatchTo, nullptr, &event, nullptr, &status);
 
-    mDestroyHandlerCalled = true;
+    mDidFirePopupHidden = true;
     mConstructed = false;
   }
 }
@@ -381,8 +381,8 @@ void nsMenuX::MenuConstruct() {
   mConstructed = false;
   gConstructingMenu = true;
 
-  
-  mDestroyHandlerCalled = false;
+  mDidFirePopupHiding = false;
+  mDidFirePopupHidden = false;
 
   
   
@@ -531,7 +531,7 @@ bool nsMenuX::OnOpen() {
 
 
 bool nsMenuX::OnClose() {
-  if (mDestroyHandlerCalled) {
+  if (mDidFirePopupHiding || mDidFirePopupHidden) {
     return true;
   }
 
@@ -545,7 +545,7 @@ bool nsMenuX::OnClose() {
   nsIContent* dispatchTo = popupContent ? popupContent : mContent;
   rv = EventDispatcher::Dispatch(dispatchTo, nullptr, &event, nullptr, &status);
 
-  mDestroyHandlerCalled = true;
+  mDidFirePopupHiding = true;
 
   if (NS_FAILED(rv) || status == nsEventStatus_eConsumeNoDefault) {
     return false;

@@ -88,7 +88,8 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   
   NSMenuItem* mNativeMenuItem = nil;  
   bool mIsEnabled = true;
-  bool mDestroyHandlerCalled = false;
+  bool mDidFirePopupHiding = false;
+  bool mDidFirePopupHidden = false;
   bool mNeedsRebuild = true;
   bool mConstructed = false;
   bool mVisible = true;
