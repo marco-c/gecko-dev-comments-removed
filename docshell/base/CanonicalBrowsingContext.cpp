@@ -168,14 +168,24 @@ void CanonicalBrowsingContext::ReplacedBy(
     mStatusFilter = nullptr;
   }
   aNewContext->mWebProgress = std::move(mWebProgress);
-  aNewContext->mFields.SetWithoutSyncing<IDX_BrowserId>(GetBrowserId());
-  aNewContext->mFields.SetWithoutSyncing<IDX_HistoryID>(GetHistoryID());
-  aNewContext->mFields.SetWithoutSyncing<IDX_ExplicitActive>(
-      GetExplicitActive());
+
+  
+  
+  
+  Transaction txn;
+  txn.SetBrowserId(GetBrowserId());
+  txn.SetHistoryID(GetHistoryID());
+  txn.SetExplicitActive(GetExplicitActive());
+  if (aNewContext->EverAttached()) {
+    MOZ_ALWAYS_SUCCEEDS(txn.Commit(aNewContext));
+  } else {
+    txn.CommitWithoutSyncing(aNewContext);
+  }
 
   
   
   if (aRemotenessOptions.mTryUseBFCache) {
+    MOZ_ASSERT(!aNewContext->EverAttached());
     aNewContext->mFields.SetWithoutSyncing<IDX_Name>(GetName());
     aNewContext->mFields.SetWithoutSyncing<IDX_HasLoadedNonInitialDocument>(
         GetHasLoadedNonInitialDocument());
