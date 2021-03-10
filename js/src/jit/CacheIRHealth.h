@@ -58,13 +58,8 @@ class CacheIRHealth {
   
   Happiness spewStubHealth(AutoStructuredSpewer& spew, ICCacheIRStub* stub);
   
-  Happiness spewHealthForStubsInCacheIREntry(AutoStructuredSpewer& spew,
-                                             ICEntry* entry);
-  
-  
-  Happiness spewJSOpAndCacheIRHealth(AutoStructuredSpewer& spew,
-                                     HandleScript script, jit::ICEntry* entry,
-                                     jsbytecode* pc, JSOp op);
+  Happiness spewICEntryHealth(AutoStructuredSpewer& spew, HandleScript script,
+                              jit::ICEntry* entry, jsbytecode* pc, JSOp op);
 
  public:
   
