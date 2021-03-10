@@ -21,6 +21,9 @@ const {
   FrontClassWithSpec,
   registerFront,
 } = require("devtools/shared/protocol");
+const {
+  DescriptorMixin,
+} = require("devtools/client/fronts/descriptors/descriptor-mixin");
 
 
 
@@ -30,10 +33,11 @@ const {
 
 
 
-class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
+class TabDescriptorFront extends DescriptorMixin(
+  FrontClassWithSpec(tabDescriptorSpec)
+) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
-    this._client = client;
 
     
     
@@ -46,10 +50,6 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
 
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
     this._handleTabEvent = this._handleTabEvent.bind(this);
-  }
-
-  get client() {
-    return this._client;
   }
 
   form(json) {

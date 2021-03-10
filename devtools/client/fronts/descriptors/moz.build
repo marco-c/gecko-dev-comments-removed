@@ -5,6 +5,7 @@
 
 
 DevToolsModules(
+    "descriptor-mixin.js",
     "process.js",
     "tab.js",
     "webextension.js",
