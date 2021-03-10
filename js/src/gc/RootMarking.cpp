@@ -449,9 +449,10 @@ class AssertNoRootsTracer final : public JS::CallbackTracer {
   }
 
  public:
+  
   explicit AssertNoRootsTracer(JSRuntime* rt)
       : JS::CallbackTracer(rt, JS::TracerKind::Callback,
-                           JS::WeakMapTraceAction::TraceKeysAndValues) {}
+                           JS::WeakMapTraceAction::Skip) {}
 };
 #endif  
 

@@ -1230,17 +1230,6 @@ void BaseScript::traceChildren(JSTracer* trc) {
     data_->trace(trc);
   }
 
-  
-  
-  
-  if (hasBytecode()) {
-    JSScript* script = this->asJSScript();
-
-    if (hasDebugScript()) {
-      DebugAPI::traceDebugScript(trc, script);
-    }
-  }
-
   if (trc->isMarkingTracer()) {
     GCMarker::fromTracer(trc)->markImplicitEdges(this);
   }

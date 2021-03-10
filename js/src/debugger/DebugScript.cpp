@@ -37,23 +37,80 @@
 #include "gc/WeakMap-inl.h"           
 #include "vm/BytecodeIterator-inl.h"  
 #include "vm/JSContext-inl.h"         
+#include "vm/JSObject-inl.h"          
 #include "vm/JSScript-inl.h"          
 #include "vm/Realm-inl.h"             
 
 namespace js {
 
+const JSClass DebugScriptObject::class_ = {
+    "DebugScriptObject", JSCLASS_HAS_PRIVATE | JSCLASS_BACKGROUND_FINALIZE,
+    &classOps_, JS_NULL_CLASS_SPEC};
 
-DebugScript* DebugScript::get(JSScript* script) {
-  MOZ_ASSERT(script->hasDebugScript());
-  DebugScriptMap* map = script->zone()->debugScriptMap.get();
-  MOZ_ASSERT(map);
-  DebugScriptMap::Ptr p = map->lookup(script);
-  MOZ_ASSERT(p);
-  return p->value().get();
+const JSClassOps DebugScriptObject::classOps_ = {
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    DebugScriptObject::finalize,  
+    nullptr,                      
+    nullptr,                      
+    nullptr,                      
+    DebugScriptObject::trace,     
+};
+
+
+DebugScriptObject* DebugScriptObject::create(JSContext* cx,
+                                             UniqueDebugScript debugScript,
+                                             size_t nbytes) {
+  auto* object = NewObjectWithGivenProto<DebugScriptObject>(cx, nullptr);
+  if (!object) {
+    return nullptr;
+  }
+
+  object->setPrivate(debugScript.release());
+  AddCellMemory(object, nbytes, MemoryUse::ScriptDebugScript);
+
+  return object;
+}
+
+DebugScript* DebugScriptObject::debugScript() const {
+  return static_cast<DebugScript*>(getPrivate());
 }
 
 
-DebugScript* DebugScript::getOrCreate(JSContext* cx, JSScript* script) {
+void DebugScriptObject::trace(JSTracer* trc, JSObject* obj) {
+  DebugScript* debugScript = obj->as<DebugScriptObject>().debugScript();
+  if (debugScript) {
+    debugScript->trace(trc);
+  }
+}
+
+
+void DebugScriptObject::finalize(JSFreeOp* fop, JSObject* obj) {
+  DebugScriptObject* object = &obj->as<DebugScriptObject>();
+  DebugScript* debugScript = object->debugScript();
+  if (debugScript) {
+    debugScript->delete_(fop, object);
+  }
+}
+
+
+DebugScript* DebugScript::get(JSScript* script) {
+  MOZ_ASSERT(script->hasDebugScript());
+  DebugScriptMap* map = script->zone()->debugScriptMap;
+  MOZ_ASSERT(map);
+  DebugScriptMap::Ptr p = map->lookupUnbarriered(script);
+  MOZ_ASSERT(p);
+  return p->value().get()->as<DebugScriptObject>().debugScript();
+}
+
+
+DebugScript* DebugScript::getOrCreate(JSContext* cx, HandleScript script) {
+  cx->check(script);
+
   if (script->hasDebugScript()) {
     return get(script);
   }
@@ -65,27 +122,35 @@ DebugScript* DebugScript::getOrCreate(JSContext* cx, JSScript* script) {
     return nullptr;
   }
 
+  debug->codeLength = script->length();
+
+  Rooted<DebugScriptObject*> object(
+      cx, DebugScriptObject::create(cx, std::move(debug), nbytes));
+  if (!object) {
+    return nullptr;
+  }
+
   
-  if (!script->zone()->debugScriptMap) {
-    auto map = cx->make_unique<DebugScriptMap>();
+  Zone* zone = script->zone();
+  MOZ_ASSERT(cx->zone() == zone);
+  if (!zone->debugScriptMap) {
+    DebugScriptMap* map = cx->new_<DebugScriptMap>(cx);
     if (!map) {
       return nullptr;
     }
 
-    script->zone()->debugScriptMap = std::move(map);
+    zone->debugScriptMap = map;
   }
 
   MOZ_ASSERT(script->hasBytecode());
 
-  DebugScript* borrowed = debug.get();
-  if (!script->zone()->debugScriptMap->putNew(script, std::move(debug))) {
+  if (!zone->debugScriptMap->putNew(script.get(), object.get())) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
 
   
   script->setHasDebugScript(true);
-  AddCellMemory(script, nbytes, MemoryUse::ScriptDebugScript);
 
   
 
@@ -98,7 +163,7 @@ DebugScript* DebugScript::getOrCreate(JSContext* cx, JSScript* script) {
     }
   }
 
-  return borrowed;
+  return object->debugScript();
 }
 
 
@@ -110,7 +175,7 @@ JSBreakpointSite* DebugScript::getBreakpointSite(JSScript* script,
 
 
 JSBreakpointSite* DebugScript::getOrCreateBreakpointSite(JSContext* cx,
-                                                         JSScript* script,
+                                                         HandleScript script,
                                                          jsbytecode* pc) {
   AutoRealm ar(cx, script);
 
@@ -150,7 +215,7 @@ void DebugScript::destroyBreakpointSite(JSFreeOp* fop, JSScript* script,
 
   debug->numSites--;
   if (!debug->needed()) {
-    DebugAPI::destroyDebugScript(fop, script);
+    DebugAPI::removeDebugScript(fop, script);
   }
 
   if (script->hasBaselineScript()) {
@@ -194,7 +259,7 @@ uint32_t DebugScript::getStepperCount(JSScript* script) {
 #endif  
 
 
-bool DebugScript::incrementStepperCount(JSContext* cx, JSScript* script) {
+bool DebugScript::incrementStepperCount(JSContext* cx, HandleScript script) {
   cx->check(script);
   MOZ_ASSERT(cx->realm()->isDebuggee());
 
@@ -230,14 +295,14 @@ void DebugScript::decrementStepperCount(JSFreeOp* fop, JSScript* script) {
     }
 
     if (!debug->needed()) {
-      DebugAPI::destroyDebugScript(fop, script);
+      DebugAPI::removeDebugScript(fop, script);
     }
   }
 }
 
 
 bool DebugScript::incrementGeneratorObserverCount(JSContext* cx,
-                                                  JSScript* script) {
+                                                  HandleScript script) {
   cx->check(script);
   MOZ_ASSERT(cx->realm()->isDebuggee());
 
@@ -270,19 +335,12 @@ void DebugScript::decrementGeneratorObserverCount(JSFreeOp* fop,
   debug->generatorObserverCount--;
 
   if (!debug->needed()) {
-    DebugAPI::destroyDebugScript(fop, script);
+    DebugAPI::removeDebugScript(fop, script);
   }
 }
 
-
-void DebugAPI::traceDebugScript(JSTracer* trc, JSScript* script) {
-  MOZ_ASSERT(script->hasDebugScript());
-  DebugScript::get(script)->trace(trc, script);
-}
-
-void DebugScript::trace(JSTracer* trc, JSScript* owner) {
-  size_t length = owner->length();
-  for (size_t i = 0; i < length; i++) {
+void DebugScript::trace(JSTracer* trc) {
+  for (size_t i = 0; i < codeLength; i++) {
     JSBreakpointSite* site = breakpoints[i];
     if (site) {
       site->trace(trc);
@@ -291,31 +349,34 @@ void DebugScript::trace(JSTracer* trc, JSScript* owner) {
 }
 
 
-void DebugAPI::destroyDebugScript(JSFreeOp* fop, JSScript* script) {
+void DebugAPI::removeDebugScript(JSFreeOp* fop, JSScript* script) {
   if (script->hasDebugScript()) {
-    DebugScriptMap* map = script->zone()->debugScriptMap.get();
+    if (IsAboutToBeFinalizedUnbarriered(&script)) {
+      
+      return;
+    }
+
+    DebugScriptMap* map = script->zone()->debugScriptMap;
     MOZ_ASSERT(map);
-    DebugScriptMap::Ptr p = map->lookup(script);
+    DebugScriptMap::Ptr p = map->lookupUnbarriered(script);
     MOZ_ASSERT(p);
-    DebugScript* debug = p->value().release();
     map->remove(p);
     script->setHasDebugScript(false);
 
-    debug->delete_(fop, script);
+    
+    
   }
 }
 
-void DebugScript::delete_(JSFreeOp* fop, JSScript* owner) {
-  size_t length = owner->length();
-  for (size_t i = 0; i < length; i++) {
+void DebugScript::delete_(JSFreeOp* fop, DebugScriptObject* owner) {
+  for (size_t i = 0; i < codeLength; i++) {
     JSBreakpointSite* site = breakpoints[i];
     if (site) {
       site->delete_(fop);
     }
   }
 
-  fop->free_(owner, this, allocSize(owner->length()),
-             MemoryUse::ScriptDebugScript);
+  fop->free_(owner, this, allocSize(codeLength), MemoryUse::ScriptDebugScript);
 }
 
 #ifdef JSGC_HASH_TABLE_CHECKS
@@ -340,5 +401,13 @@ bool DebugAPI::hasBreakpointsAtSlow(JSScript* script, jsbytecode* pc) {
   JSBreakpointSite* site = DebugScript::getBreakpointSite(script, pc);
   return !!site;
 }
+
+
+void DebugAPI::traceDebugScriptMap(JSTracer* trc, DebugScriptMap* map) {
+  map->trace(trc);
+}
+
+
+void DebugAPI::deleteDebugScriptMap(DebugScriptMap* map) { js_delete(map); }
 
 }  

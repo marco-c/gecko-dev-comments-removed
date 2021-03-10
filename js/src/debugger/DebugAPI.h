@@ -18,6 +18,7 @@ namespace js {
 
 
 class AbstractGeneratorObject;
+class DebugScriptMap;
 class PromiseObject;
 
 
@@ -102,7 +103,7 @@ class DebugAPI {
   static void traceAllForMovingGC(JSTracer* trc);
 
   
-  static void traceDebugScript(JSTracer* trc, JSScript* script);
+  static void traceDebugScriptMap(JSTracer* trc, DebugScriptMap* map);
 
   static void traceFromRealm(JSTracer* trc, Realm* realm);
 
@@ -116,7 +117,10 @@ class DebugAPI {
   [[nodiscard]] static bool findSweepGroupEdges(JSRuntime* rt);
 
   
-  static void destroyDebugScript(JSFreeOp* fop, JSScript* script);
+  static void removeDebugScript(JSFreeOp* fop, JSScript* script);
+
+  
+  static void deleteDebugScriptMap(DebugScriptMap* map);
 
   
 #ifdef JSGC_HASH_TABLE_CHECKS

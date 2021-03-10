@@ -14,6 +14,9 @@
 #include "jsapi.h"
 #include "jstypes.h"
 
+#include "gc/WeakMap.h"
+#include "vm/NativeObject.h"
+
 namespace JS {
 class JS_PUBLIC_API Realm;
 }
@@ -22,11 +25,13 @@ namespace js {
 
 class JSBreakpointSite;
 class Debugger;
+class DebugScriptObject;
 
 
 
 class DebugScript {
   friend class DebugAPI;
+  friend class DebugScriptObject;
 
   
 
@@ -52,10 +57,15 @@ class DebugScript {
 
 
 
-  uint32_t numSites;
+  size_t codeLength;
 
   
 
+
+
+  uint32_t numSites;
+
+  
 
 
 
@@ -75,16 +85,16 @@ class DebugScript {
            codeLength * sizeof(JSBreakpointSite*);
   }
 
-  void trace(JSTracer* trc, JSScript* owner);
-  void delete_(JSFreeOp* fop, JSScript* owner);
+  void trace(JSTracer* trc);
+  void delete_(JSFreeOp* fop, DebugScriptObject* owner);
 
   static DebugScript* get(JSScript* script);
-  static DebugScript* getOrCreate(JSContext* cx, JSScript* script);
+  static DebugScript* getOrCreate(JSContext* cx, HandleScript script);
 
  public:
   static JSBreakpointSite* getBreakpointSite(JSScript* script, jsbytecode* pc);
   static JSBreakpointSite* getOrCreateBreakpointSite(JSContext* cx,
-                                                     JSScript* script,
+                                                     HandleScript script,
                                                      jsbytecode* pc);
   static void destroyBreakpointSite(JSFreeOp* fop, JSScript* script,
                                     jsbytecode* pc);
@@ -103,7 +113,7 @@ class DebugScript {
 
 
   [[nodiscard]] static bool incrementStepperCount(JSContext* cx,
-                                                  JSScript* script);
+                                                  HandleScript script);
   static void decrementStepperCount(JSFreeOp* fop, JSScript* script);
 
   
@@ -112,9 +122,36 @@ class DebugScript {
 
 
 
-  [[nodiscard]] static bool incrementGeneratorObserverCount(JSContext* cx,
-                                                            JSScript* script);
+  [[nodiscard]] static bool incrementGeneratorObserverCount(
+      JSContext* cx, HandleScript script);
   static void decrementGeneratorObserverCount(JSFreeOp* fop, JSScript* script);
+};
+
+using UniqueDebugScript = js::UniquePtr<DebugScript, JS::FreePolicy>;
+
+
+
+class DebugScriptObject : public NativeObject {
+ public:
+  static const JSClass class_;
+
+  static DebugScriptObject* create(JSContext* cx, UniqueDebugScript debugScript,
+                                   size_t nbytes);
+
+  DebugScript* debugScript() const;
+
+ private:
+  static const JSClassOps classOps_;
+
+  static void trace(JSTracer* trc, JSObject* obj);
+  static void finalize(JSFreeOp* fop, JSObject* obj);
+};
+
+
+class DebugScriptMap
+    : public WeakMap<HeapPtr<JSScript*>, HeapPtr<DebugScriptObject*>> {
+ public:
+  explicit DebugScriptMap(JSContext* cx) : WeakMap(cx) {}
 };
 
 } 
