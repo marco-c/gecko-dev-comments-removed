@@ -210,8 +210,8 @@ static void TraceOp(JSTracer* trc, void* data) {
 }  
 
 void ScriptPreloader::Trace(JSTracer* trc) {
-  for (auto& script : IterHash(mScripts)) {
-    script->mScript.Trace(trc);
+  for (auto& script : mScripts) {
+    script.GetData()->mScript.Trace(trc);
   }
 }
 
@@ -284,9 +284,7 @@ void ScriptPreloader::InvalidateCache() {
     MOZ_ASSERT(mParsingSources.empty());
     MOZ_ASSERT(mPendingScripts.isEmpty());
 
-    for (auto& script : IterHash(mScripts)) {
-      script.Remove();
-    }
+    mScripts.Clear();
 
     
     
