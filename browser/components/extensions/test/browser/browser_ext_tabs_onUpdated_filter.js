@@ -300,6 +300,7 @@ add_task(async function test_filter_property() {
         "pinned",
         "sharingState",
         "title",
+        "url",
       ]);
 
       
