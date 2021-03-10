@@ -1337,18 +1337,14 @@ void gfxFcPlatformFontList::AddPatternToFontList(
     nsAutoCString keyName(aFamilyName);
     ToLowerCase(keyName);
 
-    aFontFamily = static_cast<gfxFontconfigFontFamily*>(
-        mFontFamilies
-            .LookupOrInsertWith(keyName,
-                                [&] {
-                                  FontVisibility visibility =
-                                      aAppFonts
-                                          ? FontVisibility::Base
-                                          : GetVisibilityForFamily(keyName);
-                                  return MakeRefPtr<gfxFontconfigFontFamily>(
-                                      aFamilyName, visibility);
-                                })
-            .get());
+    aFontFamily =
+        static_cast<gfxFontconfigFontFamily*>(mFontFamilies.GetWeak(keyName));
+    if (!aFontFamily) {
+      FontVisibility visibility =
+          aAppFonts ? FontVisibility::Base : GetVisibilityForFamily(keyName);
+      aFontFamily = new gfxFontconfigFontFamily(aFamilyName, visibility);
+      mFontFamilies.InsertOrUpdate(keyName, RefPtr{aFontFamily});
+    }
     
     
     
@@ -1975,41 +1971,45 @@ bool gfxFcPlatformFontList::FindAndAddFamilies(
 
   
   
-  const auto& cachedFamilies =
-      mFcSubstituteCache.LookupOrInsertWith(familyName, [&] {
-        
-        const FcChar8* kSentinelName = ToFcChar8Ptr("-moz-sentinel");
-        FcChar8* sentinelFirstFamily = nullptr;
-        RefPtr<FcPattern> sentinelSubst = dont_AddRef(FcPatternCreate());
-        FcPatternAddString(sentinelSubst, FC_FAMILY, kSentinelName);
-        FcConfigSubstitute(nullptr, sentinelSubst, FcMatchPattern);
-        FcPatternGetString(sentinelSubst, FC_FAMILY, 0, &sentinelFirstFamily);
+  if (auto* cachedFamilies = mFcSubstituteCache.GetValue(familyName)) {
+    if (cachedFamilies->IsEmpty()) {
+      return false;
+    }
+    aOutput->AppendElements(*cachedFamilies);
+    return true;
+  }
 
-        
-        RefPtr<FcPattern> fontWithSentinel = dont_AddRef(FcPatternCreate());
-        FcPatternAddString(fontWithSentinel, FC_FAMILY,
-                           ToFcChar8Ptr(familyName.get()));
-        FcPatternAddString(fontWithSentinel, FC_FAMILY, kSentinelName);
-        FcConfigSubstitute(nullptr, fontWithSentinel, FcMatchPattern);
+  
+  const FcChar8* kSentinelName = ToFcChar8Ptr("-moz-sentinel");
+  FcChar8* sentinelFirstFamily = nullptr;
+  RefPtr<FcPattern> sentinelSubst = dont_AddRef(FcPatternCreate());
+  FcPatternAddString(sentinelSubst, FC_FAMILY, kSentinelName);
+  FcConfigSubstitute(nullptr, sentinelSubst, FcMatchPattern);
+  FcPatternGetString(sentinelSubst, FC_FAMILY, 0, &sentinelFirstFamily);
 
-        
-        nsTArray<FamilyAndGeneric> cachedFamilies;
-        FcChar8* substName = nullptr;
-        for (int i = 0; FcPatternGetString(fontWithSentinel, FC_FAMILY, i,
-                                           &substName) == FcResultMatch;
-             i++) {
-          if (sentinelFirstFamily &&
-              FcStrCmp(substName, sentinelFirstFamily) == 0) {
-            break;
-          }
-          gfxPlatformFontList::FindAndAddFamilies(
-              aGeneric, nsDependentCString(ToCharPtr(substName)),
-              &cachedFamilies, aFlags, aStyle, aLanguage);
-        }
+  
+  RefPtr<FcPattern> fontWithSentinel = dont_AddRef(FcPatternCreate());
+  FcPatternAddString(fontWithSentinel, FC_FAMILY,
+                     ToFcChar8Ptr(familyName.get()));
+  FcPatternAddString(fontWithSentinel, FC_FAMILY, kSentinelName);
+  FcConfigSubstitute(nullptr, fontWithSentinel, FcMatchPattern);
 
-        
-        return cachedFamilies;
-      });
+  
+  AutoTArray<FamilyAndGeneric, 10> cachedFamilies;
+  FcChar8* substName = nullptr;
+  for (int i = 0; FcPatternGetString(fontWithSentinel, FC_FAMILY, i,
+                                     &substName) == FcResultMatch;
+       i++) {
+    if (sentinelFirstFamily && FcStrCmp(substName, sentinelFirstFamily) == 0) {
+      break;
+    }
+    gfxPlatformFontList::FindAndAddFamilies(
+        aGeneric, nsDependentCString(ToCharPtr(substName)), &cachedFamilies,
+        aFlags, aStyle, aLanguage);
+  }
+
+  
+  mFcSubstituteCache.InsertOrUpdate(familyName, cachedFamilies);
 
   if (cachedFamilies.IsEmpty()) {
     return false;
