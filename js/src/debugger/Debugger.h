@@ -429,8 +429,6 @@ class MOZ_RAII EvalOptions {
 
 
 
-
-
 using Env = JSObject;
 
 

@@ -3147,6 +3147,10 @@
 
 
 
+
+
+
+
  \
     MACRO(FreshenLexicalEnv, freshen_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
     

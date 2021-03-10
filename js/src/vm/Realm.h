@@ -44,9 +44,8 @@ class JitRealm;
 
 class AutoRestoreRealmDebugMode;
 class GlobalObject;
-class GlobalLexicalEnvironmentObject;
+class LexicalEnvironmentObject;
 class MapObject;
-class NonSyntacticLexicalEnvironmentObject;
 class ScriptSourceObject;
 class SetObject;
 struct NativeIterator;
@@ -276,15 +275,12 @@ class ObjectRealm {
 
   MOZ_ALWAYS_INLINE bool objectMaybeInIteration(JSObject* obj);
 
-  js::NonSyntacticLexicalEnvironmentObject*
-  getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx,
-                                            js::HandleObject enclosing);
-  js::NonSyntacticLexicalEnvironmentObject*
-  getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx,
-                                            js::HandleObject enclosing,
-                                            js::HandleObject key,
-                                            js::HandleObject thisv);
-  js::NonSyntacticLexicalEnvironmentObject* getNonSyntacticLexicalEnvironment(
+  js::LexicalEnvironmentObject* getOrCreateNonSyntacticLexicalEnvironment(
+      JSContext* cx, js::HandleObject enclosing);
+  js::LexicalEnvironmentObject* getOrCreateNonSyntacticLexicalEnvironment(
+      JSContext* cx, js::HandleObject enclosing, js::HandleObject key,
+      js::HandleObject thisv);
+  js::LexicalEnvironmentObject* getNonSyntacticLexicalEnvironment(
       JSObject* key) const;
 };
 
@@ -311,7 +307,7 @@ class JS::Realm : public JS::shadow::Realm {
 
   
   
-  js::WeakHeapPtr<js::GlobalLexicalEnvironmentObject*> lexicalEnv_;
+  js::WeakHeapPtr<js::LexicalEnvironmentObject*> lexicalEnv_;
 
   
   js::ObjectRealm objects_;
@@ -528,8 +524,7 @@ class JS::Realm : public JS::shadow::Realm {
     return global_.unbarrieredGet();
   }
 
-  inline js::GlobalLexicalEnvironmentObject* unbarrieredLexicalEnvironment()
-      const;
+  inline js::LexicalEnvironmentObject* unbarrieredLexicalEnvironment() const;
 
   
   inline bool globalIsAboutToBeFinalized();
@@ -538,7 +533,7 @@ class JS::Realm : public JS::shadow::Realm {
   inline bool hasLiveGlobal() const;
 
   inline void initGlobal(js::GlobalObject& global,
-                         js::GlobalLexicalEnvironmentObject& lexicalEnv);
+                         js::LexicalEnvironmentObject& lexicalEnv);
 
   
 

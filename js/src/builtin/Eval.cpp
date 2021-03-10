@@ -248,9 +248,8 @@ static bool EvalKernel(JSContext* cx, HandleValue v, EvalType evalType,
   
   
   
-  MOZ_ASSERT_IF(
-      evalType != DIRECT_EVAL,
-      cx->global() == &env->as<GlobalLexicalEnvironmentObject>().global());
+  MOZ_ASSERT_IF(evalType != DIRECT_EVAL,
+                cx->global() == &env->as<LexicalEnvironmentObject>().global());
 
   RootedLinearString linearStr(cx, str->ensureLinear(cx));
   if (!linearStr) {
@@ -381,11 +380,12 @@ bool js::IsAnyBuiltinEval(JSFunction* fun) {
   return fun->maybeNative() == IndirectEval;
 }
 
-static bool ExecuteInExtensibleLexicalEnvironment(
-    JSContext* cx, HandleScript scriptArg,
-    Handle<ExtensibleLexicalEnvironmentObject*> env) {
+static bool ExecuteInExtensibleLexicalEnvironment(JSContext* cx,
+                                                  HandleScript scriptArg,
+                                                  HandleObject env) {
   CHECK_THREAD(cx);
   cx->check(env);
+  MOZ_ASSERT(IsExtensibleLexicalEnvironment(env));
   MOZ_RELEASE_ASSERT(scriptArg->hasNonSyntacticScope());
 
   RootedScript script(cx, scriptArg);
@@ -425,18 +425,17 @@ JS_FRIEND_API bool js::ExecuteInFrameScriptEnvironment(
   
   
   ObjectRealm& realm = ObjectRealm::get(varEnv);
-  Rooted<NonSyntacticLexicalEnvironmentObject*> lexicalEnv(
-      cx,
-      realm.getOrCreateNonSyntacticLexicalEnvironment(cx, env, varEnv, objArg));
-  if (!lexicalEnv) {
+  env =
+      realm.getOrCreateNonSyntacticLexicalEnvironment(cx, env, varEnv, objArg);
+  if (!env) {
     return false;
   }
 
-  if (!ExecuteInExtensibleLexicalEnvironment(cx, scriptArg, lexicalEnv)) {
+  if (!ExecuteInExtensibleLexicalEnvironment(cx, scriptArg, env)) {
     return false;
   }
 
-  envArg.set(lexicalEnv);
+  envArg.set(env);
   return true;
 }
 
@@ -472,8 +471,7 @@ JS_FRIEND_API bool JS::ExecuteInJSMEnvironment(JSContext* cx,
       ObjectRealm::get(varEnv).getNonSyntacticLexicalEnvironment(varEnv));
   MOZ_DIAGNOSTIC_ASSERT(scriptArg->noScriptRval());
 
-  Rooted<ExtensibleLexicalEnvironmentObject*> env(
-      cx, ExtensibleLexicalEnvironmentObject::forVarEnvironment(varEnv));
+  RootedObject env(cx, JS_ExtensibleLexicalEnvironment(varEnv));
 
   
   
@@ -489,19 +487,18 @@ JS_FRIEND_API bool JS::ExecuteInJSMEnvironment(JSContext* cx,
     
 
     
-    RootedObject envChain(cx);
-    if (!js::CreateObjectsForEnvironmentChain(cx, targetObj, env, &envChain)) {
+    if (!js::CreateObjectsForEnvironmentChain(cx, targetObj, env, &env)) {
       return false;
     }
 
     
-    if (!JSObject::setQualifiedVarObj(cx, envChain)) {
+    if (!JSObject::setQualifiedVarObj(cx, env)) {
       return false;
     }
 
     
-    env = ObjectRealm::get(envChain).getOrCreateNonSyntacticLexicalEnvironment(
-        cx, envChain);
+    env = ObjectRealm::get(env).getOrCreateNonSyntacticLexicalEnvironment(cx,
+                                                                          env);
     if (!env) {
       return false;
     }

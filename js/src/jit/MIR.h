@@ -10936,9 +10936,9 @@ class MPostWriteElementBarrier
 };
 
 class MNewNamedLambdaObject : public MNullaryInstruction {
-  CompilerGCPointer<NamedLambdaObject*> templateObj_;
+  CompilerGCPointer<LexicalEnvironmentObject*> templateObj_;
 
-  explicit MNewNamedLambdaObject(NamedLambdaObject* templateObj)
+  explicit MNewNamedLambdaObject(LexicalEnvironmentObject* templateObj)
       : MNullaryInstruction(classOpcode), templateObj_(templateObj) {
     setResultType(MIRType::Object);
   }
@@ -10947,7 +10947,7 @@ class MNewNamedLambdaObject : public MNullaryInstruction {
   INSTRUCTION_HEADER(NewNamedLambdaObject)
   TRIVIAL_NEW_WRAPPERS
 
-  NamedLambdaObject* templateObj() { return templateObj_; }
+  LexicalEnvironmentObject* templateObj() { return templateObj_; }
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 };
 

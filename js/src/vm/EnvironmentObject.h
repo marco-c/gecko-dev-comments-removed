@@ -257,15 +257,6 @@ extern PropertyName* EnvironmentCoordinateNameSlow(JSScript* script,
 
 
 
-
-
-
-
-
-
-
-
-
 class EnvironmentObject : public NativeObject {
  protected:
   
@@ -518,11 +509,7 @@ class WasmFunctionCallObject : public EnvironmentObject {
   }
 };
 
-
-
-
 class LexicalEnvironmentObject : public EnvironmentObject {
- protected:
   
   
   
@@ -536,15 +523,70 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   static constexpr uint32_t RESERVED_SLOTS = 2;
   static constexpr ObjectFlags OBJECT_FLAGS = {ObjectFlag::NotExtensible};
 
- protected:
+ private:
   static LexicalEnvironmentObject* createTemplateObject(JSContext* cx,
                                                         HandleShape shape,
                                                         HandleObject enclosing,
                                                         gc::InitialHeap heap);
 
+  void initThisObject(JSObject* obj) {
+    MOZ_ASSERT(isGlobal() || !isSyntactic());
+    JSObject* thisObj = GetThisObject(obj);
+    initReservedSlot(THIS_VALUE_OR_SCOPE_SLOT, ObjectValue(*thisObj));
+  }
+
+  void initScopeUnchecked(LexicalScope* scope) {
+    initReservedSlot(THIS_VALUE_OR_SCOPE_SLOT, PrivateGCThingValue(scope));
+  }
+
+  void initScope(LexicalScope* scope) {
+    MOZ_ASSERT(!isGlobal());
+    MOZ_ASSERT(isSyntactic());
+    initScopeUnchecked(scope);
+  }
+
  public:
+  static LexicalEnvironmentObject* create(JSContext* cx,
+                                          Handle<LexicalScope*> scope,
+                                          HandleObject enclosing,
+                                          gc::InitialHeap heap);
+  static LexicalEnvironmentObject* createForFrame(JSContext* cx,
+                                                  Handle<LexicalScope*> scope,
+                                                  AbstractFramePtr frame);
+  static LexicalEnvironmentObject* createGlobal(JSContext* cx,
+                                                Handle<GlobalObject*> global);
+  static LexicalEnvironmentObject* createNonSyntactic(JSContext* cx,
+                                                      HandleObject enclosing,
+                                                      HandleObject thisv);
+  static LexicalEnvironmentObject* createHollowForDebug(
+      JSContext* cx, Handle<LexicalScope*> scope);
+
+  
+  
+  static LexicalEnvironmentObject* clone(JSContext* cx,
+                                         Handle<LexicalEnvironmentObject*> env);
+
+  
+  
+  static LexicalEnvironmentObject* recreate(
+      JSContext* cx, Handle<LexicalEnvironmentObject*> env);
+
+  
+  
+  LexicalScope& scope() const {
+    Value v = getReservedSlot(THIS_VALUE_OR_SCOPE_SLOT);
+    MOZ_ASSERT(!isExtensible() && v.isPrivateGCThing());
+    return *static_cast<LexicalScope*>(v.toGCThing());
+  }
+
   
   bool isGlobal() const { return enclosingEnvironment().is<GlobalObject>(); }
+
+  GlobalObject& global() const {
+    return enclosingEnvironment().as<GlobalObject>();
+  }
+
+  void setWindowProxyThisObject(JSObject* obj);
 
   
   
@@ -553,51 +595,17 @@ class LexicalEnvironmentObject : public EnvironmentObject {
   
   
   bool isSyntactic() const { return !isExtensible() || isGlobal(); }
-};
-
-
-
-
-
-class BlockLexicalEnvironmentObject : public LexicalEnvironmentObject {
- public:
-  static constexpr ObjectFlags OBJECT_FLAGS = {ObjectFlag::NotExtensible};
-
-  static BlockLexicalEnvironmentObject* create(JSContext* cx,
-                                               Handle<LexicalScope*> scope,
-                                               HandleObject enclosing,
-                                               gc::InitialHeap heap);
-
-  static BlockLexicalEnvironmentObject* createForFrame(
-      JSContext* cx, Handle<LexicalScope*> scope, AbstractFramePtr frame);
-
-  static BlockLexicalEnvironmentObject* createHollowForDebug(
-      JSContext* cx, Handle<LexicalScope*> scope);
 
   
   
-  static BlockLexicalEnvironmentObject* clone(
-      JSContext* cx, Handle<BlockLexicalEnvironmentObject*> env);
+  JSObject* thisObject() const;
 
-  
-  
-  static BlockLexicalEnvironmentObject* recreate(
-      JSContext* cx, Handle<BlockLexicalEnvironmentObject*> env);
-
-  
-  LexicalScope& scope() const {
-    Value v = getReservedSlot(THIS_VALUE_OR_SCOPE_SLOT);
-    MOZ_ASSERT(!isExtensible() && v.isPrivateGCThing());
-    return *static_cast<LexicalScope*>(v.toGCThing());
-  }
-
- private:
-  void initScope(LexicalScope* scope) {
-    initReservedSlot(THIS_VALUE_OR_SCOPE_SLOT, PrivateGCThingValue(scope));
+  static constexpr size_t offsetOfThisValueOrScopeSlot() {
+    return getFixedSlotOffset(THIS_VALUE_OR_SCOPE_SLOT);
   }
 };
 
-class NamedLambdaObject : public BlockLexicalEnvironmentObject {
+class NamedLambdaObject : public LexicalEnvironmentObject {
   static NamedLambdaObject* create(JSContext* cx, HandleFunction callee,
                                    HandleFunction replacement,
                                    HandleObject enclosing,
@@ -612,52 +620,6 @@ class NamedLambdaObject : public BlockLexicalEnvironmentObject {
 
   
   static size_t lambdaSlot();
-};
-
-
-class ExtensibleLexicalEnvironmentObject : public LexicalEnvironmentObject {
- public:
-  JSObject* thisObject() const;
-
-  
-  
-  
-  static ExtensibleLexicalEnvironmentObject* forVarEnvironment(JSObject* obj);
-
- protected:
-  void initThisObject(JSObject* obj) {
-    MOZ_ASSERT(isGlobal() || !isSyntactic());
-    JSObject* thisObj = GetThisObject(obj);
-    initReservedSlot(THIS_VALUE_OR_SCOPE_SLOT, ObjectValue(*thisObj));
-  }
-};
-
-
-
-class GlobalLexicalEnvironmentObject
-    : public ExtensibleLexicalEnvironmentObject {
- public:
-  static GlobalLexicalEnvironmentObject* create(JSContext* cx,
-                                                Handle<GlobalObject*> global);
-
-  GlobalObject& global() const {
-    return enclosingEnvironment().as<GlobalObject>();
-  }
-
-  void setWindowProxyThisObject(JSObject* obj);
-
-  static constexpr size_t offsetOfThisValueSlot() {
-    return getFixedSlotOffset(THIS_VALUE_OR_SCOPE_SLOT);
-  }
-};
-
-
-class NonSyntacticLexicalEnvironmentObject
-    : public ExtensibleLexicalEnvironmentObject {
- public:
-  static NonSyntacticLexicalEnvironmentObject* create(JSContext* cx,
-                                                      HandleObject enclosing,
-                                                      HandleObject thisv);
 };
 
 
@@ -1130,36 +1092,6 @@ inline bool JSObject::is<js::EnvironmentObject>() const {
 }
 
 template <>
-inline bool JSObject::is<js::BlockLexicalEnvironmentObject>() const {
-  return is<js::LexicalEnvironmentObject>() &&
-         !as<js::LexicalEnvironmentObject>().isExtensible();
-}
-
-template <>
-inline bool JSObject::is<js::ExtensibleLexicalEnvironmentObject>() const {
-  return is<js::LexicalEnvironmentObject>() &&
-         as<js::LexicalEnvironmentObject>().isExtensible();
-}
-
-template <>
-inline bool JSObject::is<js::GlobalLexicalEnvironmentObject>() const {
-  return is<js::LexicalEnvironmentObject>() &&
-         as<js::LexicalEnvironmentObject>().isGlobal();
-}
-
-template <>
-inline bool JSObject::is<js::NonSyntacticLexicalEnvironmentObject>() const {
-  return is<js::LexicalEnvironmentObject>() &&
-         !as<js::LexicalEnvironmentObject>().isSyntactic();
-}
-
-template <>
-inline bool JSObject::is<js::NamedLambdaObject>() const {
-  return is<js::BlockLexicalEnvironmentObject>() &&
-         as<js::BlockLexicalEnvironmentObject>().scope().isNamedLambda();
-}
-
-template <>
 bool JSObject::is<js::DebugEnvironmentProxy>() const;
 
 namespace js {
@@ -1185,11 +1117,13 @@ inline bool IsSyntacticEnvironment(JSObject* env) {
 }
 
 inline bool IsExtensibleLexicalEnvironment(JSObject* env) {
-  return env->is<ExtensibleLexicalEnvironmentObject>();
+  return env->is<LexicalEnvironmentObject>() &&
+         env->as<LexicalEnvironmentObject>().isExtensible();
 }
 
 inline bool IsGlobalLexicalEnvironment(JSObject* env) {
-  return env->is<GlobalLexicalEnvironmentObject>();
+  return env->is<LexicalEnvironmentObject>() &&
+         env->as<LexicalEnvironmentObject>().isGlobal();
 }
 
 inline bool IsNSVOLexicalEnvironment(JSObject* env) {
@@ -1241,7 +1175,8 @@ inline bool IsFrameInitialEnvironment(AbstractFramePtr frame,
         frame.callee()->needsNamedLambdaEnvironment() &&
         !frame.callee()->needsCallObject()) {
       LexicalScope* namedLambdaScope = frame.script()->maybeNamedLambdaScope();
-      return &env.scope() == namedLambdaScope;
+      return &env.template as<LexicalEnvironmentObject>().scope() ==
+             namedLambdaScope;
     }
   }
 
@@ -1264,19 +1199,22 @@ ModuleEnvironmentObject* GetModuleEnvironmentForScript(JSScript* script);
     JSContext* cx, AbstractGeneratorObject& genObj, JSScript* script,
     MutableHandleValue res);
 
+[[nodiscard]] bool CheckVarNameConflict(
+    JSContext* cx, Handle<LexicalEnvironmentObject*> lexicalEnv,
+    HandlePropertyName name);
+
 [[nodiscard]] bool CheckCanDeclareGlobalBinding(JSContext* cx,
                                                 Handle<GlobalObject*> global,
                                                 HandlePropertyName name,
                                                 bool isFunction);
 
 [[nodiscard]] bool CheckLexicalNameConflict(
-    JSContext* cx, Handle<ExtensibleLexicalEnvironmentObject*> lexicalEnv,
+    JSContext* cx, Handle<LexicalEnvironmentObject*> lexicalEnv,
     HandleObject varObj, HandlePropertyName name);
 
 [[nodiscard]] bool CheckGlobalDeclarationConflicts(
     JSContext* cx, HandleScript script,
-    Handle<ExtensibleLexicalEnvironmentObject*> lexicalEnv,
-    HandleObject varObj);
+    Handle<LexicalEnvironmentObject*> lexicalEnv, HandleObject varObj);
 
 [[nodiscard]] bool GlobalOrEvalDeclInstantiation(JSContext* cx,
                                                  HandleObject envChain,
