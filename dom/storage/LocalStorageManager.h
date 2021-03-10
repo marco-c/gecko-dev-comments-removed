@@ -16,9 +16,9 @@
 #include "mozilla/dom/Storage.h"
 
 #include "nsTHashtable.h"
-#include "nsDataHashtable.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
+#include "nsTHashMap.h"
 
 namespace mozilla {
 
@@ -124,7 +124,7 @@ class LocalStorageManager final : public nsIDOMStorageManager,
 
  private:
   
-  nsDataHashtable<nsCStringHashKey, RefPtr<StorageUsage> > mUsages;
+  nsTHashMap<nsCString, RefPtr<StorageUsage> > mUsages;
 
   friend class LocalStorageCache;
   friend class StorageDBChild;

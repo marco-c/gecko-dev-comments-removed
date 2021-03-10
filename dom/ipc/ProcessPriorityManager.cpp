@@ -31,6 +31,7 @@
 #include "nsCRT.h"
 #include "nsTHashtable.h"
 #include "nsQueryObject.h"
+#include "nsTHashMap.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -165,7 +166,7 @@ class ProcessPriorityManagerImpl final : public nsIObserver,
   void ObserveContentParentCreated(nsISupports* aContentParent);
   void ObserveContentParentDestroyed(nsISupports* aSubject);
 
-  nsDataHashtable<nsUint64HashKey, RefPtr<ParticularProcessPriorityManager> >
+  nsTHashMap<uint64_t, RefPtr<ParticularProcessPriorityManager> >
       mParticularManagers;
 
   
@@ -404,21 +405,16 @@ ProcessPriorityManagerImpl::Observe(nsISupports* aSubject, const char* aTopic,
 already_AddRefed<ParticularProcessPriorityManager>
 ProcessPriorityManagerImpl::GetParticularProcessPriorityManager(
     ContentParent* aContentParent) {
-  uint64_t cpId = aContentParent->ChildID();
-  auto entry = mParticularManagers.LookupForAdd(cpId);
-  RefPtr<ParticularProcessPriorityManager> pppm =
-      entry.OrInsert([aContentParent]() {
-        return new ParticularProcessPriorityManager(aContentParent);
-      });
-
-  if (!entry) {
-    
-    pppm->Init();
-    FireTestOnlyObserverNotification("process-created",
-                                     nsPrintfCString("%" PRIu64, cpId));
-  }
-
-  return pppm.forget();
+  const uint64_t cpId = aContentParent->ChildID();
+  return mParticularManagers.WithEntryHandle(cpId, [&](auto&& entry) {
+    if (!entry) {
+      entry.Insert(new ParticularProcessPriorityManager(aContentParent));
+      entry.Data()->Init();
+      FireTestOnlyObserverNotification("process-created",
+                                       nsPrintfCString("%" PRIu64, cpId));
+    }
+    return do_AddRef(entry.Data());
+  });
 }
 
 void ProcessPriorityManagerImpl::SetProcessPriority(
