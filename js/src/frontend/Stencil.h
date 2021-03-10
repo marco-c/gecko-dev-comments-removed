@@ -154,15 +154,6 @@ using ParserBindingIter = AbstractBindingIter<TaggedParserAtomIndex>;
 
 
 
-
-
-
-
-
-
-
-
-
 using RegExpIndex = TypedIndex<RegExpStencil>;
 using BigIntIndex = TypedIndex<BigIntStencil>;
 using ObjLiteralIndex = TypedIndex<ObjLiteralStencil>;
