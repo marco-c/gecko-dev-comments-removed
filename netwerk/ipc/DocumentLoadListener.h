@@ -195,7 +195,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   static RefPtr<OpenPromise> ClaimParentLoad(DocumentLoadListener** aListener,
-                                             uint64_t aLoadIdent);
+                                             uint64_t aLoadIdent,
+                                             Maybe<uint64_t> aChannelId);
 
   
   
@@ -463,6 +464,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   nsTArray<StreamListenerFunction> mStreamListenerFunctions;
 
   nsCOMPtr<nsIChannel> mChannel;
+
+  Maybe<uint64_t> mDocumentChannelId;
 
   
   
