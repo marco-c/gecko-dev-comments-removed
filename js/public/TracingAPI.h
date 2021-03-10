@@ -53,7 +53,8 @@ enum class TracerKind {
 
   
   UnmarkGray,
-  VerifyTraceProtoAndIface
+  VerifyTraceProtoAndIface,
+  Barrier
 };
 
 enum class WeakMapTraceAction {

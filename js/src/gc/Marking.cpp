@@ -964,10 +964,6 @@ JS_PUBLIC_API void js::gc::PerformIncrementalReadBarrier(JS::GCCellPtr thing) {
   
   
 
-  AutoGeckoProfilerEntry profilingStackFrame(
-      TlsContext.get(), "PerformIncrementalReadBarrier",
-      JS::ProfilingCategoryPair::GCCC_Barrier);
-
   MOZ_ASSERT(thing);
   MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
 
@@ -976,15 +972,39 @@ JS_PUBLIC_API void js::gc::PerformIncrementalReadBarrier(JS::GCCellPtr thing) {
   MOZ_ASSERT(zone->needsIncrementalBarrier());
 
   
-  GCMarker* gcmarker = GCMarker::fromTracer(zone->barrierTracer());
+  BarrierTracer* trc = BarrierTracer::fromTracer(zone->barrierTracer());
+  trc->performBarrier(thing);
+}
+
+void js::gc::PerformIncrementalBarrier(TenuredCell* cell) {
+  
+  
+
+  MOZ_ASSERT(cell);
+  MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
+
+  Zone* zone = cell->zone();
+  MOZ_ASSERT(zone->needsIncrementalBarrier());
 
   
-  ApplyGCThingTyped(thing, [gcmarker](auto thing) {
-    MOZ_ASSERT(ShouldMark(gcmarker, thing));
-    CheckTracedThing(gcmarker, thing);
-    AutoClearTracingSource acts(gcmarker);
-    gcmarker->markAndTraverse(thing);
-  });
+  BarrierTracer* trc = BarrierTracer::fromTracer(zone->barrierTracer());
+
+  trc->performBarrier(JS::GCCellPtr(cell, cell->getTraceKind()));
+}
+
+void js::gc::PerformIncrementalBarrierDuringFlattening(JSString* str) {
+  TenuredCell* cell = &str->asTenured();
+
+  
+  
+  
+  
+  if (str->isRope()) {
+    cell->markBlack();
+    return;
+  }
+
+  PerformIncrementalBarrier(cell);
 }
 
 template <typename T>
@@ -1780,7 +1800,11 @@ bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget,
   
   AutoSetMarkColor autoSetBlack(*this, MarkColor::Black);
 
-  for (;;) {
+  while (!isDrained()) {
+    if (!traceBarrieredCells(budget)) {
+      return false;
+    }
+
     while (hasBlackEntries()) {
       MOZ_ASSERT(markColor() == MarkColor::Black);
       processMarkStackTop(budget);
@@ -1805,28 +1829,24 @@ bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget,
       } while (hasGrayEntries());
     }
 
-    if (hasBlackEntries()) {
-      
-      
-      
-      
-      
-      
-      
-      
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!hasGrayEntries());
+    if (!barrierBuffer().empty() || hasBlackEntries()) {
       continue;
     }
 
-    if (!hasDelayedChildren()) {
-      break;
-    }
-
     
-
-
-
-
-    if (!markAllDelayedChildren(budget, reportTime)) {
+    
+    if (hasDelayedChildren() && !markAllDelayedChildren(budget, reportTime)) {
       return false;
     }
   }
@@ -2384,6 +2404,10 @@ bool GCMarker::init() {
          auxStack.init(gc::MarkStack::AuxiliaryStack, incrementalGCEnabled);
 }
 
+bool GCMarker::isDrained() {
+  return barrierBuffer().empty() && isMarkStackEmpty() && !delayedMarkingList;
+}
+
 void GCMarker::start() {
   MOZ_ASSERT(state == MarkingState::NotActive);
   state = MarkingState::RegularMarking;
@@ -2408,6 +2432,7 @@ void GCMarker::stop() {
   }
   state = MarkingState::NotActive;
 
+  barrierBuffer().clearAndFree();
   stack.clear();
   auxStack.clear();
   setMainStackColor(MarkColor::Black);
@@ -2436,6 +2461,7 @@ inline void GCMarker::forEachDelayedMarkingArena(F&& f) {
 void GCMarker::reset() {
   color = MarkColor::Black;
 
+  barrierBuffer().clearAndFree();
   stack.clear();
   auxStack.clear();
   setMainStackColor(MarkColor::Black);
@@ -4025,10 +4051,9 @@ void UnmarkGrayTracer::onChild(const JS::GCCellPtr& thing) {
   
   if (zone->isGCMarking()) {
     if (!cell->isMarkedBlack()) {
-      Cell* tmp = cell;
-      JSTracer* trc = &runtime()->gc.marker;
-      TraceManuallyBarrieredGenericPointerEdge(trc, &tmp, "read barrier");
-      MOZ_ASSERT(tmp == cell);
+      
+      BarrierTracer* trc = BarrierTracer::fromTracer(zone->barrierTracer());
+      trc->performBarrier(thing);
       unmarkedAny = true;
     }
     return;
@@ -4104,6 +4129,133 @@ bool js::UnmarkGrayShapeRecursively(Shape* shape) {
 #ifdef DEBUG
 Cell* js::gc::UninlinedForwarded(const Cell* cell) { return Forwarded(cell); }
 #endif
+
+#ifdef DEBUG
+static bool CellHasChildren(JS::GCCellPtr cell) {
+  struct Tracer : public JS::CallbackTracer {
+    bool hasChildren = false;
+    explicit Tracer(JSRuntime* runtime) : JS::CallbackTracer(runtime) {}
+    void onChild(const JS::GCCellPtr& thing) { hasChildren = true; }
+  };
+
+  Tracer trc(cell.asCell()->runtimeFromMainThread());
+  JS::TraceChildren(&trc, cell);
+  return trc.hasChildren;
+}
+#endif
+
+static bool CellMayHaveChildren(JS::GCCellPtr cell) {
+  bool mayHaveChildren;
+
+  switch (cell.kind()) {
+    case JS::TraceKind::BigInt:
+      mayHaveChildren = false;
+      break;
+
+    case JS::TraceKind::String: {
+      JSString* string = &cell.as<JSString>();
+      mayHaveChildren = string->hasBase() || string->isRope();
+      break;
+    }
+
+    default:
+      mayHaveChildren = true;
+      break;
+  }
+
+  MOZ_ASSERT_IF(!mayHaveChildren, !CellHasChildren(cell));
+  return mayHaveChildren;
+}
+
+
+BarrierTracer* BarrierTracer::fromTracer(JSTracer* trc) {
+  MOZ_ASSERT(trc->asCallbackTracer()->kind() == JS::TracerKind::Barrier);
+  return static_cast<BarrierTracer*>(trc->asCallbackTracer());
+}
+
+BarrierTracer::BarrierTracer(JSRuntime* rt)
+    : CallbackTracer(rt, JS::TracerKind::Barrier,
+                     JS::WeakEdgeTraceAction::Skip),
+      marker(rt->gc.marker) {}
+
+void BarrierTracer::onChild(const JS::GCCellPtr& thing) {
+  if (MapGCThingTyped(thing,
+                      [this](auto* ptr) { return ShouldMark(&marker, ptr); })) {
+    performBarrier(thing);
+  }
+}
+
+
+
+constexpr static size_t MaxBarrierBufferSize = 4096;
+
+void BarrierTracer::performBarrier(JS::GCCellPtr cell) {
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime()));
+  MOZ_ASSERT(!runtime()->gc.isBackgroundMarking());
+  MOZ_ASSERT(!cell.asCell()->isForwarded());
+
+  
+  if (!cell.asCell()->asTenured().markIfUnmarked()) {
+    return;
+  }
+
+  
+  
+  bool requiresTracing = CellMayHaveChildren(cell);
+  if (!requiresTracing) {
+    return;
+  }
+
+  BarrierBuffer& buffer = marker.barrierBuffer();
+  if (buffer.length() >= MaxBarrierBufferSize || !buffer.append(cell)) {
+    handleBufferFull(cell);
+  }
+}
+
+void BarrierTracer::handleBufferFull(JS::GCCellPtr cell) {
+  SliceBudget budget = SliceBudget::unlimited();
+  marker.traceBarrieredCells(budget);
+  marker.traceBarrieredCell(cell);
+}
+
+bool GCMarker::traceBarrieredCells(SliceBudget& budget) {
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime()) ||
+             CurrentThreadIsGCMarking());
+  MOZ_ASSERT(markColor() == MarkColor::Black);
+
+  AutoGeckoProfilerEntry profilingStackFrame(
+      TlsContext.get(), "GCMarker::traceBarrieredCells",
+      JS::ProfilingCategoryPair::GCCC_Barrier);
+
+  BarrierBuffer& buffer = barrierBuffer();
+  while (!buffer.empty()) {
+    traceBarrieredCell(buffer.popCopy());
+    budget.step();
+    if (budget.isOverBudget()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void GCMarker::traceBarrieredCell(JS::GCCellPtr cell) {
+  MOZ_ASSERT(cell.asCell()->isTenured());
+  MOZ_ASSERT(cell.asCell()->isMarkedBlack());
+  MOZ_ASSERT(!cell.asCell()->isForwarded());
+
+  ApplyGCThingTyped(cell, [this](auto thing) {
+    if (!ShouldMark(this, thing)) {
+      return;
+    }
+
+    CheckTracedThing(this, thing);
+    AutoClearTracingSource acts(this);
+
+    MOZ_ASSERT(thing->isMarkedBlack());
+    traverse(thing);
+  });
+}
 
 namespace js {
 namespace debug {

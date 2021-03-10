@@ -33,7 +33,10 @@ namespace gc {
 
 enum IncrementalProgress { NotFinished = 0, Finished };
 
+class BarrierTracer;
 struct Cell;
+
+using BarrierBuffer = Vector<JS::GCCellPtr, 0, SystemAllocPolicy>;
 
 struct WeakKeyTableHashPolicy {
   using Lookup = Cell*;
@@ -351,7 +354,7 @@ class GCMarker final : public JSTracer {
   
   void restoreWeakDelegate(JSObject* key, JSObject* delegate);
 
-  bool isDrained() { return isMarkStackEmpty() && !delayedMarkingList; }
+  bool isDrained();
 
   
   
@@ -444,6 +447,18 @@ class GCMarker final : public JSTracer {
   inline void pushValueRange(JSObject* obj, SlotsOrElementsKind kind,
                              size_t start, size_t end);
 
+  gc::MarkStack& getStack(gc::MarkColor which) {
+    return which == mainStackColor ? stack : auxStack;
+  }
+  const gc::MarkStack& getStack(gc::MarkColor which) const {
+    return which == mainStackColor ? stack : auxStack;
+  }
+
+  gc::MarkStack& currentStack() {
+    MOZ_ASSERT(currentStackPtr);
+    return *currentStackPtr;
+  }
+
   bool isMarkStackEmpty() { return stack.isEmpty() && auxStack.isEmpty(); }
 
   bool hasBlackEntries() const {
@@ -467,6 +482,18 @@ class GCMarker final : public JSTracer {
   template <typename F>
   void forEachDelayedMarkingArena(F&& f);
 
+  gc::BarrierBuffer& barrierBuffer() { return barrierBuffer_.ref(); }
+  bool traceBarrieredCells(SliceBudget& budget);
+  void traceBarrieredCell(JS::GCCellPtr cell);
+
+  
+
+
+
+
+  MainThreadOrGCTaskData<gc::BarrierBuffer> barrierBuffer_;
+  friend class gc::BarrierTracer;
+
   
 
 
@@ -486,18 +513,6 @@ class GCMarker final : public JSTracer {
   MainThreadOrGCTaskData<gc::MarkColor> mainStackColor;
 
   MainThreadOrGCTaskData<gc::MarkStack*> currentStackPtr;
-
-  gc::MarkStack& getStack(gc::MarkColor which) {
-    return which == mainStackColor ? stack : auxStack;
-  }
-  const gc::MarkStack& getStack(gc::MarkColor which) const {
-    return which == mainStackColor ? stack : auxStack;
-  }
-
-  gc::MarkStack& currentStack() {
-    MOZ_ASSERT(currentStackPtr);
-    return *currentStackPtr;
-  }
 
   
   MainThreadOrGCTaskData<js::gc::Arena*> delayedMarkingList;
