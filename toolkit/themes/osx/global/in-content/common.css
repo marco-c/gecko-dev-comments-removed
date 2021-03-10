@@ -1,6 +1,6 @@
-
-
-
+/* - This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this file,
+   - You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 %include ../../../shared/in-content/common.inc.css
 
@@ -32,10 +32,6 @@ xul|menulist::part(dropmarker) {
 xul|menulist > xul|menupopup xul|menu,
 xul|menulist > xul|menupopup xul|menuitem {
   padding-inline-end: 34px;
-}
-
-xul|*.help-button > xul|*.button-box > xul|*.button-icon {
-  margin-inline-start: 0;
 }
 
 xul|*.checkbox-icon,
@@ -76,7 +72,7 @@ xul|search-textbox::part(search-sign) {
 }
 
 html|button {
-  
+  /* XUL button min-width */
   min-width: 79px;
 }
 
