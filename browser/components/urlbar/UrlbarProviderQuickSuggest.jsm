@@ -67,6 +67,17 @@ class ProviderQuickSuggest extends UrlbarProvider {
   
 
 
+  get helpUrl() {
+    return (
+      this._helpUrl ||
+      Services.urlFormatter.formatURLPref("app.support.baseURL") +
+        "sponsored-search"
+    );
+  }
+
+  
+
+
 
 
 
@@ -130,7 +141,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
     
     if (this._onboardingCount < this._onboardingMaxCount) {
-      payload.helpUrl = UrlbarPrefs.get("quicksuggest.helpURL");
+      payload.helpUrl = this.helpUrl;
       payload.helpTitle = ONBOARDING_TEXT;
     }
 
@@ -294,6 +305,9 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
   
   _addedResultInLastQuery = false;
+
+  
+  _helpUrl = undefined;
 
   get _onboardingCount() {
     return UrlbarPrefs.get(ONBOARDING_COUNT_PREF);
