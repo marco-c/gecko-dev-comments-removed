@@ -13,8 +13,7 @@ namespace mozilla {
 
 bool ADTSDecoder::IsEnabled() {
   RefPtr<PDMFactory> platform = new PDMFactory();
-  return platform->SupportsMimeType("audio/mp4a-latm"_ns,
-                                     nullptr);
+  return platform->SupportsMimeType("audio/mp4a-latm"_ns);
 }
 
 
