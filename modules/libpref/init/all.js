@@ -4531,9 +4531,6 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
 
 
 
-pref("marionette.enabled", false);
-
-
 
 pref("marionette.debugging.clicktostart", false);
 

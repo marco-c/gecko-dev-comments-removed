@@ -309,31 +309,25 @@ class MarionetteParentProcess {
 
     this.alteredPrefs = new Set();
 
-    if (env.exists(ENV_ENABLED)) {
-      this.enabled = true;
-    } else {
-      
-      this.enabled = MarionettePrefs.enabled;
-    }
-
-    if (this.enabled) {
-      logger.trace(`Marionette enabled`);
-    }
+    
+    this.enabled = env.exists(ENV_ENABLED);
 
     Services.ppmm.addMessageListener("Marionette:IsRunning", this);
   }
 
   get enabled() {
-    return !!this._enabled;
+    return this._enabled;
   }
 
   set enabled(value) {
-    if (value) {
-      
-      MarionettePrefs.enabled = value;
+    
+    
+    if (this._enabled || !value) {
+      return;
     }
 
     this._enabled = value;
+    logger.info(`Marionette enabled`);
   }
 
   get running() {
@@ -368,10 +362,7 @@ class MarionetteParentProcess {
       case "command-line-startup":
         Services.obs.removeObserver(this, topic);
 
-        if (!this.enabled && subject.handleFlag("marionette", false)) {
-          logger.trace(`Marionette enabled`);
-          this.enabled = true;
-        }
+        this.enabled = subject.handleFlag("marionette", false);
 
         if (this.enabled) {
           Services.obs.addObserver(this, "toplevel-window-ready");

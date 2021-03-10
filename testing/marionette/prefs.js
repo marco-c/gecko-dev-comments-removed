@@ -134,20 +134,6 @@ class MarionetteBranch extends Branch {
 
 
 
-  get enabled() {
-    return this.get("enabled", false);
-  }
-
-  set enabled(isEnabled) {
-    this.set("enabled", isEnabled);
-  }
-
-  
-
-
-
-
-
 
   get clickToStart() {
     return this.get("debugging.clicktostart", false);
