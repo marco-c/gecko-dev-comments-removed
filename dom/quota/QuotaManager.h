@@ -225,15 +225,22 @@ class QuotaManager final : public BackgroundThreadObject {
   Result<nsCOMPtr<nsIFile>, nsresult> GetDirectoryForOrigin(
       PersistenceType aPersistenceType, const nsACString& aASCIIOrigin) const;
 
-  nsresult RestoreDirectoryMetadata2(nsIFile* aDirectory);
+  nsresult RestoreDirectoryMetadata2(nsIFile* aDirectory, bool aPersistent);
+
+  struct GetDirectoryResultWithOriginMetadata {
+    int64_t mTimestamp;
+    bool mPersisted;
+    OriginMetadata mOriginMetadata;
+  };
 
   
   
-  Result<FullOriginMetadata, nsresult> LoadFullOriginMetadata(
-      nsIFile* aDirectory, PersistenceType aPersistenceType);
+  Result<GetDirectoryResultWithOriginMetadata, nsresult>
+  GetDirectoryMetadataWithOriginMetadata2(nsIFile* aDirectory,
+                                          PersistenceType aPersistenceType);
 
-  Result<FullOriginMetadata, nsresult> LoadFullOriginMetadataWithRestore(
-      nsIFile* aDirectory);
+  Result<GetDirectoryResultWithOriginMetadata, nsresult>
+  GetDirectoryMetadataWithOriginMetadata2WithRestore(nsIFile* aDirectory);
 
   
   
