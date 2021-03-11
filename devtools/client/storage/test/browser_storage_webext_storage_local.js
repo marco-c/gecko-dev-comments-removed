@@ -43,23 +43,17 @@ async function setupLocalDevToolsServerAndClient() {
 
 
 
-async function setupExtensionDebuggingToolbox(id, options = {}) {
-  const { openToolbox = false } = options;
-
+async function setupExtensionDebuggingToolbox(id) {
   const client = await setupLocalDevToolsServerAndClient();
-  const front = await client.mainRoot.getAddon({ id });
-  const target = await front.getTarget();
-  target.shouldCloseClient = true;
+  const descriptor = await client.mainRoot.getAddon({ id });
 
-  let toolbox;
-  let storage;
-  if (openToolbox) {
-    const res = await openStoragePanel({
-      target,
-      hostType: Toolbox.HostType.WINDOW,
-    });
-    ({ toolbox, storage } = res);
-  }
+  const { toolbox, storage } = await openStoragePanel({
+    descriptor,
+    hostType: Toolbox.HostType.WINDOW,
+  });
+
+  const target = toolbox.target;
+  target.shouldCloseClient = true;
 
   return { target, toolbox, storage };
 }
@@ -194,10 +188,7 @@ add_task(
 
     info("Open the addon toolbox storage panel");
     const { target, toolbox } = await setupExtensionDebuggingToolbox(
-      extension.id,
-      {
-        openToolbox: true,
-      }
+      extension.id
     );
 
     await selectTreeItem(["extensionStorage", host]);
