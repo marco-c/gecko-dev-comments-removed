@@ -35,7 +35,6 @@ static NSAppearance* AppearanceForVibrancyType(VibrancyType aType) {
     case VibrancyType::TOOLTIP:
     case VibrancyType::MENU:
     case VibrancyType::HIGHLIGHTED_MENUITEM:
-    case VibrancyType::SHEET:
     case VibrancyType::SOURCE_LIST:
     case VibrancyType::SOURCE_LIST_SELECTION:
     case VibrancyType::ACTIVE_SOURCE_LIST_SELECTION:
@@ -50,8 +49,6 @@ static NSVisualEffectState VisualEffectStateForVibrancyType(VibrancyType aType) 
     case VibrancyType::TOOLTIP:
     case VibrancyType::MENU:
     case VibrancyType::HIGHLIGHTED_MENUITEM:
-    case VibrancyType::SHEET:
-      
       
       
       return NSVisualEffectStateActive;
