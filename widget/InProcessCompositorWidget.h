@@ -41,6 +41,12 @@ class InProcessCompositorWidget : public CompositorWidget {
 
  protected:
   nsBaseWidget* mWidget;
+  
+  
+  static const char* CANARY_VALUE;
+  const char* mCanary;
+  nsBaseWidget* mWidgetSanity;
+  void CheckWidgetSanity();
 };
 
 }  
