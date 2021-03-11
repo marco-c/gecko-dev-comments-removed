@@ -814,14 +814,14 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   void SetActiveBrowsingContextFromOtherProcess(
-      mozilla::dom::BrowsingContext* aContext);
+      mozilla::dom::BrowsingContext* aContext, uint64_t aActionId);
 
   
   
   
   
   void UnsetActiveBrowsingContextFromOtherProcess(
-      mozilla::dom::BrowsingContext* aContext);
+      mozilla::dom::BrowsingContext* aContext, uint64_t aActionId);
 
   
   
@@ -831,8 +831,9 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   
-  void ReviseActiveBrowsingContext(mozilla::dom::BrowsingContext* aContext,
-                                   uint64_t aActionId);
+  void ReviseActiveBrowsingContext(uint64_t aOldActionId,
+                                   mozilla::dom::BrowsingContext* aContext,
+                                   uint64_t aNewActionId);
 
   
   
@@ -848,6 +849,8 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   mozilla::dom::BrowsingContext* GetActiveBrowsingContextInChrome();
+
+  uint64_t GetActionIdForActiveBrowsingContextInChrome() const;
 
   static uint64_t GenerateFocusActionId();
 
@@ -879,6 +882,8 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   uint64_t mActionIdForActiveBrowsingContextInContent;
+
+  uint64_t mActionIdForActiveBrowsingContextInChrome;
 
   
   

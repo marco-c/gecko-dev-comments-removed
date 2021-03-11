@@ -9968,6 +9968,12 @@ uint64_t nsContentUtils::GenerateProcessSpecificId(uint64_t aId) {
 }
 
 
+std::tuple<uint64_t, uint64_t> nsContentUtils::SplitProcessSpecificId(
+    uint64_t aId) {
+  return {aId >> kIdBits, aId & ((uint64_t(1) << kIdBits) - 1)};
+}
+
+
 static uint64_t gNextTabId = 0;
 
 
