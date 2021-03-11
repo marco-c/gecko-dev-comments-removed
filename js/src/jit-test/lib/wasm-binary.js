@@ -206,7 +206,6 @@ const TableCopyCode = 0x0e;
 const StructNew = 0x00;         
 const StructGet = 0x03;         
 const StructSet = 0x06;         
-const StructNarrow = 0x07;      
 
 
 const FunctionCode     = 0x00;
