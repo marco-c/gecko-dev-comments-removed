@@ -314,7 +314,7 @@ pub struct CachedGradientSegment {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[repr(C)]
 #[derive(Clone, Debug)]
-pub struct GradientJob {
+pub struct FastLinearGradientInstance {
     pub task_rect: DeviceRect,
     pub stops: [f32; GRADIENT_FP_STOPS],
     pub colors: [PremultipliedColorF; GRADIENT_FP_STOPS],
