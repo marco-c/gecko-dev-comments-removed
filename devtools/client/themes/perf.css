@@ -1,13 +1,13 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root.theme-light {
-  
-
-
-
-
+  /**
+   * Override this variable to match the Photon guidelines and make sure the
+   * links have enough contrast on the background of the onboarding message.
+   * See Bug 1673582 to apply this back to devtools main variable.css file.
+   */
   --theme-highlight-blue: var(--blue-60);
 }
 
@@ -68,24 +68,24 @@
   font-size: inherit;
 }
 
-
+/* See https://design.firefox.com/photon/components/buttons.html for the spec */
 .perf-photon-button {
   padding: 0 8px;
   border: none;
   margin: 0;
 
-  
+  /* reset default styles */
   background: none;
 
-  
+  /* photon styles */
   background-color: var(--toolbarbutton-background);
   border-radius: 2px;
   color: var(--theme-body-color);
   font: inherit;
 }
 
-
-
+/* This is a Firefox-specific style because Firefox adds a focusring at a bad
+ * position. We're adding our own below. */
 .perf-photon-button::-moz-focus-inner {
   border: none;
 }
@@ -179,14 +179,14 @@ a.perf-photon-button:focus {
 }
 
 .perf-presets-select {
-  
+  /* Layout */
   position: relative;
   min-width: 186px;
   padding-block: 3px;
   padding-inline: 5px;
   border: 1px solid transparent;
 
-  
+  /* Presentational: */
   appearance: none;
   background-color: var(--grey-20);
   background-image: url('chrome://global/skin/icons/arrow-dropdown-12.svg');
@@ -194,7 +194,7 @@ a.perf-photon-button:focus {
   background-repeat: no-repeat;
   border-radius: 2px;
   border: 1px solid transparent;
-  color: inherit !important;
+  color: #0c0c0d;
   font-size: 12px;
   font-weight: 400;
   text-decoration: none;
@@ -221,24 +221,24 @@ a.perf-photon-button:focus {
   font-weight: bold;
 }
 
+/* OnboardingMessage component styles */
 
-
-
-
-
-
-
-
-
+/*
+ * The grid layout of the onboarding message is:
+ *
+ *  +-----------------------------+---+
+ *  |     onboarding message      | X |
+ *  +-----------------------------+---+
+ */
 .perf-onboarding {
   background-color: var(--theme-selection-background-hover);
   border-bottom: 1px solid var(--theme-splitter-color);
   display: grid;
   font-size: 13px;
   grid-template-columns: auto 36px;
-  
+  /* Compensate some of the 65px margin-top set on .perf-button-container */
   margin-bottom: -50px;
-  
+  /* Override the max-width set on ".perf > *" */
   max-width: unset;
   width: 100%;
 }
