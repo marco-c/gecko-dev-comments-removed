@@ -58,6 +58,14 @@ typedef unsigned __int64 uint64_t;
 #define OTS_TAG(c1,c2,c3,c4) ((uint32_t)((((uint8_t)(c1))<<24)|(((uint8_t)(c2))<<16)|(((uint8_t)(c3))<<8)|((uint8_t)(c4))))
 #define OTS_UNTAG(tag)       ((char)((tag)>>24)), ((char)((tag)>>16)), ((char)((tag)>>8)), ((char)(tag))
 
+#if defined(__GNUC__) && (__GNUC__ >= 4) || (__clang__)
+#define OTS_UNUSED __attribute__((unused))
+#elif defined(_MSC_VER)
+#define OTS_UNUSED __pragma(warning(suppress: 4100 4101))
+#else
+#define OTS_UNUSED
+#endif
+
 namespace ots {
 
 
@@ -205,12 +213,12 @@ class OTS_API OTSContext {
     
     
     
-    virtual void Message(int level, const char *format, ...) MSGFUNC_FMT_ATTR {}
+    virtual void Message(int level OTS_UNUSED, const char *format OTS_UNUSED, ...) MSGFUNC_FMT_ATTR {}
 
     
     
     
-    virtual TableAction GetTableAction(uint32_t tag) { return ots::TABLE_ACTION_DEFAULT; }
+    virtual TableAction GetTableAction(uint32_t tag OTS_UNUSED) { return ots::TABLE_ACTION_DEFAULT; }
 };
 
 }  
