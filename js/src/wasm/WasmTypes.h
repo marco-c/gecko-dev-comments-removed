@@ -2016,6 +2016,14 @@ class StructType {
     }
   }
 
+  bool isDefaultable() const {
+    for (auto& field : fields_) {
+      if (!field.type.isDefaultable()) {
+        return false;
+      }
+    }
+    return true;
+  }
   [[nodiscard]] bool computeLayout();
 
   
