@@ -5534,7 +5534,6 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   
 
   mScopedXPCOM = MakeUnique<ScopedXPCOMStartup>();
-  if (!mScopedXPCOM) return 1;
 
   rv = mScopedXPCOM->Initialize( false);
   NS_ENSURE_SUCCESS(rv, 1);
