@@ -728,10 +728,12 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
+
       template <typename EditorDOMPointType>
       static BoundaryData ScanCollapsibleWhiteSpaceStartFrom(
           const EditorDOMPointType& aPoint,
-          const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent,
+          const dom::Element&
+              aEditableBlockParentOrTopmostEditableInlineElement,
           const dom::Element* aEditingHost, NoBreakingSpaceData* aNBSPData);
 
       
@@ -748,10 +750,12 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
+
       template <typename EditorDOMPointType>
       static BoundaryData ScanCollapsibleWhiteSpaceEndFrom(
           const EditorDOMPointType& aPoint,
-          const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent,
+          const dom::Element&
+              aEditableBlockParentOrTopmostEditableInlineElement,
           const dom::Element* aEditingHost, NoBreakingSpaceData* aNBSPData);
 
       enum class Preformatted : bool { Yes, No };
