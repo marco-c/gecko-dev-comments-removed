@@ -705,13 +705,13 @@ void BufferTextureHost::PushResourceUpdates(
 
   
   
-  NativeTexturePolicy policy =
-      BackendNativeTexturePolicy(aResources.GetBackendType(), GetSize());
-  bool useNativeTexture =
-      (policy == REQUIRE) || (policy != FORBID && UseExternalTextures());
-  auto imageType = useNativeTexture ? wr::ExternalImageType::TextureHandle(
-                                          wr::ImageBufferKind::TextureRect)
-                                    : wr::ExternalImageType::Buffer();
+  
+  
+  auto imageType = UseExternalTextures() || aResources.GetBackendType() ==
+                                                WebRenderBackend::SOFTWARE
+                       ? wr::ExternalImageType::TextureHandle(
+                             wr::ImageBufferKind::TextureRect)
+                       : wr::ExternalImageType::Buffer();
 
   if (GetFormat() != gfx::SurfaceFormat::YUV) {
     MOZ_ASSERT(aImageKeys.length() == 1);
