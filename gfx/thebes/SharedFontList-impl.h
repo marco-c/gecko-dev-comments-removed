@@ -11,7 +11,7 @@
 
 #include "gfxFontUtils.h"
 #include "nsClassHashtable.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsXULAppAPI.h"
 #include "mozilla/UniquePtr.h"
 
@@ -139,8 +139,8 @@ class FontList {
 
 
 
-  void SetLocalNames(nsDataHashtable<nsCStringHashKey, LocalFaceRec::InitData>&
-                         aLocalNameTable);
+  void SetLocalNames(
+      nsTHashMap<nsCStringHashKey, LocalFaceRec::InitData>& aLocalNameTable);
 
   
 

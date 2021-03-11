@@ -770,7 +770,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
   
   
-  nsDataHashtable<nsVoidPtrHashKey, nsTArray<RefPtr<AudioDataListener>>>
+  nsTHashMap<nsVoidPtrHashKey, nsTArray<RefPtr<AudioDataListener>>>
       mInputDeviceUsers;
 
   

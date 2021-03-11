@@ -21,7 +21,7 @@
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsHashKeys.h"
 #include "nsTHashtable.h"
 #include "js/TypeDecls.h"
@@ -402,8 +402,7 @@ class AudioContext final : public DOMEventTargetHelper,
   nsTHashtable<nsRefPtrHashKey<AudioNode>> mActiveNodes;
   
   nsTHashtable<nsPtrHashKey<AudioNode>> mAllNodes;
-  nsDataHashtable<nsStringHashKey, AudioParamDescriptorMap>
-      mWorkletParamDescriptors;
+  nsTHashMap<nsStringHashKey, AudioParamDescriptorMap> mWorkletParamDescriptors;
   
   RefPtr<BasicWaveFormCache> mBasicWaveFormCache;
   

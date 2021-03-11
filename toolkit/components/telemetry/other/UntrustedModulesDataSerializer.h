@@ -10,7 +10,7 @@
 #include "js/TypeDecls.h"
 #include "mozilla/UntrustedModulesData.h"
 #include "mozilla/Vector.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "UntrustedModulesBackupService.h"
 
 namespace mozilla {
@@ -20,7 +20,7 @@ namespace Telemetry {
 
 
 class MOZ_RAII UntrustedModulesDataSerializer final {
-  using IndexMap = nsDataHashtable<nsStringHashKey, uint32_t>;
+  using IndexMap = nsTHashMap<nsStringHashKey, uint32_t>;
 
   nsresult mCtorResult;
   JSContext* mCx;

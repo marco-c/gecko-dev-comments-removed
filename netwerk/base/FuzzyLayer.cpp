@@ -5,7 +5,7 @@
 
 
 #include "FuzzyLayer.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsDeque.h"
 #include "nsIRunnable.h"
 #include "nsSocketTransportService2.h"
@@ -39,7 +39,7 @@ typedef struct {
 } NetworkFuzzingBuffer;
 
 
-static nsDataHashtable<nsPtrHashKey<PRFileDesc>, NetworkFuzzingBuffer*>
+static nsTHashMap<nsPtrHashKey<PRFileDesc>, NetworkFuzzingBuffer*>
     gConnectedNetworkFuzzingBuffers;
 
 

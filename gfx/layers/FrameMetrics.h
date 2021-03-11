@@ -23,7 +23,7 @@
 #include "mozilla/ScrollPositionUpdate.h"        
 #include "mozilla/StaticPtr.h"                   
 #include "mozilla/TimeStamp.h"                   
-#include "nsDataHashtable.h"                     
+#include "nsTHashMap.h"                          
 #include "nsString.h"
 #include "PLDHashTable.h"  
 
@@ -1062,8 +1062,8 @@ struct ScrollMetadata {
   
 };
 
-typedef nsDataHashtable<ScrollableLayerGuid::ViewIDHashKey,
-                        nsTArray<ScrollPositionUpdate>>
+typedef nsTHashMap<ScrollableLayerGuid::ViewIDHashKey,
+                   nsTArray<ScrollPositionUpdate>>
     ScrollUpdatesMap;
 
 }  

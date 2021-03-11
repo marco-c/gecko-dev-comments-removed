@@ -17,7 +17,7 @@
 #include "nsISupports.h"
 #include "nsIURI.h"
 #include "nsClassHashtable.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "jsapi.h"
 
 #include "xpcIJSGetFactory.h"
@@ -171,10 +171,10 @@ class mozJSComponentLoader final : public nsIMemoryReporter {
                           ModuleEntry* aMod, JS::MutableHandleObject aExports);
 
   
-  nsDataHashtable<nsCStringHashKey, ModuleEntry*> mModules;
+  nsTHashMap<nsCStringHashKey, ModuleEntry*> mModules;
 
   nsClassHashtable<nsCStringHashKey, ModuleEntry> mImports;
-  nsDataHashtable<nsCStringHashKey, ModuleEntry*> mInProgressImports;
+  nsTHashMap<nsCStringHashKey, ModuleEntry*> mInProgressImports;
 
   
   

@@ -1270,8 +1270,7 @@ class PaintedLayerDataTree {
 
 
 
-  nsDataHashtable<nsPtrHashKey<AnimatedGeometryRoot>, PaintedLayerDataNode*>
-      mNodes;
+  nsTHashMap<nsPtrHashKey<AnimatedGeometryRoot>, PaintedLayerDataNode*> mNodes;
 
   bool mForInactiveLayer;
 };

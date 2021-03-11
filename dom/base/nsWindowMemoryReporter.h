@@ -11,7 +11,7 @@
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
 #include "nsITimer.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsWeakReference.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Assertions.h"
@@ -158,7 +158,7 @@ class nsWindowMemoryReporter final : public nsIMemoryReporter,
 
 
 
-  nsDataHashtable<nsISupportsHashKey, mozilla::TimeStamp> mDetachedWindows;
+  nsTHashMap<nsISupportsHashKey, mozilla::TimeStamp> mDetachedWindows;
 
   
 

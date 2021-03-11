@@ -24,6 +24,7 @@
 #include "nsCOMPtr.h"                
 #include "nsRegion.h"                
 #include "nsTArrayForwardDeclare.h"  
+#include "nsTHashMap.h"
 #include "nsIWidget.h"
 #include <vector>
 
@@ -423,7 +424,7 @@ class ShadowLayerForwarder final : public LayersIPCActor,
   nsTArray<PluginWindowData> mPluginWindowData;
   UniquePtr<ActiveResourceTracker> mActiveResourceTracker;
   uint64_t mNextLayerHandle;
-  nsDataHashtable<nsUint64HashKey, CompositableClient*> mCompositables;
+  nsTHashMap<nsUint64HashKey, CompositableClient*> mCompositables;
   PaintTiming mPaintTiming;
   
 

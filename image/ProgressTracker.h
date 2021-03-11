@@ -12,7 +12,7 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsCOMPtr.h"
 #include "nsTObserverArray.h"
 #include "nsThreadUtils.h"
@@ -71,8 +71,9 @@ inline Progress LoadCompleteProgress(bool aLastPart, bool aError,
 
 
 
-class ObserverTable : public nsDataHashtable<nsPtrHashKey<IProgressObserver>,
-                                             WeakPtr<IProgressObserver>> {
+
+class ObserverTable : public nsTHashMap<nsPtrHashKey<IProgressObserver>,
+                                        WeakPtr<IProgressObserver>> {
  public:
   NS_INLINE_DECL_REFCOUNTING(ObserverTable);
 

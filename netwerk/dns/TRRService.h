@@ -130,7 +130,7 @@ class TRRService : public TRRServiceBase,
   
   
   
-  DataMutex<nsDataHashtable<nsCStringHashKey, int32_t>> mTRRBLStorage;
+  DataMutex<nsTHashMap<nsCStringHashKey, int32_t>> mTRRBLStorage;
 
   
   nsTHashtable<nsCStringHashKey> mExcludedDomains;

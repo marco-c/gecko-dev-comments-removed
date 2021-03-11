@@ -58,7 +58,7 @@
 #include "nsCompatibility.h"
 #include "nsContentListDeclarations.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsDebug.h"
 #include "nsExpirationTracker.h"
 #include "nsGkAtoms.h"
@@ -1623,7 +1623,7 @@ class Document : public nsINode,
   class SelectorCache final : public nsExpirationTracker<SelectorCacheKey, 4> {
    public:
     using SelectorList = UniquePtr<RawServoSelectorList>;
-    using Table = nsDataHashtable<nsCStringHashKey, SelectorList>;
+    using Table = nsTHashMap<nsCStringHashKey, SelectorList>;
 
     explicit SelectorCache(nsIEventTarget* aEventTarget);
     void NotifyExpired(SelectorCacheKey*) final;
@@ -4220,7 +4220,7 @@ class Document : public nsINode,
   };
 
   
-  typedef nsDataHashtable<nsStringCaseInsensitiveHashKey, InternalCommandData>
+  typedef nsTHashMap<nsStringCaseInsensitiveHashKey, InternalCommandData>
       InternalCommandDataHashtable;
   static InternalCommandDataHashtable* sInternalCommandDataHashtable;
 
@@ -4839,7 +4839,7 @@ class Document : public nsINode,
   
   
   
-  nsDataHashtable<nsURIHashKey, bool> mPreloadedPreconnects;
+  nsTHashMap<nsURIHashKey, bool> mPreloadedPreconnects;
 
   
   uint32_t mPreloadPictureDepth;

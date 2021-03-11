@@ -360,7 +360,7 @@ class FontFaceSet final : public DOMEventTargetHelper,
   
   
   
-  nsDataHashtable<nsPtrHashKey<const gfxFontFaceSrc>, bool> mAllowedFontLoads;
+  nsTHashMap<nsPtrHashKey<const gfxFontFaceSrc>, bool> mAllowedFontLoads;
 
   
   bool mNonRuleFacesDirty;

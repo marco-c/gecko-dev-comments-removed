@@ -17,7 +17,7 @@
 #include "mozilla/gfx/BaseSize.h"  
 #include "mozilla/gfx/Point.h"     
 #include "mozilla/mozalloc.h"      
-#include "nsDataHashtable.h"       
+#include "nsTHashMap.h"            
 #include "nsDebug.h"               
 #include "nsHashKeys.h"            
 #include "nsISupportsImpl.h"       
@@ -425,8 +425,7 @@ struct ContainerLayerProperties : public LayerPropertiesBase {
     
     
 
-    nsDataHashtable<nsPtrHashKey<Layer>, uint32_t> oldIndexMap(
-        mChildren.Length());
+    nsTHashMap<nsPtrHashKey<Layer>, uint32_t> oldIndexMap(mChildren.Length());
     for (uint32_t i = 0; i < mChildren.Length(); ++i) {
       mChildren[i]->CheckCanary();
       oldIndexMap.InsertOrUpdate(mChildren[i]->mLayer, i);

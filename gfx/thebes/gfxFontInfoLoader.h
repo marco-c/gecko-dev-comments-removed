@@ -112,11 +112,10 @@ class FontInfoData {
   bool mLoadCmaps;
 
   
-  nsDataHashtable<nsCStringHashKey, FontFaceData> mFontFaceData;
+  nsTHashMap<nsCStringHashKey, FontFaceData> mFontFaceData;
 
   
-  nsDataHashtable<nsCStringHashKey, CopyableTArray<nsCString> >
-      mOtherFamilyNames;
+  nsTHashMap<nsCStringHashKey, CopyableTArray<nsCString> > mOtherFamilyNames;
 };
 
 

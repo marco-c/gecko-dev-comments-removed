@@ -59,7 +59,7 @@ class BaseHistory : public IHistory {
  protected:
   
   
-  nsDataHashtable<nsURIHashKey, ObservingLinks> mTrackedURIs;
+  nsTHashMap<nsURIHashKey, ObservingLinks> mTrackedURIs;
 
  private:
   

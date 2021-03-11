@@ -11,7 +11,7 @@
 #include "nsMenuBaseX.h"
 #include "nsIMutationObserver.h"
 #include "nsHashKeys.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsString.h"
 
 class nsMenuItemX;
@@ -46,10 +46,10 @@ class nsMenuGroupOwnerX : public nsMenuObjectX, public nsIMutationObserver {
                                
 
   
-  nsDataHashtable<nsPtrHashKey<nsIContent>, nsChangeObserver*> mContentToObserverTable;
+  nsTHashMap<nsPtrHashKey<nsIContent>, nsChangeObserver*> mContentToObserverTable;
 
   
-  nsDataHashtable<nsUint32HashKey, nsMenuItemX*> mCommandToMenuObjectTable;
+  nsTHashMap<nsUint32HashKey, nsMenuItemX*> mCommandToMenuObjectTable;
 
   
   

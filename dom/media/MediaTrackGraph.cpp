@@ -60,7 +60,7 @@ LazyLogModule gMediaTrackGraphLog("MediaTrackGraph");
 
 
 
-static nsDataHashtable<nsUint32HashKey, MediaTrackGraphImpl*> gGraphs;
+static nsTHashMap<nsUint32HashKey, MediaTrackGraphImpl*> gGraphs;
 
 MediaTrackGraphImpl::~MediaTrackGraphImpl() {
   MOZ_ASSERT(mTracks.IsEmpty() && mSuspendedTracks.IsEmpty(),

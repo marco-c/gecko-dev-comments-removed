@@ -18,7 +18,7 @@
 #include "mozilla/ServoTypes.h"
 #include "nsCSSPropertyID.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsTArray.h"
 
 class nsCSSPropertyIDSet;
@@ -254,7 +254,7 @@ class EffectCompositor {
   
   
   EnumeratedArray<CascadeLevel, CascadeLevel(kCascadeLevelCount),
-                  nsDataHashtable<PseudoElementHashEntry, bool>>
+                  nsTHashMap<PseudoElementHashEntry, bool>>
       mElementsToRestyle;
 
   bool mIsInPreTraverse = false;

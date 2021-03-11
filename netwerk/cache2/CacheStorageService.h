@@ -12,7 +12,7 @@
 #include "nsICacheTesting.h"
 
 #include "nsClassHashtable.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 #include "nsProxyRelease.h"
@@ -105,7 +105,7 @@ class CacheStorageService final : public nsICacheStorageService,
   mozilla::Mutex& Lock() { return mLock; }
 
   
-  nsDataHashtable<nsCStringHashKey, TimeStamp> mForcedValidEntries;
+  nsTHashMap<nsCStringHashKey, TimeStamp> mForcedValidEntries;
   void ForcedValidEntriesPrune(TimeStamp& now);
 
   
@@ -390,7 +390,7 @@ class CacheStorageService final : public nsICacheStorageService,
   
   
   
-  nsDataHashtable<nsCStringHashKey, mozilla::TimeStamp> mPurgeTimeStamps;
+  nsTHashMap<nsCStringHashKey, mozilla::TimeStamp> mPurgeTimeStamps;
 
   
   class IOThreadSuspender : public Runnable {

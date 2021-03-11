@@ -21,7 +21,7 @@
 #include "nsThreadUtils.h"
 #include "nsInterfaceHashtable.h"
 #include "nsRefPtrHashtable.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "js/friend/DOMProxy.h"  
 
 class nsIMutableArray;
@@ -553,11 +553,10 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   
   nsRefPtrHashtable<nsStringHashKey, HTMLInputElement> mSelectedRadioButtons;
   
-  nsDataHashtable<nsStringCaseInsensitiveHashKey, uint32_t>
+  nsTHashMap<nsStringCaseInsensitiveHashKey, uint32_t>
       mRequiredRadioButtonCounts;
   
-  nsDataHashtable<nsStringCaseInsensitiveHashKey, bool>
-      mValueMissingRadioGroups;
+  nsTHashMap<nsStringCaseInsensitiveHashKey, bool> mValueMissingRadioGroups;
 
   
   UniquePtr<HTMLFormSubmission> mPendingSubmission;

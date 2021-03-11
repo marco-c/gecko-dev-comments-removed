@@ -134,7 +134,7 @@ extern mozilla::LazyLogModule gUserInteractionPRLog;
 static LazyLogModule gBrowsingContextLog("BrowsingContext");
 static LazyLogModule gBrowsingContextSyncLog("BrowsingContextSync");
 
-typedef nsDataHashtable<nsUint64HashKey, BrowsingContext*> BrowsingContextMap;
+typedef nsTHashMap<nsUint64HashKey, BrowsingContext*> BrowsingContextMap;
 
 
 static StaticAutoPtr<BrowsingContextMap> sBrowsingContexts;

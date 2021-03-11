@@ -10,7 +10,7 @@
 #include "mozilla/gmp/PGMPServiceParent.h"
 #include "mozIGeckoMediaPluginChromeService.h"
 #include "nsClassHashtable.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "mozilla/Atomics.h"
 #include "nsIAsyncShutdown.h"
 #include "nsRefPtrHashtable.h"
@@ -191,7 +191,7 @@ class GeckoMediaPluginServiceParent final
 
   
   
-  nsDataHashtable<nsCStringHashKey, bool> mPersistentStorageAllowed;
+  nsTHashMap<nsCStringHashKey, bool> mPersistentStorageAllowed;
 
   
   

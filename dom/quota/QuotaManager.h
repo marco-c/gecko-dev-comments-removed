@@ -25,7 +25,7 @@
 #include "mozilla/dom/quota/QuotaCommon.h"
 #include "nsCOMPtr.h"
 #include "nsClassHashtable.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsDebug.h"
 #include "nsHashKeys.h"
 #include "nsISupports.h"
@@ -581,7 +581,7 @@ class QuotaManager final : public BackgroundThreadObject {
   
   
   
-  nsDataHashtable<nsUint64HashKey, NotNull<DirectoryLockImpl*>>
+  nsTHashMap<nsUint64HashKey, NotNull<DirectoryLockImpl*>>
       mDirectoryLockIdTable;
 
   
@@ -595,7 +595,7 @@ class QuotaManager final : public BackgroundThreadObject {
   
   
   
-  nsDataHashtable<nsCStringHashKey, bool> mValidOrigins;
+  nsTHashMap<nsCStringHashKey, bool> mValidOrigins;
 
   struct OriginInitializationInfo {
     bool mPersistentOriginAttempted : 1;
@@ -605,7 +605,7 @@ class QuotaManager final : public BackgroundThreadObject {
   
   
   
-  nsDataHashtable<nsCStringHashKey, OriginInitializationInfo>
+  nsTHashMap<nsCStringHashKey, OriginInitializationInfo>
       mOriginInitializationInfos;
 
   

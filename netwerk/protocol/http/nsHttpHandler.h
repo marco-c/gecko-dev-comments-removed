@@ -25,7 +25,7 @@
 #include "nsIHttpProtocolHandler.h"
 #include "nsIObserver.h"
 #include "nsISpeculativeConnect.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #ifdef DEBUG
 #  include "nsIOService.h"
 #endif
@@ -835,7 +835,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   Atomic<bool, Relaxed> mThroughCaptivePortal;
 
   
-  nsDataHashtable<nsUint64HashKey, nsWeakPtr> mIDToHttpChannelMap;
+  nsTHashMap<nsUint64HashKey, nsWeakPtr> mIDToHttpChannelMap;
 
   
   

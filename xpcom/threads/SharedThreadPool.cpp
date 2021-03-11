@@ -10,7 +10,7 @@
 #include "mozilla/Services.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticPtr.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsXPCOMCIDInternal.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIObserver.h"
@@ -28,8 +28,7 @@ static StaticAutoPtr<ReentrantMonitor> sMonitor;
 
 
 
-static StaticAutoPtr<nsDataHashtable<nsCStringHashKey, SharedThreadPool*>>
-    sPools;
+static StaticAutoPtr<nsTHashMap<nsCStringHashKey, SharedThreadPool*>> sPools;
 
 static already_AddRefed<nsIThreadPool> CreateThreadPool(const nsCString& aName);
 
@@ -73,7 +72,7 @@ void SharedThreadPool::InitStatics() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!sMonitor && !sPools);
   sMonitor = new ReentrantMonitor("SharedThreadPool");
-  sPools = new nsDataHashtable<nsCStringHashKey, SharedThreadPool*>();
+  sPools = new nsTHashMap<nsCStringHashKey, SharedThreadPool*>();
   nsCOMPtr<nsIObserverService> obsService =
       mozilla::services::GetObserverService();
   nsCOMPtr<nsIObserver> obs = new SharedThreadPoolShutdownObserver();
@@ -100,42 +99,44 @@ already_AddRefed<SharedThreadPool> SharedThreadPool::Get(
   MOZ_ASSERT(sMonitor && sPools);
   ReentrantMonitorAutoEnter mon(*sMonitor);
   RefPtr<SharedThreadPool> pool;
-  nsresult rv;
 
-  if (auto entry = sPools->LookupForAdd(aName)) {
-    pool = entry.Data();
-    if (NS_FAILED(pool->EnsureThreadLimitIsAtLeast(aThreadLimit))) {
-      NS_WARNING("Failed to set limits on thread pool");
-    }
-  } else {
-    nsCOMPtr<nsIThreadPool> threadPool(CreateThreadPool(aName));
-    if (NS_WARN_IF(!threadPool)) {
-      sPools->Remove(aName);  
-      return nullptr;
-    }
-    pool = new SharedThreadPool(aName, threadPool);
+  return sPools->WithEntryHandle(
+      aName, [&](auto&& entry) -> already_AddRefed<SharedThreadPool> {
+        if (entry) {
+          pool = entry.Data();
+          if (NS_FAILED(pool->EnsureThreadLimitIsAtLeast(aThreadLimit))) {
+            NS_WARNING("Failed to set limits on thread pool");
+          }
+        } else {
+          nsCOMPtr<nsIThreadPool> threadPool(CreateThreadPool(aName));
+          if (NS_WARN_IF(!threadPool)) {
+            sPools->Remove(aName);  
+            return nullptr;
+          }
+          pool = new SharedThreadPool(aName, threadPool);
 
-    
-    
-    
-    
-    
-    rv = pool->SetThreadLimit(aThreadLimit);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      sPools->Remove(aName);  
-      return nullptr;
-    }
+          
+          
+          
+          
+          
+          nsresult rv = pool->SetThreadLimit(aThreadLimit);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            sPools->Remove(aName);  
+            return nullptr;
+          }
 
-    rv = pool->SetIdleThreadLimit(aThreadLimit);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      sPools->Remove(aName);  
-      return nullptr;
-    }
+          rv = pool->SetIdleThreadLimit(aThreadLimit);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            sPools->Remove(aName);  
+            return nullptr;
+          }
 
-    entry.OrInsert([pool]() { return pool.get(); });
-  }
+          entry.Insert(pool.get());
+        }
 
-  return pool.forget();
+        return pool.forget();
+      });
 }
 
 NS_IMETHODIMP_(MozExternalRefCountType) SharedThreadPool::AddRef(void) {

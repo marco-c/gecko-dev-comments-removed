@@ -12,7 +12,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StaticPrefs_toolkit.h"
 #include "mozilla/TimeStamp.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
 #include "nsITimer.h"
@@ -44,15 +44,15 @@ static StaticMutex gMutex;
 
 TimeStamp gBatchBegan;
 
-typedef nsDataHashtable<nsCStringHashKey, nsTArray<uint32_t>> HistogramBatch;
+typedef nsTHashMap<nsCStringHashKey, nsTArray<uint32_t>> HistogramBatch;
 HistogramBatch gBatch;
 HistogramBatch gCategoricalBatch;
 
-typedef nsDataHashtable<nsCStringHashKey, bool> BoolScalarBatch;
+typedef nsTHashMap<nsCStringHashKey, bool> BoolScalarBatch;
 BoolScalarBatch gBoolScalars;
-typedef nsDataHashtable<nsCStringHashKey, nsCString> StringScalarBatch;
+typedef nsTHashMap<nsCStringHashKey, nsCString> StringScalarBatch;
 StringScalarBatch gStringScalars;
-typedef nsDataHashtable<nsCStringHashKey, uint32_t> UintScalarBatch;
+typedef nsTHashMap<nsCStringHashKey, uint32_t> UintScalarBatch;
 UintScalarBatch gUintScalars;
 
 StaticRefPtr<StreamingTelemetryDelegate> gDelegate;

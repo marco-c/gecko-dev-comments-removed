@@ -12,7 +12,7 @@
 #include "GMPMessageUtils.h"
 #include "mozilla/gmp/PChromiumCDMParent.h"
 #include "mozilla/RefPtr.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "PlatformDecoderModule.h"
 #include "ImageContainer.h"
 #include "mozilla/Span.h"
@@ -154,7 +154,7 @@ class ChromiumCDMParent final : public PChromiumCDMParent,
   
   
   ChromiumCDMCallback* mCDMCallback = nullptr;
-  nsDataHashtable<nsUint32HashKey, uint32_t> mPromiseToCreateSessionToken;
+  nsTHashMap<nsUint32HashKey, uint32_t> mPromiseToCreateSessionToken;
   nsTArray<RefPtr<DecryptJob>> mDecrypts;
 
   MozPromiseHolder<InitPromise> mInitPromise;

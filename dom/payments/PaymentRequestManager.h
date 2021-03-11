@@ -92,7 +92,7 @@ class PaymentRequestManager final {
   void NotifyRequestDone(PaymentRequest* aRequest);
 
   
-  nsDataHashtable<nsRefPtrHashKey<PaymentRequest>, uint32_t> mActivePayments;
+  nsTHashMap<nsRefPtrHashKey<PaymentRequest>, uint32_t> mActivePayments;
 
   nsTArray<nsString> mSupportedRegions;
 };

@@ -12,7 +12,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsIProxyInfo.h"
 #include "nsISSLSocketControl.h"
 #include "nsNSSCertificate.h"
@@ -301,7 +301,7 @@ class nsSSLIOLayerHelpers {
       MOZ_ASSERT(intolerant == 0 || tolerant < intolerant);
     }
   };
-  nsDataHashtable<nsCStringHashKey, IntoleranceEntry> mTLSIntoleranceInfo;
+  nsTHashMap<nsCStringHashKey, IntoleranceEntry> mTLSIntoleranceInfo;
   
   
   

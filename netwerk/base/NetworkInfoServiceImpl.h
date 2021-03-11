@@ -5,12 +5,12 @@
 
 
 #include "nsString.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 
 namespace mozilla {
 namespace net {
 
-typedef nsDataHashtable<nsCStringHashKey, nsCString> AddrMapType;
+typedef nsTHashMap<nsCStringHashKey, nsCString> AddrMapType;
 
 nsresult DoListAddresses(AddrMapType& aAddrMap);
 

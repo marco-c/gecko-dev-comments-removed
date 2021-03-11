@@ -13,7 +13,7 @@
 #include "mozilla/UniquePtr.h"
 #include "nsClassHashtable.h"
 #include "nsComponentManagerUtils.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsIFile.h"
 #include "nsIObserverService.h"
 #include "nsProxyRelease.h"
@@ -276,7 +276,7 @@ class NativeFileWatcherIOTask : public Runnable {
   
   nsClassHashtable<nsStringHashKey, WatchedResourceDescriptor>
       mWatchedResourcesByPath;
-  nsDataHashtable<nsVoidPtrHashKey, WatchedResourceDescriptor*>
+  nsTHashMap<nsVoidPtrHashKey, WatchedResourceDescriptor*>
       mWatchedResourcesByHandle;
 
   

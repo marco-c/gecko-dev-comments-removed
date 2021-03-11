@@ -18,7 +18,7 @@
 #include "nsTArray.h"
 #include "nsTreeStyleCache.h"
 #include "nsTreeColumns.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "imgIRequest.h"
 #include "imgINotificationObserver.h"
 #include "nsScrollbarFrame.h"
@@ -550,7 +550,7 @@ class nsTreeBodyFrame final : public nsLeafBoxFrame,
   
   
   
-  nsDataHashtable<nsStringHashKey, nsTreeImageCacheEntry> mImageCache;
+  nsTHashMap<nsStringHashKey, nsTreeImageCacheEntry> mImageCache;
 
   
   mozilla::AtomArray mScratchArray;

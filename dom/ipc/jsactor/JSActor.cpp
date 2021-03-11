@@ -70,7 +70,7 @@ void JSActor::AfterDestroy() {
 
   
   
-  nsDataHashtable<nsUint64HashKey, PendingQuery> pendingQueries;
+  nsTHashMap<nsUint64HashKey, PendingQuery> pendingQueries;
   mPendingQueries.SwapElements(pendingQueries);
   for (auto& entry : pendingQueries) {
     nsPrintfCString message(

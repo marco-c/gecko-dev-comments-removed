@@ -185,7 +185,7 @@ class BlobURLsReporter final : public nsIMemoryReporter {
       return NS_OK;
     }
 
-    nsDataHashtable<nsPtrHashKey<mozilla::dom::BlobImpl>, uint32_t> refCounts;
+    nsTHashMap<nsPtrHashKey<mozilla::dom::BlobImpl>, uint32_t> refCounts;
 
     
     

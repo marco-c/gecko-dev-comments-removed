@@ -22,7 +22,7 @@
 #include "mozilla/PrincipalHashKey.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/css/Loader.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsIMemoryReporter.h"
 #include "nsRefPtrHashtable.h"
 #include "nsURIHashKey.h"
@@ -123,19 +123,18 @@ class SharedStyleSheetCache final : public nsIMemoryReporter {
 
   void WillStartPendingLoad(css::SheetLoadData&);
 
-  nsDataHashtable<SheetLoadDataHashKey, CompleteSheet> mCompleteSheets;
+  nsTHashMap<SheetLoadDataHashKey, CompleteSheet> mCompleteSheets;
   nsRefPtrHashtable<SheetLoadDataHashKey, css::SheetLoadData> mPendingDatas;
   
   
   
   
   
-  nsDataHashtable<SheetLoadDataHashKey, WeakPtr<css::SheetLoadData>>
-      mLoadingDatas;
+  nsTHashMap<SheetLoadDataHashKey, WeakPtr<css::SheetLoadData>> mLoadingDatas;
 
   
   
-  nsDataHashtable<PrincipalHashKey, uint32_t> mLoaderPrincipalRefCnt;
+  nsTHashMap<PrincipalHashKey, uint32_t> mLoaderPrincipalRefCnt;
 
   static SharedStyleSheetCache* sInstance;
 };

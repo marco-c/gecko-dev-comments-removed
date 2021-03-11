@@ -15,7 +15,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/ipc/IdType.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsHashKeys.h"
 #include "nsISupports.h"
 #include "nsTArray.h"
@@ -42,11 +42,11 @@ class ClientHandleParent;
 class ClientManagerService final {
   
   
-  nsDataHashtable<nsIDHashKey, ClientSourceParent*> mSourceTable;
+  nsTHashMap<nsIDHashKey, ClientSourceParent*> mSourceTable;
 
   
   
-  nsDataHashtable<nsIDHashKey, nsTArray<ClientHandleParent*>> mPendingHandles;
+  nsTHashMap<nsIDHashKey, nsTArray<ClientHandleParent*>> mPendingHandles;
 
   nsTArray<ClientManagerParent*> mManagerList;
 

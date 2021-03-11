@@ -19,7 +19,7 @@
 #endif
 
 #include "npfunctions.h"
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "nsHashKeys.h"
 #include "nsRect.h"
 
@@ -322,7 +322,7 @@ class PluginInstanceParent : public PPluginInstanceParent {
   
   int mLastRecordedDrawingModel;
 
-  nsDataHashtable<nsPtrHashKey<NPObject>, PluginScriptableObjectParent*>
+  nsTHashMap<nsPtrHashKey<NPObject>, PluginScriptableObjectParent*>
       mScriptableObjects;
 
   

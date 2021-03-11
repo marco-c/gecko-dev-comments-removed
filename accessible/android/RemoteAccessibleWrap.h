@@ -145,7 +145,7 @@ class DocRemoteAccessibleWrap : public RemoteAccessibleWrap {
   
 
 
-  nsDataHashtable<nsUint32HashKey, AccessibleWrap*> mIDToAccessibleMap;
+  nsTHashMap<nsUint32HashKey, AccessibleWrap*> mIDToAccessibleMap;
 };
 }  
 }  

@@ -76,7 +76,7 @@ class DocRemoteAccessibleWrap : public HyperTextRemoteAccessibleWrap {
   
 
 
-  nsDataHashtable<nsUint32HashKey, AccessibleWrap*> mIDToAccessibleMap;
+  nsTHashMap<nsUint32HashKey, AccessibleWrap*> mIDToAccessibleMap;
 };
 
 template <typename T>

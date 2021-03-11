@@ -33,7 +33,7 @@ static nsClassHashtable<nsUint32HashKey, PointerInfo>* sActivePointersIds;
 
 
 
-static nsDataHashtable<nsUint32HashKey, BrowserParent*>*
+static nsTHashMap<nsUint32HashKey, BrowserParent*>*
     sPointerCaptureRemoteTargetTable = nullptr;
 
 
@@ -44,7 +44,7 @@ void PointerEventHandler::InitializeStatics() {
   sActivePointersIds = new nsClassHashtable<nsUint32HashKey, PointerInfo>;
   if (XRE_IsParentProcess()) {
     sPointerCaptureRemoteTargetTable =
-        new nsDataHashtable<nsUint32HashKey, BrowserParent*>;
+        new nsTHashMap<nsUint32HashKey, BrowserParent*>;
   }
 }
 

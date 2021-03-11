@@ -47,7 +47,7 @@ class DocAccessibleWrap : public DocAccessible {
   
 
 
-  nsDataHashtable<nsUint32HashKey, AccessibleWrap*> mIDToAccessibleMap;
+  nsTHashMap<nsUint32HashKey, AccessibleWrap*> mIDToAccessibleMap;
 
   virtual void DoInitialUpdate() override;
 

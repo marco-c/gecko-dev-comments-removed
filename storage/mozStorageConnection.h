@@ -14,7 +14,7 @@
 #include "nsThreadUtils.h"
 #include "nsIInterfaceRequestor.h"
 
-#include "nsDataHashtable.h"
+#include "nsTHashMap.h"
 #include "mozIStorageProgressHandler.h"
 #include "SQLiteMutex.h"
 #include "mozIStorageConnection.h"
@@ -443,7 +443,7 @@ class Connection final : public mozIStorageConnection,
 
 
 
-  nsDataHashtable<nsCStringHashKey, FunctionInfo> mFunctions;
+  nsTHashMap<nsCStringHashKey, FunctionInfo> mFunctions;
 
   
 

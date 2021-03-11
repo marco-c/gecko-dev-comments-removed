@@ -13,7 +13,7 @@ class nsIHandleReportCallback;
 namespace xpc {
 
 
-typedef nsDataHashtable<nsUint64HashKey, nsCString> WindowPaths;
+typedef nsTHashMap<nsUint64HashKey, nsCString> WindowPaths;
 
 
 

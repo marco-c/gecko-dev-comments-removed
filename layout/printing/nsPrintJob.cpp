@@ -1991,7 +1991,7 @@ struct MOZ_STACK_CLASS SelectionRangeState {
 
   
   
-  nsDataHashtable<nsPtrHashKey<nsINode>, Position> mPositions;
+  nsTHashMap<nsPtrHashKey<nsINode>, Position> mPositions;
 
   
   const RefPtr<Selection> mSelection;

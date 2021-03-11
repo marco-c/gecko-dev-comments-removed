@@ -133,7 +133,7 @@ class nsGenConList {
   }
 
   
-  nsDataHashtable<nsPtrHashKey<nsIFrame>, nsGenConNode*> mNodes;
+  nsTHashMap<nsPtrHashKey<nsIFrame>, nsGenConNode*> mNodes;
 
   
   
