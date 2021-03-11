@@ -110,6 +110,7 @@
 
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ScopeExit.h"
 
 #include <algorithm>
 #include <utility>
@@ -8155,6 +8156,7 @@ class BaseCompiler final : public BaseCompilerInterface {
     MOZ_ASSERT(!GeneralRegisterSet::All().hasRegisterIndex(x28.asUnsized()));
     masm.Mov(x28, sp);
 #endif
+    
     EmitWasmPreBarrierCall(masm, scratch, scratch, valueAddr);
 
     masm.bind(&skipBarrier);
@@ -8168,11 +8170,7 @@ class BaseCompiler final : public BaseCompilerInterface {
     
     
     
-#ifdef JS_64BIT
-    pushI64(RegI64(Register64(valueAddr)));
-#else
-    pushI32(RegI32(valueAddr));
-#endif
+    pushPtr(valueAddr);
     if (!emitInstanceCall(bytecodeOffset, SASigPostBarrier,
                           false)) {
       return false;
@@ -8180,6 +8178,8 @@ class BaseCompiler final : public BaseCompilerInterface {
     return true;
   }
 
+  
+  
   [[nodiscard]] bool emitBarrieredStore(const Maybe<RegRef>& object,
                                         RegPtr valueAddr, RegRef value) {
     
@@ -8196,6 +8196,11 @@ class BaseCompiler final : public BaseCompilerInterface {
     EmitWasmPostBarrierGuard(masm, object, otherScratch, value, &skipBarrier);
     freeRef(otherScratch);
 
+    if (object) {
+      pushRef(*object);
+    }
+    pushRef(value);
+
     
     if (!emitPostBarrierCall(valueAddr)) {
       return false;
@@ -8203,10 +8208,10 @@ class BaseCompiler final : public BaseCompilerInterface {
 
     
     
+    popRef(value);
     if (object) {
-      freeRef(*object);
+      popRef(*object);
     }
-    freeRef(value);
 
     masm.bind(&skipBarrier);
     return true;
@@ -8631,8 +8636,7 @@ class BaseCompiler final : public BaseCompilerInterface {
   [[nodiscard]] bool emitGcStructSet(RegRef object, RegPtr data,
                                      const StructField& field, AnyReg value);
   [[nodiscard]] bool emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
-                                    RegI32 length, const ArrayType& array,
-                                    AnyReg value, RegPtr scratch);
+                                    const ArrayType& array, AnyReg value);
 
 #ifdef ENABLE_WASM_SIMD
   template <typename SourceType, typename DestType>
@@ -11689,6 +11693,7 @@ bool BaseCompiler::emitSetGlobal() {
       if (!emitBarrieredStore(Nothing(), valueAddr, rv)) {
         return false;
       }
+      freeRef(rv);
       break;
     }
 #ifdef ENABLE_WASM_SIMD
@@ -13492,44 +13497,48 @@ bool BaseCompiler::emitGcStructSet(RegRef object, RegPtr data,
   
   RegPtr valueAddr = RegPtr(PreBarrierReg);
   needPtr(valueAddr);
-  RegRef barrierOwner = needRef();
-
   masm.computeEffectiveAddress(Address(data, field.offset), valueAddr);
-  masm.movePtr(object, barrierOwner);
 
   
-  pushRef(object);
   pushPtr(data);
 
   
-  if (!emitBarrieredStore(Some(barrierOwner), valueAddr, value.ref())) {
+  if (!emitBarrieredStore(Some(object), valueAddr, value.ref())) {
     return false;
   }
+  freeRef(value.ref());
 
   
   popPtr(data);
-  popRef(object);
 
   return true;
 }
 
 bool BaseCompiler::emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
-                                  RegI32 length, const ArrayType& arrayType,
-                                  AnyReg value, RegPtr scratch) {
+                                  const ArrayType& arrayType, AnyReg value) {
+  
+  
+  
   
   uint32_t shift = arrayType.elementType_.indexingShift();
   Scale scale;
-  masm.movePtr(index, scratch);
+  bool shiftedIndex = false;
   if (IsShiftInScaleRange(shift)) {
     scale = ShiftToScale(shift);
   } else {
-    masm.lshiftPtr(Imm32(shift), scratch);
+    masm.lshiftPtr(Imm32(shift), index);
     scale = TimesOne;
+    shiftedIndex = true;
   }
+  auto unshiftIndex = mozilla::MakeScopeExit([&] {
+    if (shiftedIndex) {
+      masm.rshiftPtr(Imm32(shift), index);
+    }
+  });
 
   
   if (!arrayType.elementType_.isReference()) {
-    emitGcSetScalar(BaseIndex(data, scratch, scale, 0), arrayType.elementType_,
+    emitGcSetScalar(BaseIndex(data, index, scale, 0), arrayType.elementType_,
                     value);
     return true;
   }
@@ -13538,29 +13547,20 @@ bool BaseCompiler::emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
   
   RegPtr valueAddr = RegPtr(PreBarrierReg);
   needPtr(valueAddr);
-  RegRef barrierOwner = needRef();
-
-  masm.computeEffectiveAddress(BaseIndex(data, scratch, scale, 0), valueAddr);
-  masm.movePtr(object, barrierOwner);
+  masm.computeEffectiveAddress(BaseIndex(data, index, scale, 0), valueAddr);
 
   
-  pushAny(dupAny(value));
-  pushRef(object);
   pushPtr(data);
   pushI32(index);
-  pushI32(length);
 
   
-  if (!emitBarrieredStore(Some(barrierOwner), valueAddr, value.ref())) {
+  if (!emitBarrieredStore(Some(object), valueAddr, value.ref())) {
     return false;
   }
 
   
-  popI32(length);
   popI32(index);
   popPtr(data);
-  popRef(object);
-  popAny(value);
 
   return true;
 }
@@ -13752,7 +13752,10 @@ bool BaseCompiler::emitStructSet() {
 
   
   {
-    RegPtr scratch = needPtr();
+    
+    
+    
+    RegPtr scratch = rdata;
     RegPtr clasp = needPtr();
     masm.movePtr(SymbolicAddress::InlineTypedObjectClass, clasp);
     Label join;
@@ -13760,7 +13763,6 @@ bool BaseCompiler::emitStructSet() {
     masm.branchTestObjClass(Assembler::Equal, rp, clasp, scratch, rp,
                             &isInline);
     freePtr(clasp);
-    freePtr(scratch);
     masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfData()), rdata);
     masm.jump(&join);
 
@@ -13821,36 +13823,31 @@ bool BaseCompiler::emitArrayNewWithRtt() {
   RegI32 length = emitGcArrayGetLength(rdata, true);
 
   
-  RegI32 index = needI32();
-  masm.xor32(index, index);
-
-  RegPtr scratch = needPtr();
-
-  
   if (arrayType.elementType_.isReference()) {
     freePtr(RegPtr(PreBarrierReg));
   }
 
   
+  
   Label done;
   Label loop;
-  masm.branch32(Assembler::Equal, index, length, &done);
+  
+  masm.branch32(Assembler::Equal, length, Imm32(0), &done);
   masm.bind(&loop);
 
   
-  if (!emitGcArraySet(rp, rdata, index, length, arrayType, value, scratch)) {
+  masm.sub32(Imm32(1), length);
+
+  
+  if (!emitGcArraySet(rp, rdata, length, arrayType, value)) {
     return false;
   }
 
   
-  
-  masm.add32(Imm32(1), index);
-  masm.branch32(Assembler::NotEqual, index, length, &loop);
+  masm.branch32(Assembler::GreaterThan, length, Imm32(0), &loop);
   masm.bind(&done);
 
-  freePtr(scratch);
   freeI32(length);
-  freeI32(index);
   freeAny(value);
   freePtr(rdata);
   pushRef(rp);
@@ -13950,6 +13947,10 @@ bool BaseCompiler::emitArraySet() {
   RegRef rp = popRef();
 
   
+  
+  pushAny(value);
+
+  
   emitGcNullCheck(rp);
 
   
@@ -13959,8 +13960,6 @@ bool BaseCompiler::emitArraySet() {
   
   RegI32 length = emitGcArrayGetLength(rdata, true);
 
-  RegPtr scratch = needPtr();
-
   
   if (arrayType.elementType_.isReference()) {
     freePtr(RegPtr(PreBarrierReg));
@@ -13968,18 +13967,20 @@ bool BaseCompiler::emitArraySet() {
 
   
   emitGcArrayBoundsCheck(index, length);
+  freeI32(length);
+
+  
+  popAny(value);
 
   
   
   
-  if (!emitGcArraySet(rp, rdata, index, length, arrayType, value, scratch)) {
+  if (!emitGcArraySet(rp, rdata, index, arrayType, value)) {
     return false;
   }
 
-  freePtr(scratch);
   freePtr(rdata);
   freeRef(rp);
-  freeI32(length);
   freeI32(index);
   freeAny(value);
 
