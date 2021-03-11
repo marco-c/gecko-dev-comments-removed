@@ -44,16 +44,9 @@ class nsNSSCertificate final : public nsIX509Cert,
   
   
   
-  
-  
-  
-  
-  
-  static nsresult SegmentCertificateChain(
+  static nsresult GetIntermediatesAsDER(
        const nsTArray<RefPtr<nsIX509Cert>>& aCertList,
-       nsCOMPtr<nsIX509Cert>& aRoot,
-       nsTArray<RefPtr<nsIX509Cert>>& aIntermediates,
-       nsCOMPtr<nsIX509Cert>& aEndEntity);
+       nsTArray<nsTArray<uint8_t>>& aIntermediates);
 
   
   

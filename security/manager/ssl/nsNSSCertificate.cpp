@@ -669,35 +669,25 @@ SECStatus ConstructCERTCertListFromReversedDERArray(
 
 }  
 
-nsresult nsNSSCertificate::SegmentCertificateChain(
+nsresult nsNSSCertificate::GetIntermediatesAsDER(
      const nsTArray<RefPtr<nsIX509Cert>>& aCertList,
-     nsCOMPtr<nsIX509Cert>& aRoot,
-     nsTArray<RefPtr<nsIX509Cert>>& aIntermediates,
-     nsCOMPtr<nsIX509Cert>& aEndEntity) {
-  if (aRoot || aEndEntity) {
-    
-    return NS_ERROR_UNEXPECTED;
+     nsTArray<nsTArray<uint8_t>>& aIntermediates) {
+  if (aCertList.Length() <= 1) {
+    return NS_ERROR_INVALID_ARG;
   }
 
   if (!aIntermediates.IsEmpty()) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  for (size_t i = 0; i < aCertList.Length(); ++i) {
+  for (size_t i = 1; i < aCertList.Length() - 1; ++i) {
     const auto& cert = aCertList[i];
-    if (!aEndEntity) {
-      aEndEntity = cert;
-    } else if (i == aCertList.Length() - 1) {
-      aRoot = cert;
-    } else {
-      
-      aIntermediates.AppendElement(cert);
+    aIntermediates.AppendElement();
+    nsTArray<uint8_t>& certBytes = aIntermediates.LastElement();
+    nsresult rv = cert->GetRawDER(certBytes);
+    if (NS_FAILED(rv)) {
+      return NS_ERROR_FAILURE;
     }
-  }
-
-  if (!aRoot || !aEndEntity) {
-    
-    return NS_ERROR_INVALID_ARG;
   }
 
   return NS_OK;
