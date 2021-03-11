@@ -189,6 +189,26 @@ SearchService.prototype = {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  GENERAL_SEARCH_ENGINE_IDS: new Set([
+    "google@search.mozilla.org",
+    "ddg@search.mozilla.org",
+    "bing@search.mozilla.org",
+    "baidu@search.mozilla.org",
+    "yahoo-jp@search.mozilla.org",
+    "yandex@search.mozilla.org",
+  ]),
+
+  
+  
+  
   get _separatePrivateDefault() {
     return (
       this._separatePrivateDefaultPrefValue &&
@@ -2109,6 +2129,8 @@ SearchService.prototype = {
 
 
 
+
+
   _findAndSetNewDefaultEngine({ privateMode, excludeEngineName = "" }) {
     const currentEngineProp = privateMode
       ? "_currentPrivateEngine"
@@ -2124,24 +2146,46 @@ SearchService.prototype = {
       newDefault.hidden ||
       newDefault.name == excludeEngineName
     ) {
+      let sortedEngines = this._getSortedEngines(false);
+      let generalSearchEngines = sortedEngines.filter(e =>
+        this.GENERAL_SEARCH_ENGINE_IDS.has(e._extensionID)
+      );
       
-      let firstVisible = this._getSortedEngines(false).find(
+      let firstVisible = generalSearchEngines.find(
         e => e.name != excludeEngineName
       );
       if (firstVisible) {
         newDefault = firstVisible;
-        
-        
       } else if (newDefault) {
-        if (newDefault.name == excludeEngineName) {
-          logConsole.error(
-            "Could not find an engine to fallback to, using the same engine."
-          );
+        
+        if (newDefault.name != excludeEngineName) {
+          newDefault.hidden = false;
+        } else {
+          newDefault = null;
         }
-        newDefault.hidden = false;
+      }
+
+      
+      
+      if (!newDefault) {
+        if (!firstVisible) {
+          sortedEngines = this._getSortedEngines(true);
+          firstVisible = sortedEngines.find(e =>
+            this.GENERAL_SEARCH_ENGINE_IDS.has(e._extensionID)
+          );
+          if (!firstVisible) {
+            firstVisible = sortedEngines[0];
+          }
+        }
+        if (firstVisible) {
+          firstVisible.hidden = false;
+          newDefault = firstVisible;
+        }
       }
     }
+    
     if (!newDefault) {
+      logConsole.error("Could not find a replacement default engine.");
       return null;
     }
 
