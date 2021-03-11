@@ -275,7 +275,7 @@ impl BatchRects {
         
         if let Some(items) = &mut self.items {
             items.push(*rect);
-        } else if self.batch.area() + rect.area() > union.area() {
+        } else if self.batch.area() + rect.area() < union.area() {
             let mut items = Vec::with_capacity(16);
             items.push(self.batch);
             items.push(*rect);
