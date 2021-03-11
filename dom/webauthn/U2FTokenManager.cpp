@@ -467,12 +467,8 @@ void U2FTokenManager::MaybeAbortSign(const uint64_t& aTransactionId,
 }
 
 void U2FTokenManager::Cancel(PWebAuthnTransactionParent* aParent,
-                             const Tainted<uint64_t>& aTransactionId) {
-  
-  
-  
-  if (mTransactionParent != aParent ||
-      !MOZ_IS_VALID(aTransactionId, mLastTransactionId == aTransactionId)) {
+                             const uint64_t& aTransactionId) {
+  if (mTransactionParent != aParent || mLastTransactionId != aTransactionId) {
     return;
   }
 
