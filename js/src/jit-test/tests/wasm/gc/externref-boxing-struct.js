@@ -33,7 +33,7 @@ for (let v of WasmExternrefValues)
         `(module
            (type $S (struct (field $S.x (mut externref))))
            (func (export "make") (param $v externref) (result eqref)
-             (struct.new $S (local.get $v))))`);
+             (struct.new_with_rtt $S (local.get $v) (rtt.canon $S))))`);
     let x = ins.exports.make(v);
     assertEq(x[0], v);
 }
@@ -47,7 +47,7 @@ for (let v of WasmExternrefValues)
     let txt = `(module
                  (type $S (struct ${fields}))
                  (func (export "make") ${params} (result eqref)
-                   (struct.new $S ${args})))`;
+                   (struct.new_with_rtt $S ${args} (rtt.canon $S))))`;
     let ins = wasmEvalText(txt);
     let x = ins.exports.make({x:0}, {x:1}, {x:2}, {x:3}, {x:4}, {x:5}, {x:6}, {x:7}, {x:8}, {x:9})
     gc('shrinking');
