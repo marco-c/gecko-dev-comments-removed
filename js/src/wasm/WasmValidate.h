@@ -963,6 +963,12 @@ class Decoder {
 
 
 
+[[nodiscard]] bool CheckIsSubtypeOf(Decoder& d, const ModuleEnvironment& env,
+                                    size_t opcodeOffset, ValType actual,
+                                    ValType expected, TypeCache* cache);
+
+
+
 
 [[nodiscard]] bool EncodeLocalEntries(Encoder& d, const ValTypeVector& locals);
 
