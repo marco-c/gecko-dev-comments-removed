@@ -90,6 +90,9 @@ enum class TypeCode {
   Struct = 0x5f,  
 
   
+  Array = 0x5e,  
+
+  
   BlockVoid = 0x40,  
 
   Limit = 0x80
@@ -443,6 +446,13 @@ enum class GcOp {
   StructNewDefaultWithRtt = 0x2,
   StructGet = 0x03,
   StructSet = 0x06,
+
+  
+  ArrayNewWithRtt = 0x11,
+  ArrayNewDefaultWithRtt = 0x12,
+  ArrayGet = 0x13,
+  ArraySet = 0x16,
+  ArrayLen = 0x17,
 
   
   RttCanon = 0x30,

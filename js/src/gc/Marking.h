@@ -139,11 +139,6 @@ inline bool MaybeForwardedObjectIs(JSObject* obj);
 template <typename T>
 inline T& MaybeForwardedObjectAs(JSObject* obj);
 
-
-
-void VisitTraceList(JSTracer* trc, JSObject* obj, const uint32_t* traceList,
-                    uint8_t* memory);
-
 #ifdef JSGC_HASH_TABLE_CHECKS
 
 template <typename T>

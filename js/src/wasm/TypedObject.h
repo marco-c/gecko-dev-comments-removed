@@ -23,16 +23,18 @@ class TypedProto : public NativeObject {
   static TypedProto* create(JSContext* cx);
 };
 
+class TypedObject;
+
 class RttValue : public NativeObject {
  public:
   static const JSClass class_;
 
   enum Slot {
-    Handle = 0,     
-    Size = 1,       
-    Proto = 2,      
-    TraceList = 3,  
-    Parent = 4,     
+    Handle = 0,  
+    Kind = 1,    
+    Size = 2,    
+    Proto = 3,   
+    Parent = 4,  
     
     SlotCount = 5,
   };
@@ -45,32 +47,14 @@ class RttValue : public NativeObject {
     return wasm::TypeHandle(uint32_t(getReservedSlot(Slot::Handle).toInt32()));
   }
 
+  wasm::TypeDefKind kind() const {
+    return wasm::TypeDefKind(getReservedSlot(Slot::Kind).toInt32());
+  }
+
   size_t size() const { return getReservedSlot(Slot::Size).toInt32(); }
 
   TypedProto& typedProto() const {
     return getReservedSlot(Slot::Proto).toObject().as<TypedProto>();
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  [[nodiscard]] bool hasTraceList() const {
-    return !getFixedSlot(Slot::TraceList).isUndefined();
-  }
-  const uint32_t* traceList() const {
-    MOZ_ASSERT(hasTraceList());
-    return reinterpret_cast<uint32_t*>(
-        getFixedSlot(Slot::TraceList).toPrivate());
   }
 
   RttValue* parent() const {
@@ -79,19 +63,15 @@ class RttValue : public NativeObject {
 
   const wasm::TypeDef& getType(JSContext* cx) const;
 
-  [[nodiscard]] bool lookupProperty(JSContext* cx, jsid id, uint32_t* offset,
-                                    wasm::FieldType* type);
-  [[nodiscard]] bool hasProperty(JSContext* cx, jsid id) {
+  [[nodiscard]] bool lookupProperty(JSContext* cx,
+                                    js::Handle<TypedObject*> object, jsid id,
+                                    uint32_t* offset, wasm::FieldType* type);
+  [[nodiscard]] bool hasProperty(JSContext* cx, js::Handle<TypedObject*> object,
+                                 jsid id) {
     uint32_t offset;
     wasm::FieldType type;
-    return lookupProperty(cx, id, &offset, &type);
+    return lookupProperty(cx, object, id, &offset, &type);
   }
-  uint32_t propertyCount(JSContext* cx);
-
-  void initInstance(JSContext* cx, uint8_t* mem);
-  void traceInstance(JSTracer* trace, uint8_t* mem);
-
-  static void finalize(JSFreeOp* fop, JSObject* obj);
 };
 
 using HandleRttValue = Handle<RttValue*>;
@@ -137,12 +117,27 @@ class TypedObject : public JSObject {
                  MutableHandleValue vp);
 
   uint8_t* typedMem() const;
-  uint8_t* typedMemBase() const;
+
+  template <typename V>
+  void visitReferences(JSContext* cx, V& visitor);
+
+  void initDefault();
 
  public:
-  [[nodiscard]] static bool obj_newEnumerate(JSContext* cx, HandleObject obj,
-                                             MutableHandleIdVector properties,
-                                             bool enumerableOnly);
+  
+  static TypedObject* createStruct(JSContext* cx, HandleRttValue typeObj,
+                                   gc::InitialHeap heap = gc::DefaultHeap);
+
+  
+  static TypedObject* createArray(JSContext* cx, HandleRttValue typeObj,
+                                  uint32_t length,
+                                  gc::InitialHeap heap = gc::DefaultHeap);
+
+  
+  static JS::Result<TypedObject*, JS::OOM> create(JSContext* cx,
+                                                  js::gc::AllocKind kind,
+                                                  js::gc::InitialHeap heap,
+                                                  js::HandleShape shape);
 
   TypedProto& typedProto() const {
     
@@ -155,33 +150,13 @@ class TypedObject : public JSObject {
 
   MOZ_MUST_USE bool isRuntimeSubtype(js::Handle<RttValue*> rtt) const;
 
-  static JS::Result<TypedObject*, JS::OOM> create(JSContext* cx,
-                                                  js::gc::AllocKind kind,
-                                                  js::gc::InitialHeap heap,
-                                                  js::HandleShape shape);
-
-  uint32_t offset() const;
-  uint32_t size() const { return rttValue().size(); }
-  uint8_t* typedMem(const JS::AutoRequireNoGC&) const { return typedMem(); }
-  uint8_t* typedMem(size_t offset, const JS::AutoRequireNoGC& nogc) const {
-    
-    
-    
-    
-    
-    MOZ_ASSERT(offset <= (size_t)size());
-    return typedMem(nogc) + offset;
-  }
-
-  
-  
-  
-  static TypedObject* createZeroed(JSContext* cx, HandleRttValue typeObj,
-                                   gc::InitialHeap heap = gc::DefaultHeap);
-
   static constexpr size_t offsetOfRttValue() {
     return offsetof(TypedObject, rttValue_);
   }
+
+  [[nodiscard]] static bool obj_newEnumerate(JSContext* cx, HandleObject obj,
+                                             MutableHandleIdVector properties,
+                                             bool enumerableOnly);
 };
 
 using HandleTypedObject = Handle<TypedObject*>;
@@ -200,12 +175,21 @@ class OutlineTypedObject : public TypedObject {
 
   void setData(uint8_t* data) { data_ = data; }
 
+  void setArrayLength(uint32_t length) { *(uint32_t*)(data_) = length; }
+
  public:
   static constexpr gc::AllocKind allocKind = gc::AllocKind::OBJECT2;
 
   
-  static size_t offsetOfData() { return offsetof(OutlineTypedObject, data_); }
-  static size_t offsetOfOwner() { return offsetof(OutlineTypedObject, owner_); }
+  static constexpr size_t offsetOfData() {
+    return offsetof(OutlineTypedObject, data_);
+  }
+  static constexpr size_t offsetOfOwner() {
+    return offsetof(OutlineTypedObject, owner_);
+  }
+
+  static constexpr size_t offsetOfArrayLength() { return 0; }
+  typedef uint32_t ArrayLength;
 
   static const JSClass class_;
 
@@ -215,6 +199,10 @@ class OutlineTypedObject : public TypedObject {
   }
 
   uint8_t* outOfLineTypedMem() const { return data_; }
+
+  ArrayLength arrayLength() const {
+    return *(ArrayLength*)(data_ + offsetOfArrayLength());
+  }
 
  private:
   
@@ -229,8 +217,10 @@ class OutlineTypedObject : public TypedObject {
       gc::InitialHeap heap = gc::DefaultHeap);
 
  public:
-  static OutlineTypedObject* createZeroed(JSContext* cx, HandleRttValue rtt,
+  static OutlineTypedObject* createStruct(JSContext* cx, HandleRttValue rtt,
                                           gc::InitialHeap heap);
+  static OutlineTypedObject* createArray(JSContext* cx, HandleRttValue rtt,
+                                         uint32_t length, gc::InitialHeap heap);
 
  private:
   
@@ -239,6 +229,11 @@ class OutlineTypedObject : public TypedObject {
  public:
   static void obj_trace(JSTracer* trace, JSObject* object);
 };
+
+
+
+#define STATIC_ASSERT_ARRAYLENGTH_IS_U32 \
+  static_assert(1, "ArrayLength is uint32_t")
 
 
 class InlineTypedObject : public TypedObject {
@@ -259,11 +254,12 @@ class InlineTypedObject : public TypedObject {
  public:
   static inline gc::AllocKind allocKindForRttValue(RttValue* rtt);
 
-  static bool canAccommodateSize(size_t size) { return size <= MaxInlineBytes; }
-
-  static bool canAccommodateType(RttValue* type) {
-    return type->size() <= MaxInlineBytes;
+  static bool canAccommodateType(HandleRttValue rtt) {
+    return rtt->kind() == wasm::TypeDefKind::Struct &&
+           rtt->size() <= MaxInlineBytes;
   }
+
+  static bool canAccommodateSize(size_t size) { return size <= MaxInlineBytes; }
 
   uint8_t* inlineTypedMem(const JS::AutoRequireNoGC&) const {
     return inlineTypedMem();
@@ -276,8 +272,9 @@ class InlineTypedObject : public TypedObject {
     return offsetof(InlineTypedObject, data_);
   }
 
-  static InlineTypedObject* create(JSContext* cx, HandleRttValue rtt,
-                                   gc::InitialHeap heap = gc::DefaultHeap);
+  static InlineTypedObject* createStruct(
+      JSContext* cx, HandleRttValue rtt,
+      gc::InitialHeap heap = gc::DefaultHeap);
 };
 
 inline bool IsTypedObjectClass(const JSClass* class_) {
