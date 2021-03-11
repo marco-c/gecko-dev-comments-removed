@@ -26,7 +26,7 @@ use crate::prim_store::{PrimitiveStore, PrimitiveInstance};
 use crate::render_backend::{DataStores, ScratchBuffer};
 use crate::resource_cache::ResourceCache;
 use crate::scene::SceneProperties;
-use crate::space::{SpaceMapper, SpaceSnapper};
+use crate::space::SpaceMapper;
 use crate::internal_types::Filter;
 use crate::util::{MaxRect};
 
@@ -626,22 +626,8 @@ pub fn update_primitive_visibility(
     
     if let Some(ref rc) = pic.raster_config {
         
-        
         if pic.options.inflate_if_required {
-            
-            
-            
-            
-            
-            let snap_pic_to_raster = SpaceSnapper::new_with_target(
-                surface.raster_spatial_node_index,
-                pic.spatial_node_index,
-                surface.device_pixel_scale,
-                frame_context.spatial_tree,
-            );
-
             surface_rect = rc.composite_mode.inflate_picture_rect(surface_rect, surface.scale_factors);
-            surface_rect = snap_pic_to_raster.snap_rect(&surface_rect);
         }
 
         
