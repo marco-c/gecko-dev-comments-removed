@@ -52,22 +52,12 @@ class UAOverrides {
       return;
     }
 
-    const { blocks, matches, telemetryKey, uaTransformer } = override.config;
+    const { blocks, matches, uaTransformer } = override.config;
     const listener = details => {
-      
-      
-      if (!details.frameId && override.shouldSendDetailedTelemetry) {
-        
-        
-        
-        browser.sharedPreferences.setBoolPref(`${telemetryKey}Used`, true);
-      }
-
       
       
       if (
         !override.config.experiment ||
-        override.experimentActive ||
         override.permanentPrefEnabled === true
       ) {
         for (const header of details.requestHeaders) {
@@ -111,27 +101,11 @@ class UAOverrides {
     }
     this._activeListeners.set(override, listeners);
     override.active = true;
-
-    
-    if (telemetryKey) {
-      const { version } = browser.runtime.getManifest();
-      browser.sharedPreferences.setCharPref(`${telemetryKey}Version`, version);
-    }
-
-    
-    if (override.shouldSendDetailedTelemetry) {
-      browser.sharedPreferences.setBoolPref(`${telemetryKey}Ready`, true);
-    }
   }
 
   onOverrideConfigChanged(override) {
     
     override.hidden = override.config.hidden;
-
-    
-    if (override.config.experiment && !override.experimentActive) {
-      override.hidden = true;
-    }
 
     
     if (override.permanentPrefEnabled !== undefined) {
@@ -148,19 +122,8 @@ class UAOverrides {
 
     
     
-    override.shouldSendDetailedTelemetry =
-      override.config.telemetryKey &&
-      (override.experimentActive || override.permanentPrefEnabled);
-
     
-    
-    
-    if (
-      override.config.experiment &&
-      !override.experimentActive &&
-      !override.config.telemetryKey &&
-      override.permanentPrefEnabled !== true
-    ) {
+    if (override.config.experiment && override.permanentPrefEnabled !== true) {
       shouldBeActive = false;
     }
 
@@ -188,24 +151,6 @@ class UAOverrides {
       if (platformMatches.includes(override.platform)) {
         override.availableOnPlatform = true;
         override.currentPlatform = platformInfo.os;
-
-        
-        override.experimentActive = false;
-        const experiment = override.config.experiment;
-        if (experiment) {
-          
-          
-          
-          const branches = Array.isArray(experiment)
-            ? experiment
-            : [experiment];
-          for (const branch of branches) {
-            if (await browser.experiments.isActive(branch)) {
-              override.experimentActive = true;
-              break;
-            }
-          }
-        }
 
         
         
