@@ -1,31 +1,36 @@
-
-
-
-
-"use strict";
-
+<!DOCTYPE HTML>
+<!-- Any copyright is dedicated to the Public Domain.
+   - http://creativecommons.org/publicdomain/zero/1.0/ -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title><!-- Shadow Parts issue with xul/xbl domparser --></title>
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+  <link rel="stylesheet" href="chrome://mochikit/content/tests/SimpleTest/test.css"/>
+  <script>
+const { BrowserTestUtils } = ChromeUtils.import("resource://testing-common/BrowserTestUtils.jsm");
 const DEFAULT_SECTION_NAMES = ["one", "two", "three"];
 
-function makeButton({ doc, name, deckId }) {
-  let button = doc.createElement("button", { is: "named-deck-button" });
+function makeButton({ name, deckId }) {
+  let button = document.createElement("button", { is: "named-deck-button" });
   button.setAttribute("name", name);
   button.deckId = deckId;
   button.textContent = name.toUpperCase();
   return button;
 }
 
-function makeSection({ doc, name }) {
-  let view = doc.createElement("section");
+function makeSection({ name }) {
+  let view = document.createElement("section");
   view.setAttribute("name", name);
   view.textContent = name + name;
   return view;
 }
 
 function addSection({ name, deck, buttons }) {
-  let doc = deck.ownerDocument;
-  let button = makeButton({ doc, name, deckId: deck.id });
+  let button = makeButton({ name, deckId: deck.id });
   buttons.appendChild(button);
-  let view = makeSection({ doc, name });
+  let view = makeSection({ name });
   deck.appendChild(view);
   return { button, view };
 }
@@ -35,10 +40,10 @@ async function runTests({ deck, buttons }) {
   const getButtonByName = name => buttons.querySelector(`[name="${name}"]`);
 
   function checkState(name, count, empty = false) {
-    
+    // Check that the right view is selected.
     is(deck.selectedViewName, name, "The right view is selected");
 
-    
+    // Verify there's one element in the slot.
     let slottedEls = selectedSlot.assignedElements();
     if (empty) {
       is(slottedEls.length, 0, "The deck is empty");
@@ -51,7 +56,7 @@ async function runTests({ deck, buttons }) {
       );
     }
 
-    
+    // Check that the hidden properties are set.
     let sections = deck.querySelectorAll("section");
     is(sections.length, count, "There are the right number of sections");
     for (let section of sections) {
@@ -63,7 +68,7 @@ async function runTests({ deck, buttons }) {
       }
     }
 
-    
+    // Check the right button is selected.
     is(buttons.children.length, count, "There are the right number of buttons");
     for (let button of buttons.children) {
       let buttonName = button.getAttribute("name");
@@ -76,20 +81,20 @@ async function runTests({ deck, buttons }) {
     }
   }
 
-  
+  // Check that the first view is selected by default.
   checkState("one", 3);
 
-  
+  // Switch to the third view.
   info("Switch to section three");
   getButtonByName("three").click();
   checkState("three", 3);
 
-  
+  // Add a new section, nothing changes.
   info("Add section last");
   let last = addSection({ name: "last", deck, buttons });
   checkState("three", 4);
 
-  
+  // We can switch to the new section.
   last.button.click();
   info("Switch to section last");
   checkState("last", 4);
@@ -106,7 +111,7 @@ async function runTests({ deck, buttons }) {
   await shown;
   checkState("last", 4);
 
-  
+  // Removing the selected section leaves the selected slot empty.
   info("Remove section last");
   last.button.remove();
   last.view.remove();
@@ -114,14 +119,14 @@ async function runTests({ deck, buttons }) {
   info("Should not have any selected views");
   checkState("last", 3, true);
 
-  
+  // Setting a missing view will give a "view-changed" event.
   info("Set view to a missing name");
   let hidden = BrowserTestUtils.waitForEvent(deck, "view-changed");
   deck.selectedViewName = "missing";
   await hidden;
   checkState("missing", 3, true);
 
-  
+  // Adding the view won't trigger "view-changed", but the view will slotted.
   info("Add the missing view, it should be shown");
   shown = BrowserTestUtils.waitForEvent(selectedSlot, "slotchange");
   let viewChangedEvent = false;
@@ -136,18 +141,16 @@ async function runTests({ deck, buttons }) {
   checkState("missing", 4);
 }
 
-async function setup({ doc, beAsync, first }) {
-  const deckId = `${first}-first-${beAsync}`;
-
-  
-  const deck = doc.createElement("named-deck");
+async function setup({ beAsync, first, deckId }) {
+  // Make the deck and buttons.
+  const deck = document.createElement("named-deck");
   deck.id = deckId;
   for (let name of DEFAULT_SECTION_NAMES) {
-    deck.appendChild(makeSection({ doc, name }));
+    deck.appendChild(makeSection({ name }));
   }
-  const buttons = doc.createElement("button-group");
+  const buttons = document.createElement("button-group");
   for (let name of DEFAULT_SECTION_NAMES) {
-    buttons.appendChild(makeButton({ doc, name, deckId }));
+    buttons.appendChild(makeButton({ name, deckId }));
   }
 
   let ordered;
@@ -159,92 +162,88 @@ async function setup({ doc, beAsync, first }) {
     throw new Error("Invalid order");
   }
 
-  
-  doc.body.appendChild(ordered.shift());
+  // Insert them in the specified order, possibly async.
+  document.body.appendChild(ordered.shift());
   if (beAsync) {
     await new Promise(resolve => requestAnimationFrame(resolve));
   }
-  doc.body.appendChild(ordered.shift());
+  document.body.appendChild(ordered.shift());
 
   return { deck, buttons };
 }
 
 add_task(async function testNamedDeckAndButtons() {
-  const win = await loadInitialView("extension");
-  const doc = win.document;
-
-  
+  // Check adding the deck first.
   dump("Running deck first tests synchronously");
-  await runTests(await setup({ doc, beAsync: false, first: "deck" }));
+  await runTests(await setup({ beAsync: false, first: "deck", deckId: "deck-sync" }));
   dump("Running deck first tests asynchronously");
-  await runTests(await setup({ doc, beAsync: true, first: "deck" }));
+  await runTests(await setup({ beAsync: true, first: "deck", deckId: "deck-async" }));
 
-  
+  // Check adding the buttons first.
   dump("Running buttons first tests synchronously");
-  await runTests(await setup({ doc, beAsync: false, first: "buttons" }));
+  await runTests(await setup({ beAsync: false, first: "buttons", deckId: "buttons-sync" }));
   dump("Running buttons first tests asynchronously");
-  await runTests(await setup({ doc, beAsync: true, first: "buttons" }));
-
-  await closeView(win);
+  await runTests(await setup({ beAsync: true, first: "buttons", deckId: "buttons-async" }));
 });
 
 add_task(async function testFocusAndClickMixing() {
-  const win = await loadInitialView("extension");
-  const doc = win.document;
   const waitForAnimationFrame = () =>
     new Promise(r => requestAnimationFrame(r));
-  const tab = (e = {}) => {
-    EventUtils.synthesizeKey("VK_TAB", e, win);
+  const sendTab = (e = {}) => {
+    synthesizeKey("VK_TAB", e);
     return waitForAnimationFrame();
   };
 
-  const firstButton = doc.createElement("button");
-  doc.body.append(firstButton);
+  const firstButton = document.createElement("button");
+  document.body.append(firstButton);
 
   const { deck, buttons: buttonGroup } = await setup({
-    doc,
     beAsync: false,
     first: "buttons",
+    deckId: "focus-click-mixing",
   });
   const buttons = buttonGroup.children;
   firstButton.focus();
-  const secondButton = doc.createElement("button");
-  doc.body.append(secondButton);
+  const secondButton = document.createElement("button");
+  document.body.append(secondButton);
 
-  await tab();
-  is(doc.activeElement, buttons[0], "first deck button is focused");
+  await sendTab();
+  is(document.activeElement, buttons[0], "first deck button is focused");
   is(deck.selectedViewName, "one", "first view is shown");
 
-  await tab();
-  is(doc.activeElement, secondButton, "focus moves out of group");
+  await sendTab();
+  is(document.activeElement, secondButton, "focus moves out of group");
 
-  await tab({ shiftKey: true });
-  is(doc.activeElement, buttons[0], "focus moves back to first button");
+  await sendTab({ shiftKey: true });
+  is(document.activeElement, buttons[0], "focus moves back to first button");
 
-  
-  EventUtils.synthesizeMouseAtCenter(buttons[1], {}, win);
+  // Click on another tab button, this should make it the focusable button.
+  synthesizeMouseAtCenter(buttons[1], {});
   await waitForAnimationFrame();
 
   is(deck.selectedViewName, "two", "second view is shown");
 
-  if (doc.activeElement != buttons[1]) {
-    
-    await tab();
+  if (document.activeElement != buttons[1]) {
+    // On Mac the button isn't focused on click, but it is on Windows/Linux.
+    await sendTab();
   }
-  is(doc.activeElement, buttons[1], "second deck button is focusable");
+  is(document.activeElement, buttons[1], "second deck button is focusable");
 
-  await tab();
-  is(doc.activeElement, secondButton, "focus moved to second plain button");
+  await sendTab();
+  is(document.activeElement, secondButton, "focus moved to second plain button");
 
-  await tab({ shiftKey: true });
-  is(doc.activeElement, buttons[1], "second deck button is focusable");
+  await sendTab({ shiftKey: true });
+  is(document.activeElement, buttons[1], "second deck button is focusable");
 
-  await tab({ shiftKey: true });
+  await sendTab({ shiftKey: true });
   is(
-    doc.activeElement,
+    document.activeElement,
     firstButton,
     "next shift-tab moves out of button group"
   );
-
-  await closeView(win);
 });
+  </script>
+</head>
+<body>
+</body>
+</html>
