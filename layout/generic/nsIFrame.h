@@ -371,24 +371,6 @@ std::ostream& operator<<(std::ostream& aStream, const nsReflowStatus& aStatus);
 
 
 
-#define NS_FRAME_OVERFLOW_NONE 0x00000000
-
-
-#define NS_FRAME_OVERFLOW_LARGE 0x000000ff
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1167,8 +1149,8 @@ class nsIFrame : public nsQueryFrame {
     if (aRect == mRect) {
       return;
     }
-    if (mOverflow.mType != NS_FRAME_OVERFLOW_LARGE &&
-        mOverflow.mType != NS_FRAME_OVERFLOW_NONE) {
+    if (mOverflow.mType != OverflowStorageType::Large &&
+        mOverflow.mType != OverflowStorageType::None) {
       mozilla::OverflowAreas overflow = GetOverflowAreas();
       mRect = aRect;
       SetOverflowAreas(overflow);
@@ -3705,7 +3687,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   bool HasOverflowAreas() const {
-    return mOverflow.mType != NS_FRAME_OVERFLOW_NONE;
+    return mOverflow.mType != OverflowStorageType::None;
   }
 
   
@@ -5076,8 +5058,18 @@ class nsIFrame : public nsQueryFrame {
       return !(*this == aOther);
     }
   };
+  enum class OverflowStorageType : uint32_t {
+    
+    None = 0x00000000u,
+
+    
+    Large = 0x000000ffu,
+  };
+  
+  
+  
   union {
-    uint32_t mType;
+    OverflowStorageType mType;
     InkOverflowDeltas mInkOverflowDeltas;
   } mOverflow;
 
@@ -5345,14 +5337,14 @@ class nsIFrame : public nsQueryFrame {
  private:
   
   mozilla::OverflowAreas* GetOverflowAreasProperty() const {
-    MOZ_ASSERT(mOverflow.mType == NS_FRAME_OVERFLOW_LARGE);
+    MOZ_ASSERT(mOverflow.mType == OverflowStorageType::Large);
     mozilla::OverflowAreas* overflow = GetProperty(OverflowAreasProperty());
     MOZ_ASSERT(overflow);
     return overflow;
   }
 
   nsRect InkOverflowFromDeltas() const {
-    MOZ_ASSERT(mOverflow.mType != NS_FRAME_OVERFLOW_LARGE,
+    MOZ_ASSERT(mOverflow.mType != OverflowStorageType::Large,
                "should not be called when overflow is in a property");
     
     
