@@ -56,6 +56,20 @@ class nsHTTPSOnlyUtils {
 
 
 
+
+
+
+
+  static bool IsUpgradeDowngradeEndlessLoop(nsIURI* aURI,
+                                            nsILoadInfo* aLoadInfo);
+
+  
+
+
+
+
+
+
   static bool CouldBeHttpsOnlyError(nsIChannel* aChannel, nsresult aError);
 
   
