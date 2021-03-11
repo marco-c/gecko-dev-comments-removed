@@ -5,7 +5,6 @@
 
 #include "nsOSHelperAppService.h"
 #include "nsMIMEInfoAndroid.h"
-#include "AndroidBridge.h"
 
 nsOSHelperAppService::nsOSHelperAppService() : nsExternalHelperAppService() {}
 
@@ -59,12 +58,4 @@ nsresult nsOSHelperAppService::GetProtocolHandlerInfoFromOS(
   
   
   return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-nsIHandlerApp* nsOSHelperAppService::CreateAndroidHandlerApp(
-    const nsAString& aName, const nsAString& aDescription,
-    const nsAString& aPackageName, const nsAString& aClassName,
-    const nsACString& aMimeType, const nsAString& aAction) {
-  return new nsAndroidHandlerApp(aName, aDescription, aPackageName, aClassName,
-                                 aMimeType, aAction);
 }
