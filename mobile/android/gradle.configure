@@ -436,7 +436,7 @@ option(
     nargs="+",
     default=(
         "https://maven.google.com/",
-        "https://jcenter.bintray.com/",
+        "https://repo.maven.apache.org/maven2/",
         "https://plugins.gradle.org/m2/",
     ),
     help="Comma-separated URLs of Maven repositories containing Gradle dependencies.",
