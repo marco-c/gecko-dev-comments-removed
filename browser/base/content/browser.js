@@ -395,17 +395,25 @@ XPCOMUtils.defineLazyGetter(this, "gHighPriorityNotificationBox", () => {
   return new MozElements.NotificationBox(element => {
     element.classList.add("global-notificationbox");
     element.setAttribute("notificationside", "top");
-    document.getElementById("appcontent").prepend(element);
+    if (Services.prefs.getBoolPref("browser.proton.infobars.enabled", false)) {
+      
+      let tabNotifications = document.getElementById("tab-notification-deck");
+      gNavToolbox.insertBefore(element, tabNotifications);
+    } else {
+      document.getElementById("appcontent").prepend(element);
+    }
   });
 });
 
 
 XPCOMUtils.defineLazyGetter(this, "gNotificationBox", () => {
-  return new MozElements.NotificationBox(element => {
-    element.classList.add("global-notificationbox");
-    element.setAttribute("notificationside", "bottom");
-    document.getElementById("browser-bottombox").appendChild(element);
-  });
+  return Services.prefs.getBoolPref("browser.proton.infobars.enabled", false)
+    ? gHighPriorityNotificationBox
+    : new MozElements.NotificationBox(element => {
+        element.classList.add("global-notificationbox");
+        element.setAttribute("notificationside", "bottom");
+        document.getElementById("browser-bottombox").appendChild(element);
+      });
 });
 
 XPCOMUtils.defineLazyGetter(this, "InlineSpellCheckerUI", () => {
