@@ -26,16 +26,11 @@ var EXPORTED_SYMBOLS = ["SearchTestUtils"];
 
 var gTestScope;
 
-var SearchTestUtils = {
+var SearchTestUtils = Object.freeze({
   init(testScope) {
     gTestScope = testScope;
-    this._isMochitest = "ExtensionTestUtils" in gTestScope;
-    if (this._isMochitest) {
-      this._isMochitest = true;
-      AddonTestUtils.initMochitest(testScope);
-    } else {
-      this._isMochitest = false;
-      
+    
+    if (!("ExtensionTestUtils" in gTestScope)) {
       gTestScope.ExtensionTestUtils = ExtensionTestUtils;
     }
   },
@@ -185,40 +180,18 @@ var SearchTestUtils = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-  async installSearchExtension(options = {}, skipUnload = false) {
+  async installSearchExtension(options = {}) {
+    options.id = (options.id ?? "example") + "@tests.mozilla.org";
     let extensionInfo = {
       useAddonManager: "permanent",
       manifest: this.createEngineManifest(options),
     };
 
-    let extension;
-
-    
-    
-    if (!skipUnload && this._isMochitest) {
-      gTestScope.registerCleanupFunction(async () => {
-        await extension.unload();
-      });
-    }
-
-    extension = gTestScope.ExtensionTestUtils.loadExtension(extensionInfo);
+    let extension = gTestScope.ExtensionTestUtils.loadExtension(extensionInfo);
     await extension.startup();
     if (!options.skipWaitForSearchEngine) {
       await AddonTestUtils.waitForSearchProviderStartup(extension);
     }
-
     return extension;
   },
 
@@ -281,11 +254,8 @@ var SearchTestUtils = {
 
 
   createEngineManifest(options = {}) {
+    options.id = options.id ?? "example@tests.mozilla.org";
     options.name = options.name ?? "Example";
-    options.id = options.id ?? options.name.toLowerCase().replaceAll(" ", "");
-    if (!options.id.includes("@")) {
-      options.id += "@tests.mozilla.org";
-    }
     options.version = options.version ?? "1.0";
     let manifest = {
       version: options.version,
@@ -387,4 +357,4 @@ var SearchTestUtils = {
     this.idleService._fireObservers("idle");
     await reloadObserved;
   },
-};
+});

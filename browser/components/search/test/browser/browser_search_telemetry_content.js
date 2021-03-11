@@ -8,13 +8,16 @@ add_task(async function setup() {
   
   
   
-  await SearchTestUtils.installSearchExtension({
-    name: "MozSearch",
-    keyword: "mozalias",
+  await Services.search.addEngineWithDetails("MozSearch", {
+    alias: "mozalias",
+    method: "GET",
+    template: "http://example.com/?q={searchTerms}",
   });
-  await SearchTestUtils.installSearchExtension({
-    name: "MozSearch2",
-    keyword: "mozalias2",
+
+  await Services.search.addEngineWithDetails("MozSearch2", {
+    alias: "mozalias2",
+    method: "GET",
+    template: "http://example.com/?q={searchTerms}",
   });
 
   
@@ -42,6 +45,8 @@ add_task(async function setup() {
   
   registerCleanupFunction(async function() {
     await Services.search.setDefault(originalEngine);
+    await Services.search.removeEngine(engineDefault);
+    await Services.search.removeEngine(engineOneOff);
     await PlacesUtils.history.clear();
     Services.telemetry.setEventRecordingEnabled("navigation", false);
     Services.telemetry.canRecordExtended = oldCanRecord;
