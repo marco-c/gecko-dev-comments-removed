@@ -748,6 +748,8 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         
       case __NR_madvise: {
         Arg<int> advice(2);
+        
+        
         return If(advice == MADV_DONTNEED, Allow())
             .ElseIf(advice == MADV_FREE, Allow())
             .ElseIf(advice == MADV_HUGEPAGE, Allow())
@@ -1629,6 +1631,23 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
         return Trap(UnameTrap, nullptr);
       CASES_FOR_fcntl:
         return Trap(FcntlTrap, nullptr);
+
+      
+      
+      
+      
+      
+      case __NR_madvise: {
+        Arg<int> advice(2);
+        return If(advice == MADV_DONTNEED, Allow())
+            .ElseIf(advice == MADV_FREE, Allow())
+            .ElseIf(advice == MADV_HUGEPAGE, Allow())
+            .ElseIf(advice == MADV_NOHUGEPAGE, Allow())
+#ifdef MOZ_ASAN
+            .ElseIf(advice == MADV_DONTDUMP, Allow())
+#endif
+            .Else(Error(ENOSYS));
+      }
 
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);
