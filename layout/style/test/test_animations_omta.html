@@ -1,22 +1,22 @@
 <!DOCTYPE HTML>
 <html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=964646
+-->
+<!--
 
+ ========= PLEASE KEEP THIS IN SYNC WITH test_animations.html =========
 
+ This test mimicks the content of test_animations.html but performs tests
+ specific to animations that run on the compositor thread since they require
+ special (asynchronous) handling. Furthermore, these tests check that
+ animations that are expected to run on the compositor thread, are actually
+ doing so.
 
+ If you are making changes to this file or to test_animations.html, please
+ try to keep them consistent where appropriate.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for css3-animations running on the compositor thread (Bug
@@ -182,6 +182,10 @@
 <script type="application/javascript">
 "use strict";
 
+const { AppConstants } = SpecialPowers.Cu.import(
+  "resource://gre/modules/AppConstants.jsm",
+  {}
+);
 /** Test for css3-animations running on the compositor thread (Bug 964646) **/
  
 // Global state
@@ -224,11 +228,6 @@ runOMTATest(function() {
     SimpleTest.finish();
   });
 }, SimpleTest.finish);
-
-function isGeckoView() {
-  return SpecialPowers.Services.androidBridge &&
-    !SpecialPowers.Services.androidBridge.isFennec;
-}
 
 //----------------------------------------------------------------------
 //
@@ -2099,7 +2098,7 @@ addAsyncAnimTest(async function() {
 // Bug 996796 patch 12 - test for correct visited styles during
 // animation-only style flush.
 addAsyncAnimTest(async function() {
-  if (isGeckoView()) {
+  if (AppConstants.platform === "android") {
     todo(false, "no global history on GeckoView; can't run test");
     return;
   }
@@ -2474,7 +2473,7 @@ addAsyncAnimTest(async function() {
 // Tests that a background-color animation from currentColor to a normal color
 // on <a> element is updated when the link is visited.
 addAsyncAnimTest(async function() {
-  if (isGeckoView()) {
+  if (AppConstants.platform === "android") {
     todo(false, "no global history on GeckoView; can't run test");
     return;
   }
