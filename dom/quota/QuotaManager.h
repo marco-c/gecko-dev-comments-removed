@@ -227,19 +227,12 @@ class QuotaManager final : public BackgroundThreadObject {
 
   nsresult RestoreDirectoryMetadata2(nsIFile* aDirectory);
 
-  struct GetDirectoryResultWithOriginMetadata {
-    int64_t mTimestamp;
-    bool mPersisted;
-    OriginMetadata mOriginMetadata;
-  };
-
   
   
-  Result<GetDirectoryResultWithOriginMetadata, nsresult>
-  GetDirectoryMetadataWithOriginMetadata2(nsIFile* aDirectory,
-                                          PersistenceType aPersistenceType);
+  Result<FullOriginMetadata, nsresult> GetDirectoryMetadataWithOriginMetadata2(
+      nsIFile* aDirectory, PersistenceType aPersistenceType);
 
-  Result<GetDirectoryResultWithOriginMetadata, nsresult>
+  Result<FullOriginMetadata, nsresult>
   GetDirectoryMetadataWithOriginMetadata2WithRestore(nsIFile* aDirectory);
 
   

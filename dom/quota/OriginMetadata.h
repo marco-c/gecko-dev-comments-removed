@@ -46,6 +46,13 @@ struct OriginMetadata : public PrincipalMetadata {
         mPersistenceType(aPersistenceType) {}
 };
 
+struct FullOriginMetadata : OriginMetadata {
+  bool mPersisted;
+  int64_t mTimestamp;
+
+  
+};
+
 }  
 
 #endif  
