@@ -6,7 +6,6 @@
 
 #include "ScrollbarDrawingMac.h"
 #include "mozilla/gfx/Helpers.h"
-#include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/RelativeLuminanceUtils.h"
 #include "nsLayoutUtils.h"
 #include "nsIFrame.h"
@@ -127,8 +126,12 @@ ScrollbarParams ScrollbarDrawingMac::ComputeScrollbarParams(
   return params;
 }
 
-void ScrollbarDrawingMac::DrawScrollbarThumb(DrawTarget& aDT, const Rect& aRect,
-                                             const ScrollbarParams& aParams) {
+auto ScrollbarDrawingMac::GetThumbRect(const Rect& aRect,
+                                       const ScrollbarParams& aParams,
+                                       float aScale) -> ThumbRect {
+  
+  aScale = aScale >= 2.0f ? 2.0f : 1.0f;
+
   
   
   
@@ -139,11 +142,13 @@ void ScrollbarDrawingMac::DrawScrollbarThumb(DrawTarget& aDT, const Rect& aRect,
       thickness += 4.0f;
     }
   }
+  thickness *= aScale;
 
   
-  float outerSpacing = (aParams.overlay || aParams.small) ? 1.0f : 2.0f;
+  const float outerSpacing =
+      ((aParams.overlay || aParams.small) ? 1.0f : 2.0f) * aScale;
   Rect thumbRect = aRect;
-  thumbRect.Deflate(1.0f);
+  thumbRect.Deflate(1.0f * aScale);
   if (aParams.horizontal) {
     float bottomEdge = thumbRect.YMost() - outerSpacing;
     thumbRect.SetBoxY(bottomEdge - thickness, bottomEdge);
@@ -171,29 +176,20 @@ void ScrollbarDrawingMac::DrawScrollbarThumb(DrawTarget& aDT, const Rect& aRect,
     }
   }
 
-  
-  float cornerRadius =
-      (aParams.horizontal ? thumbRect.Height() : thumbRect.Width()) / 2.0f;
-  aDT.FillRoundedRect(RoundedRect(thumbRect, RectCornerRadii(cornerRadius)),
-                      ColorPattern(ToDeviceColor(faceColor)));
+  nscolor strokeColor = 0;
+  float strokeOutset = 0.0f;
+  float strokeWidth = 0.0f;
 
   
   if (aParams.overlay) {
-    float strokeOutset = aParams.onDarkBackground ? 0.3f : 0.5f;
-    float strokeWidth = aParams.onDarkBackground ? 0.6f : 0.8f;
-    nscolor strokeColor = aParams.onDarkBackground ? NS_RGBA(0, 0, 0, 48)
-                                                   : NS_RGBA(255, 255, 255, 48);
-    Rect thumbStrokeRect = thumbRect;
-    thumbStrokeRect.Inflate(strokeOutset);
-    float strokeRadius = (aParams.horizontal ? thumbStrokeRect.Height()
-                                             : thumbStrokeRect.Width()) /
-                         2.0f;
+    strokeOutset = (aParams.onDarkBackground ? 0.3f : 0.5f) * aScale;
+    strokeWidth = (aParams.onDarkBackground ? 0.6f : 0.8f) * aScale;
 
-    RefPtr<Path> path = MakePathForRoundedRect(aDT, thumbStrokeRect,
-                                               RectCornerRadii(strokeRadius));
-    aDT.Stroke(path, ColorPattern(ToDeviceColor(strokeColor)),
-               StrokeOptions(strokeWidth));
+    strokeColor = aParams.onDarkBackground ? NS_RGBA(0, 0, 0, 48)
+                                           : NS_RGBA(255, 255, 255, 48);
   }
+
+  return {thumbRect, faceColor, strokeColor, strokeWidth, strokeOutset};
 }
 
 struct ScrollbarTrackDecorationColors {
@@ -224,12 +220,17 @@ static ScrollbarTrackDecorationColors ComputeScrollbarTrackDecorationColors(
   return result;
 }
 
-void ScrollbarDrawingMac::DrawScrollbarTrack(DrawTarget& aDT, const Rect& aRect,
-                                             const ScrollbarParams& aParams) {
+bool ScrollbarDrawingMac::GetScrollbarTrackRects(const Rect& aRect,
+                                                 const ScrollbarParams& aParams,
+                                                 float aScale,
+                                                 ScrollbarTrackRects& aRects) {
   if (aParams.overlay && !aParams.rolledOver) {
     
-    return;
+    return false;
   }
+
+  
+  aScale = aScale >= 2.0f ? 2.0f : 1.0f;
 
   nscolor trackColor;
   if (aParams.custom) {
@@ -253,16 +254,17 @@ void ScrollbarDrawingMac::DrawScrollbarTrack(DrawTarget& aDT, const Rect& aRect,
     nscolor color;
     float thickness;
   } segments[] = {
-      {colors.mInnerColor, 1.0f},
-      {colors.mShadowColor, 1.0f},
-      {trackColor, thickness - 3.0f},
-      {colors.mOuterColor, 1.0f},
+      {colors.mInnerColor, 1.0f * aScale},
+      {colors.mShadowColor, 1.0f * aScale},
+      {trackColor, thickness - 3.0f * aScale},
+      {colors.mOuterColor, 1.0f * aScale},
   };
 
   
   
   
   
+  auto current = aRects.begin();
   float accumulatedThickness = 0.0f;
   for (const auto& segment : segments) {
     Rect segmentRect = aRect;
@@ -279,17 +281,24 @@ void ScrollbarDrawingMac::DrawScrollbarTrack(DrawTarget& aDT, const Rect& aRect,
                             aRect.X() + endThickness);
       }
     }
-    aDT.FillRect(segmentRect, ColorPattern(ToDeviceColor(segment.color)));
     accumulatedThickness = endThickness;
+    *current++ = {segmentRect, segment.color};
   }
+
+  return true;
 }
 
-void ScrollbarDrawingMac::DrawScrollCorner(DrawTarget& aDT, const Rect& aRect,
-                                           const ScrollbarParams& aParams) {
+bool ScrollbarDrawingMac::GetScrollCornerRects(const Rect& aRect,
+                                               const ScrollbarParams& aParams,
+                                               float aScale,
+                                               ScrollCornerRects& aRects) {
   if (aParams.overlay && !aParams.rolledOver) {
     
-    return;
+    return false;
   }
+
+  
+  aScale = aScale >= 2.0f ? 2.0f : 1.0f;
 
   
   
@@ -316,22 +325,29 @@ void ScrollbarDrawingMac::DrawScrollCorner(DrawTarget& aDT, const Rect& aRect,
     nscolor color;
     Rect relativeRect;
   } pieces[] = {
-      {colors.mInnerColor, {0.0f, 0.0f, 1.0f, 1.0f}},
-      {colors.mShadowColor, {1.0f, 0.0f, 1.0f, 1.0f}},
-      {colors.mShadowColor, {0.0f, 1.0f, 2.0f, 1.0f}},
-      {trackColor, {2.0f, 0.0f, width - 3.0f, 2.0f}},
-      {trackColor, {0.0f, 2.0f, width - 1.0f, height - 3.0f}},
-      {colors.mOuterColor, {width - 1.0f, 0.0f, 1.0f, height - 1.0f}},
-      {colors.mOuterColor, {0.0f, height - 1.0f, width, 1.0f}},
+      {colors.mInnerColor, {0.0f, 0.0f, 1.0f * aScale, 1.0f * aScale}},
+      {colors.mShadowColor,
+       {1.0f * aScale, 0.0f, 1.0f * aScale, 1.0f * aScale}},
+      {colors.mShadowColor,
+       {0.0f, 1.0f * aScale, 2.0f * aScale, 1.0f * aScale}},
+      {trackColor, {2.0f * aScale, 0.0f, width - 3.0f * aScale, 2.0f * aScale}},
+      {trackColor,
+       {0.0f, 2.0f * aScale, width - 1.0f * aScale, height - 3.0f * aScale}},
+      {colors.mOuterColor,
+       {width - 1.0f * aScale, 0.0f, 1.0f * aScale, height - 1.0f * aScale}},
+      {colors.mOuterColor,
+       {0.0f, height - 1.0f * aScale, width, 1.0f * aScale}},
   };
 
+  auto current = aRects.begin();
   for (const auto& piece : pieces) {
     Rect pieceRect = piece.relativeRect + aRect.TopLeft();
     if (aParams.rtl) {
       pieceRect.x = aRect.XMost() - piece.relativeRect.XMost();
     }
-    aDT.FillRect(pieceRect, ColorPattern(ToDeviceColor(piece.color)));
+    *current++ = {pieceRect, piece.color};
   }
+  return true;
 }
 
 }  
