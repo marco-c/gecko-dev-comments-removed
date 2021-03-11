@@ -126,7 +126,7 @@ use crate::render_task::{BlurTask, RenderTask, RenderTaskLocation, BlurTaskCache
 use crate::render_task::{StaticRenderTaskSurface, RenderTaskKind};
 use crate::renderer::BlendMode;
 use crate::resource_cache::{ResourceCache, ImageGeneration, ImageRequest};
-use crate::space::SpaceMapper;
+use crate::space::{SpaceMapper, SpaceSnapper};
 use crate::scene::SceneProperties;
 use smallvec::SmallVec;
 use std::{mem, u8, marker, u32};
@@ -6247,8 +6247,23 @@ impl PicturePrimitive {
         if let Some(ref mut raster_config) = self.raster_config {
             let surface = state.current_surface_mut();
             
+            
             if self.options.inflate_if_required {
                 surface.rect = raster_config.composite_mode.inflate_picture_rect(surface.rect, surface.scale_factors);
+
+                
+                
+                
+                
+                
+                let snap_surface_to_raster = SpaceSnapper::new_with_target(
+                    surface.raster_spatial_node_index,
+                    self.spatial_node_index,
+                    surface.device_pixel_scale,
+                    frame_context.spatial_tree,
+                );
+
+                surface.rect = snap_surface_to_raster.snap_rect(&surface.rect);
             }
 
             let mut surface_rect = surface.rect * Scale::new(1.0);
