@@ -30,18 +30,6 @@ class nsBaseHashtable;
 template <class KeyClass, class T>
 class nsClassHashtable;
 
-
-
-
-
-
-
-
-
-
-template <class KeyClass, class DataType>
-using nsDataHashtable = nsBaseHashtable<KeyClass, DataType, DataType>;
-
 template <class KeyClass, class PtrType>
 class nsRefCountedHashtable;
 
