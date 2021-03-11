@@ -8,7 +8,7 @@ use crate::context::QuirksMode;
 use crate::media_queries::Device;
 use crate::shared_lock::SharedRwLockReadGuard;
 use crate::stylesheets::{DocumentRule, ImportRule, MediaRule};
-use crate::stylesheets::{NestedRuleIterationCondition, Stylesheet, SupportsRule};
+use crate::stylesheets::{NestedRuleIterationCondition, StylesheetContents, SupportsRule};
 use fxhash::FxHashSet;
 
 
@@ -43,13 +43,13 @@ pub trait ToMediaListKey: Sized {
     }
 }
 
-impl ToMediaListKey for Stylesheet {}
+impl ToMediaListKey for StylesheetContents {}
 impl ToMediaListKey for ImportRule {}
 impl ToMediaListKey for MediaRule {}
 
 
 
-#[derive(Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 pub struct EffectiveMediaQueryResults {
     
     set: FxHashSet<MediaListKey>,

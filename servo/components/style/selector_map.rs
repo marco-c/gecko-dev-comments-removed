@@ -94,7 +94,7 @@ pub trait SelectorMapEntry: Sized + Clone {
 
 
 
-#[derive(Debug, MallocSizeOf)]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub struct SelectorMap<T: 'static> {
     
     pub root: SmallVec<[T; 1]>,
@@ -615,7 +615,7 @@ fn find_bucket<'a>(
 }
 
 
-#[derive(Debug, MallocSizeOf)]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub struct MaybeCaseInsensitiveHashMap<K: PrecomputedHash + Hash + Eq, V: 'static>(
     PrecomputedHashMap<K, V>,
 );

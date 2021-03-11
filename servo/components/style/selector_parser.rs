@@ -108,7 +108,7 @@ pub enum PseudoElementCascadeType {
 }
 
 
-#[derive(MallocSizeOf)]
+#[derive(Clone, MallocSizeOf)]
 pub struct PerPseudoElementMap<T> {
     entries: [Option<T>; PSEUDO_COUNT],
 }

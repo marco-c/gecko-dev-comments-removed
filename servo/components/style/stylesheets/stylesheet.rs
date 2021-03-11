@@ -4,7 +4,6 @@
 
 use crate::context::QuirksMode;
 use crate::error_reporting::{ContextualParseError, ParseErrorReporter};
-use crate::invalidation::media_queries::{MediaListKey, ToMediaListKey};
 use crate::media_queries::{Device, MediaList};
 use crate::parser::ParserContext;
 use crate::shared_lock::{DeepCloneParams, DeepCloneWithLock, Locked};
@@ -102,10 +101,10 @@ impl StylesheetContents {
 
         Self {
             rules: CssRules::new(rules, &shared_lock),
-            origin: origin,
+            origin,
             url_data: RwLock::new(url_data),
-            namespaces: namespaces,
-            quirks_mode: quirks_mode,
+            namespaces,
+            quirks_mode,
             source_map_url: RwLock::new(source_map_url),
             source_url: RwLock::new(source_url),
         }
@@ -219,19 +218,18 @@ macro_rules! rule_filter {
 
 pub trait StylesheetInDocument: ::std::fmt::Debug {
     
-    fn origin(&self, guard: &SharedRwLockReadGuard) -> Origin;
-
-    
-    fn quirks_mode(&self, guard: &SharedRwLockReadGuard) -> QuirksMode;
-
-    
     fn enabled(&self) -> bool;
 
     
     fn media<'a>(&'a self, guard: &'a SharedRwLockReadGuard) -> Option<&'a MediaList>;
 
     
-    fn rules<'a, 'b: 'a>(&'a self, guard: &'b SharedRwLockReadGuard) -> &'a [CssRule];
+    fn rules<'a, 'b: 'a>(&'a self, guard: &'b SharedRwLockReadGuard) -> &'a [CssRule] {
+        self.contents().rules(guard)
+    }
+
+    
+    fn contents(&self) -> &StylesheetContents;
 
     
     #[inline]
@@ -243,18 +241,19 @@ pub trait StylesheetInDocument: ::std::fmt::Debug {
     where
         C: NestedRuleIterationCondition,
     {
+        let contents = self.contents();
         RulesIterator::new(
             device,
-            self.quirks_mode(guard),
+            contents.quirks_mode,
             guard,
-            self.rules(guard).iter(),
+            contents.rules(guard).iter(),
         )
     }
 
     
     fn is_effective_for_device(&self, device: &Device, guard: &SharedRwLockReadGuard) -> bool {
         match self.media(guard) {
-            Some(medialist) => medialist.evaluate(device, self.quirks_mode(guard)),
+            Some(medialist) => medialist.evaluate(device, self.contents().quirks_mode),
             None => true,
         }
     }
@@ -285,14 +284,6 @@ pub trait StylesheetInDocument: ::std::fmt::Debug {
 }
 
 impl StylesheetInDocument for Stylesheet {
-    fn origin(&self, _guard: &SharedRwLockReadGuard) -> Origin {
-        self.contents.origin
-    }
-
-    fn quirks_mode(&self, _guard: &SharedRwLockReadGuard) -> QuirksMode {
-        self.contents.quirks_mode
-    }
-
     fn media<'a>(&'a self, guard: &'a SharedRwLockReadGuard) -> Option<&'a MediaList> {
         Some(self.media.read_with(guard))
     }
@@ -302,8 +293,8 @@ impl StylesheetInDocument for Stylesheet {
     }
 
     #[inline]
-    fn rules<'a, 'b: 'a>(&'a self, guard: &'b SharedRwLockReadGuard) -> &'a [CssRule] {
-        self.contents.rules(guard)
+    fn contents(&self) -> &StylesheetContents {
+        &self.contents
     }
 }
 
@@ -321,21 +312,7 @@ impl PartialEq for DocumentStyleSheet {
     }
 }
 
-impl ToMediaListKey for DocumentStyleSheet {
-    fn to_media_list_key(&self) -> MediaListKey {
-        self.0.to_media_list_key()
-    }
-}
-
 impl StylesheetInDocument for DocumentStyleSheet {
-    fn origin(&self, guard: &SharedRwLockReadGuard) -> Origin {
-        self.0.origin(guard)
-    }
-
-    fn quirks_mode(&self, guard: &SharedRwLockReadGuard) -> QuirksMode {
-        self.0.quirks_mode(guard)
-    }
-
     fn media<'a>(&'a self, guard: &'a SharedRwLockReadGuard) -> Option<&'a MediaList> {
         self.0.media(guard)
     }
@@ -345,8 +322,8 @@ impl StylesheetInDocument for DocumentStyleSheet {
     }
 
     #[inline]
-    fn rules<'a, 'b: 'a>(&'a self, guard: &'b SharedRwLockReadGuard) -> &'a [CssRule] {
-        self.0.rules(guard)
+    fn contents(&self) -> &StylesheetContents {
+        self.0.contents()
     }
 }
 

@@ -185,7 +185,7 @@ pub struct DocumentStateDependency {
 
 
 
-#[derive(Debug, MallocSizeOf)]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub struct InvalidationMap {
     
     
