@@ -3528,7 +3528,7 @@ js::gc::AllocKind JSObject::allocKindForTenure(
   }
 
   if (is<OutlineTypedObject>()) {
-    return OutlineTypedObject::allocKind;
+    return OutlineTypedObject::allocKind();
   }
 
   

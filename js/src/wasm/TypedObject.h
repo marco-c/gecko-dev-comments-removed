@@ -164,39 +164,27 @@ using RootedTypedObject = Rooted<TypedObject*>;
 
 class OutlineTypedObject : public TypedObject {
   
-  
-  
-  JSObject* owner_;
-
-  
   uint8_t* data_;
 
-  void setOwnerAndData(JSObject* owner, uint8_t* data);
-
-  void setData(uint8_t* data) { data_ = data; }
+  static OutlineTypedObject* create(JSContext* cx, HandleRttValue type,
+                                    size_t byteLength,
+                                    gc::InitialHeap heap = gc::DefaultHeap);
 
   void setArrayLength(uint32_t length) { *(uint32_t*)(data_) = length; }
 
  public:
-  static constexpr gc::AllocKind allocKind = gc::AllocKind::OBJECT2;
+  static const JSClass class_;
+
+  static OutlineTypedObject* createStruct(JSContext* cx, HandleRttValue rtt,
+                                          gc::InitialHeap heap);
+  static OutlineTypedObject* createArray(JSContext* cx, HandleRttValue rtt,
+                                         uint32_t length, gc::InitialHeap heap);
 
   
-  static constexpr size_t offsetOfData() {
-    return offsetof(OutlineTypedObject, data_);
-  }
-  static constexpr size_t offsetOfOwner() {
-    return offsetof(OutlineTypedObject, owner_);
-  }
+  static size_t offsetOfData() { return offsetof(OutlineTypedObject, data_); }
 
   static constexpr size_t offsetOfArrayLength() { return 0; }
   typedef uint32_t ArrayLength;
-
-  static const JSClass class_;
-
-  JSObject& owner() const {
-    MOZ_ASSERT(owner_);
-    return *owner_;
-  }
 
   uint8_t* outOfLineTypedMem() const { return data_; }
 
@@ -204,30 +192,10 @@ class OutlineTypedObject : public TypedObject {
     return *(ArrayLength*)(data_ + offsetOfArrayLength());
   }
 
- private:
-  
-  
-  
-  
-  
-  
-  
-  static OutlineTypedObject* createUnattached(
-      JSContext* cx, HandleRttValue type,
-      gc::InitialHeap heap = gc::DefaultHeap);
+  static gc::AllocKind allocKind();
 
- public:
-  static OutlineTypedObject* createStruct(JSContext* cx, HandleRttValue rtt,
-                                          gc::InitialHeap heap);
-  static OutlineTypedObject* createArray(JSContext* cx, HandleRttValue rtt,
-                                         uint32_t length, gc::InitialHeap heap);
-
- private:
-  
-  void attach(ArrayBufferObject& buffer);
-
- public:
   static void obj_trace(JSTracer* trace, JSObject* object);
+  static void obj_finalize(JSFreeOp* fop, JSObject* object);
 };
 
 

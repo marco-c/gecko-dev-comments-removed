@@ -236,9 +236,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     DETACHED = 0b1000,
 
     
-    TYPED_OBJECT_VIEWS = 0b1'0000,
-
-    
     
     
     
@@ -350,9 +347,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   static ArrayBufferObject* createZeroed(JSContext* cx, BufferSize nbytes,
                                          HandleObject proto = nullptr);
-
-  static ArrayBufferObject* createForTypedObject(JSContext* cx,
-                                                 BufferSize nbytes);
 
   
   
@@ -466,8 +460,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   static BufferContents createMappedContents(int fd, size_t offset,
                                              size_t length);
 
-  bool hasTypedObjectViews() const { return flags() & TYPED_OBJECT_VIEWS; }
-
  protected:
   void setDataPointer(BufferContents contents);
   void setByteLength(BufferSize length);
@@ -476,8 +468,6 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   uint32_t flags() const;
   void setFlags(uint32_t flags);
-
-  void setHasTypedObjectViews() { setFlags(flags() | TYPED_OBJECT_VIEWS); }
 
   void setIsDetached() { setFlags(flags() | DETACHED); }
   void setIsPreparedForAsmJS() {

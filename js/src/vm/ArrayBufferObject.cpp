@@ -462,7 +462,6 @@ void ArrayBufferObject::detach(JSContext* cx,
                                Handle<ArrayBufferObject*> buffer) {
   cx->check(buffer);
   MOZ_ASSERT(!buffer->isPreparedForAsmJS());
-  MOZ_ASSERT(!buffer->hasTypedObjectViews());
 
   
   
@@ -997,8 +996,6 @@ static void CheckStealPreconditions(Handle<ArrayBufferObject*> buffer,
   MOZ_ASSERT(!buffer->isDetached(), "can't steal from a detached buffer");
   MOZ_ASSERT(!buffer->isPreparedForAsmJS(),
              "asm.js-prepared buffers don't have detachable/stealable data");
-  MOZ_ASSERT(!buffer->hasTypedObjectViews(),
-             "buffers for typed objects don't have detachable/stealable data");
 }
 
 
@@ -1264,15 +1261,6 @@ ArrayBufferObject* ArrayBufferObject::createZeroed(
   auto [buffer, toFill] =
       createBufferAndData<FillContents::Zero>(cx, nbytes, metadata, proto);
   Unused << toFill;
-  return buffer;
-}
-
-ArrayBufferObject* ArrayBufferObject::createForTypedObject(JSContext* cx,
-                                                           BufferSize nbytes) {
-  ArrayBufferObject* buffer = createZeroed(cx, nbytes);
-  if (buffer) {
-    buffer->setHasTypedObjectViews();
-  }
   return buffer;
 }
 

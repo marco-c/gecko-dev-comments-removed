@@ -8621,7 +8621,6 @@ class BaseCompiler final : public BaseCompilerInterface {
   [[nodiscard]] bool emitBrOnCast();
 
   void emitGcNullCheck(RegRef rp);
-  RegRef emitGcArrayGetOwner(RegRef rp);
   RegPtr emitGcArrayGetData(RegRef rp);
   RegI32 emitGcArrayGetLength(RegPtr rdata, bool adjustDataPointer);
   void emitGcArrayBoundsCheck(RegI32 index, RegI32 length);
@@ -8629,12 +8628,11 @@ class BaseCompiler final : public BaseCompilerInterface {
   void emitGcGet(FieldType type, const T& src);
   template <typename T>
   void emitGcSetScalar(const T& dst, FieldType type, AnyReg value);
-  [[nodiscard]] bool emitGcStructSet(RegRef object, RegRef owner, RegPtr data,
+  [[nodiscard]] bool emitGcStructSet(RegRef object, RegPtr data,
                                      const StructField& field, AnyReg value);
-  [[nodiscard]] bool emitGcArraySet(RegRef object, RegRef owner, RegPtr data,
-                                    RegI32 index, RegI32 length,
-                                    const ArrayType& array, AnyReg value,
-                                    RegPtr scratch);
+  [[nodiscard]] bool emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
+                                    RegI32 length, const ArrayType& array,
+                                    AnyReg value, RegPtr scratch);
 
 #ifdef ENABLE_WASM_SIMD
   template <typename SourceType, typename DestType>
@@ -13338,13 +13336,6 @@ void BaseCompiler::emitGcNullCheck(RegRef rp) {
   masm.bind(&ok);
 }
 
-RegRef BaseCompiler::emitGcArrayGetOwner(RegRef rp) {
-  RegRef rowner = needRef();
-  
-  masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfOwner()), rowner);
-  return rowner;
-}
-
 RegPtr BaseCompiler::emitGcArrayGetData(RegRef rp) {
   RegPtr rdata = needPtr();
   
@@ -13471,7 +13462,7 @@ void BaseCompiler::emitGcSetScalar(const T& dst, FieldType type, AnyReg value) {
   }
 }
 
-bool BaseCompiler::emitGcStructSet(RegRef object, RegRef owner, RegPtr data,
+bool BaseCompiler::emitGcStructSet(RegRef object, RegPtr data,
                                    const StructField& field, AnyReg value) {
   
   if (!field.type.isReference()) {
@@ -13487,11 +13478,10 @@ bool BaseCompiler::emitGcStructSet(RegRef object, RegRef owner, RegPtr data,
   RegRef barrierOwner = needRef();
 
   masm.computeEffectiveAddress(Address(data, field.offset), valueAddr);
-  masm.movePtr(owner, barrierOwner);
+  masm.movePtr(object, barrierOwner);
 
   
   pushRef(object);
-  pushRef(owner);
   pushPtr(data);
 
   
@@ -13501,16 +13491,14 @@ bool BaseCompiler::emitGcStructSet(RegRef object, RegRef owner, RegPtr data,
 
   
   popPtr(data);
-  popRef(owner);
   popRef(object);
 
   return true;
 }
 
-bool BaseCompiler::emitGcArraySet(RegRef object, RegRef owner, RegPtr data,
-                                  RegI32 index, RegI32 length,
-                                  const ArrayType& arrayType, AnyReg value,
-                                  RegPtr scratch) {
+bool BaseCompiler::emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
+                                  RegI32 length, const ArrayType& arrayType,
+                                  AnyReg value, RegPtr scratch) {
   
   uint32_t shift = arrayType.elementType_.indexingShift();
   Scale scale;
@@ -13536,12 +13524,11 @@ bool BaseCompiler::emitGcArraySet(RegRef object, RegRef owner, RegPtr data,
   RegRef barrierOwner = needRef();
 
   masm.computeEffectiveAddress(BaseIndex(data, scratch, scale, 0), valueAddr);
-  masm.movePtr(owner, barrierOwner);
+  masm.movePtr(object, barrierOwner);
 
   
   pushAny(dupAny(value));
   pushRef(object);
-  pushRef(owner);
   pushPtr(data);
   pushI32(index);
   pushI32(length);
@@ -13555,7 +13542,6 @@ bool BaseCompiler::emitGcArraySet(RegRef object, RegRef owner, RegPtr data,
   popI32(length);
   popI32(index);
   popPtr(data);
-  popRef(owner);
   popRef(object);
   popAny(value);
 
@@ -13597,7 +13583,6 @@ bool BaseCompiler::emitStructNewWithRtt() {
   needPtr(RegPtr(PreBarrierReg));
 
   RegRef rp = popRef();
-  RegRef rowner = needRef();
   RegPtr rdata = needPtr();
 
   
@@ -13606,12 +13591,10 @@ bool BaseCompiler::emitStructNewWithRtt() {
   
   
   if (InlineTypedObject::canAccommodateSize(structType.size_)) {
-    moveRef(rp, rowner);
     masm.computeEffectiveAddress(
         Address(rp, InlineTypedObject::offsetOfDataStart()), rdata);
   } else {
     masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfData()), rdata);
-    masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfOwner()), rowner);
   }
 
   
@@ -13634,13 +13617,12 @@ bool BaseCompiler::emitStructNewWithRtt() {
     }
 
     
-    if (!emitGcStructSet(rp, rowner, rdata, structField, value)) {
+    if (!emitGcStructSet(rp, rdata, structField, value)) {
       return false;
     }
   }
 
   freePtr(rdata);
-  freeRef(rowner);
   pushRef(rp);
 
   return true;
@@ -13741,7 +13723,6 @@ bool BaseCompiler::emitStructSet() {
 
   AnyReg value = popAny();
   RegRef rp = popRef();
-  RegRef rowner = needRef();
   RegPtr rdata = needPtr();
 
   
@@ -13752,7 +13733,6 @@ bool BaseCompiler::emitStructSet() {
   
   emitGcNullCheck(rp);
 
-  
   
   {
     RegPtr scratch = needPtr();
@@ -13765,23 +13745,20 @@ bool BaseCompiler::emitStructSet() {
     freePtr(clasp);
     freePtr(scratch);
     masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfData()), rdata);
-    masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfOwner()), rowner);
     masm.jump(&join);
 
     masm.bind(&isInline);
     masm.computeEffectiveAddress(
         Address(rp, InlineTypedObject::offsetOfDataStart()), rdata);
-    masm.movePtr(rp, rowner);
     masm.bind(&join);
   }
 
   
-  if (!emitGcStructSet(rp, rowner, rdata, structField, value)) {
+  if (!emitGcStructSet(rp, rdata, structField, value)) {
     return false;
   }
 
   freePtr(rdata);
-  freeRef(rowner);
   freeRef(rp);
 
   return true;
@@ -13821,7 +13798,6 @@ bool BaseCompiler::emitArrayNewWithRtt() {
 
   
   RegPtr rdata = emitGcArrayGetData(rp);
-  RegRef rowner = emitGcArrayGetOwner(rp);
 
   
   
@@ -13845,8 +13821,7 @@ bool BaseCompiler::emitArrayNewWithRtt() {
   masm.bind(&loop);
 
   
-  if (!emitGcArraySet(rp, rowner, rdata, index, length, arrayType, value,
-                      scratch)) {
+  if (!emitGcArraySet(rp, rdata, index, length, arrayType, value, scratch)) {
     return false;
   }
 
@@ -13861,7 +13836,6 @@ bool BaseCompiler::emitArrayNewWithRtt() {
   freeI32(index);
   freeAny(value);
   freePtr(rdata);
-  freeRef(rowner);
   pushRef(rp);
 
   return true;
@@ -13961,7 +13935,6 @@ bool BaseCompiler::emitArraySet() {
   emitGcNullCheck(rp);
 
   
-  RegRef rowner = emitGcArrayGetOwner(rp);
   RegPtr rdata = emitGcArrayGetData(rp);
 
   
@@ -13981,14 +13954,12 @@ bool BaseCompiler::emitArraySet() {
   
   
   
-  if (!emitGcArraySet(rp, rowner, rdata, index, length, arrayType, value,
-                      scratch)) {
+  if (!emitGcArraySet(rp, rdata, index, length, arrayType, value, scratch)) {
     return false;
   }
 
   freePtr(scratch);
   freePtr(rdata);
-  freeRef(rowner);
   freeRef(rp);
   freeI32(length);
   freeI32(index);
