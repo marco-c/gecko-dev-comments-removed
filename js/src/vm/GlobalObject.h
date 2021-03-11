@@ -273,15 +273,6 @@ class GlobalObject : public NativeObject {
   
 
 
-  bool shouldSplicePrototype();
-
-  
-  static bool splicePrototype(JSContext* cx, Handle<GlobalObject*> global,
-                              Handle<TaggedProto> proto);
-
-  
-
-
 
   static JSFunction* createConstructor(
       JSContext* cx, JSNative ctor, JSAtom* name, unsigned length,

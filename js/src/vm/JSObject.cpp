@@ -2283,16 +2283,6 @@ bool js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto,
   }
 
   
-  
-  
-  if (obj->is<GlobalObject>()) {
-    Handle<GlobalObject*> global = obj.as<GlobalObject>();
-    if (!GlobalObject::ensureConstructor(cx, global, JSProto_Object)) {
-      return false;
-    }
-  }
-
-  
 
 
 
@@ -2488,6 +2478,16 @@ bool js::SetImmutablePrototype(JSContext* cx, HandleObject obj,
   if (obj->hasDynamicPrototype()) {
     MOZ_ASSERT(!cx->isHelperThreadContext());
     return Proxy::setImmutablePrototype(cx, obj, succeeded);
+  }
+
+  
+  
+  
+  if (obj->is<GlobalObject>()) {
+    Handle<GlobalObject*> global = obj.as<GlobalObject>();
+    if (!GlobalObject::ensureConstructor(cx, global, JSProto_Object)) {
+      return false;
+    }
   }
 
   if (!JSObject::setFlag(cx, obj, ObjectFlag::ImmutablePrototype)) {

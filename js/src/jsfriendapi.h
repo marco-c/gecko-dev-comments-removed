@@ -48,21 +48,6 @@ extern JS_FRIEND_API JSFunction* JS_GetObjectFunction(JSObject* obj);
 
 
 
-
-
-
-
-
-extern JS_FRIEND_API bool JS_SplicePrototype(JSContext* cx,
-                                             JS::HandleObject global,
-                                             JS::HandleObject proto);
-
-
-
-
-
-
-
 extern JS_FRIEND_API JSObject* JS_NewObjectWithoutMetadata(
     JSContext* cx, const JSClass* clasp, JS::Handle<JSObject*> proto);
 
