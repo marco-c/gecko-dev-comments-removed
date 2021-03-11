@@ -62,6 +62,8 @@ bool RenderCompositorSWGL::AllocateMappedBuffer(
   layers::BufferMode bufferMode = layers::BufferMode::BUFFERED;
   mDT = mWidget->StartRemoteDrawingInRegion(mDirtyRegion, &bufferMode);
   if (!mDT) {
+    gfxCriticalNote
+        << "RenderCompositorSWGL failed mapping default framebuffer, no dt";
     return false;
   }
   
@@ -107,6 +109,8 @@ bool RenderCompositorSWGL::AllocateMappedBuffer(
       
       mWidget->EndRemoteDrawingInRegion(mDT, mDirtyRegion);
       ClearMappedBuffer();
+      gfxCriticalNote
+          << "RenderCompositorSWGL failed mapping default framebuffer, no surf";
       return false;
     }
     mMappedData = map.mData;
@@ -159,9 +163,8 @@ void RenderCompositorSWGL::StartCompositing(
   
   
   
-  if (!AllocateMappedBuffer(aOpaqueRects, aNumOpaqueRects)) {
-    gfxCriticalNote
-        << "RenderCompositorSWGL failed mapping default framebuffer";
+  if (mDirtyRegion.IsEmpty() ||
+      !AllocateMappedBuffer(aOpaqueRects, aNumOpaqueRects)) {
     
     
     wr_swgl_init_default_framebuffer(mContext, 0, 0, 2, 2, 0, nullptr);
@@ -170,6 +173,7 @@ void RenderCompositorSWGL::StartCompositing(
 
 void RenderCompositorSWGL::CommitMappedBuffer(bool aDirty) {
   if (!mDT) {
+    mDirtyRegion.SetEmpty();
     return;
   }
   
@@ -203,6 +207,7 @@ void RenderCompositorSWGL::CommitMappedBuffer(bool aDirty) {
   }
   
   mWidget->EndRemoteDrawingInRegion(mDT, mDirtyRegion);
+  mDirtyRegion.SetEmpty();
   ClearMappedBuffer();
 }
 
