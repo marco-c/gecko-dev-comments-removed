@@ -865,8 +865,7 @@ bool BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat) {
 
   
   
-  mFloatOverflowAreas.UnionWith(aFloat->GetOverflowAreas() +
-                                aFloat->GetPosition());
+  mFloatOverflowAreas.UnionWith(aFloat->GetOverflowAreasRelativeToParent());
 
   
   
