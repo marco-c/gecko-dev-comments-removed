@@ -14,14 +14,12 @@
 #include "mozilla/DataMutex.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Result.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/IOUtilsBinding.h"
 #include "mozilla/dom/TypedArray.h"
 #include "nsIAsyncShutdown.h"
 #include "nsISerialEventTarget.h"
 #include "nsPrintfCString.h"
-#include "nsProxyRelease.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
@@ -121,10 +119,6 @@ class IOUtils final {
   static already_AddRefed<Promise> Exists(GlobalObject& aGlobal,
                                           const nsAString& aPath);
 
-  static void GetProfileBeforeChange(GlobalObject& aGlobal,
-                                     JS::MutableHandle<JS::Value>,
-                                     ErrorResult& aRv);
-
   class JsBuffer;
 
   
@@ -148,20 +142,27 @@ class IOUtils final {
   struct InternalFileInfo;
   struct InternalWriteOpts;
   class MozLZ4;
-  class EventQueue;
-  class State;
 
-  
+  static StaticDataMutex<StaticRefPtr<nsISerialEventTarget>>
+      sBackgroundEventTarget;
+  static StaticRefPtr<nsIAsyncShutdownClient> sBarrier;
+  static Atomic<bool> sShutdownStarted;
 
+  template <typename OkT, typename Fn, typename... Args>
+  static RefPtr<IOUtils::IOPromise<OkT>> InvokeToIOPromise(Fn aFunc,
+                                                           Args... aArgs);
 
+  static already_AddRefed<nsIAsyncShutdownClient> GetShutdownBarrier();
 
+  static already_AddRefed<nsISerialEventTarget> GetBackgroundEventTarget();
 
-
-
+  static void SetShutdownHooks();
 
   template <typename OkT, typename Fn>
-  static void DispatchAndResolve(EventQueue* aQueue, Promise* aPromise,
-                                 Fn aFunc);
+  static RefPtr<IOPromise<OkT>> RunOnBackgroundThread(Fn aFunc);
+
+  template <typename OkT, typename Fn>
+  static void RunOnBackgroundThreadAndResolve(Promise* aPromise, Fn aFunc);
 
   
 
@@ -174,6 +175,16 @@ class IOUtils final {
   friend MOZ_MUST_USE bool ToJSValue(JSContext* aCx,
                                      const InternalFileInfo& aInternalFileInfo,
                                      JS::MutableHandle<JS::Value> aValue);
+
+  
+
+
+  template <typename T>
+  static void ResolveJSPromise(Promise* aPromise, T&& aValue);
+  
+
+
+  static void RejectJSPromise(Promise* aPromise, const IOError& aError);
 
   
 
@@ -358,80 +369,6 @@ class IOUtils final {
 
 
   static Result<bool, IOError> ExistsSync(nsIFile* aFile);
-
-  enum class EventQueueStatus {
-    Uninitialized,
-    Initialized,
-    Shutdown,
-  };
-
-  enum class ShutdownBlockerStatus {
-    Uninitialized,
-    Initialized,
-    Failed,
-  };
-
-  
-
-
-  class State {
-   public:
-    StaticAutoPtr<EventQueue> mEventQueue;
-    EventQueueStatus mQueueStatus = EventQueueStatus::Uninitialized;
-    ShutdownBlockerStatus mBlockerStatus = ShutdownBlockerStatus::Uninitialized;
-
-    
-
-
-
-
-    void SetShutdownHooks();
-  };
-
-  using StateMutex = StaticDataMutex<State>;
-
-  
-
-
-
-
-
-
-
-
-  static Maybe<StateMutex::AutoLock> GetState();
-
-  static StateMutex sState;
-};
-
-
-
-
-class IOUtils::EventQueue final {
-  friend void IOUtils::State::SetShutdownHooks();
-
- public:
-  EventQueue();
-
-  EventQueue(const EventQueue&) = delete;
-  EventQueue(EventQueue&&) = delete;
-  EventQueue& operator=(const EventQueue&) = delete;
-  EventQueue& operator=(EventQueue&&) = delete;
-
-  template <typename OkT, typename Fn>
-  RefPtr<IOPromise<OkT>> Dispatch(Fn aFunc);
-
-  Result<already_AddRefed<nsIAsyncShutdownClient>, nsresult>
-  GetProfileBeforeChangeClient();
-
-  Result<already_AddRefed<nsIAsyncShutdownBarrier>, nsresult>
-  GetProfileBeforeChangeBarrier();
-
- private:
-  nsresult SetShutdownHooks();
-
-  nsCOMPtr<nsISerialEventTarget> mBackgroundEventTarget;
-  nsCOMPtr<nsIAsyncShutdownBarrier> mProfileBeforeChangeBarrier;
 };
 
 
@@ -544,25 +481,13 @@ class IOUtils::MozLZ4 {
       Span<const uint8_t> aFileContents, IOUtils::BufferKind);
 };
 
-class IOUtilsShutdownBlocker : public nsIAsyncShutdownBlocker,
-                               public nsIAsyncShutdownCompletionCallback {
+class IOUtilsShutdownBlocker : public nsIAsyncShutdownBlocker {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
-  NS_DECL_NSIASYNCSHUTDOWNCOMPLETIONCALLBACK
-
-  enum Phase {
-    ProfileBeforeChange,
-    XpcomWillShutdown,
-  };
-
-  explicit IOUtilsShutdownBlocker(Phase aPhase) : mPhase(aPhase) {}
 
  private:
   virtual ~IOUtilsShutdownBlocker() = default;
-
-  Phase mPhase;
-  RefPtr<nsIAsyncShutdownClient> mParentClient;
 };
 
 
