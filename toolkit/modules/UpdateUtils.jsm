@@ -207,7 +207,7 @@ var UpdateUtils = {
 
 
   appUpdateAutoSettingIsLocked() {
-    return appUpdateSettingIsLocked("app.update.auto");
+    return this.appUpdateSettingIsLocked("app.update.auto");
   },
 
   
@@ -384,7 +384,7 @@ var UpdateUtils = {
       );
     }
 
-    if (appUpdateSettingIsLocked(prefName)) {
+    if (this.appUpdateSettingIsLocked(prefName)) {
       return Promise.reject(
         `UpdateUtils.writeUpdateConfigSetting: Unable to change value of ` +
           `setting '${prefName}' because it is locked by policy`
@@ -466,6 +466,30 @@ var UpdateUtils = {
     updateConfigIOPromise = writePromise;
     return writePromise;
   },
+
+  
+
+
+
+  appUpdateSettingIsLocked(prefName) {
+    if (!(prefName in UpdateUtils.PER_INSTALLATION_PREFS)) {
+      return Promise.reject(
+        `UpdateUtils.appUpdateSettingIsLocked: Unknown per-installation pref '${prefName}'`
+      );
+    }
+
+    
+    if (!Services.policies) {
+      return false;
+    }
+
+    const pref = UpdateUtils.PER_INSTALLATION_PREFS[prefName];
+    if (!pref.policyFn) {
+      return false;
+    }
+    const policyValue = pref.policyFn();
+    return policyValue !== null;
+  },
 };
 
 const PER_INSTALLATION_DEFAULTS_BRANCH = "__DEFAULTS__";
@@ -520,6 +544,22 @@ UpdateUtils.PER_INSTALLATION_PREFS = {
         return true;
       }
       if (!Services.policies.isAllowed("app-auto-updates-on")) {
+        
+        return false;
+      }
+      return null;
+    },
+  },
+  "app.update.background.enabled": {
+    type: UpdateUtils.PER_INSTALLATION_PREF_TYPE_BOOL,
+    defaultValue: true,
+    observerTopic: "background-update-config-change",
+    policyFn: () => {
+      if (!Services.policies.isAllowed("app-background-update-off")) {
+        
+        return true;
+      }
+      if (!Services.policies.isAllowed("app-background-update-on")) {
         
         return false;
       }
@@ -757,30 +797,6 @@ function readDefaultValue(config, prefName) {
     }
   }
   return pref.defaultValue;
-}
-
-
-
-
-
-function appUpdateSettingIsLocked(prefName) {
-  if (!(prefName in UpdateUtils.PER_INSTALLATION_PREFS)) {
-    return Promise.reject(
-      `appUpdateSettingIsLocked: Unknown per-installation pref '${prefName}'`
-    );
-  }
-
-  
-  if (!Services.policies) {
-    return false;
-  }
-
-  const pref = UpdateUtils.PER_INSTALLATION_PREFS[prefName];
-  if (!pref.policyFn) {
-    return false;
-  }
-  const policyValue = pref.policyFn();
-  return policyValue !== null;
 }
 
 
