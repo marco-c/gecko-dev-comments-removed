@@ -4,4 +4,4 @@
 
 
 
-MOCHITEST_MANIFESTS += ["mochitest.ini"]
+MOCHITEST_MANIFESTS += ["hasinstance/mochitest.ini", "mochitest.ini"]
