@@ -184,7 +184,9 @@ pub struct SheetCollectionFlusher<'a, S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
 {
-    iter: slice::IterMut<'a, StylesheetSetEntry<S>>,
+    
+    
+    entries: &'a mut [StylesheetSetEntry<S>],
     validity: DataValidity,
     dirty: bool,
 }
@@ -204,32 +206,42 @@ where
     pub fn data_validity(&self) -> DataValidity {
         self.validity
     }
+
+    
+    pub fn sheets<'b>(&'b self) -> impl Iterator<Item = &'b S> {
+        self.entries.iter().map(|entry| &entry.sheet)
+    }
 }
 
-impl<'a, S> Iterator for SheetCollectionFlusher<'a, S>
+impl<'a, S> SheetCollectionFlusher<'a, S>
 where
     S: StylesheetInDocument + PartialEq + 'static,
 {
-    type Item = (&'a S, SheetRebuildKind);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            let potential_sheet = self.iter.next()?;
-
+    
+    
+    
+    
+    
+    
+    
+    pub fn each(self, mut callback: impl FnMut(&S, SheetRebuildKind) -> bool) {
+        for potential_sheet in self.entries.iter_mut() {
             let committed = mem::replace(&mut potential_sheet.committed, true);
-            if !committed {
+            let rebuild_kind = if !committed {
                 
                 
-                return Some((&potential_sheet.sheet, SheetRebuildKind::Full));
-            }
-
-            let rebuild_kind = match self.validity {
-                DataValidity::Valid => continue,
-                DataValidity::CascadeInvalid => SheetRebuildKind::CascadeOnly,
-                DataValidity::FullyInvalid => SheetRebuildKind::Full,
+                SheetRebuildKind::Full
+            } else {
+                match self.validity {
+                    DataValidity::Valid => continue,
+                    DataValidity::CascadeInvalid => SheetRebuildKind::CascadeOnly,
+                    DataValidity::FullyInvalid => SheetRebuildKind::Full,
+                }
             };
 
-            return Some((&potential_sheet.sheet, rebuild_kind));
+            if !callback(&potential_sheet.sheet, rebuild_kind) {
+                return;
+            }
         }
     }
 }
@@ -357,7 +369,7 @@ where
         let validity = mem::replace(&mut self.data_validity, DataValidity::Valid);
 
         SheetCollectionFlusher {
-            iter: self.entries.iter_mut(),
+            entries: &mut self.entries,
             dirty,
             validity,
         }
