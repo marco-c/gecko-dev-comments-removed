@@ -16,6 +16,10 @@ function $RegExpFlagsGetter() {
     var result = "";
 
     
+    if (R.hasIndices)
+        result += "d";
+
+    
     if (R.global)
         result += "g";
 
@@ -225,6 +229,7 @@ function RegExpGlobalMatchOpt(rx, S, fullUnicode) {
         n++;
     }
 }
+
 
 
 

@@ -33,32 +33,37 @@ class RegExpFlag {
   
 
 
+  static constexpr uint8_t HasIndices = 0b100'0000;
 
-  static constexpr uint8_t Global = 0b00'0010;
+  
+
+
+
+  static constexpr uint8_t Global = 0b000'0010;
 
   
 
 
 
-  static constexpr uint8_t IgnoreCase = 0b00'0001;
+  static constexpr uint8_t IgnoreCase = 0b000'0001;
 
   
-  static constexpr uint8_t Multiline = 0b00'0100;
+  static constexpr uint8_t Multiline = 0b000'0100;
 
   
-  static constexpr uint8_t DotAll = 0b10'0000;
+  static constexpr uint8_t DotAll = 0b010'0000;
 
   
-  static constexpr uint8_t Unicode = 0b01'0000;
+  static constexpr uint8_t Unicode = 0b001'0000;
 
   
-  static constexpr uint8_t Sticky = 0b00'1000;
+  static constexpr uint8_t Sticky = 0b000'1000;
 
   
-  static constexpr uint8_t NoFlags = 0b00'0000;
+  static constexpr uint8_t NoFlags = 0b000'0000;
 
   
-  static constexpr uint8_t AllFlags = 0b11'1111;
+  static constexpr uint8_t AllFlags = 0b111'1111;
 };
 
 
@@ -108,6 +113,7 @@ class RegExpFlags {
     return RegExpFlags(~flags_ & RegExpFlag::AllFlags);
   }
 
+  bool hasIndices() const { return flags_ & RegExpFlag::HasIndices; }
   bool global() const { return flags_ & RegExpFlag::Global; }
   bool ignoreCase() const { return flags_ & RegExpFlag::IgnoreCase; }
   bool multiline() const { return flags_ & RegExpFlag::Multiline; }
