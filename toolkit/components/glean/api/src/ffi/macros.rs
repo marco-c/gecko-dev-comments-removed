@@ -13,18 +13,20 @@
 
 
 
+
+
 macro_rules! with_metric {
-    (BOOLEAN_MAP, $id:ident, $f:expr) => {
-        maybe_labeled_with_metric!(BOOLEAN_MAP, $id, $f)
+    (BOOLEAN_MAP, $id:ident, $m:ident, $f:expr) => {
+        maybe_labeled_with_metric!(BOOLEAN_MAP, $id, $m, $f)
     };
-    (COUNTER_MAP, $id:ident, $f:expr) => {
-        maybe_labeled_with_metric!(COUNTER_MAP, $id, $f)
+    (COUNTER_MAP, $id:ident, $m:ident, $f:expr) => {
+        maybe_labeled_with_metric!(COUNTER_MAP, $id, $m, $f)
     };
-    (STRING_MAP, $id:ident, $f:expr) => {
-        maybe_labeled_with_metric!(STRING_MAP, $id, $f)
+    (STRING_MAP, $id:ident, $m:ident, $f:expr) => {
+        maybe_labeled_with_metric!(STRING_MAP, $id, $m, $f)
     };
-    ($map:ident, $id:ident, $f:expr) => {
-        just_with_metric!($map, $id, $f)
+    ($map:ident, $id:ident, $m:ident, $f:expr) => {
+        just_with_metric!($map, $id, $m, $f)
     };
 }
 
@@ -39,10 +41,12 @@ macro_rules! with_metric {
 
 
 
+
+
 macro_rules! just_with_metric {
-    ($map:ident, $id:ident, $f:expr) => {
+    ($map:ident, $id:ident, $m:ident, $f:expr) => {
         match $crate::metrics::__glean_metric_maps::$map.get(&$id.into()) {
-            Some(metric) => $f(metric),
+            Some($m) => $f,
             None => panic!("No metric for id {}", $id),
         }
     };
@@ -62,18 +66,20 @@ macro_rules! just_with_metric {
 
 
 
+
+
 macro_rules! maybe_labeled_with_metric {
-    ($map:ident, $id:ident, $f:expr) => {
+    ($map:ident, $id:ident, $m:ident, $f:expr) => {
         if $id >= $crate::metrics::__glean_metric_maps::submetric_maps::MIN_LABELED_SUBMETRIC_ID {
             let map = $crate::metrics::__glean_metric_maps::submetric_maps::$map
                 .read()
                 .expect("Read lock for labeled metric map was poisoned");
             match map.get(&$id.into()) {
-                Some(metric) => $f(metric),
+                Some($m) => $f,
                 None => panic!("No submetric for id {}", $id),
             }
         } else {
-            just_with_metric!($map, $id, $f)
+            just_with_metric!($map, $id, $m, $f)
         }
     };
 }
@@ -138,18 +144,13 @@ macro_rules! labeled_submetric_get {
             $crate::metrics::__glean_metric_maps::submetric_maps::NEXT_LABELED_SUBMETRIC_ID
                 .fetch_add(1, Ordering::SeqCst);
         {
-            with_metric!(
-                $labeled_map,
-                $id,
-                |metric: &$crate::private::LabeledMetric<$metric_type>| {
-                    let submetric = metric.get(&tuple.1);
-                    let mut map =
-                        $crate::metrics::__glean_metric_maps::submetric_maps::$submetric_map
-                            .write()
-                            .expect("write lock of submetric map was poisoned");
-                    map.insert(submetric_id.into(), submetric);
-                }
-            );
+            with_metric!($labeled_map, $id, metric, {
+                let submetric = metric.get(&tuple.1);
+                let mut map = $crate::metrics::__glean_metric_maps::submetric_maps::$submetric_map
+                    .write()
+                    .expect("write lock of submetric map was poisoned");
+                map.insert(submetric_id.into(), submetric);
+            });
         }
 
         let mut map = $crate::metrics::__glean_metric_maps::submetric_maps::LABELED_METRICS_TO_IDS

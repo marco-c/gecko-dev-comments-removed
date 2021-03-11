@@ -118,14 +118,13 @@ add_task({ skip_if: () => runningInParent }, async function run_child_stuff() {
   Glean.testOnly.whatTimeIsIt.stopAndAccumulate(t2); 
   Glean.testOnly.whatTimeIsIt.stopAndAccumulate(t3); 
 
-  
-  
-  
-  
-  
-  
-  
-  
+  Glean.testOnly.mabelsKitchenCounters.near_the_sink.add(
+    COUNTERS_NEAR_THE_SINK
+  );
+  Glean.testOnly.mabelsKitchenCounters.with_junk_on_them.add(
+    COUNTERS_WITH_JUNK_ON_THEM
+  );
+  Glean.testOnly.mabelsKitchenCounters.InvalidLabel.add(INVALID_COUNTERS);
 });
 
 add_task(
@@ -166,5 +165,16 @@ add_task(
 
 
 
+
+    const mabelsCounters = Glean.testOnly.mabelsKitchenCounters;
+    Assert.equal(
+      mabelsCounters.near_the_sink.testGetValue(),
+      COUNTERS_NEAR_THE_SINK
+    );
+    Assert.equal(
+      mabelsCounters.with_junk_on_them.testGetValue(),
+      COUNTERS_WITH_JUNK_ON_THEM
+    );
+    Assert.equal(mabelsCounters.__other__.testGetValue(), INVALID_COUNTERS);
   }
 );
