@@ -18,20 +18,9 @@ XPCOMUtils.defineLazyModuleGetter(
   "_TaskSchedulerWinImpl"
 );
 
-XPCOMUtils.defineLazyModuleGetter(
-  this,
-  "MacOSImpl",
-  "resource://gre/modules/TaskSchedulerMacOSImpl.jsm",
-  "_TaskSchedulerMacOSImpl"
-);
-
 XPCOMUtils.defineLazyGetter(this, "gImpl", () => {
   if (AppConstants.platform == "win") {
     return WinImpl;
-  }
-
-  if (AppConstants.platform == "macosx") {
-    return MacOSImpl;
   }
 
   
@@ -45,14 +34,6 @@ XPCOMUtils.defineLazyGetter(this, "gImpl", () => {
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
-
-
-
-
-
-
-
-
 
 
 
@@ -114,11 +95,7 @@ var TaskScheduler = {
 
 
 
-
-  async registerTask(id, command, intervalSeconds, options) {
-    if (typeof id !== "string") {
-      throw new Error("id is not a string");
-    }
+  registerTask(id, command, intervalSeconds, options) {
     if (!Number.isInteger(intervalSeconds)) {
       throw new Error("Interval is not an integer");
     }
@@ -134,14 +111,14 @@ var TaskScheduler = {
 
 
 
-  async deleteTask(id) {
+  deleteTask(id) {
     return gImpl.deleteTask(id);
   },
 
   
 
 
-  async deleteAllTasks() {
+  deleteAllTasks() {
     return gImpl.deleteAllTasks();
   },
 };
