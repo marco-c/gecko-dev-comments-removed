@@ -229,30 +229,21 @@ class ResponsiveUI {
 
     
     
-    this.resizeToolbarObserver = new this.browserWindow.ResizeObserver(
-      entries => {
-        for (const entry of entries) {
-          const { width } = entry.contentRect;
+    
+    this.resizeToolbarObserver = new this.browserWindow.ResizeObserver(() => {
+      const style = this.browserWindow.getComputedStyle(this.browserStackEl);
 
-          this.rdmFrame.style.setProperty("width", `${width}px`);
-
-          
-          
-          if (this.browserStackEl.classList.contains("device-modal-opened")) {
-            const style = this.browserWindow.getComputedStyle(
-              this.browserStackEl
-            );
-            this.rdmFrame.style.height = style.height;
-          } else {
-            
-            
-            
-            
-            this.rdmFrame.classList.toggle("accomodate-ua", width < 520);
-          }
-        }
-      }
-    );
+      this.browserStackEl.style.setProperty("--rdm-stack-width", style.width);
+      this.browserStackEl.style.setProperty("--rdm-stack-height", style.height);
+      
+      
+      
+      
+      this.rdmFrame.classList.toggle(
+        "accomodate-ua",
+        parseFloat(style.width) < 520
+      );
+    });
 
     this.resizeToolbarObserver.observe(this.browserStackEl);
   }
@@ -325,6 +316,8 @@ class ResponsiveUI {
     this.browserStackEl.style.removeProperty("--rdm-width");
     this.browserStackEl.style.removeProperty("--rdm-height");
     this.browserStackEl.style.removeProperty("--rdm-zoom");
+    this.browserStackEl.style.removeProperty("--rdm-stack-height");
+    this.browserStackEl.style.removeProperty("--rdm-stack-width");
 
     
     
@@ -736,10 +729,7 @@ class ResponsiveUI {
   onUpdateDeviceModal(event) {
     if (event.data.isOpen) {
       this.browserStackEl.classList.add("device-modal-opened");
-      const style = this.browserWindow.getComputedStyle(this.browserStackEl);
-      this.rdmFrame.style.height = style.height;
     } else {
-      this.rdmFrame.style.removeProperty("height");
       this.browserStackEl.classList.remove("device-modal-opened");
     }
   }
