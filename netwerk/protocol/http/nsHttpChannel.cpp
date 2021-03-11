@@ -634,7 +634,35 @@ nsresult nsHttpChannel::MaybeUseHTTPSRRForUpgrade(bool aShouldUpgrade,
       return true;
     }
 
-    return false;
+    nsAutoCString uriHost;
+    mURI->GetAsciiHost(uriHost);
+
+    if (gHttpHandler->IsHostExcludedForHTTPSRR(uriHost)) {
+      return true;
+    }
+
+    nsCOMPtr<nsIPrincipal> triggeringPrincipal =
+        mLoadInfo->TriggeringPrincipal();
+    
+    
+    if (!triggeringPrincipal->SchemeIs("https")) {
+      return false;
+    }
+
+    nsAutoCString triggeringHost;
+    triggeringPrincipal->GetAsciiHost(triggeringHost);
+
+    
+    
+    if (!triggeringHost.Equals(uriHost)) {
+      return false;
+    }
+
+    
+    
+    
+    gHttpHandler->ExcludeHTTPSRRHost(uriHost);
+    return true;
   };
 
   if (shouldSkipUpgradeWithHTTPSRR()) {
