@@ -10,7 +10,6 @@
 
 
 
-
 new RegExp("", "mig"); 
 assert.throws(SyntaxError, () => new RegExp("", "migg"), "duplicate g");
 

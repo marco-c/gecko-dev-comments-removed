@@ -8,7 +8,6 @@
 
 
 
-
 assert.compareArray([1, 2], /(?<π>a)/du.exec("bab").indices.groups.π);
 assert.compareArray([1, 2], /(?<\u{03C0}>a)/du.exec("bab").indices.groups.π);
 assert.compareArray([1, 2], /(?<π>a)/du.exec("bab").indices.groups.\u03C0);

@@ -23,7 +23,6 @@
 
 
 
-
 assert.sameValue(/./.flags, '', 'no flags');
 assert.sameValue(/./g.flags, 'g', 'global');
 assert.sameValue(/./i.flags, 'i', 'ignoreCase');

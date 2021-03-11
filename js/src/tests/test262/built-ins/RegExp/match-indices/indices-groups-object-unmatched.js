@@ -14,7 +14,6 @@
 
 
 
-
 const re = /(?<a>a).|(?<x>x)/d;
 const result = re.exec("ab").indices;
 assert.compareArray([0, 1], result.groups.a);

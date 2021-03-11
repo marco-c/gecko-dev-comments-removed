@@ -22,12 +22,10 @@ from operator import itemgetter
 UNSUPPORTED_FEATURES = set(
     [
         "tail-call-optimization",
-        "regexp-match-indices",
         "Intl.DateTimeFormat-quarter",
         "Intl.Segmenter",
         "Atomics.waitAsync",
         "legacy-regexp",
-        "arbitrary-module-namespace-names",
     ]
 )
 FEATURE_CHECK_NEEDED = {

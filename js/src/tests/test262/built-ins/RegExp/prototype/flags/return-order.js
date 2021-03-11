@@ -23,7 +23,6 @@
 
 
 
-
 assert.sameValue(new RegExp("", "dgimsuy").flags, "dgimsuy", "dgimsuy => dgimsuy");
 assert.sameValue(new RegExp("", "yusmigd").flags, "dgimsuy", "yusmigd => dgimsuy");
 

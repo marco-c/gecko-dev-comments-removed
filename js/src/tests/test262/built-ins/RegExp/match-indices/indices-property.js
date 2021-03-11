@@ -16,7 +16,6 @@
 
 
 
-
 let counter = 0;
 Object.defineProperty(Array.prototype, "indices", {
   set() { counter++; }

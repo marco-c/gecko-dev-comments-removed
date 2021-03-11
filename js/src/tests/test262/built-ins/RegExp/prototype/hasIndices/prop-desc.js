@@ -18,7 +18,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(RegExp.prototype, "hasIndices");
 
 assert.sameValue(desc.set, undefined);

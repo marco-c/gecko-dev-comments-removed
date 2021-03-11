@@ -15,7 +15,6 @@
 
 
 
-
 let groupNames = Object.getOwnPropertyNames(/(?<fst>.)|(?<snd>.)/du.exec("abcd").indices.groups);
 assert.compareArray(groupNames, ["fst", "snd"]);
 

@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(/./.hasIndices, false, "/./.hasIndices");
 assert.sameValue(/./i.hasIndices, false, "/./i.hasIndices");
 assert.sameValue(/./g.hasIndices, false, "/./g.hasIndices");
