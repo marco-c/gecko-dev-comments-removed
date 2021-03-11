@@ -26,11 +26,19 @@ var EXPORTED_SYMBOLS = ["SearchTestUtils"];
 
 var gTestScope;
 
-var SearchTestUtils = Object.freeze({
+var SearchTestUtils = {
   init(testScope) {
     gTestScope = testScope;
-    
-    if (!("ExtensionTestUtils" in gTestScope)) {
+    let env = Cc["@mozilla.org/process/environment;1"].getService(
+      Ci.nsIEnvironment
+    );
+    this._isMochitest = !env.exists("XPCSHELL_TEST_PROFILE_DIR");
+    if (this._isMochitest) {
+      this._isMochitest = true;
+      AddonTestUtils.initMochitest(testScope);
+    } else {
+      this._isMochitest = false;
+      
       gTestScope.ExtensionTestUtils = ExtensionTestUtils;
     }
   },
@@ -180,18 +188,40 @@ var SearchTestUtils = Object.freeze({
 
 
 
-  async installSearchExtension(options = {}) {
-    options.id = (options.id ?? "example") + "@tests.mozilla.org";
+
+
+
+
+
+
+
+
+
+
+
+
+  async installSearchExtension(options = {}, skipUnload = false) {
     let extensionInfo = {
       useAddonManager: "permanent",
       manifest: this.createEngineManifest(options),
     };
 
-    let extension = gTestScope.ExtensionTestUtils.loadExtension(extensionInfo);
+    let extension;
+
+    
+    
+    if (!skipUnload && this._isMochitest) {
+      gTestScope.registerCleanupFunction(async () => {
+        await extension.unload();
+      });
+    }
+
+    extension = gTestScope.ExtensionTestUtils.loadExtension(extensionInfo);
     await extension.startup();
     if (!options.skipWaitForSearchEngine) {
       await AddonTestUtils.waitForSearchProviderStartup(extension);
     }
+
     return extension;
   },
 
@@ -256,8 +286,11 @@ var SearchTestUtils = Object.freeze({
 
 
   createEngineManifest(options = {}) {
-    options.id = options.id ?? "example@tests.mozilla.org";
     options.name = options.name ?? "Example";
+    options.id = options.id ?? options.name.toLowerCase().replaceAll(" ", "");
+    if (!options.id.includes("@")) {
+      options.id += "@tests.mozilla.org";
+    }
     options.version = options.version ?? "1.0";
     let manifest = {
       version: options.version,
@@ -363,4 +396,4 @@ var SearchTestUtils = Object.freeze({
     this.idleService._fireObservers("idle");
     await reloadObserved;
   },
-});
+};
