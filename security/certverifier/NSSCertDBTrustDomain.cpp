@@ -1182,9 +1182,7 @@ static Result CheckForStartComOrWoSign(const UniqueCERTCertList& certChain) {
     if (!node || !node->cert) {
       return Result::FATAL_ERROR_LIBRARY_FAILURE;
     }
-    nsTArray<uint8_t> certDER(node->cert->derCert.data,
-                              node->cert->derCert.len);
-    if (CertDNIsInList(certDER, StartComAndWoSignDNs)) {
+    if (CertDNIsInList(node->cert, StartComAndWoSignDNs)) {
       return Result::ERROR_REVOKED_CERTIFICATE;
     }
   }
@@ -1355,12 +1353,13 @@ Result NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
   
   
   
-  nsTArray<uint8_t> rootCertDER(root.get()->derCert.data,
-                                root.get()->derCert.len);
-  if (mHostname && CertDNIsInList(rootCertDER, RootSymantecDNs)) {
-    nsTArray<nsTArray<uint8_t>> intCerts;
+  if (mHostname && CertDNIsInList(root.get(), RootSymantecDNs)) {
+    rootCert = nullptr;  
+    nsTArray<RefPtr<nsIX509Cert>> intCerts;
+    nsCOMPtr<nsIX509Cert> eeCert;
 
-    nsrv = nsNSSCertificate::GetIntermediatesAsDER(nssCertList, intCerts);
+    nsrv = nsNSSCertificate::SegmentCertificateChain(nssCertList, rootCert,
+                                                     intCerts, eeCert);
     if (NS_FAILED(nsrv)) {
       
       return Result::ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED;
