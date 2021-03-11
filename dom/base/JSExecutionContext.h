@@ -115,7 +115,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   
   
-  MOZ_MUST_USE nsresult JoinCompile(JS::OffThreadToken** aOffThreadToken);
+  [[nodiscard]] nsresult JoinCompile(JS::OffThreadToken** aOffThreadToken);
 
   
   nsresult Compile(JS::CompileOptions& aCompileOptions,
@@ -150,7 +150,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   JSScript* MaybeGetScript();
 
   
-  MOZ_MUST_USE nsresult ExecScript();
+  [[nodiscard]] nsresult ExecScript();
 
   
   
@@ -163,7 +163,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   
   
-  MOZ_MUST_USE nsresult ExecScript(JS::MutableHandle<JS::Value> aRetValue);
+  [[nodiscard]] nsresult ExecScript(JS::MutableHandle<JS::Value> aRetValue);
 };
 }  
 }  

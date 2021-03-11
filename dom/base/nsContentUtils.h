@@ -1893,9 +1893,9 @@ class nsContentUtils {
 
 
 
-  MOZ_MUST_USE
-  static bool GetNodeTextContent(nsINode* aNode, bool aDeep, nsAString& aResult,
-                                 const mozilla::fallible_t&);
+  [[nodiscard]] static bool GetNodeTextContent(nsINode* aNode, bool aDeep,
+                                               nsAString& aResult,
+                                               const mozilla::fallible_t&);
 
   static void GetNodeTextContent(nsINode* aNode, bool aDeep,
                                  nsAString& aResult);
@@ -2239,26 +2239,24 @@ class nsContentUtils {
 
   static bool CanAccessNativeAnon();
 
-  MOZ_MUST_USE
-  static nsresult WrapNative(JSContext* cx, nsISupports* native,
-                             const nsIID* aIID, JS::MutableHandle<JS::Value> vp,
-                             bool aAllowWrapping = true) {
+  [[nodiscard]] static nsresult WrapNative(JSContext* cx, nsISupports* native,
+                                           const nsIID* aIID,
+                                           JS::MutableHandle<JS::Value> vp,
+                                           bool aAllowWrapping = true) {
     return WrapNative(cx, native, nullptr, aIID, vp, aAllowWrapping);
   }
 
   
-  MOZ_MUST_USE
-  static nsresult WrapNative(JSContext* cx, nsISupports* native,
-                             JS::MutableHandle<JS::Value> vp,
-                             bool aAllowWrapping = true) {
+  [[nodiscard]] static nsresult WrapNative(JSContext* cx, nsISupports* native,
+                                           JS::MutableHandle<JS::Value> vp,
+                                           bool aAllowWrapping = true) {
     return WrapNative(cx, native, nullptr, nullptr, vp, aAllowWrapping);
   }
 
-  MOZ_MUST_USE
-  static nsresult WrapNative(JSContext* cx, nsISupports* native,
-                             nsWrapperCache* cache,
-                             JS::MutableHandle<JS::Value> vp,
-                             bool aAllowWrapping = true) {
+  [[nodiscard]] static nsresult WrapNative(JSContext* cx, nsISupports* native,
+                                           nsWrapperCache* cache,
+                                           JS::MutableHandle<JS::Value> vp,
+                                           bool aAllowWrapping = true) {
     return WrapNative(cx, native, cache, nullptr, vp, aAllowWrapping);
   }
 
@@ -2281,9 +2279,8 @@ class nsContentUtils {
 
 
   static void PlatformToDOMLineBreaks(nsString& aString);
-  MOZ_MUST_USE
-  static bool PlatformToDOMLineBreaks(nsString& aString,
-                                      const mozilla::fallible_t&);
+  [[nodiscard]] static bool PlatformToDOMLineBreaks(nsString& aString,
+                                                    const mozilla::fallible_t&);
 
   
 
@@ -3182,7 +3179,7 @@ class nsContentUtils {
 
   
   
-  static MOZ_MUST_USE bool InitJSBytecodeMimeType();
+  [[nodiscard]] static bool InitJSBytecodeMimeType();
   static nsCString& JSBytecodeMimeType() {
     MOZ_ASSERT(sJSBytecodeMimeType);
     return *sJSBytecodeMimeType;

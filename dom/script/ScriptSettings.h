@@ -211,12 +211,12 @@ class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
   
   
   
-  MOZ_MUST_USE bool Init(nsIGlobalObject* aGlobalObject);
+  [[nodiscard]] bool Init(nsIGlobalObject* aGlobalObject);
 
   
   
   
-  MOZ_MUST_USE bool Init(JSObject* aObject);
+  [[nodiscard]] bool Init(JSObject* aObject);
 
   
   
@@ -226,15 +226,15 @@ class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
   
   
   
-  MOZ_MUST_USE bool Init(nsIGlobalObject* aGlobalObject, JSContext* aCx);
+  [[nodiscard]] bool Init(nsIGlobalObject* aGlobalObject, JSContext* aCx);
 
   
   
-  MOZ_MUST_USE bool Init(nsPIDOMWindowInner* aWindow);
-  MOZ_MUST_USE bool Init(nsPIDOMWindowInner* aWindow, JSContext* aCx);
+  [[nodiscard]] bool Init(nsPIDOMWindowInner* aWindow);
+  [[nodiscard]] bool Init(nsPIDOMWindowInner* aWindow, JSContext* aCx);
 
-  MOZ_MUST_USE bool Init(nsGlobalWindowInner* aWindow);
-  MOZ_MUST_USE bool Init(nsGlobalWindowInner* aWindow, JSContext* aCx);
+  [[nodiscard]] bool Init(nsGlobalWindowInner* aWindow);
+  [[nodiscard]] bool Init(nsGlobalWindowInner* aWindow, JSContext* aCx);
 
   JSContext* cx() const {
     MOZ_ASSERT(mCx, "Must call Init before using an AutoJSAPI");
@@ -260,11 +260,11 @@ class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
   
   
   
-  MOZ_MUST_USE bool StealException(JS::MutableHandle<JS::Value> aVal);
+  [[nodiscard]] bool StealException(JS::MutableHandle<JS::Value> aVal);
 
   
   
-  MOZ_MUST_USE bool StealExceptionAndStack(JS::ExceptionStack* aExnStack);
+  [[nodiscard]] bool StealExceptionAndStack(JS::ExceptionStack* aExnStack);
 
   
   
@@ -272,7 +272,7 @@ class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
   
   
   
-  MOZ_MUST_USE bool PeekException(JS::MutableHandle<JS::Value> aVal);
+  [[nodiscard]] bool PeekException(JS::MutableHandle<JS::Value> aVal);
 
   void ClearException() {
     MOZ_ASSERT(IsStackTop());

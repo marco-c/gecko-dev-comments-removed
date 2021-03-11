@@ -650,9 +650,9 @@ class ScriptLoader final : public nsISupports {
 
   
   
-  MOZ_MUST_USE nsresult GetScriptSource(JSContext* aCx,
-                                        ScriptLoadRequest* aRequest,
-                                        MaybeSourceText* aMaybeSource);
+  [[nodiscard]] nsresult GetScriptSource(JSContext* aCx,
+                                         ScriptLoadRequest* aRequest,
+                                         MaybeSourceText* aMaybeSource);
 
   void SetModuleFetchStarted(ModuleLoadRequest* aRequest);
   void SetModuleFetchFinishedAndResumeWaitingRequests(

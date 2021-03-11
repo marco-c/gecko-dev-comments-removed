@@ -19,7 +19,6 @@
 #include "js/ValueArray.h"  
 #include "jsapi.h"          
 #include "mozilla/Assertions.h"  
-#include "mozilla/Attributes.h"        
 #include "mozilla/UniquePtr.h"         
 #include "mozilla/Unused.h"            
 #include "mozilla/dom/BindingUtils.h"  
@@ -43,12 +42,12 @@ class TypedArrayCreator;
 
 
 
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const nsAString& aArgument,
-                            JS::MutableHandle<JS::Value> aValue);
+[[nodiscard]] bool ToJSValue(JSContext* aCx, const nsAString& aArgument,
+                             JS::MutableHandle<JS::Value> aValue);
 
 
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const nsACString& aArgument,
-                            JS::MutableHandle<JS::Value> aValue);
+[[nodiscard]] bool ToJSValue(JSContext* aCx, const nsACString& aArgument,
+                             JS::MutableHandle<JS::Value> aValue);
 
 
 
@@ -56,7 +55,7 @@ MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const nsACString& aArgument,
 
 
 template <typename T>
-MOZ_MUST_USE std::enable_if_t<std::is_same<T, bool>::value, bool> ToJSValue(
+[[nodiscard]] std::enable_if_t<std::is_same<T, bool>::value, bool> ToJSValue(
     JSContext* aCx, T aArgument, JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
@@ -122,8 +121,8 @@ inline bool ToJSValue(JSContext* aCx, double aArgument,
 }
 
 
-MOZ_MUST_USE inline bool ToJSValue(JSContext* aCx, CallbackObject& aArgument,
-                                   JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] inline bool ToJSValue(JSContext* aCx, CallbackObject& aArgument,
+                                    JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
 
@@ -135,7 +134,7 @@ MOZ_MUST_USE inline bool ToJSValue(JSContext* aCx, CallbackObject& aArgument,
 
 
 template <class T>
-MOZ_MUST_USE std::enable_if_t<std::is_base_of<nsWrapperCache, T>::value, bool>
+[[nodiscard]] std::enable_if_t<std::is_base_of<nsWrapperCache, T>::value, bool>
 ToJSValue(JSContext* aCx, T& aArgument, JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
@@ -148,10 +147,10 @@ ToJSValue(JSContext* aCx, T& aArgument, JS::MutableHandle<JS::Value> aValue) {
 
 namespace binding_detail {
 template <class T>
-MOZ_MUST_USE
-    std::enable_if_t<std::is_base_of<NonRefcountedDOMObject, T>::value, bool>
-    ToJSValueFromPointerHelper(JSContext* aCx, T* aArgument,
-                               JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] std::enable_if_t<
+    std::is_base_of<NonRefcountedDOMObject, T>::value, bool>
+ToJSValueFromPointerHelper(JSContext* aCx, T* aArgument,
+                           JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
 
@@ -176,10 +175,10 @@ MOZ_MUST_USE
 
 
 template <class T>
-MOZ_MUST_USE
-    std::enable_if_t<std::is_base_of<NonRefcountedDOMObject, T>::value, bool>
-    ToJSValue(JSContext* aCx, UniquePtr<T>&& aArgument,
-              JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] std::enable_if_t<
+    std::is_base_of<NonRefcountedDOMObject, T>::value, bool>
+ToJSValue(JSContext* aCx, UniquePtr<T>&& aArgument,
+          JS::MutableHandle<JS::Value> aValue) {
   if (!binding_detail::ToJSValueFromPointerHelper(aCx, aArgument.get(),
                                                   aValue)) {
     return false;
@@ -192,11 +191,11 @@ MOZ_MUST_USE
 
 
 template <typename T>
-MOZ_MUST_USE
-    typename std::enable_if<std::is_base_of<AllTypedArraysBase, T>::value,
-                            bool>::type
-    ToJSValue(JSContext* aCx, const TypedArrayCreator<T>& aArgument,
-              JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]]
+typename std::enable_if<std::is_base_of<AllTypedArraysBase, T>::value,
+                        bool>::type
+ToJSValue(JSContext* aCx, const TypedArrayCreator<T>& aArgument,
+          JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
 
@@ -237,10 +236,10 @@ using ScriptableInterfaceType = typename GetScriptableInterfaceType<T>::Type;
 
 
 template <class T>
-MOZ_MUST_USE std::enable_if_t<!std::is_base_of<nsWrapperCache, T>::value &&
-                                  !std::is_base_of<CallbackObject, T>::value &&
-                                  std::is_base_of<nsISupports, T>::value,
-                              bool>
+[[nodiscard]] std::enable_if_t<!std::is_base_of<nsWrapperCache, T>::value &&
+                                   !std::is_base_of<CallbackObject, T>::value &&
+                                   std::is_base_of<nsISupports, T>::value,
+                               bool>
 ToJSValue(JSContext* aCx, T& aArgument, JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
@@ -252,134 +251,134 @@ ToJSValue(JSContext* aCx, T& aArgument, JS::MutableHandle<JS::Value> aValue) {
   return XPCOMObjectToJsval(aCx, scope, helper, &iid, true, aValue);
 }
 
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const WindowProxyHolder& aArgument,
-                            JS::MutableHandle<JS::Value> aValue);
+[[nodiscard]] bool ToJSValue(JSContext* aCx, const WindowProxyHolder& aArgument,
+                             JS::MutableHandle<JS::Value> aValue);
 
 
 template <typename T>
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const nsCOMPtr<T>& aArgument,
-                            JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] bool ToJSValue(JSContext* aCx, const nsCOMPtr<T>& aArgument,
+                             JS::MutableHandle<JS::Value> aValue) {
   return ToJSValue(aCx, *aArgument.get(), aValue);
 }
 
 template <typename T>
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const RefPtr<T>& aArgument,
-                            JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] bool ToJSValue(JSContext* aCx, const RefPtr<T>& aArgument,
+                             JS::MutableHandle<JS::Value> aValue) {
   return ToJSValue(aCx, *aArgument.get(), aValue);
 }
 
 template <typename T>
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const NonNull<T>& aArgument,
-                            JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] bool ToJSValue(JSContext* aCx, const NonNull<T>& aArgument,
+                             JS::MutableHandle<JS::Value> aValue) {
   return ToJSValue(aCx, *aArgument.get(), aValue);
 }
 
 
 template <class T>
-MOZ_MUST_USE std::enable_if_t<std::is_base_of<DictionaryBase, T>::value, bool>
+[[nodiscard]] std::enable_if_t<std::is_base_of<DictionaryBase, T>::value, bool>
 ToJSValue(JSContext* aCx, const T& aArgument,
           JS::MutableHandle<JS::Value> aValue) {
   return aArgument.ToObjectInternal(aCx, aValue);
 }
 
 
-MOZ_MUST_USE inline bool ToJSValue(JSContext* aCx, const JS::Value& aArgument,
-                                   JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] inline bool ToJSValue(JSContext* aCx, const JS::Value& aArgument,
+                                    JS::MutableHandle<JS::Value> aValue) {
   aValue.set(aArgument);
   return MaybeWrapValue(aCx, aValue);
 }
-MOZ_MUST_USE inline bool ToJSValue(JSContext* aCx,
-                                   JS::Handle<JS::Value> aArgument,
-                                   JS::MutableHandle<JS::Value> aValue) {
-  aValue.set(aArgument);
-  return MaybeWrapValue(aCx, aValue);
-}
-
-
-
-MOZ_MUST_USE inline bool ToJSValue(JSContext* aCx,
-                                   const JS::Heap<JS::Value>& aArgument,
-                                   JS::MutableHandle<JS::Value> aValue) {
-  aValue.set(aArgument);
-  return MaybeWrapValue(aCx, aValue);
-}
-
-
-MOZ_MUST_USE inline bool ToJSValue(JSContext* aCx,
-                                   const JS::Rooted<JS::Value>& aArgument,
-                                   JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] inline bool ToJSValue(JSContext* aCx,
+                                    JS::Handle<JS::Value> aArgument,
+                                    JS::MutableHandle<JS::Value> aValue) {
   aValue.set(aArgument);
   return MaybeWrapValue(aCx, aValue);
 }
 
 
 
-MOZ_MUST_USE inline bool ToJSValue(JSContext* aCx,
-                                   const JS::Rooted<JSObject*>& aArgument,
-                                   JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] inline bool ToJSValue(JSContext* aCx,
+                                    const JS::Heap<JS::Value>& aArgument,
+                                    JS::MutableHandle<JS::Value> aValue) {
+  aValue.set(aArgument);
+  return MaybeWrapValue(aCx, aValue);
+}
+
+
+[[nodiscard]] inline bool ToJSValue(JSContext* aCx,
+                                    const JS::Rooted<JS::Value>& aArgument,
+                                    JS::MutableHandle<JS::Value> aValue) {
+  aValue.set(aArgument);
+  return MaybeWrapValue(aCx, aValue);
+}
+
+
+
+[[nodiscard]] inline bool ToJSValue(JSContext* aCx,
+                                    const JS::Rooted<JSObject*>& aArgument,
+                                    JS::MutableHandle<JS::Value> aValue) {
   aValue.setObjectOrNull(aArgument);
   return MaybeWrapObjectOrNullValue(aCx, aValue);
 }
 
 
 
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, nsresult aArgument,
-                            JS::MutableHandle<JS::Value> aValue);
+[[nodiscard]] bool ToJSValue(JSContext* aCx, nsresult aArgument,
+                             JS::MutableHandle<JS::Value> aValue);
 
 
 
 
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, ErrorResult&& aArgument,
-                            JS::MutableHandle<JS::Value> aValue);
+[[nodiscard]] bool ToJSValue(JSContext* aCx, ErrorResult&& aArgument,
+                             JS::MutableHandle<JS::Value> aValue);
 
 
 template <typename T>
-MOZ_MUST_USE
-    std::enable_if_t<std::is_base_of<AllOwningUnionBase, T>::value, bool>
-    ToJSValue(JSContext* aCx, const T& aArgument,
-              JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] std::enable_if_t<std::is_base_of<AllOwningUnionBase, T>::value,
+                               bool>
+ToJSValue(JSContext* aCx, const T& aArgument,
+          JS::MutableHandle<JS::Value> aValue) {
   JS::Rooted<JSObject*> global(aCx, JS::CurrentGlobalOrNull(aCx));
   return aArgument.ToJSVal(aCx, global, aValue);
 }
 
 
 template <typename T>
-MOZ_MUST_USE std::enable_if_t<std::is_pointer<T>::value, bool> ToJSValue(
+[[nodiscard]] std::enable_if_t<std::is_pointer<T>::value, bool> ToJSValue(
     JSContext* aCx, T aArgument, JS::MutableHandle<JS::Value> aValue) {
   return ToJSValue(aCx, *aArgument, aValue);
 }
 
 
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, Promise& aArgument,
-                            JS::MutableHandle<JS::Value> aValue);
+[[nodiscard]] bool ToJSValue(JSContext* aCx, Promise& aArgument,
+                             JS::MutableHandle<JS::Value> aValue);
 
 
 template <typename T>
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, T* aArguments, size_t aLength,
-                            JS::MutableHandle<JS::Value> aValue);
+[[nodiscard]] bool ToJSValue(JSContext* aCx, T* aArguments, size_t aLength,
+                             JS::MutableHandle<JS::Value> aValue);
 
 template <typename T>
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const nsTArray<T>& aArgument,
-                            JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] bool ToJSValue(JSContext* aCx, const nsTArray<T>& aArgument,
+                             JS::MutableHandle<JS::Value> aValue) {
   return ToJSValue(aCx, aArgument.Elements(), aArgument.Length(), aValue);
 }
 
 template <typename T>
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const FallibleTArray<T>& aArgument,
-                            JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] bool ToJSValue(JSContext* aCx, const FallibleTArray<T>& aArgument,
+                             JS::MutableHandle<JS::Value> aValue) {
   return ToJSValue(aCx, aArgument.Elements(), aArgument.Length(), aValue);
 }
 
 template <typename T, int N>
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const T (&aArgument)[N],
-                            JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] bool ToJSValue(JSContext* aCx, const T (&aArgument)[N],
+                             JS::MutableHandle<JS::Value> aValue) {
   return ToJSValue(aCx, aArgument, N, aValue);
 }
 
 
 template <typename T>
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, T* aArguments, size_t aLength,
-                            JS::MutableHandle<JS::Value> aValue) {
+[[nodiscard]] bool ToJSValue(JSContext* aCx, T* aArguments, size_t aLength,
+                             JS::MutableHandle<JS::Value> aValue) {
   
   MOZ_ASSERT(JS::CurrentGlobalOrNull(aCx));
 

@@ -29,7 +29,6 @@ class nsStopPluginRunnable;
 class AutoSetInstantiatingToFalse;
 class nsIPrincipal;
 class nsFrameLoader;
-class nsPluginFrame;
 class nsPluginInstanceOwner;
 
 namespace mozilla {
@@ -384,7 +383,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
   void GetNestedParams(nsTArray<mozilla::dom::MozPluginParameter>& aParameters);
 
-  MOZ_MUST_USE nsresult BuildParametersArray();
+  [[nodiscard]] nsresult BuildParametersArray();
 
   
 
@@ -561,12 +560,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
 
 
-  nsPluginFrame* GetExistingFrame();
-
-  
-
-
-
 
 
 
@@ -703,8 +696,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   
   bool mPreferFallback : 1;
   bool mPreferFallbackKnown : 1;
-
-  WeakFrame mPrintFrame;
 
   RefPtr<nsPluginInstanceOwner> mInstanceOwner;
   nsTArray<mozilla::dom::MozPluginParameter> mCachedAttributes;

@@ -275,9 +275,8 @@ class TErrorResult {
   
   
   
-  MOZ_MUST_USE
-  bool MaybeSetPendingException(JSContext* cx,
-                                const char* description = nullptr) {
+  [[nodiscard]] bool MaybeSetPendingException(
+      JSContext* cx, const char* description = nullptr) {
     WouldReportJSException();
     if (!Failed()) {
       return false;

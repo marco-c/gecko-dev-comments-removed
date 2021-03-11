@@ -172,9 +172,9 @@ class IOUtils final {
   static already_AddRefed<Promise> CreateJSPromise(GlobalObject& aGlobal);
 
   
-  friend MOZ_MUST_USE bool ToJSValue(JSContext* aCx,
-                                     const InternalFileInfo& aInternalFileInfo,
-                                     JS::MutableHandle<JS::Value> aValue);
+  friend bool ToJSValue(JSContext* aCx,
+                        const InternalFileInfo& aInternalFileInfo,
+                        JS::MutableHandle<JS::Value> aValue);
 
   
 
@@ -583,8 +583,8 @@ class IOUtils::JsBuffer final {
 
   static JSObject* IntoUint8Array(JSContext* aCx, JsBuffer aBuffer);
 
-  friend MOZ_MUST_USE bool ToJSValue(JSContext* aCx, JsBuffer&& aBuffer,
-                                     JS::MutableHandle<JS::Value> aValue);
+  friend bool ToJSValue(JSContext* aCx, JsBuffer&& aBuffer,
+                        JS::MutableHandle<JS::Value> aValue);
 
  private:
   IOUtils::BufferKind mBufferKind;

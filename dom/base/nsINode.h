@@ -1951,7 +1951,7 @@ class nsINode : public mozilla::dom::EventTarget {
     const nsString& nodeName = NodeName();
     aNodeName.SetKnownLiveString(nodeName);
   }
-  MOZ_MUST_USE nsresult GetBaseURI(nsAString& aBaseURI) const;
+  [[nodiscard]] nsresult GetBaseURI(nsAString& aBaseURI) const;
   
   
   

@@ -1106,7 +1106,7 @@ class Document : public nsINode,
 
 
   typedef MozPromise<uint32_t, bool, true> GetContentBlockingEventsPromise;
-  MOZ_MUST_USE RefPtr<GetContentBlockingEventsPromise>
+  [[nodiscard]] RefPtr<GetContentBlockingEventsPromise>
   GetContentBlockingEvents();
 
   
@@ -3258,8 +3258,8 @@ class Document : public nsINode,
   static already_AddRefed<Document> Constructor(const GlobalObject& aGlobal,
                                                 ErrorResult& rv);
   DOMImplementation* GetImplementation(ErrorResult& rv);
-  MOZ_MUST_USE nsresult GetURL(nsString& retval) const;
-  MOZ_MUST_USE nsresult GetDocumentURI(nsString& retval) const;
+  [[nodiscard]] nsresult GetURL(nsString& retval) const;
+  [[nodiscard]] nsresult GetDocumentURI(nsString& retval) const;
   
   
   
@@ -4295,7 +4295,7 @@ class Document : public nsINode,
 
   typedef MozPromise<bool, bool, true>
       AutomaticStorageAccessPermissionGrantPromise;
-  MOZ_MUST_USE RefPtr<AutomaticStorageAccessPermissionGrantPromise>
+  [[nodiscard]] RefPtr<AutomaticStorageAccessPermissionGrantPromise>
   AutomaticStorageAccessPermissionCanBeGranted();
 
   static void AddToplevelLoadingDocument(Document* aDoc);

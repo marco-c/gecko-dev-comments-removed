@@ -173,7 +173,7 @@ class TextControlState final : public SupportsWeakPtr {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult OnEditActionHandled();
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult OnEditActionHandled();
 
   enum class ValueSetterOption {
     
@@ -217,10 +217,10 @@ class TextControlState final : public SupportsWeakPtr {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE bool SetValue(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT bool SetValue(
       const nsAString& aValue, const nsAString* aOldValue,
       const ValueSetterOptions& aOptions);
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE bool SetValue(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT bool SetValue(
       const nsAString& aValue, const ValueSetterOptions& aOptions) {
     return SetValue(aValue, nullptr, aOptions);
   }

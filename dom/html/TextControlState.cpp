@@ -1245,7 +1245,7 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult OnEditActionHandled() {
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult OnEditActionHandled() {
     MOZ_ASSERT(!mEditActionHandled);
     mEditActionHandled = true;
     if (!Is(TextControlAction::SetValue)) {
@@ -1280,7 +1280,7 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE bool SetValueWithoutTextEditorAgain() {
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT bool SetValueWithoutTextEditorAgain() {
     MOZ_ASSERT(!IsOriginalTextControlFrameAlive());
     
     

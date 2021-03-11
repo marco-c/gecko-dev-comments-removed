@@ -41,7 +41,7 @@ class XMLHttpRequestString final {
   
   
   
-  MOZ_MUST_USE bool GetAsString(nsAString& aString) const;
+  [[nodiscard]] bool GetAsString(nsAString& aString) const;
 
   size_t SizeOfThis(MallocSizeOf aMallocSizeOf) const;
 
@@ -108,7 +108,7 @@ class XMLHttpRequestStringSnapshot final {
 
   bool IsEmpty() const { return !mLength; }
 
-  MOZ_MUST_USE bool GetAsString(DOMString& aString) const;
+  [[nodiscard]] bool GetAsString(DOMString& aString) const;
 
  private:
   XMLHttpRequestStringSnapshot(const XMLHttpRequestStringSnapshot&) = delete;

@@ -44,7 +44,7 @@ class TextInputListener final : public nsIDOMEventListener,
   
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   OnEditActionHandled(TextEditor& aTextEditor);
 
   

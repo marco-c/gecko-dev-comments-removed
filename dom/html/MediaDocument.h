@@ -49,7 +49,7 @@ class MediaDocument : public nsHTMLDocument {
   void InitialSetupDone();
 
   
-  MOZ_MUST_USE bool InitialSetupHasBeenDone() const {
+  [[nodiscard]] bool InitialSetupHasBeenDone() const {
     return mDidInitialDocumentSetup;
   }
 
