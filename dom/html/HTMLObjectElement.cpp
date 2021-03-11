@@ -16,7 +16,6 @@
 #include "nsError.h"
 #include "mozilla/dom/Document.h"
 #include "nsIPluginDocument.h"
-#include "nsIObjectFrame.h"
 #include "nsNPAPIPluginInstance.h"
 #include "nsIWidget.h"
 #include "nsContentUtils.h"
@@ -80,6 +79,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLObjectElement,
                                                 nsGenericHTMLFormElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mValidity)
+  nsObjectLoadingContent::Unlink(tmp);
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(
@@ -191,17 +191,6 @@ bool HTMLObjectElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
 
   
   
-  if (Type() == eType_Plugin) {
-    if (aTabIndex) {
-      *aTabIndex = isFocusable ? attrVal->GetIntegerValue() : -1;
-    }
-
-    *aIsFocusable = true;
-    return false;
-  }
-
-  
-  
   if (IsEditableRoot() ||
       ((Type() == eType_Document || Type() == eType_FakePlugin) &&
        nsContentUtils::IsSubDocumentTabbable(this))) {
@@ -228,32 +217,7 @@ HTMLObjectElement::Reset() { return NS_OK; }
 
 NS_IMETHODIMP
 HTMLObjectElement::SubmitNamesValues(HTMLFormSubmission* aFormSubmission) {
-  nsAutoString name;
-  if (!GetAttr(kNameSpaceID_None, nsGkAtoms::name, name)) {
-    
-
-    return NS_OK;
-  }
-
-  nsIFrame* frame = GetPrimaryFrame();
-
-  nsIObjectFrame* objFrame = do_QueryFrame(frame);
-  if (!objFrame) {
-    
-
-    return NS_OK;
-  }
-
-  RefPtr<nsNPAPIPluginInstance> pi = objFrame->GetPluginInstance();
-  if (!pi) {
-    return NS_OK;
-  }
-
-  nsAutoString value;
-  nsresult rv = pi->GetFormValue(value);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return aFormSubmission->AddNameValuePair(name, value);
+  return NS_OK;
 }
 
 int32_t HTMLObjectElement::TabIndexDefault() { return 0; }
