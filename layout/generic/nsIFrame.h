@@ -5365,7 +5365,11 @@ class nsIFrame : public nsQueryFrame {
                   mRect.Height() + mOverflow.mInkOverflowDeltas.mBottom +
                       mOverflow.mInkOverflowDeltas.mTop);
   }
+
   
+
+
+
 
 
   bool SetOverflowAreas(const mozilla::OverflowAreas& aOverflowAreas);

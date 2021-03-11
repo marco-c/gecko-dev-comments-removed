@@ -9128,9 +9128,6 @@ bool nsIFrame::ClearOverflowRects() {
   return true;
 }
 
-
-
-
 bool nsIFrame::SetOverflowAreas(const OverflowAreas& aOverflowAreas) {
   if (mOverflow.mType == NS_FRAME_OVERFLOW_LARGE) {
     OverflowAreas* overflow = GetOverflowAreasProperty();
