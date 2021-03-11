@@ -120,6 +120,7 @@ class HttpConnectionUDP final : public HttpConnectionBase,
  private:
   
   RefPtr<Http3Session> mHttp3Session;
+  nsCString mAlpnToken;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(HttpConnectionUDP, HTTPCONNECTIONUDP_IID)
