@@ -13,9 +13,28 @@
 #include "nsString.h"
 #include "nsTArray.h"
 
+#if defined(NIGHTLY_BUILD)
+#  include "mozilla/WindowsProcessMitigations.h"
+#  define TH_UNICODE
+#  include "rulebrk.h"
+#endif
+
 void NS_GetComplexLineBreaks(const char16_t* aText, uint32_t aLength,
                              uint8_t* aBreakBefore) {
   NS_ASSERTION(aText, "aText shouldn't be null");
+
+#if defined(NIGHTLY_BUILD)
+  
+  
+  
+  
+  if (mozilla::IsWin32kLockedDown()) {
+    for (uint32_t i = 0; i < aLength; i++)
+      aBreakBefore[i] =
+          (0 == TrbWordBreakPos(aText, i, aText + i, aLength - i));
+    return;
+  }
+#endif
 
   int outItems = 0;
   HRESULT result;
