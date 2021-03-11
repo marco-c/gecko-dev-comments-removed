@@ -96,6 +96,14 @@ bool RenderCompositorSWGL::AllocateMappedBuffer(
       
       bounds.ExpandToEnclose(LayoutDeviceIntPoint(0, 0));
     }
+    
+    
+    
+    
+    bounds.IntersectRect(
+        bounds,
+        LayoutDeviceIntRect(bounds.TopLeft(),
+                            LayoutDeviceIntSize(size.width, size.height)));
   } else {
     
     
