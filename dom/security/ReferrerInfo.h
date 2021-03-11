@@ -219,16 +219,7 @@ class ReferrerInfo : public nsIReferrerInfo {
 
   static ReferrerPolicyEnum GetDefaultReferrerPolicy(
       nsIHttpChannel* aChannel = nullptr, nsIURI* aURI = nullptr,
-      bool aPrivateBrowsing = false);
-
-  
-
-
-
-
-
-  static ReferrerPolicyEnum GetDefaultThirdPartyReferrerPolicy(
-      bool aPrivateBrowsing = false);
+      bool privateBrowsing = false);
 
   
 
@@ -283,6 +274,16 @@ class ReferrerInfo : public nsIReferrerInfo {
   virtual ~ReferrerInfo() = default;
 
   ReferrerInfo(const ReferrerInfo& rhs);
+
+  
+
+
+  enum DefaultReferrerPolicy : uint32_t {
+    eDefaultPolicyNoReferrer = 0,
+    eDefaultPolicySameOrgin = 1,
+    eDefaultPolicyStrictWhenXorigin = 2,
+    eDefaultPolicyNoReferrerWhenDownGrade = 3,
+  };
 
   
 
