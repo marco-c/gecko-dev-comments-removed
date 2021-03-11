@@ -808,7 +808,7 @@ Result<Maybe<SavedResponse>, nsresult> StorageMatch(
 
   
   
-  if (!aParams.cacheName().EqualsLiteral("")) {
+  if (aParams.cacheNameSet()) {
     CACHE_TRY_INSPECT(
         const auto& maybeCacheId,
         StorageGetCacheId(aConn, aNamespace, aParams.cacheName()));
