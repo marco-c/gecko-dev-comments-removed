@@ -242,12 +242,36 @@ public class GeckoResult<T> {
     
 
 
+
+    @Deprecated
+    @DeprecationSchedule(id = "allowdeny", version = 92)
     public static final GeckoResult<AllowOrDeny> ALLOW = GeckoResult.fromValue(AllowOrDeny.ALLOW);
 
     
 
 
+
+    @Deprecated
+    @DeprecationSchedule(id = "allowdeny", version = 92)
     public static final GeckoResult<AllowOrDeny> DENY = GeckoResult.fromValue(AllowOrDeny.DENY);
+
+    
+
+
+    @AnyThread
+    @NonNull
+    public static GeckoResult<AllowOrDeny> deny() {
+        return GeckoResult.fromValue(AllowOrDeny.DENY);
+    }
+
+    
+
+
+    @AnyThread
+    @NonNull
+    public static GeckoResult<AllowOrDeny> allow() {
+        return GeckoResult.fromValue(AllowOrDeny.ALLOW);
+    }
 
     
     
