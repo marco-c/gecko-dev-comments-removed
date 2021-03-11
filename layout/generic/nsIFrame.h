@@ -5063,22 +5063,22 @@ class nsIFrame : public nsQueryFrame {
   
   
   
-  struct VisualDeltas {
+  struct InkOverflowDeltas {
     uint8_t mLeft;
     uint8_t mTop;
     uint8_t mRight;
     uint8_t mBottom;
-    bool operator==(const VisualDeltas& aOther) const {
+    bool operator==(const InkOverflowDeltas& aOther) const {
       return mLeft == aOther.mLeft && mTop == aOther.mTop &&
              mRight == aOther.mRight && mBottom == aOther.mBottom;
     }
-    bool operator!=(const VisualDeltas& aOther) const {
+    bool operator!=(const InkOverflowDeltas& aOther) const {
       return !(*this == aOther);
     }
   };
   union {
     uint32_t mType;
-    VisualDeltas mVisualDeltas;
+    InkOverflowDeltas mInkOverflowDeltas;
   } mOverflow;
 
   
@@ -5358,12 +5358,12 @@ class nsIFrame : public nsQueryFrame {
     
     
     
-    return nsRect(-(int32_t)mOverflow.mVisualDeltas.mLeft,
-                  -(int32_t)mOverflow.mVisualDeltas.mTop,
-                  mRect.Width() + mOverflow.mVisualDeltas.mRight +
-                      mOverflow.mVisualDeltas.mLeft,
-                  mRect.Height() + mOverflow.mVisualDeltas.mBottom +
-                      mOverflow.mVisualDeltas.mTop);
+    return nsRect(-(int32_t)mOverflow.mInkOverflowDeltas.mLeft,
+                  -(int32_t)mOverflow.mInkOverflowDeltas.mTop,
+                  mRect.Width() + mOverflow.mInkOverflowDeltas.mRight +
+                      mOverflow.mInkOverflowDeltas.mLeft,
+                  mRect.Height() + mOverflow.mInkOverflowDeltas.mBottom +
+                      mOverflow.mInkOverflowDeltas.mTop);
   }
   
 

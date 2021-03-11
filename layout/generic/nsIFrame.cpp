@@ -9160,17 +9160,17 @@ bool nsIFrame::SetOverflowAreas(const OverflowAreas& aOverflowAreas) {
       
       
       (l | t | r | b) != 0) {
-    VisualDeltas oldDeltas = mOverflow.mVisualDeltas;
+    InkOverflowDeltas oldDeltas = mOverflow.mInkOverflowDeltas;
     
     
     
     
-    mOverflow.mVisualDeltas.mLeft = l;
-    mOverflow.mVisualDeltas.mTop = t;
-    mOverflow.mVisualDeltas.mRight = r;
-    mOverflow.mVisualDeltas.mBottom = b;
+    mOverflow.mInkOverflowDeltas.mLeft = l;
+    mOverflow.mInkOverflowDeltas.mTop = t;
+    mOverflow.mInkOverflowDeltas.mRight = r;
+    mOverflow.mInkOverflowDeltas.mBottom = b;
     
-    return oldDeltas != mOverflow.mVisualDeltas;
+    return oldDeltas != mOverflow.mInkOverflowDeltas;
   } else {
     bool changed =
         !aOverflowAreas.ScrollableOverflow().IsEqualEdges(
