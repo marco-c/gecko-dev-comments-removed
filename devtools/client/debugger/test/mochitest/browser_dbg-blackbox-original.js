@@ -22,10 +22,10 @@ add_task(async function() {
   
   rightClickElement(dbg, "CodeMirrorLines");
   selectContextMenuItem(dbg, "#node-menu-show-source");
-  await waitForDispatch(dbg, "SHOW_SOURCE");
+  await waitForDispatch(dbg.store, "SHOW_SOURCE");
 
   await clickElement(dbg, "blackbox");
-  await waitForDispatch(dbg, "BLACKBOX");
+  await waitForDispatch(dbg.store, "BLACKBOX");
 
   const sourceTab = findElementWithSelector(dbg, ".source-tab.active");
   ok(
@@ -48,7 +48,7 @@ add_task(async function() {
 
   
   await clickElement(dbg, "blackbox");
-  await waitForDispatch(dbg, "BLACKBOX");
+  await waitForDispatch(dbg.store, "BLACKBOX");
 
   
   invokeInTab("test");

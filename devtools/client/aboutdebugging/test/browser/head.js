@@ -173,9 +173,9 @@ async function reloadAboutDebugging(tab) {
 
 function waitForRequestsSuccess(store) {
   return Promise.all([
-    aboutDebugging_waitForDispatch(store, "REQUEST_EXTENSIONS_SUCCESS"),
-    aboutDebugging_waitForDispatch(store, "REQUEST_TABS_SUCCESS"),
-    aboutDebugging_waitForDispatch(store, "REQUEST_WORKERS_SUCCESS"),
+    waitForDispatch(store, "REQUEST_EXTENSIONS_SUCCESS"),
+    waitForDispatch(store, "REQUEST_TABS_SUCCESS"),
+    waitForDispatch(store, "REQUEST_WORKERS_SUCCESS"),
   ]);
 }
 
@@ -203,9 +203,9 @@ async function waitForAboutDebuggingRequests(store, delay = 500) {
 
     
     await Promise.race([
-      aboutDebugging_waitForDispatch(store, "REQUEST_EXTENSIONS_SUCCESS"),
-      aboutDebugging_waitForDispatch(store, "REQUEST_TABS_SUCCESS"),
-      aboutDebugging_waitForDispatch(store, "REQUEST_WORKERS_SUCCESS"),
+      waitForDispatch(store, "REQUEST_EXTENSIONS_SUCCESS"),
+      waitForDispatch(store, "REQUEST_TABS_SUCCESS"),
+      waitForDispatch(store, "REQUEST_WORKERS_SUCCESS"),
       timerPromise,
     ]);
 
@@ -213,23 +213,6 @@ async function waitForAboutDebuggingRequests(store, delay = 500) {
     
     clearTimeout(timer);
   }
-}
-
-
-
-
-
-
-function aboutDebugging_waitForDispatch(store, type) {
-  return new Promise(resolve => {
-    store.dispatch({
-      type: "@@service/waitUntil",
-      predicate: action => action.type === type,
-      run: (dispatch, getState, action) => {
-        resolve(action);
-      },
-    });
-  });
 }
 
 
@@ -328,10 +311,7 @@ async function connectToRuntime(deviceName, document) {
 async function selectRuntime(deviceName, name, document) {
   const sidebarItem = findSidebarItemByText(deviceName, document);
   const store = document.defaultView.AboutDebugging.store;
-  const onSelectPageSuccess = aboutDebugging_waitForDispatch(
-    store,
-    "SELECT_PAGE_SUCCESS"
-  );
+  const onSelectPageSuccess = waitForDispatch(store, "SELECT_PAGE_SUCCESS");
 
   sidebarItem.querySelector(".qa-sidebar-link").click();
 
@@ -413,7 +393,7 @@ async function updateSelectedTab(browser, tab, store) {
 
   
   const onTabsSuccess = isOnThisFirefox
-    ? aboutDebugging_waitForDispatch(store, "REQUEST_TABS_SUCCESS")
+    ? waitForDispatch(store, "REQUEST_TABS_SUCCESS")
     : null;
 
   

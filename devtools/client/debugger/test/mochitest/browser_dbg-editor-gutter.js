@@ -18,13 +18,13 @@ add_task(async function() {
 
   
   clickGutter(dbg, 4);
-  await waitForDispatch(dbg, "SET_BREAKPOINT");
+  await waitForDispatch(dbg.store, "SET_BREAKPOINT");
   is(dbg.selectors.getBreakpointCount(), 1, "One breakpoint exists");
   await assertBreakpoint(dbg, 4);
 
   
   clickGutter(dbg, 4);
-  await waitForDispatch(dbg, "REMOVE_BREAKPOINT");
+  await waitForDispatch(dbg.store, "REMOVE_BREAKPOINT");
   is(dbg.selectors.getBreakpointCount(), 0, "No breakpoints exist");
   await assertNoBreakpoint(dbg, 4);
 });
@@ -43,7 +43,7 @@ add_task(async function() {
   const sortedSrc = findSource(dbg, "sorted.js");
   await selectSource(dbg, sortedSrc);
   await clickElement(dbg, "blackbox");
-  await waitForDispatch(dbg, "BLACKBOX");
+  await waitForDispatch(dbg.store, "BLACKBOX");
 
   
   invokeInTab("test");
@@ -52,7 +52,7 @@ add_task(async function() {
 
   info("ensure gutter breakpoint gets set with click");
   clickGutter(dbg, 4);
-  await waitForDispatch(dbg, "SET_BREAKPOINT");
+  await waitForDispatch(dbg.store, "SET_BREAKPOINT");
   is(dbg.selectors.getBreakpointCount(), 1, "One breakpoint exists");
   await assertBreakpoint(dbg, 4);
 

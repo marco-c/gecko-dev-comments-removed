@@ -11,7 +11,7 @@ add_task(async function() {
 
     
     
-    waitForDispatch(dbg, "MAP_FRAMES"),
+    waitForDispatch(dbg.store, "MAP_FRAMES"),
   ]);
   invokeInTab("firstCall");
   await ready;

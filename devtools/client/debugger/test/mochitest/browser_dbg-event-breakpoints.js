@@ -61,7 +61,7 @@ add_task(async function() {
 
   
   await clickElement(dbg, "blackbox");
-  await waitForDispatch(dbg, "BLACKBOX");
+  await waitForDispatch(dbg.store, "BLACKBOX");
 
   invokeInTab("clickHandler");
   is(isPaused(dbg), false);
@@ -74,7 +74,7 @@ add_task(async function() {
 
   
   await clickElement(dbg, "blackbox");
-  await waitForDispatch(dbg, "BLACKBOX");
+  await waitForDispatch(dbg.store, "BLACKBOX");
 });
 
 function assertPauseLocation(dbg, line, url = "event-breakpoints.js") {

@@ -66,42 +66,6 @@ function waitForNextDispatch(store, actionType) {
 
 
 
-
-
-function waitForDispatch(dbg, actionType, eventRepeat = 1) {
-  let count = 0;
-  return new Promise(resolve => {
-    dbg.store.dispatch({
-      
-      
-      
-      type: "@@service/waitUntil",
-      predicate: action => {
-        const isDone =
-          !action.status ||
-          action.status === "done" ||
-          action.status === "error";
-
-        if (action.type === actionType && isDone && ++count == eventRepeat) {
-          return true;
-        }
-      },
-      run: (dispatch, getState, action) => {
-        resolve(action);
-      },
-    });
-  });
-}
-
-
-
-
-
-
-
-
-
-
 function waitForState(dbg, predicate, msg) {
   return new Promise(resolve => {
     info(`Waiting for state change: ${msg || ""}`);
@@ -815,7 +779,7 @@ function deleteExpression(dbg, input) {
 
 
 async function reload(dbg, ...sources) {
-  const navigated = waitForDispatch(dbg, "NAVIGATE");
+  const navigated = waitForDispatch(dbg.store, "NAVIGATE");
   await dbg.client.reload();
   await navigated;
   return waitForSources(dbg, ...sources);
@@ -833,7 +797,7 @@ async function reload(dbg, ...sources) {
 
 async function navigate(dbg, url, ...sources) {
   info(`Navigating to ${url}`);
-  const navigated = waitForDispatch(dbg, "NAVIGATE");
+  const navigated = waitForDispatch(dbg.store, "NAVIGATE");
   await dbg.client.navigate(url);
   await navigated;
   return waitForSources(dbg, ...sources);
@@ -865,7 +829,7 @@ async function addBreakpoint(dbg, source, line, column, options) {
   source = findSource(dbg, source);
   const sourceId = source.id;
   const bpCount = dbg.selectors.getBreakpointCount();
-  const onBreakpoint = waitForDispatch(dbg, "SET_BREAKPOINT");
+  const onBreakpoint = waitForDispatch(dbg.store, "SET_BREAKPOINT");
   await dbg.actions.addBreakpoint(
     getContext(dbg),
     { sourceId, line, column },
@@ -1980,7 +1944,7 @@ async function addExpression(dbg, input) {
   }
   findElementWithSelector(dbg, selectors.expressionInput).focus();
   type(dbg, input);
-  const evaluated = waitForDispatch(dbg, "EVALUATE_EXPRESSION");
+  const evaluated = waitForDispatch(dbg.store, "EVALUATE_EXPRESSION");
   pressKey(dbg, "Enter");
   await evaluated;
 }
@@ -1991,7 +1955,7 @@ async function editExpression(dbg, input) {
   
   pressKey(dbg, "End");
   type(dbg, input);
-  const evaluated = waitForDispatch(dbg, "EVALUATE_EXPRESSIONS");
+  const evaluated = waitForDispatch(dbg.store, "EVALUATE_EXPRESSIONS");
   pressKey(dbg, "Enter");
   await evaluated;
 }
@@ -2144,7 +2108,7 @@ async function setLogPoint(dbg, index, value) {
     dbg,
     `${selectors.addLogItem},${selectors.editLogItem}`
   );
-  const onBreakpointSet = waitForDispatch(dbg, "SET_BREAKPOINT");
+  const onBreakpointSet = waitForDispatch(dbg.store, "SET_BREAKPOINT");
   await typeInPanel(dbg, value);
   await onBreakpointSet;
 }

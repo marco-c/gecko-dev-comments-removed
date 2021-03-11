@@ -73,6 +73,7 @@ add_task(async function runTest() {
   await ToolboxTask.importFunctions({
     
     registerCleanupFunction: () => {},
+    waitForDispatch,
     waitUntil,
   });
   await ToolboxTask.importScript(debuggerHead);

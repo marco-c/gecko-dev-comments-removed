@@ -44,7 +44,7 @@ add_task(async function() {
   
   
   
-  const evaluated = waitForDispatch(dbg, "EVALUATE_EXPRESSIONS");
+  const evaluated = waitForDispatch(dbg.store, "EVALUATE_EXPRESSIONS");
   await resume(dbg);
   await evaluated;
 

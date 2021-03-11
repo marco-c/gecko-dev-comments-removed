@@ -23,7 +23,8 @@ add_task(async function() {
 
   info("Navigate to a page that runs in the content process");
   
-  const onPropertiesFetched = waitForDispatch(panel, "FETCH_PROPERTIES");
+  const store = getReduxStoreFromPanel(panel);
+  const onPropertiesFetched = waitForDispatch(store, "FETCH_PROPERTIES");
   
   
   await navigateTo(CONTENT_PROCESS_URI);

@@ -181,7 +181,8 @@ function expandRow(panel, labelText) {
   return synthesizeMouseClickSoon(panel, row).then(() => {
     
     
-    return waitForDispatch(panel, "FETCH_PROPERTIES");
+    const store = getReduxStoreFromPanel(panel);
+    return waitForDispatch(store, "FETCH_PROPERTIES");
   });
 }
 
@@ -196,48 +197,11 @@ function refreshPanel(panel) {
   return synthesizeMouseClickSoon(panel, button).then(() => {
     
     
-    return waitForDispatch(panel, "FETCH_PROPERTIES");
+    const store = getReduxStoreFromPanel(panel);
+    return waitForDispatch(store, "FETCH_PROPERTIES");
   });
 }
 
-
-
-
-
-
-function _afterDispatchDone(store, type) {
-  return new Promise(resolve => {
-    store.dispatch({
-      
-      
-      
-      type: "@@service/waitUntil",
-      predicate: action => {
-        if (action.type === type) {
-          return action.status
-            ? action.status === "end" || action.status === "error"
-            : true;
-        }
-        return false;
-      },
-      run: (dispatch, getState, action) => {
-        resolve(action);
-      },
-    });
-  });
-}
-
-function waitForDispatch(panel, type, eventRepeat = 1) {
-  const store = panel.panelWin.view.mainFrame.store;
-  const actionType = constants[type];
-  let count = 0;
-
-  return (async function() {
-    info("Waiting for " + type + " to dispatch " + eventRepeat + " time(s)");
-    while (count < eventRepeat) {
-      await _afterDispatchDone(store, actionType);
-      count++;
-      info(type + " dispatched " + count + " time(s)");
-    }
-  })();
+function getReduxStoreFromPanel(panel) {
+  return panel.panelWin.view.mainFrame.store;
 }

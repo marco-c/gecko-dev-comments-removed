@@ -16,13 +16,13 @@ add_task(async function() {
   
   invokeInTab("main");
   await waitForPaused(dbg);
-  await waitForDispatch(dbg, "ADD_INLINE_PREVIEW");
+  await waitForDispatch(dbg.store, "ADD_INLINE_PREVIEW");
 
   
   findElement(dbg, "frame", 2).focus();
 
   
-  const dispatched = waitForDispatch(dbg, "ADD_INLINE_PREVIEW");
+  const dispatched = waitForDispatch(dbg.store, "ADD_INLINE_PREVIEW");
   await clickElement(dbg, "frame", 2);
   await dispatched;
   await waitForRequestsToSettle(dbg);

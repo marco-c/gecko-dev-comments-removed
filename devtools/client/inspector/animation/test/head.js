@@ -504,7 +504,7 @@ const mouseOutOnTargetNode = function(animationInspector, panel, index) {
 
 const selectAnimationInspector = async function(inspector) {
   await inspector.toolbox.selectTool("inspector");
-  const onDispatched = waitForDispatch(inspector, "UPDATE_ANIMATIONS");
+  const onDispatched = waitForDispatch(inspector.store, "UPDATE_ANIMATIONS");
   inspector.sidebar.select("animationinspector");
   await onDispatched;
   await waitForRendering(inspector.getPanel("animationinspector"));
@@ -532,7 +532,7 @@ const selectNodeAndWaitForAnimations = async function(
   
   
   selectNode(data, inspector, reason);
-  await waitForDispatch(inspector, "UPDATE_ANIMATIONS");
+  await waitForDispatch(inspector.store, "UPDATE_ANIMATIONS");
   await waitForRendering(inspector.getPanel("animationinspector"));
 };
 
@@ -704,51 +704,6 @@ const waitForRendering = async function(animationInspector) {
     waitForAnimationDetail(animationInspector),
   ]);
 };
-
-
-
-function _afterDispatchDone(store, type) {
-  return new Promise(resolve => {
-    store.dispatch({
-      
-      
-      
-      type: "@@service/waitUntil",
-      predicate: action => {
-        if (action.type === type) {
-          return true;
-        }
-        return false;
-      },
-      run: (dispatch, getState, action) => {
-        resolve(action);
-      },
-    });
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function waitForDispatch(inspector, type, repeat = () => 1) {
-  let count = 0;
-
-  while (count < repeat()) {
-    await _afterDispatchDone(inspector.store, type);
-    count++;
-  }
-}
 
 
 
