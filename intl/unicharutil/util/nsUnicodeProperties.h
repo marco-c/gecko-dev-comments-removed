@@ -259,8 +259,8 @@ inline bool IsCombiningDiacritic(uint32_t aCh) {
 }
 
 
-inline bool IsMathSymbol(uint32_t aCh) {
-  return u_charType(aCh) == U_MATH_SYMBOL;
+inline bool IsMathOrMusicSymbol(uint32_t aCh) {
+  return u_charType(aCh) == U_MATH_SYMBOL || u_charType(aCh) == U_OTHER_SYMBOL;
 }
 
 
