@@ -60,32 +60,19 @@ this.main = (function() {
       });
   }
 
-  function shouldOpenMyShots(url) {
-    return /^about:(?:newtab|blank|home)/i.test(url) || /^resource:\/\/activity-streams\//i.test(url);
-  }
-
   
   
   exports.onClicked = catcher.watchFunction((tab) => {
     _startShotFlow(tab, "toolbar-button");
   });
 
-  exports.onClickedContextMenu = catcher.watchFunction((info, tab) => {
+  exports.onClickedContextMenu = catcher.watchFunction((tab) => {
     _startShotFlow(tab, "context-menu");
   });
 
   exports.onCommand = catcher.watchFunction((tab) => {
     _startShotFlow(tab, "keyboard-shortcut");
   });
-
-  const _openMyShots = (tab, inputType) => {
-    catcher.watchPromise(analytics.refreshTelemetryPref().then(() => {
-      sendEvent("goto-myshots", inputType, {incognito: tab.incognito});
-    }));
-    catcher.watchPromise(
-      auth.maybeLogin()
-      .then(() => browser.tabs.update({url: backend + "/shots"})));
-  };
 
   const _startShotFlow = (tab, inputType) => {
     if (!tab) {
@@ -96,9 +83,6 @@ this.main = (function() {
       senderror.showError({
         popupMessage: "UNSHOOTABLE_PAGE",
       });
-      return;
-    } else if (shouldOpenMyShots(tab.url)) {
-      _openMyShots(tab, inputType);
       return;
     }
 
@@ -115,9 +99,6 @@ this.main = (function() {
   };
 
   function urlEnabled(url) {
-    if (shouldOpenMyShots(url)) {
-      return true;
-    }
     
     if (url && url.startsWith("about:reader?url=")) {
       return true;

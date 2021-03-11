@@ -83,9 +83,7 @@ function getVisibleMenuItems(aMenu, aData) {
         item.id != "spell-no-suggestions" &&
         item.id != "spell-add-dictionaries-main" &&
         item.id != "context-savelinktopocket" &&
-        
-        
-        item.id != "screenshots_mozilla_org-menuitem-_create-screenshot" &&
+        item.id != "fill-login-no-logins" &&
         
         
         item.id != "context-inspect-a11y"
@@ -351,9 +349,6 @@ let lastElementSelector = null;
 
 
 
-
-
-
 async function test_contextmenu(selector, menuItems, options = {}) {
   contextMenu = document.getElementById("contentAreaContextMenu");
   is(contextMenu.state, "closed", "checking if popup is closed");
@@ -444,20 +439,6 @@ async function test_contextmenu(selector, menuItems, options = {}) {
       inspectItems.push("context-inspect", true);
 
       menuItems = menuItems.concat(inspectItems);
-    }
-
-    if (
-      options.maybeScreenshotsPresent &&
-      !Services.prefs.getBoolPref("extensions.screenshots.disabled", false)
-    ) {
-      let screenshotItems = [
-        "---",
-        null,
-        "screenshots_mozilla_org-menuitem-_create-screenshot",
-        true,
-      ];
-
-      menuItems = menuItems.concat(screenshotItems);
     }
 
     checkContextMenu(menuItems);

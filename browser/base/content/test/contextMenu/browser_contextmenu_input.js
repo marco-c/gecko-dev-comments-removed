@@ -14,10 +14,6 @@ add_task(async function test_setup() {
   const contextmenu_common = chrome_base + "contextmenu_common.js";
   
   Services.scriptloader.loadSubScript(contextmenu_common, this);
-
-  
-  const addon = await AddonManager.getAddonByID("screenshots@mozilla.org");
-  await addon.disable({ allowSystemAddons: true });
 });
 
 add_task(async function test_text_input() {
@@ -229,10 +225,6 @@ add_task(
           true,
         ],
         {
-          
-          
-          
-          maybeScreenshotsPresent: true,
           skipFocusChange: true,
         }
       );
@@ -305,10 +297,6 @@ add_task(async function test_text_input_readonly() {
       null,
     ],
     {
-      
-      
-      
-      maybeScreenshotsPresent: true,
       skipFocusChange: true,
     }
   );
