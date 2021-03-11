@@ -5,6 +5,8 @@
 "use strict";
 
 {
+  const prefersDarkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
   function _isTextColorDark(r, g, b) {
     return 0.2125 * r + 0.7154 * g + 0.0721 * b <= 110;
   }
@@ -23,17 +25,19 @@
         processColor(rgbaChannels, element) {
           if (!rgbaChannels) {
             element.removeAttribute("lwt-newtab");
-            element.removeAttribute("lwt-newtab-brighttext");
+            element.toggleAttribute(
+              "lwt-newtab-brighttext",
+              prefersDarkQuery.matches
+            );
             return null;
           }
 
           element.setAttribute("lwt-newtab", "true");
           const { r, g, b, a } = rgbaChannels;
-          if (!_isTextColorDark(r, g, b)) {
-            element.setAttribute("lwt-newtab-brighttext", "true");
-          } else {
-            element.removeAttribute("lwt-newtab-brighttext");
-          }
+          element.toggleAttribute(
+            "lwt-newtab-brighttext",
+            !_isTextColorDark(r, g, b)
+          );
 
           return `rgba(${r}, ${g}, ${b}, ${a})`;
         },
@@ -112,23 +116,34 @@
 
     init() {
       addEventListener("LightweightTheme:Set", this);
+
+      
+      
+      
+      prefersDarkQuery.addEventListener("change", this);
     },
 
     
 
 
 
-    handleEvent({ type, detail }) {
-      if (type == "LightweightTheme:Set") {
-        let { data } = detail;
+
+    handleEvent(event) {
+      
+      const element = document.body ? document.body : document.documentElement;
+
+      if (event.type == "LightweightTheme:Set") {
+        let { data } = event.detail;
         if (!data) {
           data = {};
         }
-        
-        const element = document.body
-          ? document.body
-          : document.documentElement;
         this._setProperties(element, data);
+      } else if (event.type == "change") {
+        
+        
+        if (!element.hasAttribute("lwt-newtab")) {
+          element.toggleAttribute("lwt-newtab-brighttext", event.matches);
+        }
       }
     },
 
