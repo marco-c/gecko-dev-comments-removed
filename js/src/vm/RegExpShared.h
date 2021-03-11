@@ -312,12 +312,28 @@ class RegExpZone {
 };
 
 class RegExpRealm {
+ public:
+  enum ResultTemplateKind { Normal, WithIndices, Indices, NumKinds };
+
+ private:
   
 
 
 
 
-  WeakHeapPtr<ArrayObject*> matchResultTemplateObject_;
+
+
+
+
+
+
+
+
+
+
+
+  WeakHeapPtr<ArrayObject*>
+      matchResultTemplateObjects_[ResultTemplateKind::NumKinds];
 
   
 
@@ -341,7 +357,8 @@ class RegExpRealm {
 
   WeakHeapPtr<Shape*> optimizableRegExpInstanceShape_;
 
-  ArrayObject* createMatchResultTemplateObject(JSContext* cx);
+  ArrayObject* createMatchResultTemplateObject(JSContext* cx,
+                                               ResultTemplateKind kind);
 
  public:
   explicit RegExpRealm();
@@ -351,6 +368,7 @@ class RegExpRealm {
   static const size_t MatchResultObjectIndexSlot = 0;
   static const size_t MatchResultObjectInputSlot = 1;
   static const size_t MatchResultObjectGroupsSlot = 2;
+  static const size_t MatchResultObjectIndicesSlot = 3;
 
   static size_t offsetOfMatchResultObjectIndexSlot() {
     return sizeof(Value) * MatchResultObjectIndexSlot;
@@ -361,13 +379,17 @@ class RegExpRealm {
   static size_t offsetOfMatchResultObjectGroupsSlot() {
     return sizeof(Value) * MatchResultObjectGroupsSlot;
   }
+  static size_t offsetOfMatchResultObjectIndicesSlot() {
+    return sizeof(Value) * MatchResultObjectIndicesSlot;
+  }
 
   
-  ArrayObject* getOrCreateMatchResultTemplateObject(JSContext* cx) {
-    if (matchResultTemplateObject_) {
-      return matchResultTemplateObject_;
+  ArrayObject* getOrCreateMatchResultTemplateObject(
+      JSContext* cx, ResultTemplateKind kind = ResultTemplateKind::Normal) {
+    if (matchResultTemplateObjects_[kind]) {
+      return matchResultTemplateObjects_[kind];
     }
-    return createMatchResultTemplateObject(cx);
+    return createMatchResultTemplateObject(cx, kind);
   }
 
   Shape* getOptimizableRegExpPrototypeShape() {
