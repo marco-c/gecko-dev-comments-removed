@@ -889,8 +889,7 @@ var UrlbarUtils = {
 
 
   stripURLPrefix(str) {
-    const REGEXP_STRIP_PREFIX = /^[a-z]+:(?:\/){0,2}/i;
-    let match = REGEXP_STRIP_PREFIX.exec(str);
+    let match = UrlbarTokenizer.REGEXP_PREFIX.exec(str);
     if (!match) {
       return ["", str];
     }
@@ -1019,6 +1018,51 @@ var UrlbarUtils = {
         }
       );
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  canAutofillURL(url, candidate, checkFragmentOnly = false) {
+    if (
+      !checkFragmentOnly &&
+      (url.length <= candidate.length ||
+        !url.toLocaleLowerCase().startsWith(candidate.toLocaleLowerCase()))
+    ) {
+      return false;
+    }
+
+    if (!UrlbarTokenizer.REGEXP_PREFIX.test(url)) {
+      url = "http://" + url;
+    }
+
+    if (!UrlbarTokenizer.REGEXP_PREFIX.test(candidate)) {
+      candidate = "http://" + candidate;
+    }
+
+    try {
+      url = new URL(url);
+      candidate = new URL(candidate);
+    } catch (e) {
+      return false;
+    }
+
+    if (
+      !checkFragmentOnly &&
+      candidate.href.endsWith("/") &&
+      (url.pathname.length > candidate.pathname.length || url.hash)
+    ) {
+      return false;
+    }
+
+    return url.hash.startsWith(candidate.hash);
   },
 
   
