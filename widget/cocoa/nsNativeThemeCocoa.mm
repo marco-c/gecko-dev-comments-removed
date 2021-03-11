@@ -100,25 +100,6 @@ void CUIDraw(CUIRendererRef r, CGRect rect, CGContextRef ctx, CFDictionaryRef op
 
 @end
 
-
-
-
-
-
-
-
-@interface RadioButtonCell : NSButtonCell
-@end
-
-@implementation RadioButtonCell
-@end
-
-@interface CheckboxCell : NSButtonCell
-@end
-
-@implementation CheckboxCell
-@end
-
 static void DrawFocusRingForCellIfNeeded(NSCell* aCell, NSRect aWithFrame, NSView* aInView) {
   if ([aCell showsFirstResponder]) {
     CGContextRef cgContext = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
@@ -146,21 +127,9 @@ static void DrawFocusRingForCellIfNeeded(NSCell* aCell, NSRect aWithFrame, NSVie
   }
 }
 
-static bool FocusIsDrawnByDrawWithFrame(NSCell* aCell) {
-  
-  
-  
-  
-  
-  return false;
-}
-
 static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame, NSView* aInView) {
   [aCell drawWithFrame:aWithFrame inView:aInView];
-
-  if (!FocusIsDrawnByDrawWithFrame(aCell)) {
-    DrawFocusRingForCellIfNeeded(aCell, aWithFrame, aInView);
-  }
+  DrawFocusRingForCellIfNeeded(aCell, aWithFrame, aInView);
 }
 
 
@@ -263,14 +232,6 @@ static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame, NSView*
 
 - (void)drawWithFrame:(NSRect)rect inView:(NSView*)controlView {
   [super drawWithFrame:rect inView:controlView];
-
-  if (FocusIsDrawnByDrawWithFrame(self)) {
-    
-    
-    
-    
-    DrawFocusRingForCellIfNeeded(self, rect, controlView);
-  }
 }
 
 - (void)drawFocusRingMaskWithFrame:(NSRect)rect inView:(NSView*)controlView {
@@ -444,10 +405,10 @@ nsNativeThemeCocoa::nsNativeThemeCocoa() {
   [mPushButtonCell setButtonType:NSMomentaryPushInButton];
   [mPushButtonCell setHighlightsBy:NSPushInCellMask];
 
-  mRadioButtonCell = [[RadioButtonCell alloc] initTextCell:@""];
+  mRadioButtonCell = [[NSButtonCell alloc] initTextCell:@""];
   [mRadioButtonCell setButtonType:NSRadioButton];
 
-  mCheckboxCell = [[CheckboxCell alloc] initTextCell:@""];
+  mCheckboxCell = [[NSButtonCell alloc] initTextCell:@""];
   [mCheckboxCell setButtonType:NSSwitchButton];
   [mCheckboxCell setAllowsMixedState:YES];
 
