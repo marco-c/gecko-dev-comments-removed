@@ -2079,10 +2079,6 @@ add_task(async function test_pingExtendedStats() {
     "addonDetails",
   ];
 
-  if (AppConstants.platform == "android") {
-    EXTENDED_PAYLOAD_FIELDS.push("UIMeasurements");
-  }
-
   
   await TelemetryStorage.testClearPendingPings();
   PingServer.clearRequests();
