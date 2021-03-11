@@ -67,6 +67,14 @@ mozilla::LazyLogModule gDocumentChannelLog("DocumentChannel");
 
 extern mozilla::LazyLogModule gSHIPBFCacheLog;
 
+
+
+
+
+
+
+static constexpr int kMaxSameURLContentFrames = 2;
+
 using namespace mozilla::dom;
 
 namespace mozilla {
@@ -450,6 +458,57 @@ WindowGlobalParent* DocumentLoadListener::GetParentWindowContext() const {
   return mParentWindowContext;
 }
 
+bool CheckRecursiveLoad(CanonicalBrowsingContext* aLoadingContext,
+                        nsDocShellLoadState* aLoadState,
+                        DocumentLoadListener* aDLL, bool aIsDocumentLoad,
+                        LoadInfo* aLoadInfo) {
+  
+  
+  
+  
+  
+  nsAutoCString buffer;
+  if (aLoadState->URI()->SchemeIs("about")) {
+    nsresult rv = aLoadState->URI()->GetPathQueryRef(buffer);
+    if (NS_SUCCEEDED(rv) && buffer.EqualsLiteral("srcdoc")) {
+      
+      return true;
+    }
+  }
+
+  RefPtr<WindowGlobalParent> parent;
+  if (!aIsDocumentLoad) {  
+    parent = aLoadingContext->GetCurrentWindowGlobal();
+  } else {
+    parent = aLoadingContext->GetParentWindowContext();
+  }
+
+  int matchCount = 0;
+  CanonicalBrowsingContext* ancestorBC;
+  for (WindowGlobalParent* ancestorWGP = parent; ancestorWGP;
+       ancestorWGP = ancestorBC->GetParentWindowContext()) {
+    ancestorBC = ancestorWGP->BrowsingContext();
+    MOZ_ASSERT(ancestorBC);
+    if (nsCOMPtr<nsIURI> parentURI = ancestorWGP->GetDocumentURI()) {
+      bool equal;
+      nsresult rv = aLoadState->URI()->EqualsExceptRef(parentURI, &equal);
+      NS_ENSURE_SUCCESS(rv, false);
+
+      if (equal) {
+        matchCount++;
+        if (matchCount >= kMaxSameURLContentFrames) {
+          NS_WARNING(
+              "Too many nested content frames/objects have the same url "
+              "(recursion?) "
+              "so giving up");
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
 auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
                                 LoadInfo* aLoadInfo, nsLoadFlags aLoadFlags,
                                 uint32_t aCacheKey,
@@ -468,6 +527,16 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   loadingContext->GetOriginAttributes(attrs);
 
   mLoadIdentifier = aLoadState->GetLoadIdentifier();
+
+  
+  if (aLoadState->OriginalFrameSrc() || !mIsDocumentLoad) {
+    if (!CheckRecursiveLoad(loadingContext, aLoadState, this, mIsDocumentLoad,
+                            aLoadInfo)) {
+      *aRv = NS_ERROR_RECURSIVE_DOCUMENT_LOAD;
+      mParentChannelListener = nullptr;
+      return nullptr;
+    }
+  }
 
   if (!nsDocShell::CreateAndConfigureRealChannelForLoadState(
           loadingContext, aLoadState, aLoadInfo, mParentChannelListener,

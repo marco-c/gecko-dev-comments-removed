@@ -147,14 +147,6 @@ using PrintPreviewResolver = std::function<void(const PrintPreviewResultInfo&)>;
 
 
 
-#define MAX_SAME_URL_CONTENT_FRAMES 2
-
-
-
-
-
-
-
 
 #define MAX_DEPTH_CONTENT_FRAMES 10
 
@@ -2303,8 +2295,6 @@ void nsFrameLoader::GetURL(nsString& aURI, nsIPrincipal** aTriggeringPrincipal,
 }
 
 nsresult nsFrameLoader::CheckForRecursiveLoad(nsIURI* aURI) {
-  nsresult rv;
-
   MOZ_ASSERT(!IsRemoteFrame(),
              "Shouldn't call CheckForRecursiveLoad on remote frames.");
 
@@ -2327,46 +2317,6 @@ nsresult nsFrameLoader::CheckForRecursiveLoad(nsIURI* aURI) {
       NS_WARNING("Too many nested content frames so giving up");
 
       return NS_ERROR_UNEXPECTED;  
-    }
-  }
-
-  
-  
-  
-  
-  
-  nsAutoCString buffer;
-  rv = aURI->GetScheme(buffer);
-  if (NS_SUCCEEDED(rv) && buffer.EqualsLiteral("about")) {
-    rv = aURI->GetPathQueryRef(buffer);
-    if (NS_SUCCEEDED(rv) && buffer.EqualsLiteral("srcdoc")) {
-      
-      return NS_OK;
-    }
-  }
-  int32_t matchCount = 0;
-  for (BrowsingContext* bc = parentBC; bc; bc = bc->GetParent()) {
-    
-    if (auto* docShell = nsDocShell::Cast(bc->GetDocShell())) {
-      
-      nsCOMPtr<nsIURI> parentURI;
-      docShell->GetCurrentURI(getter_AddRefs(parentURI));
-      if (parentURI) {
-        
-        bool equal;
-        rv = aURI->EqualsExceptRef(parentURI, &equal);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        if (equal) {
-          matchCount++;
-          if (matchCount >= MAX_SAME_URL_CONTENT_FRAMES) {
-            NS_WARNING(
-                "Too many nested content frames have the same url (recursion?) "
-                "so giving up");
-            return NS_ERROR_UNEXPECTED;
-          }
-        }
-      }
     }
   }
 

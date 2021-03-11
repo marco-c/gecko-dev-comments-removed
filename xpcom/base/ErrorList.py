@@ -787,6 +787,10 @@ with modules["DOM"]:
 
     
     
+    errors["NS_ERROR_RECURSIVE_DOCUMENT_LOAD"] = FAILURE(1038)
+
+    
+    
     
     errors["NS_SUCCESS_DOM_NO_OPERATION"] = SUCCESS(1)
 
