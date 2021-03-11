@@ -562,12 +562,6 @@ enum class StyleRubyAlign : uint8_t {
 };
 
 
-enum class StyleRubyPosition : uint8_t {
-  Over,
-  Under,
-};
-
-
 enum class StyleTextSizeAdjust : uint8_t {
   None,
   Auto,
