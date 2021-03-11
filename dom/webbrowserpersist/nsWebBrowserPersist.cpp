@@ -583,68 +583,55 @@ void nsWebBrowserPersist::SerializeNextFile() {
 
   
   
-  uint32_t urisToPersist = 0;
-  if (mURIMap.Count() > 0) {
-    
-    
-    
-    
-    for (auto iter = mURIMap.Iter(); !iter.Done(); iter.Next()) {
-      URIData* data = iter.UserData();
-      if (data->mNeedsPersisting && !data->mSaved) {
-        urisToPersist++;
-      }
+  
+  
+  
+
+  
+  
+  for (const auto& entry : mURIMap) {
+    URIData* data = entry.GetWeak();
+
+    if (!data->mNeedsPersisting || data->mSaved) {
+      continue;
     }
-  }
 
-  if (urisToPersist > 0) {
-    NS_ENSURE_SUCCESS_VOID(rv);
+    
+    nsCOMPtr<nsIURI> uri;
+    rv = NS_NewURI(getter_AddRefs(uri), entry.GetKey(), data->mCharset.get());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      break;
+    }
+
+    
+    nsCOMPtr<nsIURI> fileAsURI = data->mDataPath;
+    rv = AppendPathToURI(fileAsURI, data->mFilename, fileAsURI);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      break;
+    }
+
+    rv = SaveURIInternal(uri, data->mTriggeringPrincipal,
+                         data->mContentPolicyType, 0, nullptr,
+                         data->mCookieJarSettings, nullptr, nullptr, fileAsURI,
+                         true, mIsPrivate);
     
     
-    for (auto iter = mURIMap.Iter(); !iter.Done(); iter.Next()) {
-      URIData* data = iter.UserData();
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      break;
+    }
 
-      if (!data->mNeedsPersisting || data->mSaved) {
-        continue;
-      }
-
-      
-      nsCOMPtr<nsIURI> uri;
-      rv = NS_NewURI(getter_AddRefs(uri), iter.Key(), data->mCharset.get());
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        break;
-      }
-
-      
-      nsCOMPtr<nsIURI> fileAsURI = data->mDataPath;
-      rv = AppendPathToURI(fileAsURI, data->mFilename, fileAsURI);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        break;
-      }
-
-      rv = SaveURIInternal(uri, data->mTriggeringPrincipal,
-                           data->mContentPolicyType, 0, nullptr,
-                           data->mCookieJarSettings, nullptr, nullptr,
-                           fileAsURI, true, mIsPrivate);
+    if (rv == NS_OK) {
       
       
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        break;
-      }
+      
+      data->mFile = fileAsURI;
+      data->mSaved = true;
+    } else {
+      data->mNeedsFixup = false;
+    }
 
-      if (rv == NS_OK) {
-        
-        
-        
-        data->mFile = fileAsURI;
-        data->mSaved = true;
-      } else {
-        data->mNeedsFixup = false;
-      }
-
-      if (mSerializingOutput) {
-        break;
-      }
+    if (mSerializingOutput) {
+      break;
     }
   }
 
