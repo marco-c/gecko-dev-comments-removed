@@ -12,8 +12,7 @@
 #include "gc/ObjectKind-inl.h"
 
 
-js::gc::AllocKind js::InlineTypedObject::allocKindForTypeDescriptor(
-    TypeDescr* descr) {
+js::gc::AllocKind js::InlineTypedObject::allocKindForRttValue(RttValue* descr) {
   size_t nbytes = descr->size();
   MOZ_ASSERT(nbytes <= MaxInlineBytes);
 

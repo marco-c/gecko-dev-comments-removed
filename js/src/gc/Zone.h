@@ -276,11 +276,11 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   
   
-  using TypeDescrObjectSet =
+  using RttValueObjectSet =
       js::GCHashSet<JSObject*, js::MovableCellHasher<JSObject*>,
                     js::SystemAllocPolicy>;
 
-  js::ZoneData<JS::WeakCache<TypeDescrObjectSet>> typeDescrObjects_;
+  js::ZoneData<JS::WeakCache<RttValueObjectSet>> rttValueObjects_;
 
   js::MainThreadData<js::UniquePtr<js::RegExpZone>> regExps_;
 
@@ -573,11 +573,11 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   js::RegExpZone& regExps() { return *regExps_.ref(); }
 
-  JS::WeakCache<TypeDescrObjectSet>& typeDescrObjects() {
-    return typeDescrObjects_.ref();
+  JS::WeakCache<RttValueObjectSet>& rttValueObjects() {
+    return rttValueObjects_.ref();
   }
 
-  bool addTypeDescrObject(JSContext* cx, HandleObject obj);
+  bool addRttValueObject(JSContext* cx, HandleObject obj);
 
   js::SparseBitmap& markedAtoms() { return markedAtoms_.ref(); }
 

@@ -2523,18 +2523,18 @@ static AllocKinds ForegroundUpdateKinds(AllocKinds kinds) {
   return result;
 }
 
-void GCRuntime::updateTypeDescrObjects(MovingTracer* trc, Zone* zone) {
+void GCRuntime::updateRttValueObjects(MovingTracer* trc, Zone* zone) {
   
   
   
   
 
-  zone->typeDescrObjects().sweep(nullptr);
+  zone->rttValueObjects().sweep(nullptr);
 
-  for (auto r = zone->typeDescrObjects().all(); !r.empty(); r.popFront()) {
-    TypeDescr* obj = &MaybeForwardedObjectAs<TypeDescr>(r.front());
+  for (auto r = zone->rttValueObjects().all(); !r.empty(); r.popFront()) {
+    RttValue* obj = &MaybeForwardedObjectAs<RttValue>(r.front());
     UpdateCellPointers(trc, obj);
-    for (size_t i = 0; i < TypeDescr::SlotCount; i++) {
+    for (size_t i = 0; i < RttValue::SlotCount; i++) {
       Value value = obj->getSlot(i);
       if (value.isObject()) {
         UpdateCellPointers(trc, &value.toObject());
@@ -2624,7 +2624,7 @@ void GCRuntime::updateAllCellPointers(MovingTracer* trc, Zone* zone) {
 
   
   
-  updateTypeDescrObjects(trc, zone);
+  updateRttValueObjects(trc, zone);
 
   updateCellPointers(zone, UpdatePhaseThree);
 }
@@ -3754,7 +3754,7 @@ void GCRuntime::sweepZones(JSFreeOp* fop, bool destroyingRuntime) {
         zone->arenas.checkEmptyFreeLists();
         zone->sweepCompartments(fop, false, destroyingRuntime);
         MOZ_ASSERT(zone->compartments().empty());
-        MOZ_ASSERT(zone->typeDescrObjects().empty());
+        MOZ_ASSERT(zone->rttValueObjects().empty());
         zone->destroy(fop);
         continue;
       }

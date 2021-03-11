@@ -3522,9 +3522,9 @@ js::gc::AllocKind JSObject::allocKindForTenure(
     
     
     
-    TypeDescr& descr = as<InlineTypedObject>().typeDescr();
+    RttValue& descr = as<InlineTypedObject>().rttValue();
     MOZ_ASSERT(!IsInsideNursery(&descr));
-    return InlineTypedObject::allocKindForTypeDescriptor(&descr);
+    return InlineTypedObject::allocKindForRttValue(&descr);
   }
 
   if (is<OutlineTypedObject>()) {

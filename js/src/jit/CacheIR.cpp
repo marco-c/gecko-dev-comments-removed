@@ -620,7 +620,7 @@ static void TestMatchingReceiver(CacheIRWriter& writer, JSObject* obj,
     
     
     writer.guardShape(objId, obj->shape());
-    writer.guardTypeDescr(objId, &obj->as<TypedObject>().typeDescr());
+    writer.guardRttValue(objId, &obj->as<TypedObject>().rttValue());
   } else if (obj->is<ProxyObject>()) {
     writer.guardShapeForClass(objId, obj->as<ProxyObject>().shape());
   } else {
