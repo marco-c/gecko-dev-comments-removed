@@ -1615,20 +1615,6 @@ process attach {continue_flag}-p {pid!s}
                 return 1
 
             
-            
-            if debugger_args:
-                from mozbuild import shellutil
-
-                try:
-                    debugger_args = shellutil.split(debugger_args)
-                except shellutil.MetaCharacterException as e:
-                    print(
-                        "The --debugger-args you passed require a real shell to parse them."
-                    )
-                    print("(We can't handle the %r character.)" % e.char)
-                    return 1
-
-            
             args = [self.debuggerInfo.path] + self.debuggerInfo.args + args
 
         return self.run_process(
@@ -1744,16 +1730,6 @@ process attach {continue_flag}-p {pid!s}
         if not no_profile_option_given and setpref:
             print("setpref is only supported if a profile is not specified")
             return 1
-
-            if not no_profile_option_given:
-                
-                
-                
-                encoding = sys.getfilesystemencoding() or sys.getdefaultencoding()
-                args = [
-                    unicode(a, encoding) if not isinstance(a, unicode) else a
-                    for a in args
-                ]
 
         some_debugging_option = debug or debugger or debugger_args
 
