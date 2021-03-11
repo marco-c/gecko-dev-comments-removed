@@ -62,6 +62,9 @@ enum class TypeCode {
   F64 = 0x7c,   
   V128 = 0x7b,  
 
+  I8 = 0x7a,   
+  I16 = 0x79,  
+
   
   FuncRef = 0x70,  
 
@@ -96,7 +99,7 @@ enum class TypeCode {
 
 
 
-static constexpr TypeCode LowestPrimitiveTypeCode = TypeCode::V128;
+static constexpr TypeCode LowestPrimitiveTypeCode = TypeCode::I16;
 
 
 
