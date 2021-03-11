@@ -1803,48 +1803,50 @@ bool CertIsInCertStorage(CERTCertificate* cert, nsICertStorage* certStorage) {
 
 
 
-void SaveIntermediateCerts(const UniqueCERTCertList& certList) {
-  if (!certList) {
-    return;
-  }
-
+void SaveIntermediateCerts(const nsTArray<nsTArray<uint8_t>>& certList) {
   UniqueCERTCertList intermediates(CERT_NewCertList());
   if (!intermediates) {
     return;
   }
 
-  bool isEndEntity = true;
+  size_t index = 0;
   size_t numIntermediates = 0;
-  for (CERTCertListNode* node = CERT_LIST_HEAD(certList);
-       !CERT_LIST_END(node, certList); node = CERT_LIST_NEXT(node)) {
-    if (isEndEntity) {
-      
-      isEndEntity = false;
+  for (const auto& certDER : certList) {
+    
+    
+    
+    
+    
+    
+    
+    index++;
+    if (index == 1 || index == certList.Length()) {
       continue;
     }
 
-    if (node->cert->slot) {
+    SECItem certDERItem = {siBuffer,
+                           const_cast<unsigned char*>(certDER.Elements()),
+                           AssertedCast<unsigned int>(certDER.Length())};
+    UniqueCERTCertificate certHandle(CERT_NewTempCertificate(
+        CERT_GetDefaultCertDB(), &certDERItem, nullptr, false, true));
+    if (!certHandle) {
+      continue;
+    }
+    if (certHandle->slot) {
       
       
       continue;
     }
 
-    if (node->cert->isperm) {
+    PRBool isperm;
+    if (CERT_GetCertIsPerm(certHandle.get(), &isperm) != SECSuccess) {
+      continue;
+    }
+    if (isperm) {
       
       continue;
     }
 
-    
-    
-    
-    
-    
-    
-    if (node == CERT_LIST_TAIL(certList)) {
-      continue;
-    }
-
-    UniqueCERTCertificate certHandle(CERT_DupCertificate(node->cert));
     if (CERT_AddCertToListTail(intermediates.get(), certHandle.get()) !=
         SECSuccess) {
       
@@ -1877,6 +1879,16 @@ void SaveIntermediateCerts(const UniqueCERTCertList& certList) {
             }
 
             if (CertIsInCertStorage(node->cert, certStorage)) {
+              continue;
+            }
+            PRBool isperm;
+            if (CERT_GetCertIsPerm(node->cert, &isperm) != SECSuccess) {
+              continue;
+            }
+            if (isperm) {
+              
+              
+              
               continue;
             }
             

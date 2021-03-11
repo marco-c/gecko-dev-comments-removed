@@ -194,7 +194,6 @@ class CertVerifier {
        const Maybe<DelegatedCredentialInfo>& dcInfo = Nothing(),
        const OriginAttributes& originAttributes =
           OriginAttributes(),
-       bool saveIntermediatesInPermanentDatabase = false,
        SECOidTag* evOidPolicy = nullptr,
        OCSPStaplingStatus* ocspStaplingStatus = nullptr,
        KeySizeStatus* keySizeStatus = nullptr,
