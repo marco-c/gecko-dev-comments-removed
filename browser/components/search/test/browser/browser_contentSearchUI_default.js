@@ -108,3 +108,9 @@ add_task(async function test_content_search_icon_in_private_window() {
 
   await BrowserTestUtils.closeWindow(win);
 });
+
+add_task(async function cleanup() {
+  
+  
+  await extension.unload();
+});

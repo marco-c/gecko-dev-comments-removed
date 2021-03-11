@@ -542,18 +542,19 @@ add_task(async function pasteAndGo_url() {
 
 add_task(async function pasteAndGo_nonURL() {
   
-  await SearchTestUtils.installSearchExtension();
-
-  let engine = Services.search.getEngineByName("Example");
+  let engine = await Services.search.addEngineWithDetails("Test", {
+    template: "http://example.com/?search={searchTerms}",
+  });
   let oldDefaultEngine = await Services.search.getDefault();
   Services.search.setDefault(engine);
 
   await doPasteAndGoTest(
     "pasteAndGo_nonURL",
-    "https://example.com/?q=pasteAndGo_nonURL"
+    "http://example.com/?search=pasteAndGo_nonURL"
   );
 
   Services.search.setDefault(oldDefaultEngine);
+  await Services.search.removeEngine(engine);
 });
 
 async function doPasteAndGoTest(searchString, expectedURL) {

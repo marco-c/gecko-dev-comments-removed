@@ -13,6 +13,8 @@ const serverInfo = {
   port: 20709, 
 };
 
+let aliasEngine;
+
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -47,14 +49,16 @@ add_task(async function setup() {
   await Services.search.moveEngine(engine2, 0);
 
   
-  await SearchTestUtils.installSearchExtension({
-    name: "MozSearch",
-    keyword: "alias",
+  aliasEngine = await Services.search.addEngineWithDetails("MozSearch", {
+    alias: "alias",
+    method: "GET",
+    template: "http://example.com/?q={searchTerms}",
   });
 
   registerCleanupFunction(async () => {
     await Services.search.setDefault(oldDefaultEngine);
     await Services.search.setDefaultPrivate(oldDefaultPrivateEngine);
+    await Services.search.removeEngine(aliasEngine);
     await PlacesUtils.history.clear();
   });
 });
