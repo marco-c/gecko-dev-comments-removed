@@ -379,7 +379,6 @@ public class GeckoAppShell {
     private static class DefaultListeners implements SensorEventListener,
                                                      LocationListener,
                                                      NotificationListener,
-                                                     ScreenOrientationDelegate,
                                                      WakeLockDelegate,
                                                      HapticFeedbackDelegate {
         @Override
@@ -516,13 +515,6 @@ public class GeckoAppShell {
             
         }
 
-        @Override 
-        public boolean setRequestedOrientationForCurrentActivity(
-                final int requestedActivityInfoOrientation) {
-            
-            return false;
-        }
-
         private SimpleArrayMap<String, PowerManager.WakeLock> mWakeLocks;
 
         @Override 
@@ -591,11 +583,6 @@ public class GeckoAppShell {
     private static WakeLockDelegate sWakeLockDelegate = DEFAULT_LISTENERS;
     private static HapticFeedbackDelegate sHapticFeedbackDelegate = DEFAULT_LISTENERS;
 
-    
-
-
-    private static ScreenOrientationDelegate sScreenOrientationDelegate = DEFAULT_LISTENERS;
-
     public static SensorEventListener getSensorListener() {
         return sSensorListener;
     }
@@ -618,15 +605,6 @@ public class GeckoAppShell {
 
     public static void setNotificationListener(final NotificationListener listener) {
         sNotificationListener = (listener != null) ? listener : DEFAULT_LISTENERS;
-    }
-
-    public static ScreenOrientationDelegate getScreenOrientationDelegate() {
-        return sScreenOrientationDelegate;
-    }
-
-    public static void setScreenOrientationDelegate(
-            final @Nullable ScreenOrientationDelegate screenOrientationDelegate) {
-        sScreenOrientationDelegate = (screenOrientationDelegate != null) ? screenOrientationDelegate : DEFAULT_LISTENERS;
     }
 
     public static WakeLockDelegate getWakeLockDelegate() {
@@ -1529,18 +1507,6 @@ public class GeckoAppShell {
     @WrapForJNI(calledFrom = "gecko")
     private static void disableScreenOrientationNotifications() {
         GeckoScreenOrientation.getInstance().disableNotifications();
-    }
-
-    @WrapForJNI(calledFrom = "gecko")
-    private static void lockScreenOrientation(final int aOrientation) {
-        
-        GeckoScreenOrientation.getInstance().lock(aOrientation);
-    }
-
-    @WrapForJNI(calledFrom = "gecko")
-    private static void unlockScreenOrientation() {
-        
-        GeckoScreenOrientation.getInstance().unlock();
     }
 
     @WrapForJNI(calledFrom = "gecko")

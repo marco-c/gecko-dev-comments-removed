@@ -124,33 +124,10 @@ void GetCurrentScreenConfiguration(ScreenConfiguration* aScreenConfiguration) {
 }
 
 bool LockScreenOrientation(const hal::ScreenOrientation& aOrientation) {
-  
-  hal::ScreenOrientation orientation =
-      aOrientation == eScreenOrientation_Default
-          ? eScreenOrientation_PortraitPrimary
-          : aOrientation;
-
-  switch (orientation) {
-    
-    case eScreenOrientation_PortraitPrimary:
-    case eScreenOrientation_PortraitSecondary:
-    case eScreenOrientation_PortraitPrimary |
-        eScreenOrientation_PortraitSecondary:
-    case eScreenOrientation_LandscapePrimary:
-    case eScreenOrientation_LandscapeSecondary:
-    case eScreenOrientation_LandscapePrimary |
-        eScreenOrientation_LandscapeSecondary:
-    case eScreenOrientation_Default:
-      java::GeckoAppShell::LockScreenOrientation(orientation);
-      return true;
-    default:
-      return false;
-  }
+  return false;
 }
 
-void UnlockScreenOrientation() {
-  java::GeckoAppShell::UnlockScreenOrientation();
-}
+void UnlockScreenOrientation() {}
 
 }  
 }  
