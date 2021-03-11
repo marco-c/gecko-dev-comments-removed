@@ -229,11 +229,11 @@ class QuotaManager final : public BackgroundThreadObject {
 
   
   
-  Result<FullOriginMetadata, nsresult> GetDirectoryMetadataWithOriginMetadata2(
+  Result<FullOriginMetadata, nsresult> LoadFullOriginMetadata(
       nsIFile* aDirectory, PersistenceType aPersistenceType);
 
-  Result<FullOriginMetadata, nsresult>
-  GetDirectoryMetadataWithOriginMetadata2WithRestore(nsIFile* aDirectory);
+  Result<FullOriginMetadata, nsresult> LoadFullOriginMetadataWithRestore(
+      nsIFile* aDirectory);
 
   
   
