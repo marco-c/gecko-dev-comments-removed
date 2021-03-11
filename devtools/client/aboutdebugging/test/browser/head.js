@@ -90,7 +90,7 @@ async function openAboutDevtoolsToolbox(
   inspectButton.click();
   await Promise.all([
     waitUntil(() => tab.nextElementSibling),
-    waitForRequestsToSettle(win.AboutDebugging.store),
+    waitForAboutDebuggingRequests(win.AboutDebugging.store),
     shouldWaitToolboxReady
       ? gDevTools.once("toolbox-ready")
       : Promise.resolve(),
@@ -152,7 +152,7 @@ async function closeAboutDevtoolsToolbox(
     () => !findDebugTargetByText("Toolbox - ", aboutDebuggingDocument)
   );
 
-  await waitForRequestsToSettle(win.AboutDebugging.store);
+  await waitForAboutDebuggingRequests(win.AboutDebugging.store);
 }
 
 async function reloadAboutDebugging(tab) {
@@ -163,7 +163,7 @@ async function reloadAboutDebugging(tab) {
   const document = browser.contentDocument;
   const window = browser.contentWindow;
   info("wait for the initial about:debugging requests to settle");
-  await waitForRequestsToSettle(window.AboutDebugging.store);
+  await waitForAboutDebuggingRequests(window.AboutDebugging.store);
 
   return document;
 }
@@ -173,9 +173,9 @@ async function reloadAboutDebugging(tab) {
 
 function waitForRequestsSuccess(store) {
   return Promise.all([
-    waitForDispatch(store, "REQUEST_EXTENSIONS_SUCCESS"),
-    waitForDispatch(store, "REQUEST_TABS_SUCCESS"),
-    waitForDispatch(store, "REQUEST_WORKERS_SUCCESS"),
+    aboutDebugging_waitForDispatch(store, "REQUEST_EXTENSIONS_SUCCESS"),
+    aboutDebugging_waitForDispatch(store, "REQUEST_TABS_SUCCESS"),
+    aboutDebugging_waitForDispatch(store, "REQUEST_WORKERS_SUCCESS"),
   ]);
 }
 
@@ -183,7 +183,7 @@ function waitForRequestsSuccess(store) {
 
 
 
-async function waitForRequestsToSettle(store, delay = 500) {
+async function waitForAboutDebuggingRequests(store, delay = 500) {
   let hasSettled = false;
 
   
@@ -203,9 +203,9 @@ async function waitForRequestsToSettle(store, delay = 500) {
 
     
     await Promise.race([
-      waitForDispatch(store, "REQUEST_EXTENSIONS_SUCCESS"),
-      waitForDispatch(store, "REQUEST_TABS_SUCCESS"),
-      waitForDispatch(store, "REQUEST_WORKERS_SUCCESS"),
+      aboutDebugging_waitForDispatch(store, "REQUEST_EXTENSIONS_SUCCESS"),
+      aboutDebugging_waitForDispatch(store, "REQUEST_TABS_SUCCESS"),
+      aboutDebugging_waitForDispatch(store, "REQUEST_WORKERS_SUCCESS"),
       timerPromise,
     ]);
 
@@ -215,7 +215,12 @@ async function waitForRequestsToSettle(store, delay = 500) {
   }
 }
 
-function waitForDispatch(store, type) {
+
+
+
+
+
+function aboutDebugging_waitForDispatch(store, type) {
   return new Promise(resolve => {
     store.dispatch({
       type: "@@service/waitUntil",
@@ -244,7 +249,7 @@ async function selectThisFirefoxPage(doc, store) {
   
   
   
-  await waitForRequestsToSettle(store);
+  await waitForAboutDebuggingRequests(store);
 }
 
 
@@ -323,7 +328,10 @@ async function connectToRuntime(deviceName, document) {
 async function selectRuntime(deviceName, name, document) {
   const sidebarItem = findSidebarItemByText(deviceName, document);
   const store = document.defaultView.AboutDebugging.store;
-  const onSelectPageSuccess = waitForDispatch(store, "SELECT_PAGE_SUCCESS");
+  const onSelectPageSuccess = aboutDebugging_waitForDispatch(
+    store,
+    "SELECT_PAGE_SUCCESS"
+  );
 
   sidebarItem.querySelector(".qa-sidebar-link").click();
 
@@ -405,7 +413,7 @@ async function updateSelectedTab(browser, tab, store) {
 
   
   const onTabsSuccess = isOnThisFirefox
-    ? waitForDispatch(store, "REQUEST_TABS_SUCCESS")
+    ? aboutDebugging_waitForDispatch(store, "REQUEST_TABS_SUCCESS")
     : null;
 
   
