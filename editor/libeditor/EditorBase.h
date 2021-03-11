@@ -2084,6 +2084,13 @@ class EditorBase : public nsIEditor,
       
       case NS_ERROR_EDITOR_ACTION_CANCELED:
         return NS_SUCCESS_DOM_NO_OPERATION;
+      
+      
+      
+      
+      
+      case NS_ERROR_EDITOR_NO_EDITABLE_RANGE:
+        return NS_SUCCESS_DOM_NO_OPERATION;
       default:
         return aRv;
     }

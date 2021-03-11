@@ -829,6 +829,11 @@ with modules["EDITOR"]:
     
     errors["NS_ERROR_EDITOR_ACTION_CANCELED"] = FAILURE(3)
 
+    
+    
+    
+    errors["NS_ERROR_EDITOR_NO_EDITABLE_RANGE"] = FAILURE(4)
+
     errors["NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND"] = SUCCESS(1)
     errors["NS_SUCCESS_EDITOR_FOUND_TARGET"] = SUCCESS(2)
 

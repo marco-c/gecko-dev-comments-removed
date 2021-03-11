@@ -756,6 +756,15 @@ class MOZ_STACK_CLASS AutoRangeArray final {
     }
   }
 
+  
+
+
+
+
+  void EnsureOnlyEditableRanges(const dom::Element& aEditingHost);
+  static bool IsEditableRange(const dom::AbstractRange& aRange,
+                              const dom::Element& aEditingHost);
+
   auto& Ranges() { return mRanges; }
   const auto& Ranges() const { return mRanges; }
   auto& FirstRangeRef() { return mRanges[0]; }
@@ -926,6 +935,12 @@ class MOZ_STACK_CLASS AutoRangeArray final {
   }
   nsIContent* GetChildAtFocusOffset() const {
     return FocusRef().IsSet() ? FocusRef().GetChildAtOffset() : nullptr;
+  }
+
+  void RemoveAllRanges() {
+    mRanges.Clear();
+    mAnchorFocusRange = nullptr;
+    mDirection = nsDirection::eDirNext;
   }
 
  private:

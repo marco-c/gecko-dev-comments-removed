@@ -631,7 +631,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  Element* GetActiveEditingHost() const;
+  enum class LimitInBodyElement { No, Yes };
+  Element* GetActiveEditingHost(
+      LimitInBodyElement aLimitInBodyElement = LimitInBodyElement::Yes) const;
 
   
 

@@ -85,6 +85,56 @@ EditActionResult& EditActionResult::operator|=(
 
 
 
+
+bool AutoRangeArray::IsEditableRange(const dom::AbstractRange& aRange,
+                                     const Element& aEditingHost) {
+  
+  
+  
+  EditorRawDOMPoint atStart(aRange.StartRef());
+  const bool isStartEditable =
+      atStart.IsInContentNode() &&
+      EditorUtils::IsEditableContent(*atStart.ContainerAsContent(),
+                                     EditorUtils::EditorType::HTML);
+  if (!isStartEditable) {
+    return false;
+  }
+
+  if (!aRange.Collapsed()) {
+    EditorRawDOMPoint atEnd(aRange.EndRef());
+    const bool isEndEditable =
+        atEnd.IsInContentNode() &&
+        EditorUtils::IsEditableContent(*atEnd.ContainerAsContent(),
+                                       EditorUtils::EditorType::HTML);
+    if (!isEndEditable) {
+      return false;
+    }
+
+    
+    
+    if (atStart.ContainerAsContent() != atEnd.ContainerAsContent() &&
+        atStart.ContainerAsContent()->GetEditingHost() !=
+            atEnd.ContainerAsContent()->GetEditingHost()) {
+      return false;
+    }
+  }
+
+  
+  nsINode* commonAncestor = aRange.GetClosestCommonInclusiveAncestor();
+  return commonAncestor && commonAncestor->IsContent() &&
+         commonAncestor->IsInclusiveDescendantOf(&aEditingHost);
+}
+
+void AutoRangeArray::EnsureOnlyEditableRanges(const Element& aEditingHost) {
+  for (size_t i = mRanges.Length(); i > 0; i--) {
+    const OwningNonNull<nsRange>& range = mRanges[i - 1];
+    if (!AutoRangeArray::IsEditableRange(range, aEditingHost)) {
+      mRanges.RemoveElementAt(i - 1);
+    }
+  }
+  mAnchorFocusRange = mRanges.IsEmpty() ? nullptr : mRanges.LastElement().get();
+}
+
 Result<nsIEditor::EDirection, nsresult>
 AutoRangeArray::ExtendAnchorFocusRangeFor(
     const EditorBase& aEditorBase, nsIEditor::EDirection aDirectionAndAmount) {
@@ -114,6 +164,14 @@ AutoRangeArray::ExtendAnchorFocusRangeFor(
   RefPtr<nsFrameSelection> frameSelection = selection->GetFrameSelection();
   if (NS_WARN_IF(!frameSelection)) {
     return Err(NS_ERROR_NOT_INITIALIZED);
+  }
+
+  RefPtr<Element> editingHost;
+  if (aEditorBase.IsHTMLEditor()) {
+    editingHost = aEditorBase.AsHTMLEditor()->GetActiveEditingHost();
+    if (!editingHost) {
+      return Err(NS_ERROR_FAILURE);
+    }
   }
 
   Result<RefPtr<nsRange>, nsresult> result(NS_ERROR_UNEXPECTED);
@@ -241,6 +299,12 @@ AutoRangeArray::ExtendAnchorFocusRangeFor(
   if (!extendedRange || NS_WARN_IF(!extendedRange->IsPositioned())) {
     NS_WARNING("Failed to extend the range, but ignored");
     return directionAndAmountResult;
+  }
+
+  
+  if (aEditorBase.IsHTMLEditor() &&
+      !AutoRangeArray::IsEditableRange(*extendedRange, *editingHost)) {
+    return aDirectionAndAmount;
   }
 
   if (NS_WARN_IF(!frameSelection->IsValidSelectionPoint(

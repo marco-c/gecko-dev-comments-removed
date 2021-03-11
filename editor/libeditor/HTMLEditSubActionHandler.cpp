@@ -1247,6 +1247,19 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
   if (NS_WARN_IF(!editingHost)) {
     return EditActionIgnored(NS_ERROR_FAILURE);
   }
+  
+  
+  
+  
+  
+  
+  if (editingHost->GetParentElement() &&
+      HTMLEditUtils::IsSimplyEditableNode(*editingHost->GetParentElement()) &&
+      (!atStartOfSelection.IsInContentNode() ||
+       !nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+           atStartOfSelection.ContainerAsContent(), editingHost))) {
+    return EditActionHandled(NS_ERROR_EDITOR_NO_EDITABLE_RANGE);
+  }
 
   
   
