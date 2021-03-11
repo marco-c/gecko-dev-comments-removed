@@ -32,28 +32,24 @@ class RttValue : public NativeObject {
     Size = 1,       
     Proto = 2,      
     TraceList = 3,  
+    Parent = 4,     
     
-    SlotCount = 4,
+    SlotCount = 5,
   };
 
   static RttValue* createFromHandle(JSContext* cx, wasm::TypeHandle handle);
+  static RttValue* createFromParent(JSContext* cx,
+                                    js::Handle<RttValue*> parent);
 
-  TypedProto& typedProto() const {
-    return getReservedSlot(Slot::Proto).toObject().as<TypedProto>();
+  wasm::TypeHandle handle() const {
+    return wasm::TypeHandle(uint32_t(getReservedSlot(Slot::Handle).toInt32()));
   }
 
   size_t size() const { return getReservedSlot(Slot::Size).toInt32(); }
 
-  const wasm::TypeDef& getType(JSContext* cx) const;
-
-  [[nodiscard]] bool lookupProperty(JSContext* cx, jsid id, uint32_t* offset,
-                                    wasm::ValType* type);
-  [[nodiscard]] bool hasProperty(JSContext* cx, jsid id) {
-    uint32_t offset;
-    wasm::ValType type;
-    return lookupProperty(cx, id, &offset, &type);
+  TypedProto& typedProto() const {
+    return getReservedSlot(Slot::Proto).toObject().as<TypedProto>();
   }
-  uint32_t propertyCount(JSContext* cx);
 
   
   
@@ -77,6 +73,21 @@ class RttValue : public NativeObject {
         getFixedSlot(Slot::TraceList).toPrivate());
   }
 
+  RttValue* parent() const {
+    return (RttValue*)getReservedSlot(Slot::Parent).toObjectOrNull();
+  }
+
+  const wasm::TypeDef& getType(JSContext* cx) const;
+
+  [[nodiscard]] bool lookupProperty(JSContext* cx, jsid id, uint32_t* offset,
+                                    wasm::ValType* type);
+  [[nodiscard]] bool hasProperty(JSContext* cx, jsid id) {
+    uint32_t offset;
+    wasm::ValType type;
+    return lookupProperty(cx, id, &offset, &type);
+  }
+  uint32_t propertyCount(JSContext* cx);
+
   void initInstance(JSContext* cx, uint8_t* mem);
   void traceInstance(JSTracer* trace, uint8_t* mem);
 
@@ -84,6 +95,7 @@ class RttValue : public NativeObject {
 };
 
 using HandleRttValue = Handle<RttValue*>;
+using RootedRttValue = Rooted<RttValue*>;
 
 
 class TypedObject : public JSObject {
@@ -141,6 +153,8 @@ class TypedObject : public JSObject {
     return *rttValue_;
   }
 
+  MOZ_MUST_USE bool isRuntimeSubtype(js::Handle<RttValue*> rtt) const;
+
   static JS::Result<TypedObject*, JS::OOM> create(JSContext* cx,
                                                   js::gc::AllocKind kind,
                                                   js::gc::InitialHeap heap,
@@ -171,6 +185,7 @@ class TypedObject : public JSObject {
 };
 
 using HandleTypedObject = Handle<TypedObject*>;
+using RootedTypedObject = Rooted<TypedObject*>;
 
 class OutlineTypedObject : public TypedObject {
   

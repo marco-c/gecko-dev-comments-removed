@@ -80,6 +80,8 @@ extern const SymbolicAddressSignature SASigExceptionNew;
 extern const SymbolicAddressSignature SASigThrowException;
 extern const SymbolicAddressSignature SASigGetLocalExceptionIndex;
 #endif
+extern const SymbolicAddressSignature SASigRefTest;
+extern const SymbolicAddressSignature SASigRttSub;
 
 
 

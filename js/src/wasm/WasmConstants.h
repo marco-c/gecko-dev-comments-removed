@@ -136,6 +136,8 @@ enum class Trap {
   IndirectCallBadSig,
   
   NullPointerDereference,
+  
+  BadCast,
 
   
   
@@ -441,6 +443,12 @@ enum class GcOp {
 
   
   RttCanon = 0x30,
+  RttSub = 0x31,
+
+  
+  RefTest = 0x40,
+  RefCast = 0x41,
+  BrOnCast = 0x42,
 
   Limit
 };
