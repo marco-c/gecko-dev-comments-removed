@@ -417,6 +417,39 @@ var gPlayTests = [
 
   
   
+
+  
+  
+  { name: "bipbop_short_vp8.webm", type: "video/webm", duration: 1.011 },
+
+  
+  
+  {
+    name: "bipbop_short_pixel_metadata_bigger_than_in_stream_vp8.webm",
+    type: "video/webm",
+    duration: 1.011,
+  },
+
+  
+  
+  {
+    name: "bipbop_short_pixel_metadata_narrower_than_in_stream_vp8.webm",
+    type: "video/webm",
+    duration: 1.011,
+  },
+
+  
+  
+  {
+    name: "bipbop_short_pixel_metadata_smaller_than_in_stream_vp8.webm",
+    type: "video/webm",
+    duration: 1.011,
+  },
+
+  
+
+  
+  
   
   { name: "spacestorm-1000Hz-100ms.ogg", type: "audio/ogg", duration: 0.099 },
 
