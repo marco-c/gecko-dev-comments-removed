@@ -431,13 +431,20 @@ void MacroAssembler::branchIfNotFunctionIsNonBuiltinCtor(Register fun,
                                                          Label* label) {
   
   
+
+  static_assert(JSFunction::offsetOfNargs() % sizeof(uint32_t) == 0);
+  static_assert(JSFunction::offsetOfFlags() == JSFunction::offsetOfNargs() + 2);
+
   
-  constexpr uint32_t mask = FunctionFlags::BASESCRIPT |
-                            FunctionFlags::SELF_HOSTED |
-                            FunctionFlags::CONSTRUCTOR;
-  constexpr uint32_t expected =
-      FunctionFlags::BASESCRIPT | FunctionFlags::CONSTRUCTOR;
-  load16ZeroExtend(Address(fun, JSFunction::offsetOfFlags()), scratch);
+  
+  
+  constexpr int32_t mask =
+      Imm32_16Adj(FunctionFlags::BASESCRIPT | FunctionFlags::SELF_HOSTED |
+                  FunctionFlags::CONSTRUCTOR);
+  constexpr int32_t expected =
+      Imm32_16Adj(FunctionFlags::BASESCRIPT | FunctionFlags::CONSTRUCTOR);
+
+  load32(Address(fun, JSFunction::offsetOfNargs()), scratch);
   and32(Imm32(mask), scratch);
   branch32(Assembler::NotEqual, scratch, Imm32(expected), label);
 }
@@ -511,8 +518,10 @@ void MacroAssembler::branchFunctionKind(Condition cond,
                                         Label* label) {
   
   
-  MOZ_ASSERT(JSFunction::offsetOfNargs() % sizeof(uint32_t) == 0);
-  MOZ_ASSERT(JSFunction::offsetOfFlags() == JSFunction::offsetOfNargs() + 2);
+
+  static_assert(JSFunction::offsetOfNargs() % sizeof(uint32_t) == 0);
+  static_assert(JSFunction::offsetOfFlags() == JSFunction::offsetOfNargs() + 2);
+
   Address address(fun, JSFunction::offsetOfNargs());
   int32_t mask = Imm32_16Adj(FunctionFlags::FUNCTION_KIND_MASK);
   int32_t bit = Imm32_16Adj(kind << FunctionFlags::FUNCTION_KIND_SHIFT);
