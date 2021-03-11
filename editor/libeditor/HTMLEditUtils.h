@@ -9,6 +9,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EditorDOMPoint.h"
 #include "mozilla/EditorUtils.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/AncestorIterator.h"
@@ -309,22 +310,30 @@ class HTMLEditUtils final {
 
 
 
-
-  enum class ChildBlockBoundary {
+  enum class LeafNodeType {
     
-    Ignore,
+    OnlyLeafNode,
     
-    TreatAsLeaf,
+    
+    LeafNodeOrChildBlock,
+    
+    
+    LeafNodeOrNonEditableNode,
   };
+  using LeafNodeTypes = EnumSet<LeafNodeType>;
   static nsIContent* GetLastLeafChild(nsINode& aNode,
-                                      ChildBlockBoundary aChildBlockBoundary) {
+                                      const LeafNodeTypes& aLeafNodeTypes) {
     for (nsIContent* content = aNode.GetLastChild(); content;
          content = content->GetLastChild()) {
-      if (aChildBlockBoundary == ChildBlockBoundary::TreatAsLeaf &&
+      if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrChildBlock) &&
           HTMLEditUtils::IsBlockElement(*content)) {
         return content;
       }
       if (!content->HasChildren()) {
+        return content;
+      }
+      if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
+          aNode.IsEditable() && !content->IsEditable()) {
         return content;
       }
     }
@@ -337,14 +346,18 @@ class HTMLEditUtils final {
 
 
   static nsIContent* GetFirstLeafChild(nsINode& aNode,
-                                       ChildBlockBoundary aChildBlockBoundary) {
+                                       const LeafNodeTypes& aLeafNodeTypes) {
     for (nsIContent* content = aNode.GetFirstChild(); content;
          content = content->GetFirstChild()) {
-      if (aChildBlockBoundary == ChildBlockBoundary::TreatAsLeaf &&
+      if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrChildBlock) &&
           HTMLEditUtils::IsBlockElement(*content)) {
         return content;
       }
       if (!content->HasChildren()) {
+        return content;
+      }
+      if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
+          aNode.IsEditable() && !content->IsEditable()) {
         return content;
       }
     }
@@ -352,6 +365,7 @@ class HTMLEditUtils final {
   }
 
   
+
 
 
 
@@ -367,6 +381,7 @@ class HTMLEditUtils final {
 
   static nsIContent* GetNextLeafContentOrNextBlockElement(
       const nsIContent& aStartContent, const nsIContent& aCurrentBlock,
+      const LeafNodeTypes& aLeafNodeTypes,
       const Element* aAncestorLimiter = nullptr) {
     if (&aStartContent == aAncestorLimiter) {
       return nullptr;
@@ -402,10 +417,14 @@ class HTMLEditUtils final {
     if (HTMLEditUtils::IsBlockElement(*nextContent)) {
       return nextContent;
     }
+    if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
+        aStartContent.IsEditable() && !nextContent->IsEditable()) {
+      return nextContent;
+    }
     if (HTMLEditUtils::IsContainerNode(*nextContent)) {
       
-      if (nsIContent* child = HTMLEditUtils::GetFirstLeafChild(
-              *nextContent, ChildBlockBoundary::Ignore)) {
+      if (nsIContent* child =
+              HTMLEditUtils::GetFirstLeafChild(*nextContent, aLeafNodeTypes)) {
         return child;
       }
     }
@@ -420,7 +439,7 @@ class HTMLEditUtils final {
   template <typename PT, typename CT>
   static nsIContent* GetNextLeafContentOrNextBlockElement(
       const EditorDOMPointBase<PT, CT>& aStartPoint,
-      const nsIContent& aCurrentBlock,
+      const nsIContent& aCurrentBlock, const LeafNodeTypes& aLeafNodeTypes,
       const Element* aAncestorLimiter = nullptr) {
     MOZ_ASSERT(aStartPoint.IsSet());
 
@@ -429,11 +448,13 @@ class HTMLEditUtils final {
     }
     if (aStartPoint.IsInTextNode()) {
       return HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-          *aStartPoint.ContainerAsText(), aCurrentBlock, aAncestorLimiter);
+          *aStartPoint.ContainerAsText(), aCurrentBlock, aLeafNodeTypes,
+          aAncestorLimiter);
     }
     if (!HTMLEditUtils::IsContainerNode(*aStartPoint.ContainerAsContent())) {
       return HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-          *aStartPoint.ContainerAsContent(), aCurrentBlock, aAncestorLimiter);
+          *aStartPoint.ContainerAsContent(), aCurrentBlock, aLeafNodeTypes,
+          aAncestorLimiter);
     }
 
     nsCOMPtr<nsIContent> nextContent = aStartPoint.GetChild();
@@ -445,17 +466,23 @@ class HTMLEditUtils final {
 
       
       return HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-          *aStartPoint.ContainerAsContent(), aCurrentBlock, aAncestorLimiter);
+          *aStartPoint.ContainerAsContent(), aCurrentBlock, aLeafNodeTypes,
+          aAncestorLimiter);
     }
 
     
     if (HTMLEditUtils::IsBlockElement(*nextContent)) {
       return nextContent;
     }
+    if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
+        aStartPoint.GetContainer()->IsEditable() &&
+        !nextContent->IsEditable()) {
+      return nextContent;
+    }
     if (HTMLEditUtils::IsContainerNode(*nextContent)) {
       
-      if (nsIContent* child = HTMLEditUtils::GetFirstLeafChild(
-              *nextContent, ChildBlockBoundary::Ignore)) {
+      if (nsIContent* child =
+              HTMLEditUtils::GetFirstLeafChild(*nextContent, aLeafNodeTypes)) {
         return child;
       }
     }
@@ -464,6 +491,7 @@ class HTMLEditUtils final {
   }
 
   
+
 
 
 
@@ -480,6 +508,7 @@ class HTMLEditUtils final {
 
   static nsIContent* GetPreviousLeafContentOrPreviousBlockElement(
       const nsIContent& aStartContent, const nsIContent& aCurrentBlock,
+      const LeafNodeTypes& aLeafNodeTypes,
       const Element* aAncestorLimiter = nullptr) {
     if (&aStartContent == aAncestorLimiter) {
       return nullptr;
@@ -515,10 +544,14 @@ class HTMLEditUtils final {
     if (HTMLEditUtils::IsBlockElement(*previousContent)) {
       return previousContent;
     }
+    if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
+        aStartContent.IsEditable() && !previousContent->IsEditable()) {
+      return previousContent;
+    }
     if (HTMLEditUtils::IsContainerNode(*previousContent)) {
       
-      if (nsIContent* child = HTMLEditUtils::GetLastLeafChild(
-              *previousContent, ChildBlockBoundary::Ignore)) {
+      if (nsIContent* child = HTMLEditUtils::GetLastLeafChild(*previousContent,
+                                                              aLeafNodeTypes)) {
         return child;
       }
     }
@@ -533,7 +566,7 @@ class HTMLEditUtils final {
   template <typename PT, typename CT>
   static nsIContent* GetPreviousLeafContentOrPreviousBlockElement(
       const EditorDOMPointBase<PT, CT>& aStartPoint,
-      const nsIContent& aCurrentBlock,
+      const nsIContent& aCurrentBlock, const LeafNodeTypes& aLeafNodeTypes,
       const Element* aAncestorLimiter = nullptr) {
     MOZ_ASSERT(aStartPoint.IsSet());
 
@@ -542,11 +575,13 @@ class HTMLEditUtils final {
     }
     if (aStartPoint.IsInTextNode()) {
       return HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-          *aStartPoint.ContainerAsText(), aCurrentBlock, aAncestorLimiter);
+          *aStartPoint.ContainerAsText(), aCurrentBlock, aLeafNodeTypes,
+          aAncestorLimiter);
     }
     if (!HTMLEditUtils::IsContainerNode(*aStartPoint.ContainerAsContent())) {
       return HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-          *aStartPoint.ContainerAsContent(), aCurrentBlock, aAncestorLimiter);
+          *aStartPoint.ContainerAsContent(), aCurrentBlock, aLeafNodeTypes,
+          aAncestorLimiter);
     }
 
     if (aStartPoint.IsStartOfContainer()) {
@@ -557,7 +592,8 @@ class HTMLEditUtils final {
 
       
       return HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-          *aStartPoint.ContainerAsContent(), aCurrentBlock, aAncestorLimiter);
+          *aStartPoint.ContainerAsContent(), aCurrentBlock, aLeafNodeTypes,
+          aAncestorLimiter);
     }
 
     nsCOMPtr<nsIContent> previousContent =
@@ -570,10 +606,15 @@ class HTMLEditUtils final {
     if (HTMLEditUtils::IsBlockElement(*previousContent)) {
       return previousContent;
     }
+    if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
+        aStartPoint.GetContainer()->IsEditable() &&
+        !previousContent->IsEditable()) {
+      return previousContent;
+    }
     if (HTMLEditUtils::IsContainerNode(*previousContent)) {
       
-      if (nsIContent* child = HTMLEditUtils::GetLastLeafChild(
-              *previousContent, ChildBlockBoundary::Ignore)) {
+      if (nsIContent* child = HTMLEditUtils::GetLastLeafChild(*previousContent,
+                                                              aLeafNodeTypes)) {
         return child;
       }
     }

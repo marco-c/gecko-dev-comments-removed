@@ -71,7 +71,8 @@ class nsISupports;
 namespace mozilla {
 
 using namespace dom;
-using ChildBlockBoundary = HTMLEditUtils::ChildBlockBoundary;
+using LeafNodeType = HTMLEditUtils::LeafNodeType;
+using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 using StyleDifference = HTMLEditUtils::StyleDifference;
 
 
@@ -2195,7 +2196,8 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
       
       nsIContent* previousContent =
           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-              newCaretPosition, *currentBlock, editingHost);
+              newCaretPosition, *currentBlock,
+              {LeafNodeType::LeafNodeOrNonEditableNode}, editingHost);
       if (previousContent && !HTMLEditUtils::IsBlockElement(*previousContent)) {
         newCaretPosition =
             previousContent->IsText() ||
@@ -2207,7 +2209,9 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
       
       else if (nsIContent* nextContent =
                    HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-                       newCaretPosition, *currentBlock, editingHost)) {
+                       newCaretPosition, *currentBlock,
+                       {LeafNodeType::LeafNodeOrNonEditableNode},
+                       editingHost)) {
         newCaretPosition = nextContent->IsText() ||
                                    HTMLEditUtils::IsContainerNode(*nextContent)
                                ? EditorDOMPoint(nextContent, 0)
@@ -5344,7 +5348,7 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
       
       nsIContent* child = HTMLEditUtils::GetLastLeafChild(
           *wsScannerAtEnd.StartReasonOtherBlockElementPtr(),
-          ChildBlockBoundary::TreatAsLeaf);
+          {LeafNodeType::LeafNodeOrChildBlock});
       if (child) {
         newEndPoint.SetAfter(child);
       }
@@ -5378,7 +5382,7 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
       
       nsINode* child = HTMLEditUtils::GetFirstLeafChild(
           *wsScannerAtStart.EndReasonOtherBlockElementPtr(),
-          ChildBlockBoundary::TreatAsLeaf);
+          {LeafNodeType::LeafNodeOrChildBlock});
       if (child) {
         newStartPoint.Set(child);
       }
@@ -6766,7 +6770,7 @@ nsresult HTMLEditor::SplitParagraph(
   
   
   nsCOMPtr<nsIContent> child = HTMLEditUtils::GetFirstLeafChild(
-      aParentDivOrP, ChildBlockBoundary::TreatAsLeaf);
+      aParentDivOrP, {LeafNodeType::LeafNodeOrChildBlock});
   if (child && (child->IsText() || HTMLEditUtils::IsContainerNode(*child))) {
     nsresult rv = CollapseSelectionToStartOf(*child);
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {

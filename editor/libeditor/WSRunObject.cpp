@@ -36,7 +36,8 @@ namespace mozilla {
 
 using namespace dom;
 
-using ChildBlockBoundary = HTMLEditUtils::ChildBlockBoundary;
+using LeafNodeType = HTMLEditUtils::LeafNodeType;
+using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 
 const char16_t kNBSP = 160;
 
@@ -1259,6 +1260,12 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
       TextFragmentDataAtStartRef().VisibleWhiteSpacesDataRef();
   if (visibleWhiteSpaces.IsInitialized() &&
       visibleWhiteSpaces.StartRef().IsBefore(aPoint)) {
+    
+    
+    
+    if (aPoint.GetChild() && !aPoint.GetChild()->IsEditable()) {
+      return WSScanResult(aPoint.GetChild(), WSType::SpecialContent);
+    }
     EditorDOMPointInText atPreviousChar = GetPreviousEditableCharPoint(aPoint);
     
     if (atPreviousChar.IsSet() && !atPreviousChar.IsContainerEmpty()) {
@@ -1297,6 +1304,12 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
       TextFragmentDataAtStartRef().VisibleWhiteSpacesDataRef();
   if (visibleWhiteSpaces.IsInitialized() &&
       aPoint.EqualsOrIsBefore(visibleWhiteSpaces.EndRef())) {
+    
+    
+    
+    if (aPoint.GetChild() && !aPoint.GetChild()->IsEditable()) {
+      return WSScanResult(aPoint.GetChild(), WSType::SpecialContent);
+    }
     EditorDOMPointInText atNextChar = GetInclusiveNextEditableCharPoint(aPoint);
     
     if (atNextChar.IsSet() && !atNextChar.IsContainerEmpty()) {
@@ -1448,7 +1461,7 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
   nsIContent* previousLeafContentOrBlock =
       HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
           aPoint, aEditableBlockParentOrTopmostEditableInlineContent,
-          aEditingHost);
+          {LeafNodeType::LeafNodeOrNonEditableNode}, aEditingHost);
   if (!previousLeafContentOrBlock) {
     
     
@@ -1580,7 +1593,7 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
   nsIContent* nextLeafContentOrBlock =
       HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
           aPoint, aEditableBlockParentOrTopmostEditableInlineElement,
-          aEditingHost);
+          {LeafNodeType::LeafNodeOrNonEditableNode}, aEditingHost);
   if (!nextLeafContentOrBlock) {
     
     
@@ -2280,7 +2293,7 @@ WSRunScanner::TextFragmentData::GetInclusiveNextEditableCharPoint(
           aPoint.CanContainerHaveChildren() ? aPoint.GetChild() : nullptr) {
     nsIContent* leafContent = child->HasChildren()
                                   ? HTMLEditUtils::GetFirstLeafChild(
-                                        *child, ChildBlockBoundary::Ignore)
+                                        *child, {LeafNodeType::OnlyLeafNode})
                                   : child;
     if (NS_WARN_IF(!leafContent)) {
       return EditorDOMPointInText();
@@ -2326,11 +2339,11 @@ WSRunScanner::TextFragmentData::GetInclusiveNextEditableCharPoint(
            HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
                *point.ContainerAsContent(),
                *editableBlockParentOrTopmostEditableInlineContent,
-               mEditingHost);
+               {LeafNodeType::LeafNodeOrNonEditableNode}, mEditingHost);
        nextContent;
        nextContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
            *nextContent, *editableBlockParentOrTopmostEditableInlineContent,
-           mEditingHost)) {
+           {LeafNodeType::LeafNodeOrNonEditableNode}, mEditingHost)) {
     if (!nextContent->IsText() || !nextContent->IsEditable()) {
       if (nextContent == GetEndReasonContent()) {
         break;  
@@ -2360,7 +2373,7 @@ WSRunScanner::TextFragmentData::GetPreviousEditableCharPoint(
     nsIContent* leafContent =
         previousChild->HasChildren()
             ? HTMLEditUtils::GetLastLeafChild(*previousChild,
-                                              ChildBlockBoundary::Ignore)
+                                              {LeafNodeType::OnlyLeafNode})
             : previousChild;
     if (NS_WARN_IF(!leafContent)) {
       return EditorDOMPointInText();
@@ -2407,13 +2420,13 @@ WSRunScanner::TextFragmentData::GetPreviousEditableCharPoint(
            HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
                *point.ContainerAsContent(),
                *editableBlockParentOrTopmostEditableInlineContent,
-               mEditingHost);
+               {LeafNodeType::LeafNodeOrNonEditableNode}, mEditingHost);
        previousContent;
        previousContent =
            HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
                *previousContent,
                *editableBlockParentOrTopmostEditableInlineContent,
-               mEditingHost)) {
+               {LeafNodeType::LeafNodeOrNonEditableNode}, mEditingHost)) {
     if (!previousContent->IsText() || !previousContent->IsEditable()) {
       if (previousContent == GetStartReasonContent()) {
         break;  

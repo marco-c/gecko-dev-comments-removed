@@ -47,7 +47,8 @@ namespace mozilla {
 
 using namespace dom;
 
-using ChildBlockBoundary = HTMLEditUtils::ChildBlockBoundary;
+using LeafNodeType = HTMLEditUtils::LeafNodeType;
+using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 
 nsresult HTMLEditor::SetInlinePropertyAsAction(nsAtom& aProperty,
                                                nsAtom* aAttribute,
@@ -991,7 +992,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   nsIContent* firstLeafChildOfNextNode = HTMLEditUtils::GetFirstLeafChild(
-      *splitResult.GetNextNode(), ChildBlockBoundary::Ignore);
+      *splitResult.GetNextNode(), {LeafNodeType::OnlyLeafNode});
   EditorDOMPoint atStartOfNextNode(firstLeafChildOfNextNode
                                        ? firstLeafChildOfNextNode
                                        : splitResult.GetNextNode(),
@@ -1050,7 +1051,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   nsIContent* firstLeafChildOfPreviousNode = HTMLEditUtils::GetFirstLeafChild(
       *splitResultAtStartOfNextNode.GetPreviousNode(),
-      ChildBlockBoundary::Ignore);
+      {LeafNodeType::OnlyLeafNode});
   EditorDOMPoint pointToPutCaret(
       firstLeafChildOfPreviousNode
           ? firstLeafChildOfPreviousNode
