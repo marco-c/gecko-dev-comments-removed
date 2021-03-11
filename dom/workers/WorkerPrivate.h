@@ -12,6 +12,7 @@
 #include "ScriptLoader.h"
 #include "js/ContextOptions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/AutoRestore.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Maybe.h"
@@ -1255,6 +1256,19 @@ class WorkerPrivate : public RelativeTimeline {
 
     uint32_t mErrorHandlerRecursionCount;
     uint32_t mNextTimeoutId;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    uint32_t mCurrentTimerNestingLevel;
 
     bool mFrozen;
     bool mTimerRunning;
