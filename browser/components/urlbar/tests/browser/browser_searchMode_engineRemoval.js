@@ -10,9 +10,8 @@
 
 
 add_task(async function activeTab() {
-  let engine = await Services.search.addEngineWithDetails("Test", {
-    template: "http://example.com/?search={searchTerms}",
-  });
+  let extension = await SearchTestUtils.installSearchExtension({}, true);
+  let engine = Services.search.getEngineByName("Example");
   await Services.search.moveEngine(engine, 0);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -25,7 +24,7 @@ add_task(async function activeTab() {
     engineName: engine.name,
     entry: "oneoff",
   });
-  await Services.search.removeEngine(engine);
+  await extension.unload();
   
   await UrlbarTestUtils.assertSearchMode(window, null);
 });
@@ -33,9 +32,8 @@ add_task(async function activeTab() {
 
 
 add_task(async function backgroundTab() {
-  let engine = await Services.search.addEngineWithDetails("Test", {
-    template: "http://example.com/?search={searchTerms}",
-  });
+  let extension = await SearchTestUtils.installSearchExtension({}, true);
+  let engine = Services.search.getEngineByName("Example");
   await Services.search.moveEngine(engine, 0);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -58,7 +56,7 @@ add_task(async function backgroundTab() {
   await BrowserTestUtils.switchTab(gBrowser, tab2);
   
   await UrlbarTestUtils.assertSearchMode(window, null);
-  await Services.search.removeEngine(engine);
+  await extension.unload();
 
   
   await BrowserTestUtils.switchTab(gBrowser, tab1);
@@ -69,9 +67,8 @@ add_task(async function backgroundTab() {
 
 
 add_task(async function backgroundWindow() {
-  let engine = await Services.search.addEngineWithDetails("Test", {
-    template: "http://example.com/?search={searchTerms}",
-  });
+  let extension = await SearchTestUtils.installSearchExtension({}, true);
+  let engine = Services.search.getEngineByName("Example");
   await Services.search.moveEngine(engine, 0);
 
   let win1 = window;
@@ -94,7 +91,7 @@ add_task(async function backgroundWindow() {
   win2.focus();
   
   await UrlbarTestUtils.assertSearchMode(win2, null);
-  await Services.search.removeEngine(engine);
+  await extension.unload();
 
   
   win1.focus();

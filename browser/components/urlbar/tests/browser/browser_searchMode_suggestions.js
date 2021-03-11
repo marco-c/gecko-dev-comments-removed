@@ -10,12 +10,9 @@
 const DEFAULT_ENGINE_NAME = "Test";
 const SUGGESTIONS_ENGINE_NAME = "searchSuggestionEngine.xml";
 const MANY_SUGGESTIONS_ENGINE_NAME = "searchSuggestionEngineMany.xml";
-const MAX_HISTORICAL_SEARCH_SUGGESTIONS = UrlbarPrefs.get(
-  "maxHistoricalSearchSuggestions"
-);
+const MAX_RESULT_COUNT = UrlbarPrefs.get("maxRichResults");
 
 let suggestionsEngine;
-let defaultEngine;
 let expectedFormHistoryResults = [];
 
 add_task(async function setup() {
@@ -24,13 +21,13 @@ add_task(async function setup() {
   );
 
   let oldDefaultEngine = await Services.search.getDefault();
-  defaultEngine = await Services.search.addEngineWithDetails(
-    DEFAULT_ENGINE_NAME,
-    {
-      template: "http://example.com/?search={searchTerms}",
-    }
+  await SearchTestUtils.installSearchExtension({
+    name: DEFAULT_ENGINE_NAME,
+    keyword: "@test",
+  });
+  await Services.search.setDefault(
+    Services.search.getEngineByName(DEFAULT_ENGINE_NAME)
   );
-  await Services.search.setDefault(defaultEngine);
   await Services.search.moveEngine(suggestionsEngine, 0);
 
   async function cleanup() {
@@ -41,9 +38,7 @@ add_task(async function setup() {
   registerCleanupFunction(cleanup);
 
   
-  
-  
-  for (let i = 0; i < MAX_HISTORICAL_SEARCH_SUGGESTIONS + 1; i++) {
+  for (let i = 0; i < MAX_RESULT_COUNT; i++) {
     let value = `hello formHistory ${i}`;
     await UrlbarTestUtils.formHistory.add([
       { value, source: suggestionsEngine.name },
@@ -67,7 +62,6 @@ add_task(async function setup() {
 
   registerCleanupFunction(async () => {
     await Services.search.setDefault(oldDefaultEngine);
-    await Services.search.removeEngine(defaultEngine);
     await UrlbarTestUtils.formHistory.clear();
   });
 
@@ -134,7 +128,7 @@ add_task(async function emptySearch_withRestyledHistory() {
           engine: suggestionsEngine.name,
         },
       },
-      ...expectedFormHistoryResults,
+      ...expectedFormHistoryResults.slice(0, MAX_RESULT_COUNT - 3),
       {
         heuristic: false,
         type: UrlbarUtils.RESULT_TYPE.URL,
@@ -234,7 +228,7 @@ add_task(async function emptySearch_behavior() {
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         searchParams: {
           query: " ",
-          engine: defaultEngine.name,
+          engine: DEFAULT_ENGINE_NAME,
         },
       },
       {
@@ -322,7 +316,7 @@ add_task(async function nonEmptySearch() {
           engine: suggestionsEngine.name,
         },
       },
-      ...expectedFormHistoryResults.slice(0, 2),
+      ...expectedFormHistoryResults.slice(0, MAX_RESULT_COUNT - 3),
       {
         heuristic: false,
         type: UrlbarUtils.RESULT_TYPE.SEARCH,
@@ -343,7 +337,6 @@ add_task(async function nonEmptySearch() {
           engine: suggestionsEngine.name,
         },
       },
-      ...expectedFormHistoryResults.slice(2, 4),
     ]);
 
     await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
@@ -450,6 +443,9 @@ add_task(async function nonEmptySearch_withHistory() {
       makeSuggestionResult("bar"),
       makeSuggestionResult("1"),
       makeSuggestionResult("2"),
+      makeSuggestionResult("3"),
+      makeSuggestionResult("4"),
+      makeSuggestionResult("5"),
       {
         heuristic: false,
         type: UrlbarUtils.RESULT_TYPE.URL,
@@ -462,9 +458,6 @@ add_task(async function nonEmptySearch_withHistory() {
         source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         url: `http://mochi.test/${query}`,
       },
-      makeSuggestionResult("3"),
-      makeSuggestionResult("4"),
-      makeSuggestionResult("5"),
     ]);
 
     await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
