@@ -371,9 +371,6 @@ std::ostream& operator<<(std::ostream& aStream, const nsReflowStatus& aStatus);
 
 
 
-#define NS_FRAME_OVERFLOW_DELTA_MAX 0xfe
-
-
 #define NS_FRAME_OVERFLOW_NONE 0x00000000
 
 
@@ -5064,6 +5061,9 @@ class nsIFrame : public nsQueryFrame {
   
   
   struct InkOverflowDeltas {
+    
+    static constexpr uint8_t kMax = 0xfe;
+
     uint8_t mLeft;
     uint8_t mTop;
     uint8_t mRight;

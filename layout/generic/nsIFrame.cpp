@@ -9146,8 +9146,8 @@ bool nsIFrame::SetOverflowAreas(const OverflowAreas& aOverflowAreas) {
       b = vis.YMost() - mRect.height;  
   if (aOverflowAreas.ScrollableOverflow().IsEqualEdges(
           nsRect(nsPoint(0, 0), GetSize())) &&
-      l <= NS_FRAME_OVERFLOW_DELTA_MAX && t <= NS_FRAME_OVERFLOW_DELTA_MAX &&
-      r <= NS_FRAME_OVERFLOW_DELTA_MAX && b <= NS_FRAME_OVERFLOW_DELTA_MAX &&
+      l <= InkOverflowDeltas::kMax && t <= InkOverflowDeltas::kMax &&
+      r <= InkOverflowDeltas::kMax && b <= InkOverflowDeltas::kMax &&
       
       
       
