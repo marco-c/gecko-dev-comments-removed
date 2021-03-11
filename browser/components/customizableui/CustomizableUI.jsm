@@ -1824,18 +1824,12 @@ var CustomizableUIInternal = {
       if (aWidget.tabSpecific) {
         node.setAttribute("tabspecific", aWidget.tabSpecific);
       }
-      node.setAttribute("label", this.getLocalizedProperty(aWidget, "label"));
-      if (button != node) {
-        button.setAttribute("label", node.getAttribute("label"));
-      }
 
-      let additionalTooltipArguments = [];
+      let shortcut;
       if (aWidget.shortcutId) {
         let keyEl = aDocument.getElementById(aWidget.shortcutId);
         if (keyEl) {
-          additionalTooltipArguments.push(
-            ShortcutUtils.prettifyShortcut(keyEl)
-          );
+          shortcut = ShortcutUtils.prettifyShortcut(keyEl);
         } else {
           log.error(
             "Key element with id '" +
@@ -1847,15 +1841,27 @@ var CustomizableUIInternal = {
         }
       }
 
-      let tooltip = this.getLocalizedProperty(
-        aWidget,
-        "tooltiptext",
-        additionalTooltipArguments
-      );
-      if (tooltip) {
-        node.setAttribute("tooltiptext", tooltip);
+      if (aWidget.l10nId) {
+        node.setAttribute("data-l10n-id", aWidget.l10nId);
+        if (shortcut) {
+          node.setAttribute("data-l10n-args", JSON.stringify({ shortcut }));
+        }
+      } else {
+        node.setAttribute("label", this.getLocalizedProperty(aWidget, "label"));
         if (button != node) {
-          button.setAttribute("tooltiptext", tooltip);
+          button.setAttribute("label", node.getAttribute("label"));
+        }
+
+        let tooltip = this.getLocalizedProperty(
+          aWidget,
+          "tooltiptext",
+          shortcut ? [shortcut] : []
+        );
+        if (tooltip) {
+          node.setAttribute("tooltiptext", tooltip);
+          if (button != node) {
+            button.setAttribute("tooltiptext", tooltip);
+          }
         }
       }
 
@@ -2866,6 +2872,7 @@ var CustomizableUIInternal = {
       shortcutId: null,
       tabSpecific: false,
       tooltiptext: null,
+      l10nId: null,
       showInPrivateBrowsing: true,
       _introducedInVersion: -1,
     };
@@ -2895,7 +2902,7 @@ var CustomizableUIInternal = {
       widget[prop] = aData[prop];
     }
 
-    const kOptStringProps = ["label", "tooltiptext", "shortcutId"];
+    const kOptStringProps = ["l10nId", "label", "tooltiptext", "shortcutId"];
     for (let prop of kOptStringProps) {
       if (typeof aData[prop] == "string") {
         widget[prop] = aData[prop];
@@ -3985,6 +3992,11 @@ var CustomizableUI = {
 
 
 
+
+
+
+
+
   createWidget(aProperties) {
     return CustomizableUIInternal.wrapWidget(
       CustomizableUIInternal.createWidget(aProperties)
@@ -4328,6 +4340,8 @@ var CustomizableUI = {
   },
 
   
+
+
 
 
 
