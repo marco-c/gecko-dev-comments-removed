@@ -2534,6 +2534,11 @@ JitCode* JitRealm::generateRegExpMatcherStub(JSContext* cx) {
                  ImmWord(0), &oolEntry);
 
   
+  masm.branchTest32(Assembler::NonZero,
+                    Address(shared, RegExpShared::offsetOfFlags()),
+                    Imm32(int32_t(JS::RegExpFlag::HasIndices)), &oolEntry);
+
+  
   Register object = temp1;
   Label matchResultFallback, matchResultJoin;
   masm.createGCObject(object, temp2, templateObj, gc::DefaultHeap,

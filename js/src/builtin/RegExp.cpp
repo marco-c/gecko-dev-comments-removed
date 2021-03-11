@@ -41,6 +41,20 @@ using JS::RegExpFlags;
 
 
 
+static PlainObject* CreateGroupsObject(JSContext* cx,
+                                       HandlePlainObject groupsTemplate) {
+  if (groupsTemplate->inDictionaryMode()) {
+    return NewObjectWithGivenProto<PlainObject>(cx, nullptr);
+  }
+
+  PlainObject* result;
+  JS_TRY_VAR_OR_RETURN_NULL(
+      cx, result, PlainObject::createWithTemplate(cx, groupsTemplate));
+  return result;
+}
+
+
+
 
 
 bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
@@ -60,10 +74,16 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
 
 
 
+
+  bool hasIndices = re->hasIndices();
+
   
   
+  RegExpRealm::ResultTemplateKind kind =
+      hasIndices ? RegExpRealm::ResultTemplateKind::WithIndices
+                 : RegExpRealm::ResultTemplateKind::Normal;
   ArrayObject* templateObject =
-      cx->realm()->regExps.getOrCreateMatchResultTemplateObject(cx);
+      cx->realm()->regExps.getOrCreateMatchResultTemplateObject(cx, kind);
   if (!templateObject) {
     return false;
   }
@@ -77,20 +97,6 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
                                 cx, numPairs, templateObject));
   if (!arr) {
     return false;
-  }
-
-  
-  RootedPlainObject groups(cx);
-  bool groupsInDictionaryMode = false;
-  if (re->numNamedCaptures() > 0) {
-    RootedPlainObject groupsTemplate(cx, re->getGroupsTemplate());
-    if (groupsTemplate->inDictionaryMode()) {
-      groups = NewObjectWithGivenProto<PlainObject>(cx, nullptr);
-      groupsInDictionaryMode = true;
-    } else {
-      JS_TRY_VAR_OR_RETURN_FALSE(
-          cx, groups, PlainObject::createWithTemplate(cx, groupsTemplate));
-    }
   }
 
   
@@ -116,15 +122,76 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
   
   
   
-  
-  
-  
-  if (!groupsInDictionaryMode) {
-    for (uint32_t i = 0; i < re->numNamedCaptures(); i++) {
-      uint32_t idx = re->getNamedCaptureIndex(i);
-      groups->setSlot(i, arr->getDenseElement(idx));
+  RootedArrayObject indices(cx);
+  RootedPlainObject indicesGroups(cx);
+  if (hasIndices) {
+    
+    ArrayObject* indicesTemplate =
+        cx->realm()->regExps.getOrCreateMatchResultTemplateObject(
+            cx, RegExpRealm::ResultTemplateKind::Indices);
+    indices =
+        NewDenseFullyAllocatedArrayWithTemplate(cx, numPairs, indicesTemplate);
+    if (!indices) {
+      return false;
     }
-  } else {
+
+    
+    if (re->numNamedCaptures() > 0) {
+      RootedPlainObject groupsTemplate(cx, re->getGroupsTemplate());
+      indicesGroups = CreateGroupsObject(cx, groupsTemplate);
+      if (!indicesGroups) {
+        return false;
+      }
+      indices->setSlot(RegExpRealm::IndicesGroupsSlot,
+                       ObjectValue(*indicesGroups));
+    } else {
+      indices->setSlot(RegExpRealm::IndicesGroupsSlot, UndefinedValue());
+    }
+
+    
+    for (size_t i = 0; i < numPairs; i++) {
+      const MatchPair& pair = matches[i];
+
+      if (pair.isUndefined()) {
+        
+        MOZ_ASSERT(i != 0);
+        indices->setDenseInitializedLength(i + 1);
+        indices->initDenseElement(i, UndefinedValue());
+      } else {
+        RootedArrayObject indexPair(cx, NewDenseFullyAllocatedArray(cx, 2));
+        if (!indexPair) {
+          return false;
+        }
+        indexPair->setDenseInitializedLength(2);
+        indexPair->initDenseElement(0, Int32Value(pair.start));
+        indexPair->initDenseElement(1, Int32Value(pair.limit));
+
+        indices->setDenseInitializedLength(i + 1);
+        indices->initDenseElement(i, ObjectValue(*indexPair));
+      }
+    }
+  }
+
+  
+  RootedPlainObject groups(cx);
+  bool groupsInDictionaryMode = false;
+  if (re->numNamedCaptures() > 0) {
+    RootedPlainObject groupsTemplate(cx, re->getGroupsTemplate());
+    groupsInDictionaryMode = groupsTemplate->inDictionaryMode();
+    groups = CreateGroupsObject(cx, groupsTemplate);
+    if (!groups) {
+      return false;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (groupsInDictionaryMode) {
     RootedIdVector keys(cx);
     RootedPlainObject groupsTemplate(cx, re->getGroupsTemplate());
     if (!GetPropertyKeys(cx, groupsTemplate, 0, &keys)) {
@@ -139,6 +206,24 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
       val = arr->getDenseElement(idx);
       if (!NativeDefineDataProperty(cx, groups, key, val, JSPROP_ENUMERATE)) {
         return false;
+      }
+      
+      if (hasIndices) {
+        val = indices->getDenseElement(idx);
+        if (!NativeDefineDataProperty(cx, indicesGroups, key, val,
+                                      JSPROP_ENUMERATE)) {
+          return false;
+        }
+      }
+    }
+  } else {
+    for (uint32_t i = 0; i < re->numNamedCaptures(); i++) {
+      uint32_t idx = re->getNamedCaptureIndex(i);
+      groups->setSlot(i, arr->getDenseElement(idx));
+
+      
+      if (hasIndices) {
+        indicesGroups->setSlot(i, indices->getDenseElement(idx));
       }
     }
   }
@@ -156,6 +241,13 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
   
   arr->setSlot(RegExpRealm::MatchResultObjectGroupsSlot,
                groups ? ObjectValue(*groups) : UndefinedValue());
+
+  
+  
+  if (re->hasIndices()) {
+    arr->setSlot(RegExpRealm::MatchResultObjectIndicesSlot,
+                 ObjectValue(*indices));
+  }
 
 #ifdef DEBUG
   RootedValue test(cx);
