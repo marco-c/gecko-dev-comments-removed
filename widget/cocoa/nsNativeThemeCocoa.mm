@@ -147,21 +147,12 @@ static void DrawFocusRingForCellIfNeeded(NSCell* aCell, NSRect aWithFrame, NSVie
 }
 
 static bool FocusIsDrawnByDrawWithFrame(NSCell* aCell) {
-#if defined(MAC_OS_X_VERSION_10_8) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_8
   
   
   
   
   
   return false;
-#else
-  
-  
-  
-  
-  return
-      [aCell isKindOfClass:[RadioButtonCell class]] || [aCell isKindOfClass:[CheckboxCell class]];
-#endif
 }
 
 static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame, NSView* aInView) {
