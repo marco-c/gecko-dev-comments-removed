@@ -74,23 +74,27 @@ void APZEventResult::SetStatusAsConsumeDoDefaultWithTargetConfirmationFlags(
     const AsyncPanZoomController& aTarget) {
   mStatus = nsEventStatus_eConsumeDoDefault;
 
-  if (!aTarget.IsRootContent() &&
-      aBlock.GetOverscrollHandoffChain()->ScrollingDownWillMoveDynamicToolbar(
-          &aTarget)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    mHandledResult =
-        aFlags.mDispatchToContent
-            ? Nothing()
-            : Some(APZHandledResult{APZHandledPlace::HandledByRoot, &aTarget});
+  if (!aTarget.IsRootContent()) {
+    auto [result, rootApzc] =
+        aBlock.GetOverscrollHandoffChain()->ScrollingDownWillMoveDynamicToolbar(
+            &aTarget);
+    if (result) {
+      MOZ_ASSERT(rootApzc && rootApzc->IsRootContent());
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      mHandledResult = aFlags.mDispatchToContent
+                           ? Nothing()
+                           : Some(APZHandledResult{
+                                 APZHandledPlace::HandledByRoot, rootApzc});
+    }
   }
 }
 
@@ -270,20 +274,10 @@ APZHandledResult::APZHandledResult(APZHandledPlace aPlace,
       }
       break;
     case APZHandledPlace::HandledByRoot: {
-      
-      
-      
-      
-      
-      const AsyncPanZoomController* target = aTarget;
-      while (target && !target->IsRootContent()) {
-        target = target->GetParent();
-      }
-
-      MOZ_ASSERT(target && target->IsRootContent());
-      if (target) {
-        mScrollableDirections = target->ScrollableDirections();
-        mOverscrollDirections = target->GetAllowedHandoffDirections();
+      MOZ_ASSERT(aTarget->IsRootContent());
+      if (aTarget) {
+        mScrollableDirections = aTarget->ScrollableDirections();
+        mOverscrollDirections = aTarget->GetAllowedHandoffDirections();
       }
       break;
     }

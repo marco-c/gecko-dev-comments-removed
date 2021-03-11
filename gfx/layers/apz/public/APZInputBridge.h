@@ -43,6 +43,14 @@ struct APZHandledResult {
   ScrollDirections mOverscrollDirections = ScrollDirections();
 
   APZHandledResult() = default;
+  
+  
+  
+  
+  
+  
+  
+  
   APZHandledResult(APZHandledPlace aPlace,
                    const AsyncPanZoomController* aTarget);
   APZHandledResult(APZHandledPlace aPlace, SideBits aScrollableDirections,
