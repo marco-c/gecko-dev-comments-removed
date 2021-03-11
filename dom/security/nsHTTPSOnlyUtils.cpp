@@ -17,7 +17,6 @@
 #include "nsIHttpsOnlyModePermission.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
-#include "nsIRedirectHistoryEntry.h"
 #include "nsIScriptError.h"
 #include "prnetdb.h"
 
@@ -204,84 +203,6 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeWebSocket(nsIURI* aURI,
                                        nsIScriptError::warningFlag, aLoadInfo,
                                        aURI);
   return true;
-}
-
-
-bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(nsIURI* aURI,
-                                                     nsILoadInfo* aLoadInfo) {
-  
-  bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
-    return false;
-  }
-
-  
-  
-  if (!mozilla::StaticPrefs::
-          dom_security_https_only_mode_break_upgrade_downgrade_endless_loop()) {
-    return false;
-  }
-
-  
-  if (aLoadInfo->GetExternalContentPolicyType() !=
-      ExtContentPolicy::TYPE_DOCUMENT) {
-    return false;
-  }
-
-  
-  uint32_t httpsOnlyStatus = aLoadInfo->GetHttpsOnlyStatus();
-  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
-    return false;
-  }
-
-  
-  
-  if (aLoadInfo->GetHasValidUserGestureActivation()) {
-    return false;
-  }
-
-  
-  
-  if (!aURI->SchemeIs("http")) {
-    return false;
-  }
-
-  nsAutoCString uriHost;
-  aURI->GetAsciiHost(uriHost);
-
-  
-  
-  
-  
-  
-  
-  if (!aLoadInfo->RedirectChain().IsEmpty()) {
-    nsCOMPtr<nsIPrincipal> redirectPrincipal;
-    for (nsIRedirectHistoryEntry* entry : aLoadInfo->RedirectChain()) {
-      entry->GetPrincipal(getter_AddRefs(redirectPrincipal));
-      if (redirectPrincipal && redirectPrincipal->SchemeIs("https")) {
-        nsAutoCString redirectHost;
-        redirectPrincipal->GetAsciiHost(redirectHost);
-        if (uriHost.Equals(redirectHost)) {
-          return true;
-        }
-      }
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
-  if (!triggeringPrincipal->SchemeIs("https")) {
-    return false;
-  }
-  nsAutoCString triggeringHost;
-  triggeringPrincipal->GetAsciiHost(triggeringHost);
-  return uriHost.Equals(triggeringHost);
 }
 
 
