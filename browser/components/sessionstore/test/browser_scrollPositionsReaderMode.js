@@ -19,11 +19,7 @@ requestLongerTimeout(2);
 
 
 add_task(async function test_scroll_background_about_reader_tabs() {
-  await pushPrefs(
-    ["browser.sessionstore.restore_on_demand", true],
-    
-    ["dom.visualviewport.enabled", true]
-  );
+  pushPrefs(["browser.sessionstore.restore_on_demand", true]);
 
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
   let tab = BrowserTestUtils.addTab(newWin.gBrowser, READER_MODE_URL);

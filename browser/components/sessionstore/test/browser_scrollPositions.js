@@ -33,9 +33,6 @@ function getScrollPosition(bc) {
 
 
 add_task(async function test_scroll() {
-  
-  await pushPrefs(["dom.visualviewport.enabled", true]);
-
   let tab = BrowserTestUtils.addTab(gBrowser, URL);
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
@@ -86,9 +83,6 @@ add_task(async function test_scroll() {
 
 
 add_task(async function test_scroll_nested() {
-  
-  await pushPrefs(["dom.visualviewport.enabled", true]);
-
   let tab = BrowserTestUtils.addTab(gBrowser, URL_FRAMESET);
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
@@ -161,11 +155,7 @@ add_task(async function test_scroll_nested() {
 
 
 add_task(async function test_scroll_background_tabs() {
-  await pushPrefs(
-    ["browser.sessionstore.restore_on_demand", true],
-    
-    ["dom.visualviewport.enabled", true]
-  );
+  pushPrefs(["browser.sessionstore.restore_on_demand", true]);
 
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
   let tab = BrowserTestUtils.addTab(newWin.gBrowser, URL);
