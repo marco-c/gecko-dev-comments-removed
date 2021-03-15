@@ -9436,33 +9436,84 @@ TabModalPromptBox.prototype = {
 
 var gDialogBox = {
   _dialog: null,
+  _queued: [],
+
+  
+  
+  
+  
+  
+  
+  
+  
+  _didCloseHTMLDialog: null,
+  
+  
+  
+  _didOpenHTMLDialog: false,
 
   get isOpen() {
     return !!this._dialog;
   },
 
   async open(uri, args) {
+    
+    
+    if (this.isOpen) {
+      return new Promise((resolve, reject) => {
+        this._queued.push({ resolve, reject, uri, args });
+      });
+    }
+    
+    this._didOpenHTMLDialog = false;
+    let haveClosedPromise = new Promise(resolve => {
+      this._didCloseHTMLDialog = resolve;
+    });
     try {
       await this._open(uri, args);
     } catch (ex) {
       Cu.reportError(ex);
     } finally {
       let dialog = document.getElementById("window-modal-dialog");
-      dialog.close();
+      if (dialog.open) {
+        dialog.close();
+      }
+      
+      
+      if (this._didOpenHTMLDialog) {
+        await haveClosedPromise;
+      }
       dialog.style.visibility = "hidden";
       dialog.style.height = "0";
       dialog.style.width = "0";
       document.documentElement.removeAttribute("window-modal-open");
       dialog.removeEventListener("dialogopen", this);
+      dialog.removeEventListener("close", this);
       this._updateMenuAndCommandState(true );
       this._dialog = null;
+    }
+    if (this._queued.length) {
+      setTimeout(() => this._openNextDialog(), 0);
     }
     return args;
   },
 
+  _openNextDialog() {
+    if (!this.isOpen) {
+      let { resolve, reject, uri, args } = this._queued.shift();
+      this.open(uri, args).then(resolve, reject);
+    }
+  },
+
   handleEvent(event) {
-    if (event.type == "dialogopen") {
-      this._dialog.focus(true);
+    switch (event.type) {
+      case "dialogopen":
+        this._dialog.focus(true);
+        break;
+      case "close":
+        this._didCloseHTMLDialog();
+        this._dialog.close();
+        break;
     }
   },
 
@@ -9482,6 +9533,7 @@ var gDialogBox = {
     
     
     parentElement.showModal();
+    this._didOpenHTMLDialog = true;
 
     
     this._updateMenuAndCommandState(false );
@@ -9490,6 +9542,7 @@ var gDialogBox = {
     let template = document.getElementById("window-modal-dialog-template")
       .content.firstElementChild;
     parentElement.addEventListener("dialogopen", this);
+    parentElement.addEventListener("close", this);
     this._dialog = new SubDialog({
       template,
       parentElement,
