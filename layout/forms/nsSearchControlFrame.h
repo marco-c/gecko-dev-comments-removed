@@ -63,7 +63,6 @@ class nsSearchControlFrame final : public nsTextControlFrame {
 
  private:
   
-  RefPtr<Element> mOuterWrapper;
   RefPtr<Element> mClearButton;
 };
 
