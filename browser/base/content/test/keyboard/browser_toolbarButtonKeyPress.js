@@ -60,9 +60,6 @@ add_task(async function testAppMenuButtonWrongKey() {
 
 
 add_task(async function testLibraryButtonPress() {
-  if (CustomizableUI.protonToolbarEnabled) {
-    CustomizableUI.addWidgetToArea("library-button", "nav-bar");
-  }
   let button = document.getElementById("library-button");
   forceFocus(button);
   EventUtils.synthesizeKey(" ");
@@ -73,9 +70,6 @@ add_task(async function testLibraryButtonPress() {
   let hidden = BrowserTestUtils.waitForEvent(document, "popuphidden", true);
   view.closest("panel").hidePopup();
   await hidden;
-  if (CustomizableUI.protonToolbarEnabled) {
-    CustomizableUI.removeWidgetFromArea("library-button");
-  }
 });
 
 
@@ -202,9 +196,6 @@ add_task(async function testReloadButtonPress() {
 
 
 add_task(async function testSidebarsButtonPress() {
-  if (CustomizableUI.protonToolbarEnabled) {
-    CustomizableUI.addWidgetToArea("sidebar-button", "nav-bar");
-  }
   let button = document.getElementById("sidebar-button");
   ok(!button.checked, "Sidebars button not checked at start of test");
   let sidebarBox = document.getElementById("sidebar-box");
@@ -225,9 +216,6 @@ add_task(async function testSidebarsButtonPress() {
   await TestUtils.waitForCondition(() => !button.checked);
   ok(true, "Sidebars button not checked after press");
   ok(sidebarBox.hidden, "Sidebar hidden after press");
-  if (CustomizableUI.protonToolbarEnabled) {
-    CustomizableUI.removeWidgetFromArea("sidebar-button");
-  }
 });
 
 

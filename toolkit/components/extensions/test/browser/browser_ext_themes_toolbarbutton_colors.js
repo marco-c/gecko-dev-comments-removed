@@ -5,15 +5,6 @@
 
 
 
-add_task(async function setup_home_button() {
-  if (CustomizableUI.protonToolbarEnabled) {
-    CustomizableUI.addWidgetToArea("home-button", "nav-bar");
-    registerCleanupFunction(() =>
-      CustomizableUI.removeWidgetFromArea("home-button")
-    );
-  }
-});
-
 add_task(async function test_button_background_properties() {
   const BUTTON_BACKGROUND_ACTIVE = "#FFFFFF";
   const BUTTON_BACKGROUND_HOVER = "#59CBE8";

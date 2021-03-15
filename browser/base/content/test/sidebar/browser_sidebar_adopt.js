@@ -12,15 +12,6 @@ function failIfSidebarFocusedFires() {
   ok(false, "This event shouldn't have fired");
 }
 
-add_task(function setup() {
-  if (CustomizableUI.protonToolbarEnabled) {
-    CustomizableUI.addWidgetToArea("sidebar-button", "nav-bar");
-    registerCleanupFunction(() =>
-      CustomizableUI.removeWidgetFromArea("sidebar-button")
-    );
-  }
-});
-
 add_task(async function testAdoptedTwoWindows() {
   
   

@@ -10,18 +10,6 @@ function focus_in_navbar() {
 }
 
 function test() {
-  if (CustomizableUI.protonToolbarEnabled) {
-    
-    CustomizableUI.addWidgetToArea(
-      "home-button",
-      "nav-bar",
-      CustomizableUI.getPlacementOfWidget("stop-reload-button").position + 1
-    );
-    registerCleanupFunction(async function resetToolbar() {
-      await CustomizableUI.reset();
-    });
-  }
-
   waitForExplicitFinish();
 
   tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank", {
