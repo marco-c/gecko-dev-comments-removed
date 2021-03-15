@@ -95,7 +95,10 @@ var TaskScheduler = {
 
 
 
-  registerTask(id, command, intervalSeconds, options) {
+  async registerTask(id, command, intervalSeconds, options) {
+    if (typeof id !== "string") {
+      throw new Error("id is not a string");
+    }
     if (!Number.isInteger(intervalSeconds)) {
       throw new Error("Interval is not an integer");
     }
@@ -111,14 +114,14 @@ var TaskScheduler = {
 
 
 
-  deleteTask(id) {
+  async deleteTask(id) {
     return gImpl.deleteTask(id);
   },
 
   
 
 
-  deleteAllTasks() {
+  async deleteAllTasks() {
     return gImpl.deleteAllTasks();
   },
 };
