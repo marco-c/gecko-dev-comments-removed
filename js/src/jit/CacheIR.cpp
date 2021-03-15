@@ -3840,17 +3840,18 @@ AttachDecision SetPropIRGenerator::tryAttachSetter(HandleObject obj,
   if (!CanAttachSetter(cx_, pc_, obj, id, &holder, &propShape)) {
     return AttachDecision::NoAction;
   }
+  auto nobj = obj.as<NativeObject>();
 
   maybeEmitIdGuard(id);
 
   
   
   
-  if (mode_ == ICState::Mode::Specialized || IsWindow(obj)) {
-    TestMatchingReceiver(writer, obj, objId);
+  if (mode_ == ICState::Mode::Specialized || IsWindow(nobj)) {
+    TestMatchingNativeReceiver(writer, nobj, objId);
 
-    if (obj != holder) {
-      GeneratePrototypeGuards(writer, obj, holder, objId);
+    if (nobj != holder) {
+      GeneratePrototypeGuards(writer, nobj, holder, objId);
 
       
       ObjOperandId holderId = writer.loadObject(holder);
@@ -3860,14 +3861,15 @@ AttachDecision SetPropIRGenerator::tryAttachSetter(HandleObject obj,
     writer.guardHasGetterSetter(objId, propShape);
   }
 
-  if (CanAttachDOMGetterSetter(cx_, JSJitInfo::Setter, obj, propShape, mode_)) {
+  if (CanAttachDOMGetterSetter(cx_, JSJitInfo::Setter, nobj, propShape,
+                               mode_)) {
     EmitCallDOMSetterNoGuards(cx_, writer, propShape, objId, rhsId);
 
     trackAttached("DOMSetter");
     return AttachDecision::Attach;
   }
 
-  EmitCallSetterNoGuards(cx_, writer, obj, holder, propShape, objId, rhsId);
+  EmitCallSetterNoGuards(cx_, writer, nobj, holder, propShape, objId, rhsId);
 
   trackAttached("Setter");
   return AttachDecision::Attach;
