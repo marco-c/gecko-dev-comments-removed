@@ -485,7 +485,12 @@ class Http2WebTestRequestHandler(BaseWebTestRequestHandler):
 
         
         
-        h2response.write_status_headers()
+        try:
+            h2response.write_status_headers()
+        except StreamClosedError:
+            
+            
+            return
 
         request_wrapper._dispatcher = dispatcher
 
@@ -518,7 +523,13 @@ class Http2WebTestRequestHandler(BaseWebTestRequestHandler):
 
     def _stream_ws_sub_thread(self, request, stream_handler, queue):
         dispatcher = request._dispatcher
-        dispatcher.transfer_data(request)
+        try:
+            dispatcher.transfer_data(request)
+        except StreamClosedError:
+            
+            
+            queue.put(None)
+            return
 
         stream_id = stream_handler.h2_stream_id
         with stream_handler.conn as connection:
