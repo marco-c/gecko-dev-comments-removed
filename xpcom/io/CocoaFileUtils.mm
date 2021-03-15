@@ -187,19 +187,15 @@ void AddOriginMetadataToFile(const CFStringRef filePath, const CFURLRef sourceUR
 }
 
 
-static CFStringRef GetQuarantinePropKey() { return kCFURLQuarantinePropertiesKey; }
-
-
 static CFMutableDictionaryRef CreateQuarantineDictionary(const CFURLRef aFileURL,
                                                          const bool aCreateProps) {
-  
   CFDictionaryRef quarantineProps = NULL;
   if (aCreateProps) {
     quarantineProps = ::CFDictionaryCreate(NULL, NULL, NULL, 0, &kCFTypeDictionaryKeyCallBacks,
                                            &kCFTypeDictionaryValueCallBacks);
   } else {
-    Boolean success =
-        ::CFURLCopyResourcePropertyForKey(aFileURL, GetQuarantinePropKey(), &quarantineProps, NULL);
+    Boolean success = ::CFURLCopyResourcePropertyForKey(aFileURL, kCFURLQuarantinePropertiesKey,
+                                                        &quarantineProps, NULL);
     
     
     if (!success || !quarantineProps) {
@@ -250,7 +246,8 @@ void AddQuarantineMetadataToFile(const CFStringRef filePath, const CFURLRef sour
   }
 
   
-  ::CFURLSetResourcePropertyForKey(fileURL, GetQuarantinePropKey(), mutQuarantineProps, NULL);
+  ::CFURLSetResourcePropertyForKey(fileURL, kCFURLQuarantinePropertiesKey, mutQuarantineProps,
+                                   NULL);
 
   ::CFRelease(fileURL);
   ::CFRelease(mutQuarantineProps);
