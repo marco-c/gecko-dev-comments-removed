@@ -260,7 +260,17 @@ var PageActions = {
       this._nonBuiltInActions.splice(index, 0, action);
     }
 
-    if (this._persistedActions.ids.includes(action.id)) {
+    let isNew = !this._persistedActions.ids.includes(action.id);
+    if (isNew) {
+      
+      this._persistedActions.ids.push(action.id);
+    }
+
+    if (UrlbarPrefs.get(PROTON_PREF)) {
+      
+      
+      action._pinnedToUrlbar = !action.__isSeparator;
+    } else if (!isNew) {
       
       
       
@@ -268,11 +278,8 @@ var PageActions = {
       action._pinnedToUrlbar = this._persistedActions.idsInUrlbar.includes(
         action.id
       );
-    } else {
-      
-      this._persistedActions.ids.push(action.id);
-      this._updateIDsPinnedToUrlbarForAction(action);
     }
+    this._updateIDsPinnedToUrlbarForAction(action);
   },
 
   _updateIDsPinnedToUrlbarForAction(action) {
@@ -363,10 +370,29 @@ var PageActions = {
   },
 
   _loadPersistedActions() {
+    let actions;
     try {
       let json = Services.prefs.getStringPref(PREF_PERSISTED_ACTIONS);
-      this._persistedActions = this._migratePersistedActions(JSON.parse(json));
+      actions = this._migratePersistedActions(JSON.parse(json));
     } catch (ex) {}
+
+    
+    
+    
+    
+    
+    
+    
+    
+    try {
+      actions = this._migratePersistedActionsProton(actions);
+    } catch (ex) {}
+
+    
+    
+    if (actions) {
+      this._persistedActions = actions;
+    }
   },
 
   _purgeUnregisteredPersistedActions() {
@@ -413,6 +439,55 @@ var PageActions = {
       ids,
       idsInUrlbar: actions.idsInUrlbar,
     };
+  },
+
+  _migratePersistedActionsProton(actions) {
+    if (UrlbarPrefs.get(PROTON_PREF)) {
+      if (actions?.idsInUrlbarPreProton) {
+        
+      } else if (actions) {
+        
+        actions.idsInUrlbarPreProton = [...(actions.idsInUrlbar || [])];
+      } else {
+        
+        actions = {
+          ids: [],
+          idsInUrlbar: [],
+          idsInUrlbarPreProton: [],
+          version: PERSISTED_ACTIONS_CURRENT_VERSION,
+        };
+      }
+    } else if (actions?.idsInUrlbarPreProton) {
+      
+      
+      
+      for (let id of actions.idsInUrlbarPreProton) {
+        if (!actions.ids.includes(id)) {
+          actions.ids.push(id);
+        }
+      }
+      actions.idsInUrlbar = actions.idsInUrlbarPreProton;
+      delete actions.idsInUrlbarPreProton;
+      
+      
+      
+      
+      
+      
+      if (!actions.idsInUrlbar.length) {
+        actions.idsInUrlbar = ["pocket", ACTION_ID_BOOKMARK];
+      }
+    } else if (actions) {
+      
+    } else {
+      
+      actions = {
+        ids: [],
+        idsInUrlbar: [],
+        version: PERSISTED_ACTIONS_CURRENT_VERSION,
+      };
+    }
+    return actions;
   },
 
   
