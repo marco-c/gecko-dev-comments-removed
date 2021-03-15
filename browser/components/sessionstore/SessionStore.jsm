@@ -999,10 +999,11 @@ var SessionStoreInternal = {
     function SHistoryListener(browser) {
       browser.browsingContext.sessionHistory.addSHistoryListener(this);
 
-      this.browser = browser;
+      this.browserId = browser.browsingContext.browserId;
       this._fromIdx = kNoIndex;
       this._sHistoryChanges = false;
-      if (this.browser.currentURI && this.browser.ownerGlobal) {
+      this._permanentKey = browser.permanentKey;
+      if (browser.currentURI && browser.ownerGlobal) {
         this._lastKnownUri = browser.currentURI.displaySpec;
         this._lastKnownBody = browser.ownerGlobal.document.body;
       }
@@ -1023,26 +1024,32 @@ var SessionStoreInternal = {
           return;
         }
 
+        let browser = BrowsingContext.getCurrentTopByBrowserId(this.browserId)
+          ?.embedderElement;
+
+        if (!browser) {
+          
+          return;
+        }
+
         if (!this._sHistoryChanges) {
-          this.browser.frameLoader.requestSHistoryUpdate(
-             false
-          );
+          browser.frameLoader.requestSHistoryUpdate( false);
           this._sHistoryChanges = true;
         }
         this._fromIdx = index;
-        if (this.browser.currentURI && this.browser.ownerGlobal) {
-          this._lastKnownUri = this.browser.currentURI.displaySpec;
-          this._lastKnownBody = this.browser.ownerGlobal.document.body;
+        if (browser.currentURI && browser.ownerGlobal) {
+          this._lastKnownUri = browser.currentURI.displaySpec;
+          this._lastKnownBody = browser.ownerGlobal.document.body;
         }
       },
 
       uninstall() {
-        if (this.browser.browsingContext?.sessionHistory) {
-          this.browser.browsingContext.sessionHistory.removeSHistoryListener(
-            this
-          );
+        let bc = BrowsingContext.getCurrentTopByBrowserId(this.browserId);
+
+        if (bc?.sessionHistory) {
+          bc.sessionHistory.removeSHistoryListener(this);
           SessionStoreInternal._browserSHistoryListener.delete(
-            this.browser.permanentKey
+            this._permanentKey
           );
         }
       },
