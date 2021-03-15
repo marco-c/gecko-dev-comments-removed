@@ -102,6 +102,7 @@ class nsJSContext : public nsIScriptContext {
 
   
   static void PokeGC(JS::GCReason aReason, JSObject* aObj, uint32_t aDelay = 0);
+  static void KillGCTimer();
 
   static void PokeShrinkingGC();
   static void KillShrinkingGCTimer();
@@ -110,8 +111,8 @@ class nsJSContext : public nsIScriptContext {
   static void EnsureCCRunner(mozilla::TimeDuration aDelay,
                              mozilla::TimeDuration aBudget);
   static void KillCCRunner();
-  static void KillGCRunner();
   static void KillFullGCTimer();
+  static void KillInterSliceGCRunner();
 
   
   static void LikelyShortLivingObjectCreated();
