@@ -113,7 +113,8 @@ struct DefaultJitOptions {
   
   
   bool spectreIndexMasking;
-  bool spectreObjectMitigations;
+  bool spectreObjectMitigationsBarriers;
+  bool spectreObjectMitigationsMisc;
   bool spectreStringMitigations;
   bool spectreValueMasking;
   bool spectreJitToCxxCalls;

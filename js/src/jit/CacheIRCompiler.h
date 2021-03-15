@@ -766,7 +766,7 @@ class MOZ_RAII CacheIRCompiler {
     
     
     
-    return JitOptions.spectreObjectMitigations &&
+    return JitOptions.spectreObjectMitigationsMisc &&
            !allocator.isDeadAfterInstruction(objId);
   }
 
