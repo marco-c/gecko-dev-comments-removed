@@ -1767,10 +1767,13 @@ bool BytecodeEmitter::emitGetPrivateName(NameNode* name) {
 
 bool BytecodeEmitter::emitGetPrivateName(TaggedParserAtomIndex nameAtom) {
   
+  
+  
   NameLocation location = lookupName(nameAtom);
   MOZ_ASSERT(location.kind() == NameLocation::Kind::FrameSlot ||
              location.kind() == NameLocation::Kind::EnvironmentCoordinate ||
-             location.kind() == NameLocation::Kind::Dynamic);
+             location.kind() == NameLocation::Kind::Dynamic ||
+             location.kind() == NameLocation::Kind::Global);
 
   return emitGetNameAtLocation(nameAtom, location);
 }
