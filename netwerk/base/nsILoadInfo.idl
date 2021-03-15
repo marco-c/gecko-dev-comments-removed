@@ -1250,6 +1250,12 @@ interface nsILoadInfo : nsISupports
 
 
 
+  [infallible] attribute boolean needForCheckingAntiTrackingHeuristic;
+
+  
+
+
+
 
 
   attribute AString cspNonce;
