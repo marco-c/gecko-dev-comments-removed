@@ -50,7 +50,6 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 #include "mozilla/Likely.h"      
-#include "mozilla/Utf8.h"        
 
 #include <stddef.h>     
 #include <stdint.h>     
@@ -58,6 +57,10 @@
 
 #include "js/UniquePtr.h"  
 #include "js/Utility.h"    
+
+namespace mozilla {
+union Utf8Unit;
+}
 
 namespace JS {
 

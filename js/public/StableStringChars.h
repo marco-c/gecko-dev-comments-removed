@@ -21,6 +21,7 @@
 
 #include "jstypes.h"  
 
+#include "js/AllocPolicy.h"
 #include "js/RootingAPI.h"  
 #include "js/String.h"      
 #include "js/TypeDecls.h"   

@@ -12,26 +12,30 @@
 #define js_OffThreadScriptCompilation_h
 
 #include "mozilla/Range.h"   
-#include "mozilla/Utf8.h"    
 #include "mozilla/Vector.h"  
 
 #include <stddef.h>  
 
 #include "jstypes.h"  
 
-#include "js/CompileOptions.h"  
-#include "js/GCVector.h"        
-#include "js/Transcoding.h"     
+#include "js/GCVector.h"  
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSScript;
 
 namespace JS {
 
+class JS_PUBLIC_API ReadOnlyCompileOptions;
+struct TranscodeSource;
+
 template <typename UnitT>
 class SourceText;
 
 }  
+
+namespace mozilla {
+union Utf8Unit;
+}
 
 namespace JS {
 

@@ -33,11 +33,8 @@
 #include "mozilla/MathAlgorithms.h"  
 
 #include "js/Conversions.h"  
-#include "js/RootingAPI.h"   
-#include "js/Value.h"        
-
-struct JS_PUBLIC_API JSContext;
-class JS_PUBLIC_API JSObject;
+#include "js/TypeDecls.h"
+#include "js/Value.h"  
 
 namespace JS {
 

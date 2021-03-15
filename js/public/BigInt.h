@@ -8,18 +8,19 @@
 #ifndef js_BigInt_h
 #define js_BigInt_h
 
-#include "mozilla/Range.h"  
+#include "mozilla/Span.h"  
 
 #include <limits>       
 #include <stdint.h>     
 #include <type_traits>  
-#include <utility>      
 
-#include "jstypes.h"        
-#include "js/RootingAPI.h"  
-#include "js/Value.h"       
+#include "jstypes.h"  
+#include "js/TypeDecls.h"
 
-struct JS_PUBLIC_API JSContext;
+namespace mozilla {
+template <typename T>
+class Range;
+}
 
 namespace JS {
 

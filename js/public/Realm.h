@@ -9,8 +9,6 @@
 
 #include "js/shadow/Realm.h"  
 
-#include "jspubtd.h"
-#include "js/GCAPI.h"
 #include "js/GCPolicyAPI.h"
 #include "js/TypeDecls.h"  
 
@@ -23,6 +21,7 @@ JS_PUBLIC_API bool RealmNeedsSweep(JS::Realm* realm);
 }  
 
 namespace JS {
+class JS_PUBLIC_API AutoRequireNoGC;
 
 
 template <>

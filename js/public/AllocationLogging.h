@@ -17,9 +17,6 @@
 #ifndef js_AllocationLogging_h
 #define js_AllocationLogging_h
 
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/PodOperations.h"
-
 #include <stdint.h>  
 
 #include "jstypes.h"  

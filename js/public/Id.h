@@ -26,10 +26,12 @@
 
 #include "jstypes.h"
 
+#include "js/GCAnnotations.h"
 #include "js/HeapAPI.h"
 #include "js/RootingAPI.h"
+#include "js/TraceKind.h"
+#include "js/TracingAPI.h"
 #include "js/TypeDecls.h"
-#include "js/Utility.h"
 
 
 

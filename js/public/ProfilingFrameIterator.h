@@ -7,12 +7,14 @@
 #ifndef js_ProfilingFrameIterator_h
 #define js_ProfilingFrameIterator_h
 
+#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 
-#include "js/GCAPI.h"
+#include "jstypes.h"
+
+#include "js/GCAnnotations.h"
 #include "js/TypeDecls.h"
-#include "js/Utility.h"
 
 namespace js {
 class Activation;
@@ -27,9 +29,6 @@ class ProfilingFrameIterator;
 }  
 
 namespace JS {
-
-struct ForEachTrackedOptimizationAttemptOp;
-struct ForEachTrackedOptimizationTypeInfoOp;
 
 
 
@@ -179,26 +178,16 @@ class MOZ_STACK_CLASS ProfiledFrameHandle {
   void* canonicalAddr_;
   const char* label_;
   uint32_t depth_;
-  mozilla::Maybe<uint8_t> optsIndex_;
 
   ProfiledFrameHandle(JSRuntime* rt, js::jit::JitcodeGlobalEntry& entry,
                       void* addr, const char* label, uint32_t depth);
 
-  void updateHasTrackedOptimizations();
-
  public:
   const char* label() const { return label_; }
   uint32_t depth() const { return depth_; }
-  bool hasTrackedOptimizations() const { return optsIndex_.isSome(); }
   void* canonicalAddress() const { return canonicalAddr_; }
 
   JS_PUBLIC_API ProfilingFrameIterator::FrameKind frameKind() const;
-  JS_PUBLIC_API void forEachOptimizationAttempt(
-      ForEachTrackedOptimizationAttemptOp& op, JSScript** scriptOut,
-      jsbytecode** pcOut) const;
-
-  JS_PUBLIC_API void forEachOptimizationTypeInfo(
-      ForEachTrackedOptimizationTypeInfoOp& op) const;
 
   JS_PUBLIC_API uint64_t realmID() const;
 };

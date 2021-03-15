@@ -26,15 +26,21 @@
 
 #include "jstypes.h"  
 
-#include "js/AllocPolicy.h"        
+#include "js/AllocPolicy.h"
 #include "js/CharacterEncoding.h"  
-#include "js/Exception.h"          
 #include "js/RootingAPI.h"         
 #include "js/UniquePtr.h"          
 #include "js/Vector.h"             
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSString;
+
+namespace JS {
+class ExceptionStack;
+}
+namespace js {
+class SystemAllocPolicy;
+}
 
 
 

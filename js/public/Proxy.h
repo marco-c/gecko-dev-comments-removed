@@ -9,13 +9,18 @@
 
 #include "mozilla/Maybe.h"
 
-#include "jsfriendapi.h"
+#include "jstypes.h"  
 
 #include "js/Array.h"  
 #include "js/CallNonGenericMethod.h"
 #include "js/Class.h"
+#include "js/HeapAPI.h"        
+#include "js/Id.h"             
 #include "js/Object.h"         
+#include "js/RootingAPI.h"     
 #include "js/shadow/Object.h"  
+#include "js/TypeDecls.h"  
+#include "js/Value.h"  
 
 namespace js {
 

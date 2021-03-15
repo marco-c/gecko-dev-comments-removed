@@ -13,21 +13,17 @@
 #include <limits.h>
 #include <type_traits>
 
-#include "jspubtd.h"
-
 #include "js/GCAnnotations.h"
 #include "js/shadow/String.h"  
 #include "js/shadow/Symbol.h"  
 #include "js/shadow/Zone.h"    
 #include "js/TraceKind.h"
-#include "js/Utility.h"
+#include "js/TypeDecls.h"
 
 #ifndef JS_BITS_PER_WORD
 #  error \
       "JS_BITS_PER_WORD must be defined. Did you forget to include js-config.h?"
 #endif
-
-struct JSExternalStringCallbacks;
 
 
 namespace js {
