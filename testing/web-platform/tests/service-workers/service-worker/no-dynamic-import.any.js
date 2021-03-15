@@ -1,0 +1,3 @@
+
+
+importScripts('resources/no-dynamic-import.js');
