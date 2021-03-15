@@ -137,16 +137,17 @@ extern mozilla::LazyLogModule gSHIPBFCacheLog;
 
 
 
-#define NOTIFY_LISTENERS_CANCELABLE(method, retval, args) \
-  PR_BEGIN_MACRO {                                        \
-    bool canceled = false;                                \
-    retval = true;                                        \
-    ITERATE_LISTENERS(listener->method args;              \
-                      if (!retval) { canceled = true; }); \
-    if (canceled) {                                       \
-      retval = false;                                     \
-    }                                                     \
-  }                                                       \
+#define NOTIFY_LISTENERS_CANCELABLE(method, retval, args)                     \
+  PR_BEGIN_MACRO {                                                            \
+    bool canceled = false;                                                    \
+    (retval) = true;                                                          \
+    ITERATE_LISTENERS(if (NS_SUCCEEDED(listener->method args) && !(retval)) { \
+      canceled = true;                                                        \
+    });                                                                       \
+    if (canceled) {                                                           \
+      (retval) = false;                                                       \
+    }                                                                         \
+  }                                                                           \
   PR_END_MACRO
 
 class MOZ_STACK_CLASS SHistoryChangeNotifier {
