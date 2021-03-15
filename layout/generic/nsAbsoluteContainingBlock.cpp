@@ -654,6 +654,57 @@ void nsAbsoluteContainingBlock::ResolveSizeDependentOffsets(
   }
 }
 
+void nsAbsoluteContainingBlock::ResolveAutoMarginsAfterLayout(
+    ReflowInput& aKidReflowInput, const LogicalSize* aLogicalCBSize,
+    const LogicalSize& aKidSize, LogicalMargin& aMargin,
+    LogicalMargin& aOffsets) {
+  MOZ_ASSERT(aKidReflowInput.mFrame->HasIntrinsicKeywordForBSize());
+
+  WritingMode wm = aKidReflowInput.GetWritingMode();
+  WritingMode outerWM = aKidReflowInput.mParentReflowInput->GetWritingMode();
+
+  const LogicalSize kidSizeInWM = aKidSize.ConvertTo(wm, outerWM);
+  LogicalMargin marginInWM = aMargin.ConvertTo(wm, outerWM);
+  LogicalMargin offsetsInWM = aOffsets.ConvertTo(wm, outerWM);
+
+  
+  
+  nscoord availMarginSpace = aLogicalCBSize->BSize(wm) - kidSizeInWM.BSize(wm) -
+                             offsetsInWM.BStartEnd(wm) -
+                             marginInWM.BStartEnd(wm);
+
+  if (availMarginSpace < 0) {
+    availMarginSpace = 0;
+  }
+
+  const auto& styleMargin = aKidReflowInput.mStyleMargin;
+  if (wm.IsOrthogonalTo(outerWM)) {
+    ReflowInput::ComputeAbsPosInlineAutoMargin(
+        availMarginSpace, outerWM,
+        styleMargin->mMargin.GetIStart(outerWM).IsAuto(),
+        styleMargin->mMargin.GetIEnd(outerWM).IsAuto(), aMargin, aOffsets);
+  } else {
+    ReflowInput::ComputeAbsPosBlockAutoMargin(
+        availMarginSpace, outerWM,
+        styleMargin->mMargin.GetBStart(outerWM).IsAuto(),
+        styleMargin->mMargin.GetBEnd(outerWM).IsAuto(), aMargin, aOffsets);
+  }
+
+  aKidReflowInput.SetComputedLogicalMargin(outerWM, aMargin);
+  aKidReflowInput.SetComputedLogicalOffsets(outerWM, aOffsets);
+
+  nsMargin* propValue =
+      aKidReflowInput.mFrame->GetProperty(nsIFrame::UsedMarginProperty());
+  
+  
+  MOZ_ASSERT_IF(styleMargin->HasInlineAxisAuto(outerWM) ||
+                    styleMargin->HasBlockAxisAuto(outerWM),
+                propValue);
+  if (propValue) {
+    *propValue = aMargin.GetPhysicalMargin(outerWM);
+  }
+}
+
 
 
 
@@ -779,6 +830,11 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
   
   ResolveSizeDependentOffsets(aPresContext, kidReflowInput, kidSize, margin,
                               &offsets, &logicalCBSize);
+
+  if (kidReflowInput.mFrame->HasIntrinsicKeywordForBSize()) {
+    ResolveAutoMarginsAfterLayout(kidReflowInput, &logicalCBSize, kidSize,
+                                  margin, offsets);
+  }
 
   
   LogicalRect rect(

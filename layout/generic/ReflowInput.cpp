@@ -1749,9 +1749,9 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
                            computedSize.ISize(cbwm) - margin.IStartEnd(cbwm) -
                            borderPadding.IStartEnd(cbwm);
     }
-  } else {
+  } else if (!mFrame->HasIntrinsicKeywordForBSize() ||
+             !wm.IsOrthogonalTo(cbwm)) {
     
-
     if (wm.IsOrthogonalTo(cbwm)) {
       
       
@@ -1814,7 +1814,8 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
                            borderPadding.BStartEnd(cbwm) -
                            computedSize.BSize(cbwm) - offsets.BStart(cbwm);
     }
-  } else {
+  } else if (!mFrame->HasIntrinsicKeywordForBSize() ||
+             wm.IsOrthogonalTo(cbwm)) {
     
     nscoord autoBSize = cbSize.BSize(cbwm) - margin.BStartEnd(cbwm) -
                         borderPadding.BStartEnd(cbwm) - offsets.BStartEnd(cbwm);

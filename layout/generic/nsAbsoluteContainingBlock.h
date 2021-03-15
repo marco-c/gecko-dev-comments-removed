@@ -135,6 +135,20 @@ class nsAbsoluteContainingBlock {
                                    mozilla::LogicalMargin* aOffsets,
                                    mozilla::LogicalSize* aLogicalCBSize);
 
+  
+
+
+
+
+
+
+
+  void ResolveAutoMarginsAfterLayout(ReflowInput& aKidReflowInput,
+                                     const mozilla::LogicalSize* aLogicalCBSize,
+                                     const mozilla::LogicalSize& aKidSize,
+                                     mozilla::LogicalMargin& aMargin,
+                                     mozilla::LogicalMargin& aOffsets);
+
   void ReflowAbsoluteFrame(nsIFrame* aDelegatingFrame,
                            nsPresContext* aPresContext,
                            const ReflowInput& aReflowInput,

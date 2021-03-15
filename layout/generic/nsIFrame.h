@@ -3055,6 +3055,13 @@ class nsIFrame : public nsQueryFrame {
   bool HasView() const { return !!(mState & NS_FRAME_HAS_VIEW); }
 
   
+  
+  bool HasIntrinsicKeywordForBSize() const {
+    const auto& bSize = StylePosition()->BSize(GetWritingMode());
+    return bSize.IsMozFitContent() || bSize.IsMinContent() ||
+           bSize.IsMaxContent();
+  }
+  
 
 
 

@@ -693,9 +693,23 @@ static bool RecomputePosition(nsIFrame* aFrame) {
     return false;
   }
 
-  
-  
   if (aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+    
+    
+    
+    
+    
+    
+    
+    if (aFrame->HasIntrinsicKeywordForBSize()) {
+      WritingMode wm = aFrame->GetWritingMode();
+      const auto* styleMargin = aFrame->StyleMargin();
+      if (styleMargin->HasBlockAxisAuto(wm)) {
+        return false;
+      }
+    }
+    
+    
     nsIFrame* ph = aFrame->GetPlaceholderFrame();
     if (ph && ph->HasAnyStateBits(PLACEHOLDER_STATICPOS_NEEDS_CSSALIGN)) {
       return false;
