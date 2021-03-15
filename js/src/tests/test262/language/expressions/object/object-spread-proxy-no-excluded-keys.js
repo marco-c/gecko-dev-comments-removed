@@ -31,8 +31,9 @@
 
 
 
+var sym = Symbol();
 var getOwnKeys = [];
-var ownKeysResult = [Symbol(), "foo", "0"];
+var ownKeysResult = [sym, "foo", "0"];
 var proxy = new Proxy({}, {
   getOwnPropertyDescriptor: function(_target, key) {
     getOwnKeys.push(key);
@@ -42,7 +43,7 @@ var proxy = new Proxy({}, {
   },
 });
 
-({...proxy});
+({[sym]: 0, foo: 0, [0]: 0, ...proxy});
 assert.compareArray(getOwnKeys, ownKeysResult);
 
 reportCompare(0, 0);
