@@ -43,7 +43,7 @@ nsNumberControlFrame::nsNumberControlFrame(ComputedStyle* aStyle,
 
 void nsNumberControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
                                        PostDestroyData& aPostDestroyData) {
-  aPostDestroyData.AddAnonymousContent(mSpinBox.forget());
+  aPostDestroyData.AddAnonymousContent(mOuterWrapper.forget());
   nsTextControlFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
@@ -62,25 +62,44 @@ nsresult nsNumberControlFrame::CreateAnonymousContent(
   
   
   
+  
+
+  
+  mOuterWrapper = MakeAnonElement(PseudoStyleType::mozComplexControlWrapper);
 
   
   
-  if (StyleDisplay()->EffectiveAppearance() != StyleAppearance::Textfield) {
-    
-    mSpinBox = MakeAnonElement(PseudoStyleType::mozNumberSpinBox);
+  
+  mOuterWrapper->SetIsNativeAnonymousRoot();
 
-    
-    mSpinUp = MakeAnonElement(PseudoStyleType::mozNumberSpinUp, mSpinBox);
+  aElements.AppendElement(mOuterWrapper);
 
+  nsTArray<ContentInfo> nestedContent;
+  nsTextControlFrame::CreateAnonymousContent(nestedContent);
+  for (auto& content : nestedContent) {
     
-    mSpinDown = MakeAnonElement(PseudoStyleType::mozNumberSpinDown, mSpinBox);
-
-    
-    
-    aElements.AppendElement(mSpinBox);
+    if (content.mContent == mRootNode) {
+      mOuterWrapper->AppendChildTo(content.mContent, false);
+    } else {
+      
+      aElements.AppendElement(std::move(content));
+    }
   }
 
-  nsTextControlFrame::CreateAnonymousContent(aElements);
+  if (StyleDisplay()->EffectiveAppearance() == StyleAppearance::Textfield) {
+    
+    
+    return NS_OK;
+  }
+
+  
+  mSpinBox = MakeAnonElement(PseudoStyleType::mozNumberSpinBox, mOuterWrapper);
+
+  
+  mSpinUp = MakeAnonElement(PseudoStyleType::mozNumberSpinUp, mSpinBox);
+
+  
+  mSpinDown = MakeAnonElement(PseudoStyleType::mozNumberSpinDown, mSpinBox);
 
   return NS_OK;
 }
@@ -212,10 +231,15 @@ bool nsNumberControlFrame::ShouldUseNativeStyleForSpinner() const {
 
 void nsNumberControlFrame::AppendAnonymousContentTo(
     nsTArray<nsIContent*>& aElements, uint32_t aFilter) {
-  if (mSpinBox) {
-    aElements.AppendElement(mSpinBox);
+  if (mOuterWrapper) {
+    aElements.AppendElement(mOuterWrapper);
   }
-  nsTextControlFrame::AppendAnonymousContentTo(aElements, aFilter);
+  if (mPlaceholderDiv) {
+    aElements.AppendElement(mPlaceholderDiv);
+  }
+  if (mPreviewDiv) {
+    aElements.AppendElement(mPreviewDiv);
+  }
 }
 
 #ifdef ACCESSIBILITY

@@ -41,7 +41,7 @@ nsSearchControlFrame::nsSearchControlFrame(ComputedStyle* aStyle,
 
 void nsSearchControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
                                        PostDestroyData& aPostDestroyData) {
-  aPostDestroyData.AddAnonymousContent(mClearButton.forget());
+  aPostDestroyData.AddAnonymousContent(mOuterWrapper.forget());
   nsTextControlFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
@@ -58,14 +58,28 @@ nsresult nsSearchControlFrame::CreateAnonymousContent(
   
   
   
+  
 
   
-  mClearButton = MakeAnonElement(PseudoStyleType::mozSearchClearButton, nullptr,
-                                 nsGkAtoms::button);
+  mOuterWrapper = MakeAnonElement(PseudoStyleType::mozComplexControlWrapper);
 
-  aElements.AppendElement(mClearButton);
+  aElements.AppendElement(mOuterWrapper);
 
-  nsTextControlFrame::CreateAnonymousContent(aElements);
+  nsTArray<ContentInfo> nestedContent;
+  nsTextControlFrame::CreateAnonymousContent(nestedContent);
+  for (auto& content : nestedContent) {
+    
+    if (content.mContent == mRootNode) {
+      mOuterWrapper->AppendChildTo(content.mContent, false);
+    } else {
+      
+      aElements.AppendElement(std::move(content));
+    }
+  }
+
+  
+  mClearButton = MakeAnonElement(PseudoStyleType::mozSearchClearButton,
+                                 mOuterWrapper, nsGkAtoms::button);
 
   
   UpdateClearButtonState();
@@ -75,10 +89,15 @@ nsresult nsSearchControlFrame::CreateAnonymousContent(
 
 void nsSearchControlFrame::AppendAnonymousContentTo(
     nsTArray<nsIContent*>& aElements, uint32_t aFilter) {
-  if (mClearButton) {
-    aElements.AppendElement(mClearButton);
+  if (mOuterWrapper) {
+    aElements.AppendElement(mOuterWrapper);
   }
-  nsTextControlFrame::AppendAnonymousContentTo(aElements, aFilter);
+  if (mPlaceholderDiv) {
+    aElements.AppendElement(mPlaceholderDiv);
+  }
+  if (mPreviewDiv) {
+    aElements.AppendElement(mPreviewDiv);
+  }
 }
 
 void nsSearchControlFrame::UpdateClearButtonState() {
