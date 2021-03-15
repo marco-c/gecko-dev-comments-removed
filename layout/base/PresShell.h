@@ -684,20 +684,6 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-
-
-  void PausePainting();
-
-  
-
-
-
-
-  void ResumePainting();
-
-  
-
-
   void UnsuppressPainting();
 
   
@@ -3079,8 +3065,6 @@ class PresShell final : public nsStubDocumentObserver,
   bool mFontSizeInflationForceEnabled : 1;
   bool mFontSizeInflationDisabledInMasterProcess : 1;
   bool mFontSizeInflationEnabled : 1;
-
-  bool mPaintingIsFrozen : 1;
 
   
   
