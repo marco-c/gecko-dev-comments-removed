@@ -19,8 +19,17 @@ bool js::ReadCompleteFile(JSContext* cx, FILE* fp, FileContents& buffer) {
   struct stat st;
   int ok = fstat(fileno(fp), &st);
   if (ok != 0) {
+    
+    
+    JS_ReportErrorLatin1(cx, "error reading file: %s", strerror(errno));
+    errno = 0;
     return false;
   }
+  if ((st.st_mode & S_IFDIR) != 0) {
+    JS_ReportErrorLatin1(cx, "error reading file: %s", strerror(EISDIR));
+    return false;
+  }
+
   if (st.st_size > 0) {
     if (!buffer.reserve(st.st_size)) {
       return false;
@@ -50,6 +59,13 @@ bool js::ReadCompleteFile(JSContext* cx, FILE* fp, FileContents& buffer) {
     if (!buffer.append(c)) {
       return false;
     }
+  }
+
+  if (ferror(fp)) {
+    
+    JS_ReportErrorLatin1(cx, "error reading file: %s", strerror(errno));
+    errno = 0;
+    return false;
   }
 
   return true;
