@@ -1,10 +1,10 @@
 <!doctype html>
 <html>
-    
-
-
-
-
+    <!--
+Test cases for Pointer Events v1 spec
+This document references Test Assertions (abbrev TA below) written by Cathy Chan
+http://www.w3.org/wiki/PointerEvents/TestAssertions
+-->
     <head>
         <title>Pointer Events pointerdown tests</title>
         <meta name="viewport" content="width=device-width">
@@ -22,7 +22,7 @@
                             'type' : event.type,
                             'pointerType' : event.pointerType
                         };
-                        top.postMessage(JSON.stringify(pass_data), "*");
+                        top.postMessage(pass_data, "*");
                     });
                });
             }
