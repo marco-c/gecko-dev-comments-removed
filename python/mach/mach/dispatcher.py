@@ -261,7 +261,7 @@ class CommandAction(argparse.Action):
                 setattr(command_namespace, name, extra)
             else:
                 setattr(command_namespace, name, options.get("default", []))
-        elif extra and handler.cls.__name__ != "DeprecatedCommands":
+        elif extra:
             raise UnrecognizedArgumentError(command, extra)
 
     def _handle_main_help(self, parser, verbose):
@@ -469,12 +469,7 @@ class CommandAction(argparse.Action):
         c_parser.print_help()
 
     def _suggest_command(self, command):
-        
-        names = [
-            h.name
-            for h in self._mach_registrar.command_handlers.values()
-            if h.cls.__name__ != "DeprecatedCommands"
-        ]
+        names = [h.name for h in self._mach_registrar.command_handlers.values()]
 
         
         
