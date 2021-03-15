@@ -12,14 +12,14 @@ namespace mozilla {
 
 already_AddRefed<IdleTaskRunner> IdleTaskRunner::Create(
     const CallbackType& aCallback, const char* aRunnableName,
-    uint32_t aMaxDelay, int64_t aMinimumUsefulBudget, bool aRepeating,
-    const MayStopProcessingCallbackType& aMayStopProcessing) {
+    uint32_t aStartDelay, uint32_t aMaxDelay, int64_t aMinimumUsefulBudget,
+    bool aRepeating, const MayStopProcessingCallbackType& aMayStopProcessing) {
   if (aMayStopProcessing && aMayStopProcessing()) {
     return nullptr;
   }
 
   RefPtr<IdleTaskRunner> runner =
-      new IdleTaskRunner(aCallback, aRunnableName, aMaxDelay,
+      new IdleTaskRunner(aCallback, aRunnableName, aStartDelay, aMaxDelay,
                          aMinimumUsefulBudget, aRepeating, aMayStopProcessing);
   runner->Schedule(false);  
   return runner.forget();
@@ -27,11 +27,13 @@ already_AddRefed<IdleTaskRunner> IdleTaskRunner::Create(
 
 IdleTaskRunner::IdleTaskRunner(
     const CallbackType& aCallback, const char* aRunnableName,
-    uint32_t aMaxDelay, int64_t aMinimumUsefulBudget, bool aRepeating,
-    const MayStopProcessingCallbackType& aMayStopProcessing)
+    uint32_t aStartDelay, uint32_t aMaxDelay, int64_t aMinimumUsefulBudget,
+    bool aRepeating, const MayStopProcessingCallbackType& aMayStopProcessing)
     : CancelableIdleRunnable(aRunnableName),
       mCallback(aCallback),
-      mDelay(aMaxDelay),
+      mStartTime(TimeStamp::Now() +
+                 TimeDuration::FromMilliseconds(aStartDelay)),
+      mMaxDelay(aMaxDelay),
       mMinimumUsefulBudget(
           TimeDuration::FromMilliseconds(aMinimumUsefulBudget)),
       mRepeating(aRepeating),
@@ -46,11 +48,14 @@ IdleTaskRunner::Run() {
   }
 
   
+  
   TimeStamp now = TimeStamp::Now();
-  bool deadLineWasNull = mDeadline.IsNull();
+  
+  
+  bool overdueForIdle = mDeadline.IsNull();
   bool didRun = false;
   bool allowIdleDispatch = false;
-  if (deadLineWasNull || ((now + mMinimumUsefulBudget) < mDeadline)) {
+  if (overdueForIdle || ((now + mMinimumUsefulBudget) < mDeadline)) {
     CancelTimer();
     didRun = mCallback(mDeadline);
     
@@ -116,18 +121,28 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
   }
 
   mDeadline = TimeStamp();
+
   TimeStamp now = TimeStamp::Now();
-  TimeStamp hint = nsRefreshDriver::GetIdleDeadlineHint(now);
-  if (hint != now) {
+  bool useRefreshDriver = false;
+  if (now >= mStartTime) {
     
-    nsRefreshDriver::DispatchIdleRunnableAfterTickUnlessExists(this, mDelay);
     
-    SetTimerInternal(mDelay);
+    useRefreshDriver = (nsRefreshDriver::GetIdleDeadlineHint(now) != now);
+  } else {
+    NS_WARNING_ASSERTION(!aAllowIdleDispatch,
+                         "early callback, or time went backwards");
+  }
+
+  if (useRefreshDriver) {
+    
+    nsRefreshDriver::DispatchIdleRunnableAfterTickUnlessExists(this, mMaxDelay);
+    
+    SetTimerInternal(mMaxDelay);
   } else {
     
     if (aAllowIdleDispatch) {
       nsCOMPtr<nsIRunnable> runnable = this;
-      SetTimerInternal(mDelay);
+      SetTimerInternal(mMaxDelay);
       NS_DispatchToCurrentThreadQueue(runnable.forget(),
                                       EventQueuePriority::Idle);
     } else {
@@ -141,8 +156,14 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
       }
       
       
+      uint32_t waitToSchedule = 16; 
+      if (now < mStartTime) {
+        
+        
+        waitToSchedule = (mStartTime - now).ToMilliseconds() + 1;
+      }
       mScheduleTimer->InitWithNamedFuncCallback(
-          ScheduleTimedOut, this, 16 ,
+          ScheduleTimedOut, this, waitToSchedule,
           nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, mName);
     }
   }

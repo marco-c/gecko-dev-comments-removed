@@ -236,16 +236,21 @@ class RefreshDriverTimer {
     MOZ_ASSERT(NS_IsMainThread());
 
     TimeStamp mostRecentRefresh = MostRecentRefresh();
-    TimeDuration refreshRate = GetTimerRate();
-    TimeStamp idleEnd = mostRecentRefresh + refreshRate;
+    TimeDuration refreshPeriod = GetTimerRate();
+    TimeStamp idleEnd = mostRecentRefresh + refreshPeriod;
 
+    
+    
+    
     if (idleEnd +
-            refreshRate *
+            refreshPeriod *
                 StaticPrefs::layout_idle_period_required_quiescent_frames() <
         TimeStamp::Now()) {
       return aDefault;
     }
 
+    
+    
     idleEnd = idleEnd - TimeDuration::FromMilliseconds(
                             StaticPrefs::layout_idle_period_time_limit());
     return idleEnd < aDefault ? idleEnd : aDefault;

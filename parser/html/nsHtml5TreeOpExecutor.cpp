@@ -434,6 +434,7 @@ void nsHtml5TreeOpExecutor::ContinueInterruptedParsingAsync() {
     gBackgroundFlushRunner = IdleTaskRunner::Create(
         &BackgroundFlushCallback,
         "nsHtml5TreeOpExecutor::BackgroundFlushCallback",
+        0,    
         250,  
         StaticPrefs::content_sink_interactive_parse_time() /
             1000,               
