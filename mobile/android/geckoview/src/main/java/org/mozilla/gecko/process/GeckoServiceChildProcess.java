@@ -30,6 +30,8 @@ public class GeckoServiceChildProcess extends Service {
     private static IProcessManager sProcessManager;
 
     private long mLastLowMemoryNotificationTime = 0;
+    
+    private static boolean sCreateCalled;
 
     @WrapForJNI(calledFrom = "gecko")
     private static void getEditableParent(final IGeckoEditableChild child,
@@ -45,13 +47,17 @@ public class GeckoServiceChildProcess extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.i(LOGTAG, "onCreate");
+
+        if (sCreateCalled) {
+            
+            
+            throw new RuntimeException("Cannot reuse process.");
+        }
+        sCreateCalled = true;
 
         GeckoAppShell.setApplicationContext(getApplicationContext());
-    }
-
-    @Override
-    public int onStartCommand(final Intent intent, final int flags, final int startId) {
-        return Service.START_NOT_STICKY;
+        GeckoThread.launch(); 
     }
 
     private final Binder mBinder = new IChildProcess.Stub() {
@@ -131,17 +137,16 @@ public class GeckoServiceChildProcess extends Service {
     };
 
     @Override
-    public IBinder onBind(final Intent intent) {
-        GeckoThread.launch(); 
-        return mBinder;
+    public void onDestroy() {
+        Log.i(LOGTAG, "Destroying GeckoServiceChildProcess");
+        System.exit(0);
     }
 
     @Override
-    public boolean onUnbind(final Intent intent) {
-        Log.i(LOGTAG, "Service has been unbound. Stopping.");
+    public IBinder onBind(final Intent intent) {
+        
         stopSelf();
-        Process.killProcess(Process.myPid());
-        return false;
+        return mBinder;
     }
 
     @Override
