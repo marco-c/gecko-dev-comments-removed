@@ -29,5 +29,3 @@ user_pref("dom.gamepad.non_standard_events.enabled", true);
 user_pref("extensions.formautofill.available", "on");
 
 user_pref("layout.css.clip-path-path.enabled", true);
-
-user_pref("dom.visualviewport.enabled", true);
