@@ -505,12 +505,6 @@ class nsView final : public nsIWidgetListener {
 
 
 
-  void ZeroDimensions();
-
-  
-
-
-
 
   void SetVisibility(nsViewVisibility visibility);
 
