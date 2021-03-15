@@ -3143,35 +3143,6 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_PendingInitialization>,
   return IsTop() && GetPendingInitialization() && !aNewValue;
 }
 
-void BrowsingContext::SessionHistoryChanged(int32_t aIndexDelta,
-                                            int32_t aLengthDelta) {
-  if (XRE_IsParentProcess() || mozilla::SessionHistoryInParent()) {
-    
-    
-    return;
-  }
-
-  if (!IsTop()) {
-    
-    
-    return;
-  }
-
-  RefPtr<ChildSHistory> shistory = GetChildSessionHistory();
-  if (!shistory || !shistory->AsyncHistoryLength()) {
-    return;
-  }
-
-  nsID changeID = shistory->AddPendingHistoryChange(aIndexDelta, aLengthDelta);
-  uint32_t index = shistory->Index();
-  uint32_t length = shistory->Count();
-
-  
-  
-  ContentChild::GetSingleton()->SendSessionHistoryUpdate(this, index, length,
-                                                         changeID);
-}
-
 bool BrowsingContext::IsPopupAllowed() {
   for (auto* context = GetCurrentWindowContext(); context;
        context = context->GetParentWindowContext()) {
