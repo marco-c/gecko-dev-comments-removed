@@ -1,29 +1,29 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* Import stylesheets for specific tooltip widgets */
 @import url(chrome://devtools/skin/accessibility-color-contrast.css);
 @import url(chrome://devtools/skin/badge.css);
 @import url(chrome://devtools/content/shared/widgets/cubic-bezier.css);
 @import url(chrome://devtools/content/shared/widgets/filter-widget.css);
 @import url(chrome://devtools/content/shared/widgets/spectrum.css);
 
-
+/* Tooltip specific theme variables */
 
 .theme-dark {
   --bezier-diagonal-color: #eee;
   --bezier-grid-color: rgba(0, 0, 0, 0.2);
 
-  
+  /* Tooltips */
   --theme-tooltip-color: var(--theme-text-color-strong);
   --theme-tooltip-background: var(--theme-popup-background);
   --theme-tooltip-shadow: rgba(25, 25, 25, 0.76);
   --theme-tooltip-icon-dimmed-color: rgb(255, 255, 255);
 
-  
-  
-
+  /* Doorhangers */
+  /* These colors are based on the colors used for doorhangers elsewhere in
+   * Firefox. */
   --theme-arrowpanel-background: var(--theme-popup-background);
   --theme-arrowpanel-color: var(--theme-popup-color);
   --theme-arrowpanel-border-color: var(--theme-popup-border-color);
@@ -37,15 +37,15 @@
   --bezier-diagonal-color: rgba(0, 0, 0, 0.2);
   --bezier-grid-color: rgba(0, 0, 0, 0.05);
 
-  
+  /* Tooltips */
   --theme-tooltip-color: var(--theme-body-color);
   --theme-tooltip-background: rgb(255, 255, 255);
   --theme-tooltip-shadow: var(--grey-90-a10);
   --theme-tooltip-icon-dimmed-color: rgba(135, 135, 137, 0.9);
 
-  
-  
-
+  /* Doorhangers */
+  /* These colors are based on the colors used for doorhangers elsewhere in
+   * Firefox. */
   --theme-arrowpanel-background: var(--theme-popup-background);
   --theme-arrowpanel-color: var(--theme-popup-color);
   --theme-arrowpanel-border-color: var(--theme-popup-border-color);
@@ -72,7 +72,7 @@ strong {
   font-weight: bold;
 }
 
-
+/* Tooltip: CSS variables tooltip */
 
 .devtools-tooltip-css-variable,
 .devtools-tooltip-css-compatibility {
@@ -81,15 +81,15 @@ strong {
   direction: ltr;
 }
 
-
+/* Tooltip: JS Evaluation Context */
 
 #webconsole-input-evaluationsButton > .tooltip-panel {
-  
+  /* helps the JS Context selector to have scrollbars when content exceed the vertical size of the popup */
   overflow-y: auto;
 }
 
 
-
+/* Tooltip: Inactive CSS tooltip */
 
 .devtools-tooltip-inactive-css,
 .devtools-tooltip-css-compatibility {
@@ -124,7 +124,7 @@ strong {
   cursor: pointer;
 }
 
-
+/* Tooltip: Compatibility tooltip */
 
 .tooltip-container[type="doorhanger"] .tooltip-panel ul.compatibility-unsupported-browser-list {
   width: 100%;
@@ -164,7 +164,7 @@ strong {
   fill: var(--theme-tooltip-icon-dimmed-color);
 }
 
-
+/* Tooltip: Tiles */
 
 .devtools-tooltip-tiles {
   background-color: #eee;
@@ -192,12 +192,12 @@ strong {
 }
 
 .tooltip-xul-wrapper .tooltip-container {
-  
-
-
-
-
-
+  /**
+   * As the width/height of xul:panel (.tooltip-xul-wrapper) is dependent on the
+   * width/height of the inner content. Thus, if "absolute" position here, as the
+   * width/height that are conveyed to the panel will be zero, the tooltip will be
+   * invisible.
+   */
   position: static;
 }
 
@@ -224,27 +224,27 @@ strong {
   visibility: hidden;
 }
 
-
+/* Tooltip : flexible height styles */
 
 .tooltip-flexible-height .tooltip-panel {
-  
+  /* In flexible mode the tooltip panel should only grow according to its content. */
   flex-grow: 0;
 }
 
 .tooltip-flexible-height .tooltip-filler {
-  
+  /* In flexible mode the filler should grow as much as possible. */
   flex-grow: 1;
 }
 
-
+/* type="arrow" overrides: remove arrow decorations for the xul <panel> wrapper */
 
 .tooltip-xul-wrapper[type="arrow"][side] {
   margin: 0;
 }
 
+/* The arrow image is hidden because the panel is opened using openPopupAtScreen(). */
 
-
-
+/* The arrow content is styled on the HTML, so we don't need the styling on the XUL element */
 .tooltip-xul-wrapper[type="arrow"]::part(arrowcontent) {
   margin: 0;
   padding: 0;
@@ -253,10 +253,10 @@ strong {
   box-shadow: none;
 }
 
-
+/* Tooltip : arrow style */
 
 .tooltip-xul-wrapper .tooltip-container {
-  
+  /* When displayed in a XUL panel the drop shadow would be abruptly cut by the panel */
   filter: none;
 }
 
@@ -284,7 +284,7 @@ strong {
   flex-shrink: 0;
 }
 
-
+/* In RTL locales and context, only use RTL on the tooltip content, keep LTR for positioning */
 .tooltip-container:-moz-locale-dir(rtl),
 .tooltip-container:dir(rtl) {
   direction: ltr;
@@ -296,20 +296,20 @@ strong {
 }
 
 .tooltip-top .tooltip-arrow {
-  
-
-
-
-
-
-
-
+  /**
+   * The -1px margin is there to make sure the middle of the arrow overlaps with
+   * the border of the tooltip container.
+   * The -2px is there because the rotated arrow is not visually as tall as its
+   * container. Since the positioning logic relies on measuring the size of the
+   * tooltip, this -2px ensures the measured size matches the visuals (and not
+   * simply the box model).
+   */
   margin-bottom: -2px;
   margin-top: -1px;
 }
 
 .tooltip-bottom .tooltip-arrow {
-  
+  /* See comment in .tooltip-top .tooltip-arrow (inverted here) */
   margin-bottom: -1px;
   margin-top: -2px;
 }
@@ -336,13 +336,13 @@ strong {
   transform: rotate(45deg);
 }
 
-
+/* XUL panels have a default border, but pure HTML tooltips don't have one. */
 .tooltip-container[type="arrow"]:not(.tooltip-container-xul) > .tooltip-panel,
 .tooltip-container[type="arrow"]:not(.tooltip-container-xul) > .tooltip-arrow::before {
   border: 1px solid var(--theme-arrowpanel-border-color);
 }
 
-
+/* Tooltip : doorhanger style */
 
 .tooltip-container[type="doorhanger"] > .tooltip-panel {
   color: var(--theme-arrowpanel-color);
@@ -362,14 +362,14 @@ strong {
 :root[platform="mac"] .tooltip-container[type="doorhanger"] > .tooltip-panel,
 :root[platform="mac"] .tooltip-container[type="doorhanger"] > .tooltip-arrow::before {
   box-shadow: none;
-  
-
-
-
-
-
-
-
+  /*
+   * The above should be:
+   *
+   *   box-shadow: 0 0 0 1px var(--theme-arrowpanel-border-color);
+   *
+   * but although that gives the right emphasis to the border it makes the
+   * platform shadow much too dark.
+   */
 }
 
 :root[platform="mac"].theme-light .tooltip-container[type="doorhanger"] > .tooltip-panel,
@@ -378,56 +378,56 @@ strong {
 }
 
 .tooltip-container[type="doorhanger"] > .tooltip-arrow {
-  
+  /* Desired width of the arrow */
   --arrow-width: 20px;
 
-  
+  /* Amount of room to allow for the shadow. Should be about half the radius. */
   --shadow-radius: 4px;
   --shadow-margin: calc(var(--shadow-radius) / 2);
 
-  
-
-
-
-
+  /*
+   * Crop the arrow region to show half the arrow plus allow room for margins.
+   *
+   * The ARROW_WIDTH in HTMLTooltip.js needs to match the following value.
+   */
   width: calc(var(--arrow-width) + 2 * var(--shadow-margin));
   height: calc(var(--arrow-width) / 2 + var(--shadow-margin));
 
-  
-
-
-
+  /**
+   * The rotated box slightly overlaps the left edge of the arrow container.
+   * This means the arrow is not centered in its own box by default.
+   */
   padding-left: 1px;
 }
 
 .tooltip-container[type="doorhanger"] > .tooltip-arrow::before {
-  
+  /* Make sure the border is included in the size */
   box-sizing: border-box;
 
-  
+  /* Don't inherit any rounded corners. */
   border-radius: 0;
 
-  
-
-
-
-
-
+  /*
+   * When the box is rotated, it should have width <arrow-width>.
+   * That makes the length of one side of the box equal to:
+   *
+   *    (<arrow-width> / 2) / sin 45
+   */
   --sin-45: 0.707106781;
   --square-side: calc(var(--arrow-width) / 2 / var(--sin-45));
   width: var(--square-side);
   height: var(--square-side);
 
-  
-
-
-
-
-
-
-
-
-
+  /*
+   * The rotated square will overshoot the left side
+   * and need to be shifted in by:
+   *
+   *   (<arrow-width> - square side) / 2
+   *
+   * But we also want to shift it in so that the box-shadow
+   * is not clipped when we clip the parent so we add
+   * a suitable margin for that.
+   */
   --overhang: calc((var(--arrow-width) - var(--square-side)) / 2);
   margin-left: calc(var(--overhang) + var(--shadow-margin));
 }
@@ -438,28 +438,28 @@ strong {
 }
 
 .tooltip-container[type="doorhanger"].tooltip-top > .tooltip-arrow {
-  
+  /* Overlap the arrow with the 1px border of the doorhanger */
   margin-top: -1px;
 }
 
 .tooltip-container[type="doorhanger"].tooltip-bottom > .tooltip-arrow {
-  
+  /* Overlap the arrow with the 1px border of the doorhanger */
   margin-bottom: -1px;
 }
 
 .tooltip-container[type="doorhanger"].tooltip-top > .tooltip-arrow::before {
-  
+  /* Show only the bottom half of the box */
   margin-top: calc(var(--square-side) / -2);
 }
 
 .tooltip-container[type="doorhanger"].tooltip-bottom > .tooltip-arrow::before {
-  
+  /* Shift the rotated box in so that it is not clipped */
   margin-top: calc(var(--overhang) + var(--shadow-margin));
 }
 
 .tooltip-container[type="doorhanger"] .tooltip-panel ul {
-  
-
+  /* Override the display: -moz-box declaration in minimal-xul.css
+   * or else menu items won't stack. */
   display: block;
 }
 
@@ -469,10 +469,10 @@ strong {
   margin: 0;
   padding: 4px 12px;
   outline: none;
-  
-
-
-
+  /*
+   * It doesn't really make sense, since if this is just about making the items
+   * easier to click we should be using min-width instead.
+   */
   margin-inline-end: 15px;
 }
 
@@ -507,8 +507,7 @@ strong {
   -moz-context-properties: fill;
   fill: currentColor;
   background: url(chrome://global/skin/icons/check.svg) no-repeat transparent;
-  background-size: 11px 11px;
-  background-position: center left 7px;
+  background-position: 7px center;
 }
 
 .tooltip-container[type="doorhanger"] .menuitem > .command[aria-checked="true"]:-moz-locale-dir(rtl),
@@ -535,19 +534,19 @@ strong {
   margin-inline-end: 8px;
   width: 16px;
   height: 16px;
-  
-
+  /* Better optical alignment than with 'vertical-align: middle'.
+     Works well with font sizes between 12px and 16px. */
   vertical-align: -3px;
   -moz-context-properties: fill;
   fill: currentColor;
   background-image: var(--menuitem-icon-image);
   background-size: contain;
   background-repeat: no-repeat;
-  
-
-
-
-
+  /*
+   * The icons in the sidebar menu have opacity: 0.8 here, but those in the
+   * hamburger menu don't. For now we match the hamburger menu styling,
+   * especially because the 80% opacity makes the icons look dull in dark mode.
+   */
 }
 
 .tooltip-container[type="doorhanger"] .menuitem > .command > .accelerator {
@@ -574,7 +573,7 @@ strong {
   pointer-events: none;
 }
 
-
+/* Tooltip: Events */
 
 .devtools-tooltip-events-container {
   border-radius: var(--theme-arrowpanel-border-radius);
@@ -650,7 +649,7 @@ strong {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  
+  /* Force ellipsis to be displayed on the left */
   direction: rtl;
 }
 
@@ -714,7 +713,7 @@ strong {
   width: 100%;
 }
 
-
+/* Tooltip: HTML Search */
 
 #searchbox-panel-listbox {
   width: 250px;
@@ -727,29 +726,29 @@ strong {
   overflow-x: hidden;
 }
 
+/* Tooltip: Image tooltip */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Overview of the Image Tooltip layout.
+ *
+ * ┌─────────────────────────────────────────┐
+ * │ .devtools-tooltip-image-container       │
+ * │ ┌─────────────────────────────────────┐ │
+ * │ │ .devtools-tooltip-image-wrapper     │ │
+ * │ │ ┌─────────────────────────────────┐ │ │
+ * │ │ │ .devtools-tooltip-image         │ │ │
+ * │ │ │ (the actual image tag)          │ │ │
+ * │ │ └─────────────────────────────────┘ │ │
+ * │ └─────────────────────────────────────┘ │
+ * │ ┌─────────────────────────────────────┐ │
+ * │ │ .devtools-tooltip-image-dimensions  │ │
+ * │ └─────────────────────────────────────┘ │
+ * └─────────────────────────────────────────┘
+ *
+ */
 
 .devtools-tooltip-image-container {
-  
+  /* Saved as variables to be synchronized easily with ImageTooltipHelper.js */
   --image-tooltip-image-padding: 4px;
   --image-tooltip-label-height: 20px;
 
@@ -784,7 +783,7 @@ strong {
   padding: 7px;
 }
 
-
+/* Tooltip: Invoke getter confirm Tooltip */
 
 .invoke-confirm {
   color: var(--theme-popup-color);
@@ -833,7 +832,7 @@ strong {
   text-align: left;
 }
 
-
+/* The button already has a "selected" style, we can remove the focus rings. */
 .confirm-button:-moz-focusring,
 .confirm-button::-moz-focus-inner {
   outline: none;
@@ -862,7 +861,7 @@ strong {
   margin-inline-start: 4px;
 }
 
-
+/* Tooltip: Rule Preview */
 
 .rule-preview-tooltip-container {
   display: flex;
