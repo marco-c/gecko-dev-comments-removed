@@ -6,7 +6,7 @@
 use core::marker::PhantomData;
 use core::sync::atomic::Ordering::{Acquire, Relaxed, Release};
 
-use {unprotected, Atomic, Guard, Shared};
+use crate::{unprotected, Atomic, Guard, Shared};
 
 
 
@@ -66,7 +66,7 @@ pub struct Entry {
 
 pub trait IsElement<T> {
     
-    fn entry_of(&T) -> &Entry;
+    fn entry_of(_: &T) -> &Entry;
 
     
     
@@ -80,7 +80,7 @@ pub trait IsElement<T> {
     
     
     
-    unsafe fn element_of(&Entry) -> &T;
+    unsafe fn element_of(_: &Entry) -> &T;
 
     
     
@@ -88,7 +88,7 @@ pub trait IsElement<T> {
     
     
     
-    unsafe fn finalize(&Entry, &Guard);
+    unsafe fn finalize(_: &Entry, _: &Guard);
 }
 
 
@@ -102,7 +102,7 @@ pub struct List<T, C: IsElement<T> = T> {
 }
 
 
-pub struct Iter<'g, T: 'g, C: IsElement<T>> {
+pub struct Iter<'g, T, C: IsElement<T>> {
     
     guard: &'g Guard,
 
@@ -218,7 +218,7 @@ impl<T, C: IsElement<T>> List<T, C> {
 impl<T, C: IsElement<T>> Drop for List<T, C> {
     fn drop(&mut self) {
         unsafe {
-            let guard = &unprotected();
+            let guard = unprotected();
             let mut curr = self.head.load(Relaxed, guard);
             while let Some(c) = curr.as_ref() {
                 let succ = c.next.load(Relaxed, guard);
@@ -247,7 +247,8 @@ impl<'g, T: 'g, C: IsElement<T>> Iterator for Iter<'g, T, C> {
                 
                 debug_assert!(self.curr.tag() == 0);
 
-                match self
+                
+                let succ = match self
                     .pred
                     .compare_and_set(self.curr, succ, Acquire, self.guard)
                 {
@@ -260,18 +261,26 @@ impl<'g, T: 'g, C: IsElement<T>> Iterator for Iter<'g, T, C> {
                         }
 
                         
-                        self.curr = succ;
-                        continue;
+                        succ
                     }
-                    Err(_) => {
+                    Err(e) => {
                         
-                        
-                        self.pred = self.head;
-                        self.curr = self.head.load(Acquire, self.guard);
+                        e.current
+                    }
+                };
 
-                        return Some(Err(IterError::Stalled));
-                    }
+                
+                
+                if succ.tag() != 0 {
+                    self.pred = self.head;
+                    self.curr = self.head.load(Acquire, self.guard);
+
+                    return Some(Err(IterError::Stalled));
                 }
+
+                
+                self.curr = succ;
+                continue;
             }
 
             
@@ -289,9 +298,9 @@ impl<'g, T: 'g, C: IsElement<T>> Iterator for Iter<'g, T, C> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{Collector, Owned};
     use crossbeam_utils::thread;
     use std::sync::Barrier;
-    use {Collector, Owned};
 
     impl IsElement<Entry> for Entry {
         fn entry_of(entry: &Entry) -> &Entry {
