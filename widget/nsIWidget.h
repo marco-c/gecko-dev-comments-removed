@@ -1713,6 +1713,13 @@ class nsIWidget : public nsISupports {
 
   virtual nsresult ClearNativeTouchSequence(nsIObserver* aObserver);
 
+  
+
+
+
+  virtual nsresult SynthesizeNativeTouchpadDoubleTap(
+      LayoutDeviceIntPoint aPoint, uint32_t aModifierFlags) = 0;
+
   virtual void StartAsyncScrollbarDrag(
       const AsyncDragMetrics& aDragMetrics) = 0;
 

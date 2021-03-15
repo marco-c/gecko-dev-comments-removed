@@ -808,6 +808,17 @@ function synthesizeNativeTap(aElement, aX, aY, aObserver = null) {
   return true;
 }
 
+function synthesizeNativeTouchpadDoubleTap(aTarget, aX, aY) {
+  let pt = coordinatesRelativeToScreen({
+    offsetX: aX,
+    offsetY: aY,
+    target: aTarget,
+  });
+  let utils = utilsForTarget(aTarget);
+  utils.sendNativeTouchpadDoubleTap(pt.x, pt.y, 0);
+  return true;
+}
+
 
 
 function synthesizeNativeMouseEventWithAPZ(aParams, aObserver = null) {
