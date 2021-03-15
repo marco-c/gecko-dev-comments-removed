@@ -702,6 +702,7 @@ static bool ShouldUseStandinsForNativeColorForNonNativeTheme(
 
   
   
+  
   switch (aColor) {
     case ColorID::Buttonface:
     case ColorID::Buttontext:
@@ -714,7 +715,7 @@ static bool ShouldUseStandinsForNativeColorForNonNativeTheme(
 
     case ColorID::Field:
     case ColorID::Fieldtext:
-      return true;
+      return PreferenceSheet::PrefsFor(aDoc).mUseAccessibilityTheme;
 
     default:
       break;
