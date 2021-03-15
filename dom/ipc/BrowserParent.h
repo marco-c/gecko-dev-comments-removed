@@ -710,6 +710,9 @@ class BrowserParent final : public PBrowserParent,
                           int32_t aNavigationIndex,
                           nsIURI* aNavigationURI) const;
 
+  
+  void Deactivated();
+
  protected:
   friend BrowserBridgeParent;
   friend BrowserHost;
