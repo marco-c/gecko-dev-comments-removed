@@ -575,11 +575,25 @@ const POLICIES_TESTS = [
     policies: {
       UserMessaging: {
         WhatsNew: false,
+        SkipOnboarding: true,
         Locked: true,
       },
     },
     lockedPrefs: {
       "browser.messaging-system.whatsNewPanel.enabled": false,
+      "browser.aboutwelcome.enabled": false,
+    },
+  },
+
+  
+  {
+    policies: {
+      UserMessaging: {
+        SkipOnboarding: false,
+      },
+    },
+    unlockedPrefs: {
+      "browser.aboutwelcome.enabled": true,
     },
   },
 
