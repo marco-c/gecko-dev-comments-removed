@@ -4740,7 +4740,9 @@ nsresult nsIFrame::SelectByTypeAtPoint(nsPresContext* aPresContext,
   }
 
   ContentOffsets offsets = GetContentOffsetsFromPoint(aPoint, SKIP_HIDDEN);
-  if (!offsets.content) return NS_ERROR_FAILURE;
+  if (!offsets.content) {
+    return NS_ERROR_FAILURE;
+  }
 
   int32_t offset;
   nsIFrame* frame = nsFrameSelection::GetFrameForNodeOffset(
@@ -4829,14 +4831,28 @@ nsresult nsIFrame::PeekBackwardAndForward(nsSelectionAmount aAmountBack,
                               true,  
                               false, false, false);
   rv = baseFrame->PeekOffset(&startpos);
-  if (NS_FAILED(rv)) return rv;
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
-  nsPeekOffsetStruct endpos(aAmountForward, eDirNext, aStartPos, nsPoint(0, 0),
-                            aJumpLines,
+  
+  
+  
+  if (startpos.mResultFrame == baseFrame) {
+    baseOffset = startpos.mContentOffset;
+  } else {
+    baseFrame = this;
+    baseOffset = aStartPos;
+  }
+
+  nsPeekOffsetStruct endpos(aAmountForward, eDirNext, baseOffset,
+                            nsPoint(0, 0), aJumpLines,
                             true,  
                             false, false, false);
-  rv = PeekOffset(&endpos);
-  if (NS_FAILED(rv)) return rv;
+  rv = baseFrame->PeekOffset(&endpos);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   
   RefPtr<nsFrameSelection> frameSelection = GetFrameSelection();
@@ -4849,13 +4865,17 @@ nsresult nsIFrame::PeekBackwardAndForward(nsSelectionAmount aAmountBack,
       MOZ_KnownLive(startpos.mResultContent) ,
       startpos.mContentOffset, startpos.mContentOffset, focusMode,
       CARET_ASSOCIATE_AFTER);
-  if (NS_FAILED(rv)) return rv;
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   rv = frameSelection->HandleClick(
       MOZ_KnownLive(endpos.mResultContent) ,
       endpos.mContentOffset, endpos.mContentOffset,
       nsFrameSelection::FocusMode::kExtendSelection, CARET_ASSOCIATE_BEFORE);
-  if (NS_FAILED(rv)) return rv;
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   
   return frameSelection->MaintainSelection(aAmountBack);
