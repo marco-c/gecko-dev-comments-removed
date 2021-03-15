@@ -26,7 +26,6 @@ namespace js {
 
 
 
-
 static inline gc::AllocKind NewObjectGCKind() { return gc::AllocKind::OBJECT4; }
 
 }  
