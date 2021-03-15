@@ -41,6 +41,7 @@
 #include "mozilla/PublicSSL.h"  
 
 #include "nsISocketTransportService.h"
+#include "nsDNSService2.h"
 #include "nsNetUtil.h"  
 
 #include <string>
@@ -528,6 +529,10 @@ nsresult MediaTransportHandlerSTS::CreateIceCtx(
 
         static bool globalInitDone = false;
         if (!globalInitDone) {
+          
+          DebugOnly<RefPtr<nsIDNSService>> dnsService =
+              RefPtr<nsIDNSService>(nsDNSService::GetXPCOMSingleton());
+          MOZ_ASSERT(dnsService.value);
           mStsThread->Dispatch(
               WrapRunnableNM(&NrIceCtx::InitializeGlobals, GetGlobalConfig()),
               NS_DISPATCH_NORMAL);
