@@ -174,22 +174,6 @@ class TextControlElement : public nsGenericHTMLFormElementWithState {
 
   virtual void InitializeKeyboardEventListeners() = 0;
 
-  
-
-
-
-  virtual void UpdateOverlayTextVisibility(bool aNotify) = 0;
-
-  
-
-
-  virtual bool GetPlaceholderVisibility() = 0;
-
-  
-
-
-  virtual bool GetPreviewVisibility() = 0;
-
   enum class ValueChangeKind {
     Internal,
     Script,

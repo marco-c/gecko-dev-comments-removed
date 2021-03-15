@@ -1017,12 +1017,10 @@ TextInputListener::HandleEvent(Event* aEvent) {
 
 nsresult TextInputListener::OnEditActionHandled(TextEditor& aTextEditor) {
   if (mFrame) {
+    
+    
     AutoWeakFrame weakFrame = mFrame;
 
-    nsITextControlFrame* frameBase = do_QueryFrame(mFrame);
-    nsTextControlFrame* frame = static_cast<nsTextControlFrame*>(frameBase);
-    NS_ASSERTION(frame, "Where is our frame?");
-    
     
     
     size_t numUndoItems = aTextEditor.NumberOfUndoItems();
@@ -1037,23 +1035,18 @@ nsresult TextInputListener::OnEditActionHandled(TextEditor& aTextEditor) {
     }
 
     if (weakFrame.IsAlive()) {
-      HandleValueChanged(frame);
+      HandleValueChanged();
     }
   }
 
   return mTextControlState ? mTextControlState->OnEditActionHandled() : NS_OK;
 }
 
-void TextInputListener::HandleValueChanged(nsTextControlFrame* aFrame) {
+void TextInputListener::HandleValueChanged() {
   
   
   if (mSetValueChanged) {
-    if (!aFrame) {
-      nsITextControlFrame* frameBase = do_QueryFrame(mFrame);
-      aFrame = static_cast<nsTextControlFrame*>(frameBase);
-      NS_ASSERTION(aFrame, "Where is our frame?");
-    }
-    aFrame->SetValueChanged(true);
+    mTxtCtrlElement->SetValueChanged(true);
   }
 
   if (!mSettingValue) {
@@ -1223,8 +1216,8 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
     
     
     mTextInputListener->SettingValue(true);
-    mTextInputListener->SetValueChanged(mValueSetterOptions.contains(
-        ValueSetterOption::UpdateOverlayTextVisibilityAndInvalidateFrame));
+    mTextInputListener->SetValueChanged(
+        mValueSetterOptions.contains(ValueSetterOption::SetValueChanged));
     mEditActionHandled = false;
     
     
@@ -1255,13 +1248,6 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
       mTextInputListener->SetValueChanged(true);
       mTextInputListener->SettingValue(
           mParent && mParent->IsHandling(TextControlAction::SetValue));
-      if (!mValueSetterOptions.contains(
-              ValueSetterOption::
-                  UpdateOverlayTextVisibilityAndInvalidateFrame)) {
-        
-        
-        mTextControlState.ValueWasChanged();
-      }
     }
     if (!IsOriginalTextControlFrameAlive()) {
       return SetValueWithoutTextEditorAgain() ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
@@ -1297,9 +1283,7 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
     ErrorResult error;
     AutoTextControlHandlingState handlingSetValueWithoutEditor(
         mTextControlState, TextControlAction::SetValue, mSettingValue,
-        mOldValue,
-        mValueSetterOptions &
-            ValueSetterOption::UpdateOverlayTextVisibilityAndInvalidateFrame,
+        mOldValue, mValueSetterOptions & ValueSetterOption::SetValueChanged,
         error);
     if (error.Failed()) {
       MOZ_ASSERT(error.ErrorCodeIs(NS_ERROR_OUT_OF_MEMORY));
@@ -1402,9 +1386,7 @@ TextControlState::TextControlState(TextControlElement* aOwningElement)
       mEverInited(false),
       mEditorInitialized(false),
       mValueTransferInProgress(false),
-      mSelectionCached(true),
-      mPlaceholderVisibility(false),
-      mPreviewVisibility(false)
+      mSelectionCached(true)
 
 
 {
@@ -1424,8 +1406,6 @@ TextControlState* TextControlState::Construct(
     state->mEditorInitialized = false;
     state->mValueTransferInProgress = false;
     state->mSelectionCached = true;
-    state->mPlaceholderVisibility = false;
-    state->mPreviewVisibility = false;
     
     
     return state;
@@ -2979,7 +2959,6 @@ bool TextControlState::SetValueWithoutTextEditor(
     }
   }
 
-  ValueWasChanged();
   return true;
 }
 
@@ -3013,8 +2992,6 @@ void TextControlState::InitializeKeyboardEventListeners() {
   mSelCon->SetScrollableFrame(mBoundFrame->GetScrollTargetFrame());
 }
 
-void TextControlState::ValueWasChanged() { UpdateOverlayTextVisibility(true); }
-
 void TextControlState::SetPreviewText(const nsAString& aValue, bool aNotify) {
   
   Element* previewDiv = GetPreviewNode();
@@ -3027,8 +3004,6 @@ void TextControlState::SetPreviewText(const nsAString& aValue, bool aNotify) {
   nsContentUtils::RemoveNewlines(previewValue);
   MOZ_ASSERT(previewDiv->GetFirstChild(), "preview div has no child");
   previewDiv->GetFirstChild()->AsText()->SetText(previewValue, aNotify);
-
-  UpdateOverlayTextVisibility(aNotify);
 }
 
 void TextControlState::GetPreviewText(nsAString& aValue) {
@@ -3043,24 +3018,6 @@ void TextControlState::GetPreviewText(nsAString& aValue) {
 
   aValue.Truncate();
   text->AppendTo(aValue);
-}
-
-void TextControlState::UpdateOverlayTextVisibility(bool aNotify) {
-  nsAutoString value, previewValue;
-  bool valueIsEmpty = !HasNonEmptyValue();
-  GetPreviewText(previewValue);
-
-  mPreviewVisibility = valueIsEmpty && !previewValue.IsEmpty();
-  mPlaceholderVisibility = valueIsEmpty && previewValue.IsEmpty();
-
-  if (mPlaceholderVisibility && !StaticPrefs::dom_placeholder_show_on_focus()) {
-    mPlaceholderVisibility =
-        !nsContentUtils::IsFocusedContent(mTextCtrlElement);
-  }
-
-  if (mBoundFrame && aNotify) {
-    mBoundFrame->InvalidateFrame();
-  }
 }
 
 bool TextControlState::EditorHasComposition() {

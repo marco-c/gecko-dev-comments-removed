@@ -207,9 +207,7 @@ class nsTextControlFrame : public nsContainerFrame,
 
   void ComputeBaseline(const ReflowInput&, ReflowOutput&);
 
- public:  
-  void SetValueChanged(bool aValueChanged);
-
+ public:
   Element* GetRootNode() const { return mRootNode; }
 
   Element* GetPreviewNode() const { return mPreviewDiv; }

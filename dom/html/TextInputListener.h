@@ -19,6 +19,7 @@ class nsTextControlFrame;
 namespace mozilla {
 class TextControlElement;
 class TextControlState;
+class TextEditor;
 
 namespace dom {
 class Selection;
@@ -39,7 +40,7 @@ class TextInputListener final : public nsIDOMEventListener,
 
 
 
-  void HandleValueChanged(nsTextControlFrame* aFrame = nullptr);
+  void HandleValueChanged();
 
   
 

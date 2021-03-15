@@ -184,7 +184,8 @@ class TextControlState final : public SupportsWeakPtr {
     
     ByContentAPI,
     
-    UpdateOverlayTextVisibilityAndInvalidateFrame,
+    
+    SetValueChanged,
     
     
     
@@ -266,15 +267,9 @@ class TextControlState final : public SupportsWeakPtr {
   }
   int32_t GetRows() { return mTextCtrlElement->GetRows(); }
 
-  void UpdateOverlayTextVisibility(bool aNotify);
-
-  
-  bool GetPlaceholderVisibility() { return mPlaceholderVisibility; }
-
   
   void SetPreviewText(const nsAString& aValue, bool aNotify);
   void GetPreviewText(nsAString& aValue);
-  bool GetPreviewVisibility() { return mPreviewVisibility; }
 
   struct SelectionProperties {
    public:
@@ -416,8 +411,6 @@ class TextControlState final : public SupportsWeakPtr {
 
   MOZ_CAN_RUN_SCRIPT void UnlinkInternal();
 
-  void ValueWasChanged();
-
   MOZ_CAN_RUN_SCRIPT void DestroyEditor();
   MOZ_CAN_RUN_SCRIPT void Clear();
 
@@ -473,8 +466,6 @@ class TextControlState final : public SupportsWeakPtr {
   bool mValueTransferInProgress;  
                                   
   bool mSelectionCached;          
-  bool mPlaceholderVisibility;
-  bool mPreviewVisibility;
 
   
 

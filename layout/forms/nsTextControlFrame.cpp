@@ -13,11 +13,13 @@
 #include "nsIEditor.h"
 #include "nsCaret.h"
 #include "nsCSSPseudoElements.h"
+#include "nsDisplayList.h"
 #include "nsGenericHTMLElement.h"
 #include "nsTextFragment.h"
 #include "nsNameSpaceManager.h"
 
 #include "nsIContent.h"
+#include "nsIScrollableFrame.h"
 #include "nsPresContext.h"
 #include "nsGkAtoms.h"
 #include "nsLayoutUtils.h"
@@ -406,12 +408,6 @@ nsresult nsTextControlFrame::CreateAnonymousContent(
   aElements.AppendElement(mRootNode);
   CreatePlaceholderIfNeeded();
   if (mPlaceholderDiv) {
-    if (!IsSingleLineTextControl()) {
-      
-      
-      
-      textControlElement->UpdateOverlayTextVisibility(true);
-    }
     aElements.AppendElement(mPlaceholderDiv);
   }
   CreatePreviewIfNeeded();
@@ -738,10 +734,6 @@ void nsTextControlFrame::SetFocus(bool aOn, bool aRepaint) {
 
   
   
-  if (mPlaceholderDiv) {
-    textControlElement->UpdateOverlayTextVisibility(true);
-  }
-
   if (!aOn) {
     return;
   }
@@ -1159,21 +1151,6 @@ void nsTextControlFrame::SetInitialChildList(ChildListID aListID,
   }
 }
 
-void nsTextControlFrame::SetValueChanged(bool aValueChanged) {
-  auto* textControlElement = TextControlElement::FromNode(GetContent());
-  MOZ_ASSERT(textControlElement);
-
-  if (mPlaceholderDiv) {
-    AutoWeakFrame weakFrame(this);
-    textControlElement->UpdateOverlayTextVisibility(true);
-    if (!weakFrame.IsAlive()) {
-      return;
-    }
-  }
-
-  textControlElement->SetValueChanged(aValueChanged);
-}
-
 nsresult nsTextControlFrame::UpdateValueDisplay(bool aNotify,
                                                 bool aBeforeEditorInit,
                                                 const nsAString* aValue) {
@@ -1218,12 +1195,6 @@ nsresult nsTextControlFrame::UpdateValueDisplay(bool aNotify,
   
   
   
-  if ((mPlaceholderDiv || mPreviewDiv) && !aBeforeEditorInit) {
-    AutoWeakFrame weakFrame(this);
-    textControlElement->UpdateOverlayTextVisibility(aNotify);
-    NS_ENSURE_STATE(weakFrame.IsAlive());
-  }
-
   if (aBeforeEditorInit && value.IsEmpty()) {
     if (nsIContent* node = mRootNode->GetFirstChild()) {
       mRootNode->RemoveChildNode(node, true);
@@ -1295,9 +1266,6 @@ void nsTextControlFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   DO_GLOBAL_REFLOW_COUNT_DSP("nsTextControlFrame");
 
-  auto* control = TextControlElement::FromNode(GetContent());
-  MOZ_ASSERT(control);
-
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 
   
@@ -1310,40 +1278,15 @@ void nsTextControlFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   
-  
-  
-  auto clipToRoot = [&](Maybe<DisplayListClipState::AutoSaveRestore>& aClip) {
-    if (mRootNode) {
-      if (auto* root = mRootNode->GetPrimaryFrame()) {
-        aClip.emplace(aBuilder);
-        nsRect rootBox(aBuilder->ToReferenceFrame(root), root->GetSize());
-        aClip->ClipContentDescendants(rootBox);
-      }
-    }
-  };
-
-  
-  
-  if (mPlaceholderDiv && control->GetPlaceholderVisibility() &&
-      mPlaceholderDiv->GetPrimaryFrame()) {
-    Maybe<DisplayListClipState::AutoSaveRestore> overlayTextClip;
-    clipToRoot(overlayTextClip);
+  if (mPlaceholderDiv && mPlaceholderDiv->GetPrimaryFrame()) {
     auto* kid = mPlaceholderDiv->GetPrimaryFrame();
     MOZ_ASSERT(kid->GetParent() == this);
     BuildDisplayListForChild(aBuilder, kid, set);
   }
 
   for (auto* kid : mFrames) {
-    nsIContent* kidContent = kid->GetContent();
-    Maybe<DisplayListClipState::AutoSaveRestore> overlayTextClip;
-    if (kidContent == mPlaceholderDiv) {
+    if (kid->GetContent() == mPlaceholderDiv) {
       continue;  
-    }
-    if (kidContent == mPreviewDiv && !control->GetPreviewVisibility()) {
-      continue;
-    }
-    if (kidContent == mPreviewDiv) {
-      clipToRoot(overlayTextClip);
     }
     BuildDisplayListForChild(aBuilder, kid, set);
   }
