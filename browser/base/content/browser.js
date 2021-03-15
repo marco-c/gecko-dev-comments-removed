@@ -3539,7 +3539,7 @@ function BrowserReloadWithFlags(reloadFlags) {
   
   
   for (let tab of unchangedRemoteness) {
-    SitePermissions.clearTemporaryPermissions(tab.linkedBrowser);
+    SitePermissions.clearTemporaryBlockPermissions(tab.linkedBrowser);
     
     delete tab.linkedBrowser.authPromptAbuseCounter;
   }

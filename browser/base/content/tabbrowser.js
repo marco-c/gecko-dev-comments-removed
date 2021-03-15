@@ -4361,7 +4361,7 @@
       let browser = this.getBrowserForTab(aTab);
       
       
-      SitePermissions.clearTemporaryPermissions(browser);
+      SitePermissions.clearTemporaryBlockPermissions(browser);
       
       delete browser.authPromptAbuseCounter;
       gIdentityHandler.hidePopup();

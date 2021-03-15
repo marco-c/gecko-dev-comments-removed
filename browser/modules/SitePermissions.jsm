@@ -240,21 +240,54 @@ const TemporaryPermissions = {
   
   
   
-  clear(browser) {
-    let entry = this._stateByBrowser.get(browser);
-    this._stateByBrowser.delete(browser);
 
+  
+
+
+
+
+
+
+
+  clear(browser, filterState = null) {
+    let entry = this._stateByBrowser.get(browser);
     if (!entry?.uriToPerm) {
       return;
     }
-    Object.values(entry.uriToPerm).forEach(permissions => {
-      Object.values(permissions).forEach(({ expireTimeout }) => {
-        if (!expireTimeout) {
-          return;
+
+    let { uriToPerm } = entry;
+    Object.entries(uriToPerm).forEach(([uriKey, permissions]) => {
+      Object.entries(permissions).forEach(
+        ([permId, { state, expireTimeout }]) => {
+          
+          
+          if (filterState != null) {
+            if (state != filterState) {
+              
+              return;
+            }
+            delete permissions[permId];
+          }
+          
+          
+          if (!expireTimeout) {
+            return;
+          }
+          clearTimeout(expireTimeout);
         }
-        clearTimeout(expireTimeout);
-      });
+      );
+      
+      if (filterState != null && !Object.keys(permissions).length) {
+        delete uriToPerm[uriKey];
+      }
     });
+
+    
+    
+    
+    if (filterState == null || !Object.keys(uriToPerm).length) {
+      this._stateByBrowser.delete(browser);
+    }
   },
 
   
@@ -871,8 +904,8 @@ var SitePermissions = {
 
 
 
-  clearTemporaryPermissions(browser) {
-    TemporaryPermissions.clear(browser);
+  clearTemporaryBlockPermissions(browser) {
+    TemporaryPermissions.clear(browser, SitePermissions.BLOCK);
   },
 
   
