@@ -48,26 +48,38 @@
 
 
 
-#![doc(test(
-    no_crate_inject,
-    attr(
-        deny(warnings, rust_2018_idioms),
-        allow(dead_code, unused_assignments, unused_variables)
-    )
-))]
-#![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
+
+
+
+
+
+
+#![warn(missing_docs)]
+#![warn(missing_debug_implementations)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(feature = "nightly", feature(cfg_target_has_atomic))]
-#![cfg_attr(feature = "nightly", feature(const_fn))]
 
-#![allow(clippy::match_like_matches_macro)]
+#[macro_use]
+extern crate cfg_if;
+#[cfg(feature = "std")]
+extern crate core;
 
-use cfg_if::cfg_if;
-
-#[cfg_attr(feature = "nightly", cfg(target_has_atomic = "ptr"))]
 cfg_if! {
     if #[cfg(feature = "alloc")] {
         extern crate alloc;
+    } else if #[cfg(feature = "std")] {
+        extern crate std as alloc;
+    }
+}
+
+#[cfg_attr(feature = "nightly", cfg(target_has_atomic = "ptr"))]
+cfg_if! {
+    if #[cfg(any(feature = "alloc", feature = "std"))] {
+        extern crate crossbeam_utils;
+        #[macro_use]
+        extern crate memoffset;
+        #[macro_use]
+        extern crate scopeguard;
 
         mod atomic;
         mod collector;
@@ -77,7 +89,7 @@ cfg_if! {
         mod internal;
         mod sync;
 
-        pub use self::atomic::{Pointable, Atomic, CompareAndSetError, CompareAndSetOrdering, Owned, Pointer, Shared};
+        pub use self::atomic::{Atomic, CompareAndSetError, CompareAndSetOrdering, Owned, Pointer, Shared};
         pub use self::collector::{Collector, LocalHandle};
         pub use self::guard::{unprotected, Guard};
     }
@@ -85,6 +97,9 @@ cfg_if! {
 
 cfg_if! {
     if #[cfg(feature = "std")] {
+        #[macro_use]
+        extern crate lazy_static;
+
         mod default;
         pub use self::default::{default_collector, is_pinned, pin};
     }

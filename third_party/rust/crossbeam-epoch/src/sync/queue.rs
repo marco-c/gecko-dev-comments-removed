@@ -5,15 +5,13 @@
 
 
 
-
-
-
-use core::mem::MaybeUninit;
+use core::mem::{self, ManuallyDrop};
+use core::ptr;
 use core::sync::atomic::Ordering::{Acquire, Relaxed, Release};
 
 use crossbeam_utils::CachePadded;
 
-use crate::{unprotected, Atomic, Guard, Owned, Shared};
+use {unprotected, Atomic, Guard, Owned, Shared};
 
 
 
@@ -24,6 +22,7 @@ pub struct Queue<T> {
     tail: CachePadded<Atomic<Node<T>>>,
 }
 
+#[derive(Debug)]
 struct Node<T> {
     
     
@@ -31,7 +30,7 @@ struct Node<T> {
     
     
     
-    data: MaybeUninit<T>,
+    data: ManuallyDrop<T>,
 
     next: Atomic<Node<T>>,
 }
@@ -47,12 +46,15 @@ impl<T> Queue<T> {
             head: CachePadded::new(Atomic::null()),
             tail: CachePadded::new(Atomic::null()),
         };
+        
+        
+        #[allow(deprecated)]
         let sentinel = Owned::new(Node {
-            data: MaybeUninit::uninit(),
+            data: unsafe { mem::uninitialized() },
             next: Atomic::null(),
         });
         unsafe {
-            let guard = unprotected();
+            let guard = &unprotected();
             let sentinel = sentinel.into_shared(guard);
             q.head.store(sentinel, Relaxed);
             q.tail.store(sentinel, Relaxed);
@@ -63,12 +65,7 @@ impl<T> Queue<T> {
     
     
     #[inline(always)]
-    fn push_internal(
-        &self,
-        onto: Shared<'_, Node<T>>,
-        new: Shared<'_, Node<T>>,
-        guard: &Guard,
-    ) -> bool {
+    fn push_internal(&self, onto: Shared<Node<T>>, new: Shared<Node<T>>, guard: &Guard) -> bool {
         
         let o = unsafe { onto.deref() };
         let next = o.next.load(Acquire, guard);
@@ -93,7 +90,7 @@ impl<T> Queue<T> {
     
     pub fn push(&self, t: T, guard: &Guard) {
         let new = Owned::new(Node {
-            data: MaybeUninit::new(t),
+            data: ManuallyDrop::new(t),
             next: Atomic::null(),
         });
         let new = Owned::into_shared(new, guard);
@@ -120,14 +117,8 @@ impl<T> Queue<T> {
                 self.head
                     .compare_and_set(head, next, Release, guard)
                     .map(|_| {
-                        let tail = self.tail.load(Relaxed, guard);
-                        
-                        if head == tail {
-                            let _ = self.tail.compare_and_set(tail, next, Release, guard);
-                        }
                         guard.defer_destroy(head);
-                        
-                        Some(n.data.as_ptr().read())
+                        Some(ManuallyDrop::into_inner(ptr::read(&n.data)))
                     })
                     .map_err(|_| ())
             },
@@ -147,17 +138,12 @@ impl<T> Queue<T> {
         let h = unsafe { head.deref() };
         let next = h.next.load(Acquire, guard);
         match unsafe { next.as_ref() } {
-            Some(n) if condition(unsafe { &*n.data.as_ptr() }) => unsafe {
+            Some(n) if condition(&n.data) => unsafe {
                 self.head
                     .compare_and_set(head, next, Release, guard)
                     .map(|_| {
-                        let tail = self.tail.load(Relaxed, guard);
-                        
-                        if head == tail {
-                            let _ = self.tail.compare_and_set(tail, next, Release, guard);
-                        }
                         guard.defer_destroy(head);
-                        Some(n.data.as_ptr().read())
+                        Some(ManuallyDrop::into_inner(ptr::read(&n.data)))
                     })
                     .map_err(|_| ())
             },
@@ -196,9 +182,9 @@ impl<T> Queue<T> {
 impl<T> Drop for Queue<T> {
     fn drop(&mut self) {
         unsafe {
-            let guard = unprotected();
+            let guard = &unprotected();
 
-            while self.try_pop(guard).is_some() {}
+            while let Some(_) = self.try_pop(guard) {}
 
             
             let sentinel = self.head.load(Relaxed, guard);
@@ -210,8 +196,8 @@ impl<T> Drop for Queue<T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::pin;
     use crossbeam_utils::thread;
+    use pin;
 
     struct Queue<T> {
         queue: super::Queue<T>,
