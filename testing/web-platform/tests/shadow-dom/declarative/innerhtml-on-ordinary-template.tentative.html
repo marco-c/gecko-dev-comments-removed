@@ -21,7 +21,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 
 <div id='has-imperative-root'>
-  <script></script> 
+  <script></script> <!-- Ensure observer runs, attaches imperative shadow root -->
   <template id=ordinarytemplate shadowroot=open>
     <span id=toreplace>This should get removed</span>
   </template>

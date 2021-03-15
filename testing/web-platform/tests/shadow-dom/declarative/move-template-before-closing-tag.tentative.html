@@ -58,7 +58,7 @@ function runTest(testdiv) {
   <div class=old-host>
     <template class='template' shadowroot=open>
       <span class=contents>Template contents</span>
-      <script></script> 
+      <script></script> <!-- Observer runs here, moves <template> node -->
     </template>
   </div>
 </div>
@@ -67,7 +67,7 @@ function runTest(testdiv) {
   <div class=new-host></div>
   <div class=old-host>
     <template class='template' shadowroot=open>
-      <script></script> 
+      <script></script> <!-- Observer runs here, moves <template> node -->
       <span class=contents>Template contents</span>
     </template>
   </div>
@@ -78,7 +78,7 @@ function runTest(testdiv) {
   <video class=old-host>
     <template class='template' shadowroot=open>
       <span class=contents>Template contents</span>
-      <script></script> 
+      <script></script> <!-- Observer runs here, moves <template> node -->
     </template>
   </video>
 </div>
