@@ -711,7 +711,7 @@ var gPermissionPanel = {
       let browser = gBrowser.selectedBrowser;
       container.remove();
       if (aPermission.sharingState) {
-        if (aPermission.id === "geo" || aPermission.id === "xr") {
+        if (aPermission.id === "xr") {
           let origins = browser.getDevicePermissionOrigins(aPermission.id);
           for (let origin of origins) {
             let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
@@ -729,21 +729,9 @@ var gPermissionPanel = {
           } else {
             
             
-            
-            let origins = browser.getDevicePermissionOrigins("webrtc");
-            for (let origin of origins) {
-              
-              
-              let principal;
-              for (let id of ["camera", "microphone"]) {
-                if (this._sharingState.webRTC[id]) {
-                  if (!principal) {
-                    principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-                      origin
-                    );
-                  }
-                  this._removePermPersistentAllow(principal, id);
-                }
+            for (let id of ["camera", "microphone"]) {
+              if (this._sharingState.webRTC[id]) {
+                this._removePermPersistentAllow(gBrowser.contentPrincipal, id);
               }
             }
           }

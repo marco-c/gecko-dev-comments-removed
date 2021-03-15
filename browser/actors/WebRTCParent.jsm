@@ -389,13 +389,6 @@ class WebRTCParent extends JSWindowActorParent {
       }
 
       
-      
-      
-      
-      let browser = this.getBrowser();
-      browser.getDevicePermissionOrigins("webrtc").add(aPrincipal.origin);
-
-      
       let camNeeded = !!videoDevices.length && !sharingScreen;
       let scrNeeded = !!videoDevices.length && sharingScreen;
       let micNeeded = !!audioDevices.length;
@@ -1104,12 +1097,6 @@ function prompt(aActor, aBrowser, aRequest) {
         if (!allowedDevices.length) {
           aActor.denyRequest(aRequest);
           return;
-        }
-
-        if (remember) {
-          
-          
-          aBrowser.getDevicePermissionOrigins("webrtc").add(principal.origin);
         }
 
         let camNeeded = !!videoDevices.length && !sharingScreen;

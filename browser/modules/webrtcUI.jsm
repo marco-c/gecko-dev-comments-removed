@@ -599,26 +599,20 @@ var webrtcUI = {
           ) {
             
             
-            
-            let origins = browser.getDevicePermissionOrigins("webrtc");
-            for (let origin of origins) {
-              
-              
-              let principal;
-              for (let id of ["camera", "microphone"]) {
-                if (webrtcState[id]) {
-                  if (!principal) {
-                    principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-                      origin
-                    );
-                  }
-                  let perm = SitePermissions.getForPrincipal(principal, id);
-                  if (
-                    perm.state == SitePermissions.ALLOW &&
-                    perm.scope == SitePermissions.SCOPE_PERSISTENT
-                  ) {
-                    SitePermissions.removeFromPrincipal(principal, id);
-                  }
+            for (let id of ["camera", "microphone"]) {
+              if (webrtcState[id]) {
+                let perm = SitePermissions.getForPrincipal(
+                  gBrowser.contentPrincipal,
+                  id
+                );
+                if (
+                  perm.state == SitePermissions.ALLOW &&
+                  perm.scope == SitePermissions.SCOPE_PERSISTENT
+                ) {
+                  SitePermissions.removeFromPrincipal(
+                    gBrowser.contentPrincipal,
+                    id
+                  );
                 }
               }
             }
