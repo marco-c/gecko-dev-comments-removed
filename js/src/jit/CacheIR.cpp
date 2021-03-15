@@ -27,6 +27,7 @@
 #include "js/friend/DOMProxy.h"       
 #include "js/friend/WindowProxy.h"  
 #include "js/friend/XrayJitInfo.h"  
+#include "js/GCAPI.h"               
 #include "js/RegExpFlags.h"         
 #include "js/ScalarType.h"          
 #include "js/Wrapper.h"
@@ -935,13 +936,16 @@ static bool CanAttachDOMCall(JSContext* cx, JSJitInfo::OpType type,
     return false;
   }
 
+  
+  JS::AutoSuppressGCAnalysis nogc;
+
   DOMInstanceClassHasProtoAtDepth instanceChecker =
       cx->runtime()->DOMcallbacks->instanceClassMatchesProto;
   return instanceChecker(clasp, jitInfo->protoID, jitInfo->depth);
 }
 
 static bool CanAttachDOMGetterSetter(JSContext* cx, JSJitInfo::OpType type,
-                                     NativeObject* obj, HandleShape shape,
+                                     NativeObject* obj, Shape* shape,
                                      ICState::Mode mode) {
   MOZ_ASSERT(type == JSJitInfo::Getter || type == JSJitInfo::Setter);
 
@@ -992,11 +996,11 @@ AttachDecision GetPropIRGenerator::tryAttachNative(HandleObject obj,
                                                    ObjOperandId objId,
                                                    HandleId id,
                                                    ValOperandId receiverId) {
-  RootedShape shape(cx_);
-  RootedNativeObject holder(cx_);
+  Shape* shape = nullptr;
+  NativeObject* holder = nullptr;
 
-  NativeGetPropCacheability type = CanAttachNativeGetProp(
-      cx_, obj, id, holder.address(), shape.address(), pc_);
+  NativeGetPropCacheability type =
+      CanAttachNativeGetProp(cx_, obj, id, &holder, &shape, pc_);
   switch (type) {
     case CanAttachNone:
       return AttachDecision::NoAction;
@@ -1017,7 +1021,7 @@ AttachDecision GetPropIRGenerator::tryAttachNative(HandleObject obj,
     }
     case CanAttachScriptedGetter:
     case CanAttachNativeGetter: {
-      auto nobj = obj.as<NativeObject>();
+      auto* nobj = &obj->as<NativeObject>();
 
       maybeEmitIdGuard(id);
 
@@ -2792,8 +2796,9 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameGetter(ObjOperandId objId,
     return AttachDecision::NoAction;
   }
 
-  if (IsCacheableGetPropCall(&globalLexical->global(), holder, shape) !=
-      CanAttachNativeGetter) {
+  GlobalObject* global = &globalLexical->global();
+
+  if (IsCacheableGetPropCall(global, holder, shape) != CanAttachNativeGetter) {
     return AttachDecision::NoAction;
   }
 
@@ -2802,23 +2807,22 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameGetter(ObjOperandId objId,
 
   
   ObjOperandId globalId = writer.loadEnclosingEnvironment(objId);
-  writer.guardShape(globalId, globalLexical->global().lastProperty());
+  writer.guardShape(globalId, global->lastProperty());
 
-  if (holder != &globalLexical->global()) {
+  if (holder != global) {
     
     ObjOperandId holderId = writer.loadObject(holder);
     writer.guardShape(holderId, holder->lastProperty());
   }
 
-  if (CanAttachDOMGetterSetter(cx_, JSJitInfo::Getter, &globalLexical->global(),
-                               shape, mode_)) {
+  if (CanAttachDOMGetterSetter(cx_, JSJitInfo::Getter, global, shape, mode_)) {
     
     EmitCallDOMGetterResultNoGuards(writer, shape, globalId);
     trackAttached("GlobalNameDOMGetter");
   } else {
     ValOperandId receiverId = writer.boxObject(globalId);
-    EmitCallGetterResultNoGuards(cx_, writer, &globalLexical->global(), holder,
-                                 shape, receiverId);
+    EmitCallGetterResultNoGuards(cx_, writer, global, holder, shape,
+                                 receiverId);
     trackAttached("GlobalNameGetter");
   }
 
