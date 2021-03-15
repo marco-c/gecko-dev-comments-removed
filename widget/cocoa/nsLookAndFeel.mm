@@ -31,6 +31,7 @@
 #if !defined(MAC_OS_X_VERSION_10_14) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_14
 @interface NSApplication (NSApplicationAppearance)
 @property(strong) NSAppearance* appearance NS_AVAILABLE_MAC(10_14);
+@property(readonly, strong) NSAppearance* effectiveAppearance NS_AVAILABLE_MAC(10_14);
 @end
 #endif
 
@@ -841,6 +842,16 @@ void nsLookAndFeel::EnsureInit() {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK
 
   nscolor color;
+
+  if (@available(macOS 10.14, *)) {
+    
+    
+    
+    
+    
+    
+    NSAppearance.currentAppearance = NSApp.effectiveAppearance;
+  }
 
   mColorTextSelectBackground = GetColorFromNSColor([NSColor selectedTextBackgroundColor]);
   mColorTextSelectBackgroundDisabled = GetColorFromNSColor([NSColor secondarySelectedControlColor]);
