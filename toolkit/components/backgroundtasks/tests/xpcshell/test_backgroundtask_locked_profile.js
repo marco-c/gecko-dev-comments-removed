@@ -4,21 +4,7 @@
 
 
 
-
-
-let gProfD = do_get_profile();
-let gDataHome = gProfD.clone();
-gDataHome.append("data");
-gDataHome.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-let gDataHomeLocal = gProfD.clone();
-gDataHomeLocal.append("local");
-gDataHomeLocal.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-
-let xreDirProvider = Cc["@mozilla.org/xre/directory-provider;1"].getService(
-  Ci.nsIXREDirProvider
-);
-xreDirProvider.setUserDataDirectory(gDataHome, false);
-xreDirProvider.setUserDataDirectory(gDataHomeLocal, true);
+setupProfileService();
 
 add_task(async function test_backgroundtask_locked_profile() {
   let profileService = Cc["@mozilla.org/toolkit/profile-service;1"].getService(
