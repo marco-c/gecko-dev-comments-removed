@@ -35,8 +35,9 @@ fn validate_shaders() {
                 &|f| webrender::get_unoptimized_shader_source(f, None)
             );
 
-            validate(&vs_validator, shader, vs);
-            validate(&fs_validator, shader, fs);
+            let full_shader_name = format!("{} {}", shader, config);
+            validate(&vs_validator, &full_shader_name, vs);
+            validate(&fs_validator, &full_shader_name, fs);
         }
     }
 }
@@ -49,6 +50,18 @@ fn validate(validator: &ShaderValidator, name: &str, source: String) {
     
     match validator.compile_and_translate(&[&source]) {
         Ok(_) => {
+            
+            
+            
+            
+            let varying_vectors = validator.get_num_unpacked_varying_vectors();
+            let max_varying_vectors = 16;
+            assert!(
+                varying_vectors <= max_varying_vectors,
+                "Shader {} uses {} varying vectors. Max allowed {}",
+                name, varying_vectors, max_varying_vectors
+            );
+
             println!("Shader translated succesfully: {}", name);
         }
         Err(_) => {
