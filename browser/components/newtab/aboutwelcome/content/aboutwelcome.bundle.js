@@ -212,6 +212,8 @@ function ComputeTelemetryInfo(welcomeContent, experimentId, branchId) {
 }
 
 async function retrieveRenderContent() {
+  var _aboutWelcomeProps;
+
   
   const featureConfig = await window.AWGetFeatureConfig();
   let aboutWelcomeProps;
@@ -225,6 +227,13 @@ async function retrieveRenderContent() {
   } else {
     
     aboutWelcomeProps = featureConfig.screens ? featureConfig : {};
+  } 
+
+
+  if (featureConfig.design && !((_aboutWelcomeProps = aboutWelcomeProps) !== null && _aboutWelcomeProps !== void 0 && _aboutWelcomeProps.design)) {
+    aboutWelcomeProps = { ...aboutWelcomeProps,
+      design: featureConfig.design
+    };
   }
 
   let {
