@@ -619,7 +619,13 @@ class WebSocketServer(object):
         env = dict(os.environ)
         env["PYTHONPATH"] = os.pathsep.join(sys.path)
         
-        self._process = mozprocess.ProcessHandler(cmd, cwd=SCRIPT_DIR, env=env)
+        
+        self._process = mozprocess.ProcessHandler(
+            cmd,
+            cwd=SCRIPT_DIR,
+            env=env,
+            processStderrLine=lambda _: None,
+        )
         self._process.run()
         pid = self._process.pid
         self._log.info("runtests.py | Websocket server pid: %d" % pid)
