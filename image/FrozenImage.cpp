@@ -43,15 +43,29 @@ FrozenImage::GetFrameAtSize(const IntSize& aSize, uint32_t aWhichFrame,
   return InnerImage()->GetFrameAtSize(aSize, FRAME_FIRST, aFlags);
 }
 
+bool FrozenImage::IsNonAnimated() const {
+  
+  
+  
+  bool animated = false;
+  return NS_SUCCEEDED(InnerImage()->GetAnimated(&animated)) && !animated;
+}
+
 NS_IMETHODIMP_(bool)
 FrozenImage::IsImageContainerAvailable(LayerManager* aManager,
                                        uint32_t aFlags) {
+  if (IsNonAnimated()) {
+    return InnerImage()->IsImageContainerAvailable(aManager, aFlags);
+  }
   return false;
 }
 
 NS_IMETHODIMP_(already_AddRefed<ImageContainer>)
 FrozenImage::GetImageContainer(layers::LayerManager* aManager,
                                uint32_t aFlags) {
+  if (IsNonAnimated()) {
+    return InnerImage()->GetImageContainer(aManager, aFlags);
+  }
   
   
   
@@ -64,6 +78,10 @@ NS_IMETHODIMP_(bool)
 FrozenImage::IsImageContainerAvailableAtSize(LayerManager* aManager,
                                              const IntSize& aSize,
                                              uint32_t aFlags) {
+  if (IsNonAnimated()) {
+    return InnerImage()->IsImageContainerAvailableAtSize(aManager, aSize,
+                                                         aFlags);
+  }
   return false;
 }
 
@@ -73,6 +91,11 @@ FrozenImage::GetImageContainerAtSize(layers::LayerManager* aManager,
                                      const Maybe<SVGImageContext>& aSVGContext,
                                      uint32_t aFlags,
                                      layers::ImageContainer** aOutContainer) {
+  if (IsNonAnimated()) {
+    return InnerImage()->GetImageContainerAtSize(aManager, aSize, aSVGContext,
+                                                 aFlags, aOutContainer);
+  }
+
   
   
   
