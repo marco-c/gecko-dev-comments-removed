@@ -247,7 +247,11 @@ var ClientIDImpl = {
 
     
     if (!hasCurrentClientID) {
-      hasCurrentClientID = this.updateClientID(this.getCachedClientID());
+      const cachedID = this.getCachedClientID();
+      
+      if (cachedID) {
+        hasCurrentClientID = this.updateClientID(cachedID);
+      }
     }
 
     
