@@ -14,6 +14,12 @@ add_task(async function setup() {
 
   win = await BrowserTestUtils.openNewBrowserWindow();
 
+  
+  
+  SpecialPowers.pushPrefEnv({
+    set: [["browser.search.suggest.enabled", false]],
+  });
+
   registerCleanupFunction(async function() {
     await BrowserTestUtils.closeWindow(win);
     gCUITestUtils.removeSearchBar();
