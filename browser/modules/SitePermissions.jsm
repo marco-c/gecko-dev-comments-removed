@@ -424,6 +424,9 @@ var SitePermissions = {
   _defaultPrefBranch: Services.prefs.getBranch("permissions.default."),
 
   
+  _temporaryPermissions: TemporaryPermissions,
+
+  
 
 
 

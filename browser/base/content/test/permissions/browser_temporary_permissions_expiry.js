@@ -18,6 +18,9 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(/The request is not allowed/);
 const EXPIRE_TIME_MS = 100;
 const TIMEOUT_MS = 500;
 
+const EXPIRE_TIME_CUSTOM_MS = 1000;
+const TIMEOUT_CUSTOM_MS = 1500;
+
 const kVREnabled = SpecialPowers.getBoolPref("dom.vr.enabled");
 
 
@@ -107,4 +110,100 @@ add_task(async function testTempPermissionRequestAfterExpiry() {
       SitePermissions.removeFromPrincipal(principal, id, browser);
     });
   }
+});
+
+
+
+
+
+async function testIdentityPermissionGrantedState(state) {
+  let hasAttribute;
+  let msg = `Identity permission box ${
+    state ? "shows" : "does not show"
+  } granted permissions.`;
+  await TestUtils.waitForCondition(() => {
+    hasAttribute = gPermissionPanel._identityPermissionBox.hasAttribute(
+      "hasPermissions"
+    );
+    return hasAttribute == state;
+  }, msg);
+  is(hasAttribute, state, msg);
+}
+
+
+
+add_task(async function testTempPermissionCustomExpiry() {
+  const TEST_ID = "geo";
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.temporary_permission_expire_time_ms", EXPIRE_TIME_MS]],
+  });
+
+  await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async browser => {
+    Assert.deepEqual(
+      SitePermissions.getForPrincipal(null, TEST_ID, browser),
+      {
+        state: SitePermissions.UNKNOWN,
+        scope: SitePermissions.SCOPE_PERSISTENT,
+      },
+      "Permission not set initially"
+    );
+
+    await testIdentityPermissionGrantedState(false);
+
+    
+    SitePermissions.setForPrincipal(
+      null,
+      "geo",
+      SitePermissions.ALLOW,
+      SitePermissions.SCOPE_TEMPORARY,
+      browser,
+      EXPIRE_TIME_CUSTOM_MS
+    );
+
+    await testIdentityPermissionGrantedState(true);
+
+    
+    let timeout = new Promise(resolve =>
+      setTimeout(resolve, TIMEOUT_CUSTOM_MS)
+    );
+
+    Assert.deepEqual(
+      SitePermissions.getForPrincipal(null, TEST_ID, browser),
+      {
+        state: SitePermissions.ALLOW,
+        scope: SitePermissions.SCOPE_TEMPORARY,
+      },
+      "We should see the temporary permission we just set."
+    );
+
+    
+    await new Promise(resolve =>
+      setTimeout(resolve, EXPIRE_TIME_CUSTOM_MS / 2)
+    );
+    Assert.deepEqual(
+      SitePermissions.getForPrincipal(null, TEST_ID, browser),
+      {
+        state: SitePermissions.ALLOW,
+        scope: SitePermissions.SCOPE_TEMPORARY,
+      },
+      "Temporary permission should not have expired yet."
+    );
+
+    
+    await timeout;
+
+    
+    
+    await testIdentityPermissionGrantedState(false);
+
+    Assert.deepEqual(
+      SitePermissions.getForPrincipal(null, TEST_ID, browser),
+      {
+        state: SitePermissions.UNKNOWN,
+        scope: SitePermissions.SCOPE_PERSISTENT,
+      },
+      "Permission should have expired"
+    );
+  });
 });

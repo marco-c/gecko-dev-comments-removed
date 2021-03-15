@@ -9,27 +9,6 @@ const { SitePermissions } = ChromeUtils.import(
 );
 
 
-
-add_task(async function testTempAllowThrows() {
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    "https://example.com"
-  );
-  let id = "notifications";
-
-  await BrowserTestUtils.withNewTab(principal.spec, function(browser) {
-    Assert.throws(function() {
-      SitePermissions.setForPrincipal(
-        principal,
-        id,
-        SitePermissions.ALLOW,
-        SitePermissions.SCOPE_TEMPORARY,
-        browser
-      );
-    }, /'Block' is the only permission we can save temporarily on a browser/);
-  });
-});
-
-
 add_task(async function testGetAllPermissionDetailsForBrowser() {
   let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
     "https://example.com"
