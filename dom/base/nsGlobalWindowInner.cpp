@@ -5454,8 +5454,9 @@ void nsGlobalWindowInner::Suspend(bool aIncludeSubWindows) {
 
   
   
+  
   if (aIncludeSubWindows) {
-    CallOnInProcessChildren(&nsGlobalWindowInner::Suspend, aIncludeSubWindows);
+    CallOnInProcessDescendants(&nsGlobalWindowInner::Suspend, false);
   }
 
   mSuspendDepth += 1;
@@ -5503,8 +5504,9 @@ void nsGlobalWindowInner::Resume(bool aIncludeSubWindows) {
 
   
   
+  
   if (aIncludeSubWindows) {
-    CallOnInProcessChildren(&nsGlobalWindowInner::Resume, aIncludeSubWindows);
+    CallOnInProcessDescendants(&nsGlobalWindowInner::Resume, false);
   }
 
   if (mSuspendDepth == 0) {
@@ -5683,43 +5685,36 @@ void nsGlobalWindowInner::SyncStateFromParentWindow() {
 }
 
 template <typename Method, typename... Args>
-CallState nsGlobalWindowInner::CallOnInProcessChildren(Method aMethod,
-                                                       Args&... aArgs) {
+CallState nsGlobalWindowInner::CallOnInProcessDescendantsInternal(
+    BrowsingContext* aBrowsingContext, bool aChildOnly, Method aMethod,
+    Args&&... aArgs) {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(IsCurrentInnerWindow());
+  MOZ_ASSERT(aBrowsingContext);
 
   CallState state = CallState::Continue;
+  for (const RefPtr<BrowsingContext>& bc : aBrowsingContext->Children()) {
+    if (nsCOMPtr<nsPIDOMWindowOuter> pWin = bc->GetDOMWindow()) {
+      auto* win = nsGlobalWindowOuter::Cast(pWin);
+      if (nsGlobalWindowInner* inner = win->GetCurrentInnerWindowInternal()) {
+        
+        
+        
+        
+        typedef decltype((inner->*aMethod)(aArgs...)) returnType;
+        state = CallDescendant<returnType>(inner, aMethod, aArgs...);
 
-  nsCOMPtr<nsIDocShell> docShell = GetDocShell();
-  if (!docShell) {
-    return state;
-  }
-
-  for (const RefPtr<BrowsingContext>& bc : GetBrowsingContext()->Children()) {
-    nsCOMPtr<nsPIDOMWindowOuter> pWin = bc->GetDOMWindow();
-    if (!pWin) {
-      continue;
+        if (state == CallState::Stop) {
+          return state;
+        }
+      }
     }
 
-    auto* win = nsGlobalWindowOuter::Cast(pWin);
-    nsGlobalWindowInner* inner = win->GetCurrentInnerWindowInternal();
-
-    
-    
-    nsCOMPtr<Element> frame = pWin->GetFrameElementInternal();
-    if (!mDoc || !frame || mDoc != frame->OwnerDoc() || !inner) {
-      continue;
-    }
-
-    
-    
-    
-    
-    typedef decltype((inner->*aMethod)(aArgs...)) returnType;
-    state = CallChild<returnType>(inner, aMethod, aArgs...);
-
-    if (state == CallState::Stop) {
-      return state;
+    if (!aChildOnly) {
+      state = CallOnInProcessDescendantsInternal(bc.get(), aChildOnly, aMethod,
+                                                 aArgs...);
+      if (state == CallState::Stop) {
+        return state;
+      }
     }
   }
 
