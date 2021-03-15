@@ -1,21 +1,21 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 %filter substitution
 
 %define item #downloadsRichListBox > richlistitem
 %define itemFocused @item@[selected]
 
-
+/*** View and outer controls ***/
 
 #downloadsRichListBox {
-  
+  /** The default listbox appearance comes with an unwanted margin. **/
   appearance: none;
   margin: 0;
 }
 
-
+/*** List items ***/
 
 @item@ {
   height: var(--downloads-item-height);
@@ -41,7 +41,9 @@
 }
 
 @item@[verdict="Uncommon"] .downloadBlockedBadge {
-  background-image: url("chrome://browser/skin/info.svg");
+  -moz-context-properties: fill;
+  fill: #00a1f2;
+  background-image: url("chrome://global/skin/icons/info-filled.svg");
 }
 
 @item@ > toolbarseparator {
@@ -55,8 +57,8 @@
 .downloadDetails {
   opacity: 0.7;
   font-size: 95%;
-  
-
+  /* Use calc() to keep the height consistent with .downloadTarget, so that the
+     progress bar can be vertically centered. */
   margin: 4px 0 calc(1em / 0.95 - 1em);
 }
 
@@ -114,7 +116,7 @@
   color: FieldText;
 }
 
-
+/*** Button icons ***/
 
 .downloadIconCancel > .button-box > .button-icon {
   list-style-image: url("chrome://browser/skin/panel-icon-cancel.svg");
@@ -128,5 +130,5 @@
   list-style-image: url("chrome://browser/skin/panel-icon-retry.svg");
 }
 
-
+/*** Progressmeter ***/
 %include progressmeter.inc.css

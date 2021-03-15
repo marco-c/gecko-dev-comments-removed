@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 %filter substitution
 
@@ -11,7 +11,7 @@
 %define itemNotFinished @item@:not([state="1"])
 %define itemFocused #downloadsListBox:focus > @item@[selected]
 
-
+/*** Panel and outer controls ***/
 
 #downloadsListBox {
   background: transparent;
@@ -50,7 +50,7 @@
 #downloadsSummary {
   background: var(--arrowpanel-dimmed);
   border-top: 1px solid var(--panel-separator-color);
-  
+  /* Reserve the same space as the button and separator in download items. */
   padding-inline-end: 59px;
 }
 
@@ -79,10 +79,10 @@
 }
 
 :root[lwt-popup-brighttext] #downloadsSummaryDescription {
-  color: #75baff; 
+  color: #75baff; /* --blue-30 */
 }
 
-
+/*** List items and similar elements in the summary ***/
 
 #downloadsSummary,
 @item@ {
@@ -119,7 +119,9 @@
 }
 
 @item@[verdict="Uncommon"] .downloadBlockedBadge {
-  background-image: url("chrome://browser/skin/info.svg");
+  -moz-context-properties: fill;
+  fill: #00a1f2;
+  background-image: url("chrome://global/skin/icons/info-filled.svg");
 }
 
 .downloadContainer {
@@ -135,20 +137,20 @@
 .downloadDetails {
   font-size: calc(100% * var(--downloads-item-font-size-factor));
   opacity: var(--downloads-item-details-opacity);
-  
-
+  /* Use calc() to keep the height consistent with .downloadTarget, so that the
+     progress bar can be vertically centered. */
   margin: 4px 0 calc(1em / var(--downloads-item-font-size-factor) - 1em);
 }
 
-
-
+/* When hovering the mouse pointer over the item, instead of the normal message
+   we display a more detailed one. */
 @item@:hover > .downloadMainArea > .downloadContainer > .downloadDetailsNormal,
 @item@:not(:hover) > .downloadMainArea > .downloadContainer > .downloadDetailsHover {
   display: none;
 }
 
-
-
+/* When hovering the action button in particular, instead of the usual hover
+   message we display the command associated with the button. */
 @item@.downloadHoveringButton > .downloadMainArea > .downloadContainer > .downloadDetailsHover,
 @item@:not(.downloadHoveringButton) > .downloadMainArea > .downloadContainer > .downloadDetailsButtonHover {
   display: none;
@@ -165,7 +167,7 @@
   border: none;
   background: transparent;
   padding: 0;
-  color: inherit !important ;
+  color: inherit !important /* !important overrides button.css on Mac and Linux */;
 }
 
 .downloadButton > .button-box > .button-icon {
@@ -199,7 +201,7 @@
   color: white;
 }
 
-
+/*** Button icons ***/
 
 .downloadIconCancel > .button-box > .button-icon {
   list-style-image: url("chrome://browser/skin/panel-icon-cancel.svg");
@@ -221,7 +223,7 @@
   transform: scaleX(-1);
 }
 
-
+/*** Blocked subview ***/
 
 #downloadsPanel-blockedSubview > .panel-view-body-unscrollable {
   background-image: url("chrome://browser/skin/warning.svg");
@@ -256,5 +258,5 @@
   margin-inline: 64px 16px;
 }
 
-
+/*** Progressmeter ***/
 %include progressmeter.inc.css
