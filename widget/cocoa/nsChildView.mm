@@ -2865,7 +2865,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
   
   
   
-  NSEventPhase eventPhase = nsCocoaUtils::EventPhase(anEvent);
+  NSEventPhase eventPhase = [anEvent phase];
   if ([anEvent type] != NSEventTypeScrollWheel || eventPhase != NSEventPhaseBegan ||
       ![anEvent hasPreciseScrollingDeltas]) {
     return false;
@@ -3219,7 +3219,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
 }
 
 static PanGestureInput::PanGestureType PanGestureTypeForEvent(NSEvent* aEvent) {
-  switch (nsCocoaUtils::EventPhase(aEvent)) {
+  switch ([aEvent phase]) {
     case NSEventPhaseMayBegin:
       return PanGestureInput::PANGESTURE_MAYSTART;
     case NSEventPhaseCancelled:
@@ -3231,7 +3231,7 @@ static PanGestureInput::PanGestureType PanGestureTypeForEvent(NSEvent* aEvent) {
     case NSEventPhaseEnded:
       return PanGestureInput::PANGESTURE_END;
     case NSEventPhaseNone:
-      switch (nsCocoaUtils::EventMomentumPhase(aEvent)) {
+      switch ([aEvent momentumPhase]) {
         case NSEventPhaseBegan:
           return PanGestureInput::PANGESTURE_MOMENTUMSTART;
         case NSEventPhaseChanged:
@@ -3263,8 +3263,8 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
     
     
     
-    return PanGestureInput::GetIntegerDeltaForEvent(
-        (nsCocoaUtils::EventPhase(aEvent) == NSEventPhaseBegan), [aEvent deltaX], [aEvent deltaY]);
+    return PanGestureInput::GetIntegerDeltaForEvent([aEvent phase] == NSEventPhaseBegan,
+                                                    [aEvent deltaX], [aEvent deltaY]);
   }
 
   
@@ -3286,7 +3286,7 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
     return;
   }
 
-  NSEventPhase phase = nsCocoaUtils::EventPhase(theEvent);
+  NSEventPhase phase = [theEvent phase];
   
   
   if (phase & NSEventPhaseMayBegin) {
