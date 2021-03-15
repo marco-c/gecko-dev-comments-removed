@@ -1,9 +1,12 @@
 
 
 
+
 'use strict';
 
 promise_test(async testCase => {
+  await reserveAndCleanupCapacity(testCase);
+
   const file = await storageFoundation.open('test_file');
   testCase.add_cleanup(async () => {
     await file.close();
