@@ -1,3 +1,5 @@
+import datetime
+
 def main(request, response):
     
     
@@ -7,5 +9,7 @@ def main(request, response):
     response_headers = [(b"Content-Type", b"text/javascript"),
                         (b"Access-Control-Allow-Origin", b"*"),
                         (b"Access-Control-Allow-Headers", b"Service-Worker")]
-    return (200, response_headers,
-            b"export const importedModules = ['export-on-load-script.js'];")
+
+    body = b"export const importedModules = ['export-on-load-script.js'];"
+    body += b"// %d" % datetime.datetime.now().timestamp()
+    return (200, response_headers, body)
