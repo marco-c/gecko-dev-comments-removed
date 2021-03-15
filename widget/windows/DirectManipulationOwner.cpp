@@ -220,7 +220,11 @@ void DManipEventHandler::TransitionToState(State aNewState) {
       MOZ_ASSERT(aNewState == State::eNone);
       
       
-      SendPinch(Phase::eEnd, 0.f);
+      
+      if (!mShouldSendPinchStart) {
+        SendPinch(Phase::eEnd, 0.f);
+      }
+      mShouldSendPinchStart = false;
       break;
     }
     case State::eNone: {
@@ -327,8 +331,9 @@ DManipEventHandler::OnContentUpdated(IDirectManipulationViewport* viewport,
       updateLastScale = SendPinch(Phase::eStart, scale);
       
       
-      MOZ_ASSERT(updateLastScale);
-      mShouldSendPinchStart = false;
+      if (updateLastScale) {
+        mShouldSendPinchStart = false;
+      }
     } else {
       updateLastScale = SendPinch(Phase::eMiddle, scale);
     }
