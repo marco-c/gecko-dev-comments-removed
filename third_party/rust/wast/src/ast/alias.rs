@@ -12,16 +12,17 @@ pub struct Alias<'a> {
     
     pub name: Option<ast::NameAnnotation<'a>>,
     
-    pub kind: AliasKind<'a>,
+    pub source: AliasSource<'a>,
+    
+    pub kind: ast::ExportKind,
 }
 
 #[derive(Debug)]
 #[allow(missing_docs)]
-pub enum AliasKind<'a> {
+pub enum AliasSource<'a> {
     InstanceExport {
         instance: ast::ItemRef<'a, kw::instance>,
         export: &'a str,
-        kind: ast::ExportKind,
     },
     Outer {
         
@@ -29,48 +30,31 @@ pub enum AliasKind<'a> {
         
         
         index: ast::Index<'a>,
-        
-        kind: ast::ExportKind,
     },
-}
-
-impl Alias<'_> {
-    
-    pub fn item_kind(&self) -> ast::ExportKind {
-        match self.kind {
-            AliasKind::InstanceExport { kind, .. } => kind,
-            AliasKind::Outer { kind, .. } => kind,
-        }
-    }
 }
 
 impl<'a> Parse<'a> for Alias<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         let span = parser.parse::<kw::alias>()?.0;
-        let id = parser.parse()?;
-        let name = parser.parse()?;
-        let kind = parser.parens(|p| {
-            let kind = p.parse()?;
-            Ok(if parser.parse::<Option<kw::outer>>()?.is_some() {
-                AliasKind::Outer {
-                    module: parser.parse()?,
-                    index: parser.parse()?,
-                    kind,
-                }
-            } else {
-                AliasKind::InstanceExport {
-                    instance: parser.parse::<ast::IndexOrRef<_>>()?.0,
-                    export: parser.parse()?,
-                    kind,
-                }
-            })
-        })?;
+        let source = if parser.parse::<Option<kw::outer>>()?.is_some() {
+            AliasSource::Outer {
+                module: parser.parse()?,
+                index: parser.parse()?,
+            }
+        } else {
+            AliasSource::InstanceExport {
+                instance: parser.parse::<ast::IndexOrRef<_>>()?.0,
+                export: parser.parse()?,
+            }
+        };
+        let (kind, id, name) = parser.parens(|p| Ok((p.parse()?, p.parse()?, p.parse()?)))?;
 
         Ok(Alias {
             span,
             id,
             name,
             kind,
+            source,
         })
     }
 }
