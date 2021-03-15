@@ -904,6 +904,80 @@ void ReflowInput::ApplyRelativePositioning(nsIFrame* aFrame,
   }
 }
 
+
+void ReflowInput::ComputeAbsPosInlineAutoMargin(nscoord aAvailMarginSpace,
+                                                WritingMode aContainingBlockWM,
+                                                bool aIsMarginIStartAuto,
+                                                bool aIsMarginIEndAuto,
+                                                LogicalMargin& aMargin,
+                                                LogicalMargin& aOffsets) {
+  if (aIsMarginIStartAuto) {
+    if (aIsMarginIEndAuto) {
+      if (aAvailMarginSpace < 0) {
+        
+        
+        
+        aMargin.IEnd(aContainingBlockWM) = aAvailMarginSpace;
+      } else {
+        
+        
+        aMargin.IStart(aContainingBlockWM) = aAvailMarginSpace / 2;
+        aMargin.IEnd(aContainingBlockWM) =
+            aAvailMarginSpace - aMargin.IStart(aContainingBlockWM);
+      }
+    } else {
+      
+      aMargin.IStart(aContainingBlockWM) = aAvailMarginSpace;
+    }
+  } else {
+    if (aIsMarginIEndAuto) {
+      
+      aMargin.IEnd(aContainingBlockWM) = aAvailMarginSpace;
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      aOffsets.IEnd(aContainingBlockWM) += aAvailMarginSpace;
+    }
+  }
+}
+
+
+void ReflowInput::ComputeAbsPosBlockAutoMargin(nscoord aAvailMarginSpace,
+                                               WritingMode aContainingBlockWM,
+                                               bool aIsMarginBStartAuto,
+                                               bool aIsMarginBEndAuto,
+                                               LogicalMargin& aMargin,
+                                               LogicalMargin& aOffsets) {
+  if (aIsMarginBStartAuto) {
+    if (aIsMarginBEndAuto) {
+      
+      
+      aMargin.BStart(aContainingBlockWM) = aAvailMarginSpace / 2;
+      aMargin.BEnd(aContainingBlockWM) =
+          aAvailMarginSpace - aMargin.BStart(aContainingBlockWM);
+    } else {
+      
+      aMargin.BStart(aContainingBlockWM) = aAvailMarginSpace;
+    }
+  } else {
+    if (aIsMarginBEndAuto) {
+      
+      aMargin.BEnd(aContainingBlockWM) = aAvailMarginSpace;
+    } else {
+      
+      
+      
+      aOffsets.BEnd(aContainingBlockWM) += aAvailMarginSpace;
+    }
+  }
+}
+
 void ReflowInput::ApplyRelativePositioning(
     nsIFrame* aFrame, mozilla::WritingMode aWritingMode,
     const mozilla::LogicalMargin& aComputedOffsets,
@@ -1716,40 +1790,8 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
         borderPadding.IStartEnd(cbwm) - computedSize.ISize(cbwm);
     marginIStartIsAuto = mStyleMargin->mMargin.GetIStart(cbwm).IsAuto();
     marginIEndIsAuto = mStyleMargin->mMargin.GetIEnd(cbwm).IsAuto();
-
-    if (marginIStartIsAuto) {
-      if (marginIEndIsAuto) {
-        if (availMarginSpace < 0) {
-          
-          
-          
-          margin.IEnd(cbwm) = availMarginSpace;
-        } else {
-          
-          
-          margin.IStart(cbwm) = availMarginSpace / 2;
-          margin.IEnd(cbwm) = availMarginSpace - margin.IStart(cbwm);
-        }
-      } else {
-        
-        margin.IStart(cbwm) = availMarginSpace;
-      }
-    } else {
-      if (marginIEndIsAuto) {
-        
-        margin.IEnd(cbwm) = availMarginSpace;
-      } else {
-        
-        
-        
-        
-        
-        
-        
-        
-        offsets.IEnd(cbwm) += availMarginSpace;
-      }
-    }
+    ComputeAbsPosInlineAutoMargin(availMarginSpace, cbwm, marginIStartIsAuto,
+                                  marginIEndIsAuto, margin, offsets);
   }
 
   bool bSizeIsAuto =
@@ -1814,27 +1856,8 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
     marginBStartIsAuto = mStyleMargin->mMargin.GetBStart(cbwm).IsAuto();
     marginBEndIsAuto = mStyleMargin->mMargin.GetBEnd(cbwm).IsAuto();
 
-    if (marginBStartIsAuto) {
-      if (marginBEndIsAuto) {
-        
-        
-        margin.BStart(cbwm) = availMarginSpace / 2;
-        margin.BEnd(cbwm) = availMarginSpace - margin.BStart(cbwm);
-      } else {
-        
-        margin.BStart(cbwm) = availMarginSpace;
-      }
-    } else {
-      if (marginBEndIsAuto) {
-        
-        margin.BEnd(cbwm) = availMarginSpace;
-      } else {
-        
-        
-        
-        offsets.BEnd(cbwm) += availMarginSpace;
-      }
-    }
+    ComputeAbsPosBlockAutoMargin(availMarginSpace, cbwm, marginBStartIsAuto,
+                                 marginBEndIsAuto, margin, offsets);
   }
   ComputedBSize() = computedSize.ConvertTo(wm, cbwm).BSize(wm);
   ComputedISize() = computedSize.ConvertTo(wm, cbwm).ISize(wm);

@@ -853,6 +853,26 @@ struct ReflowInput : public SizeComputationInput {
                              aContainerSize);
   }
 
+  
+  
+  
+  static void ComputeAbsPosBlockAutoMargin(nscoord aAvailMarginSpace,
+                                           WritingMode aContainingBlockWM,
+                                           bool aIsMarginBStartAuto,
+                                           bool aIsMarginBEndAuto,
+                                           LogicalMargin& aMargin,
+                                           LogicalMargin& aOffsets);
+
+  
+  
+  
+  static void ComputeAbsPosInlineAutoMargin(nscoord aAvailMarginSpace,
+                                            WritingMode aContainingBlockWM,
+                                            bool aIsMarginIStartAuto,
+                                            bool aIsMarginIEndAuto,
+                                            LogicalMargin& aMargin,
+                                            LogicalMargin& aOffsets);
+
 #ifdef DEBUG
   
   
