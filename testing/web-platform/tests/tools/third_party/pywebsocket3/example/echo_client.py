@@ -599,8 +599,14 @@ class EchoClient(object):
 
 
 def main():
+    
+    
+    
+    
     if six.PY2:
-        sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+        import locale
+        encoding = locale.getpreferredencoding()
+        sys.stdout = codecs.getwriter(encoding)(sys.stdout)
 
     parser = argparse.ArgumentParser()
     
@@ -636,7 +642,7 @@ def main():
         '--message',
         dest='message',
         type=six.text_type,
-        default=u'Hello,\u65e5\u672c',
+        default=u'Hello,<>',
         help=('comma-separated messages to send. '
               '%s will force close the connection from server.' %
               _GOODBYE_MESSAGE))

@@ -32,6 +32,8 @@
 """
 
 from __future__ import absolute_import
+from six.moves import urllib
+import locale
 import logging
 import os
 import signal
@@ -153,8 +155,9 @@ class EndToEndTestBase(unittest.TestCase):
     
 
     def _run_python_command(self, commandline, stdout=None, stderr=None):
+        close_fds = True if sys.platform != 'win32' else None
         return subprocess.Popen([sys.executable] + commandline,
-                                close_fds=True,
+                                close_fds=close_fds,
                                 stdout=stdout,
                                 stderr=stderr)
 
@@ -632,7 +635,14 @@ class EndToEndTestWithEchoClient(EndToEndTestBase):
 
     def _check_example_echo_client_result(self, expected, stdoutdata,
                                           stderrdata):
-        actual = stdoutdata.decode("utf-8")
+        actual = stdoutdata.decode(locale.getpreferredencoding())
+
+        
+        
+        
+        
+        actual = actual.replace('\r\n', '\n')
+
         if actual != expected:
             raise Exception('Unexpected result on example echo client: '
                             '%r (expected) vs %r (actual)' %
@@ -654,8 +664,8 @@ class EndToEndTestWithEchoClient(EndToEndTestBase):
             
             default_expectation = (u'Send: Hello\n'
                                    u'Recv: Hello\n'
-                                   u'Send: \u65e5\u672c\n'
-                                   u'Recv: \u65e5\u672c\n'
+                                   u'Send: <>\n'
+                                   u'Recv: <>\n'
                                    u'Send close\n'
                                    u'Recv ack\n')
 
@@ -690,6 +700,35 @@ class EndToEndTestWithEchoClient(EndToEndTestBase):
             self._check_example_echo_client_result(default_expectation,
                                                    stdoutdata, stderrdata)
         finally:
+            self._close_server(server)
+
+
+class EndToEndTestWithCgi(EndToEndTestBase):
+    def setUp(self):
+        EndToEndTestBase.setUp(self)
+
+    def test_cgi(self):
+        """Verifies that CGI scripts work."""
+
+        server = self._run_server(extra_args=['--cgi-paths', '/cgi-bin'])
+        time.sleep(_SERVER_WARMUP_IN_SEC)
+
+        url = 'http://localhost:%d/cgi-bin/hi.py' % self._options.server_port
+
+        
+        try:
+            f = urllib.request.urlopen(url)
+        except:
+            self._close_server(server)
+            raise
+
+        try:
+            self.assertEqual(f.getcode(), 200)
+            self.assertEqual(f.info().get('Content-Type'), 'text/plain')
+            body = f.read()
+            self.assertEqual(body.rstrip(b'\r\n'), b'Hi from hi.py')
+        finally:
+            f.close()
             self._close_server(server)
 
 
