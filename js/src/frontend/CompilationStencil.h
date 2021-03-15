@@ -846,11 +846,11 @@ struct CompilationGCOutput {
   
   
   
-  JS::GCVector<JSFunction*, 0, js::SystemAllocPolicy> functions;
+  JS::GCVector<JSFunction*, 1, js::SystemAllocPolicy> functions;
 
   
   
-  JS::GCVector<js::Scope*, 0, js::SystemAllocPolicy> scopes;
+  JS::GCVector<js::Scope*, 1, js::SystemAllocPolicy> scopes;
 
   
   ScriptSourceObject* sourceObject = nullptr;
