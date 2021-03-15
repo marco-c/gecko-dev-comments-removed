@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* Statistics panel */
 
 @import "chrome://devtools/skin/chart.css";
 
@@ -26,7 +26,7 @@
 }
 
 .statistics-panel .splitter {
-  border-color: rgba(0,0,0,0.2);
+  border-color: var(--theme-splitter-color);
   cursor: default;
   pointer-events: none;
   height: 100%;
@@ -144,12 +144,12 @@
   flex-direction: column;
 }
 
-
+/* Responsive web design support */
 
 @media (max-width: 700px) {
   .statistics-panel .charts-container {
     flex-direction: column;
-    
+    /* Minus 4em for statistics back button width */
     width: calc(100% - 4em);
   }
 

@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .theme-dark {
   --sidemenu-selected-arrow: url(images/item-arrow-dark-ltr.svg);
@@ -11,7 +11,7 @@
   --sidemenu-selected-arrow-rtl: url(images/item-arrow-rtl.svg);
 }
 
-
+/* Loading animation */
 @keyframes item-load {
   0% {
     transform: scaleY(0) translateY(-100%);
@@ -34,7 +34,7 @@
   -moz-box-align: center;
   outline: 0;
   vertical-align: bottom;
-  border-bottom: 1px solid rgba(128,128,128,0.15);
+  border-bottom: 1px solid var(--theme-splitter-color);
   background: inherit;
 }
 
@@ -56,7 +56,7 @@
   background-position: center left;
 }
 
-
+/* Toolbars */
 
 .splitview-main > .devtools-toolbar {
   background-origin: border-box;

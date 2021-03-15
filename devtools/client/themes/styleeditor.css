@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #style-editor-chrome {
   -moz-box-flex: 1;
@@ -95,7 +95,7 @@ li.error > .stylesheet-info > .stylesheet-more  > .stylesheet-error-message {
 }
 
 .splitview-nav:focus {
-  outline: 0; 
+  outline: 0; /* focus ring is on the stylesheet name */
 }
 
 .splitview-nav > li {
@@ -127,19 +127,11 @@ li.error > .stylesheet-info > .stylesheet-more  > .stylesheet-error-message {
   border-color: var(--theme-splitter-color);
 }
 
-.theme-light .media-rule-label {
-  border-bottom-color: #cddae5; 
-}
-
-.theme-dark .media-rule-label {
-  border-bottom-color: #303b47; 
-}
-
 .media-rule-label {
   display: flex;
   padding: 4px;
   cursor: pointer;
-  border-bottom: 1px solid;
+  border-bottom: 1px solid var(--theme-splitter-color);
 }
 
 .media-responsive-mode-toggle {
@@ -173,7 +165,7 @@ li.error > .stylesheet-info > .stylesheet-more  > .stylesheet-error-message {
   width: 24px;
   height: 40px;
 
-  
+  /* The icon color should always match the text color. */
   -moz-context-properties: fill;
   fill: currentColor;
 }
@@ -238,7 +230,7 @@ h3 {
   }
 }
 
-
+/* portrait mode */
 @media (max-width: 550px) {
   li.splitview-active > hgroup > .stylesheet-more > .stylesheet-rule-count,
   li:hover > hgroup > .stylesheet-more > .stylesheet-rule-count {

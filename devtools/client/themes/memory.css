@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* CSS Variables specific to this panel that aren't defined by the themes */
 .theme-dark {
   --cell-border-color: rgba(255,255,255,0.15);
   --cell-border-color-light: rgba(255,255,255,0.1);
@@ -28,41 +28,41 @@ html, body, #app, #memory-tool {
 }
 
 #memory-tool {
-  
-
-
-
-
+  /**
+   * Flex: contains two children: .devtools-toolbar and #memory-tool-container,
+   * which need to be laid out vertically. The toolbar has a fixed height and
+   * the container needs to flex to fill out all remaining vertical space.
+   */
   display: flex;
   flex-direction: column;
   --sidebar-width: 185px;
-  
-
-
-
+  /**
+   * If --heap-tree-row-height changes, be sure to change HEAP_TREE_ROW_HEIGHT
+   * in `devtools/client/memory/components/Heap.js`.
+   */
   --heap-tree-row-height: 18px;
   --heap-tree-header-height: 18px;
 }
 
-
-
-
+/**
+ * Toolbar
+ */
 
 .devtools-toolbar {
-  
-
-
-
+  /**
+   * Flex: contains several children, which need to be laid out horizontally,
+   * and aligned vertically in the middle of the container.
+   */
   display: flex;
   line-height: initial;
   align-items: stretch;
 }
 
 .devtools-toolbar > .toolbar-group:nth-of-type(1) {
-  
-
-
-
+  /**
+   * We want this to be exactly at a `--sidebar-width` distance from the
+   * toolbar's start boundary. A `.devtools-toolbar` has a 3px start padding.
+   */
   flex: 0 0 calc(var(--sidebar-width) - 4px);
   border-inline-end: 1px solid var(--theme-splitter-color);
   margin-inline-end: 5px;
@@ -70,10 +70,10 @@ html, body, #app, #memory-tool {
 }
 
 .devtools-toolbar > .toolbar-group {
-  
-
-
-
+  /**
+   * Flex: contains several children, which need to be laid out horizontally,
+   * and aligned vertically in the middle of the container.
+   */
   display: flex;
   align-items: center;
   flex: 1;
@@ -83,10 +83,10 @@ html, body, #app, #memory-tool {
 }
 
 .devtools-toolbar > .toolbar-group > label {
-  
-
-
-
+  /**
+   * Flex: contains form controls and text, which need to be laid out
+   * horizontally, vertically aligned in the middle of the container.
+   */
   display: flex;
   align-items: center;
   margin-inline-end: 5px;
@@ -138,28 +138,28 @@ html, body, #app, #memory-tool {
   height: 100%;
 }
 
-
-
-
+/**
+ * Container (sidebar + main panel)
+ */
 
 #memory-tool-container {
-  
-
-
-
-
+  /**
+   * Flex: contains two children: .list (sidebar) and #heap-view (main panel),
+   * which need to be laid out horizontally. The sidebar has a fixed width and
+   * the main panel needs to flex to fill out all remaining horizontal space.
+   */
   display: flex;
-  
-
-
-
+  /**
+   * Flexing to fill out remaining vertical space. The preceeding sibling is
+   * the toolbar. @see #memory-tool.
+   */
   flex: 1;
   overflow: hidden;
 }
 
-
-
-
+/**
+ * Sidebar
+ */
 
 .list {
   width: var(--sidebar-width);
@@ -172,13 +172,13 @@ html, body, #app, #memory-tool {
 }
 
 .snapshot-list-item {
-  
-
-
+  /**
+   * Flex: contains several children, which need to be laid out vertically.
+   */
   display: flex;
   flex-direction: column;
   color: var(--theme-body-color);
-  border-bottom: 1px solid rgba(128,128,128,0.15);
+  border-bottom: 1px solid var(--theme-splitter-color);
   padding: 8px;
   cursor: default;
 }
@@ -248,13 +248,13 @@ html, body, #app, #memory-tool {
 
 .snapshot-list-item.selected > .snapshot-state,
 .snapshot-list-item.selected > .snapshot-totals {
-  
+  /* Text inside a selected item should not be custom colored. */
   color: inherit !important;
 }
 
-
-
-
+/**
+ * Main panel
+ */
 
 .vbox {
   display: flex;
@@ -269,52 +269,52 @@ html, body, #app, #memory-tool {
 .vbox > * {
   flex: 1;
 
-  
-
-
-
+  /**
+   * By default, flex items have min-width: auto;
+   * (https://drafts.csswg.org/css-flexbox/#min-size-auto)
+   */
   min-width: 0;
 }
 
 #heap-view {
-  
-
-
-
+  /**
+   * Flex: contains a .heap-view-panel which needs to fill out all the
+   * available space, horizontally and vertically.
+   */
   display: flex;
-  
-
-
-
+  /**
+   * Flexing to fill out remaining horizontal space. The preceeding sibling
+   * is the sidebar. @see #memory-tool-container.
+   */
   flex: 1;
   background-color: var(--theme-body-background);
 
-  
-
-
-
+  /**
+   * By default, flex items have min-width: auto;
+   * (https://drafts.csswg.org/css-flexbox/#min-size-auto)
+   */
   min-width: 0;
   font-size: 90%;
 }
 
 #heap-view > .heap-view-panel {
-  
-
-
-
-
-
+  /**
+   * Flex: can contain several children, including a tree with a header and
+   * multiple rows, all of which need to be laid out vertically. When the
+   * tree is visible, the header has a fixed height and tree body needs to flex
+   * to fill out all remaining vertical space.
+   */
   display: flex;
   flex-direction: column;
-  
-
-
+  /**
+   * Flexing to fill out remaining horizontal space. @see #heap-view.
+   */
   flex: 1;
 
-  
-
-
-
+  /**
+   * By default, flex items have min-width: auto;
+   * (https://drafts.csswg.org/css-flexbox/#min-size-auto)
+   */
   min-width: 0;
 }
 
@@ -333,16 +333,16 @@ html, body, #app, #memory-tool {
   padding: 20px;
 }
 
-
-
-
+/**
+ * Heap tree view header
+ */
 
 .header {
-  
-
-
-
-
+  /**
+   * Flex: contains several span columns, all of which need to be laid out
+   * horizontally. All columns except the last one have percentage widths, and
+   * the last one needs to flex to fill out all remaining horizontal space.
+   */
   display: flex;
   color: var(--theme-body-color);
   background-color: var(--theme-tab-toolbar-background);
@@ -378,14 +378,14 @@ html, body, #app, #memory-tool {
   justify-self: center;
 }
 
-
-
-
+/**
+ * Heap tree view body
+ */
 
 .tree {
-  
-
-
+  /**
+   * Flexing to fill out remaining vertical space. @see .heap-view-panel
+   */
   flex: 1;
   overflow-y: auto;
   background-color: var(--theme-body-background);
@@ -399,8 +399,8 @@ html, body, #app, #memory-tool {
 
 .children-pointer {
   display: inline-block;
-  
-
+  /* We use transform to reverse the icon in RTL,
+   * so `padding-right` will get reversed as well. */
   padding-right: 5px;
 }
 
@@ -408,16 +408,16 @@ html, body, #app, #memory-tool {
   transform: scaleX(-1);
 }
 
-
-
-
+/**
+ * Heap tree view columns
+ */
 
 .heap-tree-item {
-  
-
-
-
-
+  /**
+   * Flex: contains several span columns, all of which need to be laid out
+   * horizontally. All columns except the last one have percentage widths, and
+   * the last one needs to flex to fill out all remaining horizontal space.
+   */
   display: flex;
 }
 
@@ -444,12 +444,12 @@ html, body, #app, #memory-tool {
 .heap-tree-item-count,
 .heap-tree-item-total-bytes,
 .heap-tree-item-total-count {
-  
-
-
-
+  /**
+   * Flex: contains several subcolumns, which need to be laid out horizontally.
+   * These subcolumns may have specific widths or need to flex.
+   */
   display: flex;
-  
+  /* Make sure units/decimals/... are always vertically aligned to right in both LTR and RTL locales */
   text-align: right;
   border-inline-end: var(--cell-border-color) 1px solid;
 }
@@ -459,26 +459,26 @@ html, body, #app, #memory-tool {
 .heap-tree-item-bytes,
 .heap-tree-item-total-bytes {
   width: 10%;
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /*
+   * Provision for up to 19 characters:
+   *
+   *     GG_MMM_KKK_BBB_100%
+   *     |            |||  |
+   *     '------------'|'--'
+   *     14 ch for 10s | 4 ch for the largest % we will
+   *     of GB and     | normally see: "100%"
+   *     spaces every  |
+   *     3 digits      |
+   *                   |
+   *             A space between the number and percent
+   */
   min-width: 19ch;
 }
 
 .heap-tree-item-name {
-  
-
-
+  /**
+   * Flexing to fill out remaining vertical space.
+   * @see .header and .heap-tree-item */
   flex: 1;
   padding-inline-start: 5px;
   overflow: hidden;
@@ -490,9 +490,9 @@ html, body, #app, #memory-tool {
   vertical-align: middle;
 }
 
-
-
-
+/**
+ * Heap tree view subcolumns
+ */
 
 .heap-tree-number,
 .heap-tree-percent,
@@ -504,7 +504,7 @@ html, body, #app, #memory-tool {
   padding: 0 3px;
   flex: 1;
   color: var(--theme-text-color-alt);
-  
+  /* Make sure number doesn't appear backwards on RTL locales */
   direction: ltr;
 }
 
@@ -535,14 +535,14 @@ html, body, #app, #memory-tool {
 
 .heap-tree-item-individuals > button {
   width: 32px;
-  
+  /* Override default styles for toolbar buttons to fix entire row height. */
   margin: 0 auto !important;
   color: inherit;
 }
 
-
-
-
+/**
+ * Tree map
+ */
 
 .tree-map-container {
   width: 100%;
@@ -564,9 +564,9 @@ html, body, #app, #memory-tool {
   color: var(--link-color-active);
 }
 
-
-
-
+/**
+ * Heap tree errors.
+ */
 
 .error::before {
   content: "";
@@ -583,9 +583,9 @@ html, body, #app, #memory-tool {
   fill: var(--yellow-60);
 }
 
-
-
-
+/**
+ * Frame View components
+ */
 
 .separator,
 .not-available,
@@ -607,9 +607,9 @@ html, body, #app, #memory-tool {
   padding: 5px;
 }
 
-
-
-
+/**
+ * Dagre-D3 graphs
+ */
 
 svg {
   --arrow-color: var(--theme-splitter-color);
@@ -621,7 +621,7 @@ svg {
 }
 
 svg #arrowhead {
-  
+  /* !important is needed to override inline style */
   fill: var(--arrow-color) !important;
 }
 
@@ -648,6 +648,6 @@ g.edgeLabel tspan {
 text {
   font-size: 1.25em;
   fill: var(--text-color);
-  
+  /* Make sure text stays inside its container in RTL locales */
   direction: ltr;
 }

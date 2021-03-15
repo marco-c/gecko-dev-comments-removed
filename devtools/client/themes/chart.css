@@ -1,11 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* Chart */
 
 .generic-chart-container {
-  
+  /* Hack: force hardware acceleration */
   transform: translateZ(1px);
 }
 
@@ -22,7 +22,7 @@
   background: var(--theme-body-color);
 }
 
-
+/* Chart: Pie */
 
 .pie-chart-slice {
   stroke-width: 1px;
@@ -74,7 +74,7 @@
   transform: none !important;
 }
 
-
+/* Chart: Table */
 
 .table-chart-title {
   padding-bottom: 10px;
@@ -118,7 +118,7 @@
 }
 
 .table-chart-totals {
-  border-top: 1px solid var(--theme-text-color-alt); 
+  border-top: 1px solid var(--theme-splitter-color);
 }
 
 .table-chart-summary-label {

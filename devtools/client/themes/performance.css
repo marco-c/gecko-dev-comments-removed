@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* CSS Variables specific to this panel that aren't defined by the themes */
 .theme-dark {
   --cell-border-color: rgba(255,255,255,0.15);
   --cell-border-color-light: rgba(255,255,255,0.1);
@@ -19,15 +19,15 @@
   --row-hover-background-color: rgba(76,158,217,0.2);
 }
 
-
-
-
-
+/*
+ * DE-XUL: Set a sidebar width because inline XUL components will cause the flex
+ * to overflow if dynamically sized.
+ */
 .performance-tool {
   --sidebar-width: 185px;
 }
 
-
+/* Let the component gain focus when a click hits an empty area */
 .performance-tool {
   -moz-user-focus: normal;
 }
@@ -36,17 +36,17 @@
   outline: 0;
 }
 
-
-
-
-
+/**
+ * A generic class to hide elements, replacing the `element.hidden` attribute
+ * that we use to hide elements that can later be active
+ */
 .hidden {
   display: none;
   width: 0px;
   height: 0px;
 }
 
-
+/* Toolbar */
 
 #performance-toolbar-control-other {
   padding-inline-end: 5px;
@@ -69,7 +69,7 @@
   border-radius: 1px;
 }
 
-
+/* Details panel buttons */
 
 #select-waterfall-view {
   list-style-image: url(images/performance-details-waterfall.svg);
@@ -89,7 +89,7 @@
   list-style-image: url(images/profiler-stopwatch.svg);
 }
 
-
+/* Recording buttons */
 
 #clear-button::before {
   background-image: url("chrome://devtools/skin/images/clear.svg");
@@ -116,7 +116,7 @@
   background: var(--theme-selection-background) !important;
 }
 
-
+/* Sidebar & recording items */
 
 #recordings-pane {
   border-inline-end: 1px solid var(--theme-splitter-color);
@@ -131,9 +131,9 @@
   width: var(--sidebar-width);
 }
 
-
-
-
+/*
+ * DE-XUL: The height of the toolbar is not correct without tweaking the line-height.
+ */
 #recordings-pane .devtools-toolbar {
   display: flex;
   line-height: 1;
@@ -143,9 +143,9 @@
   position: relative;
 }
 
-
-
-
+/**
+ * DE-XUL: This is probably only needed for the html:div inside of a vbox.
+ */
 #recordings-list > div {
   position: absolute;
   top: 0;
@@ -169,7 +169,7 @@
   display: flex;
   flex-direction: column;
   color: var(--theme-body-color);
-  border-bottom: 1px solid rgba(128,128,128,0.15);
+  border-bottom: 1px solid var(--theme-splitter-color);
   padding: 8px;
   cursor: default;
 }
@@ -214,11 +214,11 @@
 }
 
 #recordings-list .selected label {
-  
+  /* Text inside a selected item should not be custom colored. */
   color: inherit !important;
 }
 
-
+/* Recording notices */
 
 .notice-container {
   font-size: 120%;
@@ -271,7 +271,7 @@
   display: initial;
 }
 
-
+/* Profile call tree */
 
 .call-tree-cells-container {
   overflow: auto;
@@ -360,7 +360,7 @@
 .call-tree-item .call-tree-cell,
 .call-tree-item .call-tree-cell[type=function] description {
   user-select: text;
-  
+  /* so that optimizations view doesn't break the lines in call tree */
   white-space: nowrap;
 }
 
@@ -397,7 +397,7 @@
 .call-tree-item:not([origin="content"]) .call-tree-url,
 .call-tree-item:not([origin="content"]) .call-tree-line,
 .call-tree-item:not([origin="content"]) .call-tree-column {
-  
+  /* Style chrome and non-JS nodes differently. */
   opacity: 0.6;
 }
 
@@ -437,19 +437,19 @@
   transform-origin: center right;
 }
 
-
-
-
+/**
+ * Waterfall markers tree
+ */
 
 #waterfall-tree {
-  
+  /* DE-XUL: convert this to display: flex once index.xhtml is converted to HTML */
   display: -moz-box;
   -moz-box-orient: vertical;
   -moz-box-flex: 1;
 }
 
 .waterfall-markers {
-  
+  /* DE-XUL: convert this to display: flex once index.xhtml is converted to HTML */
   display: -moz-box;
   -moz-box-orient: vertical;
   -moz-box-flex: 1;
@@ -479,23 +479,23 @@
 }
 
 .waterfall-header-tick:not(:first-child) {
-  margin-inline-start: -100px !important; 
+  margin-inline-start: -100px !important; /* Don't affect layout. */
 }
 
 .waterfall-background-ticks {
-  
-  
+  /* Background created on a <canvas> in js. */
+  /* @see devtools/client/performance/modules/widgets/waterfall-ticks.js */
   background-image: -moz-element(#waterfall-background);
   background-repeat: repeat-y;
   background-position: -1px center;
 }
 
-
-
-
+/**
+ * Markers waterfall breakdown
+ */
 
 .waterfall-markers .tree {
-  
+  /* DE-XUL: convert this to display: flex once index.xhtml is converted to HTML */
   display: -moz-box;
   -moz-box-orient: vertical;
   -moz-box-flex: 1;
@@ -578,9 +578,9 @@
   background-color: var(--theme-selection-background);
 }
 
-
-
-
+/**
+ * Marker left sidebar
+ */
 
 .waterfall-sidebar {
   display: flex;
@@ -616,9 +616,9 @@
   text-overflow: ellipsis;
 }
 
-
-
-
+/**
+ * Marker timebar
+ */
 
 .waterfall-marker {
   display: flex;
@@ -638,9 +638,9 @@
   box-sizing: border-box;
 }
 
-
-
-
+/**
+ * OTMT markers
+ */
 
 .waterfall-tree-item[data-otmt=true] .waterfall-marker-bullet,
 .waterfall-tree-item[data-otmt=true] .waterfall-marker-bar {
@@ -649,9 +649,9 @@
   border-style: solid;
 }
 
-
-
-
+/**
+ * Marker details view
+ */
 
 #waterfall-details {
   padding-inline-start: 8px;
@@ -695,9 +695,9 @@
   text-decoration: underline;
 }
 
-
-
-
+/**
+ * Marker colors
+ */
 
 menuitem.marker-color-graphs-full-red .menu-iconic-left::after,
 .marker-color-graphs-full-red {
@@ -751,16 +751,16 @@ menuitem.marker-color-graphs-grey .menu-iconic-left::after,
   border-color: var(--theme-graphs-grey);
 }
 
+/**
+ * Configurable Options
+ *
+ * Elements can be tagged with a class and visibility is controlled via a
+ * preference being applied or removed.
+ */
 
-
-
-
-
-
-
-
-
-
+/**
+ * devtools.performance.ui.experimental
+ */
 menuitem.experimental-option::before {
   content: "";
   display: inline-block;
@@ -781,7 +781,7 @@ menuitem.experimental-option::before {
   display: none;
 }
 
-
+/* for call tree */
 description.opt-icon {
   margin: 0px 0px 0px 0px;
 }
