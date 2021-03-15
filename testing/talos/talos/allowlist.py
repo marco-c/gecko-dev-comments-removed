@@ -15,7 +15,7 @@ KEY_XRE = "{xre}"
 DEFAULT_DURATION = 100.0
 
 
-class Whitelist:
+class Allowlist:
     
     PRE_PROFILE = ""
 
@@ -46,8 +46,8 @@ class Whitelist:
             with open(filename, "r") as fHandle:
                 temp = json.load(fHandle)
 
-            for whitelist_name in temp:
-                self.listmap[whitelist_name.lower()] = temp[whitelist_name]
+            for allowlist_name in temp:
+                self.listmap[allowlist_name.lower()] = temp[allowlist_name]
 
         except IOError as e:
             print("%s: %s" % (e.filename, e.strerror))
