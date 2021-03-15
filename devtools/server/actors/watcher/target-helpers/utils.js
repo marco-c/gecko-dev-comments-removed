@@ -28,10 +28,7 @@ function shouldNotifyWindowGlobal(
   if (!windowGlobal) {
     return false;
   }
-  
-  if (browsingContext.currentRemoteType == "extension") {
-    return false;
-  }
+
   
   
   
