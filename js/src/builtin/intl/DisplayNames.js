@@ -145,7 +145,8 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
     lazyDisplayNamesData.requestedLocales = requestedLocales;
 
     
-    options = ToObject(options);
+    if (!IsObject(options))
+        ThrowTypeError(JSMSG_OBJECT_REQUIRED, options === null ? "null" : typeof options);
 
     
     var opt = new Record();
