@@ -390,7 +390,7 @@ function assertHighlightLocation(dbg, source, line) {
 
 
 function isPaused(dbg) {
-  return dbg.selectors.getIsPaused(dbg.selectors.getCurrentThread());
+  return dbg.selectors.getIsCurrentThreadPaused();
 }
 
 
@@ -1038,10 +1038,7 @@ async function togglePauseOnExceptions(
 }
 
 function waitForActive(dbg) {
-  const {
-    selectors: { getIsPaused, getCurrentThread },
-  } = dbg;
-  return waitForState(dbg, state => !getIsPaused(getCurrentThread()), "active");
+  return waitForState(dbg, state => !dbg.selectors.getIsCurrentThreadPaused());
 }
 
 

@@ -22,9 +22,14 @@ export function initialPauseState(thread = "UnknownThread") {
     cx: {
       navigateCounter: 0,
     },
+    
+    
+    
     threadcx: {
       navigateCounter: 0,
       thread,
+      
+      
       isPaused: false,
       pauseCounter: 0,
     },
@@ -379,6 +384,10 @@ export function getCurrentThread(state) {
 
 export function getIsPaused(state, thread) {
   return !!getThreadPauseState(state.pause, thread).frames;
+}
+
+export function getIsCurrentThreadPaused(state) {
+  return getThreadContext(state).isPaused;
 }
 
 export function isEvaluatingExpression(state, thread) {
