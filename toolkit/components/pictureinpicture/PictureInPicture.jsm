@@ -165,6 +165,26 @@ var PictureInPicture = {
     return playerWin;
   },
 
+  handleEvent(event) {
+    switch (event.type) {
+      case "TabSwapPictureInPicture": {
+        this.onPipSwappedBrowsers(event);
+      }
+    }
+  },
+
+  onPipSwappedBrowsers(event) {
+    let otherTab = event.detail;
+    if (otherTab) {
+      for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
+        if (this.weakWinToBrowser.get(win) === event.target.linkedBrowser) {
+          this.weakWinToBrowser.set(win, otherTab.linkedBrowser);
+        }
+      }
+      otherTab.addEventListener("TabSwapPictureInPicture", this);
+    }
+  },
+
   
 
 
@@ -343,6 +363,8 @@ var PictureInPicture = {
     
     let tab = parentWin.gBrowser.getTabForBrowser(browser);
     tab.setAttribute("pictureinpicture", true);
+
+    tab.addEventListener("TabSwapPictureInPicture", this);
 
     win.setupPlayer(gNextWindowID.toString(), wgp, videoData.videoRef);
     gNextWindowID++;
