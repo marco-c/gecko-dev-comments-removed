@@ -1626,7 +1626,12 @@ bool BytecodeEmitter::emitThisEnvironmentCallee() {
       ENVCOORD_HOPS_LIMIT - 1 <= UINT8_MAX,
       "JSOp::EnvCallee operand size should match ENVCOORD_HOPS_LIMIT");
 
-  MOZ_ASSERT(numHops < ENVCOORD_HOPS_LIMIT - 1);
+  
+  
+  if (numHops >= ENVCOORD_HOPS_LIMIT - 1) {
+    reportError(nullptr, JSMSG_TOO_DEEP, js_function_str);
+    return false;
+  }
 
   return emit2(JSOp::EnvCallee, numHops);
 }
@@ -1767,13 +1772,10 @@ bool BytecodeEmitter::emitGetPrivateName(NameNode* name) {
 
 bool BytecodeEmitter::emitGetPrivateName(TaggedParserAtomIndex nameAtom) {
   
-  
-  
   NameLocation location = lookupName(nameAtom);
   MOZ_ASSERT(location.kind() == NameLocation::Kind::FrameSlot ||
              location.kind() == NameLocation::Kind::EnvironmentCoordinate ||
-             location.kind() == NameLocation::Kind::Dynamic ||
-             location.kind() == NameLocation::Kind::Global);
+             location.kind() == NameLocation::Kind::Dynamic);
 
   return emitGetNameAtLocation(nameAtom, location);
 }

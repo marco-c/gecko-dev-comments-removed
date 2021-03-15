@@ -1293,7 +1293,12 @@ bool EvalScope::prepareForScopeCreation(
     }
   }
 
-  return true;
+  
+  
+  bool needsEnvironment = (scopeKind == ScopeKind::StrictEval);
+
+  return updateEnvShapeIfRequired<VarEnvironmentObject>(cx, envShape,
+                                                        needsEnvironment);
 }
 
 

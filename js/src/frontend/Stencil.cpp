@@ -402,14 +402,11 @@ static bool NameIsOnEnvironment(Scope* scope, JSAtom* name) {
 #endif
 
 
-NameLocation ScopeContext::searchInEnclosingScope(JSContext* cx,
-                                                  CompilationInput& input,
-                                                  ParserAtomsTable& parserAtoms,
-                                                  TaggedParserAtomIndex name,
-                                                  uint8_t hops) {
+NameLocation ScopeContext::searchInDelazificationEnclosingScope(
+    JSContext* cx, CompilationInput& input, ParserAtomsTable& parserAtoms,
+    TaggedParserAtomIndex name, uint8_t hops) {
   MOZ_ASSERT(input.target ==
-                 CompilationInput::CompilationTarget::Delazification ||
-             input.target == CompilationInput::CompilationTarget::Eval);
+             CompilationInput::CompilationTarget::Delazification);
 
   
   
@@ -464,7 +461,6 @@ NameLocation ScopeContext::searchInEnclosingScope(JSContext* cx,
         }
         break;
 
-      case ScopeKind::StrictEval:
       case ScopeKind::FunctionBodyVar:
       case ScopeKind::Lexical:
       case ScopeKind::NamedLambda:
@@ -518,6 +514,7 @@ NameLocation ScopeContext::searchInEnclosingScope(JSContext* cx,
         break;
 
       case ScopeKind::Eval:
+      case ScopeKind::StrictEval:
         
         
         

@@ -173,12 +173,12 @@ NameLocation EmitterScope::searchAndCache(BytecodeEmitter* bce,
   
   
   if (!loc) {
-    MOZ_ASSERT(bce->compilationState.input.lazy ||
-               bce->compilationState.input.target ==
-                   CompilationInput::CompilationTarget::Eval);
+    MOZ_ASSERT(bce->compilationState.input.lazy);
     inCurrentScript = false;
-    loc = Some(bce->compilationState.scopeContext.searchInEnclosingScope(
-        bce->cx, bce->compilationState.input, bce->parserAtoms(), name, hops));
+    loc = Some(
+        bce->compilationState.scopeContext.searchInDelazificationEnclosingScope(
+            bce->cx, bce->compilationState.input, bce->parserAtoms(), name,
+            hops));
   }
 
   
@@ -689,6 +689,9 @@ bool EmitterScope::enterEval(BytecodeEmitter* bce, EvalSharedContext* evalsc) {
   }
 
   
+  fallbackFreeNameLocation_ = Some(NameLocation::Dynamic());
+
+  
   
   ScopeKind scopeKind =
       evalsc->strict() ? ScopeKind::StrictEval : ScopeKind::Eval;
@@ -701,28 +704,6 @@ bool EmitterScope::enterEval(BytecodeEmitter* bce, EvalSharedContext* evalsc) {
   }
   if (!internBodyScopeCreationData(bce, scopeIndex)) {
     return false;
-  }
-
-  if (evalsc->strict()) {
-    if (evalsc->bindings) {
-      ParserBindingIter bi(*evalsc->bindings, true);
-      for (; bi; bi++) {
-        if (!checkSlotLimits(bce, bi)) {
-          return false;
-        }
-
-        NameLocation loc = NameLocation::fromBinding(bi.kind(), bi.location());
-        if (!putNameInCache(bce, bi.name(), loc)) {
-          return false;
-        }
-      }
-
-      updateFrameFixedSlots(bce, bi);
-    }
-  } else {
-    
-    
-    fallbackFreeNameLocation_ = Some(NameLocation::Dynamic());
   }
 
   if (hasEnvironment()) {
@@ -742,7 +723,7 @@ bool EmitterScope::enterEval(BytecodeEmitter* bce, EvalSharedContext* evalsc) {
     }
   }
 
-  return checkEnvironmentChainLength(bce);
+  return true;
 }
 
 bool EmitterScope::enterModule(BytecodeEmitter* bce,
