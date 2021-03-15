@@ -5313,21 +5313,6 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
             }
           }
         }
-
-        
-        
-        
-        
-        
-        
-        
-        if (mWindowType == eWindowType_invisible) {
-          if (!wcscmp(lParamString, L"UserInteractionMode") ||
-              !wcscmp(lParamString, L"ConvertibleSlateMode") ||
-              !wcscmp(lParamString, L"SystemDockMode")) {
-            NotifyThemeChanged(widget::ThemeChangeKind::MediaQueriesOnly);
-          }
-        }
       }
     } break;
 
