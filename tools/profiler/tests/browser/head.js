@@ -32,6 +32,7 @@ registerCleanupFunction(() => {
 
 
 
+
 async function stopProfilerNowAndGetThreads(contentPid) {
   Services.profiler.Pause();
   const profile = await Services.profiler.getProfileDataAsync();
@@ -54,7 +55,7 @@ async function stopProfilerNowAndGetThreads(contentPid) {
     throw new Error("The content thread was not found in the profile.");
   }
 
-  return { parentThread, contentThread };
+  return { parentThread, contentThread, profile };
 }
 
 
@@ -70,4 +71,48 @@ async function stopProfilerAndGetThreads(contentPid) {
   await Services.profiler.waitOnePeriodicSampling();
 
   return stopProfilerNowAndGetThreads(contentPid);
+}
+
+
+
+
+
+
+
+
+
+function findContentThreadWithNetworkMarkerForFilename(profile, filename) {
+  const allThreads = [
+    profile.threads,
+    ...profile.processes.map(process => process.threads),
+  ].flat();
+
+  const thread = allThreads.find(
+    ({ processType, markers }) =>
+      processType === "tab" &&
+      markers.data.some(markerTuple => {
+        const data = markerTuple[markers.schema.data];
+        return (
+          data &&
+          data.type === "Network" &&
+          data.URI &&
+          data.URI.endsWith(filename)
+        );
+      })
+  );
+  return thread || null;
+}
+
+
+
+
+
+
+
+function logInformationForThread(prefix, thread) {
+  const { name, pid, tid, processName, processType } = thread;
+  info(
+    `${prefix}: ` +
+      `name(${name}) pid(${pid}) tid(${tid}) processName(${processName}) processType(${processType})`
+  );
 }

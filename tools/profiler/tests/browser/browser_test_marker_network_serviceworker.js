@@ -9,6 +9,17 @@
 
 registerCleanupFunction(() => SpecialPowers.removeAllServiceWorkerData());
 
+add_task(async function test_network_markers_service_worker_setup() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.cache.disk.enable", false],
+      ["browser.cache.memory.enable", false],
+    ],
+  });
+});
+
 add_task(async function test_network_markers_service_worker_register() {
   
   
@@ -23,10 +34,7 @@ add_task(async function test_network_markers_service_worker_register() {
 
   startProfilerForMarkerTests();
 
-  const url =
-    BASE_URL_HTTPS +
-    "serviceworkers/serviceworker_register.html?cacheBust=" +
-    Math.random();
+  const url = `${BASE_URL_HTTPS}serviceworkers/serviceworker_register.html`;
   await BrowserTestUtils.withNewTab(url, async contentBrowser => {
     const contentPid = await SpecialPowers.spawn(
       contentBrowser,
@@ -38,17 +46,77 @@ add_task(async function test_network_markers_service_worker_register() {
       await content.wrappedJSObject.registerServiceWorkerAndWait();
     });
 
-    const { parentThread, contentThread } = await stopProfilerNowAndGetThreads(
-      contentPid
+    const {
+      parentThread,
+      contentThread,
+      profile,
+    } = await stopProfilerNowAndGetThreads(contentPid);
+
+    
+    
+    
+    
+    
+    
+    const serviceWorkerThread = findContentThreadWithNetworkMarkerForFilename(
+      profile,
+      "firefox-logo-nightly.svg"
     );
 
+    
+    ok(serviceWorkerThread, "We should find a thread for the service worker.");
+    Assert.notEqual(
+      serviceWorkerThread.pid,
+      parentThread.pid,
+      "We should have a different pid than the parent thread."
+    );
+    Assert.notEqual(
+      serviceWorkerThread.tid,
+      parentThread.tid,
+      "We should have a different tid than the parent thread."
+    );
+
+    
+    const workers = await SpecialPowers.registeredServiceWorkers();
+    Assert.equal(
+      workers.length,
+      1,
+      "One service worker should be properly registered."
+    );
+
+    
+    logInformationForThread("parentThread information", parentThread);
+    logInformationForThread("contentThread information", contentThread);
+    logInformationForThread(
+      "serviceWorkerThread information",
+      serviceWorkerThread
+    );
+
+    
     const parentNetworkMarkers = getInflatedNetworkMarkers(parentThread);
     const contentNetworkMarkers = getInflatedNetworkMarkers(contentThread);
-    info(JSON.stringify(parentNetworkMarkers, null, 2));
-    info(JSON.stringify(contentNetworkMarkers, null, 2));
+    const serviceWorkerNetworkMarkers = getInflatedNetworkMarkers(
+      serviceWorkerThread
+    );
+
+    
+    info(
+      "Parent network markers: " + JSON.stringify(parentNetworkMarkers, null, 2)
+    );
+    info(
+      "Content network markers: " +
+        JSON.stringify(contentNetworkMarkers, null, 2)
+    );
+    info(
+      "Serviceworker network markers: " +
+        JSON.stringify(serviceWorkerNetworkMarkers, null, 2)
+    );
 
     const parentPairs = getPairsOfNetworkMarkers(parentNetworkMarkers);
     const contentPairs = getPairsOfNetworkMarkers(contentNetworkMarkers);
+    const serviceWorkerPairs = getPairsOfNetworkMarkers(
+      serviceWorkerNetworkMarkers
+    );
 
     
     
@@ -66,15 +134,66 @@ add_task(async function test_network_markers_service_worker_register() {
         `For the URL ${pair[0].data.URI} we should get 2 markers in the content process.`
       )
     );
+    serviceWorkerPairs.forEach(pair =>
+      Assert.equal(
+        pair.length,
+        2,
+        `For the URL ${pair[0].data.URI} we should get 2 markers in the service worker process.`
+      )
+    );
+
+    
+    const parentStopMarkers = parentPairs.map(([_, stopMarker]) => stopMarker);
+    const serviceWorkerStopMarkers = serviceWorkerPairs.map(
+      ([_, stopMarker]) => stopMarker
+    );
 
     
     
-    const workers = await SpecialPowers.registeredServiceWorkers();
-    Assert.equal(
-      workers.length,
-      1,
-      "One service worker should be properly registered."
-    );
+    const expectedFiles = [
+      "serviceworker_page.html",
+      "firefox-logo-nightly.svg",
+    ].map(filename => `${BASE_URL_HTTPS}serviceworkers/${filename}`);
+
+    for (const expectedFile of expectedFiles) {
+      info(
+        `Checking if "${expectedFile}" is present in the network markers in both processes.`
+      );
+      const parentMarker = parentStopMarkers.find(
+        marker => marker.data.URI === expectedFile
+      );
+      const serviceWorkerMarker = serviceWorkerStopMarkers.find(
+        marker => marker.data.URI === expectedFile
+      );
+
+      const expectedProperties = {
+        name: Expect.stringMatches(
+          `Load \\d+:.*${escapeStringRegexp(expectedFile)}`
+        ),
+        data: Expect.objectContains({
+          status: "STATUS_STOP",
+          URI: expectedFile,
+          requestMethod: "GET",
+          contentType: Expect.stringMatches(/^(text\/html|image\/svg\+xml)$/),
+          startTime: Expect.number(),
+          endTime: Expect.number(),
+          domainLookupStart: Expect.number(),
+          domainLookupEnd: Expect.number(),
+          connectStart: Expect.number(),
+          tcpConnectEnd: Expect.number(),
+          connectEnd: Expect.number(),
+          requestStart: Expect.number(),
+          responseStart: Expect.number(),
+          responseEnd: Expect.number(),
+          id: Expect.number(),
+          count: Expect.number(),
+          pri: Expect.number(),
+        }),
+      };
+
+      Assert.objectContains(parentMarker, expectedProperties);
+      Assert.objectContains(serviceWorkerMarker, expectedProperties);
+    }
   });
 });
 
@@ -91,10 +210,7 @@ add_task(async function test_network_markers_service_worker_use() {
 
   startProfilerForMarkerTests();
 
-  const url =
-    BASE_URL_HTTPS +
-    "serviceworkers/serviceworker_page.html?cacheBust=" +
-    Math.random();
+  const url = `${BASE_URL_HTTPS}serviceworkers/serviceworker_page.html`;
   await BrowserTestUtils.withNewTab(url, async contentBrowser => {
     const contentPid = await SpecialPowers.spawn(
       contentBrowser,
@@ -108,22 +224,30 @@ add_task(async function test_network_markers_service_worker_use() {
 
     const parentNetworkMarkers = getInflatedNetworkMarkers(parentThread);
     const contentNetworkMarkers = getInflatedNetworkMarkers(contentThread);
+
+    
     info(JSON.stringify(parentNetworkMarkers, null, 2));
     info(JSON.stringify(contentNetworkMarkers, null, 2));
 
-    
+    const parentPairs = getPairsOfNetworkMarkers(parentNetworkMarkers);
     const contentPairs = getPairsOfNetworkMarkers(contentNetworkMarkers);
 
     
     
+    const expectedFiles = [
+      "serviceworker_page.html",
+      "firefox-logo-nightly.svg",
+    ].map(filename => `${BASE_URL_HTTPS}serviceworkers/${filename}`);
+
     
-
-
-
-
-
-
-
+    
+    parentPairs.forEach(pair =>
+      Assert.equal(
+        pair.length,
+        2,
+        `For the URL ${pair[0].data.URI} we should get 2 markers in the parent process.`
+      )
+    );
 
     contentPairs.forEach(pair =>
       Assert.equal(
@@ -132,5 +256,86 @@ add_task(async function test_network_markers_service_worker_use() {
         `For the URL ${pair[0].data.URI} we should get 2 markers in the content process.`
       )
     );
+
+    
+    const parentStopMarkers = parentPairs.map(([_, stopMarker]) => stopMarker);
+    const contentStopMarkers = contentPairs.map(
+      ([_, stopMarker]) => stopMarker
+    );
+
+    Assert.equal(
+      parentStopMarkers.length,
+      expectedFiles.length,
+      "There should be as many stop markers in the parent process as requested files."
+    );
+    Assert.equal(
+      contentStopMarkers.length,
+      expectedFiles.length,
+      "There should be as many stop markers in the content process as requested files."
+    );
+
+    for (const [i, expectedFile] of expectedFiles.entries()) {
+      info(
+        `Checking if "${expectedFile}" if present in the network markers in both processes.`
+      );
+      const parentMarker = parentStopMarkers.find(
+        marker => marker.data.URI === expectedFile
+      );
+      const contentMarker = contentStopMarkers.find(
+        marker => marker.data.URI === expectedFile
+      );
+
+      const commonDataProperties = {
+        type: "Network",
+        status: "STATUS_STOP",
+        URI: expectedFile,
+        requestMethod: "GET",
+        contentType: Expect.stringMatches(/^(text\/html|image\/svg\+xml)$/),
+        startTime: Expect.number(),
+        endTime: Expect.number(),
+        id: Expect.number(),
+        pri: Expect.number(),
+      };
+
+      const expectedPropertiesForTopLevelNavigation = {
+        name: Expect.stringMatches(
+          `Load \\d+:.*${escapeStringRegexp(expectedFile)}`
+        ),
+        
+        
+        
+        data: Expect.objectContainsOnly(commonDataProperties),
+      };
+
+      const expectedPropertiesForOtherRequests = {
+        name: Expect.stringMatches(
+          `Load \\d+:.*${escapeStringRegexp(expectedFile)}`
+        ),
+        
+        
+        
+        data: Expect.objectContainsOnly({
+          ...commonDataProperties,
+          innerWindowID: Expect.number(),
+        }),
+      };
+
+      if (i === 0) {
+        Assert.objectContains(
+          parentMarker,
+          expectedPropertiesForTopLevelNavigation
+        );
+        Assert.objectContains(
+          contentMarker,
+          expectedPropertiesForTopLevelNavigation
+        );
+      } else {
+        Assert.objectContains(parentMarker, expectedPropertiesForOtherRequests);
+        Assert.objectContains(
+          contentMarker,
+          expectedPropertiesForOtherRequests
+        );
+      }
+    }
   });
 });
