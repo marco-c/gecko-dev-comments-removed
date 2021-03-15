@@ -80,19 +80,10 @@ var gTests = [
       });
       await observerPromise;
 
+      
       SitePermissions.removeFromPrincipal(
         null,
         "screen",
-        gBrowser.selectedBrowser
-      );
-      SitePermissions.removeFromPrincipal(
-        null,
-        "camera",
-        gBrowser.selectedBrowser
-      );
-      SitePermissions.removeFromPrincipal(
-        null,
-        "microphone",
         gBrowser.selectedBrowser
       );
 
