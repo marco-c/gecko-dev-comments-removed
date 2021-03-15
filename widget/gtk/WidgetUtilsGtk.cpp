@@ -6,6 +6,7 @@
 #include "WidgetUtilsGtk.h"
 #include "nsWindow.h"
 #include <gtk/gtk.h>
+#include <dlfcn.h>
 
 namespace mozilla {
 
@@ -46,6 +47,31 @@ int32_t WidgetUtilsGTK::IsTouchDeviceSupportPresent() {
 bool IsMainWindowTransparent() {
   return nsWindow::IsToplevelWindowTransparent();
 }
+
+
+
+
+
+
+bool GdkIsWaylandDisplay(GdkDisplay* display) {
+  static auto sGdkWaylandDisplayGetType =
+      (GType(*)())dlsym(RTLD_DEFAULT, "gdk_wayland_display_get_type");
+  return sGdkWaylandDisplayGetType &&
+         G_TYPE_CHECK_INSTANCE_TYPE(display, sGdkWaylandDisplayGetType());
+}
+
+bool GdkIsX11Display(GdkDisplay* display) {
+  static auto sGdkX11DisplayGetType =
+      (GType(*)())dlsym(RTLD_DEFAULT, "gdk_x11_display_get_type");
+  return sGdkX11DisplayGetType &&
+         G_TYPE_CHECK_INSTANCE_TYPE(display, sGdkX11DisplayGetType());
+}
+
+bool GdkIsWaylandDisplay() {
+  return GdkIsWaylandDisplay(gdk_display_get_default());
+}
+
+bool GdkIsX11Display() { return GdkIsX11Display(gdk_display_get_default()); }
 
 }  
 
