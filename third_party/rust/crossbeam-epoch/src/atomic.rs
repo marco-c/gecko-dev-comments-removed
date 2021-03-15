@@ -1,17 +1,15 @@
+use alloc::boxed::Box;
 use core::borrow::{Borrow, BorrowMut};
 use core::cmp;
 use core::fmt;
 use core::marker::PhantomData;
-use core::mem::{self, MaybeUninit};
+use core::mem;
 use core::ops::{Deref, DerefMut};
-use core::slice;
+use core::ptr;
 use core::sync::atomic::{AtomicUsize, Ordering};
 
-use crate::alloc::alloc;
-use crate::alloc::boxed::Box;
-use crate::guard::Guard;
-use const_fn::const_fn;
 use crossbeam_utils::atomic::AtomicConsume;
+use guard::Guard;
 
 
 
@@ -26,7 +24,7 @@ fn strongest_failure_ordering(ord: Ordering) -> Ordering {
 }
 
 
-pub struct CompareAndSetError<'g, T: ?Sized + Pointable, P: Pointer<T>> {
+pub struct CompareAndSetError<'g, T: 'g, P: Pointer<T>> {
     
     pub current: Shared<'g, T>,
 
@@ -35,7 +33,7 @@ pub struct CompareAndSetError<'g, T: ?Sized + Pointable, P: Pointer<T>> {
 }
 
 impl<'g, T: 'g, P: Pointer<T> + fmt::Debug> fmt::Debug for CompareAndSetError<'g, T, P> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("CompareAndSetError")
             .field("current", &self.current)
             .field("new", &self.new)
@@ -91,28 +89,30 @@ impl CompareAndSetOrdering for (Ordering, Ordering) {
 
 
 #[inline]
-fn low_bits<T: ?Sized + Pointable>() -> usize {
-    (1 << T::ALIGN.trailing_zeros()) - 1
+fn ensure_aligned<T>(raw: *const T) {
+    assert_eq!(raw as usize & low_bits::<T>(), 0, "unaligned pointer");
 }
 
 
 #[inline]
-fn ensure_aligned<T: ?Sized + Pointable>(raw: usize) {
-    assert_eq!(raw & low_bits::<T>(), 0, "unaligned pointer");
+fn low_bits<T>() -> usize {
+    (1 << mem::align_of::<T>().trailing_zeros()) - 1
 }
 
 
 
 
 #[inline]
-fn compose_tag<T: ?Sized + Pointable>(data: usize, tag: usize) -> usize {
+fn data_with_tag<T>(data: usize, tag: usize) -> usize {
     (data & !low_bits::<T>()) | (tag & low_bits::<T>())
 }
 
 
 #[inline]
-fn decompose_tag<T: ?Sized + Pointable>(data: usize) -> (usize, usize) {
-    (data & !low_bits::<T>(), data & low_bits::<T>())
+fn decompose_data<T>(data: usize) -> (*mut T, usize) {
+    let raw = (data & !low_bits::<T>()) as *mut T;
+    let tag = data & low_bits::<T>();
+    (raw, tag)
 }
 
 
@@ -124,191 +124,15 @@ fn decompose_tag<T: ?Sized + Pointable>(data: usize) -> (usize, usize) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-pub trait Pointable {
-    
-    const ALIGN: usize;
-
-    
-    type Init;
-
-    
-    
-    
-    
-    
-    unsafe fn init(init: Self::Init) -> usize;
-
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn deref<'a>(ptr: usize) -> &'a Self;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn deref_mut<'a>(ptr: usize) -> &'a mut Self;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn drop(ptr: usize);
-}
-
-impl<T> Pointable for T {
-    const ALIGN: usize = mem::align_of::<T>();
-
-    type Init = T;
-
-    unsafe fn init(init: Self::Init) -> usize {
-        Box::into_raw(Box::new(init)) as usize
-    }
-
-    unsafe fn deref<'a>(ptr: usize) -> &'a Self {
-        &*(ptr as *const T)
-    }
-
-    unsafe fn deref_mut<'a>(ptr: usize) -> &'a mut Self {
-        &mut *(ptr as *mut T)
-    }
-
-    unsafe fn drop(ptr: usize) {
-        drop(Box::from_raw(ptr as *mut T));
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[repr(C)]
-struct Array<T> {
-    size: usize,
-    elements: [MaybeUninit<T>; 0],
-}
-
-impl<T> Pointable for [MaybeUninit<T>] {
-    const ALIGN: usize = mem::align_of::<Array<T>>();
-
-    type Init = usize;
-
-    unsafe fn init(size: Self::Init) -> usize {
-        let size = mem::size_of::<Array<T>>() + mem::size_of::<MaybeUninit<T>>() * size;
-        let align = mem::align_of::<Array<T>>();
-        let layout = alloc::Layout::from_size_align(size, align).unwrap();
-        let ptr = alloc::alloc(layout) as *mut Array<T>;
-        (*ptr).size = size;
-        ptr as usize
-    }
-
-    unsafe fn deref<'a>(ptr: usize) -> &'a Self {
-        let array = &*(ptr as *const Array<T>);
-        slice::from_raw_parts(array.elements.as_ptr() as *const _, array.size)
-    }
-
-    unsafe fn deref_mut<'a>(ptr: usize) -> &'a mut Self {
-        let array = &*(ptr as *mut Array<T>);
-        slice::from_raw_parts_mut(array.elements.as_ptr() as *mut _, array.size)
-    }
-
-    unsafe fn drop(ptr: usize) {
-        let array = &*(ptr as *mut Array<T>);
-        let size = mem::size_of::<Array<T>>() + mem::size_of::<MaybeUninit<T>>() * array.size;
-        let align = mem::align_of::<Array<T>>();
-        let layout = alloc::Layout::from_size_align(size, align).unwrap();
-        alloc::dealloc(ptr as *mut u8, layout);
-    }
-}
-
-
-
-
-
-
-
-
-
-
-pub struct Atomic<T: ?Sized + Pointable> {
+pub struct Atomic<T> {
     data: AtomicUsize,
     _marker: PhantomData<*mut T>,
 }
 
-unsafe impl<T: ?Sized + Pointable + Send + Sync> Send for Atomic<T> {}
-unsafe impl<T: ?Sized + Pointable + Send + Sync> Sync for Atomic<T> {}
+unsafe impl<T: Send + Sync> Send for Atomic<T> {}
+unsafe impl<T: Send + Sync> Sync for Atomic<T> {}
 
 impl<T> Atomic<T> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn new(init: T) -> Atomic<T> {
-        Self::init(init)
-    }
-}
-
-impl<T: ?Sized + Pointable> Atomic<T> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn init(init: T::Init) -> Atomic<T> {
-        Self::from(Owned::init(init))
-    }
-
     
     fn from_usize(data: usize) -> Self {
         Self {
@@ -326,8 +150,24 @@ impl<T: ?Sized + Pointable> Atomic<T> {
     
     
     
+    #[cfg(not(has_min_const_fn))]
+    pub fn null() -> Atomic<T> {
+        Self {
+            data: AtomicUsize::new(0),
+            _marker: PhantomData,
+        }
+    }
+
     
-    #[const_fn(feature = "nightly")]
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(has_min_const_fn)]
     pub const fn null() -> Atomic<T> {
         Self {
             data: AtomicUsize::new(0),
@@ -335,6 +175,21 @@ impl<T: ?Sized + Pointable> Atomic<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(value: T) -> Atomic<T> {
+        Self::from(Owned::new(value))
+    }
+
+    
+    
     
     
     
@@ -394,10 +249,14 @@ impl<T: ?Sized + Pointable> Atomic<T> {
     
     
     
-    pub fn store<P: Pointer<T>>(&self, new: P, ord: Ordering) {
+    
+    
+    pub fn store<'g, P: Pointer<T>>(&self, new: P, ord: Ordering) {
         self.data.store(new.into_usize(), ord);
     }
 
+    
+    
     
     
     
@@ -442,9 +301,11 @@ impl<T: ?Sized + Pointable> Atomic<T> {
     
     
     
+    
+    
     pub fn compare_and_set<'g, O, P>(
         &self,
-        current: Shared<'_, T>,
+        current: Shared<T>,
         new: P,
         ord: O,
         _: &'g Guard,
@@ -511,9 +372,10 @@ impl<T: ?Sized + Pointable> Atomic<T> {
     
     
     
+    
     pub fn compare_and_set_weak<'g, O, P>(
         &self,
-        current: Shared<'_, T>,
+        current: Shared<T>,
         new: P,
         ord: O,
         _: &'g Guard,
@@ -534,6 +396,8 @@ impl<T: ?Sized + Pointable> Atomic<T> {
             })
     }
 
+    
+    
     
     
     
@@ -576,10 +440,14 @@ impl<T: ?Sized + Pointable> Atomic<T> {
     
     
     
+    
+    
     pub fn fetch_or<'g>(&self, val: usize, ord: Ordering, _: &'g Guard) -> Shared<'g, T> {
         unsafe { Shared::from_usize(self.data.fetch_or(val & low_bits::<T>(), ord)) }
     }
 
+    
+    
     
     
     
@@ -642,10 +510,10 @@ impl<T: ?Sized + Pointable> Atomic<T> {
     }
 }
 
-impl<T: ?Sized + Pointable> fmt::Debug for Atomic<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl<T> fmt::Debug for Atomic<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let data = self.data.load(Ordering::SeqCst);
-        let (raw, tag) = decompose_tag::<T>(data);
+        let (raw, tag) = decompose_data::<T>(data);
 
         f.debug_struct("Atomic")
             .field("raw", &raw)
@@ -654,15 +522,15 @@ impl<T: ?Sized + Pointable> fmt::Debug for Atomic<T> {
     }
 }
 
-impl<T: ?Sized + Pointable> fmt::Pointer for Atomic<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl<T> fmt::Pointer for Atomic<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let data = self.data.load(Ordering::SeqCst);
-        let (raw, _) = decompose_tag::<T>(data);
-        fmt::Pointer::fmt(&(unsafe { T::deref(raw) as *const _ }), f)
+        let (raw, _) = decompose_data::<T>(data);
+        fmt::Pointer::fmt(&raw, f)
     }
 }
 
-impl<T: ?Sized + Pointable> Clone for Atomic<T> {
+impl<T> Clone for Atomic<T> {
     
     
     
@@ -673,13 +541,13 @@ impl<T: ?Sized + Pointable> Clone for Atomic<T> {
     }
 }
 
-impl<T: ?Sized + Pointable> Default for Atomic<T> {
+impl<T> Default for Atomic<T> {
     fn default() -> Self {
         Atomic::null()
     }
 }
 
-impl<T: ?Sized + Pointable> From<Owned<T>> for Atomic<T> {
+impl<T> From<Owned<T>> for Atomic<T> {
     
     
     
@@ -708,7 +576,7 @@ impl<T> From<T> for Atomic<T> {
     }
 }
 
-impl<'g, T: ?Sized + Pointable> From<Shared<'g, T>> for Atomic<T> {
+impl<'g, T> From<Shared<'g, T>> for Atomic<T> {
     
     
     
@@ -740,15 +608,10 @@ impl<T> From<*const T> for Atomic<T> {
 }
 
 
-pub trait Pointer<T: ?Sized + Pointable> {
+pub trait Pointer<T> {
     
     fn into_usize(self) -> usize;
 
-    
-    
-    
-    
-    
     
     unsafe fn from_usize(data: usize) -> Self;
 }
@@ -759,12 +622,12 @@ pub trait Pointer<T: ?Sized + Pointable> {
 
 
 
-pub struct Owned<T: ?Sized + Pointable> {
+pub struct Owned<T> {
     data: usize,
     _marker: PhantomData<Box<T>>,
 }
 
-impl<T: ?Sized + Pointable> Pointer<T> for Owned<T> {
+impl<T> Pointer<T> for Owned<T> {
     #[inline]
     fn into_usize(self) -> usize {
         let data = self.data;
@@ -781,7 +644,7 @@ impl<T: ?Sized + Pointable> Pointer<T> for Owned<T> {
     unsafe fn from_usize(data: usize) -> Self {
         debug_assert!(data != 0, "converting zero into `Owned`");
         Owned {
-            data,
+            data: data,
             _marker: PhantomData,
         }
     }
@@ -793,6 +656,14 @@ impl<T> Owned<T> {
     
     
     
+    
+    
+    
+    
+    pub fn new(value: T) -> Owned<T> {
+        Self::from(Box::new(value))
+    }
+
     
     
     
@@ -811,9 +682,25 @@ impl<T> Owned<T> {
     
     
     pub unsafe fn from_raw(raw: *mut T) -> Owned<T> {
-        let raw = raw as usize;
-        ensure_aligned::<T>(raw);
-        Self::from_usize(raw)
+        ensure_aligned(raw);
+        Self::from_usize(raw as usize)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_shared<'g>(self, _: &'g Guard) -> Shared<'g, T> {
+        unsafe { Shared::from_usize(self.into_usize()) }
     }
 
     
@@ -828,53 +715,9 @@ impl<T> Owned<T> {
     
     
     pub fn into_box(self) -> Box<T> {
-        let (raw, _) = decompose_tag::<T>(self.data);
+        let (raw, _) = decompose_data::<T>(self.data);
         mem::forget(self);
-        unsafe { Box::from_raw(raw as *mut _) }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn new(init: T) -> Owned<T> {
-        Self::init(init)
-    }
-}
-
-impl<T: ?Sized + Pointable> Owned<T> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn init(init: T::Init) -> Owned<T> {
-        unsafe { Self::from_usize(T::init(init)) }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[allow(clippy::needless_lifetimes)]
-    pub fn into_shared<'g>(self, _: &'g Guard) -> Shared<'g, T> {
-        unsafe { Shared::from_usize(self.into_usize()) }
+        unsafe { Box::from_raw(raw) }
     }
 
     
@@ -887,7 +730,7 @@ impl<T: ?Sized + Pointable> Owned<T> {
     
     
     pub fn tag(&self) -> usize {
-        let (_, tag) = decompose_tag::<T>(self.data);
+        let (_, tag) = decompose_data::<T>(self.data);
         tag
     }
 
@@ -906,22 +749,22 @@ impl<T: ?Sized + Pointable> Owned<T> {
     
     pub fn with_tag(self, tag: usize) -> Owned<T> {
         let data = self.into_usize();
-        unsafe { Self::from_usize(compose_tag::<T>(data, tag)) }
+        unsafe { Self::from_usize(data_with_tag::<T>(data, tag)) }
     }
 }
 
-impl<T: ?Sized + Pointable> Drop for Owned<T> {
+impl<T> Drop for Owned<T> {
     fn drop(&mut self) {
-        let (raw, _) = decompose_tag::<T>(self.data);
+        let (raw, _) = decompose_data::<T>(self.data);
         unsafe {
-            T::drop(raw);
+            drop(Box::from_raw(raw));
         }
     }
 }
 
-impl<T: ?Sized + Pointable> fmt::Debug for Owned<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let (raw, tag) = decompose_tag::<T>(self.data);
+impl<T> fmt::Debug for Owned<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let (raw, tag) = decompose_data::<T>(self.data);
 
         f.debug_struct("Owned")
             .field("raw", &raw)
@@ -936,19 +779,19 @@ impl<T: Clone> Clone for Owned<T> {
     }
 }
 
-impl<T: ?Sized + Pointable> Deref for Owned<T> {
+impl<T> Deref for Owned<T> {
     type Target = T;
 
     fn deref(&self) -> &T {
-        let (raw, _) = decompose_tag::<T>(self.data);
-        unsafe { T::deref(raw) }
+        let (raw, _) = decompose_data::<T>(self.data);
+        unsafe { &*raw }
     }
 }
 
-impl<T: ?Sized + Pointable> DerefMut for Owned<T> {
+impl<T> DerefMut for Owned<T> {
     fn deref_mut(&mut self) -> &mut T {
-        let (raw, _) = decompose_tag::<T>(self.data);
-        unsafe { T::deref_mut(raw) }
+        let (raw, _) = decompose_data::<T>(self.data);
+        unsafe { &mut *raw }
     }
 }
 
@@ -977,27 +820,27 @@ impl<T> From<Box<T>> for Owned<T> {
     }
 }
 
-impl<T: ?Sized + Pointable> Borrow<T> for Owned<T> {
+impl<T> Borrow<T> for Owned<T> {
     fn borrow(&self) -> &T {
-        self.deref()
+        &**self
     }
 }
 
-impl<T: ?Sized + Pointable> BorrowMut<T> for Owned<T> {
+impl<T> BorrowMut<T> for Owned<T> {
     fn borrow_mut(&mut self) -> &mut T {
-        self.deref_mut()
+        &mut **self
     }
 }
 
-impl<T: ?Sized + Pointable> AsRef<T> for Owned<T> {
+impl<T> AsRef<T> for Owned<T> {
     fn as_ref(&self) -> &T {
-        self.deref()
+        &**self
     }
 }
 
-impl<T: ?Sized + Pointable> AsMut<T> for Owned<T> {
+impl<T> AsMut<T> for Owned<T> {
     fn as_mut(&mut self) -> &mut T {
-        self.deref_mut()
+        &mut **self
     }
 }
 
@@ -1007,23 +850,23 @@ impl<T: ?Sized + Pointable> AsMut<T> for Owned<T> {
 
 
 
-pub struct Shared<'g, T: 'g + ?Sized + Pointable> {
+pub struct Shared<'g, T: 'g> {
     data: usize,
     _marker: PhantomData<(&'g (), *const T)>,
 }
 
-impl<T: ?Sized + Pointable> Clone for Shared<'_, T> {
+impl<'g, T> Clone for Shared<'g, T> {
     fn clone(&self) -> Self {
-        Self {
+        Shared {
             data: self.data,
             _marker: PhantomData,
         }
     }
 }
 
-impl<T: ?Sized + Pointable> Copy for Shared<'_, T> {}
+impl<'g, T> Copy for Shared<'g, T> {}
 
-impl<T: ?Sized + Pointable> Pointer<T> for Shared<'_, T> {
+impl<'g, T> Pointer<T> for Shared<'g, T> {
     #[inline]
     fn into_usize(self) -> usize {
         self.data
@@ -1032,37 +875,13 @@ impl<T: ?Sized + Pointable> Pointer<T> for Shared<'_, T> {
     #[inline]
     unsafe fn from_usize(data: usize) -> Self {
         Shared {
-            data,
+            data: data,
             _marker: PhantomData,
         }
     }
 }
 
 impl<'g, T> Shared<'g, T> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[allow(clippy::trivially_copy_pass_by_ref)]
-    pub fn as_raw(&self) -> *const T {
-        let (raw, _) = decompose_tag::<T>(self.data);
-        raw as *const _
-    }
-}
-
-impl<'g, T: ?Sized + Pointable> Shared<'g, T> {
     
     
     
@@ -1094,10 +913,29 @@ impl<'g, T: ?Sized + Pointable> Shared<'g, T> {
     
     
     
-    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_null(&self) -> bool {
-        let (raw, _) = decompose_tag::<T>(self.data);
-        raw == 0
+        self.as_raw().is_null()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn as_raw(&self) -> *const T {
+        let (raw, _) = decompose_data::<T>(self.data);
+        raw
     }
 
     
@@ -1131,11 +969,8 @@ impl<'g, T: ?Sized + Pointable> Shared<'g, T> {
     
     
     
-    #[allow(clippy::trivially_copy_pass_by_ref)]
-    #[allow(clippy::should_implement_trait)]
     pub unsafe fn deref(&self) -> &'g T {
-        let (raw, _) = decompose_tag::<T>(self.data);
-        T::deref(raw)
+        &*self.as_raw()
     }
 
     
@@ -1174,10 +1009,8 @@ impl<'g, T: ?Sized + Pointable> Shared<'g, T> {
     
     
     
-    #[allow(clippy::should_implement_trait)]
     pub unsafe fn deref_mut(&mut self) -> &'g mut T {
-        let (raw, _) = decompose_tag::<T>(self.data);
-        T::deref_mut(raw)
+        &mut *(self.as_raw() as *mut T)
     }
 
     
@@ -1211,14 +1044,8 @@ impl<'g, T: ?Sized + Pointable> Shared<'g, T> {
     
     
     
-    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub unsafe fn as_ref(&self) -> Option<&'g T> {
-        let (raw, _) = decompose_tag::<T>(self.data);
-        if raw == 0 {
-            None
-        } else {
-            Some(T::deref(raw))
-        }
+        self.as_raw().as_ref()
     }
 
     
@@ -1246,7 +1073,10 @@ impl<'g, T: ?Sized + Pointable> Shared<'g, T> {
     
     
     pub unsafe fn into_owned(self) -> Owned<T> {
-        debug_assert!(!self.is_null(), "converting a null `Shared` into `Owned`");
+        debug_assert!(
+            self.as_raw() != ptr::null(),
+            "converting a null `Shared` into `Owned`"
+        );
         Owned::from_usize(self.data)
     }
 
@@ -1263,9 +1093,8 @@ impl<'g, T: ?Sized + Pointable> Shared<'g, T> {
     
     
     
-    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn tag(&self) -> usize {
-        let (_, tag) = decompose_tag::<T>(self.data);
+        let (_, tag) = decompose_data::<T>(self.data);
         tag
     }
 
@@ -1287,13 +1116,12 @@ impl<'g, T: ?Sized + Pointable> Shared<'g, T> {
     
     
     
-    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn with_tag(&self, tag: usize) -> Shared<'g, T> {
-        unsafe { Self::from_usize(compose_tag::<T>(self.data, tag)) }
+        unsafe { Self::from_usize(data_with_tag::<T>(self.data, tag)) }
     }
 }
 
-impl<T> From<*const T> for Shared<'_, T> {
+impl<'g, T> From<*const T> for Shared<'g, T> {
     
     
     
@@ -1309,35 +1137,34 @@ impl<T> From<*const T> for Shared<'_, T> {
     
     
     fn from(raw: *const T) -> Self {
-        let raw = raw as usize;
-        ensure_aligned::<T>(raw);
-        unsafe { Self::from_usize(raw) }
+        ensure_aligned(raw);
+        unsafe { Self::from_usize(raw as usize) }
     }
 }
 
-impl<'g, T: ?Sized + Pointable> PartialEq<Shared<'g, T>> for Shared<'g, T> {
+impl<'g, T> PartialEq<Shared<'g, T>> for Shared<'g, T> {
     fn eq(&self, other: &Self) -> bool {
         self.data == other.data
     }
 }
 
-impl<T: ?Sized + Pointable> Eq for Shared<'_, T> {}
+impl<'g, T> Eq for Shared<'g, T> {}
 
-impl<'g, T: ?Sized + Pointable> PartialOrd<Shared<'g, T>> for Shared<'g, T> {
+impl<'g, T> PartialOrd<Shared<'g, T>> for Shared<'g, T> {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         self.data.partial_cmp(&other.data)
     }
 }
 
-impl<T: ?Sized + Pointable> Ord for Shared<'_, T> {
+impl<'g, T> Ord for Shared<'g, T> {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.data.cmp(&other.data)
     }
 }
 
-impl<T: ?Sized + Pointable> fmt::Debug for Shared<'_, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let (raw, tag) = decompose_tag::<T>(self.data);
+impl<'g, T> fmt::Debug for Shared<'g, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let (raw, tag) = decompose_data::<T>(self.data);
 
         f.debug_struct("Shared")
             .field("raw", &raw)
@@ -1346,13 +1173,13 @@ impl<T: ?Sized + Pointable> fmt::Debug for Shared<'_, T> {
     }
 }
 
-impl<T: ?Sized + Pointable> fmt::Pointer for Shared<'_, T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Pointer::fmt(&(unsafe { self.deref() as *const _ }), f)
+impl<'g, T> fmt::Pointer for Shared<'g, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Pointer::fmt(&self.as_raw(), f)
     }
 }
 
-impl<T: ?Sized + Pointable> Default for Shared<'_, T> {
+impl<'g, T> Default for Shared<'g, T> {
     fn default() -> Self {
         Shared::null()
     }

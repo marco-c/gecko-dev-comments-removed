@@ -125,21 +125,3 @@ fn join_context_second() {
     assert!(!a_migrated);
     assert!(b_migrated);
 }
-
-#[test]
-fn join_counter_overflow() {
-    const MAX: u32 = 500_000;
-
-    let mut i = 0;
-    let mut j = 0;
-    let pool = ThreadPoolBuilder::new().num_threads(2).build().unwrap();
-
-    
-    
-    for _ in 0..MAX {
-        pool.join(|| i += 1, || j += 1);
-    }
-
-    assert_eq!(i, MAX);
-    assert_eq!(j, MAX);
-}

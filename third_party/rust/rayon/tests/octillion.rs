@@ -33,25 +33,19 @@ fn octillion_flat() -> impl ParallelIterator<Item = u128> {
         })
 }
 
-
-
-
 #[test]
-#[cfg_attr(not(target_pointer_width = "64"), ignore)]
 fn find_first_octillion() {
     let x = octillion().find_first(|_| true);
     assert_eq!(x, Some(0));
 }
 
 #[test]
-#[cfg_attr(not(target_pointer_width = "64"), ignore)]
 fn find_first_octillion_inclusive() {
     let x = octillion_inclusive().find_first(|_| true);
     assert_eq!(x, Some(0));
 }
 
 #[test]
-#[cfg_attr(not(target_pointer_width = "64"), ignore)]
 fn find_first_octillion_flat() {
     let x = octillion_flat().find_first(|_| true);
     assert_eq!(x, Some(0));
@@ -68,7 +62,6 @@ fn two_threads<F: Send + FnOnce() -> R, R: Send>(f: F) -> R {
 }
 
 #[test]
-#[cfg_attr(not(target_pointer_width = "64"), ignore)]
 fn find_last_octillion() {
     
     
@@ -78,14 +71,12 @@ fn find_last_octillion() {
 }
 
 #[test]
-#[cfg_attr(not(target_pointer_width = "64"), ignore)]
 fn find_last_octillion_inclusive() {
     let x = two_threads(|| octillion_inclusive().find_last(|_| true));
     assert_eq!(x, Some(OCTILLION));
 }
 
 #[test]
-#[cfg_attr(not(target_pointer_width = "64"), ignore)]
 fn find_last_octillion_flat() {
     let x = two_threads(|| octillion_flat().find_last(|_| true));
     assert_eq!(x, Some(OCTILLION - 1));

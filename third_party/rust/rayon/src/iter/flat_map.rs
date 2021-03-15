@@ -40,7 +40,10 @@ where
     where
         C: UnindexedConsumer<Self::Item>,
     {
-        let consumer = FlatMapConsumer::new(consumer, &self.map_op);
+        let consumer = FlatMapConsumer {
+            base: consumer,
+            map_op: &self.map_op,
+        };
         self.base.drive_unindexed(consumer)
     }
 }
@@ -123,9 +126,10 @@ where
     fn consume(self, item: T) -> Self {
         let map_op = self.map_op;
         let par_iter = map_op(item).into_par_iter();
-        let consumer = self.base.split_off_left();
-        let result = par_iter.drive_unindexed(consumer);
+        let result = par_iter.drive_unindexed(self.base.split_off_left());
 
+        
+        
         let previous = match self.previous {
             None => Some(result),
             Some(previous) => {

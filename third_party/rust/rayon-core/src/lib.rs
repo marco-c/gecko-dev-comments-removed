@@ -19,7 +19,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/rayon-core/1.9")]
+#![doc(html_root_url = "https://docs.rs/rayon-core/1.8")]
 #![deny(missing_debug_implementations)]
 #![deny(missing_docs)]
 #![deny(unreachable_pub)]

@@ -6,16 +6,17 @@ use super::*;
 
 
 
+
 #[must_use = "iterator adaptors are lazy and do nothing unless consumed"]
 #[derive(Debug, Clone)]
 pub struct Flatten<I: ParallelIterator> {
     base: I,
 }
 
-impl<I> Flatten<I>
+impl<I, PI> Flatten<I>
 where
-    I: ParallelIterator,
-    I::Item: IntoParallelIterator,
+    I: ParallelIterator<Item = PI>,
+    PI: IntoParallelIterator + Send,
 {
     
     pub(super) fn new(base: I) -> Self {
@@ -23,118 +24,21 @@ where
     }
 }
 
-impl<I> ParallelIterator for Flatten<I>
+impl<I, PI> ParallelIterator for Flatten<I>
 where
-    I: ParallelIterator,
-    I::Item: IntoParallelIterator,
+    I: ParallelIterator<Item = PI>,
+    PI: IntoParallelIterator + Send,
 {
-    type Item = <I::Item as IntoParallelIterator>::Item;
+    type Item = PI::Item;
 
     fn drive_unindexed<C>(self, consumer: C) -> C::Result
     where
         C: UnindexedConsumer<Self::Item>,
     {
-        let consumer = FlattenConsumer::new(consumer);
-        self.base.drive_unindexed(consumer)
-    }
-}
-
-
-
-
-struct FlattenConsumer<C> {
-    base: C,
-}
-
-impl<C> FlattenConsumer<C> {
-    fn new(base: C) -> Self {
-        FlattenConsumer { base }
-    }
-}
-
-impl<T, C> Consumer<T> for FlattenConsumer<C>
-where
-    C: UnindexedConsumer<T::Item>,
-    T: IntoParallelIterator,
-{
-    type Folder = FlattenFolder<C, C::Result>;
-    type Reducer = C::Reducer;
-    type Result = C::Result;
-
-    fn split_at(self, index: usize) -> (Self, Self, C::Reducer) {
-        let (left, right, reducer) = self.base.split_at(index);
-        (
-            FlattenConsumer::new(left),
-            FlattenConsumer::new(right),
-            reducer,
-        )
-    }
-
-    fn into_folder(self) -> Self::Folder {
-        FlattenFolder {
-            base: self.base,
-            previous: None,
+        fn id<T>(x: T) -> T {
+            x
         }
-    }
 
-    fn full(&self) -> bool {
-        self.base.full()
-    }
-}
-
-impl<T, C> UnindexedConsumer<T> for FlattenConsumer<C>
-where
-    C: UnindexedConsumer<T::Item>,
-    T: IntoParallelIterator,
-{
-    fn split_off_left(&self) -> Self {
-        FlattenConsumer::new(self.base.split_off_left())
-    }
-
-    fn to_reducer(&self) -> Self::Reducer {
-        self.base.to_reducer()
-    }
-}
-
-struct FlattenFolder<C, R> {
-    base: C,
-    previous: Option<R>,
-}
-
-impl<T, C> Folder<T> for FlattenFolder<C, C::Result>
-where
-    C: UnindexedConsumer<T::Item>,
-    T: IntoParallelIterator,
-{
-    type Result = C::Result;
-
-    fn consume(self, item: T) -> Self {
-        let par_iter = item.into_par_iter();
-        let consumer = self.base.split_off_left();
-        let result = par_iter.drive_unindexed(consumer);
-
-        let previous = match self.previous {
-            None => Some(result),
-            Some(previous) => {
-                let reducer = self.base.to_reducer();
-                Some(reducer.reduce(previous, result))
-            }
-        };
-
-        FlattenFolder {
-            base: self.base,
-            previous,
-        }
-    }
-
-    fn complete(self) -> Self::Result {
-        match self.previous {
-            Some(previous) => previous,
-            None => self.base.into_folder().complete(),
-        }
-    }
-
-    fn full(&self) -> bool {
-        self.base.full()
+        self.base.flat_map(id).drive_unindexed(consumer)
     }
 }

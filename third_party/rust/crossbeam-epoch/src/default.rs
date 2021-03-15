@@ -4,9 +4,8 @@
 
 
 
-use crate::collector::{Collector, LocalHandle};
-use crate::guard::Guard;
-use lazy_static::lazy_static;
+use collector::{Collector, LocalHandle};
+use guard::Guard;
 
 lazy_static! {
     /// The global data for the default garbage collector.
@@ -71,7 +70,6 @@ mod tests {
                 super::pin();
                 
             });
-        })
-        .unwrap();
+        }).unwrap();
     }
 }

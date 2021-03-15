@@ -7,12 +7,6 @@
 
 use crate::iter::plumbing::*;
 use crate::iter::*;
-use crate::math::simplify_range;
-use std::iter;
-use std::mem;
-use std::ops::{Range, RangeBounds};
-use std::ptr;
-use std::slice;
 
 
 #[derive(Debug, Clone)]
@@ -61,122 +55,34 @@ impl<T: Send> IndexedParallelIterator for IntoIter<T> {
         CB: ProducerCallback<Self::Item>,
     {
         
-        self.vec.par_drain(..).with_producer(callback)
-    }
-}
-
-impl<'data, T: Send> ParallelDrainRange<usize> for &'data mut Vec<T> {
-    type Iter = Drain<'data, T>;
-    type Item = T;
-
-    fn par_drain<R: RangeBounds<usize>>(self, range: R) -> Self::Iter {
-        Drain {
-            orig_len: self.len(),
-            range: simplify_range(range, self.len()),
-            vec: self,
-        }
-    }
-}
-
-
-#[derive(Debug)]
-pub struct Drain<'data, T: Send> {
-    vec: &'data mut Vec<T>,
-    range: Range<usize>,
-    orig_len: usize,
-}
-
-impl<'data, T: Send> ParallelIterator for Drain<'data, T> {
-    type Item = T;
-
-    fn drive_unindexed<C>(self, consumer: C) -> C::Result
-    where
-        C: UnindexedConsumer<Self::Item>,
-    {
-        bridge(self, consumer)
-    }
-
-    fn opt_len(&self) -> Option<usize> {
-        Some(self.len())
-    }
-}
-
-impl<'data, T: Send> IndexedParallelIterator for Drain<'data, T> {
-    fn drive<C>(self, consumer: C) -> C::Result
-    where
-        C: Consumer<Self::Item>,
-    {
-        bridge(self, consumer)
-    }
-
-    fn len(&self) -> usize {
-        self.range.len()
-    }
-
-    fn with_producer<CB>(self, callback: CB) -> CB::Output
-    where
-        CB: ProducerCallback<Self::Item>,
-    {
+        
         unsafe {
             
-            let start = self.range.start;
-            self.vec.set_len(start);
+            let len = self.vec.len();
+            self.vec.set_len(0);
 
             
-            let mut slice = &mut self.vec[start..];
-            slice = slice::from_raw_parts_mut(slice.as_mut_ptr(), self.range.len());
+            let mut slice = self.vec.as_mut_slice();
+            slice = std::slice::from_raw_parts_mut(slice.as_mut_ptr(), len);
 
-            
-            callback.callback(DrainProducer::new(slice))
-        }
-    }
-}
-
-impl<'data, T: Send> Drop for Drain<'data, T> {
-    fn drop(&mut self) {
-        if self.range.len() > 0 {
-            let Range { start, end } = self.range;
-            if self.vec.len() != start {
-                
-                assert_eq!(self.vec.len(), self.orig_len);
-                self.vec.drain(start..end);
-            } else if end < self.orig_len {
-                
-                
-                unsafe {
-                    let ptr = self.vec.as_mut_ptr().add(start);
-                    let tail_ptr = self.vec.as_ptr().add(end);
-                    let tail_len = self.orig_len - end;
-                    ptr::copy(tail_ptr, ptr, tail_len);
-                    self.vec.set_len(start + tail_len);
-                }
-            }
+            callback.callback(VecProducer { slice })
         }
     }
 }
 
 
 
-pub(crate) struct DrainProducer<'data, T: Send> {
+struct VecProducer<'data, T: Send> {
     slice: &'data mut [T],
 }
 
-impl<'data, T: 'data + Send> DrainProducer<'data, T> {
-    
-    
-    
-    pub(crate) unsafe fn new(slice: &'data mut [T]) -> Self {
-        DrainProducer { slice }
-    }
-}
-
-impl<'data, T: 'data + Send> Producer for DrainProducer<'data, T> {
+impl<'data, T: 'data + Send> Producer for VecProducer<'data, T> {
     type Item = T;
     type IntoIter = SliceDrain<'data, T>;
 
     fn into_iter(mut self) -> Self::IntoIter {
         
-        let slice = mem::replace(&mut self.slice, &mut []);
+        let slice = std::mem::replace(&mut self.slice, &mut []);
         SliceDrain {
             iter: slice.iter_mut(),
         }
@@ -184,24 +90,25 @@ impl<'data, T: 'data + Send> Producer for DrainProducer<'data, T> {
 
     fn split_at(mut self, index: usize) -> (Self, Self) {
         
-        let slice = mem::replace(&mut self.slice, &mut []);
+        let slice = std::mem::replace(&mut self.slice, &mut []);
         let (left, right) = slice.split_at_mut(index);
-        unsafe { (DrainProducer::new(left), DrainProducer::new(right)) }
+        (VecProducer { slice: left }, VecProducer { slice: right })
     }
 }
 
-impl<'data, T: 'data + Send> Drop for DrainProducer<'data, T> {
+impl<'data, T: 'data + Send> Drop for VecProducer<'data, T> {
     fn drop(&mut self) {
-        
-        unsafe { ptr::drop_in_place(self.slice) };
+        SliceDrain {
+            iter: self.slice.iter_mut(),
+        };
     }
 }
 
 
 
 
-pub(crate) struct SliceDrain<'data, T> {
-    iter: slice::IterMut<'data, T>,
+struct SliceDrain<'data, T> {
+    iter: std::slice::IterMut<'data, T>,
 }
 
 impl<'data, T: 'data> Iterator for SliceDrain<'data, T> {
@@ -209,22 +116,19 @@ impl<'data, T: 'data> Iterator for SliceDrain<'data, T> {
 
     fn next(&mut self) -> Option<T> {
         let ptr = self.iter.next()?;
-        Some(unsafe { ptr::read(ptr) })
+        Some(unsafe { std::ptr::read(ptr) })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        self.iter.size_hint()
-    }
-
-    fn count(self) -> usize {
-        self.iter.len()
+        let len = self.len();
+        (len, Some(len))
     }
 }
 
 impl<'data, T: 'data> DoubleEndedIterator for SliceDrain<'data, T> {
     fn next_back(&mut self) -> Option<Self::Item> {
         let ptr = self.iter.next_back()?;
-        Some(unsafe { ptr::read(ptr) })
+        Some(unsafe { std::ptr::read(ptr) })
     }
 }
 
@@ -234,12 +138,12 @@ impl<'data, T: 'data> ExactSizeIterator for SliceDrain<'data, T> {
     }
 }
 
-impl<'data, T: 'data> iter::FusedIterator for SliceDrain<'data, T> {}
-
 impl<'data, T: 'data> Drop for SliceDrain<'data, T> {
     fn drop(&mut self) {
-        
-        let iter = mem::replace(&mut self.iter, [].iter_mut());
-        unsafe { ptr::drop_in_place(iter.into_slice()) };
+        for ptr in &mut self.iter {
+            unsafe {
+                std::ptr::drop_in_place(ptr);
+            }
+        }
     }
 }

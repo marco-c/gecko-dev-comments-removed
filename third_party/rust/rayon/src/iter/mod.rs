@@ -84,7 +84,7 @@ use self::private::Try;
 pub use either::Either;
 use std::cmp::{self, Ordering};
 use std::iter::{Product, Sum};
-use std::ops::{Fn, RangeBounds};
+use std::ops::Fn;
 
 pub mod plumbing;
 
@@ -115,9 +115,7 @@ mod filter_map;
 mod find;
 mod find_first_last;
 mod flat_map;
-mod flat_map_iter;
 mod flatten;
-mod flatten_iter;
 mod fold;
 mod for_each;
 mod from_par_iter;
@@ -133,7 +131,6 @@ mod noop;
 mod once;
 mod panic_fuse;
 mod par_bridge;
-mod positions;
 mod product;
 mod reduce;
 mod repeat;
@@ -161,9 +158,7 @@ pub use self::{
     filter::Filter,
     filter_map::FilterMap,
     flat_map::FlatMap,
-    flat_map_iter::FlatMapIter,
     flatten::Flatten,
-    flatten_iter::FlattenIter,
     fold::{Fold, FoldWith},
     inspect::Inspect,
     interleave::Interleave,
@@ -176,7 +171,6 @@ pub use self::{
     once::{once, Once},
     panic_fuse::PanicFuse,
     par_bridge::{IterBridge, ParallelBridge},
-    positions::Positions,
     repeat::{repeat, repeatn, Repeat, RepeatN},
     rev::Rev,
     skip::Skip,
@@ -841,8 +835,6 @@ pub trait ParallelIterator: Sized + Send {
     
     
     
-    
-    
     fn flat_map<F, PI>(self, map_op: F) -> FlatMap<Self, F>
     where
         F: Fn(Self::Item) -> PI + Sync + Send,
@@ -863,84 +855,11 @@ pub trait ParallelIterator: Sized + Send {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn flat_map_iter<F, SI>(self, map_op: F) -> FlatMapIter<Self, F>
-    where
-        F: Fn(Self::Item) -> SI + Sync + Send,
-        SI: IntoIterator,
-        SI::Item: Send,
-    {
-        FlatMapIter::new(self, map_op)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn flatten(self) -> Flatten<Self>
     where
         Self::Item: IntoParallelIterator,
     {
         Flatten::new(self)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn flatten_iter(self) -> FlattenIter<Self>
-    where
-        Self::Item: IntoIterator,
-        <Self::Item as IntoIterator>::Item: Send,
-    {
-        FlattenIter::new(self)
     }
 
     
@@ -2705,31 +2624,6 @@ pub trait IndexedParallelIterator: ParallelIterator {
     
     
     
-    
-    
-    
-    fn positions<P>(self, predicate: P) -> Positions<Self, P>
-    where
-        P: Fn(Self::Item) -> bool + Sync + Send,
-    {
-        Positions::new(self, predicate)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn rev(self) -> Rev<Self> {
         Rev::new(self)
     }
@@ -2949,124 +2843,6 @@ where
     fn par_extend<I>(&mut self, par_iter: I)
     where
         I: IntoParallelIterator<Item = T>;
-}
-
-
-
-
-
-
-
-
-pub trait ParallelDrainFull {
-    
-    type Iter: ParallelIterator<Item = Self::Item>;
-
-    
-    
-    type Item: Send;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn par_drain(self) -> Self::Iter;
-}
-
-
-
-
-
-
-
-pub trait ParallelDrainRange<Idx = usize> {
-    
-    type Iter: ParallelIterator<Item = Self::Item>;
-
-    
-    
-    type Item: Send;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn par_drain<R: RangeBounds<Idx>>(self, range: R) -> Self::Iter;
 }
 
 
