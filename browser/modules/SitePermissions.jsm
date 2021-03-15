@@ -76,10 +76,11 @@ const TemporaryPermissions = {
   },
 
   
-  set(browser, id, state, expireTimeMS, expireCallback) {
+  set(browser, id, state, expireTimeMS, browserURI, expireCallback) {
     if (
       !browser ||
-      !SitePermissions.isSupportedScheme(browser.currentURI.scheme)
+      !browserURI ||
+      !SitePermissions.isSupportedScheme(browserURI.scheme)
     ) {
       return;
     }
@@ -90,7 +91,7 @@ const TemporaryPermissions = {
     }
     let { uriToPerm } = entry;
     
-    let { strict, nonStrict } = this._getKeysFromURI(browser.currentURI);
+    let { strict, nonStrict } = this._getKeysFromURI(browserURI);
     let setKey;
     let deleteKey;
     
@@ -742,13 +743,17 @@ var SitePermissions = {
 
 
 
+
+
+
   setForPrincipal(
     principal,
     permissionID,
     state,
     scope = this.SCOPE_PERSISTENT,
     browser = null,
-    expireTimeMS = SitePermissions.temporaryPermissionExpireTime
+    expireTimeMS = SitePermissions.temporaryPermissionExpireTime,
+    browserURI = browser?.currentURI
   ) {
     if (!principal && !browser) {
       throw new Error(
@@ -795,6 +800,7 @@ var SitePermissions = {
         permissionID,
         state,
         expireTimeMS,
+        browserURI,
         
         origBrowser => {
           if (!origBrowser.ownerGlobal) {
