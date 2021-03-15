@@ -247,6 +247,12 @@ var ClientIDImpl = {
 
     
     if (!hasCurrentClientID) {
+      hasCurrentClientID = this.updateClientID(this.getCachedClientID());
+    }
+
+    
+    
+    if (!hasCurrentClientID) {
       Services.telemetry.scalarSet("telemetry.generated_new_client_id", true);
       this.updateClientID(CommonUtils.generateUUID());
     }

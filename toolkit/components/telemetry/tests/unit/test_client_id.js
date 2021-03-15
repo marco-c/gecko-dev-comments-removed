@@ -79,6 +79,7 @@ add_task(async function test_client_id() {
 
   
   await ClientID._reset();
+  Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
   await OS.File.remove(drsPath, { ignoreAbsent: true });
   let clientID = await ClientID.getClientID();
   Assert.equal(typeof clientID, "string");
@@ -90,6 +91,7 @@ add_task(async function test_client_id() {
 
   
   await ClientID._reset();
+  Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
   await OS.File.writeAtomic(drsPath, "abcd", {
     encoding: "utf-8",
     tmpPath: drsPath + ".tmp",
@@ -103,14 +105,14 @@ add_task(async function test_client_id() {
   Assert.ok(!("telemetry.loaded_client_id_doesnt_match_pref" in snapshot));
 
   
+  let oldClientID = clientID;
   for (let [invalidID] of invalidIDs) {
     await ClientID._reset();
     await CommonUtils.writeJSON({ clientID: invalidID }, drsPath);
     clientID = await ClientID.getClientID();
-    Assert.equal(typeof clientID, "string");
-    Assert.ok(uuidRegex.test(clientID));
+    Assert.equal(clientID, oldClientID);
     snapshot = Services.telemetry.getSnapshotForScalars("main", true).parent;
-    Assert.equal(snapshot["telemetry.generated_new_client_id"], true);
+    Assert.ok(!("telemetry.generated_new_client_id" in snapshot));
     Assert.equal(snapshot["telemetry.loaded_client_id_doesnt_match_pref"], 1);
   }
 
@@ -126,6 +128,7 @@ add_task(async function test_client_id() {
 
   
   await ClientID._reset();
+  Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
   clientID = await ClientID.getClientID();
   Assert.equal(clientID, validClientID);
   
