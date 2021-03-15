@@ -147,7 +147,7 @@ struct Unsigned<64> {
 #else
 #define VIXL_ASSERT(condition) ((void)0)
 #define VIXL_UNIMPLEMENTED() ((void)0)
-#define VIXL_UNREACHABLE() MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("vixl unreachable")
+#define VIXL_UNREACHABLE() MOZ_CRASH("vixl unreachable")
 #endif
 
 
