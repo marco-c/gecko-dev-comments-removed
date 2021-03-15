@@ -242,54 +242,120 @@ class KeywordTree {
   
 
 
+
+
+
+
+
+
+
   get(query) {
-    let tree = this.tree;
-    let phrase = query.trim();
+    query = query.trimStart();
+    let match = this._getMatch(query, this.tree, "");
+    if (!match) {
+      return { result: null };
+    }
+
+    let result = UrlbarQuickSuggest._results.get(match.resultID);
+    if (!result) {
+      return { result: null };
+    }
+
+    let longerPhrase;
+    let trimmedQuery = query.trim();
+    let queryWords = trimmedQuery.split(" ");
+
     
-    let result = null;
-    
-    let fullKeyword = "";
     
     
-    let matched = false;
     
-    loop: while (true) {
-      matched = false;
-      for (const [key, child] of tree.entries()) {
-        if (key == RESULT_KEY) {
-          continue;
-        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (let phrase of result.keywords) {
+      if (phrase.startsWith(query)) {
+        let trimmedPhrase = phrase.trim();
+        let phraseWords = trimmedPhrase.split(" ");
         
         
         
-        
-        if (!result && (phrase.startsWith(key) || key.startsWith(phrase))) {
-          matched = true;
-          phrase = phrase.slice(key.length);
-          if (!phrase.length) {
-            result = child.get(RESULT_KEY) || null;
-            if (!result) {
-              return { result };
-            }
-          }
-        }
-        if (result || matched) {
-          fullKeyword += key;
+        let extra = query.endsWith(" ") ? 1 : 0;
+        let len = queryWords.length + extra;
+        if (len < phraseWords.length) {
           
-          if (
-            (result && key.includes(" ")) ||
-            (child.size == 1 && child.get(RESULT_KEY))
-          ) {
-            return { result, fullKeyword: fullKeyword.trim() };
-          }
-          tree = child;
-          continue loop;
+          return {
+            result: match.resultID,
+            fullKeyword: phraseWords.slice(0, len).join(" "),
+          };
         }
-      }
-      if (!result) {
-        return { result };
+        if (
+          query.length < phrase.length &&
+          (!longerPhrase || longerPhrase.length < trimmedPhrase.length)
+        ) {
+          
+          longerPhrase = trimmedPhrase;
+        }
       }
     }
+    return {
+      result: match.resultID,
+      fullKeyword: longerPhrase || trimmedQuery,
+    };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _getMatch(query, node, phrase) {
+    for (const [key, child] of node.entries()) {
+      if (key == RESULT_KEY) {
+        continue;
+      }
+      let newPhrase = phrase + key;
+      let len = Math.min(newPhrase.length, query.length);
+      if (newPhrase.substring(0, len) == query.substring(0, len)) {
+        
+        let resultID = child.get(RESULT_KEY);
+        if (resultID !== undefined) {
+          
+          
+          
+          
+          
+          
+          
+          let result = UrlbarQuickSuggest._results.get(resultID);
+          if (
+            result &&
+            result.keywords.some(p => p.startsWith(query)) &&
+            result.keywords.some(p => query.startsWith(p))
+          ) {
+            return { resultID };
+          }
+        }
+        
+        let match = this._getMatch(query, child, newPhrase);
+        if (match) {
+          return match;
+        }
+      }
+    }
+    return null;
   }
 
   
