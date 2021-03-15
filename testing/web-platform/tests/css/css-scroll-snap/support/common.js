@@ -19,14 +19,7 @@ async function keyPress(target, key) {
     code = KEY_CODE_MAP[key];
 
   
-  let actions = new test_driver.Actions()
-    .pointerMove(0, 0, {origin: target})
-    .pointerDown()
-    .pointerUp()
-    .keyDown(code)
-    .keyUp(code);
-
-  return actions.send();
+  return test_driver.send_keys(target, code);
 }
 
 
