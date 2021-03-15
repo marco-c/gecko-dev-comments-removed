@@ -23,28 +23,31 @@ ImageTracker::~ImageTracker() { SetLockingState(false); }
 nsresult ImageTracker::Add(imgIRequest* aImage) {
   MOZ_ASSERT(aImage);
 
-  nsresult rv = NS_OK;
-  auto entry = mImages.LookupForAdd(aImage);
-  if (entry) {
-    
-    uint32_t oldCount = entry.Data();
-    MOZ_ASSERT(oldCount > 0, "Entry in the image tracker with count 0!");
-    entry.Data() = oldCount + 1;
-  } else {
-    
-    entry.OrInsert([]() { return 1; });
+  const nsresult rv = mImages.WithEntryHandle(aImage, [&](auto&& entry) {
+    nsresult rv = NS_OK;
+    if (entry) {
+      
+      uint32_t oldCount = entry.Data();
+      MOZ_ASSERT(oldCount > 0, "Entry in the image tracker with count 0!");
+      entry.Data() = oldCount + 1;
+    } else {
+      
+      entry.Insert(1);
 
-    
-    if (mLocking) {
-      rv = aImage->LockImage();
+      
+      if (mLocking) {
+        rv = aImage->LockImage();
+      }
+
+      
+      if (mAnimating) {
+        nsresult rv2 = aImage->IncrementAnimationConsumers();
+        rv = NS_SUCCEEDED(rv) ? rv2 : rv;
+      }
     }
 
-    
-    if (mAnimating) {
-      nsresult rv2 = aImage->IncrementAnimationConsumers();
-      rv = NS_SUCCEEDED(rv) ? rv2 : rv;
-    }
-  }
+    return rv;
+  });
 
   return rv;
 }
@@ -101,8 +104,8 @@ nsresult ImageTracker::SetLockingState(bool aLocked) {
   if (mLocking == aLocked) return NS_OK;
 
   
-  for (auto iter = mImages.Iter(); !iter.Done(); iter.Next()) {
-    imgIRequest* image = iter.Key();
+  for (const auto& entry : mImages) {
+    imgIRequest* image = entry.GetKey();
     if (aLocked) {
       image->LockImage();
     } else {
@@ -121,8 +124,8 @@ void ImageTracker::SetAnimatingState(bool aAnimating) {
   if (mAnimating == aAnimating) return;
 
   
-  for (auto iter = mImages.Iter(); !iter.Done(); iter.Next()) {
-    imgIRequest* image = iter.Key();
+  for (const auto& entry : mImages) {
+    imgIRequest* image = entry.GetKey();
     if (aAnimating) {
       image->IncrementAnimationConsumers();
     } else {
@@ -135,8 +138,8 @@ void ImageTracker::SetAnimatingState(bool aAnimating) {
 }
 
 void ImageTracker::RequestDiscardAll() {
-  for (auto iter = mImages.Iter(); !iter.Done(); iter.Next()) {
-    iter.Key()->RequestDiscard();
+  for (const auto& entry : mImages) {
+    entry.GetKey()->RequestDiscard();
   }
 }
 
@@ -150,8 +153,8 @@ void ImageTracker::MediaFeatureValuesChangedAllDocuments(
   
   
   nsTArray<nsCOMPtr<imgIContainer>> images;
-  for (auto iter = mImages.Iter(); !iter.Done(); iter.Next()) {
-    imgIRequest* req = iter.Key();
+  for (const auto& entry : mImages) {
+    imgIRequest* req = entry.GetKey();
     nsCOMPtr<imgIContainer> image;
     req->GetImage(getter_AddRefs(image));
     if (!image) {

@@ -6626,8 +6626,8 @@ void nsGlobalWindowInner::GetGamepads(nsTArray<RefPtr<Gamepad>>& aGamepads) {
 
   
   aGamepads.SetCapacity(mGamepads.Count());
-  for (auto iter = mGamepads.Iter(); !iter.Done(); iter.Next()) {
-    Gamepad* gamepad = iter.UserData();
+  for (const auto& entry : mGamepads) {
+    Gamepad* gamepad = entry.GetWeak();
     aGamepads.EnsureLengthAtLeast(gamepad->Index() + 1);
     aGamepads[gamepad->Index()] = gamepad;
   }
@@ -6653,8 +6653,8 @@ bool nsGlobalWindowInner::HasSeenGamepadInput() { return mHasSeenGamepadInput; }
 void nsGlobalWindowInner::SyncGamepadState() {
   if (mHasSeenGamepadInput) {
     RefPtr<GamepadManager> gamepadManager(GamepadManager::GetService());
-    for (auto iter = mGamepads.Iter(); !iter.Done(); iter.Next()) {
-      gamepadManager->SyncGamepadState(iter.Key(), this, iter.UserData());
+    for (const auto& entry : mGamepads) {
+      gamepadManager->SyncGamepadState(entry.GetKey(), this, entry.GetWeak());
     }
   }
 }
