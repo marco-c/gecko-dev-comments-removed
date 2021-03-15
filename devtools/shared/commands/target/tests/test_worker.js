@@ -1,0 +1,15 @@
+
+
+
+"use strict";
+
+console.log("[WORKER] started", globalThis.location.toString(), globalThis);
+
+globalThis.onmessage = function(e) {
+  const { type, message } = e.data;
+
+  if (type === "log-in-worker") {
+    
+    console.log("[WORKER]", message, e);
+  }
+};
