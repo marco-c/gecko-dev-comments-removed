@@ -37,6 +37,8 @@ const TemporaryPermissions = {
   
   
   
+  
+  
   _stateByBrowser: new WeakMap(),
 
   
@@ -76,43 +78,105 @@ const TemporaryPermissions = {
   },
 
   
+
+
+
+
+
+
+
+
+
+  _getKeysFromURI(uri) {
+    return { strict: uri.prePath, nonStrict: this._uriToBaseDomain(uri) };
+  },
+
+  
   set(browser, id, state) {
-    if (!browser) {
+    if (
+      !browser ||
+      !SitePermissions.isSupportedScheme(browser.currentURI.scheme)
+    ) {
       return;
     }
     if (!this._stateByBrowser.has(browser)) {
       this._stateByBrowser.set(browser, {});
     }
     let entry = this._stateByBrowser.get(browser);
-    let baseDomain = this._uriToBaseDomain(browser.currentURI);
-    if (!entry[baseDomain]) {
-      entry[baseDomain] = {};
+    
+    let { strict, nonStrict } = this._getKeysFromURI(browser.currentURI);
+    let setKey;
+    let deleteKey;
+    
+    
+    
+    
+    if (state == SitePermissions.BLOCK) {
+      setKey = nonStrict;
+      deleteKey = strict;
+    } else {
+      setKey = strict;
+      deleteKey = nonStrict;
     }
-    entry[baseDomain][id] = { timeStamp: Date.now(), state };
+    if (!entry[setKey]) {
+      entry[setKey] = {};
+    }
+    entry[setKey][id] = { timeStamp: Date.now(), state };
+
+    
+    
+    
+    let permissions = entry[deleteKey];
+    if (permissions) {
+      delete permissions[id];
+    }
   },
 
   
   remove(browser, id) {
-    if (!browser || !this._stateByBrowser.has(browser)) {
+    if (
+      !browser ||
+      !SitePermissions.isSupportedScheme(browser.currentURI.scheme) ||
+      !this._stateByBrowser.has(browser)
+    ) {
       return;
     }
     let entry = this._stateByBrowser.get(browser);
-    let baseDomain = this._uriToBaseDomain(browser.currentURI);
-    if (entry[baseDomain]) {
-      delete entry[baseDomain][id];
+    
+    
+    let { strict, nonStrict } = this._getKeysFromURI(browser.currentURI);
+    for (let key of [nonStrict, strict]) {
+      if (entry[key]?.[id] != null) {
+        delete entry[key][id];
+        
+        
+        
+        return;
+      }
     }
   },
 
   
   get(browser, id) {
-    if (!browser || !browser.currentURI || !this._stateByBrowser.has(browser)) {
+    if (
+      !browser ||
+      !browser.currentURI ||
+      !SitePermissions.isSupportedScheme(browser.currentURI.scheme) ||
+      !this._stateByBrowser.has(browser)
+    ) {
       return null;
     }
     let entry = this._stateByBrowser.get(browser);
-    let baseDomain = this._uriToBaseDomain(browser.currentURI);
-    if (entry[baseDomain]) {
-      let permission = entry[baseDomain][id];
-      return this._get(entry, baseDomain, id, permission);
+
+    let { strict, nonStrict } = this._getKeysFromURI(browser.currentURI);
+    for (let key of [nonStrict, strict]) {
+      if (entry[key]) {
+        let permission = entry[key][id];
+        let result = this._get(entry, key, id, permission);
+        if (result != null) {
+          return result;
+        }
+      }
     }
     return null;
   },
@@ -122,21 +186,28 @@ const TemporaryPermissions = {
   
   getAll(browser) {
     let permissions = [];
-    if (!this._stateByBrowser.has(browser)) {
+    if (
+      !SitePermissions.isSupportedScheme(browser.currentURI.scheme) ||
+      !this._stateByBrowser.has(browser)
+    ) {
       return permissions;
     }
     let entry = this._stateByBrowser.get(browser);
-    let baseDomain = this._uriToBaseDomain(browser.currentURI);
-    if (entry[baseDomain]) {
-      let timeStamps = entry[baseDomain];
-      for (let id of Object.keys(timeStamps)) {
-        let permission = this._get(entry, baseDomain, id, timeStamps[id]);
-        
-        if (permission) {
-          permissions.push(permission);
+
+    let { strict, nonStrict } = this._getKeysFromURI(browser.currentURI);
+    for (let key of [nonStrict, strict]) {
+      if (entry[key]) {
+        let timeStamps = entry[key];
+        for (let id of Object.keys(timeStamps)) {
+          let permission = this._get(entry, key, id, timeStamps[id]);
+          
+          if (permission) {
+            permissions.push(permission);
+          }
         }
       }
     }
+
     return permissions;
   },
 
@@ -416,9 +487,16 @@ var SitePermissions = {
         "Argument passed as principal is not an instance of Ci.nsIPrincipal"
       );
     }
-    return ["http", "https", "moz-extension", "file"].some(scheme =>
-      principal.schemeIs(scheme)
-    );
+    return this.isSupportedScheme(principal.scheme);
+  },
+
+  
+
+
+
+
+  isSupportedScheme(scheme) {
+    return ["http", "https", "moz-extension", "file"].includes(scheme);
   },
 
   
@@ -661,20 +739,6 @@ var SitePermissions = {
 
     
     if (scope == this.SCOPE_TEMPORARY) {
-      
-      
-      
-      
-      
-      
-      
-      
-      if (state != this.BLOCK) {
-        throw new Error(
-          "'Block' is the only permission we can save temporarily on a browser"
-        );
-      }
-
       if (!browser) {
         throw new Error(
           "TEMPORARY scoped permissions require a browser object"
