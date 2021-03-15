@@ -1004,7 +1004,14 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
     return nullptr;
   }
 
-  return AnyRef::fromJSObject(WasmRuntimeExceptionObject::create(cx, tag, buf))
+  RootedArrayObject refs(cx, NewDenseEmptyArray(cx));
+
+  if (!refs) {
+    return nullptr;
+  }
+
+  return AnyRef::fromJSObject(
+             WasmRuntimeExceptionObject::create(cx, tag, buf, refs))
       .forCompiledCode();
 }
 
@@ -1045,6 +1052,30 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   
   
   return UINT32_MAX;
+}
+
+ int32_t Instance::pushRefIntoExn(Instance* instance, JSObject* exn,
+                                              JSObject* ref) {
+  MOZ_ASSERT(SASigPushRefIntoExn.failureMode == FailureMode::FailOnNegI32);
+
+  JSContext* cx = TlsContext.get();
+
+  MOZ_ASSERT(exn->is<WasmRuntimeExceptionObject>());
+  RootedWasmRuntimeExceptionObject exnObj(
+      cx, &exn->as<WasmRuntimeExceptionObject>());
+
+  
+  
+  ASSERT_ANYREF_IS_JSOBJECT;
+
+  RootedValue refVal(cx, ObjectOrNullValue(ref));
+  RootedArrayObject arr(cx, &exnObj->refs());
+
+  if (!NewbornArrayPush(cx, arr, refVal)) {
+    return -1;
+  }
+
+  return 0;
 }
 #endif
 
