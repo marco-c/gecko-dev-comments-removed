@@ -204,29 +204,20 @@ class BranchedAddonStudyAction extends BaseStudyAction {
 
 
 
-  async _finalize({ noRecipes } = {}) {
+  async _finalize() {
     const activeStudies = await AddonStudies.getAllActive({
       branched: AddonStudies.FILTER_BRANCHED_ONLY,
     });
 
-    if (noRecipes) {
-      if (this.seenRecipeIds.size) {
-        throw new BranchedAddonStudyAction.BadNoRecipesArg();
-      }
-      for (const study of activeStudies) {
-        await this._considerTemporaryError({ study, reason: "no-recipes" });
-      }
-    } else {
-      for (const study of activeStudies) {
-        if (!this.seenRecipeIds.has(study.recipeId)) {
-          this.log.debug(
-            `Stopping branched add-on study for recipe ${study.recipeId}`
-          );
-          try {
-            await this.unenroll(study.recipeId, "recipe-not-seen");
-          } catch (err) {
-            Cu.reportError(err);
-          }
+    for (const study of activeStudies) {
+      if (!this.seenRecipeIds.has(study.recipeId)) {
+        this.log.debug(
+          `Stopping branched add-on study for recipe ${study.recipeId}`
+        );
+        try {
+          await this.unenroll(study.recipeId, "recipe-not-seen");
+        } catch (err) {
+          Cu.reportError(err);
         }
       }
     }
@@ -783,7 +774,3 @@ class BranchedAddonStudyAction extends BaseStudyAction {
     }
   }
 }
-
-BranchedAddonStudyAction.BadNoRecipesArg = class extends Error {
-  message = "noRecipes is true, but some recipes observed";
-};
