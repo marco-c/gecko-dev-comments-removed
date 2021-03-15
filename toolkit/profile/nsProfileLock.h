@@ -83,7 +83,8 @@ class nsProfileLock
   );
   static PRCList mPidLockList;
 
-  nsresult LockWithFcntl(nsIFile* aLockFile);
+  nsresult LockWithFcntl(nsIFile* aLockFile,
+                         nsIProfileUnlocker** aUnlocker = nullptr);
 
   
 
