@@ -18,6 +18,8 @@
 #include "mozilla/BinarySearch.h"
 #include "mozilla/dom/Element.h"
 
+#include "nsUnicharUtils.h"
+
 using namespace mozilla;
 using namespace mozilla::a11y;
 using namespace mozilla::a11y::aria;
@@ -1375,18 +1377,6 @@ static const AttrCharacteristics gWAIUnivAttrMap[] = {
     
 };
 
-namespace {
-
-struct RoleComparator {
-  const nsDependentSubstring& mRole;
-  explicit RoleComparator(const nsDependentSubstring& aRole) : mRole(aRole) {}
-  int operator()(const nsRoleMapEntry& aEntry) const {
-    return Compare(mRole, aEntry.ARIARoleString());
-  }
-};
-
-}  
-
 const nsRoleMapEntry* aria::GetRoleMap(dom::Element* aEl) {
   return GetRoleMapFromIndex(GetRoleMapIndex(aEl));
 }
@@ -1404,8 +1394,12 @@ uint8_t aria::GetRoleMapIndex(dom::Element* aEl) {
     
     const nsDependentSubstring role = tokenizer.nextToken();
     size_t idx;
-    if (BinarySearchIf(sWAIRoleMaps, 0, ArrayLength(sWAIRoleMaps),
-                       RoleComparator(role), &idx)) {
+    auto comparator = [&role](const nsRoleMapEntry& aEntry) {
+      return Compare(role, aEntry.ARIARoleString(),
+                     nsCaseInsensitiveStringComparator);
+    };
+    if (BinarySearchIf(sWAIRoleMaps, 0, ArrayLength(sWAIRoleMaps), comparator,
+                       &idx)) {
       return idx;
     }
   }
