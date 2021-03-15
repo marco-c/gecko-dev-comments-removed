@@ -171,7 +171,7 @@ ALL_PROCESSES += [
     DllBlocklistEntry("nzbrcom.dll", ALL_VERSIONS),
 
     
-    DllBlocklistEntry("k7pswsen.dll", (15, 2, 2, 95)),
+    DllBlocklistEntry("k7pswsen.dll", (15, 2, 2, 102)),
 
     
     DllBlocklistEntry("smci32.dll", ALL_VERSIONS),
