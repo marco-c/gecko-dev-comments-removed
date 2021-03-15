@@ -72,5 +72,5 @@ interface nsIHangReport : nsISupports
 
   
   
-  bool isReportForBrowser(in FrameLoader aFrameLoader);
+  bool isReportForBrowserOrChildren(in FrameLoader aFrameLoader);
 };
