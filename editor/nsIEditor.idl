@@ -328,6 +328,7 @@ interface nsIEditor  : nsISupports
 
 
 
+  [can_run_script]
   boolean canCut();
 
   
@@ -344,6 +345,7 @@ interface nsIEditor  : nsISupports
 
 
 
+  [can_run_script]
   boolean canCopy();
 
   
