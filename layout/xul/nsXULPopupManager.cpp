@@ -1640,6 +1640,9 @@ bool nsXULPopupManager::MayShowPopup(nsMenuPopupFrame* aPopup) {
       }
 
       
+      
+      
+      
       bool visible;
       baseWin->GetVisibility(&visible);
       if (!visible) {
@@ -1647,20 +1650,11 @@ bool nsXULPopupManager::MayShowPopup(nsMenuPopupFrame* aPopup) {
       }
     }
   } else {
-    
-    bool visible;
-    baseWin->GetVisibility(&visible);
-    if (!visible) {
-      return false;
-    }
-
     nsFocusManager* fm = nsFocusManager::GetFocusManager();
     BrowsingContext* bc = docShell->GetBrowsingContext();
-    if (!fm || !bc) {
-      return false;
-    }
-
-    if (fm->GetActiveBrowsingContext() != bc->Top()) {
+    if (!fm || !bc || fm->GetActiveBrowsingContext() != bc->Top()) {
+      
+      
       return false;
     }
   }
