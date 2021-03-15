@@ -182,7 +182,13 @@ function triggerPageOptionsAction(win, action) {
 }
 
 function isDefaultIcon(icon) {
-  return icon == "chrome://mozapps/skin/extensions/extensionGeneric.svg";
+  
+  
+  
+  return (
+    icon == "chrome://browser/content/extension.svg" ||
+    icon == "chrome://mozapps/skin/extensions/extensionGeneric.svg"
+  );
 }
 
 

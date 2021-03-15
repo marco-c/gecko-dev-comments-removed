@@ -1555,7 +1555,7 @@ function watchExtensionProxyContextLoad(
 
 
 let IconDetails = {
-  DEFAULT_ICON: "chrome://mozapps/skin/extensions/extensionGeneric.svg",
+  DEFAULT_ICON: "chrome://browser/content/extension.svg",
 
   
   iconCache: new DefaultWeakMap(() => {
@@ -1675,7 +1675,7 @@ let IconDetails = {
   
   
   getPreferredIcon(icons, extension = null, size = 16) {
-    const DEFAULT = "chrome://mozapps/skin/extensions/extensionGeneric.svg";
+    const DEFAULT = "chrome://browser/content/extension.svg";
 
     let bestSize = null;
     if (icons[size]) {

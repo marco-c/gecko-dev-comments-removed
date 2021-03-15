@@ -365,7 +365,7 @@ add_task(async function testDetailsObjects() {
   await promiseAnimationFrame();
 
   
-  const DEFAULT_ICON = "chrome://mozapps/skin/extensions/extensionGeneric.svg";
+  const DEFAULT_ICON = "chrome://browser/content/extension.svg";
   let browserActionButton = browserActionWidget.forWindow(window).node;
   let pageActionImage = document.getElementById(pageActionId);
   is(
