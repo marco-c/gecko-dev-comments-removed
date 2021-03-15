@@ -10,6 +10,31 @@
   const { AppConstants } = ChromeUtils.import(
     "resource://gre/modules/AppConstants.jsm"
   );
+  const { Services } = ChromeUtils.import(
+    "resource://gre/modules/Services.jsm"
+  );
+
+  
+  
+  
+  
+  
+  
+  if (AppConstants.isPlatformAndVersionAtLeast("win", "6.4")) {
+    Services.els.addSystemEventListener(
+      document,
+      "popupshowing",
+      function(e) {
+        if (e.target.nodeName == "menupopup") {
+          let haveCheckableChild = e.target.querySelector(
+            ":scope > menuitem:not([hidden]):is([type=checkbox],[type=radio])"
+          );
+          e.target.toggleAttribute("needsgutter", haveCheckableChild);
+        }
+      },
+      false
+    );
+  }
 
   class MozMenuPopup extends MozElements.MozElementMixin(XULPopupElement) {
     constructor() {
