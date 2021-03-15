@@ -260,10 +260,11 @@ class ConvertToInt32Policy final : public TypePolicy {
 };
 
 
+
 template <unsigned Op>
-class TruncateToInt32Policy final : public TypePolicy {
+class TruncateToInt32OrToBigIntPolicy final : public TypePolicy {
  public:
-  constexpr TruncateToInt32Policy() = default;
+  constexpr TruncateToInt32OrToBigIntPolicy() = default;
   EMPTY_DATA_;
   [[nodiscard]] static bool staticAdjustInputs(TempAllocator& alloc,
                                                MInstruction* def);
@@ -332,8 +333,12 @@ class NoFloatPolicyAfter final : public TypePolicy {
  public:
   constexpr NoFloatPolicyAfter() = default;
   EMPTY_DATA_;
+  [[nodiscard]] static bool staticAdjustInputs(TempAllocator& alloc,
+                                               MInstruction* def);
   [[nodiscard]] bool adjustInputs(TempAllocator& alloc,
-                                  MInstruction* ins) const override;
+                                  MInstruction* ins) const override {
+    return staticAdjustInputs(alloc, ins);
+  }
 };
 
 
