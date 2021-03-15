@@ -1,4 +1,4 @@
-function checkCommandState(testid, undoEnabled, deleteEnabled) {
+function checkCommandState(testid, undoEnabled, copyEnabled, deleteEnabled) {
   is(
     !document.getElementById("cmd_undo").hasAttribute("disabled"),
     undoEnabled,
@@ -6,9 +6,9 @@ function checkCommandState(testid, undoEnabled, deleteEnabled) {
   );
   is(
     !document.getElementById("cmd_copy").hasAttribute("disabled"),
-    true,
+    copyEnabled,
     testid + " copy"
-  ); 
+  );
   is(
     !document.getElementById("cmd_delete").hasAttribute("disabled"),
     deleteEnabled,
@@ -69,7 +69,9 @@ add_task(async function test_controllers_subframes() {
         "root focused"
       );
     });
-    checkCommandState("step " + stepNum + " root focused", false, false);
+    
+    
+    checkCommandState("step " + stepNum + " root focused", false, true, false);
 
     
     await keyAndUpdate("VK_TAB", {}, 1);
@@ -85,11 +87,11 @@ add_task(async function test_controllers_subframes() {
         "input focused"
       );
     });
-    checkCommandState("step " + stepNum + " input focused", false, false);
+    checkCommandState("step " + stepNum + " input focused", false, false, false);
 
     
     await keyAndUpdate("a", {}, 1);
-    checkCommandState("step " + stepNum + " typed", true, false);
+    checkCommandState("step " + stepNum + " typed", true, false, false);
 
     await SpecialPowers.spawn(browsingContexts[stepNum], [], () => {
       Assert.equal(
@@ -105,7 +107,7 @@ add_task(async function test_controllers_subframes() {
       goUpdateGlobalEditMenuItems(true);
     }
 
-    checkCommandState("step " + stepNum + " selected", true, true);
+    checkCommandState("step " + stepNum + " selected", true, true, true);
 
     
     await SpecialPowers.spawn(browsingContexts[stepNum], [], () => {
