@@ -6,6 +6,7 @@
 #ifndef __nsLookAndFeel
 #define __nsLookAndFeel
 
+#include <bitset>
 #include <windows.h>
 
 #include "nsXPLookAndFeel.h"
@@ -62,6 +63,12 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   void SetCacheImpl(const LookAndFeelCache& aCache) override;
 
  private:
+  enum CachedValueKind {
+    PrimaryPointerCapabilitiesKind,
+    AllPointerCapabilitiesKind,
+    CachedValueKindMax = AllPointerCapabilitiesKind,
+  };
+
   void DoSetCache(const LookAndFeelCache& aCache);
 
   
@@ -95,6 +102,15 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   int32_t mUseAccessibilityTheme;
   int32_t mUseDefaultTheme;  
   int32_t mNativeThemeId;    
+
+  
+  
+  
+  
+  
+  int32_t mPrimaryPointerCapabilities;
+  int32_t mAllPointerCapabilities;
+
   int32_t mCaretBlinkTime;
 
   
@@ -133,6 +149,11 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
       mFontCache;
 
   nsCOMPtr<nsIWindowsRegKey> mDwmKey;
+
+  
+  
+  
+  std::bitset<CachedValueKindMax + 1> mCacheValidBits;
 };
 
 #endif
