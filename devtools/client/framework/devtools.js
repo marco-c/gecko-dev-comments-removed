@@ -477,14 +477,17 @@ DevTools.prototype = {
 
 
 
+
   async showToolbox(
     descriptor,
-    toolId,
-    hostType,
-    hostOptions,
-    startTime,
-    reason = "toolbox_show",
-    shouldRaiseToolbox = true
+    {
+      toolId,
+      hostType,
+      startTime,
+      raise = true,
+      reason = "toolbox_show",
+      hostOptions,
+    } = {}
   ) {
     let toolbox = this._toolboxes.get(descriptor);
 
@@ -499,7 +502,7 @@ DevTools.prototype = {
         await toolbox.selectTool(toolId, reason);
       }
 
-      if (shouldRaiseToolbox) {
+      if (raise) {
         toolbox.raise();
       }
     } else {
@@ -565,15 +568,14 @@ DevTools.prototype = {
     { toolId, hostType, startTime, raise, reason, hostOptions } = {}
   ) {
     const descriptor = await TabDescriptorFactory.createDescriptorForTab(tab);
-    return this.showToolbox(
-      descriptor,
+    return this.showToolbox(descriptor, {
       toolId,
       hostType,
-      hostOptions,
       startTime,
+      raise,
       reason,
-      raise
-    );
+      hostOptions,
+    });
   },
 
   

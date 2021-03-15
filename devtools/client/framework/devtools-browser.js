@@ -379,11 +379,9 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
       try {
         const descriptor = await this._getContentProcessDescriptor(processId);
         
-        const toolbox = await gDevTools.showToolbox(
-          descriptor,
-          null,
-          Toolbox.HostType.WINDOW
-        );
+        const toolbox = await gDevTools.showToolbox(descriptor, {
+          hostType: Toolbox.HostType.WINDOW,
+        });
 
         
         
