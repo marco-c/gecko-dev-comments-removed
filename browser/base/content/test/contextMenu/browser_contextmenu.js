@@ -1203,6 +1203,9 @@ add_task(async function test_copylinkcommand() {
           "http://mozilla.com/",
           "paste for command cmd_paste"
         );
+        
+        
+        input.blur();
       });
     },
   });
