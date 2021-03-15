@@ -13,11 +13,9 @@
 #include "PlaceholderTransaction.h"
 #include "gfxFontUtils.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/ContentEvents.h"
 #include "mozilla/ContentIterator.h"
 #include "mozilla/EditAction.h"
 #include "mozilla/EditorDOMPoint.h"
-#include "mozilla/EventDispatcher.h"
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/LookAndFeel.h"
@@ -56,7 +54,6 @@
 #include "nsIWeakReferenceUtils.h"
 #include "nsNameSpaceManager.h"
 #include "nsLiteralString.h"
-#include "nsPresContext.h"
 #include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
@@ -1217,52 +1214,17 @@ bool TextEditor::AreClipboardCommandsUnconditionallyEnabled() const {
   return document && document->AreClipboardCommandsUnconditionallyEnabled();
 }
 
-bool TextEditor::CheckForClipboardCommandListener(
-    nsAtom* aCommand, EventMessage aEventMessage) const {
-  RefPtr<Document> document = GetDocument();
-  if (!document) {
-    return false;
-  }
-  RefPtr<PresShell> presShell = document->GetObservingPresShell();
-  if (!presShell) {
-    return false;
-  }
-  RefPtr<nsPresContext> presContext = presShell->GetPresContext();
-  if (!presContext) {
-    return false;
-  }
-
-  RefPtr<EventTarget> et = GetDOMEventTarget();
-  while (et) {
-    EventListenerManager* elm = et->GetOrCreateListenerManager();
-    if (elm && elm->HasListenersFor(aCommand)) {
-      return true;
-    }
-    InternalClipboardEvent event(true, aEventMessage);
-    EventChainPreVisitor visitor(presContext, &event, nullptr,
-                                 nsEventStatus_eIgnore, false, et);
-    et->GetEventTargetParent(visitor);
-    et = visitor.GetParentTarget();
-  }
-
-  return false;
-}
-
 bool TextEditor::IsCutCommandEnabled() const {
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return false;
   }
 
-  if (IsModifiable() && IsCopyToClipboardAllowedInternal()) {
+  if (AreClipboardCommandsUnconditionallyEnabled()) {
     return true;
   }
 
-  
-  
-  
-  
-  return CheckForClipboardCommandListener(nsGkAtoms::oncut, eCut);
+  return IsModifiable() && IsCopyToClipboardAllowedInternal();
 }
 
 NS_IMETHODIMP TextEditor::Copy() {
@@ -1284,12 +1246,11 @@ bool TextEditor::IsCopyCommandEnabled() const {
     return false;
   }
 
-  if (IsCopyToClipboardAllowedInternal()) {
+  if (AreClipboardCommandsUnconditionallyEnabled()) {
     return true;
   }
 
-  
-  return CheckForClipboardCommandListener(nsGkAtoms::oncopy, eCopy);
+  return IsCopyToClipboardAllowedInternal();
 }
 
 bool TextEditor::CanDeleteSelection() const {

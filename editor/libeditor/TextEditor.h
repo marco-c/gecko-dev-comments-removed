@@ -96,7 +96,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT bool IsCutCommandEnabled() const;
+  bool IsCutCommandEnabled() const;
 
   NS_IMETHOD Copy() override;
 
@@ -105,7 +105,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT bool IsCopyCommandEnabled() const;
+  bool IsCopyCommandEnabled() const;
 
   
 
@@ -785,13 +785,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
                                                      uint32_t aTimeout,
                                                      bool aNotify,
                                                      bool aForceStartMasking);
-
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT bool CheckForClipboardCommandListener(
-      nsAtom* aCommand, EventMessage aEventMessage) const;
 
  protected:
   mutable nsCOMPtr<nsIDocumentEncoder> mCachedDocumentEncoder;
