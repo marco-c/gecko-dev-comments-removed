@@ -1,9 +1,10 @@
 
 const kBadNativeIoNames = [
-  "Uppercase",
-  "has-dash",
-  "has.dot",
-  "has/slash",
+  'Uppercase',
+  'has-dash',
+  'has.dot',
+  'has/slash',
+  'x'.repeat(101),
 ];
 
 
