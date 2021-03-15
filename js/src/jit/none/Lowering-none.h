@@ -67,6 +67,10 @@ class LIRGeneratorNone : public LIRGeneratorShared {
                                MDefinition*) {
     MOZ_CRASH();
   }
+  void lowerForCompareI64AndBranch(MTest*, MCompare*, JSOp, MDefinition*,
+                                   MDefinition*, MBasicBlock*, MBasicBlock*) {
+    MOZ_CRASH();
+  }
 
   void lowerConstantDouble(double, MInstruction*) { MOZ_CRASH(); }
   void lowerConstantFloat32(float, MInstruction*) { MOZ_CRASH(); }
@@ -95,6 +99,9 @@ class LIRGeneratorNone : public LIRGeneratorShared {
   void lowerBigIntRsh(MBigIntRsh*) { MOZ_CRASH(); }
   void lowerBigIntDiv(MBigIntDiv*) { MOZ_CRASH(); }
   void lowerBigIntMod(MBigIntMod*) { MOZ_CRASH(); }
+
+  void lowerAtomicLoad64(MLoadUnboxedScalar*) { MOZ_CRASH(); }
+  void lowerAtomicStore64(MStoreUnboxedScalar*) { MOZ_CRASH(); }
 
   LTableSwitch* newLTableSwitch(LAllocation, LDefinition, MTableSwitch*) {
     MOZ_CRASH();
