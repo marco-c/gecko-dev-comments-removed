@@ -23,10 +23,6 @@
 #include "nsStringFwd.h"
 #include "nsWrapperCache.h"
 
-
-
-#include "mozilla/HoldDropJSObjects.h"
-
 class PickleIterator;
 class nsCycleCollectionTraversalCallback;
 class nsIContent;

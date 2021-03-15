@@ -26,12 +26,7 @@
 
 #include <type_traits>
 
-
-
 #include "js/Value.h"
-
-
-
 #include "mozilla/RootedOwningNonNull.h"
 #include "mozilla/RootedRefPtr.h"
 

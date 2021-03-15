@@ -46,11 +46,6 @@
 
 #include "nsWrapperCacheInlines.h"
 
-
-
-#include "mozilla/BasePrincipal.h"
-#include "nsJSPrincipals.h"
-
 class nsGlobalWindowInner;
 class nsGlobalWindowOuter;
 class nsIInterfaceRequestor;
