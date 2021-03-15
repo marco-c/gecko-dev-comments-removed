@@ -49,7 +49,7 @@ nsresult nsRubyTextFrame::GetFrameName(nsAString& aResult) const {
 
 void nsRubyTextFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                        const nsDisplayListSet& aLists) {
-  if (IsAutoHidden()) {
+  if (IsCollapsed()) {
     return;
   }
 
@@ -69,7 +69,7 @@ void nsRubyTextFrame::Reflow(nsPresContext* aPresContext,
   
   nsRubyContentFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
 
-  if (IsAutoHidden()) {
+  if (IsCollapsed()) {
     
     
     WritingMode lineWM = aReflowInput.mLineLayout->GetWritingMode();

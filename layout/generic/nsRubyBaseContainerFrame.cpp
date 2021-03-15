@@ -598,18 +598,23 @@ nscoord nsRubyBaseContainerFrame::ReflowOneColumn(
   for (uint32_t i = 0; i < rtcCount; i++) {
     nsRubyTextFrame* textFrame = aColumn.mTextFrames[i];
     if (textFrame) {
-      nsAutoString annotationText;
-      nsLayoutUtils::GetFrameTextContent(textFrame, annotationText);
-
-      
-      
-      
-      
-      
-      if (annotationText.Equals(baseText)) {
-        textFrame->AddStateBits(NS_RUBY_TEXT_FRAME_AUTOHIDE);
+      bool isCollapsed = false;
+      if (textFrame->StyleVisibility()->mVisible == StyleVisibility::Collapse) {
+        isCollapsed = true;
       } else {
-        textFrame->RemoveStateBits(NS_RUBY_TEXT_FRAME_AUTOHIDE);
+        
+        
+        
+        
+        
+        nsAutoString annotationText;
+        nsLayoutUtils::GetFrameTextContent(textFrame, annotationText);
+        isCollapsed = annotationText.Equals(baseText);
+      }
+      if (isCollapsed) {
+        textFrame->AddStateBits(NS_RUBY_TEXT_FRAME_COLLAPSED);
+      } else {
+        textFrame->RemoveStateBits(NS_RUBY_TEXT_FRAME_COLLAPSED);
       }
       RubyUtils::ClearReservedISize(textFrame);
 
@@ -682,7 +687,7 @@ nscoord nsRubyBaseContainerFrame::ReflowOneColumn(
     nscoord deltaISize = icoord - lineLayout->GetCurrentICoord();
     if (deltaISize > 0) {
       lineLayout->AdvanceICoord(deltaISize);
-      if (textFrame && !textFrame->IsAutoHidden()) {
+      if (textFrame && !textFrame->IsCollapsed()) {
         RubyUtils::SetReservedISize(textFrame, deltaISize);
       }
     }

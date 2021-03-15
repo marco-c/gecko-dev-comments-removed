@@ -2814,7 +2814,7 @@ void nsLineLayout::AdvanceAnnotationInlineBounds(PerFrameData* aPFD,
     
     
     if (frameType != LayoutFrameType::RubyText ||
-        !static_cast<nsRubyTextFrame*>(frame)->IsAutoHidden()) {
+        !static_cast<nsRubyTextFrame*>(frame)->IsCollapsed()) {
       nscoord reservedISize = RubyUtils::GetReservedISize(frame);
       RubyUtils::SetReservedISize(frame, reservedISize + aDeltaISize);
     }
