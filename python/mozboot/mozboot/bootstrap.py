@@ -13,6 +13,7 @@ import sys
 import subprocess
 import time
 from distutils.version import LooseVersion
+from mozboot.util import get_mach_virtualenv_binary
 from mozfile import which
 
 
@@ -331,6 +332,16 @@ class Bootstrapper(object):
             return self.mach_context.settings.build.telemetry
         
         if self.instance.no_interactive:
+            return False
+        mach_python = get_mach_virtualenv_binary()
+        proc = subprocess.run(
+            [mach_python, "-c", "import glean"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        
+        
+        if proc.returncode != 0:
             return False
         choice = self.instance.prompt_yesno(prompt=TELEMETRY_OPT_IN_PROMPT)
         if choice:
