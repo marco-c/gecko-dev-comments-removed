@@ -1,3 +1,5 @@
 
 
-assertEq(wasmCompileMode(), "ion");
+
+
+assertEq(true, wasmCompileMode() === "ion" || wasmCompileMode() === "cranelift");

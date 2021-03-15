@@ -594,9 +594,7 @@ bool shell::enableWasmOptimizing = false;
 #ifdef JS_CODEGEN_ARM64
 
 
-
-
-bool shell::forceWasmIon = true;
+bool shell::forceWasmIon = false;
 #endif
 bool shell::enableWasmReftypes = true;
 #ifdef ENABLE_WASM_FUNCTION_REFERENCES
@@ -10960,7 +10958,7 @@ static bool SetContextOptions(JSContext* cx, const OptionParser& op) {
   } else if (commandLineRequestedWasmCranelift) {
     forceWasmIon = false;
   } else {
-    forceWasmIon = !op.getBoolOption("wasm-force-cranelift");
+    forceWasmIon = op.getBoolOption("wasm-force-ion");
   }
 #endif
 
@@ -11937,8 +11935,8 @@ int main(int argc, char** argv, char** envp) {
       
       
       !op.addBoolOption(
-          '\0', "wasm-force-cranelift",
-          "Temporary: Force Cranelift in builds with both Cranelift and Ion") ||
+          '\0', "wasm-force-ion",
+          "Temporary: Force Ion in builds with both Cranelift and Ion") ||
 #endif
       !op.addBoolOption('\0', "no-native-regexp",
                         "Disable native regexp compilation") ||
