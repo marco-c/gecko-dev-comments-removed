@@ -40,7 +40,6 @@
 #include "vm/RegExpObject.h"
 #include "vm/SelfHosting.h"
 #include "vm/ThrowMsgKind.h"  
-#include "wasm/TypedObject.h"
 #include "wasm/WasmInstance.h"
 
 #include "jit/MacroAssembler-inl.h"
