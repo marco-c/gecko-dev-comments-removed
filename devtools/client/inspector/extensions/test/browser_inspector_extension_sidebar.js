@@ -301,9 +301,10 @@ add_task(async function testSidebarDOMNodeHighlighting() {
 
   
   
+
   assertObjectInspector(sidebarPanelContent, {
-    expectedDOMNodes: 1,
-    expectedOpenInspectors: 1,
+    expectedDOMNodes: 2,
+    expectedOpenInspectors: 2,
   });
 
   

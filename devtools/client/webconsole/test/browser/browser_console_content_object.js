@@ -59,7 +59,10 @@ async function testExpandObject(objectMessage) {
   const [root, contentObjectProp, deepProp, prototypeProp] = [
     ...oi.querySelectorAll(".node"),
   ];
-  ok(root.textContent.includes(`{…}`));
+
+  ok(
+    root.textContent.includes('Object { contentObject: "YAY!", deep: (1) […] }')
+  );
   ok(contentObjectProp.textContent.includes(`contentObject: "YAY!"`));
   ok(deepProp.textContent.includes(`deep: Array [ "yes!" ]`));
   ok(prototypeProp.textContent.includes(`<prototype>`));

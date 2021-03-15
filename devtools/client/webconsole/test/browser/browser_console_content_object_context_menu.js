@@ -38,6 +38,7 @@ add_task(async function() {
   
   
   
+
   await waitFor(() => oi.querySelectorAll(".node").length === 4);
   ok(true, "The ObjectInspector was expanded");
   oi.scrollIntoView();
@@ -52,7 +53,7 @@ add_task(async function() {
   info("Check that inner object can be copied to clipboard");
   await testCopyObject(
     hud,
-    oi.querySelector(".objectBox-array"),
+    oi.querySelectorAll(".node")[2].querySelector(".objectBox-array"),
     JSON.stringify(["hello", "world"], null, 2)
   );
 });
