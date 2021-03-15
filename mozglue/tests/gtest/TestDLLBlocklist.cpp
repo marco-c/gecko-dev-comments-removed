@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include <windows.h>
 #include <winternl.h>
@@ -37,8 +37,8 @@ static nsString GetFullPath(const nsAString& aLeaf) {
 
 TEST(TestDllBlocklist, BlockDllByName)
 {
-  // The DLL name has capital letters, so this also tests that the comparison
-  // is case-insensitive.
+  
+  
   constexpr auto kLeafName = u"TestDllBlocklist_MatchByName.dll"_ns;
   nsString dllPath = GetFullPath(kLeafName);
 
@@ -70,26 +70,29 @@ TEST(TestDllBlocklist, AllowDllByVersion)
   EXPECT_TRUE(!!::GetModuleHandleW(kLeafName.get()));
 }
 
+
+#if defined(MOZ_LAUNCHER_PROCESS)
 TEST(TestDllBlocklist, NoOpEntryPoint)
 {
-  // DllMain of this dll has MOZ_RELEASE_ASSERT.  This test makes sure we load
-  // the module successfully without running DllMain.
+  
+  
   constexpr auto kLeafName = u"TestDllBlocklist_NoOpEntryPoint.dll"_ns;
   nsString dllPath = GetFullPath(kLeafName);
 
   nsModuleHandle hDll(::LoadLibraryW(dllPath.get()));
 
-#if defined(MOZ_ASAN)
-  // With ASAN, the test uses mozglue's blocklist where
-  // REDIRECT_TO_NOOP_ENTRYPOINT is ignored.  So LoadLibraryW
-  // is expected to fail.
+#  if defined(MOZ_ASAN)
+  
+  
+  
   EXPECT_TRUE(!hDll);
   EXPECT_TRUE(!::GetModuleHandleW(kLeafName.get()));
-#else
+#  else
   EXPECT_TRUE(!!hDll);
   EXPECT_TRUE(!!::GetModuleHandleW(kLeafName.get()));
-#endif
+#  endif
 }
+#endif  
 
 #define DLL_BLOCKLIST_ENTRY(name, ...) {name, __VA_ARGS__},
 #define DLL_BLOCKLIST_STRING_TYPE const char*
@@ -106,16 +109,16 @@ TEST(TestDllBlocklist, BlocklistIntegrity)
   for (size_t i = 0; i < mozilla::ArrayLength(gWindowsDllBlocklist) - 1; ++i) {
     auto pEntry = pFirst + i;
 
-    // Validate name
+    
     EXPECT_TRUE(!!pEntry->mName);
     EXPECT_GT(strlen(pEntry->mName), 3);
 
-    // Check the filename for valid characters.
+    
     for (auto pch = pEntry->mName; *pch != 0; ++pch) {
       EXPECT_FALSE(*pch >= 'A' && *pch <= 'Z');
     }
 
-    // Check for duplicate entries
+    
     for (auto&& dupe : dupes) {
       EXPECT_NE(stricmp(dupe, pEntry->mName), 0);
     }
@@ -126,7 +129,7 @@ TEST(TestDllBlocklist, BlocklistIntegrity)
 
 TEST(TestDllBlocklist, BlockThreadWithLoadLibraryEntryPoint)
 {
-  // Only supported on Nightly
+  
 #if defined(NIGHTLY_BUILD)
   using ThreadProc = unsigned(__stdcall*)(void*);
 
@@ -157,5 +160,5 @@ TEST(TestDllBlocklist, BlockThreadWithLoadLibraryEntryPoint)
   EXPECT_EQ(::WaitForSingleObject(threadA, INFINITE), WAIT_OBJECT_0);
   EXPECT_TRUE(::GetExitCodeThread(threadA, &exitCode) && !exitCode);
   EXPECT_TRUE(!::GetModuleHandleW(kLeafNameW.get()));
-#endif  // defined(NIGHTLY_BUILD)
+#endif  
 }
