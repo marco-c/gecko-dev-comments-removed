@@ -263,6 +263,13 @@ if (AppConstants.platform == "android") {
   });
 }
 
+if (AppConstants.MOZ_BACKGROUNDTASKS) {
+  
+  whitelist.push({
+    file: "resource://gre/modules/BackgroundTasksUtils.jsm",
+  });
+}
+
 whitelist = new Set(
   whitelist
     .filter(
