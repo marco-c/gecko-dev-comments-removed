@@ -18,9 +18,20 @@ XPCOMUtils.defineLazyModuleGetter(
   "_TaskSchedulerWinImpl"
 );
 
+XPCOMUtils.defineLazyModuleGetter(
+  this,
+  "MacOSImpl",
+  "resource://gre/modules/TaskSchedulerMacOSImpl.jsm",
+  "_TaskSchedulerMacOSImpl"
+);
+
 XPCOMUtils.defineLazyGetter(this, "gImpl", () => {
   if (AppConstants.platform == "win") {
     return WinImpl;
+  }
+
+  if (AppConstants.platform == "macosx") {
+    return MacOSImpl;
   }
 
   
@@ -45,10 +56,19 @@ const { AppConstants } = ChromeUtils.import(
 
 
 
+
+
+
+
+
+
+
+
 var TaskScheduler = {
   MIN_INTERVAL_SECONDS: 1800,
 
   
+
 
 
 

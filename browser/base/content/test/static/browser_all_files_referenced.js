@@ -230,6 +230,21 @@ var whitelist = [
 
   
   { file: "resource://gre/localization/en-US/dom/media.ftl" },
+
+  
+  {
+    file: "resource://gre/modules/TaskScheduler.jsm",
+    platforms: ["macosx", "win"],
+  },
+  {
+    file: "resource://gre/modules/TaskSchedulerWinImpl.jsm",
+    platforms: ["win"],
+  },
+  
+  {
+    file: "resource://gre/modules/TaskSchedulerMacOSImpl.jsm",
+    platforms: ["macosx"],
+  },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
