@@ -49,6 +49,11 @@ namespace jit {
 
 
 
+
+
+
+
+
 class Registers {
  public:
   enum RegisterID {
@@ -128,11 +133,6 @@ class Registers {
   typedef uint8_t Code;
   typedef uint32_t Encoding;
   typedef uint32_t SetType;
-
-  
-  
-  
-  static const Code StackPointer = sp;
 
   static const Code Invalid = 0xFF;
 

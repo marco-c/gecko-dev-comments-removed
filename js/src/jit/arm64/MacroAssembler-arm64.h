@@ -266,6 +266,39 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
       Mov(GetStackPointer64(), vixl::sp);
     }
   }
+  
+  void assertStackPtrsSynced(uint32_t id) {
+#ifdef DEBUG
+    
+    MOZ_ASSERT(id <= 0xFFF);
+    if (!GetStackPointer64().Is(vixl::sp)) {
+      Label ok;
+      
+      
+      
+      
+      Add(GetStackPointer64(), GetStackPointer64(), Operand(id));
+      Sub(GetStackPointer64(), GetStackPointer64(), Operand(id));
+      Cmp(vixl::sp, GetStackPointer64());
+      B(Equal, &ok);
+      Unreachable();
+      bind(&ok);
+    }
+#endif
+  }
+  
+  
+  
+  void addMarker(uint32_t id) {
+#ifdef DEBUG
+    
+    MOZ_ASSERT(id <= 0xFFF);
+    ARMRegister x16 = ARMRegister(r16, 64);
+    Add(x16, x16, Operand(id));
+    Sub(x16, x16, Operand(id));
+#endif
+  }
+
   void storeValue(ValueOperand val, const Address& dest) {
     storePtr(val.valueReg(), dest);
   }
@@ -315,6 +348,8 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
   void popValue(ValueOperand val) {
     vixl::MacroAssembler::Pop(ARMRegister(val.valueReg(), 64));
+    
+    
   }
   void pushValue(const Value& val) {
     vixl::UseScratchRegisterScope temps(this);
@@ -739,6 +774,14 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   void jump(Label* label) { B(label); }
   void jump(JitCode* code) { branch(code); }
   void jump(ImmPtr ptr) {
+    
+    
+    
+    
+    
+    
+    
+    
     syncStackPtr();
     BufferOffset loc =
         b(-1,
@@ -1346,6 +1389,13 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
 
   void branch(Condition cond, Label* label) { B(label, cond); }
   void branch(JitCode* target) {
+    
+    
+    
+    
+    
+    
+    
     syncStackPtr();
     BufferOffset loc =
         b(-1,
@@ -2058,6 +2108,10 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     
     BufferOffset offset = nextOffset();
 
+    
+    
+    
+    
     syncStackPtr();
 
     BufferOffset loadOffset;

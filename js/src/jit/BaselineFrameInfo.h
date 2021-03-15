@@ -409,6 +409,8 @@ class InterpreterFrameInfo : public FrameInfo {
     
     Register spReg = AsRegister(masm.getStackPointer());
     masm.computeEffectiveAddress(BaseValueIndex(spReg, reg), spReg);
+    
+    
   }
 
   void popValue(ValueOperand dest) { masm.popValue(dest); }

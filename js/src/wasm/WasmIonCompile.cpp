@@ -5560,6 +5560,9 @@ bool wasm::IonCompileFunctions(const ModuleEnvironment& moduleEnv,
   JitContext jitContext(&alloc);
   MOZ_ASSERT(IsCompilingWasm());
   WasmMacroAssembler masm(alloc, moduleEnv);
+#if defined(JS_CODEGEN_ARM64)
+  masm.SetStackPointer64(PseudoStackPointer64);
+#endif
 
   
   MOZ_ASSERT(code->empty());
