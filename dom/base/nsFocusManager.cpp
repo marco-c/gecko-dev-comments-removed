@@ -177,6 +177,8 @@ static const char* kObservedPrefs[] = {
 nsFocusManager::nsFocusManager()
     : mActionIdForActiveBrowsingContextInContent(0),
       mActionIdForActiveBrowsingContextInChrome(0),
+      mActionIdForFocusedBrowsingContextInContent(0),
+      mActionIdForFocusedBrowsingContextInChrome(0),
       mActiveBrowsingContextInContentSetFromOtherProcess(false),
       mEventHandlingNeedsFlush(false) {}
 
@@ -245,8 +247,10 @@ nsFocusManager::Observe(nsISupports* aSubject, const char* aTopic,
     mActiveWindow = nullptr;
     mActiveBrowsingContextInContent = nullptr;
     mActionIdForActiveBrowsingContextInContent = 0;
+    mActionIdForFocusedBrowsingContextInContent = 0;
     mActiveBrowsingContextInChrome = nullptr;
     mActionIdForActiveBrowsingContextInChrome = 0;
+    mActionIdForFocusedBrowsingContextInChrome = 0;
     mFocusedWindow = nullptr;
     mFocusedBrowsingContextInContent = nullptr;
     mFocusedBrowsingContextInChrome = nullptr;
@@ -980,7 +984,9 @@ void nsFocusManager::WindowShown(mozIDOMWindowProxy* aWindow,
       return;
     }
     
-    SetFocusedWindowInternal(window, false);
+    
+    
+    SetFocusedWindowInternal(window, 0, false);
   }
 
   if (aNeedsFocus) {
@@ -1107,7 +1113,7 @@ void nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow,
 #endif
       
       
-      SetFocusedWindowInternal(window);
+      SetFocusedWindowInternal(window, aActionId);
     }
     mFocusedWindow = nullptr;
     window->SetFocusedElement(nullptr);
@@ -1173,7 +1179,7 @@ void nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow,
       }
     }
 
-    SetFocusedWindowInternal(window);
+    SetFocusedWindowInternal(window, aActionId);
   }
 }
 
@@ -1213,7 +1219,7 @@ void nsFocusManager::WasNuked(nsPIDOMWindowOuter* aWindow) {
              "How come we're nuking a window that's still active?");
   if (aWindow == mFocusedWindow) {
     mFocusedWindow = nullptr;
-    SetFocusedBrowsingContext(nullptr);
+    SetFocusedBrowsingContext(nullptr, GenerateFocusActionId());
     mFocusedElement = nullptr;
   }
 }
@@ -2192,7 +2198,7 @@ bool nsFocusManager::Blur(BrowsingContext* aBrowsingContextToClear,
   
   
   
-  SetFocusedWindowInternal(nullptr);
+  SetFocusedWindowInternal(nullptr, aActionId);
   contentChild->SendBlurToParent(
       focusedBrowsingContext, aBrowsingContextToClear,
       aAncestorBrowsingContextToFocus, aIsLeavingDocument, aAdjustWidget,
@@ -2243,10 +2249,20 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
 
   nsCOMPtr<nsIDocShell> docShell = window->GetDocShell();
   if (!docShell) {
+    if (XRE_IsContentProcess() &&
+        ActionIdComparableAndLower(
+            aActionId, mActionIdForFocusedBrowsingContextInContent)) {
+      
+      LOGFOCUS(
+          ("Ignored an attempt to null out focused BrowsingContext when "
+           "docShell is null due to a stale action id."));
+      return true;
+    }
+
     mFocusedWindow = nullptr;
     
     
-    SetFocusedBrowsingContext(nullptr);
+    SetFocusedBrowsingContext(nullptr, aActionId);
     mFocusedElement = nullptr;
     return true;
   }
@@ -2255,11 +2271,20 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
   
   RefPtr<PresShell> presShell = docShell->GetPresShell();
   if (!presShell) {
+    if (XRE_IsContentProcess() &&
+        ActionIdComparableAndLower(
+            aActionId, mActionIdForFocusedBrowsingContextInContent)) {
+      
+      LOGFOCUS(
+          ("Ignored an attempt to null out focused BrowsingContext when "
+           "presShell is null due to a stale action id."));
+      return true;
+    }
     mFocusedElement = nullptr;
     mFocusedWindow = nullptr;
     
     
-    SetFocusedBrowsingContext(nullptr);
+    SetFocusedBrowsingContext(nullptr, aActionId);
     return true;
   }
 
@@ -2374,7 +2399,7 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
       }
     }
 
-    SetFocusedWindowInternal(nullptr);
+    SetFocusedWindowInternal(nullptr, aActionId);
     mFocusedElement = nullptr;
 
     
@@ -2458,6 +2483,14 @@ void nsFocusManager::Focus(
         focusInOtherContentProcess = !bc->IsInProcess();
       }
     }
+
+    if (ActionIdComparableAndLower(
+            aActionId, mActionIdForFocusedBrowsingContextInContent)) {
+      
+      LOGFOCUS(
+          ("Ignored an attempt to focus an element due to stale action id."));
+      return;
+    }
   }
 
   
@@ -2510,7 +2543,7 @@ void nsFocusManager::Focus(
     aIsNewDocument = true;
   }
 
-  SetFocusedWindowInternal(aWindow);
+  SetFocusedWindowInternal(aWindow, aActionId);
 
   if (aAdjustWidget && !sTestMode) {
     if (nsViewManager* vm = presShell->GetViewManager()) {
@@ -4771,21 +4804,39 @@ class PointerUnlocker : public Runnable {
 
 PointerUnlocker* PointerUnlocker::sActiveUnlocker = nullptr;
 
-void nsFocusManager::SetFocusedBrowsingContext(BrowsingContext* aContext) {
+void nsFocusManager::SetFocusedBrowsingContext(BrowsingContext* aContext,
+                                               uint64_t aActionId) {
+  if (XRE_IsParentProcess()) {
+    return;
+  }
+  MOZ_ASSERT(!ActionIdComparableAndLower(
+      aActionId, mActionIdForFocusedBrowsingContextInContent));
   mFocusedBrowsingContextInContent = aContext;
-  if (aContext && !XRE_IsParentProcess()) {
+  mActionIdForFocusedBrowsingContextInContent = aActionId;
+  if (aContext) {
+    
+    
     MOZ_ASSERT(aContext->IsInProcess());
     mozilla::dom::ContentChild* contentChild =
         mozilla::dom::ContentChild::GetSingleton();
     MOZ_ASSERT(contentChild);
-    contentChild->SendSetFocusedBrowsingContext(aContext);
+    contentChild->SendSetFocusedBrowsingContext(aContext, aActionId);
   }
 }
 
 void nsFocusManager::SetFocusedBrowsingContextFromOtherProcess(
-    BrowsingContext* aContext) {
+    BrowsingContext* aContext, uint64_t aActionId) {
   MOZ_ASSERT(!XRE_IsParentProcess());
   MOZ_ASSERT(aContext);
+  if (ActionIdComparableAndLower(aActionId,
+                                 mActionIdForFocusedBrowsingContextInContent)) {
+    
+    LOGFOCUS(
+        ("Ignored an attempt to set an in-process BrowsingContext [%p] as "
+         "focused from another process due to stale action id.",
+         aContext));
+    return;
+  }
   if (aContext->IsInProcess()) {
     
     
@@ -4800,12 +4851,21 @@ void nsFocusManager::SetFocusedBrowsingContextFromOtherProcess(
     return;
   }
   mFocusedBrowsingContextInContent = aContext;
+  mActionIdForFocusedBrowsingContextInContent = aActionId;
   mFocusedElement = nullptr;
 }
 
-void nsFocusManager::SetFocusedBrowsingContextInChrome(
-    mozilla::dom::BrowsingContext* aContext) {
-  mFocusedBrowsingContextInChrome = aContext;
+bool nsFocusManager::SetFocusedBrowsingContextInChrome(
+    mozilla::dom::BrowsingContext* aContext, uint64_t aActionId) {
+  MOZ_ASSERT(aActionId);
+  if (ProcessPendingFocusedBrowsingContextActionId(aActionId, aContext)) {
+    MOZ_DIAGNOSTIC_ASSERT(!ActionIdComparableAndLower(
+        aActionId, mActionIdForFocusedBrowsingContextInChrome));
+    mFocusedBrowsingContextInChrome = aContext;
+    mActionIdForFocusedBrowsingContextInChrome = aActionId;
+    return true;
+  }
+  return false;
 }
 
 BrowsingContext* nsFocusManager::GetFocusedBrowsingContextInChrome() {
@@ -4815,6 +4875,8 @@ BrowsingContext* nsFocusManager::GetFocusedBrowsingContextInChrome() {
 void nsFocusManager::BrowsingContextDetached(BrowsingContext* aContext) {
   if (mFocusedBrowsingContextInChrome == aContext) {
     mFocusedBrowsingContextInChrome = nullptr;
+    
+    
   }
   if (mActiveBrowsingContextInChrome == aContext) {
     mActiveBrowsingContextInChrome = nullptr;
@@ -4940,6 +5002,21 @@ void nsFocusManager::ReviseActiveBrowsingContext(
   }
 }
 
+void nsFocusManager::ReviseFocusedBrowsingContext(
+    uint64_t aOldActionId, mozilla::dom::BrowsingContext* aContext,
+    uint64_t aNewActionId) {
+  MOZ_ASSERT(XRE_IsContentProcess());
+  if (mActionIdForFocusedBrowsingContextInContent == aOldActionId) {
+    mFocusedBrowsingContextInContent = aContext;
+    mActionIdForFocusedBrowsingContextInContent = aNewActionId;
+    mFocusedElement = nullptr;
+  } else {
+    LOGFOCUS(
+        ("Ignored a stale attempt to revise the focused BrowsingContext [%p].",
+         aContext));
+  }
+}
+
 bool nsFocusManager::SetActiveBrowsingContextInChrome(
     mozilla::dom::BrowsingContext* aContext, uint64_t aActionId) {
   MOZ_ASSERT(aActionId);
@@ -4957,6 +5034,10 @@ uint64_t nsFocusManager::GetActionIdForActiveBrowsingContextInChrome() const {
   return mActionIdForActiveBrowsingContextInChrome;
 }
 
+uint64_t nsFocusManager::GetActionIdForFocusedBrowsingContextInChrome() const {
+  return mActionIdForFocusedBrowsingContextInChrome;
+}
+
 BrowsingContext* nsFocusManager::GetActiveBrowsingContextInChrome() {
   return mActiveBrowsingContextInChrome;
 }
@@ -4965,6 +5046,8 @@ void nsFocusManager::InsertNewFocusActionId(uint64_t aActionId) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!mPendingActiveBrowsingContextActions.Contains(aActionId));
   mPendingActiveBrowsingContextActions.AppendElement(aActionId);
+  MOZ_ASSERT(!mPendingFocusedBrowsingContextActions.Contains(aActionId));
+  mPendingFocusedBrowsingContextActions.AppendElement(aActionId);
 }
 
 bool nsFocusManager::ProcessPendingActiveBrowsingContextActionId(
@@ -4981,6 +5064,23 @@ bool nsFocusManager::ProcessPendingActiveBrowsingContextActionId(
     index++;
   }
   mPendingActiveBrowsingContextActions.RemoveElementsAt(0, index);
+  return true;
+}
+
+bool nsFocusManager::ProcessPendingFocusedBrowsingContextActionId(
+    uint64_t aActionId, bool aSettingToNonNull) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  auto index = mPendingFocusedBrowsingContextActions.IndexOf(aActionId);
+  if (index == nsTArray<uint64_t>::NoIndex) {
+    return false;
+  }
+  
+  
+  
+  if (aSettingToNonNull) {
+    index++;
+  }
+  mPendingFocusedBrowsingContextActions.RemoveElementsAt(0, index);
   return true;
 }
 
@@ -5008,6 +5108,7 @@ static bool IsInPointerLockContext(nsPIDOMWindowOuter* aWin) {
 }
 
 void nsFocusManager::SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow,
+                                              uint64_t aActionId,
                                               bool aSyncBrowsingContext) {
   if (XRE_IsParentProcess() && !PointerUnlocker::sActiveUnlocker &&
       IsInPointerLockContext(mFocusedWindow) &&
@@ -5025,10 +5126,20 @@ void nsFocusManager::SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow,
     }
   }
 
+  if (XRE_IsContentProcess() &&
+      ActionIdComparableAndLower(aActionId,
+                                 mActionIdForFocusedBrowsingContextInContent)) {
+    
+    LOGFOCUS(
+        ("Ignored an attempt to set an in-process BrowsingContext as "
+         "focused due to stale action id."));
+    return;
+  }
+
   mFocusedWindow = aWindow;
   BrowsingContext* bc = aWindow ? aWindow->GetBrowsingContext() : nullptr;
   if (aSyncBrowsingContext) {
-    SetFocusedBrowsingContext(bc);
+    SetFocusedBrowsingContext(bc, aActionId);
   } else if (XRE_IsContentProcess()) {
     MOZ_ASSERT(mFocusedBrowsingContextInContent == bc,
                "Not syncing BrowsingContext even when different.");
