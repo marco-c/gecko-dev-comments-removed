@@ -1,5 +1,7 @@
 import socket
-import sys
+
+
+from .logger import get_logger
 
 
 def isomorphic_decode(s):
@@ -155,8 +157,17 @@ def get_port(host=''):
 
 def http2_compatible():
     
+    
+    
+    
+    
     import ssl
+    if not ssl.OPENSSL_VERSION.startswith("OpenSSL"):
+        logger = get_logger()
+        logger.warning(
+            'Skipping HTTP/2.0 compatibility check as system is not using '
+            'OpenSSL (found: %s)' % ssl.OPENSSL_VERSION)
+        return True
+
     ssl_v = ssl.OPENSSL_VERSION_INFO
-    py_v = sys.version_info
-    return (((py_v[0] == 2 and py_v[1] == 7 and py_v[2] >= 10) or (py_v[0] == 3 and py_v[1] >= 6)) and
-        (ssl_v[0] == 1 and (ssl_v[1] == 1 or (ssl_v[1] == 0 and ssl_v[2] >= 2))))
+    return ssl_v[0] == 1 and (ssl_v[1] == 1 or (ssl_v[1] == 0 and ssl_v[2] >= 2))
