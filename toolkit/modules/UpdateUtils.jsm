@@ -672,8 +672,17 @@ function makeMigrationUpdateConfig() {
     }
 
     const prefTypeFns = TYPE_SPECIFIC_PREF_FNS[pref.type];
-    const prefValue = prefTypeFns.getProfilePref(prefName, null);
-    if (prefValue !== null) {
+
+    let prefHasValue = true;
+    let prefValue;
+    try {
+      
+      
+      prefValue = prefTypeFns.getProfilePref(prefName);
+    } catch (e) {
+      prefHasValue = false;
+    }
+    if (prefHasValue) {
       setConfigValue(config, prefName, prefValue);
     }
   }

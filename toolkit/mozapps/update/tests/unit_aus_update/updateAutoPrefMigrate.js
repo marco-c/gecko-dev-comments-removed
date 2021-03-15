@@ -21,8 +21,19 @@ async function run_test() {
 
   
   Services.prefs.setBoolPref("app.update.auto.migrated", false);
-  Services.prefs.setBoolPref("app.update.auto", false);
+  Services.prefs.clearUserPref("app.update.auto");
   Assert.ok(!configFile.exists(), "Config file should not exist yet");
+  await verifyPref(
+    UpdateUtils.PER_INSTALLATION_PREFS["app.update.auto"].defaultValue
+  );
+
+  debugDump("about to remove config file");
+  configFile.remove(false);
+
+  
+  Services.prefs.setBoolPref("app.update.auto.migrated", false);
+  Services.prefs.setBoolPref("app.update.auto", false);
+  Assert.ok(!configFile.exists(), "Config file should have been removed");
   await verifyPref(false);
 
   
@@ -33,7 +44,7 @@ async function run_test() {
   
   debugDump("about to remove config file");
   configFile.remove(false);
-  Assert.ok(!configFile.exists(), "Pref file should have been removed");
+  Assert.ok(!configFile.exists(), "Config file should have been removed");
   let configValue = await UpdateUtils.getAppUpdateAutoEnabled();
   Assert.equal(
     configValue,
