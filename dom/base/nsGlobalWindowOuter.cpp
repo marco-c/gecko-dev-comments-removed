@@ -5364,8 +5364,18 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
   
   
   
-  if (aIsPreview == IsPreview::Yes &&
-      aForWindowDotPrint == IsForWindowDotPrint::Yes && !hasPrintCallbacks) {
+  
+  const bool shouldBlock = [&] {
+    if (aForWindowDotPrint == IsForWindowDotPrint::No) {
+      return false;
+    }
+    if (aIsPreview == IsPreview::Yes) {
+      return !hasPrintCallbacks;
+    }
+    return StaticPrefs::dom_window_print_fuzzing_block_while_printing();
+  }();
+
+  if (shouldBlock) {
     SpinEventLoopUntil([&] { return bc->IsDiscarded(); });
   }
 
