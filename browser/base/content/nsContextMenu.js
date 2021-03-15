@@ -798,6 +798,13 @@ class nsContextMenu {
 
     
     this.showItem("context-copylink", this.onLink && !this.onMailtoLink);
+    let copyLinkSeparator = document.getElementById("context-sep-copylink");
+    
+    
+    copyLinkSeparator.toggleAttribute(
+      "ensureHidden",
+      this.onLink && !this.onMailtoLink && !this.onImage
+    );
 
     this.showItem("context-copyvideourl", this.onVideo);
     this.showItem("context-copyaudiourl", this.onAudio);
@@ -1047,6 +1054,7 @@ class nsContextMenu {
 
   
   
+  
   showHideSeparators(aPopup) {
     let lastVisibleSeparator = null;
     let count = 0;
@@ -1058,7 +1066,10 @@ class nsContextMenu {
       }
 
       if (menuItem.localName == "menuseparator") {
-        if (!count) {
+        
+        
+        
+        if (!count || menuItem.hasAttribute("ensureHidden")) {
           menuItem.hidden = true;
         } else {
           menuItem.hidden = false;
@@ -2104,6 +2115,14 @@ class nsContextMenu {
 
     menuItem.hidden = !showSearchSelect;
     menuItemPrivate.hidden = !showPrivateSearchSelect;
+    let frameSeparator = document.getElementById("frame-sep");
+
+    
+    
+    frameSeparator.toggleAttribute(
+      "ensureHidden",
+      !showSearchSelect && this.inFrame
+    );
     
     if (!showSearchSelect) {
       return;
