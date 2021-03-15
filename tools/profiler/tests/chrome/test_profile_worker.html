@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1428076
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1428076</title>
@@ -22,7 +22,7 @@
 const settings = {
   entries: 1000000, // 9MB
   interval: 1, // ms
-  features: ["js", "threads", "leaf", "stackwalk"],
+  features: ["js", "threads", "leaf", "stackwalk", "cpu"],
   threads: ["GeckoMain", "Compositor", "Worker"], // most common combination
 };
 
