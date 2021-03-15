@@ -5405,32 +5405,18 @@ nsDisplayWrapList::nsDisplayWrapList(
   mListPtr->AppendToTop(aList);
   nsDisplayWrapList::UpdateBounds(aBuilder);
 
+#ifdef DEBUG
   if (!aFrame || !aFrame->IsTransformed()) {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   nsDisplayItem* i = mListPtr->GetBottom();
   if (i &&
       (!i->GetAbove() || i->GetType() == DisplayItemType::TYPE_TRANSFORM) &&
       i->Frame() == mFrame) {
-    mReferenceFrame = i->ReferenceFrame();
-    mToReferenceFrame = i->ToReferenceFrame();
+    MOZ_ASSERT(mReferenceFrame == i->ReferenceFrame());
   }
-
-  nsRect visible = aBuilder->GetVisibleRect() +
-                   aBuilder->GetCurrentFrameOffsetToReferenceFrame();
-
-  SetBuildingRect(visible);
+#endif
 }
 
 nsDisplayWrapList::nsDisplayWrapList(nsDisplayListBuilder* aBuilder,
@@ -7346,9 +7332,24 @@ void nsDisplayTransform::SetReferenceFrameToAncestor(
   if (mFrame == aBuilder->RootReferenceFrame()) {
     return;
   }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+#ifdef DEBUG
   nsIFrame* outerFrame = nsLayoutUtils::GetCrossDocParentFrame(mFrame);
-  mReferenceFrame = aBuilder->FindReferenceFrameFor(outerFrame);
+  MOZ_ASSERT(mReferenceFrame == aBuilder->FindReferenceFrameFor(outerFrame));
+#endif
   mToReferenceFrame = mFrame->GetOffsetToCrossDoc(mReferenceFrame);
+
   if (DisplayPortUtils::IsFixedPosFrameInDisplayPort(mFrame)) {
     
     
@@ -7374,8 +7375,6 @@ void nsDisplayTransform::SetReferenceFrameToAncestor(
       mAnimatedGeometryRoot = mAnimatedGeometryRoot->mParentAGR;
     }
   }
-
-  SetBuildingRect(aBuilder->GetVisibleRect() + mToReferenceFrame);
 }
 
 void nsDisplayTransform::Init(nsDisplayListBuilder* aBuilder,
