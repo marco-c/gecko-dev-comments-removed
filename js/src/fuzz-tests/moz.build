@@ -29,13 +29,13 @@ if CONFIG["FUZZING"]:
         "static:fuzzer-registry",
     ]
 
-if CONFIG["LIBFUZZER"]:
+    
+    include("/tools/fuzzing/libfuzzer-config.mozbuild")
+
+if CONFIG["FUZZING_INTERFACES"]:
     USE_LIBS += [
         "static:fuzzer",
     ]
-
-    
-    include("/tools/fuzzing/libfuzzer-config.mozbuild")
 
 USE_LIBS += [
     "static:js",
