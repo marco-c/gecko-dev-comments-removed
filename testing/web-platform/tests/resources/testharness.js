@@ -1929,7 +1929,10 @@
             throw new AssertionError(errors.join("\n\n"));
         }
     }
-    expose_assert(assert_any, "assert_any");
+    
+    
+    
+    expose(assert_any, "assert_any");
 
     
 
