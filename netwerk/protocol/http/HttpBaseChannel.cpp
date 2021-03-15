@@ -31,6 +31,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PerformanceStorage.h"
 #include "mozilla/dom/WindowGlobalParent.h"
@@ -5094,6 +5095,15 @@ nsresult HttpBaseChannel::CheckRedirectLimit(uint32_t aRedirectFlags) const {
 
   if (mRedirectCount >= mRedirectionLimit) {
     LOG(("redirection limit reached!\n"));
+    return NS_ERROR_REDIRECT_LOOP;
+  }
+
+  
+  
+  
+  
+  if (nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(mURI, mLoadInfo)) {
+    LOG(("upgrade downgrade redirect loop!\n"));
     return NS_ERROR_REDIRECT_LOOP;
   }
 
