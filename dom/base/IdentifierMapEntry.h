@@ -118,7 +118,7 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
 
 
 
-  Element* GetIdElement() { return mIdContentList->SafeElementAt(0); }
+  Element* GetIdElement() const { return mIdContentList->SafeElementAt(0); }
 
   
 
@@ -146,7 +146,7 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
 
 
   void SetImageElement(Element* aElement);
-  bool HasIdElementExposedAsHTMLDocumentProperty();
+  bool HasIdElementExposedAsHTMLDocumentProperty() const;
 
   bool HasContentChangeCallback() { return mChangeCallbacks != nullptr; }
   void AddContentChangeCallback(IDTargetObserver aCallback, void* aData,
