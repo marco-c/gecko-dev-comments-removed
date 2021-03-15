@@ -1570,9 +1570,7 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
 
   
   
-  {
-    Element* browserElement = browsingContext->Top()->GetEmbedderElement();
-
+  if (Element* browserElement = browsingContext->Top()->GetEmbedderElement()) {
     nsAutoString isPreloadBrowserStr;
     if (browserElement->GetAttr(kNameSpaceID_None, nsGkAtoms::preloadedState,
                                 isPreloadBrowserStr) &&
@@ -1586,6 +1584,12 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
                                   true);
       }
     }
+  } else {
+    
+    
+    
+    LOG(("Process Switch Abort: top embedder element disappeared"));
+    return false;
   }
 
   
