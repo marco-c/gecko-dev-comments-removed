@@ -131,7 +131,10 @@ add_task(async function test_keep_permissions() {
     await stopSharingPromise;
 
     
-    await checkSharingUI({ audio: true, video: true });
+    await checkSharingUI({ audio: true, video: true }, undefined, undefined, {
+      audio: { scope: SitePermissions.SCOPE_PERSISTENT },
+      video: { scope: SitePermissions.SCOPE_PERSISTENT },
+    });
 
     
     Assert.ok(

@@ -372,6 +372,8 @@ var gPermissionPanel = {
     this._permissionList
       .querySelectorAll(permissionItemSelector)
       .forEach(e => e.remove());
+    
+    this._permissionLabelIndex = 0;
 
     let permissions = SitePermissions.getAllPermissionDetailsForBrowser(
       gBrowser.selectedBrowser
@@ -415,12 +417,14 @@ var gPermissionPanel = {
         if (webrtcState[id]) {
           let found = false;
           for (let permission of permissions) {
-            if (permission.id != id) {
+            let [permId] = permission.id.split(
+              SitePermissions.PERM_KEY_DELIMITER
+            );
+            if (permId != id) {
               continue;
             }
             found = true;
             permission.sharingState = webrtcState[id];
-            break;
           }
           if (!found) {
             
@@ -461,9 +465,16 @@ var gPermissionPanel = {
         if (permContainer) {
           anchor.appendChild(permContainer);
         }
+      } else if (["camera", "screen", "microphone"].includes(id)) {
+        item = this._createWebRTCPermissionItem(permission, id, key);
+        if (!item) {
+          continue;
+        }
+        anchor.appendChild(item);
       } else {
         item = this._createPermissionItem({
           permission,
+          idNoSuffix: id,
           isContainer: id == "geo" || id == "xr",
           nowrapLabel: id == "3rdPartyStorage",
         });
@@ -524,9 +535,13 @@ var gPermissionPanel = {
     showStateLabel = true,
     idNoSuffix = permission.id,
     nowrapLabel = false,
+    clearCallback = () => {},
   }) {
     let container = document.createXULElement("hbox");
-    container.setAttribute("class", "permission-popup-permission-item");
+    container.classList.add(
+      "permission-popup-permission-item",
+      `permission-popup-permission-item-${idNoSuffix}`
+    );
     container.setAttribute("align", "center");
     container.setAttribute("role", "group");
 
@@ -552,7 +567,7 @@ var gPermissionPanel = {
     let nameLabel = document.createXULElement("label");
     nameLabel.setAttribute("flex", "1");
     nameLabel.setAttribute("class", "permission-popup-permission-label");
-    let label = SitePermissions.getPermissionLabel(idNoSuffix);
+    let label = SitePermissions.getPermissionLabel(permission.id);
     if (label === null) {
       return null;
     }
@@ -563,7 +578,11 @@ var gPermissionPanel = {
     } else {
       nameLabel.textContent = label;
     }
-    let nameLabelId = "permission-popup-permission-label-" + idNoSuffix;
+    
+    
+    
+    let nameLabelId = `permission-popup-permission-label-${idNoSuffix}-${this
+      ._permissionLabelIndex++}`;
     nameLabel.setAttribute("id", nameLabelId);
 
     let isPolicyPermission = [
@@ -612,7 +631,7 @@ var gPermissionPanel = {
       menulist.addEventListener("command", () => {
         SitePermissions.setForPrincipal(
           gBrowser.contentPrincipal,
-          idNoSuffix,
+          permission.id,
           menulist.selectedItem.value
         );
       });
@@ -651,7 +670,12 @@ var gPermissionPanel = {
       block.setAttribute("class", "permission-popup-permission-item-container");
 
       if (permClearButton) {
-        let button = this._createPermissionClearButton(permission, block);
+        let button = this._createPermissionClearButton({
+          permission,
+          container: block,
+          idNoSuffix,
+          clearCallback,
+        });
         container.appendChild(button);
       }
 
@@ -660,7 +684,12 @@ var gPermissionPanel = {
     }
 
     if (permClearButton) {
-      let button = this._createPermissionClearButton(permission, container);
+      let button = this._createPermissionClearButton({
+        permission,
+        container,
+        idNoSuffix,
+        clearCallback,
+      });
       container.appendChild(button);
     }
 
@@ -671,7 +700,8 @@ var gPermissionPanel = {
     let label = document.createXULElement("label");
     label.setAttribute("flex", "1");
     label.setAttribute("class", "permission-popup-permission-state-label");
-    let labelId = "permission-popup-permission-state-label-" + idNoSuffix;
+    let labelId = `permission-popup-permission-state-label-${idNoSuffix}-${this
+      ._permissionLabelIndex++}`;
     label.setAttribute("id", labelId);
     let { state, scope } = aPermission;
     
@@ -698,11 +728,12 @@ var gPermissionPanel = {
     }
   },
 
-  _createPermissionClearButton(
-    aPermission,
+  _createPermissionClearButton({
+    permission,
     container,
-    clearCallback = () => {}
-  ) {
+    idNoSuffix = permission.id,
+    clearCallback = () => {},
+  }) {
     let button = document.createXULElement("button");
     button.setAttribute("class", "permission-popup-permission-remove-button");
     let tooltiptext = gNavigatorBundle.getString("permissions.remove.tooltip");
@@ -710,42 +741,24 @@ var gPermissionPanel = {
     button.addEventListener("command", () => {
       let browser = gBrowser.selectedBrowser;
       container.remove();
-      if (aPermission.sharingState) {
-        if (aPermission.id === "xr") {
-          let origins = browser.getDevicePermissionOrigins(aPermission.id);
-          for (let origin of origins) {
-            let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-              origin
-            );
-            this._removePermPersistentAllow(principal, aPermission.id);
-          }
-          origins.clear();
-        } else if (
-          ["camera", "microphone", "screen"].includes(aPermission.id)
-        ) {
-          let windowId = this._sharingState.webRTC.windowId;
-          if (aPermission.id == "screen") {
-            windowId = "screen:" + windowId;
-          } else {
-            
-            
-            for (let id of ["camera", "microphone"]) {
-              if (this._sharingState.webRTC[id]) {
-                this._removePermPersistentAllow(gBrowser.contentPrincipal, id);
-              }
-            }
-          }
-
-          let bc = this._sharingState.webRTC.browsingContext;
-          bc.currentWindowGlobal
-            .getActor("WebRTC")
-            .sendAsyncMessage("webrtc:StopSharing", windowId);
-          webrtcUI.forgetActivePermissionsFromBrowser(gBrowser.selectedBrowser);
+      
+      
+      
+      
+      
+      if (permission.sharingState && idNoSuffix === "xr") {
+        let origins = browser.getDevicePermissionOrigins(idNoSuffix);
+        for (let origin of origins) {
+          let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+            origin
+          );
+          this._removePermPersistentAllow(principal, permission.id);
         }
+        origins.clear();
       }
       SitePermissions.removeFromPrincipal(
         gBrowser.contentPrincipal,
-        aPermission.id,
+        permission.id,
         browser
       );
 
@@ -754,9 +767,9 @@ var gPermissionPanel = {
         this._permissionPopupMainView
       ).descriptionHeightWorkaround();
 
-      if (aPermission.id === "geo") {
+      if (idNoSuffix === "geo") {
         gBrowser.updateBrowserSharing(browser, { geo: false });
-      } else if (aPermission.id === "xr") {
+      } else if (idNoSuffix === "xr") {
         gBrowser.updateBrowserSharing(browser, { xr: false });
       }
 
@@ -834,6 +847,52 @@ var gPermissionPanel = {
     geoContainer.appendChild(indicator);
   },
 
+  
+
+
+
+
+
+
+
+
+  _createWebRTCPermissionItem(permission, id, key) {
+    if (id != "camera" && id != "microphone" && id != "screen") {
+      throw new Error("Invalid permission id for WebRTC permission item.");
+    }
+    
+    
+    
+    if (key && permission.state != SitePermissions.ALLOW) {
+      return null;
+    }
+    
+    
+    let item = document.querySelector(
+      `.permission-popup-permission-item-${id}`
+    );
+
+    if (key) {
+      
+      
+      if (item) {
+        return null;
+      }
+    } else if (item) {
+      
+      
+      item.remove();
+    }
+
+    return this._createPermissionItem({
+      permission,
+      idNoSuffix: id,
+      clearCallback: () => {
+        webrtcUI.clearPermissionsAndStopSharing([id], gBrowser.selectedTab);
+      },
+    });
+  },
+
   _createProtocolHandlerPermissionItem(permission, key) {
     let container = document.getElementById(
       "permission-popup-open-protocol-handler-container"
@@ -876,13 +935,17 @@ var gPermissionPanel = {
     item.appendChild(text);
     item.appendChild(stateLabel);
 
-    let button = this._createPermissionClearButton(permission, item, () => {
-      
-      
-      
-      if (container.childElementCount <= 1) {
-        container.remove();
-      }
+    let button = this._createPermissionClearButton({
+      permission,
+      container: item,
+      clearCallback: () => {
+        
+        
+        
+        if (container.childElementCount <= 1) {
+          container.remove();
+        }
+      },
     });
     item.appendChild(button);
 

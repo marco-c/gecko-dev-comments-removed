@@ -533,8 +533,16 @@ var webrtcUI = {
       return;
     }
 
-    let mostRecentStream = activeStreams[activeStreams.length - 1];
-    let { browser: browserToSelect } = mostRecentStream;
+    let ids = [];
+    if (stopCameras) {
+      ids.push("camera");
+    }
+    if (stopMics) {
+      ids.push("microphone");
+    }
+    if (stopScreens || stopWindows) {
+      ids.push("screen");
+    }
 
     for (let stream of activeStreams) {
       let { browser } = stream;
@@ -551,93 +559,95 @@ var webrtcUI = {
         continue;
       }
 
-      let permissions = SitePermissions.getAllPermissionDetailsForBrowser(
-        browser
-      );
-
-      let webrtcState = tab._sharingState.webRTC;
-      let clearRequested = {
-        camera: stopCameras,
-        microphone: stopMics,
-        screen: stopScreens || stopWindows,
-      };
-
-      for (let id of ["camera", "microphone", "screen"]) {
-        if (webrtcState[id] && clearRequested[id]) {
-          let found = false;
-          for (let permission of permissions) {
-            if (permission.id != id) {
-              continue;
-            }
-            found = true;
-            permission.sharingState = webrtcState[id];
-            break;
-          }
-          if (!found) {
-            
-            
-            
-            permissions.push({
-              id,
-              state: SitePermissions.ALLOW,
-              scope: SitePermissions.SCOPE_REQUEST,
-              sharingState: webrtcState[id],
-            });
-          }
-        }
-      }
-
-      for (let permission of permissions) {
-        if (clearRequested[permission.id]) {
-          let windowId = tab._sharingState.webRTC.windowId;
-
-          if (permission.id == "screen") {
-            windowId = `screen:${webrtcState.windowId}`;
-          } else if (
-            permission.id == "camera" ||
-            permission.id == "microphone"
-          ) {
-            
-            
-            for (let id of ["camera", "microphone"]) {
-              if (webrtcState[id]) {
-                let perm = SitePermissions.getForPrincipal(
-                  gBrowser.contentPrincipal,
-                  id
-                );
-                if (
-                  perm.state == SitePermissions.ALLOW &&
-                  perm.scope == SitePermissions.SCOPE_PERSISTENT
-                ) {
-                  SitePermissions.removeFromPrincipal(
-                    gBrowser.contentPrincipal,
-                    id
-                  );
-                }
-              }
-            }
-          }
-
-          let bc = webrtcState.browsingContext;
-          bc.currentWindowGlobal
-            .getActor("WebRTC")
-            .sendAsyncMessage("webrtc:StopSharing", windowId);
-          webrtcUI.forgetActivePermissionsFromBrowser(browser);
-
-          SitePermissions.removeFromPrincipal(
-            browser.contentPrincipal,
-            permission.id,
-            browser
-          );
-        }
-      }
+      this.clearPermissionsAndStopSharing(ids, tab);
     }
+
+    
+    let mostRecentStream = activeStreams[activeStreams.length - 1];
+    let { browser: browserToSelect } = mostRecentStream;
 
     let window = browserToSelect.ownerGlobal;
     let gBrowser = browserToSelect.getTabBrowser();
     let tab = gBrowser.getTabForBrowser(browserToSelect);
     window.focus();
     gBrowser.selectedTab = tab;
+  },
+
+  
+
+
+
+
+
+
+  clearPermissionsAndStopSharing(types, tab) {
+    let invalidTypes = types.filter(
+      type => type != "camera" && type != "screen" && type != "microphone"
+    );
+    if (invalidTypes.length) {
+      throw new Error(`Invalid device types ${invalidTypes.join(",")}`);
+    }
+    let browser = tab.linkedBrowser;
+    let sharingState = tab._sharingState?.webRTC;
+
+    
+    
+    
+    let perms = SitePermissions.getAllForBrowser(browser);
+
+    let sharingCameraAndMic =
+      sharingState?.camera &&
+      sharingState?.microphone &&
+      (types.includes("camera") || types.includes("microphone"));
+    perms
+      .filter(perm => {
+        let [permId] = perm.id.split(SitePermissions.PERM_KEY_DELIMITER);
+        
+        
+        if (
+          sharingCameraAndMic &&
+          (permId == "camera" || permId == "microphone")
+        ) {
+          return true;
+        }
+        return types.includes(permId);
+      })
+      .forEach(perm => {
+        SitePermissions.removeFromPrincipal(
+          browser.contentPrincipal,
+          perm.id,
+          browser
+        );
+      });
+
+    if (!sharingState?.windowId) {
+      return;
+    }
+
+    
+    
+    let { windowId } = sharingState;
+
+    let windowIds = [];
+    if (types.includes("screen") && sharingState.screen) {
+      windowIds.push(`screen:${windowId}`);
+    }
+    if (
+      (types.includes("camera") && sharingState.camera) ||
+      (types.includes("microphone") && sharingState.microphone)
+    ) {
+      windowIds.push(windowId);
+    }
+
+    if (!windowIds.length) {
+      return;
+    }
+
+    let actor = sharingState.browsingContext.currentWindowGlobal.getActor(
+      "WebRTC"
+    );
+    windowIds.forEach(id => actor.sendAsyncMessage("webrtc:StopSharing", id));
+    webrtcUI.forgetActivePermissionsFromBrowser(browser);
   },
 
   updateIndicators(aTopBrowsingContext) {

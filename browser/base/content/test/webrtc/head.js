@@ -829,10 +829,18 @@ function checkDeviceSelectors(aAudio, aVideo, aScreen, aWindow = window) {
 
 
 
+
+
+
+
+
+
+
 async function checkSharingUI(
   aExpected,
   aWin = window,
-  aExpectedGlobal = null
+  aExpectedGlobal = null,
+  aExpectedPerm = null
 ) {
   function isPaused(streamState) {
     if (typeof streamState == "string") {
@@ -887,29 +895,58 @@ async function checkSharingUI(
       return idToConvert;
     };
     let expected = aExpected[convertId(id)];
+
+    
+    
+    let { state, scope } = aExpectedPerm?.[convertId(id)] || {};
+    if (state == null) {
+      state = SitePermissions.ALLOW;
+    }
+    if (scope == null) {
+      scope = SitePermissions.SCOPE_TEMPORARY;
+    }
+
     is(
       !!aWin.gPermissionPanel._sharingState.webRTC[id],
       !!expected,
       "sharing state for " + id + " as expected"
     );
+    let item = permissions.querySelectorAll(
+      ".permission-popup-permission-item-" + id
+    );
+    let stateLabel = item?.[0]?.querySelector(
+      ".permission-popup-permission-state-label"
+    );
     let icon = permissions.querySelectorAll(
       ".permission-popup-permission-icon." + id + "-icon"
     );
     if (expected) {
+      is(item.length, 1, "should show " + id + " item in permission panel");
+      is(
+        stateLabel?.textContent,
+        SitePermissions.getCurrentStateLabel(state, id, scope),
+        "should show correct item label for " + id
+      );
       is(icon.length, 1, "should show " + id + " icon in permission panel");
       is(
         icon[0].classList.contains("in-use"),
         expected && !isPaused(expected),
         "icon should have the in-use class, unless paused"
       );
-    } else if (!icon.length) {
+    } else if (!icon.length && !item.length && !stateLabel) {
+      ok(true, "should not show " + id + " item in the permission panel");
       ok(true, "should not show " + id + " icon in the permission panel");
+      ok(
+        true,
+        "should not show " + id + " state label in the permission panel"
+      );
     } else {
       
       ok(
         !icon[0].classList.contains("in-use"),
         "if shown, the " + id + " icon should not have the in-use class"
       );
+      is(item.length, 1, "should not show more than 1 " + id + " item");
       is(icon.length, 1, "should not show more than 1 " + id + " icon");
     }
   }
