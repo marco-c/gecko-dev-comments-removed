@@ -1153,14 +1153,16 @@ Maybe<EvalScope::ParserData*> NewEvalScopeData(JSContext* cx,
                                                ParseContext* pc) {
   ParserBindingNameVector vars(cx);
 
+  
+  bool allBindingsClosedOver = !pc->sc()->strict() || pc->sc()->allBindingsClosedOver();
   for (BindingIter bi = scope.bindings(pc); bi; bi++) {
-    
     
     MOZ_ASSERT(bi.kind() == BindingKind::Var);
     bool isTopLevelFunction =
         bi.declarationKind() == DeclarationKind::BodyLevelFunction;
+    bool closedOver = allBindingsClosedOver || bi.closedOver();
 
-    ParserBindingName binding(bi.name(), true, isTopLevelFunction);
+    ParserBindingName binding(bi.name(), closedOver, isTopLevelFunction);
     if (!vars.append(binding)) {
       return Nothing();
     }
@@ -1605,11 +1607,18 @@ LexicalScopeNode* Parser<FullParseHandler, Unit>::evalBody(
     return nullptr;
   }
 
-  
-  
-  
-  if (!varScope.propagateAndMarkAnnexBFunctionBoxes(pc_, this)) {
-    return nullptr;
+  if (pc_->sc()->strict()) {
+    if (!propagateFreeNamesAndMarkClosedOverBindings(varScope)) {
+      return nullptr;
+    }
+  } else {
+    
+    
+    
+    
+    if (!varScope.propagateAndMarkAnnexBFunctionBoxes(pc_, this)) {
+      return nullptr;
+    }
   }
 
   Maybe<EvalScope::ParserData*> bindings = newEvalScopeData(pc_->varScope());
