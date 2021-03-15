@@ -58,6 +58,8 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
  private:
   void Init(Mode mode, Listener* listener);
   bool CreatePipe(Mode mode);
+  void SetPipe(int fd);
+  bool PipeBufHasSpaceAfter(size_t already_written);
   bool EnqueueHelloMessage();
 
   bool ProcessIncomingMessages();
@@ -92,7 +94,8 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
 
   int server_listen_pipe_;
   int pipe_;
-  int client_pipe_;  
+  int client_pipe_;        
+  unsigned pipe_buf_len_;  
 
   Listener* listener_;
 

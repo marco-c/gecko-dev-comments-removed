@@ -128,7 +128,6 @@ sandbox::bpf_dsl::ResultExpr SandboxPolicyBase::EvaluateSyscall(
   
 #  ifdef __NR_socketcall
   
-  
   int fd = syscall(__NR_socket, AF_LOCAL, SOCK_STREAM, 0);
   if (fd < 0) {
     MOZ_DIAGNOSTIC_ASSERT(errno == ENOSYS);

@@ -463,6 +463,17 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 #endif
   }
 
+  static intptr_t GetSockOptUnpackTrap(ArgsRef aArgs, void* aux) {
+#ifdef __NR_getsockopt
+    auto argsPtr = reinterpret_cast<unsigned long*>(aArgs.args[1]);
+    return DoSyscall(__NR_getsockopt, argsPtr[0], argsPtr[1], argsPtr[2],
+                     argsPtr[3], argsPtr[4]);
+#else
+    MOZ_CRASH("unreachable?");
+    return -ENOSYS;
+#endif
+  }
+
  public:
   ResultExpr InvalidSyscall() const override {
     return Trap(BlockedSyscallTrap, nullptr);
@@ -543,6 +554,22 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
                    
                    .Case(SOCK_DGRAM, Trap(SocketpairDatagramTrap, nullptr))
                    .Default(InvalidSyscall()))
+                .Else(InvalidSyscall()));
+      }
+
+      case SYS_GETSOCKOPT: {
+        
+        if (!aHasArgs) {
+          if (HasSeparateSocketCalls()) {
+            return Some(Trap(GetSockOptUnpackTrap, nullptr));
+          }
+          return Some(Allow());
+        }
+        Arg<int> level(1), optname(2);
+        
+        
+        return Some(
+            If(AllOf(level == SOL_SOCKET, optname == SO_SNDBUF), Allow())
                 .Else(InvalidSyscall()));
       }
 
