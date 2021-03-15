@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=596511
+-->
 <head>
   <title>Test for Bug 596511</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -171,7 +171,7 @@ function checkInvalidWhenValueMissing(element)
   select.add(option, null);
   select.add(new Option("bar"), null);
   option.selected = true;
-  checkSufferingFromBeingMissing(select);
+  checkNotSufferingFromBeingMissing(select);
 
   select.remove(0);
   select.remove(0);
