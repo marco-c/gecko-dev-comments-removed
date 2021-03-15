@@ -480,8 +480,6 @@ class SourceListener : public SupportsWeakPtr {
 
   
   
-  
-  
   UniquePtr<DeviceState> mAudioDeviceState;
   UniquePtr<DeviceState> mVideoDeviceState;
 };
@@ -735,8 +733,7 @@ class GetUserMediaWindowListener {
     for (auto& l : mActiveListeners) {
       if (RefPtr<MediaDevice> device = l->GetAudioDevice()) {
         aOutDevices->AppendElement(device);
-      }
-      if (RefPtr<MediaDevice> device = l->GetVideoDevice()) {
+      } else if (RefPtr<MediaDevice> device = l->GetVideoDevice()) {
         aOutDevices->AppendElement(device);
       }
     }
