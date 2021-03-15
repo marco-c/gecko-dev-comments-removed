@@ -4,8 +4,8 @@
 
 
 
-#ifndef DOM_QUOTA_ORIGINMETADATA_H_
-#define DOM_QUOTA_ORIGINMETADATA_H_
+#ifndef DOM_QUOTA_COMMONMETADATA_H_
+#define DOM_QUOTA_COMMONMETADATA_H_
 
 #include <utility>
 #include "mozilla/dom/quota/PersistenceType.h"
