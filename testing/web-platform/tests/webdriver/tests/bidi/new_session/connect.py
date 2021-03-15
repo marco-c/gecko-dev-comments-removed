@@ -1,43 +1,35 @@
 import pytest
 import asyncio
 import websockets
+import webdriver
+
 
 
 @pytest.mark.asyncio
 @pytest.mark.capabilities({"webSocketUrl": True})
 async def test_websocket_url_connect(session):
+    assert not isinstance(session, webdriver.BidiSession)
     websocket_url = session.capabilities["webSocketUrl"]
     async with websockets.connect(websocket_url) as websocket:
         await websocket.send("Hello world!")
-        await websocket.close()
-
-
-
-
-@pytest.mark.asyncio
-@pytest.mark.bidi(True)
-async def test_bidi_session_1(session):
-    await session.websocket_transport.send("test_bidi_session_1")
-    await session.websocket_transport.close()
 
 
 
 @pytest.mark.asyncio
-@pytest.mark.bidi(True)
-async def test_bidi_session_2(session):
-    await session.websocket_transport.send("test_bidi_session_2")
-    await session.websocket_transport.close()
+async def test_bidi_session_send(bidi_session):
+    await bidi_session.websocket_transport.send("test_bidi_session: send")
 
 
 
 @pytest.mark.asyncio
-@pytest.mark.bidi(True)
 @pytest.mark.capabilities({"acceptInsecureCerts": True})
-async def test_bidi_session_3(session):
-    await session.websocket_transport.send("test_bidi_session_3")
+async def test_bidi_session_with_different_capability(bidi_session):
+    await bidi_session.websocket_transport.send("test_bidi_session: different capability")
+
+
 
 
 
 @pytest.mark.asyncio
-async def test_classic(session):
-    pass
+def test_classic_after_bidi_session(session):
+    assert not isinstance(session, webdriver.BidiSession)
