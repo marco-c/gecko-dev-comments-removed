@@ -5,9 +5,6 @@
 
 
 
-const { TargetList } = require("devtools/shared/resources/target-list");
-const { TYPES } = TargetList;
-
 const FISSION_TEST_URL = URL_ROOT_SSL + "fission_document.html";
 const IFRAME_FILE = "fission_iframe.html";
 const REMOTE_IFRAME_URL = URL_ROOT_ORG_SSL + IFRAME_FILE;
@@ -31,7 +28,7 @@ add_task(async function() {
   await addTab(`${FISSION_TEST_URL}?id=first-untargetted-tab&noServiceWorker`);
   await addTab(`${FISSION_TEST_URL}?id=second-untargetted-tab&noServiceWorker`);
 
-  info("Test TargetList against workers via a tab target");
+  info("Test TargetCommand against workers via a tab target");
   const tab = await addTab(`${FISSION_TEST_URL}?&noServiceWorker`);
 
   
@@ -43,7 +40,9 @@ add_task(async function() {
   
   await target.attach();
 
-  const targetList = new TargetList(target.descriptorFront);
+  const commands = await descriptor.getCommands();
+  const targetList = commands.targetCommand;
+  const { TYPES } = targetList;
 
   
   

@@ -5,7 +5,6 @@
 
 
 
-const { TargetList } = require("devtools/shared/resources/target-list");
 const {
   ResourceWatcher,
 } = require("devtools/shared/resources/resource-watcher");
@@ -21,15 +20,10 @@ async function testDocumentEventResources() {
   
   const tab = await addTab("data:text/html,Document Events");
 
-  
-  const client = await createLocalClient();
-  const descriptor = await client.mainRoot.getTab({ tab });
-  const targetList = new TargetList(descriptor);
-  await targetList.startListening();
-
-  
   const listener = new ResourceListener();
-  const resourceWatcher = new ResourceWatcher(targetList);
+  const { client, resourceWatcher, targetList } = await initResourceWatcher(
+    tab
+  );
 
   info(
     "Check whether the document events are fired correctly even when the document was already loaded"

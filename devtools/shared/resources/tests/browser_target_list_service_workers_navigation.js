@@ -8,9 +8,6 @@
 
 
 
-const { TargetList } = require("devtools/shared/resources/target-list");
-const { TYPES } = TargetList;
-
 const COM_PAGE_URL = URL_ROOT_SSL + "test_sw_page.html";
 const COM_WORKER_URL = URL_ROOT_SSL + "test_sw_page_worker.js";
 const ORG_PAGE_URL = URL_ROOT_ORG_SSL + "test_sw_page.html";
@@ -307,7 +304,8 @@ async function watchServiceWorkerTargets({
 }) {
   info("Create a target list for a tab target");
   const descriptor = await mainRoot.getTab({ tab });
-  const targetList = new TargetList(descriptor);
+  const commands = await descriptor.getCommands();
+  const targetList = commands.targetCommand;
 
   
   targetList.listenForServiceWorkers = true;
@@ -337,7 +335,7 @@ async function watchServiceWorkerTargets({
   };
 
   await targetList.watchTargets(
-    [TYPES.SERVICE_WORKER],
+    [targetList.TYPES.SERVICE_WORKER],
     onAvailable,
     onDestroyed
   );

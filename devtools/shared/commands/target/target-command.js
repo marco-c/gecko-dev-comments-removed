@@ -22,7 +22,7 @@ const {
   LegacyWorkersWatcher,
 } = require("devtools/shared/resources/legacy-target-watchers/legacy-workers-watcher");
 
-class TargetList extends EventEmitter {
+class TargetCommand extends EventEmitter {
   
 
 
@@ -41,7 +41,7 @@ class TargetList extends EventEmitter {
 
 
 
-  constructor(descriptorFront) {
+  constructor({ descriptorFront }) {
     super();
 
     this.descriptorFront = descriptorFront;
@@ -125,7 +125,7 @@ class TargetList extends EventEmitter {
       
       if (targetFront != this.targetFront) {
         console.error(
-          "Target is already registered in the TargetList",
+          "Target is already registered in the TargetCommand",
           targetFront.actorID
         );
       }
@@ -265,25 +265,25 @@ class TargetList extends EventEmitter {
         BROWSERTOOLBOX_FISSION_ENABLED
       );
       if (fissionBrowserToolboxEnabled) {
-        types = TargetList.ALL_TYPES;
+        types = TargetCommand.ALL_TYPES;
       }
     } else if (this.descriptorFront.isLocalTab) {
-      types = [TargetList.TYPES.FRAME];
+      types = [TargetCommand.TYPES.FRAME];
     }
-    if (this.listenForWorkers && !types.includes(TargetList.TYPES.WORKER)) {
-      types.push(TargetList.TYPES.WORKER);
+    if (this.listenForWorkers && !types.includes(TargetCommand.TYPES.WORKER)) {
+      types.push(TargetCommand.TYPES.WORKER);
     }
     if (
       this.listenForWorkers &&
-      !types.includes(TargetList.TYPES.SHARED_WORKER)
+      !types.includes(TargetCommand.TYPES.SHARED_WORKER)
     ) {
-      types.push(TargetList.TYPES.SHARED_WORKER);
+      types.push(TargetCommand.TYPES.SHARED_WORKER);
     }
     if (
       this.listenForServiceWorkers &&
-      !types.includes(TargetList.TYPES.SERVICE_WORKER)
+      !types.includes(TargetCommand.TYPES.SERVICE_WORKER)
     ) {
-      types.push(TargetList.TYPES.SERVICE_WORKER);
+      types.push(TargetCommand.TYPES.SERVICE_WORKER);
     }
 
     
@@ -330,7 +330,7 @@ class TargetList extends EventEmitter {
 
 
   stopListening({ onlyLegacy = false } = {}) {
-    for (const type of TargetList.ALL_TYPES) {
+    for (const type of TargetCommand.ALL_TYPES) {
       if (!this._isListening(type)) {
         continue;
       }
@@ -358,26 +358,26 @@ class TargetList extends EventEmitter {
   getTargetType(target) {
     const { typeName } = target;
     if (typeName == "browsingContextTarget") {
-      return TargetList.TYPES.FRAME;
+      return TargetCommand.TYPES.FRAME;
     }
 
     if (
       typeName == "contentProcessTarget" ||
       typeName == "parentProcessTarget"
     ) {
-      return TargetList.TYPES.PROCESS;
+      return TargetCommand.TYPES.PROCESS;
     }
 
     if (typeName == "workerDescriptor" || typeName == "workerTarget") {
       if (target.isSharedWorker) {
-        return TargetList.TYPES.SHARED_WORKER;
+        return TargetCommand.TYPES.SHARED_WORKER;
       }
 
       if (target.isServiceWorker) {
-        return TargetList.TYPES.SERVICE_WORKER;
+        return TargetCommand.TYPES.SERVICE_WORKER;
       }
 
-      return TargetList.TYPES.WORKER;
+      return TargetCommand.TYPES.WORKER;
     }
 
     throw new Error("Unsupported target typeName: " + typeName);
@@ -405,7 +405,7 @@ class TargetList extends EventEmitter {
   async watchTargets(types, onAvailable, onDestroy) {
     if (typeof onAvailable != "function") {
       throw new Error(
-        "TargetList.watchTargets expects a function as second argument"
+        "TargetCommand.watchTargets expects a function as second argument"
       );
     }
 
@@ -477,7 +477,7 @@ class TargetList extends EventEmitter {
   unwatchTargets(types, onAvailable, onDestroy) {
     if (typeof onAvailable != "function") {
       throw new Error(
-        "TargetList.unwatchTargets expects a function as second argument"
+        "TargetCommand.unwatchTargets expects a function as second argument"
       );
     }
 
@@ -628,15 +628,15 @@ class TargetList extends EventEmitter {
 
 
 
-TargetList.TYPES = TargetList.prototype.TYPES = {
+TargetCommand.TYPES = TargetCommand.prototype.TYPES = {
   PROCESS: "process",
   FRAME: "frame",
   WORKER: "worker",
   SHARED_WORKER: "shared_worker",
   SERVICE_WORKER: "service_worker",
 };
-TargetList.ALL_TYPES = TargetList.prototype.ALL_TYPES = Object.values(
-  TargetList.TYPES
+TargetCommand.ALL_TYPES = TargetCommand.prototype.ALL_TYPES = Object.values(
+  TargetCommand.TYPES
 );
 
-module.exports = { TargetList };
+module.exports = TargetCommand;

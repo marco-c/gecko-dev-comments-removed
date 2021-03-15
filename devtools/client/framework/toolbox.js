@@ -36,7 +36,6 @@ var Startup = Cc["@mozilla.org/devtools/startup-clh;1"].getService(
   Ci.nsISupports
 ).wrappedJSObject;
 
-const { TargetList } = require("devtools/shared/resources/target-list");
 const {
   ResourceWatcher,
 } = require("devtools/shared/resources/resource-watcher");
@@ -238,13 +237,6 @@ function Toolbox(
 
   this.descriptorFront = descriptorFront;
 
-  this.targetList = new TargetList(descriptorFront);
-  this.targetList.on(
-    "target-thread-wrong-order-on-resume",
-    this._onTargetThreadFrontResumeWrongOrder.bind(this)
-  );
-  this.resourceWatcher = new ResourceWatcher(this.targetList);
-
   
   
   
@@ -415,7 +407,10 @@ Toolbox.prototype = {
 
   get nodePicker() {
     if (!this._nodePicker) {
-      this._nodePicker = new NodePicker(this.targetList, this.selection);
+      this._nodePicker = new NodePicker(
+        this.commands.targetCommand,
+        this.selection
+      );
       this._nodePicker.on("picker-starting", this._onPickerStarting);
       this._nodePicker.on("picker-started", this._onPickerStarted);
       this._nodePicker.on("picker-stopped", this._onPickerStopped);
@@ -550,11 +545,11 @@ Toolbox.prototype = {
 
 
   get target() {
-    return this.targetList.targetFront;
+    return this.commands.targetCommand.targetFront;
   },
 
   get threadFront() {
-    return this.targetList.targetFront.threadFront;
+    return this.commands.targetCommand.targetFront.threadFront;
   },
 
   
@@ -787,15 +782,25 @@ Toolbox.prototype = {
 
       
       
-      await this.targetList.startListening();
+      this.targetList = this.commands.targetCommand;
+
+      this.commands.targetCommand.on(
+        "target-thread-wrong-order-on-resume",
+        this._onTargetThreadFrontResumeWrongOrder.bind(this)
+      );
+
+      this.resourceWatcher = new ResourceWatcher(this.commands.targetCommand);
+
+      
+      
+      await this.commands.targetCommand.startListening();
       
       
       
       
       
-      
-      await this.targetList.watchTargets(
-        TargetList.ALL_TYPES,
+      await this.commands.targetCommand.watchTargets(
+        this.commands.targetCommand.ALL_TYPES,
         this._onTargetAvailable,
         this._onTargetDestroyed
       );
@@ -941,7 +946,9 @@ Toolbox.prototype = {
         
         
         
-        await this.targetList.updateConfiguration({ restoreFocus: true });
+        await this.commands.targetCommand.updateConfiguration({
+          restoreFocus: true,
+        });
       }
 
       
@@ -2074,7 +2081,7 @@ Toolbox.prototype = {
     const pref = "devtools.cache.disabled";
     const cacheDisabled = Services.prefs.getBoolPref(pref);
 
-    await this.targetList.updateConfiguration({ cacheDisabled });
+    await this.commands.targetCommand.updateConfiguration({ cacheDisabled });
 
     
     if (flags.testing) {
@@ -2089,7 +2096,9 @@ Toolbox.prototype = {
   _applyServiceWorkersTestingSettings: function() {
     const pref = "devtools.serviceWorkers.testing.enabled";
     const serviceWorkersTestingEnabled = Services.prefs.getBoolPref(pref);
-    this.targetList.updateConfiguration({ serviceWorkersTestingEnabled });
+    this.commands.targetCommand.updateConfiguration({
+      serviceWorkersTestingEnabled,
+    });
   },
 
   
@@ -2098,7 +2107,7 @@ Toolbox.prototype = {
 
   _applyJavascriptEnabledSettings: function() {
     const javascriptEnabled = this.target._javascriptEnabled;
-    this.targetList.updateConfiguration({ javascriptEnabled });
+    this.commands.targetCommand.updateConfiguration({ javascriptEnabled });
   },
 
   
@@ -2143,7 +2152,7 @@ Toolbox.prototype = {
       this.telemetry.toolClosed("paintflashing", this.sessionId, this);
     }
     this.isPaintFlashing = !this.isPaintFlashing;
-    return this.targetList.updateConfiguration({
+    return this.commands.targetCommand.updateConfiguration({
       paintFlashing: this.isPaintFlashing,
     });
   },
@@ -3746,8 +3755,8 @@ Toolbox.prototype = {
     
     outstanding.push(this.resetPreference());
 
-    this.targetList.unwatchTargets(
-      TargetList.ALL_TYPES,
+    this.commands.targetCommand.unwatchTargets(
+      this.commands.targetCommand.ALL_TYPES,
       this._onTargetAvailable,
       this._onTargetDestroyed
     );
@@ -3826,7 +3835,7 @@ Toolbox.prototype = {
             
             
             
-            this.targetList.destroy();
+            this.commands.targetCommand.destroy();
             return this.target.destroy();
           }, console.error)
           .then(() => {

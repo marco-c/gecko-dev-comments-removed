@@ -7,7 +7,9 @@
 
 
 
-const Commands = {};
+const Commands = {
+  targetCommand: "devtools/shared/commands/target/target-command",
+};
 
 
 
@@ -24,7 +26,7 @@ async function createCommandsDictionary(descriptorFront) {
   const dictionary = {};
   for (const name in Commands) {
     loader.lazyGetter(dictionary, name, () => {
-      const Constructor = require(Commands[name])[name];
+      const Constructor = require(Commands[name]);
       return new Constructor({
         
         commands: dictionary,

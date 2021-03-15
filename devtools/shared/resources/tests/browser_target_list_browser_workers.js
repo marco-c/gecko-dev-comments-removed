@@ -5,9 +5,6 @@
 
 
 
-const { TargetList } = require("devtools/shared/resources/target-list");
-const { TYPES } = TargetList;
-
 const FISSION_TEST_URL = URL_ROOT_SSL + "fission_document.html";
 const WORKER_FILE = "test_worker.js";
 const CHROME_WORKER_URL = CHROME_URL_ROOT + WORKER_FILE;
@@ -25,7 +22,7 @@ add_task(async function() {
   const mainRoot = client.mainRoot;
   const tab = await addTab(FISSION_TEST_URL);
 
-  info("Test TargetList against workers via the parent process target");
+  info("Test TargetCommand against workers via the parent process target");
 
   
   
@@ -34,7 +31,9 @@ add_task(async function() {
   const sharedWorker = new SharedWorker(CHROME_WORKER_URL + "#shared-worker");
 
   const targetDescriptor = await mainRoot.getMainProcess();
-  const targetList = new TargetList(targetDescriptor);
+  const commands = await targetDescriptor.getCommands();
+  const targetList = commands.targetCommand;
+  const { TYPES } = targetList;
   await targetList.startListening();
 
   

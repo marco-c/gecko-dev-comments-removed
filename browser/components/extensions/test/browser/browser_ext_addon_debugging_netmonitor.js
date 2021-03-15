@@ -69,9 +69,12 @@ async function setupToolboxTest(extensionId) {
     `testNetworkRequestReceived(${JSON.stringify(requests)});`
   );
 
-  const onToolboxClosed = gDevTools.once("toolbox-destroyed");
   await toolbox.destroy();
-  return onToolboxClosed;
+
+  
+  
+  
+  await client.close();
 }
 
 add_task(async function test_addon_debugging_netmonitor_panel() {
