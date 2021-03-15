@@ -890,7 +890,7 @@ static void linear_row_yuv(uint32_t* dest, int span, sampler2DRect samplerY,
 
     
     
-    if (yDU >= cDU && yDU <= (4 << (STEP_BITS + 7)) &&
+    if (yDU >= cDU && cDU > 0 && yDU <= (4 << (STEP_BITS + 7)) &&
         cDU <= (2 << (STEP_BITS + 7))) {
       
       
