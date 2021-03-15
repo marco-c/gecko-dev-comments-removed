@@ -149,12 +149,12 @@ void TypeInState::PostHandleSelectionChangeCommand(
   
   if (AreSomeStylesSet() ||
       (AreSomeStylesCleared() && !IsOnlyLinkStyleCleared())) {
-    ClearProp(nsGkAtoms::a, nullptr);
+    ClearLinkPropAndDiscardItsSpecifiedStyle();
     return;
   }
 
   Reset();
-  ClearProp(nsGkAtoms::a, nullptr);
+  ClearLinkPropAndDiscardItsSpecifiedStyle();
 }
 
 void TypeInState::OnSelectionChange(const HTMLEditor& aHTMLEditor,
@@ -328,7 +328,7 @@ void TypeInState::OnSelectionChange(const HTMLEditor& aHTMLEditor,
   if (resetAllStyles) {
     Reset();
     if (unlink) {
-      ClearProp(nsGkAtoms::a, nullptr);
+      ClearLinkPropAndDiscardItsSpecifiedStyle();
     }
     return;
   }
@@ -340,7 +340,7 @@ void TypeInState::OnSelectionChange(const HTMLEditor& aHTMLEditor,
   
   
   if (unlink) {
-    ClearProp(nsGkAtoms::a, nullptr);
+    ClearLinkPropAndDiscardItsSpecifiedStyle();
   } else if (!unlink) {
     RemovePropFromClearedList(nsGkAtoms::a, nullptr);
   }
@@ -402,6 +402,15 @@ void TypeInState::ClearProp(nsAtom* aProp, nsAtom* aAttr) {
 
   
   mClearedArray.AppendElement(item);
+}
+
+void TypeInState::ClearLinkPropAndDiscardItsSpecifiedStyle() {
+  ClearProp(nsGkAtoms::a, nullptr);
+  int32_t index = -1;
+  MOZ_ALWAYS_TRUE(IsPropCleared(nsGkAtoms::a, nullptr, index));
+  if (index >= 0) {
+    mClearedArray[index]->specifiedStyle = SpecifiedStyle::Discard;
+  }
 }
 
 

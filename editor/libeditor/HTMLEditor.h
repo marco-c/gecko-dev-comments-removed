@@ -63,6 +63,7 @@ class WhiteSpaceVisibilityKeeper;
 class WSRunScanner;
 class WSScanResult;
 enum class EditSubAction : int32_t;
+enum class SpecifiedStyle : uint8_t;
 struct PropItem;
 template <class T>
 class OwningNonNull;
@@ -1134,8 +1135,11 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditResult ClearStyleAt(
-      const EditorDOMPoint& aPoint, nsAtom* aProperty, nsAtom* aAttribute);
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditResult
+  ClearStyleAt(const EditorDOMPoint& aPoint, nsAtom* aProperty,
+               nsAtom* aAttribute, SpecifiedStyle aSpecifiedStyle);
 
   MOZ_CAN_RUN_SCRIPT nsresult SetPositionToAbsolute(Element& aElement);
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
@@ -4299,8 +4303,12 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  RemoveStyleInside(Element& aElement, nsAtom* aProperty, nsAtom* aAttribute);
+  RemoveStyleInside(Element& aElement, nsAtom* aProperty, nsAtom* aAttribute,
+                    SpecifiedStyle aSpecifiedStyle);
 
   
 
