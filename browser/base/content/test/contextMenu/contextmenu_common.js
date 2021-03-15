@@ -86,7 +86,8 @@ function getVisibleMenuItems(aMenu, aData) {
         item.id != "fill-login-no-logins" &&
         
         
-        item.id != "context-inspect-a11y"
+        item.id != "context-inspect-a11y" &&
+        !item.id.includes("context-media-playbackrate")
       ) {
         if (item.id != FRAME_OS_PID) {
           ok(key, "menuitem " + item.id + " has an access key");
