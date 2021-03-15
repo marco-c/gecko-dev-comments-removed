@@ -112,7 +112,13 @@ class TargetList extends EventEmitter {
   
   
   
-  async _onTargetAvailable(targetFront, isTargetSwitching = false) {
+  async _onTargetAvailable(targetFront) {
+    
+    
+    
+    
+    const isTargetSwitching = targetFront.isTopLevel;
+
     if (this._targets.has(targetFront)) {
       
       
@@ -556,10 +562,8 @@ class TargetList extends EventEmitter {
 
 
   async switchToTarget(newTarget) {
-    newTarget.setIsTopLevel(true);
-
     
-    await this._onTargetAvailable(newTarget, true);
+    await this._onTargetAvailable(newTarget);
 
     this.emit("switched-target", newTarget);
   }

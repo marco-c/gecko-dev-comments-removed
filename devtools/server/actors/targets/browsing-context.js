@@ -552,6 +552,7 @@ const browsingContextTargetPrototype = {
     const response = {
       actor: this.actorID,
       browsingContextID: this.browsingContextID,
+      isTopLevelTarget: this.isTopLevelTarget,
       traits: {
         
         
@@ -559,6 +560,11 @@ const browsingContextTargetPrototype = {
         
         
         reconfigureSupportsSimulationFeatures: true,
+        
+        
+        
+        
+        supportsTopLevelTargetFlag: true,
       },
     };
 

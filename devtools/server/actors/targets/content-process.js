@@ -156,6 +156,8 @@ const ContentProcessTargetActor = TargetActorMixin(
 
         traits: {
           networkMonitor: false,
+          
+          supportsTopLevelTargetFlag: false,
         },
       };
     },
