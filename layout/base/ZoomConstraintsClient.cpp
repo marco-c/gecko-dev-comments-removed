@@ -223,7 +223,16 @@ void ZoomConstraintsClient::RefreshZoomConstraints() {
     mZoomConstraints.mAllowDoubleTapZoom = false;
   }
 
-  if (mZoomConstraints.mAllowDoubleTapZoom) {
+  
+  
+  
+  
+  bool allow_double_tap_always = false;
+#ifdef XP_MACOSX
+  allow_double_tap_always =
+      StaticPrefs::apz_mac_enable_double_tap_zoom_touchpad_gesture();
+#endif
+  if (!allow_double_tap_always && mZoomConstraints.mAllowDoubleTapZoom) {
     
     
     CSSToLayoutDeviceScale scale =

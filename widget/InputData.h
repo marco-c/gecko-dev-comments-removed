@@ -589,6 +589,8 @@ class TapGestureInput : public InputData {
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
 
+  WidgetSimpleGestureEvent ToWidgetEvent(nsIWidget* aWidget) const;
+
   
   
   TapGestureType mType;
