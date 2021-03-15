@@ -2972,8 +2972,6 @@ void MacroAssembler::callWithABINoProfiler(void* fun, MoveOp::Type result,
     Address flagAddr(ReturnReg, JSContext::offsetOfInUnsafeCallWithABI());
     store32(Imm32(1), flagAddr);
     pop(ReturnReg);
-    
-    
   }
 #endif
 
@@ -2991,8 +2989,6 @@ void MacroAssembler::callWithABINoProfiler(void* fun, MoveOp::Type result,
     assumeUnreachable("callWithABI: callee did not use AutoUnsafeCallWithABI");
     bind(&ok);
     pop(ReturnReg);
-    
-    
   }
 #endif
 }

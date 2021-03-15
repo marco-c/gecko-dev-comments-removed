@@ -587,16 +587,9 @@ static const unsigned WasmPushSize = sizeof(void*);
 static const unsigned FramePushedBeforeAlign =
     NonVolatileRegsPushSize + NumExtraPushed * WasmPushSize;
 
-static void AssertExpectedSP(MacroAssembler& masm) {
+static void AssertExpectedSP(const MacroAssembler& masm) {
 #ifdef JS_CODEGEN_ARM64
   MOZ_ASSERT(sp.Is(masm.GetStackPointer64()));
-#  ifdef DEBUG
-  
-  
-  
-  
-  masm.asVIXL().Mov(PseudoStackPointer64, 1);
-#  endif
 #endif
 }
 
@@ -631,7 +624,6 @@ static void MoveSPForJitABI(MacroAssembler& masm) {
 static void CallFuncExport(MacroAssembler& masm, const FuncExport& fe,
                            const Maybe<ImmPtr>& funcPtr) {
   MOZ_ASSERT(fe.hasEagerStubs() == !funcPtr);
-  MoveSPForJitABI(masm);
   if (funcPtr) {
     masm.call(*funcPtr);
   } else {
@@ -1391,13 +1383,8 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
 
   MOZ_ASSERT(masm.framePushed() == 0);
 #ifdef JS_CODEGEN_ARM64
-  AssertExpectedSP(masm);
   masm.loadPtr(Address(sp, 0), lr);
   masm.addToStackPtr(Imm32(8));
-  
-  
-  
-  
   masm.moveStackPtrTo(PseudoStackPointer);
   masm.abiret();
 #else
@@ -1631,7 +1618,6 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   void* callee = codeTier.segment().base() + codeRange.funcUncheckedCallEntry();
 
   masm.assertStackAlignment(WasmStackAlignment);
-  MoveSPForJitABI(masm);
   masm.callJit(ImmPtr(callee));
 #ifdef JS_CODEGEN_ARM64
   
@@ -2337,14 +2323,10 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   AssertStackAlignment(masm, JitStackAlignment,
                        sizeOfRetAddr + frameAlignExtra);
 #ifdef JS_CODEGEN_ARM64
-  AssertExpectedSP(masm);
-  
   
   masm.addToStackPtr(Imm32(8));
-  
-  
-  masm.moveStackPtrTo(PseudoStackPointer);
 #endif
+  MoveSPForJitABI(masm);
   masm.callJitNoProfiler(callee);
 #ifdef JS_CODEGEN_ARM64
   
@@ -2691,7 +2673,7 @@ static const LiveRegisterSet RegsToPreserve(
 
 static const LiveRegisterSet RegsToPreserve(
     GeneralRegisterSet(Registers::AllMask &
-                       ~((Registers::SetType(1) << RealStackPointer.code()) |
+                       ~((Registers::SetType(1) << Registers::StackPointer) |
                          (Registers::SetType(1) << Registers::lr))),
     FloatRegisterSet(FloatRegisters::AllDoubleMask));
 #elif defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)

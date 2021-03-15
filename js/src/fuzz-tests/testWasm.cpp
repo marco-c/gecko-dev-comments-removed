@@ -144,13 +144,7 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
       
       bool enableWasmBaseline = ((optByte & 0xF0) == (1 << 7));
       bool enableWasmOptimizing = false;
-#ifdef JS_CODEGEN_ARM64
-      
-      bool forceWasmIon = false;
-#endif
 #ifdef ENABLE_WASM_CRANELIFT
-      
-      forceWasmIon = IonPlatformSupport() && ((optByte & 0xF0) == (1 << 6));
       enableWasmOptimizing =
           CraneliftPlatformSupport() && ((optByte & 0xF0) == (1 << 5));
 #else
@@ -188,8 +182,7 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
       JS::ContextOptionsRef(gCx)
           .setWasmBaseline(enableWasmBaseline)
 #ifdef ENABLE_WASM_CRANELIFT
-          .setWasmCranelift(enableWasmOptimizing && !forceWasmIon)
-          .setWasmIon(forceWasmIon)
+          .setWasmCranelift(enableWasmOptimizing)
 #else
           .setWasmIon(enableWasmOptimizing)
 #endif

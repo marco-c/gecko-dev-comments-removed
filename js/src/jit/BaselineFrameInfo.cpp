@@ -149,8 +149,6 @@ void CompilerFrameInfo::popRegsAndSync(uint32_t uses) {
     default:
       MOZ_CRASH("Invalid uses");
   }
-  
-  
 }
 
 void InterpreterFrameInfo::popRegsAndSync(uint32_t uses) {
@@ -166,8 +164,6 @@ void InterpreterFrameInfo::popRegsAndSync(uint32_t uses) {
     default:
       MOZ_CRASH("Invalid uses");
   }
-  
-  
 }
 
 void InterpreterFrameInfo::bumpInterpreterICEntry() {

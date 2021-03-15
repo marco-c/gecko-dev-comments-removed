@@ -899,13 +899,6 @@ static bool WasmCompilersPresent(JSContext* cx, unsigned argc, Value* vp) {
     }
     strcat(buf, "cranelift");
   }
-  
-  if (wasm::IonPlatformSupport()) {
-    if (*buf) {
-      strcat(buf, ",");
-    }
-    strcat(buf, "ion");
-  }
 #else
   if (wasm::IonPlatformSupport()) {
     if (*buf) {

@@ -163,15 +163,13 @@ void MacroAssemblerCompat::loadPrivate(const Address& src, Register dest) {
 void MacroAssemblerCompat::handleFailureWithHandlerTail(
     Label* profilerExitTail) {
   
-  MOZ_RELEASE_ASSERT(GetStackPointer64().Is(PseudoStackPointer64));
-
-  
   int64_t size = (sizeof(ResumeFromException) + 7) & ~7;
-  Sub(PseudoStackPointer64, PseudoStackPointer64, Operand(size));
-  syncStackPtr();
+  Sub(GetStackPointer64(), GetStackPointer64(), Operand(size));
+  if (!GetStackPointer64().Is(sp)) {
+    Mov(sp, GetStackPointer64());
+  }
 
-  MOZ_ASSERT(!x0.Is(PseudoStackPointer64));
-  Mov(x0, PseudoStackPointer64);
+  Mov(x0, GetStackPointer64());
 
   
   using Fn = void (*)(ResumeFromException * rfe);
@@ -188,10 +186,10 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   Label wasm;
   Label wasmCatch;
 
-  
-  MOZ_ASSERT(GetStackPointer64().Is(PseudoStackPointer64));
+  MOZ_ASSERT(
+      GetStackPointer64().Is(x28));  
 
-  loadPtr(Address(PseudoStackPointer, offsetof(ResumeFromException, kind)), r0);
+  loadPtr(Address(r28, offsetof(ResumeFromException, kind)), r0);
   asMasm().branch32(Assembler::Equal, r0,
                     Imm32(ResumeFromException::RESUME_ENTRY_FRAME),
                     &entryFrame);
@@ -214,34 +212,16 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   
   bind(&entryFrame);
   moveValue(MagicValue(JS_ION_ERROR), JSReturnOperand);
-  loadPtr(
-      Address(PseudoStackPointer, offsetof(ResumeFromException, stackPointer)),
-      PseudoStackPointer);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  syncStackPtr();
+  loadPtr(Address(r28, offsetof(ResumeFromException, stackPointer)), r28);
   retn(Imm32(1 * sizeof(void*)));  
 
   
   
   bind(&catch_);
-  loadPtr(Address(PseudoStackPointer, offsetof(ResumeFromException, target)),
-          r0);
-  loadPtr(
-      Address(PseudoStackPointer, offsetof(ResumeFromException, framePointer)),
-      BaselineFrameReg);
-  loadPtr(
-      Address(PseudoStackPointer, offsetof(ResumeFromException, stackPointer)),
-      PseudoStackPointer);
+  loadPtr(Address(r28, offsetof(ResumeFromException, target)), r0);
+  loadPtr(Address(r28, offsetof(ResumeFromException, framePointer)),
+          BaselineFrameReg);
+  loadPtr(Address(r28, offsetof(ResumeFromException, stackPointer)), r28);
   syncStackPtr();
   Br(x0);
 
@@ -250,15 +230,15 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   
   bind(&finally);
   ARMRegister exception = x1;
-  Ldr(exception, MemOperand(PseudoStackPointer64,
+  Ldr(exception, MemOperand(GetStackPointer64(),
                             offsetof(ResumeFromException, exception)));
   Ldr(x0,
-      MemOperand(PseudoStackPointer64, offsetof(ResumeFromException, target)));
+      MemOperand(GetStackPointer64(), offsetof(ResumeFromException, target)));
   Ldr(ARMRegister(BaselineFrameReg, 64),
-      MemOperand(PseudoStackPointer64,
+      MemOperand(GetStackPointer64(),
                  offsetof(ResumeFromException, framePointer)));
-  Ldr(PseudoStackPointer64,
-      MemOperand(PseudoStackPointer64,
+  Ldr(GetStackPointer64(),
+      MemOperand(GetStackPointer64(),
                  offsetof(ResumeFromException, stackPointer)));
   syncStackPtr();
   pushValue(BooleanValue(true));
@@ -267,20 +247,13 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
 
   
   bind(&return_);
-  loadPtr(
-      Address(PseudoStackPointer, offsetof(ResumeFromException, framePointer)),
-      BaselineFrameReg);
-  loadPtr(
-      Address(PseudoStackPointer, offsetof(ResumeFromException, stackPointer)),
-      PseudoStackPointer);
-  
-  
-  syncStackPtr();
+  loadPtr(Address(r28, offsetof(ResumeFromException, framePointer)),
+          BaselineFrameReg);
+  loadPtr(Address(r28, offsetof(ResumeFromException, stackPointer)), r28);
   loadValue(
       Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfReturnValue()),
       JSReturnOperand);
-  movePtr(BaselineFrameReg, PseudoStackPointer);
-  syncStackPtr();
+  movePtr(BaselineFrameReg, r28);
   vixl::MacroAssembler::Pop(ARMRegister(BaselineFrameReg, 64));
 
   
@@ -302,10 +275,10 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   
   
   bind(&bailout);
-  Ldr(x2, MemOperand(PseudoStackPointer64,
+  Ldr(x2, MemOperand(GetStackPointer64(),
                      offsetof(ResumeFromException, bailoutInfo)));
   Ldr(x1,
-      MemOperand(PseudoStackPointer64, offsetof(ResumeFromException, target)));
+      MemOperand(GetStackPointer64(), offsetof(ResumeFromException, target)));
   Mov(x0, 1);
   Br(x1);
 
@@ -313,28 +286,20 @@ void MacroAssemblerCompat::handleFailureWithHandlerTail(
   
   
   bind(&wasm);
-  Ldr(x29, MemOperand(PseudoStackPointer64,
+  Ldr(x29, MemOperand(GetStackPointer64(),
                       offsetof(ResumeFromException, framePointer)));
-  Ldr(PseudoStackPointer64,
-      MemOperand(PseudoStackPointer64,
-                 offsetof(ResumeFromException, stackPointer)));
+  Ldr(x28, MemOperand(GetStackPointer64(),
+                      offsetof(ResumeFromException, stackPointer)));
   syncStackPtr();
   ret();
 
   
   bind(&wasmCatch);
-  loadPtr(Address(PseudoStackPointer, offsetof(ResumeFromException, target)),
-          r0);
-  loadPtr(
-      Address(PseudoStackPointer, offsetof(ResumeFromException, framePointer)),
-      r29);
-  loadPtr(
-      Address(PseudoStackPointer, offsetof(ResumeFromException, stackPointer)),
-      PseudoStackPointer);
+  loadPtr(Address(r28, offsetof(ResumeFromException, target)), r0);
+  loadPtr(Address(r28, offsetof(ResumeFromException, framePointer)), r29);
+  loadPtr(Address(r28, offsetof(ResumeFromException, stackPointer)), r28);
   syncStackPtr();
   Br(x0);
-
-  MOZ_ASSERT(GetStackPointer64().Is(PseudoStackPointer64));
 }
 
 void MacroAssemblerCompat::profilerEnterFrame(Register framePtr,
@@ -1042,24 +1007,20 @@ void MacroAssembler::Pop(const ValueOperand& val) {
 
 
 CodeOffset MacroAssembler::call(Register reg) {
-  
-  
   syncStackPtr();
   Blr(ARMRegister(reg, 64));
   return CodeOffset(currentOffset());
 }
 
 CodeOffset MacroAssembler::call(Label* label) {
-  
-  
   syncStackPtr();
   Bl(label);
   return CodeOffset(currentOffset());
 }
 
+void MacroAssembler::call(ImmWord imm) { call(ImmPtr((void*)imm.value)); }
+
 void MacroAssembler::call(ImmPtr imm) {
-  
-  
   syncStackPtr();
   vixl::UseScratchRegisterScope temps(this);
   MOZ_ASSERT(temps.IsAvailable(ScratchReg64));  
@@ -1068,34 +1029,25 @@ void MacroAssembler::call(ImmPtr imm) {
   Blr(ScratchReg64);
 }
 
-void MacroAssembler::call(ImmWord imm) { call(ImmPtr((void*)imm.value)); }
-
 CodeOffset MacroAssembler::call(wasm::SymbolicAddress imm) {
   vixl::UseScratchRegisterScope temps(this);
   const Register scratch = temps.AcquireX().asUnsized();
-  
-  
   syncStackPtr();
   movePtr(imm, scratch);
-  Blr(ARMRegister(scratch, 64));
-  return CodeOffset(currentOffset());
+  return call(scratch);
 }
 
 void MacroAssembler::call(const Address& addr) {
   vixl::UseScratchRegisterScope temps(this);
   const Register scratch = temps.AcquireX().asUnsized();
-  
-  
   syncStackPtr();
   loadPtr(addr, scratch);
-  Blr(ARMRegister(scratch, 64));
+  call(scratch);
 }
 
 void MacroAssembler::call(JitCode* c) {
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch64 = temps.AcquireX();
-  
-  
   syncStackPtr();
   BufferOffset off = immPool64(scratch64, uint64_t(c->raw()));
   addPendingJump(off, ImmPtr(c->raw()), RelocationKind::JITCODE);
@@ -1103,15 +1055,6 @@ void MacroAssembler::call(JitCode* c) {
 }
 
 CodeOffset MacroAssembler::callWithPatch() {
-  
-  
-  
-  
-  
-  
-  
-  
-  syncStackPtr();
   bl(0, LabelDoc());
   return CodeOffset(currentOffset());
 }
@@ -1202,56 +1145,41 @@ void MacroAssembler::popReturnAddress() {
 
 
 void MacroAssembler::setupUnalignedABICall(Register scratch) {
-  
-  
-  MOZ_ASSERT(!IsCompilingWasm());
-
-  
-  MOZ_RELEASE_ASSERT(GetStackPointer64().Is(PseudoStackPointer64));
-
   setupNativeABICall();
   dynamicAlignment_ = true;
 
   int64_t alignment = ~(int64_t(ABIStackAlignment) - 1);
   ARMRegister scratch64(scratch, 64);
-  MOZ_ASSERT(!scratch64.Is(PseudoStackPointer64));
 
   
   push(lr);
 
   
-  
-  Mov(scratch64, PseudoStackPointer64);
+  MOZ_ASSERT(!GetStackPointer64().Is(sp));
 
   
-  Sub(PseudoStackPointer64, PseudoStackPointer64, Operand(8));
-  And(PseudoStackPointer64, PseudoStackPointer64, Operand(alignment));
+  Mov(scratch64, GetStackPointer64());
+
+  
+  Sub(GetStackPointer64(), GetStackPointer64(), Operand(8));
+  And(GetStackPointer64(), GetStackPointer64(), Operand(alignment));
+
+  
+  
   syncStackPtr();
 
   
-  
-  Str(scratch64, MemOperand(PseudoStackPointer64, 0));
+  Str(scratch64, MemOperand(GetStackPointer64(), 0));
 }
 
 void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
-  
-  MOZ_ASSERT(!(dynamicAlignment_ && callFromWasm));
-
   MOZ_ASSERT(inCall_);
   uint32_t stackForCall = abiArgs_.stackBytesConsumedSoFar();
 
   
-  if (dynamicAlignment_) {
-    stackForCall += ComputeByteAlignment(stackForCall, StackAlignment);
-  } else {
-    
-    
-    
-    uint32_t alignmentAtPrologue = callFromWasm ? sizeof(wasm::Frame) : 0;
-    stackForCall += ComputeByteAlignment(
-        stackForCall + framePushed() + alignmentAtPrologue, ABIStackAlignment);
-  }
-
+  
+  MOZ_ASSERT(dynamicAlignment_);
+  stackForCall += ComputeByteAlignment(stackForCall, StackAlignment);
   *stackAdjust = stackForCall;
   reserveStack(*stackAdjust);
   {
@@ -1265,48 +1193,29 @@ void MacroAssembler::callWithABIPre(uint32_t* stackAdjust, bool callFromWasm) {
   }
 
   
-  
-  
-  
   syncStackPtr();
 }
 
 void MacroAssembler::callWithABIPost(uint32_t stackAdjust, MoveOp::Type result,
                                      bool callFromWasm) {
   
-  MOZ_ASSERT(!(dynamicAlignment_ && callFromWasm));
-
-  
-  initPseudoStackPtr();
+  if (!GetStackPointer64().Is(sp)) {
+    Mov(GetStackPointer64(), sp);
+  }
 
   freeStack(stackAdjust);
 
+  
   if (dynamicAlignment_) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     Ldr(GetStackPointer64(), MemOperand(GetStackPointer64(), 0));
-    syncStackPtr();
-
-    
-    
-    
-    pop(lr);
-
-    
-    
-    
-    
-    syncStackPtr();
   }
+
+  
+  pop(lr);
+
+  
+  
+  syncStackPtr();
 
   
   
@@ -1843,7 +1752,7 @@ void MacroAssembler::enterFakeExitFrameForWasm(Register cxreg, Register scratch,
 
   linkExitFrame(cxreg, scratch);
 
-  MOZ_RELEASE_ASSERT(sp.Is(GetStackPointer64()));
+  MOZ_ASSERT(sp.Is(GetStackPointer64()));
 
   const ARMRegister tmp(scratch, 64);
 
@@ -1851,16 +1760,6 @@ void MacroAssembler::enterFakeExitFrameForWasm(Register cxreg, Register scratch,
   const ARMRegister tmp2 = temps.AcquireX();
 
   Sub(sp, sp, 8);
-
-  
-  
-  
-  
-  
-  
-  
-  Mov(PseudoStackPointer64, sp);
-
   Mov(tmp, sp);  
   Mov(tmp2, int32_t(type));
   Str(tmp2, vixl::MemOperand(tmp, 0));
