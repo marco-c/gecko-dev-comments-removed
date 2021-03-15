@@ -199,6 +199,12 @@ ScreenPoint ComputeFixedMarginsOffset(
 bool AboutToCheckerboard(const FrameMetrics& aPaintedMetrics,
                          const FrameMetrics& aCompositorMetrics);
 
+
+
+
+
+
+bool ShouldUseProgressivePaint();
 }  
 
 }  
