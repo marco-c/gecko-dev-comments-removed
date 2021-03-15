@@ -125,7 +125,7 @@ add_task(async function startup() {
     },
     "browser.proton.enabled": {
       min: 0,
-      max: 100, 
+      max: 50, 
     },
   };
 
