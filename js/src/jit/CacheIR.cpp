@@ -600,7 +600,7 @@ static NativeGetPropCacheability CanAttachNativeGetProp(
   return CanAttachNone;
 }
 
-static void GuardReceiverProto(CacheIRWriter& writer, JSObject* obj,
+static void GuardReceiverProto(CacheIRWriter& writer, NativeObject* obj,
                                ObjOperandId objId) {
   
   
@@ -724,8 +724,8 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   }
 }
 
-static void GeneratePrototypeHoleGuards(CacheIRWriter& writer, JSObject* obj,
-                                        ObjOperandId objId,
+static void GeneratePrototypeHoleGuards(CacheIRWriter& writer,
+                                        NativeObject* obj, ObjOperandId objId,
                                         bool alwaysGuardFirstProto) {
   if (alwaysGuardFirstProto) {
     GuardReceiverProto(writer, obj, objId);
@@ -766,7 +766,7 @@ static void TestMatchingHolder(CacheIRWriter& writer, JSObject* obj,
 
 
 
-static void ShapeGuardProtoChain(CacheIRWriter& writer, JSObject* obj,
+static void ShapeGuardProtoChain(CacheIRWriter& writer, NativeObject* obj,
                                  ObjOperandId objId) {
   while (true) {
     JSObject* proto = obj->staticPrototype();
@@ -774,10 +774,10 @@ static void ShapeGuardProtoChain(CacheIRWriter& writer, JSObject* obj,
       return;
     }
 
-    obj = proto;
+    obj = &proto->as<NativeObject>();
     objId = writer.loadProto(objId);
 
-    writer.guardShape(objId, obj->as<NativeObject>().shape());
+    writer.guardShape(objId, obj->shape());
   }
 }
 
@@ -3143,10 +3143,12 @@ AttachDecision HasPropIRGenerator::tryAttachSparse(HandleObject obj,
   if (!obj->is<NativeObject>()) {
     return AttachDecision::NoAction;
   }
-  if (!obj->as<NativeObject>().isIndexed()) {
+  auto* nobj = &obj->as<NativeObject>();
+
+  if (!nobj->isIndexed()) {
     return AttachDecision::NoAction;
   }
-  if (!CanAttachDenseElementHole(&obj->as<NativeObject>(), hasOwn,
+  if (!CanAttachDenseElementHole(nobj, hasOwn,
                                   true)) {
     return AttachDecision::NoAction;
   }
@@ -3157,7 +3159,7 @@ AttachDecision HasPropIRGenerator::tryAttachSparse(HandleObject obj,
   
   
   if (!hasOwn) {
-    GeneratePrototypeHoleGuards(writer, obj, objId,
+    GeneratePrototypeHoleGuards(writer, nobj, objId,
                                  true);
   }
 
@@ -4024,7 +4026,7 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElementHole(
 
   
   if (IsPropertySetOp(op)) {
-    ShapeGuardProtoChain(writer, obj, objId);
+    ShapeGuardProtoChain(writer, nobj, objId);
   }
 
   writer.storeDenseElementHole(objId, indexId, rhsId, isAdd);
@@ -4099,13 +4101,13 @@ AttachDecision SetPropIRGenerator::tryAttachAddOrUpdateSparseElement(
   
   
   
-  GuardReceiverProto(writer, obj, objId);
+  GuardReceiverProto(writer, aobj, objId);
 
   
   
   
   
-  ShapeGuardProtoChain(writer, obj, objId);
+  ShapeGuardProtoChain(writer, aobj, objId);
 
   
   
@@ -4528,9 +4530,10 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(HandleShape oldShape) {
   if (!obj->is<NativeObject>()) {
     return AttachDecision::NoAction;
   }
+  auto* nobj = &obj->as<NativeObject>();
 
   Shape* propShape = prop.shape();
-  NativeObject* holder = &obj->as<NativeObject>();
+  NativeObject* holder = nobj;
 
   MOZ_ASSERT(propShape);
 
@@ -4558,12 +4561,12 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(HandleShape oldShape) {
 
   
   
-  if (obj->is<JSFunction>() && JSID_IS_ATOM(id, cx_->names().prototype)) {
-    MOZ_ASSERT(obj->as<JSFunction>().isNonBuiltinConstructor());
+  if (nobj->is<JSFunction>() && JSID_IS_ATOM(id, cx_->names().prototype)) {
+    MOZ_ASSERT(nobj->as<JSFunction>().isNonBuiltinConstructor());
     writer.guardFunctionIsNonBuiltinCtor(objId);
   }
 
-  ShapeGuardProtoChain(writer, obj, objId);
+  ShapeGuardProtoChain(writer, nobj, objId);
 
   if (holder->isFixedSlot(propShape->slot())) {
     size_t offset = NativeObject::getFixedSlotOffset(propShape->slot());
@@ -4801,17 +4804,16 @@ AttachDecision GetIteratorIRGenerator::tryAttachNativeIterator(
   if (!iterobj) {
     return AttachDecision::NoAction;
   }
-
-  MOZ_ASSERT(obj->is<NativeObject>());
+  auto* nobj = &obj->as<NativeObject>();
 
   
-  TestMatchingNativeReceiver(writer, &obj->as<NativeObject>(), objId);
+  TestMatchingNativeReceiver(writer, nobj, objId);
 
   
   writer.guardNoDenseElements(objId);
 
   
-  GeneratePrototypeHoleGuards(writer, obj, objId,
+  GeneratePrototypeHoleGuards(writer, nobj, objId,
                                false);
 
   ObjOperandId iterId = writer.guardAndGetIterator(
@@ -5094,7 +5096,7 @@ AttachDecision CallIRGenerator::tryAttachArrayPush(HandleFunction callee) {
   TestMatchingNativeReceiver(writer, thisarray, thisObjId);
 
   
-  ShapeGuardProtoChain(writer, thisobj, thisObjId);
+  ShapeGuardProtoChain(writer, thisarray, thisObjId);
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
