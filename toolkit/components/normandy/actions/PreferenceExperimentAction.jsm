@@ -206,14 +206,26 @@ class PreferenceExperimentAction extends BaseStudyAction {
 
 
 
-  async _finalize() {
+  async _finalize({ noRecipes } = {}) {
     const activeExperiments = await PreferenceExperiments.getAllActive();
+
+    if (noRecipes && this.seenExperimentSlugs.size) {
+      throw new PreferenceExperimentAction.BadNoRecipesArg();
+    }
+
     return Promise.all(
       activeExperiments.map(experiment => {
         if (this.name != experiment.actionName) {
           
           
           return null;
+        }
+
+        if (noRecipes) {
+          return this._considerTemporaryError({
+            experiment,
+            reason: "no-recipes",
+          });
         }
 
         if (this.seenExperimentSlugs.includes(experiment.slug)) {
@@ -280,3 +292,7 @@ class PreferenceExperimentAction extends BaseStudyAction {
     }
   }
 }
+
+PreferenceExperimentAction.BadNoRecipesArg = class extends Error {
+  message = "noRecipes is true, but some recipes observed";
+};

@@ -224,7 +224,7 @@ class BaseAction {
 
 
 
-  async finalize() {
+  async finalize(options) {
     
     
     
@@ -237,7 +237,7 @@ class BaseAction {
       }
       case BaseAction.STATE_READY: {
         try {
-          await this._finalize();
+          await this._finalize(options);
           status = Uptake.ACTION_SUCCESS;
         } catch (err) {
           status = Uptake.ACTION_POST_EXECUTION_ERROR;
@@ -284,7 +284,7 @@ class BaseAction {
 
 
 
-  async _finalize() {
+  async _finalize(_options = {}) {
     
   }
 }
