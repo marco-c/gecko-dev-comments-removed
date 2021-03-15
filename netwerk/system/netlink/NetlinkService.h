@@ -84,11 +84,11 @@ class NetlinkService : public nsIRunnable {
   bool mInitialScanFinished;
 
   
-  int mShutdownPipe[2];
+  int mShutdownPipe[2]{};
 
   
-  struct in_addr mRouteCheckIPv4;
-  struct in6_addr mRouteCheckIPv6;
+  struct in_addr mRouteCheckIPv4 {};
+  struct in6_addr mRouteCheckIPv6 {};
 
   pid_t mPid;
   uint32_t mMsgId;
