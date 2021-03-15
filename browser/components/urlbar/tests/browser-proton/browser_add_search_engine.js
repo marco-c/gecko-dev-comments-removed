@@ -1,6 +1,9 @@
 
 
+
 "use strict";
+
+
 
 const { PromptTestUtils } = ChromeUtils.import(
   "resource://testing-common/PromptTestUtils.jsm"

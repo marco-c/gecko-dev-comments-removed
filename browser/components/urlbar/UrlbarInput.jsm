@@ -3541,15 +3541,21 @@ class CopyCutController {
 
 
 
+
+
+
 class AddSearchEngineHelper {
   constructor(input) {
     this.document = input.document;
+
+    this.shortcutButtons = input.view.oneOffSearchButtons;
+
     let contextMenu = input.querySelector("moz-input-box").menupopup;
-    this.separator = this.document.createXULElement("menuseparator");
-    this.separator.setAttribute("anonid", "add-engine-separator");
-    this.separator.classList.add("menuseparator-add-engine");
-    this.separator.collapsed = true;
-    contextMenu.appendChild(this.separator);
+    this.contextSeparator = this.document.createXULElement("menuseparator");
+    this.contextSeparator.setAttribute("anonid", "add-engine-separator");
+    this.contextSeparator.classList.add("menuseparator-add-engine");
+    this.contextSeparator.collapsed = true;
+    contextMenu.appendChild(this.contextSeparator);
 
     
     
@@ -3564,9 +3570,6 @@ class AddSearchEngineHelper {
     XPCOMUtils.defineLazyGetter(this, "_bundle", () =>
       Services.strings.createBundle("chrome://browser/locale/search.properties")
     );
-
-    
-    
   }
 
   
@@ -3577,9 +3580,64 @@ class AddSearchEngineHelper {
     return 3;
   }
 
+  
+
+
+
   setEnginesFromBrowser(browser) {
-    this.engines = browser.engines;
     this.browsingContext = browser.browsingContext;
+    
+    let engines = browser.engines?.slice() || [];
+    if (!this._sameEngines(this.engines, engines)) {
+      this.engines = engines;
+
+      
+      
+      this.shortcutButtons.updateWebEngines(
+        engines.slice(0, this.maxInlineEngines).map(e => ({
+          name: e.title,
+          tooltip: this._bundle.formatStringFromName("cmd_addFoundEngine", [
+            e.title,
+          ]),
+          uri: e.uri,
+          get icon() {
+            
+            
+            
+            return e.icon;
+          },
+        }))
+      );
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  addSearchEngine({ uri, icon }) {
+    return SearchUIUtils.addOpenSearchEngine(
+      uri,
+      icon,
+      this.browsingContext
+    ).catch(ex => {
+      console.error(ex);
+      return false;
+    });
+  }
+
+  _sameEngines(engines1, engines2) {
+    if (engines1?.length != engines2?.length) {
+      return false;
+    }
+    return ObjectUtils.deepEqual(
+      engines1.map(e => e.title),
+      engines2.map(e => e.title)
+    );
   }
 
   _createMenuitem(engine, index) {
@@ -3619,9 +3677,9 @@ class AddSearchEngineHelper {
   }
 
   _refreshContextMenu() {
-    let engines = this.engines || [];
-    this.separator.collapsed = !engines.length;
-    let curElt = this.separator;
+    let engines = this.engines;
+    this.contextSeparator.collapsed = !engines.length;
+    let curElt = this.contextSeparator;
     
     for (let elt = curElt.nextElementSibling; elt; ) {
       let nextElementSibling = elt.nextElementSibling;
@@ -3636,7 +3694,7 @@ class AddSearchEngineHelper {
       
       
       let elt = this._createMenu(engines[0]);
-      this.separator.insertAdjacentElement("afterend", elt);
+      this.contextSeparator.insertAdjacentElement("afterend", elt);
       curElt = elt.lastElementChild;
     }
 
@@ -3653,16 +3711,15 @@ class AddSearchEngineHelper {
   }
 
   _onCommand(event) {
-    let uri = event.target.getAttribute("uri");
-    let image = event.target.getAttribute("image");
-    SearchUIUtils.addOpenSearchEngine(uri, image, this.browsingContext)
-      .then(added => {
-        if (added) {
-          
-          
-          this._refreshContextMenu();
-        }
-      })
-      .catch(console.error);
+    this.addSearchEngine({
+      uri: event.target.getAttribute("uri"),
+      icon: event.target.getAttribute("image"),
+    }).then(added => {
+      if (added) {
+        
+        
+        this._refreshContextMenu();
+      }
+    });
   }
 }

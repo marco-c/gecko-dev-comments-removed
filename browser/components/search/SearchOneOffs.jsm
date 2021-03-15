@@ -211,7 +211,9 @@ class SearchOneOffs {
 
 
   invalidateCache() {
-    this._engineInfo = null;
+    if (!this._rebuilding) {
+      this._engineInfo = null;
+    }
   }
 
   
