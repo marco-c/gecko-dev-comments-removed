@@ -89,8 +89,6 @@ class PresShell;
 
 
 
-
-
 enum nsViewVisibility {
   nsViewVisibility_kHide = 0,
   nsViewVisibility_kShow = 1
@@ -502,6 +500,12 @@ class nsView final : public nsIWidgetListener {
 
   void SetDimensions(const nsRect& aRect, bool aPaint = true,
                      bool aResizeWidget = true);
+
+  
+
+
+
+  void ZeroDimensions();
 
   
 
