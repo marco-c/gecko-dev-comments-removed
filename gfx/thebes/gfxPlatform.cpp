@@ -1196,6 +1196,14 @@ bool gfxPlatform::IsHeadless() {
 bool gfxPlatform::UseWebRender() { return gfx::gfxVars::UseWebRender(); }
 
 
+bool gfxPlatform::DoesFissionForceWebRender() {
+  
+  
+  
+  return FissionAutostart() && FissionExperimentEnrolled();
+}
+
+
 bool gfxPlatform::UseRemoteCanvas() {
   return XRE_IsContentProcess() && gfx::gfxVars::RemoteCanvasEnabled();
 }
@@ -3374,7 +3382,8 @@ bool gfxPlatform::FallbackFromAcceleration(FeatureStatus aStatus,
     return true;
   }
 
-  if (StaticPrefs::gfx_webrender_fallback_basic_AtStartup()) {
+  if (StaticPrefs::gfx_webrender_fallback_basic_AtStartup() &&
+      !DoesFissionForceWebRender()) {
     
     gfxCriticalNote << "Fallback (SW-)WR to Basic";
     if (gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE)) {
