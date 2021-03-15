@@ -203,25 +203,12 @@ bool nsNativeBasicTheme::IsColorPickerButton(nsIFrame* aFrame) {
 }
 
 
-LayoutDeviceRect nsNativeBasicTheme::FixAspectRatio(
-    const LayoutDeviceRect& aRect) {
+
+static LayoutDeviceRect CheckBoxRadioRect(const LayoutDeviceRect& aRect) {
   
-  LayoutDeviceRect rect(aRect);
-  if (rect.width == rect.height) {
-    return rect;
-  }
-
-  if (rect.width > rect.height) {
-    auto diff = rect.width - rect.height;
-    rect.width = rect.height;
-    rect.x += diff / 2;
-  } else {
-    auto diff = rect.height - rect.width;
-    rect.height = rect.width;
-    rect.y += diff / 2;
-  }
-
-  return rect;
+  auto size = std::trunc(std::min(aRect.width, aRect.height));
+  auto position = aRect.Center() - LayoutDevicePoint(size * 0.5, size * 0.5);
+  return LayoutDeviceRect(position, LayoutDeviceSize(size, size));
 }
 
 std::pair<sRGBColor, sRGBColor> nsNativeBasicTheme::ComputeCheckboxColors(
@@ -1457,7 +1444,7 @@ bool nsNativeBasicTheme::DoDrawWidgetBackground(PaintBackendData& aPaintData,
 
   switch (aAppearance) {
     case StyleAppearance::Radio: {
-      auto rect = FixAspectRatio(devPxRect);
+      auto rect = CheckBoxRadioRect(devPxRect);
       PaintRadioControl(aPaintData, rect, eventState, dpiRatio);
       break;
     }
@@ -1466,7 +1453,7 @@ bool nsNativeBasicTheme::DoDrawWidgetBackground(PaintBackendData& aPaintData,
         
         return false;
       } else {
-        auto rect = FixAspectRatio(devPxRect);
+        auto rect = CheckBoxRadioRect(devPxRect);
         PaintCheckboxControl(aPaintData, rect, eventState, dpiRatio);
         if (GetIndeterminate(aFrame)) {
           PaintIndeterminateMark(aPaintData, rect, eventState);
