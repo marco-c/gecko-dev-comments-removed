@@ -131,6 +131,15 @@ inline void Shape::updateBaseShapeAfterMovingGC() {
   }
 }
 
+static inline void GetterSetterPreWriteBarrier(AccessorShape* shape) {
+  if (shape->hasGetterObject()) {
+    PreWriteBarrier(shape->getterObject());
+  }
+  if (shape->hasSetterObject()) {
+    PreWriteBarrier(shape->setterObject());
+  }
+}
+
 static inline void GetterSetterPostWriteBarrier(AccessorShape* shape) {
   
   
@@ -173,6 +182,12 @@ inline AccessorShape::AccessorShape(const StackShape& other, uint32_t nfixed)
       rawSetter(other.rawSetter) {
   MOZ_ASSERT(getAllocKind() == gc::AllocKind::ACCESSOR_SHAPE);
   GetterSetterPostWriteBarrier(this);
+}
+
+inline AccessorShape::AccessorShape(BaseShape* base, ObjectFlags objectFlags,
+                                    uint32_t nfixed)
+    : Shape(base, objectFlags, nfixed), rawGetter(nullptr), rawSetter(nullptr) {
+  MOZ_ASSERT(getAllocKind() == gc::AllocKind::ACCESSOR_SHAPE);
 }
 
 inline void Shape::initDictionaryShape(const StackShape& child, uint32_t nfixed,
