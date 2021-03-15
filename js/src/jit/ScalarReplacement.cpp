@@ -1442,7 +1442,7 @@ void ArgumentsReplacer::visitGetArgumentsObjectArg(
     
     auto* actualArgs = args_->toCreateInlinedArgumentsObject();
     if (ins->argno() < actualArgs->numActuals()) {
-      getArg = actualArgs->getArg(ins->argno())->toInstruction();
+      getArg = actualArgs->getArg(ins->argno());
     } else {
       
       
