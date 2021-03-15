@@ -3,11 +3,88 @@
 
 
 "use strict";
+Cu.importGlobalProperties(["fetch"]);
 
 var EXPORTED_SYMBOLS = ["AboutHttpsOnlyErrorChild"];
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 const { RemotePageChild } = ChromeUtils.import(
   "resource://gre/actors/RemotePageChild.jsm"
 );
 
-class AboutHttpsOnlyErrorChild extends RemotePageChild {}
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "@mozilla.org/network/serialization-helper;1",
+  "nsISerializationHelper"
+);
+
+class AboutHttpsOnlyErrorChild extends RemotePageChild {
+  actorCreated() {
+    super.actorCreated();
+
+    
+    
+    const exportableFunctions = [
+      "RPMTryPingSecureWWWLink",
+      "RPMOpenSecureWWWLink",
+    ];
+    this.exportFunctions(exportableFunctions);
+  }
+
+  RPMTryPingSecureWWWLink() {
+    
+    
+    
+
+    const httpsOnlySuggestionPref = Services.prefs.getBoolPref(
+      "dom.security.https_only_mode_error_page_user_suggestions"
+    );
+
+    
+    if (!httpsOnlySuggestionPref) {
+      return;
+    }
+
+    
+    const wwwURL = "https://www." + this.contentWindow.location.host;
+    fetch(wwwURL, {
+      credentials: "omit",
+      cache: "no-store",
+    })
+      .then(data => {
+        if (data.status === 200) {
+          this.contentWindow.dispatchEvent(
+            new this.contentWindow.CustomEvent("pingSecureWWWLinkSuccess")
+          );
+        }
+      })
+      .catch(() => {
+        dump("No secure www suggestion possible for " + wwwURL);
+      });
+  }
+
+  RPMOpenSecureWWWLink() {
+    
+    const context = this.manager.browsingContext;
+    const docShell = context.docShell;
+    const httpChannel = docShell.failedChannel.QueryInterface(
+      Ci.nsIHttpChannel
+    );
+    const webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
+    const triggeringPrincipal =
+      docShell.failedChannel.loadInfo.triggeringPrincipal;
+    const oldURI = httpChannel.URI;
+    const newWWWURI = oldURI
+      .mutate()
+      .setHost("www." + oldURI.host)
+      .finalize();
+
+    webNav.loadURI(newWWWURI.spec, {
+      triggeringPrincipal,
+      loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY,
+    });
+  }
+}
