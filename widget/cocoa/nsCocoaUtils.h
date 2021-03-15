@@ -216,13 +216,7 @@ class nsCocoaUtils {
   
   static NSPoint EventLocationForWindow(NSEvent* anEvent, NSWindow* aWindow);
 
-  
-  
-  
-  
   static BOOL IsMomentumScrollEvent(NSEvent* aEvent);
-  static BOOL HasPreciseScrollingDeltas(NSEvent* aEvent);
-  static void GetScrollingDeltas(NSEvent* aEvent, CGFloat* aOutDeltaX, CGFloat* aOutDeltaY);
   static BOOL EventHasPhaseInformation(NSEvent* aEvent);
 
   
