@@ -1,9 +1,13 @@
 
 
 
+
 'use strict';
 
+
 test(testCase => {
+  reserveAndCleanupCapacitySync(testCase);
+
   const file = storageFoundation.openSync('test_file');
   testCase.add_cleanup(() => {
     file.close();
