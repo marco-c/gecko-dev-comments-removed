@@ -12,8 +12,22 @@ class nsIURI;
 
 namespace mozilla {
 
-void AntiTrackingRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
-                                   nsIChannel* aNewChannel, nsIURI* aNewURI);
+
+
+
+
+
+
+void PrepareForAntiTrackingRedirectHeuristic(nsIChannel* aOldChannel,
+                                             nsIURI* aOldURI,
+                                             nsIChannel* aNewChannel,
+                                             nsIURI* aNewURI);
+
+
+
+
+void FinishAntiTrackingRedirectHeuristic(nsIChannel* aNewChannel,
+                                         nsIURI* aNewURI);
 
 }  
 
