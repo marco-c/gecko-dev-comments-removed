@@ -471,6 +471,11 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
 
   
   
+  const targetFollowsWindowLifecycle =
+    target.targetForm.followWindowGlobalLifeCycle;
+
+  
+  
   const onPanelReloaded = waitForPanelReload(
     toolbox.currentToolId,
     toolbox.target,
@@ -504,7 +509,8 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
   }
 
   
-  if (switchedToAnotherProcess) {
+  
+  if (switchedToAnotherProcess || targetFollowsWindowLifecycle) {
     info(`Waiting for target switch…`);
     await onTargetSwitched;
     info(`→ switched-target emitted`);

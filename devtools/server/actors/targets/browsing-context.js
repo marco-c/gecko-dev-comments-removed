@@ -552,6 +552,8 @@ const browsingContextTargetPrototype = {
     const response = {
       actor: this.actorID,
       browsingContextID: this.browsingContextID,
+      
+      followWindowGlobalLifeCycle: this.followWindowGlobalLifeCycle,
       isTopLevelTarget: this.isTopLevelTarget,
       traits: {
         
@@ -565,6 +567,9 @@ const browsingContextTargetPrototype = {
         
         
         supportsTopLevelTargetFlag: true,
+        
+        
+        supportsFollowWindowGlobalLifeCycleFlag: true,
       },
     };
 
