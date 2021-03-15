@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
   --player-bg-color: #000;
@@ -71,11 +71,11 @@ browser {
   background-color: var(--btn-bg-color);
   border-radius: 4px;
   cursor: pointer;
-  
-
-
-
-
+  /**
+   * Make the button dimensions a square proportional to one
+   * dimension of the window - in this case, the width dimension,
+   * since we suspect most videos are wider than they are tall.
+   */
   height: 10vmax;
   width: 10vmax;
   max-height: 32px;
@@ -103,7 +103,7 @@ browser {
 
 #close {
   background-color: var(--close-btn-bg-color);
-  background-image: url("chrome://global/skin/pictureinpicture/close-pip.svg");
+  background-image: url("chrome://global/skin/icons/close.svg");
   position: absolute;
   right: 10px;
   top: 10px;
