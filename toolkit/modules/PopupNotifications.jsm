@@ -1697,6 +1697,11 @@ PopupNotifications.prototype = {
     
     
     
+    this.panel.removeAttribute("aria-describedby");
+
+    
+    
+    
     
     this.panel.setAttribute("noautofocus", "true");
 
