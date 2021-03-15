@@ -70,7 +70,6 @@ sandbox::bpf_dsl::ResultExpr SandboxPolicyBase::EvaluateSyscall(
 #define DISPATCH_SOCKETCALL(sysnum, socketnum) \
   case sysnum:                                 \
     return EvaluateSocketCall(socketnum, true).valueOr(InvalidSyscall())
-#ifdef __NR_socket
       DISPATCH_SOCKETCALL(__NR_socket,      SYS_SOCKET);
       DISPATCH_SOCKETCALL(__NR_bind,        SYS_BIND);
       DISPATCH_SOCKETCALL(__NR_connect,     SYS_CONNECT);
@@ -95,7 +94,6 @@ sandbox::bpf_dsl::ResultExpr SandboxPolicyBase::EvaluateSyscall(
       DISPATCH_SOCKETCALL(__NR_accept4,     SYS_ACCEPT4);
       DISPATCH_SOCKETCALL(__NR_recvmmsg,    SYS_RECVMMSG);
       DISPATCH_SOCKETCALL(__NR_sendmmsg,    SYS_SENDMMSG);
-#endif  
 #undef DISPATCH_SOCKETCALL
 #ifndef __NR_socketcall
 #ifndef ANDROID
@@ -124,21 +122,21 @@ sandbox::bpf_dsl::ResultExpr SandboxPolicyBase::EvaluateSyscall(
 }
 
  bool SandboxPolicyBase::HasSeparateSocketCalls() {
-#ifdef __NR_socket
+#ifdef __NR_socketcall
   
-#  ifdef __NR_socketcall
-  
-  int fd = syscall(__NR_socket, AF_LOCAL, SOCK_STREAM, 0);
-  if (fd < 0) {
-    MOZ_DIAGNOSTIC_ASSERT(errno == ENOSYS);
-    return false;
-  }
-  close(fd);
-#  endif  
+  static const bool kCache = [] {
+    int fd = syscall(__NR_socket, AF_LOCAL, SOCK_STREAM, 0);
+    if (fd < 0) {
+      MOZ_DIAGNOSTIC_ASSERT(errno == ENOSYS);
+      return false;
+    }
+    close(fd);
+    return true;
+  }();
+  return kCache;
+#else  
   return true;
-#else   
-  return false;
-#endif  
+#endif
 }
 
 }  
