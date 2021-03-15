@@ -593,6 +593,9 @@ add_task(async function dont_consume_clicks() {
 
 
 add_task(async function drop_opens_popup() {
+  if (CustomizableUI.protonToolbarEnabled) {
+    CustomizableUI.addWidgetToArea("home-button", "nav-bar");
+  }
   
   
   
@@ -632,6 +635,9 @@ add_task(async function drop_opens_popup() {
   await promise;
 
   textbox.value = "";
+  if (CustomizableUI.protonToolbarEnabled) {
+    CustomizableUI.removeWidgetFromArea("home-button");
+  }
 });
 
 

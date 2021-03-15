@@ -1,6 +1,21 @@
 
 
 
+add_task(async function setupHomeButton() {
+  if (CustomizableUI.protonToolbarEnabled) {
+    
+    CustomizableUI.addWidgetToArea(
+      "home-button",
+      "nav-bar",
+      CustomizableUI.getPlacementOfWidget("stop-reload-button").position + 1
+    );
+    CustomizableUI.addWidgetToArea("sidebar-button", "nav-bar");
+  }
+  registerCleanupFunction(async function resetToolbar() {
+    await CustomizableUI.reset();
+  });
+});
+
 add_task(async function() {
   let HOMEPAGE_PREF = "browser.startup.homepage";
 
