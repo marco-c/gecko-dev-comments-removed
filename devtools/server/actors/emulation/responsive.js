@@ -70,7 +70,7 @@ const ResponsiveActor = protocol.ActorClassWithSpec(responsiveSpec, {
 
 
   get _consoleActor() {
-    if (this.targetActor.exited || this.targetActor.isDestroyed()) {
+    if (this.targetActor.isDestroyed()) {
       return null;
     }
     const form = this.targetActor.form();

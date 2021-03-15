@@ -154,7 +154,7 @@ webExtensionTargetPrototype.isRootActor = true;
 
 
 
-webExtensionTargetPrototype.exit = function() {
+webExtensionTargetPrototype.destroy = function() {
   if (this._chromeGlobal) {
     const chromeGlobal = this._chromeGlobal;
     this._chromeGlobal = null;
@@ -172,7 +172,7 @@ webExtensionTargetPrototype.exit = function() {
   this.addon = null;
   this.addonId = null;
 
-  return ParentProcessTargetActor.prototype.exit.apply(this);
+  return ParentProcessTargetActor.prototype.destroy.apply(this);
 };
 
 
@@ -424,7 +424,7 @@ webExtensionTargetPrototype._onParentExit = function(msg) {
     return;
   }
 
-  this.exit();
+  this.destroy();
 };
 
 exports.WebExtensionTargetActor = TargetActorMixin(
