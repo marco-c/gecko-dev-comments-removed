@@ -797,6 +797,12 @@ void nsContentSecurityManager::MeasureUnexpectedPrivilegedLoads(
   if (!StaticPrefs::dom_security_unexpected_system_load_telemetry_enabled()) {
     return;
   }
+  
+  
+  if (aContentPolicyType != ExtContentPolicyType::TYPE_SCRIPT &&
+      aContentPolicyType != ExtContentPolicyType::TYPE_STYLESHEET) {
+    return;
+  }
   nsAutoCString uriString;
   if (aFinalURI) {
     aFinalURI->GetAsciiSpec(uriString);

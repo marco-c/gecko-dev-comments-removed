@@ -72,15 +72,15 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
       {
        
        "moz-icon:blahblah"_ns,
-       ExtContentPolicy::TYPE_IMAGE,
+       ExtContentPolicy::TYPE_STYLESHEET,
        "web"_ns,
-       {"other"_ns, "TYPE_IMAGE"_ns, "web"_ns, "unknown"_ns}},
+       {"other"_ns, "TYPE_STYLESHEET"_ns, "web"_ns, "unknown"_ns}},
       {
        
        "data://blahblahblah"_ns,
-       ExtContentPolicy::TYPE_DOCUMENT,
+       ExtContentPolicy::TYPE_SCRIPT,
        "webCOOP+COEP=https://data.example"_ns,
-       {"dataurl"_ns, "TYPE_DOCUMENT"_ns, "webCOOP+COEP"_ns, "unknown"_ns}},
+       {"dataurl"_ns, "TYPE_SCRIPT"_ns, "webCOOP+COEP"_ns, "unknown"_ns}},
       {
        "file://c/users/tom/file.txt"_ns,
        ExtContentPolicy::TYPE_SCRIPT,
@@ -96,15 +96,15 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
        }},
       {
        ""_ns,
-       ExtContentPolicy::TYPE_IMAGE,
+       ExtContentPolicy::TYPE_STYLESHEET,
        "web"_ns,
-       {"other"_ns, "TYPE_IMAGE"_ns, "web"_ns, "unknown"_ns}},
+       {"other"_ns, "TYPE_STYLESHEET"_ns, "web"_ns, "unknown"_ns}},
       {
        
        "URLWillResultInNullPtr"_ns,
-       ExtContentPolicy::TYPE_FONT,
+       ExtContentPolicy::TYPE_SCRIPT,
        "web"_ns,
-       {"other"_ns, "TYPE_FONT"_ns, "web"_ns, "unknown"_ns}},
+       {"other"_ns, "TYPE_SCRIPT"_ns, "web"_ns, "unknown"_ns}},
   };
 
   int i = 0;
