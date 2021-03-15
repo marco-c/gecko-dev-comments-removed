@@ -498,8 +498,8 @@ nsWindowMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
   
   
   WindowArray windows;
-  for (const auto& entry : *windowsById) {
-    windows.AppendElement(entry.GetData());
+  for (auto iter = windowsById->Iter(); !iter.Done(); iter.Next()) {
+    windows.AppendElement(iter.Data());
   }
 
   
@@ -802,10 +802,10 @@ void nsWindowMemoryReporter::CheckForGhostWindows(
       nonDetachedBrowsingContextGroups;
 
   
-  for (const auto& entry : *windowsById) {
+  for (auto iter = windowsById->Iter(); !iter.Done(); iter.Next()) {
     
     
-    nsGlobalWindowInner* window = entry.GetWeak();
+    nsGlobalWindowInner* window = iter.UserData();
     if (!window->GetOuterWindow() || !window->GetInProcessTopInternal() ||
         !window->GetBrowsingContextGroup()) {
       
@@ -905,8 +905,8 @@ void nsWindowMemoryReporter::UnlinkGhostWindows() {
   
   
   WindowArray windows;
-  for (const auto& entry : *windowsById) {
-    windows.AppendElement(entry.GetData());
+  for (auto iter = windowsById->Iter(); !iter.Done(); iter.Next()) {
+    windows.AppendElement(iter.Data());
   }
 
   
