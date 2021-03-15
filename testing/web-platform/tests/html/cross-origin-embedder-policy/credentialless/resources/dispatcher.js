@@ -4,10 +4,28 @@ const dispatcher_path =
   "/html/cross-origin-embedder-policy/credentialless/resources/dispatcher.py";
 const dispatcher_url = new URL(dispatcher_path, location.href).href;
 
+
+
+const concurrencyLimiter = (max_concurrency) => {
+  let pending = 0;
+  let waiting = [];
+  return async (task) => {
+    pending++;
+    if (pending > max_concurrency)
+      await new Promise(resolve => waiting.push(resolve));
+    await task();
+    pending--;
+    waiting.shift()?.();
+  };
+}
+
+
+
+
+const sendLimiter = concurrencyLimiter(1);
+
 const send = async function(uuid, message) {
-  
-  
-  await navigator.locks.request("dispatcher_send", async lock => {
+  await sendLimiter(async () => {
     await fetch(dispatcher_url + `?uuid=${uuid}`, {
       method: 'POST',
       body: message

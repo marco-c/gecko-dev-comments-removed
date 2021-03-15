@@ -1,9 +1,21 @@
 const directory = '/html/cross-origin-embedder-policy/credentialless';
-
 const executor_path = directory + '/resources/executor.html?pipe=';
-const coep_none = '|header(Cross-Origin-Embedder-Policy,none)';
+
+
+const coep_none =
+    '|header(Cross-Origin-Embedder-Policy,none)';
 const coep_credentialless =
     '|header(Cross-Origin-Embedder-Policy,credentialless)';
+const coep_require_corp =
+    '|header(Cross-Origin-Embedder-Policy,require-corp)';
+
+
+const coop_same_origin =
+    '|header(Cross-Origin-Opener-Policy,same-origin)';
+
+
+const corp_cross_origin =
+    '|header(Cross-Origin-Resource-Policy,cross-origin)';
 
 
 
