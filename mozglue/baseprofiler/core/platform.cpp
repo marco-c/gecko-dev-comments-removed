@@ -229,7 +229,8 @@ static uint32_t AvailableFeatures() {
 
 static uint32_t DefaultFeatures() {
   return ProfilerFeature::Java | ProfilerFeature::JS | ProfilerFeature::Leaf |
-         ProfilerFeature::StackWalk | ProfilerFeature::Threads;
+         ProfilerFeature::StackWalk | ProfilerFeature::Threads |
+         ProfilerFeature::CPUUtilization;
 }
 
 
@@ -237,9 +238,7 @@ static uint32_t DefaultFeatures() {
 static uint32_t StartupExtraDefaultFeatures() {
   
   
-  
-  
-  return ProfilerFeature::CPUUtilization | ProfilerFeature::MainThreadIO;
+  return ProfilerFeature::MainThreadIO;
 }
 
 class MOZ_RAII PSAutoTryLock;

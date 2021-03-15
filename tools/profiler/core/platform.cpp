@@ -270,7 +270,7 @@ static uint32_t AvailableFeatures() {
 static uint32_t DefaultFeatures() {
   return ProfilerFeature::Java | ProfilerFeature::JS | ProfilerFeature::Leaf |
          ProfilerFeature::StackWalk | ProfilerFeature::Threads |
-         ProfilerFeature::Screenshots;
+         ProfilerFeature::CPUUtilization | ProfilerFeature::Screenshots;
 }
 
 
@@ -278,9 +278,7 @@ static uint32_t DefaultFeatures() {
 static uint32_t StartupExtraDefaultFeatures() {
   
   
-  
-  
-  return ProfilerFeature::CPUUtilization | ProfilerFeature::FileIOAll;
+  return ProfilerFeature::FileIOAll;
 }
 
 
