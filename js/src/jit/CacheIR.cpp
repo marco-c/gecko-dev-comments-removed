@@ -572,7 +572,7 @@ static NativeGetPropCacheability CanAttachNativeGetProp(
   
   
   
-  JSObject* baseHolder = nullptr;
+  NativeObject* baseHolder = nullptr;
   PropertyResult prop;
   if (!LookupPropertyPure(cx, obj, id, &baseHolder, &prop)) {
     return CanAttachNone;
@@ -582,7 +582,7 @@ static NativeGetPropCacheability CanAttachNativeGetProp(
 
   if (prop.isNativeProperty()) {
     MOZ_ASSERT(baseHolder);
-    holder.set(&baseHolder->as<NativeObject>());
+    holder.set(baseHolder);
     shape.set(prop.shape());
 
     if (IsCacheableGetPropReadSlot(obj, holder, shape)) {
@@ -1960,7 +1960,7 @@ AttachDecision GetPropIRGenerator::tryAttachFunction(HandleObject obj,
     return AttachDecision::NoAction;
   }
 
-  JSObject* holder = nullptr;
+  NativeObject* holder = nullptr;
   PropertyResult prop;
   
   if (LookupPropertyPure(cx_, obj, id, &holder, &prop)) {
@@ -3183,7 +3183,7 @@ AttachDecision HasPropIRGenerator::tryAttachNamedProp(HandleObject obj,
                                                       ValOperandId keyId) {
   bool hasOwn = (cacheKind_ == CacheKind::HasOwn);
 
-  JSObject* holder = nullptr;
+  NativeObject* holder = nullptr;
   PropertyResult prop;
 
   if (hasOwn) {
@@ -3191,7 +3191,7 @@ AttachDecision HasPropIRGenerator::tryAttachNamedProp(HandleObject obj,
       return AttachDecision::NoAction;
     }
 
-    holder = obj;
+    holder = &obj->as<NativeObject>();
   } else {
     if (!LookupPropertyPure(cx_, obj, key, &holder, &prop)) {
       return AttachDecision::NoAction;
@@ -3773,7 +3773,7 @@ static bool IsCacheableSetPropCallScripted(JSObject* obj, JSObject* holder,
 }
 
 static bool CanAttachSetter(JSContext* cx, jsbytecode* pc, HandleObject obj,
-                            HandleId id, MutableHandleObject holder,
+                            HandleId id, MutableHandleNativeObject holder,
                             MutableHandleShape propShape) {
   
   MOZ_ASSERT(IsPropertySetOp(JSOp(*pc)));
@@ -3829,7 +3829,7 @@ AttachDecision SetPropIRGenerator::tryAttachSetter(HandleObject obj,
                                                    ObjOperandId objId,
                                                    HandleId id,
                                                    ValOperandId rhsId) {
-  RootedObject holder(cx_);
+  RootedNativeObject holder(cx_);
   RootedShape propShape(cx_);
   if (!CanAttachSetter(cx_, pc_, obj, id, &holder, &propShape)) {
     return AttachDecision::NoAction;
@@ -4220,7 +4220,7 @@ AttachDecision SetPropIRGenerator::tryAttachDOMProxyUnshadowed(
     return AttachDecision::NoAction;
   }
 
-  RootedObject holder(cx_);
+  RootedNativeObject holder(cx_);
   RootedShape propShape(cx_);
   if (!CanAttachSetter(cx_, pc_, proto, id, &holder, &propShape)) {
     return AttachDecision::NoAction;
@@ -4278,7 +4278,7 @@ AttachDecision SetPropIRGenerator::tryAttachDOMProxyExpando(
     return AttachDecision::Attach;
   }
 
-  RootedObject holder(cx_);
+  RootedNativeObject holder(cx_);
   if (CanAttachSetter(cx_, pc_, expandoObj, id, &holder, &propShape)) {
     
     
@@ -4622,7 +4622,7 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
   
   
   PropertyResult hasInstanceProp;
-  JSObject* hasInstanceHolder = nullptr;
+  NativeObject* hasInstanceHolder = nullptr;
   jsid hasInstanceID = SYMBOL_TO_JSID(cx_->wellKnownSymbols().hasInstance);
   if (!LookupPropertyPure(cx_, fun, hasInstanceID, &hasInstanceHolder,
                           &hasInstanceProp) ||
