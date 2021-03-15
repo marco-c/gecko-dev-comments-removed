@@ -10,31 +10,10 @@
 #include "mozilla/dom/quota/QuotaCommon.h"
 
 
-#define CACHE_TRY_GLUE(...) \
-  QM_TRY_META(mozilla::dom::cache, MOZ_UNIQUE_VAR(tryResult), ##__VA_ARGS__)
-#define CACHE_TRY(...) CACHE_TRY_GLUE(__VA_ARGS__)
-
-
-#define CACHE_TRY_ASSIGN_GLUE(accessFunction, ...)                   \
-  QM_TRY_ASSIGN_META(mozilla::dom::cache, MOZ_UNIQUE_VAR(tryResult), \
-                     accessFunction, ##__VA_ARGS__)
-#define CACHE_TRY_UNWRAP(...) CACHE_TRY_ASSIGN_GLUE(unwrap, __VA_ARGS__)
-#define CACHE_TRY_INSPECT(...) CACHE_TRY_ASSIGN_GLUE(inspect, __VA_ARGS__)
-
-
-#define CACHE_TRY_RETURN_GLUE(...)                                   \
-  QM_TRY_RETURN_META(mozilla::dom::cache, MOZ_UNIQUE_VAR(tryResult), \
-                     ##__VA_ARGS__)
-#define CACHE_TRY_RETURN(...) CACHE_TRY_RETURN_GLUE(__VA_ARGS__)
-
-
-#define CACHE_FAIL_GLUE(...) QM_FAIL_META(mozilla::dom::cache, ##__VA_ARGS__)
-#define CACHE_FAIL(...) CACHE_FAIL_GLUE(__VA_ARGS__)
-
-namespace mozilla::dom::cache {
-
-QM_META_HANDLE_ERROR("Cache"_ns)
-
-}  
+#define CACHE_TRY QM_TRY
+#define CACHE_TRY_UNWRAP QM_TRY_UNWRAP
+#define CACHE_TRY_INSPECT QM_TRY_INSPECT
+#define CACHE_TRY_RETURN QM_TRY_RETURN
+#define CACHE_FAIL QM_FAIL
 
 #endif  

@@ -310,9 +310,47 @@ void ScopedLogExtraInfo::AddInfo() {
 }
 #endif
 
-void LogError(const nsLiteralCString& aModule, const nsACString& aExpr,
-              const nsACString& aSourceFile, int32_t aSourceLine,
-              Maybe<nsresult> aRv) {
+namespace detail {
+
+nsDependentCSubstring GetSourceTreeBase() {
+  static constexpr auto thisFileRelativeSourceFileName =
+      "/dom/quota/QuotaCommon.cpp"_ns;
+
+  static constexpr auto path = nsLiteralCString(__FILE__);
+
+  MOZ_ASSERT(StringEndsWith(path, thisFileRelativeSourceFileName));
+  return Substring(path, 0,
+                   path.Length() - thisFileRelativeSourceFileName.Length());
+}
+
+nsDependentCSubstring MakeRelativeSourceFileName(
+    const nsACString& aSourceFile) {
+  static constexpr auto error = "ERROR"_ns;
+
+  static const auto sourceTreeBase = GetSourceTreeBase();
+
+  if (MOZ_LIKELY(StringBeginsWith(aSourceFile, sourceTreeBase))) {
+    return Substring(aSourceFile, sourceTreeBase.Length() + 1);
+  }
+
+  nsCString::const_iterator begin, end;
+  if (RFindInReadable("/"_ns, aSourceFile.BeginReading(begin),
+                      aSourceFile.EndReading(end))) {
+    
+    
+    ++begin;
+    return Substring(begin, aSourceFile.EndReading(end));
+  }
+
+  return nsDependentCSubstring{static_cast<mozilla::Span<const char>>(
+      static_cast<const nsCString&>(error))};
+}
+
+}  
+
+void LogError(const nsACString& aExpr, const nsACString& aSourceFile,
+              int32_t aSourceLine, Maybe<nsresult> aRv) {
+#if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
   nsAutoCString extraInfosString;
 
   nsAutoCString rvName;
@@ -330,6 +368,10 @@ void LogError(const nsLiteralCString& aModule, const nsACString& aExpr,
         !rvName.IsEmpty() ? rvName.get() : "", !rvName.IsEmpty() ? ")" : "");
   }
 
+  const auto relativeSourceFile =
+      detail::MakeRelativeSourceFileName(aSourceFile);
+#endif
+
 #ifdef QM_ENABLE_SCOPED_LOG_EXTRA_INFO
   const auto& extraInfos = ScopedLogExtraInfo::GetExtraInfoMap();
   for (const auto& item : extraInfos) {
@@ -339,24 +381,24 @@ void LogError(const nsLiteralCString& aModule, const nsACString& aExpr,
 #endif
 
 #ifdef DEBUG
-  NS_DebugBreak(NS_DEBUG_WARNING, nsAutoCString(aModule + " failure"_ns).get(),
+  NS_DebugBreak(NS_DEBUG_WARNING, nsAutoCString("QM_TRY failure"_ns).get(),
                 (extraInfosString.IsEmpty()
                      ? nsPromiseFlatCString(aExpr)
                      : static_cast<const nsCString&>(
                            nsAutoCString(aExpr + extraInfosString)))
                     .get(),
-                nsPromiseFlatCString(aSourceFile).get(), aSourceLine);
+                nsPromiseFlatCString(relativeSourceFile).get(), aSourceLine);
 #endif
 
 #if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
   nsCOMPtr<nsIConsoleService> console =
       do_GetService(NS_CONSOLESERVICE_CONTRACTID);
   if (console) {
-    NS_ConvertUTF8toUTF16 message(aModule + " failure: '"_ns + aExpr +
-                                  "', file "_ns + GetLeafName(aSourceFile) +
-                                  ", line "_ns + IntToCString(aSourceLine) +
-                                  extraInfosString);
+    NS_ConvertUTF8toUTF16 message("QM_TRY failure: '"_ns + aExpr + "' at "_ns +
+                                  relativeSourceFile + ":"_ns +
+                                  IntToCString(aSourceLine) + extraInfosString);
 
+    
     
     
 
@@ -371,9 +413,11 @@ void LogError(const nsLiteralCString& aModule, const nsACString& aExpr,
     auto extra = Some([&] {
       auto res = CopyableTArray<EventExtraEntry>{};
       res.SetCapacity(5);
-      res.AppendElement(EventExtraEntry{"module"_ns, aModule});
-      res.AppendElement(EventExtraEntry{"source_file"_ns,
-                                        nsCString(GetLeafName(aSourceFile))});
+      
+      
+      
+      res.AppendElement(
+          EventExtraEntry{"source_file"_ns, nsCString(relativeSourceFile)});
       res.AppendElement(
           EventExtraEntry{"source_line"_ns, IntToCString(aSourceLine)});
       res.AppendElement(EventExtraEntry{

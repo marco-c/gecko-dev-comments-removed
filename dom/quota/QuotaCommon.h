@@ -1015,9 +1015,16 @@ Result<SingleStepSuccessType<ResultHandling>, nsresult>
 CreateAndExecuteSingleStepStatement(mozIStorageConnection& aConnection,
                                     const nsACString& aStatementString);
 
-void LogError(const nsLiteralCString& aModule, const nsACString& aExpr,
-              const nsACString& aSourceFile, int32_t aSourceLine,
-              Maybe<nsresult> aRv);
+namespace detail {
+
+nsDependentCSubstring GetSourceTreeBase();
+
+nsDependentCSubstring MakeRelativeSourceFileName(const nsACString& aSourceFile);
+
+}  
+
+void LogError(const nsACString& aExpr, const nsACString& aSourceFile,
+              int32_t aSourceLine, Maybe<nsresult> aRv);
 
 #ifdef DEBUG
 Result<bool, nsresult> WarnIfFileIsUnknown(nsIFile& aFile,
@@ -1081,45 +1088,37 @@ struct MOZ_STACK_CLASS ScopedLogExtraInfo {
 #endif
 };
 
+
+
+
+
+
+
+
+
+
+
+
 #if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
-#  define QM_META_HANDLE_ERROR(module)                                   \
-    template <typename T>                                                \
-    MOZ_COLD inline void HandleError(const char* aExpr, const T& aRv,    \
-                                     const char* aSourceFile,            \
-                                     int32_t aSourceLine) {              \
-      if constexpr (std::is_same_v<T, nsresult>) {                       \
-        mozilla::dom::quota::LogError(module, nsDependentCString(aExpr), \
-                                      nsDependentCString(aSourceFile),   \
-                                      aSourceLine, Some(aRv));           \
-      } else {                                                           \
-        mozilla::dom::quota::LogError(module, nsDependentCString(aExpr), \
-                                      nsDependentCString(aSourceFile),   \
-                                      aSourceLine, Nothing{});           \
-      }                                                                  \
-    }
+template <typename T>
+MOZ_COLD void HandleError(const char* aExpr, const T& aRv,
+                          const char* aSourceFile, int32_t aSourceLine) {
+  if constexpr (std::is_same_v<T, nsresult>) {
+    mozilla::dom::quota::LogError(nsDependentCString(aExpr),
+                                  nsDependentCString(aSourceFile), aSourceLine,
+                                  Some(aRv));
+  } else {
+    mozilla::dom::quota::LogError(nsDependentCString(aExpr),
+                                  nsDependentCString(aSourceFile), aSourceLine,
+                                  Nothing{});
+  }
+}
 #else
-#  define QM_META_HANDLE_ERROR(module)                            \
-    template <typename T>                                         \
-    MOZ_ALWAYS_INLINE constexpr void HandleError(                 \
-        const char* aExpr, const T& aRv, const char* aSourceFile, \
-        int32_t aSourceLine) {}
+template <typename T>
+MOZ_ALWAYS_INLINE constexpr void HandleError(const char* aExpr, const T& aRv,
+                                             const char* aSourceFile,
+                                             int32_t aSourceLine) {}
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-QM_META_HANDLE_ERROR("QuotaManager"_ns)
 
 template <SingleStepResult ResultHandling = SingleStepResult::AssertHasResult,
           typename BindFunctor>
