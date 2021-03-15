@@ -998,7 +998,7 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
   }
 
   
-  nsClassHashtable<nsFloatHashKey, Keyframe> processedKeyframes;
+  nsTHashMap<nsFloatHashKey, Keyframe> processedKeyframes;
   for (const PropertyValuesPair& pair : propertyValuesPairs) {
     size_t count = pair.mValues.Length();
     if (count == 0) {
@@ -1021,9 +1021,9 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
       
       
       double offset = n ? i++ / double(n) : 1;
-      Keyframe* keyframe = processedKeyframes.GetOrInsertNew(offset);
-      if (keyframe->mPropertyValues.IsEmpty()) {
-        keyframe->mComputedOffset = offset;
+      Keyframe& keyframe = processedKeyframes.LookupOrInsert(offset);
+      if (keyframe.mPropertyValues.IsEmpty()) {
+        keyframe.mComputedOffset = offset;
       }
 
       Maybe<PropertyValuePair> valuePair =
@@ -1031,14 +1031,15 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
       if (!valuePair) {
         continue;
       }
-      keyframe->mPropertyValues.AppendElement(std::move(valuePair.ref()));
+      keyframe.mPropertyValues.AppendElement(std::move(valuePair.ref()));
     }
   }
 
   aResult.SetCapacity(processedKeyframes.Count());
-  for (auto iter = processedKeyframes.Iter(); !iter.Done(); iter.Next()) {
-    aResult.AppendElement(std::move(*iter.UserData()));
-  }
+  std::transform(processedKeyframes.begin(), processedKeyframes.end(),
+                 MakeBackInserter(aResult), [](auto& entry) {
+                   return std::move(*entry.GetModifiableData());
+                 });
 
   aResult.Sort(ComputedOffsetComparator());
 
