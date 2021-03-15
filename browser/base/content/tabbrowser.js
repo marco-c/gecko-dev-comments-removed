@@ -5347,7 +5347,7 @@
       
       
       
-      else if (tab._overPlayingIcon && !tab.pictureinpicture) {
+      else if (!gProtonTabs && tab._overPlayingIcon && !tab.pictureinpicture) {
         let stringID;
         if (tab.selected) {
           stringID = tab.linkedBrowser.audioMuted
