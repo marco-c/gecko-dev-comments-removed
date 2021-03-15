@@ -14,28 +14,18 @@ var EXPORTED_SYMBOLS = [
   
 ];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "AppConstants",
-  "resource://gre/modules/AppConstants.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "AsyncShutdown",
-  "resource://gre/modules/AsyncShutdown.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "BinarySearch",
-  "resource://gre/modules/BinarySearch.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "PrivateBrowsingUtils",
-  "resource://gre/modules/PrivateBrowsingUtils.jsm"
-);
+XPCOMUtils.defineLazyModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.jsm",
+  AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
+  BinarySearch: "resource://gre/modules/BinarySearch.jsm",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+  UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+});
 
 const ACTION_ID_BOOKMARK = "bookmark";
 const ACTION_ID_PIN_TAB = "pinTab";
@@ -45,6 +35,8 @@ const ACTION_ID_TRANSIENT_SEPARATOR = "transientSeparator";
 
 const PREF_PERSISTED_ACTIONS = "browser.pageActions.persistedActions";
 const PERSISTED_ACTIONS_CURRENT_VERSION = 1;
+
+const PROTON_PREF = "browser.proton.urlbar.enabled";
 
 
 
@@ -56,7 +48,13 @@ var PageActions = {
   
 
 
-  init() {
+
+
+
+
+  init(addShutdownBlocker = true) {
+    this._initBuiltInActions();
+
     let callbacks = this._deferredAddActionCalls;
     delete this._deferredAddActionCalls;
 
@@ -84,15 +82,17 @@ var PageActions = {
       callbacks.shift()();
     }
 
-    
-    
-    
-    
-    
-    AsyncShutdown.profileBeforeChange.addBlocker(
-      "PageActions: purging unregistered actions from cache",
-      () => this._purgeUnregisteredPersistedActions()
-    );
+    if (addShutdownBlocker) {
+      
+      
+      
+      
+      
+      AsyncShutdown.profileBeforeChange.addBlocker(
+        "PageActions: purging unregistered actions from cache",
+        () => this._purgeUnregisteredPersistedActions()
+      );
+    }
   },
 
   _deferredAddActionCalls: [],
@@ -1158,165 +1158,177 @@ PageActions.PREF_PERSISTED_ACTIONS = PREF_PERSISTED_ACTIONS;
 
 
 
-var gBuiltInActions = [
-  
-  {
-    id: ACTION_ID_BOOKMARK,
-    urlbarIDOverride: "star-button-box",
-    _urlbarNodeInMarkup: true,
-    pinnedToUrlbar: true,
-    onShowingInPanel(buttonNode) {
-      browserPageActions(buttonNode).bookmark.onShowingInPanel(buttonNode);
-    },
-    onCommand(event, buttonNode) {
-      browserPageActions(buttonNode).bookmark.onCommand(event, buttonNode);
-    },
-  },
+var gBuiltInActions;
 
-  
-  {
-    id: ACTION_ID_PIN_TAB,
-    onBeforePlacedInWindow(browserWindow) {
-      function handlePinEvent() {
-        browserPageActions(browserWindow).pinTab.updateState();
-      }
-      function handleWindowUnload() {
-        for (let event of ["TabPinned", "TabUnpinned"]) {
-          browserWindow.removeEventListener(event, handlePinEvent);
-        }
-      }
-
-      for (let event of ["TabPinned", "TabUnpinned"]) {
-        browserWindow.addEventListener(event, handlePinEvent);
-      }
-      browserWindow.addEventListener("unload", handleWindowUnload, {
-        once: true,
-      });
-    },
-    onPlacedInPanel(buttonNode) {
-      browserPageActions(buttonNode).pinTab.updateState();
-    },
-    onPlacedInUrlbar(buttonNode) {
-      browserPageActions(buttonNode).pinTab.updateState();
-    },
-    onLocationChange(browserWindow) {
-      browserPageActions(browserWindow).pinTab.updateState();
-    },
-    onCommand(event, buttonNode) {
-      browserPageActions(buttonNode).pinTab.onCommand(event, buttonNode);
-    },
-  },
-
-  
-  {
-    id: ACTION_ID_BOOKMARK_SEPARATOR,
-    _isSeparator: true,
-  },
-
-  
-  {
-    id: "copyURL",
-    panelFluentID: "page-action-copy-url-panel",
-    urlbarFluentID: "page-action-copy-url-urlbar",
-    onCommand(event, buttonNode) {
-      browserPageActions(buttonNode).copyURL.onCommand(event, buttonNode);
-    },
-  },
-
-  
-  {
-    id: "emailLink",
-    panelFluentID: "page-action-email-link-panel",
-    urlbarFluentID: "page-action-email-link-urlbar",
-    onCommand(event, buttonNode) {
-      browserPageActions(buttonNode).emailLink.onCommand(event, buttonNode);
-    },
-  },
-
-  
-  {
-    id: "addSearchEngine",
-    
-    isBadged: true,
-    _transient: true,
-    onShowingInPanel(buttonNode) {
-      browserPageActions(buttonNode).addSearchEngine.onShowingInPanel();
-    },
-    onCommand(event, buttonNode) {
-      browserPageActions(buttonNode).addSearchEngine.onCommand(
-        event,
-        buttonNode
-      );
-    },
-    onSubviewShowing(panelViewNode) {
-      browserPageActions(panelViewNode).addSearchEngine.onSubviewShowing(
-        panelViewNode
-      );
-    },
-  },
-];
-
-
-if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
-  gBuiltInActions.push({
-    id: "sendToDevice",
-    panelFluentID: "page-action-send-tabs-panel",
-    
-    
-    urlbarFluentID: "page-action-send-tabs-urlbar",
-    onBeforePlacedInWindow(browserWindow) {
-      browserPageActions(browserWindow).sendToDevice.onBeforePlacedInWindow(
-        browserWindow
-      );
-    },
-    onLocationChange(browserWindow) {
-      browserPageActions(browserWindow).sendToDevice.onLocationChange();
-    },
-    wantsSubview: true,
-    onSubviewPlaced(panelViewNode) {
-      browserPageActions(panelViewNode).sendToDevice.onSubviewPlaced(
-        panelViewNode
-      );
-    },
-    onSubviewShowing(panelViewNode) {
-      browserPageActions(panelViewNode).sendToDevice.onShowingSubview(
-        panelViewNode
-      );
-    },
-  });
-}
-
-
-if (AppConstants.platform == "macosx") {
-  gBuiltInActions.push({
-    id: "shareURL",
-    panelFluentID: "page-action-share-url-panel",
-    urlbarFluentID: "page-action-share-url-urlbar",
-    onShowingInPanel(buttonNode) {
-      browserPageActions(buttonNode).shareURL.onShowingInPanel(buttonNode);
-    },
-    wantsSubview: true,
-    onSubviewShowing(panelViewNode) {
-      browserPageActions(panelViewNode).shareURL.onShowingSubview(
-        panelViewNode
-      );
-    },
-  });
-}
-
-if (AppConstants.isPlatformAndVersionAtLeast("win", "6.4")) {
-  gBuiltInActions.push(
+PageActions._initBuiltInActions = function() {
+  gBuiltInActions = [
     
     {
+      id: ACTION_ID_BOOKMARK,
+      urlbarIDOverride: "star-button-box",
+      _urlbarNodeInMarkup: true,
+      pinnedToUrlbar: true,
+      onShowingInPanel(buttonNode) {
+        browserPageActions(buttonNode).bookmark.onShowingInPanel(buttonNode);
+      },
+      onCommand(event, buttonNode) {
+        browserPageActions(buttonNode).bookmark.onCommand(event, buttonNode);
+      },
+    },
+  ];
+
+  if (UrlbarPrefs.get(PROTON_PREF)) {
+    return;
+  }
+
+  gBuiltInActions.push(
+    ...[
+      
+      {
+        id: ACTION_ID_PIN_TAB,
+        onBeforePlacedInWindow(browserWindow) {
+          function handlePinEvent() {
+            browserPageActions(browserWindow).pinTab.updateState();
+          }
+          function handleWindowUnload() {
+            for (let event of ["TabPinned", "TabUnpinned"]) {
+              browserWindow.removeEventListener(event, handlePinEvent);
+            }
+          }
+
+          for (let event of ["TabPinned", "TabUnpinned"]) {
+            browserWindow.addEventListener(event, handlePinEvent);
+          }
+          browserWindow.addEventListener("unload", handleWindowUnload, {
+            once: true,
+          });
+        },
+        onPlacedInPanel(buttonNode) {
+          browserPageActions(buttonNode).pinTab.updateState();
+        },
+        onPlacedInUrlbar(buttonNode) {
+          browserPageActions(buttonNode).pinTab.updateState();
+        },
+        onLocationChange(browserWindow) {
+          browserPageActions(browserWindow).pinTab.updateState();
+        },
+        onCommand(event, buttonNode) {
+          browserPageActions(buttonNode).pinTab.onCommand(event, buttonNode);
+        },
+      },
+
+      
+      {
+        id: ACTION_ID_BOOKMARK_SEPARATOR,
+        _isSeparator: true,
+      },
+
+      
+      {
+        id: "copyURL",
+        panelFluentID: "page-action-copy-url-panel",
+        urlbarFluentID: "page-action-copy-url-urlbar",
+        onCommand(event, buttonNode) {
+          browserPageActions(buttonNode).copyURL.onCommand(event, buttonNode);
+        },
+      },
+
+      
+      {
+        id: "emailLink",
+        panelFluentID: "page-action-email-link-panel",
+        urlbarFluentID: "page-action-email-link-urlbar",
+        onCommand(event, buttonNode) {
+          browserPageActions(buttonNode).emailLink.onCommand(event, buttonNode);
+        },
+      },
+
+      
+      {
+        id: "addSearchEngine",
+        
+        isBadged: true,
+        _transient: true,
+        onShowingInPanel(buttonNode) {
+          browserPageActions(buttonNode).addSearchEngine.onShowingInPanel();
+        },
+        onCommand(event, buttonNode) {
+          browserPageActions(buttonNode).addSearchEngine.onCommand(
+            event,
+            buttonNode
+          );
+        },
+        onSubviewShowing(panelViewNode) {
+          browserPageActions(panelViewNode).addSearchEngine.onSubviewShowing(
+            panelViewNode
+          );
+        },
+      },
+    ]
+  );
+
+  
+  if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
+    gBuiltInActions.push({
+      id: "sendToDevice",
+      panelFluentID: "page-action-send-tabs-panel",
+      
+      
+      urlbarFluentID: "page-action-send-tabs-urlbar",
+      onBeforePlacedInWindow(browserWindow) {
+        browserPageActions(browserWindow).sendToDevice.onBeforePlacedInWindow(
+          browserWindow
+        );
+      },
+      onLocationChange(browserWindow) {
+        browserPageActions(browserWindow).sendToDevice.onLocationChange();
+      },
+      wantsSubview: true,
+      onSubviewPlaced(panelViewNode) {
+        browserPageActions(panelViewNode).sendToDevice.onSubviewPlaced(
+          panelViewNode
+        );
+      },
+      onSubviewShowing(panelViewNode) {
+        browserPageActions(panelViewNode).sendToDevice.onShowingSubview(
+          panelViewNode
+        );
+      },
+    });
+  }
+
+  
+  if (AppConstants.platform == "macosx") {
+    gBuiltInActions.push({
       id: "shareURL",
       panelFluentID: "page-action-share-url-panel",
       urlbarFluentID: "page-action-share-url-urlbar",
-      onCommand(event, buttonNode) {
-        browserPageActions(buttonNode).shareURL.onCommand(event, buttonNode);
+      onShowingInPanel(buttonNode) {
+        browserPageActions(buttonNode).shareURL.onShowingInPanel(buttonNode);
       },
-    }
-  );
-}
+      wantsSubview: true,
+      onSubviewShowing(panelViewNode) {
+        browserPageActions(panelViewNode).shareURL.onShowingSubview(
+          panelViewNode
+        );
+      },
+    });
+  }
+
+  if (AppConstants.isPlatformAndVersionAtLeast("win", "6.4")) {
+    gBuiltInActions.push(
+      
+      {
+        id: "shareURL",
+        panelFluentID: "page-action-share-url-panel",
+        urlbarFluentID: "page-action-share-url-urlbar",
+        onCommand(event, buttonNode) {
+          browserPageActions(buttonNode).shareURL.onCommand(event, buttonNode);
+        },
+      }
+    );
+  }
+};
 
 
 
