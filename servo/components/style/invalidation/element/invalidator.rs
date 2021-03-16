@@ -23,7 +23,7 @@ where
     
     
     
-    fn invalidates_on_eager_pseudo_element(&self) -> bool {
+    fn invalidates_on_pseudo_element(&self) -> bool {
         false
     }
 
@@ -878,35 +878,9 @@ where
             .selector
             .combinator_at_parse_order(next_invalidation.offset - 1);
 
-        if matches!(next_combinator, Combinator::PseudoElement) {
-            
-            
-            
-            let pseudo = next_invalidation
-                .dependency
-                .selector
-                .iter_raw_parse_order_from(next_invalidation.offset)
-                .flat_map(|c| {
-                    if let Component::PseudoElement(ref pseudo) = *c {
-                        return Some(pseudo);
-                    }
-
-                    
-                    
-                    debug_assert!(
-                        c.maybe_allowed_after_pseudo_element(),
-                        "Someone seriously messed up selector parsing: \
-                         {:?} at offset {:?}: {:?}",
-                        next_invalidation.dependency,
-                        next_invalidation.offset,
-                        c,
-                    );
-
-                    None
-                })
-                .next()
-                .unwrap();
-
+        if matches!(next_combinator, Combinator::PseudoElement) &&
+            self.processor.invalidates_on_pseudo_element()
+        {
             
             
             
@@ -921,33 +895,15 @@ where
             
             
             
-            if self.processor.invalidates_on_eager_pseudo_element() {
-                if pseudo.is_eager() {
-                    invalidated_self = true;
-                }
-                
-                
-                
-                
-                
-                
-                if pseudo.is_marker() && self.element.marker_pseudo_element().is_none() {
-                    invalidated_self = true;
-                }
-
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if pseudo.is_selection() {
-                    invalidated_self = true;
-                }
-            }
+            
+            
+            
+            
+            
+            
+            
+            
+            invalidated_self = true;
         }
 
         debug!(

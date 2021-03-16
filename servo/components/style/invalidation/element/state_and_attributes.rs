@@ -161,7 +161,7 @@ where
     
     
     
-    fn invalidates_on_eager_pseudo_element(&self) -> bool {
+    fn invalidates_on_pseudo_element(&self) -> bool {
         true
     }
 
