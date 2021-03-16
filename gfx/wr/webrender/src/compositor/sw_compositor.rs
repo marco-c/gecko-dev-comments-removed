@@ -725,6 +725,7 @@ impl SwCompositeThread {
         
         
         self.job_count.store(1, Ordering::SeqCst);
+        self.current_job.store(ptr::null_mut(), Ordering::SeqCst);
     }
 
     
@@ -795,6 +796,7 @@ impl SwCompositeThread {
                 
                 
                 0 => {
+                    self.current_job.store(ptr::null_mut(), Ordering::SeqCst);
                     self.jobs_available.notify_all();
                     if !wait {
                         return None;
