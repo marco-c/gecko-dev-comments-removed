@@ -508,8 +508,6 @@ class FirefoxLauncher implements ProductLauncher {
       'geo.wifi.scan': false,
       
       'hangmonitor.timeout': 0,
-      
-      'javascript.options.showInConsole': true,
 
       
       'media.gmp-manager.updateEnabled': false,

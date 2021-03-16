@@ -242,9 +242,6 @@ const RECOMMENDED_PREFS = new Map([
   ["geo.wifi.scan", false],
 
   
-  ["javascript.options.showInConsole", true],
-
-  
   ["network.http.phishy-userpass-length", 255],
 
   

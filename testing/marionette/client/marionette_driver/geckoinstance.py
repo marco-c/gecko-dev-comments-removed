@@ -84,7 +84,6 @@ class GeckoInstance(object):
         
         
         "idle.lastDailyNotification": -1,
-        "javascript.options.showInConsole": True,
         
         "marionette.prefs.recommended": False,
         
