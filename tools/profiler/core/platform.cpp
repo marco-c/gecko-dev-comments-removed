@@ -1752,7 +1752,7 @@ static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
                         const RegisteredThread& aRegisteredThread,
                         const Registers& aRegs, const NativeStack& aNativeStack,
                         ProfilerStackCollector& aCollector,
-                        JsFrameBuffer aJsFrames) {
+                        JsFrameBuffer aJsFrames, uint32_t aJsFramesCount) {
   
   
   
@@ -1762,16 +1762,13 @@ static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
   const js::ProfilingStackFrame* profilingStackFrames = profilingStack.frames;
   uint32_t profilingStackFrameCount = profilingStack.stackSize();
 
-  const uint32_t jsFramesCount = ExtractJsFrames(
-      aIsSynchronous, aRegisteredThread, aRegs, aCollector, aJsFrames);
-
   
   
   
   
   
   uint32_t profilingStackIndex = 0;
-  int32_t jsIndex = jsFramesCount - 1;
+  int32_t jsIndex = aJsFramesCount - 1;
   int32_t nativeIndex = aNativeStack.mCount - 1;
 
   uint8_t* lastLabelFrameStackAddr = nullptr;
@@ -2244,6 +2241,9 @@ static inline void DoSharedSample(
   MOZ_RELEASE_ASSERT(ActivePS::Exists(aLock));
 
   ProfileBufferCollector collector(aBuffer, aSamplePos, aBufferRangeStart);
+  JsFrameBuffer& jsFrames = CorePS::JsFrames(aLock);
+  const uint32_t jsFramesCount = ExtractJsFrames(
+      aIsSynchronous, aRegisteredThread, aRegs, collector, jsFrames);
   NativeStack nativeStack;
 #if defined(HAVE_NATIVE_UNWIND)
   if (ActivePS::FeatureStackWalk(aLock) &&
@@ -2251,12 +2251,12 @@ static inline void DoSharedSample(
     DoNativeBacktrace(aLock, aRegisteredThread, aRegs, nativeStack);
 
     MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aRegisteredThread,
-                aRegs, nativeStack, collector, CorePS::JsFrames(aLock));
+                aRegs, nativeStack, collector, jsFrames, jsFramesCount);
   } else
 #endif
   {
     MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aRegisteredThread,
-                aRegs, nativeStack, collector, CorePS::JsFrames(aLock));
+                aRegs, nativeStack, collector, jsFrames, jsFramesCount);
 
     
     if (ActivePS::FeatureLeaf(aLock) &&
@@ -5923,6 +5923,10 @@ void profiler_suspend_and_sample_thread(int aThreadId, uint32_t aFeatures,
             
             
             bool isSynchronous = false;
+            JsFrameBuffer& jsFrames = CorePS::JsFrames(lock);
+            const uint32_t jsFramesCount = ExtractJsFrames(
+                isSynchronous, registeredThread, aRegs, aCollector, jsFrames);
+
 #if defined(HAVE_FASTINIT_NATIVE_UNWIND)
             if (aSampleNative) {
           
@@ -5939,12 +5943,12 @@ void profiler_suspend_and_sample_thread(int aThreadId, uint32_t aFeatures,
 #  endif
 
               MergeStacks(aFeatures, isSynchronous, registeredThread, aRegs,
-                          nativeStack, aCollector, CorePS::JsFrames(lock));
+                          nativeStack, aCollector, jsFrames, jsFramesCount);
             } else
 #endif
             {
               MergeStacks(aFeatures, isSynchronous, registeredThread, aRegs,
-                          nativeStack, aCollector, CorePS::JsFrames(lock));
+                          nativeStack, aCollector, jsFrames, jsFramesCount);
 
               if (ProfilerFeature::HasLeaf(aFeatures)) {
                 aCollector.CollectNativeLeafAddr((void*)aRegs.mPC);
