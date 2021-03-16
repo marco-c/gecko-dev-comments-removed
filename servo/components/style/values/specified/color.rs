@@ -338,10 +338,6 @@ pub enum SystemColor {
     MozAccentColorForeground,
 
     
-    MozWinAccentcolor,
-    
-    MozWinAccentcolortext,
-    
     MozWinMediatext,
     
     MozWinCommunicationstext,
