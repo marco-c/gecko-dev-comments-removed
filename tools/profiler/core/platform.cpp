@@ -1688,24 +1688,13 @@ struct AutoWalkJSStack {
 
 
 
-static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
-                        const RegisteredThread& aRegisteredThread,
-                        const Registers& aRegs, const NativeStack& aNativeStack,
-                        ProfilerStackCollector& aCollector,
-                        JsFrameBuffer aJsFrames) {
-  
-  
-  
 
-  const ProfilingStack& profilingStack =
-      aRegisteredThread.RacyRegisteredThread().ProfilingStack();
-  const js::ProfilingStackFrame* profilingStackFrames = profilingStack.frames;
-  uint32_t profilingStackFrameCount = profilingStack.stackSize();
+static uint32_t ExtractJsFrames(bool aIsSynchronous,
+                                const RegisteredThread& aRegisteredThread,
+                                const Registers& aRegs,
+                                ProfilerStackCollector& aCollector,
+                                JsFrameBuffer aJsFrames) {
   JSContext* context = aRegisteredThread.GetJSContext();
-
-  
-  
-  
 
   
   
@@ -1750,6 +1739,29 @@ static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
       }
     }
   }
+
+  return jsCount;
+}
+
+
+
+static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
+                        const RegisteredThread& aRegisteredThread,
+                        const Registers& aRegs, const NativeStack& aNativeStack,
+                        ProfilerStackCollector& aCollector,
+                        JsFrameBuffer aJsFrames) {
+  
+  
+  
+
+  const ProfilingStack& profilingStack =
+      aRegisteredThread.RacyRegisteredThread().ProfilingStack();
+  const js::ProfilingStackFrame* profilingStackFrames = profilingStack.frames;
+  uint32_t profilingStackFrameCount = profilingStack.stackSize();
+  JSContext* context = aRegisteredThread.GetJSContext();
+
+  const uint32_t jsCount = ExtractJsFrames(aIsSynchronous, aRegisteredThread,
+                                           aRegs, aCollector, aJsFrames);
 
   
   
