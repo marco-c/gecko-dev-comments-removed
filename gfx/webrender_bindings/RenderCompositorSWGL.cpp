@@ -184,6 +184,10 @@ void RenderCompositorSWGL::CommitMappedBuffer(bool aDirty) {
     mDirtyRegion.SetEmpty();
     return;
   }
+  if (aDirty) {
+    
+    wr_swgl_get_color_buffer(mContext, 0, true, nullptr, nullptr, nullptr);
+  }
   
   
   wr_swgl_init_default_framebuffer(mContext, 0, 0, 0, 0, 0, nullptr);

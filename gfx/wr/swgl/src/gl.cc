@@ -2096,7 +2096,9 @@ static void clear_buffer(Texture& t, T value, IntRect bb, int skip_start = 0,
   size_t stride = t.stride();
   
   
-  if (bb.width() == t.width && bb.height() > 1 && skip_start >= skip_end) {
+  
+  if (bb.width() == t.width && bb.height() > 1 && skip_start >= skip_end &&
+      (t.should_free() || stride == t.width * sizeof(T))) {
     bb.x1 += (stride / sizeof(T)) * (bb.height() - 1);
     bb.y1 = bb.y0 + 1;
   }
