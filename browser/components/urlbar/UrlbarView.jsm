@@ -903,11 +903,13 @@ class UrlbarView {
 
 
 
+
   _rowCanUpdateToResult(
     rowIndex,
     result,
     firstSearchSuggestionIndex,
-    lastSearchSuggestionIndex
+    lastSearchSuggestionIndex,
+    queryContext
   ) {
     
     if (result.heuristic) {
@@ -920,7 +922,7 @@ class UrlbarView {
     
     if (
       result.suggestedIndex !== row.result.suggestedIndex &&
-      rowIndex == this._rows.children.length - 1
+      rowIndex == queryContext.maxResults - 1
     ) {
       return false;
     }
@@ -983,7 +985,8 @@ class UrlbarView {
           rowIndex,
           result,
           firstSearchSuggestionIndex,
-          lastSearchSuggestionIndex
+          lastSearchSuggestionIndex,
+          queryContext
         )
       ) {
         this._updateRow(row, result);
