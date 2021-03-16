@@ -2104,21 +2104,6 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
     }
   }
 
-  
-  
-  
-  
-  Document* subdoc = doc->GetSubDocumentFor(aElement);
-  if (subdoc && IsWindowVisible(subdoc->GetWindow())) {
-    const nsStyleUI* ui = frame->StyleUI();
-    int32_t tabIndex = (ui->mUserFocus == StyleUserFocus::Ignore ||
-                        ui->mUserFocus == StyleUserFocus::None)
-                           ? -1
-                           : 0;
-    return aElement->IsFocusable(&tabIndex, aFlags & FLAG_BYMOUSE) ? aElement
-                                                                   : nullptr;
-  }
-
   return frame->IsFocusable(aFlags & FLAG_BYMOUSE) ? aElement : nullptr;
 }
 
