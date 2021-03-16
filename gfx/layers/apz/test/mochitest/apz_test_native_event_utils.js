@@ -404,29 +404,6 @@ function synthesizeNativeWheelAndWaitForObserver(
 
 
 
-function synthesizeNativeWheelAndWaitForWheelEvent(
-  aTarget,
-  aX,
-  aY,
-  aDeltaX,
-  aDeltaY,
-  aCallback
-) {
-  let p = promiseNativeWheelAndWaitForWheelEvent(
-    aTarget,
-    aX,
-    aY,
-    aDeltaX,
-    aDeltaY
-  );
-  if (aCallback) {
-    p.then(aCallback);
-  }
-  return true;
-}
-
-
-
 function promiseNativeWheelAndWaitForWheelEvent(
   aTarget,
   aX,
