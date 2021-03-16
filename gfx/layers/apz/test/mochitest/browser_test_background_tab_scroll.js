@@ -30,30 +30,26 @@ add_task(async function test_main() {
   
   
   let contentScrollFunction = async function() {
-    return new Promise(resolve => {
-      content.window.wrappedJSObject.synthesizeNativeWheelAndWaitForWheelEvent(
-        content.window,
-        100,
-        100,
-        0,
-        200,
-        () => {
-          
-          let utils = content.window.SpecialPowers.getDOMWindowUtils(
-            content.window
-          );
-          for (var i = 0; i < 10; i++) {
-            utils.advanceTimeAndRefresh(16);
-          }
-          utils.restoreNormalRefresh();
-          
-          
-          content.window.wrappedJSObject.flushApzRepaints(() => {
-            resolve(content.window.scrollY);
-          }, content.window);
-        }
-      );
-    });
+    await content.window.wrappedJSObject.promiseNativeWheelAndWaitForWheelEvent(
+      content.window,
+      100,
+      100,
+      0,
+      200
+    );
+
+    
+    let utils = content.window.SpecialPowers.getDOMWindowUtils(content.window);
+    for (var i = 0; i < 10; i++) {
+      utils.advanceTimeAndRefresh(16);
+    }
+    utils.restoreNormalRefresh();
+    
+    
+    await content.window.wrappedJSObject.promiseApzRepaintsFlushed(
+      content.window
+    );
+    return content.window.scrollY;
   };
   scrollPos = await ContentTask.spawn(browser, null, contentScrollFunction);
 
