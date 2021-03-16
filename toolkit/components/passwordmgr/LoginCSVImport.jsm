@@ -68,10 +68,6 @@ class ImportFailedException extends Error {
 
 
 class LoginCSVImport {
-  static get MIGRATION_HISTOGRAM_KEY() {
-    return "login_csv";
-  }
-
   
 
 
@@ -134,10 +130,7 @@ class LoginCSVImport {
 
 
   static async importFromCSV(filePath) {
-    TelemetryStopwatch.startKeyed(
-      "FX_MIGRATION_LOGINS_IMPORT_MS",
-      LoginCSVImport.MIGRATION_HISTOGRAM_KEY
-    );
+    TelemetryStopwatch.start("PWMGR_IMPORT_LOGINS_FROM_FILE_MS");
     let responsivenessMonitor = new ResponsivenessMonitor();
     let csvColumnToFieldMap = LoginCSVImport._getCSVColumnToFieldMap();
     let csvFieldToColumnMap = new Map();
@@ -145,10 +138,7 @@ class LoginCSVImport {
     try {
       csvString = await OS.File.read(filePath, { encoding: "utf-8" });
     } catch (ex) {
-      TelemetryStopwatch.cancelKeyed(
-        "FX_MIGRATION_LOGINS_IMPORT_MS",
-        LoginCSVImport.MIGRATION_HISTOGRAM_KEY
-      );
+      TelemetryStopwatch.cancel("PWMGR_IMPORT_LOGINS_FROM_FILE_MS");
       Cu.reportError(ex);
       throw new ImportFailedException(
         ImportFailedErrorType.FILE_PERMISSIONS_ERROR
@@ -173,10 +163,7 @@ class LoginCSVImport {
           if (!csvFieldToColumnMap.has(fieldName)) {
             csvFieldToColumnMap.set(fieldName, columnName);
           } else {
-            TelemetryStopwatch.cancelKeyed(
-              "FX_MIGRATION_LOGINS_IMPORT_MS",
-              LoginCSVImport.MIGRATION_HISTOGRAM_KEY
-            );
+            TelemetryStopwatch.cancel("PWMGR_IMPORT_LOGINS_FROM_FILE_MS");
             throw new ImportFailedException(
               ImportFailedErrorType.CONFLICTING_VALUES_ERROR
             );
@@ -185,10 +172,7 @@ class LoginCSVImport {
       }
     }
     if (csvFieldToColumnMap.size === 0) {
-      TelemetryStopwatch.cancelKeyed(
-        "FX_MIGRATION_LOGINS_IMPORT_MS",
-        LoginCSVImport.MIGRATION_HISTOGRAM_KEY
-      );
+      TelemetryStopwatch.cancel("PWMGR_IMPORT_LOGINS_FROM_FILE_MS");
       throw new ImportFailedException(ImportFailedErrorType.FILE_FORMAT_ERROR);
     }
     if (
@@ -200,10 +184,7 @@ class LoginCSVImport {
       
       
       
-      TelemetryStopwatch.cancelKeyed(
-        "FX_MIGRATION_LOGINS_IMPORT_MS",
-        LoginCSVImport.MIGRATION_HISTOGRAM_KEY
-      );
+      TelemetryStopwatch.cancel("PWMGR_IMPORT_LOGINS_FROM_FILE_MS");
       throw new ImportFailedException(ImportFailedErrorType.FILE_FORMAT_ERROR);
     }
 
@@ -224,17 +205,18 @@ class LoginCSVImport {
 
     
     try {
-      Services.telemetry
-        .getKeyedHistogramById("FX_MIGRATION_LOGINS_QUANTITY")
-        .add(LoginCSVImport.MIGRATION_HISTOGRAM_KEY, report.length);
+      let histogram = Services.telemetry.getHistogramById(
+        "PWMGR_IMPORT_LOGINS_FROM_FILE_CATEGORICAL"
+      );
+      histogram.add("added", report.added);
+      histogram.add("modified", report.modified);
+      histogram.add("error", report.error);
+      histogram.add("no_change", report.no_change);
       let accumulatedDelay = responsivenessMonitor.finish();
       Services.telemetry
-        .getKeyedHistogramById("FX_MIGRATION_LOGINS_JANK_MS")
-        .add(LoginCSVImport.MIGRATION_HISTOGRAM_KEY, accumulatedDelay);
-      TelemetryStopwatch.finishKeyed(
-        "FX_MIGRATION_LOGINS_IMPORT_MS",
-        LoginCSVImport.MIGRATION_HISTOGRAM_KEY
-      );
+        .getHistogramById("PWMGR_IMPORT_LOGINS_FROM_FILE_JANK_MS")
+        .add(accumulatedDelay);
+      TelemetryStopwatch.finish("PWMGR_IMPORT_LOGINS_FROM_FILE_MS");
     } catch (ex) {
       Cu.reportError(ex);
     }
