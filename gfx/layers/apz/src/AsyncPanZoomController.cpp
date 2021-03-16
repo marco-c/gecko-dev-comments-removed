@@ -4482,7 +4482,7 @@ void AsyncPanZoomController::ApplyAsyncTestAttributes(
       
       
       Metrics().ZoomBy(mTestAsyncZoom.scale);
-      ScrollBy(mTestAsyncScrollOffset);
+      ScrollByAndClamp(mTestAsyncScrollOffset);
       ResampleCompositedAsyncTransform(aProofOfLock);
     }
   }
