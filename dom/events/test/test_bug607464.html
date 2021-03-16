@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=607464
+-->
 <head>
   <title>Test for Bug 607464</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -61,9 +61,9 @@ function runTest() {
       }
     }, true);
 
-    flushApzRepaints(function() {
+    promiseApzRepaintsFlushed(win).then(function() {
       scrollDown150PxWithPixelScrolling(scrollbox);
-    }, win);
+    });
   }, win);
 }
 
