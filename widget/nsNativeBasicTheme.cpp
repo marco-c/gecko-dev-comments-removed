@@ -1301,17 +1301,7 @@ void nsNativeBasicTheme::PaintProgress(nsIFrame* aFrame,
                                        const LayoutDeviceRect& aRect,
                                        const EventStates& aState,
                                        UseSystemColors aUseSystemColors,
-                                       DPIRatio aDpiRatio, bool aIsMeter,
-                                       bool aBar) {
-  auto [backgroundColor, borderColor] = [&] {
-    if (aIsMeter) {
-      return aBar ? ComputeMeterTrackColors(aUseSystemColors)
-                  : ComputeMeterchunkColors(aState, aUseSystemColors);
-    }
-    return aBar ? ComputeProgressTrackColors(aUseSystemColors)
-                : ComputeProgressColors(aUseSystemColors);
-  }();
-
+                                       DPIRatio aDpiRatio, bool aIsMeter) {
   const CSSCoord borderWidth = 1.0f;
   const CSSCoord radius = aIsMeter ? 5.0f : 2.0f;
 
@@ -1332,36 +1322,49 @@ void nsNativeBasicTheme::PaintProgress(nsIFrame* aFrame,
 
   
   LayoutDeviceRect clipRect = rect;
-  if (!aBar) {
-    double position = [&] {
-      if (aIsMeter) {
-        auto* meter = dom::HTMLMeterElement::FromNode(aFrame->GetContent());
-        if (!meter) {
-          return 0.0;
-        }
-        return meter->Value() / meter->Max();
-      }
-      auto* progress = dom::HTMLProgressElement::FromNode(aFrame->GetContent());
-      if (!progress) {
+  double position = [&] {
+    if (aIsMeter) {
+      auto* meter = dom::HTMLMeterElement::FromNode(aFrame->GetContent());
+      if (!meter) {
         return 0.0;
       }
-      return progress->Value() / progress->Max();
-    }();
-    if (isHorizontal) {
-      double clipWidth = rect.width * position;
-      clipRect.width = clipWidth;
-      if (IsFrameRTL(aFrame)) {
-        clipRect.x += rect.width - clipWidth;
-      }
-    } else {
-      double clipHeight = rect.height * position;
-      clipRect.height = clipHeight;
-      clipRect.y += rect.height - clipHeight;
+      return meter->Value() / meter->Max();
     }
+    auto* progress = dom::HTMLProgressElement::FromNode(aFrame->GetContent());
+    if (!progress) {
+      return 0.0;
+    }
+    return progress->Value() / progress->Max();
+  }();
+  if (isHorizontal) {
+    double clipWidth = rect.width * position;
+    clipRect.width = clipWidth;
+    if (IsFrameRTL(aFrame)) {
+      clipRect.x += rect.width - clipWidth;
+    }
+  } else {
+    double clipHeight = rect.height * position;
+    clipRect.height = clipHeight;
+    clipRect.y += rect.height - clipHeight;
   }
 
-  PaintRoundedRectWithRadius(aPaintData, rect, clipRect, backgroundColor,
-                             borderColor, borderWidth, radius, aDpiRatio);
+  {
+    
+    auto [backgroundColor, borderColor] =
+        aIsMeter ? ComputeMeterTrackColors(aUseSystemColors)
+                 : ComputeProgressTrackColors(aUseSystemColors);
+    PaintRoundedRectWithRadius(aPaintData, rect, rect, backgroundColor,
+                               borderColor, borderWidth, radius, aDpiRatio);
+  }
+
+  {
+    
+    auto [backgroundColor, borderColor] =
+        aIsMeter ? ComputeMeterchunkColors(aState, aUseSystemColors)
+                 : ComputeProgressColors(aUseSystemColors);
+    PaintRoundedRectWithRadius(aPaintData, rect, clipRect, backgroundColor,
+                               borderColor, borderWidth, radius, aDpiRatio);
+  }
 }
 
 template <typename PaintBackendData>
@@ -1680,28 +1683,17 @@ bool nsNativeBasicTheme::DoDrawWidgetBackground(PaintBackendData& aPaintData,
     case StyleAppearance::ProgressBar:
       PaintProgress(aFrame, aPaintData, devPxRect, eventState, useSystemColors,
                     dpiRatio,
-                     false,  true);
+                     false);
       break;
     case StyleAppearance::Progresschunk:
-      if (nsProgressFrame* f = do_QueryFrame(aFrame->GetParent())) {
-        PaintProgress(f, aPaintData, devPxRect,
-                      f->GetContent()->AsElement()->State(), useSystemColors,
-                      dpiRatio,
-                       false,  false);
-      }
+      
       break;
     case StyleAppearance::Meter:
       PaintProgress(aFrame, aPaintData, devPxRect, eventState, useSystemColors,
-                    dpiRatio,
-                     true,  true);
+                    dpiRatio,  true);
       break;
     case StyleAppearance::Meterchunk:
-      if (nsMeterFrame* f = do_QueryFrame(aFrame->GetParent())) {
-        PaintProgress(f, aPaintData, devPxRect,
-                      f->GetContent()->AsElement()->State(), useSystemColors,
-                      dpiRatio,
-                       true,  false);
-      }
+      
       break;
     case StyleAppearance::ScrollbarthumbHorizontal:
     case StyleAppearance::ScrollbarthumbVertical: {
