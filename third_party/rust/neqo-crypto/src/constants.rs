@@ -16,11 +16,11 @@ pub type Alert = u8;
 pub type Epoch = u16;
 
 
-pub const TLS_EPOCH_INITIAL: Epoch = 0_u16;
-pub const TLS_EPOCH_ZERO_RTT: Epoch = 1_u16;
-pub const TLS_EPOCH_HANDSHAKE: Epoch = 2_u16;
+pub const TLS_EPOCH_INITIAL: Epoch = 0 as Epoch;
+pub const TLS_EPOCH_ZERO_RTT: Epoch = 1 as Epoch;
+pub const TLS_EPOCH_HANDSHAKE: Epoch = 2 as Epoch;
 
-pub const TLS_EPOCH_APPLICATION_DATA: Epoch = 3_u16;
+pub const TLS_EPOCH_APPLICATION_DATA: Epoch = 3 as Epoch;
 
 
 

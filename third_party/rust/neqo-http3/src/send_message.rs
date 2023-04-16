@@ -271,10 +271,7 @@ impl SendMessage {
     
     
     pub fn has_data_to_send(&self) -> bool {
-        matches!(
-            self.state,
-            SendMessageState::Initialized { .. } | SendMessageState::SendingInitialMessage { .. }
-        )
+        matches!(self.state, SendMessageState::Initialized {..} | SendMessageState::SendingInitialMessage { .. } )
     }
 
     pub fn close(&mut self, conn: &mut Connection) -> Res<()> {

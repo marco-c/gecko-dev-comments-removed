@@ -10,25 +10,20 @@
 use std::cell::RefCell;
 use std::convert::TryFrom;
 use std::fmt::{self, Display};
-use std::mem;
 use std::net::{IpAddr, SocketAddr};
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 
-use crate::cc::CongestionControlAlgorithm;
 use crate::cid::{ConnectionId, ConnectionIdRef, RemoteConnectionIdEntry};
 use crate::frame::{
     FRAME_TYPE_PATH_CHALLENGE, FRAME_TYPE_PATH_RESPONSE, FRAME_TYPE_RETIRE_CONNECTION_ID,
 };
 use crate::packet::PacketBuilder;
 use crate::recovery::RecoveryToken;
-use crate::rtt::RttEstimate;
-use crate::sender::PacketSender;
 use crate::stats::FrameStats;
-use crate::tracking::{PNSpace, SentPacket};
 use crate::{Error, Res};
 
-use neqo_common::{hex, qdebug, qinfo, qlog::NeqoQlog, qtrace, Datagram, Encoder};
+use neqo_common::{hex, qdebug, qinfo, qtrace, Datagram, Encoder};
 use neqo_crypto::random;
 
 
@@ -66,21 +61,12 @@ pub struct Paths {
 
     
     to_retire: Vec<u64>,
-
-    
-    qlog: NeqoQlog,
 }
 
 impl Paths {
     
     
-    pub fn find_path(
-        &self,
-        local: SocketAddr,
-        remote: SocketAddr,
-        cc: CongestionControlAlgorithm,
-        now: Instant,
-    ) -> PathRef {
+    pub fn find_path(&self, local: SocketAddr, remote: SocketAddr) -> PathRef {
         self.paths
             .iter()
             .find_map(|p| {
@@ -90,26 +76,14 @@ impl Paths {
                     None
                 }
             })
-            .unwrap_or_else(|| {
-                let mut p = Path::temporary(local, remote, cc, self.qlog.clone(), now);
-                if let Some(primary) = self.primary.as_ref() {
-                    p.set_initial_rtt(primary.borrow().rtt().estimate());
-                }
-                Rc::new(RefCell::new(p))
-            })
+            .unwrap_or_else(|| Rc::new(RefCell::new(Path::temporary(local, remote))))
     }
 
     
     
     
     
-    pub fn find_path_with_rebinding(
-        &self,
-        local: SocketAddr,
-        remote: SocketAddr,
-        cc: CongestionControlAlgorithm,
-        now: Instant,
-    ) -> PathRef {
+    pub fn find_path_with_rebinding(&self, local: SocketAddr, remote: SocketAddr) -> PathRef {
         self.paths
             .iter()
             .find_map(|p| {
@@ -128,15 +102,7 @@ impl Paths {
                     }
                 })
             })
-            .unwrap_or_else(|| {
-                Rc::new(RefCell::new(Path::temporary(
-                    local,
-                    remote,
-                    cc,
-                    self.qlog.clone(),
-                    now,
-                )))
-            })
+            .unwrap_or_else(|| Rc::new(RefCell::new(Path::temporary(local, remote))))
     }
 
     
@@ -222,18 +188,15 @@ impl Paths {
     
     
     
-    
-    pub fn migrate(&mut self, path: &PathRef, force: bool, now: Instant) -> bool {
+    pub fn migrate(&mut self, path: &PathRef, force: bool, now: Instant) {
         debug_assert!(!self.is_temporary(path));
         if force || path.borrow().is_valid() {
             path.borrow_mut().set_valid(now);
-            mem::drop(self.select_primary(path));
-            self.migration_target = None;
+            let _ = self.select_primary(path);
         } else {
             self.migration_target = Some(Rc::clone(path));
         }
         path.borrow_mut().probe();
-        self.migration_target.is_none()
     }
 
     
@@ -269,7 +232,7 @@ impl Paths {
                 
                 let path = Rc::clone(fallback);
                 qinfo!([path.borrow()], "Failing over after primary path failed");
-                mem::drop(self.select_primary(&path));
+                let _ = self.select_primary(&path);
                 true
             } else {
                 false
@@ -326,11 +289,7 @@ impl Paths {
     }
 
     
-    
-    #[must_use]
-    pub fn path_response(&mut self, response: [u8; 8], now: Instant) -> bool {
-        
-        
+    pub fn path_response(&mut self, response: [u8; 8], now: Instant) {
         for p in &self.paths {
             if p.borrow_mut().path_response(response, now) {
                 
@@ -341,13 +300,11 @@ impl Paths {
                     .map_or(false, |target| Rc::ptr_eq(target, p))
                 {
                     let primary = self.migration_target.take();
-                    mem::drop(self.select_primary(&primary.unwrap()));
-                    return true;
+                    let _ = self.select_primary(&primary.unwrap());
                 }
                 break;
             }
         }
-        false
     }
 
     
@@ -379,26 +336,6 @@ impl Paths {
 
     pub fn acked_retire_cid(&mut self, acked: u64) {
         self.to_retire.retain(|&seqno| seqno != acked);
-    }
-
-    
-    #[cfg(test)]
-    pub fn rtt(&self) -> Duration {
-        
-        
-        
-        
-        self.primary_fallible()
-            .map_or(RttEstimate::default().estimate(), |p| {
-                p.borrow().rtt().estimate()
-            })
-    }
-
-    pub fn set_qlog(&mut self, qlog: NeqoQlog) {
-        for p in &mut self.paths {
-            p.borrow_mut().set_qlog(qlog.clone());
-        }
-        self.qlog = qlog;
     }
 }
 
@@ -463,11 +400,6 @@ pub struct Path {
     challenge: Option<[u8; 8]>,
 
     
-    rtt: RttEstimate,
-    
-    sender: PacketSender,
-
-    
     
     
     received_bytes: usize,
@@ -478,15 +410,7 @@ pub struct Path {
 impl Path {
     
     
-    pub fn temporary(
-        local: SocketAddr,
-        remote: SocketAddr,
-        cc: CongestionControlAlgorithm,
-        qlog: NeqoQlog,
-        now: Instant,
-    ) -> Self {
-        let mut sender = PacketSender::new(cc, Self::mtu_by_addr(remote.ip()), now);
-        sender.set_qlog(qlog);
+    pub fn temporary(local: SocketAddr, remote: SocketAddr) -> Self {
         Self {
             local,
             remote,
@@ -496,8 +420,6 @@ impl Path {
             state: ProbeState::ProbeNeeded { probe_count: 0 },
             validated: None,
             challenge: None,
-            rtt: RttEstimate::default(),
-            sender,
             received_bytes: 0,
             sent_bytes: 0,
         }
@@ -516,7 +438,7 @@ impl Path {
     
     
     
-    pub(crate) fn make_permanent(
+    fn make_permanent(
         &mut self,
         local_cid: Option<ConnectionId>,
         remote_cid: RemoteConnectionIdEntry,
@@ -543,13 +465,9 @@ impl Path {
     }
 
     
-    pub(crate) fn set_primary(&mut self, primary: bool) {
+    fn set_primary(&mut self, primary: bool) {
         qtrace!([self], "Make primary {}", primary);
-        debug_assert!(self.remote_cid.is_some());
         self.primary = primary;
-        if !primary {
-            self.sender.discard_in_flight();
-        }
     }
 
     
@@ -568,16 +486,12 @@ impl Path {
         }
     }
 
-    fn mtu_by_addr(addr: IpAddr) -> usize {
-        match addr {
+    
+    pub fn mtu(&self) -> usize {
+        match self.local.ip() {
             IpAddr::V4(_) => PATH_MTU_V4,
             IpAddr::V6(_) => PATH_MTU_V6,
         }
-    }
-
-    
-    pub fn mtu(&self) -> usize {
-        Self::mtu_by_addr(self.remote.ip())
     }
 
     
@@ -782,31 +696,6 @@ impl Path {
     }
 
     
-    pub fn rtt(&self) -> &RttEstimate {
-        &self.rtt
-    }
-
-    
-    pub fn rtt_mut(&mut self) -> &mut RttEstimate {
-        &mut self.rtt
-    }
-
-    
-    pub fn sender(&self) -> &PacketSender {
-        &self.sender
-    }
-
-    
-    pub fn set_max_ack_delay(&mut self, mad: Duration) {
-        self.rtt.set_max_ack_delay(mad);
-    }
-
-    
-    pub fn set_initial_rtt(&mut self, rtt: Duration) {
-        self.rtt.set_initial(rtt);
-    }
-
-    
     pub fn add_received(&mut self, count: usize) {
         self.received_bytes = self.received_bytes.saturating_add(count);
     }
@@ -814,42 +703,6 @@ impl Path {
     
     pub fn add_sent(&mut self, count: usize) {
         self.sent_bytes = self.sent_bytes.saturating_add(count);
-    }
-
-    
-    pub fn packet_sent(&mut self, sent: &mut SentPacket) {
-        if !self.is_primary() {
-            sent.clear_primary_path();
-        }
-        self.sender.on_packet_sent(sent, self.rtt.estimate());
-    }
-
-    
-    pub fn discard_packet(&mut self, sent: &SentPacket) {
-        self.sender.discard(sent);
-    }
-
-    
-    pub fn on_packets_acked(&mut self, acked_pkts: &[SentPacket], now: Instant) {
-        debug_assert!(self.is_primary());
-        self.sender
-            .on_packets_acked(acked_pkts, self.rtt.minimum(), now);
-    }
-
-    
-    pub fn on_packets_lost(
-        &mut self,
-        prev_largest_acked_sent: Option<Instant>,
-        space: PNSpace,
-        lost_packets: &[SentPacket],
-    ) {
-        debug_assert!(self.is_primary());
-        self.sender.on_packets_lost(
-            self.rtt.first_sample_time(),
-            prev_largest_acked_sent,
-            self.rtt.pto(space), 
-            lost_packets,
-        )
     }
 
     
@@ -872,11 +725,6 @@ impl Path {
                     budget.saturating_sub(self.sent_bytes)
                 })
         }
-    }
-
-    
-    pub fn set_qlog(&mut self, qlog: NeqoQlog) {
-        self.sender.set_qlog(qlog);
     }
 }
 
