@@ -1202,10 +1202,6 @@ class nsDocShell final : public nsDocLoader,
   int32_t mPreviousEntryIndex;
   int32_t mLoadedEntryIndex;
 
-  
-  
-  int32_t mChildOffset;
-
   BusyFlags mBusyFlags;
   AppType mAppType;
   uint32_t mLoadType;
