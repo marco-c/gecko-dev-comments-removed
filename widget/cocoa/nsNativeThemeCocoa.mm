@@ -252,14 +252,6 @@ static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame, NSView*
 @implementation MOZToolbarSearchFieldCell
 
 - (BOOL)_isToolbarMode {
-  
-  
-  
-  
-  
-  if (nsCocoaFeatures::OnBigSurOrLater()) {
-    return NO;
-  }
   return YES;
 }
 
