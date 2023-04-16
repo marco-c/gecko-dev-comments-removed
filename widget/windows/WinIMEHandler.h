@@ -233,12 +233,6 @@ class IMEHandler final {
 
 
   static void DismissOnScreenKeyboard(nsWindow* aWindow);
-
-  
-
-
-
-  static HWND GetOnScreenKeyboardWindow();
 };
 
 }  

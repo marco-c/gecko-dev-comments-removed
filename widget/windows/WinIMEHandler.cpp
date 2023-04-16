@@ -15,6 +15,7 @@
 #include "TSFTextStore.h"
 
 #include "OSKInputPaneManager.h"
+#include "OSKTabTipManager.h"
 #include "nsLookAndFeel.h"
 #include "nsWindow.h"
 #include "WinUtils.h"
@@ -35,7 +36,6 @@
 #include "VRShMem.h"
 #include "moz_external_vr.h"
 
-const char* kOskPathPrefName = "ui.osk.on_screen_keyboard_path";
 const char* kOskEnabled = "ui.osk.enabled";
 const char* kOskDetectPhysicalKeyboard = "ui.osk.detect_physical_keyboard";
 const char* kOskRequireWin10 = "ui.osk.require_win10";
@@ -1022,72 +1022,7 @@ void IMEHandler::ShowOnScreenKeyboard(nsWindow* aWindow) {
     return;
   }
 
-  if (GetOnScreenKeyboardWindow()) {
-    return;
-  }
-  nsAutoString cachedPath;
-  nsresult result = Preferences::GetString(kOskPathPrefName, cachedPath);
-  if (NS_FAILED(result) || cachedPath.IsEmpty()) {
-    wchar_t path[MAX_PATH];
-    
-    
-    const wchar_t kRegKeyName[] =
-        L"Software\\Classes\\CLSID\\"
-        L"{054AAE20-4BEA-4347-8A35-64A533254A9D}\\LocalServer32";
-    if (!WinUtils::GetRegistryKey(HKEY_LOCAL_MACHINE, kRegKeyName, nullptr,
-                                  path, sizeof path)) {
-      return;
-    }
-
-    std::wstring wstrpath(path);
-    
-    
-    size_t commonProgramFilesOffset = wstrpath.find(L"%CommonProgramFiles%");
-    if (commonProgramFilesOffset != std::wstring::npos) {
-      
-      
-      
-      
-      
-      
-      
-
-      
-      
-      std::wstring commonProgramFilesPath;
-      std::vector<wchar_t> commonProgramFilesPathW6432;
-      DWORD bufferSize =
-          ::GetEnvironmentVariableW(L"CommonProgramW6432", nullptr, 0);
-      if (bufferSize) {
-        commonProgramFilesPathW6432.resize(bufferSize);
-        ::GetEnvironmentVariableW(L"CommonProgramW6432",
-                                  commonProgramFilesPathW6432.data(),
-                                  bufferSize);
-        commonProgramFilesPath =
-            std::wstring(commonProgramFilesPathW6432.data());
-      } else {
-        PWSTR path = nullptr;
-        HRESULT hres = SHGetKnownFolderPath(FOLDERID_ProgramFilesCommon, 0,
-                                            nullptr, &path);
-        if (FAILED(hres) || !path) {
-          return;
-        }
-        commonProgramFilesPath =
-            static_cast<const wchar_t*>(nsDependentString(path).get());
-        ::CoTaskMemFree(path);
-      }
-      wstrpath.replace(commonProgramFilesOffset,
-                       wcslen(L"%CommonProgramFiles%"), commonProgramFilesPath);
-    }
-
-    cachedPath.Assign(wstrpath.data());
-    Preferences::SetString(kOskPathPrefName, cachedPath);
-  }
-
-  const char16_t* cachedPathPtr;
-  cachedPath.GetData(&cachedPathPtr);
-  ShellExecuteW(nullptr, L"", char16ptr_t(cachedPathPtr), nullptr, nullptr,
-                SW_SHOW);
+  OSKTabTipManager::ShowOnScreenKeyboard();
 }
 
 
@@ -1099,20 +1034,7 @@ void IMEHandler::DismissOnScreenKeyboard(nsWindow* aWindow) {
     return;
   }
 
-  HWND osk = GetOnScreenKeyboardWindow();
-  if (osk) {
-    ::PostMessage(osk, WM_SYSCOMMAND, SC_CLOSE, 0);
-  }
-}
-
-
-HWND IMEHandler::GetOnScreenKeyboardWindow() {
-  const wchar_t kOSKClassName[] = L"IPTip_Main_Window";
-  HWND osk = ::FindWindowW(kOSKClassName, nullptr);
-  if (::IsWindow(osk) && ::IsWindowEnabled(osk) && ::IsWindowVisible(osk)) {
-    return osk;
-  }
-  return nullptr;
+  OSKTabTipManager::DismissOnScreenKeyboard();
 }
 
 bool IMEHandler::MaybeCreateNativeCaret(nsWindow* aWindow) {
