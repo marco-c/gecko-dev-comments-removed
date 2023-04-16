@@ -71,7 +71,7 @@ void nsMenuGroupOwnerX::ContentAppended(nsIContent* aFirstNewContent) {
 
 void nsMenuGroupOwnerX::NodeWillBeDestroyed(const nsINode* aNode) {}
 
-void nsMenuGroupOwnerX::AttributeWillChange(dom::Element* aContent, int32_t aNameSpaceID,
+void nsMenuGroupOwnerX::AttributeWillChange(dom::Element* aElement, int32_t aNameSpaceID,
                                             nsAtom* aAttribute, int32_t aModType) {}
 
 void nsMenuGroupOwnerX::NativeAnonymousChildListChange(nsIContent* aContent, bool aIsRemove) {}
@@ -165,7 +165,7 @@ nsChangeObserver* nsMenuGroupOwnerX::LookupContentChangeObserver(nsIContent* aCo
 
 
 
-uint32_t nsMenuGroupOwnerX::RegisterForCommand(nsMenuItemX* inMenuItem) {
+uint32_t nsMenuGroupOwnerX::RegisterForCommand(nsMenuItemX* aMenuItem) {
   
   
   
@@ -175,23 +175,23 @@ uint32_t nsMenuGroupOwnerX::RegisterForCommand(nsMenuItemX* inMenuItem) {
   
   ++mCurrentCommandID;
 
-  mCommandToMenuObjectTable.InsertOrUpdate(mCurrentCommandID, inMenuItem);
+  mCommandToMenuObjectTable.InsertOrUpdate(mCurrentCommandID, aMenuItem);
 
   return mCurrentCommandID;
 }
 
 
 
-void nsMenuGroupOwnerX::UnregisterCommand(uint32_t inCommandID) {
-  mCommandToMenuObjectTable.Remove(inCommandID);
+void nsMenuGroupOwnerX::UnregisterCommand(uint32_t aCommandID) {
+  mCommandToMenuObjectTable.Remove(aCommandID);
 }
 
-nsMenuItemX* nsMenuGroupOwnerX::GetMenuItemForCommandID(uint32_t inCommandID) {
+nsMenuItemX* nsMenuGroupOwnerX::GetMenuItemForCommandID(uint32_t aCommandID) {
   nsMenuItemX* result;
-  if (mCommandToMenuObjectTable.Get(inCommandID, &result)) {
+  if (mCommandToMenuObjectTable.Get(aCommandID, &result)) {
     return result;
   }
   return nullptr;
 }
 
-void nsMenuGroupOwnerX::AddMenuItemInfoToSet(MenuItemInfo* info) { [mInfoSet addObject:info]; }
+void nsMenuGroupOwnerX::AddMenuItemInfoToSet(MenuItemInfo* aInfo) { [mInfoSet addObject:aInfo]; }
