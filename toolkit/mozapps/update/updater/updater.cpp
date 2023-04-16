@@ -3684,6 +3684,8 @@ int NS_main(int argc, NS_tchar** argv) {
 
       
       if (callbackFile == INVALID_HANDLE_VALUE) {
+        bool proceedWithoutExclusive = true;
+
         
         if (lastWriteError != ERROR_SHARING_VIOLATION) {
           LOG(
@@ -3696,6 +3698,25 @@ int NS_main(int argc, NS_tchar** argv) {
             WriteStatusFile(WRITE_ERROR_CALLBACK_APP);
           }
 
+          proceedWithoutExclusive = false;
+        }
+
+        
+        
+        
+        
+        if (lastWriteError == ERROR_SHARING_VIOLATION &&
+            sCallbackIsBackgroundTask) {
+          LOG(
+              ("NS_main: callback app file in use, failed to exclusively open "
+               "executable file from background task: " LOG_S,
+               argv[callbackIndex]));
+          WriteStatusFile(WRITE_ERROR_BACKGROUND_TASK_SHARING_VIOLATION);
+
+          proceedWithoutExclusive = false;
+        }
+
+        if (!proceedWithoutExclusive) {
           if (NS_tremove(gCallbackBackupPath) && errno != ENOENT) {
             LOG(
                 ("NS_main: unable to remove backup of callback app file, "
@@ -3708,6 +3729,7 @@ int NS_main(int argc, NS_tchar** argv) {
                             sUsingService);
           return 1;
         }
+
         LOG(
             ("NS_main: callback app file in use, continuing without "
              "exclusive access for executable file: " LOG_S,
