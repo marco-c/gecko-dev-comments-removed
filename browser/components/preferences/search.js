@@ -25,6 +25,11 @@ ChromeUtils.defineModuleGetter(
   "UrlbarUtils",
   "resource:///modules/UrlbarUtils.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "ExperimentFeature",
+  "resource://nimbus/ExperimentAPI.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarProviderQuickSuggest:
@@ -46,10 +51,6 @@ Preferences.addAll([
 const ENGINE_FLAVOR = "text/x-moz-search-engine";
 const SEARCH_TYPE = "default_search";
 const SEARCH_KEY = "defaultSearch";
-
-
-
-const QUICK_SUGGEST_EXPERIMENT_PREF = "browser.urlbar.quicksuggest.enabled";
 
 var gEngineView = null;
 
@@ -132,12 +133,13 @@ var gSearchPane = {
     this._initDefaultEngines();
     this._updateSuggestionCheckboxes();
     this._showAddEngineButton();
-
-    Services.prefs.addObserver(QUICK_SUGGEST_EXPERIMENT_PREF, this);
+    this._updateQuickSuggest = this._updateQuickSuggest.bind(this);
+    this.urlbarExperimentFeature = new ExperimentFeature("urlbar");
+    this.urlbarExperimentFeature.onUpdate(this._updateQuickSuggest);
     window.addEventListener("unload", () => {
-      Services.prefs.removeObserver(QUICK_SUGGEST_EXPERIMENT_PREF, this);
+      this.urlbarExperimentFeature.off(this._updateQuickSuggest);
     });
-    this._updateQuickSuggest();
+    this._updateQuickSuggest(true);
   },
 
   
@@ -243,16 +245,15 @@ var gSearchPane = {
 
 
 
-
-  _updateQuickSuggest(experimentPrefChanged = false) {
+  _updateQuickSuggest(onStartup = false) {
     let container = document.getElementById("showQuickSuggestContainer");
     let desc = document.getElementById("searchSuggestionsDesc");
 
-    if (!Services.prefs.getBoolPref(QUICK_SUGGEST_EXPERIMENT_PREF, false)) {
+    if (!this.urlbarExperimentFeature.getValue().quickSuggestEnabled) {
       
       
       
-      if (experimentPrefChanged) {
+      if (!onStartup) {
         container.setAttribute("hidden", "true");
         if (desc.dataset.l10nIdOriginal) {
           desc.dataset.l10nId = desc.dataset.l10nIdOriginal;
@@ -434,8 +435,6 @@ var gSearchPane = {
 
 
 
-
-
   observe(subject, topic, data) {
     if (topic == "browser-search-engine-modified") {
       let engine = subject;
@@ -483,10 +482,6 @@ var gSearchPane = {
           break;
         }
       }
-      return;
-    }
-    if (topic == "nsPref:changed" && data == QUICK_SUGGEST_EXPERIMENT_PREF) {
-      this._updateQuickSuggest(true);
     }
   },
 

@@ -13,6 +13,15 @@ const EXPORTED_SYMBOLS = ["ExperimentAPI", "ExperimentFeature"];
 
 
 const MANIFEST = {
+  urlbar: {
+    description: "The Address Bar",
+    variables: {
+      quickSuggestEnabled: {
+        type: "boolean",
+        fallbackPref: "browser.urlbar.quicksuggest.enabled",
+      },
+    },
+  },
   aboutwelcome: {
     description: "The about:welcome page",
     enabledFallbackPref: "browser.aboutwelcome.enabled",

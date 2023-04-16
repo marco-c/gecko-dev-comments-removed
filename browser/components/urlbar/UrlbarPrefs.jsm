@@ -163,9 +163,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["suggest.quicksuggest", true],
 
   
-  ["quicksuggest.enabled", false],
-
-  
   
   ["quicksuggest.suggestedIndex", -1],
 
