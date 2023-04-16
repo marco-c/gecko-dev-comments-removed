@@ -64,6 +64,8 @@ let _XPCOMUtils = ChromeUtils.import(
   null
 ).XPCOMUtils;
 
+let _OS = ChromeUtils.import("resource://gre/modules/osfile.jsm", null).OS;
+
 
 var AssertCls = ChromeUtils.import("resource://testing-common/Assert.jsm", null)
   .Assert;
@@ -503,6 +505,20 @@ function _initDebugging(port) {
 }
 
 function _execute_test() {
+  if (typeof _TEST_CWD != "undefined") {
+    let cwd_complete = false;
+    _OS.File.setCurrentDirectory(_TEST_CWD)
+      .then(_ => (cwd_complete = true))
+      .catch(e => {
+        _testLogger.error(_exception_message(e));
+        cwd_complete = true;
+      });
+    _Services.tm.spinEventLoopUntil(
+      "Test(xpcshell/head.js:setCurrentDirectory)",
+      () => cwd_complete
+    );
+  }
+
   if (runningInParent && _AppConstants.platform == "android") {
     _Services.obs.notifyObservers(null, "profile-after-change");
     
@@ -651,7 +667,7 @@ function _execute_test() {
     .catch(reportCleanupError)
     .then(() => (complete = true));
   _Services.tm.spinEventLoopUntil(
-    "Test(xpcshel/head.js:_execute_test)",
+    "Test(xpcshell/head.js:_execute_test)",
     () => complete
   );
   if (cleanupStartTime) {
@@ -1366,6 +1382,10 @@ function do_load_child_test_harness() {
 
   if (typeof _JSCOV_DIR === "string") {
     command += " const _JSCOV_DIR=" + uneval(_JSCOV_DIR) + ";";
+  }
+
+  if (typeof _TEST_CWD != "undefined") {
+    command += " const _TEST_CWD=" + uneval(_TEST_CWD) + ";";
   }
 
   if (_TESTING_MODULES_DIR) {
