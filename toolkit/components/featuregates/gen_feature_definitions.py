@@ -86,7 +86,11 @@ class FeatureGateException(Exception):
     def __repr__(self):
         
         original = super(FeatureGateException, self).__repr__()
-        return original[:-1] + ", filename={!r})".format(self.filename)
+        with_comma = original[:-1]
+        
+        if len(with_comma) > 0 and with_comma[-1] != ",":
+            with_comma = with_comma + ","
+        return with_comma + " filename={!r})".format(self.filename)
 
 
 def process_files(filenames):
