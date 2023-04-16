@@ -207,7 +207,6 @@ class AutoScrollChild extends JSWindowActorChild {
     Services.els.addSystemEventListener(this.document, "mouseup", this, true);
     this.document.addEventListener("pagehide", this, true);
 
-    this._ignoreMouseEvents = true;
     this._startX = event.screenX;
     this._startY = event.screenY;
     this._screenX = event.screenX;
@@ -348,7 +347,7 @@ class AutoScrollChild extends JSWindowActorChild {
         }
       
       case "mouseup":
-        if (this._ignoreMouseEvents) {
+        if (this._scrollable) {
           
           
           event.preventClickEvent();
