@@ -35,7 +35,7 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  ["UPDATE_GENERAL", "UPDATE_PRESERVING_RULES"],
+  ["getSheetOwnerNode", "UPDATE_GENERAL", "UPDATE_PRESERVING_RULES"],
   "devtools/server/actors/style-sheet",
   true
 );
@@ -342,10 +342,11 @@ class StyleSheetWatcher {
     const excludedProtocolsRe = /^(chrome|file|resource|moz-extension):\/\//;
     if (!excludedProtocolsRe.test(href)) {
       
-      if (styleSheet.ownerNode) {
+      const ownerNode = getSheetOwnerNode(styleSheet);
+      if (ownerNode) {
         
-        options.window = styleSheet.ownerNode.ownerDocument.defaultView;
-        options.principal = styleSheet.ownerNode.ownerDocument.nodePrincipal;
+        options.window = ownerNode.ownerDocument.defaultView;
+        options.principal = ownerNode.ownerDocument.nodePrincipal;
       }
     }
 
@@ -501,16 +502,10 @@ class StyleSheetWatcher {
   _getSourcemapBaseURL(styleSheet) {
     
     
-    let parentStyleSheet = styleSheet;
-    while (parentStyleSheet.parentStyleSheet) {
-      parentStyleSheet = parentStyleSheet.parentStyleSheet;
-    }
-
     
-    
-    
-    const ownerDocument = parentStyleSheet.ownerNode
-      ? parentStyleSheet.ownerNode.ownerDocument
+    const ownerNode = getSheetOwnerNode(styleSheet);
+    const ownerDocument = ownerNode
+      ? ownerNode.ownerDocument
       : this._targetActor.window;
 
     return getSourcemapBaseURL(

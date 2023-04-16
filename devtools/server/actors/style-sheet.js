@@ -85,6 +85,34 @@ exports.getSheetText = getSheetText;
 
 
 
+
+
+
+
+
+
+function getSheetOwnerNode(sheet) {
+  
+  
+  if (sheet.ownerNode) {
+    return sheet.ownerNode;
+  }
+
+  let parentStyleSheet = sheet;
+  while (
+    parentStyleSheet.parentStyleSheet &&
+    parentStyleSheet !== parentStyleSheet.parentStyleSheet
+  ) {
+    parentStyleSheet = parentStyleSheet.parentStyleSheet;
+  }
+
+  return parentStyleSheet.ownerNode;
+}
+exports.getSheetOwnerNode = getSheetOwnerNode;
+
+
+
+
 function getCSSCharset(sheet) {
   if (sheet) {
     
@@ -132,10 +160,11 @@ async function fetchStylesheet(sheet) {
   const excludedProtocolsRe = /^(chrome|file|resource|moz-extension):\/\//;
   if (!excludedProtocolsRe.test(href)) {
     
-    if (sheet.ownerNode) {
+    const ownerNode = getSheetOwnerNode(sheet);
+    if (ownerNode) {
       
-      options.window = sheet.ownerNode.ownerDocument.defaultView;
-      options.principal = sheet.ownerNode.ownerDocument.nodePrincipal;
+      options.window = ownerNode.ownerDocument.defaultView;
+      options.principal = ownerNode.ownerDocument.nodePrincipal;
     }
   }
 
