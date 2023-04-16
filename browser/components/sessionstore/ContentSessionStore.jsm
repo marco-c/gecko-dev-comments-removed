@@ -100,15 +100,7 @@ class EventListener extends Handler {
 
     if (this.contentRestoreInitialized) {
       
-      
-      if (
-        this.contentRestore.restoreDocument() &&
-        Services.appinfo.sessionHistoryInParent
-      ) {
-        this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {
-          epoch: this.store.epoch,
-        });
-      }
+      this.contentRestore.restoreDocument();
     }
   }
 }
@@ -518,7 +510,6 @@ const MESSAGES = [
   "SessionStore:flush",
   "SessionStore:becomeActiveProcess",
   "SessionStore:prepareForProcessChange",
-  "SessionStore:setRestoringDocument",
 ];
 
 class ContentSessionStore {
@@ -530,16 +521,17 @@ class ContentSessionStore {
 
     this.contentRestoreInitialized = false;
 
-    XPCOMUtils.defineLazyGetter(this, "contentRestore", () => {
-      this.contentRestoreInitialized = true;
-      return new ContentRestore(mm);
-    });
-
-    this.handlers = [new EventListener(this), this.messageQueue];
+    this.handlers = [this.messageQueue];
     if (Services.appinfo.sessionHistoryInParent) {
       this.mm.sendAsyncMessage("SessionStore:addSHistoryListener");
     } else {
+      this.handlers.push(new EventListener(this));
       this.handlers.push(new SessionHistoryListener(this));
+
+      XPCOMUtils.defineLazyGetter(this, "contentRestore", () => {
+        this.contentRestoreInitialized = true;
+        return new ContentRestore(mm);
+      });
     }
 
     MESSAGES.forEach(m => mm.addMessageListener(m, this));
@@ -594,9 +586,6 @@ class ContentSessionStore {
         
         
         this.mm.docShell.persistLayoutHistoryState();
-        break;
-      case "SessionStore:setRestoringDocument":
-        this.contentRestore.setRestoringDocument(data);
         break;
       default:
         debug("received unknown message '" + name + "'");
