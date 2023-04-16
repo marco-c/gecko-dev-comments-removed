@@ -129,7 +129,7 @@ namespace soundtouch
     
     
     
-    #define SOUNDTOUCH_ALLOW_NONEXACT_SIMD_OPTIMIZATION    1
+    
 
 
     #ifdef SOUNDTOUCH_INTEGER_SAMPLES
@@ -155,7 +155,8 @@ namespace soundtouch
         
         typedef float  SAMPLETYPE;
         
-        typedef double LONG_SAMPLETYPE;
+        
+        typedef float LONG_SAMPLETYPE;
 
         #ifdef SOUNDTOUCH_ALLOW_X86_OPTIMIZATIONS
             
@@ -163,6 +164,12 @@ namespace soundtouch
         #endif
 
     #endif  
+
+    #if ((SOUNDTOUCH_ALLOW_SSE) || (__SSE__) || (SOUNDTOUCH_USE_NEON))
+        #if SOUNDTOUCH_ALLOW_NONEXACT_SIMD_OPTIMIZATION
+            #define ST_SIMD_AVOID_UNALIGNED
+        #endif
+    #endif
 
 };
 

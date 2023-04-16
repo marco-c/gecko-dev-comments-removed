@@ -78,6 +78,7 @@ void RateTransposer::enableAAFilter(bool newMode)
 #ifndef SOUNDTOUCH_PREVENT_CLICK_AT_RATE_CROSSOVER
     
     bUseAAFilter = newMode;
+    clear();
 #endif
 }
 
@@ -193,6 +194,7 @@ void RateTransposer::clear()
     outputBuffer.clear();
     midBuffer.clear();
     inputBuffer.clear();
+    pTransposer->resetRegisters();
 
     
     int prefill = getLatency();

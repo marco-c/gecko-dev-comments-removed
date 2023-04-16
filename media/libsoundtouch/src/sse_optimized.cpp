@@ -80,7 +80,7 @@ double TDStretchSSE::calcCrossCorr(const float *pV1, const float *pV2, double &a
     
     
 
-#ifdef SOUNDTOUCH_ALLOW_NONEXACT_SIMD_OPTIMIZATION
+#ifdef ST_SIMD_AVOID_UNALIGNED
     
     
 
