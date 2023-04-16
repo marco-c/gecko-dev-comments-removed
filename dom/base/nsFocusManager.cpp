@@ -1225,16 +1225,14 @@ nsresult nsFocusManager::FocusPlugin(Element* aPlugin) {
 }
 
 nsFocusManager::BlurredElementInfo::BlurredElementInfo(Element& aElement)
-    : mElement(aElement),
-      mHadRing(aElement.State().HasState(NS_EVENT_STATE_FOCUSRING)) {}
+    : mElement(aElement) {}
 
 nsFocusManager::BlurredElementInfo::~BlurredElementInfo() = default;
 
 
-static bool ShouldMatchFocusVisible(
-    nsPIDOMWindowOuter* aWindow, const Element& aElement, int32_t aFocusFlags,
-    const Maybe<nsFocusManager::BlurredElementInfo>& aBlurredElementInfo,
-    bool aIsRefocus, bool aRefocusedElementUsedToShowOutline) {
+static bool ShouldMatchFocusVisible(nsPIDOMWindowOuter* aWindow,
+                                    const Element& aElement,
+                                    int32_t aFocusFlags) {
   
   if (aFocusFlags & nsIFocusManager::FLAG_SHOWRING) {
     return true;
@@ -1271,18 +1269,7 @@ static bool ShouldMatchFocusVisible(
     case InputContextAction::CAUSE_UNKNOWN:
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      if (aIsRefocus) {
-        return aRefocusedElementUsedToShowOutline;
-      }
-      return !aBlurredElementInfo || aBlurredElementInfo->mHadRing;
+      return aWindow->UnknownFocusMethodShouldShowOutline();
     case InputContextAction::CAUSE_MOUSE:
     case InputContextAction::CAUSE_TOUCH:
     case InputContextAction::CAUSE_LONGPRESS:
@@ -2543,13 +2530,9 @@ void nsFocusManager::Focus(
                                 !IsNonFocusableRoot(aElement);
     const bool isRefocus = focusedNode && focusedNode == aElement;
     const bool shouldShowFocusRing =
-        sendFocusEvent &&
-        ShouldMatchFocusVisible(
-            aWindow, *aElement, aFlags, aBlurredElementInfo, isRefocus,
-            isRefocus && aWindow->FocusedElementShowedOutline());
+        sendFocusEvent && ShouldMatchFocusVisible(aWindow, *aElement, aFlags);
 
-    aWindow->SetFocusedElement(aElement, focusMethod, false,
-                               shouldShowFocusRing);
+    aWindow->SetFocusedElement(aElement, focusMethod, false);
 
     
     if (aElement && aFocusChanged) {
