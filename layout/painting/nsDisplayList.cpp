@@ -2919,7 +2919,7 @@ nsDisplayItem::nsDisplayItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
   if (mFrame->BackfaceIsHidden(disp)) {
     mItemFlags += ItemFlag::BackfaceHidden;
   }
-  if (mFrame->Combines3DTransformWithAncestors(disp)) {
+  if (mFrame->Combines3DTransformWithAncestors()) {
     mItemFlags += ItemFlag::Combines3DTransformWithAncestors;
   }
 }
@@ -7539,12 +7539,9 @@ Matrix4x4 nsDisplayTransform::GetResultingTransformMatrixInternal(
   
   
   
-  Matrix svgTransform, parentsChildrenOnlyTransform;
-  bool hasSVGTransforms =
-      frame &&
-      frame->IsSVGTransformed(&svgTransform, &parentsChildrenOnlyTransform);
-
+  bool hasSVGTransforms = false;
   bool shouldRound = nsLayoutUtils::ShouldSnapToGrid(frame);
+  Matrix svgTransform, parentsChildrenOnlyTransform;
 
   
 
@@ -7553,12 +7550,15 @@ Matrix4x4 nsDisplayTransform::GetResultingTransformMatrixInternal(
         aProperties.mTranslate, aProperties.mRotate, aProperties.mScale,
         aProperties.mMotion, aProperties.mTransform, aRefBox,
         aAppUnitsPerPixel);
-  } else if (hasSVGTransforms) {
-    
-    float pixelsPerCSSPx = AppUnitsPerCSSPixel() / aAppUnitsPerPixel;
-    svgTransform._31 *= pixelsPerCSSPx;
-    svgTransform._32 *= pixelsPerCSSPx;
-    result = Matrix4x4::From2D(svgTransform);
+  } else if (frame && frame->HasAnyStateBits(NS_FRAME_MAY_BE_TRANSFORMED)) {
+    if ((hasSVGTransforms = frame->IsSVGTransformed(
+             &svgTransform, &parentsChildrenOnlyTransform))) {
+      
+      float pixelsPerCSSPx = AppUnitsPerCSSPixel() / aAppUnitsPerPixel;
+      svgTransform._31 *= pixelsPerCSSPx;
+      svgTransform._32 *= pixelsPerCSSPx;
+      result = Matrix4x4::From2D(svgTransform);
+    }
   }
 
   

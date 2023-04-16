@@ -1916,17 +1916,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-  bool IsTransformed(const nsStyleDisplay* aStyleDisplay) const;
-  bool IsTransformed() const { return IsTransformed(StyleDisplay()); }
+  bool IsTransformed() const;
 
   
 
 
 
-  bool IsCSSTransformed(const nsStyleDisplay* aStyleDisplay) const;
+  bool IsCSSTransformed() const;
 
   
 
@@ -2032,14 +2028,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
-  bool Combines3DTransformWithAncestors(
-      const nsStyleDisplay* aStyleDisplay) const;
-  bool Combines3DTransformWithAncestors() const {
-    return Combines3DTransformWithAncestors(StyleDisplay());
-  }
+  bool Combines3DTransformWithAncestors() const;
 
   
 
@@ -2051,7 +2040,7 @@ class nsIFrame : public nsQueryFrame {
 
   bool IsPreserve3DLeaf(const nsStyleDisplay* aStyleDisplay,
                         mozilla::EffectSet* aEffectSet = nullptr) const {
-    return Combines3DTransformWithAncestors(aStyleDisplay) &&
+    return Combines3DTransformWithAncestors() &&
            !Extend3DContext(aStyleDisplay, StyleEffects(), aEffectSet);
   }
   bool IsPreserve3DLeaf(mozilla::EffectSet* aEffectSet = nullptr) const {
