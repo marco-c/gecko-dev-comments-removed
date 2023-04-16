@@ -1045,9 +1045,14 @@ static bool EnsureParserCreatedClasses(JSContext* cx, ParseTaskKind kind) {
     return false;  
   }
 
-  if (kind == ParseTaskKind::Module &&
-      !GlobalObject::ensureModulePrototypesCreated(cx, global)) {
-    return false;
+  if (kind == ParseTaskKind::Module) {
+    
+    
+    bool setUsedAsPrototype = true;
+    if (!GlobalObject::ensureModulePrototypesCreated(cx, global,
+                                                     setUsedAsPrototype)) {
+      return false;
+    }
   }
 
   return true;
