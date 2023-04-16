@@ -372,9 +372,6 @@ class nsContentUtils {
 
 
 
-  static nsINode* GetCrossDocParentNode(nsINode* aChild);
-
-  
 
 
 
