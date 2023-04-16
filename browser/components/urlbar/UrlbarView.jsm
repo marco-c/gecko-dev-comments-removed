@@ -903,27 +903,24 @@ class UrlbarView {
 
 
 
-
-  _rowCanUpdateToResult(
-    rowIndex,
-    result,
-    firstSearchSuggestionIndex,
-    lastSearchSuggestionIndex,
-    queryContext
-  ) {
+  _rowCanUpdateToResult(rowIndex, result, seenSearchSuggestion) {
     
     if (result.heuristic) {
       return true;
     }
     let row = this._rows.children[rowIndex];
-    
-    
-    
-    
-    if (
-      result.suggestedIndex !== row.result.suggestedIndex &&
-      rowIndex == queryContext.maxResults - 1
-    ) {
+    if (result.suggestedIndex >= 0) {
+      
+      
+      
+      
+      
+      return true;
+    }
+    if (row.result.suggestedIndex >= 0) {
+      
+      
+      
       return false;
     }
     let resultIsSearchSuggestion = this._resultIsSearchSuggestion(result);
@@ -937,7 +934,7 @@ class UrlbarView {
     
     
     
-    return resultIsSearchSuggestion && rowIndex >= firstSearchSuggestionIndex;
+    return resultIsSearchSuggestion && seenSearchSuggestion;
   }
 
   _updateResults(queryContext) {
@@ -946,60 +943,66 @@ class UrlbarView {
     
 
     
-    let firstSearchSuggestionIndex = -1;
-    let lastSearchSuggestionIndex = -1;
-    for (let i = 0; i < this._rows.children.length; ++i) {
-      let row = this._rows.children[i];
-      
-      row.setAttribute("stale", "true");
-      
-      
-      if (
-        row.result.heuristic ||
-        i >= queryContext.maxResults ||
-        !this._resultIsSearchSuggestion(row.result)
-      ) {
-        continue;
-      }
-      if (firstSearchSuggestionIndex == -1) {
-        firstSearchSuggestionIndex = i;
-      }
-      lastSearchSuggestionIndex = i;
-    }
-
-    
     
     
     let results = queryContext.results;
+    let rowIndex = 0;
     let resultIndex = 0;
+    let visibleSpanCount = 0;
+    let seenSearchSuggestion = false;
     
     for (
-      let rowIndex = 0;
+      ;
       rowIndex < this._rows.children.length && resultIndex < results.length;
       ++rowIndex
     ) {
       let row = this._rows.children[rowIndex];
       let result = results[resultIndex];
       if (
-        this._rowCanUpdateToResult(
-          rowIndex,
-          result,
-          firstSearchSuggestionIndex,
-          lastSearchSuggestionIndex,
-          queryContext
-        )
+        !seenSearchSuggestion &&
+        !row.result.heuristic &&
+        this._resultIsSearchSuggestion(row.result)
       ) {
+        seenSearchSuggestion = true;
+      }
+      if (this._rowCanUpdateToResult(rowIndex, result, seenSearchSuggestion)) {
+        
         this._updateRow(row, result);
         resultIndex++;
+      } else {
+        
+        row.setAttribute("stale", "true");
+      }
+      if (this._isElementVisible(row)) {
+        visibleSpanCount += UrlbarUtils.getSpanForResult(row.result);
       }
     }
+
+    
+    
+    
+    
+    for (; rowIndex < this._rows.children.length; ++rowIndex) {
+      let row = this._rows.children[rowIndex];
+      row.setAttribute("stale", "true");
+      if (this._isElementVisible(row)) {
+        visibleSpanCount += UrlbarUtils.getSpanForResult(row.result);
+      }
+    }
+
     
     for (; resultIndex < results.length; ++resultIndex) {
       let row = this._createRow();
-      this._updateRow(row, results[resultIndex]);
-      
-      
-      if (this._rows.children.length >= queryContext.maxResults) {
+      let result = results[resultIndex];
+      this._updateRow(row, result);
+      let newVisibleSpanCount =
+        visibleSpanCount + UrlbarUtils.getSpanForResult(result);
+      if (newVisibleSpanCount <= queryContext.maxResults) {
+        
+        visibleSpanCount = newVisibleSpanCount;
+      } else {
+        
+        
         this._setRowVisibility(row, false);
       }
       this._rows.appendChild(row);
