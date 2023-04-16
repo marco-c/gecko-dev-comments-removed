@@ -434,26 +434,6 @@ function promiseNativeWheelAndWaitForWheelEvent(
 
 
 
-function synthesizeNativeWheelAndWaitForScrollEvent(
-  aTarget,
-  aX,
-  aY,
-  aDeltaX,
-  aDeltaY,
-  aCallback
-) {
-  promiseNativeWheelAndWaitForScrollEvent(
-    aTarget,
-    aX,
-    aY,
-    aDeltaX,
-    aDeltaY
-  ).then(aCallback);
-  return true;
-}
-
-
-
 function promiseNativeWheelAndWaitForScrollEvent(
   aTarget,
   aX,
