@@ -851,7 +851,7 @@ void nsNativeBasicTheme::PaintRoundedRectWithRadius(
   
   rect.Deflate(borderWidth * 0.5f);
 
-  LayoutDeviceCoord radius(aRadius * aDpiRatio);
+  LayoutDeviceCoord radius(aRadius * aDpiRatio - borderWidth * 0.5f);
   
   {
     LayoutDeviceCoord min = std::min(rect.width, rect.height);
