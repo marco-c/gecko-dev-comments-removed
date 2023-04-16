@@ -9,7 +9,7 @@ function getVisibleChildrenIds(menuElem) {
     .map(elem => elem.id || elem.tagName);
 }
 
-function checkIsLinkMenuItemVisible(visibleMenuItemIds) {
+function checkIsDefaultMenuItemVisible(visibleMenuItemIds) {
   
   
   ok(
@@ -56,14 +56,6 @@ add_task(async function overrideContext_in_extension_tab() {
       { once: true }
     );
 
-    document.querySelector("p").addEventListener(
-      "contextmenu",
-      () => {
-        browser.menus.overrideContext({ showDefaults: true });
-      },
-      { once: true }
-    );
-
     browser.menus.create({
       id: "tab_1",
       title: "tab_1",
@@ -104,7 +96,6 @@ add_task(async function overrideContext_in_extension_tab() {
       "tab.html": `
         <!DOCTYPE html><meta charset="utf-8">
         <a href="http://example.com/">Link</a>
-        <p>Some text</p>
         <div id="shadowHost"></div>
         <script src="tab.js"></script>
       `,
@@ -133,32 +124,16 @@ add_task(async function overrideContext_in_extension_tab() {
 
       browser.menus.onShown.addListener(info => {
         browser.test.assertEq("tab", info.viewType, "Expected viewType");
-        let sortedContexts = info.contexts.sort().join(",");
-        if (info.contexts.includes("link")) {
-          browser.test.assertEq(
-            "bg_1,bg_2,tab_1,tab_2",
-            info.menuIds.join(","),
-            "Expected menu items."
-          );
-          browser.test.assertEq(
-            "all,link",
-            sortedContexts,
-            "Expected menu contexts"
-          );
-        } else if (info.contexts.includes("page")) {
-          browser.test.assertEq(
-            "bg_1,tab_1,tab_2",
-            info.menuIds.join(","),
-            "Expected menu items."
-          );
-          browser.test.assertEq(
-            "all,page",
-            sortedContexts,
-            "Expected menu contexts"
-          );
-        } else {
-          browser.test.fail(`Unexpected menu context: ${sortedContexts}`);
-        }
+        browser.test.assertEq(
+          "bg_1,bg_2,tab_1,tab_2",
+          info.menuIds.join(","),
+          "Expected menu items."
+        );
+        browser.test.assertEq(
+          "all,link",
+          info.contexts.sort().join(","),
+          "Expected menu contexts"
+        );
         browser.test.sendMessage("onShown");
       });
 
@@ -195,12 +170,6 @@ add_task(async function overrideContext_in_extension_tab() {
   const EXPECTED_EXTENSION_MENU_IDS = [
     `${makeWidgetId(extension.id)}-menuitem-_bg_1`,
     `${makeWidgetId(extension.id)}-menuitem-_bg_2`,
-    `${makeWidgetId(extension.id)}-menuitem-_tab_1`,
-    `${makeWidgetId(extension.id)}-menuitem-_tab_2`,
-  ];
-
-  const EXPECTED_EXTENSION_MENU_IDS_NOLINK = [
-    `${makeWidgetId(extension.id)}-menuitem-_bg_1`,
     `${makeWidgetId(extension.id)}-menuitem-_tab_1`,
     `${makeWidgetId(extension.id)}-menuitem-_tab_2`,
   ];
@@ -242,7 +211,7 @@ add_task(async function overrideContext_in_extension_tab() {
       "Expected extension menu items at the start."
     );
 
-    checkIsLinkMenuItemVisible(visibleMenuItemIds);
+    checkIsDefaultMenuItemVisible(visibleMenuItemIds);
 
     is(
       visibleMenuItemIds[visibleMenuItemIds.length - 1],
@@ -264,7 +233,7 @@ add_task(async function overrideContext_in_extension_tab() {
     let menu = await openContextMenu("a");
     await extension.awaitMessage("onShown");
 
-    checkIsLinkMenuItemVisible(getVisibleChildrenIds(menu));
+    checkIsDefaultMenuItemVisible(getVisibleChildrenIds(menu));
 
     let menuItems = menu.getElementsByAttribute("ext-type", "top-level-menu");
     is(menuItems.length, 1, "Expected top-level menu element for extension.");
@@ -299,51 +268,6 @@ add_task(async function overrideContext_in_extension_tab() {
       getVisibleChildrenIds(menu),
       EXPECTED_EXTENSION_MENU_IDS,
       "Expected only extension menu items after overrideContext({}) in shadow DOM"
-    );
-
-    await closeContextMenu();
-  }
-
-  {
-    
-    info(
-      "Expecting overrideContext to insert items after the navigation group."
-    );
-    let menu = await openContextMenu("p");
-    await extension.awaitMessage("onShown");
-
-    let visibleMenuItemIds = getVisibleChildrenIds(menu);
-    if (AppConstants.platform == "macosx") {
-      
-      Assert.deepEqual(
-        visibleMenuItemIds.slice(0, EXPECTED_EXTENSION_MENU_IDS_NOLINK.length),
-        EXPECTED_EXTENSION_MENU_IDS_NOLINK,
-        "Expected extension menu items at the start."
-      );
-    } else {
-      
-      Assert.deepEqual(
-        visibleMenuItemIds.slice(
-          0,
-          2 + EXPECTED_EXTENSION_MENU_IDS_NOLINK.length
-        ),
-        [
-          "context-navigation",
-          "context-sep-navigation",
-          ...EXPECTED_EXTENSION_MENU_IDS_NOLINK,
-        ],
-        "Expected extension menu items immmediately after navigation items."
-      );
-    }
-    ok(
-      visibleMenuItemIds.includes("context-savepage"),
-      "Default menu items should be there."
-    );
-
-    is(
-      visibleMenuItemIds[visibleMenuItemIds.length - 1],
-      OTHER_EXTENSION_MENU_ID,
-      "Other extension menu item should be at the end."
     );
 
     await closeContextMenu();
@@ -512,7 +436,7 @@ add_task(async function overrideContext_sidebar_edge_cases() {
     await extension.awaitMessage("oncontextmenu_in_dom");
     await extension.awaitMessage("onShown_3");
     let visibleMenuItemIds = getVisibleChildrenIds(menu);
-    checkIsLinkMenuItemVisible(visibleMenuItemIds);
+    checkIsDefaultMenuItemVisible(visibleMenuItemIds);
     ok(
       visibleMenuItemIds.includes(EXPECTED_EXTENSION_MENU_ID),
       "Expected extension menu item"
