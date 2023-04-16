@@ -369,12 +369,16 @@ add_task(async function testArrowsRtl() {
 
 
 add_task(async function testArrowsBookmarksOverflowButton() {
-  let toolbarOpened = TestUtils.waitForCondition(() => {
-    let toolbar = gNavToolbox.querySelector("#PersonalToolbar");
-    return !toolbar.collapsed;
-  }, "waiting for toolbar to become visible");
-  CustomizableUI.setToolbarVisibility("PersonalToolbar", true);
-  await toolbarOpened;
+  let toolbar = gNavToolbox.querySelector("#PersonalToolbar");
+  
+  
+  setToolbarVisibility(toolbar, true, true, false);
+  Assert.ok(!toolbar.collapsed, "toolbar should be visible");
+
+  await BrowserTestUtils.waitForEvent(
+    toolbar,
+    "BookmarksToolbarVisibilityUpdated"
+  );
   let items = document.getElementById("PlacesToolbarItems").children;
   let lastVisible;
   for (let item of items) {
@@ -385,7 +389,7 @@ add_task(async function testArrowsBookmarksOverflowButton() {
   }
   forceFocus(lastVisible);
   await expectFocusAfterKey("ArrowRight", "PlacesChevron");
-  CustomizableUI.setToolbarVisibility("PersonalToolbar", false);
+  setToolbarVisibility(toolbar, false, true, false);
 });
 
 registerCleanupFunction(async function() {
