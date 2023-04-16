@@ -124,6 +124,7 @@
 #include "mozilla/net/AsyncUrlChannelClassifier.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/NeckoChannelParams.h"
+#include "mozilla/net/OpaqueResponseUtils.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "HttpTrafficAnalyzer.h"
 #include "mozilla/net/SocketProcessParent.h"
@@ -1619,6 +1620,16 @@ nsresult nsHttpChannel::CallOnStartRequest() {
   }
 
   
+  
+  
+  
+  if (!EnsureOpaqueResponseIsAllowed()) {
+    
+    
+    
+  }
+
+  
   if (mLoadFlags & LOAD_CALL_CONTENT_SNIFFERS) {
     
     
@@ -1644,6 +1655,13 @@ nsresult nsHttpChannel::CallOnStartRequest() {
         trans->SetSniffedTypeToChannel(CallTypeSniffers, thisChannel);
       }
     }
+  }
+
+  auto isAllowedOrErr = EnsureOpaqueResponseIsAllowedAfterSniff();
+  if (isAllowedOrErr.isErr() || !isAllowedOrErr.inspect()) {
+    
+    
+    
   }
 
   
@@ -9961,6 +9979,20 @@ HttpChannelSecurityWarningReporter* nsHttpChannel::GetWarningReporter() {
   LOG(("nsHttpChannel [this=%p] GetWarningReporter [%p]", this,
        mWarningReporter.get()));
   return mWarningReporter.get();
+}
+
+
+
+
+void nsHttpChannel::DisableIsOpaqueResponseAllowedAfterSniffCheck(
+    SnifferType aType) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (mCheckIsOpaqueResponseAllowedAfterSniff) {
+    MOZ_ASSERT(mCachedOpaqueResponseBlockingPref);
+
+    mCheckIsOpaqueResponseAllowedAfterSniff = false;
+  }
 }
 
 namespace {
