@@ -158,7 +158,7 @@ nsMenuX::nsMenuX(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsI
   
   
   
-  MenuConstruct();
+  RebuildMenu();
 
   mIcon = MakeUnique<nsMenuItemIconX>(this);
 
@@ -321,25 +321,24 @@ nsresult nsMenuX::RemoveAll() {
 }
 
 nsEventStatus nsMenuX::MenuOpened() {
+  mIsOpen = true;
+
   
   if (mContent->IsElement()) {
     mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::open, u"true"_ns, true);
   }
 
-  
-  bool keepProcessing = OnOpen();
-
-  if (!mNeedsRebuild || !keepProcessing) {
+  if (!OnOpen()) {
+    
+    
+    
+    
     return nsEventStatus_eConsumeNoDefault;
   }
 
-  if (!mConstructed || mNeedsRebuild) {
-    if (mNeedsRebuild) {
-      RemoveAll();
-    }
-
-    MenuConstruct();
-    mConstructed = true;
+  if (mNeedsRebuild) {
+    RemoveAll();
+    RebuildMenu();
   }
 
   nsEventStatus status = nsEventStatus_eIgnore;
@@ -353,43 +352,30 @@ nsEventStatus nsMenuX::MenuOpened() {
 }
 
 void nsMenuX::MenuClosed() {
-  if (!mConstructed) {
+  if (!mIsOpen) {
     return;
   }
 
+  mIsOpen = false;
+
   nsCOMPtr<nsIContent> popupContent = GetMenuPopupContent();
-  nsIContent* dispatchTo = popupContent ? popupContent : mContent;
+  nsCOMPtr<nsIContent> dispatchTo = popupContent ? popupContent : mContent;
 
-  if (!mDidFirePopupHiding && !mDidFirePopupHidden) {
-    nsEventStatus status = nsEventStatus_eIgnore;
-    WidgetMouseEvent event(true, eXULPopupHiding, nullptr, WidgetMouseEvent::eReal);
-    EventDispatcher::Dispatch(dispatchTo, nullptr, &event, nullptr, &status);
-
-    mDidFirePopupHiding = true;
-  }
-
-  if (mNeedsRebuild) {
-    mConstructed = false;
-  }
+  nsEventStatus status = nsEventStatus_eIgnore;
+  WidgetMouseEvent popupHiding(true, eXULPopupHiding, nullptr, WidgetMouseEvent::eReal);
+  EventDispatcher::Dispatch(dispatchTo, nullptr, &popupHiding, nullptr, &status);
 
   if (mContent->IsElement()) {
     mContent->AsElement()->UnsetAttr(kNameSpaceID_None, nsGkAtoms::open, true);
   }
 
-  nsEventStatus status = nsEventStatus_eIgnore;
-  WidgetMouseEvent event(true, eXULPopupHidden, nullptr, WidgetMouseEvent::eReal);
-  EventDispatcher::Dispatch(dispatchTo, nullptr, &event, nullptr, &status);
-
-  mDidFirePopupHidden = true;
-  mConstructed = false;
+  WidgetMouseEvent popupHidden(true, eXULPopupHidden, nullptr, WidgetMouseEvent::eReal);
+  EventDispatcher::Dispatch(dispatchTo, nullptr, &popupHidden, nullptr, &status);
 }
 
-void nsMenuX::MenuConstruct() {
-  mConstructed = false;
+void nsMenuX::RebuildMenu() {
+  MOZ_RELEASE_ASSERT(mNeedsRebuild);
   gConstructingMenu = true;
-
-  mDidFirePopupHiding = false;
-  mDidFirePopupHidden = false;
 
   
   nsCOMPtr<nsIContent> menuPopup = GetMenuPopupContent();
@@ -679,8 +665,8 @@ void nsMenuX::Dump(uint32_t aIndent) const {
   if (mNeedsRebuild) {
     printf(" [NeedsRebuild]");
   }
-  if (mConstructed) {
-    printf(" [Constructed]");
+  if (mIsOpen) {
+    printf(" [Open]");
   }
   if (mVisible) {
     printf(" [Visible]");
