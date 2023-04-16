@@ -141,6 +141,7 @@ registerCleanupFunction(() => {
   prefs.clearUserPref("network.trr.clear-cache-on-pref-change");
   prefs.clearUserPref("network.trr.odoh.enabled");
   prefs.clearUserPref("network.trr.odoh.target_path");
+  prefs.clearUserPref("network.trr.odoh.configs_uri");
   certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
     false
   );
@@ -351,6 +352,61 @@ add_task(async function testODoHConfig7() {
   await new DNSListener("bar.example.com", "127.0.0.1");
 });
 
+async function ODoHConfigTestHTTP(configUri, expectedResult) {
+  
+  
+  prefs.setCharPref("network.trr.odoh.configs_uri", configUri);
+
+  await observerPromise("odoh-service-activated");
+  Assert.equal(dns.ODoHActivated, expectedResult);
+}
+
+add_task(async function testODoHConfig8() {
+  dns.clearCache(true);
+  prefs.setCharPref("network.trr.uri", "");
+
+  await ODoHConfigTestHTTP(
+    `https://foo.example.com:${h2Port}/odohconfig?downloadFrom=http`,
+    true
+  );
+});
+
+add_task(async function testODoHConfig9() {
+  
+  
+  prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${h2Port}/odohconfig`
+  );
+  prefs.setCharPref(
+    "network.trr.odoh.target_host",
+    `https://odoh_host.example.com:${h2Port}`
+  );
+
+  
+  prefs.setIntPref("network.trr.odoh.min_ttl", 1);
+  
+  prefs.clearUserPref("network.trr.odoh.configs_uri");
+
+  await observerPromise("odoh-service-activated");
+  Assert.ok(dns.ODoHActivated);
+
+  await ODoHConfigTestHTTP(
+    `https://foo.example.com:${h2Port}/odohconfig?downloadFrom=http`,
+    true
+  );
+
+  
+  await observerPromise("odoh-service-activated");
+  Assert.ok(dns.ODoHActivated);
+  prefs.clearUserPref("network.trr.odoh.min_ttl");
+});
+
+add_task(async function testODoHConfig10() {
+  
+  await ODoHConfigTestHTTP("http://invalid_odoh_config.com", true);
+});
+
 
 add_task(async function test1() {
   dns.clearCache(true);
@@ -358,7 +414,10 @@ add_task(async function test1() {
   prefs.setBoolPref("network.trr.odoh.enabled", true);
 
   
-  await ODoHConfigTest("", `https://odoh_host.example.com:${h2Port}`, true);
+  await ODoHConfigTestHTTP(
+    `https://foo.example.com:${h2Port}/odohconfig?downloadFrom=http`,
+    true
+  );
 
   
   prefs.setCharPref("network.dns.localDomains", "odoh_host.example.com");
