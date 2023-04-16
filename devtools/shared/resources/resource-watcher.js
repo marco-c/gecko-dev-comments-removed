@@ -4,7 +4,10 @@
 
 "use strict";
 
+const Services = require("Services");
 const { throttle } = require("devtools/shared/throttle");
+
+const BROWSERTOOLBOX_FISSION_ENABLED = "devtools.browsertoolbox.fission";
 
 class ResourceWatcher {
   
@@ -693,6 +696,16 @@ class ResourceWatcher {
 
 
   hasResourceWatcherSupport(resourceType) {
+    
+    
+    
+    if (
+      this.targetList.targetFront.isParentProcess &&
+      !Services.prefs.getBoolPref(BROWSERTOOLBOX_FISSION_ENABLED, false)
+    ) {
+      return false;
+    }
+
     return this.watcherFront?.traits?.resources?.[resourceType];
   }
 

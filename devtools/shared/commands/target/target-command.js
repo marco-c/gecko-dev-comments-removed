@@ -218,6 +218,16 @@ class TargetCommand extends EventEmitter {
   }
 
   hasTargetWatcherSupport(type) {
+    
+    
+    
+    if (
+      this.targetFront.isParentProcess &&
+      !Services.prefs.getBoolPref(BROWSERTOOLBOX_FISSION_ENABLED, false)
+    ) {
+      return false;
+    }
+
     return !!this.watcherFront?.traits[type];
   }
 
