@@ -24,7 +24,7 @@ add_task(async function() {
 
   
   const win = Services.wm.getMostRecentWindow("navigator:browser");
-  const activeTabID = win.gBrowser.selectedBrowser.browsingContext.id;
+  const activeTabID = win.gBrowser.selectedBrowser.browsingContext.browserId;
 
   front.once(
     "profiler-started",
@@ -36,7 +36,7 @@ add_task(async function() {
       is(
         activeTID,
         activeTabID,
-        "Should apply active browsing context ID by startProfiler"
+        "Should apply active browser ID by startProfiler"
       );
     }
   );

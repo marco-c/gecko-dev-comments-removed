@@ -276,8 +276,8 @@ function startProfiler(pageContext) {
   );
 
   
-  const { getActiveBrowsingContextID } = lazy.RecordingUtils();
-  const activeTabID = getActiveBrowsingContextID();
+  const { getActiveBrowserID } = lazy.RecordingUtils();
+  const activeTabID = getActiveBrowserID();
 
   Services.profiler.StartProfiler(
     entries,

@@ -101,7 +101,17 @@ declare namespace MockedExports {
   }
 
   interface BrowsingContext {
-    id: number;
+    
+
+
+
+
+
+
+
+
+
+    browserId: number;
   }
 
   type GetPref<T> = (prefName: string, defaultValue?: T) => T;

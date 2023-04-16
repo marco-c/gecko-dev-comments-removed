@@ -196,7 +196,7 @@ export type GetEnvironmentVariable = (envName: string) => string;
 
 
 
-export type GetActiveBrowsingContextID = () => number;
+export type GetActiveBrowserID = () => number;
 
 
 

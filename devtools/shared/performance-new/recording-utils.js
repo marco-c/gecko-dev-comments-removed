@@ -42,16 +42,16 @@ const lazyServices = requireLazy(() =>
 
 
 
-function getActiveBrowsingContextID() {
+function getActiveBrowserID() {
   const { Services } = lazyServices();
   const win = Services.wm.getMostRecentWindow("navigator:browser");
 
-  if (win?.gBrowser?.selectedBrowser?.browsingContext?.id) {
-    return win.gBrowser.selectedBrowser.browsingContext.id;
+  if (win?.gBrowser?.selectedBrowser?.browsingContext?.browserId) {
+    return win.gBrowser.selectedBrowser.browsingContext.browserId;
   }
 
   console.error(
-    "Failed to get the active BrowsingContext ID while starting the profiler."
+    "Failed to get the active browserId while starting the profiler."
   );
   
   
@@ -59,5 +59,5 @@ function getActiveBrowsingContextID() {
 }
 
 module.exports = {
-  getActiveBrowsingContextID,
+  getActiveBrowserID,
 };
