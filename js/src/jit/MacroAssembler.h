@@ -2387,6 +2387,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void absInt32x4(FloatRegister src, FloatRegister dest)
       DEFINED_ON(x86_shared, arm64);
 
+  inline void absInt64x2(FloatRegister src, FloatRegister dest)
+      DEFINED_ON(x86_shared, arm64);
+
   
   
 
