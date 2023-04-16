@@ -28,7 +28,6 @@ XPCOMUtils.defineLazyGetter(this, "isXpcshell", function() {
 
 
 
-
 const errorMatches = (error, expectedError, context) => {
   if (
     typeof error === "object" &&
@@ -37,9 +36,6 @@ const errorMatches = (error, expectedError, context) => {
   ) {
     Cu.reportError("Error object belongs to the wrong scope.");
     return false;
-  }
-  if (expectedError === null) {
-    return true;
   }
 
   if (typeof expectedError === "function") {
