@@ -2,7 +2,7 @@
 
 
 
-import { normalizeToKebabCase } from "./utils.js";
+import { normalizeToKebabCase } from "../utils.js";
 
 export class ListItem extends HTMLElement {
   constructor(item) {

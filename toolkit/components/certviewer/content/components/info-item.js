@@ -2,7 +2,7 @@
 
 
 
-import { b64ToPEM, normalizeToKebabCase } from "./utils.js";
+import { b64ToPEM, normalizeToKebabCase } from "../utils.js";
 
 export class InfoItem extends HTMLElement {
   constructor(item) {

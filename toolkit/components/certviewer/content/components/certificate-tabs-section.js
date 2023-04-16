@@ -2,7 +2,7 @@
 
 
 
-import { normalizeToKebabCase } from "./utils.js";
+import { normalizeToKebabCase } from "../utils.js";
 import { updateSelectedItem } from "../certviewer.js";
 
 export class CertificateTabsSection extends HTMLElement {
