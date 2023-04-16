@@ -2546,6 +2546,12 @@ void MacroAssembler::bitwiseSelectSimd128(FloatRegister onTrue,
 
 
 
+void MacroAssembler::popcntInt8x16(FloatRegister src, FloatRegister dest) {
+  Cnt(Simd16B(dest), Simd16B(src));
+}
+
+
+
 void MacroAssembler::anyTrueSimd128(FloatRegister src, Register dest_) {
   ScratchSimd128Scope scratch_(*this);
   ARMFPRegister scratch(Simd1D(scratch_));

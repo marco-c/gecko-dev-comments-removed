@@ -2541,6 +2541,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
 
+  inline void popcntInt8x16(FloatRegister src, FloatRegister dest,
+                            FloatRegister temp) DEFINED_ON(x86_shared);
+
+  inline void popcntInt8x16(FloatRegister src, FloatRegister dest)
+      DEFINED_ON(arm64);
+
+  
+
   inline void anyTrueSimd128(FloatRegister src, Register dest)
       DEFINED_ON(x86, x64, arm64);
 

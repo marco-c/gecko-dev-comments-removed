@@ -2208,6 +2208,13 @@ void MacroAssembler::bitwiseSelectSimd128(FloatRegister mask,
 
 
 
+void MacroAssembler::popcntInt8x16(FloatRegister src, FloatRegister dest,
+                                   FloatRegister temp) {
+  MacroAssemblerX86Shared::popcntInt8x16(src, temp, dest);
+}
+
+
+
 void MacroAssembler::compareInt8x16(Assembler::Condition cond,
                                     FloatRegister rhs, FloatRegister lhsDest) {
   MacroAssemblerX86Shared::compareInt8x16(lhsDest, Operand(rhs), cond, lhsDest);
