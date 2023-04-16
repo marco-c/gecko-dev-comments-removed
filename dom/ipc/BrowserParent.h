@@ -474,6 +474,11 @@ class BrowserParent final : public PBrowserParent,
 
   nsresult UpdatePosition();
 
+  
+  
+  
+  void NotifyPositionUpdatedForContentsInPopup();
+
   void SizeModeChanged(const nsSizeMode& aSizeMode);
 
   void HandleAccessKey(const WidgetKeyboardEvent& aEvent,
