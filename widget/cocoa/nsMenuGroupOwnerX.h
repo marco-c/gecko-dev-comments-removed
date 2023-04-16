@@ -42,9 +42,8 @@ enum {
 
 class nsMenuGroupOwnerX : public nsIMutationObserver {
  public:
-  explicit nsMenuGroupOwnerX(nsMenuBarX* aMenuBarIfMenuBar);
-
-  void Create(mozilla::dom::Element* aContent);
+  
+  nsMenuGroupOwnerX(mozilla::dom::Element* aElement, nsMenuBarX* aMenuBarIfMenuBar);
 
   void RegisterForContentChanges(nsIContent* aContent, nsChangeObserver* aMenuObject);
   void UnregisterForContentChanges(nsIContent* aContent);
