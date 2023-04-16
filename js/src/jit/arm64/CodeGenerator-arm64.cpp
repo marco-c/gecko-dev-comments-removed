@@ -2536,6 +2536,22 @@ void CodeGenerator::visitExtendInt32ToInt64(LExtendInt32ToInt64* lir) {
   }
 }
 
+void CodeGenerator::visitWasmExtendU32Index(LWasmExtendU32Index* lir) {
+  
+  
+  Register output = ToRegister(lir->output());
+  MOZ_ASSERT(ToRegister(lir->input()) == output);
+  masm.assertCanonicalInt32(output);
+}
+
+void CodeGenerator::visitWasmWrapU32Index(LWasmWrapU32Index* lir) {
+  
+  
+  Register output = ToRegister(lir->output());
+  MOZ_ASSERT(ToRegister(lir->input()) == output);
+  masm.assertCanonicalInt32(output);
+}
+
 void CodeGenerator::visitCompareI64AndBranch(LCompareI64AndBranch* comp) {
   const MCompare* mir = comp->cmpMir();
   const mozilla::DebugOnly<MCompare::CompareType> type = mir->compareType();

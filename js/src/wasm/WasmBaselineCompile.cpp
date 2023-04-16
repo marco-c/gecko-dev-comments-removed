@@ -6937,9 +6937,53 @@ class BaseCompiler final : public BaseCompilerInterface {
 
     if (!moduleEnv_.hugeMemoryEnabled() && !check->omitBoundsCheck) {
       Label ok;
+#ifdef JS_64BIT
+      
+      
+      
+      
+      
+      
+      
+      if ((moduleEnv_.maxMemoryLength.isNothing() ||
+           moduleEnv_.maxMemoryLength.value() >= 0x100000000) &&
+          ArrayBufferObject::maxBufferByteLength() >= 0x100000000) {
+        
+        RegI64 ptr64 = fromI32(ptr);
+
+        
+        
+#  if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64)
+        
+        
+        masm.assertCanonicalInt32(ptr);
+#  else
+        MOZ_CRASH("Platform code needed here");
+#  endif
+
+        
+        masm.wasmBoundsCheck64(
+            Assembler::Below, ptr64,
+            Address(tls, offsetof(TlsData, boundsCheckLimit)), &ok);
+
+        
+        
+        
+#  if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64)
+        
+#  else
+        MOZ_CRASH("Platform code needed here");
+#  endif
+      } else {
+        masm.wasmBoundsCheck32(
+            Assembler::Below, ptr,
+            Address(tls, offsetof(TlsData, boundsCheckLimit)), &ok);
+      }
+#else
       masm.wasmBoundsCheck32(Assembler::Below, ptr,
                              Address(tls, offsetof(TlsData, boundsCheckLimit)),
                              &ok);
+#endif
       masm.wasmTrap(Trap::OutOfBounds, bytecodeOffset());
       masm.bind(&ok);
     }

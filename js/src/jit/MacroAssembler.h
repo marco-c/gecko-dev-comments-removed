@@ -313,6 +313,8 @@ constexpr uint32_t WasmCalleeTLSOffsetBeforeCall =
 
 
 
+
+
 class MacroAssembler : public MacroAssemblerSpecific {
  public:
   mozilla::Maybe<JitContext> jitContext_;
@@ -3417,6 +3419,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  
+  
+  
+  
+  
+
   void wasmBoundsCheck32(Condition cond, Register index,
                          Register boundsCheckLimit, Label* label)
       DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
@@ -3424,6 +3432,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void wasmBoundsCheck32(Condition cond, Register index,
                          Address boundsCheckLimit, Label* label)
       DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+
+  void wasmBoundsCheck64(Condition cond, Register64 index,
+                         Register64 boundsCheckLimit, Label* label)
+      DEFINED_ON(arm64, mips64, x64);
+
+  void wasmBoundsCheck64(Condition cond, Register64 index,
+                         Address boundsCheckLimit, Label* label)
+      DEFINED_ON(arm64, mips64, x64);
 
   
   void wasmLoad(const wasm::MemoryAccessDesc& access, Operand srcAddr,
@@ -4938,6 +4954,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   void touchFrameValues(Register numStackValues, Register scratch1,
                         Register scratch2);
+
+#ifdef JS_64BIT
+  
+  
+  
+  inline void assertCanonicalInt32(Register r);
+#endif
 };
 
 

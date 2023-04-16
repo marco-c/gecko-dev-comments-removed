@@ -769,6 +769,22 @@ void CodeGenerator::visitExtendInt32ToInt64(LExtendInt32ToInt64* lir) {
   }
 }
 
+void CodeGenerator::visitWasmExtendU32Index(LWasmExtendU32Index* lir) {
+  
+  
+  Register output = ToRegister(lir->output());
+  MOZ_ASSERT(ToRegister(lir->input()) == output);
+  masm.assertCanonicalInt32(output);
+}
+
+void CodeGenerator::visitWasmWrapU32Index(LWasmWrapU32Index* lir) {
+  
+  
+  Register output = ToRegister(lir->output());
+  MOZ_ASSERT(ToRegister(lir->input()) == output);
+  masm.assertCanonicalInt32(output);
+}
+
 void CodeGenerator::visitSignExtendInt64(LSignExtendInt64* ins) {
   Register64 input = ToRegister64(ins->getInt64Operand(0));
   Register64 output = ToOutRegister64(ins);

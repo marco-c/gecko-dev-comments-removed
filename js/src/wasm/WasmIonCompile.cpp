@@ -954,7 +954,12 @@ class FunctionCompiler {
     return load;
   }
 
-  MWasmLoadTls* maybeLoadBoundsCheckLimit32() {
+  MWasmLoadTls* maybeLoadBoundsCheckLimit(MIRType type) {
+#ifdef JS_64BIT
+    MOZ_ASSERT(type == MIRType::Int32 || type == MIRType::Int64);
+#else
+    MOZ_ASSERT(type == MIRType::Int32);
+#endif
     if (moduleEnv_.hugeMemoryEnabled()) {
       return nullptr;
     }
@@ -963,7 +968,7 @@ class FunctionCompiler {
                            : AliasSet::Load(AliasSet::WasmHeapMeta);
     auto* load = MWasmLoadTls::New(alloc(), tlsPointer_,
                                    offsetof(wasm::TlsData, boundsCheckLimit),
-                                   MIRType::Int32, aliases);
+                                   type, aliases);
     curBlock_->add(load);
     return load;
   }
@@ -1005,6 +1010,7 @@ class FunctionCompiler {
   void checkOffsetAndAlignmentAndBounds(MemoryAccessDesc* access,
                                         MDefinition** base) {
     MOZ_ASSERT(!inDeadCode());
+    MOZ_ASSERT(!moduleEnv_.isAsmJS());
 
     uint32_t offsetGuardLimit =
         GetMaxOffsetGuardLimit(moduleEnv_.hugeMemoryEnabled());
@@ -1043,13 +1049,53 @@ class FunctionCompiler {
           alloc(), *base, access->byteSize(), bytecodeOffset()));
     }
 
-    MWasmLoadTls* boundsCheckLimit32 = maybeLoadBoundsCheckLimit32();
-    if (boundsCheckLimit32) {
-      auto* ins = MWasmBoundsCheck::New(alloc(), *base, boundsCheckLimit32,
+#ifdef JS_64BIT
+    
+    
+    
+    
+    
+    
+    
+    bool check64 = (moduleEnv_.maxMemoryLength.isNothing() ||
+                    moduleEnv_.maxMemoryLength.value() >= 0x100000000) &&
+                   ArrayBufferObject::maxBufferByteLength() >= 0x100000000;
+#else
+    bool check64 = false;
+#endif
+    MWasmLoadTls* boundsCheckLimit =
+        maybeLoadBoundsCheckLimit(check64 ? MIRType::Int64 : MIRType::Int32);
+    if (boundsCheckLimit) {
+      
+      
+      
+      
+      MDefinition* actualBase = *base;
+
+      
+      
+
+      if (check64) {
+        auto* extended = MWasmExtendU32Index::New(alloc(), actualBase);
+        curBlock_->add(extended);
+        actualBase = extended;
+      }
+      auto* ins = MWasmBoundsCheck::New(alloc(), actualBase, boundsCheckLimit,
                                         bytecodeOffset());
       curBlock_->add(ins);
+      actualBase = ins;
+
+      
+      
+      
+
       if (JitOptions.spectreIndexMasking) {
-        *base = ins;
+        if (check64) {
+          auto* wrapped = MWasmWrapU32Index::New(alloc(), actualBase);
+          curBlock_->add(wrapped);
+          actualBase = wrapped;
+        }
+        *base = actualBase;
       }
     }
   }
@@ -1089,8 +1135,9 @@ class FunctionCompiler {
     MInstruction* load = nullptr;
     if (moduleEnv_.isAsmJS()) {
       MOZ_ASSERT(access->offset() == 0);
-      MWasmLoadTls* boundsCheckLimit32 = maybeLoadBoundsCheckLimit32();
-      load = MAsmJSLoadHeap::New(alloc(), memoryBase, base, boundsCheckLimit32,
+      MWasmLoadTls* boundsCheckLimit =
+          maybeLoadBoundsCheckLimit(MIRType::Int32);
+      load = MAsmJSLoadHeap::New(alloc(), memoryBase, base, boundsCheckLimit,
                                  access->type());
     } else {
       checkOffsetAndAlignmentAndBounds(access, &base);
@@ -1113,9 +1160,10 @@ class FunctionCompiler {
     MInstruction* store = nullptr;
     if (moduleEnv_.isAsmJS()) {
       MOZ_ASSERT(access->offset() == 0);
-      MWasmLoadTls* boundsCheckLimit32 = maybeLoadBoundsCheckLimit32();
-      store = MAsmJSStoreHeap::New(alloc(), memoryBase, base,
-                                   boundsCheckLimit32, access->type(), v);
+      MWasmLoadTls* boundsCheckLimit =
+          maybeLoadBoundsCheckLimit(MIRType::Int32);
+      store = MAsmJSStoreHeap::New(alloc(), memoryBase, base, boundsCheckLimit,
+                                   access->type(), v);
     } else {
       checkOffsetAndAlignmentAndBounds(access, &base);
       store = MWasmStore::New(alloc(), memoryBase, base, *access, v);
