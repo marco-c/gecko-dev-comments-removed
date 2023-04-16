@@ -81,7 +81,7 @@ class Element;
 
 class nsMenuBarX : public nsMenuParentX, public nsChangeObserver, public mozilla::SupportsWeakPtr {
  public:
-  nsMenuBarX();
+  explicit nsMenuBarX(mozilla::dom::Element* aElement);
 
   NS_INLINE_DECL_REFCOUNTING(nsMenuBarX)
 
@@ -101,7 +101,6 @@ class nsMenuBarX : public nsMenuParentX, public nsChangeObserver, public mozilla
   nsMenuBarX* AsMenuBar() override { return this; }
 
   
-  nsresult Create(mozilla::dom::Element* aElement);
   uint32_t GetMenuCount();
   bool MenuContainsAppMenu();
   nsMenuX* GetMenuAt(uint32_t aIndex);
