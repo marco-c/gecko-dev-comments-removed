@@ -10,12 +10,20 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 
 
 const MAX_ROWS = 20;
 
 
 const SEARCH_MINIMUM_ELEMENTS = 40;
+
+
+
+const DEFAULT_WIN10_THEME =
+  "(-moz-windows-default-theme) and (-moz-os-version: windows-win10)";
 
 
 const PROPERTIES_RESET_WHEN_ACTIVE = [
@@ -46,6 +54,24 @@ const SUPPORTED_SELECT_PROPERTIES = [
 const customStylingEnabled = Services.prefs.getBoolPref(
   "dom.forms.select.customstyling"
 );
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gProton",
+  "browser.proton.contextmenus.enabled",
+  false
+);
+
+function _rgbaToString(parsedColor) {
+  if (!parsedColor) {
+    return null;
+  }
+  let { r, g, b, a } = parsedColor;
+  if (a == 1) {
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
 
 var SelectParentHelper = {
   
@@ -93,6 +119,23 @@ var SelectParentHelper = {
     let stylesheet = menulist.querySelector("#ContentSelectDropdownStylesheet");
     if (stylesheet) {
       stylesheet.remove();
+    }
+
+    
+    if (
+      gProton &&
+      AppConstants.platform == "win" &&
+      menulist.ownerGlobal.matchMedia(DEFAULT_WIN10_THEME)
+    ) {
+      let rootCS = menulist.ownerGlobal.getComputedStyle(menulist);
+      let { InspectorUtils } = menulist.ownerGlobal;
+      
+      let normalize = v => _rgbaToString(InspectorUtils.colorToRGBA(v));
+      uaStyle["background-color"] =
+        normalize(rootCS.getPropertyValue("--menu-background-color")) ||
+        uaStyle["background-color"];
+      uaStyle.color =
+        normalize(rootCS.getPropertyValue("--menu-color")) || uaStyle.color;
     }
 
     let doc = menulist.ownerDocument;
