@@ -116,19 +116,15 @@ nsNumberControlFrame* nsNumberControlFrame::GetNumberControlFrameForSpinButton(
   
   
   nsIContent* content = aFrame->GetContent();
-  if (content->IsInNativeAnonymousSubtree() && content->GetParent() &&
-      content->GetParent()->GetParent() &&
-      content->GetParent()->GetParent()->GetParent()) {
-    nsIContent* greatgrandparent =
-        content->GetParent()->GetParent()->GetParent();
-    if (greatgrandparent->IsHTMLElement(nsGkAtoms::input) &&
-        greatgrandparent->AsElement()->AttrValueIs(
-            kNameSpaceID_None, nsGkAtoms::type, nsGkAtoms::number,
-            eCaseMatters)) {
-      return do_QueryFrame(greatgrandparent->GetPrimaryFrame());
-    }
+  auto* nacHost = content->GetClosestNativeAnonymousSubtreeRootParent();
+  if (!nacHost) {
+    return nullptr;
   }
-  return nullptr;
+  auto* input = HTMLInputElement::FromNode(nacHost);
+  if (!input || input->ControlType() != NS_FORM_INPUT_NUMBER) {
+    return nullptr;
+  }
+  return do_QueryFrame(input->GetPrimaryFrame());
 }
 
 int32_t nsNumberControlFrame::GetSpinButtonForPointerEvent(
