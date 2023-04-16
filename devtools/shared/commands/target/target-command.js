@@ -266,6 +266,8 @@ class TargetCommand extends EventEmitter {
       const supportsWatcher = this.descriptorFront.traits?.watcher;
       if (supportsWatcher) {
         this.watcherFront = await this.descriptorFront.getWatcher();
+        this.watcherFront.on("target-available", this._onTargetAvailable);
+        this.watcherFront.on("target-destroyed", this._onTargetDestroyed);
       }
     }
 
@@ -312,18 +314,10 @@ class TargetCommand extends EventEmitter {
         
         
         
-        if (onlyLegacy) {
-          continue;
+        if (!onlyLegacy) {
+          await this.watcherFront.watchTargets(type);
         }
-        if (!this._startedListeningToWatcher) {
-          this._startedListeningToWatcher = true;
-          this.watcherFront.on("target-available", this._onTargetAvailable);
-          this.watcherFront.on("target-destroyed", this._onTargetDestroyed);
-        }
-        await this.watcherFront.watchTargets(type);
-        continue;
-      }
-      if (this.legacyImplementation[type]) {
+      } else if (this.legacyImplementation[type]) {
         await this.legacyImplementation[type].listen();
       } else {
         throw new Error(`Unsupported target type '${type}'`);
@@ -355,9 +349,7 @@ class TargetCommand extends EventEmitter {
         if (!onlyLegacy) {
           this.watcherFront.unwatchTargets(type);
         }
-        continue;
-      }
-      if (this.legacyImplementation[type]) {
+      } else if (this.legacyImplementation[type]) {
         this.legacyImplementation[type].unlisten();
       } else {
         throw new Error(`Unsupported target type '${type}'`);
