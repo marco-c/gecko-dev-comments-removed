@@ -1,6 +1,6 @@
-% This Source Code Form is subject to the terms of the Mozilla Public
-% License, v. 2.0. If a copy of the MPL was not distributed with this
-% file, You can obtain one at http://mozilla.org/MPL/2.0/.
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import url("chrome://global/skin/in-content/common.css");
 
@@ -9,7 +9,7 @@
   --in-content-container-max-width: 52em;
 }
 
-
+/* Body and container */
 body {
   display: flex;
   flex-direction: column;
@@ -36,7 +36,7 @@ body.wide-container {
   margin: 10vh 0;
 }
 
-
+/* Typography */
 .title {
   background-image: url("chrome://global/skin/icons/info.svg");
   background-position: left 0;
@@ -100,7 +100,7 @@ ul.columns {
   }
 }
 
-
+/* Buttons */
 .button-container {
   margin-top: 1.2em;
 }
@@ -113,7 +113,7 @@ button {
   margin-inline-start: 0;
 }
 
-
+/* Trees */
 .tree-container {
   margin-top: 1.2em;
   flex: 1 0px;
@@ -128,7 +128,7 @@ tree {
   width: 100%;
 }
 
-
+/* Tables */
 table {
   background-color: var(--in-content-table-background);
   color: var(--in-content-text-color);
@@ -161,7 +161,7 @@ th.column {
 
 td {
   border-color: var(--in-content-table-border-dark-color);
-  unicode-bidi: plaintext; 
+  unicode-bidi: plaintext; /* Make sure file paths will be LTR */
 }
 
 #update-row > td:dir(rtl),
@@ -169,7 +169,7 @@ td {
   unicode-bidi: normal;
 }
 
-
+/* Illustrated Info Pages */
 .illustrated .title {
   margin-inline-start: 0;
   padding-inline-start: 0;
