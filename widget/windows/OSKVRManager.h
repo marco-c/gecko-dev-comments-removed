@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#ifndef OSKVRManager_h
+#define OSKVRManager_h
+
+namespace mozilla {
+namespace widget {
+
+class OSKVRManager final {
+ public:
+  static void ShowOnScreenKeyboard();
+  static void DismissOnScreenKeyboard();
+};
+
+}  
+}  
+
+#endif  
