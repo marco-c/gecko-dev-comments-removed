@@ -1,3 +1,8 @@
+const { AppConstants } = SpecialPowers.Cu.import(
+  "resource://gre/modules/AppConstants.jsm",
+  {}
+);
+
 
 
 
@@ -500,9 +505,6 @@ var gPlayTests = [
   
   { name: "bipbop-lateaudio.mp4", type: "video/mp4" },
   
-  
-  { name: "ambisonics.mp4", type: "audio/mp4", duration: 16.48 },
-  
   {
     name: "opus-sample.mp4",
     type: "audio/mp4; codecs=opus",
@@ -565,6 +567,25 @@ const win32 =
   !SpecialPowers.Services.appinfo.is64Bit;
 if (!win32) {
   gPlayTests.push({ name: "av1.mp4", type: "video/mp4", duration: 1.0 });
+}
+
+
+
+const skipAmbisonics =
+  
+  (AppConstants.platform == "macosx" && AppConstants.DEBUG) ||
+  
+  (AppConstants.platform == "linux" &&
+    !AppConstants.DEBUG &&
+    SpecialPowers.Services.appinfo.is64Bit);
+if (!skipAmbisonics) {
+  
+  
+  gPlayTests.push({
+    name: "ambisonics.mp4",
+    type: "audio/mp4",
+    duration: 16.48,
+  });
 }
 
 var gSeekToNextFrameTests = [
