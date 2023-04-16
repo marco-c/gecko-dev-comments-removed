@@ -108,8 +108,12 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(AbortSignalMainThread)
 
 class AbortSignalProxy;
 
+
+
+
+
+
 class WorkerSignalFollower final : public AbortFollower {
- public:
   
   
   class AbortSignalProxyRunnable final : public Runnable {
@@ -127,10 +131,26 @@ class WorkerSignalFollower final : public AbortFollower {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(WorkerSignalFollower)
 
-  void RunAbortAlgorithm() override {}
+  WorkerSignalFollower(AbortSignalProxy* aProxy, AbortSignalImpl* aSignalImpl)
+      : AbortFollower(), mProxy(aProxy) {
+    MOZ_ASSERT(!NS_IsMainThread());
+
+    
+    Follow(aSignalImpl);
+  }
+
+  void RunAbortAlgorithm() override;
+
+  void Shutdown() {
+    MOZ_ASSERT(!NS_IsMainThread());
+    Unfollow();
+    mProxy = nullptr;
+  }
 
  private:
   ~WorkerSignalFollower() = default;
+
+  RefPtr<AbortSignalProxy> mProxy;
 };
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(WorkerSignalFollower)
@@ -140,6 +160,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(WorkerSignalFollower)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WorkerSignalFollower)
   AbortFollower::Unlink(static_cast<AbortFollower*>(tmp));
+  tmp->mProxy = nullptr;
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WorkerSignalFollower)
@@ -152,7 +173,18 @@ NS_INTERFACE_MAP_END
 
 
 
-class AbortSignalProxy final : public AbortFollower {
+class AbortSignalProxy final : public nsISupports {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<WorkerSignalFollower> mWorkerSignalFollower;
+
   
   RefPtr<AbortSignalImpl> mSignalImplMainThread;
 
@@ -174,11 +206,9 @@ class AbortSignalProxy final : public AbortFollower {
         mAborted(aSignalImpl->Aborted()) {
     MOZ_ASSERT(!NS_IsMainThread());
     MOZ_ASSERT(mMainThreadEventTarget);
-    Follow(aSignalImpl);
-  }
 
-  
-  void RunAbortAlgorithm() override;
+    mWorkerSignalFollower = new WorkerSignalFollower(this, aSignalImpl);
+  }
 
   AbortSignalImpl* GetOrCreateSignalImplForMainThread() {
     MOZ_ASSERT(NS_IsMainThread());
@@ -190,18 +220,22 @@ class AbortSignalProxy final : public AbortFollower {
 
   AbortSignalImpl* GetSignalImplForTargetThread() {
     MOZ_ASSERT(!NS_IsMainThread());
-    return Signal();
+    return mWorkerSignalFollower->Signal();
   }
 
   nsIEventTarget* MainThreadEventTarget() { return mMainThreadEventTarget; }
 
   void Shutdown() {
     MOZ_ASSERT(!NS_IsMainThread());
-    Unfollow();
+    mWorkerSignalFollower->Shutdown();
+    mWorkerSignalFollower = nullptr;
   }
 
  private:
   ~AbortSignalProxy() {
+    MOZ_ASSERT(mWorkerSignalFollower == nullptr,
+               "Shutdown() should have been called, on the worker thread, to "
+               "release/free the worker thread's AbortSignal follower by now");
     NS_ProxyRelease("AbortSignalProxy::mSignalImplMainThread",
                     mMainThreadEventTarget, mSignalImplMainThread.forget());
   }
@@ -216,13 +250,12 @@ NS_IMETHODIMP WorkerSignalFollower::AbortSignalProxyRunnable::Run() {
   return NS_OK;
 }
 
-void AbortSignalProxy::RunAbortAlgorithm() {
+void WorkerSignalFollower::RunAbortAlgorithm() {
   MOZ_ASSERT(!NS_IsMainThread());
-  using AbortSignalProxyRunnable =
-      WorkerSignalFollower::AbortSignalProxyRunnable;
   RefPtr<AbortSignalProxyRunnable> runnable =
-      new AbortSignalProxyRunnable(this);
-  MainThreadEventTarget()->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
+      new AbortSignalProxyRunnable(mProxy);
+  mProxy->MainThreadEventTarget()->Dispatch(runnable.forget(),
+                                            NS_DISPATCH_NORMAL);
 }
 
 class WorkerFetchResolver final : public FetchDriverObserver {
