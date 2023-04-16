@@ -49,7 +49,7 @@ bool BaseHistory::CanStore(nsIURI* aURI) {
 }
 
 void BaseHistory::ScheduleVisitedQuery(nsIURI* aURI) {
-  mPendingQueries.PutEntry(aURI);
+  mPendingQueries.Insert(aURI);
   if (mStartPendingVisitedQueriesScheduled) {
     return;
   }
@@ -67,7 +67,7 @@ void BaseHistory::ScheduleVisitedQuery(nsIURI* aURI) {
 }
 
 void BaseHistory::CancelVisitedQueryIfPossible(nsIURI* aURI) {
-  mPendingQueries.RemoveEntry(aURI);
+  mPendingQueries.Remove(aURI);
   
   
 }
