@@ -1359,4 +1359,16 @@ interface nsILoadInfo : nsISupports
 
   [infallible] attribute nsILoadInfo_CrossOriginEmbedderPolicy
         loadingEmbedderPolicy;
+
+  
+
+
+
+  [infallible] attribute boolean isMediaRequest;
+
+  
+
+
+
+  [infallible] attribute boolean isMediaInitialRequest;
 };
