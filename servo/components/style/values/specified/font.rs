@@ -2193,6 +2193,37 @@ impl Parse for VariationValue<Number> {
     }
 }
 
+
+
+
+#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+pub enum MetricsOverride {
+    
+    Override(NonNegativePercentage),
+    
+    Normal,
+}
+
+impl MetricsOverride {
+    #[inline]
+    
+    pub fn normal() -> MetricsOverride {
+        MetricsOverride::Normal
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn compute(&self) -> ComputedPercentage {
+        match *self {
+            MetricsOverride::Normal => ComputedPercentage(-1.0),
+            MetricsOverride::Override(percent) => ComputedPercentage(percent.0.get()),
+        }
+    }
+}
+
 #[derive(
     Clone,
     Copy,
