@@ -116,7 +116,9 @@ WMFVideoMFTManager::WMFVideoMFTManager(
       mImageSize(aConfig.mImage),
       mDecodedImageSize(aConfig.mImage),
       mVideoStride(0),
-      mColorSpace(aConfig.mColorSpace),
+      mColorSpace(aConfig.mColorSpace != gfx::YUVColorSpace::UNKNOWN
+                      ? Some(aConfig.mColorSpace)
+                      : Nothing()),
       mColorRange(aConfig.mColorRange),
       mImageContainer(aImageContainer),
       mKnowsCompositor(aKnowsCompositor),
@@ -474,7 +476,7 @@ WMFVideoMFTManager::Input(MediaRawData* aSample) {
     
     
     
-    mColorSpace = aSample->mTrackInfo->GetAsVideoInfo()->mColorSpace;
+    mColorSpace = Some(aSample->mTrackInfo->GetAsVideoInfo()->mColorSpace);
     mColorRange = aSample->mTrackInfo->GetAsVideoInfo()->mColorRange;
   }
   mLastDuration = aSample->mDuration;
