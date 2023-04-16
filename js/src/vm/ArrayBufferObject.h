@@ -173,9 +173,14 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   
   static size_t maxBufferByteLength() {
 #ifdef JS_64BIT
+#  ifdef JS_CODEGEN_MIPS64
+    
+    
+#  else
     if (supportLargeBuffers) {
       return size_t(8) * 1024 * 1024 * 1024;  
     }
+#  endif
 #endif
     return MaxByteLengthForSmallBuffer;
   }

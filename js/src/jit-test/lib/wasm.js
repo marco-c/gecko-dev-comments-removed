@@ -6,8 +6,22 @@ load(libdir + "asserts.js");
 
 
 
+
+
 var PageSizeInBytes = 65536;
-var MaxBytesIn32BitMemory = largeArrayBufferEnabled() ? 65534*PageSizeInBytes : 0x7FFF_FFFF;
+var MaxBytesIn32BitMemory = 0;
+if (largeArrayBufferEnabled()) {
+    if (wasmCompilersPresent().indexOf("cranelift") != -1) {
+        MaxBytesIn32BitMemory = 65534*PageSizeInBytes;
+    } else {
+        MaxBytesIn32BitMemory = 65536*PageSizeInBytes;
+    }
+} else {
+    
+    
+    
+    MaxBytesIn32BitMemory = 0x7FFF_FFFF;
+}
 var MaxPagesIn32BitMemory = Math.floor(MaxBytesIn32BitMemory / PageSizeInBytes);
 
 

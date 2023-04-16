@@ -621,7 +621,8 @@ WasmArrayRawBuffer* WasmArrayRawBuffer::Allocate(BufferSize numBytes,
 
   MOZ_RELEASE_ASSERT(mappedSize <= SIZE_MAX - gc::SystemPageSize());
   MOZ_RELEASE_ASSERT(numBytes.get() <= SIZE_MAX - gc::SystemPageSize());
-  MOZ_RELEASE_ASSERT(numBytes.get() <= maxSize.valueOr(UINT32_MAX));
+  MOZ_RELEASE_ASSERT(numBytes.get() <=
+                     maxSize.valueOr(wasm::MaxMemory32Bytes()));
   MOZ_ASSERT(numBytes.get() % gc::SystemPageSize() == 0);
   MOZ_ASSERT(mappedSize % gc::SystemPageSize() == 0);
 
@@ -669,6 +670,10 @@ static bool CreateSpecificWasmBuffer32(
   Maybe<uint64_t> clampedMaxSize = maxSize;
   if (clampedMaxSize) {
 #ifdef JS_64BIT
+#  ifdef ENABLE_WASM_CRANELIFT
+    
+    
+    
     
     
     
@@ -685,6 +690,7 @@ static bool CreateSpecificWasmBuffer32(
       MOZ_ASSERT(initialSize <= clamp);
       clampedMaxSize = Some(clamp);
     }
+#  endif
 #else
     static_assert(sizeof(uintptr_t) == 4, "assuming not 64 bit implies 32 bit");
 

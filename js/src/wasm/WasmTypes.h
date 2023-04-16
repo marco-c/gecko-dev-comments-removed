@@ -3763,7 +3763,20 @@ struct TlsData {
 
   
   
-  uint32_t boundsCheckLimit32;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uintptr_t boundsCheckLimit;
 
   
   Instance* instance;

@@ -2666,8 +2666,13 @@ BufferSize WasmMemoryObject::boundsCheckLimit() const {
     return buffer().byteLength();
   }
   size_t mappedSize = buffer().wasmMappedSize();
+#if !defined(JS_64BIT) || defined(ENABLE_WASM_CRANELIFT)
+  
+  
+  
   
   MOZ_ASSERT(mappedSize < UINT32_MAX);
+#endif
   MOZ_ASSERT(mappedSize % wasm::PageSize == 0);
   MOZ_ASSERT(mappedSize >= wasm::GuardSize);
   MOZ_ASSERT(wasm::IsValidBoundsCheckImmediate(mappedSize - wasm::GuardSize));
@@ -2702,7 +2707,7 @@ uint32_t WasmMemoryObject::growShared(HandleWasmMemoryObject memory,
   MOZ_ASSERT(rawBuf->volatileByteLength().get() % PageSize == 0);
   uint32_t oldNumPages = rawBuf->volatileByteLength().get() / PageSize;
 
-  CheckedInt<uint32_t> newSize = oldNumPages;
+  CheckedInt<size_t> newSize = oldNumPages;
   newSize += delta;
   newSize *= PageSize;
   if (!newSize.isValid()) {
@@ -2741,15 +2746,17 @@ uint32_t WasmMemoryObject::grow(HandleWasmMemoryObject memory, uint32_t delta,
   MOZ_ASSERT(oldBuf->byteLength().get() % PageSize == 0);
   uint32_t oldNumPages = oldBuf->byteLength().get() / PageSize;
 
+#if !defined(JS_64BIT) || defined(ENABLE_WASM_CRANELIFT)
   
   
   
   
   
-  MOZ_ASSERT(MaxMemory32Pages() <= UINT32_MAX / PageSize,
-             "Avoid 32-bit overflows");
+  
+  MOZ_ASSERT(MaxMemory32Bytes() <= UINT32_MAX, "Avoid 32-bit overflows");
+#endif
 
-  CheckedInt<uint32_t> newSize = oldNumPages;
+  CheckedInt<size_t> newSize = oldNumPages;
   newSize += delta;
   newSize *= PageSize;
   if (!newSize.isValid()) {
@@ -4865,8 +4872,7 @@ const JSClass js::WasmNamespaceObject::class_ = {
 
 
 #ifdef JS_64BIT
-
-
+#  ifdef ENABLE_WASM_CRANELIFT
 
 
 
@@ -4879,9 +4885,24 @@ size_t wasm::MaxMemory32Pages() {
   size_t actual = ArrayBufferObject::maxBufferByteLength() / PageSize;
   return std::min(desired, actual);
 }
+
+size_t wasm::MaxMemory32BoundsCheckLimit() {
+  return UINT32_MAX - 2 * PageSize + 1;
+}
+#  else
+size_t wasm::MaxMemory32Pages() {
+  size_t desired = MaxMemory32LimitField;
+  size_t actual = ArrayBufferObject::maxBufferByteLength() / PageSize;
+  return std::min(desired, actual);
+}
+
+size_t wasm::MaxMemory32BoundsCheckLimit() { return size_t(UINT32_MAX) + 1; }
+#  endif
 #else
 size_t wasm::MaxMemory32Pages() {
   MOZ_ASSERT(ArrayBufferObject::maxBufferByteLength() >= INT32_MAX / PageSize);
   return INT32_MAX / PageSize;
 }
+
+size_t wasm::MaxMemory32BoundsCheckLimit() { return size_t(INT32_MAX) + 1; }
 #endif

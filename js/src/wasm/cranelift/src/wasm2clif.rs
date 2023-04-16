@@ -798,6 +798,16 @@ impl<'static_env, 'module_env> FuncEnvironment for TransEnv<'static_env, 'module
             ir::HeapStyle::Static { bound }
         } else {
             
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             let bound_gv = func.create_global_value(ir::GlobalValueData::Load {
                 base: vcmtx,
                 offset: (POINTER_SIZE as i32).into(),
