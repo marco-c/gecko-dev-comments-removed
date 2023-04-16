@@ -253,6 +253,11 @@ void TraceCrossCompartmentEdge(JSTracer* trc, JSObject* src,
 
 
 
+
+
+
+
+
 template <typename T>
 void TraceSameZoneCrossCompartmentEdge(JSTracer* trc,
                                        const WriteBarriered<T>* dst,

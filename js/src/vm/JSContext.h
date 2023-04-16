@@ -586,6 +586,10 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::ContextData<bool> runningOOMTest;
 #endif
 
+#ifdef DEBUG
+  js::ContextData<bool> disableCompartmentCheckTracer;
+#endif
+
   
 
 
