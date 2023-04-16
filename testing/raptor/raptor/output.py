@@ -956,15 +956,9 @@ class RaptorOutput(PerftestOutput):
 
             
             
-
             
             
-            
-            
-            
-
-            
-            if len(subtests) > 1:
+            if len(subtests) > 1 and test["type"] != "pageload":
                 suite["value"] = self.construct_summary(vals, testname=test["name"])
 
             subtests.sort(key=lambda subtest: subtest["name"])
@@ -1454,8 +1448,7 @@ class BrowsertimeOutput(PerftestOutput):
             
             
             
-            
-            if len(suite["subtests"]) > 1:
+            if len(suite["subtests"]) > 1 and suite["type"] != "pageload":
                 vals = [
                     [subtest["value"], subtest["name"]] for subtest in suite["subtests"]
                 ]
