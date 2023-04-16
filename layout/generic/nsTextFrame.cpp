@@ -1928,6 +1928,14 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
 
     
     
+    
+    
+    if (SVGUtils::IsInSVGTextSubtree(ancestor)) {
+      return false;
+    }
+
+    
+    
     Side side1 = wm.PhysicalSide(eLogicalSideIEnd);
     Side side2 = wm.PhysicalSide(eLogicalSideIStart);
     
