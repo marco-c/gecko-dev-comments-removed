@@ -16,6 +16,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ActorManagerParent: "resource://gre/modules/ActorManagerParent.jsm",
   EventDispatcher: "resource://gre/modules/Messaging.jsm",
   Preferences: "resource://gre/modules/Preferences.jsm",
+  SafeBrowsing: "resource://gre/modules/SafeBrowsing.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -93,11 +94,6 @@ class GeckoViewStartup {
             "GeckoView:WebExtension:SetPBAllowed",
             "GeckoView:WebExtension:Uninstall",
             "GeckoView:WebExtension:Update",
-          ],
-          observers: [
-            "devtools-installed-addon",
-            "testing-installed-addon",
-            "testing-uninstalled-addon",
           ],
         });
 
@@ -212,13 +208,16 @@ class GeckoViewStartup {
         ChromeUtils.import("resource://gre/modules/NotificationDB.jsm");
 
         
+        
+        SafeBrowsing.init();
+
+        
         EventDispatcher.instance.registerListener(this, [
           "GeckoView:ResetUserPrefs",
           "GeckoView:SetDefaultPrefs",
           "GeckoView:SetLocale",
         ]);
 
-        Services.obs.addObserver(this, "xpcom-shutdown");
         Services.obs.notifyObservers(null, "geckoview-startup-complete");
         break;
       }
@@ -229,16 +228,6 @@ class GeckoViewStartup {
         
         Services.startup.trackStartupCrashEnd();
         break;
-      }
-      case "xpcom-shutdown": {
-        Services.obs.removeObserver(this, "xpcom-shutdown");
-        EventDispatcher.instance.unregisterListener(this, [
-          "GeckoView:ResetUserPrefs",
-          "GeckoView:SetDefaultPrefs",
-          "GeckoView:SetLocale",
-        ]);
-        EventDispatcher.instance.shutdown();
-        delete EventDispatcher.instance;
       }
     }
   }

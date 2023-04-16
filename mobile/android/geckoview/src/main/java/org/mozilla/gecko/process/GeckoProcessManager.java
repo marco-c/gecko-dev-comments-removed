@@ -438,10 +438,9 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
         }
 
         private void removeContentConnection(@NonNull final ChildConnection conn) {
-            if (!mContentConnections.remove(conn)) {
+            if (!mContentConnections.remove(conn) && !mNonStartedContentConnections.remove(conn)) {
                 throw new RuntimeException("Attempt to remove non-registered connection");
             }
-            mNonStartedContentConnections.remove(conn);
 
             final int pid;
 
@@ -800,9 +799,8 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
             
             
             Log.w(LOGTAG, "Trying a different process");
-            connection.unbind().accept(unused ->
-                start(result, type, args, extras, flags, prefsFd, prefMapFd, ipcFd,
-                        crashFd, crashAnnotationFd,  false));
+            start(result, type, args, extras, flags, prefsFd, prefMapFd, ipcFd,
+                    crashFd, crashAnnotationFd,  false);
             return;
         }
 

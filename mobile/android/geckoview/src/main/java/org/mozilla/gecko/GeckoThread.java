@@ -154,8 +154,6 @@ public class GeckoThread extends Thread {
         public Map<String, Object> prefs;
         public String userSerialNumber;
 
-        public boolean xpcshell;
-        public String outFilePath;
         public int prefsFd;
         public int prefMapFd;
         public int ipcFd;
@@ -276,27 +274,23 @@ public class GeckoThread extends Thread {
 
         
         args.add(context.getPackageName());
+        args.add("-greomni");
+        args.add(context.getPackageResourcePath());
 
-        if (!mInitInfo.xpcshell) {
-            args.add("-greomni");
-            args.add(context.getPackageResourcePath());
-
-            final GeckoProfile profile = getProfile();
-            if (profile.isCustomProfile()) {
-                args.add("-profile");
-                args.add(profile.getDir().getAbsolutePath());
-            } else {
-                profile.getDir(); 
-                args.add("-P");
-                args.add(profile.getName());
-            }
+        final GeckoProfile profile = getProfile();
+        if (profile.isCustomProfile()) {
+            args.add("-profile");
+            args.add(profile.getDir().getAbsolutePath());
+        } else {
+            profile.getDir(); 
+            args.add("-P");
+            args.add(profile.getName());
         }
 
         if (mInitInfo.args != null) {
             args.addAll(Arrays.asList(mInitInfo.args));
         }
 
-        
         final String extraArgs = mInitInfo.extras.getString(EXTRA_ARGS, null);
         if (extraArgs != null) {
             final StringTokenizer st = new StringTokenizer(extraArgs);
@@ -311,12 +305,6 @@ public class GeckoThread extends Thread {
                 }
                 args.add(token);
             }
-        }
-
-        
-        for (int i = 0; mInitInfo.extras.containsKey("arg" + i); i++) {
-            final String arg = mInitInfo.extras.getString("arg" + i);
-            args.add(arg);
         }
 
         return args.toArray(new String[args.size()]);
@@ -440,8 +428,7 @@ public class GeckoThread extends Thread {
         final boolean isChildProcess = isChildProcess();
 
         GeckoLoader.setupGeckoEnvironment(context, isChildProcess,
-                                          context.getFilesDir().getPath(), env, mInitInfo.prefs,
-                                          mInitInfo.xpcshell);
+                                          context.getFilesDir().getPath(), env, mInitInfo.prefs);
 
         initGeckoEnvironment();
 
@@ -471,9 +458,7 @@ public class GeckoThread extends Thread {
                               mInitInfo.extras.getInt(EXTRA_PREF_MAP_FD, -1),
                               mInitInfo.extras.getInt(EXTRA_IPC_FD, -1),
                               mInitInfo.extras.getInt(EXTRA_CRASH_FD, -1),
-                              mInitInfo.extras.getInt(EXTRA_CRASH_ANNOTATION_FD, -1),
-                              isChildProcess ? false : mInitInfo.xpcshell,
-                              isChildProcess ? null : mInitInfo.outFilePath);
+                              mInitInfo.extras.getInt(EXTRA_CRASH_ANNOTATION_FD, -1));
 
         
         final boolean restarting = isState(State.RESTARTING);
@@ -485,12 +470,6 @@ public class GeckoThread extends Thread {
 
         
         Looper.myQueue().removeIdleHandler(idleHandler);
-
-        if (isChildProcess) {
-            
-            
-            System.exit(0);
-        }
     }
 
     
