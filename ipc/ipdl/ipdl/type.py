@@ -1301,7 +1301,11 @@ class GatherDecls(TcheckVisitor):
             self.checkAttributes(
                 param.attributes,
                 {
-                    "NoTaint": ("passback",)
+                    
+                    
+                    
+                    
+                    "NoTaint": ("passback", "allvalid")
                 },
             )
 
