@@ -216,6 +216,10 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   [[nodiscard]] nsresult StartRedirectChannelToURI(nsIURI*, uint32_t);
 
+  SnifferCategoryType GetSnifferCategoryType() const {
+    return mSnifferCategoryType;
+  }
+
   
   
   
