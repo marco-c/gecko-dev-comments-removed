@@ -278,13 +278,18 @@ UniquePtr<mozInlineSpellStatus> mozInlineSpellStatus::CreateForSelection(
 
 
 
-nsresult mozInlineSpellStatus::InitForRange(nsRange* aRange) {
+
+UniquePtr<mozInlineSpellStatus> mozInlineSpellStatus::CreateForRange(
+    mozInlineSpellChecker& aSpellChecker, nsRange* aRange) {
   MOZ_LOG(sInlineSpellCheckerLog, LogLevel::Debug,
           ("%s: range=%p", __FUNCTION__, aRange));
 
-  mOp = eOpChange;
-  mRange = aRange;
-  return NS_OK;
+  UniquePtr<mozInlineSpellStatus> status =
+      MakeUnique<mozInlineSpellStatus>(&aSpellChecker);
+
+  status->mOp = eOpChange;
+  status->mRange = aRange;
+  return status;
 }
 
 
@@ -853,9 +858,8 @@ nsresult mozInlineSpellChecker::SpellCheckRange(nsRange* aRange) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  auto status = MakeUnique<mozInlineSpellStatus>(this);
-  nsresult rv = status->InitForRange(aRange);
-  NS_ENSURE_SUCCESS(rv, rv);
+  UniquePtr<mozInlineSpellStatus> status =
+      mozInlineSpellStatus::CreateForRange(*this, aRange);
   return ScheduleSpellCheck(std::move(status));
 }
 
@@ -931,9 +935,8 @@ mozInlineSpellChecker::RemoveWordFromDictionary(const nsAString& word) {
   nsresult rv = mSpellCheck->RemoveWordFromDictionary(word);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  auto status = MakeUnique<mozInlineSpellStatus>(this);
-  rv = status->InitForRange(nullptr);
-  NS_ENSURE_SUCCESS(rv, rv);
+  UniquePtr<mozInlineSpellStatus> status =
+      mozInlineSpellStatus::CreateForRange(*this, nullptr);
   return ScheduleSpellCheck(std::move(status));
 }
 
@@ -1065,9 +1068,8 @@ nsresult mozInlineSpellChecker::SpellCheckBetweenNodes(nsINode* aStartNode,
 
   if (!range) return NS_OK;  
 
-  auto status = MakeUnique<mozInlineSpellStatus>(this);
-  rv = status->InitForRange(range);
-  NS_ENSURE_SUCCESS(rv, rv);
+  UniquePtr<mozInlineSpellStatus> status =
+      mozInlineSpellStatus::CreateForRange(*this, range);
   return ScheduleSpellCheck(std::move(status));
 }
 
@@ -1219,9 +1221,8 @@ nsresult mozInlineSpellChecker::DoSpellCheckSelection(
   
   
   
-  auto status = MakeUnique<mozInlineSpellStatus>(this);
-  rv = status->InitForRange(nullptr);
-  NS_ENSURE_SUCCESS(rv, rv);
+  UniquePtr<mozInlineSpellStatus> status =
+      mozInlineSpellStatus::CreateForRange(*this, nullptr);
 
   bool doneChecking;
   for (int32_t idx = 0; idx < count; idx++) {
