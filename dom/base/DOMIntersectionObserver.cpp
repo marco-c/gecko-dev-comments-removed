@@ -354,7 +354,8 @@ static Maybe<nsRect> ComputeTheIntersection(
   
   
   
-  nsIFrame* containerFrame = nsLayoutUtils::GetCrossDocParentFrame(target);
+  nsIFrame* containerFrame =
+      nsLayoutUtils::GetCrossDocParentFrameInProcess(target);
   while (containerFrame && containerFrame != aRoot) {
     
     
@@ -390,7 +391,8 @@ static Maybe<nsRect> ComputeTheIntersection(
       target = containerFrame;
     }
 
-    containerFrame = nsLayoutUtils::GetCrossDocParentFrame(containerFrame);
+    containerFrame =
+        nsLayoutUtils::GetCrossDocParentFrameInProcess(containerFrame);
   }
   MOZ_ASSERT(intersectionRect);
 
