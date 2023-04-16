@@ -367,11 +367,6 @@ bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
   
   MOZ_ASSERT(!mir->compilingWasm());
 
-  
-  if (graph.osrBlock()) {
-    return true;
-  }
-
   Vector<MBasicBlock*, 16, SystemAllocPolicy> worklist;
   uint32_t numMarked = 0;
   bool needsTrim = false;
@@ -387,6 +382,11 @@ bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
 
   
   if (!markReachable(graph.entryBlock())) {
+    return false;
+  }
+
+  
+  if (graph.osrBlock() && !markReachable(graph.osrBlock())) {
     return false;
   }
 
@@ -465,6 +465,27 @@ bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
       MBasicBlock* succ = block->getSuccessor(i);
       if (succ->isDead()) {
         continue;
+      }
+
+      
+      
+      
+      if (succ->isLoopHeader() && block != succ->backedge()) {
+        MOZ_ASSERT(graph.osrBlock());
+        if (!graph.alloc().ensureBallast()) {
+          return false;
+        }
+
+        MBasicBlock* fake = MBasicBlock::NewFakeLoopPredecessor(graph, succ);
+        if (!fake) {
+          return false;
+        }
+        
+        fake->mark();
+
+        JitSpew(JitSpew_Prune,
+                "Header %u only reachable by OSR. Add fake predecessor %u",
+                succ->id(), fake->id());
       }
 
       JitSpew(JitSpew_Prune, "Remove block edge %u -> %u.", block->id(),
@@ -1434,9 +1455,14 @@ MIRType TypeAnalyzer::guessPhiType(MPhi* phi) const {
 
   MIRType type = MIRType::None;
   bool convertibleToFloat32 = false;
+  bool hasNonOSRInputs = false;
   DebugOnly<bool> hasPhiInputs = false;
   for (size_t i = 0, e = phi->numOperands(); i < e; i++) {
     MDefinition* in = phi->getOperand(i);
+    if (!in->isOsrValue()) {
+      hasNonOSRInputs = true;
+    }
+
     if (in->isPhi()) {
       hasPhiInputs = true;
       if (!in->toPhi()->triedToSpecialize()) {
@@ -1490,8 +1516,11 @@ MIRType TypeAnalyzer::guessPhiType(MPhi* phi) const {
     }
   }
 
-  MOZ_ASSERT_IF(type == MIRType::None, hasPhiInputs);
+  if (!hasNonOSRInputs) {
+    type = MIRType::Value;
+  }
 
+  MOZ_ASSERT_IF(type == MIRType::None, hasPhiInputs);
   return type;
 }
 
@@ -1608,7 +1637,11 @@ bool TypeAnalyzer::specializePhis() {
     MBasicBlock* preHeader = graph.osrPreHeaderBlock();
     MBasicBlock* header = preHeader->getSingleSuccessor();
 
-    if (header->isLoopHeader()) {
+    if (preHeader->numPredecessors() == 1) {
+      
+      
+      MOZ_ASSERT(preHeader->getPredecessor(0) == graph.osrBlock());
+    } else if (header->isLoopHeader()) {
       for (MPhiIterator phi(header->phisBegin()); phi != header->phisEnd();
            phi++) {
         MPhi* preHeaderPhi = phi->getOperand(0)->toPhi();
@@ -1632,7 +1665,8 @@ bool TypeAnalyzer::specializePhis() {
       
       
       
-      MOZ_ASSERT(header->isPendingLoopHeader());
+      
+      
       MOZ_ASSERT(header->numPredecessors() == 1);
     }
   }
