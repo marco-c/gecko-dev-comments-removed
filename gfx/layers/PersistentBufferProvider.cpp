@@ -373,21 +373,15 @@ PersistentBufferProviderShared::BorrowDrawTarget(
 
   mDrawTarget = tex->BorrowDrawTarget();
   if (mBack != previousBackBuffer && !aPersistedRect.IsEmpty()) {
-    if (mPreviousSnapshot) {
-      mDrawTarget->CopySurface(mPreviousSnapshot, aPersistedRect,
-                               gfx::IntPoint(0, 0));
-    } else {
-      TextureClient* previous = GetTexture(previousBackBuffer);
-      if (previous && previous->Lock(OpenMode::OPEN_READ)) {
-        DebugOnly<bool> success =
-            previous->CopyToTextureClient(tex, &aPersistedRect, nullptr);
-        MOZ_ASSERT(success);
+    TextureClient* previous = GetTexture(previousBackBuffer);
+    if (previous && previous->Lock(OpenMode::OPEN_READ)) {
+      DebugOnly<bool> success =
+          previous->CopyToTextureClient(tex, &aPersistedRect, nullptr);
+      MOZ_ASSERT(success);
 
-        previous->Unlock();
-      }
+      previous->Unlock();
     }
   }
-  mPreviousSnapshot = nullptr;
 
   if (mDrawTarget) {
     
@@ -413,17 +407,6 @@ bool PersistentBufferProviderShared::ReturnDrawTarget(
   TextureClient* back = GetTexture(mBack);
   MOZ_ASSERT(back);
 
-  
-  
-  
-  
-  
-  
-  
-  if (back->HasSynchronization()) {
-    mPreviousSnapshot = back->BorrowSnapshot();
-  }
-
   mDrawTarget = nullptr;
   dt = nullptr;
 
@@ -448,11 +431,6 @@ TextureClient* PersistentBufferProviderShared::GetTextureClient() {
 
 already_AddRefed<gfx::SourceSurface>
 PersistentBufferProviderShared::BorrowSnapshot() {
-  if (mPreviousSnapshot) {
-    mSnapshot = mPreviousSnapshot;
-    return do_AddRef(mSnapshot);
-  }
-
   if (mDrawTarget) {
     auto back = GetTexture(mBack);
     MOZ_ASSERT(back && back->IsLocked());
@@ -483,7 +461,7 @@ void PersistentBufferProviderShared::ReturnSnapshot(
   mSnapshot = nullptr;
   snapshot = nullptr;
 
-  if (mPreviousSnapshot || mDrawTarget) {
+  if (mDrawTarget) {
     return;
   }
 
@@ -525,7 +503,6 @@ void PersistentBufferProviderShared::ClearCachedResources() {
 
 void PersistentBufferProviderShared::Destroy() {
   mSnapshot = nullptr;
-  mPreviousSnapshot = nullptr;
   mDrawTarget = nullptr;
 
   for (auto& mTexture : mTextures) {
