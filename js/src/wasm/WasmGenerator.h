@@ -32,7 +32,7 @@ namespace js {
 namespace wasm {
 
 struct CompileTask;
-typedef Vector<CompileTask*, 0, SystemAllocPolicy> CompileTaskPtrVector;
+using CompileTaskPtrVector = Vector<CompileTask*, 0, SystemAllocPolicy>;
 
 
 
@@ -53,7 +53,7 @@ struct FuncCompileInput {
         callSiteLineNums(std::move(callSiteLineNums)) {}
 };
 
-typedef Vector<FuncCompileInput, 8, SystemAllocPolicy> FuncCompileInputVector;
+using FuncCompileInputVector = Vector<FuncCompileInput, 8, SystemAllocPolicy>;
 
 void CraneliftFreeReusableData(void* ptr);
 
@@ -173,14 +173,14 @@ struct CompileTask : public HelperThreadTask {
 
 
 class MOZ_STACK_CLASS ModuleGenerator {
-  typedef Vector<CompileTask, 0, SystemAllocPolicy> CompileTaskVector;
-  typedef Vector<jit::CodeOffset, 0, SystemAllocPolicy> CodeOffsetVector;
+  using CompileTaskVector = Vector<CompileTask, 0, SystemAllocPolicy>;
+  using CodeOffsetVector = Vector<jit::CodeOffset, 0, SystemAllocPolicy>;
   struct CallFarJump {
     uint32_t funcIndex;
     jit::CodeOffset jump;
     CallFarJump(uint32_t fi, jit::CodeOffset j) : funcIndex(fi), jump(j) {}
   };
-  typedef Vector<CallFarJump, 0, SystemAllocPolicy> CallFarJumpVector;
+  using CallFarJumpVector = Vector<CallFarJump, 0, SystemAllocPolicy>;
 
   
   SharedCompileArgs const compileArgs_;

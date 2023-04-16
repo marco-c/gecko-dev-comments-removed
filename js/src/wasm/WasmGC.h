@@ -38,7 +38,7 @@ using namespace js::jit;
 
 
 
-typedef Vector<bool, 32, SystemAllocPolicy> ExitStubMapVector;
+using ExitStubMapVector = Vector<bool, 32, SystemAllocPolicy>;
 
 struct StackMap final {
   
@@ -307,7 +307,7 @@ static inline size_t StackArgAreaSizeAligned(const T& argTypes) {
 
 
 
-typedef Vector<bool, 128, SystemAllocPolicy> StackMapBoolVector;
+using StackMapBoolVector = Vector<bool, 128, SystemAllocPolicy>;
 
 wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
     const StackMapBoolVector& vec, bool hasRefs);

@@ -269,7 +269,7 @@ class AsmJSGlobal {
   }
 };
 
-typedef Vector<AsmJSGlobal, 0, SystemAllocPolicy> AsmJSGlobalVector;
+using AsmJSGlobalVector = Vector<AsmJSGlobal, 0, SystemAllocPolicy>;
 
 
 
@@ -284,7 +284,7 @@ class AsmJSImport {
   uint32_t ffiIndex() const { return ffiIndex_; }
 };
 
-typedef Vector<AsmJSImport, 0, SystemAllocPolicy> AsmJSImportVector;
+using AsmJSImportVector = Vector<AsmJSImport, 0, SystemAllocPolicy>;
 
 
 
@@ -308,7 +308,7 @@ class AsmJSExport {
   uint32_t endOffsetInModule() const { return endOffsetInModule_; }
 };
 
-typedef Vector<AsmJSExport, 0, SystemAllocPolicy> AsmJSExportVector;
+using AsmJSExportVector = Vector<AsmJSExport, 0, SystemAllocPolicy>;
 
 
 

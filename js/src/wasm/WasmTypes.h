@@ -53,7 +53,7 @@ class ABIArgIterBase;
 
 
 
-typedef GCVector<JSFunction*, 0, SystemAllocPolicy> JSFunctionVector;
+using JSFunctionVector = GCVector<JSFunction*, 0, SystemAllocPolicy>;
 
 class WasmMemoryObject;
 using GCPtrWasmMemoryObject = GCPtr<WasmMemoryObject*>;
@@ -73,19 +73,19 @@ using HandleWasmInstanceObject = Handle<WasmInstanceObject*>;
 using MutableHandleWasmInstanceObject = MutableHandle<WasmInstanceObject*>;
 
 class WasmTableObject;
-typedef GCVector<WasmTableObject*, 0, SystemAllocPolicy> WasmTableObjectVector;
+using WasmTableObjectVector = GCVector<WasmTableObject*, 0, SystemAllocPolicy>;
 using RootedWasmTableObject = Rooted<WasmTableObject*>;
 using HandleWasmTableObject = Handle<WasmTableObject*>;
 using MutableHandleWasmTableObject = MutableHandle<WasmTableObject*>;
 
 class WasmGlobalObject;
-typedef GCVector<WasmGlobalObject*, 0, SystemAllocPolicy>
-    WasmGlobalObjectVector;
+using WasmGlobalObjectVector =
+    GCVector<WasmGlobalObject*, 0, SystemAllocPolicy>;
 using RootedWasmGlobalObject = Rooted<WasmGlobalObject*>;
 
 class WasmExceptionObject;
-typedef GCVector<WasmExceptionObject*, 0, SystemAllocPolicy>
-    WasmExceptionObjectVector;
+using WasmExceptionObjectVector =
+    GCVector<WasmExceptionObject*, 0, SystemAllocPolicy>;
 using RootedWasmExceptionObject = Rooted<WasmExceptionObject*>;
 
 class WasmRuntimeExceptionObject;
@@ -115,16 +115,16 @@ class Table;
 
 
 
-typedef Vector<uint32_t, 8, SystemAllocPolicy> Uint32Vector;
+using Uint32Vector = Vector<uint32_t, 8, SystemAllocPolicy>;
 
-typedef Vector<uint8_t, 0, SystemAllocPolicy> Bytes;
+using Bytes = Vector<uint8_t, 0, SystemAllocPolicy>;
 using UniqueBytes = UniquePtr<Bytes>;
 using UniqueConstBytes = UniquePtr<const Bytes>;
-typedef Vector<char, 0, SystemAllocPolicy> UTF8Bytes;
-typedef Vector<Instance*, 0, SystemAllocPolicy> InstanceVector;
-typedef Vector<UniqueChars, 0, SystemAllocPolicy> UniqueCharsVector;
-typedef HashMap<uint32_t, uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy>
-    RenumberMap;
+using UTF8Bytes = Vector<char, 0, SystemAllocPolicy>;
+using InstanceVector = Vector<Instance*, 0, SystemAllocPolicy>;
+using UniqueCharsVector = Vector<UniqueChars, 0, SystemAllocPolicy>;
+using RenumberMap =
+    HashMap<uint32_t, uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy>;
 
 
 
@@ -942,7 +942,7 @@ static_assert(sizeof(V128) == 16, "Invariant");
 
 
 
-typedef Vector<ValType, 16, SystemAllocPolicy> ValTypeVector;
+using ValTypeVector = Vector<ValType, 16, SystemAllocPolicy>;
 
 
 
@@ -1192,8 +1192,8 @@ struct ExceptionTag : AtomicRefCounted<ExceptionTag> {
   ExceptionTag() = default;
 };
 using SharedExceptionTag = RefPtr<ExceptionTag>;
-typedef Vector<SharedExceptionTag, 0, SystemAllocPolicy>
-    SharedExceptionTagVector;
+using SharedExceptionTagVector =
+    Vector<SharedExceptionTag, 0, SystemAllocPolicy>;
 
 
 
@@ -1483,7 +1483,7 @@ using RootedVal = Rooted<Val>;
 using HandleVal = Handle<Val>;
 using MutableHandleVal = MutableHandle<Val>;
 
-typedef GCVector<Val, 0, SystemAllocPolicy> ValVector;
+using ValVector = GCVector<Val, 0, SystemAllocPolicy>;
 using RootedValVector = Rooted<ValVector>;
 using HandleValVector = Handle<ValVector>;
 using MutableHandleValVector = MutableHandle<ValVector>;
@@ -2108,7 +2108,7 @@ struct StructField {
   bool isMutable;
 };
 
-typedef Vector<StructField, 0, SystemAllocPolicy> StructFieldVector;
+using StructFieldVector = Vector<StructField, 0, SystemAllocPolicy>;
 
 class StructType {
  public:
@@ -2156,8 +2156,8 @@ class StructType {
   WASM_DECLARE_SERIALIZABLE(StructType)
 };
 
-typedef Vector<StructType, 0, SystemAllocPolicy> StructTypeVector;
-typedef Vector<const StructType*, 0, SystemAllocPolicy> StructTypePtrVector;
+using StructTypeVector = Vector<StructType, 0, SystemAllocPolicy>;
+using StructTypePtrVector = Vector<const StructType*, 0, SystemAllocPolicy>;
 
 
 
@@ -2192,8 +2192,8 @@ class ArrayType {
   WASM_DECLARE_SERIALIZABLE(ArrayType)
 };
 
-typedef Vector<ArrayType, 0, SystemAllocPolicy> ArrayTypeVector;
-typedef Vector<const ArrayType*, 0, SystemAllocPolicy> ArrayTypePtrVector;
+using ArrayTypeVector = Vector<ArrayType, 0, SystemAllocPolicy>;
+using ArrayTypePtrVector = Vector<const ArrayType*, 0, SystemAllocPolicy>;
 
 
 
@@ -2282,7 +2282,7 @@ struct CacheableChars : UniqueChars {
   WASM_DECLARE_SERIALIZABLE(CacheableChars)
 };
 
-typedef Vector<CacheableChars, 0, SystemAllocPolicy> CacheableCharsVector;
+using CacheableCharsVector = Vector<CacheableChars, 0, SystemAllocPolicy>;
 
 
 
@@ -2302,7 +2302,7 @@ struct Import {
   WASM_DECLARE_SERIALIZABLE(Import)
 };
 
-typedef Vector<Import, 0, SystemAllocPolicy> ImportVector;
+using ImportVector = Vector<Import, 0, SystemAllocPolicy>;
 
 
 
@@ -2340,7 +2340,7 @@ class Export {
   WASM_DECLARE_SERIALIZABLE(Export)
 };
 
-typedef Vector<Export, 0, SystemAllocPolicy> ExportVector;
+using ExportVector = Vector<Export, 0, SystemAllocPolicy>;
 
 
 
@@ -2356,7 +2356,7 @@ struct FuncDesc {
       : type(type), typeId(typeId), typeIndex(typeIndex) {}
 };
 
-typedef Vector<FuncDesc, 0, SystemAllocPolicy> FuncDescVector;
+using FuncDescVector = Vector<FuncDesc, 0, SystemAllocPolicy>;
 
 
 
@@ -2487,7 +2487,7 @@ class GlobalDesc {
   }
 };
 
-typedef Vector<GlobalDesc, 0, SystemAllocPolicy> GlobalDescVector;
+using GlobalDescVector = Vector<GlobalDesc, 0, SystemAllocPolicy>;
 
 
 
@@ -2504,7 +2504,7 @@ struct EventDesc {
   ResultType resultType() const { return ResultType::Vector(type); }
 };
 
-typedef Vector<EventDesc, 0, SystemAllocPolicy> EventDescVector;
+using EventDescVector = Vector<EventDesc, 0, SystemAllocPolicy>;
 #endif
 
 
@@ -2541,7 +2541,7 @@ static_assert(NullFuncIndex > MaxFuncs, "Invariant");
 
 using MutableElemSegment = RefPtr<ElemSegment>;
 using SharedElemSegment = SerializableRefPtr<const ElemSegment>;
-typedef Vector<SharedElemSegment, 0, SystemAllocPolicy> ElemSegmentVector;
+using ElemSegmentVector = Vector<SharedElemSegment, 0, SystemAllocPolicy>;
 
 
 
@@ -2560,7 +2560,7 @@ struct DataSegmentEnv {
   uint32_t length;
 };
 
-typedef Vector<DataSegmentEnv, 0, SystemAllocPolicy> DataSegmentEnvVector;
+using DataSegmentEnvVector = Vector<DataSegmentEnv, 0, SystemAllocPolicy>;
 
 struct DataSegment : AtomicRefCounted<DataSegment> {
   Maybe<InitExpr> offsetIfActive;
@@ -2579,7 +2579,7 @@ struct DataSegment : AtomicRefCounted<DataSegment> {
 
 using MutableDataSegment = RefPtr<DataSegment>;
 using SharedDataSegment = SerializableRefPtr<const DataSegment>;
-typedef Vector<SharedDataSegment, 0, SystemAllocPolicy> DataSegmentVector;
+using DataSegmentVector = Vector<SharedDataSegment, 0, SystemAllocPolicy>;
 
 
 
@@ -2592,7 +2592,7 @@ struct CustomSectionEnv {
   uint32_t payloadLength;
 };
 
-typedef Vector<CustomSectionEnv, 0, SystemAllocPolicy> CustomSectionEnvVector;
+using CustomSectionEnvVector = Vector<CustomSectionEnv, 0, SystemAllocPolicy>;
 
 struct CustomSection {
   Bytes name;
@@ -2601,7 +2601,7 @@ struct CustomSection {
   WASM_DECLARE_SERIALIZABLE(CustomSection)
 };
 
-typedef Vector<CustomSection, 0, SystemAllocPolicy> CustomSectionVector;
+using CustomSectionVector = Vector<CustomSection, 0, SystemAllocPolicy>;
 
 
 
@@ -2616,7 +2616,7 @@ struct Name {
   Name() : offsetInNamePayload(UINT32_MAX), length(0) {}
 };
 
-typedef Vector<Name, 0, SystemAllocPolicy> NameVector;
+using NameVector = Vector<Name, 0, SystemAllocPolicy>;
 
 
 
@@ -2793,7 +2793,7 @@ class TypeDef {
   WASM_DECLARE_SERIALIZABLE(TypeDef)
 };
 
-typedef Vector<TypeDef, 0, SystemAllocPolicy> TypeDefVector;
+using TypeDefVector = Vector<TypeDef, 0, SystemAllocPolicy>;
 
 
 
@@ -2840,7 +2840,7 @@ class TypeIdDesc {
   }
 };
 
-typedef Vector<TypeIdDesc, 0, SystemAllocPolicy> TypeIdDescVector;
+using TypeIdDescVector = Vector<TypeIdDesc, 0, SystemAllocPolicy>;
 
 
 
@@ -2858,9 +2858,9 @@ struct TypeDefWithId : public TypeDef {
   WASM_DECLARE_SERIALIZABLE(TypeDefWithId)
 };
 
-typedef Vector<TypeDefWithId, 0, SystemAllocPolicy> TypeDefWithIdVector;
-typedef Vector<const TypeDefWithId*, 0, SystemAllocPolicy>
-    TypeDefWithIdPtrVector;
+using TypeDefWithIdVector = Vector<TypeDefWithId, 0, SystemAllocPolicy>;
+using TypeDefWithIdPtrVector =
+    Vector<const TypeDefWithId*, 0, SystemAllocPolicy>;
 
 
 
@@ -3245,7 +3245,7 @@ struct FuncOffsets : CallableOffsets {
   uint32_t tierEntry;
 };
 
-typedef Vector<FuncOffsets, 0, SystemAllocPolicy> FuncOffsetsVector;
+using FuncOffsetsVector = Vector<FuncOffsets, 0, SystemAllocPolicy>;
 
 
 
@@ -3514,7 +3514,7 @@ class CallSiteTarget {
   }
 };
 
-typedef Vector<CallSiteTarget, 0, SystemAllocPolicy> CallSiteTargetVector;
+using CallSiteTargetVector = Vector<CallSiteTarget, 0, SystemAllocPolicy>;
 
 
 
@@ -3744,7 +3744,7 @@ struct TableDesc {
         maximumLength(maximumLength) {}
 };
 
-typedef Vector<TableDesc, 0, SystemAllocPolicy> TableDescVector;
+using TableDescVector = Vector<TableDesc, 0, SystemAllocPolicy>;
 
 
 
@@ -3814,7 +3814,7 @@ struct TlsDataDeleter {
   void operator()(TlsData* tlsData) { js_free(tlsData->allocatedBase); }
 };
 
-typedef UniquePtr<TlsData, TlsDataDeleter> UniqueTlsData;
+using UniqueTlsData = UniquePtr<TlsData, TlsDataDeleter>;
 
 extern UniqueTlsData CreateTlsData(uint32_t globalDataLength);
 

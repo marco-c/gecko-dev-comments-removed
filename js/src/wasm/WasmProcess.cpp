@@ -45,7 +45,7 @@ using mozilla::BinarySearchIf;
 
 
 
-typedef Vector<const CodeSegment*, 0, SystemAllocPolicy> CodeSegmentVector;
+using CodeSegmentVector = Vector<const CodeSegment*, 0, SystemAllocPolicy>;
 
 Atomic<bool> wasm::CodeExists(false);
 
