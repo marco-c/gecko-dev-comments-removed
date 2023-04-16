@@ -103,11 +103,15 @@ MFBT_API bool MozDescribeCodeAddress(void* aPC,
 
 
 
-MFBT_API void MozFormatCodeAddress(char* aBuffer, uint32_t aBufferSize,
-                                   uint32_t aFrameNumber, const void* aPC,
-                                   const char* aFunction, const char* aLibrary,
-                                   ptrdiff_t aLOffset, const char* aFileName,
-                                   uint32_t aLineNo);
+
+
+
+
+MFBT_API int MozFormatCodeAddress(char* aBuffer, uint32_t aBufferSize,
+                                  uint32_t aFrameNumber, const void* aPC,
+                                  const char* aFunction, const char* aLibrary,
+                                  ptrdiff_t aLOffset, const char* aFileName,
+                                  uint32_t aLineNo);
 
 
 
@@ -124,9 +128,13 @@ MFBT_API void MozFormatCodeAddress(char* aBuffer, uint32_t aBufferSize,
 
 
 
-MFBT_API void MozFormatCodeAddressDetails(
-    char* aBuffer, uint32_t aBufferSize, uint32_t aFrameNumber, void* aPC,
-    const MozCodeAddressDetails* aDetails);
+
+
+
+
+MFBT_API int MozFormatCodeAddressDetails(char* aBuffer, uint32_t aBufferSize,
+                                         uint32_t aFrameNumber, void* aPC,
+                                         const MozCodeAddressDetails* aDetails);
 
 namespace mozilla {
 

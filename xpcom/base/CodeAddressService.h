@@ -204,12 +204,15 @@ class CodeAddressService
     }
   }
 
-  void GetLocation(uint32_t aFrameNumber, const void* aPc, char* aBuf,
-                   size_t aBufLen) {
+  
+  
+  
+  int GetLocation(uint32_t aFrameNumber, const void* aPc, char* aBuf,
+                  size_t aBufLen) {
     Entry& entry = GetEntry(aPc);
-    MozFormatCodeAddress(aBuf, aBufLen, aFrameNumber, entry.mPc,
-                         entry.mFunction, entry.mLibrary, entry.mLOffset,
-                         entry.mFileName, entry.mLineNo);
+    return MozFormatCodeAddress(aBuf, aBufLen, aFrameNumber, entry.mPc,
+                                entry.mFunction, entry.mLibrary, entry.mLOffset,
+                                entry.mFileName, entry.mLineNo);
   }
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
