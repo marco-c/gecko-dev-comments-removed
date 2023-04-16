@@ -57,6 +57,10 @@ user_pref("media.block-autoplay-until-in-foreground", false);
 
 
 user_pref("widget.disable-dark-scrollbar", true);
+
+
+
+user_pref("nglayout.initialpaint.unsuppress_with_no_background", true);
 user_pref("media.block-autoplay-until-in-foreground", false);
 
 user_pref("browser.cache.offline.storage.enable", true);
