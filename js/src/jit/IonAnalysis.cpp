@@ -330,131 +330,88 @@ static bool FlagAllOperandsAsHavingRemovedUses(MIRGenerator* mir,
   return true;
 }
 
-static void RemoveFromSuccessors(MBasicBlock* block) {
-  
-  size_t numSucc = block->numSuccessors();
-  while (numSucc--) {
-    MBasicBlock* succ = block->getSuccessor(numSucc);
-    if (succ->isDead()) {
-      continue;
-    }
-    JitSpew(JitSpew_Prune, "Remove block edge %u -> %u.", block->id(),
-            succ->id());
-    succ->removePredecessor(block);
-  }
-}
 
-static void ConvertToBailingBlock(TempAllocator& alloc, MBasicBlock* block) {
-  
-  MBail* bail = MBail::New(alloc, BailoutKind::FirstExecution);
-  MInstruction* bailPoint = block->safeInsertTop();
-  block->insertBefore(block->safeInsertTop(), bail);
 
-  
-  MInstructionIterator clearStart = block->begin(bailPoint);
-  block->discardAllInstructionsStartingAt(clearStart);
-  if (block->outerResumePoint()) {
-    block->clearOuterResumePoint();
-  }
 
-  
-  block->end(MUnreachable::New(alloc));
-}
 
 bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
   JitSpew(JitSpew_Prune, "Begin");
-  MOZ_ASSERT(!mir->compilingWasm(),
-             "wasm compilation has no code coverage support.");
 
   
-  
-  
-  bool someUnreachable = false;
-  for (ReversePostorderIterator block(graph.rpoBegin());
-       block != graph.rpoEnd(); block++) {
-    if (mir->shouldCancel("Prune unused branches (main loop)")) {
-      return false;
-    }
-
-    JitSpew(JitSpew_Prune, "Investigate Block %u:", block->id());
-    JitSpewIndent indent(JitSpew_Prune);
-
-    
-    if (*block == graph.osrBlock() || *block == graph.entryBlock()) {
-      JitSpew(JitSpew_Prune, "Block %u is an entry point.", block->id());
-      continue;
-    }
-
-    
-    
-    bool isUnreachable = true;
-    bool isLoopHeader = block->isLoopHeader();
-    size_t numPred = block->numPredecessors();
-    for (size_t i = 0; i < numPred; i++) {
-      if (mir->shouldCancel("Prune unused branches (inner loop 1)")) {
-        return false;
-      }
-
-      MBasicBlock* pred = block->getPredecessor(i);
-
-      
-      
-      
-      if (isLoopHeader && pred == block->backedge()) {
-        continue;
-      }
-
-      
-      if (!pred->isMarked() && !pred->unreachable()) {
-        isUnreachable = false;
-        break;
-      }
-    }
-
-    
-    
-    if (!isUnreachable) {
-      continue;
-    }
-
-    someUnreachable = true;
-    if (isUnreachable) {
-      JitSpew(JitSpew_Prune, "Mark block %u as unreachable.", block->id());
-      block->setUnreachable();
-    }
-
-    
-    
-    
-    if (block->isLoopHeader()) {
-      JitSpew(JitSpew_Prune, "Mark block %u as bailing block. (loop backedge)",
-              block->backedge()->id());
-      block->backedge()->markUnchecked();
-    }
-  }
+  MOZ_ASSERT(!mir->compilingWasm());
 
   
-  if (!someUnreachable) {
+  if (graph.osrBlock()) {
     return true;
   }
 
-  JitSpew(
-      JitSpew_Prune,
-      "Convert basic block to bailing blocks, and remove unreachable blocks:");
+  Vector<MBasicBlock*, 16, SystemAllocPolicy> worklist;
+  uint32_t numMarked = 0;
+  bool needsTrim = false;
+
+  auto markReachable = [&](MBasicBlock* block) -> bool {
+    block->mark();
+    numMarked++;
+    if (block->alwaysBails()) {
+      needsTrim = true;
+    }
+    return worklist.append(block);
+  };
+
+  
+  if (!markReachable(graph.entryBlock())) {
+    return false;
+  }
+
+  
+  while (!worklist.empty()) {
+    if (mir->shouldCancel("Prune unused branches (marking reachable)")) {
+      return false;
+    }
+    MBasicBlock* block = worklist.popCopy();
+
+    JitSpew(JitSpew_Prune, "Visit block %u:", block->id());
+    JitSpewIndent indent(JitSpew_Prune);
+
+    
+    if (block->alwaysBails()) {
+      continue;
+    }
+
+    for (size_t i = 0; i < block->numSuccessors(); i++) {
+      MBasicBlock* succ = block->getSuccessor(i);
+      if (succ->isMarked()) {
+        continue;
+      }
+      JitSpew(JitSpew_Prune, "Reaches block %u", succ->id());
+      if (!markReachable(succ)) {
+        return false;
+      }
+    }
+  }
+
+  if (!needsTrim && numMarked == graph.numBlocks()) {
+    
+    graph.unmarkBlocks();
+    return true;
+  }
+
+  JitSpew(JitSpew_Prune, "Remove unreachable instructions and blocks:");
   JitSpewIndent indent(JitSpew_Prune);
 
   
   
   for (PostorderIterator it(graph.poBegin()); it != graph.poEnd();) {
-    if (mir->shouldCancel("Prune unused branches (marking loop)")) {
+    if (mir->shouldCancel("Prune unused branches (marking operands)")) {
       return false;
     }
 
     MBasicBlock* block = *it++;
-    if (!block->isMarked() && !block->unreachable()) {
+    if (block->isMarked() && !block->alwaysBails()) {
       continue;
     }
 
+    
     FlagAllOperandsAsHavingRemovedUses(mir, block);
   }
 
@@ -466,36 +423,52 @@ bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
     }
 
     MBasicBlock* block = *it++;
-    if (!block->isMarked() && !block->unreachable()) {
+    if (block->isMarked() && !block->alwaysBails()) {
       continue;
     }
 
-    JitSpew(JitSpew_Prune, "Remove / Replace block %u.", block->id());
-    JitSpewIndent indent(JitSpew_Prune);
-
     
     
-    RemoveFromSuccessors(block);
-
-    
-    
-    if (block->isMarked()) {
-      JitSpew(JitSpew_Prune, "Convert Block %u to a bailing block.",
-              block->id());
-      if (!graph.alloc().ensureBallast()) {
-        return false;
+    size_t numSucc = block->numSuccessors();
+    for (uint32_t i = 0; i < numSucc; i++) {
+      MBasicBlock* succ = block->getSuccessor(i);
+      if (succ->isDead()) {
+        continue;
       }
-      ConvertToBailingBlock(graph.alloc(), block);
-      block->unmark();
+
+      JitSpew(JitSpew_Prune, "Remove block edge %u -> %u.", block->id(),
+              succ->id());
+      succ->removePredecessor(block);
     }
 
-    
-    if (block->unreachable()) {
-      JitSpew(JitSpew_Prune, "Remove Block %u.", block->id());
-      JitSpewIndent indent(JitSpew_Prune);
+    if (!block->isMarked()) {
+      
+      JitSpew(JitSpew_Prune, "Remove block %u.", block->id());
       graph.removeBlock(block);
+    } else {
+      
+      MOZ_ASSERT(block->alwaysBails());
+      JitSpew(JitSpew_Prune, "Trim block %u.", block->id());
+      DebugOnly<bool> sawBail = false;
+      for (MInstructionIterator it = block->begin(); it != block->end(); it++) {
+        MInstruction* ins = *it;
+        if (ins->isBail()) {
+          sawBail = true;
+          it++;
+          block->discardAllInstructionsStartingAt(it);
+          break;
+        }
+      }
+      MOZ_ASSERT(sawBail);
+
+      if (block->outerResumePoint()) {
+        block->clearOuterResumePoint();
+      }
+
+      block->end(MUnreachable::New(graph.alloc()));
     }
   }
+  graph.unmarkBlocks();
 
   return true;
 }
