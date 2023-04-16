@@ -20,6 +20,8 @@ const {
 const {
   TYPES: { ERROR_MESSAGE },
 } = require("devtools/server/actors/resources/index");
+const Targets = require("devtools/server/actors/targets/index");
+
 const { MESSAGE_CATEGORY } = require("devtools/shared/constants");
 
 const PLATFORM_SPECIFIC_CATEGORIES = [
@@ -45,9 +47,30 @@ class ErrorMessageWatcher extends nsIConsoleListenerWatcher {
 
     if (this.isProcessTarget(targetActor)) {
       
+      const isCachedFromPrivateWindow =
+        isCachedMessage && message.isFromPrivateWindow;
+      if (isCachedFromPrivateWindow) {
+        return false;
+      }
+
       
       
-      return !isCachedMessage || !message.isFromPrivateWindow;
+      
+      
+      if (message.isForwardedFromContentProcess) {
+        return false;
+      }
+
+      
+      
+      if (
+        targetActor.targetType == Targets.TYPES.PROCESS &&
+        message.innerWindowID
+      ) {
+        return false;
+      }
+
+      return true;
     }
 
     if (!message.innerWindowID) {

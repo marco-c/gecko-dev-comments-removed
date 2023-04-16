@@ -30,11 +30,14 @@ const {
 
 
 
+
+
 class ConsoleAPIListener {
-  constructor(window, handler, { addonId } = {}) {
+  constructor(window, handler, { addonId, excludeMessagesBoundToWindow } = {}) {
     this.window = window;
     this.handler = handler;
     this.addonId = addonId;
+    this.excludeMessagesBoundToWindow = excludeMessagesBoundToWindow;
   }
 
   QueryInterface = ChromeUtils.generateQI([Ci.nsIObserver]);
@@ -117,11 +120,34 @@ class ConsoleAPIListener {
       }
     }
 
-    if (this.window && !workerType) {
+    
+    
+    
+    
+    
+    
+    
+    if (!workerType && typeof message.innerID !== "number" && this.window) {
+      return false;
+    }
+
+    if (typeof message.innerID == "number") {
+      if (
+        this.excludeMessagesBoundToWindow &&
+        
+        message.innerID
+      ) {
+        return false;
+      }
+
       const msgWindow = Services.wm.getCurrentInnerWindowWithId(
         message.innerID
       );
-      if (!msgWindow || !isWindowIncluded(this.window, msgWindow)) {
+
+      if (
+        this.window &&
+        (!msgWindow || !isWindowIncluded(this.window, msgWindow))
+      ) {
         
         return false;
       }

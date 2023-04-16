@@ -33,6 +33,12 @@ class PlatformMessageWatcher extends nsIConsoleListenerWatcher {
       return false;
     }
 
+    
+    
+    if (message.isForwardedFromContentProcess) {
+      return false;
+    }
+
     return true;
   }
 

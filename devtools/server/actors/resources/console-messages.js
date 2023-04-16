@@ -8,6 +8,7 @@ const {
   TYPES: { CONSOLE_MESSAGE },
 } = require("devtools/server/actors/resources/index");
 const { WebConsoleUtils } = require("devtools/server/actors/webconsole/utils");
+const Targets = require("devtools/server/actors/targets/index");
 
 const consoleAPIListenerModule = isWorker
   ? "devtools/server/actors/webconsole/worker-listeners"
@@ -56,13 +57,24 @@ class ConsoleMessageWatcher {
       ]);
     };
 
+    const isTargetActorContentProcess =
+      targetActor.targetType === Targets.TYPES.PROCESS;
+
     
     
-    const listener = new ConsoleAPIListener(
-      targetActor.isRootActor ? null : targetActor.window,
-      onConsoleAPICall,
-      targetActor.consoleAPIListenerOptions
-    );
+    
+    
+    
+    const window =
+      targetActor.targetType === Targets.TYPES.FRAME &&
+      targetActor.typeName != "parentProcessTarget"
+        ? targetActor.window
+        : null;
+
+    const listener = new ConsoleAPIListener(window, onConsoleAPICall, {
+      excludeMessagesBoundToWindow: isTargetActorContentProcess,
+      ...(targetActor.consoleAPIListenerOptions || {}),
+    });
     this.listener = listener;
     listener.init();
 
