@@ -1760,12 +1760,12 @@ def set_worker_type(config, tasks):
             
             pass
         elif test_platform.startswith("macosx1014-64"):
+            task["worker-type"] = MACOSX_WORKER_TYPES["macosx1014-64"]
+        elif test_platform.startswith("macosx1015-64"):
             if "--power-test" in task["mozharness"]["extra-options"]:
                 task["worker-type"] = MACOSX_WORKER_TYPES["macosx1014-64-power"]
             else:
-                task["worker-type"] = MACOSX_WORKER_TYPES["macosx1014-64"]
-        elif test_platform.startswith("macosx1015-64"):
-            task["worker-type"] = MACOSX_WORKER_TYPES["macosx1015-64"]
+                task["worker-type"] = MACOSX_WORKER_TYPES["macosx1015-64"]
         elif test_platform.startswith("win"):
             
             if task["virtualization"] == "hardware":
