@@ -233,14 +233,20 @@ var ManifestProcessor = {
         return defaultScope;
       }
       
-      let isSameOrigin = startURL && startURL.origin !== scopeURL.origin;
-      if (isSameOrigin || !startURL.pathname.startsWith(scopeURL.pathname)) {
+      if (
+        startURL.origin !== scopeURL.origin ||
+        startURL.pathname.startsWith(scopeURL.pathname) === false
+      ) {
         const warn = domBundle.GetStringFromName(
           "ManifestStartURLOutsideScope"
         );
         errors.push({ warn });
         return defaultScope;
       }
+      
+      
+      scopeURL.hash = "";
+      scopeURL.search = "";
       return scopeURL.href;
     }
 
