@@ -34,6 +34,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadManager.h"
+#include "nsTHashSet.h"
 #include "Classifier.h"
 #include "Entries.h"
 #include "prprf.h"
@@ -844,7 +845,7 @@ nsresult nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsTHashtable<nsCStringHashKey> providers;
+  nsTHashSet<nsCString> providers;
   for (auto& child : childArray) {
     auto dotPos = child.FindChar('.');
     if (dotPos < 0) {
@@ -853,16 +854,15 @@ nsresult nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict) {
 
     nsDependentCSubstring provider = Substring(child, 0, dotPos);
 
-    providers.PutEntry(provider);
+    providers.Insert(provider);
   }
 
   
   
   
-  for (auto itr = providers.Iter(); !itr.Done(); itr.Next()) {
-    auto entry = itr.Get();
-    nsCString provider(entry->GetKey());
-    nsPrintfCString owninListsPref("%s.lists", provider.get());
+  for (const auto& provider : providers) {
+    nsPrintfCString owninListsPref("%s.lists",
+                                   nsPromiseFlatCString{provider}.get());
 
     nsAutoCString owningLists;
     nsresult rv = prefBranch->GetCharPref(owninListsPref.get(), owningLists);
