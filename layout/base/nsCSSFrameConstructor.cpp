@@ -2504,6 +2504,9 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
 
 
 
+
+
+
   
 
   
@@ -2543,29 +2546,21 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
   ComputedStyle* viewportPseudoStyle = viewportFrame->Style();
 
   nsContainerFrame* rootFrame = nullptr;
-  PseudoStyleType rootPseudo;
 
-  if (!isPaginated) {
 #ifdef MOZ_XUL
-    if (aDocElement->IsXULElement()) {
-      
-      rootFrame = NS_NewRootBoxFrame(mPresShell, viewportPseudoStyle);
-    } else
-#endif
-    {
-      
-      rootFrame = NS_NewCanvasFrame(mPresShell, viewportPseudoStyle);
-      mHasRootAbsPosContainingBlock = true;
-    }
-
-    rootPseudo = PseudoStyleType::canvas;
-    mDocElementContainingBlock = rootFrame;
-  } else {
+  if (aDocElement->IsXULElement()) {
     
-    rootFrame = mPageSequenceFrame =
-        NS_NewPageSequenceFrame(mPresShell, viewportPseudoStyle);
-    rootPseudo = PseudoStyleType::pageSequence;
+    rootFrame = NS_NewRootBoxFrame(mPresShell, viewportPseudoStyle);
+  } else
+#endif
+  {
+    
+    rootFrame = NS_NewCanvasFrame(mPresShell, viewportPseudoStyle);
+    mHasRootAbsPosContainingBlock = true;
   }
+
+  PseudoStyleType rootPseudo = PseudoStyleType::canvas;
+  mDocElementContainingBlock = rootFrame;
 
   
 
@@ -2595,13 +2590,7 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
     rootPseudoStyle = styleSet->ResolveInheritingAnonymousBoxStyle(
         rootPseudo, viewportPseudoStyle);
   } else {
-    if (rootPseudo == PseudoStyleType::canvas) {
-      rootPseudo = PseudoStyleType::scrolledCanvas;
-    } else {
-      NS_ASSERTION(rootPseudo == PseudoStyleType::pageSequence,
-                   "Unknown root pseudo");
-      rootPseudo = PseudoStyleType::scrolledPageSequence;
-    }
+    rootPseudo = PseudoStyleType::scrolledCanvas;
 
     
     
@@ -2636,10 +2625,21 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
 
   if (isPaginated) {
     
+    {
+      RefPtr<ComputedStyle> pageSequenceStyle =
+          styleSet->ResolveInheritingAnonymousBoxStyle(
+              PseudoStyleType::pageSequence, viewportPseudoStyle);
+      mPageSequenceFrame =
+          NS_NewPageSequenceFrame(mPresShell, pageSequenceStyle);
+      mPageSequenceFrame->Init(aDocElement, rootFrame, nullptr);
+      SetInitialSingleChild(rootFrame, mPageSequenceFrame);
+    }
+
+    
     
     auto* printedSheetFrame =
-        ConstructPrintedSheetFrame(mPresShell, rootFrame, nullptr);
-    SetInitialSingleChild(rootFrame, printedSheetFrame);
+        ConstructPrintedSheetFrame(mPresShell, mPageSequenceFrame, nullptr);
+    SetInitialSingleChild(mPageSequenceFrame, printedSheetFrame);
 
     
     
