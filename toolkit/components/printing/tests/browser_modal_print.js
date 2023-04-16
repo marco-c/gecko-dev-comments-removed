@@ -51,6 +51,7 @@ add_task(async function testPrintMultiple() {
     assertExpectedPrintPage(helper);
 
     
+    await TestUtils.waitForTick();
     await helper.closeDialog();
   });
 });
