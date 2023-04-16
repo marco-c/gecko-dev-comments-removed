@@ -355,7 +355,10 @@ const observer = {
 
         
         
-        if (!alreadyModified || !alreadyModifiedFormLessField) {
+        if (
+          LoginHelper.formRemovalCaptureEnabled &&
+          (!alreadyModified || !alreadyModifiedFormLessField)
+        ) {
           ownerDocument.setNotifyFetchSuccess(true);
         }
 
