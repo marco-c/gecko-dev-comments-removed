@@ -4,7 +4,6 @@
 
 
 
-include protocol PExtensions;
 include protocol PWindowGlobal;
 
 include DOMTypes;
@@ -22,7 +21,6 @@ namespace dom {
 
 async refcounted protocol PInProcess
 {
-  manages PExtensions;
   manages PWindowGlobal;
 };
 
