@@ -48,6 +48,25 @@ XPCOMUtils.defineLazyServiceGetter(
 
 const { debug, warn } = GeckoViewUtils.initLogging("Console");
 
+
+
+
+XPCOMUtils.defineLazyGetter(this, "gAddonManagerStartup", function() {
+  if (AddonManager.isReady) {
+    
+    return true;
+  }
+
+  
+  return new Promise(resolve => {
+    AddonManager.addManagerListener({
+      onStartup() {
+        resolve(true);
+      },
+    });
+  });
+});
+
 const DOWNLOAD_CHANGED_MESSAGE = "GeckoView:WebExtension:DownloadChanged";
 
 var DownloadTracker = new (class extends EventEmitter {
@@ -635,6 +654,7 @@ var GeckoViewWebExtension = {
   },
 
   async ensureBuiltIn(aUri, aId) {
+    await gAddonManagerStartup;
     const extensionData = new ExtensionData(aUri);
     const [manifest, extension] = await Promise.all([
       extensionData.loadManifest(),
@@ -654,6 +674,7 @@ var GeckoViewWebExtension = {
   },
 
   async installBuiltIn(aUri) {
+    await gAddonManagerStartup;
     const addon = await AddonManager.installBuiltinAddon(aUri.spec);
     const exported = await exportExtension(addon, addon.userPermissions, aUri);
     return { extension: exported };
@@ -1028,6 +1049,7 @@ var GeckoViewWebExtension = {
 
       case "GeckoView:WebExtension:List": {
         try {
+          await gAddonManagerStartup;
           const addons = await AddonManager.getAddonsByTypes(["extension"]);
           const extensions = await Promise.all(
             addons.map(addon =>
