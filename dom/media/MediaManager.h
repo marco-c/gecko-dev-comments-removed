@@ -338,6 +338,13 @@ class MediaManager final : public nsIMediaManagerService,
   void RemoveMediaDevicesCallback(uint64_t aWindowID);
   void DeviceListChanged();
 
+  
+  
+  size_t AddTaskAndGetCount(uint64_t aWindowID, const nsAString& aCallID,
+                            RefPtr<GetUserMediaTask> aTask);
+  
+  RefPtr<GetUserMediaTask> TakeGetUserMediaTask(const nsAString& aCallID);
+
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf);
 
   struct nsStringHasher {
