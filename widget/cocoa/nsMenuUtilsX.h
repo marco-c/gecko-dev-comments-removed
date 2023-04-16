@@ -35,6 +35,11 @@ NSMenuItem* NativeMenuItemWithLocation(NSMenu* aRootMenu, NSString* aLocationStr
                                        bool aIsMenuBar);
 
 
+
+void CheckNativeMenuConsistency(NSMenu* aMenu);
+void CheckNativeMenuConsistency(NSMenuItem* aMenuItem);
+
+
 void DumpNativeMenu(NSMenu* aMenu);
 void DumpNativeMenuItem(NSMenuItem* aMenuItem);
 
