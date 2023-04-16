@@ -1050,6 +1050,16 @@ bool nsStyleSVGReset::HasMask() const {
 
 
 
+
+nsChangeHint nsStylePage::CalcDifference(const nsStylePage& aNewData) const {
+  MOZ_ASSERT_UNREACHABLE(
+      "Page styles should never be diffed. We do not dynamically update them");
+  return nsChangeHint{0};
+}
+
+
+
+
 nsStylePosition::nsStylePosition(const Document& aDocument)
     : mObjectPosition(Position::FromPercentage(0.5f)),
       mOffset(StyleRectWithAllSides(LengthPercentageOrAuto::Auto())),

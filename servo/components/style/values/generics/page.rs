@@ -86,7 +86,7 @@ pub enum Orientation {
     ToShmem,
 )]
 #[repr(C, u8)]
-pub enum PageSize<S> {
+pub enum GenericPageSize<S> {
     
     Size(S),
     
@@ -98,6 +98,8 @@ pub enum PageSize<S> {
     
     Auto,
 }
+
+pub use self::GenericPageSize as PageSize;
 
 impl<S> PageSize<S> {
     
