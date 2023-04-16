@@ -805,8 +805,18 @@ DMABufSurfaceYUV::DMABufSurfaceYUV()
 DMABufSurfaceYUV::~DMABufSurfaceYUV() { ReleaseSurface(); }
 
 bool DMABufSurfaceYUV::OpenFileDescriptorForPlane(int aPlane) {
+  
+  
+  
+  
   if (mDmabufFds[aPlane] >= 0) {
     return true;
+  }
+  if (mGbmBufferObject[aPlane] == nullptr) {
+    NS_WARNING(
+        "DMABufSurfaceYUV::OpenFileDescriptorForPlane: Missing "
+        "mGbmBufferObject object!");
+    return false;
   }
   mDmabufFds[aPlane] = nsGbmLib::GetFd(mGbmBufferObject[aPlane]);
   if (mDmabufFds[aPlane] < 0) {
