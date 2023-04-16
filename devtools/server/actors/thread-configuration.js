@@ -16,7 +16,12 @@ const {
 } = WatchedDataHelpers;
 
 
-const SUPPORTED_OPTIONS = {};
+const SUPPORTED_OPTIONS = {
+  
+  pauseOnExceptions: true,
+  
+  ignoreCaughtExceptions: true,
+};
 
 
 

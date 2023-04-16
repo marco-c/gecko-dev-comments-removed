@@ -11,8 +11,13 @@ add_task(async function() {
   invokeInTab("startWorker");
   invokeInTab("messageWorker");
 
+  info("Test pause on exceptions on worker load");
   await waitForPaused(dbg);
-
   const source = findSource(dbg, "worker-exception.js");
+  assertPausedAtSourceAndLine(dbg, source.id, 4);
+
+  await resume(dbg);
+  info("Test pause on exceptions on worker postMessage ");
+  await waitForPaused(dbg);
   assertPausedAtSourceAndLine(dbg, source.id, 2);
 });

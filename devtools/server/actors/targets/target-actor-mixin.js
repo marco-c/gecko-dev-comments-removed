@@ -2,7 +2,6 @@
 
 
 
-
 "use strict";
 
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
@@ -12,7 +11,6 @@ const {
   WatchedDataHelpers,
 } = require("devtools/server/actors/watcher/WatchedDataHelpers.jsm");
 const { STATES: THREAD_STATES } = require("devtools/server/actors/thread");
-
 const {
   RESOURCES,
   BREAKPOINTS,
