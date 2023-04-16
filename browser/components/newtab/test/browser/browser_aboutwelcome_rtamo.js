@@ -45,7 +45,16 @@ async function openRTAMOWelcomePage() {
       Ci.nsIEnvironment
     );
     env.set("XPCSHELL_TEST_PROFILE_DIR", "testing");
-
+    await ASRouter.forceAttribution({
+      source: "",
+      medium: "",
+      campaign: "",
+      content: "",
+      experiment: "",
+      variation: "",
+      ua: "",
+      dltoken: "",
+    });
     
     AttributionCode._clearCache();
     await AttributionCode.getAttrDataAsync();
