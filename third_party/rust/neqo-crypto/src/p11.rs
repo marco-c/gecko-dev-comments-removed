@@ -70,7 +70,7 @@ impl SymKey {
     
     
     
-    pub fn as_bytes<'a>(&'a self) -> Res<&'a [u8]> {
+    pub fn as_bytes(&self) -> Res<&[u8]> {
         secstatus_to_res(unsafe { PK11_ExtractKeyValue(self.ptr) })?;
 
         let key_item = unsafe { PK11_GetKeyData(self.ptr) };

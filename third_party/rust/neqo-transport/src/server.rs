@@ -39,7 +39,12 @@ pub enum InitialResult {
 
 
 const MIN_INITIAL_PACKET_SIZE: usize = 1200;
-const TIMER_GRANULARITY: Duration = Duration::from_millis(10);
+
+
+const TIMER_GRANULARITY: Duration = Duration::from_millis(4);
+
+
+
 const TIMER_CAPACITY: usize = 16384;
 
 type StateRef = Rc<RefCell<ServerConnectionState>>;
@@ -610,11 +615,11 @@ pub struct ActiveConnectionRef {
 }
 
 impl ActiveConnectionRef {
-    pub fn borrow<'a>(&'a self) -> impl Deref<Target = Connection> + 'a {
+    pub fn borrow(&self) -> impl Deref<Target = Connection> + '_ {
         std::cell::Ref::map(self.c.borrow(), |c| &c.c)
     }
 
-    pub fn borrow_mut<'a>(&'a mut self) -> impl DerefMut<Target = Connection> + 'a {
+    pub fn borrow_mut(&mut self) -> impl DerefMut<Target = Connection> + '_ {
         std::cell::RefMut::map(self.c.borrow_mut(), |c| &mut c.c)
     }
 

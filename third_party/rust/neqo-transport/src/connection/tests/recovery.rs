@@ -4,14 +4,14 @@
 
 
 
-use super::super::{Output, State, LOCAL_IDLE_TIMEOUT};
+use super::super::{Connection, Output, State, LOCAL_IDLE_TIMEOUT};
 use super::{
     assert_full_cwnd, connect, connect_force_idle, connect_rtt_idle, connect_with_rtt,
     default_client, default_server, fill_cwnd, maybe_authenticate, send_and_receive,
     send_something, AT_LEAST_PTO, DEFAULT_RTT, POST_HANDSHAKE_CWND,
 };
 use crate::path::PATH_MTU_V6;
-use crate::recovery::PTO_PACKET_COUNT;
+use crate::recovery::{MAX_OUTSTANDING_UNACK, MIN_OUTSTANDING_UNACK, PTO_PACKET_COUNT};
 use crate::stats::MAX_PTO_COUNTS;
 use crate::tparams::TransportParameter;
 use crate::tracking::ACK_DELAY;
@@ -19,7 +19,7 @@ use crate::StreamType;
 
 use neqo_common::qdebug;
 use neqo_crypto::AuthenticationStatus;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use test_fixture::{self, now, split_datagram};
 
 #[test]
@@ -81,7 +81,7 @@ fn pto_works_full_cwnd() {
     for d in dgrams {
         let stream_before = server.stats().frame_rx.stream;
         server.process_input(d, now);
-        assert_eq!(server.stats().frame_rx.stream, stream_before + 1);
+        assert!(server.stats().frame_rx.stream > stream_before);
     }
 }
 
@@ -105,7 +105,7 @@ fn pto_works_ping() {
 
     
     let cb = client.process(None, now).callback();
-    assert_eq!(cb, Duration::from_millis(45));
+    assert_eq!(cb, Duration::from_millis(26)); 
 
     
     let srv0 = server.process(Some(pkt1), now).dgram();
@@ -613,4 +613,92 @@ fn loss_time_past_largest_acked() {
     let delay = client.process(None, now).callback();
     assert_ne!(delay, Duration::from_secs(0));
     assert!(delay > lr_time);
+}
+
+
+
+
+fn trickle(sender: &mut Connection, receiver: &mut Connection, mut count: usize, now: Instant) {
+    let id = sender.stream_create(StreamType::UniDi).unwrap();
+    let mut maybe_ack = None;
+    while count > 0 {
+        qdebug!("trickle: remaining={}", count);
+        assert_eq!(sender.stream_send(id, &[9]).unwrap(), 1);
+        let dgram = sender.process(maybe_ack, now).dgram();
+
+        maybe_ack = receiver.process(dgram, now).dgram();
+        count -= usize::from(maybe_ack.is_some());
+    }
+    sender.process_input(maybe_ack.unwrap(), now);
+}
+
+
+
+
+
+fn ping_with_ack(fast: bool) {
+    let mut sender = default_client();
+    let mut receiver = default_server();
+    let mut now = now();
+    connect_force_idle(&mut sender, &mut receiver);
+    let sender_acks_before = sender.stats().frame_tx.ack;
+    let receiver_acks_before = receiver.stats().frame_tx.ack;
+    let count = if fast {
+        MAX_OUTSTANDING_UNACK
+    } else {
+        MIN_OUTSTANDING_UNACK
+    };
+    trickle(&mut sender, &mut receiver, count, now);
+    assert_eq!(sender.stats().frame_tx.ack, sender_acks_before);
+    assert_eq!(receiver.stats().frame_tx.ack, receiver_acks_before + count);
+    assert_eq!(receiver.stats().frame_tx.ping, 0);
+
+    if !fast {
+        
+        
+        now += receiver.pto() + Duration::from_micros(1);
+        trickle(&mut sender, &mut receiver, 1, now);
+        assert_eq!(receiver.stats().frame_tx.ping, 0);
+    }
+
+    
+    
+    now += receiver.pto() + Duration::from_micros(1);
+    trickle(&mut sender, &mut receiver, 1, now);
+    assert_eq!(receiver.stats().frame_tx.ping, 1);
+    if let Output::Callback(t) = sender.process_output(now) {
+        assert_eq!(t, ACK_DELAY);
+        assert!(sender.process_output(now + t).dgram().is_some());
+    }
+    assert_eq!(sender.stats().frame_tx.ack, sender_acks_before + 1);
+}
+
+#[test]
+fn ping_with_ack_fast() {
+    ping_with_ack(true);
+}
+
+#[test]
+fn ping_with_ack_slow() {
+    ping_with_ack(false);
+}
+
+#[test]
+fn ping_with_ack_min() {
+    const COUNT: usize = MIN_OUTSTANDING_UNACK - 2;
+    let mut sender = default_client();
+    let mut receiver = default_server();
+    let mut now = now();
+    connect_force_idle(&mut sender, &mut receiver);
+    let sender_acks_before = sender.stats().frame_tx.ack;
+    let receiver_acks_before = receiver.stats().frame_tx.ack;
+    trickle(&mut sender, &mut receiver, COUNT, now);
+    assert_eq!(sender.stats().frame_tx.ack, sender_acks_before);
+    assert_eq!(receiver.stats().frame_tx.ack, receiver_acks_before + COUNT);
+    assert_eq!(receiver.stats().frame_tx.ping, 0);
+
+    
+    now += receiver.pto() * 3 + Duration::from_micros(1);
+    trickle(&mut sender, &mut receiver, 1, now);
+    assert_eq!(receiver.stats().frame_tx.ping, 0);
 }
