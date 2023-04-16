@@ -465,6 +465,9 @@ class RefTest(object):
         prefs["reftest.isCoverageBuild"] = mozinfo.info.get("ccov", False)
 
         
+        prefs["sandbox.apple_silicon"] = mozinfo.info.get("apple_silicon", False)
+
+        
         if tests:
             testlist = os.path.join(profile.profile, "reftests.json")
             with open(testlist, "w") as fh:

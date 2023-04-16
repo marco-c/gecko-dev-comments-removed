@@ -577,6 +577,8 @@ function BuildConditionSandbox(aURL) {
     sandbox.OSX = osxmatch ? parseInt(osxmatch[1]) * 100 + parseInt(osxmatch[2]) : undefined;
 
     
+    sandbox.appleSilicon = prefs.getBoolPref("sandbox.apple_silicon", false);
+    
     sandbox.haveTestPlugin = false;
 
     
