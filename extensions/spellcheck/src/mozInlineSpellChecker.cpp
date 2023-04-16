@@ -71,9 +71,6 @@ using namespace mozilla::dom;
 using namespace mozilla::ipc;
 
 
-
-
-
 #define INLINESPELL_CHECK_TIMEOUT 1
 
 
@@ -1332,10 +1329,11 @@ nsresult mozInlineSpellChecker::DoSpellCheck(
     
     if (wordsChecked >= INLINESPELL_MINIMUM_WORDS_BEFORE_TIMEOUT &&
         PR_Now() > PRTime(beginTime + kMaxSpellCheckTimeInUsec)) {
+      
+      MOZ_LOG(
+          sInlineSpellCheckerLog, LogLevel::Verbose,
+          ("%s: we have run out of time, schedule next round.", __FUNCTION__));
 
-#ifdef DEBUG_INLINESPELL
-      printf("We have run out of the time, schedule next round.\n");
-#endif
       CheckCurrentWordsNoSuggest(aSpellCheckSelection, std::move(words),
                                  std::move(checkRanges));
 
@@ -1351,11 +1349,10 @@ nsresult mozInlineSpellChecker::DoSpellCheck(
       return NS_OK;
     }
 
-#ifdef DEBUG_INLINESPELL
-    printf("->Got word \"%s\"", NS_ConvertUTF16toUTF8(wordText).get());
-    if (dontCheckWord) printf(" (not checking)");
-    printf("\n");
-#endif
+    MOZ_LOG(sInlineSpellCheckerLog, LogLevel::Debug,
+            ("%s: got word \"%s\"%s", __FUNCTION__,
+             NS_ConvertUTF16toUTF8(wordText).get(),
+             dontCheckWord ? " (not checking)" : ""));
 
     ErrorResult erv;
     
