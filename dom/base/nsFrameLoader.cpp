@@ -3169,7 +3169,7 @@ already_AddRefed<Promise> nsFrameLoader::RequestTabStateFlush(
     return nullptr;
   }
 
-  BrowsingContext* context = GetExtantBrowsingContext();
+  RefPtr<BrowsingContext> context = GetExtantBrowsingContext();
   if (!context) {
     promise->MaybeResolveWithUndefined();
     return promise.forget();
@@ -3184,21 +3184,36 @@ already_AddRefed<Promise> nsFrameLoader::RequestTabStateFlush(
     return promise.forget();
   }
 
-  nsTArray<RefPtr<ContentParent::FlushTabStatePromise>> flushPromises;
-  context->Group()->EachParent([&](ContentParent* aParent) {
-    if (aParent->CanSend()) {
-      flushPromises.AppendElement(aParent->SendFlushTabState(context));
-    }
-  });
+  
+  
+  
+  
+  
+  
+  RefPtr<ContentParent> contentParent =
+      context->Canonical()->GetContentParent();
+  using FlushPromise = ContentParent::FlushTabStatePromise;
+  contentParent->SendFlushTabState(context)->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [promise, context,
+       contentParent](const FlushPromise::ResolveOrRejectValue&) {
+        nsTArray<RefPtr<FlushPromise>> flushPromises;
+        context->Group()->EachOtherParent(
+            contentParent, [&](ContentParent* aParent) {
+              if (aParent->CanSend()) {
+                flushPromises.AppendElement(
+                    aParent->SendFlushTabState(context));
+              }
+            });
 
-  using ResultType =
-      ContentParent::FlushTabStatePromise::AllPromiseType::ResolveOrRejectValue;
-  ContentParent::FlushTabStatePromise::All(GetCurrentSerialEventTarget(),
-                                           flushPromises)
-      ->Then(GetCurrentSerialEventTarget(), __func__,
-             [promise](const ResultType&) {
-               promise->MaybeResolveWithUndefined();
-             });
+        FlushPromise::All(GetCurrentSerialEventTarget(), flushPromises)
+            ->Then(
+                GetCurrentSerialEventTarget(), __func__,
+                [promise](
+                    const FlushPromise::AllPromiseType::ResolveOrRejectValue&) {
+                  promise->MaybeResolveWithUndefined();
+                });
+      });
 
   return promise.forget();
 }
