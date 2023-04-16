@@ -114,104 +114,83 @@ class _MachCommand(object):
         return self
 
 
-def CommandProvider(_cls=None, metrics_path=None):
-    def finalize(cls):
-        if not issubclass(cls, MachCommandBase):
-            raise MachError(
-                "Mach command provider class %s must be a subclass of "
-                "mozbuild.base.MachComandBase" % cls.__name__
-            )
-
-        seen_commands = set()
-
-        
-        
-        
-        
-        command_methods = sorted(
-            [
-                (name, value._mach_command)
-                for name, value in cls.__dict__.items()
-                if hasattr(value, "_mach_command")
-            ]
+def CommandProvider(cls):
+    if not issubclass(cls, MachCommandBase):
+        raise MachError(
+            "Mach command provider class %s must be a subclass of "
+            "mozbuild.base.MachComandBase" % cls.__name__
         )
 
-        for method, command in command_methods:
-            
-            if command.subcommand:
-                continue
+    seen_commands = set()
 
-            seen_commands.add(command.name)
+    
+    
+    
+    
+    command_methods = sorted(
+        [
+            (name, value._mach_command)
+            for name, value in cls.__dict__.items()
+            if hasattr(value, "_mach_command")
+        ]
+    )
 
-            if not command.conditions and Registrar.require_conditions:
-                continue
+    for method, command in command_methods:
+        
+        if command.subcommand:
+            continue
 
-            msg = (
-                "Mach command '%s' implemented incorrectly. "
-                + "Conditions argument must take a list "
-                + "of functions. Found %s instead."
-            )
+        seen_commands.add(command.name)
 
-            if not isinstance(command.conditions, collections.Iterable):
-                msg = msg % (command.name, type(command.conditions))
+        if not command.conditions and Registrar.require_conditions:
+            continue
+
+        msg = (
+            "Mach command '%s' implemented incorrectly. "
+            + "Conditions argument must take a list "
+            + "of functions. Found %s instead."
+        )
+
+        if not isinstance(command.conditions, collections.Iterable):
+            msg = msg % (command.name, type(command.conditions))
+            raise MachError(msg)
+
+        for c in command.conditions:
+            if not hasattr(c, "__call__"):
+                msg = msg % (command.name, type(c))
                 raise MachError(msg)
 
-            for c in command.conditions:
-                if not hasattr(c, "__call__"):
-                    msg = msg % (command.name, type(c))
-                    raise MachError(msg)
+        command.cls = cls
+        command.method = method
 
-            command.cls = cls
-            command.metrics_path = metrics_path
-            command.method = method
+        Registrar.register_command_handler(command)
 
-            Registrar.register_command_handler(command)
+    
+    
+    
+    for method, command in command_methods:
+        
+        if not command.subcommand:
+            continue
 
-        
-        
-        
-        for method, command in command_methods:
-            
-            if not command.subcommand:
-                continue
+        if command.name not in seen_commands:
+            raise MachError(
+                "Command referenced by sub-command does not exist: %s" % command.name
+            )
 
-            if command.name not in seen_commands:
-                raise MachError(
-                    "Command referenced by sub-command does not "
-                    "exist: %s" % command.name
-                )
+        if command.name not in Registrar.command_handlers:
+            continue
 
-            if command.name not in Registrar.command_handlers:
-                continue
+        command.cls = cls
+        command.method = method
+        parent = Registrar.command_handlers[command.name]
 
-            command.cls = cls
-            command.metrics_path = metrics_path
-            command.method = method
-            parent = Registrar.command_handlers[command.name]
+        if command.subcommand in parent.subcommand_handlers:
+            raise MachError("sub-command already defined: %s" % command.subcommand)
 
-            if command.subcommand in parent.subcommand_handlers:
-                raise MachError("sub-command already defined: %s" % command.subcommand)
+        parent.subcommand_handlers[command.subcommand] = command
 
-            parent.subcommand_handlers[command.subcommand] = command
-
-        return cls
-
-    if _cls:
-        
-        
-        
-        
-        
-        
-        return finalize(_cls)
-    else:
-        
-        
-        
-        
-        
-        
-        return finalize
+    return cls
 
 
 class Command(object):
@@ -236,8 +215,9 @@ class Command(object):
             pass
     """
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, metrics_path=None, **kwargs):
         self._mach_command = _MachCommand(name=name, **kwargs)
+        self._mach_command.metrics_path = metrics_path
 
     def __call__(self, func):
         if not hasattr(func, "_mach_command"):
@@ -268,12 +248,16 @@ class SubCommand(object):
 
     global_order = 0
 
-    def __init__(self, command, subcommand, description=None, parser=None):
+    def __init__(
+        self, command, subcommand, description=None, parser=None, metrics_path=None
+    ):
         self._mach_command = _MachCommand(
             name=command, subcommand=subcommand, description=description, parser=parser
         )
         self._mach_command.decl_order = SubCommand.global_order
         SubCommand.global_order += 1
+
+        self._mach_command.metrics_path = metrics_path
 
     def __call__(self, func):
         if not hasattr(func, "_mach_command"):
