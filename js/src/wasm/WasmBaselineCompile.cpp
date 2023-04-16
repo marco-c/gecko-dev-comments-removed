@@ -10367,9 +10367,11 @@ bool BaseCompiler::emitEnd() {
       
       
       
+#ifdef ENABLE_WASM_EXCEPTIONS
       if (!emitBodyDelegateThrowPad()) {
         return false;
       }
+#endif
       iter_.popEnd();
       MOZ_ASSERT(iter_.controlStackEmpty());
       return iter_.readFunctionEnd(iter_.end());
