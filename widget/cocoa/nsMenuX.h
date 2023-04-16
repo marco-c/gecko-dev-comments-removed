@@ -110,6 +110,25 @@ class nsMenuX final : public nsMenuParentX,
 
   static bool IsXULHelpMenu(nsIContent* aMenuContent);
 
+  class Observer {
+   public:
+    
+    
+    virtual void OnMenuOpened() = 0;
+
+    
+    
+    virtual void OnMenuClosed() = 0;
+  };
+
+  
+  
+  
+  void SetObserver(Observer* aObserver) { mObserver = aObserver; }
+
+  
+  void ClearObserver() { mObserver = nullptr; }
+
  protected:
   virtual ~nsMenuX();
 
@@ -144,6 +163,8 @@ class nsMenuX final : public nsMenuParentX,
   nsMenuGroupOwnerX* mMenuGroupOwner = nullptr;        
   nsMenuItemIconX::Listener* mIconListener = nullptr;  
   mozilla::UniquePtr<nsMenuItemIconX> mIcon;
+
+  Observer* mObserver = nullptr;  
 
   
   
