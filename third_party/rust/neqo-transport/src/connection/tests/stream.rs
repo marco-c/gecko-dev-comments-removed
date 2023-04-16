@@ -6,17 +6,19 @@
 
 use super::super::State;
 use super::{
-    connect, connect_force_idle, default_client, default_server, maybe_authenticate,
+    connect, connect_force_idle, default_client, default_server, maybe_authenticate, new_client,
     send_something, DEFAULT_STREAM_DATA,
 };
 use crate::events::ConnectionEvent;
 use crate::recv_stream::RECV_BUFFER_SIZE;
-use crate::send_stream::SEND_BUFFER_SIZE;
+use crate::send_stream::{SendStreamState, SEND_BUFFER_SIZE};
 use crate::tparams::{self, TransportParameter};
 use crate::tracking::MAX_UNACKED_PKTS;
+use crate::ConnectionParameters;
 use crate::{Error, StreamId, StreamType};
 
 use neqo_common::{event::Provider, qdebug};
+use std::cmp::max;
 use std::convert::TryFrom;
 use test_fixture::now;
 
@@ -130,7 +132,7 @@ fn report_fin_when_stream_closed_wo_data() {
     server.stream_close_send(stream_id).unwrap();
     let out = server.process(None, now());
     let _ = client.process(out.dgram(), now());
-    let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable {..});
+    let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable { .. });
     assert!(client.events().any(stream_readable));
 }
 
@@ -203,7 +205,10 @@ fn max_data() {
 
     let evts = client.events().collect::<Vec<_>>();
     assert_eq!(evts.len(), 1);
-    assert!(matches!(evts[0], ConnectionEvent::SendStreamWritable{..}));
+    assert!(matches!(
+        evts[0],
+        ConnectionEvent::SendStreamWritable { .. }
+    ));
 }
 
 #[test]
@@ -221,7 +226,7 @@ fn do_not_accept_data_after_stop_sending() {
     let out = client.process(None, now());
     let _ = server.process(out.dgram(), now());
 
-    let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable {..});
+    let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable { .. });
     assert!(server.events().any(stream_readable));
 
     
@@ -389,25 +394,33 @@ fn stream_data_blocked_generates_max_stream_data() {
     
     let stream_id = server.stream_create(StreamType::UniDi).unwrap();
     let _ = server.stream_send(stream_id, DEFAULT_STREAM_DATA).unwrap();
-    server.flow_mgr.borrow_mut().stream_data_blocked(
-        StreamId::from(stream_id),
-        u64::try_from(DEFAULT_STREAM_DATA.len()).unwrap(),
-    );
-
     let dgram = server.process(None, now).dgram();
     assert!(dgram.is_some());
 
-    let sdb_before = client.stats().frame_rx.stream_data_blocked;
-    client.process_input(dgram.unwrap(), now);
-    assert_eq!(client.stats().frame_rx.stream_data_blocked, sdb_before + 1);
-
     
+    client.process_input(dgram.unwrap(), now);
     let mut buf = [0; 10];
     let (count, end) = client.stream_recv(stream_id, &mut buf[..]).unwrap();
     assert_eq!(count, DEFAULT_STREAM_DATA.len());
     assert!(!end);
 
-    let dgram = client.process_output(now).dgram();
+    
+    let internal_stream = server
+        .send_streams
+        .get_mut(StreamId::from(stream_id))
+        .unwrap();
+    if let SendStreamState::Send { fc, .. } = internal_stream.state() {
+        fc.blocked();
+    } else {
+        panic!("unexpected stream state");
+    }
+    let dgram = server.process_output(now).dgram();
+    assert!(dgram.is_some());
+
+    let sdb_before = client.stats().frame_rx.stream_data_blocked;
+    let dgram = client.process(dgram, now).dgram();
+    assert_eq!(client.stats().frame_rx.stream_data_blocked, sdb_before + 1);
+    assert!(dgram.is_some());
 
     
     
@@ -425,7 +438,7 @@ fn stream_data_blocked_generates_max_stream_data() {
         }
         written += amount;
     }
-    assert_eq!(written, RECV_BUFFER_SIZE - DEFAULT_STREAM_DATA.len());
+    assert_eq!(written, RECV_BUFFER_SIZE);
 }
 
 
@@ -496,7 +509,7 @@ fn no_dupdata_readable_events() {
     let _ = server.process(out.dgram(), now());
 
     
-    let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable {..});
+    let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable { .. });
     assert!(server.events().any(stream_readable));
 
     
@@ -528,7 +541,7 @@ fn no_dupdata_readable_events_empty_last_frame() {
     let _ = server.process(out.dgram(), now());
 
     
-    let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable {..});
+    let stream_readable = |e| matches!(e, ConnectionEvent::RecvStreamReadable { .. });
     assert!(server.events().any(stream_readable));
 
     
@@ -537,4 +550,70 @@ fn no_dupdata_readable_events_empty_last_frame() {
     let out_second_data_frame = client.process(None, now());
     let _ = server.process(out_second_data_frame.dgram(), now());
     assert!(!server.events().any(stream_readable));
+}
+
+fn change_flow_control(stream_type: StreamType, new_fc: u64) {
+    const RECV_BUFFER_START: u64 = 300;
+
+    let mut client = new_client(
+        ConnectionParameters::default()
+            .max_stream_data(StreamType::BiDi, true, RECV_BUFFER_START)
+            .max_stream_data(StreamType::UniDi, true, RECV_BUFFER_START),
+    );
+    let mut server = default_server();
+    connect(&mut client, &mut server);
+
+    
+    let stream_id = server.stream_create(stream_type).unwrap();
+    let written1 = server.stream_send(stream_id, &[0x0; 10000]).unwrap();
+    assert_eq!(u64::try_from(written1).unwrap(), RECV_BUFFER_START);
+
+    
+    let out = server.process(None, now());
+    let _ = client.process(out.dgram(), now());
+
+    
+    client.set_stream_max_data(stream_id, new_fc).unwrap();
+
+    
+    let out2 = client.process(None, now());
+    let out3 = server.process(out2.dgram(), now());
+    let expected = if RECV_BUFFER_START < new_fc { 1 } else { 0 };
+    assert_eq!(server.stats().frame_rx.max_stream_data, expected);
+
+    
+    let written2 = server.stream_send(stream_id, &[0x0; 10000]).unwrap();
+    if RECV_BUFFER_START < new_fc {
+        assert_eq!(u64::try_from(written2).unwrap(), new_fc - RECV_BUFFER_START);
+    } else {
+        assert_eq!(written2, 0);
+    }
+
+    
+    let out4 = client.process(out3.dgram(), now());
+    let out5 = server.process(out4.dgram(), now());
+    let _ = client.process(out5.dgram(), now());
+
+    
+    let mut buf = [0x0; 10000];
+    let (read, _) = client.stream_recv(stream_id, &mut buf).unwrap();
+    assert_eq!(u64::try_from(read).unwrap(), max(RECV_BUFFER_START, new_fc));
+
+    let out4 = client.process(None, now());
+    let _ = server.process(out4.dgram(), now());
+
+    let written3 = server.stream_send(stream_id, &[0x0; 10000]).unwrap();
+    assert_eq!(u64::try_from(written3).unwrap(), new_fc);
+}
+
+#[test]
+fn increase_decrease_flow_control() {
+    const RECV_BUFFER_NEW_BIGGER: u64 = 400;
+    const RECV_BUFFER_NEW_SMALLER: u64 = 200;
+
+    change_flow_control(StreamType::UniDi, RECV_BUFFER_NEW_BIGGER);
+    change_flow_control(StreamType::BiDi, RECV_BUFFER_NEW_BIGGER);
+
+    change_flow_control(StreamType::UniDi, RECV_BUFFER_NEW_SMALLER);
+    change_flow_control(StreamType::BiDi, RECV_BUFFER_NEW_SMALLER);
 }
