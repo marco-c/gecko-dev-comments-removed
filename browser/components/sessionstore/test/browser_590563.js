@@ -54,6 +54,8 @@ async function middleClickTest(win) {
   await BrowserTestUtils.waitForCondition(
     () => win.getComputedStyle(treeContainer).visibility == "visible"
   );
+  
+  treeContainer.getBoundingClientRect();
 
   let tree = browser.contentDocument.getElementById("tabList");
   is(tree.view.rowCount, 3, "There should be three items");
