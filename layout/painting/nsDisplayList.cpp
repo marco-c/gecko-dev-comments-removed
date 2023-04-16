@@ -8719,10 +8719,7 @@ bool nsDisplayPerspective::CreateWebRenderCommands(
 
   Maybe<uint64_t> scrollingRelativeTo;
   for (auto* asr = GetActiveScrolledRoot(); asr; asr = asr->mParent) {
-    
-    
-    
-    if (nsLayoutUtils::IsAncestorFrameCrossDocInProcess(
+    if (nsLayoutUtils::IsAncestorFrameCrossDoc(
             asr->mScrollableFrame->GetScrolledFrame(), perspectiveFrame)) {
       scrollingRelativeTo.emplace(asr->GetViewId());
       break;
