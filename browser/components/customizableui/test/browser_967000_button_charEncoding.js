@@ -16,6 +16,11 @@ add_task(async function() {
     CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
   );
 
+  
+  
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 100));
   await waitForOverflowButtonShown();
   registerCleanupFunction(() => CustomizableUI.reset());
 

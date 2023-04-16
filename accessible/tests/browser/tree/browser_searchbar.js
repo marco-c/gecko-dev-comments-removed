@@ -9,6 +9,10 @@ add_task(async function test_searchbar_a11y_tree() {
     set: [["browser.search.widget.inNavBar", true]],
   });
 
+  
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 100));
   let searchbar = await TestUtils.waitForCondition(
     () => document.getElementById("searchbar"),
     "wait for search bar to appear"

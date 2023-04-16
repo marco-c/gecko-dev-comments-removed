@@ -1405,12 +1405,28 @@ add_task(async function test() {
     },
   ]);
 
+  
+  
+  let originalWaitForCondition = TestUtils.waitForCondition;
+  TestUtils.waitForCondition = async function(
+    condition,
+    msg,
+    interval = 100,
+    maxTries = 50
+  ) {
+    
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    return originalWaitForCondition(condition, msg, interval, maxTries);
+  };
+
   registerCleanupFunction(async function() {
     await Services.search.setDefault(oldDefaultEngine);
     await PlacesUtils.keywords.remove("kw");
     await PlacesUtils.bookmarks.remove(bm);
     await PlacesUtils.history.clear();
     await UrlbarTestUtils.formHistory.clear(window);
+    TestUtils.waitForCondition = originalWaitForCondition;
   });
 
   
