@@ -5,7 +5,8 @@
 
 const {
   STUBS_UPDATE_ENV,
-  createResourceWatcherForTab,
+  createCommandsForTab,
+  createResourceWatcherForCommands,
   getCleanedPacket,
   getStubFile,
   writeStubsToFile,
@@ -61,7 +62,8 @@ async function generateCssMessageStubs() {
   const stubs = new Map();
 
   const tab = await addTab(TEST_URI);
-  const resourceWatcher = await createResourceWatcherForTab(tab);
+  const commands = await createCommandsForTab(tab);
+  const resourceWatcher = await createResourceWatcherForCommands(commands);
 
   
   
@@ -103,7 +105,7 @@ async function generateCssMessageStubs() {
     onAvailable: onCSSMessageAvailable,
   });
 
-  await closeTabAndToolbox().catch(() => {});
+  await commands.destroy();
   return stubs;
 }
 

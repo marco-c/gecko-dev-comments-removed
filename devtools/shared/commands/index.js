@@ -23,7 +23,27 @@ async function createCommandsDictionary(descriptorFront) {
   if (supportsWatcher) {
     watcherFront = await descriptorFront.getWatcher();
   }
-  const dictionary = {};
+  const { client } = descriptorFront;
+
+  const dictionary = {
+    
+    
+    client,
+    descriptorFront,
+
+    
+    waitForRequestsToSettle() {
+      return descriptorFront.client.waitForRequestsToSettle();
+    },
+
+    
+    
+    async destroy() {
+      await descriptorFront.destroy();
+      await client.close();
+    },
+  };
+
   for (const name in Commands) {
     loader.lazyGetter(dictionary, name, () => {
       const Constructor = require(Commands[name]);

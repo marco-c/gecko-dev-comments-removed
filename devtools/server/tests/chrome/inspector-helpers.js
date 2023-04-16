@@ -7,8 +7,8 @@
 
 const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 const {
-  TabDescriptorFactory,
-} = require("devtools/client/framework/tab-descriptor-factory");
+  CommandsFactory,
+} = require("devtools/shared/commands/commands-factory");
 const { DevToolsServer } = require("devtools/server/devtools-server");
 const {
   BrowserTestUtils,
@@ -51,19 +51,6 @@ SimpleTest.registerCleanupFunction(function() {
 
 
 
-async function getTargetForSelectedTab(gBrowser) {
-  const selectedTab = gBrowser.selectedTab;
-  await BrowserTestUtils.browserLoaded(selectedTab.linkedBrowser);
-  const descriptor = await TabDescriptorFactory.createDescriptorForTab(
-    selectedTab
-  );
-  return descriptor.getTarget();
-}
-
-
-
-
-
 
 
 
@@ -81,18 +68,22 @@ async function attachURL(url) {
   const win = window.open(url, "_blank");
   await windowOpened;
 
-  const target = await getTargetForSelectedTab(gBrowser);
-  await target.attach();
+  const commands = await CommandsFactory.forTab(gBrowser.selectedTab);
+  await commands.targetCommand.startListening();
 
   const cleanup = async function() {
-    await target.destroy();
+    await commands.destroy();
     if (win) {
       win.close();
     }
   };
 
   gAttachCleanups.push(cleanup);
-  return { target, doc: win.document };
+  return {
+    commands,
+    target: commands.targetCommand.targetFront,
+    doc: win.document,
+  };
 }
 
 function promiseOnce(target, event) {
@@ -144,9 +135,6 @@ function runNextTest() {
   }
 }
 
-async function createResourceWatcher(target) {
-  const commands = await target.descriptorFront.getCommands();
-  const targetList = commands.targetCommand;
-  await targetList.startListening();
-  return new ResourceWatcher(targetList);
+async function createResourceWatcher(commands) {
+  return new ResourceWatcher(commands.targetCommand);
 }

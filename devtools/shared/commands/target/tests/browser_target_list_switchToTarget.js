@@ -6,45 +6,37 @@
 
 
 add_task(async function() {
-  const client = await createLocalClient();
+  const commands = await CommandsFactory.forTab(gBrowser.selectedTab);
 
-  await testSwitchToTarget(client);
+  await testSwitchToTarget(commands);
 
-  await client.close();
+  await commands.destroy();
 });
 
-async function testSwitchToTarget(client) {
+async function testSwitchToTarget(commands) {
   info("Test TargetCommand.switchToTarget method");
 
-  const { mainRoot } = client;
   
   const firstTab = await addTab(
     `data:text/html,<iframe src="data:text/html,foo"></iframe>`
   );
-  const firstDescriptor = await mainRoot.getTab({ tab: gBrowser.selectedTab });
-  const firstTarget = await firstDescriptor.getTarget();
 
-  const commands = await firstDescriptor.getCommands();
   const targetList = commands.targetCommand;
   const { TYPES } = targetList;
-
   await targetList.startListening();
-
-  is(
-    targetList.targetFront,
-    firstTarget,
-    "The target list top level target is the main process one"
-  );
 
   
   const secondTab = await addTab(
     `data:text/html,<iframe src="data:text/html,bar"></iframe>`
   );
-  const secondDescriptor = await mainRoot.getTab({ tab: gBrowser.selectedTab });
+  const secondDescriptor = await commands.client.mainRoot.getTab({
+    tab: gBrowser.selectedTab,
+  });
   const secondTarget = await secondDescriptor.getTarget();
 
   const frameTargets = [];
-  let currentTarget = firstTarget;
+  const firstTarget = targetList.targetFront;
+  let currentTarget = targetList.targetFront;
   const onFrameAvailable = ({ targetFront, isTargetSwitching }) => {
     is(
       targetFront.targetType,
@@ -141,6 +133,8 @@ async function testSwitchToTarget(client) {
   }
 
   targetList.destroy();
+
+  await commands.destroy();
 
   BrowserTestUtils.removeTab(firstTab);
   BrowserTestUtils.removeTab(secondTab);

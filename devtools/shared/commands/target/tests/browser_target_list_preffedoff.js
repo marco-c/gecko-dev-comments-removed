@@ -12,29 +12,23 @@ add_task(async function() {
   
   await pushPref("dom.ipc.keepProcessesAlive.web", 1);
 
-  const client = await createLocalClient();
-  const mainRoot = client.mainRoot;
-
   
   await pushPref("devtools.browsertoolbox.fission", false);
 
   
-  await testPreffedOffMainProcess(mainRoot);
-
-  await client.close();
+  await testPreffedOffMainProcess();
 });
 
-async function testPreffedOffMainProcess(mainRoot) {
+async function testPreffedOffMainProcess() {
   info(
     "Test TargetCommand when devtools's fission pref is false, via the parent process target"
   );
 
-  const targetDescriptor = await mainRoot.getMainProcess();
-  const mainProcess = await targetDescriptor.getTarget();
-  const commands = await targetDescriptor.getCommands();
+  const commands = await CommandsFactory.forMainProcess();
   const targetList = commands.targetCommand;
   const { TYPES } = targetList;
   await targetList.startListening();
+  const mainProcess = targetList.targetFront;
 
   
   
@@ -88,4 +82,6 @@ async function testPreffedOffMainProcess(mainRoot) {
   targetList.unwatchTargets([TYPES.FRAME], onFrameAvailable);
 
   targetList.destroy();
+
+  await commands.destroy();
 }

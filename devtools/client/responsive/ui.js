@@ -14,19 +14,10 @@ const Constants = require("devtools/client/responsive/constants");
 const {
   ResourceWatcher,
 } = require("devtools/shared/resources/resource-watcher");
+const {
+  CommandsFactory,
+} = require("devtools/shared/commands/commands-factory");
 
-loader.lazyRequireGetter(
-  this,
-  "DevToolsClient",
-  "devtools/client/devtools-client",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "DevToolsServer",
-  "devtools/server/devtools-server",
-  true
-);
 loader.lazyRequireGetter(
   this,
   "throttlingProfiles",
@@ -367,31 +358,19 @@ class ResponsiveUI {
     
     
     
-    const clientClosed = this.client.close();
+    const commandsDestroyed = this.commands.destroy();
     if (!isTabContentDestroying) {
-      await clientClosed;
+      await commandsDestroyed;
     }
-    this.client = this.responsiveFront = null;
+    this.commands = this.responsiveFront = null;
     this.destroyed = true;
 
     return true;
   }
 
   async connectToServer() {
-    
-    
-    DevToolsServer.init();
-    DevToolsServer.registerAllActors();
-    this.client = new DevToolsClient(DevToolsServer.connectPipe());
-    await this.client.connect();
-
-    
-    
-    
-    const descriptor = await this.client.mainRoot.getTab({ tab: this.tab });
-
-    const commands = await descriptor.getCommands();
-    this.targetList = commands.targetCommand;
+    this.commands = await CommandsFactory.forTab(this.tab);
+    this.targetList = this.commands.targetCommand;
     this.resourceWatcher = new ResourceWatcher(this.targetList);
 
     await this.targetList.startListening();

@@ -18,9 +18,6 @@ add_task(async function() {
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
 
-  const client = await createLocalClient();
-  const mainRoot = client.mainRoot;
-
   
   
   
@@ -32,16 +29,15 @@ add_task(async function() {
   const tab = await addTab(`${FISSION_TEST_URL}?&noServiceWorker`);
 
   
-  const descriptor = await mainRoot.getTab({ tab });
-  const target = await descriptor.getTarget();
-
+  const commands = await CommandsFactory.forTab(tab);
+  await commands.targetCommand.startListening();
   
   
   
+  const target = commands.targetCommand.targetFront;
   await target.attach();
-
-  const commands = await descriptor.getCommands();
   const targetList = commands.targetCommand;
+
   const { TYPES } = targetList;
 
   
@@ -322,8 +318,8 @@ add_task(async function() {
   targetList.destroy();
 
   info("Unregister service workers so they don't appear in other tests.");
-  await unregisterAllServiceWorkers(client);
+  await unregisterAllServiceWorkers(commands.client);
 
   BrowserTestUtils.removeTab(tab);
-  await client.close();
+  await commands.destroy();
 });

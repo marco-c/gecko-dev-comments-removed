@@ -104,7 +104,11 @@ function connectToContentProcess(connection, mm, onDestroy) {
         if (subject == mm) {
           
           
-          connection.send({ from: actor.actor, type: "tabDetached" });
+          
+          
+          if (actor) {
+            connection.send({ from: actor.actor, type: "tabDetached" });
+          }
           onClose();
         }
       }

@@ -39,6 +39,7 @@ var Startup = Cc["@mozilla.org/devtools/startup-clh;1"].getService(
 const {
   ResourceWatcher,
 } = require("devtools/shared/resources/resource-watcher");
+const { createCommandsDictionary } = require("devtools/shared/commands/index");
 
 const { BrowserLoader } = ChromeUtils.import(
   "resource://devtools/client/shared/browser-loader.js"
@@ -778,7 +779,8 @@ Toolbox.prototype = {
       
       
       
-      this.commands = await this.descriptorFront.getCommands();
+      
+      this.commands = await createCommandsDictionary(this.descriptorFront);
 
       
       

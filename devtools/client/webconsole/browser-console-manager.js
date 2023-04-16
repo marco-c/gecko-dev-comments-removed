@@ -5,18 +5,11 @@
 "use strict";
 
 var Services = require("Services");
-const ChromeUtils = require("ChromeUtils");
-const { DevToolsLoader } = ChromeUtils.import(
-  "resource://devtools/shared/Loader.jsm"
-);
+const {
+  CommandsFactory,
+} = require("devtools/shared/commands/commands-factory");
 
 loader.lazyRequireGetter(this, "Tools", "devtools/client/definitions", true);
-loader.lazyRequireGetter(
-  this,
-  "DevToolsClient",
-  "devtools/client/devtools-client",
-  true
-);
 loader.lazyRequireGetter(this, "l10n", "devtools/client/webconsole/utils/l10n");
 loader.lazyRequireGetter(
   this,
@@ -38,7 +31,6 @@ class BrowserConsoleManager {
     this._browserConsole = null;
     this._browserConsoleInitializing = null;
     this._browerConsoleSessionState = false;
-    this._devToolsClient = null;
   }
 
   storeBrowserConsoleSessionState() {
@@ -57,10 +49,8 @@ class BrowserConsoleManager {
 
 
 
-
-
-  async openBrowserConsole(commands, win) {
-    const hud = new BrowserConsole(commands, win, win);
+  async openBrowserConsole(win) {
+    const hud = new BrowserConsole(this.commands, win, win);
     this._browserConsole = hud;
     await hud.init();
     return hud;
@@ -77,8 +67,8 @@ class BrowserConsoleManager {
     await this._browserConsole.destroy();
     this._browserConsole = null;
 
-    await this._devToolsClient.close();
-    this._devToolsClient = null;
+    await this.commands.destroy();
+    this.commands = null;
   }
 
   
@@ -96,60 +86,15 @@ class BrowserConsoleManager {
     
     
     this._browserConsoleInitializing = (async () => {
-      const commands = await this.connect();
+      this.commands = await CommandsFactory.forBrowserConsole();
       const win = await this.openWindow();
-      const browserConsole = await this.openBrowserConsole(commands, win);
+      const browserConsole = await this.openBrowserConsole(win);
       return browserConsole;
     })();
 
     const browserConsole = await this._browserConsoleInitializing;
     this._browserConsoleInitializing = null;
     return browserConsole;
-  }
-
-  
-
-
-
-
-
-
-
-  async connect() {
-    
-    
-    
-    
-    
-    
-    
-    const loader = new DevToolsLoader({
-      freshCompartment: true,
-    });
-    const { DevToolsServer } = loader.require(
-      "devtools/server/devtools-server"
-    );
-
-    DevToolsServer.init();
-
-    
-    
-    
-    
-    DevToolsServer.registerAllActors();
-
-    DevToolsServer.allowChromeProcess = true;
-
-    this._devToolsClient = new DevToolsClient(DevToolsServer.connectPipe());
-    await this._devToolsClient.connect();
-
-    const descriptor = await this._devToolsClient.mainRoot.getMainProcess();
-
-    
-    descriptor.createdForBrowserConsole = true;
-
-    const commands = await descriptor.getCommands();
-    return commands;
   }
 
   async openWindow() {
