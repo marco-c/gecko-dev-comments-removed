@@ -25,11 +25,6 @@ def generate(output, idlFilename, dataFile):
     for p in propList:
         if "Internal" in p.flags:
             continue
-
-        
-        if "Style" not in p.rules:
-            continue
-
         
         
         extendedAttrs = [

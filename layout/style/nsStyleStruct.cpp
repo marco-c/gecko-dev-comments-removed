@@ -1050,18 +1050,6 @@ bool nsStyleSVGReset::HasMask() const {
 
 
 
-
-nsChangeHint nsStylePage::CalcDifference(const nsStylePage& aNewData) const {
-  
-  if (aNewData.mSize != mSize) {
-    return nsChangeHint_NeutralChange;
-  }
-  return nsChangeHint_Empty;
-}
-
-
-
-
 nsStylePosition::nsStylePosition(const Document& aDocument)
     : mObjectPosition(Position::FromPercentage(0.5f)),
       mOffset(StyleRectWithAllSides(LengthPercentageOrAuto::Auto())),
