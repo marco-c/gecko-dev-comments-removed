@@ -9306,7 +9306,7 @@ TabModalPromptBox.prototype = {
       browser.setAttribute("tabmodalChromePromptShowing", true);
       
       
-      PopupNotifications.anchorVisibilityChange();
+      UpdatePopupNotificationsVisibility();
     }
 
     let prompts = this.listPrompts(args.modalType);
@@ -9376,7 +9376,7 @@ TabModalPromptBox.prototype = {
       browser.removeAttribute("tabmodalChromePromptShowing");
       
       
-      PopupNotifications.anchorVisibilityChange();
+      UpdatePopupNotificationsVisibility();
     }
     
     if (!this._hasPrompts()) {
