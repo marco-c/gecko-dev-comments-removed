@@ -540,6 +540,11 @@ add_task(async function test_countryAndStateFieldLabels() {
       
       for (let labelEl of mutatableLabels) {
         if (!labelEl.textContent) {
+          
+          
+          
+          await new Promise(resolve => setTimeout(resolve, 10));
+
           await TestUtils.waitForCondition(
             () => labelEl.textContent,
             "Wait for label to be populated by the mutation observer",

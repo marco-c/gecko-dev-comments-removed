@@ -128,6 +128,10 @@ async function assertSearchSourcesTelemetry(
   let histSnapshot = {};
   let scalars = {};
 
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 100));
+
   await TestUtils.waitForCondition(() => {
     histSnapshot = searchCounts.snapshot();
     return (
