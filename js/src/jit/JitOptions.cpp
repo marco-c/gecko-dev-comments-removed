@@ -118,7 +118,7 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableBailoutLoopCheck, false);
 
   
-  SET_DEFAULT(scalarReplaceArguments, false);
+  SET_DEFAULT(scalarReplaceArguments, true);
 
   
   SET_DEFAULT(baselineInterpreter, true);
