@@ -4213,12 +4213,6 @@ JSObject* UnprivilegedJunkScopeOrWorkerGlobal(const fallible_t&) {
 
   return GetCurrentThreadWorkerGlobal();
 }
-
-JSObject* UnprivilegedJunkScopeOrWorkerGlobal() {
-  JSObject* scope = UnprivilegedJunkScopeOrWorkerGlobal(fallible);
-  MOZ_RELEASE_ASSERT(scope);
-  return scope;
-}
 }  
 
 JS::Handle<JSObject*> GetPerInterfaceObjectHandle(

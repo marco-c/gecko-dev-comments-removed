@@ -3124,7 +3124,6 @@ namespace binding_detail {
 
 
 
-JSObject* UnprivilegedJunkScopeOrWorkerGlobal();
 JSObject* UnprivilegedJunkScopeOrWorkerGlobal(const fallible_t&);
 
 
