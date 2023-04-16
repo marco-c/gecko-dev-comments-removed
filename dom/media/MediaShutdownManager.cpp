@@ -105,7 +105,7 @@ nsresult MediaShutdownManager::Register(MediaDecoder* aDecoder) {
   
   
   MOZ_ASSERT(!mDecoders.Contains(aDecoder));
-  mDecoders.PutEntry(aDecoder);
+  mDecoders.Insert(aDecoder);
   MOZ_ASSERT(mDecoders.Contains(aDecoder));
   MOZ_ASSERT(mDecoders.Count() > 0);
   return NS_OK;
@@ -113,10 +113,9 @@ nsresult MediaShutdownManager::Register(MediaDecoder* aDecoder) {
 
 void MediaShutdownManager::Unregister(MediaDecoder* aDecoder) {
   MOZ_ASSERT(NS_IsMainThread());
-  if (!mDecoders.Contains(aDecoder)) {
+  if (!mDecoders.EnsureRemoved(aDecoder)) {
     return;
   }
-  mDecoders.RemoveEntry(aDecoder);
   if (sInitPhase == XPCOMShutdownStarted && mDecoders.Count() == 0) {
     RemoveBlocker();
   }
@@ -150,8 +149,8 @@ MediaShutdownManager::BlockShutdown(nsIAsyncShutdownClient*) {
   }
 
   
-  for (auto iter = mDecoders.Iter(); !iter.Done(); iter.Next()) {
-    iter.Get()->GetKey()->NotifyXPCOMShutdown();
+  for (const auto& key : mDecoders) {
+    key->NotifyXPCOMShutdown();
     
     
     MOZ_ASSERT(mDecoders.Count() == oldCount);

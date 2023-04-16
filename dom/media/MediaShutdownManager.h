@@ -13,8 +13,7 @@
 #  include "nsCOMPtr.h"
 #  include "nsIAsyncShutdown.h"
 #  include "nsIThread.h"
-#  include "nsHashKeys.h"
-#  include "nsTHashtable.h"
+#  include "nsTHashSet.h"
 
 namespace mozilla {
 
@@ -89,7 +88,7 @@ class MediaShutdownManager : public nsIAsyncShutdownBlocker {
   
   
   
-  nsTHashtable<nsRefPtrHashKey<MediaDecoder>> mDecoders;
+  nsTHashSet<RefPtr<MediaDecoder>> mDecoders;
 };
 
 }  

@@ -23,7 +23,7 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsTHashMap.h"
 #include "nsHashKeys.h"
-#include "nsTHashtable.h"
+#include "nsTHashSet.h"
 #include "js/TypeDecls.h"
 #include "nsIMemoryReporter.h"
 
@@ -399,9 +399,9 @@ class AudioContext final : public DOMEventTargetHelper,
   nsTArray<RefPtr<Promise>> mPendingResumePromises;
   
   
-  nsTHashtable<nsRefPtrHashKey<AudioNode>> mActiveNodes;
+  nsTHashSet<RefPtr<AudioNode>> mActiveNodes;
   
-  nsTHashtable<nsPtrHashKey<AudioNode>> mAllNodes;
+  nsTHashSet<AudioNode*> mAllNodes;
   nsTHashMap<nsStringHashKey, AudioParamDescriptorMap> mWorkletParamDescriptors;
   
   RefPtr<BasicWaveFormCache> mBasicWaveFormCache;
