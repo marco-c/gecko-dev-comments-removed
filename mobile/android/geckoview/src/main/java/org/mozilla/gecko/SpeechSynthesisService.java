@@ -81,7 +81,10 @@ public class SpeechSynthesisService  {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             
             
-            return getTTS().getAvailableLanguages();
+            final Set<Locale> availableLanguages = getTTS().getAvailableLanguages();
+            if (availableLanguages != null) {
+                return availableLanguages;
+            }
         }
         final Set<Locale> locales = new HashSet<Locale>();
         for (final Locale locale : Locale.getAvailableLocales()) {
