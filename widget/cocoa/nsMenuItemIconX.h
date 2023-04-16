@@ -17,7 +17,7 @@ class nsIURI;
 class nsIContent;
 class nsIPrincipal;
 class imgRequestProxy;
-class nsMenuObjectX;
+class nsMenuParentX;
 
 #import <Cocoa/Cocoa.h>
 

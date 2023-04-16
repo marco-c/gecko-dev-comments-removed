@@ -7,14 +7,15 @@
 #define nsMenuBarX_h_
 
 #import <Cocoa/Cocoa.h>
-#include "nsISupports.h"
 
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 
-#include "nsMenuBaseX.h"
+#include "nsISupports.h"
+#include "nsMenuParentX.h"
 #include "nsMenuGroupOwnerX.h"
 #include "nsChangeObserver.h"
+#include "nsTArray.h"
 #include "nsString.h"
 
 class nsMenuBarX;
@@ -78,7 +79,7 @@ class Element;
 
 
 
-class nsMenuBarX : public nsMenuObjectX, public nsChangeObserver, public mozilla::SupportsWeakPtr {
+class nsMenuBarX : public nsMenuParentX, public nsChangeObserver, public mozilla::SupportsWeakPtr {
  public:
   nsMenuBarX();
 
@@ -97,7 +98,7 @@ class nsMenuBarX : public nsMenuObjectX, public nsChangeObserver, public mozilla
   NS_DECL_CHANGEOBSERVER
 
   
-  nsMenuObjectTypeX MenuObjectType() override { return eMenuBarObjectType; }
+  nsMenuParentTypeX MenuParentType() override { return eMenuBarParentType; }
 
   
   nsresult Create(mozilla::dom::Element* aElement);

@@ -13,7 +13,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
 #include "nsISupports.h"
-#include "nsMenuBaseX.h"
+#include "nsMenuParentX.h"
 #include "nsMenuBarX.h"
 #include "nsMenuGroupOwnerX.h"
 #include "nsMenuItemIconX.h"
@@ -34,14 +34,14 @@ class nsIWidget;
 
 
 
-class nsMenuX final : public nsMenuObjectX,
+class nsMenuX final : public nsMenuParentX,
                       public nsChangeObserver,
                       public nsMenuItemIconX::Listener {
  public:
   using MenuChild = mozilla::Variant<RefPtr<nsMenuX>, RefPtr<nsMenuItemX>>;
 
   
-  nsMenuX(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aContent);
+  nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aContent);
 
   NS_INLINE_DECL_REFCOUNTING(nsMenuX)
 
@@ -53,13 +53,13 @@ class nsMenuX final : public nsMenuObjectX,
   NS_DECL_CHANGEOBSERVER
 
   
-  nsMenuObjectTypeX MenuObjectType() override { return eSubmenuObjectType; }
+  nsMenuParentTypeX MenuParentType() override { return eSubmenuParentType; }
 
   
   void IconUpdated() override;
 
   
-  nsresult Create(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aNode);
+  nsresult Create(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aNode);
 
   
   
@@ -137,7 +137,7 @@ class nsMenuX final : public nsMenuObjectX,
 
   nsString mLabel;
   uint32_t mVisibleItemsCount = 0;                     
-  nsMenuObjectX* mParent = nullptr;                    
+  nsMenuParentX* mParent = nullptr;                    
   nsMenuGroupOwnerX* mMenuGroupOwner = nullptr;        
   nsMenuItemIconX::Listener* mIconListener = nullptr;  
   mozilla::UniquePtr<nsMenuItemIconX> mIcon;
