@@ -52,6 +52,7 @@ class nsMenuItemX final : public nsMenuObjectX, public nsChangeObserver {
   
   void* NativeData() override { return (void*)mNativeMenuItem; }
   nsMenuObjectTypeX MenuObjectType() override { return eMenuItemObjectType; }
+  void IconUpdated() override;
 
   
   nsresult SetChecked(bool aIsChecked);

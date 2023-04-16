@@ -23,17 +23,25 @@ class nsMenuObjectX;
 
 class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
  public:
-  nsMenuItemIconX(nsMenuObjectX* aMenuItem, NSMenuItem* aNativeMenuItem);
+  explicit nsMenuItemIconX(nsMenuObjectX* aMenuItem);
   ~nsMenuItemIconX();
 
  public:
   
   
-  nsresult SetupIcon(nsIContent* aContent);
+  
+  
+  
+  
+  void SetupIcon(nsIContent* aContent);
 
   
   
   nsresult OnComplete(imgIContainer* aImage) override;
+
+  
+  
+  NSImage* GetIconImage() const { return mIconImage; }
 
  protected:
   
@@ -43,7 +51,7 @@ class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
   nsMenuObjectX* mMenuObject;     
   nsIntRect mImageRegionRect;
   bool mSetIcon;
-  NSMenuItem* mNativeMenuItem;  
+  NSImage* mIconImage = nil;  
   
   
   RefPtr<mozilla::widget::IconLoader> mIconLoader;
