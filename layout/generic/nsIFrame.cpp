@@ -6876,7 +6876,7 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,
 
 
     if (isTransformed) {
-      NS_ASSERTION(nsLayoutUtils::GetCrossDocParentFrame(this),
+      NS_ASSERTION(nsLayoutUtils::GetCrossDocParentFrameInProcess(this),
                    "Cannot transform the viewport frame!");
 
       result = result * nsDisplayTransform::GetResultingTransformMatrix(
@@ -10923,7 +10923,7 @@ static bool IsFrameScrolledOutOfView(const nsIFrame* aTarget,
   
   
   for (nsIFrame* f = const_cast<nsIFrame*>(aParent); f;
-       f = nsLayoutUtils::GetCrossDocParentFrame(f)) {
+       f = nsLayoutUtils::GetCrossDocParentFrameInProcess(f)) {
     nsIScrollableFrame* scrollableFrame = do_QueryFrame(f);
     if (scrollableFrame) {
       clipParent = f;
