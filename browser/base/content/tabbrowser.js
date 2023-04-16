@@ -4133,7 +4133,10 @@
       if (aOtherTab.hasAttribute("muted")) {
         aOurTab.setAttribute("muted", "true");
         aOurTab.muteReason = aOtherTab.muteReason;
-        ourBrowser.mute();
+        
+        if (aOurTab.linkedPanel) {
+          ourBrowser.mute();
+        }
         modifiedAttrs.push("muted");
       }
       if (aOtherTab.hasAttribute("soundplaying")) {
@@ -4170,6 +4173,7 @@
         
         
         aOurTab.initializingTab = true;
+        delete ourBrowser._cachedCurrentURI;
         SessionStore.setTabState(aOurTab, SessionStore.getTabState(aOtherTab));
         delete aOurTab.initializingTab;
 

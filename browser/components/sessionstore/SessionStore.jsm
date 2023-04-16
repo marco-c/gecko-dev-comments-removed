@@ -4459,21 +4459,8 @@ var SessionStoreInternal = {
     
     
     
-    if (tabData.pinned) {
-      tabbrowser.pinTab(tab);
-    } else {
-      tabbrowser.unpinTab(tab);
-    }
-
-    if (tabData.hidden) {
-      tabbrowser.hideTab(tab);
-    } else {
-      tabbrowser.showTab(tab);
-    }
-
-    if (!!tabData.muted != browser.audioMuted) {
-      tab.toggleMuteAudio(tabData.muteReason);
-    }
+    
+    
 
     if (tabData.lastAccessed) {
       tab.updateLastAccessed(tabData.lastAccessed);
@@ -4604,6 +4591,25 @@ var SessionStoreInternal = {
         userTypedValue: tabData.userTypedValue || "",
         userTypedClear: tabData.userTypedClear || 0,
       });
+    }
+
+    
+    
+
+    if (tabData.pinned) {
+      tabbrowser.pinTab(tab);
+    } else {
+      tabbrowser.unpinTab(tab);
+    }
+
+    if (tabData.hidden) {
+      tabbrowser.hideTab(tab);
+    } else {
+      tabbrowser.showTab(tab);
+    }
+
+    if (!!tabData.muted != browser.audioMuted) {
+      tab.toggleMuteAudio(tabData.muteReason);
     }
 
     if (tab.hasAttribute("customizemode")) {
