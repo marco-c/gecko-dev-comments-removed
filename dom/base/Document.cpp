@@ -5002,9 +5002,12 @@ Document::AutoEditorCommandTarget::AutoEditorCommandTarget(
 
   
   
-  mEditorCommand = aCommandData.mGetEditorCommandFunc();
+  mEditorCommand = aCommandData.mGetEditorCommandFunc
+                       ? aCommandData.mGetEditorCommandFunc()
+                       : nullptr;
   if (!mEditorCommand) {
     mDoNothing = true;
+    mTextEditor = nullptr;
     return;
   }
 
@@ -5027,9 +5030,17 @@ Document::AutoEditorCommandTarget::AutoEditorCommandTarget(
   mTextEditor = nullptr;
 }
 
+bool Document::AutoEditorCommandTarget::IsCommandEnabled() const {
+  MOZ_ASSERT(mEditorCommand);
+  return MOZ_KnownLive(mEditorCommand)
+      ->IsCommandEnabled(mCommandData.mCommand, MOZ_KnownLive(mTextEditor));
+}
+
 nsresult Document::AutoEditorCommandTarget::DoCommand(
     nsIPrincipal* aPrincipal) const {
   MOZ_ASSERT(!DoNothing());
+  MOZ_ASSERT(mEditorCommand);
+  MOZ_ASSERT(mTextEditor);
   return MOZ_KnownLive(mEditorCommand)
       ->DoCommand(mCommandData.mCommand, MOZ_KnownLive(*mTextEditor),
                   aPrincipal);
@@ -5039,9 +5050,19 @@ template <typename ParamType>
 nsresult Document::AutoEditorCommandTarget::DoCommandParam(
     const ParamType& aParam, nsIPrincipal* aPrincipal) const {
   MOZ_ASSERT(!DoNothing());
+  MOZ_ASSERT(mEditorCommand);
+  MOZ_ASSERT(mTextEditor);
   return MOZ_KnownLive(mEditorCommand)
       ->DoCommandParam(mCommandData.mCommand, aParam,
                        MOZ_KnownLive(*mTextEditor), aPrincipal);
+}
+
+nsresult Document::AutoEditorCommandTarget::GetCommandStateParams(
+    nsCommandParams& aParams) const {
+  MOZ_ASSERT(mEditorCommand);
+  return MOZ_KnownLive(mEditorCommand)
+      ->GetCommandStateParams(mCommandData.mCommand, MOZ_KnownLive(aParams),
+                              MOZ_KnownLive(mTextEditor), nullptr);
 }
 
 bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
@@ -5253,6 +5274,12 @@ bool Document::QueryCommandEnabled(const nsAString& aHTMLCommandName,
     return false;
   }
 
+  RefPtr<nsPresContext> presContext = GetPresContext();
+  AutoEditorCommandTarget editCommandTarget(presContext, commandData);
+  if (editCommandTarget.IsEditor()) {
+    return editCommandTarget.IsCommandEnabled();
+  }
+
   
   RefPtr<nsCommandManager> commandManager = GetMidasCommandManager();
   if (!commandManager) {
@@ -5287,22 +5314,29 @@ bool Document::QueryCommandIndeterm(const nsAString& aHTMLCommandName,
     return false;
   }
 
-  
-  RefPtr<nsCommandManager> commandManager = GetMidasCommandManager();
-  if (!commandManager) {
-    return false;
-  }
-
-  nsPIDOMWindowOuter* window = GetWindow();
-  if (!window) {
-    return false;
-  }
-
+  RefPtr<nsPresContext> presContext = GetPresContext();
+  AutoEditorCommandTarget editCommandTarget(presContext, commandData);
   RefPtr<nsCommandParams> params = new nsCommandParams();
-  nsresult rv = commandManager->GetCommandState(commandData.mXULCommandName,
-                                                window, params);
-  if (NS_FAILED(rv)) {
-    return false;
+  if (editCommandTarget.IsEditor()) {
+    if (NS_FAILED(editCommandTarget.GetCommandStateParams(*params))) {
+      return false;
+    }
+  } else {
+    
+    RefPtr<nsCommandManager> commandManager = GetMidasCommandManager();
+    if (!commandManager) {
+      return false;
+    }
+
+    nsPIDOMWindowOuter* window = GetWindow();
+    if (!window) {
+      return false;
+    }
+
+    if (NS_FAILED(commandManager->GetCommandState(commandData.mXULCommandName,
+                                                  window, params))) {
+      return false;
+    }
   }
 
   
@@ -5330,28 +5364,35 @@ bool Document::QueryCommandState(const nsAString& aHTMLCommandName,
     return false;
   }
 
-  
-  RefPtr<nsCommandManager> commandManager = GetMidasCommandManager();
-  if (!commandManager) {
-    return false;
-  }
-
-  nsPIDOMWindowOuter* window = GetWindow();
-  if (!window) {
-    return false;
-  }
-
   if (aHTMLCommandName.LowerCaseEqualsLiteral("usecss")) {
     
     
     return false;
   }
 
+  RefPtr<nsPresContext> presContext = GetPresContext();
+  AutoEditorCommandTarget editCommandTarget(presContext, commandData);
   RefPtr<nsCommandParams> params = new nsCommandParams();
-  nsresult rv = commandManager->GetCommandState(commandData.mXULCommandName,
-                                                window, params);
-  if (NS_FAILED(rv)) {
-    return false;
+  if (editCommandTarget.IsEditor()) {
+    if (NS_FAILED(editCommandTarget.GetCommandStateParams(*params))) {
+      return false;
+    }
+  } else {
+    
+    RefPtr<nsCommandManager> commandManager = GetMidasCommandManager();
+    if (!commandManager) {
+      return false;
+    }
+
+    nsPIDOMWindowOuter* window = GetWindow();
+    if (!window) {
+      return false;
+    }
+
+    if (NS_FAILED(commandManager->GetCommandState(commandData.mXULCommandName,
+                                                  window, params))) {
+      return false;
+    }
   }
 
   
@@ -5462,46 +5503,57 @@ void Document::QueryCommandValue(const nsAString& aHTMLCommandName,
     return;
   }
 
-  
-  RefPtr<nsCommandManager> commandManager = GetMidasCommandManager();
-  if (!commandManager) {
-    return;
-  }
-
-  nsCOMPtr<nsPIDOMWindowOuter> window = GetWindow();
-  if (!window) {
-    return;
-  }
-
-  
-  
+  RefPtr<nsPresContext> presContext = GetPresContext();
+  AutoEditorCommandTarget editCommandTarget(presContext, commandData);
   RefPtr<nsCommandParams> params = new nsCommandParams();
-  if (commandData.mCommand == Command::GetHTML) {
-    nsresult rv = params->SetBool("selection_only", true);
-    if (NS_FAILED(rv)) {
+  
+  
+  if (editCommandTarget.IsEditor()) {
+    MOZ_ASSERT(commandData.mCommand != Command::GetHTML);
+    if (NS_FAILED(params->SetCString("state_attribute", ""_ns))) {
       return;
     }
-    rv = params->SetCString("format", "text/html"_ns);
-    if (NS_FAILED(rv)) {
-      return;
-    }
-    rv = commandManager->DoCommand(commandData.mXULCommandName, params, window);
-    if (NS_FAILED(rv)) {
-      return;
-    }
-    params->GetString("result", aValue);
-    return;
-  }
 
-  nsresult rv = params->SetCString("state_attribute", ""_ns);
-  if (NS_FAILED(rv)) {
-    return;
-  }
+    if (NS_FAILED(editCommandTarget.GetCommandStateParams(*params))) {
+      return;
+    }
+  } else {
+    
+    RefPtr<nsCommandManager> commandManager = GetMidasCommandManager();
+    if (!commandManager) {
+      return;
+    }
 
-  rv = commandManager->GetCommandState(commandData.mXULCommandName, window,
-                                       params);
-  if (NS_FAILED(rv)) {
-    return;
+    nsCOMPtr<nsPIDOMWindowOuter> window = GetWindow();
+    if (!window) {
+      return;
+    }
+
+    
+    
+    if (commandData.mCommand == Command::GetHTML) {
+      if (NS_FAILED(params->SetBool("selection_only", true))) {
+        return;
+      }
+      if (NS_FAILED(params->SetCString("format", "text/html"_ns))) {
+        return;
+      }
+      if (NS_FAILED(commandManager->DoCommand(commandData.mXULCommandName,
+                                              params, window))) {
+        return;
+      }
+      params->GetString("result", aValue);
+      return;
+    }
+
+    if (NS_FAILED(params->SetCString("state_attribute", ""_ns))) {
+      return;
+    }
+
+    if (NS_FAILED(commandManager->GetCommandState(commandData.mXULCommandName,
+                                                  window, params))) {
+      return;
+    }
   }
 
   
