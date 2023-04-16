@@ -451,7 +451,7 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
 
 #include "gfxLanguageTagList.cpp"
 
-nsTHashtable<nsUint32HashKey>* gfxGraphiteShaper::sLanguageTags;
+nsTHashSet<uint32_t>* gfxGraphiteShaper::sLanguageTags;
 
 
 uint32_t gfxGraphiteShaper::GetGraphiteTagForLang(const nsCString& aLang) {
@@ -487,15 +487,14 @@ uint32_t gfxGraphiteShaper::GetGraphiteTagForLang(const nsCString& aLang) {
 
   if (!sLanguageTags) {
     
-    sLanguageTags =
-        new nsTHashtable<nsUint32HashKey>(ArrayLength(sLanguageTagList));
+    sLanguageTags = new nsTHashSet<uint32_t>(ArrayLength(sLanguageTagList));
     for (const uint32_t* tag = sLanguageTagList; *tag != 0; ++tag) {
-      sLanguageTags->PutEntry(*tag);
+      sLanguageTags->Insert(*tag);
     }
   }
 
   
-  if (sLanguageTags->GetEntry(grLang)) {
+  if (sLanguageTags->Contains(grLang)) {
     return grLang;
   }
 

@@ -9,6 +9,7 @@
 #include "gfxFont.h"
 
 #include "mozilla/gfx/2D.h"
+#include "nsTHashSet.h"
 
 #include "ThebesRLBoxTypes.h"
 
@@ -68,7 +69,7 @@ class gfxGraphiteShaper : public gfxFontShaper {
 
   
   static uint32_t GetGraphiteTagForLang(const nsCString& aLang);
-  static nsTHashtable<nsUint32HashKey>* sLanguageTags;
+  static nsTHashSet<uint32_t>* sLanguageTags;
 };
 
 #endif 
