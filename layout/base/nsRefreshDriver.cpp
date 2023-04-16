@@ -1445,14 +1445,12 @@ void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
   
   
   
-  
-  TimeStamp newMostRecentRefresh =
-      aFlags & eAllowTimeToGoBackwards
-          ? mActiveTimer->MostRecentRefresh()
-          : std::max(mActiveTimer->MostRecentRefresh(), mMostRecentRefresh);
+  if (!(aFlags & eAllowTimeToGoBackwards)) {
+    return;
+  }
 
-  if (mMostRecentRefresh != newMostRecentRefresh) {
-    mMostRecentRefresh = newMostRecentRefresh;
+  if (mMostRecentRefresh != mActiveTimer->MostRecentRefresh()) {
+    mMostRecentRefresh = mActiveTimer->MostRecentRefresh();
 
     for (nsATimerAdjustmentObserver* obs :
          mTimerAdjustmentObservers.EndLimitedRange()) {
