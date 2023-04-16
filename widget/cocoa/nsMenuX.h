@@ -75,6 +75,11 @@ class nsMenuX final : public nsMenuParentX,
   
   
   
+  bool OnOpen();
+
+  
+  
+  
   
   nsEventStatus MenuOpened();
 
@@ -137,7 +142,6 @@ class nsMenuX final : public nsMenuParentX,
   nsresult SetEnabled(bool aIsEnabled);
   nsresult GetEnabled(bool* aIsEnabled);
   already_AddRefed<nsIContent> GetMenuPopupContent();
-  bool OnOpen();
   void AddMenuItem(RefPtr<nsMenuItemX>&& aMenuItem);
   void AddMenu(RefPtr<nsMenuX>&& aMenu);
   void LoadMenuItem(nsIContent* aMenuItemContent);
@@ -186,6 +190,10 @@ class nsMenuX final : public nsMenuParentX,
   bool mIsOpenForGecko = false;
 
   bool mVisible = true;
+
+  
+  
+  bool mDidFirePopupshowingAndIsApprovedToOpen = false;
 };
 
 #endif  

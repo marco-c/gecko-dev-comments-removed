@@ -311,6 +311,18 @@ nsresult nsMenuX::RemoveAll() {
 }
 
 nsEventStatus nsMenuX::MenuOpened() {
+  if (!mDidFirePopupshowingAndIsApprovedToOpen) {
+    
+    bool approvedToOpen = OnOpen();
+    if (!approvedToOpen) {
+      
+      
+      
+      NS_WARNING("The popupshowing event had preventDefault() called on it, but in MenuOpened() it "
+                 "is too late to stop the menu from opening.");
+    }
+  }
+
   mIsOpen = true;
 
   if (mPendingAsyncMenuCloseRunnable) {
@@ -325,19 +337,6 @@ nsEventStatus nsMenuX::MenuOpened() {
     mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::open, u"true"_ns, true);
   }
 
-  if (!OnOpen()) {
-    
-    
-    
-    
-    return nsEventStatus_eConsumeNoDefault;
-  }
-
-  if (mNeedsRebuild) {
-    RemoveAll();
-    RebuildMenu();
-  }
-
   nsEventStatus status = nsEventStatus_eIgnore;
   WidgetMouseEvent event(true, eXULPopupShown, nullptr, WidgetMouseEvent::eReal);
 
@@ -346,8 +345,16 @@ nsEventStatus nsMenuX::MenuOpened() {
   EventDispatcher::Dispatch(dispatchTo, nullptr, &event, nullptr, &status);
 
   
+  mDidFirePopupshowingAndIsApprovedToOpen = false;
+
+  
   if (mObserver) {
     mObserver->OnMenuOpened();
+  }
+
+  if (mNeedsRebuild) {
+    RemoveAll();
+    RebuildMenu();
   }
 
   return nsEventStatus_eConsumeNoDefault;
@@ -525,8 +532,16 @@ void nsMenuX::LoadSubMenu(nsIContent* aMenuContent) {
 }
 
 
-
 bool nsMenuX::OnOpen() {
+  if (mDidFirePopupshowingAndIsApprovedToOpen) {
+    return true;
+  }
+
+  if (mIsOpen) {
+    NS_WARNING("nsMenuX::OnOpen() called while the menu is already considered to be open. This "
+               "seems odd.");
+  }
+
   nsEventStatus status = nsEventStatus_eIgnore;
   WidgetMouseEvent event(true, eXULPopupShowing, nullptr, WidgetMouseEvent::eReal);
 
@@ -538,6 +553,8 @@ bool nsMenuX::OnOpen() {
   if (NS_FAILED(rv) || status == nsEventStatus_eConsumeNoDefault) {
     return false;
   }
+
+  mDidFirePopupshowingAndIsApprovedToOpen = true;
 
   
   
