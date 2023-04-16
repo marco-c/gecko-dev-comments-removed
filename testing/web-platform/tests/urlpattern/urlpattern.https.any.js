@@ -1,5 +1,16 @@
 
 
+const kComponents = [
+  'protocol',
+  'username',
+  'password',
+  'hostname',
+  'password',
+  'pathname',
+  'search',
+  'hash',
+];
+
 function runTests(data) {
   for (let entry of data) {
     test(function() {
@@ -13,43 +24,84 @@ function runTests(data) {
 
       
       
-      assert_equals(pattern.test(entry.input), !!entry.expected,
+      entry.expected_obj = entry.expected_obj || {};
+
+      
+      
+      for (let component of kComponents) {
+        
+        
+        
+        let expected = entry.expected_obj[component];
+
+        
+        
+        if (!expected) {
+          
+          
+          let baseURL = null;
+          if (entry.pattern.baseURL)
+            baseURL = new URL(entry.pattern.baseURL);
+
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          if (entry.pattern[component]) {
+            expected = entry.pattern[component];
+          } else if (baseURL &&
+                     component !== 'search' && component !== 'hash') {
+            let base_value = baseURL[component];
+            
+            
+            if (component === 'protocol')
+              base_value = base_value.substring(0, base_value.length - 1);
+            expected = base_value;
+          } else {
+            expected = '*';
+          }
+        }
+
+        
+        
+        assert_equals(pattern[component], expected,
+                      `compiled pattern property '${component}'`);
+      }
+
+      
+      
+      assert_equals(pattern.test(entry.input), !!entry.expected_match,
                     'test() result');
 
       
       const result = pattern.exec(entry.input);
 
       
-      if (!entry.expected) {
-        assert_equals(result, entry.expected, 'exec() failed match result');
+      if (!entry.expected_match) {
+        assert_equals(result, entry.expected_match, 'exec() failed match result');
         return;
       }
 
       
       
-      if (typeof entry.expected.input === 'object') {
-        assert_object_equals(result.input, entry.expected.input,
+      if (typeof entry.expected_match.input === 'object') {
+        assert_object_equals(result.input, entry.expected_match.input,
                              'exec() result.input');
       } else {
-        assert_equals(result.input, entry.expected.input,
+        assert_equals(result.input, entry.expected_match.input,
                       'exec() result.input');
       }
 
       
       
-      const component_list = [
-        'protocol',
-        'username',
-        'password',
-        'hostname',
-        'password',
-        'pathname',
-        'search',
-        'hash',
-      ];
-
-      for (let component of component_list) {
-        let expected_obj = entry.expected[component];
+      for (let component of kComponents) {
+        let expected_obj = entry.expected_match[component];
 
         
         
@@ -63,8 +115,8 @@ function runTests(data) {
           
           
           
-          if (!entry.expected.exactly_empty_components ||
-              !entry.expected.exactly_empty_components.includes(component)) {
+          if (!entry.expected_match.exactly_empty_components ||
+              !entry.expected_match.exactly_empty_components.includes(component)) {
             expected_obj.groups['0'] = '';
           }
         }
