@@ -18,8 +18,7 @@ add_task(async function() {
 
   
   info("Resume");
-  resume(dbg);
-  await waitFor(() => !isPaused(dbg), "Wait for the debugger to resume");
+  await resume(dbg);
   ok(true, "We're not paused anymore");
 
   info("Wait for a bit, just to make sure the overlay isn't displayed");

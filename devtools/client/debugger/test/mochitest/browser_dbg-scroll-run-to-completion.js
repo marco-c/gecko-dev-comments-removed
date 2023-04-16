@@ -13,6 +13,7 @@ add_task(async function() {
   
   await waitForPaused(dbg);
 
-  resume(dbg);
-  await once(Services.ppmm, "test passed");
+  const onTestPassed = once(Services.ppmm, "test passed");
+  await resume(dbg);
+  await onTestPassed;
 });
