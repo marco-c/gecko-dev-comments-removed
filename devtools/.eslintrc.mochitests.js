@@ -9,7 +9,6 @@ module.exports = {
   extends: ["plugin:mozilla/browser-test"],
   
   globals: {
-    gDevTools: true,
     waitForTick: true,
     waitUntilState: true,
   },
