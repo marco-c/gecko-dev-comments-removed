@@ -301,6 +301,12 @@ class ResourceWatcher {
 
 
   async _onTargetAvailable({ targetFront, isTargetSwitching }) {
+    
+    
+    
+    
+    targetFront.resourceWatcher = this;
+
     const resources = [];
     if (isTargetSwitching) {
       this._onWillNavigate(targetFront);
