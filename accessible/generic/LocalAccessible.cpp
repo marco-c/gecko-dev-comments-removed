@@ -354,7 +354,7 @@ uint64_t LocalAccessible::VisibilityState() const {
     }
 
     if (!parentFrame) {
-      parentFrame = nsLayoutUtils::GetCrossDocParentFrame(curFrame);
+      parentFrame = nsLayoutUtils::GetCrossDocParentFrameInProcess(curFrame);
       
       
       
