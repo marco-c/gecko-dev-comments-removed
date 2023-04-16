@@ -223,6 +223,12 @@ void ZoomConstraintsClient::RefreshZoomConstraints() {
     mZoomConstraints.mAllowDoubleTapZoom = false;
   }
 
+  if (mDocument->IsStaticDocument()) {
+    ZCC_LOG("%p is in print or print preview, disallowing double tap zooming\n",
+            this);
+    mZoomConstraints.mAllowDoubleTapZoom = false;
+  }
+
   
   
   
