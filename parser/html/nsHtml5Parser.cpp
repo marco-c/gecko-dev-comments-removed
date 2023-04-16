@@ -463,6 +463,8 @@ nsresult nsHtml5Parser::Parse(const nsAString& aSourceBuffer, void* aKey,
 NS_IMETHODIMP
 nsHtml5Parser::Terminate() {
   
+  mDocumentClosed = true;
+  
   
   if (mExecutor->IsComplete()) {
     return NS_OK;
