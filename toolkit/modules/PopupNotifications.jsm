@@ -269,6 +269,10 @@ function PopupNotifications(tabbrowser, panel, iconBox, options = {}) {
     ) {
       let escAction = notification.notification.options.escAction;
       this._onButtonEvent(aEvent, escAction, "esc-press", notification);
+      
+      
+      
+      aEvent.preventDefault();
     }
   };
 
