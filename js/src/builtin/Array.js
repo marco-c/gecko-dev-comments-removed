@@ -113,6 +113,8 @@ function ArrayEvery(callbackfn) {
     return true;
 }
 
+_SetIsInlinableLargeFunction(ArrayEvery);
+
 
 function ArraySome(callbackfn) {
     
@@ -144,6 +146,8 @@ function ArraySome(callbackfn) {
     
     return false;
 }
+
+_SetIsInlinableLargeFunction(ArraySome);
 
 
 
@@ -221,6 +225,8 @@ function ArrayForEach(callbackfn) {
     return void 0;
 }
 
+_SetIsInlinableLargeFunction(ArrayForEach);
+
 
 function ArrayMap(callbackfn) {
     
@@ -255,6 +261,8 @@ function ArrayMap(callbackfn) {
     
     return A;
 }
+
+_SetIsInlinableLargeFunction(ArrayMap);
 
 
 function ArrayFilter(callbackfn) {
