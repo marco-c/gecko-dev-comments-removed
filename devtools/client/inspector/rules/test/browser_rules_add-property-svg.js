@@ -5,7 +5,7 @@
 
 
 
-var TEST_URL = "chrome://global/skin/icons/warning.svg";
+var TEST_URL = "chrome://devtools/skin/images/alert.svg";
 var TEST_SELECTOR = "path";
 
 add_task(async function() {
