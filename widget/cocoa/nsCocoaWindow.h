@@ -171,7 +171,7 @@ typedef struct _nsCocoaWindowList {
 - (void)sendToplevelDeactivateEvents;
 @end
 
-@interface TitlebarGradientView : NSView
+@interface MOZTitlebarView : NSVisualEffectView
 @end
 
 
@@ -180,7 +180,7 @@ typedef struct _nsCocoaWindowList {
   
   
   
-  TitlebarGradientView* mTitlebarGradientView;  
+  MOZTitlebarView* mTitlebarView;  
 
   CGFloat mUnifiedToolbarHeight;
   CGFloat mSheetAttachmentPosition;
