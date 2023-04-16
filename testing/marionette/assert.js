@@ -64,16 +64,13 @@ assert.acyclic = function(obj, msg = "", err = error.JavaScriptError) {
 
 
 
-
-
-
-assert.session = function(driver, msg = "") {
+assert.session = function(session, msg = "") {
+  msg = msg || "WebDriver session does not exist, or is not active";
   assert.that(
-    sessionID => sessionID,
+    session => session && typeof session.id == "string",
     msg,
     error.InvalidSessionIDError
-  )(driver.sessionID);
-  return driver.sessionID;
+  )(session);
 };
 
 
