@@ -1728,10 +1728,9 @@ gfxFontEntry* gfxFT2FontList::LookupLocalFont(const nsACString& aFontName,
   
   FT2FontEntry* fontEntry = nullptr;
 
-  for (auto iter = mFontFamilies.ConstIter(); !iter.Done(); iter.Next()) {
+  for (const RefPtr<gfxFontFamily>& fontFamily : mFontFamilies.Values()) {
     
     
-    const RefPtr<gfxFontFamily>& fontFamily = iter.Data();
 
     
     const nsCString& family = fontFamily->Name();

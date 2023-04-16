@@ -120,8 +120,8 @@ nsresult nsNodeInfoManager::Init(mozilla::dom::Document* aDocument) {
 
 void nsNodeInfoManager::DropDocumentReference() {
   
-  for (const auto& entry : mNodeInfoHash) {
-    entry.GetData()->mDocument = nullptr;
+  for (const auto& entry : mNodeInfoHash.Values()) {
+    entry->mDocument = nullptr;
   }
 
   NS_ASSERTION(!mNonDocumentNodeInfos,

@@ -163,12 +163,10 @@ const char* GetNameForMetricID(OriginMetricID aId) {
 
 uint32_t PrioDataCount(const StaticMutexAutoLock& lock) {
   uint32_t count = 0;
-  auto iter = gMetricToOriginBag->ConstIter();
-  for (; !iter.Done(); iter.Next()) {
-    auto originIt = iter.Data().ConstIter();
+  for (const auto& origins : gMetricToOriginBag->Values()) {
     uint32_t maxOriginCount = 0;
-    for (; !originIt.Done(); originIt.Next()) {
-      maxOriginCount = std::max(maxOriginCount, originIt.Data());
+    for (const auto& data : origins.Values()) {
+      maxOriginCount = std::max(maxOriginCount, data);
     }
     count += gPrioDatasPerMetric * maxOriginCount;
   }
@@ -603,10 +601,9 @@ size_t TelemetryOrigin::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {
   }
 
   n += gMetricToOriginBag->ShallowSizeOfIncludingThis(aMallocSizeOf);
-  auto iter = gMetricToOriginBag->ConstIter();
-  for (; !iter.Done(); iter.Next()) {
+  for (const auto& origins : gMetricToOriginBag->Values()) {
     
-    n += iter.Data().ShallowSizeOfIncludingThis(aMallocSizeOf);
+    n += origins.ShallowSizeOfIncludingThis(aMallocSizeOf);
   }
 
   

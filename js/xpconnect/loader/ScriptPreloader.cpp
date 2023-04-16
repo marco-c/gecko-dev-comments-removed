@@ -210,8 +210,8 @@ static void TraceOp(JSTracer* trc, void* data) {
 }  
 
 void ScriptPreloader::Trace(JSTracer* trc) {
-  for (auto& script : mScripts) {
-    script.GetData()->mScript.Trace(trc);
+  for (const auto& script : mScripts.Values()) {
+    script->mScript.Trace(trc);
   }
 }
 

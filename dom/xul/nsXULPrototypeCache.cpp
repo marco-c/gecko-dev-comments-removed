@@ -467,8 +467,8 @@ nsresult nsXULPrototypeCache::BeginCaching(nsIURI* aURI) {
 }
 
 void nsXULPrototypeCache::MarkInCCGeneration(uint32_t aGeneration) {
-  for (auto iter = mPrototypeTable.Iter(); !iter.Done(); iter.Next()) {
-    iter.Data()->MarkInCCGeneration(aGeneration);
+  for (const auto& prototype : mPrototypeTable.Values()) {
+    prototype->MarkInCCGeneration(aGeneration);
   }
 }
 
@@ -508,12 +508,11 @@ void nsXULPrototypeCache::CollectMemoryReports(
   
 
   other += sInstance->mStyleSheetTable.ShallowSizeOfExcludingThis(mallocSizeOf);
-  for (auto iter = sInstance->mStyleSheetTable.ConstIter(); !iter.Done();
-       iter.Next()) {
+  for (const auto& stylesheet : sInstance->mStyleSheetTable.Values()) {
     
     
     
-    other += iter.Data()->SizeOfIncludingThis(mallocSizeOf);
+    other += stylesheet->SizeOfIncludingThis(mallocSizeOf);
   }
 
   other += sInstance->mScriptTable.ShallowSizeOfExcludingThis(mallocSizeOf);

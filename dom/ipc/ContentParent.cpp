@@ -805,8 +805,7 @@ void ContentParent::ReleaseCachedProcesses() {
 
 #ifdef DEBUG
   int num = 0;
-  for (auto iter = sBrowserContentParents->Iter(); !iter.Done(); iter.Next()) {
-    nsTArray<ContentParent*>* contentParents = iter.Data().get();
+  for (const auto& contentParents : sBrowserContentParents->Values()) {
     num += contentParents->Length();
     for (auto* cp : *contentParents) {
       MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
@@ -819,9 +818,7 @@ void ContentParent::ReleaseCachedProcesses() {
   
   
   nsTArray<ContentParent*> toRelease;
-  for (auto iter = sBrowserContentParents->Iter(); !iter.Done(); iter.Next()) {
-    nsTArray<ContentParent*>* contentParents = iter.Data().get();
-
+  for (const auto& contentParents : sBrowserContentParents->Values()) {
     
     
     for (auto* cp : *contentParents) {

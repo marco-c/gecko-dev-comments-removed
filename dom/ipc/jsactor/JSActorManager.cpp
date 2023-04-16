@@ -194,8 +194,8 @@ void JSActorManager::ReceiveRawMessage(
 }
 
 void JSActorManager::JSActorWillDestroy() {
-  for (auto& entry : mJSActors) {
-    entry.GetData()->StartDestroy();
+  for (const auto& entry : mJSActors.Values()) {
+    entry->StartDestroy();
   }
 }
 
@@ -206,12 +206,12 @@ void JSActorManager::JSActorDidDestroy() {
 
   
   
-  nsRefPtrHashtable<nsCStringHashKey, JSActor> actors;
-  mJSActors.SwapElements(actors);
-  for (auto& entry : actors) {
+  const nsRefPtrHashtable<nsCStringHashKey, JSActor> actors =
+      std::move(mJSActors);
+  for (const auto& entry : actors.Values()) {
     CrashReporter::AutoAnnotateCrashReport autoActorName(
-        CrashReporter::Annotation::JSActorName, entry.GetData()->Name());
-    entry.GetData()->AfterDestroy();
+        CrashReporter::Annotation::JSActorName, entry->Name());
+    entry->AfterDestroy();
   }
 }
 

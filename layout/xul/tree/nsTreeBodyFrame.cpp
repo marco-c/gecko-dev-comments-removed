@@ -79,10 +79,9 @@ using namespace mozilla::layout;
 
 
 void nsTreeBodyFrame::CancelImageRequests() {
-  for (auto iter = mImageCache.Iter(); !iter.Done(); iter.Next()) {
+  for (nsTreeImageCacheEntry entry : mImageCache.Values()) {
     
     
-    nsTreeImageCacheEntry entry = iter.UserData();
     nsLayoutUtils::DeregisterImageRequest(PresContext(), entry.request,
                                           nullptr);
     entry.request->UnlockImage();

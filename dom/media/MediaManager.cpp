@@ -2261,12 +2261,8 @@ void MediaManager::DeviceListChanged() {
               
               
               
-              nsTArray<RefPtr<GetUserMediaWindowListener>> stopListeners;
-              for (auto iter = mActiveWindows.ConstIter(); !iter.Done();
-                   iter.Next()) {
-                stopListeners.AppendElement(iter.UserData());
-              }
-              for (auto& l : stopListeners) {
+              const auto listeners = ToArray(mActiveWindows.Values());
+              for (const auto& l : listeners) {
                 l->StopRawID(id);
               }
             }
@@ -3299,8 +3295,8 @@ void MediaManager::OnCameraMute(bool aMute) {
   mCamerasMuted = aMute;
   
   
-  for (auto iter = mActiveWindows.ConstIter(); !iter.Done(); iter.Next()) {
-    iter.UserData()->MuteOrUnmuteCameras(aMute);
+  for (const auto& window : mActiveWindows.Values()) {
+    window->MuteOrUnmuteCameras(aMute);
   }
 }
 
@@ -3310,8 +3306,8 @@ void MediaManager::OnMicrophoneMute(bool aMute) {
   mMicrophonesMuted = aMute;
   
   
-  for (auto iter = mActiveWindows.ConstIter(); !iter.Done(); iter.Next()) {
-    iter.UserData()->MuteOrUnmuteMicrophones(aMute);
+  for (const auto& window : mActiveWindows.Values()) {
+    window->MuteOrUnmuteMicrophones(aMute);
   }
 }
 
@@ -3506,13 +3502,8 @@ void MediaManager::Shutdown() {
     
     
     
-    nsTArray<RefPtr<GetUserMediaWindowListener>> listeners(
-        GetActiveWindows()->Count());
-    for (auto iter = GetActiveWindows()->ConstIter(); !iter.Done();
-         iter.Next()) {
-      listeners.AppendElement(iter.UserData());
-    }
-    for (auto& listener : listeners) {
+    const auto listeners = ToArray(GetActiveWindows()->Values());
+    for (const auto& listener : listeners) {
       listener->RemoveAll();
     }
   }
@@ -3774,19 +3765,16 @@ MediaManager::CollectReports(nsIHandleReportCallback* aHandleReport,
                              nsISupports* aData, bool aAnonymize) {
   size_t amount = 0;
   amount += mActiveWindows.ShallowSizeOfExcludingThis(MallocSizeOf);
-  for (auto iter = mActiveWindows.ConstIter(); !iter.Done(); iter.Next()) {
-    const GetUserMediaWindowListener* listener = iter.UserData();
+  for (const GetUserMediaWindowListener* listener : mActiveWindows.Values()) {
     amount += listener->SizeOfIncludingThis(MallocSizeOf);
   }
   amount += mActiveCallbacks.ShallowSizeOfExcludingThis(MallocSizeOf);
-  for (auto iter = mActiveCallbacks.ConstIter(); !iter.Done(); iter.Next()) {
+  for (const GetUserMediaTask* task : mActiveCallbacks.Values()) {
     
-    const GetUserMediaTask* task = iter.UserData();
     amount += task->SizeOfIncludingThis(MallocSizeOf);
   }
   amount += mCallIds.ShallowSizeOfExcludingThis(MallocSizeOf);
-  for (auto iter = mCallIds.ConstIter(); !iter.Done(); iter.Next()) {
-    const nsTArray<nsString>* array = iter.UserData();
+  for (const auto& array : mCallIds.Values()) {
     amount += array->ShallowSizeOfExcludingThis(MallocSizeOf);
     for (const nsString& callID : *array) {
       amount += callID.SizeOfExcludingThisEvenIfShared(MallocSizeOf);

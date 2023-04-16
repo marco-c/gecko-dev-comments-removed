@@ -414,9 +414,10 @@ nsresult nsConsoleService::LogMessageWithMode(
 void nsConsoleService::CollectCurrentListeners(
     nsCOMArray<nsIConsoleListener>& aListeners) {
   MutexAutoLock lock(mLock);
-  for (auto iter = mListeners.Iter(); !iter.Done(); iter.Next()) {
-    nsIConsoleListener* value = iter.UserData();
-    aListeners.AppendObject(value);
+  
+  
+  for (const auto& listener : mListeners.Values()) {
+    aListeners.AppendObject(listener);
   }
 }
 

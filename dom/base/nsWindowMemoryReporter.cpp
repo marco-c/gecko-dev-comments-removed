@@ -497,10 +497,7 @@ nsWindowMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 
   
   
-  WindowArray windows;
-  for (const auto& entry : *windowsById) {
-    windows.AppendElement(entry.GetData());
-  }
+  const auto windows = ToTArray<WindowArray>(windowsById->Values());
 
   
   
@@ -896,10 +893,7 @@ void nsWindowMemoryReporter::UnlinkGhostWindows() {
 
   
   
-  WindowArray windows;
-  for (const auto& entry : *windowsById) {
-    windows.AppendElement(entry.GetData());
-  }
+  const auto windows = ToTArray<WindowArray>(windowsById->Values());
 
   
   nsTHashSet<uint64_t> ghostWindows;

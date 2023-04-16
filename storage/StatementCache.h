@@ -70,8 +70,8 @@ class StatementCache {
 
 
   inline void FinalizeStatements() {
-    for (auto iter = mCachedStatements.Iter(); !iter.Done(); iter.Next()) {
-      (void)iter.Data()->Finalize();
+    for (const auto& data : mCachedStatements.Values()) {
+      (void)data->Finalize();
     }
 
     

@@ -260,13 +260,15 @@ class ImageSurfaceCache {
   typedef nsRefPtrHashtable<nsGenericHashKey<SurfaceKey>, CachedSurface>
       SurfaceTable;
 
+  auto Values() const { return mSurfaces.Values(); }
+  uint32_t Count() const { return mSurfaces.Count(); }
   bool IsEmpty() const { return mSurfaces.Count() == 0; }
 
   size_t ShallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
     size_t bytes = aMallocSizeOf(this) +
                    mSurfaces.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    for (auto iter = ConstIter(); !iter.Done(); iter.Next()) {
-      bytes += iter.UserData()->ShallowSizeOfIncludingThis(aMallocSizeOf);
+    for (const auto& value : Values()) {
+      bytes += value->ShallowSizeOfIncludingThis(aMallocSizeOf);
     }
     return bytes;
   }
@@ -347,8 +349,8 @@ class ImageSurfaceCache {
 
     
     RefPtr<CachedSurface> bestMatch;
-    for (auto iter = ConstIter(); !iter.Done(); iter.Next()) {
-      NotNull<CachedSurface*> current = WrapNotNull(iter.UserData());
+    for (const auto& value : Values()) {
+      NotNull<CachedSurface*> current = WrapNotNull(value);
       const SurfaceKey& currentKey = current->GetSurfaceKey();
 
       
@@ -439,8 +441,8 @@ class ImageSurfaceCache {
     
     
     
-    auto first = ConstIter();
-    NotNull<CachedSurface*> current = WrapNotNull(first.UserData());
+    NotNull<CachedSurface*> current =
+        WrapNotNull(mSurfaces.ConstIter().UserData());
     Image* image = static_cast<Image*>(current->GetImageKey());
     size_t nativeSizes = image->GetNativeSizesLength();
     if (mIsVectorImage) {
@@ -550,8 +552,8 @@ class ImageSurfaceCache {
     }
 
     
-    auto iter = ConstIter();
-    NotNull<CachedSurface*> firstSurface = WrapNotNull(iter.UserData());
+    NotNull<CachedSurface*> firstSurface =
+        WrapNotNull(mSurfaces.ConstIter().UserData());
     Image* image = static_cast<Image*>(firstSurface->GetImageKey());
     IntSize factorSize;
     if (NS_FAILED(image->GetWidth(&factorSize.width)) ||
@@ -685,11 +687,6 @@ class ImageSurfaceCache {
 
     AfterMaybeRemove();
   }
-
-  SurfaceTable::ConstIterator ConstIter() const {
-    return mSurfaces.ConstIter();
-  }
-  uint32_t Count() const { return mSurfaces.Count(); }
 
   void SetLocked(bool aLocked) { mLocked = aLocked; }
   bool IsLocked() const { return mLocked; }
@@ -1109,8 +1106,8 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     
     
     
-    for (auto iter = cache->ConstIter(); !iter.Done(); iter.Next()) {
-      StopTracking(WrapNotNull(iter.UserData()),
+    for (const auto& value : cache->Values()) {
+      StopTracking(WrapNotNull(value),
                     true, aAutoLock);
     }
 
@@ -1202,8 +1199,8 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
         mImageCaches.ShallowSizeOfExcludingThis(aMallocSizeOf) +
         mCachedSurfacesDiscard.ShallowSizeOfExcludingThis(aMallocSizeOf) +
         mExpirationTracker.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    for (auto iter = mImageCaches.ConstIter(); !iter.Done(); iter.Next()) {
-      bytes += iter.UserData()->ShallowSizeOfIncludingThis(aMallocSizeOf);
+    for (const auto& data : mImageCaches.Values()) {
+      bytes += data->ShallowSizeOfIncludingThis(aMallocSizeOf);
     }
     return bytes;
   }
@@ -1216,14 +1213,13 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     uint32_t lockedImageCount = 0;
     uint32_t totalSurfaceCount = 0;
     uint32_t lockedSurfaceCount = 0;
-    for (auto iter = mImageCaches.ConstIter(); !iter.Done(); iter.Next()) {
-      totalSurfaceCount += iter.UserData()->Count();
-      if (iter.UserData()->IsLocked()) {
+    for (const auto& cache : mImageCaches.Values()) {
+      totalSurfaceCount += cache->Count();
+      if (cache->IsLocked()) {
         ++lockedImageCount;
       }
-      for (auto surfIter = iter.UserData()->ConstIter(); !surfIter.Done();
-           surfIter.Next()) {
-        if (surfIter.UserData()->IsLocked()) {
+      for (const auto& value : cache->Values()) {
+        if (value->IsLocked()) {
           ++lockedSurfaceCount;
         }
       }
@@ -1404,8 +1400,8 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     AutoTArray<NotNull<CachedSurface*>, 8> discard;
 
     
-    for (auto iter = aCache->ConstIter(); !iter.Done(); iter.Next()) {
-      NotNull<CachedSurface*> surface = WrapNotNull(iter.UserData());
+    for (const auto& value : aCache->Values()) {
+      NotNull<CachedSurface*> surface = WrapNotNull(value);
       if (surface->IsPlaceholder() || !surface->IsLocked()) {
         continue;
       }

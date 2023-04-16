@@ -672,8 +672,8 @@ bool FontFaceSet::UpdateRules(const nsTArray<nsFontFaceRuleContainer>& aRules) {
   
   
   
-  for (auto it = mUserFontSet->mFontFamilies.Iter(); !it.Done(); it.Next()) {
-    it.Data()->DetachFontEntries();
+  for (const auto& fontFamily : mUserFontSet->mFontFamilies.Values()) {
+    fontFamily->DetachFontEntries();
   }
 
   
@@ -1281,9 +1281,8 @@ void FontFaceSet::CacheFontLoadability() {
   }
 
   
-  for (auto iter = mUserFontSet->mFontFamilies.Iter(); !iter.Done();
-       iter.Next()) {
-    for (const gfxFontEntry* entry : iter.Data()->GetFontList()) {
+  for (const auto& fontFamily : mUserFontSet->mFontFamilies.Values()) {
+    for (const gfxFontEntry* entry : fontFamily->GetFontList()) {
       if (!entry->mIsUserFontContainer) {
         continue;
       }

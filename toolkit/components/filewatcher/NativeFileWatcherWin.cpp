@@ -847,11 +847,11 @@ nsresult NativeFileWatcherIOTask::DeactivateRunnableMethod() {
              "watches manually before quitting.");
 
   
-  for (auto it = mWatchedResourcesByHandle.Iter(); !it.Done(); it.Next()) {
+  for (const auto& data : mWatchedResourcesByHandle.Values()) {
     FILEWATCHERLOG(
         "NativeFileWatcherIOTask::DeactivateRunnableMethod - "
         "%S is still being watched.",
-        it.UserData()->mPath.get());
+        data->mPath.get());
   }
 
   
