@@ -3876,6 +3876,9 @@ pref("alerts.showFavicons", false);
 #ifdef XP_MACOSX
   
   pref("full-screen-api.macos-native-full-screen", false);
+  
+  
+  pref("full-screen-api.macos.shiftToolbar", false);
 #endif
 
 pref("full-screen-api.ignore-widgets", false);

@@ -3458,7 +3458,13 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
                                  forKeyPath:@"revealAmount"
                                     options:NSKeyValueObservingOptionNew
                                     context:nil];
-    [(NSWindow*)self addTitlebarAccessoryViewController:mFullscreenTitlebarTracker];
+    
+    
+    
+    
+    if (Preferences::GetBool("full-screen-api.macos.shiftToolbar", false)) {
+      [(NSWindow*)self addTitlebarAccessoryViewController:mFullscreenTitlebarTracker];
+    }
   }
   return self;
 
