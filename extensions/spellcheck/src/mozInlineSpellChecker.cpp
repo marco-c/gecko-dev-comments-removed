@@ -213,17 +213,22 @@ mozInlineSpellStatus::CreateForEditorChange(
 
 
 
-nsresult mozInlineSpellStatus::InitForNavigation(
-    bool aForceCheck, int32_t aNewPositionOffset, nsINode* aOldAnchorNode,
+
+nsresult mozInlineSpellStatus::CreateForNavigation(
+    UniquePtr<mozInlineSpellStatus>& aStatus,
+    mozInlineSpellChecker& aSpellChecker, bool aForceCheck,
+    int32_t aNewPositionOffset, nsINode* aOldAnchorNode,
     uint32_t aOldAnchorOffset, nsINode* aNewAnchorNode,
     uint32_t aNewAnchorOffset, bool* aContinue) {
-  mOp = eOpNavigation;
+  aStatus = MakeUnique<mozInlineSpellStatus>(&aSpellChecker);
 
-  mForceNavigationWordCheck = aForceCheck;
-  mNewNavigationPositionOffset = aNewPositionOffset;
+  aStatus->mOp = eOpNavigation;
+
+  aStatus->mForceNavigationWordCheck = aForceCheck;
+  aStatus->mNewNavigationPositionOffset = aNewPositionOffset;
 
   
-  TextEditor* textEditor = mSpellChecker->mTextEditor;
+  TextEditor* textEditor = aStatus->mSpellChecker->mTextEditor;
   if (NS_WARN_IF(!textEditor)) {
     return NS_ERROR_FAILURE;
   }
@@ -238,13 +243,14 @@ nsresult mozInlineSpellStatus::InitForNavigation(
     return NS_OK;
   }
 
-  mOldNavigationAnchorRange =
-      PositionToCollapsedRange(aOldAnchorNode, aOldAnchorOffset);
-  if (NS_WARN_IF(!mOldNavigationAnchorRange)) {
+  aStatus->mOldNavigationAnchorRange =
+      aStatus->PositionToCollapsedRange(aOldAnchorNode, aOldAnchorOffset);
+  if (NS_WARN_IF(!aStatus->mOldNavigationAnchorRange)) {
     return NS_ERROR_FAILURE;
   }
-  mAnchorRange = PositionToCollapsedRange(aNewAnchorNode, aNewAnchorOffset);
-  if (NS_WARN_IF(!mAnchorRange)) {
+  aStatus->mAnchorRange =
+      aStatus->PositionToCollapsedRange(aNewAnchorNode, aNewAnchorOffset);
+  if (NS_WARN_IF(!aStatus->mAnchorRange)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1743,11 +1749,11 @@ nsresult mozInlineSpellChecker::HandleNavigationEvent(
   NS_ENSURE_SUCCESS(rv, rv);
 
   bool shouldPost;
-  auto status = MakeUnique<mozInlineSpellStatus>(this);
-  rv = status->InitForNavigation(aForceWordSpellCheck, aNewPositionOffset,
-                                 currentAnchorNode, currentAnchorOffset,
-                                 mCurrentSelectionAnchorNode,
-                                 mCurrentSelectionOffset, &shouldPost);
+  UniquePtr<mozInlineSpellStatus> status;
+  rv = status->CreateForNavigation(
+      status, *this, aForceWordSpellCheck, aNewPositionOffset,
+      currentAnchorNode, currentAnchorOffset, mCurrentSelectionAnchorNode,
+      mCurrentSelectionOffset, &shouldPost);
   NS_ENSURE_SUCCESS(rv, rv);
   if (shouldPost) {
     rv = ScheduleSpellCheck(std::move(status));
