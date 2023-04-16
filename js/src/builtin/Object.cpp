@@ -846,9 +846,7 @@ static bool TryAssignNative(JSContext* cx, HandleObject to, HandleObject from,
 
     
     
-    if (MOZ_LIKELY(from->is<NativeObject>() &&
-                   from->as<NativeObject>().lastProperty() == fromShape &&
-                   shape->isDataProperty())) {
+    if (MOZ_LIKELY(from->shape() == fromShape && shape->isDataProperty())) {
       if (!shape->enumerable()) {
         continue;
       }
@@ -1464,9 +1462,7 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
 
       
       
-      if (obj->is<NativeObject>() &&
-          obj->as<NativeObject>().lastProperty() == objShape &&
-          shape->isDataProperty()) {
+      if (obj->shape() == objShape && shape->isDataProperty()) {
         if (!shape->enumerable()) {
           continue;
         }
