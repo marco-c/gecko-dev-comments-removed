@@ -8,8 +8,6 @@ use std::sync::Arc;
 use glean_core::metrics::MetricType;
 use glean_core::ErrorType;
 
-use crate::dispatcher;
-
 
 
 
@@ -34,7 +32,7 @@ impl QuantityMetric {
 impl glean_core::traits::Quantity for QuantityMetric {
     fn set(&self, value: i64) {
         let metric = Arc::clone(&self.0);
-        dispatcher::launch(move || crate::with_glean(|glean| metric.set(glean, value)));
+        crate::launch_with_glean(move |glean| metric.set(glean, value));
     }
 
     fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i64> {

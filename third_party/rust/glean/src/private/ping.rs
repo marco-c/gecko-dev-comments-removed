@@ -2,15 +2,24 @@
 
 
 
+use std::sync::{Arc, Mutex};
+
 use inherent::inherent;
 
+type BoxedCallback = Box<dyn FnOnce(Option<&str>) + Send + 'static>;
 
 
 
-#[derive(Clone, Debug)]
+
+#[derive(Clone)]
 pub struct PingType {
     pub(crate) name: String,
     pub(crate) ping_type: glean_core::metrics::PingType,
+
+    
+    
+    
+    test_callback: Arc<Mutex<Option<BoxedCallback>>>,
 }
 
 impl PingType {
@@ -36,15 +45,40 @@ impl PingType {
             reason_codes,
         );
 
-        let me = Self { name, ping_type };
+        let me = Self {
+            name,
+            ping_type,
+            test_callback: Arc::new(Default::default()),
+        };
         crate::register_ping_type(&me);
         me
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn test_before_next_submit(&self, cb: impl FnOnce(Option<&str>) + Send + 'static) {
+        let mut test_callback = self.test_callback.lock().unwrap();
+
+        let cb = Box::new(cb);
+        *test_callback = Some(cb);
     }
 }
 
 #[inherent(pub)]
 impl glean_core::traits::Ping for PingType {
     fn submit(&self, reason: Option<&str>) {
+        let mut cb = self.test_callback.lock().unwrap();
+        let cb = cb.take();
+        if let Some(cb) = cb {
+            cb(reason)
+        }
+
         crate::submit_ping(self, reason)
     }
 }

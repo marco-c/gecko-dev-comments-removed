@@ -9,7 +9,7 @@ use crate::ipc::need_ipc;
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum Ping {
     Parent(glean::private::PingType),
     Child,
@@ -58,10 +58,7 @@ impl glean::traits::Ping for Ping {
                 glean::traits::Ping::submit(p, reason);
             }
             Ping::Child => {
-                log::error!(
-                    "Unable to submit ping {:?} in non-main process. Ignoring.",
-                    self
-                );
+                log::error!("Unable to submit ping in non-main process. Ignoring.");
                 
             }
         };
