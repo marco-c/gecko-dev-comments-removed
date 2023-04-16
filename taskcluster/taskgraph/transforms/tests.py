@@ -405,19 +405,8 @@ test_description_schema = Schema(
         
         Optional("built-projects-only"): bool,
         
-        
-        
-        Optional("fission-run-on-projects"): optionally_keyed_by(
-            "test-name", "test-platform", Any([text_type], "built-projects")
-        ),
-        
         Optional("tier"): optionally_keyed_by(
             "test-platform", "variant", "app", "subtest", Any(int, "default")
-        ),
-        
-        
-        Optional("fission-tier"): optionally_keyed_by(
-            "test-platform", Any(int, "default")
         ),
         
         
@@ -939,7 +928,6 @@ def handle_keyed_by(config, tasks):
         "e10s",
         "suite",
         "run-on-projects",
-        "fission-run-on-projects",
         "os-groups",
         "run-as-administrator",
         "workdir",
@@ -1331,9 +1319,6 @@ def handle_tier(config, tasks):
         if "tier" in task:
             resolve_keyed_by(task, "tier", item_name=task["test-name"])
 
-        if "fission-tier" in task:
-            resolve_keyed_by(task, "fission-tier", item_name=task["test-name"])
-
         
         if "tier" not in task or task["tier"] == "default":
             if task["test-platform"] in [
@@ -1408,33 +1393,12 @@ def apply_raptor_tier_optimization(config, tasks):
 
 
 @transforms.add
-def handle_fission_attributes(config, tasks):
-    """Handle run_on_projects for fission tasks."""
-    for task in tasks:
-
-        for attr in ("run-on-projects", "tier"):
-            fission_attr = task.pop("fission-{}".format(attr), None)
-
-            if (
-                task["attributes"].get("unittest_variant")
-                not in ("fission", "geckoview-fission", "fission-xorigin")
-            ) or fission_attr is None:
-                continue
-
-            task[attr] = fission_attr
-
-        yield task
-
-
-@transforms.add
 def disable_try_only_platforms(config, tasks):
     """Turns off platforms that should only run on try."""
     try_only_platforms = ("windows7-32-qr/.*",)
     for task in tasks:
         if any(re.match(k + "$", task["test-platform"]) for k in try_only_platforms):
             task["run-on-projects"] = []
-            if "fission-run-on-projects" in task:
-                task["fission-run-on-projects"] = []
         yield task
 
 
