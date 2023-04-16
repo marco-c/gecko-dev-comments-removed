@@ -14,6 +14,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/StaticPrefs_ui.h"
+#include "mozilla/widget/NativeMenu.h"
 #include "nsAtom.h"
 #include "nsGkAtoms.h"
 #include "nsCOMPtr.h"
@@ -167,12 +168,14 @@ class nsXULPopupShownEvent final : public mozilla::Runnable,
 
 class nsMenuPopupFrame final : public nsBoxFrame,
                                public nsMenuParent,
-                               public nsIReflowCallback {
+                               public nsIReflowCallback,
+                               public mozilla::widget::NativeMenu::Observer {
  public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsMenuPopupFrame)
 
   explicit nsMenuPopupFrame(ComputedStyle* aStyle, nsPresContext* aPresContext);
+  ~nsMenuPopupFrame();
 
   
   virtual nsMenuFrame* GetCurrentMenuItem() override;
@@ -318,6 +321,16 @@ class nsMenuPopupFrame final : public nsBoxFrame,
                                int32_t aYPos, bool aIsContextMenu);
 
   
+  
+  
+  bool InitializePopupAsNativeContextMenu(nsIContent* aTriggerContent,
+                                          int32_t aXPos, int32_t aYPos);
+
+  
+  
+  void ShowNativeMenu();
+
+  
   void ShowPopup(bool aIsContextMenu);
   
   
@@ -443,6 +456,10 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   virtual bool ReflowFinished() override;
   virtual void ReflowCallbackCanceled() override;
 
+  
+  void OnNativeMenuOpened() override {}
+  void OnNativeMenuClosed() override;
+
  protected:
   
   nsPopupLevel PopupLevel(bool aIsNoAutoHide) const;
@@ -560,6 +577,11 @@ class nsMenuPopupFrame final : public nsBoxFrame,
 
  protected:
   nsString mIncrementalString;  
+
+  
+  
+  
+  RefPtr<mozilla::widget::NativeMenu> mNativeMenu;
 
   
   
