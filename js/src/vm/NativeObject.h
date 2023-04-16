@@ -596,6 +596,11 @@ class NativeObject : public JSObject {
 
   
   
+  MOZ_ALWAYS_INLINE bool setLastPropertyForNewDataProperty(JSContext* cx,
+                                                           Shape* shape);
+
+  
+  
   
   void setIsSharedMemory() {
     MOZ_ASSERT(elements_ == emptyObjectElements);
