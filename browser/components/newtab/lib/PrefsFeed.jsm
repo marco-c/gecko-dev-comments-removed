@@ -161,17 +161,6 @@ this.PrefsFeed = class PrefsFeed {
     });
 
     
-    
-    let placeholderPrefValue = Services.prefs.getStringPref(
-      "browser.urlbar.placeholderName",
-      ""
-    );
-    values["urlbar.placeholderName"] = placeholderPrefValue;
-    this._prefMap.set("urlbar.placeholderName", {
-      value: placeholderPrefValue,
-    });
-
-    
     values.featureConfig = aboutNewTabFeature.getValue() || {};
     this._setBoolPref(values, "logowordmark.alwaysVisible", false);
     this._setBoolPref(values, "feeds.section.topstories", false);
