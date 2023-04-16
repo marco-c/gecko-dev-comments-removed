@@ -285,6 +285,16 @@ static bool sStagedUpdate = false;
 static bool sReplaceRequest = false;
 static bool sUsingService = false;
 
+
+
+
+
+
+
+
+
+static bool sCallbackIsBackgroundTask = false;
+
 #ifdef XP_WIN
 static NS_tchar gCallbackRelPath[MAXPATHLEN];
 static NS_tchar gCallbackBackupPath[MAXPATHLEN];
@@ -2668,6 +2678,35 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
 return 0;
 }
 
+bool IsCallbackBackgroundTask(int argc, NS_tchar** argv) {
+#ifdef MOZ_BACKGROUNDTASKS
+  
+  
+  
+  for (int i = 1; i < argc; ++i) {
+    NS_tchar* arg = argv[i];
+
+    
+    if (*arg == '-'
+#  if defined(XP_WIN)
+        || *arg == '/'
+#  endif
+    ) {
+      ++arg;
+
+      if (*arg == '-') {
+        ++arg;
+      }
+
+      if (NS_tstrcmp(arg, NS_T("backgroundtask")) == 0) {
+        return true;
+      }
+    }
+  }
+#endif  
+  return false;
+}
+
 int NS_main(int argc, NS_tchar** argv) {
 #ifdef MOZ_MAINTENANCE_SERVICE
   sUsingService = EnvHasValue("MOZ_USING_SERVICE");
@@ -2928,6 +2967,9 @@ int NS_main(int argc, NS_tchar** argv) {
 #endif
       return 1;
     }
+
+    sCallbackIsBackgroundTask =
+        IsCallbackBackgroundTask(argc - callbackIndex, argv + callbackIndex);
   }
 
 #ifdef XP_MACOSX
@@ -2942,7 +2984,9 @@ int NS_main(int argc, NS_tchar** argv) {
     if (t1.Run(ServeElevatedUpdateThreadFunc, &threadArgs) == 0) {
       
       
-      ShowProgressUI(true);
+      if (!sCallbackIsBackgroundTask) {
+        ShowProgressUI(true);
+      }
     }
     t1.Join();
 
@@ -3245,7 +3289,8 @@ int NS_main(int argc, NS_tchar** argv) {
         if (useService) {
           bool showProgressUI = false;
           
-          if (!sStagedUpdate) {
+          
+          if (!sStagedUpdate && !sCallbackIsBackgroundTask) {
             
             
             
@@ -3291,16 +3336,37 @@ int NS_main(int argc, NS_tchar** argv) {
 
       
       
-      
       if (!useService && sStagedUpdate) {
         if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
           CloseHandle(updateLockFileHandle);
         }
+        
+        
+        
         WriteStatusFile(UNEXPECTED_STAGING_ERROR);
         LOG(
             ("Non-critical update staging error! Falling back to non-staged "
              "updates and exiting"));
         output_finish();
+        
+        return 0;
+      }
+
+      
+      
+      if (!useService && sCallbackIsBackgroundTask) {
+        if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
+          CloseHandle(updateLockFileHandle);
+        }
+        
+        
+        
+        WriteStatusFile(BACKGROUND_TASK_NEEDED_ELEVATION_ERROR);
+        LOG(("Skipping update to avoid UAC prompt from background task."));
+        output_finish();
+
+        LaunchCallbackApp(argv[5], argc - callbackIndex, argv + callbackIndex,
+                          sUsingService);
         return 0;
       }
 
@@ -3677,7 +3743,7 @@ int NS_main(int argc, NS_tchar** argv) {
   
   Thread t;
   if (t.Run(UpdateThreadFunc, nullptr) == 0) {
-    if (!sStagedUpdate && !sReplaceRequest
+    if (!sStagedUpdate && !sReplaceRequest && !sCallbackIsBackgroundTask
 #ifdef XP_MACOSX
         && !isElevated
 #endif
