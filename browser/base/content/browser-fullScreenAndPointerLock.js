@@ -266,6 +266,7 @@ var FullScreen = {
     
     addEventListener("willenterfullscreen", this, true);
     addEventListener("willexitfullscreen", this, true);
+    addEventListener("MacFullscreenMenubarRevealUpdate", this, true);
 
     if (window.fullScreen) {
       this.toggle();
@@ -300,6 +301,7 @@ var FullScreen = {
       
       document.getElementById("enterFullScreenItem").hidden = enterFS;
       document.getElementById("exitFullScreenItem").hidden = !enterFS;
+      this.shiftMacToolbarDown(0);
     }
 
     if (!this._fullScrToggler) {
@@ -357,6 +359,34 @@ var FullScreen = {
     }
   },
 
+  
+
+
+
+
+
+  shiftMacToolbarDown(shiftSize) {
+    if (typeof shiftSize !== "number") {
+      Cu.reportError("Tried to shift the toolbar by a non-numeric distance.");
+      return;
+    }
+
+    
+    
+    shiftSize = shiftSize.toFixed(2);
+    let toolbox = document.getElementById("navigator-toolbox");
+    let browserEl = document.getElementById("browser");
+    if (shiftSize > 0) {
+      toolbox.style.setProperty("transform", `translateY(${shiftSize}px)`);
+      toolbox.style.setProperty("z-index", "2");
+      browserEl.style.setProperty("position", "relative");
+    } else {
+      toolbox.style.removeProperty("transform");
+      toolbox.style.removeProperty("z-index");
+      browserEl.style.removeProperty("position");
+    }
+  },
+
   handleEvent(event) {
     switch (event.type) {
       case "willenterfullscreen":
@@ -367,6 +397,9 @@ var FullScreen = {
         break;
       case "fullscreen":
         this.toggle();
+        break;
+      case "MacFullscreenMenubarRevealUpdate":
+        this.shiftMacToolbarDown(event.detail);
         break;
     }
   },
