@@ -313,10 +313,11 @@ navigate.waitForNavigationCompleted = async function waitForNavigationCompleted(
 
   
   
-  const onBrowsingContextDiscarded = (subject, topic) => {
+  const onBrowsingContextDiscarded = (subject, topic, why) => {
     
     
-    if (subject == browsingContextFn() && !subject.currentWindowGlobal) {
+    
+    if (subject == browsingContextFn() && why != "replace") {
       logger.trace(
         "Canceled page load listener " +
           `because browsing context with id ${subject.id} has been removed`
