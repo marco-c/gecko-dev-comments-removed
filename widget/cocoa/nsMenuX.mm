@@ -46,38 +46,6 @@ static bool gMenuMethodsSwizzled = false;
 int32_t nsMenuX::sIndexingMenuLevel = 0;
 
 
-
-
-
-@implementation MenuItemInfo
-
-- (id)initWithMenuGroupOwner:(nsMenuGroupOwnerX*)aMenuGroupOwner {
-  if ((self = [super init]) != nil) {
-    [self setMenuGroupOwner:aMenuGroupOwner];
-  }
-  return self;
-}
-
-- (void)dealloc {
-  [self setMenuGroupOwner:nullptr];
-  [super dealloc];
-}
-
-- (nsMenuGroupOwnerX*)menuGroupOwner {
-  return mMenuGroupOwner;
-}
-
-- (void)setMenuGroupOwner:(nsMenuGroupOwnerX*)aMenuGroupOwner {
-  
-  mMenuGroupOwner = aMenuGroupOwner;
-  if (aMenuGroupOwner) {
-    aMenuGroupOwner->AddMenuItemInfoToSet(self);
-  }
-}
-
-@end
-
-
 static void SwizzleDynamicIndexingMethods() {
   if (gMenuMethodsSwizzled) {
     return;
@@ -240,9 +208,7 @@ void nsMenuX::AddMenuItem(RefPtr<nsMenuItemX>&& aMenuItem) {
 
   
   newNativeMenuItem.tag = mMenuGroupOwner->RegisterForCommand(aMenuItem);
-  MenuItemInfo* info = [[MenuItemInfo alloc] initWithMenuGroupOwner:mMenuGroupOwner];
-  newNativeMenuItem.representedObject = info;
-  [info release];
+  newNativeMenuItem.representedObject = mMenuGroupOwner->GetRepresentedObject();
 
   aMenuItem->SetupIcon();
 

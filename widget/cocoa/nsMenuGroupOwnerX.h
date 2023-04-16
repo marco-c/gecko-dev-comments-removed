@@ -19,6 +19,8 @@ class nsChangeObserver;
 class nsIWidget;
 class nsIContent;
 
+@class MOZMenuItemRepresentedObject;
+
 class nsMenuGroupOwnerX : public nsMenuObjectX, public nsIMutationObserver {
  public:
   nsMenuGroupOwnerX();
@@ -30,7 +32,9 @@ class nsMenuGroupOwnerX : public nsMenuObjectX, public nsIMutationObserver {
   uint32_t RegisterForCommand(nsMenuItemX* aMenuItem);
   void UnregisterCommand(uint32_t aCommandID);
   nsMenuItemX* GetMenuItemForCommandID(uint32_t aCommandID);
-  void AddMenuItemInfoToSet(MenuItemInfo* aInfo);
+
+  
+  MOZMenuItemRepresentedObject* GetRepresentedObject() { return mRepresentedObject; }
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIMUTATIONOBSERVER
@@ -51,11 +55,13 @@ class nsMenuGroupOwnerX : public nsMenuObjectX, public nsIMutationObserver {
   
   nsTHashMap<nsUint32HashKey, nsMenuItemX*> mCommandToMenuObjectTable;
 
-  
-  
-  
-  
-  NSMutableSet* mInfoSet;
+  MOZMenuItemRepresentedObject* mRepresentedObject = nil;  
 };
+
+@interface MOZMenuItemRepresentedObject : NSObject
+- (id)initWithMenuGroupOwner:(nsMenuGroupOwnerX*)aMenuGroupOwner;
+- (void)setMenuGroupOwner:(nsMenuGroupOwnerX*)aMenuGroupOwner;
+- (nsMenuGroupOwnerX*)menuGroupOwner;
+@end
 
 #endif  
