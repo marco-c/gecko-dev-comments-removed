@@ -27,9 +27,21 @@ import { isNode } from '../environment.js';
 
 
 
-export interface BrowserOptions {
+
+export interface BrowserConnectOptions {
+  
+
+
+
   ignoreHTTPSErrors?: boolean;
+  
+
+
   defaultViewport?: Viewport;
+  
+
+
+
   slowMo?: number;
 }
 
@@ -46,7 +58,7 @@ const getWebSocketTransportClass = async () => {
 
 
 export const connectToBrowser = async (
-  options: BrowserOptions & {
+  options: BrowserConnectOptions & {
     browserWSEndpoint?: string;
     browserURL?: string;
     transport?: ConnectionTransport;

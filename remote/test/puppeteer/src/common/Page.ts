@@ -37,7 +37,11 @@ import { Browser, BrowserContext } from './Browser.js';
 import { Target } from './Target.js';
 import { createJSHandle, JSHandle, ElementHandle } from './JSHandle.js';
 import { Viewport } from './PuppeteerViewport.js';
-import { Credentials, NetworkManagerEmittedEvents } from './NetworkManager.js';
+import {
+  Credentials,
+  NetworkConditions,
+  NetworkManagerEmittedEvents,
+} from './NetworkManager.js';
 import { HTTPRequest } from './HTTPRequest.js';
 import { HTTPResponse } from './HTTPResponse.js';
 import { Accessibility } from './Accessibility.js';
@@ -131,21 +135,54 @@ interface MediaFeature {
   value: string;
 }
 
-interface ScreenshotClip {
+
+
+
+export interface ScreenshotClip {
   x: number;
   y: number;
   width: number;
   height: number;
 }
 
-interface ScreenshotOptions {
+
+
+
+export interface ScreenshotOptions {
+  
+
+
   type?: 'png' | 'jpeg';
+  
+
+
+
+
+
   path?: string;
+  
+
+
+
   fullPage?: boolean;
+  
+
+
   clip?: ScreenshotClip;
+  
+
+
   quality?: number;
+  
+
+
+
   omitBackground?: boolean;
-  encoding?: string;
+  
+
+
+
+  encoding?: 'base64' | 'binary';
 }
 
 
@@ -691,6 +728,14 @@ export class Page extends EventEmitter {
 
   setOfflineMode(enabled: boolean): Promise<void> {
     return this._frameManager.networkManager().setOfflineMode(enabled);
+  }
+
+  emulateNetworkConditions(
+    networkConditions: NetworkConditions | null
+  ): Promise<void> {
+    return this._frameManager
+      .networkManager()
+      .emulateNetworkConditions(networkConditions);
   }
 
   
@@ -1298,11 +1343,11 @@ export class Page extends EventEmitter {
     return helper.waitForEvent(
       this._frameManager.networkManager(),
       NetworkManagerEmittedEvents.Response,
-      (response) => {
+      async (response) => {
         if (helper.isString(urlOrPredicate))
           return urlOrPredicate === response.url();
         if (typeof urlOrPredicate === 'function')
-          return !!urlOrPredicate(response);
+          return !!(await urlOrPredicate(response));
         return false;
       },
       timeout,
@@ -1375,7 +1420,9 @@ export class Page extends EventEmitter {
       features.every((mediaFeature) => {
         const name = mediaFeature.name;
         assert(
-          /^prefers-(?:color-scheme|reduced-motion)$/.test(name),
+          /^(?:prefers-(?:color-scheme|reduced-motion)|color-gamut)$/.test(
+            name
+          ),
           'Unsupported media feature: ' + name
         );
         return true;
@@ -1670,18 +1717,6 @@ export class Page extends EventEmitter {
 
       
       clip = { x: 0, y: 0, width, height, scale: 1 };
-      const { isMobile = false, deviceScaleFactor = 1, isLandscape = false } =
-        this._viewport || {};
-      const screenOrientation: Protocol.Emulation.ScreenOrientation = isLandscape
-        ? { angle: 90, type: 'landscapePrimary' }
-        : { angle: 0, type: 'portraitPrimary' };
-      await this._client.send('Emulation.setDeviceMetricsOverride', {
-        mobile: isMobile,
-        width,
-        height,
-        deviceScaleFactor,
-        screenOrientation,
-      });
     }
     const shouldSetDefaultBackground =
       options.omitBackground && format === 'png';
@@ -1693,6 +1728,7 @@ export class Page extends EventEmitter {
       format,
       quality: options.quality,
       clip,
+      captureBeyondViewport: true,
     });
     if (shouldSetDefaultBackground)
       await this._client.send('Emulation.setDefaultBackgroundColorOverride');

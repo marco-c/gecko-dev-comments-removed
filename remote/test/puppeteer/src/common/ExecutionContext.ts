@@ -56,6 +56,10 @@ export class ExecutionContext {
 
 
   _contextId: number;
+  
+
+
+  _contextName: string;
 
   
 
@@ -68,6 +72,7 @@ export class ExecutionContext {
     this._client = client;
     this._world = world;
     this._contextId = contextPayload.id;
+    this._contextName = contextPayload.name;
   }
 
   

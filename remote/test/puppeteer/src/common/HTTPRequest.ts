@@ -50,6 +50,13 @@ export interface ResponseForRequest {
 
 
 
+export type ResourceType = Lowercase<Protocol.Network.ResourceType>;
+
+
+
+
+
+
 
 
 
@@ -108,7 +115,7 @@ export class HTTPRequest {
   private _allowInterception: boolean;
   private _interceptionHandled = false;
   private _url: string;
-  private _resourceType: string;
+  private _resourceType: ResourceType;
 
   private _method: string;
   private _postData?: string;
@@ -133,7 +140,7 @@ export class HTTPRequest {
     this._interceptionId = interceptionId;
     this._allowInterception = allowInterception;
     this._url = event.request.url;
-    this._resourceType = event.type.toLowerCase();
+    this._resourceType = event.type.toLowerCase() as ResourceType;
     this._method = event.request.method;
     this._postData = event.request.postData;
     this._frame = frame;
@@ -154,16 +161,7 @@ export class HTTPRequest {
 
 
 
-
-
-
-
-  resourceType(): string {
-    
-    
-    
-    
-    
+  resourceType(): ResourceType {
     return this._resourceType;
   }
 

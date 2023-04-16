@@ -14,15 +14,36 @@
 
 
 
+import { BrowserConnectOptions } from '../common/BrowserConnector.js';
+import { Product } from '../common/Product.js';
 
 
 
 
-export interface ChromeArgOptions {
+
+
+export interface BrowserLaunchArgumentOptions {
+  
+
+
+
   headless?: boolean;
-  args?: string[];
+  
+
+
+
+
   userDataDir?: string;
+  
+
+
+
+
   devtools?: boolean;
+  
+
+
+  args?: string[];
 }
 
 
@@ -30,13 +51,72 @@ export interface ChromeArgOptions {
 
 
 export interface LaunchOptions {
+  
+
+
+
+
   executablePath?: string;
+  
+
+
+
+
+
   ignoreDefaultArgs?: boolean | string[];
+  
+
+
+
   handleSIGINT?: boolean;
+  
+
+
+
   handleSIGTERM?: boolean;
+  
+
+
+
   handleSIGHUP?: boolean;
+  
+
+
+
+
   timeout?: number;
+  
+
+
+
+
   dumpio?: boolean;
+  
+
+
+
   env?: Record<string, string | undefined>;
+  
+
+
+
   pipe?: boolean;
+  
+
+
+
+  product?: Product;
+  
+
+
+  extraPrefsFirefox?: Record<string, unknown>;
 }
+
+
+
+
+
+
+export type PuppeteerNodeLaunchOptions = BrowserLaunchArgumentOptions &
+  LaunchOptions &
+  BrowserConnectOptions;

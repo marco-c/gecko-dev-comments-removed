@@ -14,6 +14,19 @@
 
 
 
+import {
+  LaunchOptions,
+  BrowserLaunchArgumentOptions,
+} from './node/LaunchOptions.js';
+import { BrowserConnectOptions } from './common/BrowserConnector.js';
+import { Product } from './common/Product.js';
+import { Browser } from './common/Browser.js';
+import { ConnectOptions } from './common/Puppeteer.js';
+import { DevicesMap } from './common/DeviceDescriptors.js';
+import { PuppeteerErrors } from './common/Errors.js';
+import { PredefinedNetworkConditions } from './common/NetworkConditions.js';
+import { CustomQueryHandler } from './common/QueryHandler.js';
+
 
 
 
@@ -30,6 +43,7 @@ export * from './common/Accessibility.js';
 export * from './common/Browser.js';
 export * from './node/BrowserFetcher.js';
 export * from './node/Puppeteer.js';
+export * from './common/Coverage.js';
 export * from './common/Connection.js';
 export * from './common/ConsoleMessage.js';
 export * from './common/Coverage.js';
@@ -41,6 +55,7 @@ export * from './common/ExecutionContext.js';
 export * from './common/EventEmitter.js';
 export * from './common/FileChooser.js';
 export * from './common/FrameManager.js';
+export * from './common/PuppeteerViewport.js';
 export * from './common/Input.js';
 export * from './common/Page.js';
 export * from './common/Product.js';
@@ -62,4 +77,75 @@ export * from './common/PDFOptions.js';
 export * from './common/TimeoutSettings.js';
 export * from './common/LifecycleWatcher.js';
 export * from './common/QueryHandler.js';
+export * from './common/NetworkConditions.js';
 export * from 'devtools-protocol/types/protocol';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export declare function launch(
+  options?: LaunchOptions &
+    BrowserLaunchArgumentOptions &
+    BrowserConnectOptions & {
+      product?: Product;
+      extraPrefsFirefox?: Record<string, unknown>;
+    }
+): Promise<Browser>;
+
+
+
+
+
+export declare function connect(options: ConnectOptions): Promise<Browser>;
+
+
+
+
+
+export let devices: DevicesMap;
+
+
+
+export let errors: PuppeteerErrors;
+
+
+
+export let networkConditions: PredefinedNetworkConditions;
+
+
+
+
+
+export declare function registerCustomQueryHandler(
+  name: string,
+  queryHandler: CustomQueryHandler
+): void;
+
+
+
+
+
+export declare function unregisterCustomQueryHandler(name: string): void;
+
+
+
+
+export declare function customQueryHandlerNames(): string[];
+
+
+
+
+export declare function clearCustomQueryHandlers(): void;

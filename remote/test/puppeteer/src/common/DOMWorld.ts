@@ -115,6 +115,7 @@ export class DOMWorld {
 
   async _setContext(context?: ExecutionContext): Promise<void> {
     if (context) {
+      this._ctxBindings.clear();
       this._contextResolveCallback.call(null, context);
       this._contextResolveCallback = null;
       for (const waitTask of this._waitTasks) waitTask.rerun();
@@ -512,9 +513,12 @@ export class DOMWorld {
     const bind = async (name: string) => {
       const expression = helper.pageBindingInitString('internal', name);
       try {
+        
         await context._client.send('Runtime.addBinding', {
           name,
-          executionContextId: context._contextId,
+          
+          
+          executionContextName: context._contextName,
         });
         await context.evaluate(expression);
       } catch (error) {
