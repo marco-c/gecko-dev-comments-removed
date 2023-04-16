@@ -354,12 +354,13 @@ class TRRServer {
   
   
   
-  async registerDoHAnswers(name, type, answers, additionals, delay = 0) {
-    let text = `global.dns_query_answers["${name}/${type}"] = ${JSON.stringify({
-      answers,
-      additionals,
-      delay,
-    })}`;
+  
+  
+  
+  async registerDoHAnswers(name, type, response = {}) {
+    let text = `global.dns_query_answers["${name}/${type}"] = ${JSON.stringify(
+      response
+    )}`;
     return this.execute(text);
   }
 }
