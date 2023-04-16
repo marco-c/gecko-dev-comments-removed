@@ -167,10 +167,11 @@ async def download(url, dest, mode=None):
                         log_interval = chunk_size * 1024
             end = time.time()
             log.info(
-                "Downloaded %s, %s bytes in %s seconds",
+                "Downloaded %s, %s bytes in %s seconds: sha256:%s",
                 url,
                 bytes_downloaded,
                 int(end - start),
+                get_hash(dest, hash_alg="sha256"),
             )
             if mode:
                 log.info("chmod %o %s", mode, dest)
