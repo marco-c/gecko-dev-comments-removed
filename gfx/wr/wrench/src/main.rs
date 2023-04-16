@@ -762,11 +762,19 @@ fn main() {
         let second_filename = subargs.value_of("second_filename").unwrap();
         perf::compare(first_filename, second_filename);
         return;
+    } else if let Some(_) = args.subcommand_matches("test_init") {
+        
+        
+        println!("Initialization successful");
     } else {
         panic!("Should never have gotten here! {:?}", args);
     };
 
     wrench.renderer.deinit();
+
+    
+    #[cfg(target_os = "android")]
+    process::exit(0);
 }
 
 fn render<'a>(
