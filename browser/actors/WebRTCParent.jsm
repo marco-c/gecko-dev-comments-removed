@@ -724,6 +724,16 @@ function prompt(aActor, aBrowser, aRequest) {
         accessKey: stringBundle.getString("getUserMedia.block.accesskey"),
         callback(aState) {
           aActor.denyRequest(aRequest);
+
+          
+          
+          
+          clearTemporaryGrants(
+            notification.browser,
+            videoDevices.length && !sharingScreen,
+            audioDevices.length
+          );
+
           let scope = SitePermissions.SCOPE_TEMPORARY;
           if (aState && aState.checkboxChecked) {
             scope = SitePermissions.SCOPE_PERSISTENT;
@@ -1377,4 +1387,34 @@ function removePrompt(aBrowser, aCallId) {
   if (notification && notification.callID == aCallId) {
     notification.remove();
   }
+}
+
+
+
+
+
+
+
+function clearTemporaryGrants(browser, clearCamera, clearMicrophone) {
+  if (!clearCamera && !clearMicrophone) {
+    
+    return;
+  }
+  let perms = SitePermissions.getAllForBrowser(browser);
+  perms
+    .filter(perm => {
+      let [id, key] = perm.id.split(SitePermissions.PERM_KEY_DELIMITER);
+      
+      
+      return (
+        key &&
+        perm.state == SitePermissions.ALLOW &&
+        perm.scope == SitePermissions.SCOPE_TEMPORARY &&
+        ((clearCamera && id == "camera") ||
+          (clearMicrophone && id == "microphone"))
+      );
+    })
+    .forEach(perm =>
+      SitePermissions.removeFromPrincipal(null, perm.id, browser)
+    );
 }
