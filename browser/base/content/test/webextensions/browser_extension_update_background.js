@@ -140,8 +140,11 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
   
   
   
-  let list = document.getElementById("addon-webext-perm-list");
-  is(list.childElementCount, 1, "Permissions list contains 1 entry");
+  let singlePermissionEl = document.getElementById(
+    "addon-webext-perm-single-entry"
+  );
+  ok(!singlePermissionEl.hidden, "Single permission entry is not hidden");
+  ok(singlePermissionEl.textContent, "Single permission entry text is set");
 
   
   panel.secondaryButton.click();
