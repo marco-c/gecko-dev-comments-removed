@@ -40,6 +40,7 @@ var SearchTestUtils = {
       this._isMochitest = false;
       
       gTestScope.ExtensionTestUtils = ExtensionTestUtils;
+      this.initXPCShellAddonManager(testScope);
     }
   },
 
@@ -174,7 +175,11 @@ var SearchTestUtils = {
       "extensions.webextensions.background-delayed-startup",
       false
     );
-    gTestScope.ExtensionTestUtils.init(scope);
+    
+    if (!this._initedTestUtils) {
+      gTestScope.ExtensionTestUtils.init(scope);
+      this._initedTestUtils = true;
+    }
     AddonTestUtils.usePrivilegedSignatures = usePrivilegedSignatures;
     AddonTestUtils.overrideCertDB();
   },
@@ -195,12 +200,9 @@ var SearchTestUtils = {
 
 
 
-
-
-
-
-
   async installSearchExtension(options = {}, skipUnload = false) {
+    await Services.search.init();
+
     let extensionInfo = {
       useAddonManager: "permanent",
       manifest: this.createEngineManifest(options),
@@ -222,13 +224,18 @@ var SearchTestUtils = {
       await AddonTestUtils.waitForSearchProviderStartup(extension);
     }
 
+    
+    
+    if (!skipUnload && !this._isMochitest) {
+      gTestScope.registerCleanupFunction(async () => {
+        await extension.unload();
+      });
+    }
+
     return extension;
   },
 
   
-
-
-
 
 
 
