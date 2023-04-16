@@ -1028,8 +1028,7 @@ class ActivePS {
       
       
       
-      aWriter.DoubleProperty("activeBrowsingContextID",
-                             sInstance->mActiveTabID);
+      aWriter.DoubleProperty("activeTabID", sInstance->mActiveTabID);
     }
     aWriter.EndObject();
   }
@@ -2538,7 +2537,7 @@ static void StreamMetaJSCustomObject(
     const PreRecordedMetaInformation& aPreRecordedMetaInformation) {
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
-  aWriter.IntProperty("version", 22);
+  aWriter.IntProperty("version", 23);
 
   
   
