@@ -174,6 +174,10 @@ typedef struct _nsCocoaWindowList {
 @interface MOZTitlebarView : NSVisualEffectView
 @end
 
+@interface FullscreenTitlebarTracker : NSTitlebarAccessoryViewController
+- (FullscreenTitlebarTracker*)init;
+@end
+
 
 @interface ToolbarWindow : BaseWindow {
   
@@ -181,9 +185,18 @@ typedef struct _nsCocoaWindowList {
   
   
   MOZTitlebarView* mTitlebarView;  
+  
+  
+  
+  FullscreenTitlebarTracker* mFullscreenTitlebarTracker;
 
   CGFloat mUnifiedToolbarHeight;
   CGFloat mSheetAttachmentPosition;
+  CGFloat mMenuBarHeight;
+  
+
+
+  CGFloat mInitialTitlebarHeight;
   NSRect mWindowButtonsRect;
 }
 - (void)setUnifiedToolbarHeight:(CGFloat)aHeight;

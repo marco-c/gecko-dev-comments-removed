@@ -114,6 +114,12 @@ class nsIWidgetListener {
   
 
 
+  virtual void MacFullscreenMenubarOverlapChanged(
+      mozilla::DesktopCoord aOverlapAmount);
+
+  
+
+
   virtual void OcclusionStateChanged(bool aIsFullyOccluded);
 
   
