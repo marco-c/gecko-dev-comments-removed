@@ -573,7 +573,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
   
 
-  nsIContent* GetFocusedContent();
+  dom::Element* GetFocusedElement();
   bool IsShellVisible(nsIDocShell* aShell);
 
   
