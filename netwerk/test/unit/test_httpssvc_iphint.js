@@ -43,8 +43,6 @@ function setup() {
   
   prefs.setBoolPref("network.dns.native-is-localhost", true);
 
-  
-  prefs.setIntPref("network.trr.mode", 2); 
   prefs.setBoolPref("network.trr.wait-for-portal", false);
   
   prefs.setCharPref("network.trr.confirmationNS", "skip");
@@ -66,11 +64,10 @@ function setup() {
 
 setup();
 registerCleanupFunction(() => {
+  prefs.clearUserPref("network.trr.mode");
   prefs.clearUserPref("network.http.spdy.enabled");
   prefs.clearUserPref("network.http.spdy.enabled.http2");
   prefs.clearUserPref("network.dns.localDomains");
-  prefs.clearUserPref("network.dns.native-is-localhost");
-  prefs.clearUserPref("network.trr.mode");
   prefs.clearUserPref("network.trr.uri");
   prefs.clearUserPref("network.trr.credentials");
   prefs.clearUserPref("network.trr.wait-for-portal");
@@ -82,6 +79,7 @@ registerCleanupFunction(() => {
   prefs.clearUserPref("network.trr.clear-cache-on-pref-change");
   prefs.clearUserPref("network.dns.upgrade_with_https_rr");
   prefs.clearUserPref("network.dns.use_https_rr_as_altsvc");
+  prefs.clearUserPref("network.dns.native-is-localhost");
 });
 
 class DNSListener {
