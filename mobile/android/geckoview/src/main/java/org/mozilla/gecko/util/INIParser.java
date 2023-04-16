@@ -156,27 +156,4 @@ public final class INIParser extends INISection {
         getSections();
         return mSections.get(key);
     }
-
-    
-    public void removeSection(final String name) {
-        
-        getSections();
-        mSections.remove(name);
-    }
-
-    
-    
-    public void renameSection(final String oldName, final String newName) {
-        
-        getSections();
-
-        mSections.remove(newName);
-        final INISection section = mSections.get(oldName);
-        if (section == null)
-            return;
-
-        section.setName(newName);
-        mSections.remove(oldName);
-        mSections.put(newName, section);
-    }
 }
