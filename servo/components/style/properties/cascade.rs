@@ -424,6 +424,10 @@ fn tweak_when_ignoring_colors(
     match **declaration {
         PropertyDeclaration::BackgroundColor(ref color) => {
             
+            if color.is_system() {
+                return;
+            }
+            
             
             
             
@@ -441,6 +445,9 @@ fn tweak_when_ignoring_colors(
         },
         PropertyDeclaration::Color(ref color) => {
             
+            if color.0.is_system() {
+                return;
+            }
             if alpha_channel(&color.0, context) == 0 {
                 return;
             }
