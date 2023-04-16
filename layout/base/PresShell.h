@@ -95,9 +95,7 @@ class GeckoMVMContext;
 class OverflowChangedTracker;
 class StyleSheet;
 
-#ifdef MOZ_GECKO_PROFILER
 class ProfileChunkedBuffer;
-#endif
 
 #ifdef ACCESSIBILITY
 namespace a11y {
@@ -2867,13 +2865,11 @@ class PresShell final : public nsStubDocumentObserver,
   
   DirtyRootsList mDirtyRoots;
 
-#ifdef MOZ_GECKO_PROFILER
   
   
   
   UniquePtr<ProfileChunkedBuffer> mStyleCause;
   UniquePtr<ProfileChunkedBuffer> mReflowCause;
-#endif
 
   nsTArray<UniquePtr<DelayedEvent>> mDelayedEvents;
 

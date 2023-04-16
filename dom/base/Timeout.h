@@ -14,10 +14,7 @@
 #include "nsGlobalWindowInner.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTHashMap.h"
-
-#ifdef MOZ_GECKO_PROFILER
-#  include "mozilla/ProfileChunkedBuffer.h"
-#endif
+#include "GeckoProfiler.h"
 
 namespace mozilla {
 namespace dom {
@@ -118,11 +115,9 @@ class Timeout final : protected LinkedListElement<RefPtr<Timeout>> {
     LinkedListElement<RefPtr<Timeout>>::remove();
   }
 
-#ifdef MOZ_GECKO_PROFILER
   UniquePtr<ProfileChunkedBuffer> TakeProfilerBacktrace() {
     return std::move(mCause);
   }
-#endif
 
  private:
   
@@ -158,9 +153,7 @@ class Timeout final : protected LinkedListElement<RefPtr<Timeout>> {
   
   TimeDuration mInterval;
 
-#ifdef MOZ_GECKO_PROFILER
   UniquePtr<ProfileChunkedBuffer> mCause;
-#endif
 
   
   uint32_t mTimeoutId;

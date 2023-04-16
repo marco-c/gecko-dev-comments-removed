@@ -579,18 +579,18 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
   
   PROFILER_JS_INTERRUPT_CALLBACK();
 
-#ifdef MOZ_GECKO_PROFILER
-  nsDependentCString filename("unknown file");
-  JS::AutoFilename scriptFilename;
-  
-  
-  if (JS::DescribeScriptedCaller(cx, &scriptFilename)) {
-    if (const char* file = scriptFilename.get()) {
-      filename.Assign(file, strlen(file));
+  if (profiler_can_accept_markers()) {
+    nsDependentCString filename("unknown file");
+    JS::AutoFilename scriptFilename;
+    
+    
+    if (JS::DescribeScriptedCaller(cx, &scriptFilename)) {
+      if (const char* file = scriptFilename.get()) {
+        filename.Assign(file, strlen(file));
+      }
+      PROFILER_MARKER_TEXT("JS::InterruptCallback", JS, {}, filename);
     }
-    PROFILER_MARKER_TEXT("JS::InterruptCallback", JS, {}, filename);
   }
-#endif
 
   
   

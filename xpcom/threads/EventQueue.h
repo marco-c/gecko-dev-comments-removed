@@ -93,19 +93,15 @@ class EventQueueInternal {
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     size_t size = mQueue.ShallowSizeOfExcludingThis(aMallocSizeOf);
-#ifdef MOZ_GECKO_PROFILER
     size += mDispatchTimes.ShallowSizeOfExcludingThis(aMallocSizeOf);
-#endif
     return size;
   }
 
  private:
   mozilla::Queue<nsCOMPtr<nsIRunnable>, ItemsPerPage> mQueue;
-#ifdef MOZ_GECKO_PROFILER
   
   mozilla::Queue<mozilla::TimeStamp, ItemsPerPage> mDispatchTimes;
   TimeDuration mLastEventDelay;
-#endif
   
   
   bool mForwardToTC;

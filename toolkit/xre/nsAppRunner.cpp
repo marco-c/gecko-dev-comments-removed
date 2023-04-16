@@ -107,9 +107,7 @@
 #  include "mozilla/WindowsProcessMitigations.h"
 #  include "mozilla/WinHeaderOnlyUtils.h"
 #  include "mozilla/mscom/ProcessRuntime.h"
-#  if defined(MOZ_GECKO_PROFILER)
-#    include "mozilla/mscom/ProfilerMarkers.h"
-#  endif  
+#  include "mozilla/mscom/ProfilerMarkers.h"
 #  include "mozilla/widget/AudioSession.h"
 #  include "WinTokenUtils.h"
 
@@ -4895,10 +4893,8 @@ nsresult XREMain::XRE_mainRun() {
   auto dllServicesDisable =
       MakeScopeExit([&dllServices]() { dllServices->DisableFull(); });
 
-#  if defined(MOZ_GECKO_PROFILER)
   mozilla::mscom::InitProfilerMarkers();
-#  endif  
-#endif    
+#endif  
 
   
   

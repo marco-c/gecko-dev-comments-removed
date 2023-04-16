@@ -54,16 +54,13 @@ void EventQueueInternal<ItemsPerPage>::PutEvent(
     return;
   }
 
-#ifdef MOZ_GECKO_PROFILER
-  
-  if (profiler_is_active()) {
+  if (profiler_thread_is_being_profiled()) {
     
     while (mDispatchTimes.Count() < mQueue.Count()) {
       mDispatchTimes.Push(TimeStamp());
     }
     mDispatchTimes.Push(aDelay ? TimeStamp::Now() - *aDelay : TimeStamp::Now());
   }
-#endif
 
   mQueue.Push(std::move(event));
 }
@@ -78,7 +75,6 @@ already_AddRefed<nsIRunnable> EventQueueInternal<ItemsPerPage>::GetEvent(
     return nullptr;
   }
 
-#ifdef MOZ_GECKO_PROFILER
   
   
   
@@ -99,7 +95,6 @@ already_AddRefed<nsIRunnable> EventQueueInternal<ItemsPerPage>::GetEvent(
       *aLastEventDelay = TimeDuration();
     }
   }
-#endif
 
   nsCOMPtr<nsIRunnable> result = mQueue.Pop();
   return result.forget();
