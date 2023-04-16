@@ -48,7 +48,10 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
                              MBasicBlock* maybePred, uint32_t popped);
 
   
-  bool unreachable_;
+  bool unreachable_ = false;
+
+  
+  bool alwaysBails_ = false;
 
   
   void pushVariable(uint32_t slot) { push(slots_[slot]); }
@@ -131,6 +134,10 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   }
   void setUnreachableUnchecked() { unreachable_ = true; }
   bool unreachable() const { return unreachable_; }
+
+  void setAlwaysBails() { alwaysBails_ = true; }
+  bool alwaysBails() const { return alwaysBails_; }
+
   
   void pick(int32_t depth);
 
