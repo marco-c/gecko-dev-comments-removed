@@ -1285,6 +1285,7 @@ void TrackBuffersManager::OnDemuxerInitDone(const MediaResult& aResult) {
     
     
     if (!mFirstInitializationSegmentReceived) {
+      MSE_DEBUG("Get first init data");
       mAudioTracks.mNumTracks = numAudios;
       
       
@@ -1420,6 +1421,7 @@ void TrackBuffersManager::OnDemuxerInitDone(const MediaResult& aResult) {
       
       mFirstInitializationSegmentReceived = true;
     } else {
+      MSE_DEBUG("Get new init data");
       mAudioTracks.mLastInfo = new TrackInfoSharedPtr(info.mAudio, streamID);
       mVideoTracks.mLastInfo = new TrackInfoSharedPtr(info.mVideo, streamID);
     }
@@ -1475,6 +1477,7 @@ void TrackBuffersManager::OnDemuxerInitDone(const MediaResult& aResult) {
 }
 
 void TrackBuffersManager::OnDemuxerInitFailed(const MediaResult& aError) {
+  MSE_DEBUG("");
   MOZ_ASSERT(aError != NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA);
   mDemuxerInitRequest.Complete();
 
