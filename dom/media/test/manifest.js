@@ -557,6 +557,15 @@ var gPlayTests = [
     height: 240,
     duration: 3.13,
   },
+  
+  
+  {
+    name: "no-container-codec-delay.webm",
+    type: "video/webm",
+  },
+  
+  
+  { name: "invalid-preskip.webm", type: "audio/webm; codecs=opus" },
 
   
   { name: "bogus.duh", type: "bogus/duh", duration: Number.NaN },
@@ -711,7 +720,6 @@ var gInvalidTests = [
   { name: "invalid-cmap-s0c0.opus", type: "audio/ogg; codecs=opus" },
   { name: "invalid-cmap-s0c2.opus", type: "audio/ogg; codecs=opus" },
   { name: "invalid-cmap-s1c2.opus", type: "audio/ogg; codecs=opus" },
-  { name: "invalid-preskip.webm", type: "audio/webm; codecs=opus" },
 ];
 
 var gInvalidPlayTests = [
