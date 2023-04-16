@@ -62,7 +62,15 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   mozilla::Maybe<MenuChild> GetVisibleItemAt(uint32_t aPos);
   nsresult GetVisibleItemCount(uint32_t& aCount);
 
+  
+  
+  
+  
   nsEventStatus MenuOpened();
+
+  
+  
+  
   void MenuClosed();
   void SetRebuild(bool aMenuEvent);
   void SetupIcon();

@@ -715,7 +715,10 @@ void nsMenuX::Dump(uint32_t aIndent) const {
       return;
     }
   }
-  mGeckoMenu->MenuOpened();
+
+  
+  RefPtr<nsMenuX> geckoMenu = mGeckoMenu;
+  geckoMenu->MenuOpened();
 }
 
 - (void)menuDidClose:(NSMenu*)menu {
@@ -730,7 +733,9 @@ void nsMenuX::Dump(uint32_t aIndent) const {
     return;
   }
 
-  mGeckoMenu->MenuClosed();
+  
+  RefPtr<nsMenuX> geckoMenu = mGeckoMenu;
+  geckoMenu->MenuClosed();
 }
 
 @end
