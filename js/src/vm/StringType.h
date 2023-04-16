@@ -311,16 +311,20 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   static const uint32_t LATIN1_CHARS_BIT = js::Bit(9);
 
-  static const uint32_t INDEX_VALUE_BIT = js::Bit(10);
+  
+  
+  static const uint32_t ATOM_IS_INDEX = js::Bit(10);
+
+  static const uint32_t INDEX_VALUE_BIT = js::Bit(11);
   static const uint32_t INDEX_VALUE_SHIFT = 16;
 
   
-  static const uint32_t NON_DEDUP_BIT = js::Bit(11);
+  static const uint32_t NON_DEDUP_BIT = js::Bit(12);
 
   
   
   
-  static const uint32_t IN_STRING_TO_ATOM_CACHE = js::Bit(12);
+  static const uint32_t IN_STRING_TO_ATOM_CACHE = js::Bit(13);
 
   static const uint32_t MAX_LENGTH = JS::MaxStringLength;
 
@@ -881,18 +885,9 @@ class JSLinearString : public JSString {
 
 
 
-  bool isIndex(uint32_t* indexp) const {
-    MOZ_ASSERT(JSString::isLinear());
+  inline bool isIndex(uint32_t* indexp) const;
 
-    if (JSString::hasIndexValue()) {
-      *indexp = getIndexValue();
-      return true;
-    }
-
-    return isIndexSlow(indexp);
-  }
-
-  void maybeInitializeIndex(uint32_t index, bool allowAtom = false) {
+  void maybeInitializeIndexValue(uint32_t index, bool allowAtom = false) {
     MOZ_ASSERT(JSString::isLinear());
     MOZ_ASSERT_IF(hasIndexValue(), getIndexValue() == index);
     MOZ_ASSERT_IF(!allowAtom, !isAtom());
@@ -1166,6 +1161,29 @@ class JSAtom : public JSLinearString {
   MOZ_ALWAYS_INLINE void morphIntoPermanentAtom() {
     MOZ_ASSERT(static_cast<JSString*>(this)->isAtom());
     setFlagBit(PERMANENT_ATOM_MASK);
+  }
+
+  MOZ_ALWAYS_INLINE bool isIndex() const {
+    MOZ_ASSERT(JSString::isAtom());
+    mozilla::DebugOnly<uint32_t> index;
+    MOZ_ASSERT(!!(flags() & ATOM_IS_INDEX) == isIndexSlow(&index));
+    return flags() & ATOM_IS_INDEX;
+  }
+  MOZ_ALWAYS_INLINE bool isIndex(uint32_t* index) const {
+    MOZ_ASSERT(JSString::isAtom());
+    if (!isIndex()) {
+      return false;
+    }
+    *index = hasIndexValue() ? getIndexValue() : getIndexSlow();
+    return true;
+  }
+
+  uint32_t getIndexSlow() const;
+
+  void setIsIndex(uint32_t index) {
+    MOZ_ASSERT(JSString::isAtom());
+    setFlagBit(ATOM_IS_INDEX);
+    maybeInitializeIndexValue(index,  true);
   }
 
   inline js::HashNumber hash() const;
@@ -1971,11 +1989,23 @@ MOZ_ALWAYS_INLINE const char16_t* JSLinearString::rawTwoByteChars() const {
 }
 
 inline js::PropertyName* JSAtom::asPropertyName() {
-#ifdef DEBUG
-  uint32_t dummy;
-  MOZ_ASSERT(!isIndex(&dummy));
-#endif
+  MOZ_ASSERT(!isIndex());
   return static_cast<js::PropertyName*>(this);
+}
+
+inline bool JSLinearString::isIndex(uint32_t* indexp) const {
+  MOZ_ASSERT(JSString::isLinear());
+
+  if (isAtom()) {
+    return asAtom().isIndex(indexp);
+  }
+
+  if (JSString::hasIndexValue()) {
+    *indexp = getIndexValue();
+    return true;
+  }
+
+  return isIndexSlow(indexp);
 }
 
 inline size_t JSLinearString::allocSize() const {
