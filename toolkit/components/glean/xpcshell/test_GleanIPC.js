@@ -99,7 +99,7 @@ add_task({ skip_if: () => runningInParent }, async function run_child_stuff() {
   Glean.testOnly.cheesyStringList.add(CHEESIER_STRING);
 
   Glean.testOnlyIpc.noExtraEvent.record();
-  Glean.testOnlyIpc.anEvent.record();
+  Glean.testOnlyIpc.anEvent.record(EVENT_EXTRA);
 
   for (let memory of MEMORIES) {
     Glean.testOnly.doYouRemember.accumulate(memory);
@@ -150,12 +150,16 @@ add_task(
       Assert.ok(count == 1 && MEMORY_BUCKETS.includes(bucket));
     }
 
-    
-    
-    
-    
-    
-    
+    var events = Glean.testOnlyIpc.noExtraEvent.testGetValue();
+    Assert.equal(1, events.length);
+    Assert.equal("test_only.ipc", events[0].category);
+    Assert.equal("no_extra_event", events[0].name);
+
+    events = Glean.testOnlyIpc.anEvent.testGetValue();
+    Assert.equal(1, events.length);
+    Assert.equal("test_only.ipc", events[0].category);
+    Assert.equal("an_event", events[0].name);
+    Assert.deepEqual(EVENT_EXTRA, events[0].extra);
 
     
 

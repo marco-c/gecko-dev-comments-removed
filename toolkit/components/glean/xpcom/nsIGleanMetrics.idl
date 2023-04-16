@@ -389,6 +389,28 @@ interface nsIGleanEvent : nsISupports
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   [implicit_jscontext]
   jsval testGetValue([optional] in AUTF8String aPingName);
 };
