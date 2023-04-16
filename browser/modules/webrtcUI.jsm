@@ -651,13 +651,8 @@ var webrtcUI = {
     let actor = sharingState.browsingContext.currentWindowGlobal.getActor(
       "WebRTC"
     );
-
-    
-    
-    
-    webrtcUI.forgetActivePermissionsFromBrowser(browser);
-
     windowIds.forEach(id => actor.sendAsyncMessage("webrtc:StopSharing", id));
+    webrtcUI.forgetActivePermissionsFromBrowser(browser);
   },
 
   updateIndicators(aTopBrowsingContext) {
@@ -687,20 +682,8 @@ var webrtcUI = {
     }
   },
 
-  
-
-
-
-
-
-
   forgetActivePermissionsFromBrowser(aBrowser) {
-    let browserWindowIds = aBrowser.browsingContext
-      .getAllBrowsingContextsInSubtree()
-      .map(bc => bc.currentWindowGlobal?.outerWindowId)
-      .filter(id => id != null);
-    browserWindowIds.push(aBrowser.outerWindowId);
-    browserWindowIds.forEach(id => this.activePerms.delete(id));
+    this.activePerms.delete(aBrowser.outerWindowID);
   },
 
   showSharingDoorhanger(aActiveStream) {
