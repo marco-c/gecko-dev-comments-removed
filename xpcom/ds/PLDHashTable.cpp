@@ -697,20 +697,15 @@ PLDHashTable::EntryHandle::EntryHandle(EntryHandle&& aOther) noexcept
       mKeyHash(aOther.mKeyHash),
       mSlot(aOther.mSlot) {}
 
+#ifdef MOZ_HASH_TABLE_CHECKS_ENABLED
 PLDHashTable::EntryHandle::~EntryHandle() {
   if (!mTable) {
     return;
   }
 
-  
-  
-  if (!HasEntry()) {
-    mTable->ShrinkIfAppropriate();
-  }
-#ifdef MOZ_HASH_TABLE_CHECKS_ENABLED
   mTable->mChecker.EndWriteOp();
-#endif
 }
+#endif
 
 void PLDHashTable::EntryHandle::Remove() {
   MOZ_ASSERT(HasEntry());
