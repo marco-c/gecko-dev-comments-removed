@@ -418,8 +418,7 @@ class LookAndFeel {
   
   
   enum class FontID {
-    Caption = 1,  
-    MINIMUM = Caption,
+    Caption = 0,  
     Icon,
     Menu,
     MessageBox,
@@ -439,7 +438,8 @@ class LookAndFeel {
 
     Tooltips,  
     Widget,
-    MAXIMUM = Widget,
+
+    End,  
   };
 
   
