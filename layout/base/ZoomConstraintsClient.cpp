@@ -229,6 +229,11 @@ void ZoomConstraintsClient::RefreshZoomConstraints() {
     mZoomConstraints.mAllowDoubleTapZoom = false;
   }
 
+  if (nsContentUtils::IsPDFJS(mDocument->GetPrincipal())) {
+    ZCC_LOG("%p is pdf.js viewer, disallowing double tap zooming\n", this);
+    mZoomConstraints.mAllowDoubleTapZoom = false;
+  }
+
   
   
   
