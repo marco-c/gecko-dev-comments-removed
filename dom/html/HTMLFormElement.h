@@ -636,6 +636,13 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   bool IsSubmitting() const;
 
   NotNull<const Encoding*> GetSubmitEncoding();
+
+  
+
+
+
+  void MaybeFireFormRemoved();
+
   ~HTMLFormElement();
 };
 

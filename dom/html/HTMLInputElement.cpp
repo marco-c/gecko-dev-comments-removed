@@ -4240,6 +4240,10 @@ nsresult HTMLInputElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 }
 
 void HTMLInputElement::UnbindFromTree(bool aNullParent) {
+  if (mType == NS_FORM_INPUT_PASSWORD) {
+    MaybeFireInputPasswordRemoved();
+  }
+
   
   
   
@@ -7032,6 +7036,29 @@ already_AddRefed<nsINodeList> HTMLInputElement::GetLabels() {
   }
 
   return nsGenericHTMLElement::Labels();
+}
+
+void HTMLInputElement::MaybeFireInputPasswordRemoved() {
+  
+  
+  
+  Document* doc = GetComposedDoc();
+  nsIDocShell* container = doc ? doc->GetDocShell() : nullptr;
+  if (!container) {
+    return;
+  }
+
+  
+  
+  
+  if (!doc->ShouldNotifyFormOrPasswordRemoved()) {
+    return;
+  }
+
+  RefPtr<AsyncEventDispatcher> asyncDispatcher =
+      new AsyncEventDispatcher(this, u"DOMInputPasswordRemoved"_ns,
+                               CanBubble::eNo, ChromeOnlyDispatch::eYes);
+  asyncDispatcher->RunDOMEventWhenSafe();
 }
 
 }  

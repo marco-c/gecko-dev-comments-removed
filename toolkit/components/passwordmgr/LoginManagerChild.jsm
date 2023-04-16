@@ -337,8 +337,21 @@ const observer = {
           }
         }
         docState.fieldModificationsByRootElement.set(formLikeRoot, true);
-        if (!alreadyModified) {
-          
+        
+        
+        let alreadyModifiedFormLessField = true;
+        if (ChromeUtils.getClassName(formLikeRoot) !== "HTMLFormElement") {
+          alreadyModifiedFormLessField = docState.formlessModifiedPasswordFields.has(
+            field
+          );
+          if (!alreadyModifiedFormLessField) {
+            docState.formlessModifiedPasswordFields.add(field);
+          }
+        }
+
+        
+        
+        if (!alreadyModified || !alreadyModifiedFormLessField) {
           ownerDocument.setNotifyFetchSuccess(true);
         }
 
@@ -687,6 +700,14 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         InsecurePasswordUtils.reportInsecurePasswords(formLike);
         break;
       }
+      case "DOMFormRemoved":
+      case "DOMInputPasswordRemoved": {
+        if (this.shouldIgnoreLoginManagerEvent(event)) {
+          break;
+        }
+        this.onDOMFormRemoved(event);
+        break;
+      }
       case "DOMInputPasswordAdded": {
         if (this.shouldIgnoreLoginManagerEvent(event)) {
           break;
@@ -766,12 +787,103 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
   onDOMDocFetchSuccess(event) {
     let document = event.target;
+    let docState = this.stateForDocument(document);
+    let weakModificationsRootElements = ChromeUtils.nondeterministicGetWeakMapKeys(
+      docState.fieldModificationsByRootElement
+    );
 
+    log(
+      "onDOMDocFetchSuccess: modificationsByRootElement approx size:",
+      weakModificationsRootElements.length,
+      "document:",
+      document
+    );
     
     
+    document.setNotifyFormOrPasswordRemoved(true);
+    this.docShell.chromeEventHandler.addEventListener(
+      "DOMFormRemoved",
+      this,
+      true
+    );
+    this.docShell.chromeEventHandler.addEventListener(
+      "DOMInputPasswordRemoved",
+      this,
+      true
+    );
+
+    for (let rootElement of weakModificationsRootElements) {
+      if (ChromeUtils.getClassName(rootElement) === "HTMLFormElement") {
+        
+        
+        let formLike = LoginFormFactory.createFromForm(rootElement);
+        docState.formLikeByObservedNode.set(rootElement, formLike);
+      }
+    }
+
+    let weakFormlessModifiedPasswordFields = ChromeUtils.nondeterministicGetWeakSetKeys(
+      docState.formlessModifiedPasswordFields
+    );
+
+    log(
+      "onDOMDocFetchSuccess: formlessModifiedPasswordFields approx size:",
+      weakFormlessModifiedPasswordFields.length,
+      "document:",
+      document
+    );
+    for (let passwordField of weakFormlessModifiedPasswordFields) {
+      let formLike = LoginFormFactory.createFromField(passwordField);
+      
+      if (formLike.elements.length) {
+        docState.formLikeByObservedNode.set(passwordField, formLike);
+      }
+    }
 
     
     document.setNotifyFetchSuccess(false);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  onDOMFormRemoved(event) {
+    let document = event.composedTarget.ownerDocument;
+    let docState = this.stateForDocument(document);
+
+    let formLike = docState.formLikeByObservedNode.get(event.target);
+    if (!formLike) {
+      return;
+    }
+
+    log("form is removed");
+    this._onFormSubmit(formLike);
+
+    docState.formLikeByObservedNode.delete(event.target);
+    let weakObserveredNodes = ChromeUtils.nondeterministicGetWeakMapKeys(
+      docState.formLikeByObservedNode
+    );
+
+    if (!weakObserveredNodes.length) {
+      document.setNotifyFormOrPasswordRemoved(false);
+      this.docShell.chromeEventHandler.removeEventListener(
+        "DOMFormRemoved",
+        this
+      );
+      this.docShell.chromeEventHandler.removeEventListener(
+        "DOMInputPasswordRemoved",
+        this
+      );
+    }
   }
 
   onDOMFormBeforeSubmit(event) {
@@ -1025,6 +1137,18 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
 
         possiblePasswords: new Set(),
+
+        
+
+
+
+        formLikeByObservedNode: new WeakMap(),
+
+        
+
+
+
+        formlessModifiedPasswordFields: new WeakFieldSet(),
       };
       this._loginFormStateByDocument.set(document, loginFormState);
     }

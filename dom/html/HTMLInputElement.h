@@ -1580,6 +1580,12 @@ class HTMLInputElement final : public TextControlElement,
   
 
 
+
+  void MaybeFireInputPasswordRemoved();
+
+  
+
+
   static bool IsDateTimeTypeSupported(uint8_t aDateTimeInputType);
 
   static bool CreatesDateTimeWidget(uint8_t aType) {

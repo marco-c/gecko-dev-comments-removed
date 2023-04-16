@@ -3783,6 +3783,16 @@ class Document : public nsINode,
   void SetNotifyFetchSuccess(bool aShouldNotify);
 
   
+  
+  void SetNotifyFormOrPasswordRemoved(bool aShouldNotify);
+
+  
+  
+  bool ShouldNotifyFormOrPasswordRemoved() const {
+    return mShouldNotifyFormOrPasswordRemoved;
+  }
+
+  
 
 
 
@@ -5200,6 +5210,9 @@ class Document : public nsINode,
 
   
   bool mShouldNotifyFetchSuccess;
+
+  
+  bool mShouldNotifyFormOrPasswordRemoved;
 
   
   void AccumulateJSTelemetry();

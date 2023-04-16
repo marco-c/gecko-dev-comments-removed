@@ -438,6 +438,8 @@ static void CollectOrphans(nsINode* aRemovalRoot,
 }
 
 void HTMLFormElement::UnbindFromTree(bool aNullParent) {
+  MaybeFireFormRemoved();
+
   
   
   RefPtr<Document> oldDocument = GetUncomposedDoc();
@@ -2414,6 +2416,28 @@ bool HTMLFormElement::IsSubmitting() const {
                  mCurrentLoadId &&
                  mTargetContext->IsLoadingIdentifier(*mCurrentLoadId);
   return loading;
+}
+
+void HTMLFormElement::MaybeFireFormRemoved() {
+  
+  
+  
+  Document* doc = GetComposedDoc();
+  nsIDocShell* container = doc ? doc->GetDocShell() : nullptr;
+  if (!container) {
+    return;
+  }
+
+  
+  
+  
+  if (!doc->ShouldNotifyFormOrPasswordRemoved()) {
+    return;
+  }
+
+  RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
+      this, u"DOMFormRemoved"_ns, CanBubble::eNo, ChromeOnlyDispatch::eYes);
+  asyncDispatcher->RunDOMEventWhenSafe();
 }
 
 }  
