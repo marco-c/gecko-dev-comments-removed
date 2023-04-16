@@ -62,38 +62,44 @@ add_task(async function() {
   ];
 
   
-  debugDump(`launching child process at ${thisBinary.path} with args ${args}`);
-  Subprocess.call({
-    command: thisBinary.path,
-    arguments: args,
-    stderr: "stdout",
-  });
+  
+  for (let runs = 0; runs < 2; runs++) {
+    
+    debugDump(
+      `launching child process at ${thisBinary.path} with args ${args}`
+    );
+    Subprocess.call({
+      command: thisBinary.path,
+      arguments: args,
+      stderr: "stdout",
+    });
 
-  
-  
-  await TestUtils.waitForCondition(
-    () => syncManager.isOtherInstanceRunning(),
-    "waiting for child process to take the lock"
-  ).catch(e => {
     
     
-    Assert.ok(
-      syncManager.isOtherInstanceRunning(),
-      "child process has the lock"
-    );
-  });
+    await TestUtils.waitForCondition(
+      () => syncManager.isOtherInstanceRunning(),
+      "waiting for child process to take the lock"
+    ).catch(e => {
+      
+      
+      Assert.ok(
+        syncManager.isOtherInstanceRunning(),
+        "child process has the lock"
+      );
+    });
 
-  
-  
-  await TestUtils.waitForCondition(
-    () => !syncManager.isOtherInstanceRunning(),
-    "waiting for child process to release the lock"
-  ).catch(e => {
-    Assert.ok(
-      !syncManager.isOtherInstanceRunning(),
-      "child process has released the lock"
-    );
-  });
+    
+    
+    await TestUtils.waitForCondition(
+      () => !syncManager.isOtherInstanceRunning(),
+      "waiting for child process to release the lock"
+    ).catch(e => {
+      Assert.ok(
+        !syncManager.isOtherInstanceRunning(),
+        "child process has released the lock"
+      );
+    });
+  }
 
   doTestFinish();
 });
