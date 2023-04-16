@@ -411,7 +411,7 @@ test_description_schema = Schema(
         ),
         
         Optional("tier"): optionally_keyed_by(
-            "test-platform", "variant", Any(int, "default")
+            "test-platform", "variant", "app", "subtest", Any(int, "default")
         ),
         
         
@@ -599,6 +599,12 @@ test_description_schema = Schema(
         },
         
         Optional("python-3"): bool,
+        
+        
+        
+        
+        Optional("app"): text_type,
+        Optional("subtest"): text_type,
     }
 )
 
