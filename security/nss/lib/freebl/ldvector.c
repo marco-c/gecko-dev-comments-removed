@@ -371,12 +371,7 @@ static const struct FREEBLVectorStr vector =
       AESKeyWrap_DecryptKWP,
 
       
-      KEA_PrimeCheck,
-
-      
-      ChaCha20_InitContext,
-      ChaCha20_CreateContext,
-      ChaCha20_DestroyContext
+      KEA_PrimeCheck
 
       
     };
