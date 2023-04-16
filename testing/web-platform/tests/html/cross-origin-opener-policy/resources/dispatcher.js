@@ -7,7 +7,7 @@
 
 
 const dispatcher_path =
-    '/html/cross-origin-opener-policy/reporting/resources/dispatcher.py';
+    '/html/cross-origin-opener-policy/resources/dispatcher.py';
 const dispatcher_url = new URL(dispatcher_path, location.href).href;
 
 
