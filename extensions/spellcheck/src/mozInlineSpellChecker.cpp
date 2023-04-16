@@ -1360,8 +1360,9 @@ nsresult mozInlineSpellChecker::DoSpellCheck(
     
     if (originalRangeCount > 0) {
       
-      if (!aStatus->mCreatedRange || !aStatus->mCreatedRange->IsPointInRange(
-                                         *beginNode, beginOffset, erv)) {
+      if (!aStatus->GetCreatedRange() ||
+          !aStatus->GetCreatedRange()->IsPointInRange(*beginNode, beginOffset,
+                                                      erv)) {
         MOZ_LOG(sInlineSpellCheckerLog, LogLevel::Debug,
                 ("%s: removing ranges for some interval.", __FUNCTION__));
 
