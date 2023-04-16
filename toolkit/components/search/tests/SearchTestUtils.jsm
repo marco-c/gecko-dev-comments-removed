@@ -298,6 +298,8 @@ var SearchTestUtils = {
 
 
 
+
+
   createEngineManifest(options = {}) {
     options.name = options.name ?? "Example";
     options.id = options.id ?? options.name.toLowerCase().replaceAll(" ", "");
@@ -347,6 +349,10 @@ var SearchTestUtils = {
     if (options.suggest_url) {
       manifest.chrome_settings_overrides.search_provider.suggest_url_get_params =
         options.suggest_url_get_params;
+    }
+    if (options.search_form) {
+      manifest.chrome_settings_overrides.search_provider.search_form =
+        options.search_form;
     }
     return manifest;
   },

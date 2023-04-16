@@ -2,8 +2,6 @@
 
 
 
-const ENGINE_NAME = "engine-suggestions.xml";
-
 testEngine_setup();
 
 add_task(async function test_protocol_trimming() {
@@ -103,7 +101,7 @@ add_task(async function test_protocol_trimming() {
         context,
         matches: [
           makeSearchResult(context, {
-            engineName: ENGINE_NAME,
+            engineName: SUGGESTIONS_ENGINE_NAME,
             query: input,
             heuristic: true,
           }),

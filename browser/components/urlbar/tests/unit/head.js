@@ -41,6 +41,9 @@ AddonTestUtils.createAppInfo(
   "42"
 );
 
+const SUGGESTIONS_ENGINE_NAME = "Suggestions";
+const TAIL_SUGGESTIONS_ENGINE_NAME = "Tail Suggestions";
+
 add_task(async function initXPCShellDependencies() {
   await UrlbarTestUtils.initXPCShellDependencies();
 });
@@ -209,54 +212,13 @@ function makeTestServer(port = -1) {
 
 
 
-async function addTestEngine(basename, httpServer = undefined) {
-  httpServer = httpServer || makeTestServer();
-  httpServer.registerDirectory("/", do_get_cwd());
-  let dataUrl =
-    "http://localhost:" + httpServer.identity.primaryPort + "/data/";
-
-  
-  
-  
-  let geoPref = "browser.search.geoip.url";
-  Services.prefs.setCharPref(geoPref, "");
-  registerCleanupFunction(() => Services.prefs.clearUserPref(geoPref));
-
-  info("Adding engine: " + basename);
-  return new Promise(resolve => {
-    Services.obs.addObserver(function obs(subject, topic, data) {
-      let engine = subject.QueryInterface(Ci.nsISearchEngine);
-      info("Observed " + data + " for " + engine.name);
-      if (data != "engine-added" || engine.name != basename) {
-        return;
-      }
-
-      Services.obs.removeObserver(obs, "browser-search-engine-modified");
-      registerCleanupFunction(() => Services.search.removeEngine(engine));
-      resolve(engine);
-    }, "browser-search-engine-modified");
-
-    info("Adding engine from URL: " + dataUrl + basename);
-    Services.search.addOpenSearchEngine(dataUrl + basename, null);
-  });
-}
-
-
-
-
-
-
-
-
-
 
 async function addTestSuggestionsEngine(suggestionsFn = null) {
   
-  let server = makeTestServer(9000);
+  let server = makeTestServer();
   server.registerPathHandler("/suggest", (req, resp) => {
-    
-    
-    let searchStr = decodeURIComponent(req.queryString.replace(/\+/g, " "));
+    let params = new URLSearchParams(req.queryString);
+    let searchStr = params.get("q");
     let suggestions = suggestionsFn
       ? suggestionsFn(searchStr)
       : [searchStr].concat(["foo", "bar"].map(s => searchStr + " " + s));
@@ -264,7 +226,15 @@ async function addTestSuggestionsEngine(suggestionsFn = null) {
     resp.setHeader("Content-Type", "application/json", false);
     resp.write(JSON.stringify(data));
   });
-  let engine = await addTestEngine("engine-suggestions.xml", server);
+  await SearchTestUtils.installSearchExtension({
+    name: SUGGESTIONS_ENGINE_NAME,
+    search_url: `http://localhost:${server.identity.primaryPort}/search`,
+    suggest_url: `http://localhost:${server.identity.primaryPort}/suggest`,
+    suggest_url_get_params: "?q={searchTerms}",
+    
+    search_form: `http://localhost:${server.identity.primaryPort}/search?q={searchTerms}`,
+  });
+  let engine = Services.search.getEngineByName("Suggestions");
   return engine;
 }
 
@@ -281,11 +251,10 @@ async function addTestSuggestionsEngine(suggestionsFn = null) {
 
 async function addTestTailSuggestionsEngine(suggestionsFn = null) {
   
-  let server = makeTestServer(9001);
+  let server = makeTestServer();
   server.registerPathHandler("/suggest", (req, resp) => {
-    
-    
-    let searchStr = decodeURIComponent(req.queryString.replace(/\+/g, " "));
+    let params = new URLSearchParams(req.queryString);
+    let searchStr = params.get("q");
     let suggestions = suggestionsFn
       ? suggestionsFn(searchStr)
       : [
@@ -314,7 +283,13 @@ async function addTestTailSuggestionsEngine(suggestionsFn = null) {
     resp.setHeader("Content-Type", "application/json", false);
     resp.write(stringOfUtf8Bytes);
   });
-  let engine = await addTestEngine("engine-tail-suggestions.xml", server);
+  await SearchTestUtils.installSearchExtension({
+    name: TAIL_SUGGESTIONS_ENGINE_NAME,
+    search_url: `http://localhost:${server.identity.primaryPort}/search`,
+    suggest_url: `http://localhost:${server.identity.primaryPort}/suggest`,
+    suggest_url_get_params: "?q={searchTerms}",
+  });
+  let engine = Services.search.getEngineByName("Tail Suggestions");
   return engine;
 }
 
