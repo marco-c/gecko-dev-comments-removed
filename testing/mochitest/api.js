@@ -4,11 +4,6 @@
 
 
 
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 function loadChromeScripts(win) {
   Services.scriptloader.loadSubScript(
     "chrome://mochikit/content/chrome-harness.js",
