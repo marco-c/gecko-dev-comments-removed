@@ -450,6 +450,9 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   void MaybeRejectReplacePromise();
 
+  
+  nsISupports* GetRelevantGlobal() const;
+
  private:
   void SetModifiedRules() {
     mState |= State::ModifiedRules | State::ModifiedRulesForDevtools;
