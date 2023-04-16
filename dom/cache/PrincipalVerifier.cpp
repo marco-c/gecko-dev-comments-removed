@@ -177,12 +177,8 @@ void PrincipalVerifier::DispatchToInitiatingThread(nsresult aRv) {
   
   
   
-  nsresult rv =
-      mInitiatingEventTarget->Dispatch(this, nsIThread::DISPATCH_NORMAL);
-  if (NS_FAILED(rv)) {
-    NS_WARNING(
-        "Cache unable to complete principal verification due to shutdown.");
-  }
+  QM_WARNONLY_TRY(
+      mInitiatingEventTarget->Dispatch(this, nsIThread::DISPATCH_NORMAL));
 }
 
 }  

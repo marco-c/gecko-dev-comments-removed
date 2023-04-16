@@ -140,13 +140,10 @@ class SetupAction final : public SyncDBAction {
       
       
       
-      [&] {
-        CACHE_TRY(MaybeUpdatePaddingFile(
-                      aDBDir, aConn,  0,
-                      overallDeletedPaddingSize.value(),
-                      [&trans]() mutable { return trans.Commit(); }),
-                  QM_VOID);
-      }();
+      QM_WARNONLY_TRY(
+          MaybeUpdatePaddingFile(aDBDir, aConn,  0,
+                                 overallDeletedPaddingSize.value(),
+                                 [&trans]() { return trans.Commit(); }));
     }
 
     if (DirectoryPaddingFileExists(*aDBDir, DirPaddingFile::TMP_FILE) ||

@@ -421,16 +421,18 @@ class MOZ_RAII AutoDisableForeignKeyChecking {
                       MOZ_TO_RESULT_INVOKE(*state, GetInt32, 0), QM_VOID);
 
     if (mode) {
-      CACHE_TRY(mConn->ExecuteSimpleSQL("PRAGMA foreign_keys = OFF;"_ns),
-                QM_VOID);
-      mForeignKeyCheckingDisabled = true;
+      QM_WARNONLY_TRY(
+          ToResult(mConn->ExecuteSimpleSQL("PRAGMA foreign_keys = OFF;"_ns))
+              .andThen([this](const auto) -> Result<Ok, nsresult> {
+                mForeignKeyCheckingDisabled = true;
+                return Ok{};
+              }));
     }
   }
 
   ~AutoDisableForeignKeyChecking() {
     if (mForeignKeyCheckingDisabled) {
-      CACHE_TRY(mConn->ExecuteSimpleSQL("PRAGMA foreign_keys = ON;"_ns),
-                QM_VOID);
+      QM_WARNONLY_TRY(mConn->ExecuteSimpleSQL("PRAGMA foreign_keys = ON;"_ns));
     }
   }
 
@@ -552,16 +554,8 @@ nsresult InitializeConnection(mozIStorageConnection& aConn) {
       kPageSize)));
 
   
-  CACHE_TRY(
-      ToResult(aConn.SetGrowthIncrement(kGrowthSize, ""_ns))
-          .orElse([](const nsresult rv) -> Result<Ok, nsresult> {
-            if (rv == NS_ERROR_FILE_TOO_BIG) {
-              NS_WARNING(
-                  "Not enough disk space to set sqlite growth increment.");
-              return Ok{};
-            }
-            return Err(rv);
-          }));
+  QM_TRY(QM_OR_ELSE_WARN(ToResult(aConn.SetGrowthIncrement(kGrowthSize, ""_ns)),
+                         ErrToDefaultOkOrErr<NS_ERROR_FILE_TOO_BIG>));
 
   
   
