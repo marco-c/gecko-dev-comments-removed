@@ -29,19 +29,19 @@ const MockSecurityInfo = {
   cipherName: "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
 };
 
-function run_test() {
-  test_nullSecurityInfo();
-  test_insecureSecurityInfoWithNSSError();
-  test_insecureSecurityInfoWithoutNSSError();
-  test_brokenSecurityInfo();
-  test_secureSecurityInfo();
-}
+add_task(async function run_test() {
+  await test_nullSecurityInfo();
+  await test_insecureSecurityInfoWithNSSError();
+  await test_insecureSecurityInfoWithoutNSSError();
+  await test_brokenSecurityInfo();
+  await test_secureSecurityInfo();
+});
 
 
 
 
-function test_nullSecurityInfo() {
-  const result = NetworkHelper.parseSecurityInfo(null, {});
+async function test_nullSecurityInfo() {
+  const result = await NetworkHelper.parseSecurityInfo(null, {});
   equal(
     result.state,
     "insecure",
@@ -52,13 +52,13 @@ function test_nullSecurityInfo() {
 
 
 
-function test_insecureSecurityInfoWithNSSError() {
+async function test_insecureSecurityInfoWithNSSError() {
   MockSecurityInfo.securityState = wpl.STATE_IS_INSECURE;
 
   
   MockSecurityInfo.errorCode = -8180;
 
-  const result = NetworkHelper.parseSecurityInfo(MockSecurityInfo, {});
+  const result = await NetworkHelper.parseSecurityInfo(MockSecurityInfo, {});
   equal(
     result.state,
     "broken",
@@ -72,10 +72,10 @@ function test_insecureSecurityInfoWithNSSError() {
 
 
 
-function test_insecureSecurityInfoWithoutNSSError() {
+async function test_insecureSecurityInfoWithoutNSSError() {
   MockSecurityInfo.securityState = wpl.STATE_IS_INSECURE;
 
-  const result = NetworkHelper.parseSecurityInfo(MockSecurityInfo, {});
+  const result = await NetworkHelper.parseSecurityInfo(MockSecurityInfo, {});
   equal(
     result.state,
     "insecure",
@@ -87,10 +87,10 @@ function test_insecureSecurityInfoWithoutNSSError() {
 
 
 
-function test_secureSecurityInfo() {
+async function test_secureSecurityInfo() {
   MockSecurityInfo.securityState = wpl.STATE_IS_SECURE;
 
-  const result = NetworkHelper.parseSecurityInfo(MockSecurityInfo, {});
+  const result = await NetworkHelper.parseSecurityInfo(MockSecurityInfo, {});
   equal(
     result.state,
     "secure",
@@ -101,10 +101,10 @@ function test_secureSecurityInfo() {
 
 
 
-function test_brokenSecurityInfo() {
+async function test_brokenSecurityInfo() {
   MockSecurityInfo.securityState = wpl.STATE_IS_BROKEN;
 
-  const result = NetworkHelper.parseSecurityInfo(MockSecurityInfo, {});
+  const result = await NetworkHelper.parseSecurityInfo(MockSecurityInfo, {});
   equal(
     result.state,
     "weak",
