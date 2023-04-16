@@ -77,10 +77,15 @@ class nsITheme : public nsISupports {
 
 
 
+
+
+
+  enum class DrawOverflow { No, Yes };
   NS_IMETHOD DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
                                   StyleAppearance aWidgetType,
                                   const nsRect& aRect,
-                                  const nsRect& aDirtyRect) = 0;
+                                  const nsRect& aDirtyRect,
+                                  DrawOverflow = DrawOverflow::Yes) = 0;
 
   
 

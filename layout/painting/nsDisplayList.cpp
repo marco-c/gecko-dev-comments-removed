@@ -5117,12 +5117,13 @@ bool nsDisplayBoxShadowOuter::CanBuildWebRenderDisplayItems() {
   }
 
   bool hasBorderRadius;
-  bool nativeTheme =
-      nsCSSRendering::HasBoxShadowNativeTheme(mFrame, hasBorderRadius);
-
   
   
-  if (nativeTheme) {
+  
+  
+  
+  
+  if (nsCSSRendering::HasBoxShadowNativeTheme(mFrame, hasBorderRadius)) {
     return false;
   }
 

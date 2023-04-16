@@ -20,7 +20,8 @@ class nsNativeThemeAndroid : private nsNativeTheme, public nsITheme {
   NS_IMETHOD DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
                                   StyleAppearance aAppearance,
                                   const nsRect& aRect,
-                                  const nsRect& aDirtyRect) override;
+                                  const nsRect& aDirtyRect,
+                                  DrawOverflow) override;
   
 
 
