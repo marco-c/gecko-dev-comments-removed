@@ -26,7 +26,7 @@ ChromeUtils.defineModuleGetter(
 XPCOMUtils.defineLazyModuleGetters(this, {
   CreditCard: "resource://gre/modules/CreditCard.jsm",
   creditCardRuleset: "resource://formautofill/CreditCardRuleset.jsm",
-  LabelUtils: "resource://formautofill/FormAutofillUtils.jsm",  
+  LabelUtils: "resource://formautofill/FormAutofillUtils.jsm",
 });
 
 this.log = null;
@@ -174,6 +174,26 @@ class FieldScanner {
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -905,7 +925,63 @@ this.FormAutofillHeuristics = {
     return regexps;
   },
 
+  
+
+
+
+
+
+
+  _topFathomField(element) {
+    
+    const fieldNames = [
+      "cc-name",
+      "cc-number",
+      "cc-exp-month",
+      "cc-exp-year",
+      "cc-exp",
+      "cc-type",
+    ];
+
+    
+
+
+
+
+
+
+
+
+    function confidence(fieldName) {
+      const fnodes = creditCardRuleset.against(element).get(fieldName);
+      
+      
+      return fnodes.length ? fnodes[0].scoreFor(fieldName) : 0;
+    }
+
+    
+    const fieldsAndConfidences = fieldNames.map(fieldName => [
+      fieldName,
+      confidence(fieldName),
+    ]);
+
+    
+    fieldsAndConfidences.sort(
+      ([_1, confidence1], [_2, confidence2]) => confidence2 - confidence1
+    );
+    return fieldsAndConfidences[0];
+  },
+
   getInfo(element) {
+    function infoRecordWithFieldName(fieldName) {
+      return {
+        fieldName,
+        section: "",
+        addressType: "",
+        contactType: "",
+      };
+    }
+
     let info = element.getAutocompleteInfo();
     
     
@@ -932,29 +1008,27 @@ this.FormAutofillHeuristics = {
     
     
     if (element.type == "email" && !isAutoCompleteOff) {
-      return {
-        fieldName: "email",
-        section: "",
-        addressType: "",
-        contactType: "",
-      };
+      return infoRecordWithFieldName("email");
     }
 
+    
+    const [mostConfidentFieldName, mostConfidentScore] = this._topFathomField(
+      element
+    );
+    if (mostConfidentScore > 0.5) {
+      return infoRecordWithFieldName(mostConfidentFieldName);
+    }
+
+    
+    
+    
     let regexps = this._getRegExpList(isAutoCompleteOff, element.tagName);
-    if (!regexps.length) {
-      return null;
+    if (regexps.length) {
+      let matchedFieldName = this._findMatchedFieldName(element, regexps);
+      if (matchedFieldName) {
+        return infoRecordWithFieldName(matchedFieldName);
+      }
     }
-
-    let matchedFieldName = this._findMatchedFieldName(element, regexps);
-    if (matchedFieldName) {
-      return {
-        fieldName: matchedFieldName,
-        section: "",
-        addressType: "",
-        contactType: "",
-      };
-    }
-
     return null;
   },
 
