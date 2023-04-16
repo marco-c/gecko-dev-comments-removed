@@ -128,28 +128,28 @@ void HTMLDialogElement::FocusDialog() {
   }
 
   Element* control = nullptr;
-  nsIContent* child = GetFirstChild();
-  while (child) {
-    if (child->IsElement()) {
-      nsIFrame* frame = child->GetPrimaryFrame();
-      if (frame && frame->IsFocusable()) {
-        if (child->AsElement()->HasAttr(kNameSpaceID_None,
-                                        nsGkAtoms::autofocus)) {
-          
-          
-          
-          control = child->AsElement();
-          break;
-        }
-        
-        
-        if (!control) {
-          control = child->AsElement();
-        }
-      }
+  for (auto* child = GetFirstChild(); child; child = child->GetNextNode(this)) {
+    auto* element = Element::FromNode(child);
+    if (!element) {
+      continue;
     }
-    child = child->GetNextNode(this);
+    nsIFrame* frame = element->GetPrimaryFrame();
+    if (!frame || !frame->IsFocusable()) {
+      continue;
+    }
+    if (element->HasAttr(nsGkAtoms::autofocus)) {
+      
+      
+      control = element;
+      break;
+    }
+    if (!control) {
+      
+      
+      control = element;
+    }
   }
+
   
   if (!control) {
     control = this;
@@ -163,12 +163,9 @@ void HTMLDialogElement::FocusDialog() {
     if (rv.Failed()) {
       return;
     }
-  } else {
-    nsFocusManager* fm = nsFocusManager::GetFocusManager();
-    if (fm) {
-      
-      fm->ClearFocus(OwnerDoc()->GetWindow());
-    }
+  } else if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+    
+    fm->ClearFocus(OwnerDoc()->GetWindow());
   }
 
   
@@ -177,9 +174,8 @@ void HTMLDialogElement::FocusDialog() {
   
   BrowsingContext* bc = control->OwnerDoc()->GetBrowsingContext();
   if (bc && bc->SameOriginWithTop()) {
-    nsCOMPtr<nsIDocShell> docShell = bc->Top()->GetDocShell();
-    if (docShell) {
-      if (Document* topDocument = docShell->GetDocument()) {
+    if (nsCOMPtr<nsIDocShell> docShell = bc->Top()->GetDocShell()) {
+      if (Document* topDocument = docShell->GetExtantDocument()) {
         
         
         topDocument->SetAutoFocusFired();
