@@ -34,6 +34,10 @@ int CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuObjectX* aChild)
 NSMenuItem* NativeMenuItemWithLocation(NSMenu* aRootMenu, NSString* aLocationString,
                                        bool aIsMenuBar);
 
+
+void DumpNativeMenu(NSMenu* aMenu);
+void DumpNativeMenuItem(NSMenuItem* aMenuItem);
+
 }  
 
 #endif  
