@@ -82,6 +82,13 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
        "webCOOP+COEP=https://data.example"_ns,
        {"dataurl"_ns, "TYPE_SCRIPT"_ns, "webCOOP+COEP"_ns, "unknown"_ns}},
       {
+       
+       "data:text/css;extension=style;charset=utf-8,/* some css here */"_ns,
+       ExtContentPolicy::TYPE_STYLESHEET,
+       "web"_ns,
+       {"dataurl-extension-contentstyle"_ns, "TYPE_STYLESHEET"_ns, "web"_ns,
+        "unknown"_ns}},
+      {
        "file://c/users/tom/file.txt"_ns,
        ExtContentPolicy::TYPE_SCRIPT,
        "web"_ns,

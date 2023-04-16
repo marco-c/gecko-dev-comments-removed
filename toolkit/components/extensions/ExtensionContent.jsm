@@ -267,8 +267,12 @@ class CSSCodeCache extends BaseCSSCache {
       
       return;
     }
+    
+    
+    
     const uri = Services.io.newURI(
-      "data:text/css;charset=utf-8," + encodeURIComponent(cssCode)
+      "data:text/css;extension=style;charset=utf-8," +
+        encodeURIComponent(cssCode)
     );
     const value = styleSheetService
       .preloadSheetAsync(uri, this.sheetType)
