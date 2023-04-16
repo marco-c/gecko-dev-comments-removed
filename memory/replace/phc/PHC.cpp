@@ -216,8 +216,7 @@ void StackTrace::Fill() {
 
   PNT_TIB pTib = reinterpret_cast<PNT_TIB>(NtCurrentTeb());
   void* stackEnd = static_cast<void*>(pTib->StackBase);
-  FramePointerStackWalk(StackWalkCallback,  0, kMaxFrames,
-                        this, fp, stackEnd);
+  FramePointerStackWalk(StackWalkCallback, kMaxFrames, this, fp, stackEnd);
 #elif defined(XP_MACOSX)
   
   
@@ -231,8 +230,7 @@ void StackTrace::Fill() {
       "movq (%%rbp), %0\n\t"
       : "=r"(fp));
   void* stackEnd = pthread_get_stackaddr_np(pthread_self());
-  FramePointerStackWalk(StackWalkCallback,  0, kMaxFrames,
-                        this, fp, stackEnd);
+  FramePointerStackWalk(StackWalkCallback, kMaxFrames, this, fp, stackEnd);
 #else
   MozStackWalk(StackWalkCallback,  0, kMaxFrames, this);
 #endif
