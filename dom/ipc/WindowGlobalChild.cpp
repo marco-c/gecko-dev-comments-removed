@@ -340,6 +340,8 @@ void WindowGlobalChild::BeforeUnloadRemoved() {
 void WindowGlobalChild::Destroy() {
   JSActorWillDestroy();
 
+  mWindowContext->Discard();
+
   
   
   
@@ -644,6 +646,10 @@ void WindowGlobalChild::ActorDestroy(ActorDestroyReason aWhy) {
              "Destroying WindowGlobalChild can run script");
 
   gWindowGlobalChildById->Remove(InnerWindowId());
+
+  
+  
+  mWindowContext->Discard();
 
 #ifdef MOZ_GECKO_PROFILER
   profiler_unregister_page(InnerWindowId());
