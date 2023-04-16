@@ -140,11 +140,9 @@ class QuotaManager final : public BackgroundThreadObject {
 
 
 
-  void InitQuotaForOrigin(PersistenceType aPersistenceType,
-                          const OriginMetadata& aOriginMetadata,
+  void InitQuotaForOrigin(const FullOriginMetadata& aFullOriginMetadata,
                           const ClientUsageArray& aClientUsages,
-                          uint64_t aUsageBytes, int64_t aAccessTime,
-                          bool aPersisted);
+                          uint64_t aUsageBytes);
 
   
 
