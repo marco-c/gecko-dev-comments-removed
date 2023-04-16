@@ -828,13 +828,12 @@ class GatherDecls(TcheckVisitor):
         self.symtab = None
         self.builtinUsing = builtinUsing
 
-    def declare(self, loc, type, shortname=None, fullname=None, progname=None, attributes={}):
+    def declare(self, loc, type, shortname=None, fullname=None, progname=None):
         d = Decl(loc)
         d.type = type
         d.progname = progname
         d.shortname = shortname
         d.fullname = fullname
-        d.attributes = attributes
         self.symtab.declare(d)
         return d
 
@@ -1298,27 +1297,8 @@ class GatherDecls(TcheckVisitor):
 
         
         def paramToDecl(param):
-            self.checkAttributes(
-                param.attributes,
-                {
-                    
-                    
-                    
-                    
-                    "NoTaint": ("passback", "allvalid")
-                },
-            )
-
             ptname = param.typespec.basename()
             ploc = param.typespec.loc
-
-            if 'NoTaint' in param.attributes and 'Tainted' not in md.attributes:
-                self.error(
-                    ploc,
-                    "argument typename `%s' of message `%s' has a NoTaint attribute, but the message lacks the Tainted attribute",
-                    ptname,
-                    msgname,
-                )
 
             ptdecl = self.symtab.lookup(ptname)
             if ptdecl is None:
@@ -1331,7 +1311,7 @@ class GatherDecls(TcheckVisitor):
                 ptype = VOID
             else:
                 ptype = self._canonicalType(ptdecl.type, param.typespec)
-            return self.declare(loc=ploc, type=ptype, progname=param.name, attributes=param.attributes)
+            return self.declare(loc=ploc, type=ptype, progname=param.name)
 
         for i, inparam in enumerate(md.inParams):
             pdecl = paramToDecl(inparam)
