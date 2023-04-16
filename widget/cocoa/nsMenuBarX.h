@@ -113,7 +113,10 @@ class nsMenuBarX : public nsMenuGroupOwnerX, public nsChangeObserver {
 
   
   
-  NSInteger CalculateNativeInsertionPoint(nsMenuX* aChild);
+  void InsertChildNativeMenuItem(nsMenuX* aChild);
+
+  
+  void RemoveChildNativeMenuItem(nsMenuX* aChild);
 
  protected:
   void ConstructNativeMenus();
@@ -125,6 +128,16 @@ class nsMenuBarX : public nsMenuGroupOwnerX, public nsChangeObserver {
   NSMenuItem* CreateNativeAppMenuItem(nsMenuX* aMenu, const nsAString& aNodeID, SEL aAction,
                                       int aTag, NativeMenuItemTarget* aTarget);
   void CreateApplicationMenu(nsMenuX* aMenu);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  NSInteger CalculateNativeInsertionPoint(nsMenuX* aChild);
 
   nsTArray<RefPtr<nsMenuX>> mMenuArray;
   GeckoNSMenu* mNativeMenu;  

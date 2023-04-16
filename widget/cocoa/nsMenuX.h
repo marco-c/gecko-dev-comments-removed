@@ -90,7 +90,10 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
 
   
   
-  NSInteger CalculateNativeInsertionPoint(nsMenuX* aChild);
+  void InsertChildNativeMenuItem(nsMenuX* aChild);
+
+  
+  void RemoveChildNativeMenuItem(nsMenuX* aChild);
 
   void Dump(uint32_t aIndent) const;
 
@@ -111,6 +114,13 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   void LoadSubMenu(nsIContent* aMenuContent);
   GeckoNSMenu* CreateMenuWithGeckoString(nsString& aMenuTitle);
   void UnregisterCommands();
+
+  
+  
+  
+  
+  
+  NSInteger CalculateNativeInsertionPoint(nsMenuX* aChild);
 
   nsCOMPtr<nsIContent> mContent;  
 
