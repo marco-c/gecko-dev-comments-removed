@@ -198,7 +198,16 @@ class BlockingResourceBase {
 
 
 
-  AcquisitionState GetAcquisitionState() { return mAcquired; }
+
+  AcquisitionState TakeAcquisitionState() {
+#  ifdef MOZ_CALLSTACK_DISABLED
+    bool acquired = mAcquired;
+    ClearAcquisitionState();
+    return acquired;
+#  else
+    return mAcquired.take();
+#  endif
+  }
 
   
 
@@ -206,8 +215,8 @@ class BlockingResourceBase {
 
 
 
-  void SetAcquisitionState(const AcquisitionState& aAcquisitionState) {
-    mAcquired = aAcquisitionState;
+  void SetAcquisitionState(AcquisitionState&& aAcquisitionState) {
+    mAcquired = std::move(aAcquisitionState);
   }
 
   
