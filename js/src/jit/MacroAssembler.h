@@ -271,6 +271,48 @@ constexpr uint32_t WasmCalleeTLSOffsetBeforeCall =
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MacroAssembler : public MacroAssemblerSpecific {
  public:
   mozilla::Maybe<JitContext> jitContext_;
