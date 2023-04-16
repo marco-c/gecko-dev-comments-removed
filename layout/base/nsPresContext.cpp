@@ -452,7 +452,7 @@ void nsPresContext::AppUnitsPerDevPixelChanged() {
   
   if (mPresShell) {
     if (nsIFrame* frame = mPresShell->GetRootFrame()) {
-      frame = nsLayoutUtils::GetCrossDocParentFrame(frame);
+      frame = nsLayoutUtils::GetCrossDocParentFrameInProcess(frame);
       if (frame) {
         int32_t parentAPD = frame->PresContext()->AppUnitsPerDevPixel();
         if ((parentAPD == oldAppUnitsPerDevPixel) !=
