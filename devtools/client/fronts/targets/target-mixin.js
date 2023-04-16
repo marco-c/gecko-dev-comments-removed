@@ -491,7 +491,7 @@ function TargetMixin(parentClass) {
 
       
       
-      if (targetList.targetFront.isBrowserConsoleTarget) {
+      if (targetList.descriptorFront.createdForBrowserConsole) {
         return;
       }
 

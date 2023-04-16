@@ -59,11 +59,8 @@ class BrowserConsoleManager {
 
 
 
-
-
-  async openBrowserConsole(target, win) {
-    const commands = await target.descriptorFront.getCommands();
-    const hud = new BrowserConsole(target, commands, win, win);
+  async openBrowserConsole(commands, win) {
+    const hud = new BrowserConsole(commands, win, win);
     this._browserConsole = hud;
     await hud.init();
     return hud;
@@ -99,13 +96,9 @@ class BrowserConsoleManager {
     
     
     this._browserConsoleInitializing = (async () => {
-      const target = await this.connect();
-      
-      
-      target.isBrowserConsoleTarget = true;
-      await target.attach();
+      const commands = await this.connect();
       const win = await this.openWindow();
-      const browserConsole = await this.openBrowserConsole(target, win);
+      const browserConsole = await this.openBrowserConsole(commands, win);
       return browserConsole;
     })();
 
@@ -113,6 +106,14 @@ class BrowserConsoleManager {
     this._browserConsoleInitializing = null;
     return browserConsole;
   }
+
+  
+
+
+
+
+
+
 
   async connect() {
     
@@ -141,8 +142,14 @@ class BrowserConsoleManager {
 
     this._devToolsClient = new DevToolsClient(DevToolsServer.connectPipe());
     await this._devToolsClient.connect();
+
     const descriptor = await this._devToolsClient.mainRoot.getMainProcess();
-    return descriptor.getTarget();
+
+    
+    descriptor.createdForBrowserConsole = true;
+
+    const commands = await descriptor.getCommands();
+    return commands;
   }
 
   async openWindow() {

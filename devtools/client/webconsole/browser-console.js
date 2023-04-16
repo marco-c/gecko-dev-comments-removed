@@ -30,6 +30,7 @@ loader.lazyRequireGetter(
 
 
 
+
 class BrowserConsole extends WebConsole {
   
 
@@ -40,19 +41,13 @@ class BrowserConsole extends WebConsole {
 
 
 
-  constructor(target, commands, iframeWindow, chromeWindow) {
+  constructor(commands, iframeWindow, chromeWindow) {
     super(null, commands, iframeWindow, chromeWindow, true);
 
-    this._browserConsoleTarget = target;
-    this._descriptorFront = target.descriptorFront;
     this._resourceWatcher = new ResourceWatcher(this.targetList);
     this._telemetry = new Telemetry();
     this._bcInitializer = null;
     this._bcDestroyer = null;
-  }
-
-  get currentTarget() {
-    return this._browserConsoleTarget;
   }
 
   get resourceWatcher() {
