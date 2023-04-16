@@ -164,6 +164,7 @@ const char* ProtocolIdToName(IPCMessageStart aId);
 
 class IToplevelProtocol;
 class ActorLifecycleProxy;
+class WeakActorLifecycleProxy;
 
 class IProtocol : public HasResultCodes {
  public:
@@ -664,6 +665,8 @@ class ActorLifecycleProxy {
 
   IProtocol* Get() { return mActor; }
 
+  WeakActorLifecycleProxy* GetWeakProxy();
+
  private:
   friend class IProtocol;
 
@@ -678,6 +681,47 @@ class ActorLifecycleProxy {
   
   
   RefPtr<ActorLifecycleProxy> mManager;
+
+  
+  
+  RefPtr<WeakActorLifecycleProxy> mWeakProxy;
+};
+
+
+
+
+
+
+
+
+class WeakActorLifecycleProxy final {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WeakActorLifecycleProxy)
+
+  
+  
+  
+  IProtocol* Get() const;
+
+  
+  nsISerialEventTarget* ActorEventTarget() const { return mActorEventTarget; }
+
+ private:
+  friend class ActorLifecycleProxy;
+
+  explicit WeakActorLifecycleProxy(ActorLifecycleProxy* aProxy);
+  ~WeakActorLifecycleProxy();
+
+  WeakActorLifecycleProxy(const WeakActorLifecycleProxy&) = delete;
+  WeakActorLifecycleProxy& operator=(const WeakActorLifecycleProxy&) = delete;
+
+  
+  
+  ActorLifecycleProxy* MOZ_NON_OWNING_REF mProxy;
+
+  
+  
+  const nsCOMPtr<nsISerialEventTarget> mActorEventTarget;
 };
 
 void TableToArray(const nsTHashtable<nsPtrHashKey<void>>& aTable,
