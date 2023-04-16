@@ -797,9 +797,140 @@ static bool PropertyIsEnumerable(JSContext* cx, HandleObject obj, HandleId id,
   return true;
 }
 
+
+
+static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
+  
+  
+  if (!obj->isExtensible() || obj->isUsedAsPrototype()) {
+    return false;
+  }
+
+  
+  
+  
+  while (true) {
+    if (obj->hasNonWritableOrAccessorPropExclProto()) {
+      return false;
+    }
+
+    JSObject* proto = obj->staticPrototype();
+    if (!proto) {
+      return true;
+    }
+    if (!proto->is<PlainObject>()) {
+      return false;
+    }
+    obj = &proto->as<PlainObject>();
+  }
+}
+
+[[nodiscard]] static bool TryAssignPlain(JSContext* cx, HandleObject to,
+                                         HandleObject from, bool* optimized) {
+  
+  
+  
+
+  MOZ_ASSERT(*optimized == false);
+
+  if (!from->is<PlainObject>() || !to->is<PlainObject>()) {
+    return true;
+  }
+
+  
+  HandlePlainObject fromPlain = from.as<PlainObject>();
+  if (fromPlain->getDenseInitializedLength() > 0 || fromPlain->isIndexed()) {
+    return true;
+  }
+  MOZ_ASSERT(!fromPlain->getClass()->getNewEnumerate());
+  MOZ_ASSERT(!fromPlain->getClass()->getEnumerate());
+
+  
+  if (fromPlain->empty()) {
+    *optimized = true;
+    return true;
+  }
+
+  HandlePlainObject toPlain = to.as<PlainObject>();
+  if (!CanAddNewPropertyExcludingProtoFast(toPlain)) {
+    return true;
+  }
+
+  
+
+  using ShapeVector = GCVector<Shape*, 8>;
+  Rooted<ShapeVector> shapes(cx, ShapeVector(cx));
+
+#ifdef DEBUG
+  RootedShape fromShape(cx, fromPlain->lastProperty());
+#endif
+
+  for (Shape::Range<NoGC> r(fromPlain->lastProperty()); !r.empty();
+       r.popFront()) {
+    
+    
+    Shape& propShape = r.front();
+    jsid id = propShape.propidRaw();
+    if (MOZ_UNLIKELY(JSID_IS_SYMBOL(id))) {
+      return true;
+    }
+    
+    if (MOZ_UNLIKELY(JSID_IS_ATOM(id, cx->names().proto))) {
+      return true;
+    }
+    if (MOZ_UNLIKELY(!propShape.isDataProperty())) {
+      return true;
+    }
+    if (!propShape.enumerable()) {
+      continue;
+    }
+    if (MOZ_UNLIKELY(!shapes.append(&propShape))) {
+      return false;
+    }
+  }
+
+  *optimized = true;
+
+  bool toWasEmpty = toPlain->empty();
+  RootedValue propValue(cx);
+  RootedId nextKey(cx);
+
+  for (size_t i = shapes.length(); i > 0; i--) {
+    
+    MOZ_ASSERT(fromPlain->lastProperty() == fromShape);
+
+    Shape* fromPropShape = shapes[i - 1];
+    MOZ_ASSERT(fromPropShape->isDataProperty());
+    MOZ_ASSERT(fromPropShape->enumerable());
+
+    nextKey = fromPropShape->propid();
+    propValue = fromPlain->getSlot(fromPropShape->slot());
+
+    Shape* toShape;
+    if (toWasEmpty) {
+      MOZ_ASSERT(!toPlain->containsPure(nextKey));
+      toShape = nullptr;
+    } else {
+      toShape = toPlain->lookup(cx, nextKey);
+    }
+
+    if (toShape) {
+      MOZ_ASSERT(toShape->isDataProperty());
+      MOZ_ASSERT(toShape->writable());
+      toPlain->setSlot(toShape->slot(), propValue);
+    } else {
+      if (!AddDataPropertyNonPrototype(cx, toPlain, nextKey, propValue)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 static bool TryAssignNative(JSContext* cx, HandleObject to, HandleObject from,
                             bool* optimized) {
-  *optimized = false;
+  MOZ_ASSERT(*optimized == false);
 
   if (!from->is<NativeObject>() || !to->is<NativeObject>()) {
     return true;
@@ -918,7 +1049,15 @@ static bool AssignSlow(JSContext* cx, HandleObject to, HandleObject from) {
 
 JS_PUBLIC_API bool JS_AssignObject(JSContext* cx, JS::HandleObject target,
                                    JS::HandleObject src) {
-  bool optimized;
+  bool optimized = false;
+
+  if (!TryAssignPlain(cx, target, src, &optimized)) {
+    return false;
+  }
+  if (optimized) {
+    return true;
+  }
+
   if (!TryAssignNative(cx, target, src, &optimized)) {
     return false;
   }
