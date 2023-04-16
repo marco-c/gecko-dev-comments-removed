@@ -84,8 +84,9 @@ static inline gint GetMonitorScaleFactor(nsPresContext* aPresContext) {
       
       
       
-      int monitorScale = int(round(rootWidget->GetDefaultScale().scale /
-                                   gfxPlatformGtk::GetFontScaleFactor()));
+      int monitorScale = int(
+          round(rootWidget->GetDefaultScale().scale /
+                LookAndFeel::GetFloat(LookAndFeel::FloatID::TextScaleFactor)));
       
       
       if (monitorScale < 1) {
@@ -1093,8 +1094,7 @@ NS_IMETHODIMP
 nsNativeThemeGTK::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
                                        StyleAppearance aAppearance,
                                        const nsRect& aRect,
-                                       const nsRect& aDirtyRect,
-                                       DrawOverflow) {
+                                       const nsRect& aDirtyRect, DrawOverflow) {
   GtkWidgetState state;
   WidgetNodeType gtkWidgetType;
   GtkTextDirection direction = GetTextDirection(aFrame);

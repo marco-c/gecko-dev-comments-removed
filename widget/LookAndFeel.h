@@ -409,6 +409,9 @@ class LookAndFeel {
     CaretAspectRatio,
 
     
+    TextScaleFactor,
+
+    
     End,
   };
 
