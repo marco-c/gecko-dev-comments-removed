@@ -51,21 +51,6 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
       return this.initialized;
     }
 
-    
-    
-    
-    const { resourceWatcher } = this.targetFront;
-    if (
-      resourceWatcher?.hasResourceWatcherSupport(
-        resourceWatcher.TYPES.STYLESHEET
-      )
-    ) {
-      await resourceWatcher.watchResources([resourceWatcher.TYPES.STYLESHEET], {
-        
-        onAvailable: () => {},
-      });
-    }
-
     this.initialized = await Promise.all([
       this._getWalker(),
       this._getPageStyle(),

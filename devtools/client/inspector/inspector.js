@@ -203,6 +203,21 @@ Inspector.prototype = {
       r => (this._resolveMarkupViewInitialized = r)
     );
 
+    
+    
+    
+    if (
+      this.toolbox.resourceWatcher.hasResourceWatcherSupport(
+        this.toolbox.resourceWatcher.TYPES.STYLESHEET
+      )
+    ) {
+      this._isServerSideStyleSheetWatcherEnabled = true;
+      await this.toolbox.resourceWatcher.watchResources(
+        [this.toolbox.resourceWatcher.TYPES.STYLESHEET],
+        { onAvailable: this.onResourceAvailable }
+      );
+    }
+
     await this.toolbox.targetList.watchTargets(
       [this.toolbox.targetList.TYPES.FRAME],
       this._onTargetAvailable,
@@ -256,6 +271,11 @@ Inspector.prototype = {
   async initInspectorFront(targetFront) {
     this.inspectorFront = await targetFront.getFront("inspector");
     this.walker = this.inspectorFront.walker;
+
+    
+    if (this._isServerSideStyleSheetWatcherEnabled) {
+      this.inspectorFront.pageStyle.resourceWatcher = this.toolbox.resourceWatcher;
+    }
   },
 
   get toolbox() {

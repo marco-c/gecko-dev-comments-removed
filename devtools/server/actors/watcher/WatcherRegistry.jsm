@@ -118,9 +118,6 @@ const WatcherRegistry = {
         browserId: watcher.browserId,
         
         connectionPrefix: watcher.conn.prefix,
-        
-        
-        watcherTraits: watcher.form().traits,
       };
       
       for (const name of Object.values(SUPPORTED_DATA)) {

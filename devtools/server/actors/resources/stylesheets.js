@@ -4,6 +4,13 @@
 
 "use strict";
 
+const { Ci } = require("chrome");
+const { fetch } = require("devtools/shared/DevToolsUtils");
+const InspectorUtils = require("InspectorUtils");
+const {
+  getSourcemapBaseURL,
+} = require("devtools/server/actors/utils/source-map-utils");
+
 const {
   TYPES: { STYLESHEET },
 } = require("devtools/server/actors/resources/index");
@@ -14,12 +21,59 @@ loader.lazyRequireGetter(
   "devtools/shared/inspector/css-logic"
 );
 
+loader.lazyRequireGetter(
+  this,
+  ["addPseudoClassLock", "removePseudoClassLock"],
+  "devtools/server/actors/highlighters/utils/markup",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "loadSheet",
+  "devtools/shared/layout/utils",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  ["getSheetOwnerNode", "UPDATE_GENERAL", "UPDATE_PRESERVING_RULES"],
+  "devtools/server/actors/style-sheet",
+  true
+);
+
+const TRANSITION_PSEUDO_CLASS = ":-moz-styleeditor-transitioning";
+const TRANSITION_DURATION_MS = 500;
+const TRANSITION_BUFFER_MS = 1000;
+const TRANSITION_RULE_SELECTOR = `:root${TRANSITION_PSEUDO_CLASS}, :root${TRANSITION_PSEUDO_CLASS} *`;
+const TRANSITION_SHEET =
+  "data:text/css;charset=utf-8," +
+  encodeURIComponent(`
+  ${TRANSITION_RULE_SELECTOR} {
+    transition-duration: ${TRANSITION_DURATION_MS}ms !important;
+    transition-delay: 0ms !important;
+    transition-timing-function: ease-out !important;
+    transition-property: all !important;
+  }
+`);
+
+
+
+
+
+
+const modifiedStyleSheets = new WeakMap();
+
 class StyleSheetWatcher {
   constructor() {
-    this._onApplicableStylesheetAdded = this._onApplicableStylesheetAdded.bind(
-      this
-    );
-    this._onStylesheetUpdated = this._onStylesheetUpdated.bind(this);
+    this._resourceCount = 0;
+    
+    
+    
+    
+    this._styleSheetMap = new Map();
+    
+    this._mqlList = [];
+
+    this._onApplicableStateChanged = this._onApplicableStateChanged.bind(this);
   }
 
   
@@ -37,34 +91,539 @@ class StyleSheetWatcher {
     this._onAvailable = onAvailable;
     this._onUpdated = onUpdated;
 
-    this._styleSheetsManager = targetActor.getStyleSheetManager();
-
     
-    this._styleSheetsManager.on(
-      "applicable-stylesheet-added",
-      this._onApplicableStylesheetAdded
-    );
-    this._styleSheetsManager.on(
-      "stylesheet-updated",
-      this._onStylesheetUpdated
+    this._targetActor.chromeEventHandler.addEventListener(
+      "StyleSheetApplicableStateChanged",
+      this._onApplicableStateChanged,
+      true
     );
 
+    const styleSheets = [];
+
+    for (const window of this._targetActor.windows) {
+      
+      
+      window.document.styleSheetChangeEventsEnabled = true;
+
+      styleSheets.push(...(await this._getStyleSheets(window)));
+    }
+
+    await this._notifyResourcesAvailable(styleSheets);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async addStyleSheet(document, text, fileName) {
+    const parent = document.documentElement;
+    const style = document.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "style"
+    );
+    style.setAttribute("type", "text/css");
+
+    if (text) {
+      style.appendChild(document.createTextNode(text));
+    }
+
     
-    await this._styleSheetsManager.startWatching();
+    parent.appendChild(style);
+
+    
+    let resolve = null;
+    const promise = new Promise(r => {
+      resolve = r;
+    });
+
+    if (!this._stylesheetCreationData) {
+      this._stylesheetCreationData = new WeakMap();
+    }
+    this._stylesheetCreationData.set(style.sheet, {
+      isCreatedByDevTools: true,
+      fileName,
+      resolve,
+    });
+
+    await promise;
+
+    return style.sheet;
   }
 
-  _onApplicableStylesheetAdded(styleSheetData) {
-    return this._notifyResourcesAvailable([styleSheetData]);
+  async ensureResourceAvailable(styleSheet) {
+    if (this.getResourceId(styleSheet)) {
+      return;
+    }
+
+    await this._notifyResourcesAvailable([styleSheet]);
   }
 
-  _onStylesheetUpdated({ resourceId, updateKind, updates = {} }) {
-    this._notifyResourceUpdated(resourceId, updateKind, updates);
+  
+
+
+  getResourceId(styleSheet) {
+    for (const [resourceId, value] of this._styleSheetMap.entries()) {
+      if (styleSheet === value.styleSheet) {
+        return resourceId;
+      }
+    }
+
+    return null;
+  }
+
+  
+
+
+  getOwnerNode(resourceId) {
+    const { styleSheet } = this._styleSheetMap.get(resourceId);
+    return styleSheet.ownerNode;
+  }
+
+  
+
+
+  getStyleSheet(resourceId) {
+    const { styleSheet } = this._styleSheetMap.get(resourceId);
+    return styleSheet;
+  }
+
+  
+
+
+  getStyleSheetIndex(resourceId) {
+    const { styleSheet } = this._styleSheetMap.get(resourceId);
+    return this._getStyleSheetIndex(styleSheet);
+  }
+
+  
+
+
+  async getText(resourceId) {
+    const { styleSheet } = this._styleSheetMap.get(resourceId);
+
+    const modifiedText = modifiedStyleSheets.get(styleSheet);
+
+    
+    
+    if (modifiedText !== undefined) {
+      return modifiedText;
+    }
+
+    if (!styleSheet.href) {
+      
+      return styleSheet.ownerNode.textContent;
+    }
+
+    return this._fetchStylesheet(styleSheet);
+  }
+
+  
+
+
+
+
+  toggleDisabled(resourceId) {
+    const { styleSheet } = this._styleSheetMap.get(resourceId);
+    styleSheet.disabled = !styleSheet.disabled;
+
+    this._notifyPropertyChanged(resourceId, "disabled", styleSheet.disabled);
+
+    return styleSheet.disabled;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async update(
+    resourceId,
+    text,
+    transition,
+    kind = UPDATE_GENERAL,
+    cause = ""
+  ) {
+    const { styleSheet } = this._styleSheetMap.get(resourceId);
+    InspectorUtils.parseStyleSheet(styleSheet, text);
+    modifiedStyleSheets.set(styleSheet, text);
+
+    if (kind !== UPDATE_PRESERVING_RULES) {
+      this._notifyPropertyChanged(
+        resourceId,
+        "ruleCount",
+        styleSheet.cssRules.length
+      );
+    }
+
+    if (transition) {
+      this._startTransition(resourceId, kind, cause);
+    } else {
+      this._notifyResourceUpdated(resourceId, "style-applied", {
+        event: { kind, cause },
+      });
+    }
+
+    
+    for (const mql of this._mqlList) {
+      mql.onchange = null;
+    }
+
+    const mediaRules = await this._getMediaRules(resourceId, styleSheet);
+    this._notifyResourceUpdated(resourceId, "media-rules-changed", {
+      resourceUpdates: { mediaRules },
+    });
+  }
+
+  _startTransition(resourceId, kind, cause) {
+    const { styleSheet } = this._styleSheetMap.get(resourceId);
+    const document = styleSheet.ownerNode.ownerDocument;
+    const window = styleSheet.ownerNode.ownerGlobal;
+
+    if (!this._transitionSheetLoaded) {
+      this._transitionSheetLoaded = true;
+      
+      
+      
+      loadSheet(window, TRANSITION_SHEET);
+    }
+
+    addPseudoClassLock(document.documentElement, TRANSITION_PSEUDO_CLASS);
+
+    
+    
+    window.clearTimeout(this._transitionTimeout);
+    this._transitionTimeout = window.setTimeout(
+      this._onTransitionEnd.bind(this, resourceId, kind, cause),
+      TRANSITION_DURATION_MS + TRANSITION_BUFFER_MS
+    );
+  }
+
+  _onTransitionEnd(resourceId, kind, cause) {
+    const { styleSheet } = this._styleSheetMap.get(resourceId);
+    const document = styleSheet.ownerNode.ownerDocument;
+
+    this._transitionTimeout = null;
+    removePseudoClassLock(document.documentElement, TRANSITION_PSEUDO_CLASS);
+    this._notifyResourceUpdated(resourceId, "style-applied", {
+      event: { kind, cause },
+    });
+  }
+
+  async _fetchStylesheet(styleSheet) {
+    const href = styleSheet.href;
+
+    const options = {
+      loadFromCache: true,
+      policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
+      charset: this._getCSSCharset(styleSheet),
+    };
+
+    
+    
+    
+    
+
+    
+    const excludedProtocolsRe = /^(chrome|file|resource|moz-extension):\/\//;
+    if (!excludedProtocolsRe.test(href)) {
+      
+      const ownerNode = getSheetOwnerNode(styleSheet);
+      if (ownerNode) {
+        
+        options.window = ownerNode.ownerDocument.defaultView;
+        options.principal = ownerNode.ownerDocument.nodePrincipal;
+      }
+    }
+
+    let result;
+
+    try {
+      result = await fetch(href, options);
+    } catch (e) {
+      
+      
+      console.error(
+        `stylesheets: fetch failed for ${href},` +
+          ` using system principal instead.`
+      );
+      options.window = undefined;
+      options.principal = undefined;
+      result = await fetch(href, options);
+    }
+
+    return result.content;
+  }
+
+  _getCSSCharset(styleSheet) {
+    if (styleSheet) {
+      
+      if (styleSheet.ownerNode?.getAttribute) {
+        const linkCharset = styleSheet.ownerNode.getAttribute("charset");
+        if (linkCharset != null) {
+          return linkCharset;
+        }
+      }
+
+      
+      if (styleSheet.ownerNode?.ownerDocument.characterSet) {
+        return styleSheet.ownerNode.ownerDocument.characterSet;
+      }
+    }
+
+    return "UTF-8";
+  }
+
+  _getCSSRules(styleSheet) {
+    try {
+      return styleSheet.cssRules;
+    } catch (e) {
+      
+    }
+
+    if (!styleSheet.ownerNode) {
+      return Promise.resolve([]);
+    }
+
+    return new Promise(resolve => {
+      styleSheet.ownerNode.addEventListener(
+        "load",
+        () => resolve(styleSheet.cssRules),
+        { once: true }
+      );
+    });
+  }
+
+  async _getImportedStyleSheets(document, styleSheet) {
+    const importedStyleSheets = [];
+
+    for (const rule of await this._getCSSRules(styleSheet)) {
+      if (rule.type == CSSRule.IMPORT_RULE) {
+        
+        
+        
+        
+        
+        if (
+          !rule.styleSheet ||
+          this._haveAncestorWithSameURL(rule.styleSheet) ||
+          !this._shouldListSheet(rule.styleSheet)
+        ) {
+          continue;
+        }
+
+        importedStyleSheets.push(rule.styleSheet);
+
+        
+        const children = await this._getImportedStyleSheets(
+          document,
+          rule.styleSheet
+        );
+        importedStyleSheets.push(...children);
+      } else if (rule.type != CSSRule.CHARSET_RULE) {
+        
+        break;
+      }
+    }
+
+    return importedStyleSheets;
+  }
+
+  async _getMediaRules(resourceId, styleSheet) {
+    this._mqlList = [];
+
+    const mediaRules = Array.from(await this._getCSSRules(styleSheet)).filter(
+      rule => rule.type === CSSRule.MEDIA_RULE
+    );
+
+    return mediaRules.map((rule, index) => {
+      let matches = false;
+
+      try {
+        const window = styleSheet.ownerNode.ownerGlobal;
+        const mql = window.matchMedia(rule.media.mediaText);
+        matches = mql.matches;
+        mql.onchange = this._onMatchesChange.bind(this, resourceId, index);
+        this._mqlList.push(mql);
+      } catch (e) {
+        
+      }
+
+      return {
+        mediaText: rule.media.mediaText,
+        conditionText: rule.conditionText,
+        matches,
+        line: InspectorUtils.getRuleLine(rule),
+        column: InspectorUtils.getRuleColumn(rule),
+      };
+    });
+  }
+
+  _onMatchesChange(resourceId, index, mql) {
+    this._notifyResourceUpdated(resourceId, "matches-change", {
+      nestedResourceUpdates: [
+        {
+          path: ["mediaRules", index, "matches"],
+          value: mql.matches,
+        },
+      ],
+    });
+  }
+
+  _getNodeHref(styleSheet) {
+    const { ownerNode } = styleSheet;
+    if (!ownerNode) {
+      return null;
+    }
+
+    if (ownerNode.nodeType == ownerNode.DOCUMENT_NODE) {
+      return ownerNode.location.href;
+    } else if (ownerNode.ownerDocument?.location) {
+      return ownerNode.ownerDocument.location.href;
+    }
+
+    return null;
+  }
+
+  _getSourcemapBaseURL(styleSheet) {
+    
+    
+    
+    const ownerNode = getSheetOwnerNode(styleSheet);
+    const ownerDocument = ownerNode
+      ? ownerNode.ownerDocument
+      : this._targetActor.window;
+
+    return getSourcemapBaseURL(
+      
+      
+      
+      styleSheet.href || this._getNodeHref(styleSheet),
+      ownerDocument
+    );
+  }
+
+  _getStyleSheetIndex(styleSheet) {
+    const styleSheets = InspectorUtils.getAllStyleSheets(
+      this._targetActor.window.document,
+      true
+    );
+    return styleSheets.indexOf(styleSheet);
+  }
+
+  async _getStyleSheets({ document }) {
+    const documentOnly = !document.nodePrincipal.isSystemPrincipal;
+
+    const styleSheets = [];
+
+    for (const styleSheet of InspectorUtils.getAllStyleSheets(
+      document,
+      documentOnly
+    )) {
+      if (!this._shouldListSheet(styleSheet)) {
+        continue;
+      }
+
+      styleSheets.push(styleSheet);
+
+      
+      const importedStyleSheets = await this._getImportedStyleSheets(
+        document,
+        styleSheet
+      );
+      styleSheets.push(...importedStyleSheets);
+    }
+
+    return styleSheets;
+  }
+
+  _haveAncestorWithSameURL(styleSheet) {
+    const href = styleSheet.href;
+    while (styleSheet.parentStyleSheet) {
+      if (styleSheet.parentStyleSheet.href == href) {
+        return true;
+      }
+      styleSheet = styleSheet.parentStyleSheet;
+    }
+    return false;
+  }
+
+  _notifyPropertyChanged(resourceId, property, value) {
+    this._notifyResourceUpdated(resourceId, "property-change", {
+      resourceUpdates: { [property]: value },
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _onApplicableStateChanged({ applicable, stylesheet: styleSheet }) {
+    for (const existing of this._styleSheetMap.values()) {
+      if (existing.styleSheet === styleSheet) {
+        return;
+      }
+    }
+
+    if (
+      
+      applicable &&
+      
+      styleSheet.ownerNode &&
+      this._shouldListSheet(styleSheet) &&
+      !this._haveAncestorWithSameURL(styleSheet)
+    ) {
+      await this._notifyResourcesAvailable([styleSheet]);
+    }
+  }
+
+  _shouldListSheet(styleSheet) {
+    
+    
+    
+    if (styleSheet.href?.toLowerCase() === "about:preferencestylesheet") {
+      return false;
+    }
+
+    return true;
   }
 
   async _toResource(
     styleSheet,
-    { isCreatedByDevTools = false, fileName = null, resourceId } = {}
+    { isCreatedByDevTools = false, fileName = null } = {}
   ) {
+    
+    
+    const resourceId = `${this._targetActor.actorID}:stylesheet:${this
+      ._resourceCount++}`;
+
     const resource = {
       resourceId,
       resourceType: STYLESHEET,
@@ -72,14 +631,12 @@ class StyleSheetWatcher {
       fileName,
       href: styleSheet.href,
       isNew: isCreatedByDevTools,
-      mediaRules: await this._styleSheetsManager._getMediaRules(styleSheet),
-      nodeHref: this._styleSheetsManager._getNodeHref(styleSheet),
+      mediaRules: await this._getMediaRules(resourceId, styleSheet),
+      nodeHref: this._getNodeHref(styleSheet),
       ruleCount: styleSheet.cssRules.length,
-      sourceMapBaseURL: this._styleSheetsManager._getSourcemapBaseURL(
-        styleSheet
-      ),
+      sourceMapBaseURL: this._getSourcemapBaseURL(styleSheet),
       sourceMapURL: styleSheet.sourceMapURL,
-      styleSheetIndex: this._styleSheetsManager._getStyleSheetIndex(styleSheet),
+      styleSheetIndex: this._getStyleSheetIndex(styleSheet),
       system: CssLogic.isAgentStylesheet(styleSheet),
       title: styleSheet.title,
     };
@@ -89,18 +646,26 @@ class StyleSheetWatcher {
 
   async _notifyResourcesAvailable(styleSheets) {
     const resources = await Promise.all(
-      styleSheets.map(async ({ resourceId, styleSheet, creationData }) => {
+      styleSheets.map(async styleSheet => {
+        const creationData = this._stylesheetCreationData?.get(styleSheet);
+
         const resource = await this._toResource(styleSheet, {
-          resourceId,
           isCreatedByDevTools: creationData?.isCreatedByDevTools,
           fileName: creationData?.fileName,
         });
 
+        this._styleSheetMap.set(resource.resourceId, { styleSheet });
         return resource;
       })
     );
 
     await this._onAvailable(resources);
+
+    for (const styleSheet of styleSheets) {
+      const creationData = this._stylesheetCreationData?.get(styleSheet);
+      creationData?.resolve();
+      this._stylesheetCreationData?.delete(styleSheet);
+    }
   }
 
   _notifyResourceUpdated(
@@ -121,13 +686,14 @@ class StyleSheetWatcher {
   }
 
   destroy() {
-    this._styleSheetsManager.off(
-      "applicable-stylesheet-added",
-      this._onApplicableStylesheetAdded
-    );
-    this._styleSheetsManager.off(
-      "stylesheet-updated",
-      this._onStylesheetUpdated
+    if (!this._targetActor.docShell) {
+      return;
+    }
+
+    this._targetActor.chromeEventHandler.removeEventListener(
+      "StyleSheetApplicableStateChanged",
+      this._onApplicableStateChanged,
+      true
     );
   }
 }

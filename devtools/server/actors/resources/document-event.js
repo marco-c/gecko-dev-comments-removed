@@ -27,18 +27,12 @@ class DocumentEventWatcher {
       return;
     }
 
-    const onDocumentEvent = (
-      name,
-      time,
-      
-      shouldBeIgnoredAsRedundantWithTargetAvailable
-    ) => {
+    const onDocumentEvent = (name, time) => {
       onAvailable([
         {
           resourceType: DOCUMENT_EVENT,
           name,
           time,
-          shouldBeIgnoredAsRedundantWithTargetAvailable,
         },
       ]);
     };
