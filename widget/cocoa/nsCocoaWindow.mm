@@ -3500,8 +3500,8 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
     
     
     
-    
-    if (Preferences::GetBool("full-screen-api.macos.shiftToolbar", false)) {
+    if (!nsCocoaFeatures::OnBigSurOrLater() ||
+        Preferences::GetBool("full-screen-api.macos.shiftToolbar", false)) {
       [(NSWindow*)self addTitlebarAccessoryViewController:mFullscreenTitlebarTracker];
     }
   }
