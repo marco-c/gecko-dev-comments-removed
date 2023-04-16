@@ -45,7 +45,8 @@ void* Pointer::ToPtr(FontList* aFontList) const {
   
   
   
-  if (block >= aFontList->mBlocks.Length()) {
+  auto& blocks = aFontList->mBlocks;
+  if (block >= blocks.Length()) {
     if (XRE_IsParentProcess()) {
       
       return nullptr;
@@ -61,9 +62,18 @@ void* Pointer::ToPtr(FontList* aFontList) const {
     if (!NS_IsMainThread() || !aFontList->UpdateShmBlocks()) {
       return nullptr;
     }
-    MOZ_ASSERT(block < aFontList->mBlocks.Length());
+    MOZ_ASSERT(block < blocks.Length(), "failure in UpdateShmBlocks?");
+    
+    
+    
+    
+    
+    
+    if (block >= blocks.Length()) {
+      return nullptr;
+    }
   }
-  return static_cast<char*>(aFontList->mBlocks[block]->Memory()) + Offset();
+  return static_cast<char*>(blocks[block]->Memory()) + Offset();
 }
 
 void String::Assign(const nsACString& aString, FontList* aList) {
