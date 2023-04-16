@@ -12,6 +12,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
+#include "nsISupports.h"
 #include "nsMenuBaseX.h"
 #include "nsMenuBarX.h"
 #include "nsMenuGroupOwnerX.h"
@@ -35,10 +36,11 @@ class nsIWidget;
 
 class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
  public:
-  using MenuChild = mozilla::Variant<mozilla::UniquePtr<nsMenuX>, mozilla::UniquePtr<nsMenuItemX>>;
+  using MenuChild = mozilla::Variant<RefPtr<nsMenuX>, mozilla::UniquePtr<nsMenuItemX>>;
 
   nsMenuX(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aContent);
-  virtual ~nsMenuX();
+
+  NS_INLINE_DECL_REFCOUNTING(nsMenuX)
 
   
   
@@ -75,6 +77,8 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   static bool IsXULHelpMenu(nsIContent* aMenuContent);
 
  protected:
+  virtual ~nsMenuX();
+
   void RebuildMenu();
   nsresult RemoveAll();
   nsresult SetEnabled(bool aIsEnabled);
@@ -82,7 +86,7 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   already_AddRefed<nsIContent> GetMenuPopupContent();
   bool OnOpen();
   void AddMenuItem(mozilla::UniquePtr<nsMenuItemX>&& aMenuItem);
-  void AddMenu(mozilla::UniquePtr<nsMenuX>&& aMenu);
+  void AddMenu(RefPtr<nsMenuX>&& aMenu);
   void LoadMenuItem(nsIContent* aMenuItemContent);
   void LoadSubMenu(nsIContent* aMenuContent);
   GeckoNSMenu* CreateMenuWithGeckoString(nsString& aMenuTitle);

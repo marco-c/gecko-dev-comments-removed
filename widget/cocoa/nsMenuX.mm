@@ -219,28 +219,25 @@ void nsMenuX::AddMenuItem(UniquePtr<nsMenuItemX>&& aMenuItem) {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-void nsMenuX::AddMenu(UniquePtr<nsMenuX>&& aMenu) {
+void nsMenuX::AddMenu(RefPtr<nsMenuX>&& aMenu) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  
-  
-  nsMenuX* menu = aMenu.get();
-  mMenuChildren.AppendElement(std::move(aMenu));
+  mMenuChildren.AppendElement(aMenu);
 
-  if (nsMenuUtilsX::NodeIsHiddenOrCollapsed(menu->Content())) {
+  if (nsMenuUtilsX::NodeIsHiddenOrCollapsed(aMenu->Content())) {
     return;
   }
 
   ++mVisibleItemsCount;
 
   
-  NSMenuItem* newNativeMenuItem = menu->NativeNSMenuItem();
+  NSMenuItem* newNativeMenuItem = aMenu->NativeNSMenuItem();
   if (newNativeMenuItem) {
     [mNativeMenu addItem:newNativeMenuItem];
-    newNativeMenuItem.submenu = menu->NativeNSMenu();
+    newNativeMenuItem.submenu = aMenu->NativeNSMenu();
   }
 
-  menu->SetupIcon();
+  aMenu->SetupIcon();
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -255,7 +252,7 @@ nsMenuObjectX* nsMenuX::GetItemAt(uint32_t aPos) {
   }
 
   return mMenuChildren[aPos].match(
-      [](const UniquePtr<nsMenuX>& aMenu) { return static_cast<nsMenuObjectX*>(aMenu.get()); },
+      [](const RefPtr<nsMenuX>& aMenu) { return static_cast<nsMenuObjectX*>(aMenu.get()); },
       [](const UniquePtr<nsMenuItemX>& aMenuItem) {
         return static_cast<nsMenuObjectX*>(aMenuItem.get());
       });
@@ -480,7 +477,7 @@ void nsMenuX::LoadMenuItem(nsIContent* aMenuItemContent) {
 }
 
 void nsMenuX::LoadSubMenu(nsIContent* aMenuContent) {
-  AddMenu(MakeUnique<nsMenuX>(this, mMenuGroupOwner, aMenuContent));
+  AddMenu(MakeRefPtr<nsMenuX>(this, mMenuGroupOwner, aMenuContent));
 }
 
 
@@ -670,7 +667,7 @@ void nsMenuX::Dump(uint32_t aIndent) const {
   printf(" (%d visible items)", int(mVisibleItemsCount));
   printf("\n");
   for (const auto& subitem : mMenuChildren) {
-    subitem.match([=](const UniquePtr<nsMenuX>& aMenu) { aMenu->Dump(aIndent + 1); },
+    subitem.match([=](const RefPtr<nsMenuX>& aMenu) { aMenu->Dump(aIndent + 1); },
                   [=](const UniquePtr<nsMenuItemX>& aMenuItem) { aMenuItem->Dump(aIndent + 1); });
   }
 }
