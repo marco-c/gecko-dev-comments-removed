@@ -505,7 +505,6 @@ AutoSetHelperThreadContext::AutoSetHelperThreadContext(
   cx = HelperThreadState().getFirstUnusedContext(lock);
   MOZ_ASSERT(cx);
   cx->setHelperThread(lock);
-  cx->nativeStackBase = GetNativeStackBase();
   
   
   JS_SetNativeStackQuota(cx, HELPER_STACK_QUOTA);

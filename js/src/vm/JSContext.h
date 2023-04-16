@@ -9,6 +9,7 @@
 #ifndef vm_JSContext_h
 #define vm_JSContext_h
 
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 
 #include "jstypes.h"  
@@ -479,8 +480,12 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
     return runtime()->interpreterStack();
   }
 
+ private:
   
-  uintptr_t nativeStackBase;
+  mozilla::Maybe<uintptr_t> nativeStackBase_;
+
+ public:
+  uintptr_t nativeStackBase() const { return *nativeStackBase_; }
 
  public:
   
