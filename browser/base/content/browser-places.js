@@ -476,7 +476,7 @@ var StarUI = {
     if (!anchor) {
       anchor = document.getElementById("PanelUI-menu-button");
     }
-    ConfirmationHint.show(anchor, "pageBookmarked");
+    ConfirmationHint.show(anchor, "pageBookmarked2");
   },
 };
 
