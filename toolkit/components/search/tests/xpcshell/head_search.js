@@ -272,8 +272,6 @@ function useHttpServer(dir = "data") {
 
 
 
-
-
 var addTestEngines = async function(aItems) {
   if (!gDataUrl) {
     do_throw("useHttpServer must be called before addTestEngines.");
@@ -300,11 +298,7 @@ var addTestEngines = async function(aItems) {
         }
       }, "browser-search-engine-modified");
 
-      if (item.xmlFileName) {
-        Services.search.addOpenSearchEngine(gDataUrl + item.xmlFileName, null);
-      } else {
-        Services.search.addEngineWithDetails(item.name, item.details);
-      }
+      Services.search.addOpenSearchEngine(gDataUrl + item.xmlFileName, null);
     });
   }
 

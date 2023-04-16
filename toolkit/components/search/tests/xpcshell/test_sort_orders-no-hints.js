@@ -36,10 +36,7 @@ async function checkOrder(type, expectedOrder) {
 }
 
 add_task(async function test_engine_sort_with_non_builtins_sort() {
-  await Services.search.addEngineWithDetails("nonbuiltin1", {
-    method: "get",
-    template: "http://example.com/?search={searchTerms}",
-  });
+  await SearchTestUtils.installSearchExtension({ name: "nonbuiltin1" });
 
   
   

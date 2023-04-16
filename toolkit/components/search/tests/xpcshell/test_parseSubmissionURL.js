@@ -13,42 +13,35 @@ add_task(async function setup() {
 });
 
 add_task(async function test_parseSubmissionURL() {
-  let [engine1, engine2, engine3, engine4] = await addTestEngines([
+  let [engine1, engine2] = await addTestEngines([
     { name: "Test search engine", xmlFileName: "engine.xml" },
     { name: "Test search engine (fr)", xmlFileName: "engine-fr.xml" },
-    {
-      name: "bacon_addParam",
-      details: {
-        alias: "bacon_addParam",
-        encoding: "windows-1252",
-        description: "Search Bacon",
-        method: "GET",
-        template: "http://www.bacon.test/find",
-        searchGetParams: "q={searchTerms}",
-      },
-    },
-    {
-      name: "idn_addParam",
-      details: {
-        alias: "idn_addParam",
-        description: "Search IDN",
-        method: "GET",
-        template: "http://www.xn--bcher-kva.ch/search",
-        searchGetParams: "q={searchTerms}",
-      },
-    },
-    
-    { name: "A second test engine", xmlFileName: "engine2.xml" },
-    {
-      name: "bacon",
-      details: {
-        alias: "bacon",
-        description: "Search Bacon",
-        method: "GET",
-        template: "http://www.bacon.moz/search?q={searchTerms}",
-      },
-    },
   ]);
+
+  await SearchTestUtils.installSearchExtension({
+    name: "bacon_addParam",
+    keyword: "bacon_addParam",
+    encoding: "windows-1252",
+    search_url: "https://www.bacon.test/find",
+  });
+  await SearchTestUtils.installSearchExtension({
+    name: "idn_addParam",
+    keyword: "idn_addParam",
+    search_url: "https://www.xn--bcher-kva.ch/search",
+  });
+  let engine3 = Services.search.getEngineByName("bacon_addParam");
+  let engine4 = Services.search.getEngineByName("idn_addParam");
+
+  
+  await addTestEngines([
+    { name: "A second test engine", xmlFileName: "engine2.xml" },
+  ]);
+  await SearchTestUtils.installSearchExtension({
+    name: "bacon",
+    keyword: "bacon",
+    search_url: "https://www.bacon.moz/search?q=",
+    search_url_get_params: "",
+  });
 
   await Services.search.setDefault(engine1);
 
@@ -58,7 +51,7 @@ add_task(async function test_parseSubmissionURL() {
   }
 
   
-  let url = "http://www.google.com/search?foo=bar&q=caff%C3%A8";
+  let url = "https://www.google.com/search?foo=bar&q=caff%C3%A8";
   let result = Services.search.parseSubmissionURL(url);
   Assert.equal(result.engine, engine1);
   Assert.equal(result.terms, "caff\u00E8");
@@ -68,7 +61,7 @@ add_task(async function test_parseSubmissionURL() {
   
   
   
-  url = "http://www.google.fr/search?q=caff%E8";
+  url = "https://www.google.fr/search?q=caff%E8";
   result = Services.search.parseSubmissionURL(url);
   Assert.equal(result.engine, engine2);
   Assert.equal(result.terms, "caff\u00E8");
@@ -77,7 +70,7 @@ add_task(async function test_parseSubmissionURL() {
 
   
   
-  url = "http://www.google.co.uk/search?q=caff%C3%A8";
+  url = "https://www.google.co.uk/search?q=caff%C3%A8";
   result = Services.search.parseSubmissionURL(url);
   Assert.equal(result.engine, engine1);
   Assert.equal(result.terms, "caff\u00E8");
@@ -85,7 +78,7 @@ add_task(async function test_parseSubmissionURL() {
   Assert.equal(result.termsLength, "caff%C3%A8".length);
 
   
-  url = "http://www.bacon.test/find?q=caff%E8";
+  url = "https://www.bacon.test/find?q=caff%E8";
   result = Services.search.parseSubmissionURL(url);
   Assert.equal(result.engine, engine3);
   Assert.equal(result.terms, "caff\u00E8");
@@ -93,7 +86,7 @@ add_task(async function test_parseSubmissionURL() {
   Assert.equal(result.termsLength, "caff%E8".length);
 
   
-  url = "http://www.google.com/search?q=foo+b\u00E4r";
+  url = "https://www.google.com/search?q=foo+b\u00E4r";
   result = Services.search.parseSubmissionURL(url);
   Assert.equal(result.engine, engine1);
   Assert.equal(result.terms, "foo b\u00E4r");
@@ -101,7 +94,7 @@ add_task(async function test_parseSubmissionURL() {
   Assert.equal(result.termsLength, "foo+b\u00E4r".length);
 
   
-  url = "http://www.b\u00FCcher.ch/search?q=foo+bar";
+  url = "https://www.b\u00FCcher.ch/search?q=foo+bar";
   result = Services.search.parseSubmissionURL(url);
   Assert.equal(result.engine, engine4);
   Assert.equal(result.terms, "foo bar");
@@ -109,7 +102,7 @@ add_task(async function test_parseSubmissionURL() {
   Assert.equal(result.termsLength, "foo+bar".length);
 
   
-  url = "http://www.xn--bcher-kva.ch/search?q=foo+bar";
+  url = "https://www.xn--bcher-kva.ch/search?q=foo+bar";
   result = Services.search.parseSubmissionURL(url);
   Assert.equal(result.engine, engine4);
   Assert.equal(result.terms, "foo bar");
@@ -118,7 +111,8 @@ add_task(async function test_parseSubmissionURL() {
 
   
   Assert.equal(
-    Services.search.parseSubmissionURL("http://www.bacon.moz/search?q=").engine,
+    Services.search.parseSubmissionURL("https://www.bacon.moz/search?q=")
+      .engine,
     null
   );
   Assert.equal(
@@ -139,13 +133,13 @@ add_task(async function test_parseSubmissionURL() {
 
   
   result = Services.search.parseSubmissionURL(
-    "http://www.google.com/search?q=+with++spaces+"
+    "https://www.google.com/search?q=+with++spaces+"
   );
   Assert.equal(result.engine, engine1);
   Assert.equal(result.terms, " with  spaces ");
 
   
-  url = "http://www.google.com/search?q=";
+  url = "https://www.google.com/search?q=";
   result = Services.search.parseSubmissionURL(url);
   Assert.equal(result.engine, engine1);
   Assert.equal(result.terms, "");
@@ -153,7 +147,7 @@ add_task(async function test_parseSubmissionURL() {
 
   
   result = Services.search.parseSubmissionURL(
-    "http://www.google.com/search/?q=test"
+    "https://www.google.com/search/?q=test"
   );
   Assert.equal(result.engine, null);
   Assert.equal(result.terms, "");
@@ -161,7 +155,7 @@ add_task(async function test_parseSubmissionURL() {
 
   
   result = Services.search.parseSubmissionURL(
-    "http://www.google.com/search?q2=test"
+    "https://www.google.com/search?q2=test"
   );
   Assert.equal(result.engine, null);
   Assert.equal(result.terms, "");
