@@ -1596,8 +1596,7 @@ void nsWindow::Show(bool bState) {
     
     
     ::SendMessageW(mWnd, WM_CHANGEUISTATE,
-                   MAKEWPARAM(UIS_INITIALIZE, UISF_HIDEFOCUS | UISF_HIDEACCEL),
-                   0);
+                   MAKEWPARAM(UIS_SET, UISF_HIDEFOCUS | UISF_HIDEACCEL), 0);
   }
 
   if (mWindowType == eWindowType_popup) {
@@ -1703,9 +1702,8 @@ void nsWindow::Show(bool bState) {
       if (!wasVisible && (mWindowType == eWindowType_toplevel ||
                           mWindowType == eWindowType_dialog)) {
         
-        ::SendMessageW(
-            mWnd, WM_CHANGEUISTATE,
-            MAKEWPARAM(UIS_INITIALIZE, UISF_HIDEFOCUS | UISF_HIDEACCEL), 0);
+        ::SendMessageW(mWnd, WM_CHANGEUISTATE,
+                       MAKEWPARAM(UIS_SET, UISF_HIDEFOCUS | UISF_HIDEACCEL), 0);
       }
     } else {
       
@@ -6215,9 +6213,10 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
         if (action == UIS_SET || action == UIS_CLEAR) {
           int32_t flags = HIWORD(wParam);
           UIStateChangeType showFocusRings = UIStateChangeType_NoChange;
-          if (flags & UISF_HIDEFOCUS)
+          if (flags & UISF_HIDEFOCUS) {
             showFocusRings = (action == UIS_SET) ? UIStateChangeType_Clear
                                                  : UIStateChangeType_Set;
+          }
           NotifyUIStateChanged(showFocusRings);
         }
       }
