@@ -565,6 +565,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
     
     HitTestResult(HitTestResult&&) = default;
     HitTestResult& operator=(HitTestResult&&) = default;
+
+    
+    
+    HitTestResult CopyWithoutScrollbarNode() const;
   };
 
   

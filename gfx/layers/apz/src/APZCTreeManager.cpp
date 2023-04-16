@@ -1942,10 +1942,7 @@ void APZCTreeManager::ProcessTouchInput(InputHandlingState& aState,
 
     HitTestResult hit = GetTouchInputBlockAPZC(aInput, &touchBehaviors);
     
-    mTouchBlockHitResult = HitTestResult();
-    mTouchBlockHitResult.mTargetApzc = hit.mTargetApzc;
-    mTouchBlockHitResult.mHitResult = hit.mHitResult;
-    mTouchBlockHitResult.mFixedPosSides = hit.mFixedPosSides;
+    mTouchBlockHitResult = hit.CopyWithoutScrollbarNode();
     if (hit.mLayersId.IsValid()) {
       
       
@@ -2494,6 +2491,16 @@ void APZCTreeManager::ClearTree() {
         self->mFlushObserver->Unregister();
         self->mFlushObserver = nullptr;
       }));
+}
+
+APZCTreeManager::HitTestResult
+APZCTreeManager::HitTestResult::CopyWithoutScrollbarNode() const {
+  HitTestResult result;
+  result.mTargetApzc = mTargetApzc;
+  result.mHitResult = mHitResult;
+  result.mLayersId = mLayersId;
+  result.mFixedPosSides = mFixedPosSides;
+  return result;
 }
 
 RefPtr<HitTestingTreeNode> APZCTreeManager::GetRootNode() const {
