@@ -245,6 +245,8 @@ class WebRenderAPI final {
 
   already_AddRefed<WebRenderAPI> Clone();
 
+  void DestroyRenderer();
+
   wr::WindowId GetId() const { return mId; }
 
   
@@ -343,6 +345,7 @@ class WebRenderAPI final {
   bool mSupportsExternalBufferTextures;
   bool mCaptureSequence;
   layers::SyncHandle mSyncHandle;
+  bool mRendererDestroyed;
 
   
   
