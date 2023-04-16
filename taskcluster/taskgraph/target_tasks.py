@@ -1074,6 +1074,13 @@ def target_tasks_coverity_full(full_task_graph, parameters, graph_config):
     return ["source-test-coverity-coverity-full-analysis"]
 
 
+
+@_target_task("updatebot_cron")
+def target_tasks_updatebot_cron(full_task_graph, parameters, graph_config):
+    """Select tasks required to run Updatebot's cron job"""
+    return ["updatebot-cron"]
+
+
 @_target_task("customv8_update")
 def target_tasks_customv8_update(full_task_graph, parameters, graph_config):
     """Select tasks required for building latest d8/v8 version."""
