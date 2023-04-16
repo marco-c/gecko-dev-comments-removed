@@ -12,6 +12,7 @@
 #include "mozilla/MemoryReporting.h"  
 #include "mozilla/Range.h"            
 #include "mozilla/Span.h"             
+#include "mozilla/Unused.h"           
 #include "mozilla/Variant.h"          
 
 #include <stddef.h>  

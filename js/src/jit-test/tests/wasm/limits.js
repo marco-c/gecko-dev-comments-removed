@@ -5,9 +5,9 @@
 
 
 
-const PageSize = 65536;
+const PageSize = PageSizeInBytes;
 const MemoryMaxValid = 65536;
-const MemoryMaxRuntime = Math.floor(0x7fff_ffff / PageSize);
+const MemoryMaxRuntime = MaxPagesIn32BitMemory;
 
 const TableMaxValid = 0xffff_ffff;
 const TableMaxRuntime = 10_000_000;

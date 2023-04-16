@@ -411,6 +411,8 @@ TypeCode env_elem_typecode(const CraneliftModuleEnvironment* env,
   return env->env->elemSegments[index]->elemType.packed().typeCode();
 }
 
+
+
 uint32_t env_max_memory(const CraneliftModuleEnvironment* env) {
   
   if (env->env->maxMemoryLength.isSome()) {
@@ -421,9 +423,8 @@ uint32_t env_max_memory(const CraneliftModuleEnvironment* env) {
     MOZ_RELEASE_ASSERT(inBytes <= (((uint64_t)1) << 32));
     MOZ_RELEASE_ASSERT((inBytes & wasm::PageMask) == 0);
     return (uint32_t)(inBytes >> wasm::PageBits);
-  } else {
-    return UINT32_MAX;
   }
+  return UINT32_MAX;
 }
 
 bool env_uses_shared_memory(const CraneliftModuleEnvironment* env) {

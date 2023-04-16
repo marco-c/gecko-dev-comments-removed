@@ -34,7 +34,8 @@
 #include "js/RootingAPI.h"     
 #include "js/SweepingAPI.h"    
 #include "js/TypeDecls.h"  
-#include "js/Vector.h"        
+#include "js/Vector.h"  
+#include "vm/BufferSize.h"
 #include "vm/JSFunction.h"    
 #include "vm/NativeObject.h"  
 #include "wasm/WasmTypes.h"   
@@ -56,10 +57,8 @@ class ArrayBufferObjectMaybeShared;
 class JSStringBuilder;
 class SharedArrayRawBuffer;
 class TypedArrayObject;
-class WasmArrayRawBuffer;
 class WasmFunctionScope;
 class WasmInstanceScope;
-class SharedArrayRawBuffer;
 
 namespace wasm {
 
@@ -162,6 +161,12 @@ void ReportSimdAnalysis(const char* data);
 
 bool ExceptionsAvailable(JSContext* cx);
 
+size_t MaxMemory32Pages();
+
+static inline size_t MaxMemory32Bytes() {
+  return MaxMemory32Pages() * PageSize;
+}
+
 
 
 
@@ -203,17 +208,6 @@ WasmInstanceObject* ExportedFunctionToInstanceObject(JSFunction* fun);
 uint32_t ExportedFunctionToFuncIndex(JSFunction* fun);
 
 bool IsSharedWasmMemoryObject(JSObject* obj);
-
-
-
-
-
-
-uint32_t ByteLength32(Handle<ArrayBufferObjectMaybeShared*> buffer);
-uint32_t ByteLength32(const ArrayBufferObjectMaybeShared& buffer);
-uint32_t ByteLength32(const WasmArrayRawBuffer* buffer);
-uint32_t ByteLength32(const ArrayBufferObject& buffer);
-uint32_t VolatileByteLength32(const SharedArrayRawBuffer* buffer);
 
 }  
 
@@ -416,12 +410,12 @@ class WasmMemoryObject : public NativeObject {
   
   
   
-  uint32_t volatileMemoryLength32() const;
+  js::BufferSize volatileMemoryLength() const;
 
   bool isShared() const;
   bool isHuge() const;
   bool movingGrowable() const;
-  uint32_t boundsCheckLimit32() const;
+  js::BufferSize boundsCheckLimit() const;
 
   
   SharedArrayRawBuffer* sharedArrayRawBuffer() const;

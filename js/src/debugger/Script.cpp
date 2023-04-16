@@ -43,6 +43,7 @@
 #include "vm/StringType.h"            
 #include "wasm/WasmDebug.h"           
 #include "wasm/WasmInstance.h"        
+#include "wasm/WasmJS.h"              
 #include "wasm/WasmTypes.h"           
 
 #include "vm/BytecodeUtil-inl.h"  

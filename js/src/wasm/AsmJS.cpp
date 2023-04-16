@@ -6785,6 +6785,21 @@ static bool CheckBuffer(JSContext* cx, const AsmJSMetadata& metadata,
     return LinkFail(cx, msg.get());
   }
 
+  
+  
+  
+  
+  if (memoryLength >= INT32_MAX) {
+    UniqueChars msg(
+        JS_smprintf("ArrayBuffer byteLength 0x%" PRIx64
+                    " is too large for asm.js (implementation limit).",
+                    uint64_t(memoryLength)));
+    if (!msg) {
+      return false;
+    }
+    return LinkFail(cx, msg.get());
+  }
+
   if (!buffer->prepareForAsmJS()) {
     return LinkFail(cx, "Unable to prepare ArrayBuffer for asm.js use");
   }
@@ -7279,7 +7294,7 @@ bool js::IsValidAsmJSHeapLength(size_t length) {
   }
 
   
-  if (length > MaxMemory32Bytes) {
+  if (length > MaxMemory32Bytes()) {
     return false;
   }
 

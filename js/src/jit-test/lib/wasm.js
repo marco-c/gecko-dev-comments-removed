@@ -5,6 +5,13 @@ load(libdir + "asserts.js");
 
 
 
+
+var PageSizeInBytes = 65536;
+var MaxBytesIn32BitMemory = largeArrayBufferEnabled() ? 65534*PageSizeInBytes : 0x7FFF_FFFF;
+var MaxPagesIn32BitMemory = Math.floor(MaxBytesIn32BitMemory / PageSizeInBytes);
+
+
+
 function wasmEvalText(str, imports, options) {
     let binary = wasmTextToBinary(str);
     let valid = WebAssembly.validate(binary, options);
