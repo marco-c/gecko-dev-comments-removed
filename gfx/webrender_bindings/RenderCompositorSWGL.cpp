@@ -185,10 +185,6 @@ void RenderCompositorSWGL::CommitMappedBuffer(bool aDirty) {
     return;
   }
   
-  if (aDirty) {
-    wr_swgl_resolve_framebuffer(mContext, 0);
-  }
-  
   
   wr_swgl_init_default_framebuffer(mContext, 0, 0, 0, 0, 0, nullptr);
   
