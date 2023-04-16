@@ -7,9 +7,4 @@
 
 module.exports = {
   extends: ["plugin:mozilla/browser-test"],
-
-  rules: {
-    
-    camelcase: "off",
-  },
 };

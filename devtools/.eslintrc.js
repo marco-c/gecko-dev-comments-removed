@@ -22,7 +22,11 @@ module.exports = {
       },
     },
     {
-      files: ["client/shared/*.jsm"],
+      files: [
+        "client/shared/*.jsm",
+        
+        "**/test*/**/*",
+      ],
       rules: {
         camelcase: "off",
       },
