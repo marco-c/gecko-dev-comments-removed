@@ -13,6 +13,7 @@
 
 
 #import <Cocoa/Cocoa.h>
+#include "NativeMenuMac.h"
 #import <Carbon/Carbon.h>
 
 #include "nsCOMPtr.h"
@@ -251,14 +252,11 @@ void ProcessPendingGetURLAppleEvents() {
   rv = dockSupport->GetDockMenu(getter_AddRefs(dockMenuInterface));
   if (NS_FAILED(rv) || !dockMenuInterface) return menu;
 
-  RefPtr<nsStandaloneNativeMenu> dockMenu =
-      static_cast<nsStandaloneNativeMenu*>(dockMenuInterface.get());
+  RefPtr<mozilla::widget::NativeMenuMac> dockMenu =
+      static_cast<nsStandaloneNativeMenu*>(dockMenuInterface.get())->GetNativeMenu();
 
   
-  
-  bool shouldShowItems;
-  rv = dockMenu->MenuWillOpen(&shouldShowItems);
-  if (NS_FAILED(rv) || !shouldShowItems) return menu;
+  dockMenu->MenuWillOpen();
 
   
   NSMenu* nativeDockMenu = dockMenu->NativeNSMenu();
