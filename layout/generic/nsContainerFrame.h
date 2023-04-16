@@ -212,9 +212,21 @@ class nsContainerFrame : public nsSplittableFrame {
                                  const nsSize& aMaxSize);
 
   
-  void DoInlineIntrinsicISize(gfxContext* aRenderingContext,
-                              InlineIntrinsicISizeData* aData,
-                              mozilla::IntrinsicISizeType aType);
+
+
+
+
+
+
+
+
+  template <typename ISizeData, typename F>
+  void DoInlineIntrinsicISize(ISizeData* aData, F& aHandleChildren);
+
+  void DoInlineMinISize(gfxContext* aRenderingContext,
+                        InlineMinISizeData* aData);
+  void DoInlinePrefISize(gfxContext* aRenderingContext,
+                         InlinePrefISizeData* aData);
 
   
 

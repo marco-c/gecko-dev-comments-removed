@@ -98,8 +98,7 @@ nsresult nsFirstLetterFrame::GetChildFrameContainingOffset(
 
 void nsFirstLetterFrame::AddInlineMinISize(
     gfxContext* aRenderingContext, nsIFrame::InlineMinISizeData* aData) {
-  DoInlineIntrinsicISize(aRenderingContext, aData,
-                         IntrinsicISizeType::MinISize);
+  DoInlineMinISize(aRenderingContext, aData);
 }
 
 
@@ -107,9 +106,7 @@ void nsFirstLetterFrame::AddInlineMinISize(
 
 void nsFirstLetterFrame::AddInlinePrefISize(
     gfxContext* aRenderingContext, nsIFrame::InlinePrefISizeData* aData) {
-  DoInlineIntrinsicISize(aRenderingContext, aData,
-                         IntrinsicISizeType::PrefISize);
-  aData->mLineIsEmpty = false;
+  DoInlinePrefISize(aRenderingContext, aData);
 }
 
 

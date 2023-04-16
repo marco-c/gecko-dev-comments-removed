@@ -7,6 +7,7 @@
 
 
 #include "nsContainerFrame.h"
+#include "nsContainerFrameInlines.h"
 
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
@@ -868,109 +869,25 @@ void nsContainerFrame::SyncFrameViewAfterReflow(nsPresContext* aPresContext,
   }
 }
 
-static nscoord GetCoord(const LengthPercentage& aCoord, nscoord aIfNotCoord) {
-  if (aCoord.ConvertsToLength()) {
-    return aCoord.ToLength();
-  }
-  return aIfNotCoord;
+void nsContainerFrame::DoInlineMinISize(gfxContext* aRenderingContext,
+                                        InlineMinISizeData* aData) {
+  auto handleChildren = [aRenderingContext](auto frame, auto data) {
+    for (nsIFrame* kid : frame->mFrames) {
+      kid->AddInlineMinISize(aRenderingContext, data);
+    }
+  };
+  DoInlineIntrinsicISize(aData, handleChildren);
 }
 
-static nscoord GetCoord(const LengthPercentageOrAuto& aCoord,
-                        nscoord aIfNotCoord) {
-  if (aCoord.IsAuto()) {
-    return aIfNotCoord;
-  }
-  return GetCoord(aCoord.AsLengthPercentage(), aIfNotCoord);
-}
-
-void nsContainerFrame::DoInlineIntrinsicISize(gfxContext* aRenderingContext,
-                                              InlineIntrinsicISizeData* aData,
-                                              IntrinsicISizeType aType) {
-  if (GetPrevInFlow()) return;  
-
-  WritingMode wm = GetWritingMode();
-  mozilla::Side startSide = wm.PhysicalSideForInlineAxis(eLogicalEdgeStart);
-  mozilla::Side endSide = wm.PhysicalSideForInlineAxis(eLogicalEdgeEnd);
-
-  const nsStylePadding* stylePadding = StylePadding();
-  const nsStyleBorder* styleBorder = StyleBorder();
-  const nsStyleMargin* styleMargin = StyleMargin();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nscoord clonePBM = 0;  
-  const bool sliceBreak =
-      styleBorder->mBoxDecorationBreak == StyleBoxDecorationBreak::Slice;
-  if (!GetPrevContinuation() || MOZ_UNLIKELY(!sliceBreak)) {
-    nscoord startPBM =
-        
-        std::max(GetCoord(stylePadding->mPadding.Get(startSide), 0), 0) +
-        styleBorder->GetComputedBorderWidth(startSide) +
-        GetCoord(styleMargin->mMargin.Get(startSide), 0);
-    if (MOZ_LIKELY(sliceBreak)) {
-      aData->mCurrentLine += startPBM;
-    } else {
-      clonePBM = startPBM;
+void nsContainerFrame::DoInlinePrefISize(gfxContext* aRenderingContext,
+                                         InlinePrefISizeData* aData) {
+  auto handleChildren = [aRenderingContext](auto frame, auto data) {
+    for (nsIFrame* kid : frame->mFrames) {
+      kid->AddInlinePrefISize(aRenderingContext, data);
     }
-  }
-
-  nscoord endPBM =
-      
-      std::max(GetCoord(stylePadding->mPadding.Get(endSide), 0), 0) +
-      styleBorder->GetComputedBorderWidth(endSide) +
-      GetCoord(styleMargin->mMargin.Get(endSide), 0);
-  if (MOZ_UNLIKELY(!sliceBreak)) {
-    clonePBM += endPBM;
-    aData->mCurrentLine += clonePBM;
-  }
-
-  const nsLineList_iterator* savedLine = aData->mLine;
-  nsIFrame* const savedLineContainer = aData->LineContainer();
-
-  nsContainerFrame* lastInFlow;
-  for (nsContainerFrame* nif = this; nif;
-       nif = static_cast<nsContainerFrame*>(nif->GetNextInFlow())) {
-    if (aData->mCurrentLine == 0) {
-      aData->mCurrentLine = clonePBM;
-    }
-    for (nsIFrame* kid : nif->mFrames) {
-      if (aType == IntrinsicISizeType::MinISize) {
-        kid->AddInlineMinISize(aRenderingContext,
-                               static_cast<InlineMinISizeData*>(aData));
-      } else {
-        kid->AddInlinePrefISize(aRenderingContext,
-                                static_cast<InlinePrefISizeData*>(aData));
-      }
-    }
-
-    
-    
-    aData->mLine = nullptr;
-    aData->SetLineContainer(nullptr);
-
-    lastInFlow = nif;
-  }
-
-  aData->mLine = savedLine;
-  aData->SetLineContainer(savedLineContainer);
-
-  
-  
-  
-  
-  
-  
-  
-  if (MOZ_LIKELY(!lastInFlow->GetNextContinuation() && sliceBreak)) {
-    aData->mCurrentLine += endPBM;
-  }
+  };
+  DoInlineIntrinsicISize(aData, handleChildren);
+  aData->mLineIsEmpty = false;
 }
 
 
