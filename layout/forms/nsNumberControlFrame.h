@@ -70,13 +70,6 @@ class nsNumberControlFrame final : public nsTextControlFrame {
 
 
 
-  static nsNumberControlFrame* GetNumberControlFrameForTextField(
-      nsIFrame* aFrame);
-
-  
-
-
-
   static nsNumberControlFrame* GetNumberControlFrameForSpinButton(
       nsIFrame* aFrame);
 
