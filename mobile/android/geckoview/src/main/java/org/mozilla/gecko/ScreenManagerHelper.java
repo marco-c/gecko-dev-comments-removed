@@ -13,13 +13,6 @@ class ScreenManagerHelper {
     
 
 
-    final static int DISPLAY_PRIMARY  = 0; 
-    final static int DISPLAY_EXTERNAL = 1; 
-    final static int DISPLAY_VIRTUAL  = 2; 
-
-    
-
-
     public static void refreshScreenInfo() {
         
         
@@ -30,28 +23,4 @@ class ScreenManagerHelper {
 
     @WrapForJNI(stubName = "RefreshScreenInfo", dispatchTo = "gecko")
     private native static void nativeRefreshScreenInfo();
-
-    
-
-
-
-
-
-
-
-
-
-    @WrapForJNI
-    public native static int addDisplay(int displayType,
-                                        int width,
-                                        int height,
-                                        float density);
-
-    
-
-
-
-
-    @WrapForJNI
-    public native static void removeDisplay(int screenId);
 }
