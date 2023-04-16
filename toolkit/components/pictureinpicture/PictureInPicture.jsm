@@ -140,7 +140,6 @@ class PictureInPictureParent extends JSWindowActorParent {
 
 
 
-
 var PictureInPicture = {
   
   weakPipToWin: new WeakMap(),
@@ -186,6 +185,8 @@ var PictureInPicture = {
   },
 
   
+
+
 
 
 
@@ -378,6 +379,8 @@ var PictureInPicture = {
   },
 
   
+
+
 
 
 
@@ -654,6 +657,14 @@ var PictureInPicture = {
     return { top, left, width, height };
   },
 
+  
+
+
+
+
+
+
+
   resizePictureInPictureWindow(videoData, actorRef) {
     let win = this.getWeakPipPlayer(actorRef);
 
@@ -665,6 +676,13 @@ var PictureInPicture = {
     win.resizeTo(width, height);
     win.moveTo(left, top);
   },
+
+  
+
+
+
+
+
 
   openToggleContextMenu(window, data) {
     let document = window.document;
@@ -757,6 +775,9 @@ var PictureInPicture = {
   },
 
   
+
+
+
 
 
 

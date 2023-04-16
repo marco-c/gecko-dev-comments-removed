@@ -427,6 +427,10 @@ let Player = {
     );
   },
 
+  
+
+
+
   determineDirectionDragged() {
     
     let deltaX = this.oldMouseUpWindowX - window.screenX;
@@ -444,6 +448,12 @@ let Player = {
     }
     return dragDirection;
   },
+
+  
+
+
+
+
 
   onMouseUp(event) {
     if (
@@ -536,10 +546,22 @@ let Player = {
     this.oldMouseUpWindowY = window.screenY;
   },
 
+  
+
+
+
+
+
   onResize(event) {
     this.resizeDebouncer.disarm();
     this.resizeDebouncer.arm();
   },
+
+  
+
+
+
+
 
   onCommand(event) {
     this.closePipWindow({ reason: "player-shortcut" });
@@ -556,13 +578,12 @@ let Player = {
 
 
 
+
+
+
   get isPlaying() {
     return this._isPlaying;
   },
-
-  
-
-
 
   set isPlaying(isPlaying) {
     this._isPlaying = isPlaying;
@@ -578,13 +599,12 @@ let Player = {
 
 
 
+
+
+
   get isMuted() {
     return this._isMuted;
   },
-
-  
-
-
 
   set isMuted(isMuted) {
     this._isMuted = isMuted;
@@ -593,6 +613,14 @@ let Player = {
     let strId = "pictureinpicture-" + (isMuted ? "unmute" : "mute");
     document.l10n.setAttributes(audioButton, strId);
   },
+
+  
+
+
+
+
+
+
 
   recordEvent(type, args) {
     Services.telemetry.recordEvent(
