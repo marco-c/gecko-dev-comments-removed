@@ -184,7 +184,6 @@ class GeckoViewNavigation extends GeckoViewModule {
         navFlags |= Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_LOAD_URI_DELEGATE;
 
         let triggeringPrincipal, referrerInfo, csp;
-        let parsedUri;
         if (referrerSessionId) {
           const referrerWindow = Services.ww.getWindowByName(
             referrerSessionId,
@@ -202,30 +201,19 @@ class GeckoViewNavigation extends GeckoViewModule {
             true,
             referrerWindow.browser.documentURI
           );
-        } else {
-          try {
-            
-            
-            const isExternal =
-              navFlags & Ci.nsIWebNavigation.LOAD_FLAGS_FROM_EXTERNAL;
-            parsedUri = Services.io.newURI(uri);
-            if (
-              !isExternal &&
-              (parsedUri.schemeIs("about") ||
-                parsedUri.schemeIs("data") ||
-                parsedUri.schemeIs("file") ||
-                parsedUri.schemeIs("resource") ||
-                parsedUri.schemeIs("moz-extension"))
-            ) {
-              
-              triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
-                parsedUri,
-                {}
-              );
-            }
-          } catch (ignored) {}
-
+        } else if (referrerUri) {
           referrerInfo = createReferrerInfo(referrerUri);
+        } else {
+          
+          
+          const isExternal =
+            navFlags & Ci.nsIWebNavigation.LOAD_FLAGS_FROM_EXTERNAL;
+          if (!isExternal) {
+            
+            
+            
+            triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+          }
         }
 
         if (!triggeringPrincipal) {
@@ -269,7 +257,7 @@ class GeckoViewNavigation extends GeckoViewModule {
         
         
         
-        this.browser.loadURI(parsedUri ? parsedUri.spec : uri, {
+        this.browser.loadURI(uri, {
           flags: navFlags,
           referrerInfo,
           triggeringPrincipal,
