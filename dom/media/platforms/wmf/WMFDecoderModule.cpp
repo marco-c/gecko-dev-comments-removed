@@ -322,16 +322,6 @@ bool WMFDecoderModule::Supports(const SupportDecoderParams& aParams,
   if ((trackInfo.mMimeType.EqualsLiteral("audio/mp4a-latm") ||
        trackInfo.mMimeType.EqualsLiteral("audio/mp4")) &&
       WMFDecoderModule::HasAAC()) {
-    const auto audioInfo = trackInfo.GetAsAudioInfo();
-    if (audioInfo && audioInfo->mRate > 0) {
-      
-      
-      const std::vector<uint32_t> frequencies = {
-          8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000,
-      };
-      return std::find(frequencies.begin(), frequencies.end(),
-                       audioInfo->mRate) != frequencies.end();
-    }
     return true;
   }
   if (MP4Decoder::IsH264(trackInfo.mMimeType) && WMFDecoderModule::HasH264()) {
