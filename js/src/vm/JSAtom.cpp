@@ -954,14 +954,7 @@ static MOZ_ALWAYS_INLINE JSAtom* AllocateNewAtom(
   MOZ_ASSERT(atom->hash() == lookup.hash);
 
   if (indexValue) {
-    atom->setIsIndex(*indexValue);
-  } else {
-    
-    
-    uint32_t index;
-    if (atom->isIndexSlow(&index)) {
-      atom->setIsIndex(index);
-    }
+    atom->maybeInitializeIndex(*indexValue, true);
   }
 
   return atom;
