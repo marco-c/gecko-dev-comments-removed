@@ -3,13 +3,6 @@
 
 "use strict";
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-
-ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
-XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
-
 
 
 
@@ -61,8 +54,8 @@ this.PersistentCache = class PersistentCache {
       (this._cache = new Promise(async (resolve, reject) => {
         let filepath;
         try {
-          filepath = OS.Path.join(
-            OS.Constants.Path.localProfileDir,
+          filepath = PathUtils.join(
+            await PathUtils.getLocalProfileDir(),
             this._filename
           );
         } catch (error) {
@@ -70,16 +63,14 @@ this.PersistentCache = class PersistentCache {
           return;
         }
 
-        let file;
-        try {
-          file = await fetch(`file://${filepath}`);
-        } catch (error) {} 
-
         let data = {};
-        if (file) {
-          try {
-            data = await file.json();
-          } catch (error) {
+        try {
+          data = await IOUtils.readJSON(filepath);
+        } catch (error) {
+          if (
+            !(error instanceof DOMException) ||
+            error.name !== "NotFoundError"
+          ) {
             Cu.reportError(
               `Failed to parse ${this._filename}: ${error.message}`
             );
@@ -94,12 +85,12 @@ this.PersistentCache = class PersistentCache {
   
 
 
-  _persist(data) {
-    const filepath = OS.Path.join(
-      OS.Constants.Path.localProfileDir,
+  async _persist(data) {
+    const filepath = PathUtils.join(
+      await PathUtils.getLocalProfileDir(),
       this._filename
     );
-    return OS.File.writeAtomic(filepath, JSON.stringify(data), {
+    await IOUtils.writeJSON(filepath, data, {
       tmpPath: `${filepath}.tmp`,
     });
   }

@@ -209,6 +209,11 @@ const TEST_GLOBAL = {
   fetch() {},
   
   Image: function() {}, 
+  IOUtils: {
+    writeJSON() {
+      return Promise.resolve(0);
+    },
+  },
   NewTabUtils: {
     activityStreamProvider: {
       getTopFrecentSites: () => [],
@@ -235,6 +240,17 @@ const TEST_GLOBAL = {
       Path: {
         localProfileDir: "/",
       },
+    },
+  },
+  PathUtils: {
+    join(...parts) {
+      return parts[parts.length - 1];
+    },
+    getProfileDir() {
+      return Promise.resolve("/");
+    },
+    getLocalProfileDir() {
+      return Promise.resolve("/");
     },
   },
   PlacesUtils: {
