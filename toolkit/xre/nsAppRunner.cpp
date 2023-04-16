@@ -494,9 +494,6 @@ static const char kPrefFissionExperimentEnrollmentStatus[] =
 static const char kPrefFissionExperimentStartupEnrollmentStatus[] =
     "fission.experiment.startupEnrollmentStatus";
 
-static const char kPrefNonNativeThemeEnabled[] =
-    "widget.non-native-theme.enabled";
-
 
 
 
@@ -730,12 +727,6 @@ static void EnsureFissionAutostartInitialized() {
   Preferences::SetBool(kPrefFissionAutostartSession, gFissionAutostart,
                        PrefValueKind::Default);
   Preferences::Lock(kPrefFissionAutostartSession);
-
-  if (gFissionExperimentStatus == nsIXULRuntime::eExperimentStatusControl ||
-      gFissionExperimentStatus == nsIXULRuntime::eExperimentStatusTreatment) {
-    Preferences::SetBool(kPrefNonNativeThemeEnabled, true,
-                         PrefValueKind::Default);
-  }
 
   
   
