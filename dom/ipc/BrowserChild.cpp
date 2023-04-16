@@ -470,9 +470,6 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
   NS_ASSERTION(mWebNav, "nsWebBrowser doesn't implement nsIWebNavigation?");
 
   
-  NotifyTabContextUpdated();
-
-  
   
   mWebBrowser->SetAllowDNSPrefetch(true);
 
@@ -558,21 +555,6 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
   UpdateVisibility();
 
   return NS_OK;
-}
-
-void BrowserChild::NotifyTabContextUpdated() {
-  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
-  MOZ_ASSERT(docShell);
-
-  if (!docShell) {
-    return;
-  }
-
-  
-  if (!PresentationURL().IsEmpty()) {
-    
-    Unused << mBrowsingContext->SetSandboxFlags(SANDBOXED_AUXILIARY_NAVIGATION);
-  }
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(BrowserChild)

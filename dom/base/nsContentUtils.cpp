@@ -9063,37 +9063,6 @@ void nsContentUtils::SetScrollbarsVisibility(nsIDocShell* aDocShell,
 }
 
 
-void nsContentUtils::GetPresentationURL(nsIDocShell* aDocShell,
-                                        nsAString& aPresentationUrl) {
-  MOZ_ASSERT(aDocShell);
-
-  if (XRE_IsContentProcess()) {
-    nsCOMPtr<nsIDocShellTreeItem> sameTypeRoot;
-    aDocShell->GetInProcessSameTypeRootTreeItem(getter_AddRefs(sameTypeRoot));
-    nsCOMPtr<nsIDocShellTreeItem> root;
-    aDocShell->GetInProcessRootTreeItem(getter_AddRefs(root));
-    if (sameTypeRoot.get() == root.get()) {
-      
-      
-      BrowserChild* browserChild = BrowserChild::GetFrom(aDocShell);
-      if (browserChild) {
-        aPresentationUrl = browserChild->PresentationURL();
-      }
-      return;
-    }
-  }
-
-  nsCOMPtr<nsILoadContext> loadContext(do_QueryInterface(aDocShell));
-  RefPtr<Element> topFrameElt;
-  loadContext->GetTopFrameElement(getter_AddRefs(topFrameElt));
-  if (!topFrameElt) {
-    return;
-  }
-
-  topFrameElt->GetAttr(nsGkAtoms::mozpresentation, aPresentationUrl);
-}
-
-
 nsIDocShell* nsContentUtils::GetDocShellForEventTarget(EventTarget* aTarget) {
   nsCOMPtr<nsPIDOMWindowInner> innerWindow;
 

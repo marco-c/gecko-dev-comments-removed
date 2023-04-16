@@ -741,12 +741,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   void HandleDoubleTap(const CSSPoint& aPoint, const Modifiers& aModifiers,
                        const ScrollableLayerGuid& aGuid);
 
-  
-  
-  
-  
-  void NotifyTabContextUpdated();
-
   void ActorDestroy(ActorDestroyReason why) override;
 
   bool InitBrowserChildMessageManager();

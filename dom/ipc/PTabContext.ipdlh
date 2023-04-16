@@ -28,11 +28,6 @@ struct FrameIPCTabContext
   uint64_t chromeOuterWindowID;
 
   
-  
-  
-  nsString presentationURL;
-
-  
   UIStateChangeType showFocusRings;
 
   
