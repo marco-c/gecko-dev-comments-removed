@@ -98,6 +98,60 @@ T* PtrGetWeak(const UniquePtr<T>& aPtr) {
   return aPtr.get();
 }
 
+template <typename EntryType>
+class nsBaseHashtableValueIterator : public ::detail::nsTHashtableIteratorBase {
+  
+
+ public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = const std::decay_t<typename EntryType::DataType>;
+  using difference_type = int32_t;
+  using pointer = value_type*;
+  using reference = value_type&;
+
+  using iterator_type = nsBaseHashtableValueIterator;
+  using const_iterator_type = nsBaseHashtableValueIterator;
+
+  using nsTHashtableIteratorBase::nsTHashtableIteratorBase;
+
+  value_type* operator->() const {
+    return &static_cast<const EntryType*>(mIterator.Get())->GetData();
+  }
+  decltype(auto) operator*() const {
+    return static_cast<const EntryType*>(mIterator.Get())->GetData();
+  }
+
+  iterator_type& operator++() {
+    mIterator.Next();
+    return *this;
+  }
+  iterator_type operator++(int) {
+    iterator_type it = *this;
+    ++*this;
+    return it;
+  }
+};
+
+template <typename EntryType>
+class nsBaseHashtableValueRange {
+ public:
+  using IteratorType = nsBaseHashtableValueIterator<EntryType>;
+  using iterator = IteratorType;
+
+  explicit nsBaseHashtableValueRange(const PLDHashTable& aHashtable)
+      : mHashtable{aHashtable} {}
+
+  auto begin() const { return IteratorType{mHashtable}; }
+  auto end() const {
+    return IteratorType{mHashtable, typename IteratorType::EndIteratorTag{}};
+  }
+  auto cbegin() const { return begin(); }
+  auto cend() const { return end(); }
+
+ private:
+  const PLDHashTable& mHashtable;
+};
+
 }  
 
 
@@ -136,9 +190,11 @@ class nsDefaultConverter {
 
 
 
-template <class KeyClass, class DataType>
+template <class KeyClass, class TDataType>
 class nsBaseHashtableET : public KeyClass {
  public:
+  using DataType = TDataType;
+
   const DataType& GetData() const { return mData; }
   DataType* GetModifiableData() { return &mData; }
   template <typename U>
@@ -852,6 +908,30 @@ class nsBaseHashtable
   using nsTHashtable<EntryType>::cend;
 
   using nsTHashtable<EntryType>::Keys;
+
+  
+
+
+
+
+
+  auto Values() const {
+    return mozilla::detail::nsBaseHashtableValueRange<EntryType>{this->mTable};
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  void Remove(mozilla::detail::nsBaseHashtableValueIterator<EntryType>& aIter) {
+    aIter.mIterator.Remove();
+  }
 
   
 
