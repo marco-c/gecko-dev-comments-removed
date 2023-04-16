@@ -11,11 +11,19 @@
 
 
 const { NodeServer } = ChromeUtils.import("resource://testing-common/httpd.js");
+let gDNS;
 
 
 
 function trr_test_setup() {
   dump("start!\n");
+
+  let env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  let h2Port = env.get("MOZHTTP2_PORT");
+  Assert.notEqual(h2Port, null);
+  Assert.notEqual(h2Port, "");
 
   
   do_get_profile();
@@ -25,7 +33,6 @@ function trr_test_setup() {
   
   Services.prefs.setCharPref("network.trr.bootstrapAddress", "127.0.0.1");
 
-  
   
   Services.prefs.setBoolPref("network.dns.native-is-localhost", true);
 
@@ -47,6 +54,8 @@ function trr_test_setup() {
 
   
   
+
+  return h2Port;
 }
 
 
@@ -95,18 +104,21 @@ class TRRDNSListener {
     });
     let trrServer = options.trrServer || "";
 
-    const dns = Cc["@mozilla.org/network/dns-service;1"].getService(
-      Ci.nsIDNSService
-    );
     const threadManager = Cc["@mozilla.org/thread-manager;1"].getService(
       Ci.nsIThreadManager
     );
     const currentThread = threadManager.currentThread;
 
+    if (!gDNS) {
+      gDNS = Cc["@mozilla.org/network/dns-service;1"].getService(
+        Ci.nsIDNSService
+      );
+    }
+
     let resolverInfo =
-      trrServer == "" ? null : dns.newTRRResolverInfo(trrServer);
+      trrServer == "" ? null : gDNS.newTRRResolverInfo(trrServer);
     try {
-      this.request = dns.asyncResolve(
+      this.request = gDNS.asyncResolve(
         name,
         Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT,
         this.options.flags || 0,
