@@ -1200,7 +1200,8 @@ bool gfxPlatform::DoesFissionForceWebRender() {
   
   
   
-  return FissionAutostart() && FissionExperimentEnrolled();
+  
+  return FissionExperimentEnrolled();
 }
 
 
