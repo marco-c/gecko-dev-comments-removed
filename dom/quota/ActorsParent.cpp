@@ -3865,25 +3865,25 @@ void QuotaManager::EnsureQuotaForOrigin(const OriginMetadata& aOriginMetadata) {
   }
 }
 
-void QuotaManager::NoteOriginDirectoryCreated(
-    PersistenceType aPersistenceType, const OriginMetadata& aOriginMetadata,
-    bool aPersisted, int64_t& aTimestamp) {
+int64_t QuotaManager::NoteOriginDirectoryCreated(
+    const OriginMetadata& aOriginMetadata, bool aPersisted) {
   AssertIsOnIOThread();
-  MOZ_ASSERT(aPersistenceType != PERSISTENCE_TYPE_PERSISTENT);
+  MOZ_ASSERT(IsBestEffortPersistenceType(aOriginMetadata.mPersistenceType));
 
   int64_t timestamp;
 
   MutexAutoLock lock(mQuotaMutex);
 
   RefPtr<GroupInfo> groupInfo = LockedGetOrCreateGroupInfo(
-      aPersistenceType, aOriginMetadata.mSuffix, aOriginMetadata.mGroup);
+      aOriginMetadata.mPersistenceType, aOriginMetadata.mSuffix,
+      aOriginMetadata.mGroup);
 
   RefPtr<OriginInfo> originInfo =
       groupInfo->LockedGetOriginInfo(aOriginMetadata.mOrigin);
   if (originInfo) {
+    timestamp = originInfo->LockedAccessTime();
     originInfo->mPersisted = aPersisted;
     originInfo->mDirectoryExists = true;
-    timestamp = originInfo->LockedAccessTime();
   } else {
     timestamp = PR_Now();
     groupInfo->LockedAddOriginInfo(MakeNotNull<RefPtr<OriginInfo>>(
@@ -3892,7 +3892,7 @@ void QuotaManager::NoteOriginDirectoryCreated(
          timestamp, aPersisted,  true));
   }
 
-  aTimestamp = timestamp;
+  return timestamp;
 }
 
 void QuotaManager::DecreaseUsageForOrigin(PersistenceType aPersistenceType,
@@ -6161,9 +6161,8 @@ QuotaManager::EnsureTemporaryOriginIsInitialized(
     QM_TRY_INSPECT(const bool& created, EnsureOriginDirectory(*directory));
 
     if (created) {
-      int64_t timestamp;
-      NoteOriginDirectoryCreated(aPersistenceType, aOriginMetadata,
-                                  false, timestamp);
+      const int64_t timestamp =
+          NoteOriginDirectoryCreated(aOriginMetadata,  false);
 
       
       QM_TRY(CreateDirectoryMetadata2(*directory, timestamp,
@@ -9323,9 +9322,8 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
     
     
     if (aQuotaManager.IsTemporaryStorageInitialized()) {
-      aQuotaManager.NoteOriginDirectoryCreated(
-          mPersistenceType.Value(), originMetadata,
-           true, timestamp);
+      timestamp = aQuotaManager.NoteOriginDirectoryCreated(
+          originMetadata,  true);
     } else {
       timestamp = PR_Now();
     }
