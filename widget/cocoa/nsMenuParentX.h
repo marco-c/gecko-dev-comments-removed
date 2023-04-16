@@ -11,10 +11,19 @@ enum nsMenuParentTypeX {
   eSubmenuParentType,
 };
 
+class nsMenuX;
+
 
 class nsMenuParentX {
  public:
   virtual nsMenuParentTypeX MenuParentType() = 0;
+
+  
+  
+  virtual void InsertChildNativeMenuItem(nsMenuX* aChild) = 0;
+
+  
+  virtual void RemoveChildNativeMenuItem(nsMenuX* aChild) = 0;
 };
 
 #endif  

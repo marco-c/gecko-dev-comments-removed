@@ -118,10 +118,10 @@ class nsMenuBarX : public nsMenuParentX, public nsChangeObserver, public mozilla
 
   
   
-  void InsertChildNativeMenuItem(nsMenuX* aChild);
+  void InsertChildNativeMenuItem(nsMenuX* aChild) override;
 
   
-  void RemoveChildNativeMenuItem(nsMenuX* aChild);
+  void RemoveChildNativeMenuItem(nsMenuX* aChild) override;
 
  protected:
   virtual ~nsMenuBarX();

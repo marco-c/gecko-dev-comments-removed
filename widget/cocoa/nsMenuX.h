@@ -98,10 +98,10 @@ class nsMenuX final : public nsMenuParentX,
 
   
   
-  void InsertChildNativeMenuItem(nsMenuX* aChild);
+  void InsertChildNativeMenuItem(nsMenuX* aChild) override;
 
   
-  void RemoveChildNativeMenuItem(nsMenuX* aChild);
+  void RemoveChildNativeMenuItem(nsMenuX* aChild) override;
 
   void Dump(uint32_t aIndent) const;
 
