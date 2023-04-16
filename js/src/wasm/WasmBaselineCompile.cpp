@@ -17524,6 +17524,10 @@ bool js::wasm::IsValidStackMapKey(bool debugEnabled, const uint8_t* nextPC) {
           (insn[-1] & 0xfc000000) == 0x94000000 ||    
           (debugEnabled && insn[-1] == 0xd503201f));  
 
+#  elif defined(JS_CODEGEN_MIPS64)
+  
+  
+  return true;
 #  else
   MOZ_CRASH("IsValidStackMapKey: requires implementation on this platform");
 #  endif
