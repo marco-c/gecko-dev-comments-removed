@@ -5328,7 +5328,7 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
 
 
 
-    loadState->SetLoadType(LOAD_NORMAL_REPLACE);
+    loadState->SetLoadType(LOAD_REFRESH_REPLACE);
 
     
 
@@ -5800,6 +5800,7 @@ nsresult nsDocShell::Embed(nsIContentViewer* aContentViewer,
   
   switch (mLoadType) {
     case LOAD_NORMAL_REPLACE:
+    case LOAD_REFRESH_REPLACE:
     case LOAD_STOP_CONTENT_AND_REPLACE:
     case LOAD_RELOAD_BYPASS_CACHE:
     case LOAD_RELOAD_BYPASS_PROXY:
@@ -11093,7 +11094,7 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
   
   if (!mozilla::SessionHistoryInParent() && rootSH &&
       ((mLoadType & (LOAD_CMD_HISTORY | LOAD_CMD_RELOAD)) ||
-       mLoadType == LOAD_NORMAL_REPLACE)) {
+       mLoadType == LOAD_NORMAL_REPLACE || mLoadType == LOAD_REFRESH_REPLACE)) {
     mPreviousEntryIndex = rootSH->Index();
     if (!mozilla::SessionHistoryInParent()) {
       rootSH->LegacySHistory()->UpdateIndex();
