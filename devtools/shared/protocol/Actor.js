@@ -94,10 +94,12 @@ class Actor extends Pool {
   writeError(error, typeName, method) {
     console.error(
       `Error while calling actor '${typeName}'s method '${method}'`,
-      error.message
+      error.message || error
     );
+    
+    
     if (error.stack) {
-      console.error(error.stack);
+      console.error(error);
     }
 
     
@@ -110,7 +112,11 @@ class Actor extends Pool {
       from: this.actorID,
       
       
-      error: error.error || error.name || "unknownError",
+      
+      error:
+        error.error ||
+        error.name ||
+        (typeof error == "string" ? error : "unknownError"),
       message: error.message,
       
       
