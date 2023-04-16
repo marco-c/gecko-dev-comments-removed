@@ -54,6 +54,10 @@
       cellsArray = [ [] ];
       testTableStruct("grid4", cellsArray);
 
+      // ////////////////////////////////////////////////////////////////////////
+      // ARIA table with tr inside a shadow root (bug 1698097).
+      testTableStruct("tableShadow", [ [ kDataCell ] ]);
+
       SimpleTest.finish();
     }
 
@@ -81,7 +85,7 @@
   <pre id="test">
   </pre>
 
-  
+  <!-- Not usual markup to avoid text accessible between cell accessibles -->
   <div id="table" role="grid">
     <div role="row"><span
       id="table_ch_1" role="columnheader">col_1</span><span
@@ -119,8 +123,8 @@
     </tbody>
   </table>
 
-  
-
+  <!-- ARIA grid containing presentational HTML:table with HTML:td used as ARIA
+    grid cells (focusable and not focusable cells) -->
   <div role="grid" id="grid2">
     <div role="row">
       <table role="presentation">
@@ -140,8 +144,20 @@
     </div>
   </div>
 
-  
+  <!-- Wrong markup ARIA grid -->
   <div role="grid" id="grid3"></div>
   <div role="grid" id="grid4"><div role="row"></div></div>
+
+  <div id="tableShadow" role="table"></div>
+  <script>
+    let host = document.getElementById("tableShadow");
+    let shadow = host.attachShadow({mode: "open"});
+    let tr = document.createElement("tr");
+    shadow.append(tr);
+    tr.setAttribute("role", "row");
+    let td = document.createElement("td");
+    tr.append(td);
+    td.textContent = "test";
+  </script>
 </body>
 </html>
