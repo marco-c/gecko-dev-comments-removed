@@ -614,8 +614,6 @@ class gfxUserFontEntry : public gfxFontEntry {
     mUserFontLoadState = STATUS_NOT_LOADED;
     mFontDataLoadingState = NOT_LOADING;
     mLoader = nullptr;
-    mSrcIndex = 0;
-    mSeenLocalSource = false;
   }
 
   
@@ -766,7 +764,6 @@ class gfxUserFontEntry : public gfxFontEntry {
   };
   FontDataLoadingState mFontDataLoadingState;
 
-  bool mSeenLocalSource;
   bool mUnsupportedFormat;
   mozilla::StyleFontDisplay mFontDisplay;  
 
