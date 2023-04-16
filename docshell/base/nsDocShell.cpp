@@ -1208,6 +1208,8 @@ void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
   
   nsCOMPtr<nsIContentViewer> contentViewer(mContentViewer);
   if (aShow) {
+    mRefreshURIList = std::move(mBFCachedRefreshURIList);
+    RefreshURIFromQueue();
     mFiredUnloadEvent = false;
     RefPtr<Document> doc = contentViewer->GetDocument();
     if (doc) {
@@ -1247,6 +1249,16 @@ void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
   } else if (!mFiredUnloadEvent) {
     
     
+
+    if (mRefreshURIList) {
+      RefreshURIToQueue();
+      mBFCachedRefreshURIList = std::move(mRefreshURIList);
+    } else {
+      
+      
+      mBFCachedRefreshURIList = std::move(mSavedRefreshURIList);
+    }
+
     mFiredUnloadEvent = true;
     contentViewer->PageHide(false);
 
@@ -5677,8 +5689,10 @@ NS_IMETHODIMP
 nsDocShell::CancelRefreshURITimers() {
   DoCancelRefreshURITimers(mRefreshURIList);
   DoCancelRefreshURITimers(mSavedRefreshURIList);
+  DoCancelRefreshURITimers(mBFCachedRefreshURIList);
   mRefreshURIList = nullptr;
   mSavedRefreshURIList = nullptr;
+  mBFCachedRefreshURIList = nullptr;
 
   return NS_OK;
 }
@@ -5698,8 +5712,7 @@ nsDocShell::GetRefreshPending(bool* aResult) {
   return rv;
 }
 
-NS_IMETHODIMP
-nsDocShell::SuspendRefreshURIs() {
+void nsDocShell::RefreshURIToQueue() {
   if (mRefreshURIList) {
     uint32_t n = 0;
     mRefreshURIList->GetLength(&n);
@@ -5719,6 +5732,11 @@ nsDocShell::SuspendRefreshURIs() {
       mRefreshURIList->ReplaceElementAt(callback, i);
     }
   }
+}
+
+NS_IMETHODIMP
+nsDocShell::SuspendRefreshURIs() {
+  RefreshURIToQueue();
 
   
   for (auto* child : mChildList.ForwardRange()) {
