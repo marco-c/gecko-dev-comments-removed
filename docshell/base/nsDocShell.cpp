@@ -8732,7 +8732,6 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
       targetContext = newBC;
     }
   }
-
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(targetContext, rv);
 
@@ -8752,6 +8751,27 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState) {
   
   aLoadState->SetFileName(VoidString());
   return targetContext->InternalLoad(aLoadState);
+}
+
+static nsAutoCString RefMaybeNull(nsIURI* aURI) {
+  nsAutoCString result;
+  if (NS_FAILED(aURI->GetRef(result))) {
+    result.SetIsVoid(true);
+  }
+  return result;
+}
+
+uint32_t nsDocShell::GetSameDocumentNavigationFlags(nsIURI* aNewURI) {
+  uint32_t flags = LOCATION_CHANGE_SAME_DOCUMENT;
+
+  bool equal = false;
+  if (mCurrentURI &&
+      NS_SUCCEEDED(mCurrentURI->EqualsExceptRef(aNewURI, &equal)) && equal &&
+      RefMaybeNull(mCurrentURI) != RefMaybeNull(aNewURI)) {
+    flags |= LOCATION_CHANGE_HASHCHANGE;
+  }
+
+  return flags;
 }
 
 bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
@@ -8955,6 +8975,10 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
     newURIPartitionedPrincipalToInherit = doc->PartitionedPrincipal();
     newCsp = doc->GetCsp();
   }
+
+  uint32_t locationChangeFlags =
+      GetSameDocumentNavigationFlags(aLoadState->URI());
+
   
   
   
@@ -9142,8 +9166,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   }
 
   if (locationChangeNeeded) {
-    FireOnLocationChange(this, nullptr, aLoadState->URI(),
-                         LOCATION_CHANGE_SAME_DOCUMENT);
+    FireOnLocationChange(this, nullptr, aLoadState->URI(), locationChangeFlags);
   }
 
   
@@ -11537,7 +11560,7 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
     aDocument->SetDocumentURI(aNewURI);
     SetCurrentURI(aNewURI, nullptr,  true,
                    false,
-                  LOCATION_CHANGE_SAME_DOCUMENT);
+                  GetSameDocumentNavigationFlags(aNewURI));
 
     AddURIVisit(aNewURI, aCurrentURI, 0);
 
