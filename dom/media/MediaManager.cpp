@@ -1450,19 +1450,12 @@ class GetUserMediaTask final {
   }
 
  public:
-  nsresult Denied(MediaMgrError::Name aName,
-                  const nsCString& aMessage = ""_ns) {
+  void Denied(MediaMgrError::Name aName, const nsCString& aMessage = ""_ns) {
+    MOZ_ASSERT(NS_IsMainThread());
+    mHolder.Reject(MakeRefPtr<MediaMgrError>(aName, aMessage), __func__);
     
     
-    if (NS_IsMainThread()) {
-      mHolder.Reject(MakeRefPtr<MediaMgrError>(aName, aMessage), __func__);
-      
-      mSourceListener->Stop();
-    } else {
-      
-      Fail(aName, aMessage);
-    }
-    return NS_OK;
+    mSourceListener->Stop();
   }
 
   const MediaStreamConstraints& GetConstraints() { return mConstraints; }
@@ -3715,7 +3708,8 @@ nsresult MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
     }
 
     if (sHasShutdown) {
-      return task->Denied(MediaMgrError::Name::AbortError, "In shutdown"_ns);
+      task->Denied(MediaMgrError::Name::AbortError, "In shutdown"_ns);
+      return NS_OK;
     }
     task->Allowed();
     return NS_OK;
