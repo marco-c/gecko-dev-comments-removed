@@ -19,6 +19,7 @@
 #include "nsMenuItemIconX.h"
 #include "nsCOMPtr.h"
 #include "nsChangeObserver.h"
+#include "nsThreadUtils.h"
 
 class nsMenuX;
 class nsMenuItemX;
@@ -81,6 +82,14 @@ class nsMenuX final : public nsMenuParentX,
   
   
   void MenuClosed();
+
+  
+  
+  
+  
+  
+  void MenuClosedAsync();
+
   void SetRebuild(bool aMenuEvent);
   void SetupIcon();
   nsIContent* Content() { return mContent; }
@@ -135,13 +144,26 @@ class nsMenuX final : public nsMenuParentX,
   nsMenuGroupOwnerX* mMenuGroupOwner = nullptr;        
   nsMenuItemIconX::Listener* mIconListener = nullptr;  
   mozilla::UniquePtr<nsMenuItemIconX> mIcon;
+
+  
+  
+  
+  
+  RefPtr<mozilla::CancelableRunnable> mPendingAsyncMenuCloseRunnable;
+
   GeckoNSMenu* mNativeMenu = nil;     
   MenuDelegate* mMenuDelegate = nil;  
   
   NSMenuItem* mNativeMenuItem = nil;  
   bool mIsEnabled = true;
   bool mNeedsRebuild = true;
+
+  
   bool mIsOpen = false;
+
+  
+  bool mIsOpenForGecko = false;
+
   bool mVisible = true;
 };
 

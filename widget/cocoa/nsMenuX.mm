@@ -18,6 +18,7 @@
 
 #include "nsObjCExceptions.h"
 
+#include "nsThreadUtils.h"
 #include "nsToolkit.h"
 #include "nsCocoaUtils.h"
 #include "nsCOMPtr.h"
@@ -126,6 +127,11 @@ nsMenuX::~nsMenuX() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   RemoveAll();
+
+  if (mPendingAsyncMenuCloseRunnable) {
+    mPendingAsyncMenuCloseRunnable->Cancel();
+    mPendingAsyncMenuCloseRunnable = nullptr;
+  }
 
   mNativeMenu.delegate = nil;
   [mNativeMenu release];
@@ -307,6 +313,13 @@ nsresult nsMenuX::RemoveAll() {
 nsEventStatus nsMenuX::MenuOpened() {
   mIsOpen = true;
 
+  if (mPendingAsyncMenuCloseRunnable) {
+    
+    MenuClosedAsync();
+  }
+
+  mIsOpenForGecko = true;
+
   
   if (mContent->IsElement()) {
     mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::open, u"true"_ns, true);
@@ -342,12 +355,51 @@ void nsMenuX::MenuClosed() {
 
   mIsOpen = false;
 
+  
+  
+  
+  
+  
+  
+  class MenuClosedAsyncRunnable final : public mozilla::CancelableRunnable {
+   public:
+    explicit MenuClosedAsyncRunnable(nsMenuX* aMenu)
+        : CancelableRunnable("MenuClosedAsyncRunnable"), mMenu(aMenu) {}
+
+    nsresult Run() override {
+      if (mMenu) {
+        RefPtr<nsMenuX> menu = mMenu;
+        menu->MenuClosedAsync();
+        mMenu = nullptr;
+      }
+      return NS_OK;
+    }
+    nsresult Cancel() override {
+      mMenu = nullptr;
+      return NS_OK;
+    }
+
+   private:
+    nsMenuX* mMenu;  
+  };
+  mPendingAsyncMenuCloseRunnable = new MenuClosedAsyncRunnable(this);
+  NS_DispatchToCurrentThread(mPendingAsyncMenuCloseRunnable);
+}
+
+void nsMenuX::MenuClosedAsync() {
+  if (mPendingAsyncMenuCloseRunnable) {
+    mPendingAsyncMenuCloseRunnable->Cancel();
+    mPendingAsyncMenuCloseRunnable = nullptr;
+  }
+
   nsCOMPtr<nsIContent> popupContent = GetMenuPopupContent();
   nsCOMPtr<nsIContent> dispatchTo = popupContent ? popupContent : mContent;
 
   nsEventStatus status = nsEventStatus_eIgnore;
   WidgetMouseEvent popupHiding(true, eXULPopupHiding, nullptr, WidgetMouseEvent::eReal);
   EventDispatcher::Dispatch(dispatchTo, nullptr, &popupHiding, nullptr, &status);
+
+  mIsOpenForGecko = false;
 
   if (mContent->IsElement()) {
     mContent->AsElement()->UnsetAttr(kNameSpaceID_None, nsGkAtoms::open, true);
