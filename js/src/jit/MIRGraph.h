@@ -547,25 +547,6 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   void dump(GenericPrinter& out);
   void dump();
 
-  
-  enum class HitState {
-    
-    NotDefined,
-
-    
-    
-    Count,
-  };
-  HitState getHitState() const { return hitState_; }
-  void setHitCount(uint64_t count) {
-    hitCount_ = count;
-    hitState_ = HitState::Count;
-  }
-  uint64_t getHitCount() const {
-    MOZ_ASSERT(hitState_ == HitState::Count);
-    return hitCount_;
-  }
-
   BytecodeSite* trackedSite() const { return trackedSite_; }
   InlineScriptTree* trackedTree() const { return trackedSite_->tree(); }
 
@@ -616,11 +597,6 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   
   
   BytecodeSite* trackedSite_;
-
-  
-  
-  uint64_t hitCount_;
-  HitState hitState_;
 
 #if defined(JS_ION_PERF) || defined(DEBUG)
   unsigned lineno_;
