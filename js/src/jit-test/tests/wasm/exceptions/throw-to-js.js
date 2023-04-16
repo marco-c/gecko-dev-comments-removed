@@ -50,6 +50,29 @@ assertThrowsValue(
 );
 
 
+assertThrowsValue(
+  () =>
+    wasmEvalText(
+      `(module
+         (import "m" "import" (func $import))
+         (func (export "f")
+           try
+             (call $import)
+           catch_all
+             (rethrow 0)
+           end))`,
+      {
+        m: {
+          import: () => {
+            throw 42;
+          },
+        },
+      }
+    ).exports.f(),
+  42
+);
+
+
 {
   var wasmThrower;
   let exports = wasmEvalText(

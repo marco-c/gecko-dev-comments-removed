@@ -4087,6 +4087,13 @@ class BaseCompiler final : public BaseCompilerInterface {
   }
 
   
+  void dupRefAt(uint32_t depth, RegRef dest) {
+    MOZ_ASSERT(depth < stk_.length());
+    Stk& src = peek(stk_.length() - depth - 1);
+    loadRef(src, dest);
+  }
+
+  
   
   
   
@@ -5198,6 +5205,31 @@ class BaseCompiler final : public BaseCompilerInterface {
       fr.popStackBeforeBranch(stackBase, type);
     }
   }
+
+#ifdef ENABLE_WASM_EXCEPTIONS
+  
+  
+  
+  void popCatchResults(ResultType type, StackHeight stackBase) {
+    if (!type.empty()) {
+      ABIResultIter iter(type);
+      popRegisterResults(iter);
+      if (!iter.done()) {
+        popStackResults(iter, stackBase);
+        
+        
+        popValueStackBy(1);
+      } else {
+        
+        
+        dropValue();
+      }
+    } else {
+      dropValue();
+    }
+    fr.popStackBeforeBranch(stackBase, type);
+  }
+#endif
 
   Stk captureStackResult(const ABIResult& result, StackHeight resultsBase,
                          uint32_t stackResultBytes) {
@@ -8398,6 +8430,7 @@ class BaseCompiler final : public BaseCompilerInterface {
   [[nodiscard]] bool emitCatch();
   [[nodiscard]] bool emitCatchAll();
   [[nodiscard]] bool emitThrow();
+  [[nodiscard]] bool emitRethrow();
 #endif
   [[nodiscard]] bool emitEnd();
   [[nodiscard]] bool emitBr();
@@ -10574,9 +10607,17 @@ void BaseCompiler::emitCatchSetup(LabelKind kind, Control& tryCatch,
     fr.resetStackHeight(tryCatch.stackHeight, resultType);
     popValueStackTo(tryCatch.stackSize);
   } else {
-    MOZ_ASSERT(stk_.length() == tryCatch.stackSize + resultType.length());
     
-    popBlockResults(resultType, tryCatch.stackHeight, ContinuationKind::Jump);
+    
+    MOZ_ASSERT(stk_.length() == tryCatch.stackSize + resultType.length() +
+                                    (kind == LabelKind::Try ? 0 : 1));
+    
+    if (kind == LabelKind::Try) {
+      popBlockResults(resultType, tryCatch.stackHeight, ContinuationKind::Jump);
+    } else {
+      popCatchResults(resultType, tryCatch.stackHeight);
+    }
+    MOZ_ASSERT(stk_.length() == tryCatch.stackSize);
     freeResultRegisters(resultType);
     MOZ_ASSERT(!tryCatch.deadOnArrival);
   }
@@ -10671,7 +10712,9 @@ bool BaseCompiler::emitCatch() {
 #  endif
   masm.loadPtr(Address(refs, NativeObject::offsetOfElements()), refs);
 
-  freeRef(exn);
+  
+  
+  pushRef(exn);
 
   masm.loadPtr(Address(values, dataOffset), values);
   size_t argOffset = 0;
@@ -10764,6 +10807,14 @@ bool BaseCompiler::emitCatchAll() {
 
   masm.bind(&tryCatch.catchInfos.back().label);
 
+  
+  
+  RegRef exn = RegRef(WasmExceptionReg);
+  needRef(exn);
+  
+  
+  pushRef(exn);
+
   return true;
 }
 
@@ -10776,10 +10827,13 @@ bool BaseCompiler::endTryCatch(ResultType type) {
     fr.resetStackHeight(tryCatch.stackHeight, type);
     popValueStackTo(tryCatch.stackSize);
   } else {
-    MOZ_ASSERT(stk_.length() == tryCatch.stackSize + type.length());
     
     
-    popBlockResults(type, tryCatch.stackHeight, ContinuationKind::Jump);
+    MOZ_ASSERT(stk_.length() == tryCatch.stackSize + type.length() + 1);
+    
+    
+    popCatchResults(type, tryCatch.stackHeight);
+    MOZ_ASSERT(stk_.length() == tryCatch.stackSize);
     
     
     freeResultRegisters(type);
@@ -10984,6 +11038,25 @@ bool BaseCompiler::emitThrow() {
   }
   MOZ_ASSERT(argOffset == 0);
   freeRef(scratch);
+
+  return throwFrom(exn, lineOrBytecode);
+}
+
+bool BaseCompiler::emitRethrow() {
+  uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
+
+  uint32_t relativeDepth;
+  if (!iter_.readRethrow(&relativeDepth)) {
+    return false;
+  }
+
+  if (deadCode_) {
+    return true;
+  }
+
+  Control& tryCatch = controlItem(relativeDepth);
+  RegRef exn = needRef();
+  dupRefAt(tryCatch.stackSize, exn);
 
   return throwFrom(exn, lineOrBytecode);
 }
@@ -15871,6 +15944,11 @@ bool BaseCompiler::emitBody() {
           return iter_.unrecognizedOpcode(&op);
         }
         CHECK_NEXT(emitThrow());
+      case uint16_t(Op::Rethrow):
+        if (!moduleEnv_.exceptionsEnabled()) {
+          return iter_.unrecognizedOpcode(&op);
+        }
+        CHECK_NEXT(emitRethrow());
 #endif
       case uint16_t(Op::Br):
         CHECK_NEXT(emitBr());
