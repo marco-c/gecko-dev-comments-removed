@@ -623,18 +623,6 @@ nsresult nsHttpChannel::MaybeUseHTTPSRRForUpgrade(bool aShouldUpgrade,
   }
 
   auto shouldSkipUpgradeWithHTTPSRR = [&]() -> bool {
-    if (LoadBeConservative()) {
-      return true;
-    }
-
-    
-    
-    if (mLoadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
-        mLoadInfo->GetExternalContentPolicyType() !=
-            ExtContentPolicy::TYPE_DOCUMENT) {
-      return true;
-    }
-
     nsAutoCString uriHost;
     mURI->GetAsciiHost(uriHost);
 
@@ -728,6 +716,7 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
 
   if (LoadIsTRRServiceChannel()) {
     mCaps |= NS_HTTP_LARGE_KEEPALIVE;
+    mCaps |= NS_HTTP_DISALLOW_HTTPS_RR;
   }
 
   mCaps |= NS_HTTP_TRR_FLAGS_FROM_MODE(nsIRequest::GetTRRMode());
@@ -6612,11 +6601,6 @@ nsresult nsHttpChannel::BeginConnect() {
                       !(mCaps & NS_HTTP_BE_CONSERVATIVE) &&
                       !LoadBeConservative() && LoadAllowHttp3();
 
-  
-  
-  StoreUseHTTPSSVC(StaticPrefs::network_dns_upgrade_with_https_rr() &&
-                   mHTTPSSVCRecord.isNothing());
-
   RefPtr<AltSvcMapping> mapping;
   if (!mConnectionInfo && LoadAllowAltSvc() &&  
       (http2Allowed || http3Allowed) && !(mLoadFlags & LOAD_FRESH_CONNECTION) &&
@@ -6665,9 +6649,6 @@ nsresult nsHttpChannel::BeginConnect() {
                                originAttributes);
     Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC, true);
     Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC_OE, !isHttps);
-
-    
-    StoreUseHTTPSSVC(false);
   } else if (mConnectionInfo) {
     LOG(("nsHttpChannel %p Using channel supplied connection info", this));
     Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC, false);
@@ -6678,9 +6659,19 @@ nsresult nsHttpChannel::BeginConnect() {
     Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC, false);
   }
 
-  if (mConnectionInfo->UsingConnect()) {
-    StoreUseHTTPSSVC(false);
+  bool httpsRRAllowed =
+      !LoadBeConservative() && !(mCaps & NS_HTTP_BE_CONSERVATIVE) &&
+      !(mLoadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
+        mLoadInfo->GetExternalContentPolicyType() !=
+            ExtContentPolicy::TYPE_DOCUMENT) &&
+      !mConnectionInfo->UsingConnect();
+  if (!httpsRRAllowed) {
+    mCaps |= NS_HTTP_DISALLOW_HTTPS_RR;
   }
+  
+  
+  StoreUseHTTPSSVC(StaticPrefs::network_dns_upgrade_with_https_rr() &&
+                   httpsRRAllowed && mHTTPSSVCRecord.isNothing());
 
   
   
@@ -6800,8 +6791,8 @@ nsresult nsHttpChannel::MaybeStartDNSPrefetch() {
   bool httpssvcQueried = false;
   
   
-  auto resetUsHTTPSSVC =
-      MakeScopeExit([&] { StoreUseHTTPSSVC(httpssvcQueried); });
+  auto resetUsHTTPSSVC = MakeScopeExit(
+      [&] { StoreUseHTTPSSVC(LoadUseHTTPSSVC() && httpssvcQueried); });
 
   
   
@@ -6855,7 +6846,7 @@ nsresult nsHttpChannel::MaybeStartDNSPrefetch() {
     
     if (LoadUseHTTPSSVC() ||
         (gHttpHandler->UseHTTPSRRForSpeculativeConnection() &&
-         !mHTTPSSVCRecord && !mConnectionInfo->UsingConnect())) {
+         !mHTTPSSVCRecord && !(mCaps & NS_HTTP_DISALLOW_HTTPS_RR))) {
       MOZ_ASSERT(!mHTTPSSVCRecord);
 
       OriginAttributes originAttributes;
