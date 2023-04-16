@@ -4963,6 +4963,91 @@ Document::InternalCommandData Document::ConvertToInternalCommand(
   }
 }
 
+Document::AutoEditorCommandTarget::AutoEditorCommandTarget(
+    nsPresContext* aPresContext, const InternalCommandData& aCommandData)
+    : mCommandData(aCommandData) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aPresContext) {
+    if (aCommandData.IsCutOrCopyCommand()) {
+      
+      
+      
+      
+      
+      mTextEditor = nsContentUtils::GetActiveEditor(aPresContext);
+    } else {
+      mTextEditor = nsContentUtils::GetHTMLEditor(aPresContext);
+      if (!mTextEditor) {
+        mTextEditor = nsContentUtils::GetActiveEditor(aPresContext);
+      }
+    }
+  }
+
+  
+  
+  if (!mTextEditor) {
+    
+    
+    if (aCommandData.IsAvailableOnlyWhenEditable()) {
+      mDoNothing = true;
+      return;
+    }
+    return;
+  }
+
+  
+  
+  mEditorCommand = aCommandData.mGetEditorCommandFunc();
+  if (!mEditorCommand) {
+    mDoNothing = true;
+    return;
+  }
+
+  if (MOZ_KnownLive(mEditorCommand)
+          ->IsCommandEnabled(aCommandData.mCommand,
+                             MOZ_KnownLive(mTextEditor))) {
+    return;
+  }
+
+  
+  
+  if (aCommandData.IsAvailableOnlyWhenEditable()) {
+    
+    mDoNothing = true;
+    return;
+  }
+
+  
+  mEditorCommand = nullptr;
+  mTextEditor = nullptr;
+}
+
+nsresult Document::AutoEditorCommandTarget::DoCommand(
+    nsIPrincipal* aPrincipal) const {
+  MOZ_ASSERT(!DoNothing());
+  return MOZ_KnownLive(mEditorCommand)
+      ->DoCommand(mCommandData.mCommand, MOZ_KnownLive(*mTextEditor),
+                  aPrincipal);
+}
+
+template <typename ParamType>
+nsresult Document::AutoEditorCommandTarget::DoCommandParam(
+    const ParamType& aParam, nsIPrincipal* aPrincipal) const {
+  MOZ_ASSERT(!DoNothing());
+  return MOZ_KnownLive(mEditorCommand)
+      ->DoCommandParam(mCommandData.mCommand, aParam,
+                       MOZ_KnownLive(*mTextEditor), aPrincipal);
+}
+
 bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
                            const nsAString& aValue,
                            nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv) {
@@ -5023,66 +5108,17 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<TextEditor> maybeHTMLEditor;
-  if (nsPresContext* presContext = GetPresContext()) {
-    if (commandData.IsCutOrCopyCommand()) {
-      
-      
-      
-      
-      
-      maybeHTMLEditor = nsContentUtils::GetActiveEditor(presContext);
-    } else {
-      maybeHTMLEditor = nsContentUtils::GetHTMLEditor(presContext);
-      if (!maybeHTMLEditor) {
-        maybeHTMLEditor = nsContentUtils::GetActiveEditor(presContext);
-      }
-    }
-  }
-
-  
-  
-  RefPtr<EditorCommand> editorCommand;
-  if (!maybeHTMLEditor) {
-    
-    
-    if (commandData.IsAvailableOnlyWhenEditable()) {
-      return false;
-    }
-  } else {
-    
-    
-    editorCommand = commandData.mGetEditorCommandFunc();
-    if (!editorCommand) {
-      return false;
-    }
-
-    if (!editorCommand->IsCommandEnabled(commandData.mCommand,
-                                         maybeHTMLEditor)) {
-      
-      
-      if (commandData.IsAvailableOnlyWhenEditable()) {
-        
-        return false;
-      }
-      
-      editorCommand = nullptr;
-    }
+  RefPtr<nsPresContext> presContext = GetPresContext();
+  AutoEditorCommandTarget editCommandTarget(presContext, commandData);
+  if (editCommandTarget.DoNothing()) {
+    return false;
   }
 
   AutoRunningExecCommandMarker markRunningExecCommand(*this);
 
   
   
-  if (!editorCommand) {
+  if (!editCommandTarget.IsEditor()) {
     MOZ_ASSERT(!commandData.IsAvailableOnlyWhenEditable());
 
     
@@ -5141,7 +5177,6 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
 
   
   
-  MOZ_ASSERT(maybeHTMLEditor);
 
   EditorCommandParamType paramType =
       EditorCommand::GetParamType(commandData.mCommand);
@@ -5150,8 +5185,7 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
   
   if (adjustedValue.IsEmpty() || paramType == EditorCommandParamType::None) {
     MOZ_ASSERT(!(paramType & EditorCommandParamType::Bool));
-    nsresult rv = editorCommand->DoCommand(
-        commandData.mCommand, *maybeHTMLEditor, &aSubjectPrincipal);
+    nsresult rv = editCommandTarget.DoCommand(&aSubjectPrincipal);
     return NS_SUCCEEDED(rv) && rv != NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -5161,9 +5195,8 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
   if (!!(paramType & EditorCommandParamType::Bool)) {
     MOZ_ASSERT(adjustedValue.EqualsLiteral("true") ||
                adjustedValue.EqualsLiteral("false"));
-    nsresult rv = editorCommand->DoCommandParam(
-        commandData.mCommand, Some(adjustedValue.EqualsLiteral("true")),
-        *maybeHTMLEditor, &aSubjectPrincipal);
+    nsresult rv = editCommandTarget.DoCommandParam(
+        Some(adjustedValue.EqualsLiteral("true")), &aSubjectPrincipal);
     return NS_SUCCEEDED(rv) && rv != NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -5175,8 +5208,7 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
   if (!!(paramType & EditorCommandParamType::String)) {
     MOZ_ASSERT(!adjustedValue.IsVoid());
     nsresult rv =
-        editorCommand->DoCommandParam(commandData.mCommand, adjustedValue,
-                                      *maybeHTMLEditor, &aSubjectPrincipal);
+        editCommandTarget.DoCommandParam(adjustedValue, &aSubjectPrincipal);
     return NS_SUCCEEDED(rv) && rv != NS_SUCCESS_DOM_NO_OPERATION;
   }
 
@@ -5185,8 +5217,8 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
   if (!!(paramType & EditorCommandParamType::CString)) {
     NS_ConvertUTF16toUTF8 utf8Value(adjustedValue);
     MOZ_ASSERT(!utf8Value.IsVoid());
-    nsresult rv = editorCommand->DoCommandParam(
-        commandData.mCommand, utf8Value, *maybeHTMLEditor, &aSubjectPrincipal);
+    nsresult rv =
+        editCommandTarget.DoCommandParam(utf8Value, &aSubjectPrincipal);
     return NS_SUCCEEDED(rv) && rv != NS_SUCCESS_DOM_NO_OPERATION;
   }
 
