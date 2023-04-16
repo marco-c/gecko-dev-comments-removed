@@ -1211,12 +1211,15 @@ this.LoginHelper = {
 
 
 
-  isPasswordFieldType(element) {
+
+
+
+  isPasswordFieldType(element, { ignoreConnect = false } = {}) {
     if (ChromeUtils.getClassName(element) !== "HTMLInputElement") {
       return false;
     }
 
-    if (!element.isConnected) {
+    if (!element.isConnected && !ignoreConnect) {
       
       
       return false;
@@ -1246,12 +1249,15 @@ this.LoginHelper = {
 
 
 
-  isUsernameFieldType(element) {
+
+
+
+  isUsernameFieldType(element, { ignoreConnect = false } = {}) {
     if (ChromeUtils.getClassName(element) !== "HTMLInputElement") {
       return false;
     }
 
-    if (!element.isConnected) {
+    if (!element.isConnected && !ignoreConnect) {
       
       
       return false;
