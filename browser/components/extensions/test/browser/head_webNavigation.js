@@ -47,3 +47,19 @@ async function runCreatedNavigationTargetTest({
     "Got the expected webNavigation.onCompleted url property"
   );
 }
+
+
+
+
+
+function assertNoPendingCreatedNavigationTargetData() {
+  const { Manager } = ChromeUtils.import(
+    "resource://gre/modules/WebNavigation.jsm",
+    null
+  );
+  Assert.equal(
+    Manager.createdNavigationTargetByOuterWindowId.size,
+    0,
+    "There should be no pending createdNavigationTarget messages in WebNavigation"
+  );
+}
