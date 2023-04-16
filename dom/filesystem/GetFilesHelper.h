@@ -12,7 +12,7 @@
 #include "nsCycleCollectionTraversalCallback.h"
 #include "nsHashKeys.h"
 #include "nsTArray.h"
-#include "nsTHashtable.h"
+#include "nsTHashSet.h"
 #include "nsThreadUtils.h"
 
 class nsIGlobalObject;
@@ -59,7 +59,7 @@ class GetFilesHelperBase {
 
   
   FallibleTArray<RefPtr<BlobImpl>> mTargetBlobImplArray;
-  nsTHashtable<nsStringHashKey> mExploredDirectories;
+  nsTHashSet<nsString> mExploredDirectories;
 };
 
 
