@@ -233,6 +233,7 @@ enum class Op {
 
 
 #ifdef ENABLE_WASM_EXCEPTIONS
+  Delegate = 0x18,
   CatchAll = 0x19,
 #endif
 
