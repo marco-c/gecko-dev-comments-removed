@@ -154,8 +154,7 @@ class QuotaManager final : public BackgroundThreadObject {
 
 
 
-  void EnsureQuotaForOrigin(PersistenceType aPersistenceType,
-                            const OriginMetadata& aOriginMetadata);
+  void EnsureQuotaForOrigin(const OriginMetadata& aOriginMetadata);
 
   
 
