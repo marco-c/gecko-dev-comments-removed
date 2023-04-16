@@ -261,8 +261,12 @@ class PropertyTree {
 
 class TenuringTracer;
 
-using GetterOp = JSGetterOp;
-using SetterOp = JSSetterOp;
+
+
+using GetterOp = bool (*)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
+                          JS::MutableHandleValue vp);
+using SetterOp = bool (*)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
+                          JS::HandleValue v, JS::ObjectOpResult& result);
 
 
 static const uint32_t SHAPE_INVALID_SLOT = Bit(24) - 1;
