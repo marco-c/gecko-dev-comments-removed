@@ -1071,6 +1071,7 @@ class nsIFrame : public nsQueryFrame {
   nsRect GetPaddingRectRelativeToSelf() const;
   nsRect GetContentRect() const;
   nsRect GetContentRectRelativeToSelf() const;
+  nsRect GetMarginRect() const;
   nsRect GetMarginRectRelativeToSelf() const;
 
   
@@ -5729,4 +5730,4 @@ inline nsFrameList::Iterator& nsFrameList::Iterator::operator--() {
   return *this;
 }
 
-#endif
+#endif 
