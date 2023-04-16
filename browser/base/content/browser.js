@@ -5261,6 +5261,15 @@ var XULBrowserWindow = {
       );
     }
 
+    
+    
+    Services.obs.notifyObservers(
+      null,
+      "toggle-screenshot-disable",
+      aLocationURI.scheme == "about" &&
+        !aLocationURI.spec.startsWith("about:reader")
+    );
+
     gPermissionPanel.onLocationChange();
 
     gProtectionsHandler.onLocationChange();
