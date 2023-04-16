@@ -14,6 +14,7 @@
 #include "nsTHashMap.h"
 #include "nsString.h"
 
+class nsMenuBarX;
 class nsMenuItemX;
 class nsChangeObserver;
 class nsIWidget;
@@ -35,6 +36,9 @@ class nsMenuGroupOwnerX : public nsMenuObjectX, public nsIMutationObserver {
 
   
   MOZMenuItemRepresentedObject* GetRepresentedObject() { return mRepresentedObject; }
+
+  
+  nsMenuBarX* GetMenuBar();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIMUTATIONOBSERVER
