@@ -1626,12 +1626,7 @@ bool BytecodeEmitter::emitThisEnvironmentCallee() {
       ENVCOORD_HOPS_LIMIT - 1 <= UINT8_MAX,
       "JSOp::EnvCallee operand size should match ENVCOORD_HOPS_LIMIT");
 
-  
-  
-  if (numHops >= ENVCOORD_HOPS_LIMIT - 1) {
-    reportError(nullptr, JSMSG_TOO_DEEP, js_function_str);
-    return false;
-  }
+  MOZ_ASSERT(numHops < ENVCOORD_HOPS_LIMIT - 1);
 
   return emit2(JSOp::EnvCallee, numHops);
 }
