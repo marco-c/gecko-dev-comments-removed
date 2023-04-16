@@ -142,7 +142,7 @@ void DocumentOrShadowRoot::SetAdoptedStyleSheets(
       break;
     }
     ++commonPrefix;
-    set.Insert(mAdoptedStyleSheets[i]);
+    set.PutEntry(mAdoptedStyleSheets[i]);
   }
 
   

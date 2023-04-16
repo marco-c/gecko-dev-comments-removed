@@ -963,14 +963,14 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
 
     
     nsTArray<WindowInfo> windows;
-    for (const auto& browserParentWrapperKey :
+    for (const auto& browserParentWrapper :
          contentParent->ManagedPBrowserParent()) {
-      for (const auto& windowGlobalParentWrapperKey :
-           browserParentWrapperKey->ManagedPWindowGlobalParent()) {
+      for (const auto& windowGlobalParentWrapper :
+           browserParentWrapper.GetKey()->ManagedPWindowGlobalParent()) {
         
         
-        auto* windowGlobalParent =
-            static_cast<WindowGlobalParent*>(windowGlobalParentWrapperKey);
+        auto* windowGlobalParent = static_cast<WindowGlobalParent*>(
+            windowGlobalParentWrapper.GetKey());
 
         nsString documentTitle;
         windowGlobalParent->GetDocumentTitle(documentTitle);

@@ -1871,7 +1871,7 @@ void nsDisplayListBuilder::WeakFrameRegion::RemoveModifiedFramesAndRects() {
         AnyContentAncestorModified(wrapper.mWeakFrame->GetFrame())) {
       
       
-      mFrameSet.Remove(wrapper.mFrame);
+      mFrameSet.RemoveEntry(wrapper.mFrame);
       mFrames[i] = std::move(mFrames[length - 1]);
       mRects[i] = std::move(mRects[length - 1]);
       length--;
@@ -2037,7 +2037,7 @@ bool nsDisplayListBuilder::AddToAGRBudget(nsIFrame* aFrame) {
 
   if (onBudget) {
     mUsedAGRBudget += cost;
-    mAGRBudgetSet.Insert(aFrame);
+    mAGRBudgetSet.PutEntry(aFrame);
   }
 
   return onBudget;
@@ -7540,9 +7540,9 @@ Matrix4x4 nsDisplayTransform::GetResultingTransformMatrixInternal(
   
   
   Matrix svgTransform, parentsChildrenOnlyTransform;
-  const bool hasSVGTransforms =
-      frame && frame->HasAnyStateBits(NS_FRAME_MAY_BE_TRANSFORMED) &&
-      frame->IsSVGTransformed(&svgTransform, &parentsChildrenOnlyTransform);
+  const bool hasSVGTransforms = frame &&
+    frame->HasAnyStateBits(NS_FRAME_MAY_BE_TRANSFORMED) &&
+    frame->IsSVGTransformed(&svgTransform, &parentsChildrenOnlyTransform);
   bool shouldRound = nsLayoutUtils::ShouldSnapToGrid(frame);
 
   

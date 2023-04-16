@@ -12,7 +12,6 @@
 #include "nsIObserver.h"
 #include "nsITimer.h"
 #include "nsTHashMap.h"
-#include "nsTHashSet.h"
 #include "nsWeakReference.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Assertions.h"
@@ -133,7 +132,8 @@ class nsWindowMemoryReporter final : public nsIMemoryReporter,
 
 
 
-  void CheckForGhostWindows(nsTHashSet<uint64_t>* aOutGhostIDs = nullptr);
+  void CheckForGhostWindows(
+      nsTHashtable<nsUint64HashKey>* aOutGhostIDs = nullptr);
 
   
 

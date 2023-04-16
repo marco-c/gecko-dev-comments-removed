@@ -24,7 +24,7 @@
 #include "mozilla/dom/PBackgroundStorageParent.h"
 #include "mozilla/dom/PSessionStorageObserverChild.h"
 #include "mozilla/dom/PSessionStorageObserverParent.h"
-#include "nsTHashSet.h"
+#include "nsClassHashtable.h"
 
 namespace mozilla {
 
@@ -166,17 +166,17 @@ class StorageDBChild final : public PBackgroundStorageChild {
                                         const int64_t& aUsage) override;
   mozilla::ipc::IPCResult RecvError(const nsresult& aRv) override;
 
-  nsTHashSet<nsCString>& OriginsHavingData();
+  nsTHashtable<nsCStringHashKey>& OriginsHavingData();
 
   
   RefPtr<LocalStorageManager> mManager;
 
   
-  UniquePtr<nsTHashSet<nsCString>> mOriginsHavingData;
+  UniquePtr<nsTHashtable<nsCStringHashKey>> mOriginsHavingData;
 
   
   
-  nsTHashSet<RefPtr<LocalStorageCacheBridge>> mLoadingCaches;
+  nsTHashtable<nsRefPtrHashKey<LocalStorageCacheBridge>> mLoadingCaches;
 
   
   const uint32_t mPrivateBrowsingId;

@@ -44,7 +44,7 @@
 #include "nsRefreshObservers.h"
 #include "nsStringFwd.h"
 #include "nsStubDocumentObserver.h"
-#include "nsTHashSet.h"
+#include "nsTHashtable.h"
 #include "nsThreadUtils.h"
 #include "nsWeakReference.h"
 
@@ -157,7 +157,7 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   
-  typedef nsTHashSet<nsIFrame*> VisibleFrames;
+  typedef nsTHashtable<nsPtrHashKey<nsIFrame>> VisibleFrames;
 
  public:
   explicit PresShell(Document* aDocument);
@@ -1705,14 +1705,14 @@ class PresShell final : public nsStubDocumentObserver,
   void RecordAlloc(void* aPtr) {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
     MOZ_DIAGNOSTIC_ASSERT(!mAllocatedPointers.Contains(aPtr));
-    mAllocatedPointers.Insert(aPtr);
+    mAllocatedPointers.PutEntry(aPtr);
 #endif
   }
 
   void RecordFree(void* aPtr) {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
     MOZ_DIAGNOSTIC_ASSERT(mAllocatedPointers.Contains(aPtr));
-    mAllocatedPointers.Remove(aPtr);
+    mAllocatedPointers.RemoveEntry(aPtr);
 #endif
   }
 
@@ -2810,7 +2810,7 @@ class PresShell final : public nsStubDocumentObserver,
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   
   
-  nsTHashSet<void*> mAllocatedPointers;
+  nsTHashtable<nsPtrHashKey<void>> mAllocatedPointers;
 #endif
 
   
@@ -2818,7 +2818,7 @@ class PresShell final : public nsStubDocumentObserver,
   AutoWeakFrame* mAutoWeakFrames;
 
   
-  nsTHashSet<WeakFrame*> mWeakFrames;
+  nsTHashtable<nsPtrHashKey<WeakFrame>> mWeakFrames;
 
   class DirtyRootsList {
    public:
@@ -2912,9 +2912,9 @@ class PresShell final : public nsStubDocumentObserver,
   nsCOMArray<nsIContent> mCurrentEventContentStack;
   
   
-  nsTHashSet<nsIFrame*> mFramesToDirty;
-  nsTHashSet<nsIScrollableFrame*> mPendingScrollAnchorSelection;
-  nsTHashSet<nsIScrollableFrame*> mPendingScrollAnchorAdjustment;
+  nsTHashtable<nsPtrHashKey<nsIFrame>> mFramesToDirty;
+  nsTHashtable<nsPtrHashKey<nsIScrollableFrame>> mPendingScrollAnchorSelection;
+  nsTHashtable<nsPtrHashKey<nsIScrollableFrame>> mPendingScrollAnchorAdjustment;
 
   nsCallbackEventRequest* mFirstCallbackEventRequest = nullptr;
   nsCallbackEventRequest* mLastCallbackEventRequest = nullptr;

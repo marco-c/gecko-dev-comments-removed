@@ -191,9 +191,9 @@ StorageDBChild* StorageDBChild::GetOrCreate(const uint32_t aPrivateBrowsingId) {
   return storageChild;
 }
 
-nsTHashSet<nsCString>& StorageDBChild::OriginsHavingData() {
+nsTHashtable<nsCStringHashKey>& StorageDBChild::OriginsHavingData() {
   if (!mOriginsHavingData) {
-    mOriginsHavingData = MakeUnique<nsTHashSet<nsCString>>();
+    mOriginsHavingData = MakeUnique<nsTHashtable<nsCStringHashKey>>();
   }
 
   return *mOriginsHavingData;
@@ -244,7 +244,7 @@ void StorageDBChild::AsyncPreload(LocalStorageCacheBridge* aCache,
   if (mIPCOpen) {
     
     
-    mLoadingCaches.Insert(aCache);
+    mLoadingCaches.PutEntry(aCache);
     SendAsyncPreload(aCache->OriginSuffix(), aCache->OriginNoSuffix(),
                      aPriority);
   } else {
@@ -296,7 +296,7 @@ nsresult StorageDBChild::AsyncAddItem(LocalStorageCacheBridge* aCache,
 
   SendAsyncAddItem(aCache->OriginSuffix(), aCache->OriginNoSuffix(),
                    nsString(aKey), nsString(aValue));
-  OriginsHavingData().Insert(aCache->Origin());
+  OriginsHavingData().PutEntry(aCache->Origin());
   return NS_OK;
 }
 
@@ -309,7 +309,7 @@ nsresult StorageDBChild::AsyncUpdateItem(LocalStorageCacheBridge* aCache,
 
   SendAsyncUpdateItem(aCache->OriginSuffix(), aCache->OriginNoSuffix(),
                       nsString(aKey), nsString(aValue));
-  OriginsHavingData().Insert(aCache->Origin());
+  OriginsHavingData().PutEntry(aCache->Origin());
   return NS_OK;
 }
 
@@ -330,7 +330,7 @@ nsresult StorageDBChild::AsyncClear(LocalStorageCacheBridge* aCache) {
   }
 
   SendAsyncClear(aCache->OriginSuffix(), aCache->OriginNoSuffix());
-  OriginsHavingData().Remove(aCache->Origin());
+  OriginsHavingData().RemoveEntry(aCache->Origin());
   return NS_OK;
 }
 
@@ -360,7 +360,7 @@ mozilla::ipc::IPCResult StorageDBChild::RecvOriginsHavingData(
   }
 
   for (uint32_t i = 0; i < aOrigins.Length(); ++i) {
-    OriginsHavingData().Insert(aOrigins[i]);
+    OriginsHavingData().PutEntry(aOrigins[i]);
   }
 
   return IPC_OK();
@@ -387,7 +387,7 @@ mozilla::ipc::IPCResult StorageDBChild::RecvLoadDone(
     aCache->LoadDone(aRv);
 
     
-    mLoadingCaches.Remove(static_cast<LocalStorageCacheBridge*>(aCache));
+    mLoadingCaches.RemoveEntry(static_cast<LocalStorageCacheBridge*>(aCache));
   }
 
   return IPC_OK();

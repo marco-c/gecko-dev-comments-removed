@@ -2095,15 +2095,18 @@ History::IsURIVisited(nsIURI* aURI, mozIVisitedStatusCallback* aCallback) {
 void History::StartPendingVisitedQueries(
     const PendingVisitedQueries& aQueries) {
   if (XRE_IsContentProcess()) {
-    const auto uris = ToTArray<nsTArray<RefPtr<nsIURI>>>(aQueries);
+    nsTArray<RefPtr<nsIURI>> uris(aQueries.Count());
+    for (auto iter = aQueries.ConstIter(); !iter.Done(); iter.Next()) {
+      uris.AppendElement(iter.Get()->GetKey());
+    }
     auto* cpc = mozilla::dom::ContentChild::GetSingleton();
     MOZ_ASSERT(cpc, "Content Protocol is NULL!");
     Unused << cpc->SendStartVisitedQueries(uris);
   } else {
     
     
-    for (const auto& key : aQueries) {
-      nsresult queryStatus = VisitedQuery::Start(key);
+    for (auto iter = aQueries.ConstIter(); !iter.Done(); iter.Next()) {
+      nsresult queryStatus = VisitedQuery::Start(iter.Get()->GetKey());
       Unused << NS_WARN_IF(NS_FAILED(queryStatus));
     }
   }

@@ -11,7 +11,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/GridBinding.h"
 #include "nsGridContainerFrame.h"
-#include "nsTHashSet.h"
 
 namespace mozilla::dom {
 
@@ -35,13 +34,13 @@ Grid::Grid(nsISupports* aParent, nsGridContainerFrame* aFrame)
 
   
   
-  nsTHashSet<RefPtr<nsAtom>> namesSeen;
+  nsTHashtable<nsRefPtrHashKey<nsAtom>> namesSeen;
   nsGridContainerFrame::ImplicitNamedAreas* implicitAreas =
       aFrame->GetImplicitNamedAreas();
   if (implicitAreas) {
     for (auto iter = implicitAreas->iter(); !iter.done(); iter.next()) {
       auto& areaInfo = iter.get().value();
-      namesSeen.Insert(areaInfo.name.AsAtom());
+      namesSeen.PutEntry(areaInfo.name.AsAtom());
       GridArea* area =
           new GridArea(this, areaInfo.name.AsAtom(), GridDeclaration::Implicit,
                        areaInfo.rows.start, areaInfo.rows.end,

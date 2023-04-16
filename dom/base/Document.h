@@ -92,7 +92,7 @@
 #include "nsRefPtrHashtable.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "nsTHashSet.h"
+#include "nsTHashtable.h"
 #include "nsTLiteralString.h"
 #include "nsTObserverArray.h"
 #include "nsThreadUtils.h"
@@ -1369,13 +1369,13 @@ class Document : public nsINode,
 
 
   void ScheduleSVGForPresAttrEvaluation(SVGElement* aSVG) {
-    mLazySVGPresElements.Insert(aSVG);
+    mLazySVGPresElements.PutEntry(aSVG);
   }
 
   
   
   void UnscheduleSVGForPresAttrEvaluation(SVGElement* aSVG) {
-    mLazySVGPresElements.Remove(aSVG);
+    mLazySVGPresElements.RemoveEntry(aSVG);
   }
 
   
@@ -2431,11 +2431,11 @@ class Document : public nsINode,
   void AddStyleRelevantLink(Link* aLink) {
     NS_ASSERTION(aLink, "Passing in a null link.  Expect crashes RSN!");
 #ifdef DEBUG
-    NS_ASSERTION(!mStyledLinks.Contains(aLink),
-                 "Document already knows about this Link!");
+    nsPtrHashKey<Link>* entry = mStyledLinks.GetEntry(aLink);
+    NS_ASSERTION(!entry, "Document already knows about this Link!");
     mStyledLinksCleared = false;
 #endif
-    mStyledLinks.Insert(aLink);
+    mStyledLinks.PutEntry(aLink);
   }
 
   
@@ -2447,11 +2447,11 @@ class Document : public nsINode,
   void ForgetLink(Link* aLink) {
     NS_ASSERTION(aLink, "Passing in a null link.  Expect crashes RSN!");
 #ifdef DEBUG
-    bool linkContained = mStyledLinks.Contains(aLink);
-    NS_ASSERTION(linkContained || mStyledLinksCleared,
+    nsPtrHashKey<Link>* entry = mStyledLinks.GetEntry(aLink);
+    NS_ASSERTION(entry || mStyledLinksCleared,
                  "Document knows nothing about this Link!");
 #endif
-    mStyledLinks.Remove(aLink);
+    mStyledLinks.RemoveEntry(aLink);
   }
 
   
@@ -3100,14 +3100,14 @@ class Document : public nsINode,
   
   void AddPlugin(nsIObjectLoadingContent* aPlugin) {
     MOZ_ASSERT(aPlugin);
-    mPlugins.Insert(aPlugin);
+    mPlugins.PutEntry(aPlugin);
   }
 
   
   
   void RemovePlugin(nsIObjectLoadingContent* aPlugin) {
     MOZ_ASSERT(aPlugin);
-    mPlugins.Remove(aPlugin);
+    mPlugins.RemoveEntry(aPlugin);
   }
 
   
@@ -3118,33 +3118,33 @@ class Document : public nsINode,
   
   void AddResponsiveContent(HTMLImageElement* aContent) {
     MOZ_ASSERT(aContent);
-    mResponsiveContent.Insert(aContent);
+    mResponsiveContent.PutEntry(aContent);
   }
 
   
   
   void RemoveResponsiveContent(HTMLImageElement* aContent) {
     MOZ_ASSERT(aContent);
-    mResponsiveContent.Remove(aContent);
+    mResponsiveContent.RemoveEntry(aContent);
   }
 
   void ScheduleSVGUseElementShadowTreeUpdate(SVGUseElement&);
   void UnscheduleSVGUseElementShadowTreeUpdate(SVGUseElement& aElement) {
-    mSVGUseElementsNeedingShadowTreeUpdate.Remove(&aElement);
+    mSVGUseElementsNeedingShadowTreeUpdate.RemoveEntry(&aElement);
   }
 
   bool SVGUseElementNeedsShadowTreeUpdate(SVGUseElement& aElement) const {
-    return mSVGUseElementsNeedingShadowTreeUpdate.Contains(&aElement);
+    return mSVGUseElementsNeedingShadowTreeUpdate.GetEntry(&aElement);
   }
 
-  using ShadowRootSet = nsTHashSet<ShadowRoot*>;
+  using ShadowRootSet = nsTHashtable<nsPtrHashKey<ShadowRoot>>;
 
   void AddComposedDocShadowRoot(ShadowRoot& aShadowRoot) {
-    mComposedShadowRoots.Insert(&aShadowRoot);
+    mComposedShadowRoots.PutEntry(&aShadowRoot);
   }
 
   void RemoveComposedDocShadowRoot(ShadowRoot& aShadowRoot) {
-    mComposedShadowRoots.Remove(&aShadowRoot);
+    mComposedShadowRoots.RemoveEntry(&aShadowRoot);
   }
 
   
@@ -3710,11 +3710,11 @@ class Document : public nsINode,
   void AddIntersectionObserver(DOMIntersectionObserver* aObserver) {
     MOZ_ASSERT(!mIntersectionObservers.Contains(aObserver),
                "Intersection observer already in the list");
-    mIntersectionObservers.Insert(aObserver);
+    mIntersectionObservers.PutEntry(aObserver);
   }
 
   void RemoveIntersectionObserver(DOMIntersectionObserver* aObserver) {
-    mIntersectionObservers.Remove(aObserver);
+    mIntersectionObservers.RemoveEntry(aObserver);
   }
 
   bool HasIntersectionObservers() const {
@@ -4414,7 +4414,7 @@ class Document : public nsINode,
   
   ShadowRootSet mComposedShadowRoots;
 
-  using SVGUseElementSet = nsTHashSet<SVGUseElement*>;
+  using SVGUseElementSet = nsTHashtable<nsPtrHashKey<SVGUseElement>>;
 
   
   
@@ -4426,10 +4426,10 @@ class Document : public nsINode,
   
   
   
-  UniquePtr<nsTHashSet<nsISupports*>> mActivityObservers;
+  UniquePtr<nsTHashtable<nsPtrHashKey<nsISupports>>> mActivityObservers;
 
   
-  nsTHashSet<Link*> mStyledLinks;
+  nsTHashtable<nsPtrHashKey<Link>> mStyledLinks;
 #ifdef DEBUG
   
   
@@ -5029,7 +5029,7 @@ class Document : public nsINode,
   
   
   
-  nsTHashSet<nsCString> mTrackingScripts;
+  nsTHashtable<nsCStringHashKey> mTrackingScripts;
 
   
   
@@ -5095,7 +5095,7 @@ class Document : public nsINode,
   nsWeakPtr mScopeObject;
 
   
-  nsTHashSet<DOMIntersectionObserver*> mIntersectionObservers;
+  nsTHashtable<nsPtrHashKey<DOMIntersectionObserver>> mIntersectionObservers;
 
   RefPtr<DOMIntersectionObserver> mLazyLoadImageObserver;
   
@@ -5113,10 +5113,10 @@ class Document : public nsINode,
   RefPtr<nsContentList> mImageMaps;
 
   
-  nsTHashSet<HTMLImageElement*> mResponsiveContent;
+  nsTHashtable<nsPtrHashKey<HTMLImageElement>> mResponsiveContent;
 
   
-  nsTHashSet<nsIObjectLoadingContent*> mPlugins;
+  nsTHashtable<nsPtrHashKey<nsIObjectLoadingContent>> mPlugins;
 
   RefPtr<DocumentTimeline> mDocumentTimeline;
   LinkedList<DocumentTimeline> mTimelines;
@@ -5182,9 +5182,9 @@ class Document : public nsINode,
   
   
   
-  nsTHashSet<SVGElement*> mLazySVGPresElements;
+  nsTHashtable<nsPtrHashKey<SVGElement>> mLazySVGPresElements;
 
-  nsTHashSet<RefPtr<nsAtom>> mLanguagesUsed;
+  nsTHashtable<nsRefPtrHashKey<nsAtom>> mLanguagesUsed;
 
   
   RefPtr<nsAtom> mLanguageFromCharset;

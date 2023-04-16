@@ -108,7 +108,7 @@ void nsLineBox::StealHashTableFrom(nsLineBox* aFromLine,
   
   nsIFrame* f = aFromLine->mFirstChild;
   for (uint32_t i = 0; i < aFromLineNewCount; f = f->GetNextSibling(), ++i) {
-    mFrames->Remove(f);
+    mFrames->RemoveEntry(f);
   }
 }
 
@@ -136,14 +136,14 @@ void nsLineBox::NoteFramesMovedFrom(nsLineBox* aFromLine) {
       
       nsIFrame* f = mFirstChild;
       for (uint32_t i = 0; i < toCount; f = f->GetNextSibling(), ++i) {
-        aFromLine->mFrames->Remove(f);
+        aFromLine->mFrames->RemoveEntry(f);
       }
     } else if (toCount <= fromNewCount) {
       
       
       nsIFrame* f = mFirstChild;
       for (uint32_t i = 0; i < toCount; f = f->GetNextSibling(), ++i) {
-        aFromLine->mFrames->Remove(f);  
+        aFromLine->mFrames->RemoveEntry(f);  
       }
       SwitchToHashtable();  
     } else {

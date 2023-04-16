@@ -17,7 +17,6 @@
 #include "nsPresContext.h"
 #include "nsPresContextInlines.h"  
 #include "nsStringFwd.h"
-#include "nsTHashSet.h"
 
 class nsAttrValue;
 class nsCSSFrameConstructor;
@@ -246,7 +245,7 @@ class RestyleManager {
     
     
     if (mDestroyedFrames) {
-      mDestroyedFrames->Insert(aFrame);
+      mDestroyedFrames->PutEntry(aFrame);
     }
   }
 
@@ -516,7 +515,8 @@ class RestyleManager {
   
   
   
-  mozilla::UniquePtr<nsTHashSet<const nsIFrame*>> mDestroyedFrames;
+  mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<const nsIFrame>>>
+      mDestroyedFrames;
 
  protected:
   

@@ -19,7 +19,6 @@
 #include "nsTreeStyleCache.h"
 #include "nsTreeColumns.h"
 #include "nsTHashMap.h"
-#include "nsTHashSet.h"
 #include "imgIRequest.h"
 #include "imgINotificationObserver.h"
 #include "nsScrollbarFrame.h"
@@ -609,7 +608,7 @@ class nsTreeBodyFrame final : public nsLeafBoxFrame,
 
   
   
-  nsTHashSet<nsTreeImageListener*> mCreatedListeners;
+  nsTHashtable<nsPtrHashKey<nsTreeImageListener> > mCreatedListeners;
 
 };  
 

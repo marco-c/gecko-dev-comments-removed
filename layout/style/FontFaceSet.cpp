@@ -269,7 +269,7 @@ void FontFaceSet::FindMatchingFontFaces(const nsACString& aFont,
   arrays[1] = &mRuleFaces;
 
   
-  nsTHashSet<FontFace*> matchingFaces;
+  nsTHashtable<nsPtrHashKey<FontFace>> matchingFaces;
 
   for (const FontFamilyName& fontFamilyName : familyList->mNames) {
     if (!fontFamilyName.IsNamed()) {
@@ -290,7 +290,7 @@ void FontFaceSet::FindMatchingFontFaces(const nsACString& aFont,
       FontFace::Entry* entry = static_cast<FontFace::Entry*>(e);
       if (HasAnyCharacterInUnicodeRange(entry, aText)) {
         for (FontFace* f : entry->GetFontFaces()) {
-          matchingFaces.Insert(f);
+          matchingFaces.PutEntry(f);
         }
       }
     }
@@ -680,7 +680,7 @@ bool FontFaceSet::UpdateRules(const nsTArray<nsFontFaceRuleContainer>& aRules) {
   
   
   
-  nsTHashSet<RawServoFontFaceRule*> handledRules;
+  nsTHashtable<nsPtrHashKey<RawServoFontFaceRule>> handledRules;
 
   for (size_t i = 0, i_end = aRules.Length(); i < i_end; ++i) {
     

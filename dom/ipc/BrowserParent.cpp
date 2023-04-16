@@ -429,8 +429,8 @@ a11y::DocAccessibleParent* BrowserParent::GetTopLevelDocAccessible() const {
   
   const ManagedContainer<PDocAccessibleParent>& docs =
       ManagedPDocAccessibleParent();
-  for (auto* key : docs) {
-    auto* doc = static_cast<a11y::DocAccessibleParent*>(key);
+  for (auto iter = docs.ConstIter(); !iter.Done(); iter.Next()) {
+    auto doc = static_cast<a11y::DocAccessibleParent*>(iter.Get()->GetKey());
     
     
     
@@ -630,8 +630,9 @@ void BrowserParent::DestroyInternal() {
   
   const ManagedContainer<PPluginWidgetParent>& kids =
       ManagedPPluginWidgetParent();
-  for (const auto& key : kids) {
-    static_cast<mozilla::plugins::PluginWidgetParent*>(key)->ParentDestroy();
+  for (auto iter = kids.ConstIter(); !iter.Done(); iter.Next()) {
+    static_cast<mozilla::plugins::PluginWidgetParent*>(iter.Get()->GetKey())
+        ->ParentDestroy();
   }
 #endif
 }

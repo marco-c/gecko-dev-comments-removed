@@ -1501,12 +1501,12 @@ static bool VisitDocAccessibleParentDescendantsAtTopLevelInContentProcess(
   
   
   const auto& bridges = aBrowser->ManagedPBrowserBridgeParent();
-  return std::all_of(bridges.cbegin(), bridges.cend(), [&](const auto& key) {
-    auto* bridge = static_cast<dom::BrowserBridgeParent*>(key);
+  for (auto iter = bridges.ConstIter(); !iter.Done(); iter.Next()) {
+    auto bridge = static_cast<dom::BrowserBridgeParent*>(iter.Get()->GetKey());
     dom::BrowserParent* childBrowser = bridge->GetBrowserParent();
     DocAccessibleParent* childDocAcc = childBrowser->GetTopLevelDocAccessible();
     if (!childDocAcc || childDocAcc->IsShutdown()) {
-      return true;
+      continue;
     }
     if (!aCallback(childDocAcc)) {
       return false;  
@@ -1515,8 +1515,8 @@ static bool VisitDocAccessibleParentDescendantsAtTopLevelInContentProcess(
             childBrowser, aCallback)) {
       return false;  
     }
-    return true;  
-  });
+  }
+  return true;  
 }
 
 already_AddRefed<IAccessible> AccessibleWrap::GetRemoteIAccessibleFor(

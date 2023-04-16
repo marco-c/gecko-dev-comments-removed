@@ -23,7 +23,6 @@
 #include "nsIFile.h"
 #include "nsIThreadInternal.h"
 #include "nsThreadUtils.h"
-#include "nsTHashSet.h"
 
 class mozIStorageConnection;
 
@@ -412,7 +411,7 @@ class StorageDBThread final {
 
   
   
-  nsTHashSet<nsCString> mOriginsHavingData;
+  nsTHashtable<nsCStringHashKey> mOriginsHavingData;
 
   
   nsCOMPtr<mozIStorageConnection> mWorkerConnection;

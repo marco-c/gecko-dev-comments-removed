@@ -12,7 +12,6 @@
 #include "mozilla/SVGContainerFrame.h"
 #include "mozilla/UniquePtr.h"
 #include "nsRegion.h"
-#include "nsTHashSet.h"
 
 class gfxContext;
 
@@ -197,7 +196,8 @@ class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
   
   
   
-  UniquePtr<nsTHashSet<SVGForeignObjectFrame*>> mForeignObjectHash;
+  UniquePtr<nsTHashtable<nsPtrHashKey<SVGForeignObjectFrame>>>
+      mForeignObjectHash;
 
   nsRegion mInvalidRegion;
 
