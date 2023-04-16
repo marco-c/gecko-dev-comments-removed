@@ -1,7 +1,7 @@
 %if 0
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 %endif
 
 #editBookmarkPanelTitle {
@@ -118,7 +118,7 @@ html|img#editBookmarkPanelFavicon[src] {
   border-radius: 6px;
   margin-top: 10px;
   margin-inline-start: 10px;
-  margin-bottom: -52px; 
+  margin-bottom: -52px; /* margin-top + paddings + height */
 }
 
 #editBookmarkPanelImage {
@@ -128,9 +128,9 @@ html|img#editBookmarkPanelFavicon[src] {
   background-repeat: no-repeat;
   background-size: cover;
   margin: 0 2px;
-  
-
-
+  /* When adjusting the height for long CFR messages we want the animations
+   * to align. The delay is used to force the animation to start when the
+   * panel message has finished sliding down. */
   transition: height 0.28s cubic-bezier(0.07, 0.95, 0, 1);
   transition-delay: 10ms;
 }
@@ -148,7 +148,7 @@ html|img#editBookmarkPanelFavicon[src] {
   padding-top: 0;
 }
 
-
+/* Implements editBookmarkPanel resizing on folderTree un-collapse. */
 #editBMPanel_folderTree {
   min-width: 27em;
 }
@@ -157,6 +157,7 @@ html|img#editBookmarkPanelFavicon[src] {
   display: flex;
 }
 
+@supports not -moz-bool-pref("browser.proton.enabled") {
 .editBookmarkPanelBottomButton {
   flex: 1;
 }
@@ -164,3 +165,4 @@ html|img#editBookmarkPanelFavicon[src] {
 .editBookmarkPanelBottomButton:not(:last-child) {
   border-inline-end: 1px solid var(--panel-separator-color);
 }
+} /** END not Proton **/
