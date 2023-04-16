@@ -15,17 +15,6 @@
 using namespace mozilla;
 using namespace TelemetryTestHelpers;
 
-namespace mozilla {
-namespace Telemetry {
-
-struct EventExtraEntry {
-  nsCString key;
-  nsCString value;
-};
-
-}  
-}  
-
 
 TEST_F(TelemetryTestFixture, RecordEventNative) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
