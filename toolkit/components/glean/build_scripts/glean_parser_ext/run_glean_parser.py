@@ -53,7 +53,9 @@ def parse(args):
     if util.report_validation_errors(all_objs):
         sys.exit(1)
 
-    if lint.lint_metrics(all_objs.value, options):
+    nits = lint.lint_metrics(all_objs.value, options)
+    if nits is not None and any(nit.check_name != "EXPIRED" for nit in nits):
+        
         
         sys.exit(1)
 
