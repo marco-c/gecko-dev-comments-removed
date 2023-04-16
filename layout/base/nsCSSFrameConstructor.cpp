@@ -2504,8 +2504,6 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
 
 
 
-
-
   
 
   
@@ -2517,56 +2515,63 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
   
 
   nsPresContext* presContext = mPresShell->GetPresContext();
-  const bool isPaginated = presContext->IsRootPaginatedDocument();
-
-  const bool isHTML = aDocElement->IsHTMLElement();
-  const bool isXUL = !isHTML && aDocElement->IsXULElement();
-
-  const bool isScrollable = [&] {
-    if (isPaginated) {
-      return presContext->HasPaginatedScrolling();
-    }
-    
-    
-    if (isXUL) {
-      return false;
-    }
-    if (aDocElement->OwnerDoc()->IsDocumentURISchemeChrome() &&
-        aDocElement->AsElement()->AttrValueIs(
-                 kNameSpaceID_None, nsGkAtoms::scrolling, nsGkAtoms::_false,
-                 eCaseMatters)) {
-      return false;
-    }
-    return true;
-  }();
-
+  bool isPaginated = presContext->IsRootPaginatedDocument();
   nsContainerFrame* viewportFrame =
       static_cast<nsContainerFrame*>(GetRootFrame());
   ComputedStyle* viewportPseudoStyle = viewportFrame->Style();
 
   nsContainerFrame* rootFrame = nullptr;
+  PseudoStyleType rootPseudo;
 
+  if (!isPaginated) {
 #ifdef MOZ_XUL
-  if (aDocElement->IsXULElement()) {
-    
-    rootFrame = NS_NewRootBoxFrame(mPresShell, viewportPseudoStyle);
-  } else
+    if (aDocElement->IsXULElement()) {
+      
+      rootFrame = NS_NewRootBoxFrame(mPresShell, viewportPseudoStyle);
+    } else
 #endif
-  {
+    {
+      
+      rootFrame = NS_NewCanvasFrame(mPresShell, viewportPseudoStyle);
+      mHasRootAbsPosContainingBlock = true;
+    }
+
+    rootPseudo = PseudoStyleType::canvas;
+    mDocElementContainingBlock = rootFrame;
+  } else {
     
-    rootFrame = NS_NewCanvasFrame(mPresShell, viewportPseudoStyle);
-    mHasRootAbsPosContainingBlock = true;
+    rootFrame = mPageSequenceFrame =
+        NS_NewPageSequenceFrame(mPresShell, viewportPseudoStyle);
+    rootPseudo = PseudoStyleType::pageSequence;
   }
 
-  PseudoStyleType rootPseudo = PseudoStyleType::canvas;
-  mDocElementContainingBlock = rootFrame;
-
   
 
   
   
   
   
+
+  bool isHTML = aDocElement->IsHTMLElement();
+  bool isXUL = false;
+
+  if (!isHTML) {
+    isXUL = aDocElement->IsXULElement();
+  }
+
+  
+  
+  bool isScrollable = true;
+  if (isPaginated) {
+    isScrollable = presContext->HasPaginatedScrolling();
+  } else if (isXUL) {
+    isScrollable = false;
+  } else if (aDocElement->OwnerDoc()->IsDocumentURISchemeChrome() &&
+             aDocElement->AsElement()->AttrValueIs(
+                 kNameSpaceID_None, nsGkAtoms::scrolling, nsGkAtoms::_false,
+                 eCaseMatters)) {
+    isScrollable = false;
+  }
 
   
   
@@ -2589,7 +2594,13 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
     rootPseudoStyle = styleSet->ResolveInheritingAnonymousBoxStyle(
         rootPseudo, viewportPseudoStyle);
   } else {
-    rootPseudo = PseudoStyleType::scrolledCanvas;
+    if (rootPseudo == PseudoStyleType::canvas) {
+      rootPseudo = PseudoStyleType::scrolledCanvas;
+    } else {
+      NS_ASSERTION(rootPseudo == PseudoStyleType::pageSequence,
+                   "Unknown root pseudo");
+      rootPseudo = PseudoStyleType::scrolledPageSequence;
+    }
 
     
     
@@ -2624,21 +2635,10 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
 
   if (isPaginated) {
     
-    {
-      RefPtr<ComputedStyle> pageSequenceStyle =
-        styleSet->ResolveInheritingAnonymousBoxStyle(
-          PseudoStyleType::pageSequence, viewportPseudoStyle);
-      mPageSequenceFrame =
-          NS_NewPageSequenceFrame(mPresShell, pageSequenceStyle);
-      mPageSequenceFrame->Init(aDocElement, rootFrame, nullptr);
-      SetInitialSingleChild(rootFrame, mPageSequenceFrame);
-    }
-
-    
     
     auto* printedSheetFrame =
-        ConstructPrintedSheetFrame(mPresShell, mPageSequenceFrame, nullptr);
-    SetInitialSingleChild(mPageSequenceFrame, printedSheetFrame);
+        ConstructPrintedSheetFrame(mPresShell, rootFrame, nullptr);
+    SetInitialSingleChild(rootFrame, printedSheetFrame);
 
     
     
