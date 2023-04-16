@@ -51,6 +51,12 @@ loader.lazyRequireGetter(
   "devtools/server/actors/target-configuration",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "ThreadConfigurationActor",
+  "devtools/server/actors/thread-configuration",
+  true
+);
 
 exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   
@@ -171,6 +177,12 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         
         
         "target-configuration": true,
+        
+        
+        
+        
+        
+        "thread-configuration": true,
         
         
         
@@ -498,10 +510,23 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
   getTargetConfigurationActor() {
-    if (!this._configurationListActor) {
-      this._configurationListActor = new TargetConfigurationActor(this);
+    if (!this._targetConfigurationListActor) {
+      this._targetConfigurationListActor = new TargetConfigurationActor(this);
     }
-    return this._configurationListActor;
+    return this._targetConfigurationListActor;
+  },
+
+  
+
+
+
+
+
+  getThreadConfigurationActor() {
+    if (!this._threadConfigurationListActor) {
+      this._threadConfigurationListActor = new ThreadConfigurationActor(this);
+    }
+    return this._threadConfigurationListActor;
   },
 
   

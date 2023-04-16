@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 const { ActorClassWithSpec } = require("devtools/shared/protocol");
@@ -11,10 +12,12 @@ const {
   WatchedDataHelpers,
 } = require("devtools/server/actors/watcher/WatchedDataHelpers.jsm");
 const { STATES: THREAD_STATES } = require("devtools/server/actors/thread");
+
 const {
   RESOURCES,
   BREAKPOINTS,
   TARGET_CONFIGURATION,
+  THREAD_CONFIGURATION,
   XHR_BREAKPOINTS,
 } = WatchedDataHelpers.SUPPORTED_DATA;
 
@@ -73,6 +76,25 @@ module.exports = function(targetType, targetActorSpec, implementation) {
           }
           this.updateTargetConfiguration(options);
         }
+      } else if (type == THREAD_CONFIGURATION) {
+        if (typeof this.attach == "function") {
+          this.attach();
+        }
+
+        const threadOptions = {};
+
+        for (const { key, value } of entries) {
+          threadOptions[key] = value;
+        }
+
+        if (
+          !this.targetType.endsWith("worker") &&
+          this.threadActor.state == THREAD_STATES.DETACHED
+        ) {
+          await this.threadActor.attach(threadOptions);
+        } else {
+          await this.threadActor.reconfigure(threadOptions);
+        }
       } else if (type == XHR_BREAKPOINTS) {
         
         
@@ -85,7 +107,7 @@ module.exports = function(targetType, targetActorSpec, implementation) {
         
         
         if (
-          this.threadActor.state == "detached" &&
+          this.threadActor.state == THREAD_STATES.DETACHED &&
           !this.targetType.endsWith("worker")
         ) {
           await this.threadActor.attach();
@@ -106,7 +128,7 @@ module.exports = function(targetType, targetActorSpec, implementation) {
         for (const { location } of entries) {
           this.threadActor.removeBreakpoint(location);
         }
-      } else if (type == TARGET_CONFIGURATION) {
+      } else if (type == TARGET_CONFIGURATION || type == THREAD_CONFIGURATION) {
         
       } else if (type == XHR_BREAKPOINTS) {
         for (const { path, method } of entries) {
