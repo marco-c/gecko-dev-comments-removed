@@ -614,6 +614,18 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
     onViewShowing(aEvent) {
       let panelview = aEvent.target;
       let doc = panelview.ownerDocument;
+      let window = doc.defaultView;
+
+      
+      
+      
+      
+      if (window.PanelUI.protonAppMenuEnabled) {
+        let toolbarbuttons = panelview.querySelectorAll("toolbarbutton");
+        for (let toolbarbutton of toolbarbuttons) {
+          toolbarbutton.classList.remove("subviewbutton-iconic");
+        }
+      }
 
       let syncNowBtn = panelview.querySelector(".syncnow-label");
       let l10nId = syncNowBtn.getAttribute("sync-now-data-l10n-id");
