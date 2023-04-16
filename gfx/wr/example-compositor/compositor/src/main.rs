@@ -20,8 +20,6 @@ use webrender::{CompositorSurfaceTransform, Transaction, api::*, euclid::point2}
 use webrender::api::units::*;
 #[cfg(target_os = "windows")]
 use compositor_windows as compositor;
-#[cfg(target_os = "linux")]
-use compositor_wayland as compositor;
 use std::{env, f32, process};
 
 
@@ -156,7 +154,7 @@ impl webrender::Compositor for DirectCompositeInterface {
     }
 
     fn deinit(&mut self) {
-        compositor::deinit(self.window);
+        todo!()
     }
 
     fn get_capabilities(&self) -> webrender::CompositorCapabilities {
