@@ -1019,34 +1019,43 @@ static AccessKeyType GetAccessKeyTypeFor(nsISupports* aDocShell) {
   }
 }
 
-static bool IsAccessKeyTarget(nsIContent* aContent, nsIFrame* aFrame,
-                              nsAString& aKey) {
+static bool IsAccessKeyTarget(Element* aElement, nsAString& aKey) {
   
   
   nsString contentKey;
-  if (!aContent->IsElement() ||
-      !aContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::accesskey,
-                                      contentKey) ||
-      !contentKey.Equals(aKey, nsCaseInsensitiveStringComparator))
+  if (!aElement ||
+      !aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::accesskey, contentKey) ||
+      !contentKey.Equals(aKey, nsCaseInsensitiveStringComparator)) {
     return false;
+  }
 
-  if (!aContent->IsXULElement()) return true;
-
-  
-  if (!aFrame) return false;
-
-  if (aFrame->IsFocusable()) return true;
-
-  if (!aFrame->IsVisibleConsideringAncestors()) return false;
+  if (!aElement->IsXULElement()) {
+    return true;
+  }
 
   
-  nsCOMPtr<nsIDOMXULControlElement> control =
-      aContent->AsElement()->AsXULControl();
-  if (control) return true;
+  nsIFrame* frame = aElement->GetPrimaryFrame();
+  if (!frame) {
+    return false;
+  }
+
+  if (frame->IsFocusable()) {
+    return true;
+  }
+
+  if (!frame->IsVisibleConsideringAncestors()) {
+    return false;
+  }
+
+  
+  nsCOMPtr<nsIDOMXULControlElement> control = aElement->AsXULControl();
+  if (control) {
+    return true;
+  }
 
   
   
-  if (aContent->IsXULElement(nsGkAtoms::label)) {
+  if (aElement->IsXULElement(nsGkAtoms::label)) {
     return true;
   }
 
@@ -1074,7 +1083,6 @@ bool EventStateManager::LookForAccessKeyAndExecute(
     }
   }
   RefPtr<Element> element;
-  nsIFrame* frame;
   int32_t length = mAccessKeys.Count();
   for (uint32_t i = 0; i < aAccessCharCodes.Length(); ++i) {
     uint32_t ch = aAccessCharCodes[i];
@@ -1083,8 +1091,7 @@ bool EventStateManager::LookForAccessKeyAndExecute(
     for (count = 1; count <= length; ++count) {
       
       element = mAccessKeys[(start + count) % length];
-      frame = element->GetPrimaryFrame();
-      if (IsAccessKeyTarget(element, frame, accessKey)) {
+      if (IsAccessKeyTarget(element, accessKey)) {
         if (!aExecute) {
           return true;
         }
@@ -1096,9 +1103,10 @@ bool EventStateManager::LookForAccessKeyAndExecute(
         }
 
         while (shouldActivate && ++count <= length) {
-          nsIContent* oc = mAccessKeys[(start + count) % length];
-          nsIFrame* of = oc->GetPrimaryFrame();
-          if (IsAccessKeyTarget(oc, of, accessKey)) shouldActivate = false;
+          Element* el = mAccessKeys[(start + count) % length];
+          if (IsAccessKeyTarget(el, accessKey)) {
+            shouldActivate = false;
+          }
         }
 
         bool focusChanged = false;
