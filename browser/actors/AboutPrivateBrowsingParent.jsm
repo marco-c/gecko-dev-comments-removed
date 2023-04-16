@@ -57,12 +57,6 @@ class AboutPrivateBrowsingParent extends JSWindowActorParent {
         break;
       }
       case "SearchHandoff": {
-        let searchAlias = "";
-        let searchEngine = Services.search.defaultPrivateEngine;
-        let searchAliases = searchEngine.aliases;
-        if (searchAliases && searchAliases.length) {
-          searchAlias = `${searchAliases[0]} `;
-        }
         let urlBar = win.gURLBar;
         let isFirstChange = true;
 
@@ -70,10 +64,7 @@ class AboutPrivateBrowsingParent extends JSWindowActorParent {
           urlBar.setHiddenFocus();
         } else {
           
-          urlBar.search(`${searchAlias}${aMessage.data.text}`, {
-            searchEngine,
-            searchModeEntry: "handoff",
-          });
+          urlBar.search(aMessage.data.text);
           isFirstChange = false;
         }
 
@@ -84,10 +75,7 @@ class AboutPrivateBrowsingParent extends JSWindowActorParent {
           if (isFirstChange) {
             isFirstChange = false;
             urlBar.removeHiddenFocus();
-            urlBar.search(searchAlias, {
-              searchEngine,
-              searchModeEntry: "handoff",
-            });
+            urlBar.search("");
             this.sendAsyncMessage("HideSearch");
             urlBar.removeEventListener("compositionstart", checkFirstChange);
             urlBar.removeEventListener("paste", checkFirstChange);

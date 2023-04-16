@@ -209,7 +209,6 @@ var UrlbarUtils = {
   
   SEARCH_MODE_ENTRY: new Set([
     "bookmarkmenu",
-    "handoff",
     "keywordoffer",
     "oneoff",
     "other",
