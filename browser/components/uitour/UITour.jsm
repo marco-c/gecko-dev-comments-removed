@@ -120,7 +120,7 @@ var UITour = {
       "accountStatus",
       {
         query: aDocument => {
-          let id = UITour.protonEnabled
+          let id = UITour.protonAppMenuEnabled
             ? "appMenu-fxa-label2"
             : "appMenu-fxa-label";
           
@@ -136,7 +136,7 @@ var UITour = {
       "addons",
       {
         query: aDocument => {
-          return UITour.protonEnabled
+          return UITour.protonAppMenuEnabled
             ? UITour.getNodeFromDocument(
                 aDocument,
                 "#appMenu-extensions-themes-button"
@@ -183,7 +183,7 @@ var UITour = {
       "logins",
       {
         query: aDocument => {
-          return UITour.protonEnabled
+          return UITour.protonAppMenuEnabled
             ? UITour.getNodeFromDocument(aDocument, "#appMenu-passwords-button")
             : UITour.getNodeFromDocument(aDocument, "#appMenu-logins-button");
         },
@@ -200,7 +200,7 @@ var UITour = {
       "privateWindow",
       {
         query: aDocument => {
-          return UITour.protonEnabled
+          return UITour.protonAppMenuEnabled
             ? UITour.getNodeFromDocument(
                 aDocument,
                 "#appMenu-new-private-window-button2"
@@ -216,7 +216,7 @@ var UITour = {
       "quit",
       {
         query: aDocument => {
-          return UITour.protonEnabled
+          return UITour.protonAppMenuEnabled
             ? UITour.getNodeFromDocument(aDocument, "#appMenu-quit-button2")
             : UITour.getNodeFromDocument(aDocument, "#appMenu-quit-button");
         },
@@ -277,9 +277,6 @@ var UITour = {
         },
       },
     ],
-  ]),
-
-  nonProtonActions: [
     [
       "pageAction-copyURL",
       {
@@ -328,7 +325,7 @@ var UITour = {
         },
       },
     ],
-  ],
+  ]),
 
   init() {
     log.debug("Initializing UITour");
@@ -341,17 +338,10 @@ var UITour = {
 
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
-      "protonEnabled",
+      "protonAppMenuEnabled",
       "browser.proton.enabled",
       false
     );
-
-    
-    if (!this.protonEnabled) {
-      for (let [id, target] of this.nonProtonActions) {
-        this.actions.set(id, target);
-      }
-    }
 
     
     let listenerMethods = [
@@ -423,7 +413,7 @@ var UITour = {
       }
 
       case "showHighlight": {
-        if (!UITour.protonEnabled && data.target.startsWith("pageAction-")) {
+        if (data.target.startsWith("pageAction-")) {
           
           
           
