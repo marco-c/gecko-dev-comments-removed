@@ -268,14 +268,30 @@ static bool FlagPhiInputsAsHavingRemovedUses(MIRGenerator* mir,
   return true;
 }
 
-static bool FlagAllOperandsAsHavingRemovedUses(MIRGenerator* mir,
-                                               MBasicBlock* block) {
+static MInstructionIterator FindFirstInstructionAfterBail(MBasicBlock* block) {
+  MOZ_ASSERT(block->alwaysBails());
+  for (MInstructionIterator it = block->begin(); it != block->end(); it++) {
+    MInstruction* ins = *it;
+    if (ins->isBail()) {
+      it++;
+      return it;
+    }
+  }
+  MOZ_CRASH("Expected MBail in alwaysBails block");
+}
+
+
+
+static bool FlagOperandsAsHavingRemovedUsesAfter(
+    MIRGenerator* mir, MBasicBlock* block, MInstructionIterator firstRemoved) {
+  MOZ_ASSERT(firstRemoved->block() == block);
+
   const CompileInfo& info = block->info();
 
   
   MInstructionIterator end = block->end();
-  for (MInstructionIterator it = block->begin(); it != end; it++) {
-    if (mir->shouldCancel("FlagAllOperandsAsHavingRemovedUses loop 1")) {
+  for (MInstructionIterator it = firstRemoved; it != end; it++) {
+    if (mir->shouldCancel("FlagOperandsAsHavingRemovedUsesAfter (loop 1)")) {
       return false;
     }
 
@@ -298,9 +314,27 @@ static bool FlagAllOperandsAsHavingRemovedUses(MIRGenerator* mir,
   }
 
   
+  MPhiUseIteratorStack worklist;
+  for (size_t i = 0, e = block->numSuccessors(); i < e; i++) {
+    if (mir->shouldCancel("FlagOperandsAsHavingRemovedUsesAfter (loop 2)")) {
+      return false;
+    }
+
+    if (!FlagPhiInputsAsHavingRemovedUses(mir, block, block->getSuccessor(i),
+                                          worklist)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static bool FlagEntryResumePointOperands(MIRGenerator* mir,
+                                         MBasicBlock* block) {
+  
   MResumePoint* rp = block->entryResumePoint();
   while (rp) {
-    if (mir->shouldCancel("FlagAllOperandsAsHavingRemovedUses loop 2")) {
+    if (mir->shouldCancel("FlagEntryResumePointOperands")) {
       return false;
     }
 
@@ -314,20 +348,13 @@ static bool FlagAllOperandsAsHavingRemovedUses(MIRGenerator* mir,
     rp = rp->caller();
   }
 
-  
-  MPhiUseIteratorStack worklist;
-  for (size_t i = 0, e = block->numSuccessors(); i < e; i++) {
-    if (mir->shouldCancel("FlagAllOperandsAsHavingRemovedUses loop 3")) {
-      return false;
-    }
-
-    if (!FlagPhiInputsAsHavingRemovedUses(mir, block, block->getSuccessor(i),
-                                          worklist)) {
-      return false;
-    }
-  }
-
   return true;
+}
+
+static bool FlagAllOperandsAsHavingRemovedUses(MIRGenerator* mir,
+                                               MBasicBlock* block) {
+  return FlagEntryResumePointOperands(mir, block) &&
+         FlagOperandsAsHavingRemovedUsesAfter(mir, block, block->begin());
 }
 
 
@@ -407,12 +434,16 @@ bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
     }
 
     MBasicBlock* block = *it++;
-    if (block->isMarked() && !block->alwaysBails()) {
-      continue;
+    if (!block->isMarked()) {
+      
+      
+      FlagAllOperandsAsHavingRemovedUses(mir, block);
+    } else if (block->alwaysBails()) {
+      
+      
+      MInstructionIterator firstRemoved = FindFirstInstructionAfterBail(block);
+      FlagOperandsAsHavingRemovedUsesAfter(mir, block, firstRemoved);
     }
-
-    
-    FlagAllOperandsAsHavingRemovedUses(mir, block);
   }
 
   
@@ -447,19 +478,11 @@ bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
       graph.removeBlock(block);
     } else {
       
-      MOZ_ASSERT(block->alwaysBails());
       JitSpew(JitSpew_Prune, "Trim block %u.", block->id());
-      DebugOnly<bool> sawBail = false;
-      for (MInstructionIterator it = block->begin(); it != block->end(); it++) {
-        MInstruction* ins = *it;
-        if (ins->isBail()) {
-          sawBail = true;
-          it++;
-          block->discardAllInstructionsStartingAt(it);
-          break;
-        }
-      }
-      MOZ_ASSERT(sawBail);
+
+      
+      MInstructionIterator firstRemoved = FindFirstInstructionAfterBail(block);
+      block->discardAllInstructionsStartingAt(firstRemoved);
 
       if (block->outerResumePoint()) {
         block->clearOuterResumePoint();
