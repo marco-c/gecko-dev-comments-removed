@@ -48,7 +48,7 @@ struct OriginMetadata : public PrincipalMetadata {
 
 struct FullOriginMetadata : OriginMetadata {
   bool mPersisted;
-  int64_t mTimestamp;
+  int64_t mLastAccessTime;
 
   
 };

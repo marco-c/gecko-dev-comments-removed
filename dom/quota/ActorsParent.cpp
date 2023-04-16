@@ -4135,7 +4135,7 @@ nsresult QuotaManager::LoadQuota() {
             QM_TRY_INSPECT(const auto& metadata,
                            LoadFullOriginMetadataWithRestore(directory));
 
-            QM_TRY(OkIf(lastAccessTime == metadata.mTimestamp),
+            QM_TRY(OkIf(lastAccessTime == metadata.mLastAccessTime),
                    Err(NS_ERROR_FAILURE));
 
             QM_TRY(OkIf(persisted == metadata.mPersisted),
@@ -4558,7 +4558,7 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
 
   FullOriginMetadata fullOriginMetadata;
 
-  QM_TRY_UNWRAP(fullOriginMetadata.mTimestamp,
+  QM_TRY_UNWRAP(fullOriginMetadata.mLastAccessTime,
                 MOZ_TO_RESULT_INVOKE(binaryStream, Read64));
 
   QM_TRY_UNWRAP(fullOriginMetadata.mPersisted,
@@ -4600,9 +4600,9 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
   if (updated) {
     
     
-    QM_TRY(CreateDirectoryMetadata2(*aDirectory, fullOriginMetadata.mTimestamp,
-                                    fullOriginMetadata.mPersisted,
-                                    fullOriginMetadata));
+    QM_TRY(CreateDirectoryMetadata2(
+        *aDirectory, fullOriginMetadata.mLastAccessTime,
+        fullOriginMetadata.mPersisted, fullOriginMetadata));
   }
 
   return fullOriginMetadata;
@@ -4712,11 +4712,12 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType) {
                           
                           
                           if (originSanitized.Equals(utf8LeafName + "."_ns)) {
-                            const int64_t timestamp = metadata.mTimestamp;
+                            const int64_t lastAccessTime =
+                                metadata.mLastAccessTime;
                             const bool persisted = metadata.mPersisted;
                             renameAndInitInfos.AppendElement(RenameAndInitInfo{
                                 std::move(childDirectory), std::move(metadata),
-                                timestamp, persisted});
+                                lastAccessTime, persisted});
                             break;
                           }
 
@@ -4726,26 +4727,26 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType) {
                           
                         }
 
-                        QM_TRY(ToResult(InitializeOrigin(aPersistenceType,
-                                                         metadata,
-                                                         metadata.mTimestamp,
-                                                         metadata.mPersisted,
-                                                         childDirectory))
-                                   .orElse([&childDirectory](const nsresult rv)
-                                               -> Result<Ok, nsresult> {
-                                     if (IsDatabaseCorruptionError(rv)) {
-                                       
-                                       
-                                       
-                                       
+                        QM_TRY(
+                            ToResult(InitializeOrigin(
+                                         aPersistenceType, metadata,
+                                         metadata.mLastAccessTime,
+                                         metadata.mPersisted, childDirectory))
+                                .orElse([&childDirectory](const nsresult rv)
+                                            -> Result<Ok, nsresult> {
+                                  if (IsDatabaseCorruptionError(rv)) {
+                                    
+                                    
+                                    
+                                    
 
-                                       QM_TRY(childDirectory->Remove(true));
+                                    QM_TRY(childDirectory->Remove(true));
 
-                                       return Ok{};
-                                     }
+                                    return Ok{};
+                                  }
 
-                                     return Err(rv);
-                                   }));
+                                  return Err(rv);
+                                }));
 
                         break;
                       }
@@ -6110,9 +6111,9 @@ QuotaManager::EnsurePersistentOriginIsInitialized(
                          const auto& metadata,
                          LoadFullOriginMetadataWithRestore(directory));
 
-                     MOZ_ASSERT(metadata.mTimestamp <= PR_Now());
+                     MOZ_ASSERT(metadata.mLastAccessTime <= PR_Now());
 
-                     return metadata.mTimestamp;
+                     return metadata.mLastAccessTime;
                    }()));
 
     QM_TRY(InitializeOrigin(PERSISTENCE_TYPE_PERSISTENT, aOriginMetadata,
@@ -8447,7 +8448,7 @@ nsresult GetUsageOp::ProcessOrigin(QuotaManager& aQuotaManager,
                  GetUsageForOrigin(aQuotaManager, aPersistenceType, metadata));
 
   ProcessOriginInternal(&aQuotaManager, aPersistenceType, metadata.mOrigin,
-                        metadata.mTimestamp, metadata.mPersisted,
+                        metadata.mLastAccessTime, metadata.mPersisted,
                         usageInfo.TotalUsage().valueOr(0));
 
   return NS_OK;
