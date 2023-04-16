@@ -3026,10 +3026,14 @@ bool AsyncPanZoomController::IsInOverscrollGutter(
 }
 
 bool AsyncPanZoomController::IsOverscrolled() const {
+  
+  
+  if (StaticPrefs::apz_overscroll_test_async_scroll_offset_enabled()) {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    AutoApplyAsyncTestAttributes testAttributeApplier(this, lock);
+    return mX.IsOverscrolled() || mY.IsOverscrolled();
+  }
   RecursiveMutexAutoLock lock(mRecursiveMutex);
-  
-  
-  AutoApplyAsyncTestAttributes testAttributeApplier(this, lock);
   return mX.IsOverscrolled() || mY.IsOverscrolled();
 }
 
