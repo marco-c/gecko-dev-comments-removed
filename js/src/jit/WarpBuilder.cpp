@@ -268,6 +268,11 @@ bool WarpBuilder::startNewOsrPreHeaderBlock(BytecodeLocation loopHead) {
     return false;
   }
 
+  
+  if (pred->getHitState() == MBasicBlock::HitState::Count) {
+    current->setHitCount(pred->getHitCount());
+  }
+
   return true;
 }
 
@@ -3301,9 +3306,10 @@ bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
 bool WarpBuilder::buildBailoutForColdIC(BytecodeLocation loc, CacheKind kind) {
   MOZ_ASSERT(loc.opHasIC());
 
+  
+  
   MBail* bail = MBail::New(alloc(), BailoutKind::FirstExecution);
   current->add(bail);
-  current->setAlwaysBails();
 
   MIRType resultType;
   switch (kind) {
