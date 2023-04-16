@@ -3424,7 +3424,17 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
               if (!activeContent || !activeContent->IsXULElement())
 #endif
                 fm->ClearFocus(mDocument->GetWindow());
-              fm->SetFocusedWindow(mDocument->GetWindow());
+              
+              
+              
+              
+              
+              
+              
+              
+              if (XRE_IsParentProcess() || IsInActiveTab(mDocument)) {
+                fm->SetFocusedWindow(mDocument->GetWindow());
+              }
             }
           }
         }
@@ -3447,6 +3457,8 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         
         StopTrackingDragGesture(true);
       }
+      
+      
       SetActiveManager(this, activeContent);
     } break;
     case ePointerCancel:

@@ -4,6 +4,8 @@
 
 "use strict";
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 var EXPORTED_SYMBOLS = ["AutoScrollParent"];
 
 class AutoScrollParent extends JSWindowActorParent {
@@ -13,11 +15,29 @@ class AutoScrollParent extends JSWindowActorParent {
       return null;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    const requestedInForegroundTab = Services.focus.focusedElement == browser;
+
     let data = msg.data;
     switch (msg.name) {
       case "Autoscroll:Start":
+        
+        if (!requestedInForegroundTab) {
+          return Promise.resolve({ autoscrollEnabled: false, usingAPZ: false });
+        }
         return Promise.resolve(browser.startScroll(data));
       case "Autoscroll:MaybeStartInParent":
+        
+        if (!requestedInForegroundTab) {
+          return Promise.resolve({ autoscrollEnabled: false, usingAPZ: false });
+        }
         let parent = this.browsingContext.parent;
         if (parent) {
           let actor = parent.currentWindowGlobal.getActor("AutoScroll");
