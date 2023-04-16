@@ -93,7 +93,6 @@ class nsMenuBarX : public nsMenuGroupOwnerX, public nsChangeObserver {
   NS_DECL_CHANGEOBSERVER
 
   
-  void* NativeData() override { return (void*)mNativeMenu; }
   nsMenuObjectTypeX MenuObjectType() override { return eMenuBarObjectType; }
 
   
@@ -110,6 +109,7 @@ class nsMenuBarX : public nsMenuGroupOwnerX, public nsChangeObserver {
   void SetNeedsRebuild();
   void ApplicationMenuOpened();
   bool PerformKeyEquivalent(NSEvent* aEvent);
+  GeckoNSMenu* NativeNSMenu() { return mNativeMenu; }
 
  protected:
   void ConstructNativeMenus();
