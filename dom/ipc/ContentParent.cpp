@@ -1819,10 +1819,9 @@ void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
 
   const ManagedContainer<POfflineCacheUpdateParent>& ocuParents =
       ManagedPOfflineCacheUpdateParent();
-  for (auto iter = ocuParents.ConstIter(); !iter.Done(); iter.Next()) {
+  for (auto* key : ocuParents.Keys()) {
     RefPtr<mozilla::docshell::OfflineCacheUpdateParent> ocuParent =
-        static_cast<mozilla::docshell::OfflineCacheUpdateParent*>(
-            iter.Get()->GetKey());
+        static_cast<mozilla::docshell::OfflineCacheUpdateParent*>(key);
     ocuParent->StopSendingMessagesToChild();
   }
 
@@ -1885,8 +1884,8 @@ void ContentParent::AssertNotInPool() {
         !sBrowserContentParents->Get(mRemoteType)->Contains(this) ||
         !sCanLaunchSubprocesses);  
 
-    for (auto& group : mGroups) {
-      MOZ_RELEASE_ASSERT(group.GetKey()->GetHostProcess(mRemoteType) != this,
+    for (const auto& group : mGroups) {
+      MOZ_RELEASE_ASSERT(group->GetHostProcess(mRemoteType) != this,
                          "still a host process for one of our groups?");
     }
   }
@@ -1922,8 +1921,8 @@ void ContentParent::RemoveFromList() {
   
   
   
-  for (auto& group : mGroups) {
-    group.GetKey()->RemoveHostProcess(this);
+  for (const auto& group : mGroups) {
+    group->RemoveHostProcess(this);
   }
 
   StopRecycling( false);
@@ -2157,10 +2156,9 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
   
   BrowsingContext::DiscardFromContentParent(this);
 
-  nsTHashtable<nsRefPtrHashKey<BrowsingContextGroup>> groups;
-  mGroups.SwapElements(groups);
-  for (auto& group : groups) {
-    group.GetKey()->Unsubscribe(this);
+  const nsTHashSet<RefPtr<BrowsingContextGroup>> groups = std::move(mGroups);
+  for (const auto& group : groups) {
+    group->Unsubscribe(this);
   }
   MOZ_DIAGNOSTIC_ASSERT(mGroups.IsEmpty());
 }
@@ -3188,8 +3186,8 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
 
   
   
-  for (auto& group : mGroups) {
-    group.GetKey()->Subscribe(this);
+  for (const auto& group : mGroups) {
+    group->Subscribe(this);
   }
 
   
@@ -6154,10 +6152,9 @@ void ContentParent::EnsurePermissionsByKey(const nsCString& aKey,
     return;
   }
 
-  if (mActivePermissionKeys.Contains(aKey)) {
+  if (!mActivePermissionKeys.EnsureInserted(aKey)) {
     return;
   }
-  mActivePermissionKeys.PutEntry(aKey);
 
   nsTArray<IPC::Permission> perms;
   if (permManager->GetPermissionsFromOriginOrKey(aOrigin, aKey, perms)) {
@@ -7149,7 +7146,7 @@ void ContentParent::RemoveBrowsingContextGroup(BrowsingContextGroup* aGroup) {
   MOZ_DIAGNOSTIC_ASSERT(aGroup);
   
   
-  mGroups.RemoveEntry(aGroup);
+  mGroups.Remove(aGroup);
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvCommitBrowsingContextTransaction(
