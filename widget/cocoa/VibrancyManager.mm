@@ -28,6 +28,28 @@ using namespace mozilla;
 @end
 
 static NSAppearance* AppearanceForVibrancyType(VibrancyType aType) {
+  if (@available(macOS 10.14, *)) {
+    switch (aType) {
+      case VibrancyType::TITLEBAR_LIGHT:
+        
+        return [NSAppearance appearanceNamed:NSAppearanceNameAqua];
+      case VibrancyType::TITLEBAR_DARK:
+        
+        return [NSAppearance appearanceNamed:@"NSAppearanceNameDarkAqua"];
+      case VibrancyType::TOOLTIP:
+      case VibrancyType::MENU:
+      case VibrancyType::HIGHLIGHTED_MENUITEM:
+      case VibrancyType::SOURCE_LIST:
+      case VibrancyType::SOURCE_LIST_SELECTION:
+      case VibrancyType::ACTIVE_SOURCE_LIST_SELECTION:
+        
+        
+        return nil;
+    }
+  }
+
+  
+  
   switch (aType) {
     case VibrancyType::TITLEBAR_LIGHT:
     case VibrancyType::TOOLTIP:
@@ -36,9 +58,9 @@ static NSAppearance* AppearanceForVibrancyType(VibrancyType aType) {
     case VibrancyType::SOURCE_LIST:
     case VibrancyType::SOURCE_LIST_SELECTION:
     case VibrancyType::ACTIVE_SOURCE_LIST_SELECTION:
-      return [NSAppearance appearanceNamed:@"NSAppearanceNameVibrantLight"];
+      return [NSAppearance appearanceNamed:NSAppearanceNameVibrantLight];
     case VibrancyType::TITLEBAR_DARK:
-      return [NSAppearance appearanceNamed:@"NSAppearanceNameVibrantDark"];
+      return [NSAppearance appearanceNamed:NSAppearanceNameVibrantDark];
   }
 }
 
