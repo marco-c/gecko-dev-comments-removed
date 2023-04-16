@@ -485,8 +485,13 @@ bool WebRenderBridgeParent::UpdateResources(
   wr::ShmSegmentsReader reader(aSmallShmems, aLargeShmems);
   UniquePtr<ScheduleSharedSurfaceRelease> scheduleRelease;
 
-  if (!aResourceUpdates.IsEmpty()) {
-    GPUParent::MaybeFlushMemory();
+  while (GPUParent::MaybeFlushMemory()) {
+    
+    
+    
+    if (!SharedSurfacesParent::AgeAndExpireOneGeneration()) {
+      break;
+    }
   }
 
   for (const auto& cmd : aResourceUpdates) {
