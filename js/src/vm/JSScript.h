@@ -2290,7 +2290,7 @@ class JSScript : public js::BaseScript {
   }
 
   bool formalIsAliased(unsigned argSlot);
-  bool anyFormalIsAliased();
+  bool anyFormalIsForwarded();
   bool formalLivesInArgumentsObject(unsigned argSlot);
 
   

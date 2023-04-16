@@ -4839,8 +4839,10 @@ bool JSScript::formalIsAliased(unsigned argSlot) {
   MOZ_CRASH("Argument slot not found");
 }
 
-bool JSScript::anyFormalIsAliased() {
-  if (functionHasParameterExprs()) {
+
+
+bool JSScript::anyFormalIsForwarded() {
+  if (!argsObjAliasesFormals()) {
     return false;
   }
 

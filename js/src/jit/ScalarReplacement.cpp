@@ -1507,7 +1507,7 @@ void ArgumentsReplacer::visitGuardArgumentsObjectFlags(
 
   MOZ_ASSERT((ins->flags() & ~supportedBits) == 0);
   MOZ_ASSERT_IF(ins->flags() & ArgumentsObject::FORWARDED_ARGUMENTS_BIT,
-                !args_->block()->info().anyFormalIsAliased());
+                !args_->block()->info().anyFormalIsForwarded());
 #endif
 
   
