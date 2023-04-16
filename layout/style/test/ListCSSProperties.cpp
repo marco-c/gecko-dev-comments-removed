@@ -11,6 +11,9 @@
 #include "mozilla/ArrayUtils.h"
 
 
+#define CSS_PROP_LIST_EXCLUDE_NOT_IN_STYLE
+
+
 
 #define STRINGIFY_METHOD(method_) #method_
 
