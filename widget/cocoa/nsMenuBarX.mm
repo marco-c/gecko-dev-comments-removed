@@ -237,7 +237,7 @@ void nsMenuBarX::InsertMenuAtIndex(RefPtr<nsMenuX>&& aMenu, uint32_t aIndex) {
   
   RefPtr<nsIContent> menuContent = aMenu->Content();
   if (menuContent->GetChildCount() > 0 && !nsMenuUtilsX::NodeIsHiddenOrCollapsed(menuContent)) {
-    int insertionIndex = nsMenuUtilsX::CalculateNativeInsertionPoint(this, aMenu);
+    int insertionIndex = CalculateNativeInsertionPoint(aMenu);
     if (MenuContainsAppMenu()) {
       insertionIndex++;
     }
@@ -462,6 +462,22 @@ void nsMenuBarX::ApplicationMenuOpened() {
 
 bool nsMenuBarX::PerformKeyEquivalent(NSEvent* aEvent) {
   return [mNativeMenu performSuperKeyEquivalent:aEvent];
+}
+
+NSInteger nsMenuBarX::CalculateNativeInsertionPoint(nsMenuX* aChild) {
+  NSInteger insertionPoint = 0;
+  for (auto& currMenu : mMenuArray) {
+    if (currMenu == aChild) {
+      return insertionPoint;
+    }
+    
+    
+    
+    if (currMenu->NativeNSMenuItem().menu) {
+      insertionPoint++;
+    }
+  }
+  return insertionPoint;
 }
 
 

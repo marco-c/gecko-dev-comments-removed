@@ -111,6 +111,10 @@ class nsMenuBarX : public nsMenuGroupOwnerX, public nsChangeObserver {
   bool PerformKeyEquivalent(NSEvent* aEvent);
   GeckoNSMenu* NativeNSMenu() { return mNativeMenu; }
 
+  
+  
+  NSInteger CalculateNativeInsertionPoint(nsMenuX* aChild);
+
  protected:
   void ConstructNativeMenus();
   void ConstructFallbackNativeMenus();
