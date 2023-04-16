@@ -162,22 +162,15 @@ class ScriptLoadRequest
   }
 
   
-  enum class DataType : uint8_t {
-    eUnknown,
-    eTextSource,
-    eBinASTSource,
-    eBytecode
-  };
+  enum class DataType : uint8_t { eUnknown, eTextSource, eBytecode };
 
   bool IsUnknownDataType() const { return mDataType == DataType::eUnknown; }
   bool IsTextSource() const { return mDataType == DataType::eTextSource; }
-  bool IsBinASTSource() const { return false; }
-  bool IsSource() const { return IsTextSource() || IsBinASTSource(); }
+  bool IsSource() const { return IsTextSource(); }
   bool IsBytecode() const { return mDataType == DataType::eBytecode; }
 
   void SetUnknownDataType();
   void SetTextSource();
-  void SetBinASTSource();
   void SetBytecode();
 
   
@@ -185,10 +178,6 @@ class ScriptLoadRequest
   
   template <typename Unit>
   using ScriptTextBuffer = Vector<Unit, 0, js::MallocAllocPolicy>;
-
-  
-  
-  using BinASTSourceBuffer = Vector<uint8_t>;
 
   bool IsUTF16Text() const {
     return mScriptData->is<ScriptTextBuffer<char16_t>>();
@@ -206,15 +195,6 @@ class ScriptLoadRequest
   ScriptTextBuffer<Unit>& ScriptText() {
     MOZ_ASSERT(IsTextSource());
     return mScriptData->as<ScriptTextBuffer<Unit>>();
-  }
-
-  const BinASTSourceBuffer& ScriptBinASTData() const {
-    MOZ_ASSERT(IsBinASTSource());
-    return mScriptData->as<BinASTSourceBuffer>();
-  }
-  BinASTSourceBuffer& ScriptBinASTData() {
-    MOZ_ASSERT(IsBinASTSource());
-    return mScriptData->as<BinASTSourceBuffer>();
   }
 
   size_t ScriptTextLength() const {
@@ -288,8 +268,6 @@ class ScriptLoadRequest
     return element->GetParserCreated();
   }
 
-  bool ShouldAcceptBinASTEncoding() const;
-
   void ClearScriptSource();
 
   void SetScript(JSScript* aScript);
@@ -334,8 +312,7 @@ class ScriptLoadRequest
   JS::Heap<JSScript*> mScript;
 
   
-  Maybe<Variant<ScriptTextBuffer<char16_t>, ScriptTextBuffer<Utf8Unit>,
-                BinASTSourceBuffer>>
+  Maybe<Variant<ScriptTextBuffer<char16_t>, ScriptTextBuffer<Utf8Unit>>>
       mScriptData;
 
   

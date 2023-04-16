@@ -137,12 +137,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   nsresult JoinDecode(JS::OffThreadToken** aOffThreadToken);
 
-  nsresult JoinDecodeBinAST(JS::OffThreadToken** aOffThreadToken);
-
-  
-  nsresult DecodeBinAST(JS::CompileOptions& aCompileOptions,
-                        const uint8_t* aBuf, size_t aLength);
-
   
   JSScript* GetScript();
 

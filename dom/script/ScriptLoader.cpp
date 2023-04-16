@@ -324,7 +324,6 @@ static void CollectScriptTelemetry(ScriptLoadRequest* aRequest) {
     } else if (aRequest->IsTextSource()) {
       AccumulateCategorical(LABELS_DOM_SCRIPT_LOADING_SOURCE::SourceFallback);
     }
-    
   } else {
     MOZ_ASSERT(aRequest->IsLoading());
     if (aRequest->IsTextSource()) {
@@ -332,7 +331,6 @@ static void CollectScriptTelemetry(ScriptLoadRequest* aRequest) {
     } else if (aRequest->IsBytecode()) {
       AccumulateCategorical(LABELS_DOM_SCRIPT_LOADING_SOURCE::AltData);
     }
-    
   }
 }
 
@@ -1667,119 +1665,115 @@ nsresult ScriptLoader::StartLoad(ScriptLoadRequest* aRequest) {
   if (httpChannel) {
     
     nsAutoCString acceptTypes("*/*");
-    if (nsJSUtils::BinASTEncodingEnabled() &&
-        aRequest->ShouldAcceptBinASTEncoding()) {
-      acceptTypes = APPLICATION_JAVASCRIPT_BINAST ", *
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-, u""_ns,
+    rv = httpChannel->SetRequestHeader("Accept"_ns, acceptTypes, false);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+    nsCOMPtr<nsIReferrerInfo> referrerInfo =
+        new ReferrerInfo(aRequest->mReferrer, aRequest->ReferrerPolicy());
+    rv = httpChannel->SetReferrerInfoWithoutClone(referrerInfo);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+    nsCOMPtr<nsIHttpChannelInternal> internalChannel(
+        do_QueryInterface(httpChannel));
+    if (internalChannel) {
+      rv = internalChannel->SetIntegrityMetadata(
+          aRequest->mIntegrity.GetIntegrityString());
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
+    }
+  }
+
+  mozilla::net::PredictorLearn(
+      aRequest->mURI, mDocument->GetDocumentURI(),
+      nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE,
+      mDocument->NodePrincipal()->OriginAttributesRef());
+
+  
+  nsCOMPtr<nsITimedChannel> timedChannel(do_QueryInterface(httpChannel));
+  if (timedChannel) {
+    if (aRequest->IsLinkPreloadScript()) {
+      timedChannel->SetInitiatorType(u"link"_ns);
+    } else {
+      timedChannel->SetInitiatorType(u"script"_ns);
+    }
+  }
+
+  UniquePtr<mozilla::dom::SRICheckDataVerifier> sriDataVerifier;
+  if (!aRequest->mIntegrity.IsEmpty()) {
+    nsAutoCString sourceUri;
+    if (mDocument->GetDocumentURI()) {
+      mDocument->GetDocumentURI()->GetAsciiSpec(sourceUri);
+    }
+    sriDataVerifier = MakeUnique<SRICheckDataVerifier>(aRequest->mIntegrity,
+                                                       sourceUri, mReporter);
+  }
+
+  RefPtr<ScriptLoadHandler> handler =
+      new ScriptLoadHandler(this, aRequest, std::move(sriDataVerifier));
+
+  nsCOMPtr<nsIIncrementalStreamLoader> loader;
+  rv = NS_NewIncrementalStreamLoader(getter_AddRefs(loader), handler);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  auto key = PreloadHashKey::CreateAsScript(
+      aRequest->mURI, aRequest->CORSMode(), aRequest->mKind);
+  aRequest->NotifyOpen(key, channel, mDocument,
+                       aRequest->IsLinkPreloadScript());
+
+  rv = channel->AsyncOpen(loader);
+
+  if (NS_FAILED(rv)) {
+    
+    
+    aRequest->NotifyStart(channel);
+    aRequest->NotifyStop(rv);
+  }
+
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (aRequest->IsModuleRequest()) {
+    
+    
+    SetModuleFetchStarted(aRequest->AsModuleRequest());
+    LOG(("ScriptLoadRequest (%p): Start fetching module", aRequest));
+  }
+
+  return NS_OK;
+}
+
+bool ScriptLoader::PreloadURIComparator::Equals(const PreloadInfo& aPi,
+                                                nsIURI* const& aURI) const {
+  bool same;
+  return NS_SUCCEEDED(aPi.mRequest->mURI->Equals(aURI, &same)) && same;
+}
+
+static bool CSPAllowsInlineScript(nsIScriptElement* aElement,
+                                  Document* aDocument) {
+  nsCOMPtr<nsIContentSecurityPolicy> csp = aDocument->GetCsp();
+  nsresult rv = NS_OK;
+
+  if (!csp) {
+    
+    return true;
+  }
+
+  
+  nsCOMPtr<Element> scriptContent = do_QueryInterface(aElement);
+  nsAutoString nonce;
+  if (scriptContent) {
+    nsString* cspNonce =
+        static_cast<nsString*>(scriptContent->GetProperty(nsGkAtoms::nonce));
+    if (cspNonce) {
+      nonce = *cspNonce;
+    }
+  }
+
+  bool parserCreated =
+      aElement->GetParserCreated() != mozilla::dom::NOT_FROM_PARSER;
+
+  bool allowInlineScript = false;
+  rv = csp->GetAllowsInline(
+      nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE, nonce, parserCreated,
+      scriptContent, nullptr , u""_ns,
       aElement->GetScriptLineNumber(), aElement->GetScriptColumnNumber(),
       &allowInlineScript);
   return NS_SUCCEEDED(rv) && allowInlineScript;
@@ -2446,8 +2440,6 @@ NotifyOffThreadScriptLoadCompletedRunnable::Run() {
     ProfilerString8View scriptSourceString;
     if (request->IsTextSource()) {
       scriptSourceString = "ScriptCompileOffThread";
-    } else if (request->IsBinASTSource()) {
-      scriptSourceString = "BinASTDecodeOffThread";
     } else {
       MOZ_ASSERT(request->IsBytecode());
       scriptSourceString = "BytecodeDecodeOffThread";
@@ -2955,7 +2947,6 @@ bool ScriptLoader::ShouldCacheBytecode(ScriptLoadRequest* aRequest) {
   bool hasSourceLengthMin = false;
   bool hasFetchCountMin = false;
   size_t sourceLengthMin = 100;
-  size_t binASTLengthMin = 70;
   int32_t fetchCountMin = 4;
 
   LOG(("ScriptLoadRequest (%p): Bytecode-cache: strategy = %d.", aRequest,
@@ -2978,7 +2969,6 @@ bool ScriptLoader::ShouldCacheBytecode(ScriptLoadRequest* aRequest) {
       hasSourceLengthMin = true;
       hasFetchCountMin = true;
       sourceLengthMin = 1024;
-      binASTLengthMin = 700;
       
       
       fetchCountMin = 4;
@@ -2992,14 +2982,9 @@ bool ScriptLoader::ShouldCacheBytecode(ScriptLoadRequest* aRequest) {
   if (hasSourceLengthMin) {
     size_t sourceLength;
     size_t minLength;
-    if (aRequest->IsTextSource()) {
-      sourceLength = aRequest->mScriptTextLength;
-      minLength = sourceLengthMin;
-    } else {
-      MOZ_ASSERT(aRequest->IsBinASTSource());
-      sourceLength = aRequest->ScriptBinASTData().length();
-      minLength = binASTLengthMin;
-    }
+    MOZ_ASSERT(aRequest->IsTextSource());
+    sourceLength = aRequest->mScriptTextLength;
+    minLength = sourceLengthMin;
     if (sourceLength < minLength) {
       LOG(("ScriptLoadRequest (%p): Bytecode-cache: Script is too small.",
            aRequest));
@@ -3292,42 +3277,26 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
                   ("ScriptLoadRequest (%p): Join (off-thread parsing) and "
                    "Execute",
                    aRequest));
-              if (aRequest->IsBinASTSource()) {
-                rv = exec.JoinDecodeBinAST(&aRequest->mOffThreadToken);
-              } else {
-                MOZ_ASSERT(aRequest->IsTextSource());
-                rv = exec.JoinCompile(&aRequest->mOffThreadToken);
-              }
+              MOZ_ASSERT(aRequest->IsTextSource());
+              rv = exec.JoinCompile(&aRequest->mOffThreadToken);
             } else {
               
               LOG(("ScriptLoadRequest (%p): Compile And Exec", aRequest));
-              if (aRequest->IsBinASTSource()) {
+              MOZ_ASSERT(aRequest->IsTextSource());
+              MaybeSourceText maybeSource;
+              rv = GetScriptSource(cx, aRequest, &maybeSource);
+              if (NS_SUCCEEDED(rv)) {
                 AUTO_PROFILER_MARKER_TEXT(
-                    "BinASTDecodeMainThread", JS,
+                    "ScriptCompileMainThread", JS,
                     MarkerInnerWindowIdFromDocShell(docShell),
                     profilerLabelString);
 
-                rv = exec.DecodeBinAST(options,
-                                       aRequest->ScriptBinASTData().begin(),
-                                       aRequest->ScriptBinASTData().length());
-              } else {
-                MOZ_ASSERT(aRequest->IsTextSource());
-                MaybeSourceText maybeSource;
-                rv = GetScriptSource(cx, aRequest, &maybeSource);
-                if (NS_SUCCEEDED(rv)) {
-                  AUTO_PROFILER_MARKER_TEXT(
-                      "ScriptCompileMainThread", JS,
-                      MarkerInnerWindowIdFromDocShell(docShell),
-                      profilerLabelString);
-
-                  rv = maybeSource.constructed<SourceText<char16_t>>()
-                           ? exec.Compile(
-                                 options,
-                                 maybeSource.ref<SourceText<char16_t>>())
-                           : exec.Compile(
-                                 options,
-                                 maybeSource.ref<SourceText<Utf8Unit>>());
-                }
+                rv =
+                    maybeSource.constructed<SourceText<char16_t>>()
+                        ? exec.Compile(options,
+                                       maybeSource.ref<SourceText<char16_t>>())
+                        : exec.Compile(options,
+                                       maybeSource.ref<SourceText<Utf8Unit>>());
               }
             }
 
