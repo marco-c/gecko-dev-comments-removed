@@ -69,11 +69,14 @@ class Suggestions {
   async query(phrase) {
     log.info("Handling query for", phrase);
     phrase = phrase.toLowerCase();
-    let match = this._tree.get(phrase);
-    if (!match.result || !this._results.has(match.result)) {
+    let resultID = this._tree.get(phrase);
+    if (resultID === null) {
       return null;
     }
-    let result = this._results.get(match.result);
+    let result = this._results.get(resultID);
+    if (!result) {
+      return null;
+    }
     let d = new Date();
     let pad = number => number.toString().padStart(2, "0");
     let date =
@@ -81,7 +84,7 @@ class Suggestions {
       `${pad(d.getDate())}${pad(d.getHours())}`;
     let icon = await this.fetchIcon(result.icon);
     return {
-      fullKeyword: match.fullKeyword,
+      fullKeyword: this.getFullKeyword(phrase, result.keywords),
       title: result.title,
       url: result.url.replace("%YYYYMMDDHH%", date),
       click_url: result.click_url.replace("%YYYYMMDDHH%", date),
@@ -92,6 +95,58 @@ class Suggestions {
       isSponsored: !NONSPONSORED_IAB_CATEGORIES.has(result.iab_category),
       icon,
     };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getFullKeyword(query, keywords) {
+    let longerPhrase;
+    let trimmedQuery = query.trim();
+    let queryWords = trimmedQuery.split(" ");
+
+    for (let phrase of keywords) {
+      if (phrase.startsWith(query)) {
+        let trimmedPhrase = phrase.trim();
+        let phraseWords = trimmedPhrase.split(" ");
+        
+        
+        
+        let extra = query.endsWith(" ") ? 1 : 0;
+        let len = queryWords.length + extra;
+        if (len < phraseWords.length) {
+          
+          return phraseWords.slice(0, len).join(" ");
+        }
+        if (
+          query.length < phrase.length &&
+          (!longerPhrase || longerPhrase.length < trimmedPhrase.length)
+        ) {
+          
+          longerPhrase = trimmedPhrase;
+        }
+      }
+    }
+    return longerPhrase || trimmedQuery;
   }
 
   
@@ -247,106 +302,38 @@ class KeywordTree {
 
 
 
-
-
   get(query) {
-    query = query.trimStart();
-    let match = this._getMatch(query, this.tree, "");
-    if (!match) {
-      return { result: null };
-    }
-
-    let result = UrlbarQuickSuggest._results.get(match.resultID);
-    if (!result) {
-      return { result: null };
-    }
-
-    let longerPhrase;
-    let trimmedQuery = query.trim();
-    let queryWords = trimmedQuery.split(" ");
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    for (let phrase of result.keywords) {
-      if (phrase.startsWith(query)) {
-        let trimmedPhrase = phrase.trim();
-        let phraseWords = trimmedPhrase.split(" ");
+    query = query.trimStart() + RESULT_KEY;
+    let node = this.tree;
+    let phrase = "";
+    while (phrase.length < query.length) {
+      
+      
+      let key = query[phrase.length];
+      let child = node.get(key);
+      if (!child) {
         
-        
-        
-        let extra = query.endsWith(" ") ? 1 : 0;
-        let len = queryWords.length + extra;
-        if (len < phraseWords.length) {
-          
-          return {
-            result: match.resultID,
-            fullKeyword: phraseWords.slice(0, len).join(" "),
-          };
-        }
-        if (
-          query.length < phrase.length &&
-          (!longerPhrase || longerPhrase.length < trimmedPhrase.length)
-        ) {
-          
-          longerPhrase = trimmedPhrase;
-        }
-      }
-    }
-    return {
-      result: match.resultID,
-      fullKeyword: longerPhrase || trimmedQuery,
-    };
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  _getMatch(query, node, phrase) {
-    for (const [key, child] of node.entries()) {
-      if (key == RESULT_KEY) {
-        continue;
-      }
-      let newPhrase = phrase + key;
-      let len = Math.min(newPhrase.length, query.length);
-      if (newPhrase.substring(0, len) == query.substring(0, len)) {
-        
-        let resultID = child.get(RESULT_KEY);
-        if (resultID !== undefined) {
-          
-          
-          let result = UrlbarQuickSuggest._results.get(resultID);
-          if (result?.keywords.includes(query)) {
-            return { resultID };
+        key = null;
+        for (let childKey of node.keys()) {
+          let childPhrase = phrase + childKey;
+          if (childPhrase == query.substring(0, childPhrase.length)) {
+            key = childKey;
+            break;
           }
         }
-        
-        let match = this._getMatch(query, child, newPhrase);
-        if (match) {
-          return match;
+        if (!key) {
+          return null;
         }
+        child = node.get(key);
       }
+      node = child;
+      phrase += key;
     }
-    return null;
+    if (phrase.length != query.length) {
+      return null;
+    }
+    
+    return node;
   }
 
   
@@ -357,33 +344,34 @@ class KeywordTree {
 
 
   flatten() {
-    for (let key of Array.from(this.tree.keys())) {
-      this._flatten(this.tree, key);
-    }
+    this._flatten("", this.tree, null);
   }
 
-  _flatten(parent, key) {
-    let tree = parent.get(key);
-    let keys = Array.from(tree.keys()).filter(k => k != RESULT_KEY);
-    let result = tree.get(RESULT_KEY);
+  
 
-    if (keys.length == 1) {
-      let childKey = keys[0];
-      let child = tree.get(childKey);
-      let childResult = child.get(RESULT_KEY);
 
-      if (result == childResult) {
-        let newKey = key + childKey;
-        parent.set(newKey, child);
-        parent.delete(key);
-        this._flatten(parent, newKey);
-      } else {
-        this._flatten(tree, childKey);
+
+
+
+
+
+
+
+  _flatten(key, node, parent) {
+    
+    
+    
+    for (let [childKey, child] of [...node.entries()]) {
+      if (childKey != RESULT_KEY) {
+        this._flatten(childKey, child, node);
       }
-    } else {
-      for (let k of keys) {
-        this._flatten(tree, k);
-      }
+    }
+    
+    
+    if (node.size == 1 && parent) {
+      parent.delete(key);
+      let childKey = [...node.keys()][0];
+      parent.set(key + childKey, node.get(childKey));
     }
   }
 
