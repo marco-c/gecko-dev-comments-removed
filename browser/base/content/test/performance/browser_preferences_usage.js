@@ -127,6 +127,10 @@ add_task(async function startup() {
       min: 0,
       max: 100, 
     },
+    "browser.proton.urlbar.enabled": {
+      min: 0,
+      max: 100, 
+    },
   };
 
   let startupRecorder = Cc["@mozilla.org/test/startuprecorder;1"].getService()
