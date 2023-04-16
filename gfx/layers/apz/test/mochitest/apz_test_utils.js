@@ -207,12 +207,19 @@ function isLayerized(elementId) {
 
 
 
-function getLastContentDisplayportFor(elementId) {
+function getLastContentDisplayportFor(elementId, expectPainted = true) {
   var contentTestData = SpecialPowers.getDOMWindowUtils(
     window
   ).getContentAPZTestData();
+  if (contentTestData == undefined) {
+    ok(!expectPainted, "expected to have apz test data (1)");
+    return null;
+  }
   var nonEmptyBucket = getLastNonemptyBucket(contentTestData.paints);
-  ok(nonEmptyBucket != null, "expected at least one nonempty paint");
+  if (nonEmptyBucket == null) {
+    ok(!expectPainted, "expected to have apz test data (2)");
+    return null;
+  }
   var seqno = nonEmptyBucket.sequenceNumber;
   contentTestData = convertTestData(contentTestData);
   var paint = contentTestData.paints[seqno];
