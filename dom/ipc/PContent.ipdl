@@ -38,7 +38,6 @@ include protocol PRemoteSpellcheckEngine;
 include protocol PWebBrowserPersistDocument;
 include protocol PWebrtcGlobal;
 include protocol PWindowGlobal;
-include protocol PPresentation;
 include protocol PURLClassifier;
 include protocol PURLClassifierLocal;
 include protocol PVRManager;
@@ -426,7 +425,6 @@ nested(upto inside_cpow) sync protocol PContent
     manages PRemoteSpellcheckEngine;
     manages PWebBrowserPersistDocument;
     manages PWebrtcGlobal;
-    manages PPresentation;
     manages PURLClassifier;
     manages PURLClassifierLocal;
     manages PScriptCache;
@@ -740,18 +738,6 @@ child:
     
 
 
-
-    async NotifyPresentationReceiverLaunched(PBrowser aIframe, nsString aSessionId);
-
-    
-
-
-
-    async NotifyPresentationReceiverCleanUp(nsString aSessionId);
-
-    
-
-
     async NotifyEmptyHTTPCache();
 
     
@@ -1024,8 +1010,6 @@ parent:
     async PMedia();
 
     async PWebrtcGlobal();
-
-    async PPresentation();
 
     async CreateAudioIPCConnection() returns (FileDescOrError fd);
 
