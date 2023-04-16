@@ -388,7 +388,6 @@ interface nsISHEntry : nsISupports
 
 
 
-
     void setLoadTypeAsHistory();
 
     
@@ -426,7 +425,7 @@ interface nsISHEntry : nsISupports
 
 
     [notxpcom] void ClearEntry();
-    
+
     
 
 
@@ -447,4 +446,3 @@ interface nsISHEntry : nsISupports
                                                    in BrowsingContext aTopBC,
                                                    in BrowsingContext aIgnoreBC);
 };
-
