@@ -1133,22 +1133,23 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
     }
   }
 
-  
-  WindowContext::Discard();
-
   ContentParent* cp = nullptr;
   if (!IsInProcess()) {
     cp = static_cast<ContentParent*>(Manager()->Manager());
   }
 
-  RefPtr<WindowGlobalParent> self(this);
   Group()->EachOtherParent(cp, [&](ContentParent* otherContent) {
     
     
-    auto resolve = [self](bool) {};
-    auto reject = [self](mozilla::ipc::ResponseRejectReason) {};
-    otherContent->SendDiscardWindowContext(InnerWindowId(), resolve, reject);
+    Group()->AddKeepAlive();
+    auto callback = [self = RefPtr{this}](auto) {
+      self->Group()->RemoveKeepAlive();
+    };
+    otherContent->SendDiscardWindowContext(InnerWindowId(), callback, callback);
   });
+
+  
+  WindowContext::Discard();
 
   
   
