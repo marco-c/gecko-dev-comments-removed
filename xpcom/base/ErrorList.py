@@ -791,6 +791,9 @@ with modules["DOM"]:
     errors["NS_ERROR_RECURSIVE_DOCUMENT_LOAD"] = FAILURE(1038)
 
     
+    errors["NS_ERROR_DOM_WEBEXT_CONTENT_SCRIPT_URI"] = FAILURE(1039)
+
+    
     
     
     errors["NS_SUCCESS_DOM_NO_OPERATION"] = SUCCESS(1)
