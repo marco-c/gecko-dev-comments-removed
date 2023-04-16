@@ -320,7 +320,7 @@ nsresult mozSpellChecker::GetDictionaryList(
   nsresult rv;
 
   
-  nsTHashtable<nsCStringHashKey> dictionaries;
+  nsTHashSet<nsCString> dictionaries;
 
   nsCOMArray<mozISpellCheckingEngine> spellCheckingEngines;
   rv = GetEngineList(&spellCheckingEngines);
@@ -334,9 +334,8 @@ nsresult mozSpellChecker::GetDictionaryList(
     for (auto& dictName : dictNames) {
       
       
-      if (dictionaries.Contains(dictName)) continue;
+      if (!dictionaries.EnsureInserted(dictName)) continue;
 
-      dictionaries.PutEntry(dictName);
       aDictionaryList->AppendElement(dictName);
     }
   }
