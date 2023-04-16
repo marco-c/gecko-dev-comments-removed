@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var EXPORTED_SYMBOLS = ["Troubleshoot"];
 
@@ -24,10 +24,10 @@ const { FeatureGate } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser"]);
 
-
-
-
-
+// We use a preferences whitelist to make sure we only show preferences that
+// are useful for support and won't compromise the user's privacy.  Note that
+// entries are *prefixes*: for example, "accessibility." applies to all prefs
+// under the "accessibility.*" branch.
 const PREFS_WHITELIST = [
   "accessibility.",
   "apz.",
@@ -109,15 +109,16 @@ const PREFS_WHITELIST = [
   "widget.wayland",
 ];
 
-
+// The blacklist, unlike the whitelist, is a list of regular expressions.
 const PREFS_BLACKLIST = [
   /^browser[.]fixup[.]domainwhitelist[.]/,
   /^media[.]webrtc[.]debug[.]aec_log_dir/,
   /^media[.]webrtc[.]debug[.]log_file/,
+  /^print[.].*print_to_filename$/,
   /^network[.]proxy[.]/,
 ];
 
-
+// Table of getters for various preference types.
 const PREFS_GETTERS = {};
 
 PREFS_GETTERS[Ci.nsIPrefBranch.PREF_STRING] = (prefs, name) =>
@@ -127,8 +128,8 @@ PREFS_GETTERS[Ci.nsIPrefBranch.PREF_INT] = (prefs, name) =>
 PREFS_GETTERS[Ci.nsIPrefBranch.PREF_BOOL] = (prefs, name) =>
   prefs.getBoolPref(name);
 
-
-
+// List of unimportant locked prefs (won't be shown on the troubleshooting
+// session)
 const PREFS_UNIMPORTANT_LOCKED = [
   "dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled",
   "privacy.restrict3rdpartystorage.url_decorations",
@@ -142,8 +143,8 @@ function getPref(name) {
   return PREFS_GETTERS[type](Services.prefs, name);
 }
 
-
-
+// Return the preferences filtered by PREFS_BLACKLIST and whitelist lists
+// and also by the custom 'filter'-ing function.
 function getPrefList(filter, whitelist = PREFS_WHITELIST) {
   return whitelist.reduce(function(prefs, branch) {
     Services.prefs.getChildList(branch).forEach(function(name) {
@@ -156,20 +157,20 @@ function getPrefList(filter, whitelist = PREFS_WHITELIST) {
 }
 
 var Troubleshoot = {
-  
-
-
-
-
-
-
+  /**
+   * Captures a snapshot of data that may help troubleshooters troubleshoot
+   * trouble.
+   *
+   * @param done A function that will be asynchronously called when the
+   *             snapshot completes.  It will be passed the snapshot object.
+   */
   snapshot: function snapshot(done) {
     let snapshot = {};
     let numPending = Object.keys(dataProviders).length;
     function providerDone(providerName, providerData) {
       snapshot[providerName] = providerData;
       if (--numPending == 0) {
-        
+        // Ensure that done is always and truly called asynchronously.
         Services.tm.dispatchToMainThread(done.bind(null, snapshot));
       }
     }
@@ -184,14 +185,14 @@ var Troubleshoot = {
     }
   },
 
-  kMaxCrashAge: 3 * 24 * 60 * 60 * 1000, 
+  kMaxCrashAge: 3 * 24 * 60 * 60 * 1000, // 3 days
 };
 
-
-
-
-
-
+// Each data provider is a name => function mapping.  When a snapshot is
+// captured, each provider's function is called, and it's the function's job to
+// generate the provider's data.  The function is passed a "done" callback, and
+// when done, it must pass its data to the callback.  The resulting snapshot
+// object will contain a name => data entry for each provider.
 var dataProviders = {
   application: function application(done) {
     let data = {
@@ -220,7 +221,7 @@ var dataProviders = {
       ).UpdateUtils.UpdateChannel;
     }
 
-    
+    // eslint-disable-next-line mozilla/use-default-preference-values
     try {
       data.vendor = Services.prefs.getCharPref("app.support.vendor");
     } catch (e) {}
@@ -230,7 +231,7 @@ var dataProviders = {
       );
     } catch (e) {}
 
-    
+    // MacOSX: Check for rosetta status, if it exists
     try {
       data.rosetta = Services.sysinfo.getProperty("rosettaStatus");
     } catch (e) {}
@@ -301,7 +302,7 @@ var dataProviders = {
         return a.type.localeCompare(b.type);
       }
 
-      
+      // In some unfortunate cases add-on names can be null.
       let aname = a.name || "";
       let bname = b.name || "";
       let lc = aname.localeCompare(bname);
@@ -348,7 +349,7 @@ var dataProviders = {
     let features = await AddonManager.getAddonsByTypes(["extension"]);
     features = features.filter(f => f.isSystem);
     features.sort(function(a, b) {
-      
+      // In some unfortunate cases addon names can be null.
       let aname = a.name || null;
       let bname = b.name || null;
       let lc = aname.localeCompare(bname);
@@ -380,8 +381,8 @@ var dataProviders = {
         remoteType = Services.ppmm.getChildAt(i).remoteType;
       } catch (e) {}
 
-      
-      
+      // The parent process is also managed by the ppmm (because
+      // of non-remote tabs), but it doesn't have a remoteType.
       if (!remoteType) {
         continue;
       }
@@ -434,7 +435,7 @@ var dataProviders = {
   async environmentVariables(done) {
     let Subprocess;
     try {
-      
+      // Subprocess is not available in all builds
       Subprocess = ChromeUtils.import("resource://gre/modules/Subprocess.jsm")
         .Subprocess;
     } catch (ex) {
@@ -444,8 +445,8 @@ var dataProviders = {
 
     let environment = Subprocess.getEnvironment();
     let filteredEnvironment = {};
-    
-    
+    // Limit the environment variables to those that we
+    // know may affect Firefox to reduce leaking PII.
     let filteredEnvironmentKeys = ["xre_", "moz_", "gdk", "display"];
     for (let key of Object.keys(environment)) {
       if (filteredEnvironmentKeys.some(k => key.toLowerCase().startsWith(k))) {
@@ -473,9 +474,9 @@ var dataProviders = {
     let filter = name => Services.prefs.prefHasUserValue(name);
     let prefs = getPrefList(filter, ["print."]);
 
-    
-    
-    
+    // print_printer is special and is the only pref that is outside of the
+    // "print." branch... Maybe we should change it to print.printer or
+    // something...
     if (filter("print_printer")) {
       prefs.print_printer = getPref("print_printer");
     }
@@ -485,10 +486,10 @@ var dataProviders = {
 
   graphics: function graphics(done) {
     function statusMsgForFeature(feature) {
-      
-      
-      
-      
+      // We return an object because in the try-newer-driver case we need to
+      // include the suggested version, which the consumer likely needs to plug
+      // into a format string from a localization file. Rather than returning
+      // a string in some cases and an object in others, return an object always.
       let msg = { key: "" };
       try {
         var status = gfxInfo.getFeatureStatus(feature);
@@ -521,13 +522,13 @@ var dataProviders = {
     let data = {};
 
     try {
-      
+      // nsIGfxInfo may not be implemented on some platforms.
       var gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
     } catch (e) {}
 
     let promises = [];
-    
-    
+    // done will be called upon all pending promises being resolved.
+    // add your pending promise to promises when adding new ones.
     function completed() {
       Promise.all(promises).then(() => done(data));
     }
@@ -537,7 +538,7 @@ var dataProviders = {
     for (let win of Services.ww.getWindowEnumerator()) {
       let winUtils = win.windowUtils;
       try {
-        
+        // NOTE: windowless browser's windows should not be reported in the graphics troubleshoot report
         if (
           winUtils.layerManagerType == "None" ||
           !winUtils.layerManagerRemote
@@ -556,7 +557,7 @@ var dataProviders = {
       }
     }
 
-    
+    // If we had no OMTC windows, report back Basic Layers.
     if (!data.windowLayerManagerType) {
       data.windowLayerManagerType = "Basic";
       data.windowLayerManagerRemote = false;
@@ -575,10 +576,10 @@ var dataProviders = {
       return;
     }
 
-    
-    
-    
-    
+    // keys are the names of attributes on nsIGfxInfo, values become the names
+    // of the corresponding properties in our data object.  A null value means
+    // no change.  This is needed so that the names of properties in the data
+    // object are the same as the names of keys in aboutSupport.properties.
     let gfxInfoProps = {
       adapterDescription: null,
       adapterVendorID: null,
@@ -635,13 +636,13 @@ var dataProviders = {
       data[keyPrefix + "Extensions"] = "-";
       data[keyPrefix + "WSIInfo"] = "-";
 
-      
+      // //
 
       let canvas = doc.createElement("canvas");
       canvas.width = 1;
       canvas.height = 1;
 
-      
+      // //
 
       let creationError = null;
 
@@ -667,14 +668,14 @@ var dataProviders = {
         return;
       }
 
-      
+      // //
 
       data[keyPrefix + "Extensions"] = gl.getSupportedExtensions().join(" ");
 
-      
+      // //
 
       let ext = gl.getExtension("MOZ_debug");
-      
+      // This extension is unconditionally available to chrome. No need to check.
       let vendor = ext.getParameter(gl.VENDOR);
       let renderer = ext.getParameter(gl.RENDERER);
 
@@ -683,9 +684,9 @@ var dataProviders = {
       data[keyPrefix + "DriverExtensions"] = ext.getParameter(ext.EXTENSIONS);
       data[keyPrefix + "WSIInfo"] = ext.getParameter(ext.WSI_INFO);
 
-      
+      // //
 
-      
+      // Eagerly free resources.
       let loseExt = gl.getExtension("WEBGL_lose_context");
       if (loseExt) {
         loseExt.loseContext();
@@ -765,7 +766,7 @@ var dataProviders = {
   accessibility: function accessibility(done) {
     let data = {};
     data.isActive = Services.appinfo.accessibilityEnabled;
-    
+    // eslint-disable-next-line mozilla/use-default-preference-values
     try {
       data.forceDisabled = Services.prefs.getIntPref(
         "accessibility.force_disabled"
@@ -849,8 +850,8 @@ var dataProviders = {
           Services.telemetry.EXCLUDE_STACKINFO_FROM_LOADEVENTS
       );
     } catch (e) {
-      
-      
+      // No error report in case of NS_ERROR_NOT_AVAILABLE
+      // because the method throws it when data is empty.
       if (
         !(e instanceof Components.Exception) ||
         e.result != Cr.NS_ERROR_NOT_AVAILABLE
@@ -864,11 +865,11 @@ var dataProviders = {
       return;
     }
 
-    
-    
-    
-    
-    
+    // The original telemetry data structure has an array of modules
+    // and an array of loading events referring to the module array's
+    // item via its index.
+    // To easily display data per module, we put loading events into
+    // a corresponding module object and return the module array.
     for (const [proc, perProc] of Object.entries(data.processes)) {
       for (const event of perProc.events) {
         const module = data.modules[event.moduleIndex];
@@ -898,7 +899,7 @@ var dataProviders = {
       PreferenceRollouts: NormandyPreferenceRollouts,
     } = ChromeUtils.import("resource://normandy/lib/PreferenceRollouts.jsm");
 
-    
+    // Get Normandy data in parallel, and sort each group by slug.
     const [addonStudies, prefRollouts, prefStudies] = await Promise.all(
       [
         NormandyAddonStudies.getAllActive(),
