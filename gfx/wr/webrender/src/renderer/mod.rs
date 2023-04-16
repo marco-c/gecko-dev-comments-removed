@@ -2234,6 +2234,7 @@ impl Renderer {
           
           results.stats.merge(&stats);
 
+          self.profiler.update_frame_stats(stats);
         }
 
         
