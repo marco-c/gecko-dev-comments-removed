@@ -1647,6 +1647,20 @@ class Element : public FragmentOrElement {
   enum PresContextFor { eForComposedDoc, eForUncomposedDoc };
   nsPresContext* GetPresContext(PresContextFor aFor);
 
+  
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT virtual bool PerformAccesskey(bool aKeyCausesActivation,
+                                                   bool aIsTrustedEvent) {
+    return false;
+  }
+
  protected:
   
 

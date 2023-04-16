@@ -325,20 +325,6 @@ class nsIContent : public nsINode {
 
 
 
-  MOZ_CAN_RUN_SCRIPT virtual bool PerformAccesskey(bool aKeyCausesActivation,
-                                                   bool aIsTrustedEvent) {
-    return false;
-  }
-
-  
-
-
-
-
-
-
-
-
 
 
 
