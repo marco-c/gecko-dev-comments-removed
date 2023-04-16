@@ -168,10 +168,18 @@ var gMenuBuilder = {
           Infinity,
           false
         );
-        
-        nextSibling =
-          nextSibling ||
-          this.xulMenu.querySelector(":scope > #context-sep-navigation + *");
+        if (!nextSibling) {
+          
+          
+          
+          if (AppConstants.platform == "macosx") {
+            nextSibling = this.xulMenu.firstElementChild;
+          } else {
+            nextSibling = this.xulMenu.querySelector(
+              ":scope > #context-sep-navigation + *"
+            );
+          }
+        }
         if (
           rootElements.length &&
           showDefaults &&
