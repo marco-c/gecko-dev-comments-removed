@@ -731,8 +731,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   bool CrossOriginIsolated();
 
-  void SessionHistoryChanged(int32_t aIndexDelta, int32_t aLengthDelta);
-
   
   
   bool IsPopupAllowed();
