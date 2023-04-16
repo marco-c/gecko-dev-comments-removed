@@ -15,7 +15,7 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 var gEnv = Cc["@mozilla.org/process/environment;1"].getService(
   Ci.nsIEnvironment
 );
-var gPythonName = gEnv.get("PYTHON");
+var gPythonName = gEnv.get("PYTHON3");
 
 
 
