@@ -74,7 +74,7 @@ const int32_t kHackyDowngradeSchemaVersion = 25;
 const int32_t kHackyPaddingSizePresentVersion = 27;
 
 
-const int32_t kLatestSchemaVersion = 27;
+const int32_t kLatestSchemaVersion = 28;
 
 
 
@@ -478,7 +478,7 @@ nsresult CreateOrMigrateSchema(mozIStorageConnection& aConn) {
         aConn.ExecuteSimpleSQL(nsLiteralCString(kIndexResponseHeadersName)));
     CACHE_TRY(aConn.ExecuteSimpleSQL(nsLiteralCString(kTableResponseUrlList)));
     CACHE_TRY(aConn.ExecuteSimpleSQL(nsLiteralCString(kTableStorage)));
-    CACHE_TRY(aConn.SetSchemaVersion(kHackyDowngradeSchemaVersion));
+    CACHE_TRY(aConn.SetSchemaVersion(kLatestSchemaVersion));
     CACHE_TRY_UNWRAP(schemaVersion, GetEffectiveSchemaVersion(aConn));
   }
 
@@ -491,9 +491,7 @@ nsresult CreateOrMigrateSchema(mozIStorageConnection& aConn) {
     
     
 
-    
-    
-    CACHE_TRY(aConn.ExecuteSimpleSQL("VACUUM"_ns), NS_OK);
+    CACHE_TRY(aConn.ExecuteSimpleSQL("VACUUM"_ns));
   }
 
   return NS_OK;
@@ -2288,6 +2286,7 @@ nsresult MigrateFrom23To24(mozIStorageConnection& aConn, bool& aRewriteSchema);
 nsresult MigrateFrom24To25(mozIStorageConnection& aConn, bool& aRewriteSchema);
 nsresult MigrateFrom25To26(mozIStorageConnection& aConn, bool& aRewriteSchema);
 nsresult MigrateFrom26To27(mozIStorageConnection& aConn, bool& aRewriteSchema);
+nsresult MigrateFrom27To28(mozIStorageConnection& aConn, bool& aRewriteSchema);
 
 constexpr Migration sMigrationList[] = {
     Migration{15, MigrateFrom15To16}, Migration{16, MigrateFrom16To17},
@@ -2296,7 +2295,9 @@ constexpr Migration sMigrationList[] = {
     Migration{21, MigrateFrom21To22}, Migration{22, MigrateFrom22To23},
     Migration{23, MigrateFrom23To24}, Migration{24, MigrateFrom24To25},
     Migration{25, MigrateFrom25To26}, Migration{26, MigrateFrom26To27},
+    Migration{27, MigrateFrom27To28},
 };
+
 nsresult RewriteEntriesSchema(mozIStorageConnection& aConn) {
   CACHE_TRY(aConn.ExecuteSimpleSQL("PRAGMA writable_schema = ON"_ns));
 
@@ -2696,9 +2697,12 @@ nsresult MigrateFrom21To22(mozIStorageConnection& aConn, bool& aRewriteSchema) {
   MOZ_ASSERT(!NS_IsMainThread());
 
   
+  CACHE_TRY(aConn.ExecuteSimpleSQL(
+      "ALTER TABLE entries "
+      "ADD COLUMN request_integrity TEXT NOT NULL DEFAULT '';"_ns));
+
   CACHE_TRY(
-      aConn.ExecuteSimpleSQL("ALTER TABLE entries "
-                             "ADD COLUMN request_integrity TEXT NULL"_ns));
+      aConn.ExecuteSimpleSQL("UPDATE entries SET request_integrity = '';"_ns));
 
   CACHE_TRY(aConn.SetSchemaVersion(22));
 
@@ -2766,6 +2770,22 @@ nsresult MigrateFrom26To27(mozIStorageConnection& aConn, bool& aRewriteSchema) {
   MOZ_ASSERT(!NS_IsMainThread());
 
   CACHE_TRY(aConn.SetSchemaVersion(kHackyDowngradeSchemaVersion));
+
+  return NS_OK;
+}
+
+nsresult MigrateFrom27To28(mozIStorageConnection& aConn, bool& aRewriteSchema) {
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  
+  
+  
+  
+  CACHE_TRY(
+      aConn.ExecuteSimpleSQL("UPDATE entries SET request_integrity = '' "
+                             "WHERE request_integrity is NULL;"_ns));
+
+  CACHE_TRY(aConn.SetSchemaVersion(28));
 
   return NS_OK;
 }
