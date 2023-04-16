@@ -232,27 +232,6 @@ FxAccountsProfileClient.prototype = {
     log.debug("FxAccountsProfileClient: Requested profile");
     return this._createRequest("/profile", "GET", etag);
   },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  setEcosystemAnonId(ecosystemAnonId) {
-    log.debug("FxAccountsProfileClient: Setting ecosystemAnonId");
-    
-    return this._createRequest("/ecosystem_anon_id", "POST", "*", {
-      ecosystemAnonId,
-    });
-  },
 };
 
 

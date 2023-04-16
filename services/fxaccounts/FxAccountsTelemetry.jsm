@@ -18,10 +18,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   
   Observers: "resource://services-common/observers.js",
   Services: "resource://gre/modules/Services.jsm",
-  CommonUtils: "resource://services-common/utils.js",
   CryptoUtils: "resource://services-crypto/utils.js",
-  FxAccountsConfig: "resource://gre/modules/FxAccountsConfig.jsm",
-  jwcrypto: "resource://services-crypto/jwcrypto.jsm",
 });
 
 const { PREF_ACCOUNT_ROOT, log } = ChromeUtils.import(
@@ -40,7 +37,6 @@ class FxAccountsTelemetry {
   constructor(fxai) {
     this._fxai = fxai;
     Services.telemetry.setEventRecordingEnabled("fxa", true);
-    this._promiseEnsureEcosystemAnonId = null;
   }
 
   
@@ -64,181 +60,6 @@ class FxAccountsTelemetry {
     return this.generateUUID();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  async getEcosystemAnonId() {
-    return this._fxai.withCurrentAccountState(async state => {
-      
-      
-      let {
-        ecosystemAnonId,
-        ecosystemUserId,
-      } = await state.getUserAccountData([
-        "ecosystemAnonId",
-        "ecosystemUserId",
-      ]);
-      
-      if (!ecosystemUserId) {
-        try {
-          
-          const profile = await this._fxai.profile.getProfile();
-          if (profile && profile.hasOwnProperty("ecosystemAnonId")) {
-            ecosystemAnonId = profile.ecosystemAnonId;
-          }
-        } catch (err) {
-          log.error("Getting ecosystemAnonId from profile failed", err);
-        }
-      }
-      
-      
-      
-      if (!ecosystemAnonId) {
-        
-        this.ensureEcosystemAnonId().catch(err => {
-          log.error(
-            "Failed ensuring we have an anon-id in the background ",
-            err
-          );
-        });
-      }
-      return ecosystemAnonId || null;
-    });
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  async ensureEcosystemAnonId() {
-    if (!this._promiseEnsureEcosystemAnonId) {
-      this._promiseEnsureEcosystemAnonId = this._ensureEcosystemAnonId().finally(
-        () => {
-          this._promiseEnsureEcosystemAnonId = null;
-        }
-      );
-    }
-    return this._promiseEnsureEcosystemAnonId;
-  }
-
-  async _ensureEcosystemAnonId() {
-    return this._fxai.withCurrentAccountState(async state => {
-      
-      
-      let {
-        ecosystemAnonId,
-        ecosystemUserId,
-      } = await state.getUserAccountData([
-        "ecosystemAnonId",
-        "ecosystemUserId",
-      ]);
-      if (ecosystemUserId) {
-        if (!ecosystemAnonId) {
-          ecosystemAnonId = await this._generateAnonIdFromUserId(
-            ecosystemUserId
-          );
-          await state.updateUserAccountData({ ecosystemAnonId });
-        }
-      } else {
-        ecosystemAnonId = await this._ensureEcosystemAnonIdInProfile();
-      }
-      return ecosystemAnonId;
-    });
-  }
-
-  
-  
-  
-  
-  
-  
-  async _ensureEcosystemAnonIdInProfile(generatePlaceholder = true) {
-    
-    
-    
-    
-    
-    
-    
-    
-    let options = generatePlaceholder
-      ? { staleOk: true }
-      : { forceFresh: true };
-    const profile = await this._fxai.profile.ensureProfile(options);
-    if (profile && profile.hasOwnProperty("ecosystemAnonId")) {
-      return profile.ecosystemAnonId;
-    }
-    if (!generatePlaceholder) {
-      throw new Error("Profile data does not contain an 'ecosystemAnonId'");
-    }
-    
-    
-    const ecosystemUserId = CommonUtils.bufferToHex(
-      CryptoUtils.generateRandomBytes(32)
-    );
-    const ecosystemAnonId = await this._generateAnonIdFromUserId(
-      ecosystemUserId
-    );
-    
-    try {
-      await this._fxai.profile.client.setEcosystemAnonId(ecosystemAnonId);
-    } catch (err) {
-      if (err && err.code && err.code === 412) {
-        
-        return this._ensureEcosystemAnonIdInProfile(false);
-      }
-      throw err;
-    }
-    return ecosystemAnonId;
-  }
-
-  
-  
-  
-  
-  
-  async _generateAnonIdFromUserId(ecosystemUserId) {
-    const serverConfig = await FxAccountsConfig.fetchConfigDocument();
-    const ecosystemKeys = serverConfig.ecosystem_anon_id_keys;
-    if (!ecosystemKeys || !ecosystemKeys.length) {
-      throw new Error("Unable to fetch ecosystem_anon_id_keys from FxA server");
-    }
-    const randomKey = Math.floor(
-      Math.random() * Math.floor(ecosystemKeys.length)
-    );
-    return jwcrypto.generateJWE(
-      ecosystemKeys[randomKey],
-      new TextEncoder().encode(ecosystemUserId)
-    );
-  }
-
-  
-  
   
   
   

@@ -17,8 +17,8 @@ const { CryptoUtils } = ChromeUtils.import(
 const {
   LEGACY_DERIVED_KEYS_NAMES,
   SCOPE_OLD_SYNC,
-  SCOPE_ECOSYSTEM_TELEMETRY,
   LEGACY_SCOPE_WEBEXT_SYNC,
+  DEPRECATED_SCOPE_ECOSYSTEM_TELEMETRY,
   FX_OAUTH_CLIENT_ID,
   log,
   logPII,
@@ -28,6 +28,10 @@ const {
 
 
 const LEGACY_DERIVED_KEY_SCOPES = [SCOPE_OLD_SYNC, LEGACY_SCOPE_WEBEXT_SYNC];
+
+
+
+const DEPRECATED_KEY_SCOPES = [DEPRECATED_SCOPE_ECOSYSTEM_TELEMETRY];
 
 
 
@@ -188,7 +192,6 @@ class FxAccountsKeys {
 
 
 
-
   async _loadOrFetchKeys() {
     return this._fxai.withCurrentAccountState(async currentState => {
       try {
@@ -200,6 +203,9 @@ class FxAccountsKeys {
         if (userData.scopedKeys) {
           if (
             LEGACY_DERIVED_KEY_SCOPES.every(scope =>
+              userData.scopedKeys.hasOwnProperty(scope)
+            ) &&
+            !DEPRECATED_KEY_SCOPES.some(scope =>
               userData.scopedKeys.hasOwnProperty(scope)
             )
           ) {
@@ -237,6 +243,30 @@ class FxAccountsKeys {
 
 
   async _migrateOrFetchKeys(currentState, userData) {
+    
+    
+    
+    
+    if (userData.scopedKeys) {
+      const toRemove = DEPRECATED_KEY_SCOPES.filter(scope =>
+        userData.scopedKeys.hasOwnProperty(scope)
+      );
+      if (toRemove.length > 0) {
+        for (const scope of toRemove) {
+          delete userData.scopedKeys[scope];
+        }
+        await currentState.updateUserAccountData({
+          scopedKeys: userData.scopedKeys,
+          
+          
+          
+          ecosystemUserId: null,
+          ecosystemAnonId: null,
+        });
+        userData = await currentState.getUserAccountData();
+        return userData;
+      }
+    }
     
     
     if (
@@ -394,7 +424,7 @@ class FxAccountsKeys {
     
     
     
-    const scopes = [SCOPE_OLD_SYNC, SCOPE_ECOSYSTEM_TELEMETRY].join(" ");
+    const scopes = [SCOPE_OLD_SYNC].join(" ");
     const scopedKeysMetadata = await this._fxai.fxAccountsClient.getScopedKeyData(
       sessionToken,
       FX_OAUTH_CLIENT_ID,
@@ -455,12 +485,6 @@ class FxAccountsKeys {
       kExtKbHash: scopedKeys[LEGACY_SCOPE_WEBEXT_SYNC]
         ? this.kidAsHex(scopedKeys[LEGACY_SCOPE_WEBEXT_SYNC])
         : CommonUtils.bytesAsHex(await this._deriveWebExtKbHash(uid, kBbytes)),
-      
-      
-      
-      ecosystemUserId: scopedKeys[SCOPE_ECOSYSTEM_TELEMETRY]
-        ? CommonUtils.base64urlToHex(scopedKeys[SCOPE_ECOSYSTEM_TELEMETRY].k)
-        : null,
     };
   }
 
