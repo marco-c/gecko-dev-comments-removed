@@ -176,9 +176,13 @@ var SearchTestUtils = {
       false
     );
     
-    if (!this._initedTestUtils) {
+    try {
       gTestScope.ExtensionTestUtils.init(scope);
-      this._initedTestUtils = true;
+    } catch (ex) {
+      
+      if (ex.result != Cr.NS_ERROR_FILE_ALREADY_EXISTS) {
+        throw ex;
+      }
     }
     AddonTestUtils.usePrivilegedSignatures = usePrivilegedSignatures;
     AddonTestUtils.overrideCertDB();
@@ -292,6 +296,8 @@ var SearchTestUtils = {
 
 
 
+
+
   createEngineManifest(options = {}) {
     options.name = options.name ?? "Example";
     options.id = options.id ?? options.name.toLowerCase().replaceAll(" ", "");
@@ -310,11 +316,18 @@ var SearchTestUtils = {
         search_provider: {
           name: options.name,
           search_url: options.search_url ?? "https://example.com/",
-          search_url_get_params:
-            options.search_url_get_params ?? "?q={searchTerms}",
         },
       },
     };
+
+    if (options.search_url_post_params) {
+      manifest.chrome_settings_overrides.search_provider.search_url_post_params =
+        options.search_url_post_params;
+    } else {
+      manifest.chrome_settings_overrides.search_provider.search_url_get_params =
+        options.search_url_get_params ?? "?q={searchTerms}";
+    }
+
     if (options.favicon_url) {
       manifest.chrome_settings_overrides.search_provider.favicon_url =
         options.favicon_url;
