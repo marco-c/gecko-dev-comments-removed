@@ -104,8 +104,7 @@ nsresult ImageTracker::SetLockingState(bool aLocked) {
   if (mLocking == aLocked) return NS_OK;
 
   
-  for (const auto& entry : mImages) {
-    imgIRequest* image = entry.GetKey();
+  for (imgIRequest* image : mImages.Keys()) {
     if (aLocked) {
       image->LockImage();
     } else {
@@ -124,8 +123,7 @@ void ImageTracker::SetAnimatingState(bool aAnimating) {
   if (mAnimating == aAnimating) return;
 
   
-  for (const auto& entry : mImages) {
-    imgIRequest* image = entry.GetKey();
+  for (imgIRequest* image : mImages.Keys()) {
     if (aAnimating) {
       image->IncrementAnimationConsumers();
     } else {
@@ -138,8 +136,8 @@ void ImageTracker::SetAnimatingState(bool aAnimating) {
 }
 
 void ImageTracker::RequestDiscardAll() {
-  for (const auto& entry : mImages) {
-    entry.GetKey()->RequestDiscard();
+  for (imgIRequest* image : mImages.Keys()) {
+    image->RequestDiscard();
   }
 }
 
@@ -153,8 +151,7 @@ void ImageTracker::MediaFeatureValuesChangedAllDocuments(
   
   
   nsTArray<nsCOMPtr<imgIContainer>> images;
-  for (const auto& entry : mImages) {
-    imgIRequest* req = entry.GetKey();
+  for (imgIRequest* req : mImages.Keys()) {
     nsCOMPtr<imgIContainer> image;
     req->GetImage(getter_AddRefs(image));
     if (!image) {

@@ -2085,7 +2085,7 @@ void SMILTimedElement::NotifyNewInterval() {
     container->SyncPauseTime();
   }
 
-  for (auto iter = mTimeDependents.Iter(); !iter.Done(); iter.Next()) {
+  for (SMILTimeValueSpec* spec : mTimeDependents.Keys()) {
     SMILInterval* interval = mCurrentInterval.get();
     
     
@@ -2094,7 +2094,6 @@ void SMILTimedElement::NotifyNewInterval() {
     if (!interval) {
       break;
     }
-    SMILTimeValueSpec* spec = iter.Get()->GetKey();
     spec->HandleNewInterval(*interval, container);
   }
 }

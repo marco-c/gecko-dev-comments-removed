@@ -3559,10 +3559,8 @@ void HTMLMediaElement::UpdateOutputTrackSources() {
   }
 
   
-  AutoTArray<nsString, 4> trackSourcesToRemove;
-  for (const auto& entry : mOutputTrackSources) {
-    trackSourcesToRemove.AppendElement(entry.GetKey());
-  }
+  auto trackSourcesToRemove =
+      ToTArray<AutoTArray<nsString, 4>>(mOutputTrackSources.Keys());
 
   
   mediaTracksToAdd.RemoveLastElements(

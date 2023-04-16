@@ -411,8 +411,8 @@ struct ParamTraits<mozilla::ModulePaths> {
   
   static void WriteSet(Message* aMsg, const paramType::SetType& aSet) {
     aMsg->WriteUInt32(aSet.Count());
-    for (auto iter = aSet.ConstIter(); !iter.Done(); iter.Next()) {
-      WriteParam(aMsg, iter.Get()->GetKey());
+    for (const auto& key : aSet.Keys()) {
+      WriteParam(aMsg, key);
     }
   }
 

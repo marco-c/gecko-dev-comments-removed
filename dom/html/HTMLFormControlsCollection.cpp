@@ -309,9 +309,7 @@ void HTMLFormControlsCollection::GetSupportedNames(nsTArray<nsString>& aNames) {
   
   
   
-  for (auto iter = mNameLookupTable.Iter(); !iter.Done(); iter.Next()) {
-    aNames.AppendElement(iter.Key());
-  }
+  AppendToArray(aNames, mNameLookupTable.Keys());
 }
 
 

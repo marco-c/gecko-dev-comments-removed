@@ -310,8 +310,7 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   
   
   TimeContainerHashtable activeContainers(mChildContainerTable.Count());
-  for (auto iter = mChildContainerTable.Iter(); !iter.Done(); iter.Next()) {
-    SMILTimeContainer* container = iter.Get()->GetKey();
+  for (SMILTimeContainer* container : mChildContainerTable.Keys()) {
     if (!container) {
       continue;
     }
@@ -351,8 +350,7 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   nsTArray<RefPtr<SVGAnimationElement>> animElems(
       mAnimationElementTable.Count());
 
-  for (auto iter = mAnimationElementTable.Iter(); !iter.Done(); iter.Next()) {
-    SVGAnimationElement* animElem = iter.Get()->GetKey();
+  for (SVGAnimationElement* animElem : mAnimationElementTable.Keys()) {
     SampleTimedElement(animElem, &activeContainers);
     AddAnimationToCompositorTable(animElem, currentCompositorTable.get(),
                                   isStyleFlushNeeded);
@@ -379,9 +377,8 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
     
     
     
-    for (auto iter = currentCompositorTable->Iter(); !iter.Done();
-         iter.Next()) {
-      mLastCompositorTable->RemoveEntry(iter.Get()->GetKey());
+    for (const auto& key : currentCompositorTable->Keys()) {
+      mLastCompositorTable->RemoveEntry(key);
     }
 
     
@@ -424,27 +421,21 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
 }
 
 void SMILAnimationController::RewindElements() {
-  bool rewindNeeded = false;
-  for (auto iter = mChildContainerTable.Iter(); !iter.Done(); iter.Next()) {
-    SMILTimeContainer* container = iter.Get()->GetKey();
-    if (container->NeedsRewind()) {
-      rewindNeeded = true;
-      break;
-    }
-  }
+  const bool rewindNeeded = std::any_of(
+      mChildContainerTable.Keys().cbegin(), mChildContainerTable.Keys().cend(),
+      [](SMILTimeContainer* container) { return container->NeedsRewind(); });
 
   if (!rewindNeeded) return;
 
-  for (auto iter = mAnimationElementTable.Iter(); !iter.Done(); iter.Next()) {
-    SVGAnimationElement* animElem = iter.Get()->GetKey();
+  for (SVGAnimationElement* animElem : mAnimationElementTable.Keys()) {
     SMILTimeContainer* timeContainer = animElem->GetTimeContainer();
     if (timeContainer && timeContainer->NeedsRewind()) {
       animElem->TimedElement().Rewind();
     }
   }
 
-  for (auto iter = mChildContainerTable.Iter(); !iter.Done(); iter.Next()) {
-    iter.Get()->GetKey()->ClearNeedsRewind();
+  for (SMILTimeContainer* container : mChildContainerTable.Keys()) {
+    container->ClearNeedsRewind();
   }
 }
 
@@ -475,8 +466,7 @@ void SMILAnimationController::DoMilestoneSamples() {
     
     
     SMILMilestone nextMilestone(GetCurrentTimeAsSMILTime() + 1, true);
-    for (auto iter = mChildContainerTable.Iter(); !iter.Done(); iter.Next()) {
-      SMILTimeContainer* container = iter.Get()->GetKey();
+    for (SMILTimeContainer* container : mChildContainerTable.Keys()) {
       if (container->IsPausedByType(SMILTimeContainer::PAUSE_BEGIN)) {
         continue;
       }
@@ -493,8 +483,7 @@ void SMILAnimationController::DoMilestoneSamples() {
     }
 
     nsTArray<RefPtr<mozilla::dom::SVGAnimationElement>> elements;
-    for (auto iter = mChildContainerTable.Iter(); !iter.Done(); iter.Next()) {
-      SMILTimeContainer* container = iter.Get()->GetKey();
+    for (SMILTimeContainer* container : mChildContainerTable.Keys()) {
       if (container->IsPausedByType(SMILTimeContainer::PAUSE_BEGIN)) {
         continue;
       }
@@ -663,9 +652,7 @@ bool SMILAnimationController::PreTraverseInSubtree(Element* aRoot) {
   }
 
   bool foundElementsNeedingRestyle = false;
-  for (auto iter = mAnimationElementTable.Iter(); !iter.Done(); iter.Next()) {
-    SVGAnimationElement* animElement = iter.Get()->GetKey();
-
+  for (SVGAnimationElement* animElement : mAnimationElementTable.Keys()) {
     SMILTargetIdentifier key;
     if (!GetTargetIdentifierForAnimation(animElement, key)) {
       

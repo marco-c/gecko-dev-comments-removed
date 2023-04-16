@@ -129,8 +129,8 @@ nsresult VariableLengthPrefixSet::SetPrefixes(PrefixStringMap& aPrefixMap) {
   auto scopeExit = MakeScopeExit([&]() { aPrefixMap.Clear(); });
 
   
-  for (auto iter = aPrefixMap.ConstIter(); !iter.Done(); iter.Next()) {
-    if (iter.Key() < PREFIX_SIZE_FIXED || iter.Key() > COMPLETE_SIZE) {
+  for (const auto& key : aPrefixMap.Keys()) {
+    if (key < PREFIX_SIZE_FIXED || key > COMPLETE_SIZE) {
       return NS_ERROR_FAILURE;
     }
   }

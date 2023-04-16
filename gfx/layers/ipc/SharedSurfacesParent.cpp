@@ -26,11 +26,11 @@ StaticAutoPtr<SharedSurfacesParent> SharedSurfacesParent::sInstance;
 SharedSurfacesParent::SharedSurfacesParent() = default;
 
 SharedSurfacesParent::~SharedSurfacesParent() {
-  for (auto i = mSurfaces.Iter(); !i.Done(); i.Next()) {
+  for (const auto& key : mSurfaces.Keys()) {
     
     
     
-    wr::RenderThread::Get()->UnregisterExternalImageDuringShutdown(i.Key());
+    wr::RenderThread::Get()->UnregisterExternalImageDuringShutdown(key);
   }
 }
 
