@@ -172,6 +172,7 @@ typedef void* nsNativeWidget;
 #endif
 
 #define MOZ_WIDGET_MAX_SIZE 16384
+#define MOZ_WIDGET_INVALID_SCALE 0.0
 
 
 #define NS_IWIDGET_IID                               \
@@ -293,11 +294,14 @@ namespace widget {
 
 
 struct SizeConstraints {
-  SizeConstraints() : mMaxSize(MOZ_WIDGET_MAX_SIZE, MOZ_WIDGET_MAX_SIZE) {}
+  SizeConstraints()
+      : mMaxSize(MOZ_WIDGET_MAX_SIZE, MOZ_WIDGET_MAX_SIZE),
+        mScale(MOZ_WIDGET_INVALID_SCALE) {}
 
   SizeConstraints(mozilla::LayoutDeviceIntSize aMinSize,
-                  mozilla::LayoutDeviceIntSize aMaxSize)
-      : mMinSize(aMinSize), mMaxSize(aMaxSize) {
+                  mozilla::LayoutDeviceIntSize aMaxSize,
+                  mozilla::DesktopToLayoutDeviceScale aScale)
+      : mMinSize(aMinSize), mMaxSize(aMaxSize), mScale(aScale) {
     if (mMaxSize.width > MOZ_WIDGET_MAX_SIZE) {
       mMaxSize.width = MOZ_WIDGET_MAX_SIZE;
     }
@@ -308,6 +312,16 @@ struct SizeConstraints {
 
   mozilla::LayoutDeviceIntSize mMinSize;
   mozilla::LayoutDeviceIntSize mMaxSize;
+
+  
+
+
+
+
+
+
+
+  mozilla::DesktopToLayoutDeviceScale mScale;
 };
 
 struct AutoObserverNotifier {
