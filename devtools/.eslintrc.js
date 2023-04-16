@@ -95,6 +95,10 @@ module.exports = {
           "^(resource://)?devtools/client",
         ],
       },
+      excludedFiles: [
+        
+        "**/test*/**/*",
+      ],
     },
     {
       

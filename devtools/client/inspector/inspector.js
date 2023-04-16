@@ -67,9 +67,6 @@ loader.lazyRequireGetter(
   true
 );
 
-
-
-
 loader.lazyImporter(
   this,
   "DeferredTask",

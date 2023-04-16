@@ -11,7 +11,6 @@
 
 
 
-
 "use strict";
 
 const { Cc, Ci } = require("chrome");
