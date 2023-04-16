@@ -6,6 +6,10 @@
 
 var EXPORTED_SYMBOLS = ["XPCOMUtils"];
 
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+
 let global = Cu.getGlobalForObject({});
 
 
@@ -273,6 +277,24 @@ var XPCOMUtils = {
                                    aOnUpdate = null,
                                    aTransform = val => val)
   {
+    if (AppConstants.DEBUG && aDefaultValue !== null) {
+      let prefType = Services.prefs.getPrefType(aPreference);
+      if (prefType != Ci.nsIPrefBranch.PREF_INVALID) {
+        
+        
+        let prefTypeForDefaultValue = {
+          boolean: Ci.nsIPrefBranch.PREF_BOOL,
+          number: Ci.nsIPrefBranch.PREF_INT,
+          string: Ci.nsIPrefBranch.PREF_STRING,
+        }[typeof aDefaultValue];
+        if (prefTypeForDefaultValue != prefType) {
+          throw new Error(
+            `Default value does not match preference type (Got ${prefTypeForDefaultValue}, expected ${prefType}) for ${aPreference}`
+          );
+        }
+      }
+    }
+
     
     
     
