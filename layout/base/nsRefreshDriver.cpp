@@ -230,6 +230,7 @@ class RefreshDriverTimer {
   }
 
   TimeStamp MostRecentRefresh() const { return mLastFireTime; }
+  VsyncId MostRecentRefreshVsyncId() const { return mLastFireId; }
 
   virtual TimeDuration GetTimerRate() = 0;
 
@@ -332,6 +333,7 @@ class RefreshDriverTimer {
     ScheduleNextTick(now);
 
     mLastFireTime = now;
+    mLastFireId = aId;
 
     LOG("[%p] ticking drivers...", this);
 
@@ -346,6 +348,7 @@ class RefreshDriverTimer {
   }
 
   TimeStamp mLastFireTime;
+  VsyncId mLastFireId;
   TimeStamp mTargetTime;
 
   nsTArray<RefPtr<nsRefreshDriver>> mContentRefreshDrivers;
@@ -393,6 +396,7 @@ class SimpleTimerBasedRefreshDriverTimer : public RefreshDriverTimer {
   void StartTimer() override {
     
     mLastFireTime = TimeStamp::Now();
+    mLastFireId = VsyncId();
 
     mTargetTime = mLastFireTime + mRateDuration;
 
@@ -741,6 +745,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     MOZ_ASSERT(NS_IsMainThread());
 
     mLastFireTime = TimeStamp::Now();
+    mLastFireId = VsyncId();
 
     if (mVsyncDispatcher) {
       mVsyncDispatcher->AddChildRefreshTimer(mVsyncObserver);
@@ -876,6 +881,7 @@ class InactiveRefreshDriverTimer final
 
   void StartTimer() override {
     mLastFireTime = TimeStamp::Now();
+    mLastFireId = VsyncId();
 
     mTargetTime = mLastFireTime + mRateDuration;
 
@@ -919,6 +925,7 @@ class InactiveRefreshDriverTimer final
     ScheduleNextTick(now);
 
     mLastFireTime = now;
+    mLastFireId = VsyncId();
 
     nsTArray<RefPtr<nsRefreshDriver>> drivers(mContentRefreshDrivers.Clone());
     drivers.AppendElements(mRootRefreshDrivers);
@@ -1385,6 +1392,20 @@ void nsRefreshDriver::RunDelayedEventsSoon() {
   EnsureTimerStarted();
 }
 
+bool nsRefreshDriver::CanDoCatchUpTick() {
+  if (mTestControllingRefreshes || !mActiveTimer) {
+    return false;
+  }
+
+  
+  
+  if (mMostRecentRefresh >= mActiveTimer->MostRecentRefresh()) {
+    return false;
+  }
+
+  return true;
+}
+
 void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
   
   
@@ -1427,6 +1448,24 @@ void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
     if (mActiveTimer) mActiveTimer->RemoveRefreshDriver(this);
     mActiveTimer = newTimer;
     mActiveTimer->AddRefreshDriver(this);
+
+    
+    
+    if (CanDoCatchUpTick()) {
+      RefPtr<nsRefreshDriver> self = this;
+      NS_DispatchToCurrentThreadQueue(
+          NS_NewRunnableFunction(
+              "RefreshDriver::EnsureTimerStarted::catch-up",
+              [self]() -> void {
+                
+                
+                if (self->CanDoCatchUpTick()) {
+                  self->Tick(self->mActiveTimer->MostRecentRefreshVsyncId(),
+                             self->mActiveTimer->MostRecentRefresh());
+                }
+              }),
+          EventQueuePriority::High);
+    }
   }
 
   
