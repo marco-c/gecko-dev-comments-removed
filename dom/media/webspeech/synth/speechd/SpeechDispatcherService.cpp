@@ -415,14 +415,14 @@ void SpeechDispatcherService::Setup() {
 
 void SpeechDispatcherService::RegisterVoices() {
   RefPtr<nsSynthVoiceRegistry> registry = nsSynthVoiceRegistry::GetInstance();
-  for (auto iter = mVoices.Iter(); !iter.Done(); iter.Next()) {
-    RefPtr<SpeechDispatcherVoice>& voice = iter.Data();
+  for (const auto& entry : mVoices) {
+    const RefPtr<SpeechDispatcherVoice>& voice = entry.GetData();
 
     
     
     
     DebugOnly<nsresult> rv =
-        registry->AddVoice(this, iter.Key(), voice->mName, voice->mLanguage,
+        registry->AddVoice(this, entry.GetKey(), voice->mName, voice->mLanguage,
                            voice->mName.EqualsLiteral("default"), true);
 
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to add voice");

@@ -175,26 +175,26 @@ void PendingTransactionQueue::AppendPendingQForNonFocusedWindows(
     uint32_t maxCount) {
   
   uint32_t totalCount = 0;
-  for (auto it = mPendingTransactionTable.Iter(); !it.Done(); it.Next()) {
-    if (windowId && it.Key() == windowId) {
+  for (const auto& entry : mPendingTransactionTable) {
+    if (windowId && entry.GetKey() == windowId) {
       continue;
     }
 
     uint32_t count = 0;
-    for (; count < it.UserData()->Length(); ++count) {
+    for (; count < entry.GetWeak()->Length(); ++count) {
       if (maxCount && totalCount == maxCount) {
         break;
       }
 
       
       
-      InsertTransactionSorted(result, it.UserData()->ElementAt(count));
+      InsertTransactionSorted(result, entry.GetWeak()->ElementAt(count));
       ++totalCount;
     }
-    it.UserData()->RemoveElementsAt(0, count);
+    entry.GetWeak()->RemoveElementsAt(0, count);
 
     if (maxCount && totalCount == maxCount) {
-      if (it.UserData()->Length()) {
+      if (entry.GetWeak()->Length()) {
         
         
         
@@ -250,9 +250,9 @@ void PendingTransactionQueue::PrintPendingQ() {
   for (const auto& info : mUrgentStartQ) {
     LOG(("  %p", info->Transaction()));
   }
-  for (auto it = mPendingTransactionTable.Iter(); !it.Done(); it.Next()) {
-    LOG(("] window id = %" PRIx64 " queue [", it.Key()));
-    for (const auto& info : *it.UserData()) {
+  for (const auto& entry : mPendingTransactionTable) {
+    LOG(("] window id = %" PRIx64 " queue [", entry.GetKey()));
+    for (const auto& info : *entry.GetWeak()) {
       LOG(("  %p", info->Transaction()));
     }
   }
@@ -261,7 +261,7 @@ void PendingTransactionQueue::PrintPendingQ() {
 
 void PendingTransactionQueue::Compact() {
   mUrgentStartQ.Compact();
-  for (auto it = mPendingTransactionTable.Iter(); !it.Done(); it.Next()) {
+  for (auto it = mPendingTransactionTable.ConstIter(); !it.Done(); it.Next()) {
     it.UserData()->Compact();
   }
 }
@@ -274,7 +274,7 @@ void PendingTransactionQueue::CancelAllTransactions(nsresult reason) {
   }
   mUrgentStartQ.Clear();
 
-  for (auto it = mPendingTransactionTable.Iter(); !it.Done(); it.Next()) {
+  for (auto it = mPendingTransactionTable.ConstIter(); !it.Done(); it.Next()) {
     for (const auto& pendingTransInfo : *it.UserData()) {
       LOG(("PendingTransactionQueue::CancelAllTransactions %p\n",
            pendingTransInfo->Transaction()));

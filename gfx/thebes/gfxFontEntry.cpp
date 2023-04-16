@@ -1449,6 +1449,8 @@ void gfxFontEntry::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
   if (mFeatureInputs) {
     aSizes->mFontTableCacheSize +=
         mFeatureInputs->ShallowSizeOfIncludingThis(aMallocSizeOf);
+    
+    
     for (auto iter = mFeatureInputs->ConstIter(); !iter.Done(); iter.Next()) {
       
       

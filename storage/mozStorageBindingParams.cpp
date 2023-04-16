@@ -150,8 +150,8 @@ already_AddRefed<mozIStorageError> AsyncBindingParams::bind(
 
   nsCOMPtr<mozIStorageError> err;
 
-  for (auto iter = mNamedParameters.Iter(); !iter.Done(); iter.Next()) {
-    const nsACString& key = iter.Key();
+  for (const auto& entry : mNamedParameters) {
+    const nsACString& key = entry.GetKey();
 
     
     
@@ -171,7 +171,7 @@ already_AddRefed<mozIStorageError> AsyncBindingParams::bind(
     
     
     int rc = variantToSQLiteT(BindingColumnData(aStatement, oneIdx - 1),
-                              iter.UserData());
+                              entry.GetWeak());
     if (rc != SQLITE_OK) {
       
       

@@ -627,7 +627,8 @@ PermissionManager::PermissionManager()
 PermissionManager::~PermissionManager() {
   
   
-  for (auto iter = mPermissionKeyPromiseMap.Iter(); !iter.Done(); iter.Next()) {
+  for (auto iter = mPermissionKeyPromiseMap.ConstIter(); !iter.Done();
+       iter.Next()) {
     if (iter.Data()) {
       iter.Data()->Reject(NS_ERROR_FAILURE, __func__);
     }
@@ -1946,16 +1947,15 @@ nsresult PermissionManager::RemovePermissionEntries(T aCondition) {
   EnsureReadCompleted();
 
   Vector<Tuple<nsCOMPtr<nsIPrincipal>, nsCString, nsCString>, 10> array;
-  for (auto iter = mPermissionTable.Iter(); !iter.Done(); iter.Next()) {
-    PermissionHashKey* entry = iter.Get();
-    for (const auto& permEntry : entry->GetPermissions()) {
+  for (const PermissionHashKey& entry : mPermissionTable) {
+    for (const auto& permEntry : entry.GetPermissions()) {
       if (!aCondition(permEntry)) {
         continue;
       }
 
       nsCOMPtr<nsIPrincipal> principal;
       nsresult rv = GetPrincipalFromOrigin(
-          entry->GetKey()->mOrigin,
+          entry.GetKey()->mOrigin,
           IsOAForceStripPermission(mTypeArray[permEntry.mType]),
           getter_AddRefs(principal));
       if (NS_FAILED(rv)) {
@@ -1963,7 +1963,7 @@ nsresult PermissionManager::RemovePermissionEntries(T aCondition) {
       }
 
       if (!array.emplaceBack(principal, mTypeArray[permEntry.mType],
-                             entry->GetKey()->mOrigin)) {
+                             entry.GetKey()->mOrigin)) {
         continue;
       }
     }
@@ -2259,9 +2259,8 @@ nsresult PermissionManager::GetPermissionEntries(
 
   EnsureReadCompleted();
 
-  for (auto iter = mPermissionTable.Iter(); !iter.Done(); iter.Next()) {
-    PermissionHashKey* entry = iter.Get();
-    for (const auto& permEntry : entry->GetPermissions()) {
+  for (const PermissionHashKey& entry : mPermissionTable) {
+    for (const auto& permEntry : entry.GetPermissions()) {
       
       
       
@@ -2282,7 +2281,7 @@ nsresult PermissionManager::GetPermissionEntries(
 
       nsCOMPtr<nsIPrincipal> principal;
       nsresult rv = GetPrincipalFromOrigin(
-          entry->GetKey()->mOrigin,
+          entry.GetKey()->mOrigin,
           IsOAForceStripPermission(mTypeArray[permEntry.mType]),
           getter_AddRefs(principal));
       if (NS_FAILED(rv)) {
@@ -2462,11 +2461,9 @@ nsresult PermissionManager::RemovePermissionsWithAttributes(
   EnsureReadCompleted();
 
   Vector<Tuple<nsCOMPtr<nsIPrincipal>, nsCString, nsCString>, 10> permissions;
-  for (auto iter = mPermissionTable.Iter(); !iter.Done(); iter.Next()) {
-    PermissionHashKey* entry = iter.Get();
-
+  for (const PermissionHashKey& entry : mPermissionTable) {
     nsCOMPtr<nsIPrincipal> principal;
-    nsresult rv = GetPrincipalFromOrigin(entry->GetKey()->mOrigin, false,
+    nsresult rv = GetPrincipalFromOrigin(entry.GetKey()->mOrigin, false,
                                          getter_AddRefs(principal));
     if (NS_FAILED(rv)) {
       continue;
@@ -2476,9 +2473,9 @@ nsresult PermissionManager::RemovePermissionsWithAttributes(
       continue;
     }
 
-    for (const auto& permEntry : entry->GetPermissions()) {
+    for (const auto& permEntry : entry.GetPermissions()) {
       if (!permissions.emplaceBack(principal, mTypeArray[permEntry.mType],
-                                   entry->GetKey()->mOrigin)) {
+                                   entry.GetKey()->mOrigin)) {
         continue;
       }
     }
@@ -2977,14 +2974,12 @@ bool PermissionManager::GetPermissionsFromOriginOrKey(
     return false;
   }
 
-  for (auto iter = mPermissionTable.Iter(); !iter.Done(); iter.Next()) {
-    PermissionHashKey* entry = iter.Get();
-
+  for (const PermissionHashKey& entry : mPermissionTable) {
     nsAutoCString permissionKey;
     if (aOrigin.IsEmpty()) {
       
       
-      GetKeyForOrigin(entry->GetKey()->mOrigin, false, permissionKey);
+      GetKeyForOrigin(entry.GetKey()->mOrigin, false, permissionKey);
 
       
       
@@ -2992,14 +2987,14 @@ bool PermissionManager::GetPermissionsFromOriginOrKey(
       if (aKey != permissionKey && !aKey.IsEmpty()) {
         continue;
       }
-    } else if (aOrigin != entry->GetKey()->mOrigin) {
+    } else if (aOrigin != entry.GetKey()->mOrigin) {
       
       
       
       continue;
     }
 
-    for (const auto& permEntry : entry->GetPermissions()) {
+    for (const auto& permEntry : entry.GetPermissions()) {
       
       
       
@@ -3013,11 +3008,11 @@ bool PermissionManager::GetPermissionsFromOriginOrKey(
         shouldAppend = (isPreload && aKey.IsEmpty()) ||
                        (!isPreload && aKey == permissionKey);
       } else {
-        shouldAppend = (!isPreload && aOrigin == entry->GetKey()->mOrigin);
+        shouldAppend = (!isPreload && aOrigin == entry.GetKey()->mOrigin);
       }
       if (shouldAppend) {
         aPerms.AppendElement(
-            IPC::Permission(entry->GetKey()->mOrigin,
+            IPC::Permission(entry.GetKey()->mOrigin,
                             mTypeArray[permEntry.mType], permEntry.mPermission,
                             permEntry.mExpireType, permEntry.mExpireTime));
       }

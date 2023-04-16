@@ -135,11 +135,11 @@ CategoryEnumerator* CategoryEnumerator::Create(
     return nullptr;
   }
 
-  for (auto iter = aTable.Iter(); !iter.Done(); iter.Next()) {
+  for (const auto& entry : aTable) {
     
-    CategoryNode* aNode = iter.UserData();
+    CategoryNode* aNode = entry.GetWeak();
     if (aNode->Count()) {
-      enumObj->mArray[enumObj->mCount++] = iter.Key();
+      enumObj->mArray[enumObj->mCount++] = entry.GetKey();
     }
   }
 

@@ -126,13 +126,13 @@ TEST(UrlClassifierProtocolParser, SingleValueEncoding)
   const TableUpdateArray& tus = p->GetTableUpdates();
   RefPtr<const TableUpdateV4> tuv4 = TableUpdate::Cast<TableUpdateV4>(tus[0]);
   auto& prefixMap = tuv4->Prefixes();
-  for (auto iter = prefixMap.ConstIter(); !iter.Done(); iter.Next()) {
+  for (const auto& entry : prefixMap) {
     
-    ASSERT_EQ(iter.Key(), 4u);
+    ASSERT_EQ(entry.GetKey(), 4u);
 
     
     
-    nsCString* prefix = iter.UserData();
+    nsCString* prefix = entry.GetWeak();
     ASSERT_TRUE(prefix->Equals(nsCString(expectedPrefix, 4)));
   }
 
