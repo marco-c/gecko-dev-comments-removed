@@ -57,6 +57,13 @@ add_task(async function test_browser_settings() {
     let listeners = new Set([]);
     browser.test.onMessage.addListener(async (msg, apiName, value) => {
       let apiObj = browser.browserSettings[apiName];
+      if (msg == "get") {
+        browser.test.sendMessage("settingData", await apiObj.get({}));
+        return;
+      }
+
+      
+
       
       
       if (!listeners.has(apiName)) {
@@ -207,12 +214,11 @@ add_task(async function test_browser_settings() {
     });
   }
 
-  await testSetting("ftpProtocolEnabled", false, {
-    "network.ftp.enabled": false,
-  });
-  await testSetting("ftpProtocolEnabled", true, {
-    "network.ftp.enabled": true,
-  });
+  
+  
+  extension.sendMessage("get", "ftpProtocolEnabled");
+  let data = await extension.awaitMessage("settingData");
+  equal(data.value, Services.prefs.getBoolPref("network.ftp.enabled"));
 
   await testSetting("newTabPosition", "afterCurrent", {
     "browser.tabs.insertRelatedAfterCurrent": false,
