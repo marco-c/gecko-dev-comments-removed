@@ -1177,8 +1177,8 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     MOZ_ASSERT(!inDictionary());
     
     
-    
-    uint32_t free = clasp->isProxyObject() ? 0 : JSSLOT_FREE(clasp);
+    MOZ_ASSERT(clasp->isNativeObject());
+    uint32_t free = JSSLOT_FREE(clasp);
     return hasMissingSlot() ? free : std::max(free, maybeSlot() + 1);
   }
 
