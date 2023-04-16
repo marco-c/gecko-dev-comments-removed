@@ -11,6 +11,9 @@
 
 #include "mozilla/Types.h"
 #include <stdint.h>
+#include <stdio.h>
+
+MOZ_BEGIN_EXTERN_C
 
 
 
@@ -136,16 +139,54 @@ MFBT_API int MozFormatCodeAddressDetails(char* aBuffer, uint32_t aBufferSize,
                                          uint32_t aFrameNumber, void* aPC,
                                          const MozCodeAddressDetails* aDetails);
 
+#ifdef __cplusplus
+#  define FRAMES_DEFAULT = 0
+#else
+#  define FRAMES_DEFAULT
+#endif
+
+
+
+
+
+
+
+
+
+MFBT_API void MozWalkTheStack(FILE* aStream,
+                              uint32_t aSkipFrames FRAMES_DEFAULT,
+                              uint32_t aMaxFrames FRAMES_DEFAULT);
+
+
+
+
+
+
+
+
+
+
+
+MFBT_API void MozWalkTheStackWithWriter(void (*aWriter)(const char*),
+                                        uint32_t aSkipFrames FRAMES_DEFAULT,
+                                        uint32_t aMaxFrames FRAMES_DEFAULT);
+
+#undef FRAMES_DEFAULT
+
+MOZ_END_EXTERN_C
+
+#ifdef __cplusplus
 namespace mozilla {
 
 MFBT_API void FramePointerStackWalk(MozWalkStackCallback aCallback,
                                     uint32_t aMaxFrames, void* aClosure,
                                     void** aBp, void* aStackEnd);
 
-#if defined(XP_LINUX) || defined(XP_FREEBSD)
+#  if defined(XP_LINUX) || defined(XP_FREEBSD)
 MFBT_API void DemangleSymbol(const char* aSymbol, char* aBuffer, int aBufLen);
-#endif
+#  endif
 
 }  
+#endif
 
 #endif
