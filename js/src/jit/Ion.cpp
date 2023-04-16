@@ -1411,6 +1411,20 @@ bool OptimizeMIR(MIRGenerator* mir) {
 
   
   
+  
+  
+  if (!mir->compilingWasm() && graph.osrBlock()) {
+    graph.removeFakeLoopPredecessors();
+    gs.spewPass("Remove fake loop predecessors");
+    AssertGraphCoherency(graph);
+
+    if (mir->shouldCancel("Remove fake loop predecessors")) {
+      return false;
+    }
+  }
+
+  
+  
 
   if (mir->optimizationInfo().edgeCaseAnalysisEnabled()) {
     AutoTraceLog log(logger, TraceLogger_EdgeCaseAnalysis);
