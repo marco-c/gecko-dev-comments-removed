@@ -34,17 +34,35 @@ class Document;
 
 
 
+
+
+
 class nsChangeObserver {
  public:
+  
   
   virtual void ObserveAttributeChanged(mozilla::dom::Document* aDocument,
                                        nsIContent* aContent,
                                        nsAtom* aAttribute) = 0;
 
+  
+  
+  
+  
+  
+  
+  
+  
   virtual void ObserveContentRemoved(mozilla::dom::Document* aDocument,
                                      nsIContent* aContainer, nsIContent* aChild,
                                      nsIContent* aPreviousSibling) = 0;
 
+  
+  
+  
+  
+  
+  
   virtual void ObserveContentInserted(mozilla::dom::Document* aDocument,
                                       nsIContent* aContainer,
                                       nsIContent* aChild) = 0;
