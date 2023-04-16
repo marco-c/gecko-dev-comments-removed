@@ -190,6 +190,7 @@ class nsCocoaUtils {
   
   
   static NSRect GeckoRectToCocoaRect(const mozilla::DesktopIntRect& geckoRect);
+  static NSPoint GeckoPointToCocoaPoint(const mozilla::DesktopPoint& aPoint);
 
   
   static NSRect GeckoRectToCocoaRectDevPix(const mozilla::LayoutDeviceIntRect& aGeckoRect,
