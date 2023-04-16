@@ -13,11 +13,10 @@
 namespace mozilla {
 namespace baseprofiler {
 
-PageInformation::PageInformation(uint64_t aBrowsingContextID,
-                                 uint64_t aInnerWindowID,
+PageInformation::PageInformation(uint64_t aTabID, uint64_t aInnerWindowID,
                                  const std::string& aUrl,
                                  uint64_t aEmbedderInnerWindowID)
-    : mBrowsingContextID(aBrowsingContextID),
+    : mTabID(aTabID),
       mInnerWindowID(aInnerWindowID),
       mUrl(aUrl),
       mEmbedderInnerWindowID(aEmbedderInnerWindowID),
@@ -35,7 +34,7 @@ void PageInformation::StreamJSON(SpliceableJSONWriter& aWriter) const {
   
   
   
-  aWriter.DoubleProperty("browsingContextID", BrowsingContextID());
+  aWriter.DoubleProperty("browsingContextID", TabID());
   aWriter.DoubleProperty("innerWindowID", InnerWindowID());
   aWriter.StringProperty("url", Url());
   aWriter.DoubleProperty("embedderInnerWindowID", EmbedderInnerWindowID());

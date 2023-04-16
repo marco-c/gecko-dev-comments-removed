@@ -160,7 +160,7 @@ static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_STARTUP_ENTRIES =
 
 #  define PROFILER_DEFAULT_INTERVAL 1  /* millisecond */
 #  define PROFILER_MAX_INTERVAL 5000   /* milliseconds */
-#  define PROFILER_DEFAULT_ACTIVE_BROWSING_CONTEXT_ID 0
+#  define PROFILER_DEFAULT_ACTIVE_TAB_ID 0
 
 
 
@@ -205,8 +205,7 @@ void profiler_shutdown(IsFastShutdown aIsFastShutdown = IsFastShutdown::No);
 
 void profiler_start(
     mozilla::PowerOfTwo32 aCapacity, double aInterval, uint32_t aFeatures,
-    const char** aFilters, uint32_t aFilterCount,
-    uint64_t aActiveBrowsingContextID,
+    const char** aFilters, uint32_t aFilterCount, uint64_t aActiveTabID,
     const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
 
 
@@ -220,8 +219,7 @@ void profiler_stop();
 
 void profiler_ensure_started(
     mozilla::PowerOfTwo32 aCapacity, double aInterval, uint32_t aFeatures,
-    const char** aFilters, uint32_t aFilterCount,
-    uint64_t aActiveBrowsingContextID,
+    const char** aFilters, uint32_t aFilterCount, uint64_t aActiveTabID,
     const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
 
 
@@ -257,10 +255,8 @@ void profiler_unregister_thread();
 
 
 
-
-
-void profiler_register_page(uint64_t aBrowsingContextID,
-                            uint64_t aInnerWindowID, const nsCString& aUrl,
+void profiler_register_page(uint64_t aTabID, uint64_t aInnerWindowID,
+                            const nsCString& aUrl,
                             uint64_t aEmbedderInnerWindowID);
 
 
@@ -352,7 +348,7 @@ void profiler_get_start_params(
     int* aEntrySize, mozilla::Maybe<double>* aDuration, double* aInterval,
     uint32_t* aFeatures,
     mozilla::Vector<const char*, 0, mozilla::MallocAllocPolicy>* aFilters,
-    uint64_t* aActiveBrowsingContextID);
+    uint64_t* aActiveTabID);
 
 
 mozilla::ProfileBufferControlledChunkManager*
