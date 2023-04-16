@@ -407,6 +407,9 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     eHasVisualViewportScrollEvents = 1 << 5,
   };
 
+  void AddForceNotifyContentfulPaintPresContext(nsPresContext* aPresContext);
+  void FlushForceNotifyContentfulPaintPresContext();
+
  private:
   typedef nsTArray<RefPtr<VVPResizeEvent>> VisualViewportResizeEventArray;
   typedef nsTArray<RefPtr<mozilla::Runnable>> ScrollEventArray;
@@ -587,6 +590,17 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
       mPendingFullscreenEvents;
   AutoTArray<mozilla::AnimationEventDispatcher*, 16>
       mAnimationEventFlushObservers;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<mozilla::WeakPtr<nsPresContext>>
+      mForceNotifyContentfulPaintPresContexts;
 
   void BeginRefreshingImages(RequestTable& aEntries,
                              mozilla::TimeStamp aDesired);

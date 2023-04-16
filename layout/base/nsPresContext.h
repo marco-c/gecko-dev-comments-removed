@@ -1332,6 +1332,11 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   unsigned mHadContentfulPaint : 1;
   
+  
+  
+  unsigned mHadNonTickContentfulPaint : 1;
+
+  
   unsigned mHadContentfulPaintComposite : 1;
 
 #ifdef DEBUG
