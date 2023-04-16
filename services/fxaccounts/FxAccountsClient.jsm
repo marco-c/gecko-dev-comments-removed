@@ -24,7 +24,6 @@ const {
   ERRNO_INVALID_AUTH_NONCE,
   ERRNO_INVALID_AUTH_TIMESTAMP,
   ERRNO_INVALID_AUTH_TOKEN,
-  FX_OAUTH_CLIENT_ID,
   log,
 } = ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
 const { Credentials } = ChromeUtils.import(
@@ -438,54 +437,6 @@ FxAccountsClient.prototype = {
       kA: keyAWrapB.slice(0, 32),
       wrapKB: keyAWrapB.slice(32),
     };
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async signCertificate(sessionTokenHex, serializedPublicKey, lifetime) {
-    let creds = await deriveHawkCredentials(sessionTokenHex, "sessionToken");
-
-    
-    
-    
-    
-    
-    let service = FX_OAUTH_CLIENT_ID;
-    if (Services.prefs.prefHasUserValue("services.sync.username")) {
-      service = "sync";
-    }
-
-    let body = { publicKey: serializedPublicKey, duration: lifetime };
-    return Promise.resolve()
-      .then(_ =>
-        this._request(
-          `/certificate/sign?service=${service}`,
-          "POST",
-          creds,
-          body
-        )
-      )
-      .then(
-        resp => resp.cert,
-        err => {
-          log.error("HAWK.signCertificate error", err);
-          throw err;
-        }
-      );
   },
 
   

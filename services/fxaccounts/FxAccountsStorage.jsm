@@ -13,7 +13,6 @@ const {
   DATA_FORMAT_VERSION,
   DEFAULT_STORAGE_FILENAME,
   FXA_PWDMGR_HOST,
-  FXA_PWDMGR_MEMORY_FIELDS,
   FXA_PWDMGR_PLAINTEXT_FIELDS,
   FXA_PWDMGR_REALM,
   FXA_PWDMGR_SECURE_FIELDS,
@@ -27,7 +26,6 @@ const { CommonUtils } = ChromeUtils.import(
 
 function FxAccountsStorageManagerCanStoreField(fieldName) {
   return (
-    FXA_PWDMGR_MEMORY_FIELDS.has(fieldName) ||
     FXA_PWDMGR_PLAINTEXT_FIELDS.has(fieldName) ||
     FXA_PWDMGR_SECURE_FIELDS.has(fieldName)
   );
@@ -87,14 +85,10 @@ FxAccountsStorageManager.prototype = {
           } else {
             
             
-            
-            if (!FXA_PWDMGR_MEMORY_FIELDS.has(name)) {
-              log.warn(
-                "Unknown FxA field name in user data, treating as in-memory",
-                name
-              );
-            }
-            this.cachedMemory[name] = val;
+            log.error(
+              "Unknown FxA field name in user data, it will be ignored",
+              name
+            );
           }
         }
         
@@ -179,8 +173,6 @@ FxAccountsStorageManager.prototype = {
       for (let [name, value] of Object.entries(this.cachedSecure)) {
         result[name] = value;
       }
-      
-      
       return result;
     }
     
@@ -189,11 +181,7 @@ FxAccountsStorageManager.prototype = {
     }
     let checkedSecure = false;
     for (let fieldName of fieldNames) {
-      if (FXA_PWDMGR_MEMORY_FIELDS.has(fieldName)) {
-        if (this.cachedMemory[fieldName] !== undefined) {
-          result[fieldName] = this.cachedMemory[fieldName];
-        }
-      } else if (FXA_PWDMGR_PLAINTEXT_FIELDS.has(fieldName)) {
+      if (FXA_PWDMGR_PLAINTEXT_FIELDS.has(fieldName)) {
         if (this.cachedPlain[fieldName] !== undefined) {
           result[fieldName] = this.cachedPlain[fieldName];
         }
@@ -229,14 +217,11 @@ FxAccountsStorageManager.prototype = {
     
     for (let [name, value] of Object.entries(newFields)) {
       if (value == null) {
-        delete this.cachedMemory[name];
         delete this.cachedPlain[name];
         
         
         
         this.cachedSecure[name] = null;
-      } else if (FXA_PWDMGR_MEMORY_FIELDS.has(name)) {
-        this.cachedMemory[name] = value;
       } else if (FXA_PWDMGR_PLAINTEXT_FIELDS.has(name)) {
         this.cachedPlain[name] = value;
       } else if (FXA_PWDMGR_SECURE_FIELDS.has(name)) {
@@ -258,7 +243,6 @@ FxAccountsStorageManager.prototype = {
   },
 
   _clearCachedData() {
-    this.cachedMemory = {};
     this.cachedPlain = {};
     
     

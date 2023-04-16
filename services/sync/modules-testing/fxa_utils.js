@@ -8,8 +8,8 @@ var EXPORTED_SYMBOLS = ["initializeIdentityWithTokenServerResponse"];
 
 const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
 const { Weave } = ChromeUtils.import("resource://services-sync/main.js");
-const { BrowserIDManager } = ChromeUtils.import(
-  "resource://services-sync/browserid_identity.js"
+const { SyncAuthManager } = ChromeUtils.import(
+  "resource://services-sync/sync_auth.js"
 );
 const { TokenServerClient } = ChromeUtils.import(
   "resource://services-common/tokenserverclient.js"
@@ -51,13 +51,13 @@ var initializeIdentityWithTokenServerResponse = function(response) {
   MockTSC.prototype.observerPrefix = "weave:service";
 
   
-  Weave.Status.__authManager = Weave.Service.identity = new BrowserIDManager();
-  let browseridManager = Weave.Service.identity;
+  Weave.Status.__authManager = Weave.Service.identity = new SyncAuthManager();
+  let syncAuthManager = Weave.Service.identity;
   
-  if (!(browseridManager instanceof BrowserIDManager)) {
-    throw new Error("sync isn't configured for browserid_identity");
+  if (!(syncAuthManager instanceof SyncAuthManager)) {
+    throw new Error("sync isn't configured to use sync_auth");
   }
   let mockTSC = new MockTSC();
-  configureFxAccountIdentity(browseridManager);
-  browseridManager._tokenServerClient = mockTSC;
+  configureFxAccountIdentity(syncAuthManager);
+  syncAuthManager._tokenServerClient = mockTSC;
 };

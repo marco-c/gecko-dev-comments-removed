@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["BrowserIDManager", "AuthenticationError"];
+var EXPORTED_SYMBOLS = ["SyncAuthManager", "AuthenticationError"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -57,7 +57,7 @@ ChromeUtils.defineModuleGetter(
 );
 
 XPCOMUtils.defineLazyGetter(this, "log", function() {
-  let log = Log.repository.getLogger("Sync.BrowserIDManager");
+  let log = Log.repository.getLogger("Sync.SyncAuthManager");
   log.manageLevelFromPref("services.sync.log.logger.identity");
   return log;
 });
@@ -66,12 +66,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "IGNORE_CACHED_AUTH_CREDENTIALS",
   "services.sync.debug.ignoreCachedAuthCredentials"
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "USE_OAUTH_FOR_SYNC_TOKEN",
-  "identity.sync.useOAuthForSyncToken"
 );
 
 
@@ -109,7 +103,13 @@ AuthenticationError.prototype = {
   },
 };
 
-function BrowserIDManager() {
+
+
+
+
+
+
+function SyncAuthManager() {
   
   
   this._fxaService = fxAccounts;
@@ -128,7 +128,7 @@ function BrowserIDManager() {
   }
 }
 
-this.BrowserIDManager.prototype = {
+this.SyncAuthManager.prototype = {
   _fxaService: null,
   _tokenServerClient: null,
   
@@ -409,14 +409,11 @@ this.BrowserIDManager.prototype = {
     }
 
     
+    
+    
     let getToken = async key => {
       this._log.info("Getting a sync token from", this._tokenServerUrl);
-      let token;
-      if (USE_OAUTH_FOR_SYNC_TOKEN) {
-        token = await this._fetchTokenUsingOAuth(key);
-      } else {
-        token = await this._fetchTokenUsingBrowserID(key);
-      }
+      let token = await this._fetchTokenUsingOAuth(key);
       this._log.trace("Successfully got a token");
       return token;
     };
@@ -455,6 +452,7 @@ this.BrowserIDManager.prototype = {
       return token;
     } catch (caughtErr) {
       let err = caughtErr; 
+
       
       
       
@@ -502,46 +500,13 @@ this.BrowserIDManager.prototype = {
     };
 
     return this._tokenServerClient
-      .getTokenFromOAuthToken(this._tokenServerUrl, accessToken, headers)
+      .getTokenUsingOAuth(this._tokenServerUrl, accessToken, headers)
       .catch(async err => {
         if (err.response && err.response.status === 401) {
           
           
           
-          console.log("REMOVE CACHED", accessToken);
           await fxa.removeCachedOAuthToken({ token: accessToken });
-        }
-
-        
-        throw err;
-      });
-  },
-
-  
-
-
-
-
-
-
-
-
-  async _fetchTokenUsingBrowserID(key) {
-    this._log.debug("Getting a token using BrowserID");
-    const fxa = this._fxaService;
-    const audience = Services.io.newURI(this._tokenServerUrl).prePath;
-    const assertion = await fxa._internal.getAssertion(audience);
-    const headers = {
-      "X-Client-State": fxa._internal.keys.kidAsHex(key),
-    };
-    return this._tokenServerClient
-      .getTokenFromBrowserIDAssertion(this._tokenServerUrl, assertion, headers)
-      .catch(async err => {
-        if (err.response && err.response.status === 401) {
-          this._log.warn(
-            "Token server returned 401, refreshing certificate and retrying token fetch"
-          );
-          await fxa._internal.invalidateCertificate();
         }
 
         

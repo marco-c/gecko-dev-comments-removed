@@ -91,12 +91,6 @@ TokenServerClientNetworkError.prototype._toStringFields = function() {
 
 
 
-
-
-
-
-
-
 function TokenServerClientServerError(message, cause = "general") {
   this.now = new Date().toISOString(); 
   this.name = "TokenServerClientServerError";
@@ -120,11 +114,6 @@ TokenServerClientServerError.prototype._toStringFields = function() {
   }
   return fields;
 };
-
-
-
-
-
 
 
 
@@ -202,53 +191,7 @@ TokenServerClient.prototype = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async getTokenFromBrowserIDAssertion(url, assertion, addHeaders = {}) {
-    this._log.debug("Beginning BID assertion exchange: " + url);
-
-    if (!assertion) {
-      throw new TokenServerClientError("assertion argument is not valid.");
-    }
-
-    return this._tokenServerExchangeRequest(
-      url,
-      `BrowserID ${assertion}`,
-      addHeaders
-    );
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  async getTokenFromOAuthToken(url, oauthToken, addHeaders = {}) {
+  async getTokenUsingOAuth(url, oauthToken, addHeaders = {}) {
     this._log.debug("Beginning OAuth token exchange: " + url);
 
     if (!oauthToken) {
@@ -377,26 +320,6 @@ TokenServerClient.prototype = {
         
         error.message = "Authentication failed.";
         error.cause = result.status;
-      } else if (response.status == 403) {
-        
-        
-        
-        
-        
-        if (!("urls" in result)) {
-          this._log.warn("403 response without proper fields!");
-          this._log.warn("Response body: " + response.body);
-
-          error.message = "Missing JSON fields.";
-          error.cause = "malformed-response";
-        } else if (typeof result.urls != "object") {
-          error.message = "urls field is not a map.";
-          error.cause = "malformed-response";
-        } else {
-          error.message = "Conditions must be accepted.";
-          error.cause = "conditions-required";
-          error.urls = result.urls;
-        }
       } else if (response.status == 404) {
         error.message = "Unknown service.";
         error.cause = "unknown-service";

@@ -18,8 +18,6 @@ add_task(async function test_authenticated_request() {
 
   let message = "Great Success!";
 
-  
-  
   let id = "eyJleHBpcmVzIjogMTM2NTAxMDg5OC4x";
   let key = "qTZf4ZFpAMpMoeSsX3zVRjiqmNs=";
   let method = "GET";

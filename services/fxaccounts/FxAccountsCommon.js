@@ -62,18 +62,7 @@ exports.FXACCOUNTS_PERMISSION = "firefox-accounts";
 exports.DATA_FORMAT_VERSION = 1;
 exports.DEFAULT_STORAGE_FILENAME = "signedInUser.json";
 
-
-
-
-
-exports.ASSERTION_LIFETIME = 1000 * 3600 * 24 * 365 * 25; 
-
-
-
-exports.ASSERTION_USE_PERIOD = 1000 * 60 * 5; 
-exports.CERT_LIFETIME = 1000 * 3600 * 6; 
 exports.OAUTH_TOKEN_FOR_SYNC_LIFETIME_SECONDS = 3600 * 6; 
-exports.KEY_LIFETIME = 1000 * 3600 * 12; 
 
 
 
@@ -309,12 +298,8 @@ exports.FXA_PWDMGR_SECURE_FIELDS = new Set([
   ...exports.LEGACY_DERIVED_KEYS_NAMES,
   "keyFetchToken",
   "unwrapBKey",
-  "assertion",
   "scopedKeys",
 ]);
-
-
-exports.FXA_PWDMGR_MEMORY_FIELDS = new Set(["cert", "keyPair"]);
 
 
 

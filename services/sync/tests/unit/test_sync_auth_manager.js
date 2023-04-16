@@ -1,8 +1,8 @@
 
 
 
-const { AuthenticationError, BrowserIDManager } = ChromeUtils.import(
-  "resource://services-sync/browserid_identity.js"
+const { AuthenticationError, SyncAuthManager } = ChromeUtils.import(
+  "resource://services-sync/sync_auth.js"
 );
 const { Resource } = ChromeUtils.import("resource://services-sync/resource.js");
 const { initializeIdentityWithTokenServerResponse } = ChromeUtils.import(
@@ -18,7 +18,6 @@ const { FxAccountsClient } = ChromeUtils.import(
   "resource://gre/modules/FxAccountsClient.jsm"
 );
 const {
-  CERT_LIFETIME,
   ERRNO_INVALID_AUTH_TOKEN,
   ONLOGIN_NOTIFICATION,
   ONVERIFIED_NOTIFICATION,
@@ -45,8 +44,8 @@ const MOCK_ACCESS_TOKEN =
   "e3c5caf17f27a0d9e351926a928938b3737df43e91d4992a5a5fca9a7bdef8ba";
 
 var globalIdentityConfig = makeIdentityConfig();
-var globalBrowseridManager = new BrowserIDManager();
-configureFxAccountIdentity(globalBrowseridManager, globalIdentityConfig);
+var globalSyncAuthManager = new SyncAuthManager();
+configureFxAccountIdentity(globalSyncAuthManager, globalIdentityConfig);
 
 
 
@@ -76,46 +75,27 @@ MockFxAccountsClient.prototype = {
 
 add_test(function test_initial_state() {
   _("Verify initial state");
-  Assert.ok(!globalBrowseridManager._token);
-  Assert.ok(!globalBrowseridManager._hasValidToken());
+  Assert.ok(!globalSyncAuthManager._token);
+  Assert.ok(!globalSyncAuthManager._hasValidToken());
   run_next_test();
 });
 
 add_task(async function test_initialialize() {
   _("Verify start after fetching token");
-  await globalBrowseridManager._ensureValidToken();
-  Assert.ok(!!globalBrowseridManager._token);
-  Assert.ok(globalBrowseridManager._hasValidToken());
-});
-
-add_task(async function test_initialialize_via_oauth_token() {
-  _("Verify start after fetching token using the oauth token flow");
-  Services.prefs.setBoolPref("identity.sync.useOAuthForSyncToken", true);
-  let browseridManager = new BrowserIDManager();
-
-  let identityConfig = makeIdentityConfig();
-  let fxaInternal = makeFxAccountsInternalMock(identityConfig);
-  configureFxAccountIdentity(browseridManager, identityConfig, fxaInternal);
-  browseridManager._fxaService._internal.initialize();
-  browseridManager._fxaService.getOAuthToken = () =>
-    Promise.resolve(MOCK_ACCESS_TOKEN);
-
-  await browseridManager._ensureValidToken();
-  Assert.ok(!!browseridManager._token);
-  Assert.ok(browseridManager._hasValidToken());
-  Services.prefs.setBoolPref("identity.sync.useOAuthForSyncToken", false);
+  await globalSyncAuthManager._ensureValidToken();
+  Assert.ok(!!globalSyncAuthManager._token);
+  Assert.ok(globalSyncAuthManager._hasValidToken());
 });
 
 add_task(async function test_refreshOAuthTokenOn401() {
   _("Refreshes the FXA OAuth token after a 401.");
-  Services.prefs.setBoolPref("identity.sync.useOAuthForSyncToken", true);
   let getTokenCount = 0;
-  let browseridManager = new BrowserIDManager();
+  let syncAuthManager = new SyncAuthManager();
   let identityConfig = makeIdentityConfig();
   let fxaInternal = makeFxAccountsInternalMock(identityConfig);
-  configureFxAccountIdentity(browseridManager, identityConfig, fxaInternal);
-  browseridManager._fxaService._internal.initialize();
-  browseridManager._fxaService.getOAuthToken = () => {
+  configureFxAccountIdentity(syncAuthManager, identityConfig, fxaInternal);
+  syncAuthManager._fxaService._internal.initialize();
+  syncAuthManager._fxaService.getOAuthToken = () => {
     ++getTokenCount;
     return Promise.resolve(MOCK_ACCESS_TOKEN);
   };
@@ -145,33 +125,32 @@ add_task(async function test_refreshOAuthTokenOn401() {
     };
   });
 
-  browseridManager._tokenServerClient = mockTSC;
+  syncAuthManager._tokenServerClient = mockTSC;
 
-  await browseridManager._ensureValidToken();
+  await syncAuthManager._ensureValidToken();
 
   Assert.equal(getTokenCount, 2);
   Assert.ok(didReturn401);
   Assert.ok(didReturn200);
-  Assert.ok(browseridManager._token);
-  Assert.ok(browseridManager._hasValidToken());
-  Services.prefs.setBoolPref("identity.sync.useOAuthForSyncToken", false);
+  Assert.ok(syncAuthManager._token);
+  Assert.ok(syncAuthManager._hasValidToken());
 });
 
 add_task(async function test_initialializeWithAuthErrorAndDeletedAccount() {
   _("Verify sync state with auth error + account deleted");
 
   var identityConfig = makeIdentityConfig();
-  var browseridManager = new BrowserIDManager();
+  var syncAuthManager = new SyncAuthManager();
 
   
   
   let fxaInternal = makeFxAccountsInternalMock(identityConfig);
-  delete fxaInternal._getAssertion;
+  delete fxaInternal.getOAuthToken;
 
-  configureFxAccountIdentity(browseridManager, identityConfig, fxaInternal);
-  browseridManager._fxaService._internal.initialize();
+  configureFxAccountIdentity(syncAuthManager, identityConfig, fxaInternal);
+  syncAuthManager._fxaService._internal.initialize();
 
-  let signCertificateCalled = false;
+  let accessTokenWithSessionTokenCalled = false;
   let accountStatusCalled = false;
   let sessionStatusCalled = false;
 
@@ -180,8 +159,8 @@ add_task(async function test_initialializeWithAuthErrorAndDeletedAccount() {
   };
   AuthErrorMockFxAClient.prototype = {
     __proto__: FxAccountsClient.prototype,
-    signCertificate() {
-      signCertificateCalled = true;
+    accessTokenWithSessionToken() {
+      accessTokenWithSessionTokenCalled = true;
       return Promise.reject({
         code: 401,
         errno: ERRNO_INVALID_AUTH_TOKEN,
@@ -198,27 +177,27 @@ add_task(async function test_initialializeWithAuthErrorAndDeletedAccount() {
   };
 
   let mockFxAClient = new AuthErrorMockFxAClient();
-  browseridManager._fxaService._internal._fxAccountsClient = mockFxAClient;
+  syncAuthManager._fxaService._internal._fxAccountsClient = mockFxAClient;
 
   await Assert.rejects(
-    browseridManager._ensureValidToken(),
+    syncAuthManager._ensureValidToken(),
     AuthenticationError,
     "should reject due to an auth error"
   );
 
-  Assert.ok(signCertificateCalled);
+  Assert.ok(accessTokenWithSessionTokenCalled);
   Assert.ok(sessionStatusCalled);
   Assert.ok(accountStatusCalled);
-  Assert.ok(!browseridManager._token);
-  Assert.ok(!browseridManager._hasValidToken());
+  Assert.ok(!syncAuthManager._token);
+  Assert.ok(!syncAuthManager._hasValidToken());
 });
 
 add_task(async function test_getResourceAuthenticator() {
   _(
-    "BrowserIDManager supplies a Resource Authenticator callback which returns a Hawk header."
+    "SyncAuthManager supplies a Resource Authenticator callback which returns a Hawk header."
   );
-  configureFxAccountIdentity(globalBrowseridManager);
-  let authenticator = globalBrowseridManager.getResourceAuthenticator();
+  configureFxAccountIdentity(globalSyncAuthManager);
+  let authenticator = globalSyncAuthManager.getResourceAuthenticator();
   Assert.ok(!!authenticator);
   let req = {
     uri: CommonUtils.makeURI("https://example.net/somewhere/over/the/rainbow"),
@@ -230,14 +209,14 @@ add_task(async function test_getResourceAuthenticator() {
   Assert.ok(output.headers.authorization.startsWith("Hawk"));
   _("Expected internal state after successful call.");
   Assert.equal(
-    globalBrowseridManager._token.uid,
+    globalSyncAuthManager._token.uid,
     globalIdentityConfig.fxaccount.token.uid
   );
 });
 
 add_task(async function test_resourceAuthenticatorSkew() {
   _(
-    "BrowserIDManager Resource Authenticator compensates for clock skew in Hawk header."
+    "SyncAuthManager Resource Authenticator compensates for clock skew in Hawk header."
   );
 
   
@@ -245,7 +224,7 @@ add_task(async function test_resourceAuthenticatorSkew() {
   
   let now =
     new Date("Fri Apr 09 2004 00:00:00 GMT-0700").valueOf() + 12 * HOUR_MS;
-  let browseridManager = new BrowserIDManager();
+  let syncAuthManager = new SyncAuthManager();
   let hawkClient = new HawkClient("https://example.net/v1", "/foo");
 
   
@@ -276,25 +255,25 @@ add_task(async function test_resourceAuthenticatorSkew() {
 
   
   configureFxAccountIdentity(
-    browseridManager,
+    syncAuthManager,
     globalIdentityConfig,
     fxaInternal
   );
 
-  Assert.equal(browseridManager._fxaService._internal.now(), now);
+  Assert.equal(syncAuthManager._fxaService._internal.now(), now);
   Assert.equal(
-    browseridManager._fxaService._internal.localtimeOffsetMsec,
+    syncAuthManager._fxaService._internal.localtimeOffsetMsec,
     localtimeOffsetMsec
   );
 
-  Assert.equal(browseridManager._fxaService._internal.now(), now);
+  Assert.equal(syncAuthManager._fxaService._internal.now(), now);
   Assert.equal(
-    browseridManager._fxaService._internal.localtimeOffsetMsec,
+    syncAuthManager._fxaService._internal.localtimeOffsetMsec,
     localtimeOffsetMsec
   );
 
   let request = new Resource("https://example.net/i/like/pie/");
-  let authenticator = browseridManager.getResourceAuthenticator();
+  let authenticator = syncAuthManager.getResourceAuthenticator();
   let output = await authenticator(request, "GET");
   dump("output" + JSON.stringify(output));
   let authHeader = output.headers.authorization;
@@ -308,13 +287,13 @@ add_task(async function test_resourceAuthenticatorSkew() {
 
 add_task(async function test_RESTResourceAuthenticatorSkew() {
   _(
-    "BrowserIDManager REST Resource Authenticator compensates for clock skew in Hawk header."
+    "SyncAuthManager REST Resource Authenticator compensates for clock skew in Hawk header."
   );
 
   
   let now =
     new Date("Fri Apr 09 2004 00:00:00 GMT-0700").valueOf() + 12 * HOUR_MS;
-  let browseridManager = new BrowserIDManager();
+  let syncAuthManager = new SyncAuthManager();
   let hawkClient = new HawkClient("https://example.net/v1", "/foo");
 
   
@@ -334,15 +313,15 @@ add_task(async function test_RESTResourceAuthenticatorSkew() {
   fxaInternal.fxAccountsClient = fxaClient;
 
   configureFxAccountIdentity(
-    browseridManager,
+    syncAuthManager,
     globalIdentityConfig,
     fxaInternal
   );
 
-  Assert.equal(browseridManager._fxaService._internal.now(), now);
+  Assert.equal(syncAuthManager._fxaService._internal.now(), now);
 
   let request = new Resource("https://example.net/i/like/pie/");
-  let authenticator = browseridManager.getResourceAuthenticator();
+  let authenticator = syncAuthManager.getResourceAuthenticator();
   let output = await authenticator(request, "GET");
   dump("output" + JSON.stringify(output));
   let authHeader = output.headers.authorization;
@@ -355,25 +334,25 @@ add_task(async function test_RESTResourceAuthenticatorSkew() {
 });
 
 add_task(async function test_ensureLoggedIn() {
-  configureFxAccountIdentity(globalBrowseridManager);
-  await globalBrowseridManager._ensureValidToken();
+  configureFxAccountIdentity(globalSyncAuthManager);
+  await globalSyncAuthManager._ensureValidToken();
   Assert.equal(Status.login, LOGIN_SUCCEEDED, "original initialize worked");
-  Assert.ok(globalBrowseridManager._token);
+  Assert.ok(globalSyncAuthManager._token);
 
   
-  let fxa = globalBrowseridManager._fxaService;
+  let fxa = globalSyncAuthManager._fxaService;
   let signedInUser =
     fxa._internal.currentAccountState.storageManager.accountData;
   fxa._internal.currentAccountState.storageManager.accountData = null;
   await Assert.rejects(
-    globalBrowseridManager._ensureValidToken(true),
+    globalSyncAuthManager._ensureValidToken(true),
     /no user is logged in/,
     "expecting rejection due to no user"
   );
   
   fxa._internal.currentAccountState.storageManager.accountData = signedInUser;
   Status.login = LOGIN_FAILED_LOGIN_REJECTED;
-  await globalBrowseridManager._ensureValidToken(true);
+  await globalSyncAuthManager._ensureValidToken(true);
   Assert.equal(Status.login, LOGIN_SUCCEEDED, "final ensureLoggedIn worked");
 });
 
@@ -383,18 +362,18 @@ add_task(async function test_syncState() {
   let fxaInternal = makeFxAccountsInternalMock(identityConfig);
   fxaInternal.startVerifiedCheck = () => {};
   configureFxAccountIdentity(
-    globalBrowseridManager,
+    globalSyncAuthManager,
     globalIdentityConfig,
     fxaInternal
   );
 
   
-  let fxa = globalBrowseridManager._fxaService;
+  let fxa = globalSyncAuthManager._fxaService;
   let signedInUser =
     fxa._internal.currentAccountState.storageManager.accountData;
   fxa._internal.currentAccountState.storageManager.accountData = null;
   await Assert.rejects(
-    globalBrowseridManager._ensureValidToken(true),
+    globalSyncAuthManager._ensureValidToken(true),
     /no user is logged in/,
     "expecting rejection due to no user"
   );
@@ -404,7 +383,7 @@ add_task(async function test_syncState() {
   fxa._internal.currentAccountState.storageManager.accountData = signedInUser;
   Status.login = LOGIN_FAILED_LOGIN_REJECTED;
   
-  await globalBrowseridManager.observe(null, ONLOGIN_NOTIFICATION, "");
+  await globalSyncAuthManager.observe(null, ONLOGIN_NOTIFICATION, "");
   Assert.equal(
     Status.login,
     LOGIN_FAILED_LOGIN_REJECTED,
@@ -413,7 +392,7 @@ add_task(async function test_syncState() {
 
   
   signedInUser.verified = true;
-  await globalBrowseridManager.observe(null, ONVERIFIED_NOTIFICATION, "");
+  await globalSyncAuthManager.observe(null, ONVERIFIED_NOTIFICATION, "");
   Assert.equal(
     Status.login,
     LOGIN_SUCCEEDED,
@@ -422,8 +401,8 @@ add_task(async function test_syncState() {
 });
 
 add_task(async function test_tokenExpiration() {
-  _("BrowserIDManager notices token expiration:");
-  let bimExp = new BrowserIDManager();
+  _("SyncAuthManager notices token expiration:");
+  let bimExp = new SyncAuthManager();
   configureFxAccountIdentity(bimExp, globalIdentityConfig);
 
   let authenticator = bimExp.getResourceAuthenticator();
@@ -443,12 +422,12 @@ add_task(async function test_tokenExpiration() {
     writable: true,
   });
   Assert.ok(bimExp._token.expiration < bimExp._now());
-  _("... means BrowserIDManager knows to re-fetch it on the next call.");
+  _("... means SyncAuthManager knows to re-fetch it on the next call.");
   Assert.ok(!bimExp._hasValidToken());
 });
 
 add_task(async function test_getTokenErrors() {
-  _("BrowserIDManager correctly handles various failures to get a token.");
+  _("SyncAuthManager correctly handles various failures to get a token.");
 
   _("Arrange for a 401 - Sync should reflect an auth error.");
   initializeIdentityWithTokenServerResponse({
@@ -456,10 +435,10 @@ add_task(async function test_getTokenErrors() {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({}),
   });
-  let browseridManager = Service.identity;
+  let syncAuthManager = Service.identity;
 
   await Assert.rejects(
-    browseridManager._ensureValidToken(),
+    syncAuthManager._ensureValidToken(),
     AuthenticationError,
     "should reject due to 401"
   );
@@ -477,9 +456,9 @@ add_task(async function test_getTokenErrors() {
     headers: [],
     body: "",
   });
-  browseridManager = Service.identity;
+  syncAuthManager = Service.identity;
   await Assert.rejects(
-    browseridManager._ensureValidToken(),
+    syncAuthManager._ensureValidToken(),
     TokenServerClientServerError,
     "should reject due to non-JSON response"
   );
@@ -490,36 +469,37 @@ add_task(async function test_getTokenErrors() {
   );
 });
 
-add_task(async function test_refreshCertificateOn401() {
-  _("BrowserIDManager refreshes the FXA certificate after a 401.");
+add_task(async function test_refreshAccessTokenOn401() {
+  _("SyncAuthManager refreshes the FXA OAuth access token after a 401.");
   var identityConfig = makeIdentityConfig();
-  var browseridManager = new BrowserIDManager();
+  var syncAuthManager = new SyncAuthManager();
   
   
   let fxaInternal = makeFxAccountsInternalMock(identityConfig);
-  delete fxaInternal._getAssertion;
-  configureFxAccountIdentity(browseridManager, identityConfig, fxaInternal);
-  browseridManager._fxaService._internal.initialize();
+  delete fxaInternal.getOAuthToken;
+  configureFxAccountIdentity(syncAuthManager, identityConfig, fxaInternal);
+  syncAuthManager._fxaService._internal.initialize();
 
-  let getCertCount = 0;
+  let getTokenCount = 0;
 
   let CheckSignMockFxAClient = function() {
     FxAccountsClient.apply(this);
   };
   CheckSignMockFxAClient.prototype = {
     __proto__: FxAccountsClient.prototype,
-    signCertificate() {
-      ++getCertCount;
+    accessTokenWithSessionToken() {
+      ++getTokenCount;
+      return Promise.resolve({ access_token: "token" });
     },
   };
 
   let mockFxAClient = new CheckSignMockFxAClient();
-  browseridManager._fxaService._internal._fxAccountsClient = mockFxAClient;
+  syncAuthManager._fxaService._internal._fxAccountsClient = mockFxAClient;
 
   let didReturn401 = false;
   let didReturn200 = false;
   let mockTSC = mockTokenServer(() => {
-    if (getCertCount <= 1) {
+    if (getTokenCount <= 1) {
       didReturn401 = true;
       return {
         status: 401,
@@ -541,15 +521,15 @@ add_task(async function test_refreshCertificateOn401() {
     };
   });
 
-  browseridManager._tokenServerClient = mockTSC;
+  syncAuthManager._tokenServerClient = mockTSC;
 
-  await browseridManager._ensureValidToken();
+  await syncAuthManager._ensureValidToken();
 
-  Assert.equal(getCertCount, 2);
+  Assert.equal(getTokenCount, 2);
   Assert.ok(didReturn401);
   Assert.ok(didReturn200);
-  Assert.ok(browseridManager._token);
-  Assert.ok(browseridManager._hasValidToken());
+  Assert.ok(syncAuthManager._token);
+  Assert.ok(syncAuthManager._hasValidToken());
 });
 
 add_task(async function test_getTokenErrorWithRetry() {
@@ -564,10 +544,10 @@ add_task(async function test_getTokenErrorWithRetry() {
     headers: { "content-type": "application/json", "retry-after": "100" },
     body: JSON.stringify({}),
   });
-  let browseridManager = Service.identity;
+  let syncAuthManager = Service.identity;
 
   await Assert.rejects(
-    browseridManager._ensureValidToken(),
+    syncAuthManager._ensureValidToken(),
     TokenServerClientServerError,
     "should reject due to 503"
   );
@@ -584,10 +564,10 @@ add_task(async function test_getTokenErrorWithRetry() {
     headers: { "content-type": "application/json", "x-backoff": "200" },
     body: JSON.stringify({}),
   });
-  browseridManager = Service.identity;
+  syncAuthManager = Service.identity;
 
   await Assert.rejects(
-    browseridManager._ensureValidToken(),
+    syncAuthManager._ensureValidToken(),
     TokenServerClientServerError,
     "should reject due to no token in response"
   );
@@ -628,9 +608,9 @@ add_task(async function test_getKeysErrorWithBackoff() {
     };
   });
 
-  let browseridManager = Service.identity;
+  let syncAuthManager = Service.identity;
   await Assert.rejects(
-    browseridManager._ensureValidToken(),
+    syncAuthManager._ensureValidToken(),
     TokenServerClientServerError,
     "should reject due to 503"
   );
@@ -671,9 +651,9 @@ add_task(async function test_getKeysErrorWithRetry() {
     };
   });
 
-  let browseridManager = Service.identity;
+  let syncAuthManager = Service.identity;
   await Assert.rejects(
-    browseridManager._ensureValidToken(),
+    syncAuthManager._ensureValidToken(),
     TokenServerClientServerError,
     "should reject due to 503"
   );
@@ -685,7 +665,7 @@ add_task(async function test_getKeysErrorWithRetry() {
 });
 
 add_task(async function test_getHAWKErrors() {
-  _("BrowserIDManager correctly handles various HAWK failures.");
+  _("SyncAuthManager correctly handles various HAWK failures.");
 
   _("Arrange for a 401 - Sync should reflect an auth error.");
   let config = makeIdentityConfig();
@@ -694,10 +674,17 @@ add_task(async function test_getHAWKErrors() {
     data,
     uri
   ) {
-    Assert.equal(method, "post");
-    Assert.equal(uri, "http://mockedserver:9999/certificate/sign?service=sync");
+    if (uri == "http://mockedserver:9999/oauth/token") {
+      Assert.equal(method, "post");
+      return {
+        status: 401,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ code: 401, errno: 110, error: "invalid token" }),
+      };
+    }
+    
     return {
-      status: 401,
+      status: 200,
       headers: { "content-type": "application/json" },
       body: JSON.stringify({}),
     };
@@ -717,7 +704,7 @@ add_task(async function test_getHAWKErrors() {
     uri
   ) {
     Assert.equal(method, "post");
-    Assert.equal(uri, "http://mockedserver:9999/certificate/sign?service=sync");
+    Assert.equal(uri, "http://mockedserver:9999/oauth/token");
     return {
       status: 200,
       headers: [],
@@ -732,7 +719,7 @@ add_task(async function test_getHAWKErrors() {
 });
 
 add_task(async function test_getGetKeysFailing401() {
-  _("BrowserIDManager correctly handles 401 responses fetching keys.");
+  _("SyncAuthManager correctly handles 401 responses fetching keys.");
 
   _("Arrange for a 401 - Sync should reflect an auth error.");
   let config = makeIdentityConfig();
@@ -760,7 +747,7 @@ add_task(async function test_getGetKeysFailing401() {
 });
 
 add_task(async function test_getGetKeysFailing503() {
-  _("BrowserIDManager correctly handles 5XX responses fetching keys.");
+  _("SyncAuthManager correctly handles 5XX responses fetching keys.");
 
   _("Arrange for a 503 - Sync should reflect a network error.");
   let config = makeIdentityConfig();
@@ -793,10 +780,10 @@ add_task(async function test_getGetKeysFailing503() {
 
 add_task(async function test_getKeysMissing() {
   _(
-    "BrowserIDManager correctly handles getKeyForScope succeeding but not returning the key."
+    "SyncAuthManager correctly handles getKeyForScope succeeding but not returning the key."
   );
 
-  let browseridManager = new BrowserIDManager();
+  let syncAuthManager = new SyncAuthManager();
   let identityConfig = makeIdentityConfig();
   
   
@@ -807,7 +794,7 @@ add_task(async function test_getKeysMissing() {
   delete identityConfig.fxaccount.user.kExtKbHash;
   identityConfig.fxaccount.user.keyFetchToken = "keyFetchToken";
 
-  configureFxAccountIdentity(browseridManager, identityConfig);
+  configureFxAccountIdentity(syncAuthManager, identityConfig);
 
   
   let fxa = new FxAccounts({
@@ -830,20 +817,20 @@ add_task(async function test_getKeysMissing() {
     },
   });
 
-  browseridManager._fxaService = fxa;
+  syncAuthManager._fxaService = fxa;
 
   await Assert.rejects(
-    browseridManager._ensureValidToken(),
+    syncAuthManager._ensureValidToken(),
     /browser does not have the sync key, cannot sync/
   );
 });
 
 add_task(async function test_getKeysUnexpecedError() {
   _(
-    "BrowserIDManager correctly handles getKeyForScope throwing an unexpected error."
+    "SyncAuthManager correctly handles getKeyForScope throwing an unexpected error."
   );
 
-  let browseridManager = new BrowserIDManager();
+  let syncAuthManager = new SyncAuthManager();
   let identityConfig = makeIdentityConfig();
   
   
@@ -854,7 +841,7 @@ add_task(async function test_getKeysUnexpecedError() {
   delete identityConfig.fxaccount.user.kExtKbHash;
   identityConfig.fxaccount.user.keyFetchToken = "keyFetchToken";
 
-  configureFxAccountIdentity(browseridManager, identityConfig);
+  configureFxAccountIdentity(syncAuthManager, identityConfig);
 
   
   let fxa = new FxAccounts({
@@ -877,20 +864,20 @@ add_task(async function test_getKeysUnexpecedError() {
     },
   });
 
-  browseridManager._fxaService = fxa;
+  syncAuthManager._fxaService = fxa;
 
   await Assert.rejects(
-    browseridManager._ensureValidToken(),
+    syncAuthManager._ensureValidToken(),
     /well that was unexpected/
   );
 });
 
 add_task(async function test_signedInUserMissing() {
   _(
-    "BrowserIDManager detects getSignedInUser returning incomplete account data"
+    "SyncAuthManager detects getSignedInUser returning incomplete account data"
   );
 
-  let browseridManager = new BrowserIDManager();
+  let syncAuthManager = new SyncAuthManager();
   
   delete globalIdentityConfig.fxaccount.user.scopedKeys;
   delete globalIdentityConfig.fxaccount.user.kSync;
@@ -899,7 +886,7 @@ add_task(async function test_signedInUserMissing() {
   delete globalIdentityConfig.fxaccount.user.kExtKbHash;
   delete globalIdentityConfig.fxaccount.user.keyFetchToken;
 
-  configureFxAccountIdentity(browseridManager, globalIdentityConfig);
+  configureFxAccountIdentity(syncAuthManager, globalIdentityConfig);
 
   let fxa = new FxAccounts({
     fetchAndUnwrapKeys() {
@@ -918,9 +905,9 @@ add_task(async function test_signedInUserMissing() {
     },
   });
 
-  browseridManager._fxaService = fxa;
+  syncAuthManager._fxaService = fxa;
 
-  let status = await browseridManager.unlockAndVerifyAuthState();
+  let status = await syncAuthManager.unlockAndVerifyAuthState();
   Assert.equal(status, LOGIN_FAILED_LOGIN_REJECTED);
 });
 
@@ -1010,9 +997,9 @@ async function initializeIdentityWithHAWKResponseFactory(
   };
   let fxa = new FxAccounts(internal);
 
-  globalBrowseridManager._fxaService = fxa;
+  globalSyncAuthManager._fxaService = fxa;
   await Assert.rejects(
-    globalBrowseridManager._ensureValidToken(true),
+    globalSyncAuthManager._ensureValidToken(true),
     
     () => true,
     "expecting rejection due to hawk error"
