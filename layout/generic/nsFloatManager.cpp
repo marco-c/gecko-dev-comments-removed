@@ -354,10 +354,10 @@ nsresult nsFloatManager::RemoveTrailingRegions(nsIFrame* aFrameList) {
   
   
   
-  nsTHashtable<nsPtrHashKey<nsIFrame> > frameSet(1);
+  nsTHashSet<nsIFrame*> frameSet(1);
 
   for (nsIFrame* f = aFrameList; f; f = f->GetNextSibling()) {
-    frameSet.PutEntry(f);
+    frameSet.Insert(f);
   }
 
   uint32_t newLength = mFloats.Length();

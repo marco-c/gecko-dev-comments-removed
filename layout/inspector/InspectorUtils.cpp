@@ -78,7 +78,7 @@ void InspectorUtils::GetAllStyleSheets(GlobalObject& aGlobalObject,
 
     
     
-    nsTHashtable<nsPtrHashKey<StyleSheet>> sheetSet;
+    nsTHashSet<StyleSheet*> sheetSet;
     for (StyleSheet* sheet : nonDocumentSheets) {
       if (sheetSet.EnsureInserted(sheet)) {
         aResult.AppendElement(sheet);
