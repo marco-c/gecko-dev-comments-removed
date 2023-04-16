@@ -1741,7 +1741,12 @@ class HighlightersOverlay {
 
   async _onResourceAvailable(resources) {
     for (const resource of resources) {
-      if (resource.resourceType !== this.resourceWatcher.TYPES.ROOT_NODE) {
+      if (
+        resource.resourceType !== this.resourceWatcher.TYPES.ROOT_NODE ||
+        
+        
+        resource.isDestroyed()
+      ) {
         
         
         
