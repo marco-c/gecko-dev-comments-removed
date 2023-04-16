@@ -153,6 +153,9 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   }
 
   
+  bool IsFormControlDefaultFocusable(bool aWithMouse) const;
+
+  
 
 
 
