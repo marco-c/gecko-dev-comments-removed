@@ -45,6 +45,9 @@ class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
 
  protected:
   
+  bool StartIconLoad(nsIContent* aContent);
+
+  
   already_AddRefed<nsIURI> GetIconURI(nsIContent* aContent);
 
   nsCOMPtr<nsIContent> mContent;  
