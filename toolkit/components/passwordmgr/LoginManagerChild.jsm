@@ -337,6 +337,10 @@ const observer = {
           }
         }
         docState.fieldModificationsByRootElement.set(formLikeRoot, true);
+        if (!alreadyModified) {
+          
+          ownerDocument.setNotifyFetchSuccess(true);
+        }
 
         if (
           
@@ -657,6 +661,14 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     }
 
     switch (event.type) {
+      case "DOMDocFetchSuccess": {
+        if (this.shouldIgnoreLoginManagerEvent(event)) {
+          break;
+        }
+
+        this.onDOMDocFetchSuccess(event);
+        break;
+      }
       case "DOMFormBeforeSubmit": {
         if (this.shouldIgnoreLoginManagerEvent(event)) {
           break;
@@ -746,6 +758,20 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     } catch (ex) {
       
     }
+  }
+
+  
+
+
+
+  onDOMDocFetchSuccess(event) {
+    let document = event.target;
+
+    
+    
+
+    
+    document.setNotifyFetchSuccess(false);
   }
 
   onDOMFormBeforeSubmit(event) {

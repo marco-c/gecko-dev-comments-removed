@@ -2361,6 +2361,17 @@ void XMLHttpRequestMainThread::ChangeStateToDoneInternal() {
   }
 
   
+  
+  
+  
+  if (mErrorLoad == ErrorType::eOK) {
+    Document* doc = GetDocumentIfCurrent();
+    if (doc) {
+      doc->NotifyFetchOrXHRSuccess();
+    }
+  }
+
+  
   ChangeState(XMLHttpRequest_Binding::DONE, true);
 
   

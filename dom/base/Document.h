@@ -3775,6 +3775,14 @@ class Document : public nsINode,
   PermissionDelegateHandler* GetPermissionDelegateHandler();
 
   
+  
+  
+  void NotifyFetchOrXHRSuccess();
+
+  
+  void SetNotifyFetchSuccess(bool aShouldNotify);
+
+  
 
 
 
@@ -5189,6 +5197,9 @@ class Document : public nsINode,
 
   
   PreloadService mPreloadService;
+
+  
+  bool mShouldNotifyFetchSuccess;
 
   
   void AccumulateJSTelemetry();
