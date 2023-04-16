@@ -14,6 +14,7 @@
 
 class nsIContent;
 class nsMenuBarX;
+class nsMenuX;
 
 
 namespace nsMenuUtilsX {
@@ -24,7 +25,7 @@ unsigned int MacModifiersForGeckoModifiers(uint8_t geckoModifiers);
 nsMenuBarX* GetHiddenWindowMenuBar();   
 NSMenuItem* GetStandardEditMenuItem();  
 bool NodeIsHiddenOrCollapsed(nsIContent* aContent);
-int CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuObjectX* aChild);
+int CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuX* aChild);
 
 
 

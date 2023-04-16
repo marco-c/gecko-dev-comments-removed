@@ -190,7 +190,7 @@ bool nsMenuUtilsX::NodeIsHiddenOrCollapsed(nsIContent* aContent) {
 
 
 
-int nsMenuUtilsX::CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuObjectX* aChild) {
+int nsMenuUtilsX::CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuX* aChild) {
   int insertionPoint = 0;
   nsMenuObjectTypeX parentType = aParent->MenuObjectType();
   if (parentType == eMenuBarObjectType) {
