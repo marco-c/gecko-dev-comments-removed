@@ -170,8 +170,18 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
         yuv_features.push(list.concat(&brush_alpha_features).finish());
         yuv_features.push(list.with("DEBUG_OVERDRAW").finish());
     }
-    shaders.insert("composite", composite_features);
     shaders.insert("brush_yuv_image", yuv_features);
+
+    
+    for texture_type in &texture_types {
+        let mut list = FeatureList::new();
+        if !texture_type.is_empty() {
+            list.add(texture_type);
+        }
+        list.add("FAST_PATH");
+        composite_features.push(list.finish());
+    }
+    shaders.insert("composite", composite_features);
 
     
     let mut text_types = vec![""];
