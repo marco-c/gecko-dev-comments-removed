@@ -176,10 +176,10 @@ var webrtcUI = {
           window: state.window,
         };
         let browser = aStream.topBrowsingContext.embedderElement;
-        let browserWindow = browser.ownerGlobal;
-        let tab =
-          browserWindow.gBrowser &&
-          browserWindow.gBrowser.getTabForBrowser(browser);
+        
+        
+        
+        let tab = browser?.ownerGlobal.gBrowser?.getTabForBrowser(browser);
         return {
           uri: state.documentURI,
           tab,
