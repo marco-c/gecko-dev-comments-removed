@@ -125,20 +125,29 @@ function httpRedirectCookieTest(cookie, expectedValue, name, location) {
 
 
 
+function dropAllDomCookies() {
+  let cookies = document.cookie.split('; ');
+  for (const cookie of cookies) {
+    if (!Boolean(cookie))
+      continue;
+    document.cookie = `${cookie}; expires=01 Jan 1970 00:00:00 GMT`;
+  }
+  assert_equals(document.cookie, '', 'All DOM cookies were dropped.');
+}
+
+
+
 
 
 function domCookieTest(cookie, expectedValue, name) {
-  return test(() => {
+  return test(function() {
     document.cookie = cookie;
     let cookies = document.cookie;
-    if (Boolean(expectedValue)) {
-      assert_equals(cookies, expectedValue, 'The cookie was set as expected.');
-    } else {
-      assert_equals(cookies, expectedValue, 'The cookie was rejected.');
-    }
-    document.cookie = `${expectedValue}; expires=01 Jan 1970 00:00:00 GMT`;
+    this.add_cleanup(dropAllDomCookies);
     assert_equals(
-        document.cookie, '', 'The cookies were cleaned up properly post-test.');
+        cookies, expectedValue,
+        Boolean(expectedValue) ? 'The cookie was set as expected.' :
+                                 'The cookie was rejected.');
   }, name);
 }
 
