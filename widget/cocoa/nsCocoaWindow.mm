@@ -262,6 +262,48 @@ static bool UseNativePopupWindows() {
 #endif 
 }
 
+DesktopToLayoutDeviceScale ParentBackingScaleFactor(nsIWidget* aParent, NSView* aParentView) {
+  if (aParent) {
+    return aParent->GetDesktopToDeviceScale();
+  }
+  NSWindow* parentWindow = [aParentView window];
+  if (parentWindow) {
+    return DesktopToLayoutDeviceScale([parentWindow backingScaleFactor]);
+  }
+  return DesktopToLayoutDeviceScale(1.0);
+}
+
+
+
+
+static DesktopRect GetWidgetScreenRectForChildren(nsIWidget* aWidget, NSView* aView) {
+  if (aWidget) {
+    mozilla::DesktopToLayoutDeviceScale scale = aWidget->GetDesktopToDeviceScale();
+    if (aWidget->WindowType() == eWindowType_child) {
+      return aWidget->GetScreenBounds() / scale;
+    }
+    return aWidget->GetClientBounds() / scale;
+  }
+
+  MOZ_RELEASE_ASSERT(aView);
+
+  
+  
+  NSRect rectInWindowCoordinatesOBL = [aView convertRect:[aView bounds] toView:nil];
+
+  
+  NSRect rectInScreenCoordinatesOBL =
+      [[aView window] convertRectToScreen:rectInWindowCoordinatesOBL];
+
+  
+  
+  return DesktopRect(nsCocoaUtils::CocoaRectToGeckoRect(rectInScreenCoordinatesOBL));
+}
+
+
+
+
+
 
 nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                                const DesktopIntRect& aRect, nsWidgetInitData* aInitData) {
@@ -290,13 +332,25 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   
   if ((mWindowType == eWindowType_popup) && UseNativePopupWindows()) return NS_OK;
 
+  
+  
+  
+  DesktopIntPoint parentOrigin;
+
+  
+  if (aParent || aNativeParent) {
+    DesktopRect parentDesktopRect = GetWidgetScreenRectForChildren(aParent, (NSView*)aNativeParent);
+    parentOrigin = gfx::RoundedToInt(parentDesktopRect.TopLeft());
+  }
+
+  DesktopIntRect widgetRect = aRect + parentOrigin;
+
   nsresult rv =
-      CreateNativeWindow(nsCocoaUtils::GeckoRectToCocoaRect(newBounds), mBorderStyle, false);
+      CreateNativeWindow(nsCocoaUtils::GeckoRectToCocoaRect(widgetRect), mBorderStyle, false);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (mWindowType == eWindowType_popup) {
     SetWindowMouseTransparent(aInitData->mMouseTransparent);
-
     
     
     LayoutDeviceIntRect devRect = RoundedToInt(newBounds * GetDesktopToDeviceScale());
@@ -312,7 +366,8 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
 nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                                const LayoutDeviceIntRect& aRect, nsWidgetInitData* aInitData) {
-  DesktopIntRect desktopRect = RoundedToInt(aRect / GetDesktopToDeviceScale());
+  DesktopIntRect desktopRect =
+      RoundedToInt(aRect / ParentBackingScaleFactor(aParent, (NSView*)aNativeParent));
   return Create(aParent, aNativeParent, desktopRect, aInitData);
 }
 
@@ -1768,7 +1823,6 @@ CGFloat nsCocoaWindow::BackingScaleFactor() {
 }
 
 void nsCocoaWindow::BackingScaleFactorChanged() {
-  CGFloat oldScale = mBackingScaleFactor;
   CGFloat newScale = GetBackingScaleFactor(mWindow);
 
   
@@ -1803,22 +1857,6 @@ void nsCocoaWindow::BackingScaleFactorChanged() {
   }
   mWidgetListener->UIResolutionChanged();
 
-  if ((mWindowType == eWindowType_popup) && (mBackingScaleFactor == 2.0)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    NSRect frame = [mWindow frame];
-    CGFloat previousYOrigin = frame.origin.y + frame.size.height;
-    frame.size.width = mBounds.Width() * (oldScale / newScale);
-    frame.size.height = mBounds.Height() * (oldScale / newScale);
-    frame.origin.y = previousYOrigin - frame.size.height;
-    [mWindow setFrame:frame display:NO animate:NO];
-  }
 }
 
 int32_t nsCocoaWindow::RoundsWidgetCoordinatesTo() {
