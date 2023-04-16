@@ -5,6 +5,10 @@
 #ifndef nsAHtml5TreeOpSink_h
 #define nsAHtml5TreeOpSink_h
 
+#include "nsTArrayForwardDeclare.h"
+
+class nsHtml5TreeOperation;
+
 
 
 

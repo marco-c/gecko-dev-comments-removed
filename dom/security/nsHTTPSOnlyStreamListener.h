@@ -11,6 +11,8 @@
 #include "nsCOMPtr.h"
 #include "nsIStreamListener.h"
 
+class nsILoadInfo;
+
 
 
 

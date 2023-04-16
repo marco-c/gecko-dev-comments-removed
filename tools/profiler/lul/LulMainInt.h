@@ -16,6 +16,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/HashTable.h"
+#include "mozilla/Sprintf.h"
 
 
 

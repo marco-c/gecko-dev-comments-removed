@@ -2,6 +2,7 @@
 
 
 
+#include "jsctypes-test.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Types.h"
 
