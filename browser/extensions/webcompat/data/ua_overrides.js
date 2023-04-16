@@ -459,12 +459,13 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1622081",
+
+    id: "bug1697324",
     platform: "android",
-    domain: "m2.bmo.com",
-    bug: "1622081",
+    domain: "mobile2.bmo.com",
+    bug: "1697324",
     config: {
-      matches: ["*://m2.bmo.com/*"],
+      matches: ["*://mobile2.bmo.com/*"],
       uaTransformer: originalUA => {
         return originalUA + " Chrome";
       },
@@ -612,6 +613,28 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://*.vh1.com/*"],
       uaTransformer: () => {
         return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1693827",
+    platform: "desktop",
+    domain: "spectrum.net",
+    bug: "1693827",
+    config: {
+      matches: ["*://*.spectrum.net/voice/*"],
+      uaTransformer: originalUA => {
+        return (
+          UAHelpers.getPrefix(originalUA) +
+          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36"
+        );
       },
     },
   },
