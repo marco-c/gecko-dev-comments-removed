@@ -393,7 +393,11 @@ test_description_schema = Schema(
         
         
         Optional("run-on-projects"): optionally_keyed_by(
-            "test-platform", "test-name", "variant", Any([text_type], "built-projects")
+            "app",
+            "test-platform",
+            "test-name",
+            "variant",
+            Any([text_type], "built-projects"),
         ),
         
         
