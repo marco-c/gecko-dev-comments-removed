@@ -135,7 +135,7 @@ function getIframeBrowsingContext(window, iframeNumber = 0) {
 
 
 
-function setUserInputValues(parentNode, selectorValues) {
+function setUserInputValues(parentNode, selectorValues, userInput = true) {
   for (let [selector, newValue] of Object.entries(selectorValues)) {
     info(`setUserInputValues, selector: ${selector}`);
     try {
@@ -144,7 +144,11 @@ function setUserInputValues(parentNode, selectorValues) {
         
         field.value += "#";
       }
-      field.setUserInput(newValue);
+      if (userInput) {
+        field.setUserInput(newValue);
+      } else {
+        field.value = newValue;
+      }
     } catch (ex) {
       info(ex.message);
       info(ex.stack);
