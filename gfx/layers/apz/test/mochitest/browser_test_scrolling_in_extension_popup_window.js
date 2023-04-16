@@ -12,57 +12,14 @@ Services.scriptloader.loadSubScript(
 );
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js",
+  "chrome://mochitests/content/browser/gfx/layers/apz/test/mochitest/apz_test_utils.js",
   this
 );
 
-
-
-
-
-
-
-
-async function flushApzRepaintsInPopup(popup) {
-  
-  await SpecialPowers.spawn(popup, [], async () => {
-    return new Promise(resolve => {
-      const utils = SpecialPowers.getDOMWindowUtils(content.window);
-      var repaintDone = function() {
-        dump("APZ flush done\n");
-        SpecialPowers.Services.obs.removeObserver(
-          repaintDone,
-          "apz-repaints-flushed"
-        );
-        if (utils.isMozAfterPaintPending) {
-          dump("Waits for a MozAfterPaint event\n");
-          content.window.addEventListener(
-            "MozAfterPaint",
-            () => {
-              dump("Got a MozAfterPaint event\n");
-              resolve();
-            },
-            { once: true }
-          );
-        } else {
-          content.window.setTimeout(resolve, 0);
-        }
-      };
-      SpecialPowers.Services.obs.addObserver(
-        repaintDone,
-        "apz-repaints-flushed"
-      );
-      if (utils.flushApzRepaints()) {
-        dump("Flushed APZ repaints, waiting for callback...\n");
-      } else {
-        dump(
-          "Flushing APZ repaints was a no-op, triggering callback directly...\n"
-        );
-        repaintDone();
-      }
-    });
-  });
-}
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js",
+  this
+);
 
 add_task(async () => {
   let extension = ExtensionTestUtils.loadExtension({
