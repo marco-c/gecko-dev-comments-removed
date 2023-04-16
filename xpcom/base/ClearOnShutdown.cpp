@@ -12,7 +12,7 @@ namespace ClearOnShutdown_Internal {
 Array<StaticAutoPtr<ShutdownList>,
       static_cast<size_t>(ShutdownPhase::ShutdownPhase_Length)>
     sShutdownObservers;
-ShutdownPhase sCurrentShutdownPhase = ShutdownPhase::NotInShutdown;
+ShutdownPhase sCurrentClearOnShutdownPhase = ShutdownPhase::NotInShutdown;
 
 void InsertIntoShutdownList(ShutdownObserver* aObserver, ShutdownPhase aPhase) {
   
@@ -42,7 +42,7 @@ void KillClearOnShutdown(ShutdownPhase aPhase) {
 
   
   
-  sCurrentShutdownPhase = aPhase;
+  sCurrentClearOnShutdownPhase = aPhase;
 
   
   

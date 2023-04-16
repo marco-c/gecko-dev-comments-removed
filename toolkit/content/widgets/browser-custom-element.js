@@ -1706,7 +1706,7 @@
         
         
         
-        Services.tm.spinEventLoopUntilOrShutdown(
+        Services.tm.spinEventLoopUntilOrQuit(
           "browser-custom-element.js:permitUnload",
           () => window.closed || success !== undefined
         );

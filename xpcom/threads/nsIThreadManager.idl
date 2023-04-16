@@ -124,7 +124,7 @@ interface nsIThreadManager : nsISupports
 
 
 
-  void spinEventLoopUntilOrShutdown(in ACString aVeryGoodReasonToDoThis, in nsINestedEventLoopCondition condition);
+  void spinEventLoopUntilOrQuit(in ACString aVeryGoodReasonToDoThis, in nsINestedEventLoopCondition condition);
 
   
 

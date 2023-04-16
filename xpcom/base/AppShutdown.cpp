@@ -4,6 +4,7 @@
 
 
 
+#include "ShutdownPhase.h"
 #ifdef XP_WIN
 #  include <windows.h>
 #else
@@ -68,6 +69,8 @@ static ShutdownPhase sFastShutdownPhase = ShutdownPhase::NotInShutdown;
 static ShutdownPhase sLateWriteChecksPhase = ShutdownPhase::NotInShutdown;
 static AppShutdownMode sShutdownMode = AppShutdownMode::Normal;
 static Atomic<bool, MemoryOrdering::Relaxed> sIsShuttingDown;
+static Atomic<ShutdownPhase> sCurrentShutdownPhase(
+    ShutdownPhase::NotInShutdown);
 static int sExitCode = 0;
 
 
@@ -97,6 +100,10 @@ ShutdownPhase GetShutdownPhaseFromPrefValue(int32_t aPrefValue) {
 }
 
 bool AppShutdown::IsShuttingDown() { return sIsShuttingDown; }
+
+ShutdownPhase AppShutdown::GetCurrentShutdownPhase() {
+  return sCurrentShutdownPhase;
+}
 
 int AppShutdown::GetExitCode() { return sExitCode; }
 
@@ -285,6 +292,9 @@ bool AppShutdown::IsRestarting() {
 void AppShutdown::AdvanceShutdownPhase(
     ShutdownPhase aPhase, const char16_t* aNotificationData,
     nsCOMPtr<nsISupports> aNotificationSubject) {
+  MOZ_ASSERT(aPhase >= sCurrentShutdownPhase);
+  sCurrentShutdownPhase = aPhase;
+
 #ifndef ANDROID
   if (sTerminator) {
     sTerminator->AdvancePhase(aPhase);
