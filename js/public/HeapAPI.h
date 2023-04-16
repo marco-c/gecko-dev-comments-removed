@@ -112,7 +112,7 @@ struct TenuredChunkInfo {
 
 
 
-  uint32_t lastDecommittedArenaOffset;
+  uint32_t lastDecommittedPageOffset;
 
   
   uint32_t numArenasFree;
@@ -222,14 +222,14 @@ static_assert(ArenaBitmapBytes * ArenasPerChunk == sizeof(MarkBitmap),
               "Ensure our MarkBitmap actually covers all arenas.");
 
 
-using DecommitBitmap = mozilla::BitSet<ArenasPerChunk, uint32_t>;
+using DecommitBitmap = mozilla::BitSet<PagesPerChunk, uint32_t>;
 
 
 class TenuredChunkBase : public ChunkBase {
  public:
   TenuredChunkInfo info;
   MarkBitmap markBits;
-  DecommitBitmap decommittedArenas;
+  DecommitBitmap decommittedPages;
 
  protected:
   explicit TenuredChunkBase(JSRuntime* runtime) : ChunkBase(runtime, nullptr) {}

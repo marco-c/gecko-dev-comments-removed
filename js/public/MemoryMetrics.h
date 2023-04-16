@@ -793,12 +793,12 @@ struct RuntimeStats {
   
   
   
-#define FOR_EACH_SIZE(MACRO)                           \
-  MACRO(_, Ignore, gcHeapChunkTotal)                   \
-  MACRO(_, GCHeapDecommitted, gcHeapDecommittedArenas) \
-  MACRO(_, GCHeapUnused, gcHeapUnusedChunks)           \
-  MACRO(_, GCHeapUnused, gcHeapUnusedArenas)           \
-  MACRO(_, GCHeapAdmin, gcHeapChunkAdmin)              \
+#define FOR_EACH_SIZE(MACRO)                          \
+  MACRO(_, Ignore, gcHeapChunkTotal)                  \
+  MACRO(_, GCHeapDecommitted, gcHeapDecommittedPages) \
+  MACRO(_, GCHeapUnused, gcHeapUnusedChunks)          \
+  MACRO(_, GCHeapUnused, gcHeapUnusedArenas)          \
+  MACRO(_, GCHeapAdmin, gcHeapChunkAdmin)             \
   MACRO(_, Ignore, gcHeapGCThings)
 
   explicit RuntimeStats(mozilla::MallocSizeOf mallocSizeOf)

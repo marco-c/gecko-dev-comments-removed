@@ -708,11 +708,41 @@ Arena* GCRuntime::allocateArena(TenuredChunk* chunk, Zone* zone,
 Arena* TenuredChunk::allocateArena(GCRuntime* gc, Zone* zone,
                                    AllocKind thingKind,
                                    const AutoLockGC& lock) {
-  Arena* arena = info.numArenasFreeCommitted > 0 ? fetchNextFreeArena(gc)
-                                                 : fetchNextDecommittedArena();
+  if (info.numArenasFreeCommitted == 0) {
+    commitOnePage(gc);
+    MOZ_ASSERT(info.numArenasFreeCommitted == ArenasPerPage);
+  }
+  MOZ_ASSERT(info.numArenasFreeCommitted > 0);
+  Arena* arena = fetchNextFreeArena(gc);
+
   arena->init(zone, thingKind, lock);
   updateChunkListAfterAlloc(gc, lock);
   return arena;
+}
+
+void TenuredChunk::commitOnePage(GCRuntime* gc) {
+  MOZ_ASSERT(info.numArenasFreeCommitted == 0);
+  MOZ_ASSERT(!info.freeArenasHead);
+  MOZ_ASSERT(info.numArenasFree > 0);
+
+  unsigned offset = findDecommittedPageOffset();
+  info.lastDecommittedPageOffset = offset + 1;
+
+  if (DecommitEnabled()) {
+    MarkPagesInUseSoft(pageAddress(offset), PageSize);
+  }
+
+  size_t arenaIndex = offset * ArenasPerPage;
+  decommittedPages[offset] = false;
+  for (size_t i = 0; i < ArenasPerPage; i++) {
+    arenas[arenaIndex + i].setAsNotAllocated();
+  }
+
+  
+  
+  
+  
+  addArenasInPageToFreeList(gc, offset);
 }
 
 inline void GCRuntime::updateOnFreeArenaAlloc(const TenuredChunkInfo& info) {
@@ -723,6 +753,7 @@ inline void GCRuntime::updateOnFreeArenaAlloc(const TenuredChunkInfo& info) {
 Arena* TenuredChunk::fetchNextFreeArena(GCRuntime* gc) {
   MOZ_ASSERT(info.numArenasFreeCommitted > 0);
   MOZ_ASSERT(info.numArenasFreeCommitted <= info.numArenasFree);
+  MOZ_ASSERT(info.freeArenasHead);
 
   Arena* arena = info.freeArenasHead;
   info.freeArenasHead = arena->next;
@@ -733,39 +764,21 @@ Arena* TenuredChunk::fetchNextFreeArena(GCRuntime* gc) {
   return arena;
 }
 
-Arena* TenuredChunk::fetchNextDecommittedArena() {
-  MOZ_ASSERT(info.numArenasFreeCommitted == 0);
-  MOZ_ASSERT(info.numArenasFree > 0);
-
-  unsigned offset = findDecommittedArenaOffset();
-  info.lastDecommittedArenaOffset = offset + 1;
-  --info.numArenasFree;
-  decommittedArenas[offset] = false;
-
-  Arena* arena = &arenas[offset];
-  if (DecommitEnabled()) {
-    MarkPagesInUseSoft(arena, ArenaSize);
-  }
-  arena->setAsNotAllocated();
-
-  return arena;
-}
 
 
 
 
 
 
-
-uint32_t TenuredChunk::findDecommittedArenaOffset() {
+uint32_t TenuredChunk::findDecommittedPageOffset() {
   
-  for (unsigned i = info.lastDecommittedArenaOffset; i < ArenasPerChunk; i++) {
-    if (decommittedArenas[i]) {
+  for (unsigned i = info.lastDecommittedPageOffset; i < PagesPerChunk; i++) {
+    if (decommittedPages[i]) {
       return i;
     }
   }
-  for (unsigned i = 0; i < info.lastDecommittedArenaOffset; i++) {
-    if (decommittedArenas[i]) {
+  for (unsigned i = 0; i < info.lastDecommittedPageOffset; i++) {
+    if (decommittedPages[i]) {
       return i;
     }
   }
@@ -882,13 +895,13 @@ void TenuredChunk::init(GCRuntime* gc) {
 }
 
 void TenuredChunk::decommitAllArenas() {
-  decommittedArenas.SetAll();
+  decommittedPages.SetAll();
   if (DecommitEnabled()) {
     MarkPagesUnusedSoft(&arenas[0], ArenasPerChunk * ArenaSize);
   }
 
   info.freeArenasHead = nullptr;
-  info.lastDecommittedArenaOffset = 0;
+  info.lastDecommittedPageOffset = 0;
   info.numArenasFree = ArenasPerChunk;
   info.numArenasFreeCommitted = 0;
 }
