@@ -68,7 +68,10 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
       const policy = ExtensionParent.WebExtensionPolicy.getByID(this.addonId);
       return {
         actor: this.actorID,
-        debuggable: this.addon.isDebuggable,
+        
+        
+        
+        debuggable: policy?.active && this.addon.isDebuggable,
         hidden: this.addon.hidden,
         
         iconDataURL: this._iconDataURL,
