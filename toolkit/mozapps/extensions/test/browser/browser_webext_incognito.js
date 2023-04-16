@@ -67,11 +67,9 @@ async function setPrivateBrowsingValue(value, id) {
   let radio = getHtmlElem(
     `input[type="radio"][name="private-browsing"][value="${value}"]`
   );
-  EventUtils.synthesizeMouseAtCenter(
-    radio,
-    { clickCount: 1 },
-    radio.ownerGlobal
-  );
+  
+  
+  radio.click();
   
   return changePromise;
 }
