@@ -2628,7 +2628,7 @@ LayerManager::PaintedLayerCreationHint ContainerState::GetLayerCreationHint(
   
   for (AnimatedGeometryRoot* agr = aAnimatedGeometryRoot;
        agr && agr != mContainerAnimatedGeometryRoot; agr = agr->mParentAGR) {
-    nsIFrame* fParent = nsLayoutUtils::GetCrossDocParentFrame(*agr);
+    nsIFrame* fParent = nsLayoutUtils::GetCrossDocParentFrameInProcess(*agr);
     if (!fParent) {
       break;
     }
@@ -4354,7 +4354,7 @@ nsIntRegion ContainerState::ComputeOpaqueRect(
   
   
   
-  if (!nsLayoutUtils::GetCrossDocParentFrame(mContainerFrame)) {
+  if (!nsLayoutUtils::GetCrossDocParentFrameInProcess(mContainerFrame)) {
     mBuilder->AddWindowOpaqueRegion(aItem->Frame(), opaqueClipped.GetBounds());
   }
   opaquePixels = ScaleRegionToInsidePixels(opaqueClipped, snapOpaque);
