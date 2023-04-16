@@ -342,6 +342,9 @@ class WebRTCParent extends JSWindowActorParent {
     aId,
     aPermissionPrincipal
   ) {
+    
+    
+    
     if (!webrtcUI.activePerms.has(this.manager.outerWindowId)) {
       return;
     }
