@@ -156,7 +156,16 @@ function ensureStorage() {
       EXPERIMENT_FILE
     );
     const storage = new JSONFile({ path });
+    
+    
+    
+    
+    
+    
     gStorePromise = storage.load().then(() => {
+      if (!storage.data.experiments) {
+        storage.data = { ...storage.data, experiments: {} };
+      }
       return storage;
     });
   }

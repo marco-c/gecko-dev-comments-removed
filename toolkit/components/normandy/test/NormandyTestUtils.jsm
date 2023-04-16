@@ -3,6 +3,7 @@
 
 "use strict";
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { Preferences } = ChromeUtils.import(
   "resource://gre/modules/Preferences.jsm"
 );
@@ -15,6 +16,7 @@ const { NormandyUtils } = ChromeUtils.import(
 const { RecipeRunner } = ChromeUtils.import(
   "resource://normandy/lib/RecipeRunner.jsm"
 );
+const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
 const FIXTURE_ADDON_ID = "normandydriver-a@example.com";
 const UUID_REGEX = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
@@ -34,8 +36,9 @@ const preferenceBranches = {
 };
 
 const NormandyTestUtils = {
-  init({ add_task } = {}) {
+  init({ add_task, Assert } = {}) {
     testGlobals.add_task = add_task;
+    testGlobals.Assert = Assert;
   },
 
   factories: {
@@ -324,4 +327,122 @@ const NormandyTestUtils = {
       };
     };
   },
+
+  withStub(object, method, { returnValue, as = `${method}Stub` } = {}) {
+    return function wrapper(testFunction) {
+      return async function wrappedTestFunction(args) {
+        const stub = sinon.stub(object, method);
+        if (returnValue) {
+          stub.returns(returnValue);
+        }
+        try {
+          await testFunction({ ...args, [as]: stub });
+        } finally {
+          stub.restore();
+        }
+      };
+    };
+  },
+
+  withSpy(object, method, { as = `${method}Spy` } = {}) {
+    return function wrapper(testFunction) {
+      return async function wrappedTestFunction(args) {
+        const spy = sinon.spy(object, method);
+        try {
+          await testFunction({ ...args, [as]: spy });
+        } finally {
+          spy.restore();
+        }
+      };
+    };
+  },
+
+  
+
+
+
+
+  withConsoleSpy() {
+    return function(testFunction) {
+      return async function wrappedTestFunction(args) {
+        const consoleSpy = new TestConsoleListener();
+        console.log("Starting to track console messages");
+        Services.console.registerListener(consoleSpy);
+        try {
+          await testFunction({ ...args, consoleSpy });
+        } finally {
+          Services.console.unregisterListener(consoleSpy);
+          console.log("Stopped monitoring console messages");
+        }
+      };
+    };
+  },
 };
+
+class TestConsoleListener {
+  constructor() {
+    this.messages = [];
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  assertAtLeast(expectedMessages, assertMessage = null) {
+    let expectedSet = new Set(expectedMessages);
+    for (let { message } of this.messages) {
+      let found = false;
+      for (let expected of expectedSet) {
+        if (expected.test && expected.test(message)) {
+          found = true;
+        } else if (expected === message) {
+          found = true;
+        }
+        if (found) {
+          expectedSet.delete(expected);
+          break;
+        }
+      }
+    }
+    if (expectedSet.size) {
+      let remaining = Array.from(expectedSet);
+      let errorMessageParts = [];
+      if (assertMessage) {
+        errorMessageParts.push(assertMessage);
+      }
+      errorMessageParts.push(remaining[0]);
+      if (remaining.length > 1) {
+        errorMessageParts.push(`and ${remaining.length - 1} more log messages`);
+      }
+      errorMessageParts.push("expected in the console but not found.");
+      testGlobals.Assert.ok(false, errorMessageParts.join(" "));
+    }
+  }
+
+  
+
+  get QueryInterface() {
+    return ChromeUtils.generateQI(["nsIConsoleListener"]);
+  }
+
+  
+
+  
+
+
+
+
+
+
+  observe(message) {
+    this.messages.push(message);
+  }
+}
