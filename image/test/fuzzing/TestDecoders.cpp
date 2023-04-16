@@ -78,6 +78,9 @@ static int RunDecodeToSurfaceFuzzing(nsCOMPtr<nsIInputStream> inputStream,
     return 0;
   }
 
+  
+  gfxPlatform::GetCMSMode();
+
   nsCOMPtr<nsIThread> thread;
   nsresult rv =
       NS_NewNamedThread("Decoder Test", getter_AddRefs(thread), nullptr);
