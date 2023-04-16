@@ -247,7 +247,7 @@ class DefinitionServer {
       id: "test-feature",
       
       title: "experimental-features-media-avif",
-      description: "pane-experimental-description",
+      description: "pane-experimental-description2",
       restartRequired: false,
       type: "boolean",
       preference: "test.feature",

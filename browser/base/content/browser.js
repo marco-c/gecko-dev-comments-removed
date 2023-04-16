@@ -1040,7 +1040,7 @@ const gStoragePressureObserver = {
       
       document.l10n.setAttributes(message, "space-alert-over-5gb-message2");
       buttons.push({
-        "l10n-id": "space-alert-over-5gb-pref-button",
+        "l10n-id": "space-alert-over-5gb-settings-button",
         callback(notificationBar, button) {
           
           
