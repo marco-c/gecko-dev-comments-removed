@@ -716,22 +716,15 @@ void IMEHandler::AppendInputScopeFromType(const nsAString& aHTMLInputType,
 }
 
 
-void IMEHandler::MaybeShowOnScreenKeyboard(nsWindow* aWindow,
-                                           const InputContext& aInputContext) {
-  if (aInputContext.mHTMLInputInputmode.EqualsLiteral("none")) {
-    return;
-  }
+bool IMEHandler::IsOnScreenKeyboardSupported() {
 #ifdef NIGHTLY_BUILD
   if (FxRWindowManager::GetInstance()->IsFxRWindow(sFocusedWindow)) {
-    mozilla::gfx::VRShMem shmem(nullptr, true );
-    shmem.SendIMEState(FxRWindowManager::GetInstance()->GetWindowID(),
-                       mozilla::gfx::VRFxEventState::FOCUS);
-    return;
+    return true;
   }
 #endif  
   if (!IsWin8OrLater() || !Preferences::GetBool(kOskEnabled, true) ||
-      GetOnScreenKeyboardWindow() || !IMEHandler::NeedOnScreenKeyboard()) {
-    return;
+      !IMEHandler::NeedOnScreenKeyboard()) {
+    return false;
   }
 
   
@@ -739,9 +732,23 @@ void IMEHandler::MaybeShowOnScreenKeyboard(nsWindow* aWindow,
   
   if (IsWin10OrLater()) {
     if (!IsInTabletMode() && !AutoInvokeOnScreenKeyboardInDesktopMode()) {
-      return;
+      return false;
     }
   } else if (Preferences::GetBool(kOskRequireWin10, true)) {
+    return false;
+  }
+
+  return true;
+}
+
+
+void IMEHandler::MaybeShowOnScreenKeyboard(nsWindow* aWindow,
+                                           const InputContext& aInputContext) {
+  if (aInputContext.mHTMLInputInputmode.EqualsLiteral("none")) {
+    return;
+  }
+
+  if (!IsOnScreenKeyboardSupported()) {
     return;
   }
 
@@ -1001,11 +1008,23 @@ bool IMEHandler::AutoInvokeOnScreenKeyboardInDesktopMode() {
 
 
 void IMEHandler::ShowOnScreenKeyboard(nsWindow* aWindow) {
+#ifdef NIGHTLY_BUILD
+  if (FxRWindowManager::GetInstance()->IsFxRWindow(sFocusedWindow)) {
+    mozilla::gfx::VRShMem shmem(nullptr, true );
+    shmem.SendIMEState(FxRWindowManager::GetInstance()->GetWindowID(),
+                       mozilla::gfx::VRFxEventState::FOCUS);
+    return;
+  }
+#endif  
+
   if (IsWin10AnniversaryUpdateOrLater()) {
     OSKInputPaneManager::ShowOnScreenKeyboard(aWindow->GetWindowHandle());
     return;
   }
 
+  if (GetOnScreenKeyboardWindow()) {
+    return;
+  }
   nsAutoString cachedPath;
   nsresult result = Preferences::GetString(kOskPathPrefName, cachedPath);
   if (NS_FAILED(result) || cachedPath.IsEmpty()) {
