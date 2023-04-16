@@ -485,7 +485,7 @@ void nsXULElement::OpenMenu(bool aOpenFlag) {
 
 bool nsXULElement::PerformAccesskey(bool aKeyCausesActivation,
                                     bool aIsTrustedEvent) {
-  RefPtr<Element> content(this);
+  RefPtr<Element> element(this);
 
   if (IsXULElement(nsGkAtoms::label)) {
     nsAutoString control;
@@ -496,33 +496,32 @@ bool nsXULElement::PerformAccesskey(bool aKeyCausesActivation,
 
     
     
-    nsCOMPtr<Document> document = content->GetUncomposedDoc();
+    nsCOMPtr<Document> document = element->GetUncomposedDoc();
     if (!document) {
       return false;
     }
 
-    content = document->GetElementById(control);
-    if (!content) {
+    element = document->GetElementById(control);
+    if (!element) {
       return false;
     }
   }
 
-  nsIFrame* frame = content->GetPrimaryFrame();
+  nsIFrame* frame = element->GetPrimaryFrame();
   if (!frame || !frame->IsVisibleConsideringAncestors()) {
     return false;
   }
 
   bool focused = false;
-  nsXULElement* elm = FromNode(content);
-  if (elm) {
+  if (nsXULElement* elm = FromNode(element)) {
     
-    if (!content->IsXULElement(nsGkAtoms::toolbarbutton)) {
+    if (!elm->IsXULElement(nsGkAtoms::toolbarbutton)) {
       if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
         nsCOMPtr<Element> elementToFocus;
         
-        if (content->IsXULElement(nsGkAtoms::radio)) {
+        if (elm->IsXULElement(nsGkAtoms::radio)) {
           nsCOMPtr<nsIDOMXULSelectControlItemElement> controlItem =
-              content->AsXULSelectControlItem();
+              elm->AsXULSelectControlItem();
           if (controlItem) {
             bool disabled;
             controlItem->GetDisabled(&disabled);
@@ -531,7 +530,7 @@ bool nsXULElement::PerformAccesskey(bool aKeyCausesActivation,
             }
           }
         } else {
-          elementToFocus = content;
+          elementToFocus = elm;
         }
         if (elementToFocus) {
           fm->SetFocus(elementToFocus, nsIFocusManager::FLAG_BYKEY);
@@ -542,12 +541,12 @@ bool nsXULElement::PerformAccesskey(bool aKeyCausesActivation,
         }
       }
     }
-    if (aKeyCausesActivation && !content->IsXULElement(nsGkAtoms::menulist)) {
+    if (aKeyCausesActivation && !elm->IsXULElement(nsGkAtoms::menulist)) {
       elm->ClickWithInputSource(MouseEvent_Binding::MOZ_SOURCE_KEYBOARD,
                                 aIsTrustedEvent);
     }
   } else {
-    return content->PerformAccesskey(aKeyCausesActivation, aIsTrustedEvent);
+    return element->PerformAccesskey(aKeyCausesActivation, aIsTrustedEvent);
   }
 
   return focused;
