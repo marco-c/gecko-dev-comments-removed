@@ -1014,21 +1014,6 @@ void js::gc::PerformIncrementalBarrier(TenuredCell* cell) {
   trc->performBarrier(JS::GCCellPtr(cell, cell->getTraceKind()));
 }
 
-void js::gc::PerformIncrementalBarrierDuringFlattening(JSString* str) {
-  TenuredCell* cell = &str->asTenured();
-
-  
-  
-  
-  
-  if (str->isRope()) {
-    cell->markBlack();
-    return;
-  }
-
-  PerformIncrementalBarrier(cell);
-}
-
 template <typename T>
 void js::GCMarker::markAndTraverse(T* thing) {
   if (thing->isPermanentAndMayBeShared()) {
@@ -4147,6 +4132,7 @@ void BarrierTracer::performBarrier(JS::GCCellPtr cell) {
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime()));
   MOZ_ASSERT(!runtime()->gc.isBackgroundMarking());
   MOZ_ASSERT(!cell.asCell()->isForwarded());
+  MOZ_ASSERT(!cell.asCell()->hasTempHeaderData());
 
   
   if (!cell.asCell()->asTenured().markIfUnmarked()) {
@@ -4199,14 +4185,21 @@ void GCMarker::traceBarrieredCell(JS::GCCellPtr cell) {
   MOZ_ASSERT(!cell.asCell()->isForwarded());
 
   ApplyGCThingTyped(cell, [this](auto thing) {
-    if (!ShouldMark(this, thing)) {
-      return;
+    MOZ_ASSERT(ShouldMark(this, thing));
+    MOZ_ASSERT(thing->isMarkedBlack());
+
+    if constexpr (std::is_same_v<decltype(thing), JSString*>) {
+      if (thing->isBeingFlattened()) {
+        
+        
+        
+        return;
+      }
     }
 
     CheckTracedThing(this, thing);
     AutoClearTracingSource acts(this);
 
-    MOZ_ASSERT(thing->isMarkedBlack());
     traverse(thing);
   });
 }
