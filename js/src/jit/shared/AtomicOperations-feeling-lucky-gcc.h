@@ -49,7 +49,8 @@
 
 
 
-#if defined(JS_SIMULATOR_ARM64) || defined(JS_SIMULATOR_ARM)
+#if defined(JS_SIMULATOR_ARM64) || defined(JS_SIMULATOR_ARM) || \
+    defined(JS_SIMULATOR_MIPS64)
 
 
 
