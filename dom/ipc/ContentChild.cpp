@@ -2840,7 +2840,8 @@ void ContentChild::ForceKillTimerCallback(nsITimer* aTimer, void* aClosure) {
 mozilla::ipc::IPCResult ContentChild::RecvShutdown() {
   
   
-  AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownConfirmed);
+  AppShutdown::AdvanceShutdownPhaseWithoutNotify(
+      ShutdownPhase::AppShutdownConfirmed);
 
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   if (os) {

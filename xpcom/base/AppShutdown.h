@@ -72,7 +72,15 @@ class AppShutdown {
 
   static void AdvanceShutdownPhase(
       ShutdownPhase aPhase, const char16_t* aNotificationData = nullptr,
-      nsCOMPtr<nsISupports> aNotificationSubject = nullptr);
+      const nsCOMPtr<nsISupports>& aNotificationSubject =
+          nsCOMPtr<nsISupports>(nullptr));
+
+  
+
+
+
+
+  static void AdvanceShutdownPhaseWithoutNotify(ShutdownPhase aPhase);
 
   
 
