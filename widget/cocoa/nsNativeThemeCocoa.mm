@@ -76,21 +76,43 @@ void CUIDraw(CUIRendererRef r, CGRect rect, CGContextRef ctx, CFDictionaryRef op
 
 
 
+@interface MOZCellDrawWindow : NSWindow
+@property BOOL cellsShouldLookActive;
+@end
+
+@implementation MOZCellDrawWindow
 
 
 
-
-
-
-
-
-
-
-@interface CellDrawView : NSControl
+- (BOOL)_hasActiveAppearance {
+  return self.cellsShouldLookActive;
+}
+- (BOOL)hasKeyAppearance {
+  return self.cellsShouldLookActive;
+}
+- (BOOL)_hasKeyAppearance {
+  return self.cellsShouldLookActive;
+}
 
 @end
 
-@implementation CellDrawView
+
+
+
+
+
+
+
+
+
+
+
+
+@interface MOZCellDrawView : NSControl
+
+@end
+
+@implementation MOZCellDrawView
 
 - (BOOL)isFlipped {
   return YES;
@@ -422,7 +444,24 @@ nsNativeThemeCocoa::nsNativeThemeCocoa() {
   mMeterBarCell = [[NSLevelIndicatorCell alloc]
       initWithLevelIndicatorStyle:NSContinuousCapacityLevelIndicatorStyle];
 
-  mCellDrawView = [[CellDrawView alloc] init];
+  mCellDrawView = [[MOZCellDrawView alloc] init];
+
+  if (XRE_IsParentProcess()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mCellDrawWindow = [[MOZCellDrawWindow alloc] initWithContentRect:NSZeroRect
+                                                           styleMask:NSWindowStyleMaskBorderless
+                                                             backing:NSBackingStoreBuffered
+                                                               defer:NO];
+    [mCellDrawWindow.contentView addSubview:mCellDrawView];
+  }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
@@ -442,6 +481,7 @@ nsNativeThemeCocoa::~nsNativeThemeCocoa() {
   [mToolbarSearchFieldCell release];
   [mDropdownCell release];
   [mComboBoxCell release];
+  [mCellDrawWindow release];
   [mCellDrawView release];
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -881,6 +921,9 @@ void nsNativeThemeCocoa::DrawCheckboxOrRadio(CGContextRef cgContext, bool inChec
                                inBoxRect.origin.y + (int)((inBoxRect.size.height - length) / 2.0f),
                                length, length);
 
+  if (mCellDrawWindow) {
+    mCellDrawWindow.cellsShouldLookActive = aParams.controlParams.insideActiveWindow;
+  }
   DrawCellWithSnapping(cell, cgContext, drawRect, inCheckbox ? checkboxSettings : radioSettings,
                        aParams.verticalAlignFactor, mCellDrawView, NO);
 
@@ -968,6 +1011,9 @@ void nsNativeThemeCocoa::DrawTextField(CGContextRef cgContext, const HIRect& inB
   [cell setEnabled:!aParams.disabled];
   [cell setShowsFirstResponder:aParams.focused];
 
+  if (mCellDrawWindow) {
+    mCellDrawWindow.cellsShouldLookActive = YES;  
+  }
   DrawCellWithSnapping(cell, cgContext, inBoxRect, searchFieldSettings, aParams.verticalAlignFactor,
                        mCellDrawView, aParams.rtl);
 
@@ -986,6 +1032,9 @@ void nsNativeThemeCocoa::DrawSearchField(CGContextRef cgContext, const HIRect& i
   
   [cell setPlaceholderString:@""];
 
+  if (mCellDrawWindow) {
+    mCellDrawWindow.cellsShouldLookActive = YES;  
+  }
   DrawCellWithSnapping(cell, cgContext, inBoxRect, searchFieldSettings, aParams.verticalAlignFactor,
                        mCellDrawView, aParams.rtl);
 
@@ -1197,6 +1246,10 @@ void nsNativeThemeCocoa::DrawRoundedBezelPushButton(CGContextRef cgContext, cons
 
   ApplyControlParamsToNSCell(aControlParams, mPushButtonCell);
   [mPushButtonCell setBezelStyle:NSRoundedBezelStyle];
+
+  if (mCellDrawWindow) {
+    mCellDrawWindow.cellsShouldLookActive = aControlParams.insideActiveWindow;
+  }
   DrawCellWithSnapping(mPushButtonCell, cgContext, inBoxRect, pushButtonSettings, 0.5f,
                        mCellDrawView, aControlParams.rtl, 1.0f);
 
@@ -1209,6 +1262,10 @@ void nsNativeThemeCocoa::DrawSquareBezelPushButton(CGContextRef cgContext, const
 
   ApplyControlParamsToNSCell(aControlParams, mPushButtonCell);
   [mPushButtonCell setBezelStyle:NSShadowlessSquareBezelStyle];
+
+  if (mCellDrawWindow) {
+    mCellDrawWindow.cellsShouldLookActive = aControlParams.insideActiveWindow;
+  }
   DrawCellWithScaling(mPushButtonCell, cgContext, inBoxRect, NSControlSizeRegular, NSZeroSize,
                       NSMakeSize(14, 0), NULL, mCellDrawView, aControlParams.rtl);
 
@@ -1220,6 +1277,10 @@ void nsNativeThemeCocoa::DrawHelpButton(CGContextRef cgContext, const HIRect& in
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   ApplyControlParamsToNSCell(aControlParams, mHelpButtonCell);
+
+  if (mCellDrawWindow) {
+    mCellDrawWindow.cellsShouldLookActive = aControlParams.insideActiveWindow;
+  }
   DrawCellWithScaling(mHelpButtonCell, cgContext, inBoxRect, NSControlSizeRegular, NSZeroSize,
                       kHelpButtonSize, NULL, mCellDrawView,
                       false);  
@@ -1234,6 +1295,10 @@ void nsNativeThemeCocoa::DrawDisclosureButton(CGContextRef cgContext, const HIRe
 
   ApplyControlParamsToNSCell(aControlParams, mDisclosureButtonCell);
   [mDisclosureButtonCell setState:aCellState];
+
+  if (mCellDrawWindow) {
+    mCellDrawWindow.cellsShouldLookActive = aControlParams.insideActiveWindow;
+  }
   DrawCellWithScaling(mDisclosureButtonCell, cgContext, inBoxRect, NSControlSizeRegular, NSZeroSize,
                       kDisclosureButtonSize, NULL, mCellDrawView,
                       false);  
@@ -1566,6 +1631,10 @@ void nsNativeThemeCocoa::DrawDropdown(CGContextRef cgContext, const HIRect& inBo
 
   const CellRenderSettings& settings =
       aParams.editable ? editableMenulistSettings : dropdownSettings;
+
+  if (mCellDrawWindow) {
+    mCellDrawWindow.cellsShouldLookActive = aParams.controlParams.insideActiveWindow;
+  }
   DrawCellWithSnapping(cell, cgContext, inBoxRect, settings, 0.5f, mCellDrawView,
                        aParams.controlParams.rtl);
 
@@ -1759,6 +1828,9 @@ void nsNativeThemeCocoa::DrawProgress(CGContextRef cgContext, const HIRect& inBo
   [cell setControlTint:(aParams.insideActiveWindow ? [NSColor currentControlTint]
                                                    : NSClearControlTint)];
 
+  if (mCellDrawWindow) {
+    mCellDrawWindow.cellsShouldLookActive = aParams.insideActiveWindow;
+  }
   DrawCellWithSnapping(cell, cgContext, inBoxRect,
                        progressSettings[aParams.horizontal][aParams.indeterminate],
                        aParams.verticalAlignFactor, mCellDrawView, aParams.rtl);
@@ -1868,6 +1940,9 @@ void nsNativeThemeCocoa::DrawMeter(CGContextRef cgContext, const HIRect& inBoxRe
     CGContextTranslateCTM(cgContext, -CGRectGetMidX(rect), -CGRectGetMidY(rect));
   }
 
+  if (mCellDrawWindow) {
+    mCellDrawWindow.cellsShouldLookActive = YES;  
+  }
   DrawCellWithSnapping(cell, cgContext, rect, meterSetting, aParams.verticalAlignFactor,
                        mCellDrawView, !vertical && aParams.rtl);
 
