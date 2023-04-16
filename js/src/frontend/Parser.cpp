@@ -1154,7 +1154,8 @@ Maybe<EvalScope::ParserData*> NewEvalScopeData(JSContext* cx,
   ParserBindingNameVector vars(cx);
 
   
-  bool allBindingsClosedOver = !pc->sc()->strict() || pc->sc()->allBindingsClosedOver();
+  bool allBindingsClosedOver =
+      !pc->sc()->strict() || pc->sc()->allBindingsClosedOver();
   for (BindingIter bi = scope.bindings(pc); bi; bi++) {
     
     MOZ_ASSERT(bi.kind() == BindingKind::Var);
