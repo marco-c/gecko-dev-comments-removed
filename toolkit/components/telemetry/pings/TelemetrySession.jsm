@@ -751,13 +751,20 @@ var Impl = {
       const isMobile = AppConstants.platform == "android";
       const isSubsession = isMobile ? false : !this._isClassicReason(reason);
 
-      Telemetry.scalarSet(
-        "browser.engagement.session_time_including_suspend",
-        Telemetry.msSinceProcessStartIncludingSuspend()
-      );
+      
+      
+      
+      
+      
+      
+      
       Telemetry.scalarSet(
         "browser.engagement.session_time_excluding_suspend",
         Telemetry.msSinceProcessStartExcludingSuspend()
+      );
+      Telemetry.scalarSet(
+        "browser.engagement.session_time_including_suspend",
+        Telemetry.msSinceProcessStartIncludingSuspend()
       );
 
       if (isMobile) {
