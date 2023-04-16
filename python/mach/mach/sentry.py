@@ -111,21 +111,39 @@ def _patch_absolute_paths(sentry_event, topsrcdir):
         else:
             return value
 
-    for (needle, replacement) in (
+    for (target_path, replacement) in (
         (get_state_dir(), "<statedir>"),
         (topsrcdir, "<topsrcdir>"),
         (expanduser("~"), "~"),
-        
-        
-        
-        
-        
-        (repr(expanduser("~"))[1:-1], "~"),
     ):
-        if needle is None:
-            continue  
-        needle_regex = re.compile(re.escape(needle), re.IGNORECASE)
-        sentry_event = recursive_patch(sentry_event, needle_regex, replacement)
+        
+        
+        
+        
+        
+        repr_path = repr(target_path)[1:-1]
+
+        for target in (target_path, repr_path):
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            slash_regex = re.compile(r"[\/\\]")
+            
+            
+            
+            target = slash_regex.sub(r"[\\/\\\\]", target)
+
+            
+            needle_regex = re.compile(target, re.IGNORECASE)
+            sentry_event = recursive_patch(sentry_event, needle_regex, replacement)
     return sentry_event
 
 
