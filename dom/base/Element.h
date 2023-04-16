@@ -1946,6 +1946,11 @@ class Element : public FragmentOrElement {
 
   static nsAtom* GetEventNameForAttr(nsAtom* aAttr);
 
+  
+
+
+  virtual void RegUnRegAccessKey(bool aDoReg);
+
  private:
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   void AssertInvariantsOnNodeInfoChange();

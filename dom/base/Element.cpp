@@ -4478,4 +4478,25 @@ nsAtom* Element::GetEventNameForAttr(nsAtom* aAttr) {
   return aAttr;
 }
 
+void Element::RegUnRegAccessKey(bool aDoReg) {
+  
+  nsAutoString accessKey;
+  GetAttr(kNameSpaceID_None, nsGkAtoms::accesskey, accessKey);
+  if (accessKey.IsEmpty()) {
+    return;
+  }
+
+  
+  if (nsPresContext* presContext = GetPresContext(eForUncomposedDoc)) {
+    EventStateManager* esm = presContext->EventStateManager();
+
+    
+    if (aDoReg) {
+      esm->RegisterAccessKey(this, (uint32_t)accessKey.First());
+    } else {
+      esm->UnregisterAccessKey(this, (uint32_t)accessKey.First());
+    }
+  }
+}
+
 }  

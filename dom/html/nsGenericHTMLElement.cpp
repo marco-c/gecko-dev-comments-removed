@@ -2391,29 +2391,6 @@ bool nsGenericHTMLElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
   return disallowOverridingFocusability;
 }
 
-void nsGenericHTMLElement::RegUnRegAccessKey(bool aDoReg) {
-  
-  nsAutoString accessKey;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::accesskey, accessKey);
-  if (accessKey.IsEmpty()) {
-    return;
-  }
-
-  
-  nsPresContext* presContext = GetPresContext(eForUncomposedDoc);
-
-  if (presContext) {
-    EventStateManager* esm = presContext->EventStateManager();
-
-    
-    if (aDoReg) {
-      esm->RegisterAccessKey(this, (uint32_t)accessKey.First());
-    } else {
-      esm->UnregisterAccessKey(this, (uint32_t)accessKey.First());
-    }
-  }
-}
-
 bool nsGenericHTMLElement::PerformAccesskey(bool aKeyCausesActivation,
                                             bool aIsTrustedEvent) {
   nsPresContext* presContext = GetPresContext(eForUncomposedDoc);

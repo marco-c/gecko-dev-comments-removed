@@ -743,31 +743,13 @@ void nsXULElement::DoneAddingChildren(bool aHaveNotified) {
   }
 }
 
-
 void nsXULElement::RegUnRegAccessKey(bool aDoReg) {
   
   if (!SupportsAccessKey()) {
     return;
   }
 
-  
-  nsAutoString accessKey;
-  GetAttr(nsGkAtoms::accesskey, accessKey);
-  if (accessKey.IsEmpty()) {
-    return;
-  }
-
-  
-  if (nsPresContext* presContext = GetPresContext(eForUncomposedDoc)) {
-    EventStateManager* esm = presContext->EventStateManager();
-
-    
-    if (aDoReg) {
-      esm->RegisterAccessKey(this, (uint32_t)accessKey.First());
-    } else {
-      esm->UnregisterAccessKey(this, (uint32_t)accessKey.First());
-    }
-  }
+  nsStyledElement::RegUnRegAccessKey(aDoReg);
 }
 
 bool nsXULElement::SupportsAccessKey() const {
