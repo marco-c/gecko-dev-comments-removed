@@ -3180,7 +3180,11 @@ void gfxPlatform::GetDisplayInfo(mozilla::widget::InfoObject& aObj) {
     }
   }
 
-  GetPlatformDisplayInfo(aObj);
+  
+  
+  if (XRE_IsParentProcess()) {
+    GetPlatformDisplayInfo(aObj);
+  }
 }
 
 class FrameStatsComparator {
