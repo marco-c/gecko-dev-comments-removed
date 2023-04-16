@@ -1032,7 +1032,24 @@ static void AllocCallback(void* aPtr, size_t aReqSize, Thread* aT) {
   
   bool getTrace = gOptions->DoFullStacks() || gBernoulli->trial(actualSize);
   LiveBlock b(aPtr, aReqSize, getTrace ? StackTrace::Get(aT) : nullptr);
-  MOZ_ALWAYS_TRUE(gLiveBlockTable->putNew(aPtr, b));
+  LiveBlockTable::AddPtr p = gLiveBlockTable->lookupForAdd(aPtr);
+  if (!p) {
+    
+    MOZ_ALWAYS_TRUE(gLiveBlockTable->add(p, b));
+  } else {
+    
+    
+    
+    
+    
+    if (gOptions->IsCumulativeMode()) {
+      
+      DeadBlock db(*p);
+      MaybeAddToDeadBlockTable(db);
+    }
+    gLiveBlockTable->remove(p);
+    MOZ_ALWAYS_TRUE(gLiveBlockTable->putNew(aPtr, b));
+  }
 }
 
 static void FreeCallback(void* aPtr, Thread* aT, DeadBlock* aDeadBlock) {
