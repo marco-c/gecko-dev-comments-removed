@@ -84,9 +84,8 @@ nsresult nsMenuItemIconX::SetupIcon() {
     }
   }
 
-  nsCOMPtr<nsIURI> iconURI;
-  nsresult rv = GetIconURI(getter_AddRefs(iconURI));
-  if (NS_FAILED(rv)) {
+  nsCOMPtr<nsIURI> iconURI = GetIconURI();
+  if (!iconURI) {
     
     
     mNativeMenuItem.image = nil;
@@ -103,7 +102,7 @@ nsresult nsMenuItemIconX::SetupIcon() {
     mNativeMenuItem.image = [MOZIconHelper placeholderIconWithSize:iconSize];
   }
 
-  rv = mIconLoader->LoadIcon(iconURI, mContent);
+  nsresult rv = mIconLoader->LoadIcon(iconURI, mContent);
   if (NS_FAILED(rv)) {
     
     
@@ -118,68 +117,61 @@ nsresult nsMenuItemIconX::SetupIcon() {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-nsresult nsMenuItemIconX::GetIconURI(nsIURI** aIconURI) {
+already_AddRefed<nsIURI> nsMenuItemIconX::GetIconURI() {
   
   nsAutoString imageURIString;
   bool hasImageAttr =
       mContent->IsElement() &&
       mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::image, imageURIString);
 
-  nsresult rv;
-  RefPtr<ComputedStyle> sc;
-  nsCOMPtr<nsIURI> iconURI;
-  if (!hasImageAttr) {
+  if (hasImageAttr) {
     
     
-    RefPtr<mozilla::dom::Document> document = mContent->GetComposedDoc();
-    if (!document || !mContent->IsElement()) {
-      return NS_ERROR_FAILURE;
-    }
-
-    sc = nsComputedDOMStyle::GetComputedStyle(mContent->AsElement(), nullptr);
-    if (!sc) {
-      return NS_ERROR_FAILURE;
-    }
-
-    iconURI = sc->StyleList()->GetListStyleImageURI();
-    if (!iconURI) {
-      return NS_ERROR_FAILURE;
-    }
-  } else {
     
-    
-    rv = NS_NewURI(getter_AddRefs(iconURI), imageURIString);
+    RefPtr<nsIURI> iconURI;
+    nsresult rv = NS_NewURI(getter_AddRefs(iconURI), imageURIString);
     if (NS_FAILED(rv)) {
-      return rv;
+      return nullptr;
     }
+    mImageRegionRect.SetEmpty();
+    return iconURI.forget();
   }
 
   
   
-  
-  mImageRegionRect.SetEmpty();
-
-  iconURI.forget(aIconURI);
-
-  if (!hasImageAttr) {
-    
-    
-    const nsRect r = sc->StyleList()->GetImageRegion();
-
-    
-    
-    if (r.X() < 0 || r.Y() < 0 || r.Width() < 0 || r.Height() < 0) {
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    
-    if (!r.IsEmpty()) {
-      mImageRegionRect = r.ToNearestPixels(mozilla::AppUnitsPerCSSPixel());
-    }
+  RefPtr<mozilla::dom::Document> document = mContent->GetComposedDoc();
+  if (!document || !mContent->IsElement()) {
+    return nullptr;
   }
 
-  return NS_OK;
+  RefPtr<ComputedStyle> sc = nsComputedDOMStyle::GetComputedStyle(mContent->AsElement(), nullptr);
+  if (!sc) {
+    return nullptr;
+  }
+
+  RefPtr<nsIURI> iconURI = sc->StyleList()->GetListStyleImageURI();
+  if (!iconURI) {
+    return nullptr;
+  }
+
+  
+  
+  const nsRect r = sc->StyleList()->GetImageRegion();
+
+  
+  
+  if (r.X() < 0 || r.Y() < 0 || r.Width() < 0 || r.Height() < 0) {
+    return nullptr;
+  }
+
+  
+  
+  if (r.IsEmpty()) {
+    mImageRegionRect.SetEmpty();
+  } else {
+    mImageRegionRect = r.ToNearestPixels(mozilla::AppUnitsPerCSSPixel());
+  }
+  return iconURI.forget();
 }
 
 

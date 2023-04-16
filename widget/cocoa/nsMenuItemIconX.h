@@ -33,13 +33,13 @@ class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
   nsresult SetupIcon();
 
   
-  nsresult GetIconURI(nsIURI** aIconURI);
-
-  
   
   nsresult OnComplete(imgIContainer* aImage) override;
 
  protected:
+  
+  already_AddRefed<nsIURI> GetIconURI();
+
   nsCOMPtr<nsIContent> mContent;  
   nsMenuObjectX* mMenuObject;     
   nsIntRect mImageRegionRect;
