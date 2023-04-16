@@ -1763,29 +1763,6 @@ bool js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj,
 }
 
 bool js::NativeDefineAccessorProperty(JSContext* cx, HandleNativeObject obj,
-                                      HandleId id, GetterOp getter,
-                                      SetterOp setter, unsigned attrs) {
-  Rooted<PropertyDescriptor> desc(cx);
-  desc.initFields(nullptr, UndefinedHandleValue, attrs, getter, setter);
-
-  ObjectOpResult result;
-  if (!NativeDefineProperty(cx, obj, id, desc, result)) {
-    return false;
-  }
-
-  if (!result) {
-    
-    
-    
-    MOZ_ASSERT(!cx->isHelperThreadContext());
-    result.reportError(cx, obj, id);
-    return false;
-  }
-
-  return true;
-}
-
-bool js::NativeDefineAccessorProperty(JSContext* cx, HandleNativeObject obj,
                                       HandleId id, HandleObject getter,
                                       HandleObject setter, unsigned attrs) {
   Rooted<PropertyDescriptor> desc(cx);

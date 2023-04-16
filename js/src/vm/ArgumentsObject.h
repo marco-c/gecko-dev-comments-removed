@@ -280,7 +280,6 @@ class ArgumentsObject : public NativeObject {
   static bool reifyLength(JSContext* cx, Handle<ArgumentsObject*> obj);
 
   
-
   bool hasOverriddenIterator() const {
     const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
     return v.toInt32() & ITERATOR_OVERRIDDEN_BIT;
@@ -303,8 +302,6 @@ class ArgumentsObject : public NativeObject {
   static bool getArgumentsIterator(JSContext* cx, MutableHandleValue val);
 
   
-
-
   bool hasOverriddenElement() const {
     const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
     return v.toInt32() & ELEMENT_OVERRIDDEN_BIT;

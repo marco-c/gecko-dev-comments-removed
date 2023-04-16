@@ -634,6 +634,24 @@ bool ArgumentsObject::reifyIterator(JSContext* cx,
   return true;
 }
 
+static bool ResolveArgumentsProperty(JSContext* cx,
+                                     Handle<ArgumentsObject*> obj, HandleId id,
+                                     GetterOp getter, SetterOp setter,
+                                     unsigned attrs, bool* resolvedp) {
+  
+  
+
+  MOZ_ASSERT(id.isInt() || id.isAtom(cx->names().length) ||
+             id.isAtom(cx->names().callee));
+
+  if (!NativeObject::addAccessorProperty(cx, obj, id, getter, setter, attrs)) {
+    return false;
+  }
+
+  *resolvedp = true;
+  return true;
+}
+
 
 bool MappedArgumentsObject::obj_resolve(JSContext* cx, HandleObject obj,
                                         HandleId id, bool* resolvedp) {
@@ -674,13 +692,8 @@ bool MappedArgumentsObject::obj_resolve(JSContext* cx, HandleObject obj,
     }
   }
 
-  if (!NativeDefineAccessorProperty(cx, argsobj, id, MappedArgGetter,
-                                    MappedArgSetter, attrs)) {
-    return false;
-  }
-
-  *resolvedp = true;
-  return true;
+  return ResolveArgumentsProperty(cx, argsobj, id, MappedArgGetter,
+                                  MappedArgSetter, attrs, resolvedp);
 }
 
 
@@ -716,6 +729,80 @@ bool MappedArgumentsObject::obj_enumerate(JSContext* cx, HandleObject obj) {
   return true;
 }
 
+static bool DefineMappedIndex(JSContext* cx, Handle<MappedArgumentsObject*> obj,
+                              HandleId id,
+                              MutableHandle<PropertyDescriptor> desc,
+                              ObjectOpResult& result) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(id.isInt());
+  MOZ_ASSERT(!obj->isElementDeleted(id.toInt()));
+  MOZ_ASSERT(!obj->containsDenseElement(id.toInt()));
+
+  MOZ_ASSERT(!desc.isAccessorDescriptor());
+
+  
+  MOZ_ASSERT(!desc.hasWritable() || desc.writable());
+
+  
+  Rooted<PropertyResult> prop(cx);
+  if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
+    return false;
+  }
+
+  MOZ_ASSERT(prop.isNativeProperty());
+
+  Shape* shape = prop.shape();
+  MOZ_ASSERT(shape);
+  MOZ_ASSERT(shape->writable());
+  MOZ_ASSERT(shape->getter() == MappedArgGetter);
+  MOZ_ASSERT(shape->setter() == MappedArgSetter);
+
+  
+  
+  
+
+  
+  bool configurable = shape->configurable();
+  bool enumerable = shape->enumerable();
+  if (configurable) {
+    if (desc.hasConfigurable()) {
+      configurable = desc.configurable();
+    }
+    if (desc.hasEnumerable()) {
+      enumerable = desc.enumerable();
+    }
+  } else {
+    
+    if ((desc.hasConfigurable() && desc.configurable()) ||
+        (desc.hasEnumerable() && enumerable != desc.enumerable())) {
+      return result.fail(JSMSG_CANT_REDEFINE_PROP);
+    }
+  }
+
+  unsigned attrs = 0;
+  if (!configurable) {
+    attrs |= JSPROP_PERMANENT;
+  }
+  if (enumerable) {
+    attrs |= JSPROP_ENUMERATE;
+  }
+  if (!NativeObject::putAccessorProperty(cx, obj, id, MappedArgGetter,
+                                         MappedArgSetter, attrs)) {
+    return false;
+  }
+
+  return result.succeed();
+}
+
 
 
 bool MappedArgumentsObject::obj_defineProperty(JSContext* cx, HandleObject obj,
@@ -737,6 +824,7 @@ bool MappedArgumentsObject::obj_defineProperty(JSContext* cx, HandleObject obj,
   Rooted<PropertyDescriptor> newArgDesc(cx, desc);
 
   
+  bool defineMapped = false;
   if (!desc.isAccessorDescriptor() && isMapped) {
     
     if (desc.hasWritable() && !desc.writable()) {
@@ -748,19 +836,20 @@ bool MappedArgumentsObject::obj_defineProperty(JSContext* cx, HandleObject obj,
       newArgDesc.setSetter(nullptr);
     } else {
       
-      
-      
-      newArgDesc.setGetter(MappedArgGetter);
-      newArgDesc.setSetter(MappedArgSetter);
-      newArgDesc.value().setUndefined();
-      newArgDesc.attributesRef() |= JSPROP_IGNORE_VALUE;
+      defineMapped = true;
     }
   }
 
   
-  if (!NativeDefineProperty(cx, obj.as<NativeObject>(), id, newArgDesc,
-                            result)) {
-    return false;
+  if (defineMapped) {
+    if (!DefineMappedIndex(cx, argsobj, id, &newArgDesc, result)) {
+      return false;
+    }
+  } else {
+    if (!NativeDefineProperty(cx, obj.as<NativeObject>(), id, newArgDesc,
+                              result)) {
+      return false;
+    }
   }
   
   if (!result.ok()) {
@@ -901,13 +990,8 @@ bool UnmappedArgumentsObject::obj_resolve(JSContext* cx, HandleObject obj,
     return true;
   }
 
-  if (!NativeDefineAccessorProperty(cx, argsobj, id, UnmappedArgGetter,
-                                    UnmappedArgSetter, attrs)) {
-    return false;
-  }
-
-  *resolvedp = true;
-  return true;
+  return ResolveArgumentsProperty(cx, argsobj, id, UnmappedArgGetter,
+                                  UnmappedArgSetter, attrs, resolvedp);
 }
 
 
