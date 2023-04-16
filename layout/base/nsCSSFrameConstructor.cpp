@@ -2515,7 +2515,29 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
   
 
   nsPresContext* presContext = mPresShell->GetPresContext();
-  bool isPaginated = presContext->IsRootPaginatedDocument();
+  const bool isPaginated = presContext->IsRootPaginatedDocument();
+
+  const bool isHTML = aDocElement->IsHTMLElement();
+  const bool isXUL = !isHTML && aDocElement->IsXULElement();
+
+  const bool isScrollable = [&] {
+    if (isPaginated) {
+      return presContext->HasPaginatedScrolling();
+    }
+    
+    
+    if (isXUL) {
+      return false;
+    }
+    if (aDocElement->OwnerDoc()->IsDocumentURISchemeChrome() &&
+        aDocElement->AsElement()->AttrValueIs(
+                 kNameSpaceID_None, nsGkAtoms::scrolling, nsGkAtoms::_false,
+                 eCaseMatters)) {
+      return false;
+    }
+    return true;
+  }();
+
   nsContainerFrame* viewportFrame =
       static_cast<nsContainerFrame*>(GetRootFrame());
   ComputedStyle* viewportPseudoStyle = viewportFrame->Style();
@@ -2551,27 +2573,6 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
   
   
   
-
-  bool isHTML = aDocElement->IsHTMLElement();
-  bool isXUL = false;
-
-  if (!isHTML) {
-    isXUL = aDocElement->IsXULElement();
-  }
-
-  
-  
-  bool isScrollable = true;
-  if (isPaginated) {
-    isScrollable = presContext->HasPaginatedScrolling();
-  } else if (isXUL) {
-    isScrollable = false;
-  } else if (aDocElement->OwnerDoc()->IsDocumentURISchemeChrome() &&
-             aDocElement->AsElement()->AttrValueIs(
-                 kNameSpaceID_None, nsGkAtoms::scrolling, nsGkAtoms::_false,
-                 eCaseMatters)) {
-    isScrollable = false;
-  }
 
   
   
