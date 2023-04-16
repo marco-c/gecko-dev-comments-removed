@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* Layout */
 
 .notificationbox .notificationInner {
   display: flex;
@@ -28,7 +28,7 @@
   flex-direction: row-reverse;
 }
 
-
+/* Style */
 
 .notificationbox .notification {
   color: var(--theme-toolbar-color);
@@ -66,15 +66,15 @@
   margin: 6px;
 }
 
-
+/* Default icons for notifications */
 
 .notificationbox .messageImage[data-type="info"] {
   background-image: url("chrome://devtools/skin/images/info.svg");
 }
 
 .notificationbox .messageImage[data-type="warning"] {
-  background-image: url("chrome://global/skin/icons/warning.svg");
-  
+  background-image: url("chrome://devtools/skin/images/alert.svg");
+  /* Keep the icon colored to make it more eye-catching */
   fill: #ffbf00;
 }
 
@@ -82,7 +82,7 @@
   background-image: url("chrome://devtools/skin/images/error.svg");
 }
 
-
+/* Close button */
 
 .notificationbox .messageCloseButton {
   width: 24px;
@@ -104,7 +104,7 @@
 }
 
 .notificationbox .messageCloseButton:active {
-  background-color: rgba(170, 170, 170, .4); 
+  background-color: rgba(170, 170, 170, .4); /* --toolbar-tab-hover-active */
 }
 
 .notificationbox.wrapping .notificationInner .messageText {
