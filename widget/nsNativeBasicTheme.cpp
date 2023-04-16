@@ -1593,7 +1593,7 @@ auto nsNativeBasicTheme::ShouldUseSystemColors(const dom::Document& aDoc)
   
   
   return UseSystemColors(
-      PreferenceSheet::PrefsFor(aDoc).mUseAccessibilityTheme);
+      PreferenceSheet::PrefsFor(aDoc).NonNativeThemeShouldUseSystemColors());
 }
 
 template <typename PaintBackendData>

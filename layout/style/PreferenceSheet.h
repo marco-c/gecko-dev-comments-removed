@@ -41,6 +41,14 @@ struct PreferenceSheet {
     uint8_t mFocusRingStyle = 1;
     bool mFocusRingOnAnything = false;
 
+    
+    
+    
+    
+    bool NonNativeThemeShouldUseSystemColors() const {
+      return mUseAccessibilityTheme && !mUseDocumentColors;
+    }
+
     void Load(bool aIsChrome);
   };
 
