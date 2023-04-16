@@ -11,6 +11,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Variant.h"
 #include "nsMenuBaseX.h"
 #include "nsMenuBarX.h"
 #include "nsMenuGroupOwnerX.h"
@@ -34,6 +35,8 @@ class nsIWidget;
 
 class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
  public:
+  using MenuChild = mozilla::Variant<mozilla::UniquePtr<nsMenuX>, mozilla::UniquePtr<nsMenuItemX>>;
+
   nsMenuX(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aContent);
   virtual ~nsMenuX();
 
@@ -87,7 +90,7 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   nsCOMPtr<nsIContent> mContent;  
 
   
-  nsTArray<mozilla::UniquePtr<nsMenuObjectX>> mMenuObjectsArray;
+  nsTArray<MenuChild> mMenuChildren;
 
   nsString mLabel;
   uint32_t mVisibleItemsCount = 0;               
