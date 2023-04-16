@@ -120,6 +120,8 @@ void RenderThread::ShutDown() {
   sRenderThread->Loop()->PostTask(runnable.forget());
   task.Wait();
 
+  layers::SharedSurfacesParent::Shutdown();
+
   sRenderThread = nullptr;
 #ifdef XP_WIN
   if (widget::WinCompositorWindowThread::Get()) {
@@ -140,7 +142,7 @@ void RenderThread::ShutDownTask(layers::SynchronousTask* aTask) {
 
   
   
-  layers::SharedSurfacesParent::Shutdown();
+  layers::SharedSurfacesParent::ShutdownRenderThread();
 
   ClearAllBlobImageResources();
   ClearSingletonGL();

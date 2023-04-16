@@ -34,6 +34,7 @@ class SharedSurfacesMemoryReport;
 class SharedSurfacesParent final {
  public:
   static void Initialize();
+  static void ShutdownRenderThread();
   static void Shutdown();
 
   
@@ -57,8 +58,6 @@ class SharedSurfacesParent final {
                                      SharedSurfacesMemoryReport& aReport);
 
   static bool AccumulateMemoryReport(SharedSurfacesMemoryReport& aReport);
-
-  ~SharedSurfacesParent();
 
  private:
   friend class SharedSurfacesChild;
