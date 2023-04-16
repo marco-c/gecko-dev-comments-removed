@@ -346,6 +346,7 @@ class OpenOp final : public ConnectionOperationBase,
   const SDBRequestOpenParams mParams;
   RefPtr<DirectoryLock> mDirectoryLock;
   nsCOMPtr<nsIFileStream> mFileStream;
+  
   quota::OriginMetadata mOriginMetadata;
   State mState;
   bool mFileStreamOpen;

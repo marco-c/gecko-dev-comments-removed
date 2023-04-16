@@ -1203,6 +1203,7 @@ class Connection final : public CachingDatabaseConnection {
   nsCOMPtr<nsITimer> mFlushTimer;
   UniquePtr<ArchivedOriginScope> mArchivedOriginScope;
   ConnectionWriteOptimizer mWriteOptimizer;
+  
   const OriginMetadata mOriginMetadata;
   nsString mDirectoryPath;
   
