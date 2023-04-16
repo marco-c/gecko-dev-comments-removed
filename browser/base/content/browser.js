@@ -9482,6 +9482,10 @@ var gDialogBox = {
     let haveClosedPromise = new Promise(resolve => {
       this._didCloseHTMLDialog = resolve;
     });
+
+    
+    window.focus();
+
     try {
       await this._open(uri, args);
     } catch (ex) {
