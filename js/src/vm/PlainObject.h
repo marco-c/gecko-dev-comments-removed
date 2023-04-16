@@ -11,8 +11,8 @@
 #include "js/Class.h"         
 #include "js/Result.h"        
 #include "js/RootingAPI.h"    
+#include "vm/JSObject.h"      
 #include "vm/NativeObject.h"  
-#include "vm/ObjectGroup.h"   
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSFunction;

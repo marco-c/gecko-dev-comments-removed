@@ -21,9 +21,9 @@
 #include "js/RootingAPI.h"                         
 #include "js/TypeDecls.h"                          
 #include "vm/JSAtom.h"                             
+#include "vm/JSObject.h"                           
 #include "vm/JSONPrinter.h"                        
 #include "vm/NativeObject.h"                       
-#include "vm/ObjectGroup.h"                        
 #include "vm/PlainObject.h"                        
 #include "vm/Printer.h"                            
 

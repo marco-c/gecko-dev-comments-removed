@@ -37,7 +37,6 @@
 #include "vm/JSObject.h"      
 #include "vm/JSONPrinter.h"   
 #include "vm/JSScript.h"      
-#include "vm/ObjectGroup.h"   
 #include "vm/Printer.h"       
 #include "vm/RegExpObject.h"  
 #include "vm/Scope.h"  

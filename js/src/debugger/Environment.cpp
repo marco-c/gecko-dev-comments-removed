@@ -29,7 +29,6 @@
 #include "vm/JSFunction.h"            
 #include "vm/JSObject.h"              
 #include "vm/NativeObject.h"          
-#include "vm/ObjectGroup.h"           
 #include "vm/Realm.h"                 
 #include "vm/Scope.h"                 
 #include "vm/StringType.h"            

@@ -27,7 +27,6 @@
 #include "vm/JSContext.h"                 
 #include "vm/JSObject.h"                  
 #include "vm/JSScript.h"          
-#include "vm/ObjectGroup.h"       
 #include "vm/StringType.h"        
 #include "vm/TypedArrayObject.h"  
 #include "wasm/WasmCode.h"        

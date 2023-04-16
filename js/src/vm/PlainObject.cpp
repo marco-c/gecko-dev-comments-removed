@@ -19,7 +19,6 @@
 #include "vm/JSContext.h"    
 #include "vm/JSFunction.h"   
 #include "vm/JSObject.h"     
-#include "vm/ObjectGroup.h"  
 #include "vm/TaggedProto.h"  
 
 #include "vm/JSObject-inl.h"  

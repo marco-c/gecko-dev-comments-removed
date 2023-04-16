@@ -90,7 +90,6 @@
 #include "vm/JSContext.h"             
 #include "vm/JSFunction.h"            
 #include "vm/JSObject.h"              
-#include "vm/ObjectGroup.h"           
 #include "vm/ObjectOperations.h"      
 #include "vm/PlainObject.h"           
 #include "vm/PromiseObject.h"         

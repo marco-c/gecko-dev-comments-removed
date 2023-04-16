@@ -14,15 +14,14 @@
 
 #include <stddef.h>  
 
-#include "gc/AllocKind.h"    
-#include "js/CallArgs.h"     
-#include "js/RootingAPI.h"   
-#include "js/Value.h"        
-#include "vm/JSContext.h"    
-#include "vm/JSFunction.h"   
-#include "vm/JSObject.h"     
-#include "vm/ObjectGroup.h"  
-#include "vm/StringType.h"   
+#include "gc/AllocKind.h"   
+#include "js/CallArgs.h"    
+#include "js/RootingAPI.h"  
+#include "js/Value.h"       
+#include "vm/JSContext.h"   
+#include "vm/JSFunction.h"  
+#include "vm/JSObject.h"    
+#include "vm/StringType.h"  
 
 #include "vm/JSContext-inl.h"  
 
