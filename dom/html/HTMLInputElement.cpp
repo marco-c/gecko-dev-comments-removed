@@ -5133,8 +5133,8 @@ void HTMLInputElement::ImageInputMapAttributesIntoRule(
                                                                  aDecls);
   nsGenericHTMLFormElementWithState::MapImageMarginAttributeInto(aAttributes,
                                                                  aDecls);
-  nsGenericHTMLFormElementWithState::MapImageSizeAttributesInto(aAttributes,
-                                                                aDecls);
+  nsGenericHTMLFormElementWithState::MapImageSizeAttributesInto(
+      aAttributes, aDecls, MapAspectRatio::Yes);
   
   nsGenericHTMLFormElementWithState::MapImageAlignAttributeInto(aAttributes,
                                                                 aDecls);

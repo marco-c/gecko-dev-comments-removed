@@ -519,6 +519,17 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   static void MapImageSizeAttributesInto(const nsMappedAttributes*,
                                          mozilla::MappedDeclarations&,
                                          MapAspectRatio = MapAspectRatio::No);
+  
+
+
+
+
+
+
+
+
+  static void MapAspectRatioInto(const nsMappedAttributes*,
+                                 mozilla::MappedDeclarations&);
 
   
 
