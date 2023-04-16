@@ -23,10 +23,14 @@ class nsMenuObjectX;
 
 class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
  public:
-  explicit nsMenuItemIconX(nsMenuObjectX* aMenuItem);
+  class Listener {
+   public:
+    virtual void IconUpdated() = 0;
+  };
+
+  explicit nsMenuItemIconX(Listener* aListener);
   ~nsMenuItemIconX();
 
- public:
   
   
   
@@ -51,7 +55,7 @@ class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
   already_AddRefed<nsIURI> GetIconURI(nsIContent* aContent);
 
   nsCOMPtr<nsIContent> mContent;  
-  nsMenuObjectX* mMenuObject;     
+  Listener* mListener;            
   nsIntRect mImageRegionRect;
   NSImage* mIconImage = nil;  
   RefPtr<mozilla::widget::IconLoader> mIconLoader;

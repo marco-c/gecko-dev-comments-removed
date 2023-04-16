@@ -16,11 +16,11 @@
 #include "nsMenuBaseX.h"
 #include "nsMenuBarX.h"
 #include "nsMenuGroupOwnerX.h"
+#include "nsMenuItemIconX.h"
 #include "nsCOMPtr.h"
 #include "nsChangeObserver.h"
 
 class nsMenuX;
-class nsMenuItemIconX;
 class nsMenuItemX;
 class nsIWidget;
 
@@ -34,7 +34,9 @@ class nsIWidget;
 
 
 
-class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
+class nsMenuX final : public nsMenuObjectX,
+                      public nsChangeObserver,
+                      public nsMenuItemIconX::Listener {
  public:
   using MenuChild = mozilla::Variant<RefPtr<nsMenuX>, RefPtr<nsMenuItemX>>;
 
@@ -51,6 +53,8 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
 
   
   nsMenuObjectTypeX MenuObjectType() override { return eSubmenuObjectType; }
+
+  
   void IconUpdated() override;
 
   
@@ -87,6 +91,9 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   nsIContent* Content() { return mContent; }
   NSMenuItem* NativeNSMenuItem() { return mNativeMenuItem; }
   GeckoNSMenu* NativeNSMenu() { return mNativeMenu; }
+
+  void SetIconListener(nsMenuItemIconX::Listener* aListener) { mIconListener = aListener; }
+  void ClearIconListener() { mIconListener = nullptr; }
 
   
   
@@ -128,9 +135,10 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   nsTArray<MenuChild> mMenuChildren;
 
   nsString mLabel;
-  uint32_t mVisibleItemsCount = 0;               
-  nsMenuObjectX* mParent = nullptr;              
-  nsMenuGroupOwnerX* mMenuGroupOwner = nullptr;  
+  uint32_t mVisibleItemsCount = 0;                     
+  nsMenuObjectX* mParent = nullptr;                    
+  nsMenuGroupOwnerX* mMenuGroupOwner = nullptr;        
+  nsMenuItemIconX::Listener* mIconListener = nullptr;  
   mozilla::UniquePtr<nsMenuItemIconX> mIcon;
   GeckoNSMenu* mNativeMenu = nil;     
   MenuDelegate* mMenuDelegate = nil;  

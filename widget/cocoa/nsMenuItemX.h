@@ -10,6 +10,7 @@
 #include "nsISupports.h"
 #include "nsMenuBaseX.h"
 #include "nsMenuGroupOwnerX.h"
+#include "nsMenuItemIconX.h"
 #include "nsChangeObserver.h"
 #include "nsStringFwd.h"
 
@@ -42,7 +43,9 @@ enum EMenuItemType {
 
 
 
-class nsMenuItemX final : public nsMenuObjectX, public nsChangeObserver {
+class nsMenuItemX final : public nsMenuObjectX,
+                          public nsChangeObserver,
+                          public nsMenuItemIconX::Listener {
  public:
   nsMenuItemX(nsMenuX* aParent, const nsString& aLabel, EMenuItemType aItemType,
               nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aNode);
@@ -64,6 +67,8 @@ class nsMenuItemX final : public nsMenuObjectX, public nsChangeObserver {
 
   
   nsMenuObjectTypeX MenuObjectType() override { return eMenuItemObjectType; }
+
+  
   void IconUpdated() override;
 
   
