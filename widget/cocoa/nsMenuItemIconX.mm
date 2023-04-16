@@ -41,14 +41,9 @@ using mozilla::widget::IconLoader;
 
 static const uint32_t kIconSize = 16;
 
-nsMenuItemIconX::nsMenuItemIconX(nsMenuObjectX* aMenuItem, nsIContent* aContent,
-                                 NSMenuItem* aNativeMenuItem)
-    : mContent(aContent),
-      mMenuObject(aMenuItem),
-      mSetIcon(false),
-      mNativeMenuItem(aNativeMenuItem) {
+nsMenuItemIconX::nsMenuItemIconX(nsMenuObjectX* aMenuItem, NSMenuItem* aNativeMenuItem)
+    : mMenuObject(aMenuItem), mSetIcon(false), mNativeMenuItem(aNativeMenuItem) {
   MOZ_COUNT_CTOR(nsMenuItemIconX);
-  MOZ_RELEASE_ASSERT(mContent);
 }
 
 nsMenuItemIconX::~nsMenuItemIconX() {
@@ -58,7 +53,7 @@ nsMenuItemIconX::~nsMenuItemIconX() {
   MOZ_COUNT_DTOR(nsMenuItemIconX);
 }
 
-nsresult nsMenuItemIconX::SetupIcon() {
+nsresult nsMenuItemIconX::SetupIcon(nsIContent* aContent) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   
@@ -67,7 +62,7 @@ nsresult nsMenuItemIconX::SetupIcon() {
     return NS_ERROR_FAILURE;
   }
 
-  nsCOMPtr<nsIURI> iconURI = GetIconURI();
+  nsCOMPtr<nsIURI> iconURI = GetIconURI(aContent);
   if (!iconURI) {
     
     
@@ -85,7 +80,7 @@ nsresult nsMenuItemIconX::SetupIcon() {
     mNativeMenuItem.image = [MOZIconHelper placeholderIconWithSize:iconSize];
   }
 
-  nsresult rv = mIconLoader->LoadIcon(iconURI, mContent);
+  nsresult rv = mIconLoader->LoadIcon(iconURI, aContent);
   if (NS_FAILED(rv)) {
     
     
@@ -100,12 +95,12 @@ nsresult nsMenuItemIconX::SetupIcon() {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-already_AddRefed<nsIURI> nsMenuItemIconX::GetIconURI() {
+already_AddRefed<nsIURI> nsMenuItemIconX::GetIconURI(nsIContent* aContent) {
   
   nsAutoString imageURIString;
   bool hasImageAttr =
-      mContent->IsElement() &&
-      mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::image, imageURIString);
+      aContent->IsElement() &&
+      aContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::image, imageURIString);
 
   if (hasImageAttr) {
     
@@ -122,12 +117,12 @@ already_AddRefed<nsIURI> nsMenuItemIconX::GetIconURI() {
 
   
   
-  RefPtr<mozilla::dom::Document> document = mContent->GetComposedDoc();
-  if (!document || !mContent->IsElement()) {
+  RefPtr<mozilla::dom::Document> document = aContent->GetComposedDoc();
+  if (!document || !aContent->IsElement()) {
     return nullptr;
   }
 
-  RefPtr<ComputedStyle> sc = nsComputedDOMStyle::GetComputedStyle(mContent->AsElement(), nullptr);
+  RefPtr<ComputedStyle> sc = nsComputedDOMStyle::GetComputedStyle(aContent->AsElement(), nullptr);
   if (!sc) {
     return nullptr;
   }

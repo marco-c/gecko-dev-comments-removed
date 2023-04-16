@@ -23,14 +23,13 @@ class nsMenuObjectX;
 
 class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
  public:
-  nsMenuItemIconX(nsMenuObjectX* aMenuItem, nsIContent* aContent,
-                  NSMenuItem* aNativeMenuItem);
+  nsMenuItemIconX(nsMenuObjectX* aMenuItem, NSMenuItem* aNativeMenuItem);
   ~nsMenuItemIconX();
 
  public:
   
   
-  nsresult SetupIcon();
+  nsresult SetupIcon(nsIContent* aContent);
 
   
   
@@ -38,7 +37,7 @@ class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
 
  protected:
   
-  already_AddRefed<nsIURI> GetIconURI();
+  already_AddRefed<nsIURI> GetIconURI(nsIContent* aContent);
 
   nsCOMPtr<nsIContent> mContent;  
   nsMenuObjectX* mMenuObject;     
