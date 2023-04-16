@@ -1462,7 +1462,7 @@ static bool HasNonLockModifier(Modifiers aModifiers) {
 
 APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
   APZThreadUtils::AssertOnControllerThread();
-  InputHandlingState state;
+  InputHandlingState state{aEvent};
 
   
   AutoFocusSequenceNumberSetter focusSetter(mFocusState, aEvent);
@@ -1489,7 +1489,6 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
       }
 
       state.mHit = GetTargetAPZC(mouseInput.mOrigin);
-      aEvent.mLayersId = state.mHit.mLayersId;
       bool hitScrollbar = (bool)state.mHit.mScrollbarNode;
 
       
@@ -1567,11 +1566,10 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
       
       ScrollWheelInput& wheelInput = aEvent.AsScrollWheelInput();
       state.mHit = GetTargetAPZC(wheelInput.mOrigin);
-      aEvent.mLayersId = state.mHit.mLayersId;
 
       wheelInput.mHandledByAPZ = WillHandleInput(wheelInput);
       if (!wheelInput.mHandledByAPZ) {
-        return state.mResult;
+        return state.Finish();
       }
 
       mOvershootDetector.Update(wheelInput);
@@ -1592,7 +1590,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
                                                  state.mHit.mTargetApzc);
           }
           state.mResult.SetStatusAsConsumeNoDefault();
-          return state.mResult;
+          return state.Finish();
         }
 
         MOZ_ASSERT(wheelInput.mAPZAction == APZWheelAction::Scroll);
@@ -1611,7 +1609,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
             UntransformBy(transformToGecko, wheelInput.mOrigin);
 
         if (!untransformedOrigin) {
-          return state.mResult;
+          return state.Finish();
         }
 
         state.mResult = mInputQueue->ReceiveInputEvent(
@@ -1629,11 +1627,10 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
       
       PanGestureInput& panInput = aEvent.AsPanGestureInput();
       state.mHit = GetTargetAPZC(panInput.mPanStartPoint);
-      aEvent.mLayersId = state.mHit.mLayersId;
 
       panInput.mHandledByAPZ = WillHandleInput(panInput);
       if (!panInput.mHandledByAPZ) {
-        return state.mResult;
+        return state.Finish();
       }
 
       
@@ -1667,7 +1664,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
                               panInput.mPanStartPoint);
 
         if (!untransformedStartPoint || !untransformedDisplacement) {
-          return state.mResult;
+          return state.Finish();
         }
 
         state.mResult = mInputQueue->ReceiveInputEvent(
@@ -1688,11 +1685,10 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
       if (HasNonLockModifier(pinchInput.modifiers)) {
         APZCTM_LOG("Discarding pinch input due to modifiers 0x%x\n",
                    pinchInput.modifiers);
-        return state.mResult;
+        return state.Finish();
       }
 
       state.mHit = GetTargetAPZC(pinchInput.mFocusPoint);
-      aEvent.mLayersId = state.mHit.mLayersId;
 
       
       pinchInput.mHandledByAPZ = true;
@@ -1713,7 +1709,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
             UntransformBy(outTransform, pinchInput.mFocusPoint);
 
         if (!untransformedFocusPoint) {
-          return state.mResult;
+          return state.Finish();
         }
 
         state.mResult = mInputQueue->ReceiveInputEvent(
@@ -1728,7 +1724,6 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
     case TAPGESTURE_INPUT: {  
       TapGestureInput& tapInput = aEvent.AsTapGestureInput();
       state.mHit = GetTargetAPZC(tapInput.mPoint);
-      aEvent.mLayersId = state.mHit.mLayersId;
 
       if (state.mHit.mTargetApzc) {
         MOZ_ASSERT(state.mHit.mHitResult != CompositorHitTestInvisibleToHit);
@@ -1740,7 +1735,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
             UntransformBy(outTransform, tapInput.mPoint);
 
         if (!untransformedPoint) {
-          return state.mResult;
+          return state.Finish();
         }
 
         state.mResult = mInputQueue->ReceiveInputEvent(
@@ -1758,7 +1753,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
       if (!StaticPrefs::apz_keyboard_enabled_AtStartup() ||
           StaticPrefs::accessibility_browsewithcaret()) {
         APZ_KEY_LOG("Skipping key input from invalid prefs\n");
-        return state.mResult;
+        return state.Finish();
       }
 
       KeyboardInput& keyInput = aEvent.AsKeyboardInput();
@@ -1775,14 +1770,14 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
         if (mFocusState.CanIgnoreKeyboardShortcutMisses()) {
           focusSetter.MarkAsNonFocusChanging();
         }
-        return state.mResult;
+        return state.Finish();
       }
 
       
       
       if (shortcut->mDispatchToContent) {
         APZ_KEY_LOG("Skipping key input with dispatch-to-content shortcut\n");
-        return state.mResult;
+        return state.Finish();
       }
 
       
@@ -1811,7 +1806,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
       
       if (!targetGuid) {
         APZ_KEY_LOG("Skipping key input with no current focus target\n");
-        return state.mResult;
+        return state.Finish();
       }
 
       RefPtr<AsyncPanZoomController> targetApzc =
@@ -1819,7 +1814,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
 
       if (!targetApzc) {
         APZ_KEY_LOG("Skipping key input with focus target but no APZC\n");
-        return state.mResult;
+        return state.Finish();
       }
 
       
@@ -1843,7 +1838,7 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
       break;
     }
   }
-  return state.mResult;
+  return state.Finish();
 }
 
 static TouchBehaviorFlags ConvertToTouchBehavior(
@@ -1918,6 +1913,17 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetTouchInputBlockAPZC(
   return hit;
 }
 
+APZEventResult APZCTreeManager::InputHandlingState::Finish() const {
+  
+  
+  
+  
+  if (mHit.mLayersId.IsValid()) {
+    mEvent.mLayersId = mHit.mLayersId;
+  }
+  return mResult;
+}
+
 void APZCTreeManager::ProcessTouchInput(InputHandlingState& aState,
                                         MultiTouchInput& aInput) {
   aInput.mHandledByAPZ = true;
@@ -1947,11 +1953,6 @@ void APZCTreeManager::ProcessTouchInput(InputHandlingState& aState,
     aState.mHit = GetTouchInputBlockAPZC(aInput, &touchBehaviors);
     
     mTouchBlockHitResult = aState.mHit.CopyWithoutScrollbarNode();
-    if (aState.mHit.mLayersId.IsValid()) {
-      
-      
-      aInput.mLayersId = aState.mHit.mLayersId;
-    }
     hitScrollbarNode = std::move(aState.mHit.mScrollbarNode);
 
     

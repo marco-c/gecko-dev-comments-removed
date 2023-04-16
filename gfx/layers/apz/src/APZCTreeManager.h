@@ -685,12 +685,19 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   struct InputHandlingState {
     
+    InputData& mEvent;
+
+    
     APZEventResult mResult;
 
     
     
     
     HitTestResult mHit;
+
+    
+    
+    APZEventResult Finish() const;
   };
 
   void ProcessTouchInput(InputHandlingState& aState, MultiTouchInput& aInput);
