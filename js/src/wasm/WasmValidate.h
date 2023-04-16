@@ -981,7 +981,7 @@ class Decoder {
 
 
 
-[[nodiscard]] bool EncodeLocalEntries(Encoder& d, const ValTypeVector& locals);
+[[nodiscard]] bool EncodeLocalEntries(Encoder& e, const ValTypeVector& locals);
 
 
 
@@ -1003,7 +1003,7 @@ class Decoder {
 
 
 [[nodiscard]] bool StartsCodeSection(const uint8_t* begin, const uint8_t* end,
-                                     SectionRange* range);
+                                     SectionRange* codeSection);
 
 
 
