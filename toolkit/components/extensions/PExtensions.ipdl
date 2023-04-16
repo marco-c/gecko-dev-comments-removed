@@ -1,0 +1,28 @@
+
+
+
+
+
+
+include protocol PContent;
+include protocol PInProcess;
+
+namespace mozilla {
+namespace extensions {
+
+
+
+
+
+
+
+refcounted protocol PExtensions
+{
+    manager PContent or PInProcess;
+
+  parent:
+    async __delete__();
+};
+
+} 
+} 

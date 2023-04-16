@@ -1,0 +1,16 @@
+
+
+
+
+
+#include "mozilla/extensions/ExtensionsParent.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/RefPtr.h"
+
+namespace mozilla {
+namespace extensions {
+
+void ExtensionsParent::ActorDestroy(ActorDestroyReason aWhy) {}
+
+}  
+}  
