@@ -51,7 +51,7 @@ ID3D11Texture2D* RenderDXGITextureHost::GetD3D11Texture2DWithGL() {
 
   if (!mGL) {
     
-    mGL = RenderThread::Get()->SharedGL();
+    mGL = RenderThread::Get()->SingletonGL();
   }
 
   if (!EnsureD3D11Texture2DWithGL()) {

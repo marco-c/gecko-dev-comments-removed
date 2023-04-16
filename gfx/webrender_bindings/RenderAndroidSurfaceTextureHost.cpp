@@ -99,7 +99,7 @@ bool RenderAndroidSurfaceTextureHost::EnsureAttachedToGLContext() {
   }
 
   if (!mGL) {
-    mGL = RenderThread::Get()->SharedGL();
+    mGL = RenderThread::Get()->SingletonGL();
   }
 
   if (!mSurfTex || !mGL || !mGL->MakeCurrent()) {
@@ -210,7 +210,7 @@ gfx::SurfaceFormat RenderAndroidSurfaceTextureHost::GetFormat() const {
 already_AddRefed<DataSourceSurface>
 RenderAndroidSurfaceTextureHost::ReadTexImage() {
   if (!mGL) {
-    mGL = RenderThread::Get()->SharedGL();
+    mGL = RenderThread::Get()->SingletonGL();
     if (!mGL) {
       return nullptr;
     }

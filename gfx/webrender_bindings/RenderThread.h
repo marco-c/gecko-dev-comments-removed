@@ -255,9 +255,9 @@ class RenderThread final {
   }
 
   
-  gl::GLContext* SharedGL(nsACString& aError);
-  gl::GLContext* SharedGL();
-  void ClearSharedGL();
+  gl::GLContext* SingletonGL(nsACString& aError);
+  gl::GLContext* SingletonGL();
+  void ClearSingletonGL();
   RefPtr<layers::SurfacePool> SharedSurfacePool();
   void ClearSharedSurfacePool();
 
@@ -322,7 +322,7 @@ class RenderThread final {
 
   
   
-  RefPtr<gl::GLContext> mSharedGL;
+  RefPtr<gl::GLContext> mSingletonGL;
 
   RefPtr<layers::SurfacePool> mSurfacePool;
 
