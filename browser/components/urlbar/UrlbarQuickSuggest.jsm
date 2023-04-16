@@ -334,17 +334,8 @@ class KeywordTree {
         if (resultID !== undefined) {
           
           
-          
-          
-          
-          
-          
           let result = UrlbarQuickSuggest._results.get(resultID);
-          if (
-            result &&
-            result.keywords.some(p => p.startsWith(query)) &&
-            result.keywords.some(p => query.startsWith(p))
-          ) {
+          if (result?.keywords.includes(query)) {
             return { resultID };
           }
         }
