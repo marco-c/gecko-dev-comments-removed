@@ -27,17 +27,39 @@ exports.DocumentEventsListener = DocumentEventsListener;
 DocumentEventsListener.prototype = {
   listen() {
     EventEmitter.on(this.targetActor, "window-ready", this.onWindowReady);
-    this.onWindowReady({ window: this.targetActor.window, isTopLevel: true });
+    this.onWindowReady({
+      window: this.targetActor.window,
+      isTopLevel: true,
+      
+      
+      shouldBeIgnoredAsRedundantWithTargetAvailable: true,
+    });
   },
 
-  onWindowReady({ window, isTopLevel }) {
+  onWindowReady({
+    window,
+    isTopLevel,
+    shouldBeIgnoredAsRedundantWithTargetAvailable,
+  }) {
     
     if (!isTopLevel) {
       return;
     }
 
     const time = window.performance.timing.navigationStart;
-    this.emit("dom-loading", time);
+    this.emit(
+      "dom-loading",
+      time,
+      
+      
+      
+      
+      
+      
+      shouldBeIgnoredAsRedundantWithTargetAvailable ||
+        (this.targetActor.isTopLevel &&
+          this.targetActor.followWindowGlobalLifecycle)
+    );
 
     const { readyState } = window.document;
     if (readyState != "interactive" && readyState != "complete") {
