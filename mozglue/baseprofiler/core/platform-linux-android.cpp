@@ -77,9 +77,11 @@ namespace baseprofiler {
 int profiler_current_process_id() { return getpid(); }
 
 int profiler_current_thread_id() {
-#if defined(GP_OS_linux) || defined(GP_OS_android)
+#if defined(GP_OS_linux)
   
   return static_cast<int>(static_cast<pid_t>(syscall(SYS_gettid)));
+#elif defined(GP_OS_android)
+  return gettid();
 #elif defined(GP_OS_freebsd)
   long id;
   (void)thr_self(&id);
