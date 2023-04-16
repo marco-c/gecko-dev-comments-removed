@@ -100,7 +100,12 @@ class nsHttpTransaction final : public nsAHttpTransaction,
       
       mPendingDurationTime = TimeStamp::Now() - mPendingTime;
     }
-    mPendingTime = now ? TimeStamp::Now() : TimeStamp();
+    
+    
+    
+    if (mPendingTime.IsNull()) {
+      mPendingTime = now ? TimeStamp::Now() : TimeStamp();
+    }
   }
   const TimeStamp GetPendingTime() { return mPendingTime; }
 
