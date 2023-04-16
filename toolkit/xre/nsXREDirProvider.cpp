@@ -994,9 +994,13 @@ nsXREDirProvider::DoStartup() {
       
       nsCOMPtr<nsIPK11TokenDB> db =
           do_GetService("@mozilla.org/security/pk11tokendb;1");
-      nsCOMPtr<nsIPK11Token> token;
-      if (NS_SUCCEEDED(db->GetInternalKeyToken(getter_AddRefs(token)))) {
-        mozilla::Unused << token->Login(false);
+      if (db) {
+        nsCOMPtr<nsIPK11Token> token;
+        if (NS_SUCCEEDED(db->GetInternalKeyToken(getter_AddRefs(token)))) {
+          mozilla::Unused << token->Login(false);
+        }
+      } else {
+        NS_WARNING("Failed to get nsIPK11TokenDB service.");
       }
     }
 #endif
