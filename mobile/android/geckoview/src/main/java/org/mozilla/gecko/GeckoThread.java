@@ -485,6 +485,12 @@ public class GeckoThread extends Thread {
 
         
         Looper.myQueue().removeIdleHandler(idleHandler);
+
+        if (isChildProcess) {
+            
+            
+            System.exit(0);
+        }
     }
 
     
