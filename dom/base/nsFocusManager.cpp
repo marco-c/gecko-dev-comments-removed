@@ -1251,10 +1251,6 @@ static bool ShouldMatchFocusVisible(nsPIDOMWindowOuter* aWindow,
     }
   }
 
-  if (aFocusFlags & nsIFocusManager::FLAG_NOSHOWRING) {
-    return false;
-  }
-
   switch (nsFocusManager::GetFocusMoveActionCause(aFocusFlags)) {
     case InputContextAction::CAUSE_KEY:
       
@@ -2528,8 +2524,7 @@ void nsFocusManager::Focus(
     const bool shouldShowFocusRing =
         sendFocusEvent && ShouldMatchFocusVisible(aWindow, *aElement, aFlags);
 
-    aWindow->SetFocusedElement(aElement, focusMethod, false,
-                               shouldShowFocusRing);
+    aWindow->SetFocusedElement(aElement, focusMethod, false);
 
     
     if (aElement && aFocusChanged) {
@@ -3593,14 +3588,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
 
 uint32_t nsFocusManager::FocusOptionsToFocusManagerFlags(
     const mozilla::dom::FocusOptions& aOptions) {
-  uint32_t flags = 0;
-  if (aOptions.mPreventScroll) {
-    flags |= FLAG_NOSCROLL;
-  }
-  if (aOptions.mPreventFocusRing) {
-    flags |= FLAG_NOSHOWRING;
-  }
-  return flags;
+  return aOptions.mPreventScroll ? nsIFocusManager::FLAG_NOSCROLL : 0;
 }
 
 static bool IsHostOrSlot(const nsIContent* aContent) {
