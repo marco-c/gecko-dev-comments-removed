@@ -24,6 +24,9 @@
 #include "nsNetUtil.h"
 #include "nsReadableUtils.h"
 #include "nsIXPConnect.h"
+#ifdef ENABLE_MARIONETTE
+#  include "nsIMarionette.h"
+#endif
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -948,13 +951,20 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
     MeasureUnexpectedPrivilegedLoads(finalURI, contentPolicyType, remoteType);
   }
 
+  bool marionetteRunning = false;
+#ifdef ENABLE_MARIONETTE
+  nsCOMPtr<nsIMarionette> marionette = do_GetService(NS_MARIONETTE_CONTRACTID);
+  if (marionette) {
+    marionette->GetRunning(&marionetteRunning);
+  }
+#endif
+
   
   
   
   
   
-  if (xpc::AreNonLocalConnectionsDisabled() ||
-      mozilla::EnvHasValue("MOZ_MARIONETTE")) {
+  if (xpc::AreNonLocalConnectionsDisabled() || marionetteRunning) {
     bool disallowSystemPrincipalRemoteDocuments = Preferences::GetBool(
         "security.disallow_non_local_systemprincipal_in_tests");
     if (disallowSystemPrincipalRemoteDocuments) {
