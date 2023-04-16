@@ -390,8 +390,7 @@ bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
     bool isUnreachable = true;
     bool isLoopHeader = block->isLoopHeader();
     size_t numPred = block->numPredecessors();
-    size_t i = 0;
-    for (; i < numPred; i++) {
+    for (size_t i = 0; i < numPred; i++) {
       if (mir->shouldCancel("Prune unused branches (inner loop 1)")) {
         return false;
       }
@@ -414,147 +413,7 @@ bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
 
     
     
-    
-    bool shouldBailout = block->getHitState() == MBasicBlock::HitState::Count &&
-                         block->getHitCount() == 0;
-
-    
-    
-    
-    if (!isUnreachable && shouldBailout) {
-      size_t p = numPred;
-      size_t predCount = 0;
-      size_t numSuccessorsOfPreds = 1;
-      bool isLoopExit = false;
-      while (p--) {
-        if (mir->shouldCancel("Prune unused branches (inner loop 2)")) {
-          return false;
-        }
-
-        MBasicBlock* pred = block->getPredecessor(p);
-        if (pred->getHitState() == MBasicBlock::HitState::Count) {
-          predCount += pred->getHitCount();
-        }
-        isLoopExit |= pred->isLoopHeader() && pred->backedge() != *block;
-        numSuccessorsOfPreds += pred->numSuccessors() - 1;
-      }
-
-      
-      
-      
-      
-      size_t numDominatedInst = 0;
-      size_t numEffectfulInst = 0;
-      int numInOutEdges = block->numPredecessors();
-      size_t branchSpan = 0;
-      ReversePostorderIterator it(block);
-      do {
-        if (mir->shouldCancel("Prune unused branches (inner loop 3)")) {
-          return false;
-        }
-
-        
-        numInOutEdges -= it->numPredecessors();
-        if (numInOutEdges < 0) {
-          break;
-        }
-        numInOutEdges += it->numSuccessors();
-
-        
-        for (MDefinitionIterator def(*it); def; def++) {
-          numDominatedInst++;
-          if (def->isEffectful()) {
-            numEffectfulInst++;
-          }
-        }
-
-        it++;
-        branchSpan++;
-      } while (numInOutEdges > 0 && it != graph.rpoEnd());
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      size_t score = 0;
-      MOZ_ASSERT(numSuccessorsOfPreds >= 1);
-      score += predCount * JitOptions.branchPruningHitCountFactor /
-               numSuccessorsOfPreds;
-      score += numDominatedInst * JitOptions.branchPruningInstFactor;
-      score += branchSpan * JitOptions.branchPruningBlockSpanFactor;
-      score += numEffectfulInst * JitOptions.branchPruningEffectfulInstFactor;
-      if (score < JitOptions.branchPruningThreshold) {
-        shouldBailout = false;
-      }
-
-      
-      
-      
-      if (predCount / numSuccessorsOfPreds < 50) {
-        shouldBailout = false;
-      }
-
-      
-      
-      
-      if (numSuccessorsOfPreds == 1) {
-        shouldBailout = false;
-      }
-
-      
-      
-      
-      if (isLoopExit) {
-        shouldBailout = false;
-      }
-
-      
-      
-      
-      
-      if (numSuccessorsOfPreds > 8) {
-        shouldBailout = false;
-      }
-
-      JitSpew(JitSpew_Prune,
-              "info: block %u,"
-              " predCount: %zu, domInst: %zu"
-              ", span: %zu, effectful: %zu, "
-              " isLoopExit: %s, numSuccessorsOfPred: %zu."
-              " (score: %zu, shouldBailout: %s)",
-              block->id(), predCount, numDominatedInst, branchSpan,
-              numEffectfulInst, isLoopExit ? "true" : "false",
-              numSuccessorsOfPreds, score, shouldBailout ? "true" : "false");
-    }
-
-    
-    
-    if (!isUnreachable && !shouldBailout) {
+    if (!isUnreachable) {
       continue;
     }
 
@@ -562,11 +421,6 @@ bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
     if (isUnreachable) {
       JitSpew(JitSpew_Prune, "Mark block %u as unreachable.", block->id());
       block->setUnreachable();
-      
-      
-    } else if (shouldBailout) {
-      JitSpew(JitSpew_Prune, "Mark block %u as bailing block.", block->id());
-      block->markUnchecked();
     }
 
     
