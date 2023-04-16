@@ -67,23 +67,6 @@ nsresult nsMenuItemIconX::SetupIcon() {
     return NS_ERROR_FAILURE;
   }
 
-  if (!mMenuObject) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (mMenuObject->MenuObjectType() == eMenuItemObjectType) {
-    nsMenuItemX* menuItem = static_cast<nsMenuItemX*>(mMenuObject);
-    if (menuItem->GetMenuItemType() != eRegularMenuItemType) {
-      return NS_OK;
-    }
-  }
-
   nsCOMPtr<nsIURI> iconURI = GetIconURI();
   if (!iconURI) {
     
