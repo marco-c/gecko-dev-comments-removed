@@ -310,7 +310,7 @@ CommonDialog.prototype = {
       if (isOSX) {
         this.ui.infoBody.focus();
       } else {
-        button.focus();
+        button.focus({ preventFocusRing: true });
       }
     } else if (this.args.promptType == "promptPassword") {
       

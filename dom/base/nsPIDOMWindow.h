@@ -677,6 +677,10 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   bool mHasNotifiedGlobalCreated;
 
+  
+  
+  
+  
   bool mUnknownFocusMethodShouldShowOutline = true;
 
   uint32_t mMarkedCCGeneration;

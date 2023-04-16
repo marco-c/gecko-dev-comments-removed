@@ -4368,6 +4368,11 @@ void nsGlobalWindowInner::SetFocusedElement(Element* aElement,
     } else if (nsFocusManager::GetFocusMoveActionCause(mFocusMethod) !=
                widget::InputContextAction::CAUSE_UNKNOWN) {
       mUnknownFocusMethodShouldShowOutline = false;
+    } else if (aFocusMethod & nsIFocusManager::FLAG_NOSHOWRING) {
+      
+      
+      
+      mUnknownFocusMethodShouldShowOutline = false;
     }
   }
 
