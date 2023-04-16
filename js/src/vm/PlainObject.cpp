@@ -53,3 +53,32 @@ PlainObject* js::CreateThisForFunction(JSContext* cx,
 
   return res;
 }
+
+#ifdef DEBUG
+void PlainObject::assertHasNoNonWritableOrAccessorPropExclProto() const {
+  
+  
+  static constexpr size_t MaxCount = 8;
+
+  size_t count = 0;
+  PropertyName* protoName = runtimeFromMainThread()->commonNames->proto;
+
+  for (Shape::Range<NoGC> r(lastProperty()); !r.empty(); r.popFront()) {
+    Shape& propShape = r.front();
+    jsid id = propShape.propidRaw();
+
+    
+    if (JSID_IS_ATOM(id, protoName)) {
+      continue;
+    }
+
+    MOZ_ASSERT(propShape.isDataProperty());
+    MOZ_ASSERT(propShape.writable());
+
+    count++;
+    if (count > MaxCount) {
+      return;
+    }
+  }
+}
+#endif

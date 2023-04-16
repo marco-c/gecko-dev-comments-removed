@@ -26,11 +26,27 @@ class PlainObject : public NativeObject {
  public:
   static const JSClass class_;
 
+ private:
+#ifdef DEBUG
+  void assertHasNoNonWritableOrAccessorPropExclProto() const;
+#endif
+
+ public:
   static inline JS::Result<PlainObject*, JS::OOM> createWithTemplate(
       JSContext* cx, JS::Handle<PlainObject*> templateObject);
 
   
   inline gc::AllocKind allocKindForTenure() const;
+
+  bool hasNonWritableOrAccessorPropExclProto() const {
+    if (hasFlag(ObjectFlag::HasNonWritableOrAccessorPropExclProto)) {
+      return true;
+    }
+#ifdef DEBUG
+    assertHasNoNonWritableOrAccessorPropExclProto();
+#endif
+    return false;
+  }
 };
 
 

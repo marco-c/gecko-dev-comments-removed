@@ -657,6 +657,19 @@ enum class ObjectFlag : uint16_t {
 
   
   QualifiedVarObj = 1 << 8,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  HasNonWritableOrAccessorPropExclProto = 1 << 9,
 };
 
 using ObjectFlags = EnumFlags<ObjectFlag>;
