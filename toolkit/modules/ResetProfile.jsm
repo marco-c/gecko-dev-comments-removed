@@ -49,17 +49,44 @@ var ResetProfile = {
   
 
 
-  openConfirmationDialog(window) {
+  async openConfirmationDialog(window) {
+    let win = window;
     
+    
+    if (win.docShell.chromeEventHandler) {
+      win = win.browsingContext?.topChromeWindow;
+    }
+
     let params = {
+      learnMore: false,
       reset: false,
     };
-    window.browsingContext.topChromeWindow.openDialog(
-      "chrome://global/content/resetProfile.xhtml",
-      null,
-      "modal,centerscreen,titlebar",
-      params
-    );
+
+    if (win.gDialogBox) {
+      await win.gDialogBox.open(
+        "chrome://global/content/resetProfile.xhtml",
+        params
+      );
+    } else {
+      win.openDialog(
+        "chrome://global/content/resetProfile.xhtml",
+        null,
+        "modal,centerscreen,titlebar",
+        params
+      );
+    }
+
+    if (params.learnMore) {
+      win.openTrustedLinkIn(
+        "https://support.mozilla.org/kb/refresh-firefox-reset-add-ons-and-settings",
+        "tab",
+        {
+          fromChrome: true,
+        }
+      );
+      return;
+    }
+
     if (!params.reset) {
       return;
     }
