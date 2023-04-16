@@ -208,7 +208,11 @@ class StudyList extends React.Component {
               translations,
             });
           }
-          if (study.type === "nimbus") {
+          if (
+            study.type === "nimbus" ||
+            
+            study.type === "messaging_experiment"
+          ) {
             return r(MessagingSystemListItem, {
               key: study.slug,
               study,
