@@ -9,6 +9,7 @@ package org.mozilla.geckoview;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Locale;
 
 import androidx.annotation.AnyThread;
@@ -18,6 +19,7 @@ import androidx.annotation.Nullable;
 
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission;
 
 
 
@@ -180,5 +182,37 @@ public final class StorageController {
         
         return String.format("gvctx%x", new BigInteger(contextId.getBytes()))
                .toLowerCase(Locale.ROOT);
+    }
+
+    
+
+
+
+
+
+    @AnyThread
+    public @NonNull GeckoResult<List<ContentPermission>> getAllPermissions() {
+        return EventDispatcher.getInstance().queryBundle("GeckoView:GetAllPermissions").map(bundle -> {
+            final GeckoBundle[] permsArray = bundle.getBundleArray("permissions");
+            return ContentPermission.fromBundleArray(permsArray);
+        });
+    }
+
+    
+
+
+
+
+
+
+
+    @AnyThread
+    public @NonNull GeckoResult<List<ContentPermission>> getPermissions(final @NonNull String uri) {
+        final GeckoBundle msg = new GeckoBundle(1);
+        msg.putString("uri", uri);
+        return EventDispatcher.getInstance().queryBundle("GeckoView:GetPermissionsByURI", msg).map(bundle -> {
+            final GeckoBundle[] permsArray = bundle.getBundleArray("permissions");
+            return ContentPermission.fromBundleArray(permsArray);
+        });
     }
 }

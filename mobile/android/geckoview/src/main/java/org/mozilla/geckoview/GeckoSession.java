@@ -14,6 +14,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.AbstractSequentialList;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -466,8 +467,11 @@ public class GeckoSession {
                 Log.d(LOGTAG, "handleMessage " + event + " uri=" + message.getString("uri"));
                 if ("GeckoView:LocationChange".equals(event)) {
                     if (message.getBoolean("isTopLevel")) {
+                        final GeckoBundle[] perms = message.getBundleArray("permissions");
+                        final List<PermissionDelegate.ContentPermission> permList =
+                            PermissionDelegate.ContentPermission.fromBundleArray(perms);
                         delegate.onLocationChange(GeckoSession.this,
-                                                  message.getString("uri"));
+                                                  message.getString("uri"), permList);
                     }
                     delegate.onCanGoBack(GeckoSession.this,
                                          message.getBoolean("canGoBack"));
@@ -3645,7 +3649,19 @@ public class GeckoSession {
 
 
         @UiThread
+        @DeprecationSchedule(id = "location-permissions", version = 92)
         default void onLocationChange(@NonNull final GeckoSession session, @Nullable final String url) {}
+
+        
+
+
+
+
+
+        @UiThread
+        default void onLocationChange(@NonNull GeckoSession session, @Nullable String url, final @NonNull List<PermissionDelegate.ContentPermission> perms) {
+            session.getNavigationDelegate().onLocationChange(session, url);
+        }
 
         
 
@@ -5364,6 +5380,110 @@ public class GeckoSession {
 
 
         int PERMISSION_MEDIA_KEY_SYSTEM_ACCESS = 6;
+
+        
+
+
+
+
+        class ContentPermission {
+            @Retention(RetentionPolicy.SOURCE)
+            @IntDef({VALUE_PROMPT, VALUE_DENY, VALUE_ALLOW})
+             @interface Value {}
+
+            
+
+
+            final public static int VALUE_PROMPT = 3;
+
+            
+
+
+            final public static int VALUE_DENY = 2;
+
+            
+
+
+            final public static int VALUE_ALLOW = 1;
+
+            
+
+
+            final public @NonNull String uri;
+
+            
+
+
+
+            final public boolean privateMode;
+
+            
+
+
+            final public int permission;
+
+            
+
+
+            final public @Value int value;
+
+            final private String mPrincipal;
+
+            protected ContentPermission() {
+                this.uri = "";
+                this.privateMode = false;
+                this.permission = PERMISSION_GEOLOCATION;
+                this.value = VALUE_ALLOW;
+                this.mPrincipal = "";
+            }
+
+            private ContentPermission(final @NonNull GeckoBundle bundle) {
+                this.uri = bundle.getString("uri");
+                this.mPrincipal = bundle.getString("principal");
+                this.privateMode = bundle.getBoolean("privateMode");
+
+                final String permission = bundle.getString("type");
+                this.permission = convertType(permission);
+
+                this.value = bundle.getInt("value");
+            }
+
+            private static int convertType(final @NonNull String type) {
+                if ("geolocation".equals(type)) {
+                    return PERMISSION_GEOLOCATION;
+                } else if ("desktop-notification".equals(type)) {
+                    return PERMISSION_DESKTOP_NOTIFICATION;
+                } else if ("persistent-storage".equals(type)) {
+                    return PERMISSION_PERSISTENT_STORAGE;
+                } else if ("xr".equals(type)) {
+                    return PERMISSION_XR;
+                } else if ("autoplay-media-inaudible".equals(type)) {
+                    return PERMISSION_AUTOPLAY_INAUDIBLE;
+                } else if ("autoplay-media-audible".equals(type)) {
+                    return PERMISSION_AUTOPLAY_AUDIBLE;
+                } else if ("media-key-system-access".equals(type)) {
+                    return PERMISSION_MEDIA_KEY_SYSTEM_ACCESS;
+                } else {
+                    return -1;
+                }
+            }
+
+             static @NonNull ArrayList<ContentPermission> fromBundleArray(final @NonNull GeckoBundle[] bundleArray) {
+                final ArrayList<ContentPermission> res = new ArrayList<ContentPermission>();
+                if (bundleArray == null) {
+                    return res;
+                }
+
+                for (final GeckoBundle bundle : bundleArray) {
+                    final ContentPermission temp = new ContentPermission(bundle);
+                    if (temp.permission == -1 || temp.value < 1 || temp.value > 3) {
+                        continue;
+                    }
+                    res.add(temp);
+                }
+                return res;
+            }
+        }
 
         
 
