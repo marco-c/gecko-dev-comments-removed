@@ -40,8 +40,8 @@ class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
   nsresult OnComplete(imgIContainer* aImage) override;
 
  protected:
-  nsCOMPtr<nsIContent> mContent;
-  nsMenuObjectX* mMenuObject;  
+  nsCOMPtr<nsIContent> mContent;  
+  nsMenuObjectX* mMenuObject;     
   nsIntRect mImageRegionRect;
   bool mSetIcon;
   NSMenuItem* mNativeMenuItem;  
