@@ -14,6 +14,7 @@
 #include "ODoHService.h"
 #include "TRRServiceBase.h"
 #include "nsICaptivePortalService.h"
+#include "nsTHashSet.h"
 
 class nsDNSService;
 class nsIPrefBranch;
@@ -135,9 +136,9 @@ class TRRService : public TRRServiceBase,
       "DataMutex::TRRBlocklist"};
 
   
-  nsTHashtable<nsCStringHashKey> mExcludedDomains;
-  nsTHashtable<nsCStringHashKey> mDNSSuffixDomains;
-  nsTHashtable<nsCStringHashKey> mEtcHostsDomains;
+  nsTHashSet<nsCString> mExcludedDomains;
+  nsTHashSet<nsCString> mDNSSuffixDomains;
+  nsTHashSet<nsCString> mEtcHostsDomains;
 
   enum class ConfirmationEvent {
     Init,

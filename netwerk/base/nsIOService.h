@@ -23,6 +23,7 @@
 #include "prtime.h"
 #include "nsICaptivePortalService.h"
 #include "nsIObserverService.h"
+#include "nsTHashSet.h"
 #include "nsWeakReference.h"
 
 #define NS_N(x) (sizeof(x) / sizeof(*x))
@@ -249,10 +250,10 @@ class nsIOService final : public nsIIOService,
   nsTArray<std::function<void()>> mPendingEvents;
 
   
-  nsTHashtable<nsCStringHashKey> mObserverTopicForSocketProcess;
+  nsTHashSet<nsCString> mObserverTopicForSocketProcess;
   
   
-  nsTHashtable<nsCStringHashKey> mSocketProcessTopicBlackList;
+  nsTHashSet<nsCString> mSocketProcessTopicBlackList;
 
   nsCOMPtr<nsIObserverService> mObserverService;
 
