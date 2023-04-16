@@ -933,6 +933,52 @@ class PerftestOutput(object):
 
         return subtests, vals
 
+    def parseAssortedDomOutput(self, test):
+        
+        
+
+        
+        
+
+        
+        
+        
+
+        
+        
+
+        _subtests = {}
+        data = test["measurements"]["assorted-dom"]
+        for pagecycle in data:
+            for _sub, _value in pagecycle[0].items():
+                
+                if _sub not in _subtests:
+                    
+                    _subtests[_sub] = {
+                        "unit": test["subtest_unit"],
+                        "alertThreshold": float(test["alert_threshold"]),
+                        "lowerIsBetter": test["subtest_lower_is_better"],
+                        "name": _sub,
+                        "replicates": [],
+                    }
+                _subtests[_sub]["replicates"].extend([_value])
+
+        vals = []
+        subtests = []
+        names = list(_subtests)
+        names.sort(reverse=True)
+        for name in names:
+            
+            _subtests[name]["value"] = float(
+                round(filters.median(_subtests[name]["replicates"]), 2)
+            )
+            subtests.append(_subtests[name])
+            
+            if name == "total":
+                vals.append([_subtests[name]["value"], name])
+
+        return subtests, vals
+
 
 class RaptorOutput(PerftestOutput):
     """class for raptor output"""
@@ -1298,52 +1344,6 @@ class RaptorOutput(PerftestOutput):
 
         return subtests, vals
 
-    def parseAssortedDomOutput(self, test):
-        
-        
-
-        
-        
-
-        
-        
-        
-
-        
-        
-
-        _subtests = {}
-        data = test["measurements"]["assorted-dom"]
-        for pagecycle in data:
-            for _sub, _value in pagecycle[0].items():
-                
-                if _sub not in _subtests:
-                    
-                    _subtests[_sub] = {
-                        "unit": test["subtest_unit"],
-                        "alertThreshold": float(test["alert_threshold"]),
-                        "lowerIsBetter": test["subtest_lower_is_better"],
-                        "name": _sub,
-                        "replicates": [],
-                    }
-                _subtests[_sub]["replicates"].extend([_value])
-
-        vals = []
-        subtests = []
-        names = list(_subtests)
-        names.sort(reverse=True)
-        for name in names:
-            
-            _subtests[name]["value"] = float(
-                round(filters.median(_subtests[name]["replicates"]), 2)
-            )
-            subtests.append(_subtests[name])
-            
-            if name == "total":
-                vals.append([_subtests[name]["value"], name])
-
-        return subtests, vals
-
     def summarize_screenshots(self, screenshots):
         if len(screenshots) == 0:
             return
@@ -1566,6 +1566,8 @@ class BrowsertimeOutput(PerftestOutput):
                     subtests, vals = self.parseWASMGodotOutput(test)
                 if "sunspider" in test["measurements"]:
                     subtests, vals = self.parseSunspiderOutput(test)
+                if "assorted-dom" in test["measurements"]:
+                    subtests, vals = self.parseAssortedDomOutput(test)
 
                 if subtests is None:
                     raise Exception("No benchmark metrics found in browsertime results")
