@@ -4200,6 +4200,10 @@ nsRect ScrollFrameHelper::RestrictToRootDisplayPort(
     return aDisplayportBase;
   }
 
+  
+  
+  MOZ_ASSERT(!mIsRoot || rootPresContext != pc);
+
   nsRect rootDisplayPort;
   bool hasDisplayPort =
       rootFrame->GetContent() && DisplayPortUtils::GetDisplayPort(
@@ -4382,7 +4386,10 @@ bool ScrollFrameHelper::DecideScrollableLayer(
 
         
         
-        if (usingDisplayPort) {
+        
+        
+        
+        if (usingDisplayPort && (!mIsRoot || pc->GetParentPresContext())) {
           displayportBase = RestrictToRootDisplayPort(displayportBase);
           MOZ_LOG(sDisplayportLog, LogLevel::Verbose,
                   ("Scroll id %" PRIu64 " has restricted base %s\n", viewID,
