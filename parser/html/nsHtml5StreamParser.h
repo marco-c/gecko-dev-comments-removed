@@ -15,6 +15,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
+#include "nsCharsetSource.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
@@ -89,36 +90,86 @@ enum eBomState {
   
 
 
-  BOM_SNIFFING_NOT_STARTED = 0,
+  BOM_SNIFFING_NOT_STARTED,
 
   
 
 
 
-  SEEN_UTF_16_LE_FIRST_BYTE = 1,
+  SEEN_UTF_16_LE_FIRST_BYTE,
 
   
 
 
 
-  SEEN_UTF_16_BE_FIRST_BYTE = 2,
+  SEEN_UTF_16_BE_FIRST_BYTE,
 
   
 
 
 
-  SEEN_UTF_8_FIRST_BYTE = 3,
+  SEEN_UTF_8_FIRST_BYTE,
 
   
 
 
 
-  SEEN_UTF_8_SECOND_BYTE = 4,
+  SEEN_UTF_8_SECOND_BYTE,
 
   
 
 
-  BOM_SNIFFING_OVER = 5
+  SEEN_UTF_16_BE_XML_FIRST,
+
+  
+
+
+  SEEN_UTF_16_BE_XML_SECOND,
+
+  
+
+
+  SEEN_UTF_16_BE_XML_THIRD,
+
+  
+
+
+  SEEN_UTF_16_BE_XML_FOURTH,
+
+  
+
+
+  SEEN_UTF_16_BE_XML_FIFTH,
+
+  
+
+
+  SEEN_UTF_16_LE_XML_FIRST,
+
+  
+
+
+  SEEN_UTF_16_LE_XML_SECOND,
+
+  
+
+
+  SEEN_UTF_16_LE_XML_THIRD,
+
+  
+
+
+  SEEN_UTF_16_LE_XML_FOURTH,
+
+  
+
+
+  SEEN_UTF_16_LE_XML_FIFTH,
+
+  
+
+
+  BOM_SNIFFING_OVER,
 };
 
 enum eHtml5StreamState {
@@ -186,12 +237,15 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
   inline void SetDocumentCharset(NotNull<const Encoding*> aEncoding,
-                                 int32_t aSource) {
+                                 int32_t aSource, bool aChannelHadCharset) {
     MOZ_ASSERT(mStreamState == STREAM_NOT_STARTED,
                "SetDocumentCharset called too late.");
     NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
+    MOZ_ASSERT(!(aSource == kCharsetFromChannel && !aChannelHadCharset),
+               "If charset is from channel, channel must have had charset.");
     mEncoding = aEncoding;
     mCharsetSource = aSource;
+    mChannelHadCharset = aChannelHadCharset;
   }
 
   inline void SetObserver(nsIRequestObserver* aObserver) {
@@ -310,7 +364,7 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
-  void SniffBOMlessUTF16BasicLatin(mozilla::Span<const uint8_t> aFromSegment);
+  void SniffBOMlessUTF16BasicLatin(const uint8_t* aBuf, size_t aBufLen);
 
   
 
@@ -347,7 +401,9 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
-  nsresult SetupDecodingFromBom(NotNull<const Encoding*> aEncoding);
+  void SetupDecodingFromBom(NotNull<const Encoding*> aEncoding);
+
+  void SetupDecodingFromUtf16BogoXml(NotNull<const Encoding*> aEncoding);
 
   
 
@@ -488,6 +544,11 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
   bool mReparseForbidden;
+
+  
+
+
+  bool mChannelHadCharset;
 
   
   

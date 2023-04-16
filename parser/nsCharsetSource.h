@@ -28,9 +28,9 @@ enum {
   kCharsetFromParentFrame,  
                             
                             
+  kCharsetFromXmlDeclaration,
   kCharsetFromMetaPrescan,  
   kCharsetFromMetaTag,      
-  kCharsetFromIrreversibleAutoDetection,
   kCharsetFromChannel,
   kCharsetFromOtherComponent,
   kCharsetFromPendingUserForcedAutoDetection,  
@@ -39,6 +39,10 @@ enum {
   kCharsetFromFinalUserForcedAutoDetection,
   kCharsetFromUserForced,  
   kCharsetFromUserForcedJapaneseAutoDetection,
+  kCharsetFromXmlDeclarationUtf16,        
+                                          
+  kCharsetFromIrreversibleAutoDetection,  
+                                          
   kCharsetFromByteOrderMark,
   kCharsetFromUtf8OnlyMime,  
   kCharsetFromBuiltIn,       
