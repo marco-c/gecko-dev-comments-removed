@@ -875,12 +875,17 @@ static BOOL gMenuItemsExecuteCommands = YES;
   }
 
   
+  
+  
+  NSEventModifierFlags modifierFlags = NSApp.currentEvent ? NSApp.currentEvent.modifierFlags : 0;
+
+  
   if (tag == eCommand_ID_About) {
     nsIContent* mostSpecificContent = sAboutItemContent;
     if (menuBar && menuBar->mAboutItemContent) {
       mostSpecificContent = menuBar->mAboutItemContent;
     }
-    nsMenuUtilsX::DispatchCommandTo(mostSpecificContent);
+    nsMenuUtilsX::DispatchCommandTo(mostSpecificContent, modifierFlags);
     return;
   }
   if (tag == eCommand_ID_Prefs) {
@@ -888,7 +893,7 @@ static BOOL gMenuItemsExecuteCommands = YES;
     if (menuBar && menuBar->mPrefItemContent) {
       mostSpecificContent = menuBar->mPrefItemContent;
     }
-    nsMenuUtilsX::DispatchCommandTo(mostSpecificContent);
+    nsMenuUtilsX::DispatchCommandTo(mostSpecificContent, modifierFlags);
     return;
   }
   if (tag == eCommand_ID_HideApp) {
@@ -916,7 +921,7 @@ static BOOL gMenuItemsExecuteCommands = YES;
     
     
     if (mostSpecificContent) {
-      nsMenuUtilsX::DispatchCommandTo(mostSpecificContent);
+      nsMenuUtilsX::DispatchCommandTo(mostSpecificContent, modifierFlags);
     } else {
       nsCOMPtr<nsIAppStartup> appStartup = mozilla::components::AppStartup::Service();
       if (appStartup) {
@@ -932,7 +937,7 @@ static BOOL gMenuItemsExecuteCommands = YES;
   if (menuGroupOwner) {
     nsMenuItemX* menuItem = menuGroupOwner->GetMenuItemForCommandID(static_cast<uint32_t>(tag));
     if (menuItem) {
-      menuItem->DoCommand();
+      menuItem->DoCommand(modifierFlags);
     }
   }
 }
