@@ -66,6 +66,23 @@ nsresult nsMenuItemIconX::SetupIcon() {
     return NS_ERROR_FAILURE;
   }
 
+  if (!mMenuObject) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (mMenuObject->MenuObjectType() == eMenuItemObjectType) {
+    nsMenuItemX* menuItem = static_cast<nsMenuItemX*>(mMenuObject);
+    if (menuItem->GetMenuItemType() != eRegularMenuItemType) {
+      return NS_OK;
+    }
+  }
+
   nsCOMPtr<nsIURI> iconURI;
   nsresult rv = GetIconURI(getter_AddRefs(iconURI));
   if (NS_FAILED(rv)) {
@@ -101,23 +118,6 @@ nsresult nsMenuItemIconX::SetupIcon() {
 }
 
 nsresult nsMenuItemIconX::GetIconURI(nsIURI** aIconURI) {
-  if (!mMenuObject) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (mMenuObject->MenuObjectType() == eMenuItemObjectType) {
-    nsMenuItemX* menuItem = static_cast<nsMenuItemX*>(mMenuObject);
-    if (menuItem->GetMenuItemType() != eRegularMenuItemType) {
-      return NS_ERROR_FAILURE;
-    }
-  }
-
   if (!mContent) {
     return NS_ERROR_FAILURE;
   }
