@@ -198,8 +198,7 @@ enum class ExplicitActiveStatus : uint8_t {
    * browsing context. */                                                     \
   FIELD(HistoryEntryCount, uint32_t)                                          \
   FIELD(IsInBFCache, bool)                                                    \
-  FIELD(HasRestoreData, bool)                                                 \
-  FIELD(SessionStoreEpoch, uint32_t)
+  FIELD(HasRestoreData, bool)
 
 
 
@@ -392,14 +391,12 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool IsInSubtreeOf(BrowsingContext* aContext);
 
   bool IsContentSubframe() const { return IsContent() && IsFrame(); }
-
   
   uint64_t Id() const { return mBrowsingContextId; }
 
   BrowsingContext* GetParent() const;
   BrowsingContext* Top();
   const BrowsingContext* Top() const;
-
   int32_t IndexOf(BrowsingContext* aChild);
 
   
@@ -467,38 +464,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   
-  enum class WalkFlag {
-    Next,
-    Skip,
-    Stop,
-  };
-
-  
-
-
-
-
-
-
-
-
-
-  template <typename F>
-  void PreOrderWalk(F&& aCallback) {
-    if constexpr (std::is_void_v<
-                      typename std::invoke_result_t<F, BrowsingContext*>>) {
-      PreOrderWalkVoid(std::forward<F>(aCallback));
-    } else {
-      PreOrderWalkFlag(std::forward<F>(aCallback));
-    }
-  }
-
-  void PreOrderWalkVoid(const std::function<void(BrowsingContext*)>& aCallback);
-  WalkFlag PreOrderWalkFlag(
-      const std::function<WalkFlag(BrowsingContext*)>& aCallback);
-
+  void PreOrderWalk(const std::function<void(BrowsingContext*)>& aCallback);
   void PostOrderWalk(const std::function<void(BrowsingContext*)>& aCallback);
-
   void GetAllBrowsingContextsInSubtree(
       nsTArray<RefPtr<BrowsingContext>>& aBrowsingContexts);
 
@@ -847,8 +814,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return GetPrefersColorSchemeOverride();
   }
 
-  void FlushSessionStore();
-
  protected:
   virtual ~BrowsingContext();
   BrowsingContext(WindowContext* aParentWindow, BrowsingContextGroup* aGroup,
@@ -926,11 +891,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
                              const BaseTransaction& aTxn, uint64_t aEpoch);
   void SendCommitTransaction(ContentChild* aChild, const BaseTransaction& aTxn,
                              uint64_t aEpoch);
-
-  bool CanSet(FieldIndex<IDX_SessionStoreEpoch>, uint32_t aEpoch,
-              ContentParent* aSource) {
-    return IsTop() && !aSource;
-  }
 
   using CanSetResult = syncedcontext::CanSetResult;
 

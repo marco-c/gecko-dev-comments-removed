@@ -11,7 +11,6 @@
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/DOMRect.h"
@@ -44,8 +43,6 @@ class WindowGlobalChild;
 class JSWindowActorParent;
 class JSActorMessageMeta;
 struct PageUseCounters;
-class WindowSessionStoreState;
-struct WindowSessionStoreUpdate;
 
 
 
@@ -82,8 +79,6 @@ class WindowGlobalParent final : public WindowContext,
   CanonicalBrowsingContext* GetBrowsingContext() {
     return CanonicalBrowsingContext::Cast(WindowContext::GetBrowsingContext());
   }
-
-  Element* GetRootOwnerElement();
 
   
   bool IsClosed() { return !CanSend(); }
@@ -207,10 +202,6 @@ class WindowGlobalParent final : public WindowContext,
 
   const nsACString& GetRemoteType() override;
 
-  nsresult UpdateSessionStore(const Maybe<FormData>& aFormData,
-                              const Maybe<nsPoint>& aScrollPosition,
-                              uint32_t aEpoch);
-
  protected:
   already_AddRefed<JSActor> InitJSActor(JS::HandleObject aMaybeActor,
                                         const nsACString& aName,
@@ -272,12 +263,6 @@ class WindowGlobalParent final : public WindowContext,
 
   mozilla::ipc::IPCResult RecvRequestRestoreTabContent();
 
-  mozilla::ipc::IPCResult RecvUpdateSessionStore(
-      const Maybe<FormData>& aFormData, const Maybe<nsPoint>& aScrollPosition,
-      uint32_t aEpoch);
-
-  mozilla::ipc::IPCResult RecvResetSessionStore(uint32_t aEpoch);
-
  private:
   WindowGlobalParent(CanonicalBrowsingContext* aBrowsingContext,
                      uint64_t aInnerWindowId, uint64_t aOuterWindowId,
@@ -287,8 +272,6 @@ class WindowGlobalParent final : public WindowContext,
 
   bool ShouldTrackSiteOriginTelemetry();
   void FinishAccumulatingPageUseCounters();
-
-  nsresult ResetSessionStore(uint32_t aEpoch);
 
   
   

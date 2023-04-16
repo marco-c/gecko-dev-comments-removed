@@ -88,9 +88,7 @@
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
 #include "mozilla/dom/PBrowser.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
-#include "mozilla/dom/SessionStoreChangeListener.h"
 #include "mozilla/dom/SessionStoreListener.h"
-#include "mozilla/dom/SessionStoreUtils.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/XULFrameElement.h"
 #include "mozilla/gfx/CrossProcessPaint.h"
@@ -155,8 +153,7 @@ using PrintPreviewResolver = std::function<void(const PrintPreviewResultInfo&)>;
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(nsFrameLoader, mPendingBrowsingContext,
                                       mMessageManager, mChildMessageManager,
-                                      mRemoteBrowser,
-                                      mSessionStoreChangeListener)
+                                      mRemoteBrowser)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsFrameLoader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsFrameLoader)
 
@@ -1852,7 +1849,7 @@ void nsFrameLoader::StartDestroy(bool aForProcessSwitch) {
   mDestroyCalled = true;
 
   
-  RequestTabStateFlush();
+  RequestTabStateFlush( 0,  true);
 
   
   
@@ -2019,11 +2016,6 @@ void nsFrameLoader::DestroyDocShell() {
     mSessionStoreListener = nullptr;
   }
 
-  if (mSessionStoreChangeListener) {
-    mSessionStoreChangeListener->Stop();
-    mSessionStoreChangeListener = nullptr;
-  }
-
   
   if (GetDocShell()) {
     GetDocShell()->Destroy();
@@ -2117,19 +2109,11 @@ void nsFrameLoader::SetOwnerContent(Element* aContent) {
   if (mSessionStoreListener && mOwnerContent) {
     
     
-    
     mSessionStoreListener->SetOwnerContent(mOwnerContent);
   }
 
   if (RefPtr<BrowsingContext> browsingContext = GetExtantBrowsingContext()) {
     browsingContext->SetEmbedderElement(mOwnerContent);
-  }
-
-  if (mSessionStoreChangeListener) {
-    
-    
-    
-    mSessionStoreChangeListener->UpdateEventTargets();
   }
 
   AutoJSAPI jsapi;
@@ -3011,17 +2995,15 @@ nsresult nsFrameLoader::EnsureMessageManager() {
         GetDocShell(), mOwnerContent, mMessageManager);
     NS_ENSURE_TRUE(mChildMessageManager, NS_ERROR_UNEXPECTED);
 
+#if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_THUNDERBIRD) && \
+    !defined(MOZ_SUITE)
     
-    if constexpr (SessionStoreUtils::NATIVE_LISTENER) {
-      if (XRE_IsParentProcess()) {
-        mSessionStoreListener = new TabListener(GetDocShell(), mOwnerContent);
-        rv = mSessionStoreListener->Init();
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        mSessionStoreChangeListener =
-            SessionStoreChangeListener::Create(GetExtantBrowsingContext());
-      }
+    if (XRE_IsParentProcess()) {
+      mSessionStoreListener = new TabListener(GetDocShell(), mOwnerContent);
+      rv = mSessionStoreListener->Init();
+      NS_ENSURE_SUCCESS(rv, rv);
     }
+#endif
   }
   return NS_OK;
 }
@@ -3159,93 +3141,23 @@ void nsFrameLoader::RequestUpdatePosition(ErrorResult& aRv) {
   }
 }
 
-already_AddRefed<Promise> nsFrameLoader::RequestTabStateFlush(
-    ErrorResult& aRv) {
-  MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
-  RefPtr<Promise> promise =
-      Promise::Create(GetOwnerDoc()->GetOwnerGlobal(), aRv);
-
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  RefPtr<BrowsingContext> context = GetExtantBrowsingContext();
-  if (!context) {
-    promise->MaybeResolveWithUndefined();
-    return promise.forget();
-  }
-
+bool nsFrameLoader::RequestTabStateFlush(uint32_t aFlushId, bool aIsFinal) {
   if (mSessionStoreListener) {
-    context->FlushSessionStore();
-    mSessionStoreListener->ForceFlushFromParent(false);
-
+    mSessionStoreListener->ForceFlushFromParent(aFlushId, aIsFinal);
     
-    promise->MaybeResolveWithUndefined();
-    return promise.forget();
+    return false;
   }
 
   
-  
-  
-  
-  
-  
-  RefPtr<ContentParent> contentParent =
-      context->Canonical()->GetContentParent();
-  using FlushPromise = ContentParent::FlushTabStatePromise;
-  contentParent->SendFlushTabState(context)->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [promise, context,
-       contentParent](const FlushPromise::ResolveOrRejectValue&) {
-        nsTArray<RefPtr<FlushPromise>> flushPromises;
-        context->Group()->EachOtherParent(
-            contentParent, [&](ContentParent* aParent) {
-              if (aParent->CanSend()) {
-                flushPromises.AppendElement(
-                    aParent->SendFlushTabState(context));
-              }
-            });
-
-        FlushPromise::All(GetCurrentSerialEventTarget(), flushPromises)
-            ->Then(
-                GetCurrentSerialEventTarget(), __func__,
-                [promise](
-                    const FlushPromise::AllPromiseType::ResolveOrRejectValue&) {
-                  promise->MaybeResolveWithUndefined();
-                });
-      });
-
-  return promise.forget();
-}
-
-void nsFrameLoader::RequestTabStateFlush() {
-  BrowsingContext* context = GetExtantBrowsingContext();
-  if (!context || !context->IsTop()) {
-    return;
+  if (auto* browserParent = GetBrowserParent()) {
+    Unused << browserParent->SendFlushTabState(aFlushId, aIsFinal);
+    return true;
   }
 
-  if (mSessionStoreListener) {
-    context->FlushSessionStore();
-    mSessionStoreListener->ForceFlushFromParent(true);
-    
-    return;
-  }
-
-  context->Group()->EachParent([&](ContentParent* aParent) {
-    if (aParent->CanSend()) {
-      aParent->SendFlushTabState(
-          context, [](auto) {}, [](auto) {});
-    }
-  });
+  return false;
 }
 
 void nsFrameLoader::RequestEpochUpdate(uint32_t aEpoch) {
-  BrowsingContext* context = GetExtantBrowsingContext();
-  if (context) {
-    BrowsingContext* top = context->Top();
-    Unused << top->SetSessionStoreEpoch(aEpoch);
-  }
-
   if (mSessionStoreListener) {
     mSessionStoreListener->SetEpoch(aEpoch);
     return;

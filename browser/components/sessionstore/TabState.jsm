@@ -199,17 +199,18 @@ var TabStateInternal = {
         if (value.hasOwnProperty("requestedIndex")) {
           tabData.requestedIndex = value.requestedIndex;
         }
-      } else if (!value && (key == "scroll" || key == "formdata")) {
-        
-
-        
-        
-        
-        
-        
-        delete tabData[key];
       } else {
         tabData[key] = value;
+      }
+    }
+
+    
+    
+    
+    
+    if (tabData.scroll) {
+      if (!data.scroll) {
+        delete tabData.scroll;
       }
     }
   },

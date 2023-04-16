@@ -938,11 +938,7 @@ child:
   
   async UpdateMediaCodecsSupported(RemoteDecodeIn aLocation, MediaCodecsSupported aSupported);
 
-  async FlushTabState(MaybeDiscardedBrowsingContext aBrowsingContext)
-      returns(bool aHadContext);
-
 parent:
-
 
     async SynchronizeLayoutHistoryState(MaybeDiscardedBrowsingContext aContext,
                                         nsILayoutHistoryState aState);
