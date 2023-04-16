@@ -3767,18 +3767,18 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     nsRect clipRect = effectiveScrollPort + aBuilder->ToReferenceFrame(mOuter);
+    nsMargin padding = mOuter->GetUsedPadding();
+    if (!cbH) {
+      padding.left = padding.right = nscoord(0);
+    }
+    if (!cbV) {
+      padding.top = padding.bottom = nscoord(0);
+    }
+    clipRect.Deflate(padding);
+
     nsRect so = mScrolledFrame->ScrollableOverflowRect();
     if ((cbH && (clipRect.width != so.width || so.x < 0)) ||
         (cbV && (clipRect.height != so.height || so.y < 0))) {
-      nsMargin padding = mOuter->GetUsedPadding();
-      if (!cbH) {
-        padding.left = padding.right = nscoord(0);
-      }
-      if (!cbV) {
-        padding.top = padding.bottom = nscoord(0);
-      }
-      clipRect.Deflate(padding);
-
       
       
       
