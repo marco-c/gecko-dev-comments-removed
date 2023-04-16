@@ -14,6 +14,25 @@ class NativeMenu {
  public:
   NS_INLINE_DECL_REFCOUNTING(NativeMenu)
 
+  class Observer {
+   public:
+    
+    
+    virtual void OnNativeMenuOpened() = 0;
+
+    
+    
+    virtual void OnNativeMenuClosed() = 0;
+  };
+
+  
+  
+  
+  virtual void AddObserver(Observer* aObserver) = 0;
+
+  
+  virtual void RemoveObserver(Observer* aObserver) = 0;
+
  protected:
   virtual ~NativeMenu() = default;
 };

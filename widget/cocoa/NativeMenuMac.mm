@@ -27,12 +27,14 @@ NativeMenuMac::NativeMenuMac(mozilla::dom::Element* aElement) : mContainerStatus
   MOZ_RELEASE_ASSERT(aElement->IsAnyOfXULElements(nsGkAtoms::menu, nsGkAtoms::menupopup));
   mMenuGroupOwner = new nsMenuGroupOwnerX(aElement, nullptr);
   mMenu = MakeRefPtr<nsMenuX>(nullptr, mMenuGroupOwner, aElement);
+  mMenu->SetObserver(this);
   mMenu->SetIconListener(this);
   mMenu->SetupIcon();
 }
 
 NativeMenuMac::~NativeMenuMac() {
   mMenu->DetachFromGroupOwnerRecursive();
+  mMenu->ClearObserver();
   mMenu->ClearIconListener();
 }
 
@@ -150,6 +152,25 @@ void NativeMenuMac::Dump() {
   nsMenuUtilsX::DumpNativeMenu(mMenu->NativeNSMenu());
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+void NativeMenuMac::OnMenuOpened() {
+  
+  
+  RefPtr<NativeMenuMac> kungFuDeathGrip(this);
+
+  for (NativeMenu::Observer* observer : mObservers.Clone()) {
+    observer->OnNativeMenuOpened();
+  }
+}
+void NativeMenuMac::OnMenuClosed() {
+  
+  
+  RefPtr<NativeMenuMac> kungFuDeathGrip(this);
+
+  for (NativeMenu::Observer* observer : mObservers.Clone()) {
+    observer->OnNativeMenuClosed();
+  }
 }
 
 }  
