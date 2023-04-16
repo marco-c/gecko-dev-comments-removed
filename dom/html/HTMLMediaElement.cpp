@@ -1717,14 +1717,12 @@ class HTMLMediaElement::ChannelLoader final {
       return;
     }
 
-    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
     if (setAttrs) {
+      nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
       
       Unused << loadInfo->SetOriginAttributes(
           triggeringPrincipal->OriginAttributesRef());
     }
-    loadInfo->SetIsMediaRequest(true);
-    loadInfo->SetIsMediaInitialRequest(true);
 
     nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(channel));
     if (cos) {

@@ -1016,21 +1016,8 @@ InterceptedHttpChannel::OnStartRequest(nsIRequest* aRequest) {
     GetCallback(mProgressSink);
   }
 
-  if (!EnsureOpaqueResponseIsAllowed()) {
-    
-    
-    
-  }
-
   if (mPump && mLoadFlags & LOAD_CALL_CONTENT_SNIFFERS) {
     mPump->PeekStream(CallTypeSniffers, static_cast<nsIChannel*>(this));
-  }
-
-  auto isAllowedOrErr = EnsureOpaqueResponseIsAllowedAfterSniff();
-  if (isAllowedOrErr.isErr() || !isAllowedOrErr.inspect()) {
-    
-    
-    
   }
 
   nsresult rv = ProcessCrossOriginEmbedderPolicyHeader();

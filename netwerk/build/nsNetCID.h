@@ -837,18 +837,6 @@
 
 
 
-
-#define NS_ORB_SNIFFER_CATEGORY "orb-content-sniffers"
-
-
-
-
-
-#define NS_CONTENT_AND_ORB_SNIFFER_CATEGORY "net-and-orb-content-sniffers"
-
-
-
-
 #define NS_NSS_ERRORS_SERVICE_CONTRACTID "@mozilla.org/nss_errors_service;1"
 
 

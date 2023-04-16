@@ -332,10 +332,6 @@ class LoadInfo final : public nsILoadInfo {
   bool mIsFromProcessingFrameAttributes = false;
 
   
-  bool mIsMediaRequest = false;
-  bool mIsMediaInitialRequest = false;
-
-  
   
   
   
