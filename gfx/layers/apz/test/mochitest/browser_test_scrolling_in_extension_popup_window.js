@@ -152,18 +152,7 @@ add_task(async () => {
   );
 
   
-  await new Promise(resolve => {
-    synthesizeNativeWheelAndWaitForObserver(
-      browserForPopup,
-      50,
-      50,
-      0,
-      -100,
-      () => {
-        resolve();
-      }
-    );
-  });
+  await promiseNativeWheelAndWaitForObserver(browserForPopup, 50, 50, 0, -100);
 
   
   

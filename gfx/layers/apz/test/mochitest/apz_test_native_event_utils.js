@@ -381,22 +381,23 @@ function synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY, aObserver) {
 
 
 
-function synthesizeNativeWheelAndWaitForObserver(
+function promiseNativeWheelAndWaitForObserver(
   aElement,
   aX,
   aY,
   aDeltaX,
-  aDeltaY,
-  aCallback
+  aDeltaY
 ) {
-  var observer = {
-    observe(aSubject, aTopic, aData) {
-      if (aCallback && aTopic == "mousescrollevent") {
-        setTimeout(aCallback, 0);
-      }
-    },
-  };
-  return synthesizeNativeWheel(aElement, aX, aY, aDeltaX, aDeltaY, observer);
+  return new Promise(resolve => {
+    var observer = {
+      observe(aSubject, aTopic, aData) {
+        if (aTopic == "mousescrollevent") {
+          resolve();
+        }
+      },
+    };
+    synthesizeNativeWheel(aElement, aX, aY, aDeltaX, aDeltaY, observer);
+  });
 }
 
 
