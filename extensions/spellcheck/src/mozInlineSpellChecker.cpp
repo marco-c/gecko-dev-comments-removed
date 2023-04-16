@@ -1315,9 +1315,8 @@ nsresult mozInlineSpellChecker::DoSpellCheck(
   nsAutoString wordText;
   NodeOffsetRange wordNodeOffsetRange;
   bool dontCheckWord;
-  
   static const size_t requestChunkSize =
-      XRE_IsContentProcess() ? INLINESPELL_MAXIMUM_CHUNKED_WORDS_PER_TASK : 1;
+      INLINESPELL_MAXIMUM_CHUNKED_WORDS_PER_TASK;
   while (
       aWordUtil.GetNextWord(wordText, &wordNodeOffsetRange, &dontCheckWord)) {
     
