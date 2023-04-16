@@ -25,15 +25,6 @@ StaticAutoPtr<SharedSurfacesParent> SharedSurfacesParent::sInstance;
 
 SharedSurfacesParent::SharedSurfacesParent() = default;
 
-SharedSurfacesParent::~SharedSurfacesParent() {
-  for (const auto& key : mSurfaces.Keys()) {
-    
-    
-    
-    wr::RenderThread::Get()->UnregisterExternalImageDuringShutdown(key);
-  }
-}
-
 
 void SharedSurfacesParent::Initialize() {
   MOZ_ASSERT(NS_IsMainThread());
@@ -44,10 +35,27 @@ void SharedSurfacesParent::Initialize() {
 }
 
 
-void SharedSurfacesParent::Shutdown() {
+void SharedSurfacesParent::ShutdownRenderThread() {
   
   
   MOZ_ASSERT(wr::RenderThread::IsInRenderThread());
+  StaticMutexAutoLock lock(sMutex);
+  MOZ_ASSERT(sInstance);
+
+  for (const auto& key : mSurfaces.Keys()) {
+    
+    
+    
+    wr::RenderThread::Get()->UnregisterExternalImageDuringShutdown(key);
+  }
+}
+
+
+void SharedSurfacesParent::Shutdown() {
+  
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
   StaticMutexAutoLock lock(sMutex);
   sInstance = nullptr;
 }
