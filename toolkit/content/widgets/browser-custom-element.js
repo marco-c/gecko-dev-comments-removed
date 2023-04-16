@@ -1446,6 +1446,10 @@
           }
           case "mouseup":
           case "mousedown":
+            
+            
+            aEvent.preventClickEvent();
+          
           case "contextmenu": {
             if (!this._ignoreMouseEvents) {
               
@@ -1462,6 +1466,9 @@
             break;
           }
           case "popuphidden": {
+            
+            
+            
             this._autoScrollPopup.removeEventListener(
               "popuphidden",
               this,
