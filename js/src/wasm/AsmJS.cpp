@@ -6751,8 +6751,6 @@ static bool CheckBuffer(JSContext* cx, const AsmJSMetadata& metadata,
 
   buffer.set(&bufferObj->as<ArrayBufferObject>());
 
-  
-  
   size_t memoryLength = buffer->byteLength().get();
 
   if (!IsValidAsmJSHeapLength(memoryLength)) {
