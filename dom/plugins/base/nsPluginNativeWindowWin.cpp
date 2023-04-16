@@ -7,8 +7,8 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/WeakPtr.h"
 
-#include "windows.h"
-#include "windowsx.h"
+#include <windows.h>
+#include <windowsx.h>
 
 
 
@@ -235,31 +235,6 @@ static LRESULT CALLBACK PluginWndProcInternal(HWND hWnd, UINT msg,
       enablePopups = true;
 
       break;
-
-    case WM_MOUSEACTIVATE: {
-      
-      
-      
-      
-      HWND focusedWnd = ::GetFocus();
-      if (!::IsChild((HWND)win->window, focusedWnd)) {
-        
-        
-        
-        
-        
-        
-        
-        
-        nsCOMPtr<nsIWidget> widget;
-        win->GetPluginWidget(getter_AddRefs(widget));
-        if (widget) {
-          WidgetGUIEvent event(true, ePluginActivate, widget);
-          nsEventStatus status;
-          widget->DispatchEvent(&event, status);
-        }
-      }
-    } break;
 
     case WM_SETFOCUS:
     case WM_KILLFOCUS: {
