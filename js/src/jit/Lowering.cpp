@@ -5698,17 +5698,9 @@ void LIRGenerator::updateResumeState(MInstruction* ins) {
 void LIRGenerator::updateResumeState(MBasicBlock* block) {
   
   
-  
-  
-  
-  
-  
-  
   MOZ_ASSERT_IF(!mir()->compilingWasm() && !block->unreachable(),
                 block->entryResumePoint());
-  MOZ_ASSERT_IF(
-      block->unreachable(),
-      block->graph().osrBlock() || !mir()->optimizationInfo().gvnEnabled());
+  MOZ_ASSERT_IF(block->unreachable(), !mir()->optimizationInfo().gvnEnabled());
   lastResumePoint_ = block->entryResumePoint();
 #ifdef JS_JITSPEW
   if (JitSpewEnabled(JitSpew_IonSnapshots) && lastResumePoint_) {
@@ -5723,14 +5715,7 @@ bool LIRGenerator::visitBlock(MBasicBlock* block) {
 
   definePhis();
 
-  
-  
-  MOZ_ASSERT_IF(block->unreachable(),
-                *block->begin() == block->lastIns() ||
-                    !mir()->optimizationInfo().gvnEnabled());
-  MOZ_ASSERT_IF(
-      block->unreachable(),
-      block->graph().osrBlock() || !mir()->optimizationInfo().gvnEnabled());
+  MOZ_ASSERT_IF(block->unreachable(), !mir()->optimizationInfo().gvnEnabled());
   for (MInstructionIterator iter = block->begin(); *iter != block->lastIns();
        iter++) {
     if (!visitInstruction(*iter)) {
