@@ -7,12 +7,17 @@
 #define mozilla_widget_NativeMenu_h
 
 #include "nsISupportsImpl.h"
+#include "Units.h"
 
 namespace mozilla::widget {
 
 class NativeMenu {
  public:
   NS_INLINE_DECL_REFCOUNTING(NativeMenu)
+
+  
+  
+  virtual bool ShowAsContextMenu(const mozilla::DesktopPoint& aPosition) = 0;
 
   class Observer {
    public:

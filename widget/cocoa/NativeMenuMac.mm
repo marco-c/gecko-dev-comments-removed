@@ -4,6 +4,8 @@
 
 
 #import <Cocoa/Cocoa.h>
+#include "nsThreadUtils.h"
+#include "mozilla/dom/Document.h"
 
 #include "NativeMenuMac.h"
 
@@ -16,6 +18,10 @@
 #include "nsMenuItemX.h"
 #include "nsMenuUtilsX.h"
 #include "nsObjCExceptions.h"
+#include "mozilla/dom/Document.h"
+#include "PresShell.h"
+#include "nsCocoaUtils.h"
+#include "nsIFrame.h"
 
 namespace mozilla {
 
@@ -170,6 +176,95 @@ void NativeMenuMac::OnMenuClosed() {
 
   for (NativeMenu::Observer* observer : mObservers.Clone()) {
     observer->OnNativeMenuClosed();
+  }
+}
+
+static NSView* NativeViewForContent(nsIContent* aContent) {
+  mozilla::dom::Document* doc = aContent->GetUncomposedDoc();
+  if (!doc) {
+    return nil;
+  }
+
+  PresShell* presShell = doc->GetPresShell();
+  if (!presShell) {
+    return nil;
+  }
+
+  nsIFrame* frame = presShell->GetRootFrame();
+  if (!frame) {
+    return nil;
+  }
+
+  nsIWidget* widget = frame->GetNearestWidget();
+  return (NSView*)widget->GetNativeData(NS_NATIVE_WIDGET);
+}
+
+bool NativeMenuMac::ShowAsContextMenu(const mozilla::DesktopPoint& aPosition) {
+  bool allowOpening = mMenu->OnOpen();
+  if (!allowOpening) {
+    
+    return false;
+  }
+
+  
+  
+  mozilla::DesktopPoint position = aPosition;
+  RefPtr<NativeMenuMac> self = this;
+  NS_DispatchToCurrentThread(NS_NewRunnableFunction("nsStandaloneNativeMenu::OpenMenu",
+                                                    [=]() { self->OpenMenu(position); }));
+
+  return true;
+}
+
+void NativeMenuMac::OpenMenu(const mozilla::DesktopPoint& aPosition) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  NSView* view = NativeViewForContent(mMenu->Content());
+  NSMenu* nativeMenu = mMenu->NativeNSMenu();
+
+  NSPoint locationOnScreen = nsCocoaUtils::GeckoPointToCocoaPoint(aPosition);
+  if (view) {
+    
+    NSPoint locationInWindow = nsCocoaUtils::ConvertPointFromScreen(view.window, locationOnScreen);
+    NSEvent* event = [NSEvent mouseEventWithType:NSEventTypeRightMouseDown
+                                        location:locationInWindow
+                                   modifierFlags:0
+                                       timestamp:[[NSProcessInfo processInfo] systemUptime]
+                                    windowNumber:view.window.windowNumber
+                                         context:nil
+                                     eventNumber:0
+                                      clickCount:1
+                                        pressure:0.0f];
+    [NSMenu popUpContextMenu:nativeMenu withEvent:event forView:view];
+  } else {
+    
+    
+    
+    
+    [nativeMenu popUpMenuPositioningItem:nil atLocation:locationOnScreen inView:nil];
   }
 }
 
