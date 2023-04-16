@@ -2053,6 +2053,19 @@ void nsBlockFrame::ConsiderBlockEndEdgeOfChildren(
   
   
   
+
+  if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(GetLogicalUsedBorderAndPadding(wm) == GetLogicalUsedPadding(wm),
+               "A scrolled inner frame shouldn't have any border!");
+    aBEndEdgeOfChildren += GetLogicalUsedPadding(wm).BEnd(wm);
+  }
+
   
   
   
