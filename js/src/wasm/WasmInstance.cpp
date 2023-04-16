@@ -1487,11 +1487,7 @@ bool Instance::memoryAccessInBounds(uint8_t* addr, unsigned numBytes) const {
   
   
   size_t lastByteOffset = addr - base + (numBytes - 1);
-  if (lastByteOffset >= length) {
-    return false;
-  }
-
-  return true;
+  return lastByteOffset < length;
 }
 
 void Instance::tracePrivate(JSTracer* trc) {
