@@ -2720,6 +2720,14 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
     return HandleEndOfPan();
   }
 
+  if (IsOverscrolled() && mState != OVERSCROLL_ANIMATION) {
+    
+    
+    StartOverscrollAnimation(GetVelocityVector());
+  } else {
+    SetState(NOTHING);
+  }
+
   
   
   
@@ -2738,7 +2746,6 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
     }
   }
 
-  SetState(NOTHING);
   RequestContentRepaint();
 
   if (!aEvent.mFollowedByMomentum) {
