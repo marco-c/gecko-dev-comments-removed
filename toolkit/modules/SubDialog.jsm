@@ -119,6 +119,21 @@ SubDialog.prototype = {
     this._frame._dialogReady = this._dialogReady;
 
     
+    
+    let dialog = null;
+
+    if (closingCallback) {
+      this._closingCallback = (...args) => {
+        closingCallback.apply(dialog, args);
+      };
+    }
+    if (closedCallback) {
+      this._closedCallback = (...args) => {
+        closedCallback.apply(dialog, args);
+      };
+    }
+
+    
     await this._frameCreated;
 
     if (!this._frame.contentWindow) {
@@ -152,18 +167,12 @@ SubDialog.prototype = {
       dialogFeatures = `${features},${dialogFeatures}`;
     }
 
-    let dialog = this._window.openDialog(
+    dialog = this._window.openDialog(
       aURL,
       `dialogFrame-${this._id}`,
       dialogFeatures,
       ...aParams
     );
-    if (closingCallback) {
-      this._closingCallback = closingCallback.bind(dialog);
-    }
-    if (closedCallback) {
-      this._closedCallback = closedCallback.bind(dialog);
-    }
 
     this._closingEvent = null;
     this._isClosing = false;
