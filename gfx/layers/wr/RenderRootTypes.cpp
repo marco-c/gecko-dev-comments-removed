@@ -48,7 +48,7 @@ void WriteScrollUpdates(IPC::Message* aMsg, IProtocol* aActor,
   
   
   WriteIPDLParam(aMsg, aActor, aParam.Count());
-  for (auto it = aParam.Iter(); !it.Done(); it.Next()) {
+  for (auto it = aParam.ConstIter(); !it.Done(); it.Next()) {
     WriteIPDLParam(aMsg, aActor, it.Key());
     WriteIPDLParam(aMsg, aActor, it.Data());
   }

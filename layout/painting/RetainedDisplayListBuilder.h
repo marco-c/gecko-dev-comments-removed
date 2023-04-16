@@ -59,7 +59,7 @@ struct RetainedDisplayListData {
   
 
 
-  auto Iterator() { return mFrames.Iter(); }
+  auto ConstIterator() { return mFrames.ConstIter(); }
 
   
 
