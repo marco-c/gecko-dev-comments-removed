@@ -7,7 +7,11 @@
 add_task(async function testValidCache() {
   
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.sessionhistory.contentViewerTimeout", 86400]],
+    set: [
+      ["browser.sessionhistory.contentViewerTimeout", 86400],
+      
+      ["fission.bfcacheInParent", true],
+    ],
   });
 
   await BrowserTestUtils.withNewTab(
@@ -40,7 +44,11 @@ add_task(async function testValidCache() {
 add_task(async function testExpiredCache() {
   
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.sessionhistory.contentViewerTimeout", 1]],
+    set: [
+      ["browser.sessionhistory.contentViewerTimeout", 1],
+      
+      ["fission.bfcacheInParent", true],
+    ],
   });
 
   await BrowserTestUtils.withNewTab(
