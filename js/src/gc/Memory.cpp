@@ -166,7 +166,7 @@ void* TestMapAlignedPagesLastDitch(size_t length, size_t alignment) {
   return MapAlignedPagesLastDitch(length, alignment);
 }
 
-bool DecommitEnabled() { return SystemPageSize() <= ArenaSize; }
+bool DecommitEnabled() { return SystemPageSize() == PageSize; }
 
 
 static inline size_t OffsetFromAligned(void* region, size_t alignment) {
