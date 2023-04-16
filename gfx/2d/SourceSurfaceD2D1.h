@@ -62,10 +62,11 @@ class SourceSurfaceD2D1 : public SourceSurface {
   
   RefPtr<ID2D1Device> mDevice;
 
-  SurfaceFormat mFormat;
-  IntSize mSize;
+  const SurfaceFormat mFormat;
+  const IntSize mSize;
   DrawTargetD2D1* mDrawTarget;
   std::shared_ptr<Mutex> mSnapshotLock;
+  bool mOwnsCopy;
 };
 
 class DataSourceSurfaceD2D1 : public DataSourceSurface {
