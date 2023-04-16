@@ -144,6 +144,13 @@ class Axis {
   
 
 
+
+
+  void RestoreOverscroll(ParentLayerCoord aOverscroll);
+
+  
+
+
   void StartOverscrollAnimation(float aVelocity);
 
   

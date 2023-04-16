@@ -797,6 +797,17 @@ class AsyncPanZoomController {
   
 
 
+  ParentLayerPoint GetOverscrollAmount() const;
+  
+
+
+
+
+  void RestoreOverscrollAmount(const ParentLayerPoint& aOverscroll);
+
+  
+
+
 
   void HandlePanningWithTouchAction(double angle);
 
@@ -1245,7 +1256,8 @@ class AsyncPanZoomController {
 
 
   void UnapplyAsyncTestAttributes(const RecursiveMutexAutoLock& aProofOfLock,
-                                  const FrameMetrics& aPrevFrameMetrics);
+                                  const FrameMetrics& aPrevFrameMetrics,
+                                  const ParentLayerPoint& aPrevOverscroll);
 
   
 
