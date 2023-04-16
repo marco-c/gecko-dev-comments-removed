@@ -89,6 +89,10 @@ class nsRefCountedHashtable
 
 
   inline bool Remove(KeyType aKey, RawPointerType* aData = nullptr);
+
+  nsRefCountedHashtable Clone() const {
+    return this->template CloneAs<nsRefCountedHashtable>();
+  }
 };
 
 template <typename K, typename T>

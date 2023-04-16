@@ -878,6 +878,26 @@ class nsBaseHashtable
   }
 
   using nsTHashtable<EntryType>::MarkImmutable;
+
+  
+
+
+
+  nsBaseHashtable Clone() const { return CloneAs<nsBaseHashtable>(); }
+
+ protected:
+  template <typename T>
+  T CloneAs() const {
+    static_assert(std::is_base_of_v<nsBaseHashtable, T>);
+    
+    T result(Count());
+    for (const auto& srcEntry : *this) {
+      result.WithEntryHandle(srcEntry.GetKey(), [&](auto&& dstEntry) {
+        dstEntry.Insert(srcEntry.GetData());
+      });
+    }
+    return result;
+  }
 };
 
 
