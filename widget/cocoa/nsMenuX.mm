@@ -94,15 +94,11 @@ nsMenuX::nsMenuX(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsI
   NS_ASSERTION(mMenuGroupOwner, "No menu owner given, must have one");
   mMenuGroupOwner->RegisterForContentChanges(mContent, this);
 
-  
-
-#ifdef DEBUG
-  nsMenuObjectTypeX parentType =
-#endif
-      mParent->MenuObjectType();
-  NS_ASSERTION((parentType == eMenuBarObjectType || parentType == eSubmenuObjectType ||
-                parentType == eStandaloneNativeMenuObjectType),
-               "Menu parent not a menu bar, menu, or native menu!");
+  if (mParent) {
+    
+    nsMenuObjectTypeX parentType = mParent->MenuObjectType();
+    MOZ_RELEASE_ASSERT(parentType == eMenuBarObjectType || parentType == eSubmenuObjectType);
+  }
 
   if (nsMenuUtilsX::NodeIsHiddenOrCollapsed(mContent)) {
     mVisible = false;
@@ -553,9 +549,6 @@ void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aCon
     return;
   }
 
-  MOZ_RELEASE_ASSERT(mParent);
-  nsMenuObjectTypeX parentType = mParent->MenuObjectType();
-
   if (aAttribute == nsGkAtoms::disabled) {
     SetEnabled(!mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::disabled,
                                                    nsGkAtoms::_true, eCaseMatters));
@@ -574,19 +567,22 @@ void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aCon
       return;
     }
 
-    if (parentType == eMenuBarObjectType) {
-      nsMenuBarX* parentMenuBar = static_cast<nsMenuBarX*>(mParent);
-      if (newVisible) {
-        parentMenuBar->InsertChildNativeMenuItem(this);
-      } else {
-        parentMenuBar->RemoveChildNativeMenuItem(this);
-      }
-    } else if (parentType == eSubmenuObjectType) {
-      nsMenuX* parentMenu = static_cast<nsMenuX*>(mParent);
-      if (newVisible) {
-        parentMenu->InsertChildNativeMenuItem(this);
-      } else {
-        parentMenu->RemoveChildNativeMenuItem(this);
+    if (mParent) {
+      nsMenuObjectTypeX parentType = mParent->MenuObjectType();
+      if (parentType == eMenuBarObjectType) {
+        nsMenuBarX* parentMenuBar = static_cast<nsMenuBarX*>(mParent);
+        if (newVisible) {
+          parentMenuBar->InsertChildNativeMenuItem(this);
+        } else {
+          parentMenuBar->RemoveChildNativeMenuItem(this);
+        }
+      } else if (parentType == eSubmenuObjectType) {
+        nsMenuX* parentMenu = static_cast<nsMenuX*>(mParent);
+        if (newVisible) {
+          parentMenu->InsertChildNativeMenuItem(this);
+        } else {
+          parentMenu->RemoveChildNativeMenuItem(this);
+        }
       }
     }
     mVisible = newVisible;
