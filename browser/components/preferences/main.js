@@ -69,7 +69,11 @@ const PREF_CONTAINERS_EXTENSION = "privacy.userContext.extension";
 
 const CONTAINERS_KEY = "privacy.containers";
 
-const AUTO_UPDATE_CHANGED_TOPIC = "auto-update-config-change";
+const AUTO_UPDATE_CHANGED_TOPIC =
+  UpdateUtils.PER_INSTALLATION_PREFS["app.update.auto"].observerTopic;
+const BACKGROUND_UPDATE_CHANGED_TOPIC =
+  UpdateUtils.PER_INSTALLATION_PREFS["app.update.background.enabled"]
+    .observerTopic;
 
 const ICON_URL_APP =
   AppConstants.platform == "linux"
@@ -667,12 +671,19 @@ var gMainPane = {
         document.getElementById("autoDesktop").removeAttribute("selected");
         document.getElementById("manualDesktop").removeAttribute("selected");
         
-        this.updateReadPrefs();
-        setEventListener(
-          "updateRadioGroup",
-          "command",
-          gMainPane.updateWritePrefs
-        );
+        this.readUpdateAutoPref();
+        setEventListener("updateRadioGroup", "command", event => {
+          if (event.target.id == "backgroundUpdate") {
+            this.writeBackgroundUpdatePref();
+          } else {
+            this.writeUpdateAutoPref();
+          }
+        });
+        if (this.isBackgroundUpdateUIAvailable()) {
+          document.getElementById("backgroundUpdate").hidden = false;
+          
+          this.readBackgroundUpdatePref();
+        }
       }
 
       if (AppConstants.platform == "win") {
@@ -713,6 +724,7 @@ var gMainPane = {
     
     
     Services.obs.addObserver(this, AUTO_UPDATE_CHANGED_TOPIC);
+    Services.obs.addObserver(this, BACKGROUND_UPDATE_CHANGED_TOPIC);
 
     setEventListener("filter", "command", gMainPane.filter);
     setEventListener("typeColumn", "click", gMainPane.sort);
@@ -1790,27 +1802,26 @@ var gMainPane = {
   
 
 
-  async updateReadPrefs() {
+  async readUpdateAutoPref() {
     if (
       AppConstants.MOZ_UPDATER &&
       (!Services.policies || Services.policies.isAllowed("appUpdate"))
     ) {
       let radiogroup = document.getElementById("updateRadioGroup");
+
       radiogroup.disabled = true;
-      try {
-        let enabled = await UpdateUtils.getAppUpdateAutoEnabled();
-        radiogroup.value = enabled;
-        radiogroup.disabled = false;
-      } catch (error) {
-        Cu.reportError(error);
-      }
+      let enabled = await UpdateUtils.getAppUpdateAutoEnabled();
+      radiogroup.value = enabled;
+      radiogroup.disabled = false;
+
+      this.maybeDisableBackgroundUpdateControls();
     }
   },
 
   
 
 
-  async updateWritePrefs() {
+  async writeUpdateAutoPref() {
     if (
       AppConstants.MOZ_UPDATER &&
       (!Services.policies || Services.policies.isAllowed("appUpdate"))
@@ -1823,16 +1834,84 @@ var gMainPane = {
         radiogroup.disabled = false;
       } catch (error) {
         Cu.reportError(error);
-        await this.updateReadPrefs();
+        await this.readUpdateAutoPref();
         await this.reportUpdatePrefWriteError(error);
         return;
       }
+
+      this.maybeDisableBackgroundUpdateControls();
 
       
       
       if (!updateAutoValue) {
         await this.checkUpdateInProgress();
       }
+    }
+  },
+
+  isBackgroundUpdateUIAvailable() {
+    return (
+      Services.prefs.getBoolPref("app.update.background.experimental", false) &&
+      AppConstants.MOZ_UPDATER &&
+      AppConstants.MOZ_UPDATE_AGENT &&
+      (!Services.policies || Services.policies.isAllowed("appUpdate")) &&
+      !UpdateUtils.appUpdateSettingIsLocked("app.update.background.enabled")
+    );
+  },
+
+  maybeDisableBackgroundUpdateControls() {
+    if (this.isBackgroundUpdateUIAvailable()) {
+      let radiogroup = document.getElementById("updateRadioGroup");
+      let updateAutoEnabled = radiogroup.value == "true";
+
+      
+      document.getElementById("backgroundUpdate").disabled = !updateAutoEnabled;
+    }
+  },
+
+  async readBackgroundUpdatePref() {
+    const prefName = "app.update.background.enabled";
+    if (this.isBackgroundUpdateUIAvailable()) {
+      let backgroundCheckbox = document.getElementById("backgroundUpdate");
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      backgroundCheckbox.disabled = true;
+
+      let enabled = await UpdateUtils.readUpdateConfigSetting(prefName);
+      backgroundCheckbox.checked = enabled;
+      this.maybeDisableBackgroundUpdateControls();
+    }
+  },
+
+  async writeBackgroundUpdatePref() {
+    const prefName = "app.update.background.enabled";
+    if (this.isBackgroundUpdateUIAvailable()) {
+      let backgroundCheckbox = document.getElementById("backgroundUpdate");
+      backgroundCheckbox.disabled = true;
+      let backgroundUpdateEnabled = backgroundCheckbox.checked;
+      try {
+        await UpdateUtils.writeUpdateConfigSetting(
+          prefName,
+          backgroundUpdateEnabled
+        );
+      } catch (error) {
+        Cu.reportError(error);
+        await this.readBackgroundUpdatePref();
+        await this.reportUpdatePrefWriteError(error);
+        return;
+      }
+
+      this.maybeDisableBackgroundUpdateControls();
     }
   },
 
@@ -1921,6 +2000,7 @@ var gMainPane = {
     window.removeEventListener("unload", this);
     Services.prefs.removeObserver(PREF_CONTAINERS_EXTENSION, this);
     Services.obs.removeObserver(this, AUTO_UPDATE_CHANGED_TOPIC);
+    Services.obs.removeObserver(this, BACKGROUND_UPDATE_CHANGED_TOPIC);
   },
 
   
@@ -1941,10 +2021,24 @@ var gMainPane = {
         await this._rebuildView();
       }
     } else if (aTopic == AUTO_UPDATE_CHANGED_TOPIC) {
+      if (!AppConstants.MOZ_UPDATER) {
+        return;
+      }
       if (aData != "true" && aData != "false") {
         throw new Error("Invalid preference value for app.update.auto");
       }
       document.getElementById("updateRadioGroup").value = aData;
+      this.maybeDisableBackgroundUpdateControls();
+    } else if (aTopic == BACKGROUND_UPDATE_CHANGED_TOPIC) {
+      if (!AppConstants.MOZ_UPDATER || !AppConstants.MOZ_UPDATE_AGENT) {
+        return;
+      }
+      if (aData != "true" && aData != "false") {
+        throw new Error(
+          "Invalid preference value for app.update.background.enabled"
+        );
+      }
+      document.getElementById("backgroundUpdate").checked = aData == "true";
     }
   },
 
