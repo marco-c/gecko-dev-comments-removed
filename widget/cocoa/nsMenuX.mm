@@ -566,20 +566,9 @@ void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aCon
                                                    nsGkAtoms::_true, eCaseMatters));
   } else if (aAttribute == nsGkAtoms::label) {
     mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::label, mLabel);
-
-    
-    
-    
-    if (parentType == eMenuBarObjectType) {
-      
-      NS_ASSERTION(mNativeMenu, "nsMenuX::AttributeChanged: invalid menu handle.");
-      NSString* newCocoaLabelString = nsMenuUtilsX::GetTruncatedCocoaLabel(mLabel);
-      mNativeMenu.title = newCocoaLabelString;
-    } else if (parentType == eSubmenuObjectType) {
-      static_cast<nsMenuX*>(mParent)->SetRebuild(true);
-    } else if (parentType == eStandaloneNativeMenuObjectType) {
-      static_cast<nsStandaloneNativeMenu*>(mParent)->GetMenuXObject()->SetRebuild(true);
-    }
+    NSString* newCocoaLabelString = nsMenuUtilsX::GetTruncatedCocoaLabel(mLabel);
+    mNativeMenu.title = newCocoaLabelString;
+    mNativeMenuItem.title = newCocoaLabelString;
   } else if (aAttribute == nsGkAtoms::hidden || aAttribute == nsGkAtoms::collapsed) {
     SetRebuild(true);
 
