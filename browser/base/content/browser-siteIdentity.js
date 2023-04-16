@@ -158,9 +158,20 @@ var gIdentityHandler = {
     );
   },
 
+  get _isPDFViewer() {
+    return gBrowser.contentPrincipal?.originNoSuffix == "resource://pdf.js";
+  },
+
   get _isPotentiallyTrustworthy() {
+    
+    
+    
+    
+    
+    
     return (
       !this._isBrokenConnection &&
+      !this._isPDFViewer &&
       (this._isSecureContext ||
         (gBrowser.selectedBrowser.documentURI &&
           gBrowser.selectedBrowser.documentURI.scheme == "chrome"))
