@@ -2011,7 +2011,10 @@ LogicalSize ReflowInput::ComputeContainingBlockRectangle(
     cbSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
   }
 
-  if ((mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) ||
+  if (((mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
+        
+        
+        !mFrame->GetPrevInFlow()) ||
        (mFrame->IsTableFrame() &&
         mFrame->GetParent()->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW))) &&
       mStyleDisplay->IsAbsolutelyPositioned(mFrame)) {
