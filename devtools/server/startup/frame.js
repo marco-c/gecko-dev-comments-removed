@@ -51,11 +51,20 @@ try {
     const connections = new Map();
 
     const onConnect = DevToolsUtils.makeInfallible(function(msg) {
-      removeMessageListener("debug:connect", onConnect);
-
       const mm = msg.target;
       const prefix = msg.data.prefix;
       const addonId = msg.data.addonId;
+
+      
+      
+      
+      
+      
+      
+      if (DevToolsServer.hasConnectionForPrefix(prefix)) {
+        return;
+      }
+      removeMessageListener("debug:connect", onConnect);
 
       const conn = DevToolsServer.connectToParent(prefix, mm);
       conn.parentMessageManager = mm;
