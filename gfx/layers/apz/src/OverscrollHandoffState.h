@@ -91,6 +91,9 @@ class OverscrollHandoffChain {
   bool HasFastFlungApzc() const;
 
   
+  bool HasAutoscrollApzc() const;
+
+  
   
   
   

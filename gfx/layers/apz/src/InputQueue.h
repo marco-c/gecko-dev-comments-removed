@@ -58,7 +58,7 @@ class InputQueue {
 
   APZEventResult ReceiveInputEvent(
       const RefPtr<AsyncPanZoomController>& aTarget,
-      TargetConfirmationFlags aFlags, const InputData& aEvent,
+      TargetConfirmationFlags aFlags, InputData& aEvent,
       const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors = Nothing());
   
 
@@ -191,7 +191,7 @@ class InputQueue {
       const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors);
   APZEventResult ReceiveMouseInput(
       const RefPtr<AsyncPanZoomController>& aTarget,
-      TargetConfirmationFlags aFlags, const MouseInput& aEvent);
+      TargetConfirmationFlags aFlags, MouseInput& aEvent);
   APZEventResult ReceiveScrollWheelInput(
       const RefPtr<AsyncPanZoomController>& aTarget,
       TargetConfirmationFlags aFlags, const ScrollWheelInput& aEvent);

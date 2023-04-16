@@ -453,6 +453,11 @@ class AsyncPanZoomController {
   
 
 
+  bool IsAutoscroll() const { return mState == AUTOSCROLL; }
+
+  
+
+
 
 
   int32_t GetLastTouchIdentifier() const;

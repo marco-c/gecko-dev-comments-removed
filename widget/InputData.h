@@ -299,6 +299,11 @@ class MouseInput : public InputData {
   ScreenPoint mOrigin;
   ParentLayerPoint mLocalOrigin;
   bool mHandledByAPZ;
+  
+
+
+
+  bool mPreventClickEvent;
 };
 
 
