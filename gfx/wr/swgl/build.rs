@@ -74,11 +74,15 @@ fn translate_shader(shader_key: &str, shader_dir: &str) {
 
     let mut build = cc::Build::new();
     build.no_default_flags(true);
-    if build.get_compiler().is_like_msvc() {
-        build.flag("/EP").flag("/clang:-undef");
-    } else {
-        build.flag("-xc").flag("-P").flag("-undef");
+    if let Ok(tool) = build.try_get_compiler() {
+        if tool.is_like_msvc() {
+            build.flag("/EP").flag("/clang:-undef");
+        } else {
+            build.flag("-xc").flag("-P").flag("-undef");
+        }
     }
+    
+    build.target("SWGLPP");
     build.file(&imp_name);
     let vs = build.clone()
         .define("WR_VERTEX_SHADER", Some("1"))
@@ -119,6 +123,17 @@ fn main() {
     }
 
     shaders.sort();
+
+    
+    
+    
+    if let Ok(target) = std::env::var("TARGET") {
+        if let Ok(cc) = std::env::var(format!("CC_{}", target))
+                        .or(std::env::var(format!("CC_{}", target.replace("-", "_")))) {
+            std::env::set_var("CC_SWGLPP", cc);
+        }
+    }
+    std::env::set_var("CFLAGS_SWGLPP", "");
 
     for shader in &shaders {
         translate_shader(shader, &shader_dir);
