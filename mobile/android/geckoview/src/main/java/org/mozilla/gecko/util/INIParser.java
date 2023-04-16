@@ -6,7 +6,6 @@ package org.mozilla.gecko.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -52,11 +51,7 @@ public final class INIParser extends INISection {
         } catch (final IOException e) {
             e.printStackTrace();
         } finally {
-            try {
-                if (writer != null) {
-                    ((Closeable) writer).close();
-                }
-            } catch (final IOException e) { }
+            IOUtils.safeStreamClose(writer);
         }
     }
 
@@ -155,5 +150,28 @@ public final class INIParser extends INISection {
         
         getSections();
         return mSections.get(key);
+    }
+
+    
+    public void removeSection(final String name) {
+        
+        getSections();
+        mSections.remove(name);
+    }
+
+    
+    
+    public void renameSection(final String oldName, final String newName) {
+        
+        getSections();
+
+        mSections.remove(newName);
+        final INISection section = mSections.get(oldName);
+        if (section == null)
+            return;
+
+        section.setName(newName);
+        mSections.remove(oldName);
+        mSections.put(newName, section);
     }
 }

@@ -7,6 +7,8 @@ package org.mozilla.gecko.util;
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.os.Build;
+import android.system.Os;
 import android.util.Log;
 
 import java.io.File;
@@ -48,6 +50,50 @@ public final class HardwareUtils {
 
     public static boolean isTablet() {
         return sIsLargeTablet || sIsSmallTablet;
+    }
+
+    private static String getPreferredAbi() {
+        String abi = null;
+        if (Build.VERSION.SDK_INT >= 21) {
+            abi = Build.SUPPORTED_ABIS[0];
+        }
+        if (abi == null) {
+            abi = Build.CPU_ABI;
+        }
+        return abi;
+    }
+
+    public static boolean isARMSystem() {
+        return "armeabi-v7a".equals(getPreferredAbi());
+    }
+
+    public static boolean isARM64System() {
+        
+        return "arm64-v8a".equals(getPreferredAbi());
+    }
+
+    public static boolean isX86System() {
+        if ("x86".equals(getPreferredAbi())) {
+            return true;
+        }
+        if (Build.VERSION.SDK_INT >= 21) {
+            
+            try {
+                return Os.uname().release.contains("-x86_");
+            } catch (final Exception e) {
+                Log.w(LOGTAG, "Cannot get uname", e);
+            }
+        }
+        return false;
+    }
+
+    public static String getRealAbi() {
+        if (isX86System() && isARMSystem()) {
+            
+            
+            return "x86";
+        }
+        return getPreferredAbi();
     }
 
     private static final int ELF_MACHINE_UNKNOWN = 0;

@@ -1292,6 +1292,13 @@ add_old_configure_assignment("MOZ_APP_VERSION", milestone.app_version)
 
 
 
+@depends(milestone.is_nightly)
+def fennec_nightly(is_nightly):
+    return is_nightly
+
+
+
+
 
 option(
     "--enable-update-channel",
