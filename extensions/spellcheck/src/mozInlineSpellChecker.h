@@ -60,7 +60,7 @@ class mozInlineSpellStatus {
   
   bool IsFullSpellCheck() const { return mOp == eOpChange && !mRange; }
 
-  RefPtr<mozInlineSpellChecker> mSpellChecker;
+  const RefPtr<mozInlineSpellChecker> mSpellChecker;
 
   enum Operation {
     eOpChange,        
