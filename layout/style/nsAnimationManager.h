@@ -12,6 +12,7 @@
 #include "mozilla/Keyframe.h"
 #include "mozilla/MemoryReporting.h"
 #include "nsISupportsImpl.h"
+#include "nsTHashSet.h"
 
 struct nsStyleDisplay;
 class ServoCSSAnimationBuilder;
@@ -87,7 +88,7 @@ class nsAnimationManager final
   
   
   
-  nsTHashtable<nsRefPtrHashKey<nsAtom>> mMaybeReferencedAnimations;
+  nsTHashSet<RefPtr<nsAtom>> mMaybeReferencedAnimations;
 
   void DoUpdateAnimations(const mozilla::NonOwningAnimationTarget& aTarget,
                           const nsStyleDisplay& aStyleDisplay,
