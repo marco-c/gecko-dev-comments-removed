@@ -423,7 +423,15 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE(CompositionPayloadType, uint8_t, (
 
 
 
-  eContentPaint
+  eContentPaint,
+
+  
+
+
+
+
+
+  eMouseUpFollowedByClick
 ));
 
 
