@@ -1225,14 +1225,16 @@ nsresult nsFocusManager::FocusPlugin(Element* aPlugin) {
 }
 
 nsFocusManager::BlurredElementInfo::BlurredElementInfo(Element& aElement)
-    : mElement(aElement) {}
+    : mElement(aElement),
+      mHadRing(aElement.State().HasState(NS_EVENT_STATE_FOCUSRING)) {}
 
 nsFocusManager::BlurredElementInfo::~BlurredElementInfo() = default;
 
 
-static bool ShouldMatchFocusVisible(nsPIDOMWindowOuter* aWindow,
-                                    const Element& aElement,
-                                    int32_t aFocusFlags) {
+static bool ShouldMatchFocusVisible(
+    nsPIDOMWindowOuter* aWindow, const Element& aElement, int32_t aFocusFlags,
+    const Maybe<nsFocusManager::BlurredElementInfo>& aBlurredElementInfo,
+    bool aIsRefocus, bool aRefocusedElementUsedToShowOutline) {
   
   if (aFocusFlags & nsIFocusManager::FLAG_SHOWRING) {
     return true;
@@ -1269,7 +1271,18 @@ static bool ShouldMatchFocusVisible(nsPIDOMWindowOuter* aWindow,
     case InputContextAction::CAUSE_UNKNOWN:
       
       
-      return aWindow->UnknownFocusMethodShouldShowOutline();
+      
+      
+      
+      
+      
+      
+      
+      
+      if (aIsRefocus) {
+        return aRefocusedElementUsedToShowOutline;
+      }
+      return !aBlurredElementInfo || aBlurredElementInfo->mHadRing;
     case InputContextAction::CAUSE_MOUSE:
     case InputContextAction::CAUSE_TOUCH:
     case InputContextAction::CAUSE_LONGPRESS:
@@ -2530,9 +2543,13 @@ void nsFocusManager::Focus(
                                 !IsNonFocusableRoot(aElement);
     const bool isRefocus = focusedNode && focusedNode == aElement;
     const bool shouldShowFocusRing =
-        sendFocusEvent && ShouldMatchFocusVisible(aWindow, *aElement, aFlags);
+        sendFocusEvent &&
+        ShouldMatchFocusVisible(
+            aWindow, *aElement, aFlags, aBlurredElementInfo, isRefocus,
+            isRefocus && aWindow->FocusedElementShowedOutline());
 
-    aWindow->SetFocusedElement(aElement, focusMethod, false);
+    aWindow->SetFocusedElement(aElement, focusMethod, false,
+                               shouldShowFocusRing);
 
     
     if (aElement && aFocusChanged) {
