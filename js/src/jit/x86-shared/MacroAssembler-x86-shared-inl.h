@@ -1463,14 +1463,12 @@ void MacroAssembler::bitmaskInt64x2(FloatRegister src, Register dest) {
 
 
 
-void MacroAssembler::swizzleInt8x16(FloatRegister rhs, FloatRegister lhsDest,
-                                    FloatRegister temp) {
+void MacroAssembler::swizzleInt8x16(FloatRegister rhs, FloatRegister lhsDest) {
   ScratchSimd128Scope scratch(*this);
-  loadConstantSimd128Int(SimdConstant::SplatX16(15), scratch);
-  moveSimd128Int(rhs, temp);
-  vpcmpgtb(Operand(scratch), temp, temp);  
-  vpor(Operand(rhs), temp, temp);          
-  vpshufb(temp, lhsDest, lhsDest);         
+  moveSimd128Int(rhs, scratch);
+  vpcmpgtbSimd128(SimdConstant::SplatX16(15), scratch);  
+  vpor(Operand(rhs), scratch, scratch);                  
+  vpshufb(scratch, lhsDest, lhsDest);                    
 }
 
 
