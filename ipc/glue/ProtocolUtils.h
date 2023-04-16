@@ -31,7 +31,7 @@
 #include "nsDebug.h"
 #include "nsISupports.h"
 #include "nsTArrayForwardDeclare.h"
-#include "nsTHashtable.h"
+#include "nsTHashSet.h"
 
 
 #include "mozilla/ipc/Transport.h"  
@@ -727,8 +727,7 @@ class WeakActorLifecycleProxy final {
   const nsCOMPtr<nsISerialEventTarget> mActorEventTarget;
 };
 
-void TableToArray(const nsTHashtable<nsPtrHashKey<void>>& aTable,
-                  nsTArray<void*>& aArray);
+void TableToArray(const nsTHashSet<void*>& aTable, nsTArray<void*>& aArray);
 
 class IPDLResolverInner final {
  public:
@@ -756,8 +755,8 @@ class IPDLResolverInner final {
 }  
 
 template <typename Protocol>
-class ManagedContainer : public nsTHashtable<nsPtrHashKey<Protocol>> {
-  typedef nsTHashtable<nsPtrHashKey<Protocol>> BaseClass;
+class ManagedContainer : public nsTHashSet<Protocol*> {
+  typedef nsTHashSet<Protocol*> BaseClass;
 
  public:
   
@@ -768,10 +767,9 @@ class ManagedContainer : public nsTHashtable<nsPtrHashKey<Protocol>> {
   
   
   void ToArray(nsTArray<Protocol*>& aArray) const {
-    ::mozilla::ipc::TableToArray(
-        *reinterpret_cast<const nsTHashtable<nsPtrHashKey<void>>*>(
-            static_cast<const BaseClass*>(this)),
-        reinterpret_cast<nsTArray<void*>&>(aArray));
+    ::mozilla::ipc::TableToArray(*reinterpret_cast<const nsTHashSet<void*>*>(
+                                     static_cast<const BaseClass*>(this)),
+                                 reinterpret_cast<nsTArray<void*>&>(aArray));
   }
 };
 
@@ -782,7 +780,7 @@ Protocol* LoneManagedOrNullAsserts(
     return nullptr;
   }
   MOZ_ASSERT(aManagees.Count() == 1);
-  return aManagees.ConstIter().Get()->GetKey();
+  return *aManagees.cbegin();
 }
 
 template <typename Protocol>
@@ -790,7 +788,7 @@ Protocol* SingleManagedOrNull(const ManagedContainer<Protocol>& aManagees) {
   if (aManagees.Count() != 1) {
     return nullptr;
   }
-  return aManagees.ConstIter().Get()->GetKey();
+  return *aManagees.cbegin();
 }
 
 }  
