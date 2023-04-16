@@ -29,8 +29,6 @@ function trr_test_setup() {
   
   Services.prefs.setBoolPref("network.dns.native-is-localhost", true);
 
-  
-  Services.prefs.setIntPref("network.trr.mode", 2); 
   Services.prefs.setBoolPref("network.trr.wait-for-portal", false);
   
   Services.prefs.setBoolPref("network.trr.wait-for-A-and-AAAA", true);
@@ -46,6 +44,9 @@ function trr_test_setup() {
     Ci.nsIX509CertDB
   );
   addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
+
+  
+  
 }
 
 
