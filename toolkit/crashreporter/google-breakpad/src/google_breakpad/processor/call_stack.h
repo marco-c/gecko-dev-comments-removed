@@ -67,8 +67,10 @@ class CallStack {
 
   
   void set_tid(uint32_t tid) { tid_ = tid; }
+  void set_last_error(uint32_t last_error) { last_error_ = last_error; }
 
   uint32_t tid() const { return tid_; }
+  uint32_t last_error() const { return last_error_; }
 
  private:
   
@@ -80,6 +82,8 @@ class CallStack {
   
   
   uint32_t tid_;
+  
+  uint32_t last_error_;
 };
 
 }  

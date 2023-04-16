@@ -285,6 +285,16 @@ class MinidumpThread : public MinidumpObject {
   
   virtual MinidumpMemoryRegion* GetMemory();
   
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual uint32_t GetLastError();
+  
   virtual MinidumpContext* GetContext();
 
   

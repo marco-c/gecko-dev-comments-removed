@@ -49,6 +49,7 @@ void CallStack::Clear() {
     delete *iterator;
   }
   tid_ = 0;
+  last_error_ = 0;
 }
 
 }  
