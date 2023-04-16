@@ -7,6 +7,7 @@ import zlib
 
 import mozlog
 
+import wptserve.logger
 from marionette_harness.runner import httpd
 
 
@@ -15,6 +16,13 @@ class PingServer(object):
 
     def __init__(self, server_root, url):
         self._logger = mozlog.get_default_logger(component="pingserver")
+
+        
+        try:
+            wptserve.logger.set_logger(self._logger)
+        except Exception:
+            
+            pass
         self.pings = []
 
         @httpd.handlers.handler
