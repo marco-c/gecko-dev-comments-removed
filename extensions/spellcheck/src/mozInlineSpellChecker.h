@@ -74,9 +74,12 @@ class mozInlineSpellStatus {
   RefPtr<nsRange> mCreatedRange;
 
   
-  RefPtr<nsRange> mNoCheckRange;
+  const nsRange* GetNoCheckRange() const { return mNoCheckRange; }
 
  private:
+  
+  RefPtr<nsRange> mNoCheckRange;
+
   
   
   

@@ -1389,8 +1389,9 @@ nsresult mozInlineSpellChecker::DoSpellCheck(
     
     
     
-    if (aStatus->mNoCheckRange &&
-        aStatus->mNoCheckRange->IsPointInRange(*beginNode, beginOffset, erv)) {
+    if (aStatus->GetNoCheckRange() &&
+        aStatus->GetNoCheckRange()->IsPointInRange(*beginNode, beginOffset,
+                                                   erv)) {
       continue;
     }
 
