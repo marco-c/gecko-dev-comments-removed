@@ -73,8 +73,6 @@ fn translate_shader(shader_key: &str, shader_dir: &str) {
     std::fs::write(&imp_name, imported).unwrap();
 
     let mut build = cc::Build::new();
-    
-    build.target("SWGLPP");
     build.no_default_flags(true);
     if build.get_compiler().is_like_msvc() {
         build.flag("/EP").flag("/clang:-undef");
@@ -121,12 +119,6 @@ fn main() {
     }
 
     shaders.sort();
-
-    
-    
-    
-    std::env::set_var("CFLAGS_SWGLPP", "");
-    std::env::set_var("CXXFLAGS_SWGLPP", "");
 
     for shader in &shaders {
         translate_shader(shader, &shader_dir);
