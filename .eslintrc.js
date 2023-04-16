@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 "use strict";
 
@@ -11,10 +11,10 @@ const chromeTestConfig = require("eslint-plugin-mozilla/lib/configs/chrome-test.
 const fs = require("fs");
 const path = require("path");
 
-
-
-
-
+/**
+ * Some configurations have overrides, which can't be specified within overrides,
+ * so we need to remove them.
+ */
 function removeOverrides(config) {
   config = { ...config };
   delete config.overrides;
@@ -26,8 +26,8 @@ const xpcshellTestPaths = ["**/test*/unit*/", "**/test*/xpcshell/"];
 const browserTestPaths = ["**/test*/**/browser*/"];
 
 const mochitestTestPaths = [
-  
-  
+  // Note: we do not want to match testing/mochitest as that would apply
+  // too many globals for that directory.
   "**/test/mochitest/",
   "**/tests/mochitest/",
   "**/test/mochitests/",
@@ -63,18 +63,18 @@ module.exports = {
     },
   },
   ignorePatterns,
-  
+  // Ignore eslint configurations in parent directories.
   root: true,
-  
-  
-  
+  // New rules and configurations should generally be added in
+  // tools/lint/eslint/eslint-plugin-mozilla/lib/configs/recommended.js to
+  // allow external repositories that use the plugin to pick them up as well.
   extends: ["plugin:mozilla/recommended"],
   plugins: ["mozilla"],
   overrides: [
     {
-      
-      
-      
+      // All .eslintrc.js files are in the node environment, so turn that
+      // on here.
+      // https://github.com/eslint/eslint/issues/13008
       files: [".eslintrc.js"],
       env: {
         node: true,
@@ -91,13 +91,13 @@ module.exports = {
         "js/src/shell/**/*.js",
       ],
       rules: {
-        
-        
+        // Curly brackets are required for all the tree via recommended.js,
+        // however these files aren't auto-fixable at the moment.
         curly: "off",
       },
     },
     {
-      
+      // TODO: Bug 1515949. Enable no-undef for gfx/
       files: "gfx/layers/apz/test/mochitest/**",
       rules: {
         "no-undef": "off",
@@ -109,10 +109,10 @@ module.exports = {
       excludedFiles: "devtools/**",
     },
     {
-      
-      
-      
-      
+      // If it is an xpcshell head file, we turn off global unused variable checks, as it
+      // would require searching the other test files to know if they are used or not.
+      // This would be expensive and slow, and it isn't worth it for head files.
+      // We could get developers to declare as exported, but that doesn't seem worth it.
       files: xpcshellTestPaths.map(path => `${path}head*.js`),
       rules: {
         "no-unused-vars": [
@@ -144,9 +144,9 @@ module.exports = {
     },
     {
       env: {
-        
-        
-        
+        // Ideally we wouldn't be using the simpletest env here, but our uses of
+        // js files mean we pick up everything from the global scope, which could
+        // be any one of a number of html files. So we just allow the basics...
         "mozilla/simpletest": true,
       },
       files: [
@@ -247,6 +247,7 @@ module.exports = {
         "dom/security/test/general/**",
         "dom/security/test/https-only/**",
         "dom/security/test/mixedcontentblocker/**",
+        "dom/security/test/sec-fetch/**",
         "dom/security/test/sri/**",
         "dom/security/test/referrer-policy/**",
         "dom/serviceworkers/**",
@@ -494,7 +495,7 @@ module.exports = {
       },
     },
     {
-      
+      // TODO: Bug 1609271 Fix all violations for ChromeUtils.import(..., null)
       files: [
         "browser/base/content/test/forms/head.js",
         "browser/base/content/test/general/browser_datachoices_notification.js",
