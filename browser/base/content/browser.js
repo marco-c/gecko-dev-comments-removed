@@ -589,15 +589,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "gProtonTabs",
-  "browser.proton.tabs.enabled",
-  false
-);
-
-
-
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,

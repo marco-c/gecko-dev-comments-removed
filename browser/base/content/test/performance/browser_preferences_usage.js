@@ -125,11 +125,7 @@ add_task(async function startup() {
     },
     "browser.proton.enabled": {
       min: 0,
-      max: 100, 
-    },
-    "browser.proton.tabs.enabled": {
-      min: 0,
-      max: 100, 
+      max: 200, 
     },
     "browser.proton.urlbar.enabled": {
       min: 0,
