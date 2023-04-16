@@ -52,7 +52,6 @@ class mozInlineSpellStatus {
 
   RefPtr<mozInlineSpellChecker> mSpellChecker;
 
-  
   enum Operation {
     eOpChange,        
                       
@@ -61,8 +60,10 @@ class mozInlineSpellStatus {
     eOpNavigation,    
     eOpSelection,     
     eOpResume
-  };  
-  Operation mOp;
+  };
+
+  
+  Operation GetOperation() const { return mOp; }
 
   
   
@@ -75,6 +76,9 @@ class mozInlineSpellStatus {
   const nsRange* GetNoCheckRange() const { return mNoCheckRange; }
 
  private:
+  
+  Operation mOp;
+
   
   
   
