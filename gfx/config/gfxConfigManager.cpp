@@ -129,13 +129,13 @@ void gfxConfigManager::ConfigureWebRenderSoftware() {
   
   if (mWrSoftwareForceEnabled) {
     mFeatureWrSoftware->UserForceEnable("Force enabled by pref");
-  } else if (gfxPlatform::DoesFissionForceWebRender()) {
-    mFeatureWrSoftware->UserForceEnable("Force enabled by fission");
   } else if (mWrForceDisabled || mWrEnvForceDisabled) {
     
     
     mFeatureWrSoftware->UserDisable("User force-disabled WR",
                                     "FEATURE_FAILURE_USER_FORCE_DISABLED"_ns);
+  } else if (gfxPlatform::DoesFissionForceWebRender()) {
+    mFeatureWrSoftware->UserForceEnable("Force enabled by fission");
   }
 
   nsCString failureId;
