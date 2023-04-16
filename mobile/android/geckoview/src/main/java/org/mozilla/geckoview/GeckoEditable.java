@@ -655,13 +655,13 @@ import android.view.inputmethod.EditorInfo;
             if (mKeyMap == null) {
                 mKeyMap = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             
             
             
             return null;
         }
-        KeyEvent [] keyEvents = mKeyMap.getEvents(cs.toString().toCharArray());
+        final KeyEvent [] keyEvents = mKeyMap.getEvents(cs.toString().toCharArray());
         if (keyEvents == null || keyEvents.length == 0) {
             return null;
         }
@@ -677,11 +677,11 @@ import android.view.inputmethod.EditorInfo;
             
             return;
         }
-        KeyEvent [] keyEvents = synthesizeKeyEvents(action.mSequence);
+        final KeyEvent [] keyEvents = synthesizeKeyEvents(action.mSequence);
         if (keyEvents == null) {
             return;
         }
-        for (KeyEvent event : keyEvents) {
+        for (final KeyEvent event : keyEvents) {
             if (KeyEvent.isModifierKey(event.getKeyCode())) {
                 continue;
             }
@@ -752,7 +752,7 @@ import android.view.inputmethod.EditorInfo;
     private Object getField(final Object obj, final String field, final Object def) {
         try {
             return obj.getClass().getField(field).get(obj);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return def;
         }
     }
@@ -801,7 +801,7 @@ import android.view.inputmethod.EditorInfo;
 
             
             
-            for (Object span : spans) {
+            for (final Object span : spans) {
                 if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) == 0) {
                     continue;
                 }
@@ -870,13 +870,15 @@ import android.view.inputmethod.EditorInfo;
         }
 
         int rangeStart = composingStart;
-        TextPaint tp = new TextPaint();
-        TextPaint emptyTp = new TextPaint();
+        final TextPaint tp = new TextPaint();
+        final TextPaint emptyTp = new TextPaint();
         
         
         emptyTp.setColor(0);
         do {
-            int rangeType, rangeStyles = 0, rangeLineStyle = IME_RANGE_LINE_NONE;
+            final int rangeType;
+            int rangeStyles = 0;
+            int rangeLineStyle = IME_RANGE_LINE_NONE;
             boolean rangeBoldLine = false;
             int rangeForeColor = 0, rangeBackColor = 0, rangeLineColor = 0;
             int rangeEnd = text.nextSpanTransition(rangeStart, composingEnd, Object.class);
@@ -886,7 +888,7 @@ import android.view.inputmethod.EditorInfo;
             } else if (selEnd > rangeStart && selEnd < rangeEnd) {
                 rangeEnd = selEnd;
             }
-            CharacterStyle[] styleSpans =
+            final CharacterStyle[] styleSpans =
                     text.getSpans(rangeStart, rangeEnd, CharacterStyle.class);
 
             if (DEBUG) {
@@ -903,7 +905,7 @@ import android.view.inputmethod.EditorInfo;
                             ? IME_RANGE_SELECTEDCONVERTEDTEXT
                             : IME_RANGE_CONVERTEDTEXT;
                 tp.set(emptyTp);
-                for (CharacterStyle span : styleSpans) {
+                for (final CharacterStyle span : styleSpans) {
                     span.updateDrawState(tp);
                 }
                 int tpUnderlineColor = 0;
@@ -957,7 +959,7 @@ import android.view.inputmethod.EditorInfo;
                              final @NonNull KeyEvent event) {
         final Editable editable = mProxy;
         final KeyListener keyListener = TextKeyListener.getInstance();
-        KeyEvent translatedEvent = translateKey(event.getKeyCode(), event);
+        final KeyEvent translatedEvent = translateKey(event.getKeyCode(), event);
 
         
         final View v = ThreadUtils.isOnUiThread() ? view : null;
@@ -1515,7 +1517,7 @@ import android.view.inputmethod.EditorInfo;
         
         
         
-        int state;
+        final int state;
         if ((typeHint != null && (typeHint.equalsIgnoreCase("date") ||
                                   typeHint.equalsIgnoreCase("time") ||
                                   typeHint.equalsIgnoreCase("month") ||
@@ -1821,7 +1823,7 @@ import android.view.inputmethod.EditorInfo;
                              final int start, final int unboundedOldEnd) {
         
         if (DEBUG) {
-            StringBuilder sb = new StringBuilder("onTextChange(");
+            final StringBuilder sb = new StringBuilder("onTextChange(");
             debugAppend(sb, text).append(", ").append(start).append(", ")
                                  .append(unboundedOldEnd).append(")");
             Log.d(LOGTAG, sb.toString());
@@ -1894,7 +1896,7 @@ import android.view.inputmethod.EditorInfo;
     public void onDefaultKeyEvent(final IBinder token, final KeyEvent event) {
         
         if (DEBUG) {
-            StringBuilder sb = new StringBuilder("onDefaultKeyEvent(");
+            final StringBuilder sb = new StringBuilder("onDefaultKeyEvent(");
             sb.append("action=").append(event.getAction()).append(", ")
                 .append("keyCode=").append(event.getKeyCode()).append(", ")
                 .append("metaState=").append(event.getMetaState()).append(", ")
@@ -1944,13 +1946,13 @@ import android.view.inputmethod.EditorInfo;
     
 
     static String getConstantName(final Class<?> cls, final String prefix, final Object value) {
-        for (Field fld : cls.getDeclaredFields()) {
+        for (final Field fld : cls.getDeclaredFields()) {
             try {
                 if (fld.getName().startsWith(prefix) &&
                     fld.get(null).equals(value)) {
                     return fld.getName();
                 }
-            } catch (IllegalAccessException e) {
+            } catch (final IllegalAccessException e) {
             }
         }
         return String.valueOf(value);
@@ -2000,7 +2002,7 @@ import android.view.inputmethod.EditorInfo;
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args)
             throws Throwable {
-        Object target;
+        final Object target;
         final Class<?> methodInterface = method.getDeclaringClass();
         if (DEBUG) {
             
@@ -2017,10 +2019,10 @@ import android.view.inputmethod.EditorInfo;
 
         final Object ret = method.invoke(target, args);
         if (DEBUG) {
-            StringBuilder log = new StringBuilder(method.getName());
+            final StringBuilder log = new StringBuilder(method.getName());
             log.append("(");
             if (args != null) {
-                for (Object arg : args) {
+                for (final Object arg : args) {
                     debugAppend(log, arg).append(", ");
                 }
                 if (args.length > 0) {

@@ -114,7 +114,7 @@ public class GeckoThread extends Thread {
         @Override
         public void run() {
             ThreadUtils.assertOnUiThread();
-            long nextDelay = runUiThreadCallback();
+            final long nextDelay = runUiThreadCallback();
             if (nextDelay >= 0) {
                 ThreadUtils.getUiHandler().postDelayed(this, nextDelay);
             }
@@ -258,7 +258,7 @@ public class GeckoThread extends Thread {
         if (locale.toString().equalsIgnoreCase("zh_hk")) {
             final Locale mappedLocale = Locale.TRADITIONAL_CHINESE;
             Locale.setDefault(mappedLocale);
-            Configuration config = res.getConfiguration();
+            final Configuration config = res.getConfiguration();
             config.locale = mappedLocale;
             res.updateConfiguration(config, null);
         }
@@ -357,7 +357,7 @@ public class GeckoThread extends Thread {
             return new ArrayList<>();
         }
 
-        ArrayList<String> result = new ArrayList<>();
+        final ArrayList<String> result = new ArrayList<>();
         if (extras != null) {
             String env = extras.getString("env0");
             for (int c = 1; env != null; c++) {
@@ -385,7 +385,7 @@ public class GeckoThread extends Thread {
         final MessageQueue.IdleHandler idleHandler = new MessageQueue.IdleHandler() {
             @Override public boolean queueIdle() {
                 final Handler geckoHandler = ThreadUtils.sGeckoHandler;
-                Message idleMsg = Message.obtain(geckoHandler);
+                final Message idleMsg = Message.obtain(geckoHandler);
                 
                 idleMsg.obj = geckoHandler;
                 geckoHandler.sendMessageAtFrontOfQueue(idleMsg);
@@ -493,7 +493,7 @@ public class GeckoThread extends Thread {
             }
 
             if (e.startsWith("MOZ_DEBUG_CHILD_WAIT_FOR_JAVA_DEBUGGER=")) {
-                String filter = e.substring("MOZ_DEBUG_CHILD_WAIT_FOR_JAVA_DEBUGGER=".length());
+                final String filter = e.substring("MOZ_DEBUG_CHILD_WAIT_FOR_JAVA_DEBUGGER=".length());
                 if (isChildProcess()) {
                     final String processName = getProcessName(context);
                     if (processName == null || processName.endsWith(filter)) {
@@ -538,7 +538,7 @@ public class GeckoThread extends Thread {
 
             if (envItem.startsWith(startupEnv)) {
                 
-                String value = envItem.substring(startupEnv.length());
+                final String value = envItem.substring(startupEnv.length());
                 if (value.isEmpty() || value.equals("0") || value.equals("n") || value.equals("N")) {
                     
                     
@@ -549,23 +549,23 @@ public class GeckoThread extends Thread {
                 isStartupProfiling = true;
             } else if (envItem.startsWith(intervalEnv)) {
                 
-                String value = envItem.substring(intervalEnv.length());
+                final String value = envItem.substring(intervalEnv.length());
 
                 try {
-                    int intValue = Integer.parseInt(value);
+                    final int intValue = Integer.parseInt(value);
                     interval = Math.max(intValue, interval);
-                } catch (NumberFormatException err) {
+                } catch (final NumberFormatException err) {
                     
                 }
             } else if (envItem.startsWith(capacityEnv)) {
                 
-                String value = envItem.substring(capacityEnv.length());
+                final String value = envItem.substring(capacityEnv.length());
 
                 try {
-                    int intValue = Integer.parseInt(value);
+                    final int intValue = Integer.parseInt(value);
                     
                     capacity = Math.max(intValue, minCapacity);
-                } catch (NumberFormatException err) {
+                } catch (final NumberFormatException err) {
                     
                 }
             }
@@ -581,13 +581,13 @@ public class GeckoThread extends Thread {
         final ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
 
         
-        List<ActivityManager.RunningAppProcessInfo> processInfos = manager.getRunningAppProcesses();
+        final List<ActivityManager.RunningAppProcessInfo> processInfos = manager.getRunningAppProcesses();
 
         if (processInfos == null) {
             return null;
         }
 
-        for (ActivityManager.RunningAppProcessInfo processInfo : processInfos) {
+        for (final ActivityManager.RunningAppProcessInfo processInfo : processInfos) {
             if (processInfo.pid == pid) {
                 return processInfo.processName;
             }

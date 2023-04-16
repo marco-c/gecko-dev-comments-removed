@@ -193,8 +193,8 @@ public class MediaSession {
 
 
         default void onActivated(
-                @NonNull GeckoSession session,
-                @NonNull MediaSession mediaSession) {}
+                @NonNull final GeckoSession session,
+                @NonNull final MediaSession mediaSession) {}
 
         
 
@@ -206,8 +206,8 @@ public class MediaSession {
 
 
         default void onDeactivated(
-                @NonNull GeckoSession session,
-                @NonNull MediaSession mediaSession) {}
+                @NonNull final GeckoSession session,
+                @NonNull final MediaSession mediaSession) {}
 
         
 
@@ -219,9 +219,9 @@ public class MediaSession {
 
 
         default void onMetadata(
-                @NonNull GeckoSession session,
-                @NonNull MediaSession mediaSession,
-                @NonNull Metadata meta) {}
+                @NonNull final GeckoSession session,
+                @NonNull final MediaSession mediaSession,
+                @NonNull final Metadata meta) {}
 
         
 
@@ -232,9 +232,9 @@ public class MediaSession {
 
 
         default void onFeatures(
-                @NonNull GeckoSession session,
-                @NonNull MediaSession mediaSession,
-                @MSFeature long features) {}
+                @NonNull final GeckoSession session,
+                @NonNull final MediaSession mediaSession,
+                @MSFeature final long features) {}
 
         
 
@@ -243,8 +243,8 @@ public class MediaSession {
 
 
         default void onPlay(
-                @NonNull GeckoSession session,
-                @NonNull MediaSession mediaSession) {}
+                @NonNull final GeckoSession session,
+                @NonNull final MediaSession mediaSession) {}
 
         
 
@@ -253,8 +253,8 @@ public class MediaSession {
 
 
         default void onPause(
-                @NonNull GeckoSession session,
-                @NonNull MediaSession mediaSession) {}
+                @NonNull final GeckoSession session,
+                @NonNull final MediaSession mediaSession) {}
 
         
 
@@ -263,8 +263,8 @@ public class MediaSession {
 
 
         default void onStop(
-                @NonNull GeckoSession session,
-                @NonNull MediaSession mediaSession) {}
+                @NonNull final GeckoSession session,
+                @NonNull final MediaSession mediaSession) {}
 
         
 
@@ -274,9 +274,9 @@ public class MediaSession {
 
 
         default void onPositionState(
-                @NonNull GeckoSession session,
-                @NonNull MediaSession mediaSession,
-                @NonNull PositionState state) {}
+                @NonNull final GeckoSession session,
+                @NonNull final MediaSession mediaSession,
+                @NonNull final PositionState state) {}
 
         
 
@@ -287,10 +287,10 @@ public class MediaSession {
 
 
         default void onFullscreen(
-                @NonNull GeckoSession session,
-                @NonNull MediaSession mediaSession,
-                boolean enabled,
-                @Nullable ElementMetadata meta) {}
+                @NonNull final GeckoSession session,
+                @NonNull final MediaSession mediaSession,
+                final boolean enabled,
+                @Nullable final ElementMetadata meta) {}
     }
 
 

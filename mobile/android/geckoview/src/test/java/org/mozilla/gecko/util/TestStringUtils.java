@@ -105,7 +105,7 @@ public class TestStringUtils {
 
     @Test
     public void testIsSearchQuery(){
-        boolean any = true;
+        final boolean any = true;
         
         assertFalse(StringUtils.isSearchQuery("",false));
         assertTrue(StringUtils.isSearchQuery("",true));

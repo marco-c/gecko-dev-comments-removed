@@ -44,14 +44,14 @@ public final class Clipboard {
         final ClipboardManager cm = (ClipboardManager)
                 context.getSystemService(Context.CLIPBOARD_SERVICE);
         if (cm.hasPrimaryClip()) {
-            ClipData clip = cm.getPrimaryClip();
+            final ClipData clip = cm.getPrimaryClip();
             if (clip == null || clip.getItemCount() == 0) {
                 return null;
             }
 
-            ClipDescription description = clip.getDescription();
+            final ClipDescription description = clip.getDescription();
             if (HTML_MIME.equals(mimeType) && description.hasMimeType(ClipDescription.MIMETYPE_TEXT_HTML)) {
-                CharSequence data = clip.getItemAt(0).getHtmlText();
+                final CharSequence data = clip.getItemAt(0).getHtmlText();
                 if (data == null) {
                     return null;
                 }
@@ -103,11 +103,11 @@ public final class Clipboard {
                 context.getSystemService(Context.CLIPBOARD_SERVICE);
         try {
             cm.setPrimaryClip(clipData);
-        } catch (NullPointerException e) {
+        } catch (final NullPointerException e) {
             
             
             
-        } catch (RuntimeException e) {
+        } catch (final RuntimeException e) {
             
             Log.e(LOGTAG, "Couldn't set clip data to clipboard", e);
             return false;

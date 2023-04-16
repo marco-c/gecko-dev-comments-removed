@@ -258,8 +258,8 @@ public class MediaElement {
          LoadProgressInfo(final GeckoBundle bundle) {
             loadedBytes = bundle.getLong("loadedBytes", -1);
             totalBytes = bundle.getLong("loadedBytes", -1);
-            double[] starts = bundle.getDoubleArray("timeRangeStarts");
-            double[] ends = bundle.getDoubleArray("timeRangeEnds");
+            final double[] starts = bundle.getDoubleArray("timeRangeStarts");
+            final double[] ends = bundle.getDoubleArray("timeRangeEnds");
             if (starts == null || ends == null) {
                 buffered = null;
                 return;
@@ -297,8 +297,8 @@ public class MediaElement {
 
 
         @UiThread
-        default void onPlaybackStateChange(@NonNull MediaElement mediaElement,
-                                           @MediaStateFlags int mediaState) {}
+        default void onPlaybackStateChange(@NonNull final MediaElement mediaElement,
+                                           @MediaStateFlags final int mediaState) {}
 
         
 
@@ -308,8 +308,8 @@ public class MediaElement {
 
 
         @UiThread
-        default void onReadyStateChange(@NonNull MediaElement mediaElement,
-                                        @ReadyStateFlags int readyState) {}
+        default void onReadyStateChange(@NonNull final MediaElement mediaElement,
+                                        @ReadyStateFlags final int readyState) {}
 
         
 
@@ -318,8 +318,8 @@ public class MediaElement {
 
 
         @UiThread
-        default void onMetadataChange(@NonNull MediaElement mediaElement,
-                                      @NonNull Metadata metaData) {}
+        default void onMetadataChange(@NonNull final MediaElement mediaElement,
+                                      @NonNull final Metadata metaData) {}
 
         
 
@@ -328,46 +328,8 @@ public class MediaElement {
 
 
         @UiThread
-        default void onLoadProgress(@NonNull MediaElement mediaElement,
-                                    @NonNull LoadProgressInfo progressInfo) {}
-
-        
-
-
-
-
-
-
-        @UiThread
-        default void onVolumeChange(@NonNull MediaElement mediaElement, double volume,
-                                    boolean muted) {}
-
-        
-
-
-
-
-
-        @UiThread
-        default void onTimeChange(@NonNull MediaElement mediaElement, double time) {}
-
-        
-
-
-
-
-
-        @UiThread
-        default void onPlaybackRateChange(@NonNull MediaElement mediaElement, double rate) {}
-
-        
-
-
-
-
-
-        @UiThread
-        default void onFullscreenChange(@NonNull MediaElement mediaElement, boolean fullscreen) {}
+        default void onLoadProgress(@NonNull final MediaElement mediaElement,
+                                    @NonNull final LoadProgressInfo progressInfo) {}
 
         
 
@@ -377,7 +339,45 @@ public class MediaElement {
 
 
         @UiThread
-        default void onError(@NonNull MediaElement mediaElement, @MediaErrorFlags int errorCode) {}
+        default void onVolumeChange(@NonNull final MediaElement mediaElement, final double volume,
+                                    final boolean muted) {}
+
+        
+
+
+
+
+
+        @UiThread
+        default void onTimeChange(@NonNull final MediaElement mediaElement, final double time) {}
+
+        
+
+
+
+
+
+        @UiThread
+        default void onPlaybackRateChange(@NonNull final MediaElement mediaElement, final double rate) {}
+
+        
+
+
+
+
+
+        @UiThread
+        default void onFullscreenChange(@NonNull final MediaElement mediaElement, final boolean fullscreen) {}
+
+        
+
+
+
+
+
+
+        @UiThread
+        default void onError(@NonNull final MediaElement mediaElement, @MediaErrorFlags final int errorCode) {}
     }
 
      long getVideoId() {
@@ -403,7 +403,7 @@ public class MediaElement {
         if (mDelegate == delegate) {
             return;
         }
-        MediaElement.Delegate oldDelegate = mDelegate;
+        final MediaElement.Delegate oldDelegate = mDelegate;
         mDelegate = delegate;
         if (oldDelegate != null && mDelegate == null) {
             mSession.getEventDispatcher().dispatch("GeckoView:MediaUnobserve", createMessage());
@@ -478,7 +478,7 @@ public class MediaElement {
 
     @UiThread
      void notifyPlaybackStateChange(final String event) {
-        @MediaStateFlags int state;
+        @MediaStateFlags final int state;
         switch (event.toLowerCase(Locale.ROOT)) {
             case "play":
                 state = MEDIA_STATE_PLAY;

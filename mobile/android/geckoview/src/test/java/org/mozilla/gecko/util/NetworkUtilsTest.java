@@ -92,7 +92,7 @@ public class NetworkUtilsTest {
         assertEquals(ConnectionSubType.UNKNOWN, NetworkUtils.getConnectionSubType(connectivityManager));
 
         
-        int[] cell2gTypes = new int[] {
+        final int[] cell2gTypes = new int[] {
                 TelephonyManager.NETWORK_TYPE_GPRS,
                 TelephonyManager.NETWORK_TYPE_EDGE,
                 TelephonyManager.NETWORK_TYPE_CDMA,
@@ -107,7 +107,7 @@ public class NetworkUtilsTest {
         }
 
         
-        int[] cell3gTypes = new int[] {
+        final int[] cell3gTypes = new int[] {
                 TelephonyManager.NETWORK_TYPE_UMTS,
                 TelephonyManager.NETWORK_TYPE_EVDO_0,
                 TelephonyManager.NETWORK_TYPE_EVDO_A,

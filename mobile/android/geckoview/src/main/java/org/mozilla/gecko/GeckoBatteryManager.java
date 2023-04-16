@@ -84,8 +84,8 @@ public class GeckoBatteryManager extends BroadcastReceiver {
             return;
         }
 
-        boolean previousCharging = isCharging();
-        double previousLevel = getLevel();
+        final boolean previousCharging = isCharging();
+        final double previousLevel = getLevel();
 
         
         
@@ -95,7 +95,7 @@ public class GeckoBatteryManager extends BroadcastReceiver {
         
         if (intent.getBooleanExtra(BatteryManager.EXTRA_PRESENT, false) ||
                 Build.MODEL.equals("Galaxy Nexus")) {
-            int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+            final int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
             if (plugged == -1) {
                 sCharging = kDefaultCharging;
                 Log.e(LOGTAG, "Failed to get the plugged status!");
@@ -113,8 +113,8 @@ public class GeckoBatteryManager extends BroadcastReceiver {
             }
 
             
-            double current = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-            double max = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+            final double current = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+            final double max = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
             if (current == -1 || max == -1) {
                 Log.e(LOGTAG, "Failed to get battery level!");
                 sLevel = kDefaultLevel;
@@ -128,9 +128,9 @@ public class GeckoBatteryManager extends BroadcastReceiver {
                 
                 if (sLastLevelChange != 0) {
                     
-                    long currentTime = SystemClock.elapsedRealtime();
-                    long dt = (currentTime - sLastLevelChange) / 1000;
-                    double dLevel = sLevel - previousLevel;
+                    final long currentTime = SystemClock.elapsedRealtime();
+                    final long dt = (currentTime - sLastLevelChange) / 1000;
+                    final double dLevel = sLevel - previousLevel;
 
                     if (sCharging) {
                         if (dLevel < 0) {
