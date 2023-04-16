@@ -1256,14 +1256,15 @@ nsresult nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest) {
   
   mReparseForbidden = !(mMode == NORMAL || mMode == PLAIN_TEXT);
 
-  mDocGroup = mExecutor->GetDocument()->GetDocGroup();
+  mNetworkEventTarget =
+      mExecutor->GetDocument()->EventTargetFor(TaskCategory::Network);
 
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mRequest, &rv));
   if (NS_SUCCEEDED(rv)) {
     
     
-    MOZ_ASSERT(mDocGroup || mMode == LOAD_AS_DATA,
-               "How come the doc group is still null?");
+    MOZ_ASSERT(mNetworkEventTarget || mMode == LOAD_AS_DATA,
+               "How come the network event target is still null?");
 
     nsAutoCString method;
     Unused << httpChannel->GetRequestMethod(method);
@@ -2189,8 +2190,8 @@ void nsHtml5StreamParser::MarkAsBroken(nsresult aRv) {
 
 nsresult nsHtml5StreamParser::DispatchToMain(
     already_AddRefed<nsIRunnable>&& aRunnable) {
-  if (mDocGroup) {
-    return mDocGroup->Dispatch(TaskCategory::Network, std::move(aRunnable));
+  if (mNetworkEventTarget) {
+    return mNetworkEventTarget->Dispatch(std::move(aRunnable));
   }
   return SchedulerGroup::UnlabeledDispatch(TaskCategory::Network,
                                            std::move(aRunnable));

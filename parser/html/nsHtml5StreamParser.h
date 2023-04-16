@@ -511,7 +511,7 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
-  RefPtr<mozilla::dom::DocGroup> mDocGroup;
+  nsCOMPtr<nsISerialEventTarget> mNetworkEventTarget;
 
   
 
