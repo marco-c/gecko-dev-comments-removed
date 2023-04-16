@@ -2415,7 +2415,7 @@ pref("devtools.browserconsole.input.editorWidth", 0);
 pref("devtools.webconsole.input.editorOnboarding", true);
 
 
-#if defined(NIGHTLY_BUILD)
+#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
   pref("devtools.performance.new-panel-enabled", true);
 #else
   pref("devtools.performance.new-panel-enabled", false);
