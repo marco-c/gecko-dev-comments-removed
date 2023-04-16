@@ -147,20 +147,21 @@ nsresult OggWriter::GetContainerData(nsTArray<nsTArray<uint8_t>>* aOutputBufs,
     ProduceOggPage(aOutputBufs);
   }
 
-  
-  
-  while (ogg_stream_pageout(&mOggStreamState, &mOggPage) != 0) {
-    ProduceOggPage(aOutputBufs);
-  }
-
   if (aFlags & ContainerWriter::FLUSH_NEEDED) {
     
-    if (ogg_stream_flush(&mOggStreamState, &mOggPage) != 0) {
-      ProduceOggPage(aOutputBufs);
-    }
-    mIsWritingComplete = true;
+    rc = ogg_stream_flush(&mOggStreamState, &mOggPage);
+  } else {
+    
+    
+    rc = ogg_stream_pageout(&mOggStreamState, &mOggPage);
   }
 
+  if (rc) {
+    ProduceOggPage(aOutputBufs);
+  }
+  if (aFlags & ContainerWriter::FLUSH_NEEDED) {
+    mIsWritingComplete = true;
+  }
   
   
   
