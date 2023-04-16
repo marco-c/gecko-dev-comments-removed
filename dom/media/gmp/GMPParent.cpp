@@ -892,7 +892,8 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
     nsCString codec;
     if (chromiumCodec.EqualsASCII("vp8")) {
       codec = "vp8"_ns;
-    } else if (chromiumCodec.EqualsASCII("vp9.0")) {
+    } else if (chromiumCodec.EqualsASCII("vp9.0") ||  
+               chromiumCodec.EqualsASCII("vp09")) {
       codec = "vp9"_ns;
     } else if (chromiumCodec.EqualsASCII("avc1")) {
       codec = "h264"_ns;
