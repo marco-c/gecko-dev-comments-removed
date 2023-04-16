@@ -23,6 +23,7 @@
 #include "nsIRedirectHistoryEntry.h"
 #include "nsNetUtil.h"
 #include "nsReadableUtils.h"
+#include "nsSandboxFlags.h"
 #include "nsIXPConnect.h"
 
 #include "mozilla/BasePrincipal.h"
@@ -266,6 +267,33 @@ static nsresult ValidateSecurityFlags(nsILoadInfo* aLoadInfo) {
   return NS_OK;
 }
 
+static already_AddRefed<nsIPrincipal> GetExtensionSandboxPrincipal(
+    nsILoadInfo* aLoadInfo) {
+  
+  
+  
+  
+  if (!aLoadInfo->TriggeringPrincipal()->GetIsNullPrincipal()) {
+    return nullptr;
+  }
+  RefPtr<Document> doc;
+  aLoadInfo->GetLoadingDocument(getter_AddRefs(doc));
+  if (!doc || !(doc->GetSandboxFlags() & SANDBOXED_ORIGIN)) {
+    return nullptr;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> docPrincipal = BasePrincipal::CreateContentPrincipal(
+      doc->GetDocumentURI(), doc->NodePrincipal()->OriginAttributesRef());
+
+  if (!BasePrincipal::Cast(docPrincipal)->AddonPolicy()) {
+    return nullptr;
+  }
+  return docPrincipal.forget();
+}
+
 static bool IsImageLoadInEditorAppType(nsILoadInfo* aLoadInfo) {
   
   
@@ -329,11 +357,20 @@ static nsresult DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
     return NS_OK;
   }
 
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
+  nsCOMPtr<nsIPrincipal> addonPrincipal =
+      GetExtensionSandboxPrincipal(aLoadInfo);
+  if (addonPrincipal) {
+    
+    
+    triggeringPrincipal = addonPrincipal;
+  }
+
   
   
   
   return nsContentUtils::GetSecurityManager()->CheckLoadURIWithPrincipal(
-      aLoadInfo->TriggeringPrincipal(), aURI, aLoadInfo->CheckLoadURIFlags(),
+      triggeringPrincipal, aURI, aLoadInfo->CheckLoadURIFlags(),
       aLoadInfo->GetInnerWindowID());
 }
 
