@@ -24,7 +24,7 @@ add_task(async function() {
   
   
   
-  Services.prefs.setIntPref("ui.prefersReducedMotion", 0);
+  await pushPref("ui.prefersReducedMotion", 0);
 
   const container = doc.querySelector("#cubic-bezier-container");
   const w = new CubicBezierWidget(container, PREDEFINED.linear);
