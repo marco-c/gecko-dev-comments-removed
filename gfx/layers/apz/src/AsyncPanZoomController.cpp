@@ -2589,6 +2589,10 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
     return OnPanBegin(aEvent);
   }
 
+  if (mState == OVERSCROLL_ANIMATION && !aFingersOnTouchpad) {
+    return nsEventStatus_eConsumeNoDefault;
+  }
+
   
   
   
@@ -2690,15 +2694,21 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
     
     RecordScrollPayload(aEvent.mTimeStamp);
   }
+
+  const ParentLayerPoint velocity = GetVelocityVector();
   bool consumed = CallDispatchScroll(startPoint, endPoint, handoffState);
 
-  if (!consumed && !aFingersOnTouchpad) {
-    
-    
-    
-    
-    
-    SetState(NOTHING);
+  if (!aFingersOnTouchpad) {
+    if (IsOverscrolled() && mState != OVERSCROLL_ANIMATION) {
+      StartOverscrollAnimation(velocity);
+    } else if (!consumed) {
+      
+      
+      
+      
+      
+      SetState(NOTHING);
+    }
   }
 
   return nsEventStatus_eConsumeNoDefault;
@@ -2764,6 +2774,10 @@ nsEventStatus AsyncPanZoomController::OnPanMomentumStart(
     CancelAnimation();
   }
 
+  if (mState == OVERSCROLL_ANIMATION) {
+    return nsEventStatus_eConsumeNoDefault;
+  }
+
   SetState(PAN_MOMENTUM);
   ScrollSnapToDestination();
 
@@ -2776,6 +2790,10 @@ nsEventStatus AsyncPanZoomController::OnPanMomentumStart(
 nsEventStatus AsyncPanZoomController::OnPanMomentumEnd(
     const PanGestureInput& aEvent) {
   APZC_LOG("%p got a pan-momentumend in state %d\n", this, mState);
+
+  if (mState == OVERSCROLL_ANIMATION) {
+    return nsEventStatus_eConsumeNoDefault;
+  }
 
   
   OnPan(aEvent, false);
