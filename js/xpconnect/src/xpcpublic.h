@@ -138,7 +138,6 @@ bool AllowContentXBLScope(JS::Realm* realm);
 JSObject* NACScope(JSObject* global);
 
 bool IsSandboxPrototypeProxy(JSObject* obj);
-bool IsWebExtensionContentScriptSandbox(JSObject* obj);
 
 
 
