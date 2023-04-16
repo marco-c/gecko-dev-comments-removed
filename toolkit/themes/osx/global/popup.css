@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 @namespace html url("http://www.w3.org/1999/xhtml");
@@ -23,7 +23,7 @@ menupopup > menu > menupopup {
 }
 
 panel[titlebar] {
-  appearance: none; 
+  appearance: none; /* to disable rounded corners */
 }
 
 panel[type="arrow"] {
@@ -53,18 +53,13 @@ panel[type="arrow"][side="right"] {
   margin: 1px;
 }
 
-.panel-arrowcontent > html|slot {
-  
-  border-radius: inherit;
-}
-
 :host([orient=vertical]) .panel-arrowcontent {
   -moz-box-orient: vertical;
 }
 
 panel[type="arrow"].panel-no-padding::part(arrowcontent) {
   padding: 0;
-  overflow: hidden; 
+  overflow: hidden; /* Don't let panel content overflow the border-radius */
 }
 
 :is(panel, menupopup)::part(arrow) {
@@ -99,7 +94,7 @@ panel[type="arrow"].panel-no-padding::part(arrowcontent) {
   margin-left: -1px;
 }
 
-
+/* rules for popups associated with menulists */
 
 menulist > menupopup {
   min-width: 0;
