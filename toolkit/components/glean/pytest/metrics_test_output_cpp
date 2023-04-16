@@ -161,7 +161,7 @@ namespace test_nested {
 
 
 
-    constexpr impl::EventMetric<uint32_t> event_metric(16);
+    constexpr impl::EventMetric<NoExtraKeys> event_metric(16);
 
     
 

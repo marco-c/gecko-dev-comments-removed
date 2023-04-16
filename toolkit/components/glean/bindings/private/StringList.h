@@ -7,9 +7,11 @@
 #ifndef mozilla_glean_GleanStringList_h
 #define mozilla_glean_GleanStringList_h
 
-#include "mozilla/Maybe.h"
-#include "nsIGleanMetrics.h"
+#include "mozilla/glean/bindings/ScalarGIFFTMap.h"
 #include "mozilla/glean/fog_ffi_generated.h"
+#include "mozilla/Maybe.h"
+#include "nsDebug.h"
+#include "nsIGleanMetrics.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
@@ -29,6 +31,11 @@ class StringListMetric {
 
 
   void Add(const nsACString& aValue) const {
+    auto scalarId = ScalarIdForMetric(mId);
+    if (scalarId) {
+      Telemetry::ScalarSet(scalarId.extract(), NS_ConvertUTF8toUTF16(aValue),
+                           true);
+    }
 #ifndef MOZ_GLEAN_ANDROID
     fog_string_list_add(mId, &aValue);
 #endif
@@ -45,6 +52,10 @@ class StringListMetric {
 
 
   void Set(const nsTArray<nsCString>& aValue) const {
+    
+    
+    
+    (void)NS_WARN_IF(ScalarIdForMetric(mId).isSome());
 #ifndef MOZ_GLEAN_ANDROID
     fog_string_list_set(mId, &aValue);
 #endif
