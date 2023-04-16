@@ -782,26 +782,25 @@ void nsHTMLScrollFrame::ReflowScrolledFrame(ScrollReflowInput* aState,
   aMetrics->UnionOverflowAreasWithDesiredBounds();
 
   auto* disp = StyleDisplay();
-  if (MOZ_UNLIKELY(
-          disp->mOverflowClipBoxBlock == StyleOverflowClipBox::ContentBox ||
-          disp->mOverflowClipBoxInline == StyleOverflowClipBox::ContentBox)) {
-    OverflowAreas childOverflow;
-    nsLayoutUtils::UnionChildOverflow(mHelper.mScrolledFrame, childOverflow);
-    nsRect childScrollableOverflow = childOverflow.ScrollableOverflow();
-    if (disp->mOverflowClipBoxBlock == StyleOverflowClipBox::PaddingBox) {
-      padding.BStart(wm) = nscoord(0);
-      padding.BEnd(wm) = nscoord(0);
-    }
-    if (disp->mOverflowClipBoxInline == StyleOverflowClipBox::PaddingBox) {
-      padding.IStart(wm) = nscoord(0);
-      padding.IEnd(wm) = nscoord(0);
-    }
-    childScrollableOverflow.Inflate(padding.GetPhysicalMargin(wm));
-    nsRect contentArea = wm.IsVertical()
-                             ? nsRect(0, 0, computedBSize, availISize)
-                             : nsRect(0, 0, availISize, computedBSize);
-    if (!contentArea.Contains(childScrollableOverflow)) {
-      aMetrics->mOverflowAreas.ScrollableOverflow() = childScrollableOverflow;
+  if (MOZ_UNLIKELY(disp->mOverflowClipBoxInline ==
+                   StyleOverflowClipBox::ContentBox)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsRect& so = aMetrics->ScrollableOverflow();
+    const nscoord soInlineSize = wm.IsVertical() ? so.Height() : so.Width();
+    if (soInlineSize > availISize) {
+      const LogicalMargin inlinePaddingEnd =
+          padding.ApplySkipSides(LogicalSides(wm, eLogicalSideBitsBBoth) |
+                                 LogicalSides(wm, eLogicalSideBitsIStart));
+      so.Inflate(inlinePaddingEnd.GetPhysicalMargin(wm));
     }
   }
 
