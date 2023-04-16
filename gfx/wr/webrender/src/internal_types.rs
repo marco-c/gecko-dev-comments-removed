@@ -314,7 +314,7 @@ pub struct TextureCacheAllocation {
 }
 
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct TextureCacheAllocInfo {
     pub width: i32,
     pub height: i32,
