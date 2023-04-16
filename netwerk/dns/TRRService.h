@@ -115,24 +115,25 @@ class TRRService : public TRRServiceBase,
 
   void CompleteConfirmation(nsresult aStatus, TRR* aTrrRequest);
 
-  bool mInitialized;
-  Atomic<uint32_t, Relaxed> mBlocklistDurationSeconds;
+  bool mInitialized{false};
+  Atomic<uint32_t, Relaxed> mBlocklistDurationSeconds{60};
 
-  Mutex mLock;
+  Mutex mLock{"TRRService"};
 
   nsCString mPrivateCred;  
-  nsCString mConfirmationNS;
+  nsCString mConfirmationNS{"example.com"_ns};
   nsCString mBootstrapAddr;
 
-  Atomic<bool, Relaxed>
-      mCaptiveIsPassed;  
+  Atomic<bool, Relaxed> mCaptiveIsPassed{
+      false};  
   Atomic<bool, Relaxed> mDisableIPv6;  
 
   
   
   
   
-  DataMutex<nsTHashMap<nsCStringHashKey, int32_t>> mTRRBLStorage;
+  DataMutex<nsTHashMap<nsCStringHashKey, int32_t>> mTRRBLStorage{
+      "DataMutex::TRRBlocklist"};
 
   
   nsTHashtable<nsCStringHashKey> mExcludedDomains;
@@ -150,12 +151,12 @@ class TRRService : public TRRServiceBase,
    public:
     static const size_t RESULTS_SIZE = 32;
 
-    Atomic<ConfirmationState, Relaxed> mState;
+    Atomic<ConfirmationState, Relaxed> mState{CONFIRM_INIT};
     RefPtr<TRR> mTask;
     nsCOMPtr<nsITimer> mTimer;
     uint32_t mRetryInterval = 125;  
     
-    Atomic<uint32_t, Relaxed> mTRRFailures;
+    Atomic<uint32_t, Relaxed> mTRRFailures{0};
 
     
     
@@ -197,7 +198,7 @@ class TRRService : public TRRServiceBase,
 
   ConfirmationContext mConfirmation;
 
-  bool mParentalControlEnabled;
+  bool mParentalControlEnabled{false};
   RefPtr<ODoHService> mODoHService;
   nsCOMPtr<nsINetworkLinkService> mLinkService;
 };
