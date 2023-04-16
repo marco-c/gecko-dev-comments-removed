@@ -294,6 +294,10 @@ class nsDocShellLoadState final {
 
   bool GetChannelInitialized() const { return mChannelInitialized; }
 
+  void SetIsMetaRefresh(bool aMetaRefresh) { mIsMetaRefresh = aMetaRefresh; }
+
+  bool IsMetaRefresh() const { return mIsMetaRefresh; }
+
   
   
   
@@ -500,6 +504,9 @@ class nsDocShellLoadState final {
   
   
   bool mChannelInitialized;
+
+  
+  bool mIsMetaRefresh;
 };
 
 #endif 

@@ -195,6 +195,12 @@ bool IsSameSite(nsIChannel* aHTTPChannel) {
 
 
 bool IsUserTriggeredForSecFetchSite(nsIHttpChannel* aHTTPChannel) {
+  
+
+
+
+
+
   nsCOMPtr<nsILoadInfo> loadInfo = aHTTPChannel->LoadInfo();
   nsContentPolicyType contentType = loadInfo->InternalContentPolicyType();
 
@@ -203,6 +209,12 @@ bool IsUserTriggeredForSecFetchSite(nsIHttpChannel* aHTTPChannel) {
   if (contentType != nsIContentPolicy::TYPE_DOCUMENT &&
       contentType != nsIContentPolicy::TYPE_SUBDOCUMENT &&
       contentType != nsIContentPolicy::TYPE_INTERNAL_IFRAME) {
+    return false;
+  }
+
+  
+  
+  if (loadInfo->GetIsMetaRefresh()) {
     return false;
   }
 
