@@ -484,6 +484,14 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
+  void ConsiderBlockEndEdgeOfChildren(mozilla::OverflowAreas& aOverflowAreas,
+                                      nscoord aBEndEdgeOfChildren,
+                                      const nsStyleDisplay* aDisplay) const;
+
+  
+
+
+
 
 
 

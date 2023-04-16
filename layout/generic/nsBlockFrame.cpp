@@ -2042,10 +2042,11 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 #endif
 }
 
-static void ConsiderBlockEndEdgeOfChildren(const WritingMode aWritingMode,
-                                           nscoord aBEndEdgeOfChildren,
-                                           OverflowAreas& aOverflowAreas,
-                                           const nsStyleDisplay* aDisplay) {
+void nsBlockFrame::ConsiderBlockEndEdgeOfChildren(
+    OverflowAreas& aOverflowAreas, nscoord aBEndEdgeOfChildren,
+    const nsStyleDisplay* aDisplay) const {
+  const auto wm = GetWritingMode();
+
   
   
   
@@ -2055,8 +2056,8 @@ static void ConsiderBlockEndEdgeOfChildren(const WritingMode aWritingMode,
   
   
   
-  if (aWritingMode.IsVertical()) {
-    if (aWritingMode.IsVerticalLR()) {
+  if (wm.IsVertical()) {
+    if (wm.IsVerticalLR()) {
       for (const auto otype : AllOverflowTypes()) {
         if (!(aDisplay->IsContainLayout() &&
               otype == OverflowType::Scrollable)) {
@@ -2121,8 +2122,8 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
       aOverflowAreas.UnionAllWith(outsideMarker->GetRect());
     }
 
-    ConsiderBlockEndEdgeOfChildren(GetWritingMode(), aBEndEdgeOfChildren,
-                                   aOverflowAreas, aDisplay);
+    ConsiderBlockEndEdgeOfChildren(aOverflowAreas, aBEndEdgeOfChildren,
+                                   aDisplay);
   }
 
 #ifdef NOISY_OVERFLOW_AREAS
@@ -2169,8 +2170,8 @@ bool nsBlockFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
   nscoord blockEndEdgeOfChildren =
       GetProperty(BlockEndEdgeOfChildrenProperty(), &found);
   if (found) {
-    ConsiderBlockEndEdgeOfChildren(GetWritingMode(), blockEndEdgeOfChildren,
-                                   aOverflowAreas, StyleDisplay());
+    ConsiderBlockEndEdgeOfChildren(aOverflowAreas, blockEndEdgeOfChildren,
+                                   StyleDisplay());
   }
 
   
