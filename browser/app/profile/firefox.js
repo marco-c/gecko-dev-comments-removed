@@ -907,9 +907,6 @@ pref("browser.sessionstore.resume_session_once", false);
 pref("browser.sessionstore.resuming_after_os_restart", false);
 
 
-pref("browser.sessionstore.interval", 15000); 
-
-
 pref("browser.sessionstore.interval.idle", 3600000); 
 
 
@@ -949,10 +946,6 @@ pref("browser.sessionstore.upgradeBackup.latestBuildID", "");
 pref("browser.sessionstore.upgradeBackup.maxUpgradeBackups", 3);
 
 pref("browser.sessionstore.debug", false);
-
-
-
-pref("browser.sessionstore.debug.no_auto_updates", false);
 
 pref("browser.sessionstore.cleanup.forget_closed_after", 1209600000);
 
