@@ -440,20 +440,9 @@ XPCOMUtils.defineLazyGetter(this, "PopupNotifications", () => {
   try {
     
     
-    
-    
-    
-    
-    
-    let shouldSuppress = () => {
-      return (
-        window.windowState == window.STATE_MINIMIZED ||
-        (gURLBar.getAttribute("pageproxystate") != "valid" &&
-          gURLBar.focused) ||
-        gBrowser?.selectedBrowser.hasAttribute("tabmodalChromePromptShowing") ||
-        gBrowser?.selectedBrowser.hasAttribute("tabDialogShowing")
-      );
-    };
+    let shouldSuppress = () =>
+      (gURLBar.getAttribute("pageproxystate") != "valid" && gURLBar.focused) ||
+      shouldSuppressPopupNotifications();
     return new PopupNotifications(
       gBrowser,
       document.getElementById("notification-popup"),
@@ -691,6 +680,19 @@ Object.defineProperty(this, "gFindBarPromise", {
     return gBrowser.getFindBar();
   },
 });
+
+function shouldSuppressPopupNotifications() {
+  
+  
+  
+  
+  
+  return (
+    window.windowState == window.STATE_MINIMIZED ||
+    gBrowser?.selectedBrowser.hasAttribute("tabmodalChromePromptShowing") ||
+    gBrowser?.selectedBrowser.hasAttribute("tabDialogShowing")
+  );
+}
 
 async function gLazyFindCommand(cmd, ...args) {
   let fb = await gFindBarPromise;
@@ -1977,7 +1979,7 @@ var gBrowserInit = {
     
     
     FullZoom.init();
-    PanelUI.init();
+    PanelUI.init(shouldSuppressPopupNotifications);
 
     UpdateUrlbarSearchSplitterState();
 
@@ -3359,14 +3361,17 @@ function UpdateUrlbarSearchSplitterState() {
 function UpdatePopupNotificationsVisibility() {
   
   
-  if (Object.getOwnPropertyDescriptor(window, "PopupNotifications").get) {
-    return;
+  if (!Object.getOwnPropertyDescriptor(window, "PopupNotifications").get) {
+    
+    
+    
+    PopupNotifications.anchorVisibilityChange();
   }
 
   
   
   
-  PopupNotifications.anchorVisibilityChange();
+  PanelUI?.updateNotifications();
 }
 
 function PageProxyClickHandler(aEvent) {
