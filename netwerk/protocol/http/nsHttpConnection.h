@@ -357,7 +357,7 @@ class nsHttpConnection final : public HttpConnectionBase,
 
  private:
   bool mThroughCaptivePortal;
-  int64_t mTotalBytesWritten;  
+  int64_t mTotalBytesWritten = 0;  
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsHttpConnection, NS_HTTPCONNECTION_IID)
