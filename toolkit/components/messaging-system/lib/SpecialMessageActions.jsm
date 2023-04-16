@@ -84,17 +84,13 @@ const SpecialMessageActions = {
 
 
 
-  async pinFirefoxToTaskbar(window) {
+  pinFirefoxToTaskbar(window) {
     try {
       
-      const shell = window
+      window
         .getShellService()
-        .QueryInterface(Ci.nsIWindowsShellService);
-
-      
-      if (!(await shell.isCurrentAppPinnedToTaskbarAsync())) {
-        shell.pinCurrentAppToTaskbar();
-      }
+        .QueryInterface(Ci.nsIWindowsShellService)
+        .pinCurrentAppToTaskbar();
     } catch (e) {
       Cu.reportError(e);
     }
