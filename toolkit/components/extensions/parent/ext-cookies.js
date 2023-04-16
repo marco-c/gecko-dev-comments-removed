@@ -4,12 +4,6 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "Services",
-  "resource://gre/modules/Services.jsm"
-);
-
 
 
 var { ExtensionError } = ExtensionUtils;
