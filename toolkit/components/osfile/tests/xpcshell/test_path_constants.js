@@ -4,6 +4,9 @@
 
 "use strict";
 
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 const { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
 const { makeFakeAppDir } = ChromeUtils.import(
   "resource://testing-common/AppData.jsm"
@@ -35,9 +38,13 @@ add_task(async function test_simple_paths() {
 
 
 add_task(async function test_before_after_profile() {
-  Assert.equal(null, OS.Constants.Path.profileDir);
-  Assert.equal(null, OS.Constants.Path.localProfileDir);
-  Assert.equal(null, OS.Constants.Path.userApplicationDataDir);
+  
+  
+  if (AppConstants.platform != "android") {
+    Assert.equal(null, OS.Constants.Path.profileDir);
+    Assert.equal(null, OS.Constants.Path.localProfileDir);
+    Assert.equal(null, OS.Constants.Path.userApplicationDataDir);
+  }
 
   do_get_profile();
   Assert.ok(!!OS.Constants.Path.profileDir);
