@@ -16,6 +16,7 @@
 #include "builtin/Array.h"
 #include "js/friend/ErrorMessages.h"  
 #include "util/StringBuffer.h"
+#include "vm/PlainObject.h"  
 #include "vm/Realm.h"
 
 #include "vm/NativeObject-inl.h"

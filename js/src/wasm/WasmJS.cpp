@@ -25,6 +25,7 @@
 
 #include <algorithm>
 
+#include "ds/IdValuePair.h"  
 #include "gc/FreeOp.h"
 #include "jit/AtomicOperations.h"
 #include "jit/JitOptions.h"
