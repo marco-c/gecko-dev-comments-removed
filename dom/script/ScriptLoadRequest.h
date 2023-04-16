@@ -22,7 +22,6 @@
 #include "mozilla/Vector.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsIGlobalObject.h"
 #include "nsIScriptElement.h"
 #include "ScriptKind.h"
 
@@ -56,17 +55,13 @@ class ScriptFetchOptions {
 
   ScriptFetchOptions(mozilla::CORSMode aCORSMode,
                      enum ReferrerPolicy aReferrerPolicy, Element* aElement,
-                     nsIPrincipal* aTriggeringPrincipal,
-                     nsIGlobalObject* aWebExtGlobal);
+                     nsIPrincipal* aTriggeringPrincipal);
 
   const mozilla::CORSMode mCORSMode;
   const enum ReferrerPolicy mReferrerPolicy;
   bool mIsPreload;
   nsCOMPtr<Element> mElement;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  
-  
-  nsCOMPtr<nsIGlobalObject> mWebExtGlobal;
 };
 
 
@@ -261,13 +256,6 @@ class ScriptLoadRequest
   nsIScriptElement* GetScriptElement() const;
   nsIPrincipal* TriggeringPrincipal() const {
     return mFetchOptions->mTriggeringPrincipal;
-  }
-
-  
-  
-  
-  nsIGlobalObject* GetWebExtGlobal() const {
-    return mFetchOptions->mWebExtGlobal;
   }
 
   
