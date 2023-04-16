@@ -661,7 +661,12 @@ void nsTextControlFrame::ReflowTextControlChild(
   
   auto overridePadding =
       isButtonBox ? Nothing() : Some(aReflowInput.ComputedLogicalPadding(wm));
-  kidReflowInput.Init(aPresContext, Nothing(), Nothing(), overridePadding);
+  
+  
+  
+  auto overrideCBSize =
+      isButtonBox ? Some(aReflowInput.ComputedSizeWithPadding(wm)) : Nothing();
+  kidReflowInput.Init(aPresContext, overrideCBSize, Nothing(), overridePadding);
 
   LogicalPoint position(wm);
   const auto& bp = aReflowInput.ComputedLogicalBorderPadding(outerWM);
