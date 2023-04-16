@@ -112,6 +112,13 @@ class AboutPrivateBrowsingParent extends JSWindowActorParent {
         urlBar.addEventListener("paste", checkFirstChange);
         break;
       }
+      case "ShouldShowSearch": {
+        let engineName = Services.prefs.getStringPref(
+          "browser.urlbar.placeholderName.private",
+          ""
+        );
+        return engineName;
+      }
       case "ShouldShowSearchBanner": {
         
         
