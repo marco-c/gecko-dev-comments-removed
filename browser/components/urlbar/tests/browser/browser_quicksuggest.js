@@ -145,6 +145,8 @@ add_task(async function init() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.suggest.searches", true]],
   });
+  
+  await ExperimentAPI.ready();
   let {
     enrollmentPromise,
     doExperimentCleanup,
