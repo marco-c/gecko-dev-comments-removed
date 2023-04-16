@@ -50,7 +50,6 @@ class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
   nsCOMPtr<nsIContent> mContent;  
   nsMenuObjectX* mMenuObject;     
   nsIntRect mImageRegionRect;
-  bool mSetIcon;
   NSImage* mIconImage = nil;  
   
   
