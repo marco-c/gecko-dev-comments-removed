@@ -6,7 +6,7 @@ const ADDON_ID = "policytest@mozilla.com";
 const BASE_URL =
   "http://mochi.test:8888/browser/browser/components/enterprisepolicies/tests/browser";
 
-async function isExtensionLocked(win, addonID) {
+async function isExtensionLockedAndUpdateDisabled(win, addonID) {
   let addonCard = await BrowserTestUtils.waitForCondition(() => {
     return win.document.querySelector(`addon-card[addon-id="${addonID}"]`);
   }, `Get addon-card for "${addonID}"`);
@@ -14,15 +14,20 @@ async function isExtensionLocked(win, addonID) {
   let removeBtn = addonCard.querySelector('panel-item[action="remove"]');
   ok(removeBtn.disabled, "Remove button should be disabled");
   ok(disableBtn.hidden, "Disable button should be hidden");
+  let updateRow = addonCard.querySelector(".addon-detail-row-updates");
+  is(updateRow.hidden, true, "Update row should be hidden");
 }
 
 add_task(async function test_addon_install() {
   let installPromise = waitForAddonInstall(ADDON_ID);
   await setupPolicyEngineWithJson({
     policies: {
-      Extensions: {
-        Install: [`${BASE_URL}/policytest_v0.1.xpi`],
-        Locked: [ADDON_ID],
+      ExtensionSettings: {
+        "policytest@mozilla.com": {
+          install_url: `${BASE_URL}/policytest_v0.1.xpi`,
+          installation_mode: "force_installed",
+          updates_disabled: true,
+        },
       },
     },
   });
@@ -38,80 +43,29 @@ add_task(async function test_addon_install() {
   );
 });
 
-add_task(async function test_addon_locked() {
+add_task(async function test_addon_locked_update_disabled() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
-  const win = await BrowserOpenAddonsMgr("addons://list/extension");
+  const win = await BrowserOpenAddonsMgr(
+    "addons://detail/" + encodeURIComponent(ADDON_ID)
+  );
 
-  await isExtensionLocked(win, ADDON_ID);
+  await isExtensionLockedAndUpdateDisabled(win, ADDON_ID);
 
   BrowserTestUtils.removeTab(tab);
 });
 
-add_task(async function test_addon_reinstall() {
-  
-  
-
-  let uninstallPromise = waitForAddonUninstall(ADDON_ID);
-  let installPromise = waitForAddonInstall(ADDON_ID);
-  await setupPolicyEngineWithJson({
-    policies: {
-      Extensions: {
-        Uninstall: [ADDON_ID],
-        Install: [`${BASE_URL}/policytest_v0.2.xpi`],
-      },
-    },
-  });
-
-  
-  await uninstallPromise;
-
-  
-  await installPromise;
-
-  let addon = await AddonManager.getAddonByID(ADDON_ID);
-  isnot(
-    addon,
-    null,
-    "Addon still exists because the policy was used to update it."
-  );
-  is(addon.version, "0.2", "New version is correct");
-});
-
 add_task(async function test_addon_uninstall() {
-  EnterprisePolicyTesting.resetRunOnceState();
-
   let uninstallPromise = waitForAddonUninstall(ADDON_ID);
   await setupPolicyEngineWithJson({
     policies: {
-      Extensions: {
-        Uninstall: [ADDON_ID],
+      ExtensionSettings: {
+        "policytest@mozilla.com": {
+          installation_mode: "blocked",
+        },
       },
     },
   });
   await uninstallPromise;
   let addon = await AddonManager.getAddonByID(ADDON_ID);
   is(addon, null, "Addon should be uninstalled.");
-});
-
-add_task(async function test_addon_download_failure() {
-  
-  
-
-  let installPromise = waitForAddonInstall(ADDON_ID);
-  await setupPolicyEngineWithJson({
-    policies: {
-      Extensions: {
-        Install: [`${BASE_URL}/policytest_invalid.xpi`],
-      },
-    },
-  });
-
-  await installPromise;
-  is(
-    Services.prefs.prefHasUserValue(
-      "browser.policies.runOncePerModification.extensionsInstall"
-    ),
-    false,
-    "runOnce pref should be unset"
-  );
 });

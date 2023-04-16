@@ -1356,10 +1356,7 @@ var AddonManagerInternal = {
                     
                     
                     logger.debug("Found update for add-on ${id}", aAddon);
-                    if (
-                      aAddon.permissions & AddonManager.PERM_CAN_UPGRADE &&
-                      AddonManager.shouldAutoUpdate(aAddon)
-                    ) {
+                    if (AddonManager.shouldAutoUpdate(aAddon)) {
                       
                       
                       logger.debug(`Starting upgrade install of ${aAddon.id}`);
@@ -4213,6 +4210,9 @@ var AddonManager = {
     }
 
     if (!("applyBackgroundUpdates" in aAddon)) {
+      return false;
+    }
+    if (!(aAddon.permissions & AddonManager.PERM_CAN_UPGRADE)) {
       return false;
     }
     if (aAddon.applyBackgroundUpdates == AddonManager.AUTOUPDATE_ENABLE) {
