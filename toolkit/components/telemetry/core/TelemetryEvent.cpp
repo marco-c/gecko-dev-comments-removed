@@ -288,10 +288,10 @@ bool gCanRecordExtended;
 nsClassHashtable<nsCStringHashKey, EventKey> gEventNameIDMap(kEventCount);
 
 
-nsTHashtable<nsCStringHashKey> gCategoryNames;
+nsTHashSet<nsCString> gCategoryNames;
 
 
-nsTHashtable<nsCStringHashKey> gEnabledCategories;
+nsTHashSet<nsCString> gEnabledCategories;
 
 
 
@@ -386,21 +386,21 @@ EventKey* GetEventKey(const StaticMutexAutoLock& lock,
 
 static bool CheckExtraKeysValid(const EventKey& eventKey,
                                 const ExtraArray& extra) {
-  nsTHashtable<nsCStringHashKey> validExtraKeys;
+  nsTHashSet<nsCString> validExtraKeys;
   if (!eventKey.dynamic) {
     const CommonEventInfo& common = gEventInfo[eventKey.id].common_info;
     for (uint32_t i = 0; i < common.extra_count; ++i) {
-      validExtraKeys.PutEntry(common.extra_key(i));
+      validExtraKeys.Insert(common.extra_key(i));
     }
   } else if (gDynamicEventInfo) {
     const DynamicEventInfo& info = (*gDynamicEventInfo)[eventKey.id];
     for (uint32_t i = 0, len = info.extra_keys.Length(); i < len; ++i) {
-      validExtraKeys.PutEntry(info.extra_keys[i]);
+      validExtraKeys.Insert(info.extra_keys[i]);
     }
   }
 
   for (uint32_t i = 0; i < extra.Length(); ++i) {
-    if (!validExtraKeys.GetEntry(extra[i].key)) {
+    if (!validExtraKeys.Contains(extra[i].key)) {
       return false;
     }
   }
@@ -459,7 +459,7 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
                                   processType, dynamicNonBuiltin);
 
   
-  if (!gEnabledCategories.GetEntry(GetCategory(lock, *eventKey))) {
+  if (!gEnabledCategories.Contains(GetCategory(lock, *eventKey))) {
     return RecordEventResult::Ok;
   }
 
@@ -537,13 +537,13 @@ void RegisterEvents(const StaticMutexAutoLock& lock, const nsACString& category,
 
   
   if (aBuiltin) {
-    gCategoryNames.PutEntry(category);
+    gCategoryNames.Insert(category);
   }
 
   if (!aBuiltin) {
     
     
-    gEnabledCategories.PutEntry(category);
+    gEnabledCategories.Insert(category);
   }
 }
 
@@ -704,11 +704,11 @@ void TelemetryEvent::InitializeGlobalState(bool aCanRecordBase,
     gEventNameIDMap.InsertOrUpdate(
         UniqueEventName(info),
         UniquePtr<EventKey>{new EventKey{eventId, false}});
-    gCategoryNames.PutEntry(info.common_info.category());
+    gCategoryNames.Insert(info.common_info.category());
   }
 
   
-  gEnabledCategories.PutEntry("avif"_ns);
+  gEnabledCategories.Insert("avif"_ns);
 
   gInitDone = true;
 }
@@ -1341,9 +1341,9 @@ void TelemetryEvent::SetEventRecordingEnabled(const nsACString& category,
   }
 
   if (enabled) {
-    gEnabledCategories.PutEntry(category);
+    gEnabledCategories.Insert(category);
   } else {
-    gEnabledCategories.RemoveEntry(category);
+    gEnabledCategories.Remove(category);
   }
 }
 
