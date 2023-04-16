@@ -1,0 +1,7 @@
+
+
+
+"use strict";
+
+
+const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");

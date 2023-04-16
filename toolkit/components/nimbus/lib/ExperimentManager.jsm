@@ -4,12 +4,6 @@
 
 "use strict";
 
-
-
-
-
-
-
 const EXPORTED_SYMBOLS = ["ExperimentManager", "_ExperimentManager"];
 
 const { XPCOMUtils } = ChromeUtils.import(

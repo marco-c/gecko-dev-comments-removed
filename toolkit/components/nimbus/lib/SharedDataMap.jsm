@@ -40,6 +40,10 @@ class SharedDataMap extends EventEmitter {
 
     if (this.isParent) {
       
+      
+      
+      this._nonPersistentStore = null;
+      
       XPCOMUtils.defineLazyGetter(this, "_store", () => {
         let path = options.path;
         let store = null;
@@ -69,6 +73,7 @@ class SharedDataMap extends EventEmitter {
       try {
         await this._store.load();
         this._data = this._store.data;
+        this._nonPersistentStore = {};
         this._syncToChildren({ flush: true });
         this._checkIfReady();
       } catch (e) {
@@ -93,7 +98,14 @@ class SharedDataMap extends EventEmitter {
     if (!this._data) {
       return null;
     }
-    return this._data[key];
+
+    let entry = this._data[key];
+
+    if (!entry && this._nonPersistentStore) {
+      return this._nonPersistentStore[key];
+    }
+
+    return entry;
   }
 
   set(key, value) {
@@ -108,6 +120,18 @@ class SharedDataMap extends EventEmitter {
     this._notifyUpdate();
   }
 
+  setNonPersistent(key, value) {
+    if (!this.isParent) {
+      throw new Error(
+        "Setting values from within a content process is not allowed"
+      );
+    }
+
+    this._nonPersistentStore[key] = value;
+    this._syncToChildren();
+    this._notifyUpdate();
+  }
+
   
   _deleteForTests(key) {
     if (!this.isParent) {
@@ -117,6 +141,7 @@ class SharedDataMap extends EventEmitter {
     }
     if (this.has(key)) {
       delete this._store.data[key];
+      delete this._nonPersistentStore[key];
       this._store.saveSoon();
       this._syncToChildren();
       this._notifyUpdate();
@@ -135,10 +160,19 @@ class SharedDataMap extends EventEmitter {
     for (let key of Object.keys(this._data || {})) {
       this.emit(`${process}-store-update:${key}`, this._data[key]);
     }
+    for (let key of Object.keys(this._nonPersistentStore || {})) {
+      this.emit(
+        `${process}-store-update:${key}`,
+        this._nonPersistentStore[key]
+      );
+    }
   }
 
   _syncToChildren({ flush = false } = {}) {
-    Services.ppmm.sharedData.set(this.sharedDataKey, this._data);
+    Services.ppmm.sharedData.set(this.sharedDataKey, {
+      ...this._data,
+      ...this._nonPersistentStore,
+    });
     if (flush) {
       Services.ppmm.sharedData.flush();
     }
