@@ -55,6 +55,88 @@ this bootstrap again.
 """
 
 
+def ensure_command_line_tools():
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    proc = subprocess.run(
+        ["xcode-select", "--print-path"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    if not proc.stdout:
+        subprocess.run(["xcode-select", "--install"], check=True)
+        
+        
+        
+        
+        
+        print("Please follow the command line tools installer instructions")
+        print("and rerun `./mach bootstrap` when it's finished.")
+        sys.exit(1)
+
+
+class OSXBootstrapperLight(BaseBootstrapper):
+    def __init__(self, version, **kwargs):
+        BaseBootstrapper.__init__(self, **kwargs)
+
+    def install_system_packages(self):
+        ensure_command_line_tools()
+
+        if platform.machine() == "arm64":
+            
+            
+            
+            
+            
+            proc = subprocess.run(
+                ["arch", "-x86_64", "cat"],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            if proc.returncode != 0:
+                print("Installing Rosetta")
+                subprocess.check_call(["softwareupdate", "--install-rosetta"])
+
+    
+    
+    def install_browser_packages(self, mozconfig_builder):
+        pass
+
+    def install_browser_artifact_mode_packages(self, mozconfig_builder):
+        pass
+
+    def ensure_node_packages(self, state_dir, checkout_root):
+        pass
+
+    def ensure_stylo_packages(self, state_dir, checkout_root):
+        pass
+
+    def ensure_clang_static_analysis_package(self, state_dir, checkout_root):
+        pass
+
+    def ensure_nasm_packages(self, state_dir, checkout_root):
+        pass
+
+
 class OSXBootstrapper(BaseBootstrapper):
 
     INSTALL_PYTHON_GUIDANCE = (
@@ -71,17 +153,10 @@ class OSXBootstrapper(BaseBootstrapper):
         if self.os_version < StrictVersion("10.6"):
             raise Exception("OS X 10.6 or above is required.")
 
-        if platform.machine() == "arm64":
-            print(
-                "Bootstrap is not supported on Apple Silicon yet.\n"
-                "Please see instructions at https://bit.ly/36bUmEx in the meanwhile"
-            )
-            sys.exit(1)
-
         self.minor_version = version.split(".")[1]
 
     def install_system_packages(self):
-        self.ensure_command_line_tools()
+        ensure_command_line_tools()
 
         self.ensure_homebrew_installed()
         _, hg_modern, _ = self.is_mercurial_modern()
@@ -120,43 +195,6 @@ class OSXBootstrapper(BaseBootstrapper):
         from mozboot import android
 
         return android.generate_mozconfig("macosx", artifact_mode=artifact_mode)
-
-    def ensure_command_line_tools(self):
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        proc = subprocess.run(
-            ["xcode-select", "--print-path"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-        )
-        if not proc.stdout:
-            subprocess.run(["xcode-select", "--install"], check=True)
-            
-            
-            
-            
-            
-            print("Please follow the command line tools installer instructions")
-            print("and rerun `./mach bootstrap` when it's finished.")
-            sys.exit(1)
 
     def _ensure_homebrew_found(self):
         self.brew = which("brew")
