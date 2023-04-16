@@ -1173,16 +1173,15 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
     return JSID_IS_EMPTY(propid_);
   }
 
-  uint32_t slotSpan(const JSClass* clasp) const {
+  uint32_t slotSpan() const {
     MOZ_ASSERT(!inDictionary());
     
     
+    const JSClass* clasp = getObjectClass();
     MOZ_ASSERT(clasp->isNativeObject());
     uint32_t free = JSSLOT_FREE(clasp);
     return hasMissingSlot() ? free : std::max(free, maybeSlot() + 1);
   }
-
-  uint32_t slotSpan() const { return slotSpan(getObjectClass()); }
 
   void setSlot(uint32_t slot) {
     MOZ_ASSERT(slot <= SHAPE_INVALID_SLOT);
