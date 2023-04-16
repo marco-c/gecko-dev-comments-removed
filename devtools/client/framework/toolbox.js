@@ -3836,7 +3836,7 @@ Toolbox.prototype = {
             
             
             this.commands.targetCommand.destroy();
-            return this.descriptorFront.destroy();
+            return this.target.destroy();
           }, console.error)
           .then(() => {
             this.emit("destroyed");

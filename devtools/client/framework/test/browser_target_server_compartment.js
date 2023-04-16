@@ -64,7 +64,7 @@ async function testChromeTab() {
     Services.obs.addObserver(observe, "devtools:loader:destroy");
   });
 
-  await target.descriptorFront.destroy();
+  await target.destroy();
 
   
   

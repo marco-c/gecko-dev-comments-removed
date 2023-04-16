@@ -147,10 +147,7 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     for (const target of allServiceWorkerTargets) {
       const isRegisteredBefore = this.targetList.isTargetRegistered(target);
       if (shouldDestroy && isRegisteredBefore) {
-        
-        
-        
-        this.onTargetDestroyed(target, { shouldDestroyTargetFront: false });
+        this.onTargetDestroyed(target);
       }
 
       

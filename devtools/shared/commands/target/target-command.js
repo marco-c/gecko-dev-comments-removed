@@ -144,9 +144,7 @@ class TargetCommand extends EventEmitter {
       for (const target of this._targets) {
         
         const isDestroyedTargetSwitching = target == this.targetFront;
-        this._onTargetDestroyed(target, {
-          isTargetSwitching: isDestroyedTargetSwitching,
-        });
+        this._onTargetDestroyed(target, isDestroyedTargetSwitching);
       }
       
       
@@ -176,10 +174,6 @@ class TargetCommand extends EventEmitter {
       targetFrontsSet.delete(targetFront);
     }
 
-    if (this.isDestroyed() || targetFront.isDestroyedOrBeingDestroyed()) {
-      return;
-    }
-
     
     await this._createListeners.emitAsync(targetType, {
       targetFront,
@@ -196,39 +190,7 @@ class TargetCommand extends EventEmitter {
     this.emitForTests("processed-available-target", targetFront);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _onTargetDestroyed(
-    targetFront,
-    { isTargetSwitching = false, shouldDestroyTargetFront = true } = {}
-  ) {
+  _onTargetDestroyed(targetFront, isTargetSwitching = false) {
     
     
     
@@ -241,10 +203,6 @@ class TargetCommand extends EventEmitter {
       isTargetSwitching,
     });
     this._targets.delete(targetFront);
-
-    if (shouldDestroyTargetFront) {
-      targetFront.destroy();
-    }
   }
 
   _setListening(type, value) {
@@ -308,8 +266,6 @@ class TargetCommand extends EventEmitter {
       const supportsWatcher = this.descriptorFront.traits?.watcher;
       if (supportsWatcher) {
         this.watcherFront = await this.descriptorFront.getWatcher();
-        this.watcherFront.on("target-available", this._onTargetAvailable);
-        this.watcherFront.on("target-destroyed", this._onTargetDestroyed);
       }
     }
 
@@ -356,10 +312,18 @@ class TargetCommand extends EventEmitter {
         
         
         
-        if (!onlyLegacy) {
-          await this.watcherFront.watchTargets(type);
+        if (onlyLegacy) {
+          continue;
         }
-      } else if (this.legacyImplementation[type]) {
+        if (!this._startedListeningToWatcher) {
+          this._startedListeningToWatcher = true;
+          this.watcherFront.on("target-available", this._onTargetAvailable);
+          this.watcherFront.on("target-destroyed", this._onTargetDestroyed);
+        }
+        await this.watcherFront.watchTargets(type);
+        continue;
+      }
+      if (this.legacyImplementation[type]) {
         await this.legacyImplementation[type].listen();
       } else {
         throw new Error(`Unsupported target type '${type}'`);
@@ -391,7 +355,9 @@ class TargetCommand extends EventEmitter {
         if (!onlyLegacy) {
           this.watcherFront.unwatchTargets(type);
         }
-      } else if (this.legacyImplementation[type]) {
+        continue;
+      }
+      if (this.legacyImplementation[type]) {
         this.legacyImplementation[type].unlisten();
       } else {
         throw new Error(`Unsupported target type '${type}'`);
@@ -583,9 +549,14 @@ class TargetCommand extends EventEmitter {
     
     
     
-    if (targetFront) {
-      await targetFront.once("target-destroyed");
-    }
+    
+    
+    
+    
+    targetFront.shouldCloseClient = false;
+
+    
+    await targetFront.once("target-destroyed");
 
     
     const newTarget = await this.descriptorFront.getTarget();

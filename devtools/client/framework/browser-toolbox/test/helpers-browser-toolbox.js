@@ -167,13 +167,7 @@ async function initBrowserToolboxTask({
 
   async function destroy() {
     const closePromise = process._dbgProcess.wait();
-    consoleFront.evaluateJSAsync("gToolbox.destroy()").catch(e => {
-      
-      
-      if (!e.message.includes("Connection closed")) {
-        throw e;
-      }
-    });
+    consoleFront.evaluateJSAsync("gToolbox.destroy()");
 
     const { exitCode } = await closePromise;
     ok(true, "Browser toolbox process closed");

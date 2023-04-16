@@ -126,6 +126,14 @@ async function initToolbox(url, host) {
         showErrorPage(host.contentDocument, `${error}`);
       }
     });
+
+    
+    
+    
+    
+    
+    const isCachedClient = url.searchParams.get("remoteId");
+    target.shouldCloseClient = !isCachedClient;
   } catch (error) {
     
     console.error("Exception while loading the toolbox", error);
@@ -169,7 +177,9 @@ async function _createTestOnlyDescriptor(host) {
   
   
   
-  await descriptor.getTarget();
+  const target = await descriptor.getTarget();
+  
+  target.shouldCloseClient = true;
 
   return descriptor;
 }

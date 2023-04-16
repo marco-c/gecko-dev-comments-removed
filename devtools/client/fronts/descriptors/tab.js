@@ -86,12 +86,6 @@ class TabDescriptorFront extends DescriptorMixin(
   setLocalTab(localTab) {
     this._localTab = localTab;
     this._setupLocalTabListeners();
-
-    
-    
-    
-    
-    this.shouldCloseClient = true;
   }
 
   get isLocalTab() {
@@ -144,6 +138,10 @@ class TabDescriptorFront extends DescriptorMixin(
   _createTabTarget(form) {
     const front = new BrowsingContextTargetFront(this._client, null, this);
 
+    if (this.isLocalTab) {
+      front.shouldCloseClient = true;
+    }
+
     
     
     front.actorID = form.actor;
@@ -164,12 +162,7 @@ class TabDescriptorFront extends DescriptorMixin(
     
     
     
-    
-    if (
-      !this.traits.emitDescriptorDestroyed ||
-      !this.isLocalTab ||
-      this.isDevToolsExtensionContext
-    ) {
+    if (!this.traits.emitDescriptorDestroyed || !this.isLocalTab) {
       this.destroy();
     }
   }
@@ -202,26 +195,19 @@ class TabDescriptorFront extends DescriptorMixin(
     }
 
     this._targetFrontPromise = (async () => {
-      let newTargetFront = null;
+      let targetFront = null;
       try {
         const targetForm = await super.getTarget();
-        newTargetFront = this._createTabTarget(targetForm);
-        await newTargetFront.attach();
+        targetFront = this._createTabTarget(targetForm);
+        await targetFront.attach();
       } catch (e) {
         console.log(
           `Request to connect to TabDescriptor "${this.id}" failed: ${e}`
         );
       }
-
-      
-      
-      
-      if (this._targetFront) {
-        this._targetFront.off("target-destroyed", this._onTargetDestroyed);
-      }
-      this._targetFront = newTargetFront;
+      this._targetFront = targetFront;
       this._targetFrontPromise = null;
-      return newTargetFront;
+      return targetFront;
     })();
     return this._targetFrontPromise;
   }

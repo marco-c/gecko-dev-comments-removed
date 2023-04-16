@@ -108,9 +108,5 @@ async function checkFirstTargetActor(targetFront1) {
 
 async function getTabTarget(client, filter) {
   const descriptor = await client.mainRoot.getTab(filter);
-  
-  
-  
-  descriptor.shouldCloseClient = false;
   return descriptor.getTarget();
 }

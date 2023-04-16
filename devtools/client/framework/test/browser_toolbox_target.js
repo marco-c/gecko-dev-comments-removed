@@ -35,7 +35,6 @@ add_task(async function() {
   
   info("Waiting for toolbox-ready");
   const toolbox = await onToolboxReady;
-  const { client } = toolbox.descriptorFront;
 
   is(
     toolbox.hostType,
@@ -53,10 +52,6 @@ add_task(async function() {
   info("Waiting for toolbox-destroyed");
   await onToolboxDestroyed;
   info("Toolbox destroyed");
-
-  
-  
-  await client.close();
 
   iframe.remove();
 });

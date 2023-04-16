@@ -26,6 +26,8 @@ add_task(async function test() {
 
   
   await assertGetTab(client, client.mainRoot, tab);
+
+  await removeTab(tab);
 });
 
 async function assertListTabs(rootFront) {
@@ -41,8 +43,8 @@ async function assertListTabs(rootFront) {
 
   const tabTarget = await tabDescriptor.getTarget();
   ok(
-    !tabDescriptor.shouldCloseClient,
-    "Tab descriptors from listTabs shouldn't auto-close their client"
+    !tabTarget.shouldCloseClient,
+    "Tab targets from listTabs shouldn't auto-close their client"
   );
   ok(isTargetAttached(tabTarget), "The tab target should be attached");
 
@@ -54,11 +56,6 @@ async function assertListTabs(rootFront) {
   info("Wait for target destruction");
   await onTargetDestroyed;
 
-  
-  
-  
-  
-  
   info("Wait for descriptor destruction");
   await onDescriptorDestroyed;
 
@@ -102,48 +99,36 @@ async function assertGetTab(client, rootFront, tab) {
 
   const tabTarget = await tabDescriptor.getTarget();
   ok(
-    tabDescriptor.shouldCloseClient,
-    "Tab descriptor from getTab should close their client"
+    tabTarget.shouldCloseClient,
+    "Tab targets from getTab shoul close their client"
   );
   ok(isTargetAttached(tabTarget), "The tab target should be attached");
 
   info("Detach the tab target");
   const onTargetDestroyed = tabTarget.once("target-destroyed");
+  const onDescriptorDestroyed = tabDescriptor.once("descriptor-destroyed");
+  const onClientClosed = client.once("closed");
   await tabTarget.detach();
 
   info("Wait for target destruction");
   await onTargetDestroyed;
 
-  
-  
-  
-  
-  
-  ok(
-    !tabDescriptor.isDestroyed(),
-    "The tab descriptor isn't destroyed on target detach"
-  );
-
-  info("Close the descriptor's tab");
-  const onDescriptorDestroyed = tabDescriptor.once("descriptor-destroyed");
-  const onClientClosed = client.once("closed");
-  await removeTab(tab);
-
   info("Wait for descriptor destruction");
   await onDescriptorDestroyed;
 
+  
+  
+  
   ok(
     tabTarget.isDestroyed(),
-    "The tab target should be destroyed after closing the tab"
+    "The tab target should be destroyed after detach"
   );
   ok(
     tabDescriptor.isDestroyed(),
-    "The tab descriptor is also always destroyed after tab closing"
+    "The tab descriptor kept running after detach"
   );
 
-  
-  
-  info("Wait for client being auto-closed by the descriptor");
+  info("Wait for client being auto-closed by the target");
   await onClientClosed;
 }
 

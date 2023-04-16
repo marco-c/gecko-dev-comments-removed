@@ -28,15 +28,6 @@ function DescriptorMixin(parentClass) {
         "descriptor-destroyed",
         this.destroy.bind(this, { isServerDestroyEvent: true })
       );
-
-      
-      
-      
-      
-      
-      
-      
-      this.shouldCloseClient = false;
     }
 
     get client() {
@@ -48,37 +39,6 @@ function DescriptorMixin(parentClass) {
         this._commands = createCommandsDictionary(this);
       }
       return this._commands;
-    }
-
-    async destroy({ isServerDestroyEvent } = {}) {
-      if (this.isDestroyed()) {
-        return;
-      }
-      
-      const { client } = this;
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (isServerDestroyEvent) {
-        this.baseFrontClassDestroy();
-      }
-
-      await super.destroy();
-
-      
-      if (this.shouldCloseClient) {
-        await client.close();
-      }
     }
   }
   return Descriptor;

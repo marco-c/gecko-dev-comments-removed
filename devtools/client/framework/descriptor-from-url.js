@@ -66,13 +66,6 @@ exports.descriptorFromURL = async function descriptorFromURL(url) {
     throw e;
   }
 
-  
-  
-  
-  
-  
-  descriptorFront.shouldCloseClient = !isCachedClient;
-
   return descriptorFront;
 };
 

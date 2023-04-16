@@ -113,26 +113,33 @@ DevToolsClient.prototype = {
 
 
   close() {
-    if (this._closed) {
-      return Promise.resolve();
-    }
-    if (this._closePromise) {
-      return this._closePromise;
-    }
-    
-    
-    this._closePromise = this.once("closed");
+    const promise = new Promise(resolve => {
+      
+      
+      this._eventsEnabled = false;
 
-    
-    
-    this._eventsEnabled = false;
+      const cleanup = () => {
+        if (this._transport) {
+          this._transport.close();
+        }
+        this._transport = null;
+      };
 
-    if (this._transport) {
-      this._transport.close();
-      this._transport = null;
-    }
+      
+      
+      
+      if (this._closed) {
+        cleanup();
+        resolve();
+        return;
+      }
 
-    return this._closePromise;
+      this.once("closed", resolve);
+
+      cleanup();
+    });
+
+    return promise;
   },
 
   
