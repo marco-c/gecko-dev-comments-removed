@@ -167,6 +167,12 @@ bool TRR::MaybeBlockRequest() {
     
     MOZ_ASSERT(mRec);
 
+    
+    if (!gTRRService->Enabled(mRec->mEffectiveTRRMode)) {
+      RecordReason(TRRSkippedReason::TRR_MODE_NOT_ENABLED);
+      return true;
+    }
+
     if (UseDefaultServer() &&
         gTRRService->IsTemporarilyBlocked(mHost, mOriginSuffix, mPB, true)) {
       if (mType == TRRTYPE_A) {
