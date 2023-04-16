@@ -214,15 +214,24 @@ DataTextureSourceD3D11::DataTextureSourceD3D11(gfx::SurfaceFormat aFormat,
 
 DataTextureSourceD3D11::~DataTextureSourceD3D11() {}
 
+enum class SerializeWithMoz2D : bool { No, Yes };
+
 template <typename T>  
-static bool LockD3DTexture(T* aTexture) {
+static bool LockD3DTexture(
+    T* aTexture, SerializeWithMoz2D aSerialize = SerializeWithMoz2D::No) {
   MOZ_ASSERT(aTexture);
   RefPtr<IDXGIKeyedMutex> mutex;
   aTexture->QueryInterface((IDXGIKeyedMutex**)getter_AddRefs(mutex));
   
   
   if (mutex) {
-    HRESULT hr = mutex->AcquireSync(0, 10000);
+    HRESULT hr;
+    if (aSerialize == SerializeWithMoz2D::Yes) {
+      AutoSerializeWithMoz2D serializeWithMoz2D(BackendType::DIRECT2D1_1);
+      hr = mutex->AcquireSync(0, 10000);
+    } else {
+      hr = mutex->AcquireSync(0, 10000);
+    }
     if (hr == WAIT_TIMEOUT) {
       gfxDevCrash(LogReason::D3DLockTimeout) << "D3D lock mutex timeout";
     } else if (hr == WAIT_ABANDONED) {
@@ -246,12 +255,19 @@ static bool HasKeyedMutex(T* aTexture) {
 }
 
 template <typename T>  
-static void UnlockD3DTexture(T* aTexture) {
+static void UnlockD3DTexture(
+    T* aTexture, SerializeWithMoz2D aSerialize = SerializeWithMoz2D::No) {
   MOZ_ASSERT(aTexture);
   RefPtr<IDXGIKeyedMutex> mutex;
   aTexture->QueryInterface((IDXGIKeyedMutex**)getter_AddRefs(mutex));
   if (mutex) {
-    HRESULT hr = mutex->ReleaseSync(0);
+    HRESULT hr;
+    if (aSerialize == SerializeWithMoz2D::Yes) {
+      AutoSerializeWithMoz2D serializeWithMoz2D(BackendType::DIRECT2D1_1);
+      hr = mutex->ReleaseSync(0);
+    } else {
+      hr = mutex->ReleaseSync(0);
+    }
     if (FAILED(hr)) {
       NS_WARNING("Failed to unlock the texture");
     }
@@ -278,9 +294,12 @@ static void DestroyDrawTarget(RefPtr<DrawTarget>& aDT,
   
   
   
-  LockD3DTexture(aTexture.get());
+  LockD3DTexture(aTexture.get(), SerializeWithMoz2D::Yes);
   aDT = nullptr;
-  UnlockD3DTexture(aTexture.get());
+
+  
+  AutoSerializeWithMoz2D serializeWithMoz2D(BackendType::DIRECT2D1_1);
+  UnlockD3DTexture(aTexture.get(), SerializeWithMoz2D::No);
   aTexture = nullptr;
 }
 
@@ -291,7 +310,7 @@ D3D11TextureData::~D3D11TextureData() {
 }
 
 bool D3D11TextureData::Lock(OpenMode aMode) {
-  if (!LockD3DTexture(mTexture.get())) {
+  if (!LockD3DTexture(mTexture.get(), SerializeWithMoz2D::Yes)) {
     return false;
   }
 
@@ -332,7 +351,9 @@ bool D3D11TextureData::PrepareDrawTargetInLock(OpenMode aMode) {
   return true;
 }
 
-void D3D11TextureData::Unlock() { UnlockD3DTexture(mTexture.get()); }
+void D3D11TextureData::Unlock() {
+  UnlockD3DTexture(mTexture.get(), SerializeWithMoz2D::Yes);
+}
 
 void D3D11TextureData::FillInfo(TextureData::Info& aInfo) const {
   aInfo.size = mSize;
@@ -482,6 +503,7 @@ D3D11TextureData* D3D11TextureData::Create(IntSize aSize, SurfaceFormat aFormat,
   RefPtr<ID3D11Texture2D> texture11;
 
   {
+    AutoSerializeWithMoz2D serializeWithMoz2D(BackendType::DIRECT2D1_1);
     D3D11MTAutoEnter lock(mt.forget());
 
     HRESULT hr = device->CreateTexture2D(&newDesc, uploadDataPtr,
@@ -516,10 +538,10 @@ D3D11TextureData* D3D11TextureData::Create(IntSize aSize, SurfaceFormat aFormat,
   
   
   if (aSurface && newDesc.MiscFlags == D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX) {
-    if (!LockD3DTexture(texture11.get())) {
+    if (!LockD3DTexture(texture11.get(), SerializeWithMoz2D::Yes)) {
       return nullptr;
     }
-    UnlockD3DTexture(texture11.get());
+    UnlockD3DTexture(texture11.get(), SerializeWithMoz2D::Yes);
   }
   texture11->SetPrivateDataInterface(
       sD3D11TextureUsage,

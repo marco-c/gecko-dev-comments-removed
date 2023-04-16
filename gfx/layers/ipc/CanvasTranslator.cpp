@@ -29,6 +29,9 @@ namespace layers {
 
 static const TimeDuration kReadEventTimeout = TimeDuration::FromMilliseconds(5);
 
+static const TimeDuration kDescriptorTimeout =
+    TimeDuration::FromMilliseconds(10000);
+
 class RingBufferReaderServices final
     : public CanvasEventRingBuffer::ReaderServices {
  public:
@@ -107,9 +110,10 @@ CanvasTranslator::CanvasTranslator(
 }
 
 CanvasTranslator::~CanvasTranslator() {
-  if (mReferenceTextureData) {
-    mReferenceTextureData->Unlock();
-  }
+  
+  
+  mDrawTargets.Clear();
+  mBaseDT = nullptr;
 }
 
 void CanvasTranslator::Bind(Endpoint<PCanvasParent>&& aEndpoint) {
@@ -222,12 +226,9 @@ void CanvasTranslator::Deactivate() {
       NewRunnableMethod("CanvasTranslator::SendDeactivate", this,
                         &CanvasTranslator::SendDeactivate));
 
-  {
-    
-    gfx::AutoSerializeWithMoz2D serializeWithMoz2D(GetBackendType());
-    for (auto const& entry : mTextureDatas) {
-      entry.second->Unlock();
-    }
+  
+  for (auto const& entry : mTextureDatas) {
+    entry.second->Unlock();
   }
 
   
@@ -330,7 +331,7 @@ void CanvasTranslator::Flush() {
     return;
   }
 
-  gfx::AutoSerializeWithMoz2D serializeWithMoz2D(GetBackendType());
+  gfx::AutoSerializeWithMoz2D serializeWithMoz2D(mBackendType);
   RefPtr<ID3D11DeviceContext> deviceContext;
   mDevice->GetImmediateContext(getter_AddRefs(deviceContext));
   deviceContext->Flush();
@@ -439,10 +440,6 @@ already_AddRefed<gfx::DrawTarget> CanvasTranslator::CreateDrawTarget(
     gfx::SurfaceFormat aFormat) {
   RefPtr<gfx::DrawTarget> dt;
   do {
-    
-    
-    
-    gfx::AutoSerializeWithMoz2D serializeWithMoz2D(GetBackendType());
     TextureData* textureData = CreateTextureData(mTextureType, aSize, aFormat);
     if (textureData) {
       MOZ_DIAGNOSTIC_ASSERT(mNextTextureId >= 0, "No texture ID set");
@@ -459,7 +456,6 @@ already_AddRefed<gfx::DrawTarget> CanvasTranslator::CreateDrawTarget(
 }
 
 void CanvasTranslator::RemoveTexture(int64_t aTextureId) {
-  gfx::AutoSerializeWithMoz2D serializeWithMoz2D(GetBackendType());
   mTextureDatas.erase(aTextureId);
 
   
@@ -487,7 +483,12 @@ UniquePtr<SurfaceDescriptor> CanvasTranslator::WaitForSurfaceDescriptor(
       return nullptr;
     }
 
-    mSurfaceDescriptorsMonitor.Wait();
+    CVStatus status = mSurfaceDescriptorsMonitor.Wait(kDescriptorTimeout);
+    if (status == CVStatus::Timeout) {
+      
+      
+      return nullptr;
+    }
   }
 
   UniquePtr<SurfaceDescriptor> descriptor = std::move(result->second);

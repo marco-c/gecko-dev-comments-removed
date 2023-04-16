@@ -28,6 +28,9 @@ RecordedTextureData::RecordedTextureData(
 }
 
 RecordedTextureData::~RecordedTextureData() {
+  
+  
+  mDT = nullptr;
   mCanvasChild->RecordEvent(RecordedTextureDestruction(mTextureId));
 }
 
