@@ -14,6 +14,7 @@
 #include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/EventTarget.h"
+#include "mozilla/dom/PWindowGlobalParent.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/ContentProcessManager.h"
 #include "mozilla/dom/MediaController.h"
@@ -175,11 +176,21 @@ void CanonicalBrowsingContext::ReplacedBy(
 
   
   
+  SetRestoreData(nullptr);
+  mRequestedContentRestores = 0;
+  mCompletedContentRestores = 0;
+  aNewContext->mRestoreData = nullptr;
+  aNewContext->mRequestedContentRestores = 0;
+  aNewContext->mCompletedContentRestores = 0;
+
+  
+  
   
   Transaction txn;
   txn.SetBrowserId(GetBrowserId());
   txn.SetHistoryID(GetHistoryID());
   txn.SetExplicitActive(GetExplicitActive());
+  txn.SetHasRestoreData(false);
   if (aNewContext->EverAttached()) {
     MOZ_ALWAYS_SUCCEEDS(txn.Commit(aNewContext));
   } else {
@@ -1718,6 +1729,58 @@ void CanonicalBrowsingContext::ResetScalingZoom() {
   
   if (WindowGlobalParent* topWindow = GetTopWindowContext()) {
     Unused << topWindow->SendResetScalingZoom();
+  }
+}
+
+void CanonicalBrowsingContext::SetRestoreData(SessionStoreRestoreData* aData) {
+  MOZ_DIAGNOSTIC_ASSERT(!mRestoreData || !aData,
+                        "must either be clearing or initializing");
+  MOZ_DIAGNOSTIC_ASSERT(
+      !aData || mCompletedContentRestores == mRequestedContentRestores,
+      "must not start restore in an unstable state");
+  mRestoreData = aData;
+  MOZ_ALWAYS_SUCCEEDS(SetHasRestoreData(mRestoreData));
+}
+
+void CanonicalBrowsingContext::RequestRestoreTabContent(
+    WindowGlobalParent* aWindow) {
+  if (IsDiscarded() || !mRestoreData || mRestoreData->IsEmpty()) {
+    return;
+  }
+
+  CanonicalBrowsingContext* context = aWindow->GetBrowsingContext();
+  MOZ_DIAGNOSTIC_ASSERT(!context->IsDiscarded());
+
+  RefPtr<SessionStoreRestoreData> data = mRestoreData->FindChild(context);
+
+  
+  
+  
+  if (context->IsTop()) {
+    MOZ_DIAGNOSTIC_ASSERT(context == this);
+    SetRestoreData(nullptr);
+  }
+
+  if (data && !data->IsEmpty()) {
+    auto onTabRestoreComplete = [self = RefPtr{this}](auto) {
+      self->mCompletedContentRestores++;
+      if (!self->mRestoreData &&
+          self->mCompletedContentRestores == self->mRequestedContentRestores) {
+        if (Element* browser = self->GetEmbedderElement()) {
+          SessionStoreUtils::CallRestoreTabContentComplete(browser);
+        }
+      }
+    };
+
+    mRequestedContentRestores++;
+
+    if (aWindow->IsInProcess()) {
+      data->RestoreInto(context);
+      onTabRestoreComplete(true);
+    } else {
+      aWindow->SendRestoreTabContent(data, onTabRestoreComplete,
+                                     onTabRestoreComplete);
+    }
   }
 }
 

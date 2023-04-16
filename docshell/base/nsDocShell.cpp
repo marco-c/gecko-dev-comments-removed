@@ -6557,6 +6557,12 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
 
   
   
+  if (!NS_IsAboutBlank(url)) {
+    MaybeRestoreTabContent();
+  }
+
+  
+  
   if (!mEODForCurrentDocument && mContentViewer) {
     mIsExecutingOnLoadHandler = true;
     nsCOMPtr<nsIContentViewer> contentViewer = mContentViewer;
@@ -13300,6 +13306,23 @@ void nsDocShell::NotifyJSRunToCompletionStop() {
     if (timelines && timelines->HasConsumer(this)) {
       timelines->AddMarkerForDocShell(this, "Javascript",
                                       MarkerTracingType::END);
+    }
+  }
+}
+
+void nsDocShell::MaybeRestoreTabContent() {
+  BrowsingContext* bc = mBrowsingContext;
+  if (bc && bc->Top()->GetHasRestoreData()) {
+    if (XRE_IsParentProcess()) {
+      if (WindowGlobalParent* wgp = bc->Canonical()->GetCurrentWindowGlobal()) {
+        bc->Canonical()->RequestRestoreTabContent(wgp);
+      }
+    } else {
+      if (WindowContext* windowContext = bc->GetCurrentWindowContext()) {
+        if (WindowGlobalChild* wgc = windowContext->GetWindowGlobalChild()) {
+          wgc->SendRequestRestoreTabContent();
+        }
+      }
     }
   }
 }
