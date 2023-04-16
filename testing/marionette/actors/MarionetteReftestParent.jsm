@@ -29,6 +29,12 @@ class MarionetteReftestParent extends JSWindowActorParent {
           useRemote,
         }
       );
+
+      if (isCorrectUrl) {
+        
+        await this._flushRenderingInSubtree();
+      }
+
       return isCorrectUrl;
     } catch (e) {
       if (e.name === "AbortError") {
@@ -40,5 +46,40 @@ class MarionetteReftestParent extends JSWindowActorParent {
       
       throw e;
     }
+  }
+
+  
+
+
+
+  async _flushRenderingInSubtree() {
+    const browsingContext = this.manager.browsingContext;
+    const contexts = browsingContext.getAllBrowsingContextsInSubtree();
+
+    await Promise.all(
+      contexts.map(async context => {
+        if (context === browsingContext) {
+          
+          
+          return;
+        }
+
+        const windowGlobal = context.currentWindowGlobal;
+        if (!windowGlobal) {
+          
+          return;
+        }
+
+        if (!windowGlobal.isProcessRoot) {
+          
+          
+          
+          return;
+        }
+
+        const reftestActor = windowGlobal.getActor("MarionetteReftest");
+        await reftestActor.sendQuery("MarionetteReftestParent:flushRendering");
+      })
+    );
   }
 }
