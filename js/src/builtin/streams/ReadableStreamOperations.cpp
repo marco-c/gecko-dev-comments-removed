@@ -213,13 +213,13 @@ static bool TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp) {
     done = doneVal.toBoolean();
   }
 
-  
   if (done) {
     
+
+    
+    
+    
     if (!unwrappedTeeState->canceled1()) {
-      
-      
-      
       Rooted<ReadableStreamDefaultController*> unwrappedBranch1(
           cx, unwrappedTeeState->branch1());
       if (!ReadableStreamDefaultControllerClose(cx, unwrappedBranch1)) {
@@ -228,15 +228,21 @@ static bool TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
+    
     if (!unwrappedTeeState->canceled2()) {
-      
-      
-      
       Rooted<ReadableStreamDefaultController*> unwrappedBranch2(
           cx, unwrappedTeeState->branch2());
       if (!ReadableStreamDefaultControllerClose(cx, unwrappedBranch2)) {
         return false;
       }
+    }
+
+    
+    Rooted<PromiseObject*> unwrappedCancelPromise(
+        cx, unwrappedTeeState->cancelPromise());
+    MOZ_ASSERT(unwrappedCancelPromise != nullptr);
+    if (!ResolveUnwrappedPromiseWithUndefined(cx, unwrappedCancelPromise)) {
+      return false;
     }
 
     args.rval().setUndefined();
@@ -473,6 +479,8 @@ static bool TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
+
 static bool TeeReaderErroredHandler(JSContext* cx, unsigned argc,
                                     JS::Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -496,6 +504,18 @@ static bool TeeReaderErroredHandler(JSContext* cx, unsigned argc,
   unwrappedBranchController = teeState->branch2();
   if (!ReadableStreamControllerError(cx, unwrappedBranchController, reason)) {
     return false;
+  }
+
+  
+  
+  if (!teeState->canceled1() || !teeState->canceled2()) {
+    Rooted<PromiseObject*> unwrappedCancelPromise(cx,
+                                                  teeState->cancelPromise());
+    MOZ_ASSERT(unwrappedCancelPromise != nullptr);
+
+    if (!ResolveUnwrappedPromiseWithUndefined(cx, unwrappedCancelPromise)) {
+      return false;
+    }
   }
 
   args.rval().setUndefined();
