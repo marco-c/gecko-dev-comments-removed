@@ -90,7 +90,35 @@ document.addEventListener("DOMContentLoaded", function() {
   openSearchOptions.addEventListener("keypress", openSearchOptionsEvtHandler);
 
   
+  new window.ContentSearchHandoffUIController();
+
+  
   let btn = document.getElementById("search-handoff-button");
+  RPMSendQuery("ShouldShowSearch", {}).then(engineName => {
+    let input = document.querySelector(".fake-textbox");
+    if (engineName) {
+      document.l10n.setAttributes(btn, "about-private-browsing-handoff", {
+        engine: engineName,
+      });
+      document.l10n.setAttributes(
+        input,
+        "about-private-browsing-handoff-text",
+        {
+          engine: engineName,
+        }
+      );
+    } else {
+      document.l10n.setAttributes(
+        btn,
+        "about-private-browsing-handoff-no-engine"
+      );
+      document.l10n.setAttributes(
+        input,
+        "about-private-browsing-handoff-text-no-engine"
+      );
+    }
+  });
+
   let editable = document.getElementById("fake-editable");
   let DISABLE_SEARCH_TOPIC = "DisableSearch";
   let SHOW_SEARCH_TOPIC = "ShowSearch";
@@ -135,7 +163,4 @@ document.addEventListener("DOMContentLoaded", function() {
     ev.preventDefault();
     handoffSearch(ev.clipboardData.getData("Text"));
   });
-
-  
-  new window.ContentSearchHandoffUIController();
 });

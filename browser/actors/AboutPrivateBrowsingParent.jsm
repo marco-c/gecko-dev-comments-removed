@@ -112,6 +112,13 @@ class AboutPrivateBrowsingParent extends JSWindowActorParent {
         urlBar.addEventListener("paste", checkFirstChange);
         break;
       }
+      case "ShouldShowSearch": {
+        return new Promise(resolve => {
+          Services.search.getDefaultPrivate().then(engine => {
+            resolve(engine.isAppProvided ? engine.name : null);
+          });
+        });
+      }
       case "ShouldShowSearchBanner": {
         
         
