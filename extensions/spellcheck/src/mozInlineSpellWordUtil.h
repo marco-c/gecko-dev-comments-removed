@@ -186,6 +186,9 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   enum DOMMapHint { HINT_BEGIN, HINT_END };
   NodeOffset MapSoftTextOffsetToDOMPosition(int32_t aSoftTextOffset,
                                             DOMMapHint aHint);
+
+  static void ToString(DOMMapHint aHint, nsACString& aResult);
+
   
   
   
