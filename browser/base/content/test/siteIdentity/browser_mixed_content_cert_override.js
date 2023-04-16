@@ -43,13 +43,13 @@ add_task(async function() {
 
   
   await loadBadCertPage(MIXED_CONTENT_URL);
-  checkIdentityPopup("connection-mixed-passive-loaded.svg");
+  checkIdentityPopup("security-warning.svg");
 
   
   gIdentityHandler.disableMixedContentProtection();
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
-  checkIdentityPopup("connection-mixed-active-loaded.svg");
+  checkIdentityPopup("security-broken.svg");
 
   
   BrowserTestUtils.loadURI(
@@ -57,7 +57,7 @@ add_task(async function() {
     "https://self-signed.example.com"
   );
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  checkIdentityPopup("connection-mixed-passive-loaded.svg");
+  checkIdentityPopup("security-warning.svg");
 
   
   let certOverrideService = Cc[

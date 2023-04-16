@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
   height: 100%;
@@ -9,7 +9,7 @@
 body {
   height: 100%;
   margin: 0;
-  
+  /* Override font-size from in-content/common.css which is too large */
   font-size: inherit;
 }
 
@@ -18,11 +18,11 @@ body {
 }
 
 #debugging-console {
-  
+  /* include the default borders in the max-height */
   box-sizing: border-box;
   float: right;
   height: 100vh;
-  
+  /* Float above the other overlays */
   position: relative;
   z-index: 99;
 }
@@ -45,9 +45,9 @@ payment-dialog > header,
 payment-dialog > header {
   border-bottom: 1px solid rgba(0,0,0,0.1);
   display: flex;
-  
+  /* Wrap so that the error text appears full-width above the rest of the contents */
   flex-wrap: wrap;
-  
+  /* from visual spec: */
   padding-bottom: 19px;
   padding-top: 19px;
 }
@@ -83,7 +83,7 @@ payment-dialog > header > .page-error {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  
+  /* The area above the footer should scroll, if necessary. */
   overflow: auto;
   padding-top: 18px;
 }
@@ -106,7 +106,7 @@ payment-dialog > header > .page-error {
   justify-content: end;
   background-color: #eaeaee;
   display: flex;
-  
+  /* from visual spec: */
   padding-top: 20px;
   padding-bottom: 18px;
 }
@@ -146,13 +146,13 @@ payment-dialog > header > .page-error {
 }
 
 payment-dialog[complete-status="processing"] #pay {
-  
+  /* Force opacity to 1 even when disabled in the processing state. */
   opacity: 1;
 }
 
 payment-dialog #pay::before {
   -moz-context-properties: fill;
-  content: url(chrome://browser/skin/connection-secure.svg);
+  content: url(chrome://global/skin/icons/security.svg);
   fill: currentColor;
   height: 16px;
   margin-inline-end: 0.5em;
@@ -164,7 +164,7 @@ payment-dialog[changes-prevented][complete-status="fail"] #pay,
 payment-dialog[changes-prevented][complete-status="unknown"] #pay,
 payment-dialog[changes-prevented][complete-status="processing"] #pay,
 payment-dialog[changes-prevented][complete-status="success"] #pay {
-  
+  /* Show the pay button above #disabled-overlay */
   position: relative;
   z-index: 51;
 }
@@ -180,8 +180,8 @@ payment-dialog[changes-prevented][complete-status="success"] #pay {
   right: 0;
   bottom: 0;
   left: 0;
-  
-
+  /* z-index must be greater than some positioned fields and #pay with z-index
+     but less than 99, the z-index of the debugging console. */
   z-index: 50;
 }
 
@@ -217,7 +217,7 @@ payment-dialog[changes-prevented][complete-status="success"] #pay {
   font-size: smaller;
   line-height: normal;
   width: 188px;
-  
+  /* Center the tooltip over the (i) icon (188px / 2 - 5px (padding) - 1px (border)). */
   left: -86px;
   bottom: 20px;
 }
@@ -230,7 +230,7 @@ payment-dialog[changes-prevented][complete-status="success"] #pay {
 
 .csc.info-tooltip:focus::after,
 .csc.info-tooltip:hover::after {
-  
+  /* Right-align the tooltip over the (i) icon (-188px - 60px (padding) - 2px (border) + 4px ((i) start padding) + 16px ((i) icon width)). */
   left: -226px;
   background-position: top 5px left 5px;
   background-image: url(./containers/cvv-hint-image-back.svg);
@@ -245,7 +245,7 @@ payment-dialog[changes-prevented][complete-status="success"] #pay {
 .csc.info-tooltip:dir(rtl):focus::after,
 .csc.info-tooltip:dir(rtl):hover::after {
   left: auto;
-  
+  /* Left-align the tooltip over the (i) icon (-188px - 60px (padding) - 2px (border) + 4px ((i) start padding) + 16px ((i) icon width)). */
   right: -226px;
   background-position: top 5px right 5px;
 }
