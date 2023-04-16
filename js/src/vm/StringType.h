@@ -64,6 +64,12 @@ static const size_t UINT32_CHAR_BUFFER_LENGTH = sizeof("4294967295") - 1;
 
 
 
+
+const uint32_t MAX_ARRAY_INDEX = 4294967294u;  
+
+
+
+
 template <typename CharT>
 bool CheckStringIsIndex(const CharT* s, size_t length, uint32_t* indexp);
 
@@ -311,6 +317,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
 
   static const uint32_t LATIN1_CHARS_BIT = js::Bit(9);
 
+  
   
   
   static const uint32_t ATOM_IS_INDEX_BIT = js::Bit(10);
@@ -879,12 +886,10 @@ class JSLinearString : public JSString {
   }
 
   
-
-
-
-
-
-
+  
+  
+  
+  
   inline bool isIndex(uint32_t* indexp) const;
 
   void maybeInitializeIndexValue(uint32_t index, bool allowAtom = false) {

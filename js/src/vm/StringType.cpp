@@ -1212,11 +1212,11 @@ bool js::CheckStringIsIndex(const CharT* s, size_t length, uint32_t* indexp) {
   }
 
   
-
-
-
-  if (oldIndex < UINT32_MAX / 10 ||
-      (oldIndex == UINT32_MAX / 10 && c <= (UINT32_MAX % 10))) {
+  
+  
+  if (oldIndex < MAX_ARRAY_INDEX / 10 ||
+      (oldIndex == MAX_ARRAY_INDEX / 10 && c <= (MAX_ARRAY_INDEX % 10))) {
+    MOZ_ASSERT(index <= MAX_ARRAY_INDEX);
     *indexp = index;
     return true;
   }
@@ -1251,6 +1251,7 @@ static uint32_t AtomCharsToIndex(const CharT* s, size_t length) {
     cp++;
   }
 
+  MOZ_ASSERT(index <= MAX_ARRAY_INDEX);
   return index;
 }
 
