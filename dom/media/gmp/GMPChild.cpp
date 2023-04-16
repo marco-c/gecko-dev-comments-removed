@@ -234,6 +234,17 @@ mozilla::ipc::IPCResult GMPChild::RecvPreloadLibs(const nsCString& aLibs) {
         if (libHandle) {
           mLibHandles.AppendElement(libHandle);
         } else {
+          
+          
+          const char* error = dlerror();
+          if (error) {
+            
+            
+            nsAutoCString nsError{error};
+            CrashReporter::AppendAppNotesToCrashReport(nsError);
+          }
+          
+
           MOZ_CRASH("Couldn't load lib needed by NSS");
         }
       }
