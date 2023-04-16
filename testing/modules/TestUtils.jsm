@@ -198,8 +198,7 @@ var TestUtils = {
         setTimeout(tryOnce, interval);
       }
 
-      
-      setTimeout(tryOnce, interval);
+      TestUtils.executeSoon(tryOnce);
     });
   },
 
