@@ -6632,6 +6632,22 @@ bool Document::RemoveFromBFCacheSync() {
     entry->RemoveFromBFCacheSync();
     return true;
   }
+
+  if (XRE_IsContentProcess()) {
+    if (BrowsingContext* bc = GetBrowsingContext()) {
+      BrowsingContext* top = bc->Top();
+      if (top->GetIsInBFCache()) {
+        ContentChild* cc = ContentChild::GetSingleton();
+        
+        
+        
+        
+        
+        cc->SendRemoveFromBFCache(top);
+        return true;
+      }
+    }
+  }
   return false;
 }
 
