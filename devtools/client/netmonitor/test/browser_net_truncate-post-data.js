@@ -30,11 +30,7 @@ add_task(async function() {
   await waitUntil(() => item.querySelector(".requests-list-type").title);
 
   
-  const waitAccordionItems = waitForDOM(
-    document,
-    "#request-panel .accordion-item",
-    1
-  );
+  const waitHeader = waitForDOM(document, "#request-panel .data-header");
   const waitSourceEditor = waitForDOM(
     document,
     "#request-panel .CodeMirror.cm-s-mozilla"
@@ -43,7 +39,7 @@ add_task(async function() {
   store.dispatch(Actions.toggleNetworkDetails());
   clickOnSidebarTab(document, "request");
 
-  await Promise.all([waitAccordionItems, waitSourceEditor]);
+  await Promise.all([waitHeader, waitSourceEditor]);
 
   const tabpanel = document.querySelector("#request-panel");
   is(
@@ -56,8 +52,7 @@ add_task(async function() {
     "Request has been truncated",
     "The error message shown is incorrect"
   );
-  const jsonView =
-    tabpanel.querySelector(".accordion-item .accordion-header-label") || {};
+  const jsonView = tabpanel.querySelector(".data-label") || {};
   is(
     jsonView.textContent === L10N.getStr("jsonScopeName"),
     false,

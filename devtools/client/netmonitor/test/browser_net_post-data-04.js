@@ -25,33 +25,27 @@ add_task(async function() {
   await performRequests(monitor, tab, 1);
 
   
-  const waitAccordionItems = waitForDOM(
-    document,
-    "#request-panel .accordion-item",
-    2
-  );
-  const waitSourceEditor = waitForDOM(
-    document,
-    "#request-panel .CodeMirror-code"
-  );
+  const wait = waitForDOM(document, "#request-panel .data-header");
+  let waitForContent = waitForDOM(document, "#request-panel .properties-view");
   store.dispatch(Actions.toggleNetworkDetails());
   clickOnSidebarTab(document, "request");
-  await Promise.all([waitAccordionItems, waitSourceEditor]);
+  await Promise.all([wait, waitForContent]);
+
   const tabpanel = document.querySelector("#request-panel");
 
   ok(
     tabpanel.querySelector(".treeTable"),
     "The request params doesn't have the indended visibility."
   );
-  
-  ok(
-    tabpanel.querySelector(".CodeMirror-code"),
+  is(
+    tabpanel.querySelector(".CodeMirror-code") === null,
+    true,
     "The request post data doesn't have the indended visibility."
   );
   is(
-    tabpanel.querySelectorAll(".accordion-item").length,
-    2,
-    "There should be 2 accordion items displayed in this tabpanel."
+    tabpanel.querySelectorAll(".raw-data-toggle") !== null,
+    true,
+    "The raw request data toggle should be displayed in this tabpanel."
   );
   is(
     tabpanel.querySelectorAll(".empty-notice").length,
@@ -59,16 +53,9 @@ add_task(async function() {
     "The empty notice should not be displayed in this tabpanel."
   );
 
-  const accordionItems = tabpanel.querySelectorAll(".accordion-item");
-
   is(
-    accordionItems[0].querySelector(".accordion-header-label").textContent,
+    tabpanel.querySelector(".data-label").textContent,
     L10N.getStr("jsonScopeName"),
-    "The post section doesn't have the correct title."
-  );
-  is(
-    accordionItems[1].querySelector(".accordion-header-label").textContent,
-    L10N.getStr("paramsPostPayload"),
     "The post section doesn't have the correct title."
   );
 
@@ -78,6 +65,35 @@ add_task(async function() {
   is(labels[0].textContent, "a", "The JSON var name was incorrect.");
   is(values[0].textContent, "1", "The JSON var value was incorrect.");
 
+  
+  waitForContent = waitForDOM(document, "#request-panel .CodeMirror-code");
+  const rawDataToggle = document.querySelector(
+    "#request-panel .raw-data-toggle-input .devtools-checkbox-toggle"
+  );
+  clickElement(rawDataToggle, monitor);
+  await waitForContent;
+
+  is(
+    tabpanel.querySelector(".data-label").textContent,
+    L10N.getStr("paramsPostPayload"),
+    "The post section doesn't have the correct title."
+  );
+  is(
+    tabpanel.querySelector(".raw-data-toggle-input .devtools-checkbox-toggle")
+      .checked,
+    true,
+    "The raw request toggle should be on."
+  );
+  is(
+    tabpanel.querySelector(".properties-view") === null,
+    true,
+    "The formatted display should be hidden."
+  );
+  
+  ok(
+    tabpanel.querySelector(".CodeMirror-code"),
+    "The request post data doesn't have the indended visibility."
+  );
   ok(
     getCodeMirrorValue(monitor).includes('{"a":1}'),
     "The text shown in the source editor is incorrect."
