@@ -23,6 +23,11 @@ namespace widget {
 #define GBMLIB_NAME "libgbm.so.1"
 #define DRMLIB_NAME "libdrm.so.2"
 
+
+
+
+mozilla::StaticMutex nsGbmLib::sDRILock;
+
 void* nsGbmLib::sGbmLibHandle = nullptr;
 void* nsGbmLib::sXf86DrmLibHandle = nullptr;
 bool nsGbmLib::sLibLoaded = false;
