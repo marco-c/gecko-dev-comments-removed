@@ -46,6 +46,9 @@ async function setupLocalDevToolsServerAndClient() {
 async function setupExtensionDebuggingToolbox(id) {
   const client = await setupLocalDevToolsServerAndClient();
   const descriptor = await client.mainRoot.getAddon({ id });
+  
+  
+  descriptor.shouldCloseClient = true;
 
   const { toolbox, storage } = await openStoragePanel({
     descriptor,
@@ -53,7 +56,6 @@ async function setupExtensionDebuggingToolbox(id) {
   });
 
   const target = toolbox.target;
-  target.shouldCloseClient = true;
 
   return { target, toolbox, storage };
 }

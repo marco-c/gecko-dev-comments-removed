@@ -62,11 +62,13 @@ async function testLocalTab(rootFront) {
 
   const tab = await addTab(TEST_URL);
   const descriptor = await rootFront.getTab({ tab });
+  
+  
+  
+  descriptor.shouldCloseClient = false;
   const commands = await descriptor.getCommands();
   const targetList = commands.targetCommand;
   await targetList.startListening();
-  
-  targetList.targetFront.shouldCloseClient = false;
 
   const targets = await targetList.getAllTargets(targetList.ALL_TYPES);
   is(targets.length, 1, "Got a unique target");

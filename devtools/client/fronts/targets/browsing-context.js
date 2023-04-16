@@ -127,6 +127,16 @@ class BrowsingContextTargetFront extends TargetMixin(
     
     this.off("tabNavigated", this._onTabNavigated);
     this.off("frameUpdate", this._onFrameUpdate);
+
+    
+    
+    
+    
+    
+    
+    if (!this.isDestroyedOrBeingDestroyed()) {
+      await this.destroy();
+    }
   }
 
   destroy() {

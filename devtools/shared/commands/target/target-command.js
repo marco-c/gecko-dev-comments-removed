@@ -577,15 +577,6 @@ class TargetCommand extends EventEmitter {
 
   async onLocalTabRemotenessChange(targetFront) {
     
-    
-    
-    
-    
-    
-    
-    targetFront.shouldCloseClient = false;
-
-    
     await targetFront.once("target-destroyed");
 
     
