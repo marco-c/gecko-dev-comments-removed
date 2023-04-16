@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
   line-height: 22px;
@@ -33,7 +33,7 @@ label {
 
 .long-hex:hover {
   border-block: 1px solid var(--in-content-border-color);
-  background-color: var(--in-content-box-background-hover);
+  background-color: var(--in-content-item-hover);
   padding: 0;
 }
 
@@ -47,7 +47,7 @@ label {
   padding-bottom: 10px;
 }
 
-
+/* Elements that always need to be forced to LTR */
 .hex,
 :host(.dns-name) .info,
 .url {
@@ -55,7 +55,7 @@ label {
   text-align: match-parent;
 }
 
-
+/* Display some elements according to their text directionality */
 :host(.common-name) .info,
 :host(.name) .info,
 :host(.organization) .info {
