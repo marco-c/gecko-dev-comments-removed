@@ -4166,7 +4166,12 @@
       
       
       if (isPending) {
+        
+        
+        
+        aOurTab.initializingTab = true;
         SessionStore.setTabState(aOurTab, SessionStore.getTabState(aOtherTab));
+        delete aOurTab.initializingTab;
 
         
         this._swapRegisteredOpenURIs(ourBrowser, otherBrowser);

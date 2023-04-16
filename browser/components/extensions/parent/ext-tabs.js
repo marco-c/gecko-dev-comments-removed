@@ -277,6 +277,7 @@ class TabsUpdateFilterEventManager extends EventManager {
 
       let listener = event => {
         
+        
         if (event.originalTarget.initializingTab) {
           return;
         }
