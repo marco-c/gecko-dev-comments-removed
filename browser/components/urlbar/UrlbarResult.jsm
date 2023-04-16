@@ -63,10 +63,6 @@ class UrlbarResult {
 
     
     
-    this.suggestedIndex = -1;
-
-    
-    
     this.heuristic = false;
 
     
@@ -150,6 +146,16 @@ class UrlbarResult {
 
   get icon() {
     return this.payload.icon;
+  }
+
+  
+
+
+
+
+
+  get hasSuggestedIndex() {
+    return typeof this.suggestedIndex == "number";
   }
 
   

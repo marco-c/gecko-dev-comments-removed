@@ -99,33 +99,9 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       state
     );
 
-    
-    let resultsWithSuggestedIndex = state.resultsByGroup.get(
-      UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX
-    );
-    if (resultsWithSuggestedIndex) {
-      
-      
-      resultsWithSuggestedIndex.sort(
-        (a, b) => a.suggestedIndex - b.suggestedIndex
-      );
-      
-      for (let result of resultsWithSuggestedIndex) {
-        this._updateStatePreAdd(result, state);
-      }
-      
-      for (let result of resultsWithSuggestedIndex) {
-        if (this._canAddResult(result, state)) {
-          let index =
-            result.suggestedIndex <= sortedResults.length
-              ? result.suggestedIndex
-              : sortedResults.length;
-          sortedResults.splice(index, 0, result);
-          this._updateStatePostAdd(result, state);
-        }
-      }
-    }
+    this._addSuggestedIndexResults(sortedResults, state);
 
+    this._truncateResults(sortedResults, context.maxResults);
     context.results = sortedResults;
   }
 
@@ -642,6 +618,97 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         UrlbarProviderTabToSearch.enginesShown.regular.add(
           result.payload.engine
         );
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  _addSuggestedIndexResults(sortedResults, state) {
+    let suggestedIndexResults = state.resultsByGroup.get(
+      UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX
+    );
+    if (!suggestedIndexResults) {
+      return;
+    }
+
+    
+    
+    suggestedIndexResults.sort((a, b) => a.suggestedIndex - b.suggestedIndex);
+
+    
+    
+    
+    let negativeIndexSpanCount = 0;
+    for (let result of suggestedIndexResults) {
+      if (result.suggestedIndex < 0) {
+        negativeIndexSpanCount += UrlbarUtils.getSpanForResult(result);
+      } else {
+        this._updateStatePreAdd(result, state);
+        if (this._canAddResult(result, state)) {
+          let index =
+            result.suggestedIndex <= sortedResults.length
+              ? result.suggestedIndex
+              : sortedResults.length;
+          sortedResults.splice(index, 0, result);
+          this._updateStatePostAdd(result, state);
+        }
+      }
+    }
+
+    
+    
+    
+    
+    
+    
+    this._truncateResults(
+      sortedResults,
+      state.context.maxResults - negativeIndexSpanCount
+    );
+
+    
+    if (negativeIndexSpanCount) {
+      for (let result of suggestedIndexResults) {
+        if (result.suggestedIndex >= 0) {
+          break;
+        }
+        this._updateStatePreAdd(result, state);
+        if (this._canAddResult(result, state)) {
+          let index = Math.max(
+            result.suggestedIndex + sortedResults.length + 1,
+            0
+          );
+          sortedResults.splice(index, 0, result);
+          this._updateStatePostAdd(result, state);
+        }
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  _truncateResults(sortedResults, maxSpanCount) {
+    let remainingSpanCount = maxSpanCount;
+    for (let i = 0; i < sortedResults.length; i++) {
+      remainingSpanCount -= UrlbarUtils.getSpanForResult(sortedResults[i]);
+      if (remainingSpanCount < 0) {
+        sortedResults.splice(i, sortedResults.length - i);
+        break;
       }
     }
   }

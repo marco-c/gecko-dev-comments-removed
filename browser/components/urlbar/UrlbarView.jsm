@@ -909,7 +909,7 @@ class UrlbarView {
       return true;
     }
     let row = this._rows.children[rowIndex];
-    if (result.suggestedIndex >= 0) {
+    if (result.hasSuggestedIndex) {
       
       
       
@@ -917,7 +917,7 @@ class UrlbarView {
       
       return true;
     }
-    if (row.result.suggestedIndex >= 0) {
+    if (row.result.hasSuggestedIndex) {
       
       
       
