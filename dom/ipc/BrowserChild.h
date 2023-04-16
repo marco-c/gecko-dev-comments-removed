@@ -84,6 +84,7 @@ class ClonedMessageData;
 class CoalescedMouseData;
 class CoalescedWheelData;
 class ContentSessionStore;
+class SessionStoreChangeListener;
 class TabListener;
 class RequestData;
 class WebProgressData;
@@ -387,9 +388,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
                                                 aApzResponse);
   }
 
-  mozilla::ipc::IPCResult RecvFlushTabState(const uint32_t& aFlushId,
-                                            const bool& aIsFinal);
-
   mozilla::ipc::IPCResult RecvUpdateEpoch(const uint32_t& aEpoch);
 
   mozilla::ipc::IPCResult RecvUpdateSHistory(const bool& aImmediately);
@@ -682,7 +680,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
     mCancelContentJSEpoch = aEpoch;
   }
 
-  bool UpdateSessionStore(uint32_t aFlushId, bool aIsFinal = false);
+  bool UpdateSessionStore(bool aIsFinal = false);
 
 #ifdef XP_WIN
   
@@ -878,6 +876,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   RefPtr<layers::IAPZCTreeManager> mApzcTreeManager;
   RefPtr<TabListener> mSessionStoreListener;
+  RefPtr<SessionStoreChangeListener> mSessionStoreChangeListener;
 
   
   layers::LayersObserverEpoch mLayersObserverEpoch;

@@ -1294,13 +1294,6 @@ var SessionStoreInternal = {
     TabState.update(aBrowser, aData);
     let win = aBrowser.ownerGlobal;
     this.saveStateDelayed(win);
-
-    if (aData.flushID) {
-      
-      
-      
-      TabStateFlusher.resolve(aBrowser, aData.flushID);
-    }
   },
 
   
