@@ -475,7 +475,7 @@ var PageActions = {
       
       
       if (!actions.idsInUrlbar.length) {
-        actions.idsInUrlbar = ["pocket", ACTION_ID_BOOKMARK];
+        actions.idsInUrlbar = [ACTION_ID_BOOKMARK];
       }
     } else if (actions) {
       
@@ -1205,7 +1205,7 @@ Action.prototype = {
   },
 
   get _isBuiltIn() {
-    let builtInIDs = ["pocket", "screenshots_mozilla_org"].concat(
+    let builtInIDs = ["screenshots_mozilla_org"].concat(
       gBuiltInActions.filter(a => !a.__isSeparator).map(a => a.id)
     );
     return builtInIDs.includes(this.id);

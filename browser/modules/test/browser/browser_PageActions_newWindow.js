@@ -117,7 +117,7 @@ add_task(async function migrate1() {
   
   
   
-  let ids = [PageActions.ACTION_ID_BOOKMARK, "pocket", "copyURL"];
+  let ids = [PageActions.ACTION_ID_BOOKMARK, "copyURL"];
   let persisted = ids.reduce(
     (memo, id) => {
       memo.ids[id] = true;
@@ -142,7 +142,7 @@ add_task(async function migrate1() {
   PageActions.actionForID("copyURL")._pinnedToUrlbar = true;
 
   
-  let orderedIDs = ["pocket", "copyURL", PageActions.ACTION_ID_BOOKMARK];
+  let orderedIDs = ["copyURL", PageActions.ACTION_ID_BOOKMARK];
 
   
   Assert.deepEqual(

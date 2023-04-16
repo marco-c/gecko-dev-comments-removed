@@ -323,7 +323,7 @@ add_task(async function testPocketButtonPress() {
   await BrowserTestUtils.withNewTab("https://example.com", async function(
     aBrowser
   ) {
-    let button = document.getElementById("pocket-button");
+    let button = document.getElementById("save-to-pocket-button");
     forceFocus(button);
     
     
@@ -331,7 +331,7 @@ add_task(async function testPocketButtonPress() {
     EventUtils.synthesizeKey(" ");
     let event = await showing;
     let panel = event.target;
-    is(panel.id, "pageActionActivatedActionPanel");
+    is(panel.id, "customizationui-widget-panel");
     let focused = BrowserTestUtils.waitForEvent(panel, "focus", true);
     await focused;
     is(

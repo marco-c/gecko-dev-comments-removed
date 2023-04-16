@@ -24,10 +24,8 @@ const TEST_ACTION_ID = "browser_PageActions_proton";
 
 const IGNORED_ACTION_IDS = new Set([
   "addSearchEngine",
-  "pocket",
   "screenshots_mozilla_org",
 ]);
-const EXTRA_IGNORED_ELEMENT_IDS = ["pocket-button"];
 
 
 
@@ -358,9 +356,9 @@ async function checkNewWindow({ idsInUrlbarExtra = [] } = {}) {
     url: "http://example.com/",
   });
 
-  let ignoredElementIDs = Array.from(IGNORED_ACTION_IDS)
-    .map(id => win.BrowserPageActions.urlbarButtonNodeIDForActionID(id))
-    .concat(EXTRA_IGNORED_ELEMENT_IDS);
+  let ignoredElementIDs = Array.from(IGNORED_ACTION_IDS).map(id =>
+    win.BrowserPageActions.urlbarButtonNodeIDForActionID(id)
+  );
 
   
   let elementIDs = [];

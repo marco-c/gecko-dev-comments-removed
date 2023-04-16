@@ -85,7 +85,7 @@ const kSubviewEvents = ["ViewShowing", "ViewHiding"];
 
 
 
-var kVersion = 16;
+var kVersion = 17;
 
 
 
@@ -264,6 +264,7 @@ var CustomizableUIInternal = {
       "spring",
       "urlbar-container",
       "spring",
+      "save-to-pocket-button",
       "downloads-button",
       gProtonToolbarEnabled ? null : "library-button",
       AppConstants.MOZ_DEV_EDITION ? "developer-button" : null,
@@ -601,6 +602,33 @@ var CustomizableUIInternal = {
       
       if (navbarPlacements) {
         navbarPlacements.push("fxa-toolbar-menu-button");
+      }
+    }
+
+    
+    if (currentVersion < 17 && gSavedState.placements) {
+      let navbarPlacements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
+      let persistedPageActionsPref = Services.prefs.getCharPref(
+        "browser.pageActions.persistedActions",
+        ""
+      );
+      let pocketPreviouslyInUrl = true;
+      try {
+        let persistedPageActionsData = JSON.parse(persistedPageActionsPref);
+        
+        
+        pocketPreviouslyInUrl = persistedPageActionsData.idsInUrlbar.includes(
+          "pocket"
+        );
+      } catch (e) {}
+      if (navbarPlacements && pocketPreviouslyInUrl) {
+        
+        let newPosition =
+          navbarPlacements.indexOf("downloads-button") ??
+          navbarPlacements.indexOf("fxa-toolbar-menu-button") ??
+          navbarPlacements.length;
+
+        navbarPlacements.splice(newPosition, 0, "save-to-pocket-button");
       }
     }
   },
