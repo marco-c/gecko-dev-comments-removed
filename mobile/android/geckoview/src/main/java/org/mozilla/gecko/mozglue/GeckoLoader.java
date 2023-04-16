@@ -74,13 +74,15 @@ public final class GeckoLoader {
     }
 
     private static File getTmpDir(final Context context) {
-        final File tmpDir = context.getDir("tmpdir", Context.MODE_PRIVATE);
         
-        final File oldDir = new File(tmpDir.getParentFile(), "app_tmp");
+        
+        final File oldDir = context.getDir("tmpdir", Context.MODE_PRIVATE);
         if (oldDir.exists()) {
             delTree(oldDir);
         }
-        return tmpDir;
+        
+        
+        return new File(context.getCacheDir(), "gecko_temp");
     }
 
     private static String escapeDoubleQuotes(final String str) {
