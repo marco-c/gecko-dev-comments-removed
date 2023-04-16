@@ -34,10 +34,6 @@
 var EXPORTED_SYMBOLS = ["CrashMonitor"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-const { PromiseUtils } = ChromeUtils.import(
-  "resource://gre/modules/PromiseUtils.jsm"
-);
 
 const NOTIFICATIONS = [
   "final-ui-startup",
@@ -46,9 +42,10 @@ const NOTIFICATIONS = [
   "quit-application",
   "profile-change-net-teardown",
   "profile-change-teardown",
-  "profile-before-change",
   "sessionstore-final-state-write-complete",
 ];
+
+const SHUTDOWN_PHASES = ["profile-before-change"];
 
 var CrashMonitorInternal = {
   
@@ -74,15 +71,15 @@ var CrashMonitorInternal = {
   previousCheckpoints: null,
 
   
-  profileBeforeChangeDeferred: PromiseUtils.defer(),
-
-  
 
 
 
 
 
-  path: OS.Path.join(OS.Constants.Path.profileDir, "sessionCheckpoints.json"),
+  path: PathUtils.join(
+    Services.dirsvc.get("ProfD", Ci.nsIFile).path,
+    "sessionCheckpoints.json"
+  ),
 
   
 
@@ -91,29 +88,16 @@ var CrashMonitorInternal = {
 
   loadPreviousCheckpoints() {
     this.previousCheckpoints = (async function() {
-      let data;
-      try {
-        data = await OS.File.read(CrashMonitorInternal.path, {
-          encoding: "utf-8",
-        });
-      } catch (ex) {
-        if (!(ex instanceof OS.File.Error)) {
-          throw ex;
-        }
-        if (!ex.becauseNoSuchFile) {
-          Cu.reportError(
-            "Error while loading crash monitor data: " + ex.toString()
-          );
-        }
-
-        return null;
-      }
-
       let notifications;
       try {
-        notifications = JSON.parse(data);
+        notifications = await IOUtils.readJSON(CrashMonitorInternal.path);
       } catch (ex) {
-        Cu.reportError("Error while parsing crash monitor data: " + ex);
+        
+        if (ex.name !== "NotFoundError") {
+          Cu.reportError(
+            `Error while loading crash monitor data: ${ex.message}`
+          );
+        }
         return null;
       }
 
@@ -173,9 +157,9 @@ var CrashMonitor = {
     }, this);
 
     
-    OS.File.profileBeforeChange.addBlocker(
+    IOUtils.profileBeforeChange.addBlocker(
       "CrashMonitor: Writing notifications to file after receiving profile-before-change",
-      CrashMonitorInternal.profileBeforeChangeDeferred.promise,
+      () => this.writeCheckpoint("profile-before-change"),
       () => this.checkpoints
     );
 
@@ -189,37 +173,38 @@ var CrashMonitor = {
 
 
   observe(aSubject, aTopic, aData) {
-    if (!(aTopic in CrashMonitorInternal.checkpoints)) {
-      
-      
-      CrashMonitorInternal.checkpoints[aTopic] = true;
-      (async function() {
-        try {
-          let data = JSON.stringify(CrashMonitorInternal.checkpoints);
+    this.writeCheckpoint(aTopic);
 
-          
-
-
-
-
-
-          await OS.File.writeAtomic(CrashMonitorInternal.path, data, {
-            tmpPath: CrashMonitorInternal.path + ".tmp",
-          });
-        } finally {
-          
-          if (aTopic == "profile-before-change") {
-            CrashMonitorInternal.profileBeforeChangeDeferred.resolve();
-          }
-        }
-      })();
-    }
-
-    if (NOTIFICATIONS.every(elem => elem in CrashMonitorInternal.checkpoints)) {
+    if (
+      NOTIFICATIONS.every(elem => elem in CrashMonitorInternal.checkpoints) &&
+      SHUTDOWN_PHASES.every(elem => elem in CrashMonitorInternal.checkpoints)
+    ) {
       
       NOTIFICATIONS.forEach(function(aTopic) {
         Services.obs.removeObserver(this, aTopic);
       }, this);
+    }
+  },
+
+  async writeCheckpoint(aCheckpoint) {
+    if (!(aCheckpoint in CrashMonitorInternal.checkpoints)) {
+      
+      
+      CrashMonitorInternal.checkpoints[aCheckpoint] = true;
+
+      
+
+
+
+
+
+      await IOUtils.writeJSON(
+        CrashMonitorInternal.path,
+        CrashMonitorInternal.checkpoints,
+        {
+          tmpPath: CrashMonitorInternal.path + ".tmp",
+        }
+      );
     }
   },
 };
