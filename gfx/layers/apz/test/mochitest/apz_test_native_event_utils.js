@@ -916,23 +916,6 @@ function promiseNativeMouseEventWithAPZAndWaitForEvent(aParams) {
 
 
 
-function moveMouseAndScrollWheelOver(
-  target,
-  dx,
-  dy,
-  testDriver,
-  waitForScroll = true,
-  scrollDelta = 10
-) {
-  promiseMoveMouseAndScrollWheelOver(
-    target,
-    dx,
-    dy,
-    waitForScroll,
-    scrollDelta
-  ).then(testDriver);
-  return true;
-}
 
 
 
