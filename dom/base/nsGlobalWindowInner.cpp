@@ -4341,7 +4341,8 @@ void nsGlobalWindowInner::StopVRActivity() {
 
 void nsGlobalWindowInner::SetFocusedElement(Element* aElement,
                                             uint32_t aFocusMethod,
-                                            bool aNeedsFocus) {
+                                            bool aNeedsFocus,
+                                            bool aWillShowOutline) {
   if (aElement && aElement->GetComposedDoc() != mDoc) {
     NS_WARNING("Trying to set focus to a node from a wrong document");
     return;
@@ -4367,6 +4368,14 @@ void nsGlobalWindowInner::SetFocusedElement(Element* aElement,
       mFocusByKeyOccurred = true;
     } else if (nsFocusManager::GetFocusMoveActionCause(mFocusMethod) !=
                widget::InputContextAction::CAUSE_UNKNOWN) {
+      mUnknownFocusMethodShouldShowOutline = false;
+    } else if (!aWillShowOutline) {
+      
+      
+      
+      
+      
+      
       mUnknownFocusMethodShouldShowOutline = false;
     }
   }
