@@ -336,6 +336,12 @@ class LookAndFeel {
     GTKCSDMaximizeButtonPosition,
 
     
+    SystemVerticalScrollbarWidth,
+
+    
+    SystemHorizontalScrollbarHeight,
+
+    
 
 
     End,
