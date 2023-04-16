@@ -496,12 +496,6 @@ class gfxFontEntry {
 
   
   
-  float mAscentOverride = -1.0;
-  float mDescentOverride = -1.0;
-  float mLineGapOverride = -1.0;
-
-  
-  
   
   
   
