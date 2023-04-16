@@ -295,7 +295,7 @@ NS_DECL_THREADSAFE_FFI_REFCOUNTING(mozilla::SharedFontList, SharedFontList);
 
 
 
-void Gecko_nsFont_InitSystem(nsFont* dst, int32_t font_id,
+void Gecko_nsFont_InitSystem(nsFont* dst, mozilla::StyleSystemFont font_id,
                              const nsStyleFont* font,
                              const mozilla::dom::Document*);
 

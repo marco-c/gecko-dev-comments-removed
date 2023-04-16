@@ -26,6 +26,7 @@ class LookAndFeelCache;
 }  
 
 enum class StyleSystemColor : uint8_t;
+enum class StyleSystemFont : uint8_t;
 
 class LookAndFeel {
  public:
@@ -415,32 +416,7 @@ class LookAndFeel {
     End,
   };
 
-  
-  
-  enum class FontID {
-    Caption = 0,  
-    Icon,
-    Menu,
-    MessageBox,
-    SmallCaption,
-    StatusBar,
-
-    Window,  
-    Document,
-    Workspace,
-    Desktop,
-    Info,
-    Dialog,
-    Button,
-    PullDownMenu,
-    List,
-    Field,
-
-    Tooltips,  
-    Widget,
-
-    End,  
-  };
+  using FontID = mozilla::StyleSystemFont;
 
   
 

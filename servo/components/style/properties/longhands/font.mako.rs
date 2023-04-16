@@ -288,208 +288,153 @@ ${helpers.predefined_type(
 )}
 
 % if engine == "gecko":
-    pub mod system_font {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+pub mod system_font {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-        use cssparser::{Parser, ToCss};
-        use crate::values::computed::font::GenericFontFamily;
-        use crate::properties::longhands;
-        use std::fmt;
-        use std::hash::{Hash, Hasher};
-        use style_traits::ParseError;
-        use crate::values::computed::{ToComputedValue, Context};
+    use crate::values::computed::font::GenericFontFamily;
+    use crate::properties::longhands;
+    use std::hash::{Hash, Hasher};
+    use crate::values::computed::{ToComputedValue, Context};
+    use crate::values::specified::font::SystemFont;
 
-        <%
-            system_fonts = """caption icon menu message-box small-caption status-bar
-                              -moz-window -moz-document -moz-workspace -moz-desktop
-                              -moz-info -moz-dialog -moz-button -moz-pull-down-menu
-                              -moz-list -moz-field""".split()
-            kw_font_props = """font_variant_caps
-                               font_kerning font_variant_position font_variant_ligatures
-                               font_variant_east_asian font_variant_numeric
-                               font_optical_sizing""".split()
-            kw_cast = """font_variant_caps font_kerning font_variant_position
-                         font_optical_sizing""".split()
-        %>
-        #[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq,
-                 SpecifiedValueInfo, ToCss, ToShmem)]
-        pub enum SystemFont {
-            % for font in system_fonts:
-                ${to_camel_case(font)},
-            % endfor
-        }
+    <%
+        kw_font_props = """font_variant_caps
+                           font_kerning font_variant_position font_variant_ligatures
+                           font_variant_east_asian font_variant_numeric
+                           font_optical_sizing""".split()
+        kw_cast = """font_variant_caps font_kerning font_variant_position
+                     font_optical_sizing""".split()
+    %>
 
-        
-        
-        
-        
-        
-        impl PartialEq for ComputedSystemFont {
-            fn eq(&self, other: &Self) -> bool {
-                self.system_font == other.system_font
-            }
-        }
-        impl Eq for ComputedSystemFont {}
-
-        impl Hash for ComputedSystemFont {
-            fn hash<H: Hasher>(&self, hasher: &mut H) {
-                self.system_font.hash(hasher)
-            }
-        }
-
-        impl ToComputedValue for SystemFont {
-            type ComputedValue = ComputedSystemFont;
-
-            fn to_computed_value(&self, cx: &Context) -> Self::ComputedValue {
-                use crate::gecko_bindings::bindings;
-                use crate::gecko_bindings::structs::{LookAndFeel_FontID, nsFont};
-                use std::mem;
-                use crate::values::computed::Percentage;
-                use crate::values::specified::font::KeywordInfo;
-                use crate::values::computed::font::{FontFamily, FontSize, FontStretch, FontStyle, FontFamilyList};
-                use crate::values::generics::NonNegative;
-
-                let id = match *self {
-                    % for font in system_fonts:
-                        SystemFont::${to_camel_case(font)} => {
-                            LookAndFeel_FontID::${to_camel_case(font.replace("-moz-", ""))}
-                        }
-                    % endfor
-                };
-
-                let mut system = mem::MaybeUninit::<nsFont>::uninit();
-                let system = unsafe {
-                    bindings::Gecko_nsFont_InitSystem(
-                        system.as_mut_ptr(),
-                        id as i32,
-                        cx.style().get_font().gecko(),
-                        cx.device().document()
-                    );
-                    &mut *system.as_mut_ptr()
-                };
-                let font_weight = longhands::font_weight::computed_value::T::from_gecko_weight(system.weight);
-                let font_stretch = FontStretch(NonNegative(Percentage(unsafe {
-                    bindings::Gecko_FontStretch_ToFloat(system.stretch)
-                })));
-                let font_style = FontStyle::from_gecko(system.style);
-                let ret = ComputedSystemFont {
-                    font_family: FontFamily {
-                        families: FontFamilyList::SharedFontList(
-                            unsafe { system.fontlist.mFontlist.mBasePtr.to_safe() }
-                        ),
-                        is_system_font: true,
-                    },
-                    font_size: FontSize {
-                        size: NonNegative(cx.maybe_zoom_text(system.size.0)),
-                        keyword_info: KeywordInfo::none()
-                    },
-                    font_weight,
-                    font_stretch,
-                    font_style,
-                    font_size_adjust: longhands::font_size_adjust::computed_value
-                                               ::T::from_gecko_adjust(system.sizeAdjust),
-                    % for kwprop in kw_font_props:
-                        ${kwprop}: longhands::${kwprop}::computed_value::T::from_gecko_keyword(
-                            system.${to_camel_case_lower(kwprop.replace('font_', ''))}
-                            % if kwprop in kw_cast:
-                                as u32
-                            % endif
-                        ),
-                    % endfor
-                    font_language_override: longhands::font_language_override::computed_value
-                                                     ::T(system.languageOverride),
-                    font_feature_settings: longhands::font_feature_settings::get_initial_value(),
-                    font_variation_settings: longhands::font_variation_settings::get_initial_value(),
-                    font_variant_alternates: longhands::font_variant_alternates::get_initial_value(),
-                    system_font: *self,
-                    default_font_type: system.fontlist.mDefaultFontType,
-                };
-                unsafe { bindings::Gecko_nsFont_Destroy(system); }
-                ret
-            }
-
-            fn from_computed_value(_: &ComputedSystemFont) -> Self {
-                unreachable!()
-            }
-        }
-
-        #[inline]
-        
-        
-        
-        
-        pub fn resolve_system_font(system: SystemFont, context: &mut Context) {
-            
-            
-            
-            if Some(system) != context.cached_system_font.as_ref().map(|x| x.system_font) {
-                let computed = system.to_computed_value(context);
-                context.cached_system_font = Some(computed);
-            }
-        }
-
-        #[derive(Clone, Debug)]
-        pub struct ComputedSystemFont {
-            % for name in SYSTEM_FONT_LONGHANDS:
-                pub ${name}: longhands::${name}::computed_value::T,
-            % endfor
-            pub system_font: SystemFont,
-            pub default_font_type: GenericFontFamily,
-        }
-
-        impl SystemFont {
-            pub fn parse<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
-                try_match_ident_ignore_ascii_case! { input,
-                    % for font in system_fonts:
-                        "${font}" => Ok(SystemFont::${to_camel_case(font)}),
-                    % endfor
-                }
-            }
-        }
-
-        impl ToCss for SystemFont {
-            fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-                
-                
-                dest.write_str("-moz-use-system-font")
-            }
+    
+    
+    
+    
+    
+    impl PartialEq for ComputedSystemFont {
+        fn eq(&self, other: &Self) -> bool {
+            self.system_font == other.system_font
         }
     }
-% else:
-    pub mod system_font {
-        use cssparser::Parser;
+    impl Eq for ComputedSystemFont {}
 
-        
-        
-        
-
-        #[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
-        
-        pub enum SystemFont {}
-        impl SystemFont {
-            pub fn parse(_: &mut Parser) -> Result<Self, ()> {
-                Err(())
-            }
+    impl Hash for ComputedSystemFont {
+        fn hash<H: Hasher>(&self, hasher: &mut H) {
+            self.system_font.hash(hasher)
         }
     }
+
+    impl ToComputedValue for SystemFont {
+        type ComputedValue = ComputedSystemFont;
+
+        fn to_computed_value(&self, cx: &Context) -> Self::ComputedValue {
+            use crate::gecko_bindings::bindings;
+            use crate::gecko_bindings::structs::nsFont;
+            use std::mem;
+            use crate::values::computed::Percentage;
+            use crate::values::specified::font::KeywordInfo;
+            use crate::values::computed::font::{FontFamily, FontSize, FontStretch, FontStyle, FontFamilyList};
+            use crate::values::generics::NonNegative;
+
+            let mut system = mem::MaybeUninit::<nsFont>::uninit();
+            let system = unsafe {
+                bindings::Gecko_nsFont_InitSystem(
+                    system.as_mut_ptr(),
+                    *self,
+                    cx.style().get_font().gecko(),
+                    cx.device().document()
+                );
+                &mut *system.as_mut_ptr()
+            };
+            let font_weight = longhands::font_weight::computed_value::T::from_gecko_weight(system.weight);
+            let font_stretch = FontStretch(NonNegative(Percentage(unsafe {
+                bindings::Gecko_FontStretch_ToFloat(system.stretch)
+            })));
+            let font_style = FontStyle::from_gecko(system.style);
+            let ret = ComputedSystemFont {
+                font_family: FontFamily {
+                    families: FontFamilyList::SharedFontList(
+                        unsafe { system.fontlist.mFontlist.mBasePtr.to_safe() }
+                    ),
+                    is_system_font: true,
+                },
+                font_size: FontSize {
+                    size: NonNegative(cx.maybe_zoom_text(system.size.0)),
+                    keyword_info: KeywordInfo::none()
+                },
+                font_weight,
+                font_stretch,
+                font_style,
+                font_size_adjust: longhands::font_size_adjust::computed_value
+                                           ::T::from_gecko_adjust(system.sizeAdjust),
+                % for kwprop in kw_font_props:
+                    ${kwprop}: longhands::${kwprop}::computed_value::T::from_gecko_keyword(
+                        system.${to_camel_case_lower(kwprop.replace('font_', ''))}
+                        % if kwprop in kw_cast:
+                            as u32
+                        % endif
+                    ),
+                % endfor
+                font_language_override: longhands::font_language_override::computed_value
+                                                 ::T(system.languageOverride),
+                font_feature_settings: longhands::font_feature_settings::get_initial_value(),
+                font_variation_settings: longhands::font_variation_settings::get_initial_value(),
+                font_variant_alternates: longhands::font_variant_alternates::get_initial_value(),
+                system_font: *self,
+                default_font_type: system.fontlist.mDefaultFontType,
+            };
+            unsafe { bindings::Gecko_nsFont_Destroy(system); }
+            ret
+        }
+
+        fn from_computed_value(_: &ComputedSystemFont) -> Self {
+            unreachable!()
+        }
+    }
+
+    #[inline]
+    
+    
+    
+    
+    pub fn resolve_system_font(system: SystemFont, context: &mut Context) {
+        
+        
+        
+        if Some(system) != context.cached_system_font.as_ref().map(|x| x.system_font) {
+            let computed = system.to_computed_value(context);
+            context.cached_system_font = Some(computed);
+        }
+    }
+
+    #[derive(Clone, Debug)]
+    pub struct ComputedSystemFont {
+        % for name in SYSTEM_FONT_LONGHANDS:
+            pub ${name}: longhands::${name}::computed_value::T,
+        % endfor
+        pub system_font: SystemFont,
+        pub default_font_type: GenericFontFamily,
+    }
+
+}
 % endif
 
 ${helpers.single_keyword(

@@ -880,18 +880,18 @@ bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
                                   gfxFontStyle& aFontStyle) {
   switch (aID) {
     case FontID::Menu:          
-    case FontID::PullDownMenu:  
+    case FontID::MozPullDownMenu:  
       aFontName = mMenuFontName;
       aFontStyle = mMenuFontStyle;
       break;
 
-    case FontID::Field:  
-    case FontID::List:   
+    case FontID::MozField:  
+    case FontID::MozList:   
       aFontName = mFieldFontName;
       aFontStyle = mFieldFontStyle;
       break;
 
-    case FontID::Button:  
+    case FontID::MozButton:  
       aFontName = mButtonFontName;
       aFontStyle = mButtonFontStyle;
       break;
@@ -901,14 +901,12 @@ bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
     case FontID::MessageBox:    
     case FontID::SmallCaption:  
     case FontID::StatusBar:     
-    case FontID::Window:        
-    case FontID::Document:      
-    case FontID::Workspace:     
-    case FontID::Desktop:       
-    case FontID::Info:          
-    case FontID::Dialog:        
-    case FontID::Tooltips:      
-    case FontID::Widget:        
+    case FontID::MozWindow:     
+    case FontID::MozDocument:   
+    case FontID::MozWorkspace:  
+    case FontID::MozDesktop:    
+    case FontID::MozInfo:       
+    case FontID::MozDialog:     
     default:
       aFontName = mDefaultFontName;
       aFontStyle = mDefaultFontStyle;
