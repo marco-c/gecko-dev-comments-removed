@@ -6,13 +6,23 @@
 
 
 
+
+
+
 class PictureInPictureOverrides {
+  
+
+
+
   constructor(availableOverrides) {
     this.pref = "enable_picture_in_picture_overrides";
     this._prefEnabledOverrides = new Set();
     this._availableOverrides = availableOverrides;
     this.policies = browser.pictureInPictureChild.getPolicies();
   }
+
+  
+
 
   async _checkGlobalPref() {
     await browser.aboutConfigPipPrefs.getPref(this.pref).then(value => {
@@ -27,6 +37,11 @@ class PictureInPictureOverrides {
     });
   }
 
+  
+
+
+
+
   async _checkSpecificOverridePref(id, pref) {
     const isDisabled = await browser.aboutConfigPipPrefs.getPref(pref);
     if (isDisabled === true) {
@@ -35,6 +50,9 @@ class PictureInPictureOverrides {
       this._prefEnabledOverrides.add(id);
     }
   }
+
+  
+
 
   bootup() {
     const checkGlobal = async () => {
@@ -62,6 +80,9 @@ class PictureInPictureOverrides {
       this._onAvailableOverridesChanged();
     });
   }
+
+  
+
 
   async _onAvailableOverridesChanged() {
     const policies = await this.policies;

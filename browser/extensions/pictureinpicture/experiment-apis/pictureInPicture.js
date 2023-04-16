@@ -25,6 +25,12 @@ const TOGGLE_ENABLED_PREF =
 
 
 this.pictureInPictureParent = class extends ExtensionAPI {
+  
+
+
+
+
+
   getAPI(context) {
     return {
       pictureInPictureParent: {
@@ -52,6 +58,12 @@ this.pictureInPictureParent = class extends ExtensionAPI {
 
 
 this.pictureInPictureChild = class extends ExtensionAPI {
+  
+
+
+
+
+
   getAPI(context) {
     return {
       pictureInPictureChild: {
