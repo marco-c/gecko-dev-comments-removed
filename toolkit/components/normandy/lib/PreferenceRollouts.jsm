@@ -130,7 +130,7 @@ var PreferenceRollouts = {
   
   
   
-  GRADUATION_SET: new Set(),
+  GRADUATION_SET: new Set(["pref-webrender-intel-rollout-70-release"]),
 
   
 
