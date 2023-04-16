@@ -14,17 +14,12 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
 
+  AppInfo: "chrome://marionette/content/appinfo.js",
   browser: "chrome://marionette/content/browser.js",
   error: "chrome://marionette/content/error.js",
   evaluate: "chrome://marionette/content/evaluate.js",
   pprint: "chrome://marionette/content/format.js",
 });
-
-const isFennec = () => AppConstants.platform == "android";
-const isFirefox = () =>
-  Services.appinfo.ID == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}";
-const isThunderbird = () =>
-  Services.appinfo.ID == "{3550f703-e582-4d05-9a08-453d09bdfdc6}";
 
 
 
@@ -84,7 +79,11 @@ assert.session = function(session, msg = "") {
 
 assert.firefox = function(msg = "") {
   msg = msg || "Only supported in Firefox";
-  assert.that(isFirefox, msg, error.UnsupportedOperationError)();
+  assert.that(
+    isFirefox => isFirefox,
+    msg,
+    error.UnsupportedOperationError
+  )(AppInfo.isFirefox);
 };
 
 
@@ -99,10 +98,10 @@ assert.firefox = function(msg = "") {
 assert.desktop = function(msg = "") {
   msg = msg || "Only supported in desktop applications";
   assert.that(
-    obj => isFirefox(obj) || isThunderbird(obj),
+    isDesktop => isDesktop,
     msg,
     error.UnsupportedOperationError
-  )();
+  )(!AppInfo.isAndroid);
 };
 
 
@@ -114,9 +113,13 @@ assert.desktop = function(msg = "") {
 
 
 
-assert.fennec = function(msg = "") {
-  msg = msg || "Only supported in Fennec";
-  assert.that(isFennec, msg, error.UnsupportedOperationError)();
+assert.mobile = function(msg = "") {
+  msg = msg || "Only supported on Android";
+  assert.that(
+    isAndroid => isAndroid,
+    msg,
+    error.UnsupportedOperationError
+  )(AppInfo.isAndroid);
 };
 
 
