@@ -1,10 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/**
+ * UrlbarProviderTabToSearch
+ */
 
 .urlbarView-row[dynamicType=onboardTabToSearch] > .urlbarView-row-inner {
   min-height: 64px;
@@ -17,7 +17,7 @@
 }
 
 .urlbarView-row[dynamicType=onboardTabToSearch]:hover > .urlbarView-row-inner {
-  background: var(--arrowpanel-dimmed);
+  background-color: var(--arrowpanel-dimmed);
 }
 
 .urlbarView-row[dynamicType=onboardTabToSearch] > .urlbarView-row-inner[selected] {
@@ -26,11 +26,11 @@
   fill-opacity: 1;
 }
 
-
+/* Icon */
 .urlbarView-row[dynamicType=onboardTabToSearch] > .urlbarView-row-inner > .urlbarView-no-wrap > .urlbarView-favicon {
   min-width: 32px;
   height: 32px;
-  color: #0060df; 
+  color: #0060df; /* Blue-60 */
   stroke: #fff;
   -moz-context-properties: fill, stroke;
 }
@@ -41,7 +41,7 @@
 }
 
 :root[lwt-toolbar-field-brighttext] .urlbarView-row[dynamicType=onboardTabToSearch] > .urlbarView-row-inner:not([selected]) > .urlbarView-no-wrap > .urlbarView-favicon {
-  color: #0a84ff; 
+  color: #0a84ff; /* Blue-50 */
 }
 
 :root[lwt-toolbar-field-brighttext] .urlbarView-row[dynamicType=onboardTabToSearch] > .urlbarView-row-inner[selected] > .urlbarView-no-wrap > .urlbarView-favicon {
@@ -53,7 +53,7 @@
   flex-direction: column;
 }
 
-
+/* First row of text. */
 .urlbarView-dynamic-onboardTabToSearch-first-row-container {
   display: flex;
   align-items: end;
@@ -79,7 +79,7 @@
   }
 }
 
-
+/* Description text. */
 .urlbarView-dynamic-onboardTabToSearch-description {
   margin-block-start: 2px;
 }
