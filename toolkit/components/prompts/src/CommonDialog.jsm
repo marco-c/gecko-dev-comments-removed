@@ -40,8 +40,6 @@ CommonDialog.prototype = {
 
 
   async onLoad(commonDialogEl = null) {
-    let isEmbedded = !!commonDialogEl?.ownerGlobal.docShell.chromeEventHandler;
-
     switch (this.args.promptType) {
       case "alert":
       case "alertCheck":
@@ -134,7 +132,11 @@ CommonDialog.prototype = {
     
     
     infoTitle.hidden =
-      isOldContentPrompt || !(AppConstants.platform === "macosx" || isEmbedded);
+      isOldContentPrompt ||
+      !(
+        AppConstants.platform === "macosx" ||
+        commonDialogEl?.ownerGlobal.docShell.chromeEventHandler
+      );
 
     if (commonDialogEl) {
       commonDialogEl.ownerDocument.title = title;
@@ -210,6 +212,8 @@ CommonDialog.prototype = {
       button.setAttribute("default", "true");
     }
 
+    let isEmbedded =
+      commonDialogEl && this.ui.prompt.docShell.chromeEventHandler;
     if (!isEmbedded && !this.ui.promptContainer?.hidden) {
       
       
