@@ -2,7 +2,7 @@
 % License, v. 2.0. If a copy of the MPL was not distributed with this
 % file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
+/* These styles are intended to mimic XUL trees and the XUL search box. */
 
 html {
   height: 100%;
@@ -18,21 +18,21 @@ body {
   user-select: none;
 }
 
-
-
-
+/* The content-container holds the non-scrollable header and the scrollable
+   content area.
+*/
 .content-container {
   display: flex;
   flex-flow: column;
   height: 100%;
 }
 
-
+/* The content header is not scrollable */
 .content-header {
   flex: 0 1 auto;
 }
 
-
+/* The main content area is scrollable and fills the rest of the area */
 .content-scrollable {
   flex: 1 1 auto;
   overflow: auto;
@@ -132,7 +132,7 @@ body {
 }
 
 .item.tab > .item-title-container > .item-icon-container {
-  background-image: url("chrome://mozapps/skin/places/defaultFavicon.svg");
+  background-image: url("chrome://global/skin/icons/defaultFavicon.svg");
   -moz-context-properties: fill;
   fill: currentColor;
 }
@@ -284,7 +284,7 @@ body[lwt-sidebar] .deck .instructions {
   flex-grow: 1;
 }
 
-
+/* Themed sidebars */
 
 body[lwt-sidebar] {
   background-color: var(--lwt-sidebar-background-color);
@@ -310,7 +310,7 @@ body[lwt-sidebar-highlight] .item.selected:focus > .item-title-container {
   color: var(--lwt-sidebar-highlight-text-color);
 }
 
-
+/* Apply crisp rendering for favicons at exactly 2dppx resolution */
 @media (resolution: 2dppx) {
   .tabs-container .item-tabs-list .item-icon-container {
     image-rendering: -moz-crisp-edges;

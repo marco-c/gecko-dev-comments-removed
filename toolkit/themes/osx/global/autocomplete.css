@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 @namespace html url("http://www.w3.org/1999/xhtml");
@@ -9,7 +9,7 @@ html|input[nomatch="true"][highlightnonmatches="true"] {
   color: red;
 }
 
-
+/* ::::: autocomplete popups ::::: */
 
 panel[type="autocomplete-richlistbox"] {
   padding: 0px !important;
@@ -19,7 +19,7 @@ panel[type="autocomplete-richlistbox"] {
   appearance: none;
 }
 
-
+/* ::::: richlistbox autocomplete ::::: */
 
 .autocomplete-richlistbox {
   appearance: none;
@@ -44,7 +44,7 @@ panel[type="autocomplete-richlistbox"] {
   max-height: 16px;
   margin-inline-start: 6px;
   margin-inline-end: 8px;
-  list-style-image: url("chrome://mozapps/skin/places/defaultFavicon.svg");
+  list-style-image: url("chrome://global/skin/icons/defaultFavicon.svg");
   -moz-context-properties: fill;
   fill: currentColor;
 }
@@ -64,7 +64,7 @@ panel[type="autocomplete-richlistbox"] {
   display: none;
 }
 
-
+/* Better align the URL with the title. */
 .ac-separator,
 .ac-url {
   margin-bottom: -2px;
