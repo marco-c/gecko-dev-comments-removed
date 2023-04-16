@@ -1093,12 +1093,17 @@ static already_AddRefed<gl::GLContext> CreateGLContextANGLE(
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WAYLAND)
 static already_AddRefed<gl::GLContext> CreateGLContextEGL() {
   
+  bool forHardwareWebRender = true;
+  
+  if (gfx::gfxVars::UseSoftwareWebRender()) {
+    forHardwareWebRender = false;
+  }
   RefPtr<gl::GLContext> gl =
       gl::GLContextProviderEGL::CreateForCompositorWidget(
-          nullptr,  true,  true);
+          nullptr, forHardwareWebRender,  true);
   if (!gl || !gl->MakeCurrent()) {
-    gfxCriticalNote << "Failed GL context creation for WebRender: "
-                    << gfx::hexa(gl.get());
+    gfxCriticalNote << "Failed GL context creation for hardware WebRender: "
+                    << forHardwareWebRender;
     return nullptr;
   }
   return gl.forget();
