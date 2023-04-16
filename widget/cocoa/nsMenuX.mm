@@ -675,6 +675,26 @@ void nsMenuX::IconUpdated() {
   }
 }
 
+NSInteger nsMenuX::CalculateNativeInsertionPoint(nsMenuX* aChild) {
+  NSInteger insertionPoint = 0;
+  for (auto& currItem : mMenuChildren) {
+    
+    if (currItem.is<RefPtr<nsMenuX>>() && currItem.as<RefPtr<nsMenuX>>() == aChild) {
+      return insertionPoint;
+    }
+    NSMenuItem* nativeItem = currItem.match(
+        [](const RefPtr<nsMenuX>& aMenu) { return aMenu->NativeNSMenuItem(); },
+        [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->NativeNSMenuItem(); });
+    
+    
+    
+    if (nativeItem.menu) {
+      insertionPoint++;
+    }
+  }
+  return insertionPoint;
+}
+
 void nsMenuX::Dump(uint32_t aIndent) const {
   printf("%*s - menu [%p] %-16s <%s>", aIndent * 2, "", this,
          mLabel.IsEmpty() ? "(empty label)" : NS_ConvertUTF16toUTF8(mLabel).get(),

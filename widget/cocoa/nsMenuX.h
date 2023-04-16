@@ -88,6 +88,10 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   NSMenuItem* NativeNSMenuItem() { return mNativeMenuItem; }
   GeckoNSMenu* NativeNSMenu() { return mNativeMenu; }
 
+  
+  
+  NSInteger CalculateNativeInsertionPoint(nsMenuX* aChild);
+
   void Dump(uint32_t aIndent) const;
 
   static bool IsXULHelpMenu(nsIContent* aMenuContent);
