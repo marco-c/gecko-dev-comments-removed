@@ -560,6 +560,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
     
     
     SideBits mFixedPosSides = SideBits::eNone;
+    
+    
+    bool mHitOverscrollGutter = false;
 
     HitTestResult() = default;
     
@@ -697,7 +700,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
     
     
-    APZEventResult Finish() const;
+    APZEventResult Finish();
   };
 
   void ProcessTouchInput(InputHandlingState& aState, MultiTouchInput& aInput);
