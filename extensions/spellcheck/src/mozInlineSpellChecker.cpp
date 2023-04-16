@@ -104,17 +104,23 @@ mozInlineSpellStatus::mozInlineSpellStatus(mozInlineSpellChecker* aSpellChecker)
 
 
 
-nsresult mozInlineSpellStatus::InitForEditorChange(
-    EditSubAction aEditSubAction, nsINode* aAnchorNode, uint32_t aAnchorOffset,
-    nsINode* aPreviousNode, uint32_t aPreviousOffset, nsINode* aStartNode,
-    uint32_t aStartOffset, nsINode* aEndNode, uint32_t aEndOffset) {
+
+nsresult mozInlineSpellStatus::CreateForEditorChange(
+    mozilla::UniquePtr<mozInlineSpellStatus>& aStatus,
+    mozInlineSpellChecker& aSpellChecker, EditSubAction aEditSubAction,
+    nsINode* aAnchorNode, uint32_t aAnchorOffset, nsINode* aPreviousNode,
+    uint32_t aPreviousOffset, nsINode* aStartNode, uint32_t aStartOffset,
+    nsINode* aEndNode, uint32_t aEndOffset) {
   if (NS_WARN_IF(!aAnchorNode) || NS_WARN_IF(!aPreviousNode)) {
     return NS_ERROR_FAILURE;
   }
 
+  aStatus = MakeUnique<mozInlineSpellStatus>(&aSpellChecker);
+
   
-  mAnchorRange = PositionToCollapsedRange(aAnchorNode, aAnchorOffset);
-  if (NS_WARN_IF(!mAnchorRange)) {
+  aStatus->mAnchorRange =
+      aStatus->PositionToCollapsedRange(aAnchorNode, aAnchorOffset);
+  if (NS_WARN_IF(!aStatus->mAnchorRange)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -129,35 +135,35 @@ nsresult mozInlineSpellStatus::InitForEditorChange(
     
     
     
-    mOp = eOpChangeDelete;
-    mRange = nullptr;
+    aStatus->mOp = eOpChangeDelete;
+    aStatus->mRange = nullptr;
     return NS_OK;
   }
 
-  mOp = eOpChange;
+  aStatus->mOp = eOpChange;
 
   
-  mRange = nsRange::Create(aPreviousNode);
+  aStatus->mRange = nsRange::Create(aPreviousNode);
 
   
   ErrorResult errorResult;
-  int16_t cmpResult =
-      mAnchorRange->ComparePoint(*aPreviousNode, aPreviousOffset, errorResult);
+  int16_t cmpResult = aStatus->mAnchorRange->ComparePoint(
+      *aPreviousNode, aPreviousOffset, errorResult);
   if (NS_WARN_IF(errorResult.Failed())) {
     return errorResult.StealNSResult();
   }
   nsresult rv;
   if (cmpResult < 0) {
     
-    rv = mRange->SetStartAndEnd(aPreviousNode, aPreviousOffset, aAnchorNode,
-                                aAnchorOffset);
+    rv = aStatus->mRange->SetStartAndEnd(aPreviousNode, aPreviousOffset,
+                                         aAnchorNode, aAnchorOffset);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
   } else {
     
-    rv = mRange->SetStartAndEnd(aAnchorNode, aAnchorOffset, aPreviousNode,
-                                aPreviousOffset);
+    rv = aStatus->mRange->SetStartAndEnd(aAnchorNode, aAnchorOffset,
+                                         aPreviousNode, aPreviousOffset);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -166,26 +172,28 @@ nsresult mozInlineSpellStatus::InitForEditorChange(
   
   
   if (aEditSubAction == EditSubAction::eInsertText) {
-    mCreatedRange = mRange;
+    aStatus->mCreatedRange = aStatus->mRange;
   }
 
   
   if (aStartNode && aEndNode) {
-    cmpResult = mRange->ComparePoint(*aStartNode, aStartOffset, errorResult);
+    cmpResult =
+        aStatus->mRange->ComparePoint(*aStartNode, aStartOffset, errorResult);
     if (NS_WARN_IF(errorResult.Failed())) {
       return errorResult.StealNSResult();
     }
     if (cmpResult < 0) {  
-      rv = mRange->SetStart(aStartNode, aStartOffset);
+      rv = aStatus->mRange->SetStart(aStartNode, aStartOffset);
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    cmpResult = mRange->ComparePoint(*aEndNode, aEndOffset, errorResult);
+    cmpResult =
+        aStatus->mRange->ComparePoint(*aEndNode, aEndOffset, errorResult);
     if (NS_WARN_IF(errorResult.Failed())) {
       return errorResult.StealNSResult();
     }
     if (cmpResult > 0) {  
-      rv = mRange->SetEnd(aEndNode, aEndOffset);
+      rv = aStatus->mRange->SetEnd(aEndNode, aEndOffset);
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }
@@ -798,11 +806,11 @@ nsresult mozInlineSpellChecker::SpellCheckAfterEditorChange(
   mNeedsCheckAfterNavigation = true;
 
   
-  auto status = MakeUnique<mozInlineSpellStatus>(this);
-  rv = status->InitForEditorChange(
-      aEditSubAction, aSelection.GetAnchorNode(), aSelection.AnchorOffset(),
-      aPreviousSelectedNode, aPreviousSelectedOffset, aStartNode, aStartOffset,
-      aEndNode, aEndOffset);
+  UniquePtr<mozInlineSpellStatus> status;
+  rv = mozInlineSpellStatus::CreateForEditorChange(
+      status, *this, aEditSubAction, aSelection.GetAnchorNode(),
+      aSelection.AnchorOffset(), aPreviousSelectedNode, aPreviousSelectedOffset,
+      aStartNode, aStartOffset, aEndNode, aEndOffset);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = ScheduleSpellCheck(std::move(status));
   NS_ENSURE_SUCCESS(rv, rv);
