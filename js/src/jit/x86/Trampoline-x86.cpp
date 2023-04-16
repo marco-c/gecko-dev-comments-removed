@@ -141,6 +141,10 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   }
 
   
+  masm.subl(esp, esi);
+  masm.makeFrameDescriptor(esi, FrameType::CppToJSJit, JitFrameLayout::Size());
+
+  
   
   
   masm.mov(Operand(ebp, ARG_RESULT), eax);
@@ -155,11 +159,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.loadPtr(Address(ebp, ARG_STACKFRAME), OsrFrameReg);
 
   
-
-
-  
-  masm.subl(esp, esi);
-  masm.makeFrameDescriptor(esi, FrameType::CppToJSJit, JitFrameLayout::Size());
   masm.push(esi);
 
   CodeLabel returnLabel;
@@ -287,6 +286,8 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   
   masm.pop(eax);
   masm.shrl(Imm32(FRAMESIZE_SHIFT), eax);  
+  masm.pop(ebx);                           
+  masm.pop(ebx);                           
   masm.addl(eax, esp);
 
   

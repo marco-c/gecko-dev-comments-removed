@@ -169,6 +169,12 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.checkStackAlignment();
 
   
+  masm.subStackPtrFrom(r19);
+
+  
+  masm.makeFrameDescriptor(r19, FrameType::CppToJSJit, JitFrameLayout::Size());
+
+  
   
   
   {
@@ -181,10 +187,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.checkStackAlignment();
 
   
-  masm.subStackPtrFrom(r19);
-
-  
-  masm.makeFrameDescriptor(r19, FrameType::CppToJSJit, JitFrameLayout::Size());
   masm.Push(r19);
 
   Label osrReturnPoint;
@@ -268,10 +270,13 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   
   masm.bind(&osrReturnPoint);
 
+  masm.Pop(r19);       
+  masm.pop(r24, r23);  
+
   
-  masm.Pop(r19);
   masm.Add(masm.GetStackPointer64(), masm.GetStackPointer64(),
            Operand(x19, vixl::LSR, FRAMESIZE_SHIFT));
+
   masm.syncStackPtr();
   masm.SetStackPointer64(sp);
 

@@ -224,13 +224,15 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   }
   masm.bind(&footer);
 
+  
+  masm.subPtr(StackPointer, s4);
+  masm.makeFrameDescriptor(s4, FrameType::CppToJSJit, JitFrameLayout::Size());
+
   masm.subPtr(Imm32(2 * sizeof(uintptr_t)), StackPointer);
   masm.storePtr(s3,
                 Address(StackPointer, sizeof(uintptr_t)));  
   masm.storePtr(reg_token, Address(StackPointer, 0));       
 
-  masm.subPtr(StackPointer, s4);
-  masm.makeFrameDescriptor(s4, FrameType::CppToJSJit, JitFrameLayout::Size());
   masm.push(s4);  
 
   CodeLabel returnLabel;
@@ -358,9 +360,13 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   }
 
   
-  
   masm.pop(s0);
   masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), s0);
+
+  
+  masm.addPtr(Imm32(2 * sizeof(uintptr_t)), StackPointer);
+
+  
   masm.addPtr(s0, StackPointer);
 
   

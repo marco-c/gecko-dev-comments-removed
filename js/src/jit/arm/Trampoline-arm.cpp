@@ -173,8 +173,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
       sizeof(JitFrameLayout) % JitStackAlignment == 0,
       "No need to consider the JitFrameLayout for aligning the stack");
   
-  
-  aasm->as_sub(sp, r4, Imm8(sizeof(JitFrameLayout)));
+  masm.movePtr(r4, sp);
 
   
   
@@ -201,8 +200,11 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.bind(&footer);
   }
 
+  
   masm.ma_sub(r8, sp, r8);
   masm.makeFrameDescriptor(r8, FrameType::CppToJSJit, JitFrameLayout::Size());
+
+  aasm->as_sub(sp, sp, Imm8(sizeof(JitFrameLayout)));
 
   masm.startDataTransferM(IsStore, sp, IB, NoWriteBack);
   
@@ -343,12 +345,12 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.bind(&returnLabel);
 
   
-  
-  
-  aasm->as_sub(sp, sp, Imm8(4));
+  masm.pop(r5);
 
   
-  masm.loadPtr(Address(sp, JitFrameLayout::offsetOfDescriptor()), r5);
+  masm.addPtr(Imm32(2 * sizeof(uintptr_t)), sp);
+
+  
   aasm->as_add(sp, sp, lsr(r5, FRAMESIZE_SHIFT));
 
   
