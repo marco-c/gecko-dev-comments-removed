@@ -1014,6 +1014,21 @@ void js::gc::PerformIncrementalBarrier(TenuredCell* cell) {
   trc->performBarrier(JS::GCCellPtr(cell, cell->getTraceKind()));
 }
 
+void js::gc::PerformIncrementalBarrierDuringFlattening(JSString* str) {
+  TenuredCell* cell = &str->asTenured();
+
+  
+  
+  
+  
+  if (str->isRope()) {
+    cell->markBlack();
+    return;
+  }
+
+  PerformIncrementalBarrier(cell);
+}
+
 template <typename T>
 void js::GCMarker::markAndTraverse(T* thing) {
   if (thing->isPermanentAndMayBeShared()) {

@@ -55,6 +55,7 @@ class StoreBuffer;
 class TenuredCell;
 
 extern void PerformIncrementalBarrier(TenuredCell* cell);
+extern void PerformIncrementalBarrierDuringFlattening(JSString* str);
 extern void UnmarkGrayGCThingRecursively(TenuredCell* cell);
 
 
