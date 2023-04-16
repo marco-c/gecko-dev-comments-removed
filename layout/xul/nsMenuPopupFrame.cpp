@@ -958,6 +958,17 @@ void nsMenuPopupFrame::InitializePopupAtRect(nsIContent* aTriggerContent,
 
 void nsMenuPopupFrame::ShowNativeMenu() {
   MOZ_RELEASE_ASSERT(mNativeMenu);
+
+  
+  
+  
+  EventStateManager* activeESM = static_cast<EventStateManager*>(
+      EventStateManager::GetActiveEventStateManager());
+  if (activeESM) {
+    EventStateManager::ClearGlobalActiveContent(activeESM);
+  }
+  PresShell::ReleaseCapturingContent();
+
   bool succeeded = mNativeMenu->ShowAsContextMenu(
       DesktopPoint::FromUnknownPoint(mScreenRect.TopLeft()));
   if (!succeeded) {
