@@ -1245,6 +1245,10 @@ void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
       if (presShell) {
         presShell->Thaw(false);
       }
+
+      if (inner) {
+        inner->FireDelayedDOMEvents(false);
+      }
     }
   } else if (!mFiredUnloadEvent) {
     
@@ -7878,7 +7882,7 @@ nsresult nsDocShell::RestoreFromHistory() {
     presShell->Thaw();
   }
 
-  return privWin->FireDelayedDOMEvents();
+  return privWin->FireDelayedDOMEvents(true);
 }
 
 nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,

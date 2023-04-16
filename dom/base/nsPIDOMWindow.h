@@ -418,7 +418,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   
   
-  virtual nsresult FireDelayedDOMEvents() = 0;
+  virtual nsresult FireDelayedDOMEvents(bool aIncludeSubWindows) = 0;
 
   
 
@@ -873,7 +873,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   
   
-  virtual nsresult FireDelayedDOMEvents() = 0;
+  virtual nsresult FireDelayedDOMEvents(bool aIncludeSubWindows) = 0;
 
   
 
