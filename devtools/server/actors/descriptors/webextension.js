@@ -122,6 +122,14 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
         { addonId: this.addonId }
       );
 
+      
+      
+      if (!this._form) {
+        throw new Error(
+          "browser element destroyed while connecting to it: " + this.addon.name
+        );
+      }
+
       this._childActorID = this._form.actor;
 
       
