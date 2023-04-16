@@ -32,9 +32,6 @@ class Event;
 
 class mozInlineSpellStatus {
  public:
-  
-  explicit mozInlineSpellStatus(mozInlineSpellChecker* aSpellChecker);
-
   static mozilla::Result<mozilla::UniquePtr<mozInlineSpellStatus>, nsresult>
   CreateForEditorChange(mozInlineSpellChecker& aSpellChecker,
                         mozilla::EditSubAction aEditSubAction,
@@ -86,6 +83,9 @@ class mozInlineSpellStatus {
   const nsRange* GetNoCheckRange() const { return mNoCheckRange; }
 
  private:
+  
+  explicit mozInlineSpellStatus(mozInlineSpellChecker* aSpellChecker);
+
   
   Operation mOp;
 
