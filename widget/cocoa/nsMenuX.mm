@@ -94,12 +94,6 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsI
   NS_ASSERTION(mMenuGroupOwner, "No menu owner given, must have one");
   mMenuGroupOwner->RegisterForContentChanges(mContent, this);
 
-  if (mParent) {
-    
-    nsMenuParentTypeX parentType = mParent->MenuParentType();
-    MOZ_RELEASE_ASSERT(parentType == eMenuBarParentType || parentType == eSubmenuParentType);
-  }
-
   if (nsMenuUtilsX::NodeIsHiddenOrCollapsed(mContent)) {
     mVisible = false;
   }
