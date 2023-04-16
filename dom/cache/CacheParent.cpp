@@ -57,8 +57,10 @@ mozilla::ipc::IPCResult CacheParent::RecvPCacheOpConstructor(
 }
 
 mozilla::ipc::IPCResult CacheParent::RecvTeardown() {
-  
-  QM_WARNONLY_TRY(OkIf(Send__delete__(this)));
+  if (!Send__delete__(this)) {
+    
+    NS_WARNING("Cache failed to send delete.");
+  }
   return IPC_OK();
 }
 

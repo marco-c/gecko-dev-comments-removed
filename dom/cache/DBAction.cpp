@@ -172,13 +172,12 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> OpenDBConnection(
 
   CACHE_TRY_UNWRAP(
       auto conn,
-      QM_OR_ELSE_WARN(
-          MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<mozIStorageConnection>,
-                                     storageService, OpenDatabaseWithFileURL,
-                                     dbFileUrl, ""_ns),
-          ([&aQuotaInfo, &aDBFile, &storageService,
-            &dbFileUrl](const nsresult rv)
-               -> Result<nsCOMPtr<mozIStorageConnection>, nsresult> {
+      MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<mozIStorageConnection>,
+                                 storageService, OpenDatabaseWithFileURL,
+                                 dbFileUrl, ""_ns)
+          .orElse([&aQuotaInfo, &aDBFile, &storageService,
+                   &dbFileUrl](const nsresult rv)
+                      -> Result<nsCOMPtr<mozIStorageConnection>, nsresult> {
             if (IsDatabaseCorruptionError(rv)) {
               NS_WARNING(
                   "Cache database corrupted. Recreating empty database.");
@@ -192,7 +191,7 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> OpenDBConnection(
                   OpenDatabaseWithFileURL, dbFileUrl, ""_ns));
             }
             return Err(rv);
-          })));
+          }));
 
   
   CACHE_TRY_INSPECT(const int32_t& schemaVersion,

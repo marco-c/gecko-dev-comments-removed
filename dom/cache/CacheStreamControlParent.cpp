@@ -145,9 +145,11 @@ void CacheStreamControlParent::CloseAll() {
 
 void CacheStreamControlParent::Shutdown() {
   NS_ASSERT_OWNINGTHREAD(CacheStreamControlParent);
-
-  
-  QM_WARNONLY_TRY(OkIf(Send__delete__(this)));
+  if (!Send__delete__(this)) {
+    
+    NS_WARNING("Cache failed to delete stream actor.");
+    return;
+  }
 }
 
 void CacheStreamControlParent::NotifyCloseAll() {
