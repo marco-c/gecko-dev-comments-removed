@@ -223,9 +223,6 @@ var whitelist = [
   },
 
   
-  { file: "resource://app/localization/en-US/browser/screenshots.ftl" },
-
-  
   { file: "resource://gre/modules/RustFxAccount.js" },
 
   
