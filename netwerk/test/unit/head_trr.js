@@ -271,13 +271,7 @@ function trrQueryHandler(req, resp, url) {
       ] || {};
 
     let flags = global.dnsPacket.RECURSION_DESIRED;
-    if (
-      (!response.answers || !response.answers.length) &&
-      response.additionals &&
-      response.additionals.length > 0
-    ) {
-      flags |= global.dnsPacket.rcodes.toRcode("SERVFAIL");
-    }
+    flags |= response.flags || 0;
     let buf = global.dnsPacket.encode({
       type: "response",
       id: dnsQuery.id,
@@ -287,25 +281,39 @@ function trrQueryHandler(req, resp, url) {
       additionals: response.additionals || [],
     });
 
-    let writeResponse = (resp, buf) => {
-      resp.setHeader("Content-Length", buf.length);
-      resp.writeHead(200, { "Content-Type": "application/dns-message" });
-      resp.write(buf);
-      resp.end("");
+    let writeResponse = (resp, buf, context) => {
+      try {
+        if (context.error) {
+          
+          if (context.error < 600) {
+            resp.writeHead(context.error);
+            resp.end("Intentional error");
+            return;
+          }
+
+          
+          req.stream.session.close();
+          return;
+        }
+        resp.setHeader("Content-Length", buf.length);
+        resp.writeHead(200, { "Content-Type": "application/dns-message" });
+        resp.write(buf);
+        resp.end("");
+      } catch (e) {}
     };
 
     if (response.delay) {
       setTimeout(
         arg => {
-          writeResponse(arg[0], arg[1]);
+          writeResponse(arg[0], arg[1], arg[2]);
         },
         response.delay,
-        [resp, buf]
+        [resp, buf, response]
       );
       return;
     }
 
-    writeResponse(resp, buf);
+    writeResponse(resp, buf, response);
   }
 }
 
@@ -344,6 +352,8 @@ class TRRServer {
     );
   }
 
+  
+  
   
   
   
