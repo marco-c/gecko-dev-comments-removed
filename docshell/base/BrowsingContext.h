@@ -464,8 +464,38 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   
-  void PreOrderWalk(const std::function<void(BrowsingContext*)>& aCallback);
+  enum class WalkFlag {
+    Next,
+    Skip,
+    Stop,
+  };
+
+  
+
+
+
+
+
+
+
+
+
+  template <typename F>
+  void PreOrderWalk(F&& aCallback) {
+    if constexpr (std::is_void_v<
+                      typename std::invoke_result_t<F, BrowsingContext*>>) {
+      PreOrderWalkVoid(std::forward<F>(aCallback));
+    } else {
+      PreOrderWalkFlag(std::forward<F>(aCallback));
+    }
+  }
+
+  void PreOrderWalkVoid(const std::function<void(BrowsingContext*)>& aCallback);
+  WalkFlag PreOrderWalkFlag(
+      const std::function<WalkFlag(BrowsingContext*)>& aCallback);
+
   void PostOrderWalk(const std::function<void(BrowsingContext*)>& aCallback);
+
   void GetAllBrowsingContextsInSubtree(
       nsTArray<RefPtr<BrowsingContext>>& aBrowsingContexts);
 
