@@ -679,10 +679,10 @@ class PresShell final : public nsStubDocumentObserver,
 
   bool IsPaintingSuppressed() const { return mPaintingSuppressed; }
 
+  
+
+
   void UnsuppressPainting();
-  void UnsuppressPaintingFromTimer();
-  void InitPaintSuppressionTimer();
-  void CancelPaintSuppressionTimer();
 
   
 
@@ -2721,6 +2721,9 @@ class PresShell final : public nsStubDocumentObserver,
   nscolor GetDefaultBackgroundColorToDraw();
 
   
+  static void sPaintSuppressionCallback(nsITimer* aTimer, void* aPresShell);
+
+  
   
   
 
@@ -2988,9 +2991,6 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   RenderingStateFlags mRenderingStateFlags;
-
-  
-  int32_t mPaintSuppressionAttempts = 0;
 
   
   
