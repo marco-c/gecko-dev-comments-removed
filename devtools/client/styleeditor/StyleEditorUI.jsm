@@ -1185,6 +1185,7 @@ StyleEditorUI.prototype = {
   },
 
   async _onResourceAvailable(resources) {
+    const promises = [];
     for (const resource of resources) {
       if (
         resource.resourceType === this._toolbox.resourceWatcher.TYPES.STYLESHEET
@@ -1195,8 +1196,7 @@ StyleEditorUI.prototype = {
           
           this._loadingStyleSheets.push(onStyleSheetHandled);
         }
-
-        await onStyleSheetHandled;
+        promises.push(onStyleSheetHandled);
         continue;
       }
 
@@ -1211,12 +1211,23 @@ StyleEditorUI.prototype = {
         
         
         
+        
+        
+        
+        
+        
+        
+        if (resource.shouldBeIgnoredAsRedundantWithTargetAvailable) {
+          continue;
+        }
+
         this._startLoadingStyleSheets();
         this._clear();
       } else if (resource.name === "dom-complete") {
-        await this._waitForLoadingStyleSheets();
+        promises.push(this._waitForLoadingStyleSheets());
       }
     }
+    await Promise.all(promises);
   },
 
   async _onResourceUpdated(updates) {
@@ -1254,6 +1265,8 @@ StyleEditorUI.prototype = {
 
   async _onTargetAvailable({ targetFront }) {
     if (targetFront.isTopLevel) {
+      this._startLoadingStyleSheets();
+      this._clear();
       await this.initializeHighlighter(targetFront);
     }
   },
