@@ -92,9 +92,7 @@ class AboutNewTabChild extends JSWindowActorChild {
         this.sendAsyncMessage("DefaultBrowserNotification");
 
         
-        newtabExperimentFeature
-          .ready()
-          .then(() => newtabExperimentFeature.recordExposureEvent());
+        newtabExperimentFeature.recordExposureEvent();
       }
     }
   }
