@@ -144,7 +144,9 @@ class TargetCommand extends EventEmitter {
       for (const target of this._targets) {
         
         const isDestroyedTargetSwitching = target == this.targetFront;
-        this._onTargetDestroyed(target, isDestroyedTargetSwitching);
+        this._onTargetDestroyed(target, {
+          isTargetSwitching: isDestroyedTargetSwitching,
+        });
       }
       
       
@@ -190,7 +192,39 @@ class TargetCommand extends EventEmitter {
     this.emitForTests("processed-available-target", targetFront);
   }
 
-  _onTargetDestroyed(targetFront, isTargetSwitching = false) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _onTargetDestroyed(
+    targetFront,
+    { isTargetSwitching = false, shouldDestroyTargetFront = true } = {}
+  ) {
     
     
     
@@ -203,6 +237,10 @@ class TargetCommand extends EventEmitter {
       isTargetSwitching,
     });
     this._targets.delete(targetFront);
+
+    if (shouldDestroyTargetFront) {
+      targetFront.destroy();
+    }
   }
 
   _setListening(type, value) {
