@@ -207,7 +207,7 @@ static void ReportCount(const nsCString& aBasePath, const char* aPathTail,
 
 static void CollectWindowReports(nsGlobalWindowInner* aWindow,
                                  nsWindowSizes* aWindowTotalSizes,
-                                 nsTHashtable<nsUint64HashKey>* aGhostWindowIDs,
+                                 nsTHashSet<uint64_t>* aGhostWindowIDs,
                                  WindowPaths* aWindowPaths,
                                  WindowPaths* aTopWindowPaths,
                                  nsIHandleReportCallback* aHandleReport,
@@ -504,17 +504,11 @@ nsWindowMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 
   
   
-  nsTHashtable<nsUint64HashKey> ghostWindows;
+  nsTHashSet<uint64_t> ghostWindows;
   CheckForGhostWindows(&ghostWindows);
-  for (auto iter = ghostWindows.ConstIter(); !iter.Done(); iter.Next()) {
-    nsGlobalWindowInner::InnerWindowByIdTable* windowsById =
-        nsGlobalWindowInner::GetWindowsTable();
-    if (!windowsById) {
-      NS_WARNING("Couldn't get window-by-id hashtable?");
-      continue;
-    }
 
-    nsGlobalWindowInner* window = windowsById->Get(iter.Get()->GetKey());
+  for (const auto& key : ghostWindows) {
+    nsGlobalWindowInner* window = windowsById->Get(key);
     if (!window) {
       NS_WARNING("Could not look up window?");
       continue;
@@ -787,7 +781,7 @@ void nsWindowMemoryReporter::ObserveAfterMinimizeMemoryUsage() {
 
 
 void nsWindowMemoryReporter::CheckForGhostWindows(
-    nsTHashtable<nsUint64HashKey>* aOutGhostIDs ) {
+    nsTHashSet<uint64_t>* aOutGhostIDs ) {
   nsGlobalWindowInner::InnerWindowByIdTable* windowsById =
       nsGlobalWindowInner::GetWindowsTable();
   if (!windowsById) {
@@ -798,8 +792,7 @@ void nsWindowMemoryReporter::CheckForGhostWindows(
   mLastCheckForGhostWindows = TimeStamp::NowLoRes();
   KillCheckTimer();
 
-  nsTHashtable<nsPtrHashKey<BrowsingContextGroup>>
-      nonDetachedBrowsingContextGroups;
+  nsTHashSet<BrowsingContextGroup*> nonDetachedBrowsingContextGroups;
 
   
   for (const auto& entry : *windowsById) {
@@ -813,8 +806,7 @@ void nsWindowMemoryReporter::CheckForGhostWindows(
       continue;
     }
 
-    nonDetachedBrowsingContextGroups.PutEntry(
-        window->GetBrowsingContextGroup());
+    nonDetachedBrowsingContextGroups.Insert(window->GetBrowsingContextGroup());
   }
 
   
@@ -852,7 +844,7 @@ void nsWindowMemoryReporter::CheckForGhostWindows(
     BrowsingContextGroup* browsingContextGroup =
         window->GetBrowsingContextGroup();
     if (browsingContextGroup &&
-        nonDetachedBrowsingContextGroups.GetEntry(browsingContextGroup)) {
+        nonDetachedBrowsingContextGroups.Contains(browsingContextGroup)) {
       
       
       timeStamp = TimeStamp();
@@ -867,7 +859,7 @@ void nsWindowMemoryReporter::CheckForGhostWindows(
         
         mGhostWindowCount++;
         if (aOutGhostIDs && window) {
-          aOutGhostIDs->PutEntry(window->WindowID());
+          aOutGhostIDs->Insert(window->WindowID());
         }
       }
     }
@@ -910,16 +902,16 @@ void nsWindowMemoryReporter::UnlinkGhostWindows() {
   }
 
   
-  nsTHashtable<nsUint64HashKey> ghostWindows;
+  nsTHashSet<uint64_t> ghostWindows;
   sWindowReporter->CheckForGhostWindows(&ghostWindows);
-  for (auto iter = ghostWindows.ConstIter(); !iter.Done(); iter.Next()) {
+  for (const auto& key : ghostWindows) {
     nsGlobalWindowInner::InnerWindowByIdTable* windowsById =
         nsGlobalWindowInner::GetWindowsTable();
     if (!windowsById) {
       continue;
     }
 
-    RefPtr<nsGlobalWindowInner> window = windowsById->Get(iter.Get()->GetKey());
+    RefPtr<nsGlobalWindowInner> window = windowsById->Get(key);
     if (window) {
       window->RiskyUnlink();
     }
