@@ -197,10 +197,16 @@ function PollPromise(func, { timeout = null, interval = 10 } = {}) {
 
 
 
-function TimedPromise(
-  fn,
-  { timeout = PROMISE_TIMEOUT, throws = error.TimeoutError } = {}
-) {
+
+
+
+function TimedPromise(fn, options = {}) {
+  const {
+    errorMessage = "TimedPromise timed out",
+    timeout = PROMISE_TIMEOUT,
+    throws = error.TimeoutError,
+  } = options;
+
   const timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
   if (typeof fn != "function") {
@@ -220,10 +226,10 @@ function TimedPromise(
     
     let bail = () => {
       if (throws !== null) {
-        let err = new throws();
+        let err = new throws(`${errorMessage} after ${timeout} ms`);
         reject(err);
       } else {
-        logger.warn(`TimedPromise timed out after ${timeout} ms`, trace);
+        logger.warn(`${errorMessage} after ${timeout} ms`, trace);
         resolve();
       }
     };

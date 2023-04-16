@@ -534,61 +534,69 @@ GeckoDriver.prototype.newSession = async function(cmd) {
   registerEventsActor();
 
   
-  await new Promise(resolve => {
-    const waitForWindow = () => {
-      let windowTypes;
-      if (AppInfo.isThunderbird) {
-        windowTypes = ["mail:3pane"];
-      } else {
-        
-        
-        windowTypes = ["navigator:browser", "navigator:geckoview"];
-      }
-
-      let win;
-      for (const windowType of windowTypes) {
-        win = Services.wm.getMostRecentWindow(windowType);
-        if (win) {
-          break;
+  await new TimedPromise(
+    resolve => {
+      const waitForWindow = () => {
+        let windowTypes;
+        if (AppInfo.isThunderbird) {
+          windowTypes = ["mail:3pane"];
+        } else {
+          
+          
+          windowTypes = ["navigator:browser", "navigator:geckoview"];
         }
-      }
 
-      if (!win) {
-        
-        let checkTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-        checkTimer.initWithCallback(
-          waitForWindow,
-          100,
-          Ci.nsITimer.TYPE_ONE_SHOT
-        );
-      } else if (win.document.readyState != "complete") {
-        
-        let listener = ev => {
-          
-          
-          if (ev.target != win.document) {
-            return;
+        let win;
+        for (const windowType of windowTypes) {
+          win = Services.wm.getMostRecentWindow(windowType);
+          if (win) {
+            break;
           }
-          win.removeEventListener("load", listener);
-          waitForWindow();
-        };
-        win.addEventListener("load", listener, true);
-      } else {
-        if (MarionettePrefs.clickToStart) {
-          Services.prompt.alert(
-            win,
-            "",
-            "Click to start execution of marionette tests"
-          );
         }
-        this.addBrowser(win);
-        this.mainFrame = win;
-        resolve();
-      }
-    };
 
-    waitForWindow();
-  });
+        if (!win) {
+          
+          let checkTimer = Cc["@mozilla.org/timer;1"].createInstance(
+            Ci.nsITimer
+          );
+          checkTimer.initWithCallback(
+            waitForWindow,
+            100,
+            Ci.nsITimer.TYPE_ONE_SHOT
+          );
+        } else if (win.document.readyState != "complete") {
+          
+          let listener = ev => {
+            
+            
+            if (ev.target != win.document) {
+              return;
+            }
+            win.removeEventListener("load", listener);
+            waitForWindow();
+          };
+          win.addEventListener("load", listener, true);
+        } else {
+          if (MarionettePrefs.clickToStart) {
+            Services.prompt.alert(
+              win,
+              "",
+              "Click to start execution of marionette tests"
+            );
+          }
+          this.addBrowser(win);
+          this.mainFrame = win;
+          resolve();
+        }
+      };
+
+      waitForWindow();
+    },
+    {
+      throws: error.SessionNotCreatedError,
+      errorMessage: "No applicable application windows found",
+    }
+  );
 
   for (let win of this.windows) {
     const tabBrowser = browser.getTabBrowser(win);
