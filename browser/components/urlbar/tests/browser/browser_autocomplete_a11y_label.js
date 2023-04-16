@@ -11,9 +11,14 @@ const TEST_ENGINE_BASENAME = "searchSuggestionEngine.xml";
 
 async function getResultText(element) {
   await initAccessibilityService();
-  await BrowserTestUtils.waitForCondition(() =>
-    accService.getAccessibleFor(element)
-  );
+
+  
+  
+  
+  
+  await new Promise(requestAnimationFrame);
+  await TestUtils.waitForTick();
+
   let accessible = accService.getAccessibleFor(element);
   return accessible.name;
 }
