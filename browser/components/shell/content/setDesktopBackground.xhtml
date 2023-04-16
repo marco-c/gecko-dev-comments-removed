@@ -1,4 +1,4 @@
-<?xml version="1.0"?> 
+<?xml version="1.0"?> <!-- -*- Mode: HTML -*- -->
 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -48,7 +48,7 @@
     <hbox align="center">
       <label data-l10n-id="set-background-position"/>
       <menulist id="menuPosition"
-                oncommand="gSetBackground.updatePosition();">
+                oncommand="gSetBackground.updatePosition();" native="true">
         <menupopup>
           <menuitem data-l10n-id="set-background-center"  value="CENTER"/>
           <menuitem data-l10n-id="set-background-tile"    value="TILE"/>
@@ -67,7 +67,7 @@
 #endif
 
     <vbox align="center">
-      
+      <!-- default to 16:9, will be adjusted to match user's actual screen -->
       <stack>
         <html:canvas id="screen" width="202" height="114" role="presentation"/>
         <vbox pack="center">
