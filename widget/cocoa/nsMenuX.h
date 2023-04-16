@@ -56,12 +56,10 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   
   nsresult Create(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aNode);
 
-  
-  nsMenuObjectX* GetItemAt(uint32_t aPos);
+  mozilla::Maybe<MenuChild> GetItemAt(uint32_t aPos);
   uint32_t GetItemCount();
 
-  
-  nsMenuObjectX* GetVisibleItemAt(uint32_t aPos);
+  mozilla::Maybe<MenuChild> GetVisibleItemAt(uint32_t aPos);
   nsresult GetVisibleItemCount(uint32_t& aCount);
 
   nsEventStatus MenuOpened();

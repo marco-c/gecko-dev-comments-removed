@@ -216,18 +216,13 @@ int nsMenuUtilsX::CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuX*
     uint32_t numItems = menuParent->GetItemCount();
     for (uint32_t i = 0; i < numItems; i++) {
       
-      nsMenuObjectX* currItem = menuParent->GetItemAt(i);
-      if (currItem == aChild) {
+      nsMenuX::MenuChild currItem = *menuParent->GetItemAt(i);
+      if (currItem.is<RefPtr<nsMenuX>>() && currItem.as<RefPtr<nsMenuX>>() == aChild) {
         return insertionPoint;  
       }
-      NSMenuItem* nativeItem = nil;
-      nsMenuObjectTypeX currItemType = currItem->MenuObjectType();
-      if (currItemType == eSubmenuObjectType) {
-        nativeItem = static_cast<nsMenuX*>(currItem)->NativeNSMenuItem();
-      } else {
-        MOZ_RELEASE_ASSERT(currItemType == eMenuItemObjectType);
-        nativeItem = static_cast<nsMenuItemX*>(currItem)->NativeNSMenuItem();
-      }
+      NSMenuItem* nativeItem = currItem.match(
+          [](const RefPtr<nsMenuX>& aMenu) { return aMenu->NativeNSMenuItem(); },
+          [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->NativeNSMenuItem(); });
       if (nativeItem.menu) {
         insertionPoint++;
       }
