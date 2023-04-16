@@ -807,9 +807,6 @@ class nsDisplayListBuilder {
 
   bool IsInFilter() const { return mInFilter; }
 
-  bool IsInPageSequence() const { return mInPageSequence; }
-  void SetInPageSequence(bool aInPage) { mInPageSequence = aInPage; }
-
   
 
 
