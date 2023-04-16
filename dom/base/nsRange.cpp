@@ -847,27 +847,36 @@ void nsRange::AssertIfMismatchRootAndRangeBoundaries(
     const RangeBoundaryBase<EPT, ERT>& aEndBoundary, const nsINode* aRootNode,
     bool aNotInsertedYet ) {
 #ifdef DEBUG
-  if (aRootNode) {
-    if (!aNotInsertedYet) {
-      MOZ_ASSERT(
-          aStartBoundary.Container()->IsInclusiveDescendantOf(aRootNode));
-      MOZ_ASSERT(aEndBoundary.Container()->IsInclusiveDescendantOf(aRootNode));
-      MOZ_ASSERT(aRootNode ==
-                 RangeUtils::ComputeRootNode(aStartBoundary.Container()));
-      MOZ_ASSERT(aRootNode ==
-                 RangeUtils::ComputeRootNode(aEndBoundary.Container()));
-    }
-    if (!aStartBoundary.Container()->IsContent() ||
-        !aEndBoundary.Container()->IsContent() ||
-        aRootNode != RangeUtils::ComputeRootNode(aStartBoundary.Container()) ||
-        aRootNode != RangeUtils::ComputeRootNode(aEndBoundary.Container())) {
-      MOZ_ASSERT(!aRootNode->GetParentNode());
-      MOZ_ASSERT(aRootNode->IsDocument() || aRootNode->IsAttr() ||
-                 aRootNode->IsDocumentFragment() ||
-                 
-                 aRootNode->IsContent());
-    }
+  if (!aRootNode) {
+    MOZ_ASSERT(!aStartBoundary.IsSet());
+    MOZ_ASSERT(!aEndBoundary.IsSet());
+    return;
   }
+
+  MOZ_ASSERT(aStartBoundary.IsSet());
+  MOZ_ASSERT(aEndBoundary.IsSet());
+  if (!aNotInsertedYet) {
+    
+    
+    
+    
+    nsINode* tempRoot = RangeUtils::ComputeRootNode(aStartBoundary.Container());
+    
+    MOZ_ASSERT(tempRoot ==
+               RangeUtils::ComputeRootNode(aEndBoundary.Container()));
+    MOZ_ASSERT(aStartBoundary.Container()->IsInclusiveDescendantOf(tempRoot));
+    MOZ_ASSERT(aEndBoundary.Container()->IsInclusiveDescendantOf(tempRoot));
+    
+    
+    
+    
+    
+    const bool tempRootIsDisconnectedNAC =
+        tempRoot->IsInNativeAnonymousSubtree() && !tempRoot->GetParentNode();
+    MOZ_ASSERT_IF(!tempRootIsDisconnectedNAC, tempRoot == aRootNode);
+  }
+  MOZ_ASSERT(aRootNode->IsDocument() || aRootNode->IsAttr() ||
+             aRootNode->IsDocumentFragment() || aRootNode->IsContent());
 #endif  
 }
 
