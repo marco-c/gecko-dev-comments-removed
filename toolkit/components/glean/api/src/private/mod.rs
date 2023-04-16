@@ -4,6 +4,9 @@
 
 
 
+use std::convert::TryFrom;
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use serde::{Deserialize, Serialize};
 
 
@@ -45,9 +48,38 @@ pub use self::timing_distribution::TimingDistributionMetric;
 pub use self::uuid::UuidMetric;
 
 
+
+
+
+
+
+
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Instant(u64);
+
+impl Instant {
+    
+    fn now() -> Instant {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("SystemTime before UNIX epoch!");
+        let now = now.as_nanos();
+
+        match u64::try_from(now) {
+            Ok(now) => Instant(now),
+            Err(_) => {
+                
+                panic!("timestamp exceeds value range")
+            }
+        }
+    }
+}
+
+
 #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, Deserialize, Serialize)]
 #[repr(transparent)]
-pub struct MetricId(pub(crate) u32);
+pub struct MetricId(u32);
 
 impl MetricId {
     pub fn new(id: u32) -> Self {

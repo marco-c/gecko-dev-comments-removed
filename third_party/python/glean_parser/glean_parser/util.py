@@ -66,41 +66,47 @@ class _NoDatesSafeLoader(yaml.SafeLoader):
 _NoDatesSafeLoader.remove_implicit_resolver("tag:yaml.org,2002:timestamp")
 
 
-def yaml_load(stream):
-    """
-    Map line number to yaml nodes, and preserve the order
-    of metrics as they appear in the metrics.yaml file.
-    """
+if sys.version_info < (3, 7):
+    
+    
+    
+    
+    def ordered_yaml_load(stream):
+        class OrderedLoader(_NoDatesSafeLoader):
+            pass
 
-    class SafeLineLoader(_NoDatesSafeLoader):
-        pass
+        def construct_mapping(loader, node):
+            loader.flatten_mapping(node)
+            return OrderedDict(loader.construct_pairs(node))
 
-    def _construct_mapping_adding_line(loader, node):
-        loader.flatten_mapping(node)
-        mapping = OrderedDict(loader.construct_pairs(node))
-        mapping.defined_in = {"line": node.start_mark.line}
-        return mapping
-
-    SafeLineLoader.add_constructor(
-        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_mapping_adding_line
-    )
-    return yaml.load(stream, SafeLineLoader)
-
-
-def ordered_yaml_dump(data, **kwargs):
-    class OrderedDumper(yaml.Dumper):
-        pass
-
-    def _dict_representer(dumper, data):
-        return dumper.represent_mapping(
-            yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, data.items()
+        OrderedLoader.add_constructor(
+            yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, construct_mapping
         )
+        return yaml.load(stream, OrderedLoader)
 
-    OrderedDumper.add_representer(OrderedDict, _dict_representer)
-    return yaml.dump(data, Dumper=OrderedDumper, **kwargs)
+    def ordered_yaml_dump(data, **kwargs):
+        class OrderedDumper(yaml.Dumper):
+            pass
+
+        def _dict_representer(dumper, data):
+            return dumper.represent_mapping(
+                yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, data.items()
+            )
+
+        OrderedDumper.add_representer(OrderedDict, _dict_representer)
+        return yaml.dump(data, Dumper=OrderedDumper, **kwargs)
 
 
-def load_yaml_or_json(path: Path):
+else:
+
+    def ordered_yaml_load(stream):
+        return yaml.load(stream, Loader=_NoDatesSafeLoader)
+
+    def ordered_yaml_dump(data, **kwargs):
+        return yaml.dump(data, **kwargs)
+
+
+def load_yaml_or_json(path: Path, ordered_dict: bool = False):
     """
     Load the content from either a .json or .yaml file, based on the filename
     extension.
@@ -119,7 +125,10 @@ def load_yaml_or_json(path: Path):
             return json.load(fd)
     elif path.suffix in (".yml", ".yaml", ".yamlx"):
         with path.open("r", encoding="utf-8") as fd:
-            return yaml_load(fd)
+            if ordered_dict:
+                return ordered_yaml_load(fd)
+            else:
+                return yaml.load(fd, Loader=_NoDatesSafeLoader)
     else:
         raise ValueError(f"Unknown file extension {path.suffix}")
 
@@ -390,30 +399,19 @@ def report_validation_errors(all_objects):
     return found_error
 
 
-def remove_output_params(d, output_params):
-    """
-    Remove output-only params, such as "defined_in",
-    in order to validate the output against the input schema.
-    """
-    modified_dict = {}
-    for key, value in d.items():
-        if key is not output_params:
-            modified_dict[key] = value
-    return modified_dict
 
 
 
-common_metric_args = [
+
+
+
+
+extra_metric_args = [
     "category",
     "name",
     "send_in_pings",
     "lifetime",
     "disabled",
-]
-
-
-
-extra_metric_args = [
     "time_unit",
     "memory_unit",
     "allowed_extra_keys",
@@ -422,21 +420,11 @@ extra_metric_args = [
     "range_max",
     "range_min",
     "histogram_type",
-    "numerators",
 ]
 
 
 
-
-
-
-
-
-metric_args = common_metric_args + extra_metric_args
-
-
-
-ping_args = [
+extra_ping_args = [
     "include_client_id",
     "send_if_empty",
     "name",
@@ -445,4 +433,6 @@ ping_args = [
 
 
 
-extra_args = metric_args + [v for v in ping_args if v not in metric_args]
+extra_args = extra_metric_args + [
+    v for v in extra_ping_args if v not in extra_metric_args
+]

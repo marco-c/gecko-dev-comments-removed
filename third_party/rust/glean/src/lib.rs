@@ -152,17 +152,6 @@ where
 }
 
 
-fn launch_with_glean(callback: impl FnOnce(&Glean) + Send + 'static) {
-    dispatcher::launch(|| crate::with_glean(callback));
-}
-
-
-
-fn launch_with_glean_mut(callback: impl FnOnce(&mut Glean) + Send + 'static) {
-    dispatcher::launch(|| crate::with_glean_mut(callback));
-}
-
-
 
 
 
@@ -182,7 +171,7 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
         .spawn(move || {
             let core_cfg = glean_core::Configuration {
                 upload_enabled: cfg.upload_enabled,
-                data_path: cfg.data_path.into_os_string().into_string().unwrap(),
+                data_path: cfg.data_path.clone(),
                 application_id: cfg.application_id.clone(),
                 language_binding_name: LANGUAGE_BINDING_NAME.into(),
                 max_events: cfg.max_events,
@@ -363,8 +352,10 @@ pub fn shutdown() {
         return;
     }
 
-    crate::launch_with_glean_mut(|glean| {
-        glean.set_dirty_flag(false);
+    dispatcher::launch(move || {
+        with_glean_mut(|glean| {
+            glean.set_dirty_flag(false);
+        })
     });
 
     if let Err(e) = dispatcher::shutdown() {
@@ -434,7 +425,7 @@ fn initialize_core_metrics(
     if let Some(app_channel) = channel {
         core_metrics::internal_metrics::app_channel.set_sync(glean, app_channel);
     }
-    core_metrics::internal_metrics::os_version.set_sync(glean, system::get_os_version());
+    core_metrics::internal_metrics::os_version.set_sync(glean, "unknown".to_string());
     core_metrics::internal_metrics::architecture.set_sync(glean, system::ARCH.to_string());
     core_metrics::internal_metrics::device_manufacturer.set_sync(glean, "unknown".to_string());
     core_metrics::internal_metrics::device_model.set_sync(glean, "unknown".to_string());
@@ -459,25 +450,27 @@ pub fn set_upload_enabled(enabled: bool) {
     
     
     
-    crate::launch_with_glean_mut(move |glean| {
-        let state = global_state().lock().unwrap();
-        let old_enabled = glean.is_upload_enabled();
-        glean.set_upload_enabled(enabled);
+    dispatcher::launch(move || {
+        with_glean_mut(|glean| {
+            let state = global_state().lock().unwrap();
+            let old_enabled = glean.is_upload_enabled();
+            glean.set_upload_enabled(enabled);
 
-        
-        
+            
+            
 
-        if !old_enabled && enabled {
-            
-            
-            initialize_core_metrics(&glean, &state.client_info, state.channel.clone());
-        }
+            if !old_enabled && enabled {
+                
+                
+                initialize_core_metrics(&glean, &state.client_info, state.channel.clone());
+            }
 
-        if old_enabled && !enabled {
-            
-            
-            state.upload_manager.trigger_upload();
-        }
+            if old_enabled && !enabled {
+                
+                
+                state.upload_manager.trigger_upload();
+            }
+        });
     });
 }
 
@@ -489,8 +482,10 @@ pub fn register_ping_type(ping: &private::PingType) {
     
     if was_initialize_called() {
         let ping = ping.clone();
-        crate::launch_with_glean_mut(move |glean| {
-            glean.register_ping_type(&ping.ping_type);
+        dispatcher::launch(move || {
+            with_glean_mut(|glean| {
+                glean.register_ping_type(&ping.ping_type);
+            })
         })
     } else {
         
@@ -575,8 +570,14 @@ pub fn set_experiment_active(
     branch: String,
     extra: Option<HashMap<String, String>>,
 ) {
-    crate::launch_with_glean(move |glean| {
-        glean.set_experiment_active(experiment_id.to_owned(), branch.to_owned(), extra)
+    dispatcher::launch(move || {
+        with_glean(|glean| {
+            glean.set_experiment_active(
+                experiment_id.to_owned(),
+                branch.to_owned(),
+                extra.to_owned(),
+            )
+        });
     })
 }
 
@@ -584,7 +585,9 @@ pub fn set_experiment_active(
 
 
 pub fn set_experiment_inactive(experiment_id: String) {
-    crate::launch_with_glean(move |glean| glean.set_experiment_inactive(experiment_id))
+    dispatcher::launch(move || {
+        with_glean(|glean| glean.set_experiment_inactive(experiment_id.to_owned()))
+    })
 }
 
 
@@ -594,14 +597,16 @@ pub fn set_experiment_inactive(experiment_id: String) {
 
 
 pub fn handle_client_active() {
-    crate::launch_with_glean_mut(|glean| {
-        glean.handle_client_active();
+    dispatcher::launch(move || {
+        with_glean_mut(|glean| {
+            glean.handle_client_active();
 
-        
-        
-        
-        let state = global_state().lock().unwrap();
-        state.upload_manager.trigger_upload();
+            
+            
+            
+            let state = global_state().lock().unwrap();
+            state.upload_manager.trigger_upload();
+        })
     });
 
     
@@ -623,14 +628,16 @@ pub fn handle_client_inactive() {
     
     core_metrics::internal_metrics::baseline_duration.stop();
 
-    crate::launch_with_glean_mut(|glean| {
-        glean.handle_client_inactive();
+    dispatcher::launch(move || {
+        with_glean_mut(|glean| {
+            glean.handle_client_inactive();
 
-        
-        
-        
-        let state = global_state().lock().unwrap();
-        state.upload_manager.trigger_upload();
+            
+            
+            
+            let state = global_state().lock().unwrap();
+            state.upload_manager.trigger_upload();
+        })
     })
 }
 
@@ -758,11 +765,6 @@ pub fn set_source_tags(tags: Vec<String>) -> bool {
         
         true
     }
-}
-
-
-pub fn get_timestamp_ms() -> u64 {
-    glean_core::get_timestamp_ms()
 }
 
 #[cfg(test)]

@@ -133,7 +133,7 @@ pub(crate) mod __glean_metric_maps {
     
     
     
-    pub(crate) fn record_event_by_id(metric_id: u32, extra: HashMap<i32, String>) -> Result<(), EventRecordingError> {
+    pub(crate) fn event_record_wrapper(metric_id: u32, extra: HashMap<i32, String>) -> Result<(), EventRecordingError> {
         match metric_id {
 {% for metric_id, event in events_by_id.items() %}
           {{metric_id}} => {
@@ -168,37 +168,7 @@ pub(crate) mod __glean_metric_maps {
     
     
     
-    
-    
-    pub(crate) fn record_event_by_id_with_time(metric_id: MetricId, timestamp: u64, extra: HashMap<i32, String>) -> Result<(), EventRecordingError> {
-        match metric_id {
-{% for metric_id, event in events_by_id.items() %}
-          MetricId({{metric_id}}) => {
-              if extra_keys_len(&super::{{event}}) == 0 && !extra.is_empty() {
-                return Err(EventRecordingError::InvalidExtraKey);
-              }
-
-              super::{{event}}.record_with_time(timestamp, extra);
-              Ok(())
-          }
-{% endfor %}
-           _ => Err(EventRecordingError::InvalidId),
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub(crate) fn record_event_by_id_with_strings(metric_id: u32, extra: HashMap<String, String>) -> Result<(), EventRecordingError> {
+    pub(crate) fn event_record_wrapper_str(metric_id: u32, extra: HashMap<String, String>) -> Result<(), EventRecordingError> {
         match metric_id {
 {% for metric_id, event in events_by_id.items() %}
           {{metric_id}} => {
@@ -235,11 +205,10 @@ pub(crate) mod __glean_metric_maps {
     
     
     
-    
-    pub(crate) fn event_test_get_value_wrapper(metric_id: u32, ping_name: Option<String>) -> Option<Vec<RecordedEvent>> {
+    pub(crate) fn event_test_get_value_wrapper(metric_id: u32, storage_name: &str) -> Option<Vec<RecordedEvent>> {
         match metric_id {
 {% for metric_id, event in events_by_id.items() %}
-           {{metric_id}} => super::{{event}}.test_get_value(ping_name.as_deref()),
+           {{metric_id}} => super::{{event}}.test_get_value(storage_name),
 {% endfor %}
            _ => panic!("No event for metric id {}", metric_id),
         }

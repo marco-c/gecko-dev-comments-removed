@@ -4,9 +4,7 @@
 
 #![cfg(feature = "with_gecko")]
 
-use std::collections::HashMap;
-
-use nsstring::{nsACString, nsCString, nsCStringRepr};
+use nsstring::{nsACString, nsCString};
 use thin_vec::ThinVec;
 
 use crate::metrics::__glean_metric_maps as metric_maps;
@@ -20,7 +18,7 @@ pub extern "C" fn fog_event_record(
 ) {
     
     if extra_keys.is_empty() {
-        if metric_maps::record_event_by_id(id, Default::default()).is_err() {
+        if metric_maps::event_record_wrapper(id, Default::default()).is_err() {
             panic!("No event for id {}", id);
         }
 
@@ -40,7 +38,7 @@ pub extern "C" fn fog_event_record(
         .zip(extra_values.iter())
         .map(|(&k, v)| (k, v.to_string()))
         .collect();
-    match metric_maps::record_event_by_id(id, extra) {
+    match metric_maps::event_record_wrapper(id, extra) {
         Ok(()) => {}
         Err(EventRecordingError::InvalidId) => panic!("No event for id {}", id),
         Err(EventRecordingError::InvalidExtraKey) => {
@@ -57,7 +55,7 @@ pub extern "C" fn fog_event_record_str(
 ) {
     
     if extra_keys.is_empty() {
-        if metric_maps::record_event_by_id_with_strings(id, Default::default()).is_err() {
+        if metric_maps::event_record_wrapper_str(id, Default::default()).is_err() {
             panic!("No event for id {}", id);
         }
 
@@ -77,7 +75,7 @@ pub extern "C" fn fog_event_record_str(
         .zip(extra_values.iter())
         .map(|(k, v)| (k.to_string(), v.to_string()))
         .collect();
-    match metric_maps::record_event_by_id_with_strings(id, extra) {
+    match metric_maps::event_record_wrapper_str(id, extra) {
         Ok(()) => {}
         Err(EventRecordingError::InvalidId) => panic!("No event for id {}", id),
         Err(EventRecordingError::InvalidExtraKey) => {
@@ -87,91 +85,6 @@ pub extern "C" fn fog_event_record_str(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn fog_event_test_has_value(id: u32, ping_name: &nsACString) -> bool {
-    let storage = if ping_name.is_empty() {
-        None
-    } else {
-        Some(ping_name.to_utf8().into_owned())
-    };
-    metric_maps::event_test_get_value_wrapper(id, storage).is_some()
-}
-
-
-
-
-
-#[repr(C)]
-pub struct FfiRecordedEvent {
-    timestamp: u64,
-    category: nsCStringRepr,
-    name: nsCStringRepr,
-
-    
-    
-    extra_len: u32,
-
-    
-    
-    
-    extra: *mut nsCStringRepr,
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn fog_event_test_get_value(
-    id: u32,
-    ping_name: &nsACString,
-    out_events: &mut ThinVec<FfiRecordedEvent>,
-) {
-    let storage = if ping_name.is_empty() {
-        None
-    } else {
-        Some(ping_name.to_utf8().into_owned())
-    };
-
-    let events = match metric_maps::event_test_get_value_wrapper(id, storage) {
-        Some(events) => events,
-        None => return,
-    };
-
-    for event in events {
-        let extra = event.extra.unwrap_or_else(HashMap::new);
-        let extra_len = extra.len();
-        let mut extras = Vec::with_capacity(extra_len * 2);
-        for (k, v) in extra.into_iter() {
-            extras.push(nsCString::from(k).into_repr());
-            extras.push(nsCString::from(v).into_repr());
-        }
-
-        
-        extras.shrink_to_fit();
-        let extra_ptr = extras.as_mut_ptr();
-
-        
-        
-        std::mem::forget(extras);
-
-        let event = FfiRecordedEvent {
-            timestamp: event.timestamp,
-            category: nsCString::from(event.category).into_repr(),
-            name: nsCString::from(event.name).into_repr(),
-            extra_len: extra_len as u32,
-            extra: extra_ptr,
-        };
-
-        out_events.push(event);
-    }
-}
-
-
-
-
-
-
-
-
-#[no_mangle]
-pub unsafe extern "C" fn fog_event_free_event_extra(extra: *mut nsCStringRepr, len: u32) {
-    assert!(!extra.is_null());
-    let v = Vec::from_raw_parts(extra, len as usize, len as usize);
-    drop(v);
+pub unsafe extern "C" fn fog_event_test_has_value(id: u32, storage_name: &nsACString) -> bool {
+    metric_maps::event_test_get_value_wrapper(id, &storage_name.to_utf8()).is_some()
 }

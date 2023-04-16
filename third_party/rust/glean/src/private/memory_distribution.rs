@@ -8,6 +8,8 @@ use std::sync::Arc;
 use glean_core::metrics::{DistributionData, MemoryUnit, MetricType};
 use glean_core::ErrorType;
 
+use crate::dispatcher;
+
 
 
 
@@ -34,7 +36,7 @@ impl MemoryDistributionMetric {
 impl glean_core::traits::MemoryDistribution for MemoryDistributionMetric {
     fn accumulate(&self, sample: u64) {
         let metric = Arc::clone(&self.0);
-        crate::launch_with_glean(move |glean| metric.accumulate(glean, sample));
+        dispatcher::launch(move || crate::with_glean(|glean| metric.accumulate(glean, sample)));
     }
 
     fn test_get_value<'a, S: Into<Option<&'a str>>>(

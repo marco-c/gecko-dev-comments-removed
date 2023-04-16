@@ -8,6 +8,8 @@ use std::sync::Arc;
 use glean_core::metrics::MetricType;
 use glean_core::ErrorType;
 
+use crate::dispatcher;
+
 
 
 
@@ -32,7 +34,7 @@ impl UuidMetric {
 impl glean_core::traits::Uuid for UuidMetric {
     fn set(&self, value: uuid::Uuid) {
         let metric = Arc::clone(&self.0);
-        crate::launch_with_glean(move |glean| metric.set(glean, value));
+        dispatcher::launch(move || crate::with_glean(|glean| metric.set(glean, value)));
     }
 
     fn generate_and_set(&self) -> uuid::Uuid {

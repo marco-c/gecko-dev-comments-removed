@@ -49,7 +49,6 @@ impl Timings {
     
     
     
-    
     fn set_start(&mut self, start_time: u64) -> TimerId {
         let id = self.next_id;
         self.next_id += 1;
@@ -320,7 +319,7 @@ impl TimingDistributionMetric {
     
     
     pub fn test_get_value(&self, glean: &Glean, storage_name: &str) -> Option<DistributionData> {
-        match StorageManager.snapshot_metric_for_test(
+        match StorageManager.snapshot_metric(
             glean.storage(),
             storage_name,
             &self.meta.identifier(glean),

@@ -9,6 +9,8 @@ use std::sync::Arc;
 use glean_core::metrics::MetricType;
 use glean_core::ErrorType;
 
+use crate::dispatcher;
+
 
 
 
@@ -38,7 +40,7 @@ impl CounterMetric {
 impl glean_core::traits::Counter for CounterMetric {
     fn add(&self, amount: i32) {
         let metric = Arc::clone(&self.0);
-        crate::launch_with_glean(move |glean| metric.add(glean, amount));
+        dispatcher::launch(move || crate::with_glean(|glean| metric.add(glean, amount)));
     }
 
     fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i32> {

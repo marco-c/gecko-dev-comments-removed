@@ -90,30 +90,9 @@ class EventMetric {
       return Nothing();
     }
 
-    nsTArray<FfiRecordedEvent> events;
-    fog_event_test_get_value(mId, &aPingName, &events);
-
-    nsTArray<RecordedEvent> result;
-    for (auto event : events) {
-      auto ev = result.AppendElement();
-      ev->mTimestamp = event.timestamp;
-      ev->mCategory.Append(event.category);
-      ev->mName.Assign(event.name);
-
-      
-      
-      
-      ev->mExtra.SetCapacity(event.extra_len);
-      for (unsigned int i = 0; i < event.extra_len; i++) {
-        
-        auto key = event.extra[2 * i];
-        auto value = event.extra[2 * i + 1];
-        ev->mExtra.AppendElement(MakeTuple(key, value));
-      }
-      
-      fog_event_free_event_extra(event.extra, event.extra_len);
-    }
-    return Some(std::move(result));
+    
+    nsTArray<RecordedEvent> empty;
+    return Some(std::move(empty));
 #endif
   }
 

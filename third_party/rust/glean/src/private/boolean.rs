@@ -7,6 +7,8 @@ use std::sync::Arc;
 
 use glean_core::metrics::MetricType;
 
+use crate::dispatcher;
+
 
 
 
@@ -31,7 +33,7 @@ impl BooleanMetric {
 impl glean_core::traits::Boolean for BooleanMetric {
     fn set(&self, value: bool) {
         let metric = Arc::clone(&self.0);
-        crate::launch_with_glean(move |glean| metric.set(glean, value));
+        dispatcher::launch(move || crate::with_glean(|glean| metric.set(glean, value)));
     }
 
     fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<bool> {

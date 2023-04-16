@@ -9,6 +9,8 @@ use std::sync::Arc;
 use glean_core::metrics::MetricType;
 use glean_core::ErrorType;
 
+use crate::dispatcher;
+
 
 
 
@@ -39,7 +41,7 @@ impl glean_core::traits::String for StringMetric {
     fn set<S: Into<std::string::String>>(&self, value: S) {
         let metric = Arc::clone(&self.0);
         let new_value = value.into();
-        crate::launch_with_glean(move |glean| metric.set(glean, new_value));
+        dispatcher::launch(move || crate::with_glean(|glean| metric.set(glean, new_value)));
     }
 
     fn test_get_value<'a, S: Into<Option<&'a str>>>(

@@ -4,8 +4,6 @@
 
 use crate::net::PingUploader;
 
-use std::path::PathBuf;
-
 
 pub(crate) const DEFAULT_GLEAN_ENDPOINT: &str = "https://incoming.telemetry.mozilla.org";
 
@@ -17,7 +15,7 @@ pub struct Configuration {
     
     pub upload_enabled: bool,
     
-    pub data_path: PathBuf,
+    pub data_path: String,
     
     pub application_id: String,
     

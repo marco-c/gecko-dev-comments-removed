@@ -27,7 +27,6 @@ use uuid::Uuid;
 mod macros;
 
 mod common_metric_data;
-mod coverage;
 mod database;
 mod debug;
 mod error;
@@ -628,15 +627,6 @@ impl Glean {
                 Ok(false)
             }
             Some(content) => {
-                
-                
-                
-                
-                self.core_metrics
-                    .pings_submitted
-                    .get(&ping.name)
-                    .add(&self, 1);
-
                 if let Err(e) = ping_maker.store_ping(
                     self,
                     &doc_id,
@@ -972,12 +962,7 @@ impl Glean {
 }
 
 
-pub fn get_timestamp_ms() -> u64 {
-    const NANOS_PER_MILLI: u64 = 1_000_000;
-    zeitstempel::now() / NANOS_PER_MILLI
-}
-
-
+#[cfg(test)]
 #[cfg(test)]
 #[path = "lib_unit_tests.rs"]
 mod tests;
