@@ -6,17 +6,14 @@
 #ifndef nsMenuParentX_h_
 #define nsMenuParentX_h_
 
-enum nsMenuParentTypeX {
-  eMenuBarParentType,
-  eSubmenuParentType,
-};
-
 class nsMenuX;
+class nsMenuBarX;
 
 
 class nsMenuParentX {
  public:
-  virtual nsMenuParentTypeX MenuParentType() = 0;
+  
+  virtual nsMenuBarX* AsMenuBar() { return nullptr; }
 
   
   
