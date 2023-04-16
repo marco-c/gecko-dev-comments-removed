@@ -4039,6 +4039,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
     call(preBarrier);
     Pop(PreBarrierReg);
+    
+    
     bind(&done);
   }
 
