@@ -186,11 +186,6 @@ bool js::SetPropertyIgnoringNamedGetter(JSContext* cx, HandleObject obj,
     RootedObject receiverObj(cx, &receiver.toObject());
 
     
-    if (SetterOp setter = ownDesc.setter()) {
-      return CallJSSetterOp(cx, setter, receiverObj, id, v, result);
-    }
-
-    
     Rooted<PropertyDescriptor> existingDescriptor(cx);
     if (!GetOwnPropertyDescriptor(cx, receiverObj, id, &existingDescriptor)) {
       return false;
