@@ -101,6 +101,15 @@ class OnboardingMessage extends PureComponent {
       return null;
     }
 
+    
+    const anyWindow = window;
+
+    
+    
+    if (!anyWindow.gToolbox) {
+      return null;
+    }
+
     const learnMoreLink = button({
       className: "perf-external-link",
       onClick: this.handleLearnMoreClick,
