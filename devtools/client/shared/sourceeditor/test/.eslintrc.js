@@ -1,10 +1,7 @@
 "use strict";
 
+
+
 module.exports = {
-  
-  extends: "../../../../.eslintrc.mochitests.js",
-  globals: {
-    runCodeMirrorTest: true,
-    gBrowser: true,
-  },
+  extends: ["plugin:mozilla/browser-test"],
 };

@@ -1,6 +1,7 @@
 "use strict";
 
+
+
 module.exports = {
-  
-  extends: "../../../../.eslintrc.mochitests.js",
+  extends: ["plugin:mozilla/browser-test"],
 };

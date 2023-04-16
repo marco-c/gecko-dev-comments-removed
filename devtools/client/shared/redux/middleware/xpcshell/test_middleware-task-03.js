@@ -17,10 +17,6 @@ const {
 
 
 
-function run_test() {
-  run_next_test();
-}
-
 add_task(async function() {
   const store = applyMiddleware(task)(createStore)(reducer);
 

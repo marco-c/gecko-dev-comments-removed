@@ -6,15 +6,5 @@
 
 module.exports = {
   
-  extends: "../../../../../.eslintrc.mochitests.js",
-  globals: {
-    run_test: true,
-    run_next_test: true,
-    equal: true,
-    do_print: true,
-  },
-  rules: {
-    
-    camelcase: "off",
-  },
+  extends: "../../../../../.eslintrc.xpcshell.js",
 };
