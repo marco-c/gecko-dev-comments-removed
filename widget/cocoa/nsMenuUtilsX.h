@@ -29,11 +29,6 @@ bool NodeIsHiddenOrCollapsed(nsIContent* aContent);
 
 
 
-int CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuX* aChild);
-
-
-
-
 
 
 NSMenuItem* NativeMenuItemWithLocation(NSMenu* aRootMenu, NSString* aLocationString,
