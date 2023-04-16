@@ -84,8 +84,7 @@ void GeckoViewHistory::QueryVisitedStateInContentProcess(
   
   
   AutoTArray<NewURIEntry, 8> newEntries;
-  for (auto query = aQueries.ConstIter(); !query.Done(); query.Next()) {
-    nsIURI* uri = query.Get()->GetKey();
+  for (nsIURI* uri : aQueries) {
     auto entry = mTrackedURIs.Lookup(uri);
     if (!entry) {
       continue;
@@ -143,8 +142,7 @@ void GeckoViewHistory::QueryVisitedStateInParentProcess(
   MOZ_ASSERT(XRE_IsParentProcess());
 
   nsTArray<NewURIEntry> newEntries;
-  for (auto query = aQueries.ConstIter(); !query.Done(); query.Next()) {
-    nsIURI* uri = query.Get()->GetKey();
+  for (nsIURI* uri : aQueries) {
     auto entry = mTrackedURIs.Lookup(uri);
     if (!entry) {
       continue;  
