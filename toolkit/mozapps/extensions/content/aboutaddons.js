@@ -7,7 +7,6 @@
 
 
 
-
 "use strict";
 
 XPCOMUtils.defineLazyModuleGetters(this, {
