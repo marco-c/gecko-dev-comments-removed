@@ -38,10 +38,8 @@ async function clearDownloads() {
 
 function promiseClickDownloadDialogButton(buttonAction) {
   const uri = "chrome://mozapps/content/downloads/unknownContentType.xhtml";
-  return BrowserTestUtils.promiseAlertDialogOpen(
-    buttonAction,
-    uri,
-    async win => {
+  return BrowserTestUtils.promiseAlertDialogOpen(buttonAction, uri, {
+    async callback(win) {
       
       
       
@@ -59,8 +57,8 @@ function promiseClickDownloadDialogButton(buttonAction) {
       button.disabled = false;
       info(`clicking ${buttonAction} button`);
       button.click();
-    }
-  );
+    },
+  });
 }
 
 async function performCanceledDownload(tab, path) {
