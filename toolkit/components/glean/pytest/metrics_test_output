@@ -433,7 +433,7 @@ pub(crate) mod __glean_metric_maps {
     
     
     
-    pub(crate) fn event_record_wrapper(metric_id: u32, extra: HashMap<i32, String>) -> Result<(), EventRecordingError> {
+    pub(crate) fn record_event_by_id(metric_id: u32, extra: HashMap<i32, String>) -> Result<(), EventRecordingError> {
         match metric_id {
           16 => {
               assert!(
@@ -481,7 +481,43 @@ pub(crate) mod __glean_metric_maps {
     
     
     
-    pub(crate) fn event_record_wrapper_str(metric_id: u32, extra: HashMap<String, String>) -> Result<(), EventRecordingError> {
+    
+    
+    pub(crate) fn record_event_by_id_with_time(metric_id: MetricId, timestamp: u64, extra: HashMap<i32, String>) -> Result<(), EventRecordingError> {
+        match metric_id {
+          MetricId(16) => {
+              if extra_keys_len(&super::test_nested::event_metric) == 0 && !extra.is_empty() {
+                return Err(EventRecordingError::InvalidExtraKey);
+              }
+
+              super::test_nested::event_metric.record_with_time(timestamp, extra);
+              Ok(())
+          }
+          MetricId(17) => {
+              if extra_keys_len(&super::test_nested::event_metric_with_extra) == 0 && !extra.is_empty() {
+                return Err(EventRecordingError::InvalidExtraKey);
+              }
+
+              super::test_nested::event_metric_with_extra.record_with_time(timestamp, extra);
+              Ok(())
+          }
+           _ => Err(EventRecordingError::InvalidId),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn record_event_by_id_with_strings(metric_id: u32, extra: HashMap<String, String>) -> Result<(), EventRecordingError> {
         match metric_id {
           16 => {
               assert!(
