@@ -307,7 +307,7 @@ class MarionetteParentProcess {
     this.alteredPrefs = new Set();
 
     
-    this.enabled = env.exists(ENV_ENABLED);
+    this.enabled = env.get(ENV_ENABLED) === "1";
 
     Services.ppmm.addMessageListener("Marionette:IsRunning", this);
   }
