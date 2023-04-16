@@ -322,74 +322,10 @@ MBasicBlock* MBasicBlock::New(MIRGraph& graph, const CompileInfo& info,
   return block;
 }
 
-
-
-
-
-
-
-
-MBasicBlock* MBasicBlock::NewFakeLoopPredecessor(MIRGraph& graph,
-                                                 MBasicBlock* header) {
-  MOZ_ASSERT(graph.osrBlock());
-
-  MBasicBlock* backedge = header->backedge();
-  MBasicBlock* fake = MBasicBlock::New(graph, header->info(), nullptr,
-                                       MBasicBlock::FAKE_LOOP_PRED);
-  if (!fake) {
-    return nullptr;
-  }
-
-  graph.insertBlockBefore(header, fake);
-  fake->setUnreachable();
-
-  
-  for (MPhiIterator iter(header->phisBegin()), end(header->phisEnd());
-       iter != end; ++iter) {
-    MPhi* phi = *iter;
-    auto* fakeDef = MUnreachableResult::New(graph.alloc(), phi->type());
-    fake->add(fakeDef);
-    if (!phi->addInputSlow(fakeDef)) {
-      return nullptr;
-    }
-  }
-
-  fake->end(MGoto::New(graph.alloc(), header));
-
-  if (!header->addPredecessorWithoutPhis(fake)) {
-    return nullptr;
-  }
-
-  
-  
-  header->clearLoopHeader();
-  header->setLoopHeader(backedge);
-
-  return fake;
-}
-
-void MIRGraph::removeFakeLoopPredecessors() {
-  MOZ_ASSERT(osrBlock());
-  size_t id = 0;
-  for (ReversePostorderIterator it = rpoBegin(); it != rpoEnd();) {
-    MBasicBlock* block = *it++;
-    if (block->isFakeLoopPred()) {
-      MOZ_ASSERT(block->unreachable());
-      MBasicBlock* succ = block->getSingleSuccessor();
-      succ->removePredecessor(block);
-      removeBlock(block);
-    } else {
-      block->setId(id++);
-    }
-  }
-#ifdef DEBUG
-  canBuildDominators_ = false;
-#endif
-}
-
 MBasicBlock::MBasicBlock(MIRGraph& graph, const CompileInfo& info,
                          BytecodeSite* site, Kind kind)
-    : graph_(graph),
+    : unreachable_(false),
+      graph_(graph),
       info_(info),
       predecessors_(graph.alloc()),
       stackPosition_(info_.firstStackSlot()),
@@ -407,7 +343,9 @@ MBasicBlock::MBasicBlock(MIRGraph& graph, const CompileInfo& info,
       mark_(false),
       immediatelyDominated_(graph.alloc()),
       immediateDominator_(nullptr),
-      trackedSite_(site)
+      trackedSite_(site),
+      hitCount_(0),
+      hitState_(HitState::NotDefined)
 #if defined(JS_ION_PERF) || defined(DEBUG)
       ,
       lineno_(0u),

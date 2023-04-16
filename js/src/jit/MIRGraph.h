@@ -37,14 +37,7 @@ class LBlock;
 
 class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
  public:
-  enum Kind {
-    NORMAL,
-    PENDING_LOOP_HEADER,
-    LOOP_HEADER,
-    SPLIT_EDGE,
-    FAKE_LOOP_PRED,
-    DEAD
-  };
+  enum Kind { NORMAL, PENDING_LOOP_HEADER, LOOP_HEADER, SPLIT_EDGE, DEAD };
 
  private:
   MBasicBlock(MIRGraph& graph, const CompileInfo& info, BytecodeSite* site,
@@ -55,10 +48,7 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
                              MBasicBlock* maybePred, uint32_t popped);
 
   
-  bool unreachable_ = false;
-
-  
-  bool alwaysBails_ = false;
+  bool unreachable_;
 
   
   void pushVariable(uint32_t slot) { push(slots_[slot]); }
@@ -127,8 +117,6 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
                                            BytecodeSite* site);
   static MBasicBlock* NewSplitEdge(MIRGraph& graph, MBasicBlock* pred,
                                    size_t predEdgeIdx, MBasicBlock* succ);
-  static MBasicBlock* NewFakeLoopPredecessor(MIRGraph& graph,
-                                             MBasicBlock* header);
 
   bool dominates(const MBasicBlock* other) const {
     return other->domIndex() - domIndex() < numDominated();
@@ -143,10 +131,6 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   }
   void setUnreachableUnchecked() { unreachable_ = true; }
   bool unreachable() const { return unreachable_; }
-
-  void setAlwaysBails() { alwaysBails_ = true; }
-  bool alwaysBails() const { return alwaysBails_; }
-
   
   void pick(int32_t depth);
 
@@ -410,12 +394,11 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
 
   bool hasUniqueBackedge() const {
     MOZ_ASSERT(isLoopHeader());
-    MOZ_ASSERT(numPredecessors() >= 1);
-    if (numPredecessors() == 1 || numPredecessors() == 2) {
+    MOZ_ASSERT(numPredecessors() >= 2);
+    if (numPredecessors() == 2) {
       return true;
     }
-    if (numPredecessors() == 3) {
-      
+    if (numPredecessors() == 3) {  
       return getPredecessor(1)->numPredecessors() == 0;
     }
     return false;
@@ -443,7 +426,6 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   }
   bool isSplitEdge() const { return kind_ == SPLIT_EDGE; }
   bool isDead() const { return kind_ == DEAD; }
-  bool isFakeLoopPred() const { return kind_ == FAKE_LOOP_PRED; }
 
   uint32_t stackDepth() const { return stackPosition_; }
   bool isMarked() const { return mark_; }
@@ -565,6 +547,25 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   void dump(GenericPrinter& out);
   void dump();
 
+  
+  enum class HitState {
+    
+    NotDefined,
+
+    
+    
+    Count,
+  };
+  HitState getHitState() const { return hitState_; }
+  void setHitCount(uint64_t count) {
+    hitCount_ = count;
+    hitState_ = HitState::Count;
+  }
+  uint64_t getHitCount() const {
+    MOZ_ASSERT(hitState_ == HitState::Count);
+    return hitCount_;
+  }
+
   BytecodeSite* trackedSite() const { return trackedSite_; }
   InlineScriptTree* trackedTree() const { return trackedSite_->tree(); }
 
@@ -615,6 +616,11 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock> {
   
   
   BytecodeSite* trackedSite_;
+
+  
+  
+  uint64_t hitCount_;
+  HitState hitState_;
 
 #if defined(JS_ION_PERF) || defined(DEBUG)
   unsigned lineno_;
@@ -740,17 +746,6 @@ class MIRGraph {
     phiFreeListLength_--;
     return phiFreeList_.popBack();
   }
-
-  void removeFakeLoopPredecessors();
-
-#ifdef DEBUG
-  
- private:
-  bool canBuildDominators_ = true;
-
- public:
-  bool canBuildDominators() const { return canBuildDominators_; }
-#endif
 };
 
 class MDefinitionIterator {

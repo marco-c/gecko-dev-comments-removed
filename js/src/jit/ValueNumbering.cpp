@@ -397,20 +397,48 @@ static bool hasNonDominatingPredecessor(MBasicBlock* block,
 
 
 
-bool ValueNumberer::fixupOSROnlyLoop(MBasicBlock* block) {
+bool ValueNumberer::fixupOSROnlyLoop(MBasicBlock* block,
+                                     MBasicBlock* backedge) {
   
   
   
   
   
   
-  MBasicBlock* fake = MBasicBlock::NewFakeLoopPredecessor(graph_, block);
-  if (!fake) {
+  MBasicBlock* fake =
+      MBasicBlock::New(graph_, block->info(), nullptr, MBasicBlock::NORMAL);
+  if (fake == nullptr) {
     return false;
   }
+
+  graph_.insertBlockBefore(block, fake);
   fake->setImmediateDominator(fake);
   fake->addNumDominated(1);
   fake->setDomIndex(fake->id());
+  fake->setUnreachable();
+
+  
+  
+  
+  for (MPhiIterator iter(block->phisBegin()), end(block->phisEnd());
+       iter != end; ++iter) {
+    MPhi* phi = *iter;
+    MPhi* fakePhi = MPhi::New(graph_.alloc(), phi->type());
+    fake->addPhi(fakePhi);
+    if (!phi->addInputSlow(fakePhi)) {
+      return false;
+    }
+  }
+
+  fake->end(MGoto::New(graph_.alloc(), block));
+
+  if (!block->addPredecessorWithoutPhis(fake)) {
+    return false;
+  }
+
+  
+  block->clearLoopHeader();
+  block->setLoopHeader(backedge);
 
   JitSpew(JitSpew_GVN, "        Created fake block%u", fake->id());
   hasOSRFixups_ = true;
@@ -1135,7 +1163,7 @@ bool ValueNumberer::insertOSRFixups() {
       continue;
     }
 
-    if (!fixupOSROnlyLoop(block)) {
+    if (!fixupOSROnlyLoop(block, block->backedge())) {
       return false;
     }
   }

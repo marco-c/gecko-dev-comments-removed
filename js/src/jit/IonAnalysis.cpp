@@ -268,30 +268,14 @@ static bool FlagPhiInputsAsHavingRemovedUses(MIRGenerator* mir,
   return true;
 }
 
-static MInstructionIterator FindFirstInstructionAfterBail(MBasicBlock* block) {
-  MOZ_ASSERT(block->alwaysBails());
-  for (MInstructionIterator it = block->begin(); it != block->end(); it++) {
-    MInstruction* ins = *it;
-    if (ins->isBail()) {
-      it++;
-      return it;
-    }
-  }
-  MOZ_CRASH("Expected MBail in alwaysBails block");
-}
-
-
-
-static bool FlagOperandsAsHavingRemovedUsesAfter(
-    MIRGenerator* mir, MBasicBlock* block, MInstructionIterator firstRemoved) {
-  MOZ_ASSERT(firstRemoved->block() == block);
-
+static bool FlagAllOperandsAsHavingRemovedUses(MIRGenerator* mir,
+                                               MBasicBlock* block) {
   const CompileInfo& info = block->info();
 
   
   MInstructionIterator end = block->end();
-  for (MInstructionIterator it = firstRemoved; it != end; it++) {
-    if (mir->shouldCancel("FlagOperandsAsHavingRemovedUsesAfter (loop 1)")) {
+  for (MInstructionIterator it = block->begin(); it != end; it++) {
+    if (mir->shouldCancel("FlagAllOperandsAsHavingRemovedUses loop 1")) {
       return false;
     }
 
@@ -314,27 +298,9 @@ static bool FlagOperandsAsHavingRemovedUsesAfter(
   }
 
   
-  MPhiUseIteratorStack worklist;
-  for (size_t i = 0, e = block->numSuccessors(); i < e; i++) {
-    if (mir->shouldCancel("FlagOperandsAsHavingRemovedUsesAfter (loop 2)")) {
-      return false;
-    }
-
-    if (!FlagPhiInputsAsHavingRemovedUses(mir, block, block->getSuccessor(i),
-                                          worklist)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-static bool FlagEntryResumePointOperands(MIRGenerator* mir,
-                                         MBasicBlock* block) {
-  
   MResumePoint* rp = block->entryResumePoint();
   while (rp) {
-    if (mir->shouldCancel("FlagEntryResumePointOperands")) {
+    if (mir->shouldCancel("FlagAllOperandsAsHavingRemovedUses loop 2")) {
       return false;
     }
 
@@ -348,102 +314,294 @@ static bool FlagEntryResumePointOperands(MIRGenerator* mir,
     rp = rp->caller();
   }
 
+  
+  MPhiUseIteratorStack worklist;
+  for (size_t i = 0, e = block->numSuccessors(); i < e; i++) {
+    if (mir->shouldCancel("FlagAllOperandsAsHavingRemovedUses loop 3")) {
+      return false;
+    }
+
+    if (!FlagPhiInputsAsHavingRemovedUses(mir, block, block->getSuccessor(i),
+                                          worklist)) {
+      return false;
+    }
+  }
+
   return true;
 }
 
-static bool FlagAllOperandsAsHavingRemovedUses(MIRGenerator* mir,
-                                               MBasicBlock* block) {
-  return FlagEntryResumePointOperands(mir, block) &&
-         FlagOperandsAsHavingRemovedUsesAfter(mir, block, block->begin());
+static void RemoveFromSuccessors(MBasicBlock* block) {
+  
+  size_t numSucc = block->numSuccessors();
+  while (numSucc--) {
+    MBasicBlock* succ = block->getSuccessor(numSucc);
+    if (succ->isDead()) {
+      continue;
+    }
+    JitSpew(JitSpew_Prune, "Remove block edge %u -> %u.", block->id(),
+            succ->id());
+    succ->removePredecessor(block);
+  }
 }
 
+static void ConvertToBailingBlock(TempAllocator& alloc, MBasicBlock* block) {
+  
+  MBail* bail = MBail::New(alloc, BailoutKind::FirstExecution);
+  MInstruction* bailPoint = block->safeInsertTop();
+  block->insertBefore(block->safeInsertTop(), bail);
 
+  
+  MInstructionIterator clearStart = block->begin(bailPoint);
+  block->discardAllInstructionsStartingAt(clearStart);
+  if (block->outerResumePoint()) {
+    block->clearOuterResumePoint();
+  }
 
-
+  
+  block->end(MUnreachable::New(alloc));
+}
 
 bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
   JitSpew(JitSpew_Prune, "Begin");
+  MOZ_ASSERT(!mir->compilingWasm(),
+             "wasm compilation has no code coverage support.");
 
   
-  MOZ_ASSERT(!mir->compilingWasm());
-
-  Vector<MBasicBlock*, 16, SystemAllocPolicy> worklist;
-  uint32_t numMarked = 0;
-  bool needsTrim = false;
-
-  auto markReachable = [&](MBasicBlock* block) -> bool {
-    block->mark();
-    numMarked++;
-    if (block->alwaysBails()) {
-      needsTrim = true;
-    }
-    return worklist.append(block);
-  };
-
   
-  if (!markReachable(graph.entryBlock())) {
-    return false;
-  }
-
   
-  if (graph.osrBlock() && !markReachable(graph.osrBlock())) {
-    return false;
-  }
-
-  
-  while (!worklist.empty()) {
-    if (mir->shouldCancel("Prune unused branches (marking reachable)")) {
+  bool someUnreachable = false;
+  for (ReversePostorderIterator block(graph.rpoBegin());
+       block != graph.rpoEnd(); block++) {
+    if (mir->shouldCancel("Prune unused branches (main loop)")) {
       return false;
     }
-    MBasicBlock* block = worklist.popCopy();
 
-    JitSpew(JitSpew_Prune, "Visit block %u:", block->id());
+    JitSpew(JitSpew_Prune, "Investigate Block %u:", block->id());
     JitSpewIndent indent(JitSpew_Prune);
 
     
-    if (block->alwaysBails()) {
+    if (*block == graph.osrBlock() || *block == graph.entryBlock()) {
+      JitSpew(JitSpew_Prune, "Block %u is an entry point.", block->id());
       continue;
     }
 
-    for (size_t i = 0; i < block->numSuccessors(); i++) {
-      MBasicBlock* succ = block->getSuccessor(i);
-      if (succ->isMarked()) {
-        continue;
-      }
-      JitSpew(JitSpew_Prune, "Reaches block %u", succ->id());
-      if (!markReachable(succ)) {
+    
+    
+    bool isUnreachable = true;
+    bool isLoopHeader = block->isLoopHeader();
+    size_t numPred = block->numPredecessors();
+    size_t i = 0;
+    for (; i < numPred; i++) {
+      if (mir->shouldCancel("Prune unused branches (inner loop 1)")) {
         return false;
       }
+
+      MBasicBlock* pred = block->getPredecessor(i);
+
+      
+      
+      
+      if (isLoopHeader && pred == block->backedge()) {
+        continue;
+      }
+
+      
+      if (!pred->isMarked() && !pred->unreachable()) {
+        isUnreachable = false;
+        break;
+      }
+    }
+
+    
+    
+    
+    bool shouldBailout = block->getHitState() == MBasicBlock::HitState::Count &&
+                         block->getHitCount() == 0;
+
+    
+    
+    
+    if (!isUnreachable && shouldBailout) {
+      size_t p = numPred;
+      size_t predCount = 0;
+      size_t numSuccessorsOfPreds = 1;
+      bool isLoopExit = false;
+      while (p--) {
+        if (mir->shouldCancel("Prune unused branches (inner loop 2)")) {
+          return false;
+        }
+
+        MBasicBlock* pred = block->getPredecessor(p);
+        if (pred->getHitState() == MBasicBlock::HitState::Count) {
+          predCount += pred->getHitCount();
+        }
+        isLoopExit |= pred->isLoopHeader() && pred->backedge() != *block;
+        numSuccessorsOfPreds += pred->numSuccessors() - 1;
+      }
+
+      
+      
+      
+      
+      size_t numDominatedInst = 0;
+      size_t numEffectfulInst = 0;
+      int numInOutEdges = block->numPredecessors();
+      size_t branchSpan = 0;
+      ReversePostorderIterator it(block);
+      do {
+        if (mir->shouldCancel("Prune unused branches (inner loop 3)")) {
+          return false;
+        }
+
+        
+        numInOutEdges -= it->numPredecessors();
+        if (numInOutEdges < 0) {
+          break;
+        }
+        numInOutEdges += it->numSuccessors();
+
+        
+        for (MDefinitionIterator def(*it); def; def++) {
+          numDominatedInst++;
+          if (def->isEffectful()) {
+            numEffectfulInst++;
+          }
+        }
+
+        it++;
+        branchSpan++;
+      } while (numInOutEdges > 0 && it != graph.rpoEnd());
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      size_t score = 0;
+      MOZ_ASSERT(numSuccessorsOfPreds >= 1);
+      score += predCount * JitOptions.branchPruningHitCountFactor /
+               numSuccessorsOfPreds;
+      score += numDominatedInst * JitOptions.branchPruningInstFactor;
+      score += branchSpan * JitOptions.branchPruningBlockSpanFactor;
+      score += numEffectfulInst * JitOptions.branchPruningEffectfulInstFactor;
+      if (score < JitOptions.branchPruningThreshold) {
+        shouldBailout = false;
+      }
+
+      
+      
+      
+      if (predCount / numSuccessorsOfPreds < 50) {
+        shouldBailout = false;
+      }
+
+      
+      
+      
+      if (numSuccessorsOfPreds == 1) {
+        shouldBailout = false;
+      }
+
+      
+      
+      
+      if (isLoopExit) {
+        shouldBailout = false;
+      }
+
+      
+      
+      
+      
+      if (numSuccessorsOfPreds > 8) {
+        shouldBailout = false;
+      }
+
+      JitSpew(JitSpew_Prune,
+              "info: block %u,"
+              " predCount: %zu, domInst: %zu"
+              ", span: %zu, effectful: %zu, "
+              " isLoopExit: %s, numSuccessorsOfPred: %zu."
+              " (score: %zu, shouldBailout: %s)",
+              block->id(), predCount, numDominatedInst, branchSpan,
+              numEffectfulInst, isLoopExit ? "true" : "false",
+              numSuccessorsOfPreds, score, shouldBailout ? "true" : "false");
+    }
+
+    
+    
+    if (!isUnreachable && !shouldBailout) {
+      continue;
+    }
+
+    someUnreachable = true;
+    if (isUnreachable) {
+      JitSpew(JitSpew_Prune, "Mark block %u as unreachable.", block->id());
+      block->setUnreachable();
+      
+      
+    } else if (shouldBailout) {
+      JitSpew(JitSpew_Prune, "Mark block %u as bailing block.", block->id());
+      block->markUnchecked();
+    }
+
+    
+    
+    
+    if (block->isLoopHeader()) {
+      JitSpew(JitSpew_Prune, "Mark block %u as bailing block. (loop backedge)",
+              block->backedge()->id());
+      block->backedge()->markUnchecked();
     }
   }
 
-  if (!needsTrim && numMarked == graph.numBlocks()) {
-    
-    graph.unmarkBlocks();
+  
+  if (!someUnreachable) {
     return true;
   }
 
-  JitSpew(JitSpew_Prune, "Remove unreachable instructions and blocks:");
+  JitSpew(
+      JitSpew_Prune,
+      "Convert basic block to bailing blocks, and remove unreachable blocks:");
   JitSpewIndent indent(JitSpew_Prune);
 
   
   
   for (PostorderIterator it(graph.poBegin()); it != graph.poEnd();) {
-    if (mir->shouldCancel("Prune unused branches (marking operands)")) {
+    if (mir->shouldCancel("Prune unused branches (marking loop)")) {
       return false;
     }
 
     MBasicBlock* block = *it++;
-    if (!block->isMarked()) {
-      
-      
-      FlagAllOperandsAsHavingRemovedUses(mir, block);
-    } else if (block->alwaysBails()) {
-      
-      
-      MInstructionIterator firstRemoved = FindFirstInstructionAfterBail(block);
-      FlagOperandsAsHavingRemovedUsesAfter(mir, block, firstRemoved);
+    if (!block->isMarked() && !block->unreachable()) {
+      continue;
     }
+
+    FlagAllOperandsAsHavingRemovedUses(mir, block);
   }
 
   
@@ -454,65 +612,36 @@ bool jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph) {
     }
 
     MBasicBlock* block = *it++;
-    if (block->isMarked() && !block->alwaysBails()) {
+    if (!block->isMarked() && !block->unreachable()) {
       continue;
     }
 
+    JitSpew(JitSpew_Prune, "Remove / Replace block %u.", block->id());
+    JitSpewIndent indent(JitSpew_Prune);
+
     
     
-    size_t numSucc = block->numSuccessors();
-    for (uint32_t i = 0; i < numSucc; i++) {
-      MBasicBlock* succ = block->getSuccessor(i);
-      if (succ->isDead()) {
-        continue;
+    RemoveFromSuccessors(block);
+
+    
+    
+    if (block->isMarked()) {
+      JitSpew(JitSpew_Prune, "Convert Block %u to a bailing block.",
+              block->id());
+      if (!graph.alloc().ensureBallast()) {
+        return false;
       }
-
-      
-      
-      
-      if (succ->isLoopHeader() && block != succ->backedge()) {
-        MOZ_ASSERT(graph.osrBlock());
-        if (!graph.alloc().ensureBallast()) {
-          return false;
-        }
-
-        MBasicBlock* fake = MBasicBlock::NewFakeLoopPredecessor(graph, succ);
-        if (!fake) {
-          return false;
-        }
-        
-        fake->mark();
-
-        JitSpew(JitSpew_Prune,
-                "Header %u only reachable by OSR. Add fake predecessor %u",
-                succ->id(), fake->id());
-      }
-
-      JitSpew(JitSpew_Prune, "Remove block edge %u -> %u.", block->id(),
-              succ->id());
-      succ->removePredecessor(block);
+      ConvertToBailingBlock(graph.alloc(), block);
+      block->unmark();
     }
 
-    if (!block->isMarked()) {
-      
-      JitSpew(JitSpew_Prune, "Remove block %u.", block->id());
+    
+    if (block->unreachable()) {
+      JitSpew(JitSpew_Prune, "Remove Block %u.", block->id());
+      JitSpewIndent indent(JitSpew_Prune);
       graph.removeBlock(block);
-    } else {
-      
-      JitSpew(JitSpew_Prune, "Trim block %u.", block->id());
-
-      
-      MInstructionIterator firstRemoved = FindFirstInstructionAfterBail(block);
-      block->discardAllInstructionsStartingAt(firstRemoved);
-
-      if (block->outerResumePoint()) {
-        block->clearOuterResumePoint();
-      }
-
-      block->end(MUnreachable::New(graph.alloc()));
     }
   }
-  graph.unmarkBlocks();
 
   return true;
 }
@@ -1455,7 +1584,6 @@ MIRType TypeAnalyzer::guessPhiType(MPhi* phi) const {
 
   MIRType type = MIRType::None;
   bool convertibleToFloat32 = false;
-  bool hasNonOSRInputs = false;
   DebugOnly<bool> hasPhiInputs = false;
   for (size_t i = 0, e = phi->numOperands(); i < e; i++) {
     MDefinition* in = phi->getOperand(i);
@@ -1470,10 +1598,6 @@ MIRType TypeAnalyzer::guessPhiType(MPhi* phi) const {
         
         continue;
       }
-    }
-
-    if (!in->isOsrValue()) {
-      hasNonOSRInputs = true;
     }
 
     
@@ -1516,11 +1640,8 @@ MIRType TypeAnalyzer::guessPhiType(MPhi* phi) const {
     }
   }
 
-  if (!hasNonOSRInputs) {
-    type = MIRType::Value;
-  }
-
   MOZ_ASSERT_IF(type == MIRType::None, hasPhiInputs);
+
   return type;
 }
 
@@ -1637,11 +1758,7 @@ bool TypeAnalyzer::specializePhis() {
     MBasicBlock* preHeader = graph.osrPreHeaderBlock();
     MBasicBlock* header = preHeader->getSingleSuccessor();
 
-    if (preHeader->numPredecessors() == 1) {
-      
-      
-      MOZ_ASSERT(preHeader->getPredecessor(0) == graph.osrBlock());
-    } else if (header->isLoopHeader()) {
+    if (header->isLoopHeader()) {
       for (MPhiIterator phi(header->phisBegin()); phi != header->phisEnd();
            phi++) {
         MPhi* preHeaderPhi = phi->getOperand(0)->toPhi();
@@ -1665,8 +1782,7 @@ bool TypeAnalyzer::specializePhis() {
       
       
       
-      
-      
+      MOZ_ASSERT(header->isPendingLoopHeader());
       MOZ_ASSERT(header->numPredecessors() == 1);
     }
   }
@@ -2368,8 +2484,6 @@ static void ComputeImmediateDominators(MIRGraph& graph) {
 }
 
 bool jit::BuildDominatorTree(MIRGraph& graph) {
-  MOZ_ASSERT(graph.canBuildDominators());
-
   ComputeImmediateDominators(graph);
 
   Vector<MBasicBlock*, 4, JitAllocPolicy> worklist(graph.alloc());
