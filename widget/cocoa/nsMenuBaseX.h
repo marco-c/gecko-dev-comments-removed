@@ -21,20 +21,4 @@ class nsMenuObjectX {
   virtual nsMenuObjectTypeX MenuObjectType() = 0;
 };
 
-
-
-
-
-enum {
-  eCommand_ID_About = 1,
-  eCommand_ID_Prefs = 2,
-  eCommand_ID_Quit = 3,
-  eCommand_ID_HideApp = 4,
-  eCommand_ID_HideOthers = 5,
-  eCommand_ID_ShowAll = 6,
-  eCommand_ID_Update = 7,
-  eCommand_ID_TouchBar = 8,
-  eCommand_ID_Last = 9
-};
-
 #endif  

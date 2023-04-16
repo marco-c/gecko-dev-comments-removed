@@ -24,6 +24,23 @@ class nsIContent;
 
 @class MOZMenuItemRepresentedObject;
 
+
+
+enum {
+  eCommand_ID_About = 1,
+  eCommand_ID_Prefs = 2,
+  eCommand_ID_Quit = 3,
+  eCommand_ID_HideApp = 4,
+  eCommand_ID_HideOthers = 5,
+  eCommand_ID_ShowAll = 6,
+  eCommand_ID_Update = 7,
+  eCommand_ID_TouchBar = 8,
+  eCommand_ID_Last = 9
+};
+
+
+
+
 class nsMenuGroupOwnerX : public nsIMutationObserver {
  public:
   explicit nsMenuGroupOwnerX(nsMenuBarX* aMenuBarIfMenuBar);
@@ -52,8 +69,8 @@ class nsMenuGroupOwnerX : public nsIMutationObserver {
 
   RefPtr<nsIContent> mContent;
 
-  uint32_t mCurrentCommandID;  
-                               
+  
+  uint32_t mCurrentCommandID = eCommand_ID_Last;
 
   
   nsTHashMap<nsPtrHashKey<nsIContent>, nsChangeObserver*> mContentToObserverTable;
