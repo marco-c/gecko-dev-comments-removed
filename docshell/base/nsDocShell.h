@@ -819,7 +819,8 @@ class nsDocShell final : public nsDocLoader,
   
   
   bool SetCurrentURI(nsIURI* aURI, nsIRequest* aRequest,
-                     bool aFireOnLocationChange, uint32_t aLocationFlags);
+                     bool aFireOnLocationChange, bool aIsInitialAboutBlank,
+                     uint32_t aLocationFlags);
 
   
   

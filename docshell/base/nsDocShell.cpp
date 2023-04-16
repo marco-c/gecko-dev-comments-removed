@@ -1234,7 +1234,9 @@ void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
 
       nsCOMPtr<nsIChannel> channel = doc->GetChannel();
       if (channel) {
-        SetCurrentURI(doc->GetDocumentURI(), channel, true, 0);
+        SetCurrentURI(doc->GetDocumentURI(), channel,
+                       true,
+                       false,  0);
         mEODForCurrentDocument = false;
         mIsRestoringDocument = true;
         mLoadGroup->AddRequest(channel, nullptr);
@@ -1477,12 +1479,14 @@ NS_IMETHODIMP
 nsDocShell::SetCurrentURI(nsIURI* aURI) {
   
   
-  SetCurrentURI(aURI, nullptr, true, 0);
+  SetCurrentURI(aURI, nullptr,  true,
+                 false,  0);
   return NS_OK;
 }
 
 bool nsDocShell::SetCurrentURI(nsIURI* aURI, nsIRequest* aRequest,
                                bool aFireOnLocationChange,
+                               bool aIsInitialAboutBlank,
                                uint32_t aLocationFlags) {
   MOZ_ASSERT(!mIsBeingDestroyed);
 
@@ -1514,9 +1518,9 @@ bool nsDocShell::SetCurrentURI(nsIURI* aURI, nsIRequest* aRequest,
 
   
   
-  
-  if (!(mLoadingEntry || mLSHE) && !mHasLoadedNonBlankURI && !aRequest &&
-      aLocationFlags == 0 && !mBrowsingContext->IsTop()) {
+  if (aIsInitialAboutBlank && !mHasLoadedNonBlankURI &&
+      !mBrowsingContext->IsTop()) {
+    MOZ_ASSERT(!aRequest && aLocationFlags == 0);
     return false;
   }
 
@@ -6885,7 +6889,9 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
         rv = Embed(viewer, aActor, true, false);
         NS_ENSURE_SUCCESS(rv, rv);
 
-        SetCurrentURI(blankDoc->GetDocumentURI(), nullptr, true, 0);
+        SetCurrentURI(blankDoc->GetDocumentURI(), nullptr,
+                       true,
+                       true,  0);
         rv = mIsBeingDestroyed ? NS_ERROR_NOT_AVAILABLE : NS_OK;
       }
     }
@@ -7678,7 +7684,8 @@ nsresult nsDocShell::RestoreFromHistory() {
     
     
     nsCOMPtr<nsIURI> uri = origLSHE->GetURI();
-    SetCurrentURI(uri, document->GetChannel(), true, 0);
+    SetCurrentURI(uri, document->GetChannel(),  true,
+                   false,  0);
   }
 
   
@@ -11121,7 +11128,8 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
       aCloneSHChildren ? uint32_t(LOCATION_CHANGE_SAME_DOCUMENT) : 0;
 
   bool onLocationChangeNeeded =
-      SetCurrentURI(aURI, aChannel, aFireOnLocationChange, locationFlags);
+      SetCurrentURI(aURI, aChannel, aFireOnLocationChange,
+                     false, locationFlags);
   
   SetupReferrerInfoFromChannel(aChannel);
   return onLocationChangeNeeded;
@@ -11527,7 +11535,9 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
   
   if (!aEqualURIs && !mIsBeingDestroyed) {
     aDocument->SetDocumentURI(aNewURI);
-    SetCurrentURI(aNewURI, nullptr, true, LOCATION_CHANGE_SAME_DOCUMENT);
+    SetCurrentURI(aNewURI, nullptr,  true,
+                   false,
+                  LOCATION_CHANGE_SAME_DOCUMENT);
 
     AddURIVisit(aNewURI, aCurrentURI, 0);
 
