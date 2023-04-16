@@ -13,7 +13,6 @@ enum nsMenuObjectTypeX {
   eMenuBarObjectType,
   eSubmenuObjectType,
   eMenuItemObjectType,
-  eStandaloneNativeMenuObjectType,
 };
 
 
