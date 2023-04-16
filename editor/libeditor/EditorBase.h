@@ -292,6 +292,12 @@ class EditorBase : public nsIEditor,
 
 
 
+  Element* GetExposedRoot() const;
+
+  
+
+
+
   void SetTextInputListener(TextInputListener* aTextInputListener);
 
   
@@ -1860,12 +1866,6 @@ class EditorBase : public nsIEditor,
 
 
   virtual Element* GetEditorRoot() const;
-
-  
-
-
-
-  Element* GetExposedRoot() const;
 
   
 
