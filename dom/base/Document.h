@@ -1581,11 +1581,6 @@ class Document : public nsINode,
   
 
 
-  bool IsEditingOnAfterFlush();
-
-  
-
-
 
 
 
@@ -4197,6 +4192,7 @@ class Document : public nsINode,
         delete;
 
     bool DoNothing() const { return mDoNothing; }
+    MOZ_CAN_RUN_SCRIPT bool IsEditable(Document* aDocument) const;
     bool IsEditor() const {
       MOZ_ASSERT_IF(mEditorCommand, mActiveEditor || mHTMLEditor);
       return !!mEditorCommand;

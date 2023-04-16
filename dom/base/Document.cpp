@@ -5106,6 +5106,21 @@ TextEditor* Document::AutoEditorCommandTarget::GetTargetEditor() const {
   }
 }
 
+bool Document::AutoEditorCommandTarget::IsEditable(Document* aDocument) const {
+  if (RefPtr<Document> doc = aDocument->GetInProcessParentDocument()) {
+    
+    
+    doc->FlushPendingNotifications(FlushType::Frames);
+  }
+  TextEditor* targetEditor = GetTargetEditor();
+  if (targetEditor && targetEditor->IsTextEditor()) {
+    
+    
+    return !targetEditor->IsReadonly();
+  }
+  return aDocument->IsEditingOn();
+}
+
 bool Document::AutoEditorCommandTarget::IsCommandEnabled() const {
   TextEditor* targetEditor = GetTargetEditor();
   if (!targetEditor) {
@@ -5190,11 +5205,6 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
     return false;
   }
 
-  
-  if (commandData.IsAvailableOnlyWhenEditable() && !IsEditingOnAfterFlush()) {
-    return false;
-  }
-
   if (commandData.mCommand == Command::GetHTML) {
     return false;
   }
@@ -5220,6 +5230,11 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
   
   RefPtr<nsPresContext> presContext = GetPresContext();
   AutoEditorCommandTarget editCommandTarget(presContext, commandData);
+  if (commandData.IsAvailableOnlyWhenEditable() &&
+      !editCommandTarget.IsEditable(this)) {
+    return false;
+  }
+
   if (editCommandTarget.DoNothing()) {
     return false;
   }
@@ -5362,13 +5377,12 @@ bool Document::QueryCommandEnabled(const nsAString& aHTMLCommandName,
     return false;
   }
 
-  
-  if (!IsEditingOnAfterFlush()) {
+  RefPtr<nsPresContext> presContext = GetPresContext();
+  AutoEditorCommandTarget editCommandTarget(presContext, commandData);
+  if (!editCommandTarget.IsEditable(this)) {
     return false;
   }
 
-  RefPtr<nsPresContext> presContext = GetPresContext();
-  AutoEditorCommandTarget editCommandTarget(presContext, commandData);
   if (editCommandTarget.IsEditor()) {
     return editCommandTarget.IsCommandEnabled();
   }
@@ -5402,13 +5416,11 @@ bool Document::QueryCommandIndeterm(const nsAString& aHTMLCommandName,
     return false;
   }
 
-  
-  if (!IsEditingOnAfterFlush()) {
-    return false;
-  }
-
   RefPtr<nsPresContext> presContext = GetPresContext();
   AutoEditorCommandTarget editCommandTarget(presContext, commandData);
+  if (!editCommandTarget.IsEditable(this)) {
+    return false;
+  }
   RefPtr<nsCommandParams> params = new nsCommandParams();
   if (editCommandTarget.IsEditor()) {
     if (NS_FAILED(editCommandTarget.GetCommandStateParams(*params))) {
@@ -5452,11 +5464,6 @@ bool Document::QueryCommandState(const nsAString& aHTMLCommandName,
     return false;
   }
 
-  
-  if (!IsEditingOnAfterFlush()) {
-    return false;
-  }
-
   if (aHTMLCommandName.LowerCaseEqualsLiteral("usecss")) {
     
     
@@ -5465,6 +5472,9 @@ bool Document::QueryCommandState(const nsAString& aHTMLCommandName,
 
   RefPtr<nsPresContext> presContext = GetPresContext();
   AutoEditorCommandTarget editCommandTarget(presContext, commandData);
+  if (!editCommandTarget.IsEditable(this)) {
+    return false;
+  }
   RefPtr<nsCommandParams> params = new nsCommandParams();
   if (editCommandTarget.IsEditor()) {
     if (NS_FAILED(editCommandTarget.GetCommandStateParams(*params))) {
@@ -5591,13 +5601,11 @@ void Document::QueryCommandValue(const nsAString& aHTMLCommandName,
     return;
   }
 
-  
-  if (!IsEditingOnAfterFlush()) {
-    return;
-  }
-
   RefPtr<nsPresContext> presContext = GetPresContext();
   AutoEditorCommandTarget editCommandTarget(presContext, commandData);
+  if (!editCommandTarget.IsEditable(this)) {
+    return;
+  }
   RefPtr<nsCommandParams> params = new nsCommandParams();
   
   
@@ -5656,17 +5664,6 @@ void Document::QueryCommandValue(const nsAString& aHTMLCommandName,
   nsAutoCString result;
   params->GetCString("state_attribute", result);
   CopyUTF8toUTF16(result, aValue);
-}
-
-bool Document::IsEditingOnAfterFlush() {
-  RefPtr<Document> doc = GetInProcessParentDocument();
-  if (doc) {
-    
-    
-    doc->FlushPendingNotifications(FlushType::Frames);
-  }
-
-  return IsEditingOn();
 }
 
 void Document::MaybeEditingStateChanged() {
