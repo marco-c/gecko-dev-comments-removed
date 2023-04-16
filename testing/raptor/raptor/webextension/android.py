@@ -75,9 +75,6 @@ class WebExtensionAndroid(PerftestAndroid, WebExtension):
         
         
 
-        
-        if self.config["app"] == "fennec":
-            return
         LOG.info("creating android app config.yml")
 
         yml_config_data = dict(
@@ -134,49 +131,21 @@ class WebExtensionAndroid(PerftestAndroid, WebExtension):
     def launch_firefox_android_app(self, test_name):
         LOG.info("starting %s" % self.config["app"])
 
-        extra_args = [
-            "-profile",
-            self.remote_profile,
-            "--allow-downgrade",
-            "--es",
-            "env0",
-            "LOG_VERBOSE=1",
-            "--es",
-            "env1",
-            "R_LOG_LEVEL=6",
-            "--es",
-            "env2",
-            "MOZ_WEBRENDER=%d" % self.config["enable_webrender"],
-            
-            "--es",
-            "env3",
-            "MOZ_CRASHREPORTER_SHUTDOWN=1",
-        ]
-
         try:
             
             self.device.stop_application(self.config["binary"])
 
-            if self.config["app"] == "fennec":
-                self.device.launch_fennec(
-                    self.config["binary"],
-                    extra_args=extra_args,
-                    url="about:blank",
-                    fail_if_running=False,
-                )
-            else:
+            
+            
 
-                
-                
-
-                self.device.launch_application(
-                    self.config["binary"],
-                    self.config["activity"],
-                    self.config["intent"],
-                    extras=None,
-                    url="about:blank",
-                    fail_if_running=False,
-                )
+            self.device.launch_application(
+                self.config["binary"],
+                self.config["activity"],
+                self.config["intent"],
+                extras=None,
+                url="about:blank",
+                fail_if_running=False,
+            )
 
             
             if not self.process_exists:

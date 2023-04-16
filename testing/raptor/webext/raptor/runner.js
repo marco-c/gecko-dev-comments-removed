@@ -19,7 +19,7 @@ const TEST_BENCHMARK = "benchmark";
 const TEST_PAGE_LOAD = "pageload";
 const TEST_SCENARIO = "scenario";
 
-const ANDROID_BROWSERS = ["fennec", "fenix", "geckoview", "refbrow"];
+const ANDROID_BROWSERS = ["fenix", "geckoview", "refbrow"];
 
 
 

@@ -148,10 +148,8 @@ class Perftest(object):
         
         
         
-        
         self.using_condprof = not (
             (self.config["platform"] == "win" and self.config["processor"] == "aarch64")
-            or self.config["binary"] == "org.mozilla.fennec_aurora"
             or self.config["binary"] == "org.mozilla.reference.browser.raptor"
             or self.config["no_conditioned_profile"]
         )
@@ -160,10 +158,6 @@ class Perftest(object):
         else:
             LOG.info("Using an empty profile.")
         self.config["using_condprof"] = self.using_condprof
-
-        
-        if self.config["app"] == "fennec":
-            self.config["e10s"] = False
 
         
         

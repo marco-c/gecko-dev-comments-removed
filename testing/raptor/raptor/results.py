@@ -575,9 +575,6 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                         and bt in ("fnbpaint", "dcf")
                     ):
                         continue
-                    
-                    if self.app and "fennec" in self.app.lower() and bt == "fcp":
-                        continue
 
                     
                     
