@@ -451,6 +451,17 @@ class nsLayoutUtils {
 
 
 
+
+
+  static nsIFrame* GetCrossDocParentFrameInProcess(
+      const nsIFrame* aFrame, nsPoint* aCrossDocOffset = nullptr);
+
+  
+
+
+
+
+
   static nsIFrame* GetCrossDocParentFrame(const nsIFrame* aFrame,
                                           nsPoint* aCrossDocOffset = nullptr);
 
