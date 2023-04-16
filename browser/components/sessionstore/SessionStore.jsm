@@ -527,10 +527,6 @@ var SessionStore = {
   finishTabRemotenessChange(aTab, aSwitchId) {
     SessionStoreInternal.finishTabRemotenessChange(aTab, aSwitchId);
   },
-
-  restoreTabContentComplete(aBrowser, aData) {
-    SessionStoreInternal._restoreTabContentComplete(aBrowser, aData);
-  },
 };
 
 
@@ -1199,12 +1195,26 @@ var SessionStoreInternal = {
       }
       onStateChange(webProgress, request, stateFlags, status) {
         if (
-          webProgress.isTopLevel &&
-          stateFlags & Ci.nsIWebProgressListener.STATE_IS_WINDOW &&
-          stateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
-          callbacks.onStopRequest
+          !webProgress.isTopLevel ||
+          !(stateFlags & Ci.nsIWebProgressListener.STATE_IS_WINDOW)
         ) {
-          callbacks.onStopRequest(request, this);
+          return;
+        }
+
+        if (
+          callbacks.onStartRequest &&
+          stateFlags & Ci.nsIWebProgressListener.STATE_START
+        ) {
+          callbacks.onStartRequest();
+          this.uninstall();
+        }
+
+        if (
+          callbacks.onStopRequest &&
+          stateFlags & Ci.nsIWebProgressListener.STATE_STOP
+        ) {
+          callbacks.onStopRequest();
+          this.uninstall();
         }
       }
     }
@@ -1401,7 +1411,6 @@ var SessionStoreInternal = {
             }
           }
         }
-
         if (aMessage.data.isFinal) {
           
           
@@ -1412,6 +1421,7 @@ var SessionStoreInternal = {
           for (let wm of [
             this._browserSHistoryListener,
             this._browserSHistoryListenerForRestore,
+            this._browserProgressListenerForRestore,
           ]) {
             let listener = wm.get(browser.permanentKey);
             if (listener) {
@@ -5631,15 +5641,6 @@ var SessionStoreInternal = {
   _resetLocalTabRestoringState(aTab) {
     let browser = aTab.linkedBrowser;
 
-    if (Services.appinfo.sessionHistoryInParent) {
-      if (this._browserProgressListenerForRestore.has(browser.permanentKey)) {
-        this._browserProgressListenerForRestore
-          .get(browser.permanentKey)
-          .uninstall();
-      }
-      SessionStoreUtils.setRestoreData(browser.browsingContext, {});
-    }
-
     
     let previousState = TAB_STATE_FOR_BROWSER.get(browser);
 
@@ -5673,9 +5674,7 @@ var SessionStoreInternal = {
       return;
     }
 
-    if (!Services.appinfo.sessionHistoryInParent) {
-      browser.messageManager.sendAsyncMessage("SessionStore:resetRestore", {});
-    }
+    browser.messageManager.sendAsyncMessage("SessionStore:resetRestore", {});
     this._resetLocalTabRestoringState(tab);
   },
 
@@ -5764,91 +5763,6 @@ var SessionStoreInternal = {
 
 
 
-  buildRestoreData(formdata, scroll) {
-    function addFormEntries(root, fields, isXpath) {
-      for (let [key, value] of Object.entries(fields)) {
-        switch (typeof value) {
-          case "string":
-            root.addTextField(isXpath, key, value);
-            break;
-          case "boolean":
-            root.addCheckbox(isXpath, key, value);
-            break;
-          case "object": {
-            if (value === null) {
-              break;
-            }
-            if (
-              value.hasOwnProperty("type") &&
-              value.hasOwnProperty("fileList")
-            ) {
-              root.addFileList(isXpath, key, value.type, value.fileList);
-              break;
-            }
-            if (
-              value.hasOwnProperty("selectedIndex") &&
-              value.hasOwnProperty("value")
-            ) {
-              root.addSingleSelect(
-                isXpath,
-                key,
-                value.selectedIndex,
-                value.value
-              );
-              break;
-            }
-            if (
-              key === "sessionData" &&
-              ["about:sessionrestore", "about:welcomeback"].includes(
-                formdata.url
-              )
-            ) {
-              root.addTextField(isXpath, key, JSON.stringify(value));
-              break;
-            }
-            if (Array.isArray(value)) {
-              root.addMultipleSelect(isXpath, key, value);
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    let root = SessionStoreUtils.constructSessionStoreRestoreData();
-    if (scroll?.hasOwnProperty("scroll")) {
-      root.scroll = scroll.scroll;
-    }
-    if (formdata?.hasOwnProperty("url")) {
-      root.url = formdata.url;
-      if (formdata.hasOwnProperty("innerHTML")) {
-        
-        root.innerHTML = formdata.innerHTML;
-      }
-      if (formdata.hasOwnProperty("xpath")) {
-        addFormEntries(root, formdata.xpath,  true);
-      }
-      if (formdata.hasOwnProperty("id")) {
-        addFormEntries(root, formdata.id,  false);
-      }
-    }
-    let childrenLength = Math.max(
-      scroll?.children?.length || 0,
-      formdata?.children?.length || 0
-    );
-    for (let i = 0; i < childrenLength; i++) {
-      root.addChild(
-        this.buildRestoreData(formdata?.children?.[i], scroll?.children?.[i]),
-        i
-      );
-    }
-    return root;
-  },
-
-  
-
-
-
   async _restoreTabState(browser, data) {
     if (!Services.appinfo.sessionHistoryInParent) {
       throw new Error("This function should only be used with SHIP");
@@ -5909,14 +5823,18 @@ var SessionStoreInternal = {
       throw new Error("This function should only be used with SHIP");
     }
 
-    for (let map of [
-      this._browserProgressListenerForRestore,
-      this._browserSHistoryListenerForRestore,
-    ]) {
-      let listener = map.get(browser.permanentKey);
-      if (listener) {
-        listener.uninstall();
-      }
+    let listener = this._browserProgressListenerForRestore.get(
+      browser.permanentKey
+    );
+    if (listener) {
+      listener.uninstall();
+    }
+
+    listener = this._browserSHistoryListenerForRestore.get(
+      browser.permanentKey
+    );
+    if (listener) {
+      listener.uninstall();
     }
 
     let restoreData = {
@@ -5928,56 +5846,43 @@ var SessionStoreInternal = {
     this._restoreTabContentStarted(browser, restoreData);
 
     let { tabData } = restoreData;
-    let uri = null;
-    let loadFlags = null;
+
+    let uri = "about:blank";
+    let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY;
 
     if (tabData?.userTypedValue && tabData?.userTypedClear) {
       uri = tabData.userTypedValue;
       loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
     } else if (tabData?.entries.length) {
-      uri = tabData.entries[tabData.index - 1].url;
-      let willRestoreContent = SessionStoreUtils.setRestoreData(
-        browser.browsingContext,
-        this.buildRestoreData(tabData.formdata, tabData.scroll)
+      uri = loadFlags = null;
+      browser.messageManager.sendAsyncMessage(
+        "SessionStore:setRestoringDocument",
+        {
+          entry: tabData.entries[tabData.index - 1] || {},
+          formdata: tabData.formdata || {},
+          scrollPositions: tabData.scroll || {},
+        }
       );
-      
-      
-      
-      if (willRestoreContent) {
-        return;
-      }
-    } else {
-      uri = "about:blank";
-      loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY;
+      browser.browsingContext.sessionHistory.reloadCurrentEntry();
     }
 
-    if (uri) {
+    if (uri && loadFlags) {
+      
+      
+      
+      
+      
+      
       this.addProgressListenerForRestore(browser, {
-        onStopRequest: (request, listener) => {
-          let requestURI = request.QueryInterface(Ci.nsIChannel)?.originalURI;
-          
-          
-          
-          
-          
-          
-          
-          
-          if (requestURI?.spec !== "about:blank" || uri === "about:blank") {
-            listener.uninstall();
-            this._restoreTabContentComplete(browser, restoreData);
-          }
+        onStopRequest: () => {
+          this._restoreTabContentComplete(browser, restoreData);
         },
       });
 
-      if (loadFlags) {
-        browser.browsingContext.loadURI(uri, {
-          loadFlags,
-          triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-        });
-      } else {
-        browser.browsingContext.sessionHistory.reloadCurrentEntry();
-      }
+      browser.browsingContext.loadURI(uri, {
+        loadFlags,
+        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      });
     }
   },
 

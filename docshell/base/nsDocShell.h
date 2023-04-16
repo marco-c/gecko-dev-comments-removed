@@ -398,8 +398,6 @@ class nsDocShell final : public nsDocLoader,
 
   void StoreWindowNameToSHEntries();
 
-  void MaybeRestoreTabContent();
-
   void SetWillChangeProcess() { mWillChangeProcess = true; }
   bool WillChangeProcess() { return mWillChangeProcess; }
 
@@ -1194,6 +1192,10 @@ class nsDocShell final : public nsDocLoader,
   
   int32_t mPreviousEntryIndex;
   int32_t mLoadedEntryIndex;
+
+  
+  
+  int32_t mChildOffset;
 
   BusyFlags mBusyFlags;
   AppType mAppType;
