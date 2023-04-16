@@ -9,17 +9,22 @@
 
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TaskCategory.h"
+#include "mozilla/TaskController.h"
 #include "nsThreadUtils.h"
 #include <functional>
 
 namespace mozilla {
 
+class IdleTaskRunnerTask;
 
 
 
 
-class IdleTaskRunner final : public CancelableIdleRunnable {
+
+class IdleTaskRunner {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(IdleTaskRunner)
+
   
   using CallbackType = std::function<bool(TimeStamp aDeadline)>;
 
@@ -49,19 +54,22 @@ class IdleTaskRunner final : public CancelableIdleRunnable {
       uint32_t aStartDelay, uint32_t aMaxDelay, int64_t aMinimumUsefulBudget,
       bool aRepeating, const MayStopProcessingCallbackType& aMayStopProcessing);
 
-  NS_IMETHOD Run() override;
+  void Run();
 
   
   
-  void SetDeadline(mozilla::TimeStamp aDeadline) override;
+  void SetIdleDeadline(mozilla::TimeStamp aDeadline);
 
-  void SetTimer(uint32_t aDelay, nsIEventTarget* aTarget) override;
+  void SetTimer(uint32_t aDelay, nsIEventTarget* aTarget);
 
   
   void SetMinimumUsefulBudget(int64_t aMinimumUsefulBudget);
 
-  nsresult Cancel() override;
+  void Cancel();
+
   void Schedule(bool aAllowIdleDispatch);
+
+  const char* GetName() { return mName; }
 
  private:
   explicit IdleTaskRunner(
@@ -94,6 +102,7 @@ class IdleTaskRunner final : public CancelableIdleRunnable {
   bool mTimerActive;
   MayStopProcessingCallbackType mMayStopProcessing;
   const char* mName;
+  RefPtr<IdleTaskRunnerTask> mTask;
 };
 
 }  
