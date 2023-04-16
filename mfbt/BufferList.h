@@ -306,7 +306,7 @@ class BufferList : private AllocPolicy {
 
   
   
-  inline MOZ_MUST_USE bool WriteBytes(const char* aData, size_t aSize);
+  [[nodiscard]] inline bool WriteBytes(const char* aData, size_t aSize);
 
   
   
@@ -398,8 +398,8 @@ class BufferList : private AllocPolicy {
 };
 
 template <typename AllocPolicy>
-MOZ_MUST_USE bool BufferList<AllocPolicy>::WriteBytes(const char* aData,
-                                                      size_t aSize) {
+[[nodiscard]] bool BufferList<AllocPolicy>::WriteBytes(const char* aData,
+                                                       size_t aSize) {
   MOZ_RELEASE_ASSERT(mOwning);
   MOZ_RELEASE_ASSERT(mStandardCapacity);
 

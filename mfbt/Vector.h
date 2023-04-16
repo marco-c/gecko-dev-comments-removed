@@ -116,7 +116,8 @@ struct VectorImpl {
 
 
 
-  static inline MOZ_MUST_USE bool growTo(Vector<T, N, AP>& aV, size_t aNewCap) {
+  [[nodiscard]] static inline bool growTo(Vector<T, N, AP>& aV,
+                                          size_t aNewCap) {
     MOZ_ASSERT(!aV.usingInlineStorage());
     MOZ_ASSERT(!CapacityHasExcessSpace<T>(aNewCap));
     T* newbuf = aV.template pod_malloc<T>(aNewCap);
@@ -200,7 +201,8 @@ struct VectorImpl<T, N, AP, true> {
     }
   }
 
-  static inline MOZ_MUST_USE bool growTo(Vector<T, N, AP>& aV, size_t aNewCap) {
+  [[nodiscard]] static inline bool growTo(Vector<T, N, AP>& aV,
+                                          size_t aNewCap) {
     MOZ_ASSERT(!aV.usingInlineStorage());
     MOZ_ASSERT(!CapacityHasExcessSpace<T>(aNewCap));
     T* newbuf =
@@ -252,9 +254,9 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
 
   friend struct detail::VectorTesting;
 
-  MOZ_MUST_USE bool growStorageBy(size_t aIncr);
-  MOZ_MUST_USE bool convertToHeapStorage(size_t aNewCap);
-  MOZ_MUST_USE bool maybeCheckSimulatedOOM(size_t aRequestedSize);
+  [[nodiscard]] bool growStorageBy(size_t aIncr);
+  [[nodiscard]] bool convertToHeapStorage(size_t aNewCap);
+  [[nodiscard]] bool maybeCheckSimulatedOOM(size_t aRequestedSize);
 
   
 
@@ -576,7 +578,7 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
 
 
 
-  MOZ_MUST_USE bool initCapacity(size_t aRequest);
+  [[nodiscard]] bool initCapacity(size_t aRequest);
 
   
 
@@ -585,7 +587,7 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
 
 
 
-  MOZ_MUST_USE bool initLengthUninitialized(size_t aRequest);
+  [[nodiscard]] bool initLengthUninitialized(size_t aRequest);
 
   
 
@@ -595,7 +597,7 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
 
 
 
-  MOZ_MUST_USE bool reserve(size_t aRequest);
+  [[nodiscard]] bool reserve(size_t aRequest);
 
   
 
@@ -610,18 +612,18 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
   void shrinkTo(size_t aNewLength);
 
   
-  MOZ_MUST_USE bool growBy(size_t aIncr);
+  [[nodiscard]] bool growBy(size_t aIncr);
 
   
-  MOZ_MUST_USE bool resize(size_t aNewLength);
+  [[nodiscard]] bool resize(size_t aNewLength);
 
   
 
 
 
-  MOZ_MUST_USE bool growByUninitialized(size_t aIncr);
+  [[nodiscard]] bool growByUninitialized(size_t aIncr);
   void infallibleGrowByUninitialized(size_t aIncr);
-  MOZ_MUST_USE bool resizeUninitialized(size_t aNewLength);
+  [[nodiscard]] bool resizeUninitialized(size_t aNewLength);
 
   
   void clear();
@@ -657,29 +659,29 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
 
 
   template <typename U>
-  MOZ_MUST_USE bool append(U&& aU);
+  [[nodiscard]] bool append(U&& aU);
 
   
 
 
   template <typename... Args>
-  MOZ_MUST_USE bool emplaceBack(Args&&... aArgs) {
+  [[nodiscard]] bool emplaceBack(Args&&... aArgs) {
     if (!growByUninitialized(1)) return false;
     Impl::new_(&back(), std::forward<Args>(aArgs)...);
     return true;
   }
 
   template <typename U, size_t O, class BP>
-  MOZ_MUST_USE bool appendAll(const Vector<U, O, BP>& aU);
+  [[nodiscard]] bool appendAll(const Vector<U, O, BP>& aU);
   template <typename U, size_t O, class BP>
-  MOZ_MUST_USE bool appendAll(Vector<U, O, BP>&& aU);
-  MOZ_MUST_USE bool appendN(const T& aT, size_t aN);
+  [[nodiscard]] bool appendAll(Vector<U, O, BP>&& aU);
+  [[nodiscard]] bool appendN(const T& aT, size_t aN);
   template <typename U>
-  MOZ_MUST_USE bool append(const U* aBegin, const U* aEnd);
+  [[nodiscard]] bool append(const U* aBegin, const U* aEnd);
   template <typename U>
-  MOZ_MUST_USE bool append(const U* aBegin, size_t aLength);
+  [[nodiscard]] bool append(const U* aBegin, size_t aLength);
   template <typename U>
-  MOZ_MUST_USE bool moveAppend(U* aBegin, U* aEnd);
+  [[nodiscard]] bool moveAppend(U* aBegin, U* aEnd);
 
   
 
@@ -719,7 +721,7 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
 
 
 
-  MOZ_MUST_USE T* extractRawBuffer();
+  [[nodiscard]] T* extractRawBuffer();
 
   
 
@@ -737,7 +739,7 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
 
 
 
-  MOZ_MUST_USE T* extractOrCopyRawBuffer();
+  [[nodiscard]] T* extractOrCopyRawBuffer();
 
   
 
@@ -776,7 +778,7 @@ class MOZ_NON_PARAM Vector final : private AllocPolicy {
 
 
   template <typename U>
-  MOZ_MUST_USE T* insert(T* aP, U&& aVal);
+  [[nodiscard]] T* insert(T* aP, U&& aVal);
 
   
 

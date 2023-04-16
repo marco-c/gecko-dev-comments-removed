@@ -212,7 +212,7 @@ class HashMap {
 
   
   
-  MOZ_MUST_USE bool reserve(uint32_t aLen) { return mImpl.reserve(aLen); }
+  [[nodiscard]] bool reserve(uint32_t aLen) { return mImpl.reserve(aLen); }
 
   
 
@@ -247,7 +247,7 @@ class HashMap {
   
   
   template <typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool put(KeyInput&& aKey, ValueInput&& aValue) {
+  [[nodiscard]] bool put(KeyInput&& aKey, ValueInput&& aValue) {
     AddPtr p = lookupForAdd(aKey);
     if (p) {
       p->value() = std::forward<ValueInput>(aValue);
@@ -260,14 +260,14 @@ class HashMap {
   
   
   template <typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool putNew(KeyInput&& aKey, ValueInput&& aValue) {
+  [[nodiscard]] bool putNew(KeyInput&& aKey, ValueInput&& aValue) {
     return mImpl.putNew(aKey, std::forward<KeyInput>(aKey),
                         std::forward<ValueInput>(aValue));
   }
 
   template <typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool putNew(const Lookup& aLookup, KeyInput&& aKey,
-                           ValueInput&& aValue) {
+  [[nodiscard]] bool putNew(const Lookup& aLookup, KeyInput&& aKey,
+                            ValueInput&& aValue) {
     return mImpl.putNew(aLookup, std::forward<KeyInput>(aKey),
                         std::forward<ValueInput>(aValue));
   }
@@ -331,15 +331,15 @@ class HashMap {
 
   
   template <typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool add(AddPtr& aPtr, KeyInput&& aKey, ValueInput&& aValue) {
+  [[nodiscard]] bool add(AddPtr& aPtr, KeyInput&& aKey, ValueInput&& aValue) {
     return mImpl.add(aPtr, std::forward<KeyInput>(aKey),
                      std::forward<ValueInput>(aValue));
   }
 
   
   template <typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool relookupOrAdd(AddPtr& aPtr, KeyInput&& aKey,
-                                  ValueInput&& aValue) {
+  [[nodiscard]] bool relookupOrAdd(AddPtr& aPtr, KeyInput&& aKey,
+                                   ValueInput&& aValue) {
     return mImpl.relookupOrAdd(aPtr, aKey, std::forward<KeyInput>(aKey),
                                std::forward<ValueInput>(aValue));
   }
@@ -501,7 +501,7 @@ class HashSet {
 
   
   
-  MOZ_MUST_USE bool reserve(uint32_t aLen) { return mImpl.reserve(aLen); }
+  [[nodiscard]] bool reserve(uint32_t aLen) { return mImpl.reserve(aLen); }
 
   
 
@@ -534,7 +534,7 @@ class HashSet {
 
   
   template <typename U>
-  MOZ_MUST_USE bool put(U&& aU) {
+  [[nodiscard]] bool put(U&& aU) {
     AddPtr p = lookupForAdd(aU);
     return p ? true : add(p, std::forward<U>(aU));
   }
@@ -542,13 +542,13 @@ class HashSet {
   
   
   template <typename U>
-  MOZ_MUST_USE bool putNew(U&& aU) {
+  [[nodiscard]] bool putNew(U&& aU) {
     return mImpl.putNew(aU, std::forward<U>(aU));
   }
 
   
   template <typename U>
-  MOZ_MUST_USE bool putNew(const Lookup& aLookup, U&& aU) {
+  [[nodiscard]] bool putNew(const Lookup& aLookup, U&& aU) {
     return mImpl.putNew(aLookup, std::forward<U>(aU));
   }
 
@@ -610,13 +610,14 @@ class HashSet {
 
   
   template <typename U>
-  MOZ_MUST_USE bool add(AddPtr& aPtr, U&& aU) {
+  [[nodiscard]] bool add(AddPtr& aPtr, U&& aU) {
     return mImpl.add(aPtr, std::forward<U>(aU));
   }
 
   
   template <typename U>
-  MOZ_MUST_USE bool relookupOrAdd(AddPtr& aPtr, const Lookup& aLookup, U&& aU) {
+  [[nodiscard]] bool relookupOrAdd(AddPtr& aPtr, const Lookup& aLookup,
+                                   U&& aU) {
     return mImpl.relookupOrAdd(aPtr, aLookup, std::forward<U>(aU));
   }
 
@@ -2018,7 +2019,7 @@ class HashTable : private AllocPolicy {
     compact();
   }
 
-  MOZ_MUST_USE bool reserve(uint32_t aLen) {
+  [[nodiscard]] bool reserve(uint32_t aLen) {
     if (aLen == 0) {
       return true;
     }
@@ -2093,7 +2094,7 @@ class HashTable : private AllocPolicy {
   }
 
   template <typename... Args>
-  MOZ_MUST_USE bool add(AddPtr& aPtr, Args&&... aArgs) {
+  [[nodiscard]] bool add(AddPtr& aPtr, Args&&... aArgs) {
     ReentrancyGuard g(*this);
     MOZ_ASSERT_IF(aPtr.isValid(), mTable);
     MOZ_ASSERT_IF(aPtr.isValid(), aPtr.mTable == this);
@@ -2165,7 +2166,7 @@ class HashTable : private AllocPolicy {
   
   
   template <typename... Args>
-  MOZ_MUST_USE bool putNew(const Lookup& aLookup, Args&&... aArgs) {
+  [[nodiscard]] bool putNew(const Lookup& aLookup, Args&&... aArgs) {
     if (!this->checkSimulatedOOM()) {
       return false;
     }
@@ -2182,8 +2183,8 @@ class HashTable : private AllocPolicy {
   
   
   template <typename... Args>
-  MOZ_MUST_USE bool relookupOrAdd(AddPtr& aPtr, const Lookup& aLookup,
-                                  Args&&... aArgs) {
+  [[nodiscard]] bool relookupOrAdd(AddPtr& aPtr, const Lookup& aLookup,
+                                   Args&&... aArgs) {
     
     if (!aPtr.isLive()) {
       return false;

@@ -81,10 +81,10 @@ class LZ4 {
 
 
 
-  static MFBT_API MOZ_MUST_USE bool decompress(const char* aSource,
-                                               size_t aInputSize, char* aDest,
-                                               size_t aMaxOutputSize,
-                                               size_t* aOutputSize);
+  [[nodiscard]] static MFBT_API bool decompress(const char* aSource,
+                                                size_t aInputSize, char* aDest,
+                                                size_t aMaxOutputSize,
+                                                size_t* aOutputSize);
 
   
 
@@ -105,11 +105,11 @@ class LZ4 {
 
 
 
-  static MFBT_API MOZ_MUST_USE bool decompressPartial(const char* aSource,
-                                                      size_t aInputSize,
-                                                      char* aDest,
-                                                      size_t aMaxOutputSize,
-                                                      size_t* aOutputSize);
+  [[nodiscard]] static MFBT_API bool decompressPartial(const char* aSource,
+                                                       size_t aInputSize,
+                                                       char* aDest,
+                                                       size_t aMaxOutputSize,
+                                                       size_t* aOutputSize);
 
   
 

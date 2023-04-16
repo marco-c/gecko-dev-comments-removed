@@ -633,8 +633,7 @@ static MOZ_ALWAYS_INLINE bool FuzzyEqualsMultiplicative(
 
 
 
-MOZ_MUST_USE
-extern MFBT_API bool IsFloat32Representable(double aValue);
+[[nodiscard]] extern MFBT_API bool IsFloat32Representable(double aValue);
 
 } 
 

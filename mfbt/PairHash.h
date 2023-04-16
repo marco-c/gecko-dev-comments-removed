@@ -23,13 +23,13 @@ namespace mozilla {
 
 
 template <typename U, typename V>
-MOZ_MUST_USE inline HashNumber HashPair(const std::pair<U, V>& pair) {
+[[nodiscard]] inline HashNumber HashPair(const std::pair<U, V>& pair) {
   
   return HashGeneric(pair.first, pair.second);
 }
 
 template <typename U, typename V>
-MOZ_MUST_USE inline HashNumber HashCompactPair(const CompactPair<U, V>& pair) {
+[[nodiscard]] inline HashNumber HashCompactPair(const CompactPair<U, V>& pair) {
   
   return HashGeneric(pair.first(), pair.second());
 }

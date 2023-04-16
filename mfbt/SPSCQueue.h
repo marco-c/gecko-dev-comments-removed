@@ -123,8 +123,9 @@ class SPSCRingBufferBase {
 
 
 
-  MOZ_MUST_USE
-  int EnqueueDefault(int aCount) { return Enqueue(nullptr, aCount); }
+  [[nodiscard]] int EnqueueDefault(int aCount) {
+    return Enqueue(nullptr, aCount);
+  }
   
 
 
@@ -134,8 +135,7 @@ class SPSCRingBufferBase {
 
 
 
-  MOZ_MUST_USE
-  int Enqueue(T& aElement) { return Enqueue(&aElement, 1); }
+  [[nodiscard]] int Enqueue(T& aElement) { return Enqueue(&aElement, 1); }
   
 
 
@@ -147,8 +147,7 @@ class SPSCRingBufferBase {
 
 
 
-  MOZ_MUST_USE
-  int Enqueue(T* aElements, int aCount) {
+  [[nodiscard]] int Enqueue(T* aElements, int aCount) {
 #ifdef DEBUG
     AssertCorrectThread(mProducerId);
 #endif
@@ -194,8 +193,7 @@ class SPSCRingBufferBase {
 
 
 
-  MOZ_MUST_USE
-  int Dequeue(T* elements, int count) {
+  [[nodiscard]] int Dequeue(T* elements, int count) {
 #ifdef DEBUG
     AssertCorrectThread(mConsumerId);
 #endif

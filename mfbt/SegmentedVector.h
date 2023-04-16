@@ -156,7 +156,7 @@ class SegmentedVector : private AllocPolicy {
   
   
   template <typename U>
-  MOZ_MUST_USE bool Append(U&& aU) {
+  [[nodiscard]] bool Append(U&& aU) {
     Segment* last = mSegments.getLast();
     if (!last || last->Length() == kSegmentCapacity) {
       last = this->template pod_malloc<Segment>(1);
