@@ -18,6 +18,10 @@
 
 
 
+
+
+
+
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
@@ -119,7 +123,20 @@ var FxAccountsPairingChannel =
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+
 __webpack_require__.r(__webpack_exports__);
+
+
+__webpack_require__.d(__webpack_exports__, "PairingChannel", function() { return  src_PairingChannel; });
+__webpack_require__.d(__webpack_exports__, "base64urlToBytes", function() { return  base64urlToBytes; });
+__webpack_require__.d(__webpack_exports__, "bytesToBase64url", function() { return  bytesToBase64url; });
+__webpack_require__.d(__webpack_exports__, "bytesToHex", function() { return  bytesToHex; });
+__webpack_require__.d(__webpack_exports__, "bytesToUtf8", function() { return  bytesToUtf8; });
+__webpack_require__.d(__webpack_exports__, "hexToBytes", function() { return  hexToBytes; });
+__webpack_require__.d(__webpack_exports__, "TLSCloseNotify", function() { return  TLSCloseNotify; });
+__webpack_require__.d(__webpack_exports__, "TLSError", function() { return  TLSError; });
+__webpack_require__.d(__webpack_exports__, "utf8ToBytes", function() { return  utf8ToBytes; });
+__webpack_require__.d(__webpack_exports__, "_internals", function() { return  _internals; });
 
 
 
@@ -633,6 +650,8 @@ class utils_BufferWriter extends utils_BufferWithPointer {
 
 
 
+
+
 const AEAD_SIZE_INFLATION = 16;
 const KEY_LENGTH = 16;
 const IV_LENGTH = 12;
@@ -738,6 +757,11 @@ async function getRandomBytes(size) {
   crypto.getRandomValues(bytes);
   return bytes;
 }
+
+
+
+
+
 
 
 
@@ -3418,16 +3442,8 @@ if (
 
 
 
- __webpack_require__.d(__webpack_exports__, "PairingChannel", function() { return src_PairingChannel; });
- __webpack_require__.d(__webpack_exports__, "_internals", function() { return _internals; });
-__webpack_require__.d(__webpack_exports__, "base64urlToBytes", function() { return base64urlToBytes; });
-__webpack_require__.d(__webpack_exports__, "bytesToBase64url", function() { return bytesToBase64url; });
-__webpack_require__.d(__webpack_exports__, "bytesToHex", function() { return bytesToHex; });
-__webpack_require__.d(__webpack_exports__, "bytesToUtf8", function() { return bytesToUtf8; });
-__webpack_require__.d(__webpack_exports__, "hexToBytes", function() { return hexToBytes; });
-__webpack_require__.d(__webpack_exports__, "TLSCloseNotify", function() { return TLSCloseNotify; });
-__webpack_require__.d(__webpack_exports__, "TLSError", function() { return TLSError; });
-__webpack_require__.d(__webpack_exports__, "utf8ToBytes", function() { return utf8ToBytes; });
+
+
 
 
 
@@ -3462,9 +3478,14 @@ class src_PairingChannel extends EventTarget {
 
 
 
+
+
+
+
   static create(channelServerURI) {
     const wsURI = new URL('/v1/ws/', channelServerURI).href;
     const channelKey = crypto.getRandomValues(new Uint8Array(32));
+    
     return this._makePairingChannel(wsURI, tlsconnection_ServerConnection, channelKey);
   }
 
@@ -3473,8 +3494,14 @@ class src_PairingChannel extends EventTarget {
 
 
 
+
+
+
+
   static connect(channelServerURI, channelId, channelKey) {
     const wsURI = new URL(`/v1/ws/${channelId}`, channelServerURI).href;
+    
+    
     return this._makePairingChannel(wsURI, tlsconnection_ClientConnection, channelKey);
   }
 
@@ -3490,9 +3517,12 @@ class src_PairingChannel extends EventTarget {
       const onFirstMessage = async event => {
         stopListening();
         try {
+          
+          
           const {channelid: channelId} = JSON.parse(event.data);
           const pskId = utf8ToBytes(channelId);
           const connection = await ConnectionClass.create(psk, pskId, data => {
+            
             
             
             socket.send(bytesToBase64url(data));
@@ -3504,9 +3534,11 @@ class src_PairingChannel extends EventTarget {
         }
       };
       stopListening = () => {
+        socket.removeEventListener('close', onConnectionError);
         socket.removeEventListener('error', onConnectionError);
         socket.removeEventListener('message', onFirstMessage);
       };
+      socket.addEventListener('close', onConnectionError);
       socket.addEventListener('error', onConnectionError);
       socket.addEventListener('message', onFirstMessage);
     });
@@ -3515,6 +3547,8 @@ class src_PairingChannel extends EventTarget {
   _setupListeners() {
     this._socket.addEventListener('message', async event => {
       try {
+        
+        
         const channelServerEnvelope = JSON.parse(event.data);
         const payload = await this._connection.recv(base64urlToBytes(channelServerEnvelope.message));
         if (payload !== null) {
@@ -3528,6 +3562,9 @@ class src_PairingChannel extends EventTarget {
         }
       } catch (error) {
         let event;
+        
+        
+        
         if (error instanceof TLSCloseNotify) {
           this._peerClosed = true;
           if (this._selfClosed) {
