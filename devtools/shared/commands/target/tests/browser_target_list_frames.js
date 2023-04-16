@@ -230,9 +230,13 @@ async function testTabFrames(mainRoot) {
       afterNavigationFramesCount,
       "retrieved all targets after navigation"
     );
+    
+    
+    
+    
     is(
-      targets[2].targetFront.url,
-      SECOND_PAGE_URL,
+      targets[2].targetFront.outerWindowID,
+      browser.outerWindowID,
       "The new target should be the newly loaded document"
     );
     is(
