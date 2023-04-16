@@ -125,6 +125,19 @@ var FormSubmitListener = {
   },
 };
 
+
+
+
+
+
+
+function iterateDocShellTree(docShell) {
+  return docShell.getAllDocShellsInSubtree(
+    docShell.typeContent,
+    docShell.ENUMERATE_FORWARDS
+  );
+}
+
 var WebProgressListener = {
   init: function() {
     
@@ -132,9 +145,7 @@ var WebProgressListener = {
     this.previousURIMap = new WeakMap();
 
     
-    for (let currentDocShell of WebNavigationFrames.iterateDocShellTree(
-      docShell
-    )) {
+    for (let currentDocShell of iterateDocShellTree(docShell)) {
       let win = currentDocShell.domWindow;
       let { currentURI } = currentDocShell.QueryInterface(Ci.nsIWebNavigation);
 

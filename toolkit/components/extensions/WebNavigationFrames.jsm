@@ -26,19 +26,6 @@ const EXPORTED_SYMBOLS = ["WebNavigationFrames"];
 
 
 
-function iterateDocShellTree(docShell) {
-  return docShell.getAllDocShellsInSubtree(
-    docShell.typeContent,
-    docShell.ENUMERATE_FORWARDS
-  );
-}
-
-
-
-
-
-
-
 
 
 function getFrameId(bc) {
@@ -66,46 +53,20 @@ function getParentFrameId(bc) {
 
 
 
-
-function convertDocShellToFrameDetail(docShell) {
-  let { browsingContext, domWindow: window } = docShell;
-
+function getFrameDetail(bc) {
   return {
-    frameId: getFrameId(browsingContext),
-    parentFrameId: getParentFrameId(browsingContext),
-    url: window.location.href,
+    frameId: getFrameId(bc),
+    parentFrameId: getParentFrameId(bc),
+    url: bc.currentURI?.spec,
   };
 }
 
-
-
-
-
-
-
-
-
-
-
-function findDocShell(frameId, rootDocShell) {
-  for (let docShell of iterateDocShellTree(rootDocShell)) {
-    if (frameId == getFrameId(docShell.browsingContext)) {
-      return docShell;
-    }
-  }
-
-  return null;
-}
-
 var WebNavigationFrames = {
-  iterateDocShellTree,
-
-  findDocShell,
-
-  getFrame(docShell, frameId) {
-    let result = findDocShell(frameId, docShell);
-    if (result) {
-      return convertDocShellToFrameDetail(result);
+  getFrame(bc, frameId) {
+    
+    let frame = BrowsingContext.get(frameId || bc.id);
+    if (frame && frame.top === bc) {
+      return getFrameDetail(frame);
     }
     return null;
   },
@@ -113,10 +74,15 @@ var WebNavigationFrames = {
   getFrameId,
   getParentFrameId,
 
-  getAllFrames(docShell) {
-    return Array.from(
-      iterateDocShellTree(docShell),
-      convertDocShellToFrameDetail
-    );
+  getAllFrames(bc) {
+    let frames = [];
+
+    
+    function visit(bc) {
+      frames.push(bc);
+      bc.children.forEach(visit);
+    }
+    visit(bc);
+    return frames.map(getFrameDetail);
   },
 };
