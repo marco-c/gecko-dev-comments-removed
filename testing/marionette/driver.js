@@ -7,16 +7,15 @@
 
 const EXPORTED_SYMBOLS = ["GeckoDriver"];
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   OS: "resource://gre/modules/osfile.jsm",
-  Services: "resource://gre/modules/Services.jsm",
 
   Addon: "chrome://marionette/content/addon.js",
-  AppInfo: "chrome://marionette/content/appinfo.js",
   assert: "chrome://marionette/content/assert.js",
   atom: "chrome://marionette/content/atom.js",
   browser: "chrome://marionette/content/browser.js",
@@ -64,6 +63,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
+const APP_ID_FIREFOX = "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}";
+const APP_ID_THUNDERBIRD = "{3550f703-e582-4d05-9a08-453d09bdfdc6}";
+
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 const SUPPORTED_STRATEGIES = new Set([
@@ -105,6 +107,9 @@ const globalMessageManager = Services.mm;
 
 
 this.GeckoDriver = function(server) {
+  this.appId = Services.appinfo.ID;
+  this.appName = Services.appinfo.name.toLowerCase();
+
   this._server = server;
 
   
@@ -406,7 +411,7 @@ GeckoDriver.prototype.registerBrowser = function(browserElement) {
   
   
   if (
-    !AppInfo.isFirefox ||
+    this.appId != APP_ID_FIREFOX ||
     browserElement.namespaceURI != XUL_NS ||
     browserElement.nodeName != "browser" ||
     browserElement.getTabBrowser()
@@ -537,12 +542,15 @@ GeckoDriver.prototype.newSession = async function(cmd) {
   await new Promise(resolve => {
     const waitForWindow = () => {
       let windowTypes;
-      if (AppInfo.isThunderbird) {
-        windowTypes = ["mail:3pane"];
-      } else {
-        
-        
-        windowTypes = ["navigator:browser", "navigator:geckoview"];
+      switch (this.appId) {
+        case APP_ID_THUNDERBIRD:
+          windowTypes = ["mail:3pane"];
+          break;
+        default:
+          
+          
+          windowTypes = ["navigator:browser", "navigator:geckoview"];
+          break;
       }
 
       let win;
@@ -2403,7 +2411,7 @@ GeckoDriver.prototype.takeScreenshot = async function(cmd) {
 
 
 GeckoDriver.prototype.getScreenOrientation = function() {
-  assert.mobile();
+  assert.fennec();
   assert.open(this.getBrowsingContext({ top: true }));
 
   const win = this.getCurrentWindow();
@@ -2426,7 +2434,7 @@ GeckoDriver.prototype.getScreenOrientation = function() {
 
 
 GeckoDriver.prototype.setScreenOrientation = function(cmd) {
-  assert.mobile();
+  assert.fennec();
   assert.open(this.getBrowsingContext({ top: true }));
 
   const ors = [

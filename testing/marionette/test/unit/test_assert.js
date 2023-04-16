@@ -58,7 +58,7 @@ add_test(function test_session() {
 add_test(function test_platforms() {
   
   let raised;
-  for (let fn of [assert.desktop, assert.mobile]) {
+  for (let fn of [assert.firefox, assert.fennec]) {
     try {
       fn();
     } catch (e) {
