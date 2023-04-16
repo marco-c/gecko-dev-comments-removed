@@ -654,9 +654,7 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   }
 
   
-  for (auto iter = mTextHash.ConstIter(); !iter.Done(); iter.Next()) {
-    const nsCOMPtrHashKey<nsIContent>* entry = iter.Get();
-    nsIContent* textNode = entry->GetKey();
+  for (nsIContent* textNode : mTextHash) {
     LocalAccessible* textAcc = mDocument->GetAccessible(textNode);
 
     
