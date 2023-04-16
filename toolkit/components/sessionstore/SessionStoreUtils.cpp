@@ -1110,16 +1110,9 @@ void RestoreFormEntry(Element* aNode, FormEntryValue aValue) {
 
 MOZ_CAN_RUN_SCRIPT
 
-bool SessionStoreUtils::RestoreFormData(
-    Document& aDocument, const nsCString& aFormUrl, const nsString& aInnerHTML,
+void SessionStoreUtils::RestoreFormData(
+    Document& aDocument, const nsString& aInnerHTML,
     const nsTArray<SessionStoreRestoreData::Entry>& aEntries) {
-  
-  nsAutoCString url;
-  Unused << aDocument.GetDocumentURI()->GetSpecIgnoringRef(url);
-  if (!aFormUrl.Equals(url)) {
-    return false;
-  }
-
   if (!aInnerHTML.IsEmpty()) {
     SetInnerHTML(aDocument, aInnerHTML);
   }
@@ -1132,8 +1125,6 @@ bool SessionStoreUtils::RestoreFormData(
       RestoreFormEntry(node, entry.mData.value());
     }
   }
-
-  return true;
 }
 
 

@@ -1774,13 +1774,18 @@ void CanonicalBrowsingContext::RequestRestoreTabContent(
 
     mRequestedContentRestores++;
 
-    if (aWindow->IsInProcess()) {
+    if (data->CanRestoreInto(aWindow->GetDocumentURI())) {
+      if (!aWindow->IsInProcess()) {
+        aWindow->SendRestoreTabContent(data, onTabRestoreComplete,
+                                       onTabRestoreComplete);
+        return;
+      }
       data->RestoreInto(context);
-      onTabRestoreComplete(true);
-    } else {
-      aWindow->SendRestoreTabContent(data, onTabRestoreComplete,
-                                     onTabRestoreComplete);
     }
+
+    
+    
+    onTabRestoreComplete(true);
   }
 }
 
