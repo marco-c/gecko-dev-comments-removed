@@ -806,6 +806,59 @@ class PerftestOutput(object):
 
         return subtests, vals
 
+    def parseWebaudioOutput(self, test):
+        
+        
+
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        _subtests = {}
+        data = test["measurements"]["webaudio"]
+        for page_cycle in data:
+            data = json.loads(page_cycle[0])
+            for item in data:
+                
+                sub = item["name"]
+                replicates = [item["duration"]]
+                if sub not in _subtests:
+                    
+                    _subtests[sub] = {
+                        "unit": test["subtest_unit"],
+                        "alertThreshold": float(test["alert_threshold"]),
+                        "lowerIsBetter": test["subtest_lower_is_better"],
+                        "name": sub,
+                        "replicates": [],
+                    }
+                
+                _subtests[sub]["replicates"].extend(
+                    [float(round(x, 3)) for x in replicates]
+                )
+
+        vals = []
+        subtests = []
+        names = list(_subtests)
+        names.sort(reverse=True)
+        for name in names:
+            _subtests[name]["value"] = filters.median(_subtests[name]["replicates"])
+            subtests.append(_subtests[name])
+            vals.append([_subtests[name]["value"], name])
+
+        print(subtests)
+        return subtests, vals
+
 
 class RaptorOutput(PerftestOutput):
     """class for raptor output"""
@@ -1212,59 +1265,6 @@ class RaptorOutput(PerftestOutput):
 
         return subtests, vals
 
-    def parseWebaudioOutput(self, test):
-        
-        
-
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        _subtests = {}
-        data = test["measurements"]["webaudio"]
-        for page_cycle in data:
-            data = json.loads(page_cycle[0])
-            for item in data:
-                
-                sub = item["name"]
-                replicates = [item["duration"]]
-                if sub not in _subtests:
-                    
-                    _subtests[sub] = {
-                        "unit": test["subtest_unit"],
-                        "alertThreshold": float(test["alert_threshold"]),
-                        "lowerIsBetter": test["subtest_lower_is_better"],
-                        "name": sub,
-                        "replicates": [],
-                    }
-                
-                _subtests[sub]["replicates"].extend(
-                    [float(round(x, 3)) for x in replicates]
-                )
-
-        vals = []
-        subtests = []
-        names = list(_subtests)
-        names.sort(reverse=True)
-        for name in names:
-            _subtests[name]["value"] = filters.median(_subtests[name]["replicates"])
-            subtests.append(_subtests[name])
-            vals.append([_subtests[name]["value"], name])
-
-        print(subtests)
-        return subtests, vals
-
     def parseSunspiderOutput(self, test):
         _subtests = {}
         data = test["measurements"]["sunspider"]
@@ -1560,6 +1560,8 @@ class BrowsertimeOutput(PerftestOutput):
                     subtests, vals = self.parseYoutubePlaybackPerformanceOutput(test)
                 if "unity-webgl" in test["name"]:
                     subtests, vals = self.parseUnityWebGLOutput(test)
+                if "webaudio" in test["measurements"]:
+                    subtests, vals = self.parseWebaudioOutput(test)
 
                 if subtests is None:
                     raise Exception("No benchmark metrics found in browsertime results")
