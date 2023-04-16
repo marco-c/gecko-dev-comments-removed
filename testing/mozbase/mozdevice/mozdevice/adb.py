@@ -4207,7 +4207,9 @@ class ADBDevice(ADBCommand):
         
         
         if extra_args:
-            extras["args"] = " ".join(extra_args)
+            for (arg_count, arg) in enumerate(extra_args):
+                extras["arg" + str(arg_count)] = arg
+
         extras["use_multiprocess"] = e10s
         self.launch_application(
             app_name,
