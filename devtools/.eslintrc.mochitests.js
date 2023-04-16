@@ -10,7 +10,6 @@ module.exports = {
   
   globals: {
     waitForTick: true,
-    waitUntilState: true,
   },
 
   rules: {
