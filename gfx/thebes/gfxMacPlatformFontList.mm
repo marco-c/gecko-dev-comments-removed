@@ -580,8 +580,6 @@ class gfxMacFontFamily final : public gfxFontFamily {
 
   virtual void FindStyleVariations(FontInfoData* aFontInfoData = nullptr);
 
-  virtual bool IsSingleFaceFamily() const { return false; }
-
  protected:
   double mSizeHint;
 };
@@ -933,7 +931,7 @@ void gfxMacPlatformFontList::ReadSystemFontList(nsTArray<FontFamilyListEntry>* a
   }
   
   for (auto f = mFontFamilies.Iter(); !f.Done(); f.Next()) {
-    auto macFamily = static_cast<gfxMacFontFamily*>(f.Data().get());
+    auto macFamily = f.Data().get();
     if (macFamily->IsSingleFaceFamily()) {
       continue;  
     }
