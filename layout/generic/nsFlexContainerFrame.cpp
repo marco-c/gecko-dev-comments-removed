@@ -4656,6 +4656,32 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     ConsiderChildOverflow(aReflowOutput.mOverflowAreas, childFrame);
   }
 
+  if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+    MOZ_ASSERT(aReflowInput.ComputedLogicalBorderPadding(wm) ==
+                   aReflowInput.ComputedLogicalPadding(wm),
+               "A scrolled inner frame shouldn't have any border!");
+    const LogicalMargin& padding = borderPadding;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsRect childrenInflowBounds;
+    for (nsIFrame* childFrame : mFrames) {
+      childrenInflowBounds =
+          childrenInflowBounds.Union(childFrame->GetMarginRect());
+    }
+    childrenInflowBounds.Inflate(padding.GetPhysicalMargin(wm));
+    aReflowOutput.mOverflowAreas.UnionAllWith(childrenInflowBounds);
+  }
+
   
   aReflowOutput.mOverflowAreas.UnionWith(ocBounds);
   aStatus.MergeCompletionStatusFrom(ocStatus);
