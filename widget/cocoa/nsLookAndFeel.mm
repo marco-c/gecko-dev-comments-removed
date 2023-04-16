@@ -397,13 +397,11 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
     
     
     
-    case ColorID::MozMacVibrancyLight:
     case ColorID::MozMacVibrantTitlebarLight:
     case ColorID::MozMacSourceList:
     case ColorID::MozMacTooltip:
       aColor = NS_RGB(0xf7, 0xf7, 0xf7);
       break;
-    case ColorID::MozMacVibrancyDark:
     case ColorID::MozMacVibrantTitlebarDark:
       aColor = NS_RGB(0x28, 0x28, 0x28);
       break;

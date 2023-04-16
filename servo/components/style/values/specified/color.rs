@@ -317,8 +317,6 @@ pub enum SystemColor {
 
     
     
-    MozMacVibrancyLight,
-    MozMacVibrancyDark,
     MozMacVibrantTitlebarLight,
     MozMacVibrantTitlebarDark,
     MozMacMenupopup,
