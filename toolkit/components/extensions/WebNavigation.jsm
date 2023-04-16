@@ -4,7 +4,7 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = ["WebNavigation", "WebNavigationManager"];
+const EXPORTED_SYMBOLS = ["WebNavigation"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { AppConstants } = ChromeUtils.import(
@@ -28,11 +28,6 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
-  "WebNavigationFrames",
-  "resource://gre/modules/WebNavigationFrames.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
   "ClickHandlerParent",
   "resource:///actors/ClickHandlerParent.jsm"
 );
@@ -42,11 +37,7 @@ ChromeUtils.defineModuleGetter(
 
 const RECENT_DATA_THRESHOLD = 5 * 1000000;
 
-function getBrowser(bc) {
-  return bc.top.embedderElement;
-}
-
-var WebNavigationManager = {
+var Manager = {
   
   listeners: new Map(),
 
@@ -55,6 +46,11 @@ var WebNavigationManager = {
     
     this.recentTabTransitionData = new WeakMap();
 
+    
+    
+    
+    this.createdNavigationTargetByOuterWindowId = new Map();
+
     Services.obs.addObserver(this, "urlbar-user-start-navigation", true);
 
     Services.obs.addObserver(this, "webNavigation-createdNavigationTarget");
@@ -62,6 +58,17 @@ var WebNavigationManager = {
     if (AppConstants.MOZ_BUILD_APP == "browser") {
       ClickHandlerParent.addContentClickListener(this);
     }
+
+    Services.mm.addMessageListener("Extension:DOMContentLoaded", this);
+    Services.mm.addMessageListener("Extension:StateChange", this);
+    Services.mm.addMessageListener("Extension:DocumentChange", this);
+    Services.mm.addMessageListener("Extension:HistoryChange", this);
+    Services.mm.addMessageListener("Extension:CreatedNavigationTarget", this);
+
+    Services.mm.loadFrameScript(
+      "resource://gre/modules/WebNavigationContent.js",
+      true
+    );
   },
 
   uninit() {
@@ -73,7 +80,22 @@ var WebNavigationManager = {
       ClickHandlerParent.removeContentClickListener(this);
     }
 
+    Services.mm.removeMessageListener("Extension:StateChange", this);
+    Services.mm.removeMessageListener("Extension:DocumentChange", this);
+    Services.mm.removeMessageListener("Extension:HistoryChange", this);
+    Services.mm.removeMessageListener("Extension:DOMContentLoaded", this);
+    Services.mm.removeMessageListener(
+      "Extension:CreatedNavigationTarget",
+      this
+    );
+
+    Services.mm.removeDelayedFrameScript(
+      "resource://gre/modules/WebNavigationContent.js"
+    );
+    Services.mm.broadcastAsyncMessage("Extension:DisableWebNavigation");
+
     this.recentTabTransitionData = new WeakMap();
+    this.createdNavigationTargetByOuterWindowId.clear();
   },
 
   addListener(type, listener, filters, context) {
@@ -108,7 +130,6 @@ var WebNavigationManager = {
 
 
   QueryInterface: ChromeUtils.generateQI([
-    "extIWebNavigation",
     "nsIObserver",
     "nsISupportsWeakReference",
   ]),
@@ -135,11 +156,16 @@ var WebNavigationManager = {
         sourceTabBrowser,
       } = subject.wrappedJSObject;
 
-      this.fire("onCreatedNavigationTarget", createdTabBrowser, null, {
-        sourceTabBrowser,
-        sourceFrameId: sourceFrameID,
-        url,
-      });
+      this.fire(
+        "onCreatedNavigationTarget",
+        createdTabBrowser,
+        {},
+        {
+          sourceTabBrowser,
+          sourceFrameId: sourceFrameID,
+          url,
+        }
+      );
     }
   },
 
@@ -269,6 +295,34 @@ var WebNavigationManager = {
     return data;
   },
 
+  
+
+
+
+  receiveMessage({ name, data, target }) {
+    switch (name) {
+      case "Extension:StateChange":
+        this.onStateChange(target, data);
+        break;
+
+      case "Extension:DocumentChange":
+        this.onDocumentChange(target, data);
+        break;
+
+      case "Extension:HistoryChange":
+        this.onHistoryChange(target, data);
+        break;
+
+      case "Extension:DOMContentLoaded":
+        this.onLoad(target, data);
+        break;
+
+      case "Extension:CreatedNavigationTarget":
+        this.onCreatedNavigationTarget(target, data);
+        break;
+    }
+  },
+
   onContentClick(target, data) {
     
     if (data.href && !data.bookmark) {
@@ -280,101 +334,128 @@ var WebNavigationManager = {
     }
   },
 
-  onCreatedNavigationTarget(bc, sourceBC, url) {
-    if (!this.listeners.size) {
+  onCreatedNavigationTarget(browser, data) {
+    const { createdOuterWindowId, isSourceTab, sourceFrameId, url } = data;
+
+    
+    
+    
+    
+    
+    const pairedMessage = this.createdNavigationTargetByOuterWindowId.get(
+      createdOuterWindowId
+    );
+
+    if (!isSourceTab) {
+      if (pairedMessage) {
+        
+        Services.console.logStringMessage(
+          `Discarding onCreatedNavigationTarget for ${createdOuterWindowId}: ` +
+            "unexpected pending data while receiving the created tab data"
+        );
+      }
+
+      
+      
+      const browserWeakRef = Cu.getWeakReference(browser);
+
+      this.createdNavigationTargetByOuterWindowId.set(createdOuterWindowId, {
+        browserWeakRef,
+        data,
+      });
+
       return;
     }
 
-    let browser = getBrowser(bc);
+    if (!pairedMessage) {
+      
+      
+      
+      
+      
+      
+      Services.console.logStringMessage(
+        `Discarding onCreatedNavigationTarget for ${createdOuterWindowId}: ` +
+          "received source tab data without any created tab data available"
+      );
 
-    this.fire("onCreatedNavigationTarget", browser, null, {
-      sourceTabBrowser: getBrowser(sourceBC),
-      sourceFrameId: WebNavigationFrames.getFrameId(sourceBC),
-      url,
-    });
+      return;
+    }
+
+    this.createdNavigationTargetByOuterWindowId.delete(createdOuterWindowId);
+
+    let sourceTabBrowser = browser;
+    let createdTabBrowser = pairedMessage.browserWeakRef.get();
+
+    if (!createdTabBrowser) {
+      Services.console.logStringMessage(
+        `Discarding onCreatedNavigationTarget for ${createdOuterWindowId}: ` +
+          "the created tab has been already destroyed"
+      );
+
+      return;
+    }
+
+    this.fire(
+      "onCreatedNavigationTarget",
+      createdTabBrowser,
+      {},
+      {
+        sourceTabBrowser,
+        sourceFrameId,
+        url,
+      }
+    );
   },
 
-  onStateChange(bc, requestURI, status, stateFlags) {
-    if (!this.listeners.size) {
-      return;
-    }
-
-    let browser = getBrowser(bc);
-
+  onStateChange(browser, data) {
+    let stateFlags = data.stateFlags;
     if (stateFlags & Ci.nsIWebProgressListener.STATE_IS_WINDOW) {
-      let url = requestURI.spec;
+      let url = data.requestURL;
       if (stateFlags & Ci.nsIWebProgressListener.STATE_START) {
-        this.fire("onBeforeNavigate", browser, bc, { url });
+        this.fire("onBeforeNavigate", browser, data, { url });
       } else if (stateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
-        if (Components.isSuccessCode(status)) {
-          this.fire("onCompleted", browser, bc, { url });
+        if (Components.isSuccessCode(data.status)) {
+          this.fire("onCompleted", browser, data, { url });
         } else {
-          let error = `Error code ${status}`;
-          this.fire("onErrorOccurred", browser, bc, { error, url });
+          let error = `Error code ${data.status}`;
+          this.fire("onErrorOccurred", browser, data, { error, url });
         }
       }
     }
   },
 
-  onDocumentChange(bc, frameTransitionData, location) {
-    if (!this.listeners.size) {
-      return;
-    }
-
-    let browser = getBrowser(bc);
-
+  onDocumentChange(browser, data) {
     let extra = {
-      url: location ? location.spec : "",
+      url: data.location,
       
-      frameTransitionData,
+      frameTransitionData: data.frameTransitionData,
       tabTransitionData: this.getAndForgetRecentTabTransitionData(browser),
     };
 
-    this.fire("onCommitted", browser, bc, extra);
+    this.fire("onCommitted", browser, data, extra);
   },
 
-  onHistoryChange(
-    bc,
-    frameTransitionData,
-    location,
-    isHistoryStateUpdated,
-    isReferenceFragmentUpdated
-  ) {
-    if (!this.listeners.size) {
-      return;
-    }
-
-    let browser = getBrowser(bc);
-
+  onHistoryChange(browser, data) {
     let extra = {
-      url: location ? location.spec : "",
+      url: data.location,
       
-      frameTransitionData,
+      frameTransitionData: data.frameTransitionData,
       tabTransitionData: this.getAndForgetRecentTabTransitionData(browser),
     };
 
-    if (isReferenceFragmentUpdated) {
-      this.fire("onReferenceFragmentUpdated", browser, bc, extra);
-    } else if (isHistoryStateUpdated) {
-      this.fire("onHistoryStateUpdated", browser, bc, extra);
+    if (data.isReferenceFragmentUpdated) {
+      this.fire("onReferenceFragmentUpdated", browser, data, extra);
+    } else if (data.isHistoryStateUpdated) {
+      this.fire("onHistoryStateUpdated", browser, data, extra);
     }
   },
 
-  onDOMContentLoaded(bc, documentURI) {
-    if (!this.listeners.size) {
-      return;
-    }
-
-    let browser = getBrowser(bc);
-
-    this.fire("onDOMContentLoaded", browser, bc, { url: documentURI.spec });
+  onLoad(browser, data) {
+    this.fire("onDOMContentLoaded", browser, data, { url: data.url });
   },
 
-  fire(type, browser, bc, extra) {
-    if (!browser) {
-      return;
-    }
-
+  fire(type, browser, data, extra) {
     let listeners = this.listeners.get(type);
     if (!listeners) {
       return;
@@ -382,11 +463,11 @@ var WebNavigationManager = {
 
     let details = {
       browser,
+      frameId: data.frameId,
     };
 
-    if (bc) {
-      details.frameId = WebNavigationFrames.getFrameId(bc);
-      details.parentFrameId = WebNavigationFrames.getParentFrameId(bc);
+    if (data.parentFrameId !== undefined) {
+      details.parentFrameId = data.parentFrameId;
     }
 
     for (let prop in extra) {
@@ -424,13 +505,7 @@ var WebNavigation = {};
 
 for (let event of EVENTS) {
   WebNavigation[event] = {
-    addListener: WebNavigationManager.addListener.bind(
-      WebNavigationManager,
-      event
-    ),
-    removeListener: WebNavigationManager.removeListener.bind(
-      WebNavigationManager,
-      event
-    ),
+    addListener: Manager.addListener.bind(Manager, event),
+    removeListener: Manager.removeListener.bind(Manager, event),
   };
 }
