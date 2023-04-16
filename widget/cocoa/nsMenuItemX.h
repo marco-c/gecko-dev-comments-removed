@@ -47,6 +47,17 @@ class nsMenuItemX final : public nsMenuObjectX, public nsChangeObserver {
   nsMenuItemX(nsMenuX* aParent, const nsString& aLabel, EMenuItemType aItemType,
               nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aNode);
 
+  
+  
+  
+  
+  void DetachFromGroupOwner();
+
+  
+  
+  
+  void DetachFromParent() { mMenuParent = nullptr; }
+
   NS_INLINE_DECL_REFCOUNTING(nsMenuItemX)
 
   NS_DECL_CHANGEOBSERVER

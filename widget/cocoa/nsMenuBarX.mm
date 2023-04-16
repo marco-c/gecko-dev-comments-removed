@@ -105,11 +105,10 @@ nsMenuBarX::~nsMenuBarX() {
     UnregisterForContentChanges(mContent);
   }
 
-  
-  
-  
-  
-  mMenuArray.Clear();
+  for (nsMenuX* menu : mMenuArray) {
+    menu->DetachFromGroupOwnerRecursive();
+    menu->DetachFromParent();
+  }
 
   if (mApplicationMenuDelegate) {
     [mApplicationMenuDelegate release];
@@ -256,16 +255,20 @@ void nsMenuBarX::RemoveMenuAtIndex(uint32_t aIndex) {
     return;
   }
 
+  RefPtr<nsMenuX> menu = mMenuArray[aIndex];
+  mMenuArray.RemoveElementAt(aIndex);
+
+  menu->DetachFromGroupOwnerRecursive();
+  menu->DetachFromParent();
+
   
   
   
-  NSMenuItem* nativeMenuItem = mMenuArray[aIndex]->NativeNSMenuItem();
+  NSMenuItem* nativeMenuItem = menu->NativeNSMenuItem();
   int nativeMenuItemIndex = [mNativeMenu indexOfItem:nativeMenuItem];
   if (nativeMenuItemIndex != -1) {
     [mNativeMenu removeItemAtIndex:nativeMenuItemIndex];
   }
-
-  mMenuArray.RemoveElementAt(aIndex);
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }

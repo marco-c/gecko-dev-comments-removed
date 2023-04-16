@@ -56,6 +56,16 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   
   nsresult Create(nsMenuObjectX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aNode);
 
+  
+  
+  
+  
+  void DetachFromGroupOwnerRecursive();
+
+  
+  
+  void DetachFromParent() { mParent = nullptr; }
+
   mozilla::Maybe<MenuChild> GetItemAt(uint32_t aPos);
   uint32_t GetItemCount();
 
@@ -96,6 +106,7 @@ class nsMenuX final : public nsMenuObjectX, public nsChangeObserver {
   void LoadMenuItem(nsIContent* aMenuItemContent);
   void LoadSubMenu(nsIContent* aMenuContent);
   GeckoNSMenu* CreateMenuWithGeckoString(nsString& aMenuTitle);
+  void UnregisterCommands();
 
   nsCOMPtr<nsIContent> mContent;  
 

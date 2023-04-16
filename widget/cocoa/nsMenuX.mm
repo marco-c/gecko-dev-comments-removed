@@ -177,12 +177,44 @@ nsMenuX::~nsMenuX() {
   
   [mNativeMenuItem autorelease];
 
-  
-  if (mContent) {
-    mMenuGroupOwner->UnregisterForContentChanges(mContent);
-  }
+  DetachFromGroupOwnerRecursive();
 
   MOZ_COUNT_DTOR(nsMenuX);
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+void nsMenuX::DetachFromGroupOwnerRecursive() {
+  if (!mMenuGroupOwner) {
+    
+    
+    
+    return;
+  }
+
+  if (mMenuGroupOwner && mContent) {
+    mMenuGroupOwner->UnregisterForContentChanges(mContent);
+  }
+  UnregisterCommands();
+  mMenuGroupOwner = nullptr;
+
+  
+  for (auto& child : mMenuChildren) {
+    child.match([](const RefPtr<nsMenuX>& aMenu) { aMenu->DetachFromGroupOwnerRecursive(); },
+                [](const RefPtr<nsMenuItemX>& aMenuItem) { aMenuItem->DetachFromGroupOwner(); });
+  }
+}
+
+void nsMenuX::UnregisterCommands() {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  if (!mMenuGroupOwner || !mNativeMenu) {
+    return;
+  }
+
+  for (NSMenuItem* item in mNativeMenu.itemArray) {
+    mMenuGroupOwner->UnregisterCommand(static_cast<uint32_t>(item.tag));
+  }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -294,16 +326,19 @@ Maybe<nsMenuX::MenuChild> nsMenuX::GetVisibleItemAt(uint32_t aPos) {
 nsresult nsMenuX::RemoveAll() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  if (mNativeMenu) {
-    
-    int itemCount = mNativeMenu.numberOfItems;
-    for (int i = 0; i < itemCount; i++) {
-      mMenuGroupOwner->UnregisterCommand((uint32_t)[[mNativeMenu itemAtIndex:i] tag]);
-    }
-    
-    for (int i = mNativeMenu.numberOfItems - 1; i >= 0; i--) {
-      [mNativeMenu removeItemAtIndex:i];
-    }
+  UnregisterCommands();
+  [mNativeMenu removeAllItems];
+
+  for (auto& child : mMenuChildren) {
+    child.match(
+        [](const RefPtr<nsMenuX>& aMenu) {
+          aMenu->DetachFromGroupOwnerRecursive();
+          aMenu->DetachFromParent();
+        },
+        [](const RefPtr<nsMenuItemX>& aMenuItem) {
+          aMenuItem->DetachFromGroupOwner();
+          aMenuItem->DetachFromParent();
+        });
   }
 
   mMenuChildren.Clear();
@@ -395,7 +430,7 @@ void nsMenuX::RebuildMenu() {
 void nsMenuX::SetRebuild(bool aNeedsRebuild) {
   if (!gConstructingMenu) {
     mNeedsRebuild = aNeedsRebuild;
-    if (mParent->MenuObjectType() == eMenuBarObjectType) {
+    if (mParent && mParent->MenuObjectType() == eMenuBarObjectType) {
       nsMenuBarX* mb = static_cast<nsMenuBarX*>(mParent);
       mb->SetNeedsRebuild();
     }
@@ -553,6 +588,7 @@ void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aCon
     return;
   }
 
+  MOZ_RELEASE_ASSERT(mParent);
   nsMenuObjectTypeX parentType = mParent->MenuObjectType();
 
   if (aAttribute == nsGkAtoms::disabled) {
@@ -638,7 +674,9 @@ void nsMenuX::SetupIcon() {
 
 void nsMenuX::IconUpdated() {
   mNativeMenuItem.image = mIcon->GetIconImage();
-  mParent->IconUpdated();
+  if (mParent) {
+    mParent->IconUpdated();
+  }
 }
 
 void nsMenuX::Dump(uint32_t aIndent) const {
