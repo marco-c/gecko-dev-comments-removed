@@ -26,8 +26,12 @@
 #include "util/DiagnosticAssertions.h"
 
 
+
+
+
+
 #if defined(JS_CRASH_DIAGNOSTICS) || defined(JS_GC_ZEAL)
-#  define JS_GC_POISONING 1
+#  define JS_GC_ALLOW_EXTRA_POISONING 1
 #endif
 
 namespace mozilla {
@@ -182,16 +186,17 @@ static inline void AlwaysPoison(void* ptr, uint8_t value, size_t num,
   SetMemCheckKind(ptr, num, kind);
 }
 
-
-extern bool gDisablePoisoning;
+#if defined(JS_GC_ALLOW_EXTRA_POISONING)
+extern bool gExtraPoisoningEnabled;
+#endif
 
 
 
 
 static inline void Poison(void* ptr, uint8_t value, size_t num,
                           MemCheckKind kind) {
-#if defined(JS_GC_POISONING)
-  if (!js::gDisablePoisoning) {
+#if defined(JS_GC_ALLOW_EXTRA_POISONING)
+  if (js::gExtraPoisoningEnabled) {
     PoisonImpl(ptr, value, num);
   }
 #endif

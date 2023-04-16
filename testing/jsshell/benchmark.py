@@ -114,9 +114,6 @@ class Benchmark(object):
         
         env = os.environ.copy()
 
-        
-        env["JSGC_DISABLE_POISONING"] = "1"
-
         process_args = {
             "cmd": self.command,
             "cwd": self.path,

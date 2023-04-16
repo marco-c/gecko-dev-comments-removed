@@ -1057,9 +1057,6 @@ class Raptor(
         env["EXTERNALTOOLSPATH"] = external_tools_path
 
         
-        env["JSGC_DISABLE_POISONING"] = "1"
-
-        
         if self.is_release_build:
             env["MOZ_DISABLE_NONLOCAL_CONNECTIONS"] = "1"
 
