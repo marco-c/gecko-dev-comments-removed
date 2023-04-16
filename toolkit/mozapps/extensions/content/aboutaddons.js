@@ -1364,6 +1364,7 @@ class AddonPageHeader extends HTMLElement {
         this.getAttribute("page-options-id")
       );
     }
+    document.addEventListener("view-selected", this);
     this.addEventListener("click", this);
     this.addEventListener("mousedown", this);
     
@@ -1373,6 +1374,7 @@ class AddonPageHeader extends HTMLElement {
   }
 
   disconnectedCallback() {
+    document.removeEventListener("view-selected", this);
     this.removeEventListener("click", this);
     this.removeEventListener("mousedown", this);
     this.pageOptionsMenu.removeEventListener("shown", this, true);
@@ -1422,6 +1424,9 @@ class AddonPageHeader extends HTMLElement {
         "aria-expanded",
         this.pageOptionsMenu.open
       );
+    } else if (e.target == document && e.type == "view-selected") {
+      const { type, param } = e.detail;
+      this.setViewInfo({ type, param });
     }
   }
 }
@@ -1792,6 +1797,10 @@ class CategoriesBox extends customElements.get("button-group") {
 
     this.updateAvailableCount();
 
+    document.addEventListener("view-selected", e => {
+      const { type, param } = e.detail;
+      this.select(`addons://${type}/${param}`);
+    });
     this.addEventListener("click", e => {
       let button = e.target.closest("[viewid]");
       if (button) {
@@ -1808,23 +1817,6 @@ class CategoriesBox extends customElements.get("button-group") {
     await hiddenUpdated;
   }
 
-  get initialViewId() {
-    let viewId = Services.prefs.getStringPref(PREF_UI_LASTCATEGORY, "");
-    
-    if (this.getButtonByViewId(viewId)) {
-      return viewId;
-    }
-    
-    for (let button of this.children) {
-      if (!button.defaultHidden && !button.hidden && button.isVisible) {
-        return button.viewId;
-      }
-    }
-    
-    
-    throw new Error("Couldn't find initial view to load");
-  }
-
   shouldHideCategory(name) {
     return Services.prefs.getBoolPref(`extensions.ui.${name}.hidden`, true);
   }
@@ -1835,10 +1827,6 @@ class CategoriesBox extends customElements.get("button-group") {
 
   getButtonByName(name) {
     return this.querySelector(`[name="${name}"]`);
-  }
-
-  getButtonByViewId(id) {
-    return this.querySelector(`[viewid="${id}"]`);
   }
 
   get selectedChild() {
@@ -4526,162 +4514,138 @@ class DiscoveryPane extends RecommendedSection {
 }
 customElements.define("discovery-pane", DiscoveryPane);
 
-class ListView {
-  constructor({ param, root }) {
-    this.type = param;
-    this.root = root;
+
+gViewController.defineView("list", async type => {
+  if (!(type in AddonManager.addonTypes)) {
+    return null;
   }
 
-  async render() {
-    if (!(this.type in AddonManager.addonTypes)) {
-      gViewController.resetState();
-      return;
-    }
+  let frag = document.createDocumentFragment();
 
-    let frag = document.createDocumentFragment();
+  let list = document.createElement("addon-list");
+  list.type = type;
+  list.setSections([
+    {
+      headingId: type + "-enabled-heading",
+      filterFn: addon =>
+        !addon.hidden && addon.isActive && !isPending(addon, "uninstall"),
+    },
+    {
+      headingId: type + "-disabled-heading",
+      filterFn: addon =>
+        !addon.hidden && !addon.isActive && !isPending(addon, "uninstall"),
+    },
+  ]);
+  frag.appendChild(list);
 
-    let list = document.createElement("addon-list");
-    list.type = this.type;
+  
+  if (
+    LIST_RECOMMENDATIONS_ENABLED &&
+    (type == "extension" || type == "theme")
+  ) {
+    let elementName =
+      type == "extension"
+        ? "recommended-extensions-section"
+        : "recommended-themes-section";
+    let recommendations = document.createElement(elementName);
+    
+    
+    recommendations.render();
+    frag.appendChild(recommendations);
+  }
+
+  await list.render();
+
+  return frag;
+});
+
+gViewController.defineView("detail", async param => {
+  let [id, selectedTab] = param.split("/");
+  let addon = await AddonManager.getAddonByID(id);
+
+  if (!addon) {
+    return null;
+  }
+
+  let card = document.createElement("addon-card");
+
+  
+  document.querySelector("categories-box").selectType(addon.type);
+
+  
+  card.addEventListener("remove", () =>
+    gViewController.loadView(`list/${addon.type}`)
+  );
+
+  card.setAddon(addon);
+  card.expand();
+  await card.render();
+  if (selectedTab === "preferences" && (await isAddonOptionsUIAllowed(addon))) {
+    card.showPrefs();
+  }
+
+  return card;
+});
+
+gViewController.defineView("updates", async param => {
+  let list = document.createElement("addon-list");
+  list.type = "all";
+  if (param == "available") {
     list.setSections([
       {
-        headingId: this.type + "-enabled-heading",
-        filterFn: addon =>
-          !addon.hidden && addon.isActive && !isPending(addon, "uninstall"),
-      },
-      {
-        headingId: this.type + "-disabled-heading",
-        filterFn: addon =>
-          !addon.hidden && !addon.isActive && !isPending(addon, "uninstall"),
+        headingId: "available-updates-heading",
+        filterFn: addon => {
+          
+          
+          
+          const install = getUpdateInstall(addon);
+          return install && isManualUpdate(install) && !install.installed;
+        },
       },
     ]);
-    frag.appendChild(list);
-
-    
-    if (
-      LIST_RECOMMENDATIONS_ENABLED &&
-      (this.type == "extension" || this.type == "theme")
-    ) {
-      let elementName =
-        this.type == "extension"
-          ? "recommended-extensions-section"
-          : "recommended-themes-section";
-      let recommendations = document.createElement(elementName);
-      
-      
-      recommendations.render();
-      frag.appendChild(recommendations);
-    }
-
-    await list.render();
-
-    this.root.textContent = "";
-    this.root.appendChild(frag);
-  }
-}
-
-class DetailView {
-  constructor({ param, root }) {
-    let [id, selectedTab] = param.split("/");
-    this.id = id;
-    this.selectedTab = selectedTab;
-    this.root = root;
+  } else if (param == "recent") {
+    list.sortByFn = (a, b) => {
+      if (a.updateDate > b.updateDate) {
+        return -1;
+      }
+      if (a.updateDate < b.updateDate) {
+        return 1;
+      }
+      return 0;
+    };
+    let updateLimit = new Date() - UPDATES_RECENT_TIMESPAN;
+    list.setSections([
+      {
+        headingId: "recent-updates-heading",
+        filterFn: addon =>
+          !addon.hidden && addon.updateDate && addon.updateDate > updateLimit,
+      },
+    ]);
+  } else {
+    throw new Error(`Unknown updates view ${param}`);
   }
 
-  async render() {
-    let addon = await AddonManager.getAddonByID(this.id);
+  await list.render();
+  return list;
+});
 
-    if (!addon) {
-      gViewController.resetState();
-      return;
-    }
+gViewController.defineView("discover", async () => {
+  let discopane = document.createElement("discovery-pane");
+  discopane.render();
+  await document.l10n.translateFragment(discopane);
+  return discopane;
+});
 
-    let card = document.createElement("addon-card");
+gViewController.defineView("shortcuts", async () => {
+  
+  
+  document.querySelector("categories-box").selectType("extension");
 
-    
-    categoriesBox.selectType(addon.type);
-
-    
-    card.addEventListener("remove", () =>
-      gViewController.loadView(`list/${addon.type}`)
-    );
-
-    card.setAddon(addon);
-    card.expand();
-    await card.render();
-    if (
-      this.selectedTab === "preferences" &&
-      (await isAddonOptionsUIAllowed(addon))
-    ) {
-      card.showPrefs();
-    }
-
-    this.root.textContent = "";
-    this.root.appendChild(card);
-  }
-}
-
-class UpdatesView {
-  constructor({ param, root }) {
-    this.root = root;
-    this.param = param;
-  }
-
-  async render() {
-    let list = document.createElement("addon-list");
-    list.type = "all";
-    if (this.param == "available") {
-      list.setSections([
-        {
-          headingId: "available-updates-heading",
-          filterFn: addon => {
-            
-            
-            
-            const install = getUpdateInstall(addon);
-            return install && isManualUpdate(install) && !install.installed;
-          },
-        },
-      ]);
-    } else if (this.param == "recent") {
-      list.sortByFn = (a, b) => {
-        if (a.updateDate > b.updateDate) {
-          return -1;
-        }
-        if (a.updateDate < b.updateDate) {
-          return 1;
-        }
-        return 0;
-      };
-      let updateLimit = new Date() - UPDATES_RECENT_TIMESPAN;
-      list.setSections([
-        {
-          headingId: "recent-updates-heading",
-          filterFn: addon =>
-            !addon.hidden && addon.updateDate && addon.updateDate > updateLimit,
-        },
-      ]);
-    } else {
-      throw new Error(`Unknown updates view ${this.param}`);
-    }
-
-    await list.render();
-    this.root.textContent = "";
-    this.root.appendChild(list);
-  }
-}
-
-class DiscoveryView {
-  render() {
-    let discopane = document.createElement("discovery-pane");
-    discopane.render();
-    return discopane;
-  }
-}
-
-
-let mainEl = null;
-let addonPageHeader = null;
-let categoriesBox = null;
+  let view = document.createElement("addon-shortcuts");
+  await view.render();
+  await document.l10n.translateFragment(view);
+  return view;
+});
 
 
 
@@ -4749,21 +4713,21 @@ var ScrollOffsets = {
   },
 };
 
+function sendEMPong(aSubject, aTopic, aData) {
+  Services.obs.notifyObservers(window, "EM-pong");
+}
 
 
 
-async function initializeView() {
-  mainEl = document.getElementById("main");
-  addonPageHeader = document.getElementById("page-header");
-  categoriesBox = document.querySelector("categories-box");
 
-  categoriesBox.initialize();
-
-  AddonManagerListenerHandler.startup();
+async function initialize() {
+  Services.obs.addObserver(sendEMPong, "EM-ping");
 
   window.addEventListener(
     "unload",
     () => {
+      Services.obs.removeObserver(sendEMPong, "EM-ping");
+
       
       
       document.body.textContent = "";
@@ -4771,58 +4735,39 @@ async function initializeView() {
     },
     { once: true }
   );
-}
 
+  
+  gViewController.initialize(document.getElementById("main"));
 
+  document.querySelector("categories-box").initialize();
+  AddonManagerListenerHandler.startup();
 
+  
+  Services.obs.notifyObservers(window, "EM-loaded");
 
-
-
-async function showView(type, param, { historyEntryId }) {
-  let container = document.createElement("div");
-  container.setAttribute("current-view", type);
-  addonPageHeader.setViewInfo({ type, param });
-  categoriesBox.select(`addons://${type}/${param}`);
-  if (type == "list") {
-    await new ListView({ param, root: container }).render();
-  } else if (type == "detail") {
-    await new DetailView({
-      param,
-      root: container,
-    }).render();
-  } else if (type == "discover") {
-    let discoverView = new DiscoveryView();
-    let elem = discoverView.render();
-    await document.l10n.translateFragment(elem);
-    container.append(elem);
-  } else if (type == "updates") {
-    await new UpdatesView({ param, root: container }).render();
-  } else if (type == "shortcuts") {
-    
-    
-    categoriesBox.selectType("extension");
-    let view = document.createElement("addon-shortcuts");
-    await view.render();
-    await document.l10n.translateFragment(view);
-    container.appendChild(view);
-  } else {
-    console.warn(`No view for ${type} ${param}, switching to default`);
-    gViewController.resetState();
+  
+  if (!gViewController.currentViewId) {
+    if (history.state) {
+      
+      await gViewController.renderState(history.state);
+    } else {
+      
+      await gViewController.loadView(
+        Services.prefs.getStringPref(
+          PREF_UI_LASTCATEGORY,
+          gViewController.defaultViewId
+        )
+      );
+    }
   }
-
-  ScrollOffsets.save();
-  ScrollOffsets.setView(historyEntryId);
-  mainEl.textContent = "";
-  mainEl.appendChild(container);
-
-  
-  
-  
-  
-  return new Promise(resolve => {
-    window.requestAnimationFrame(() => {
-      ScrollOffsets.restore();
-      resolve();
-    });
-  });
 }
+
+window.promiseInitialized = new Promise(resolve => {
+  window.addEventListener(
+    "load",
+    () => {
+      initialize().then(resolve);
+    },
+    { once: true }
+  );
+});
