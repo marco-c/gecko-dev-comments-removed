@@ -1084,6 +1084,11 @@ void gfxMacPlatformFontList::InitAliasesForSingleFaceList() {
       }
     }
   }
+  if (!mAliasTable.IsEmpty()) {
+    
+    
+    SharedFontList()->SetAliases(mAliasTable);
+  }
 }
 
 void gfxMacPlatformFontList::InitSingleFaceList() {
