@@ -2418,11 +2418,8 @@ bool nsGenericHTMLElement::PerformAccesskey(bool aKeyCausesActivation,
     fm->SetFocus(this, nsIFocusManager::FLAG_BYKEY);
 
     
-    
-    
-    
     nsPIDOMWindowOuter* window = OwnerDoc()->GetWindow();
-    focused = window && window->GetFocusedElement();
+    focused = window && window->GetFocusedElement() == this;
   }
 
   if (aKeyCausesActivation) {

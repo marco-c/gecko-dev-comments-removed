@@ -1102,28 +1102,31 @@ bool EventStateManager::LookForAccessKeyAndExecute(
           shouldActivate = false;
         }
 
-        while (shouldActivate && ++count <= length) {
-          Element* el = mAccessKeys[(start + count) % length];
+        
+        
+        
+        int32_t j = 0;
+        while (shouldActivate && ++j < length) {
+          Element* el = mAccessKeys[(start + count + j) % length];
           if (IsAccessKeyTarget(el, accessKey)) {
             shouldActivate = false;
           }
         }
 
-        bool focusChanged =
-            element->PerformAccesskey(shouldActivate, aIsTrustedEvent);
-        if (focusChanged && aIsTrustedEvent) {
-          
-          
-          
-          nsIDocShell* docShell = mPresContext->GetDocShell();
-          nsCOMPtr<nsIBrowserChild> child =
-              docShell ? docShell->GetBrowserChild() : nullptr;
-          if (child) {
-            child->SendRequestFocus(false, CallerType::System);
+        if (element->PerformAccesskey(shouldActivate, aIsTrustedEvent)) {
+          if (aIsTrustedEvent) {
+            
+            
+            
+            nsIDocShell* docShell = mPresContext->GetDocShell();
+            nsCOMPtr<nsIBrowserChild> child =
+                docShell ? docShell->GetBrowserChild() : nullptr;
+            if (child) {
+              child->SendRequestFocus(false, CallerType::System);
+            }
           }
+          return true;
         }
-
-        return true;
       }
     }
   }
