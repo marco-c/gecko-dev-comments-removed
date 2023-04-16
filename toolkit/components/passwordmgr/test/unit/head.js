@@ -52,7 +52,7 @@ const newPropertyBag = LoginHelper.newPropertyBag;
 
 const NEW_PASSWORD_HEURISTIC_ENABLED_PREF =
   "signon.generation.confidenceThreshold";
-
+const RELATED_REALMS_ENABLED_PREF = "signon.relatedRealms.enabled";
 
 
 
@@ -91,6 +91,12 @@ add_task(async function test_common_initialize() {
 
   
   await Services.logins.initializationPromise;
+  Services.prefs.setBoolPref(RELATED_REALMS_ENABLED_PREF, true);
+  if (LoginHelper.relatedRealmsEnabled) {
+    
+    
+    await LoginTestUtils.remoteSettings.setupWebsitesWithSharedCredentials();
+  }
 });
 
 add_task(async function test_common_prefs() {

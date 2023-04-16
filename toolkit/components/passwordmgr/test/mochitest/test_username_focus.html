@@ -38,23 +38,23 @@ let chromeScript = runInParent(function chromeSetup() {
 
 <p id="display"></p>
 <div id="content">
-  
+  <!-- first 3 forms have a matching user+pass login -->
 
-  
+  <!-- user+pass form. -->
   <form id="form-autofilled" action="http://username-focus-1">
     <input  type="text"     name="uname">
     <input  type="password" name="pword">
     <button type="submit" name="submit">Submit</button>
   </form>
 
-  
+  <!-- user+pass form, username prefilled -->
   <form id="form-autofilled-prefilled-un" action="http://username-focus-1">
     <input  type="text"     name="uname" value="testuser1A">
     <input  type="password" name="pword">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- user+pass form. -->
   <form id="form-autofilled-focused-dynamic" action="http://username-focus-1">
     <input  type="text"             name="uname">
     <input  type="not-yet-password" name="pword">
@@ -62,37 +62,37 @@ let chromeScript = runInParent(function chromeSetup() {
   </form>
 
 
-  
+  <!-- next 5 forms have matching user+pass (2x) logins -->
 
-  
+  <!-- user+pass form. -->
   <form id="form-multiple" action="http://username-focus-2">
     <input  type="text"     name="uname">
     <input  type="password" name="pword">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- user+pass form dynamic with existing focus -->
   <form id="form-multiple-dynamic" action="http://username-focus-2">
     <input  type="text"             name="uname">
     <input  type="not-yet-password" name="pword">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- user+pass form, username prefilled -->
   <form id="form-multiple-prefilled-un1" action="http://username-focus-2">
     <input  type="text"     name="uname" value="testuser2A">
     <input  type="password" name="pword">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- user+pass form, different username prefilled -->
   <form id="form-multiple-prefilled-un2" action="http://username-focus-2">
     <input  type="text"     name="uname" value="testuser2B">
     <input  type="password" name="pword">
     <button type="submit">Submit</button>
   </form>
 
-  
+  <!-- user+pass form, username prefilled with existing focus -->
   <form id="form-multiple-prefilled-focused-dynamic" action="http://username-focus-2">
     <input  type="text"             name="uname" value="testuser2B">
     <input  type="not-yet-password" name="pword">
@@ -239,10 +239,6 @@ add_task(async function test_multiple_prefilled_focused_dynamic() {
   let shownPromise = promiseACShown();
   usernameField.focus();
   await shownPromise;
-});
-
-add_task(async function cleanup() {
-  removeFocus();
 });
 </script>
 </pre>
