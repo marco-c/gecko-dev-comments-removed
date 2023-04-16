@@ -1362,13 +1362,8 @@ class GetUserMediaTask final {
 
   void Fail(MediaMgrError::Name aName, const nsCString& aMessage = ""_ns,
             const nsString& aConstraint = u""_ns) {
-    NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "GetUserMediaTask::Fail",
-        [aName, aMessage, aConstraint, holder = std::move(mHolder)]() mutable {
-          holder.Reject(MakeRefPtr<MediaMgrError>(aName, aMessage, aConstraint),
-                        __func__);
-        }));
-    
+    mHolder.Reject(MakeRefPtr<MediaMgrError>(aName, aMessage, aConstraint),
+                   __func__);
     NS_DispatchToMainThread(NewRunnableMethod(
         "SourceListener::Stop", mSourceListener, &SourceListener::Stop));
   }
