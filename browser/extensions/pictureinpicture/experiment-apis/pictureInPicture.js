@@ -5,11 +5,6 @@
 "use strict";
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "Services",
-  "resource://gre/modules/Services.jsm"
-);
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -21,12 +16,6 @@ ChromeUtils.defineModuleGetter(
   this,
   "TOGGLE_POLICIES",
   "resource://gre/modules/PictureInPictureControls.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  this,
-  "AppConstants",
-  "resource://gre/modules/AppConstants.jsm"
 );
 
 const TOGGLE_ENABLED_PREF =

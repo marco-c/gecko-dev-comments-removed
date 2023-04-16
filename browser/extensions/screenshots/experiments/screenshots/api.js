@@ -6,16 +6,6 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(this, "AppConstants",
-                               "resource://gre/modules/AppConstants.jsm");
-ChromeUtils.defineModuleGetter(this, "Services",
-                               "resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(
-  this,
-  "ExtensionCommon",
-  "resource://gre/modules/ExtensionCommon.jsm"
-);
-
 const TOPIC = "contextmenu-screenshot";
 
 this.screenshots = class extends ExtensionAPI {

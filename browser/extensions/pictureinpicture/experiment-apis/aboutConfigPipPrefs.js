@@ -6,10 +6,6 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  Services: "resource://gre/modules/Services.jsm",
-});
-
 this.aboutConfigPipPrefs = class extends ExtensionAPI {
   getAPI(context) {
     const EventManager = ExtensionCommon.EventManager;

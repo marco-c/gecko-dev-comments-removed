@@ -6,10 +6,6 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  Services: "resource://gre/modules/Services.jsm",
-});
-
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL", "ChannelWrapper"]);
 
 class Manager {

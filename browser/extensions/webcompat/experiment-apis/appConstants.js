@@ -6,10 +6,6 @@
 
 
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  AppConstants: "resource://gre/modules/AppConstants.jsm",
-});
-
 this.appConstants = class extends ExtensionAPI {
   getAPI(context) {
     return {

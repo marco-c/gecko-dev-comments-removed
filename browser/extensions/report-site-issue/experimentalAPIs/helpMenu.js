@@ -6,18 +6,6 @@
 
 
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "Services",
-  "resource://gre/modules/Services.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  this,
-  "ExtensionCommon",
-  "resource://gre/modules/ExtensionCommon.jsm"
-);
-
 const TOPIC = "report-site-issue";
 
 this.helpMenu = class extends ExtensionAPI {

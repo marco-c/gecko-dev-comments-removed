@@ -6,8 +6,6 @@
 
 
 
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 XPCOMUtils.defineLazyGetter(this, "l10nStrings", function() {
   return Services.strings.createBundle(
     "chrome://report-site-issue/locale/webcompat.properties"
