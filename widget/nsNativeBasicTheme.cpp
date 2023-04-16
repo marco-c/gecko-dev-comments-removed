@@ -851,7 +851,7 @@ void nsNativeBasicTheme::PaintRoundedRectWithRadius(
   
   rect.Deflate(borderWidth * 0.5f);
 
-  LayoutDeviceCoord radius(aRadius * aDpiRatio + borderWidth * 0.5f);
+  LayoutDeviceCoord radius(aRadius * aDpiRatio);
   
   {
     LayoutDeviceCoord min = std::min(rect.width, rect.height);
@@ -906,10 +906,9 @@ void nsNativeBasicTheme::PaintCheckboxControl(DrawTarget& aDrawTarget,
   auto [backgroundColor, borderColor] = ComputeCheckboxColors(
       aState, StyleAppearance::Checkbox, aUseSystemColors);
   {
-    CSSCoord radius = 2.0f;
+    const CSSCoord radius = 2.0f;
     CSSCoord borderWidth = kCheckboxRadioBorderWidth;
     if (backgroundColor == borderColor) {
-      radius += borderWidth;
       borderWidth = 0.0f;
     }
     PaintRoundedRectWithRadius(aDrawTarget, aRect, backgroundColor, borderColor,
