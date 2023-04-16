@@ -454,6 +454,11 @@ add_task(async function contextMenus() {
 
 add_task(async function pageActions() {
   
+  if (Services.prefs.getBoolPref("browser.proton.urlbar.enabled", false)) {
+    return;
+  }
+
+  
   await BrowserTestUtils.withNewTab("http://example.com", async () => {
     
     organizeToolbars({
