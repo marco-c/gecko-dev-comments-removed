@@ -2597,7 +2597,8 @@ NSEvent* gLastDragMouseDownEvent = nil;
       bool shouldRollup = true;
 
       
-      if ([theEvent type] == NSEventTypeScrollWheel || [theEvent type] == NSEventTypeMagnify) {
+      if ([theEvent type] == NSEventTypeScrollWheel || [theEvent type] == NSEventTypeMagnify ||
+          [theEvent type] == NSEventTypeSmartMagnify) {
         shouldRollup = rollupListener->ShouldRollupOnMouseWheelEvent();
         
         
@@ -2758,6 +2759,10 @@ NSEvent* gLastDragMouseDownEvent = nil;
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!anEvent || !mGeckoChild || [self beginOrEndGestureForEventPhase:anEvent]) {
+    return;
+  }
+
+  if ([self maybeRollup:anEvent]) {
     return;
   }
 
