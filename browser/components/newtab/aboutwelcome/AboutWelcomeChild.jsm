@@ -236,7 +236,7 @@ class AboutWelcomeChild extends JSWindowActorChild {
         featureConfig = { ...attributionData, ...featureConfig };
       } else {
         log.debug("Loading about:welcome with default data");
-        let defaults = AboutWelcomeDefaults.getDefaults(featureConfig);
+        let defaults = AboutWelcomeDefaults.getDefaults();
         
         
         
