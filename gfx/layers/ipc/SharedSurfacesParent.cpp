@@ -6,7 +6,6 @@
 
 #include "SharedSurfacesParent.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/StaticPrefs_image.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUProcessManager.h"
@@ -15,7 +14,6 @@
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/webrender/RenderSharedSurfaceTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
-#include "nsThreadUtils.h"  
 
 namespace mozilla {
 namespace layers {
@@ -25,33 +23,16 @@ using namespace mozilla::gfx;
 StaticMutex SharedSurfacesParent::sMutex;
 StaticAutoPtr<SharedSurfacesParent> SharedSurfacesParent::sInstance;
 
-void SharedSurfacesParent::MappingTracker::NotifyExpiredLocked(
-    SourceSurfaceSharedDataWrapper* aSurface,
-    const StaticMutexAutoLock& aAutoLock) {
-  RemoveObjectLocked(aSurface, aAutoLock);
-  mExpired.AppendElement(aSurface);
-}
+SharedSurfacesParent::SharedSurfacesParent() = default;
 
-void SharedSurfacesParent::MappingTracker::TakeExpired(
-    nsTArray<RefPtr<gfx::SourceSurfaceSharedDataWrapper>>& aExpired,
-    const StaticMutexAutoLock& aAutoLock) {
-  aExpired = std::move(mExpired);
-}
-
-void SharedSurfacesParent::MappingTracker::NotifyHandlerEnd() {
-  nsTArray<RefPtr<gfx::SourceSurfaceSharedDataWrapper>> expired;
-  {
-    StaticMutexAutoLock lock(sMutex);
-    TakeExpired(expired, lock);
+SharedSurfacesParent::~SharedSurfacesParent() {
+  for (const auto& key : mSurfaces.Keys()) {
+    
+    
+    
+    wr::RenderThread::Get()->UnregisterExternalImageDuringShutdown(key);
   }
-
-  SharedSurfacesParent::ExpireMap(expired);
 }
-
-SharedSurfacesParent::SharedSurfacesParent()
-    : mTracker(
-          StaticPrefs::image_mem_shared_unmap_min_expiration_ms_AtStartup(),
-          mozilla::GetCurrentEventTarget()) {}
 
 
 void SharedSurfacesParent::Initialize() {
@@ -63,27 +44,10 @@ void SharedSurfacesParent::Initialize() {
 }
 
 
-void SharedSurfacesParent::ShutdownRenderThread() {
-  
-  
-  MOZ_ASSERT(wr::RenderThread::IsInRenderThread());
-  StaticMutexAutoLock lock(sMutex);
-  MOZ_ASSERT(sInstance);
-
-  for (const auto& key : mSurfaces.Keys()) {
-    
-    
-    
-    wr::RenderThread::Get()->UnregisterExternalImageDuringShutdown(key);
-  }
-}
-
-
 void SharedSurfacesParent::Shutdown() {
   
   
-  
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(wr::RenderThread::IsInRenderThread());
   StaticMutexAutoLock lock(sMutex);
   sInstance = nullptr;
 }
@@ -137,7 +101,6 @@ bool SharedSurfacesParent::Release(const wr::ExternalImageId& aId,
   }
 
   if (surface->RemoveConsumer(aForCreator)) {
-    RemoveTrackingLocked(surface, lock);
     wr::RenderThread::Get()->UnregisterExternalImage(id);
     sInstance->mSurfaces.Remove(id);
   }
@@ -188,7 +151,6 @@ void SharedSurfacesParent::DestroyProcess(base::ProcessId aPid) {
     SourceSurfaceSharedDataWrapper* surface = i.Data();
     if (surface->GetCreatorPid() == aPid && surface->HasCreatorRef() &&
         surface->RemoveConsumer( true)) {
-      RemoveTrackingLocked(surface, lock);
       wr::RenderThread::Get()->UnregisterExternalImage(i.Key());
       i.Remove();
     }
@@ -201,23 +163,18 @@ void SharedSurfacesParent::Add(const wr::ExternalImageId& aId,
                                base::ProcessId aPid) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   MOZ_ASSERT(aPid != base::GetCurrentProcId());
-
-  RefPtr<SourceSurfaceSharedDataWrapper> surface =
-      new SourceSurfaceSharedDataWrapper();
-
-  
-  
-  
-  
-  
-  
-  
-  surface->Init(aDesc.size(), aDesc.stride(), aDesc.format(), aDesc.handle(),
-                aPid);
-
   StaticMutexAutoLock lock(sMutex);
   if (!sInstance) {
     gfxCriticalNote << "SSP:Add " << wr::AsUint64(aId) << " shtd";
+    return;
+  }
+
+  
+  RefPtr<SourceSurfaceSharedDataWrapper> surface =
+      new SourceSurfaceSharedDataWrapper();
+  if (NS_WARN_IF(!surface->Init(aDesc.size(), aDesc.stride(), aDesc.format(),
+                                aDesc.handle(), aPid))) {
+    gfxCriticalNote << "SSP:Add " << wr::AsUint64(aId) << " init";
     return;
   }
 
@@ -235,87 +192,6 @@ void SharedSurfacesParent::Add(const wr::ExternalImageId& aId,
 void SharedSurfacesParent::Remove(const wr::ExternalImageId& aId) {
   DebugOnly<bool> rv = Release(aId,  true);
   MOZ_ASSERT(rv);
-}
-
-
-void SharedSurfacesParent::AddTrackingLocked(
-    SourceSurfaceSharedDataWrapper* aSurface,
-    const StaticMutexAutoLock& aAutoLock) {
-  MOZ_ASSERT(!aSurface->GetExpirationState()->IsTracked());
-  sInstance->mTracker.AddObjectLocked(aSurface, aAutoLock);
-}
-
-
-void SharedSurfacesParent::AddTracking(
-    SourceSurfaceSharedDataWrapper* aSurface) {
-  StaticMutexAutoLock lock(sMutex);
-  if (!sInstance) {
-    return;
-  }
-
-  AddTrackingLocked(aSurface, lock);
-}
-
-
-void SharedSurfacesParent::RemoveTrackingLocked(
-    SourceSurfaceSharedDataWrapper* aSurface,
-    const StaticMutexAutoLock& aAutoLock) {
-  if (!aSurface->GetExpirationState()->IsTracked()) {
-    return;
-  }
-
-  sInstance->mTracker.RemoveObjectLocked(aSurface, aAutoLock);
-}
-
-
-void SharedSurfacesParent::RemoveTracking(
-    SourceSurfaceSharedDataWrapper* aSurface) {
-  StaticMutexAutoLock lock(sMutex);
-  if (!sInstance) {
-    return;
-  }
-
-  RemoveTrackingLocked(aSurface, lock);
-}
-
-
-bool SharedSurfacesParent::AgeOneGenerationLocked(
-    nsTArray<RefPtr<SourceSurfaceSharedDataWrapper>>& aExpired,
-    const StaticMutexAutoLock& aAutoLock) {
-  if (sInstance->mTracker.IsEmptyLocked(aAutoLock)) {
-    return false;
-  }
-
-  sInstance->mTracker.AgeOneGenerationLocked(aAutoLock);
-  sInstance->mTracker.TakeExpired(aExpired, aAutoLock);
-  return true;
-}
-
-
-bool SharedSurfacesParent::AgeOneGeneration(
-    nsTArray<RefPtr<SourceSurfaceSharedDataWrapper>>& aExpired) {
-  StaticMutexAutoLock lock(sMutex);
-  if (!sInstance) {
-    return false;
-  }
-
-  return AgeOneGenerationLocked(aExpired, lock);
-}
-
-
-bool SharedSurfacesParent::AgeAndExpireOneGeneration() {
-  nsTArray<RefPtr<SourceSurfaceSharedDataWrapper>> expired;
-  bool aged = AgeOneGeneration(expired);
-  ExpireMap(expired);
-  return aged;
-}
-
-
-void SharedSurfacesParent::ExpireMap(
-    nsTArray<RefPtr<SourceSurfaceSharedDataWrapper>>& aExpired) {
-  for (auto& surface : aExpired) {
-    surface->ExpireMap();
-  }
 }
 
 
