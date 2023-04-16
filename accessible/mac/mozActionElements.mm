@@ -153,6 +153,10 @@ enum CheckboxValue {
 
 @implementation mozIncrementableAccessible
 
+- (void)moxSetValue:(id)value {
+  [self setValue:([value doubleValue])];
+}
+
 - (void)moxPerformIncrement {
   [self changeValueBySteps:1];
 }
@@ -179,30 +183,47 @@ enum CheckboxValue {
 
 
 
+
+
+
 - (void)changeValueBySteps:(int)factor {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+  MOZ_ASSERT(!mGeckoAccessible.IsNull(), "mGeckoAccessible is null");
 
   if (LocalAccessible* acc = mGeckoAccessible.AsAccessible()) {
-    double newVal = acc->CurValue() + (acc->Step() * factor);
+    double newValue = acc->CurValue() + (acc->Step() * factor);
+    [self setValue:(newValue)];
+  } else {
+    RemoteAccessible* proxy = mGeckoAccessible.AsProxy();
+    double newValue = proxy->CurValue() + (proxy->Step() * factor);
+    [self setValue:(newValue)];
+  }
+}
+
+
+
+
+- (void)setValue:(double)value {
+  MOZ_ASSERT(!mGeckoAccessible.IsNull(), "mGeckoAccessible is null");
+
+  if (LocalAccessible* acc = mGeckoAccessible.AsAccessible()) {
     double min = acc->MinValue();
     double max = acc->MaxValue();
-    if ((IsNaN(min) || newVal >= min) && (IsNaN(max) || newVal <= max)) {
-      acc->SetCurValue(newVal);
+    
+    
+    
+    
+    if ((IsNaN(min) || value >= min) && (IsNaN(max) || value <= max)) {
+      acc->SetCurValue(value);
     }
-  } else if (RemoteAccessible* proxy = mGeckoAccessible.AsProxy()) {
-    double newVal = proxy->CurValue() + (proxy->Step() * factor);
+  } else {
+    RemoteAccessible* proxy = mGeckoAccessible.AsProxy();
     double min = proxy->MinValue();
     double max = proxy->MaxValue();
     
-    
-    
-    
-    if ((IsNaN(min) || newVal >= min) && (IsNaN(max) || newVal <= max)) {
-      proxy->SetCurValue(newVal);
+    if ((IsNaN(min) || value >= min) && (IsNaN(max) || value <= max)) {
+      proxy->SetCurValue(value);
     }
   }
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 @end
