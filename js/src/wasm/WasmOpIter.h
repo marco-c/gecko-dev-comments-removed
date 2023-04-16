@@ -362,8 +362,11 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   [[nodiscard]] bool getControl(uint32_t relativeDepth, Control** controlEntry);
   [[nodiscard]] bool checkBranchValue(uint32_t relativeDepth, ResultType* type,
                                       ValueVector* values);
-  [[nodiscard]] bool checkBranchType(uint32_t relativeDepth,
-                                     ResultType expectedType);
+  [[nodiscard]] bool checkCastedBranchValue(uint32_t relativeDepth,
+                                            ValType castedFromType,
+                                            ValType castedToType,
+                                            ResultType* branchTargetType,
+                                            ValueVector* values);
   [[nodiscard]] bool checkBrTableEntry(uint32_t* relativeDepth,
                                        ResultType prevBranchType,
                                        ResultType* branchType,
@@ -577,7 +580,8 @@ class MOZ_STACK_CLASS OpIter : private Policy {
                                  uint32_t* rttDepth, Value* ref);
   [[nodiscard]] bool readBrOnCast(uint32_t* relativeDepth, Value* rtt,
                                   uint32_t* rttTypeIndex, uint32_t* rttDepth,
-                                  ValueVector* values, ResultType* types);
+                                  ResultType* branchTargetType,
+                                  ValueVector* values);
   [[nodiscard]] bool readValType(ValType* type);
   [[nodiscard]] bool readHeapType(bool nullable, RefType* type);
   [[nodiscard]] bool readReferenceType(ValType* type,
@@ -1261,14 +1265,63 @@ inline bool OpIter<Policy>::checkBranchValue(uint32_t relativeDepth,
   return topWithType(*type, values);
 }
 
+
+
+
+
 template <typename Policy>
-inline bool OpIter<Policy>::checkBranchType(uint32_t relativeDepth,
-                                            ResultType expectedType) {
+inline bool OpIter<Policy>::checkCastedBranchValue(uint32_t relativeDepth,
+                                                   ValType castedFromType,
+                                                   ValType castedToType,
+                                                   ResultType* branchTargetType,
+                                                   ValueVector* values) {
+  
+  
   Control* block = nullptr;
   if (!getControl(relativeDepth, &block)) {
     return false;
   }
-  return checkIsSubtypeOf(expectedType, block->branchTargetType());
+  *branchTargetType = block->branchTargetType();
+
+  
+  
+  if (branchTargetType->length() < 1) {
+    UniqueChars expectedText = ToString(castedToType);
+    if (!expectedText) {
+      return false;
+    }
+
+    UniqueChars error(JS_smprintf("type mismatch: expected [_, %s], got []",
+                                  expectedText.get()));
+    if (!error) {
+      return false;
+    }
+    return fail(error.get());
+  }
+
+  
+  
+  const size_t castTypeIndex = branchTargetType->length() - 1;
+
+  
+  
+  if (!checkIsSubtypeOf(castedToType, (*branchTargetType)[castTypeIndex])) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  ValTypeVector stackTargetType;
+  if (!branchTargetType->cloneToVector(&stackTargetType)) {
+    return false;
+  }
+  stackTargetType[castTypeIndex] = castedFromType;
+
+  return topWithType(ResultType::Vector(stackTargetType), values);
 }
 
 template <typename Policy>
@@ -2967,8 +3020,8 @@ template <typename Policy>
 inline bool OpIter<Policy>::readBrOnCast(uint32_t* relativeDepth, Value* rtt,
                                          uint32_t* rttTypeIndex,
                                          uint32_t* rttDepth,
-                                         ValueVector* values,
-                                         ResultType* types) {
+                                         ResultType* branchTargetType,
+                                         ValueVector* values) {
   MOZ_ASSERT(Classify(op_) == OpKind::BrOnCast);
 
   if (!readVarU32(relativeDepth)) {
@@ -2979,13 +3032,15 @@ inline bool OpIter<Policy>::readBrOnCast(uint32_t* relativeDepth, Value* rtt,
     return false;
   }
 
-  *types =
-      ResultType::Single(ValType(RefType::fromTypeIndex(*rttTypeIndex, false)));
-  if (!checkBranchType(*relativeDepth, *types)) {
-    return false;
-  }
+  
+  ValType castedFromType(RefType::eq());
 
-  return topWithType(ResultType::Single(ValType(RefType::eq())), values);
+  
+  
+  ValType castedToType(RefType::fromTypeIndex(*rttTypeIndex, false));
+
+  return checkCastedBranchValue(*relativeDepth, castedFromType, castedToType,
+                                branchTargetType, values);
 }
 
 #ifdef ENABLE_WASM_SIMD

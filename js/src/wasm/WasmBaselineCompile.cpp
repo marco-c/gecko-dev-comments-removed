@@ -14119,6 +14119,8 @@ bool BaseCompiler::emitRttSub() {
     return true;
   }
 
+  
+  
   if (!emitInstanceCall(lineOrBytecode, SASigRttSub)) {
     return false;
   }
@@ -14138,6 +14140,9 @@ bool BaseCompiler::emitRefTest() {
   if (deadCode_) {
     return true;
   }
+
+  
+  
   return emitInstanceCall(lineOrBytecode, SASigRefTest);
 }
 
@@ -14157,16 +14162,20 @@ bool BaseCompiler::emitRefCast() {
 
   RegRef rttPtr = popRef();
   RegRef refPtr = popRef();
+
+  
   RegRef castedPtr = needRef();
   moveRef(refPtr, castedPtr);
   pushRef(castedPtr);
   pushRef(refPtr);
   pushRef(rttPtr);
 
+  
   if (!emitInstanceCall(lineOrBytecode, SASigRefTest)) {
     return false;
   }
 
+  
   RegI32 result = popI32();
   Label nonZero;
   masm.branchTest32(Assembler::NonZero, result, result, &nonZero);
@@ -14186,9 +14195,9 @@ bool BaseCompiler::emitBrOnCast() {
   NothingVector unused_values;
   uint32_t rttTypeIndex;
   uint32_t rttDepth;
-  ResultType type;
+  ResultType branchTargetType;
   if (!iter_.readBrOnCast(&relativeDepth, &unused, &rttTypeIndex, &rttDepth,
-                          &unused_values, &type)) {
+                          &branchTargetType, &unused_values)) {
     return false;
   }
 
@@ -14201,17 +14210,22 @@ bool BaseCompiler::emitBrOnCast() {
 
   RegRef rttPtr = popRef();
   RegRef refPtr = popRef();
+
+  
   RegRef castedPtr = needRef();
   moveRef(refPtr, castedPtr);
   pushRef(castedPtr);
   pushRef(refPtr);
   pushRef(rttPtr);
 
+  
   if (!emitInstanceCall(lineOrBytecode, SASigRefTest)) {
     return false;
   }
 
-  BranchState b(&target.label, target.stackHeight, InvertBranch(false), type);
+  
+  BranchState b(&target.label, target.stackHeight, InvertBranch(false),
+                branchTargetType);
   if (b.hasBlockResults()) {
     needResultRegisters(b.resultType);
   }
