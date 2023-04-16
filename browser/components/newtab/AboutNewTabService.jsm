@@ -448,7 +448,12 @@ class BaseAboutNewTabService {
 
 
 
-    if (awExperimentFeature.isEnabled({ defaultValue: true })) {
+    if (
+      awExperimentFeature.isEnabled({
+        defaultValue: true,
+        sendExposureEvent: true,
+      })
+    ) {
       return ABOUT_WELCOME_URL;
     }
     return this.defaultURL;
