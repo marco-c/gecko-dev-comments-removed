@@ -19,7 +19,7 @@ const SCREEN_SHARING_HEADER_ID = "sharing-warning-screen-panel-header";
 
 
 const WARNING_PANEL_TIMEOUT_MS = 1000;
-const CTRL_TAB_RUO_PREF = "browser.ctrlTab.recentlyUsedOrder";
+const CTRL_TAB_RUO_PREF = "browser.ctrlTab.sortByRecentlyUsed";
 
 
 
