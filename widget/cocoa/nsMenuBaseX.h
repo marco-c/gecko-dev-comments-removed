@@ -12,12 +12,7 @@
 enum nsMenuObjectTypeX {
   eMenuBarObjectType,
   eSubmenuObjectType,
-  eMenuItemObjectType,
 };
-
-
-
-
 
 
 class nsMenuObjectX {

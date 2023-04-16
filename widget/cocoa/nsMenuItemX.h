@@ -43,8 +43,7 @@ enum EMenuItemType {
 
 
 
-class nsMenuItemX final : public nsMenuObjectX,
-                          public nsChangeObserver,
+class nsMenuItemX final : public nsChangeObserver,
                           public nsMenuItemIconX::Listener {
  public:
   nsMenuItemX(nsMenuX* aParent, const nsString& aLabel, EMenuItemType aItemType,
@@ -64,9 +63,6 @@ class nsMenuItemX final : public nsMenuObjectX,
   NS_INLINE_DECL_REFCOUNTING(nsMenuItemX)
 
   NS_DECL_CHANGEOBSERVER
-
-  
-  nsMenuObjectTypeX MenuObjectType() override { return eMenuItemObjectType; }
 
   
   void IconUpdated() override;
