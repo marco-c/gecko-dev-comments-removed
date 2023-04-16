@@ -5,7 +5,7 @@ const executor_path = directory + '/resources/executor.html?pipe=';
 const coep_none =
     '|header(Cross-Origin-Embedder-Policy,none)';
 const coep_credentialless =
-    '|header(Cross-Origin-Embedder-Policy,credentialless)';
+    '|header(Cross-Origin-Embedder-Policy,cors-or-credentialless)';
 const coep_require_corp =
     '|header(Cross-Origin-Embedder-Policy,require-corp)';
 
@@ -27,6 +27,24 @@ let promise_test_parallel = (promise, description) => {
       .catch(test.step_func(error => { throw error; }));
   }, description);
 };
+
+
+
+
+
+const setCookie = async (origin, cookie_key, cookie_value) => {
+  const popup_token = token();
+  const popup_url = origin + executor_path + `&uuid=${popup_token}`;
+  const popup = window.open(popup_url);
+
+  const reply_token = token();
+  send(popup_token, `
+    document.cookie = "${cookie_key}=${cookie_value}";
+    send("${reply_token}", "done");
+  `);
+  assert_equals(await receive(reply_token), "done");
+  popup.close();
+}
 
 let parseCookies = function(headers_json) {
   if (!headers_json["cookie"])
