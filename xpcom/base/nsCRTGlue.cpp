@@ -253,7 +253,14 @@ void vprintf_stderr(const char* aFmt, va_list aArgs) {
     }
   }
 
-  FILE* fp = _fdopen(_dup(2), "a");
+  
+  
+  int fd = _fileno(stderr);
+  if (fd == -2) {
+    return;
+  }
+
+  FILE* fp = _fdopen(_dup(fd), "a");
   if (!fp) {
     return;
   }
