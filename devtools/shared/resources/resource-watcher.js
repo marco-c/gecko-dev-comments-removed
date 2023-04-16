@@ -380,26 +380,6 @@ class ResourceWatcher {
     this._existingLegacyListeners.set(targetFront, []);
 
     
-    for (const watcherEntry of this._watchers) {
-      watcherEntry.pendingEvents = watcherEntry.pendingEvents.filter(
-        ({ callbackType, updates }) => {
-          updates = updates.filter(update => {
-            if (callbackType !== "available" && callbackType !== "updated") {
-              return true;
-            }
-
-            const resource =
-              callbackType == "available" ? update : update.resource;
-            return resource.targetFront !== targetFront;
-          });
-
-          
-          return updates.length > 0;
-        }
-      );
-    }
-
-    
     
     
     
@@ -426,10 +406,6 @@ class ResourceWatcher {
 
       if (watcherFront) {
         targetFront = await this._getTargetForWatcherResource(resource);
-      }
-
-      if (targetFront && targetFront.isDestroyedOrBeingDestroyed()) {
-        continue;
       }
 
       
@@ -517,11 +493,7 @@ class ResourceWatcher {
           cachedResource.resourceId === resourceId
       );
 
-      if (
-        !existingResource ||
-        (existingResource.targetFront &&
-          existingResource.targetFront.isDestroyedOrBeingDestroyed())
-      ) {
+      if (!existingResource) {
         continue;
       }
 
