@@ -1167,15 +1167,15 @@ nsresult NS_GetURLSpecFromDir(nsIFile* file, nsACString& url,
 void NS_GetReferrerFromChannel(nsIChannel* channel, nsIURI** referrer) {
   *referrer = nullptr;
 
-  nsCOMPtr<nsIPropertyBag2> props(do_QueryInterface(channel));
-  if (props) {
+  if (nsCOMPtr<nsIPropertyBag2> props = do_QueryInterface(channel)) {
     
     
     
-    nsresult rv = props->GetPropertyAsInterface(
-        u"docshell.internalReferrer"_ns, NS_GET_IID(nsIURI),
-        reinterpret_cast<void**>(referrer));
+    nsresult rv;
+    nsCOMPtr<nsIURI> uri(
+        do_GetProperty(props, u"docshell.internalReferrer"_ns, &rv));
     if (NS_SUCCEEDED(rv)) {
+      uri.forget(referrer);
       return;
     }
   }
