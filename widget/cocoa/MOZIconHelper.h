@@ -12,6 +12,10 @@
 
 class imgIContainer;
 
+namespace mozilla {
+class ComputedStyle;
+}
+
 @interface MOZIconHelper : NSObject
 
 
@@ -20,6 +24,7 @@ class imgIContainer;
 
 + (NSImage*)iconImageFromImageContainer:(imgIContainer*)aImage
                                withSize:(NSSize)aSize
+                          computedStyle:(const mozilla::ComputedStyle*)aComputedStyle
                                 subrect:(const nsIntRect&)aSubRect
                             scaleFactor:(CGFloat)aScaleFactor;
 

@@ -507,8 +507,9 @@ OSXNotificationCenter::OnImageReady(nsISupports* aUserData, imgIRequest* aReques
   }
 
   NSImage* cocoaImage = nil;
+  
   nsCocoaUtils::CreateDualRepresentationNSImageFromImageContainer(image, imgIContainer::FRAME_FIRST,
-                                                                  &cocoaImage);
+                                                                  nullptr, &cocoaImage);
   (osxni->mPendingNotification).contentImage = cocoaImage;
   [cocoaImage release];
   ShowPendingNotification(osxni);
