@@ -4861,6 +4861,14 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       
       mGdkWindow = gtk_widget_get_window(eventWidget);
 
+#ifdef MOZ_WAYLAND
+      if (mIsX11Display && gfx::gfxVars::UseEGL() && isAccelerated) {
+        mCompositorInitiallyPaused = true;
+        mNeedsCompositorResume = true;
+        MaybeResumeCompositor();
+      }
+#endif
+
       if (mWindowType == eWindowType_popup) {
         
         
