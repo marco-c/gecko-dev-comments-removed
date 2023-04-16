@@ -21,6 +21,14 @@ add_task(async function setup() {
 
   await promiseSaveSettingsData(data);
 
+  await Services.search.init();
+
+  
+  
+  
+  let oldFunc = Services.search.wrappedJSObject.addEnginesFromExtension;
+  Services.search.wrappedJSObject.addEnginesFromExtension = () => {};
+
   
   extension = await SearchTestUtils.installSearchExtension({
     id: "simple",
@@ -28,6 +36,8 @@ add_task(async function setup() {
     search_url: "https://example.com/",
     skipWaitForSearchEngine: true,
   });
+
+  Services.search.wrappedJSObject.addEnginesFromExtension = oldFunc;
 });
 
 add_task(async function test_migrateLegacyEngineDifferentName() {
