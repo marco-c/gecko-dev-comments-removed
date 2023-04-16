@@ -123,6 +123,8 @@ pub struct BuiltDisplayList {
 #[derive(Copy, Clone, Default, Deserialize, Serialize)]
 pub struct BuiltDisplayListDescriptor {
     
+    gecko_display_list_time: f64,
+    
     builder_start_time: u64,
     
     builder_finish_time: u64,
@@ -166,6 +168,10 @@ impl DisplayListWithCache {
 
     pub fn descriptor(&self) -> &BuiltDisplayListDescriptor {
         self.display_list.descriptor()
+    }
+
+    pub fn times(&self) -> (f64, u64, u64, u64) {
+        self.display_list.times()
     }
 
     pub fn data(&self) -> &[u8] {
@@ -383,8 +389,9 @@ impl BuiltDisplayList {
         self.descriptor.send_start_time = time;
     }
 
-    pub fn times(&self) -> (u64, u64, u64) {
+    pub fn times(&self) -> (f64, u64, u64, u64) {
         (
+            self.descriptor.gecko_display_list_time,
             self.descriptor.builder_start_time,
             self.descriptor.builder_finish_time,
             self.descriptor.send_start_time,
@@ -1984,6 +1991,7 @@ impl DisplayListBuilder {
             self.pipeline_id,
             BuiltDisplayList {
                 descriptor: BuiltDisplayListDescriptor {
+                    gecko_display_list_time: 0.0,
                     builder_start_time: self.builder_start_time,
                     builder_finish_time: end_time,
                     send_start_time: end_time,
