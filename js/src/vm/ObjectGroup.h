@@ -23,22 +23,6 @@ namespace js {
 
 class PlainObject;
 
-
-
-
-
-enum NewObjectKind {
-  
-  GenericObject,
-
-  
-
-
-
-
-  TenuredObject
-};
-
 }  
 
 #endif 

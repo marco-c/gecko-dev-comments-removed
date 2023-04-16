@@ -46,6 +46,22 @@ class NewObjectCache;
 enum class IntegrityLevel { Sealed, Frozen };
 
 
+
+
+
+enum NewObjectKind {
+  
+  GenericObject,
+
+  
+
+
+
+
+  TenuredObject
+};
+
+
 bool PreventExtensions(JSContext* cx, JS::HandleObject obj,
                        JS::ObjectOpResult& result);
 bool SetImmutablePrototype(JSContext* cx, JS::HandleObject obj,
