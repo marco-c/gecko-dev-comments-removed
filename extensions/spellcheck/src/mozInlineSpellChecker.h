@@ -76,6 +76,7 @@ class mozInlineSpellStatus {
   
   RefPtr<nsRange> mNoCheckRange;
 
+ private:
   
   
   
@@ -99,7 +100,6 @@ class mozInlineSpellStatus {
   
   int32_t mNewNavigationPositionOffset;
 
- protected:
   nsresult FinishNavigationEvent(mozInlineSpellWordUtil& aWordUtil);
 
   nsresult FillNoCheckRangeFromAnchor(mozInlineSpellWordUtil& aWordUtil);
