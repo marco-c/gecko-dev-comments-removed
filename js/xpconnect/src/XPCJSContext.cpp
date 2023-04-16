@@ -934,9 +934,7 @@ static void ReloadPrefsCallback(const char* pref, void* aXpccx) {
       Preferences::GetBool(JS_OPTIONS_DOT_STR "wasm_trustedprincipals");
   bool useWasmOptimizing =
       Preferences::GetBool(JS_OPTIONS_DOT_STR "wasm_optimizingjit");
-#ifdef JS_CODEGEN_ARM64
-  
-  
+#ifdef ENABLE_WASM_CRANELIFT
   
   bool forceWasmIon = Preferences::GetBool(JS_OPTIONS_DOT_STR "wasm_force_ion");
 #endif
