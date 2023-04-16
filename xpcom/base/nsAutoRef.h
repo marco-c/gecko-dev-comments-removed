@@ -188,9 +188,8 @@ class nsAutoRef : public nsAutoRefBase<T> {
   
   
 
- private:
   
-  explicit nsAutoRef(ThisClass& aRefToSteal);
+  explicit nsAutoRef(const ThisClass& aRefToSteal) = delete;
 };
 
 
@@ -217,7 +216,7 @@ class nsReturnRef : public nsAutoRefBase<T> {
       : BaseClass(aRefToRelease) {}
 
   
-  nsReturnRef(nsReturnRef<T>& aRefToSteal) : BaseClass(aRefToSteal) {}
+  nsReturnRef(nsReturnRef<T>&& aRefToSteal) = default;
 
   MOZ_IMPLICIT nsReturnRef(const nsReturningRef<T>& aReturning)
       : BaseClass(aReturning) {}
@@ -428,8 +427,7 @@ class nsAutoRefBase : public nsSimpleRef<T> {
   explicit nsAutoRefBase(RawRefOnly aRefToRelease) : SimpleRef(aRefToRelease) {}
 
   
-  explicit nsAutoRefBase(ThisClass& aRefToSteal)
-      : SimpleRef(aRefToSteal.disown()) {}
+  nsAutoRefBase(ThisClass&& aRefToSteal) : SimpleRef(aRefToSteal.disown()) {}
   explicit nsAutoRefBase(const nsReturningRef<T>& aReturning)
       : SimpleRef(aReturning.mReturnRef.disown()) {}
 
@@ -444,10 +442,9 @@ class nsAutoRefBase : public nsSimpleRef<T> {
     explicit LocalSimpleRef(RawRef aRawRef) : SimpleRef(aRawRef) {}
   };
 
- private:
+ public:
   ThisClass& operator=(const ThisClass& aSmartRef) = delete;
 
- public:
   RawRef operator->() const { return this->get(); }
 
   
