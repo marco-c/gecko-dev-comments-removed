@@ -56,9 +56,6 @@ class nsMenuX final : public nsMenuParentX,
   void IconUpdated() override;
 
   
-  nsresult Create(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aNode);
-
-  
   
   
   
