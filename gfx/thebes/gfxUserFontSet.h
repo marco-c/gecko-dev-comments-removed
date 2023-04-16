@@ -265,7 +265,9 @@ class gfxUserFontSet {
       const nsTArray<gfxFontFeature>& aFeatureSettings,
       const nsTArray<mozilla::gfx::FontVariation>& aVariationSettings,
       uint32_t aLanguageOverride, gfxCharacterMap* aUnicodeRanges,
-      mozilla::StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags) = 0;
+      mozilla::StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags,
+      float aAscentOverride, float aDescentOverride,
+      float aLineGapOverride) = 0;
 
   
   
@@ -276,7 +278,8 @@ class gfxUserFontSet {
       const nsTArray<gfxFontFeature>& aFeatureSettings,
       const nsTArray<mozilla::gfx::FontVariation>& aVariationSettings,
       uint32_t aLanguageOverride, gfxCharacterMap* aUnicodeRanges,
-      mozilla::StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags);
+      mozilla::StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags,
+      float aAscentOverride, float aDescentOverride, float aLineGapOverride);
 
   
   void AddUserFontEntry(const nsCString& aFamilyName,
@@ -525,7 +528,8 @@ class gfxUserFontSet {
       const nsTArray<gfxFontFeature>& aFeatureSettings,
       const nsTArray<mozilla::gfx::FontVariation>& aVariationSettings,
       uint32_t aLanguageOverride, gfxCharacterMap* aUnicodeRanges,
-      mozilla::StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags);
+      mozilla::StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags,
+      float aAscentOverride, float aDescentOverride, float aLineGapOverride);
 
   
   
@@ -573,7 +577,8 @@ class gfxUserFontEntry : public gfxFontEntry {
       const nsTArray<gfxFontFeature>& aFeatureSettings,
       const nsTArray<mozilla::gfx::FontVariation>& aVariationSettings,
       uint32_t aLanguageOverride, gfxCharacterMap* aUnicodeRanges,
-      mozilla::StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags);
+      mozilla::StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags,
+      float aAscentOverride, float aDescentOverride, float aLineGapOverride);
 
   virtual ~gfxUserFontEntry();
 
@@ -584,7 +589,8 @@ class gfxUserFontEntry : public gfxFontEntry {
       const nsTArray<gfxFontFeature>& aFeatureSettings,
       const nsTArray<mozilla::gfx::FontVariation>& aVariationSettings,
       uint32_t aLanguageOverride, gfxCharacterMap* aUnicodeRanges,
-      mozilla::StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags);
+      mozilla::StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags,
+      float aAscentOverride, float aDescentOverride, float aLineGapOverride);
 
   
   bool Matches(const nsTArray<gfxFontFaceSrc>& aFontFaceSrcList,
@@ -593,7 +599,9 @@ class gfxUserFontEntry : public gfxFontEntry {
                const nsTArray<gfxFontFeature>& aFeatureSettings,
                const nsTArray<mozilla::gfx::FontVariation>& aVariationSettings,
                uint32_t aLanguageOverride, gfxCharacterMap* aUnicodeRanges,
-               mozilla::StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags);
+               mozilla::StyleFontDisplay aFontDisplay, RangeFlags aRangeFlags,
+               float aAscentOverride, float aDescentOverride,
+               float aLineGapOverride);
 
   gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) override;
 
