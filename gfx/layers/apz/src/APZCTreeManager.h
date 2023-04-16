@@ -675,7 +675,16 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   HitTestResult GetTouchInputBlockAPZC(
       const MultiTouchInput& aEvent,
       nsTArray<TouchBehaviorFlags>* aOutTouchBehaviors);
-  APZEventResult ProcessTouchInput(MultiTouchInput& aInput);
+
+  
+
+
+  struct InputHandlingState {
+    
+    APZEventResult mResult;
+  };
+
+  void ProcessTouchInput(InputHandlingState& aState, MultiTouchInput& aInput);
   
 
 
