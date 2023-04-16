@@ -1118,3 +1118,19 @@ function checkStorageData(name, value) {
 function buildURLWithContent(domain, html) {
   return `http://${domain}/document-builder.sjs?html=${encodeURI(html)}`;
 }
+
+
+
+
+
+
+function checkCookieData(name, value) {
+  const rows = Array.from(gUI.table.items);
+  const cookie = rows.map(([, data]) => data).find(x => x.name === name);
+
+  is(
+    cookie?.value,
+    value,
+    `Table row has an entry for: ${name} with value: ${value}`
+  );
+}
