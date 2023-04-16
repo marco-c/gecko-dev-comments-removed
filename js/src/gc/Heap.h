@@ -643,7 +643,9 @@ class TenuredChunk : public TenuredChunkBase {
   void releaseArena(GCRuntime* gc, Arena* arena, const AutoLockGC& lock);
   void recycleArena(Arena* arena, SortedArenaList& dest, size_t thingsPerArena);
 
-  [[nodiscard]] bool decommitOneFreeArena(GCRuntime* gc, AutoLockGC& lock);
+  void decommitFreeArenas(GCRuntime* gc, const bool& cancel, AutoLockGC& lock);
+  [[nodiscard]] bool decommitOneFreePage(GCRuntime* gc, size_t pageIndex,
+                                         AutoLockGC& lock);
   void decommitAllArenas();
 
   
@@ -673,10 +675,20 @@ class TenuredChunk : public TenuredChunkBase {
   void markArenasInPageDecommitted(size_t pageIndex);
 
   void updateChunkListAfterAlloc(GCRuntime* gc, const AutoLockGC& lock);
-  void updateChunkListAfterFree(GCRuntime* gc, const AutoLockGC& lock);
+  void updateChunkListAfterFree(GCRuntime* gc, size_t numArenasFree,
+                                const AutoLockGC& lock);
+
+  
+  void rebuildFreeArenasList();
 
   
   bool isPageFree(size_t pageIndex) const;
+  
+  
+  
+  
+  
+  bool isPageFree(const Arena* arena) const;
 
   
   size_t pageIndex(const Arena* arena) const {
