@@ -105,23 +105,24 @@ mozInlineSpellStatus::mozInlineSpellStatus(mozInlineSpellChecker* aSpellChecker)
 
 
 
-nsresult mozInlineSpellStatus::CreateForEditorChange(
-    mozilla::UniquePtr<mozInlineSpellStatus>& aStatus,
+Result<UniquePtr<mozInlineSpellStatus>, nsresult>
+mozInlineSpellStatus::CreateForEditorChange(
     mozInlineSpellChecker& aSpellChecker, EditSubAction aEditSubAction,
     nsINode* aAnchorNode, uint32_t aAnchorOffset, nsINode* aPreviousNode,
     uint32_t aPreviousOffset, nsINode* aStartNode, uint32_t aStartOffset,
     nsINode* aEndNode, uint32_t aEndOffset) {
   if (NS_WARN_IF(!aAnchorNode) || NS_WARN_IF(!aPreviousNode)) {
-    return NS_ERROR_FAILURE;
+    return Err(NS_ERROR_FAILURE);
   }
 
-  aStatus = MakeUnique<mozInlineSpellStatus>(&aSpellChecker);
+  UniquePtr<mozInlineSpellStatus> status =
+      MakeUnique<mozInlineSpellStatus>(&aSpellChecker);
 
   
-  aStatus->mAnchorRange =
-      aStatus->PositionToCollapsedRange(aAnchorNode, aAnchorOffset);
-  if (NS_WARN_IF(!aStatus->mAnchorRange)) {
-    return NS_ERROR_FAILURE;
+  status->mAnchorRange =
+      status->PositionToCollapsedRange(aAnchorNode, aAnchorOffset);
+  if (NS_WARN_IF(!status->mAnchorRange)) {
+    return Err(NS_ERROR_FAILURE);
   }
 
   bool deleted = aEditSubAction == EditSubAction::eDeleteSelectedContent;
@@ -135,70 +136,74 @@ nsresult mozInlineSpellStatus::CreateForEditorChange(
     
     
     
-    aStatus->mOp = eOpChangeDelete;
-    aStatus->mRange = nullptr;
-    return NS_OK;
+    status->mOp = eOpChangeDelete;
+    status->mRange = nullptr;
+    return status;
   }
 
-  aStatus->mOp = eOpChange;
+  status->mOp = eOpChange;
 
   
-  aStatus->mRange = nsRange::Create(aPreviousNode);
+  status->mRange = nsRange::Create(aPreviousNode);
 
   
   ErrorResult errorResult;
-  int16_t cmpResult = aStatus->mAnchorRange->ComparePoint(
+  int16_t cmpResult = status->mAnchorRange->ComparePoint(
       *aPreviousNode, aPreviousOffset, errorResult);
   if (NS_WARN_IF(errorResult.Failed())) {
-    return errorResult.StealNSResult();
+    return Err(errorResult.StealNSResult());
   }
   nsresult rv;
   if (cmpResult < 0) {
     
-    rv = aStatus->mRange->SetStartAndEnd(aPreviousNode, aPreviousOffset,
-                                         aAnchorNode, aAnchorOffset);
+    rv = status->mRange->SetStartAndEnd(aPreviousNode, aPreviousOffset,
+                                        aAnchorNode, aAnchorOffset);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      return Err(rv);
     }
   } else {
     
-    rv = aStatus->mRange->SetStartAndEnd(aAnchorNode, aAnchorOffset,
-                                         aPreviousNode, aPreviousOffset);
+    rv = status->mRange->SetStartAndEnd(aAnchorNode, aAnchorOffset,
+                                        aPreviousNode, aPreviousOffset);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      return Err(rv);
     }
   }
 
   
   
   if (aEditSubAction == EditSubAction::eInsertText) {
-    aStatus->mCreatedRange = aStatus->mRange;
+    status->mCreatedRange = status->mRange;
   }
 
   
   if (aStartNode && aEndNode) {
     cmpResult =
-        aStatus->mRange->ComparePoint(*aStartNode, aStartOffset, errorResult);
+        status->mRange->ComparePoint(*aStartNode, aStartOffset, errorResult);
     if (NS_WARN_IF(errorResult.Failed())) {
-      return errorResult.StealNSResult();
+      return Err(errorResult.StealNSResult());
     }
     if (cmpResult < 0) {  
-      rv = aStatus->mRange->SetStart(aStartNode, aStartOffset);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = status->mRange->SetStart(aStartNode, aStartOffset);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return Err(rv);
+      }
     }
 
     cmpResult =
-        aStatus->mRange->ComparePoint(*aEndNode, aEndOffset, errorResult);
+        status->mRange->ComparePoint(*aEndNode, aEndOffset, errorResult);
     if (NS_WARN_IF(errorResult.Failed())) {
-      return errorResult.StealNSResult();
+      return Err(errorResult.StealNSResult());
     }
     if (cmpResult > 0) {  
-      rv = aStatus->mRange->SetEnd(aEndNode, aEndOffset);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = status->mRange->SetEnd(aEndNode, aEndOffset);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return Err(rv);
+      }
     }
   }
 
-  return NS_OK;
+  return status;
 }
 
 
@@ -806,13 +811,17 @@ nsresult mozInlineSpellChecker::SpellCheckAfterEditorChange(
   mNeedsCheckAfterNavigation = true;
 
   
-  UniquePtr<mozInlineSpellStatus> status;
-  rv = mozInlineSpellStatus::CreateForEditorChange(
-      status, *this, aEditSubAction, aSelection.GetAnchorNode(),
-      aSelection.AnchorOffset(), aPreviousSelectedNode, aPreviousSelectedOffset,
-      aStartNode, aStartOffset, aEndNode, aEndOffset);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = ScheduleSpellCheck(std::move(status));
+  Result<UniquePtr<mozInlineSpellStatus>, nsresult> res =
+      mozInlineSpellStatus::CreateForEditorChange(
+          *this, aEditSubAction, aSelection.GetAnchorNode(),
+          aSelection.AnchorOffset(), aPreviousSelectedNode,
+          aPreviousSelectedOffset, aStartNode, aStartOffset, aEndNode,
+          aEndOffset);
+  if (NS_WARN_IF(res.isErr())) {
+    return res.unwrapErr();
+  }
+
+  rv = ScheduleSpellCheck(res.unwrap());
   NS_ENSURE_SUCCESS(rv, rv);
 
   
