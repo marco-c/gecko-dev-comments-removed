@@ -400,6 +400,12 @@ void EmitWasmPostBarrierGuard(MacroAssembler& masm,
                               Register otherScratch, Register setValue,
                               Label* skipBarrier);
 
+#ifdef DEBUG
+
+
+bool IsValidStackMapKey(bool debugEnabled, const uint8_t* nextPC);
+#endif
+
 }  
 }  
 
