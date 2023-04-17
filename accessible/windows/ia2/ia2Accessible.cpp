@@ -278,15 +278,9 @@ ia2Accessible::get_states(AccessibleStates* aStates) {
 
   
 
-  if (!Acc()) {
-    *aStates = IA2_STATE_DEFUNCT;
-    return S_OK;
-  }
-  AccessibleWrap* acc = LocalAcc();
+  Accessible* acc = Acc();
   if (!acc) {
-    
-    
-    
+    *aStates = IA2_STATE_DEFUNCT;
     return S_OK;
   }
 

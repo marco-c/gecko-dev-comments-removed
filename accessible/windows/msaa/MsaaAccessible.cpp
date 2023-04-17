@@ -1162,17 +1162,6 @@ MsaaAccessible::get_accState(
     return accessible->get_accState(kVarChildIdSelf, pvarState);
   }
 
-  if (mAcc->IsRemote()) {
-    
-    if (mAcc->IsDoc()) {
-      
-      
-      
-      pvarState->lVal |= STATE_SYSTEM_READONLY;
-    }
-    return S_OK;
-  }
-
   
   
   
@@ -1181,7 +1170,7 @@ MsaaAccessible::get_accState(
   
   
 
-  uint64_t state = LocalAcc()->State();
+  uint64_t state = Acc()->State();
 
   uint32_t msaaState = 0;
   nsAccUtils::To32States(state, &msaaState, nullptr);
