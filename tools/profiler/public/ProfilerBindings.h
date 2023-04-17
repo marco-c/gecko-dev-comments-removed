@@ -4,11 +4,20 @@
 
 
 
+
+
 #ifndef ProfilerBindings_h
 #define ProfilerBindings_h
 
+#include <stdint.h>
 
+namespace mozilla {
+class AutoProfilerLabel;
+}  
 
+namespace JS {
+enum class ProfilingCategoryPair : uint32_t;
+}  
 
 
 
@@ -16,6 +25,10 @@ extern "C" {
 
 void gecko_profiler_register_thread(const char* aName);
 void gecko_profiler_unregister_thread();
+
+void gecko_profiler_construct_label(mozilla::AutoProfilerLabel* aAutoLabel,
+                                    JS::ProfilingCategoryPair aCategoryPair);
+void gecko_profiler_destruct_label(mozilla::AutoProfilerLabel* aAutoLabel);
 
 }  
 
