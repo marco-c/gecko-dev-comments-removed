@@ -108,7 +108,6 @@ nsContentDLF::CreateInstance(const char* aCommand, nsIChannel* aChannel,
       viewSourceChannel->SetContentType(type);
     } else if (IsImageContentType(type)) {
       
-      
       contentType = type;
     } else {
       viewSourceChannel->SetContentType(nsLiteralCString(TEXT_PLAIN));
