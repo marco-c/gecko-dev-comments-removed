@@ -527,6 +527,20 @@ class ExternalData {
   }
 };
 
+class AutoGCParameter {
+  JSContext* cx_;
+  JSGCParamKey key_;
+  uint32_t value_;
+
+ public:
+  explicit AutoGCParameter(JSContext* cx, JSGCParamKey key, uint32_t value)
+      : cx_(cx), key_(key) {
+    JS_SetGCParameter(cx_, key_, value_);
+    value_ = JS_GetGCParameter(cx_, key_);
+  }
+  ~AutoGCParameter() { JS_SetGCParameter(cx_, key_, value_); }
+};
+
 #ifdef JS_GC_ZEAL
 
 
@@ -561,6 +575,12 @@ class AutoLeaveZeal {
 #  endif
   }
 };
-#endif 
+
+#else
+class AutoLeaveZeal {
+ public:
+  explicit AutoLeaveZeal(JSContext* cx) {}
+};
+#endif
 
 #endif 

@@ -374,7 +374,7 @@ BEGIN_TEST(testIncrementalRoots) {
   
   
   js::SliceBudget budget(js::WorkBudget(1000));
-  JS_SetGCParameter(cx, JSGC_INCREMENTAL_GC_ENABLED, true);
+  AutoGCParameter param(cx, JSGC_INCREMENTAL_GC_ENABLED, true);
   rt->gc.startDebugGC(GC_NORMAL, budget);
   while (rt->gc.state() != gc::State::Mark) {
     rt->gc.debugGCSlice(budget);
