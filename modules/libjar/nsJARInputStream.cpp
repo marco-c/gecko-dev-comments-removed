@@ -24,6 +24,16 @@
 
 
 
+#if defined(HAVE_SEH_EXCEPTIONS)
+#  define CatchableMemcpy CopyMemory
+#else
+#  define CatchableMemcpy memcpy
+#endif
+
+
+
+
+
 NS_IMPL_ISUPPORTS(nsJARInputStream, nsIInputStream)
 
 
@@ -224,7 +234,7 @@ nsJARInputStream::Read(char* aBuffer, uint32_t aCount, uint32_t* aBytesRead) {
                               "Did we read more than expected?");
         uint32_t count = std::min(aCount, mOutSize - uint32_t(mZs.total_out));
         if (count) {
-          memcpy(aBuffer, mZs.next_in + mZs.total_out, count);
+          CatchableMemcpy(aBuffer, mZs.next_in + mZs.total_out, count);
           mZs.total_out += count;
         }
         *aBytesRead = count;
@@ -400,7 +410,7 @@ uint32_t nsJARInputStream::CopyDataToBuffer(char*& aBuffer, uint32_t& aCount) {
   const uint32_t writeLength = std::min(aCount, mBuffer.Length() - mCurPos);
 
   if (writeLength > 0) {
-    memcpy(aBuffer, mBuffer.get() + mCurPos, writeLength);
+    CatchableMemcpy(aBuffer, mBuffer.get() + mCurPos, writeLength);
     mCurPos += writeLength;
     aCount -= writeLength;
     aBuffer += writeLength;
