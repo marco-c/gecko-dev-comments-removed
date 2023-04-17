@@ -1023,11 +1023,10 @@ static bool InstantiateFunctions(JSContext* cx, CompilationAtomCache& atomCache,
 
     
     
-    
     if (scriptStencil.hasSelfHostedCanonicalName()) {
       JSAtom* canonicalName = atomCache.getExistingAtomAt(
           cx, scriptStencil.selfHostedCanonicalName());
-      SetUnclonedSelfHostedCanonicalName(fun, canonicalName);
+      fun->setAtom(canonicalName);
     }
 
     gcOutput.getFunctionNoBaseIndex(index) = fun;
@@ -1441,6 +1440,56 @@ bool CompilationStencil::instantiateStencilAfterPreparation(
   }
 
   return true;
+}
+
+
+
+
+
+static bool SelfHostedDummyFunction(JSContext* cx, unsigned argc,
+                                    JS::Value* vp) {
+  MOZ_CRASH("Self-hosting top-level should not use functions directly");
+}
+
+bool CompilationStencil::instantiateSelfHostedForRuntime(
+    JSContext* cx, CompilationAtomCache& atomCache) const {
+  MOZ_ASSERT(isInitialStencil());
+
+  
+  
+  return InstantiateAtoms(cx, atomCache, *this);
+}
+
+JSScript* CompilationStencil::instantiateSelfHostedTopLevelForRealm(
+    JSContext* cx, CompilationInput& input) {
+  MOZ_ASSERT(isInitialStencil());
+
+  Rooted<CompilationGCOutput> gcOutput(cx);
+
+  gcOutput.get().sourceObject = SelfHostingScriptSourceObject(cx);
+  if (!gcOutput.get().sourceObject) {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  RootedFunction dummy(
+      cx, NewNativeFunction(cx, SelfHostedDummyFunction, 0, nullptr));
+  if (!dummy) {
+    return nullptr;
+  }
+  if (!gcOutput.get().functions.appendN(dummy, scriptData.size())) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  if (!InstantiateTopLevel(cx, input, *this, gcOutput.get())) {
+    return nullptr;
+  }
+
+  return gcOutput.get().script;
 }
 
 JSFunction* CompilationStencil::instantiateSelfHostedLazyFunction(

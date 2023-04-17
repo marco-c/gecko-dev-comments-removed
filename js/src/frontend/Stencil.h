@@ -252,6 +252,9 @@ class ScopeStencil {
   ScopeKind kind_{UINT8_MAX};
 
   
+  
+  
+  
   static constexpr uint8_t HasEnclosing = 1 << 0;
 
   
