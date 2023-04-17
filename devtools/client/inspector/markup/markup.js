@@ -2106,6 +2106,11 @@ MarkupView.prototype = {
     
     await this._updateChildren(container, { expand, flash });
 
+    
+    if (this._destroyed) {
+      return;
+    }
+
     if (updateLevel) {
       
       
@@ -2371,6 +2376,7 @@ MarkupView.prototype = {
 
     this.popup.destroy();
     this.popup = null;
+    this._selectedContainer = null;
 
     this._elt.removeEventListener("blur", this._onBlur, true);
     this._elt.removeEventListener("click", this._onMouseClick);
@@ -2426,6 +2432,8 @@ MarkupView.prototype = {
     this.controllerWindow = null;
     this.doc = null;
     this.highlighters = null;
+    this.walker = null;
+    this.resourceCommand = null;
     this.win = null;
 
     this._lastDropTarget = null;
