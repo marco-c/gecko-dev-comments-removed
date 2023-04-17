@@ -2751,7 +2751,7 @@ HelperThreadTask* GlobalHelperThreadState::findHighestPriorityTask(
   
 
   for (const auto& selector : selectors) {
-    if (auto* task = (HelperThreadState().*(selector))(locked)) {
+    if (auto* task = (this->*(selector))(locked)) {
       return task;
     }
   }
