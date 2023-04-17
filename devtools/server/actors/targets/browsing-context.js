@@ -264,9 +264,12 @@ const browsingContextTargetPrototype = {
 
 
 
+
+
+
   initialize: function(
     connection,
-    { docShell, followWindowGlobalLifeCycle, isTopLevelTarget }
+    { docShell, followWindowGlobalLifeCycle, isTopLevelTarget, ignoreSubFrames }
   ) {
     Actor.prototype.initialize.call(this, connection);
 
@@ -279,6 +282,7 @@ const browsingContextTargetPrototype = {
 
     this.followWindowGlobalLifeCycle = followWindowGlobalLifeCycle;
     this.isTopLevelTarget = !!isTopLevelTarget;
+    this.ignoreSubFrames = ignoreSubFrames;
 
     
     this._extraActors = {};
@@ -381,6 +385,10 @@ const browsingContextTargetPrototype = {
 
 
   get docShells() {
+    if (this.ignoreSubFrames) {
+      return [this.docShell];
+    }
+
     return getChildDocShells(this.docShell);
   },
 
@@ -1408,6 +1416,10 @@ const browsingContextTargetPrototype = {
   _windowReady(window, { isFrameSwitching, isBFCache } = {}) {
     const isTopLevel = window == this.window;
 
+    if (this.ignoreSubFrames && !this.isTopLevel) {
+      return;
+    }
+
     
     
     if (window == this._originalWindow && !isFrameSwitching) {
@@ -1438,6 +1450,10 @@ const browsingContextTargetPrototype = {
   ) {
     const isTopLevel = window == this.window;
 
+    if (this.ignoreSubFrames && !this.isTopLevel) {
+      return;
+    }
+
     
     
     
@@ -1467,8 +1483,12 @@ const browsingContextTargetPrototype = {
     navigationStart,
   }) {
     let isTopLevel = window == this.window;
-    let reset = false;
 
+    if (this.ignoreSubFrames && !this.isTopLevel) {
+      return;
+    }
+
+    let reset = false;
     if (window == this._originalWindow && !isFrameSwitching) {
       
       
@@ -1523,6 +1543,10 @@ const browsingContextTargetPrototype = {
 
   _navigate(window, isFrameSwitching = false) {
     const isTopLevel = window == this.window;
+
+    if (this.ignoreSubFrames && !this.isTopLevel) {
+      return;
+    }
 
     
     
@@ -1685,7 +1709,10 @@ DebuggerProgressListener.prototype = {
     handler.addEventListener("pagehide", this._onWindowHidden, true);
 
     
-    for (const win of this._getWindowsInDocShell(docShell)) {
+    const windows = this._targetActor.ignoreSubFrames
+      ? [docShellWindow]
+      : this._getWindowsInDocShell(docShell);
+    for (const win of windows) {
       this._targetActor._windowReady(win);
       this._knownWindowIDs.set(getWindowID(win), win);
     }
@@ -1729,7 +1756,10 @@ DebuggerProgressListener.prototype = {
     handler.removeEventListener("pageshow", this._onWindowCreated, true);
     handler.removeEventListener("pagehide", this._onWindowHidden, true);
 
-    for (const win of this._getWindowsInDocShell(docShell)) {
+    const windows = this._targetActor.ignoreSubFrames
+      ? [docShellWindow]
+      : this._getWindowsInDocShell(docShell);
+    for (const win of windows) {
       this._knownWindowIDs.delete(getWindowID(win));
     }
 

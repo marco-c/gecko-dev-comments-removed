@@ -24,6 +24,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "resource://devtools/server/connectors/js-window-actor/WindowGlobalLogger.jsm",
 });
 
+const isEveryFrameTargetEnabled = Services.prefs.getBoolPref(
+  "devtools.every-frame-target.enabled",
+  false
+);
+
 
 const SHARED_DATA_KEY_NAME = "DevTools:watchedPerWatcher";
 
@@ -87,7 +92,7 @@ function shouldNotifyWindowGlobal(
   
   
   
-  if (!windowGlobal.isProcessRoot) {
+  if (!isEveryFrameTargetEnabled && !windowGlobal.isProcessRoot) {
     return false;
   }
 
@@ -392,6 +397,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       followWindowGlobalLifeCycle: true,
       isTopLevelTarget,
+      ignoreSubFrames: isEveryFrameTargetEnabled,
     });
     targetActor.manage(targetActor);
     targetActor.createdFromJsWindowActor = true;

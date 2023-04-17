@@ -2169,6 +2169,10 @@ pref("devtools.browsertoolbox.fission", false);
 pref("devtools.target-switching.server.enabled", true);
 
 
+
+pref("devtools.every-frame-target.enabled", false);
+
+
 pref("devtools.command-button-pick.enabled", true);
 pref("devtools.command-button-frames.enabled", true);
 pref("devtools.command-button-splitconsole.enabled", true);
