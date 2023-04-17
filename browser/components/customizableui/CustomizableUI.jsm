@@ -1843,9 +1843,6 @@ var CustomizableUIInternal = {
       if (aWidget.tabSpecific) {
         node.setAttribute("tabspecific", aWidget.tabSpecific);
       }
-      if (aWidget.locationSpecific) {
-        node.setAttribute("locationspecific", aWidget.locationSpecific);
-      }
 
       let shortcut;
       if (aWidget.shortcutId) {
@@ -2897,7 +2894,6 @@ var CustomizableUIInternal = {
       defaultArea: null,
       shortcutId: null,
       tabSpecific: false,
-      locationSpecific: false,
       tooltiptext: null,
       l10nId: null,
       showInPrivateBrowsing: true,
@@ -2941,7 +2937,6 @@ var CustomizableUIInternal = {
       "showInPrivateBrowsing",
       "overflows",
       "tabSpecific",
-      "locationSpecific",
       "localized",
     ];
     for (let prop of kOptBoolProps) {
@@ -3919,10 +3914,6 @@ var CustomizableUI = {
     CustomizableUIInternal.endBatchUpdate(aForceDirty);
   },
   
-
-
-
-
 
 
 

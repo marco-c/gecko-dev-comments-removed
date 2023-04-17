@@ -2018,6 +2018,16 @@ var gBrowserInit = {
       PanicButtonNotifier.init();
     });
 
+    gBrowser.tabContainer.addEventListener("TabSelect", function() {
+      for (let panel of document.querySelectorAll(
+        "panel[tabspecific='true']"
+      )) {
+        if (panel.state == "open") {
+          panel.hidePopup();
+        }
+      }
+    });
+
     if (BrowserHandler.kiosk) {
       
       if (!gURLBar.readOnly) {
@@ -5410,25 +5420,6 @@ var XULBrowserWindow = {
         false,
         false
       );
-    }
-
-    let closeOpenPanels = selector => {
-      for (let panel of document.querySelectorAll(selector)) {
-        if (panel.state == "open") {
-          panel.hidePopup();
-        }
-      }
-    };
-
-    
-    
-    if (aIsSimulated) {
-      closeOpenPanels("panel[tabspecific='true']");
-    }
-
-    
-    if (!isSameDocument) {
-      closeOpenPanels("panel[locationspecific='true']");
     }
 
     

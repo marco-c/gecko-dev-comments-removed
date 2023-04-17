@@ -46,7 +46,7 @@ var PocketCustomizableWidget = {
       type: "view",
       viewId: "PanelUI-savetopocket",
       
-      locationSpecific: true,
+      tabSpecific: true,
       onViewShowing(aEvent) {
         let panelView = aEvent.target;
         let panelNode = panelView.querySelector(
