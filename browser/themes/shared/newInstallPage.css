@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 h1 {
   margin: 0 0 40px;
@@ -29,7 +29,7 @@ p {
   height: 52px;
 }
 
-@media (prefers-color-scheme: dark) {
+@media (-moz-toolbar-prefers-color-scheme: dark) {
   #header > img {
     -moz-context-properties: fill;
     fill: currentColor;
@@ -100,6 +100,6 @@ p {
   font-size: 87%;
   color: var(--in-content-deemphasized-text);
   margin-bottom: 0;
-  margin-inline: 4px; 
+  margin-inline: 4px; /* Align with input and button */
   text-align: start;
 }
