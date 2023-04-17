@@ -107,7 +107,7 @@ class HitTestingTreeNode {
       const LayerIntSize& aRemoteDocumentSize,
       const CSSTransformMatrix& aTransform,
       const Maybe<ParentLayerIntRegion>& aClipRegion,
-      const EventRegionsOverride& aOverride, bool aIsBackfaceHidden,
+      const EventRegionsOverride& aOverride,
       const Maybe<ScrollableLayerGuid::ViewID>& aAsyncZoomContainerId);
 
   
@@ -221,14 +221,6 @@ class HitTestingTreeNode {
   
 
   CSSTransformMatrix mTransform;
-
-  
-
-
-
-
-
-  bool mIsBackfaceHidden;
 
   
 
