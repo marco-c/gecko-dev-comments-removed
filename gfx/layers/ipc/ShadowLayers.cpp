@@ -9,7 +9,6 @@
 #include <set>     
 #include <vector>  
 
-#include "ClientLayerManager.h"  
 #include "IPDLActor.h"
 #include "ISurfaceAllocator.h"    
 #include "Layers.h"               
