@@ -180,7 +180,7 @@ void nsHTMLDocument::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
   
   
   
-  SetContentTypeInternal(nsDependentCString("text/html"));
+  SetContentType(nsDependentCString("text/html"));
 }
 
 void nsHTMLDocument::TryReloadCharset(nsIContentViewer* aCv,

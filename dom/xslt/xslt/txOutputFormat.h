@@ -58,7 +58,7 @@ class txOutputFormat {
   txThreeState mIndent;
 
   
-  nsString mMediaType;
+  nsCString mMediaType;
 };
 
 #endif

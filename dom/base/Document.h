@@ -1014,7 +1014,7 @@ class Document : public nsINode,
   
 
 
-  virtual void SetContentType(const nsAString& aContentType);
+  void SetContentType(const nsACString& aContentType);
 
   
 
@@ -4365,8 +4365,6 @@ class Document : public nsINode,
   friend class mozAutoSubtreeModified;
 
   virtual Element* GetNameSpaceElement() override { return GetRootElement(); }
-
-  void SetContentTypeInternal(const nsACString& aType);
 
   nsCString GetContentTypeInternal() const { return mContentType; }
 
