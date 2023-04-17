@@ -8,63 +8,56 @@
 
 
 
+const connection_reuse_test = (path, follow_on_assertions, test_label) => {
+  const {on_200, on_304} = follow_on_assertions;
 
+  
+  
+  
+  
+  const client = new XMLHttpRequest();
+  const identifier = Math.random();
+  path = `${path}?tag=${identifier}`;
+  client.open("GET", path, false);
+  client.send();
 
+  attribute_test(
+    async () => {
+      client.open("GET", path + "&same_resource=false", false);
+      client.send();
 
+      
+      
+      if (client.status != 200) {
+        throw new Error(`Got something other than a 200 response. ` +
+                        `client.status: ${client.status}`);
+      }
+    }, path, entry => {
+      invariants.assert_connection_reused(entry);
+      on_200(entry);
+    },
+    `PerformanceResrouceTiming entries need to conform to the spec when a ` +
+    `distinct resource is fetched over a persistent connection ` +
+    `(${test_label})`);
 
-const client = new XMLHttpRequest();
-const identifier = Math.random();
-const path = `resources/fake_responses.py?tag=${identifier}`;
-client.open("GET", path, false);
-client.send();
+  attribute_test(
+    async () => {
+      client.open("GET", path, false);
+      client.setRequestHeader("If-None-Match", identifier);
+      client.send();
 
-attribute_test(
-  async () => {
-    client.open("GET", path + "&same_resource=false", false);
-    client.send();
-
-    
-    
-    if (client.status != 200) {
-      throw new Error(`Got something other than a 200 response. ` +
-                      `client.status: ${client.status}`);
-    }
-  }, path, entry => {
-    invariants.assert_connection_reused(entry);
-
-    
-    
-    if (self.location.protocol == 'https:') {
-      invariants.assert_tao_pass_no_redirect_https(entry);
-    } else {
-      invariants.assert_tao_pass_no_redirect_http(entry);
-    }
-  },
-  "PerformanceResrouceTiming entries need to conform to the spec when a " +
-  "distinct resource is fetched over a persistent connection");
-
-attribute_test(
-  async () => {
-    client.open("GET", path, false);
-    client.setRequestHeader("If-None-Match", identifier);
-    client.send();
-
-    
-    
-    if (client.status != 304) {
-      throw new Error(`Got something other than a 304 response. ` +
-                      `client.status: ${client.status}`);
-    }
-  }, path, entry => {
-    invariants.assert_connection_reused(entry);
-
-    
-    
-    if (self.location.protocol == 'https:') {
-      invariants.assert_tao_pass_304_not_modified_https(entry);
-    } else {
-      invariants.assert_tao_pass_304_not_modified_http(entry);
-    }
-  },
-  "PerformanceResrouceTiming entries need to conform to the spec when the " +
-  "resource is cache-revalidated over a persistent connection");
+      
+      
+      if (client.status != 304) {
+        throw new Error(`Got something other than a 304 response. ` +
+                        `client.status: ${client.status}, response: ` +
+                        `'${client.responseText}'`);
+      }
+    }, path, entry => {
+      invariants.assert_connection_reused(entry);
+      on_304(entry);
+    },
+    `PerformanceResrouceTiming entries need to conform to the spec when the ` +
+    `resource is cache-revalidated over a persistent connection ` +
+    `(${test_label})`);
+}

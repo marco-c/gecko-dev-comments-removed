@@ -1,6 +1,12 @@
 
 
 def main(request, response):
+    if request.method == "OPTIONS":
+        
+        response.headers.set(b"Access-Control-Allow-Headers", "*")
+        response.headers.set(b"Access-Control-Allow-Origin", "*")
+        response.status = (204, "No Content")
+        return b""
     tag = request.GET.first(b"tag", None)
     redirect = request.GET.first(b"redirect", None)
     match = request.headers.get(b"If-None-Match", None)
