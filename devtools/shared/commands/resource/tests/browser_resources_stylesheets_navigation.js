@@ -117,14 +117,16 @@ add_task(async function() {
 
   
   
-  
+  const expectedStylesheetResources = isEveryFrameTargetEnabled() ? 5 : 3;
   info(
     "Wait until we're notified about all the stylesheets (top-level document + iframe)"
   );
-  await waitFor(() => availableResources.length === 3);
+  await waitFor(
+    () => availableResources.length === expectedStylesheetResources
+  );
   is(
     availableResources.length,
-    3,
+    expectedStylesheetResources,
     "Retrieved the expected stylesheets after the page was reloaded"
   );
 
@@ -133,19 +135,27 @@ add_task(async function() {
   await assertResource(availableResources[0], {
     styleText: `.top-level-org{}`,
   });
-  
-  
-  
-  
-  
-  
-  
-  await assertResource(availableResources[1], {
-    styleText: `.frame-com-1{}`,
-  });
-  await assertResource(availableResources[2], {
-    styleText: `.frame-com-new-bc{}`,
-  });
+  if (isEveryFrameTargetEnabled()) {
+    await assertResource(availableResources[1], {
+      styleText: `.frame-org-1{}`,
+    });
+    await assertResource(availableResources[2], {
+      styleText: `.frame-org-2{}`,
+    });
+    await assertResource(availableResources[3], {
+      styleText: `.frame-com-1{}`,
+    });
+    await assertResource(availableResources[4], {
+      styleText: `.frame-com-new-bc{}`,
+    });
+  } else {
+    await assertResource(availableResources[1], {
+      styleText: `.frame-com-1{}`,
+    });
+    await assertResource(availableResources[2], {
+      styleText: `.frame-com-new-bc{}`,
+    });
+  }
 
   is(
     await getDocumentStyleSheetChangeEventsEnabled(tab.linkedBrowser),
@@ -153,17 +163,18 @@ add_task(async function() {
     `styleSheetChangeEventsEnabled is still true on the top level document after reloading`
   );
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  if (isEveryFrameTargetEnabled()) {
+    const bc = await SpecialPowers.spawn(
+      tab.linkedBrowser,
+      [],
+      () => content.document.querySelector("#same-origin-1").browsingContext
+    );
+    is(
+      await getDocumentStyleSheetChangeEventsEnabled(bc),
+      true,
+      `styleSheetChangeEventsEnabled is still true on the iframe after reloading`
+    );
+  }
 
   
   availableResources = [];
