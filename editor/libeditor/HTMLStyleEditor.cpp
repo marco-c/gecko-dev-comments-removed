@@ -206,7 +206,7 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "EditorBase::CommitComposition() failed, but ignored");
 
-  if (SelectionRefPtr()->IsCollapsed()) {
+  if (SelectionRef().IsCollapsed()) {
     
     
     mTypeInState->SetProp(&aProperty, aAttribute, aAttributeValue);
@@ -245,7 +245,7 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
     
     
     
-    AutoSelectionRangeArray arrayOfRanges(SelectionRefPtr());
+    AutoSelectionRangeArray arrayOfRanges(SelectionRef());
     for (auto& range : arrayOfRanges.mRanges) {
       
       
@@ -1456,8 +1456,8 @@ nsresult HTMLEditor::GetInlinePropertyBase(nsAtom& aHTMLProperty,
   *aFirst = false;
   bool first = true;
 
-  bool isCollapsed = SelectionRefPtr()->IsCollapsed();
-  RefPtr<nsRange> range = SelectionRefPtr()->GetRangeAt(0);
+  bool isCollapsed = SelectionRef().IsCollapsed();
+  RefPtr<nsRange> range = SelectionRef().GetRangeAt(0);
   
   
   if (range) {
@@ -1857,7 +1857,7 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
   }
   removeStyles.AppendElement(HTMLStyle(aProperty, aAttribute));
 
-  if (SelectionRefPtr()->IsCollapsed()) {
+  if (SelectionRef().IsCollapsed()) {
     
     
     if (removeStyles[0].mProperty) {
@@ -1911,7 +1911,7 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
       
       
       
-      AutoSelectionRangeArray arrayOfRanges(SelectionRefPtr());
+      AutoSelectionRangeArray arrayOfRanges(SelectionRef());
       for (auto& range : arrayOfRanges.mRanges) {
         if (style.mProperty == nsGkAtoms::name) {
           
@@ -2220,14 +2220,14 @@ nsresult HTMLEditor::RelativeFontChange(FontSize aDir) {
                        "EditorBase::CommitComposition() failed, but ignored");
 
   
-  if (SelectionRefPtr()->IsCollapsed()) {
+  if (SelectionRef().IsCollapsed()) {
     nsAtom& atom = aDir == FontSize::incr ? *nsGkAtoms::big : *nsGkAtoms::small;
 
     
-    if (NS_WARN_IF(!SelectionRefPtr()->RangeCount())) {
+    if (NS_WARN_IF(!SelectionRef().RangeCount())) {
       return NS_OK;
     }
-    RefPtr<const nsRange> firstRange = SelectionRefPtr()->GetRangeAt(0);
+    RefPtr<const nsRange> firstRange = SelectionRef().GetRangeAt(0);
     if (NS_WARN_IF(!firstRange) ||
         NS_WARN_IF(!firstRange->GetStartContainer())) {
       return NS_OK;
@@ -2266,7 +2266,7 @@ nsresult HTMLEditor::RelativeFontChange(FontSize aDir) {
   AutoTransactionsConserveSelection dontChangeMySelection(*this);
 
   
-  AutoSelectionRangeArray arrayOfRanges(SelectionRefPtr());
+  AutoSelectionRangeArray arrayOfRanges(SelectionRef());
   for (auto& range : arrayOfRanges.mRanges) {
     
     nsresult rv = PromoteInlineRange(*range);

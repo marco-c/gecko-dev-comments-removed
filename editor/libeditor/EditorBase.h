@@ -273,7 +273,7 @@ class EditorBase : public nsIEditor,
       SelectionType aSelectionType = SelectionType::eNormal) const {
     if (aSelectionType == SelectionType::eNormal &&
         IsEditActionDataAvailable()) {
-      return SelectionRefPtr().get();
+      return &SelectionRef();
     }
     nsISelectionController* sc = GetSelectionController();
     if (!sc) {
@@ -927,11 +927,14 @@ class EditorBase : public nsIEditor,
 
     bool IsCanceled() const { return mBeforeInputEventCanceled; }
 
-    const RefPtr<Selection>& SelectionRefPtr() const {
+    
+
+
+
+    MOZ_KNOWN_LIVE Selection& SelectionRef() const {
       MOZ_ASSERT(!mSelection ||
                  (mSelection->GetType() == SelectionType::eNormal));
-
-      return mSelection;
+      return *mSelection;
     }
 
     nsIPrincipal* GetPrincipal() const { return mPrincipal; }
@@ -1316,13 +1319,11 @@ class EditorBase : public nsIEditor,
 
 
 
-
-  const RefPtr<Selection>& SelectionRefPtr() const {
+  MOZ_KNOWN_LIVE Selection& SelectionRef() const {
     MOZ_ASSERT(mEditActionData);
-    MOZ_ASSERT(mEditActionData->SelectionRefPtr()->GetType() ==
+    MOZ_ASSERT(mEditActionData->SelectionRef().GetType() ==
                SelectionType::eNormal);
-
-    return mEditActionData->SelectionRefPtr();
+    return mEditActionData->SelectionRef();
   }
 
   nsIPrincipal* GetEditActionPrincipal() const {

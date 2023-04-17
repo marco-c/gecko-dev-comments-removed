@@ -62,7 +62,7 @@ nsresult TextEditor::InitEditorContentAndSelection() {
   
   
   
-  if (!SelectionRefPtr()->RangeCount()) {
+  if (!SelectionRef().RangeCount()) {
     nsresult rv = CollapseSelectionToEnd();
     if (NS_FAILED(rv)) {
       NS_WARNING("EditorBase::CollapseSelectionToEnd() failed");
@@ -117,8 +117,8 @@ void TextEditor::OnStartToHandleTopLevelEditSubAction(
     
     
     
-    EditorRawDOMPoint point = FindBetterInsertionPoint(
-        EditorRawDOMPoint(SelectionRefPtr()->AnchorRef()));
+    EditorRawDOMPoint point =
+        FindBetterInsertionPoint(EditorRawDOMPoint(SelectionRef().AnchorRef()));
     NS_WARNING_ASSERTION(
         point.IsSet(),
         "EditorBase::FindBetterInsertionPoint() failed, but ignored");
@@ -127,9 +127,8 @@ void TextEditor::OnStartToHandleTopLevelEditSubAction(
       return;
     }
   }
-  if (SelectionRefPtr()->AnchorRef().IsSet()) {
-    SetSpellCheckRestartPoint(
-        EditorRawDOMPoint(SelectionRefPtr()->AnchorRef()));
+  if (SelectionRef().AnchorRef().IsSet()) {
+    SetSpellCheckRestartPoint(EditorRawDOMPoint(SelectionRef().AnchorRef()));
   }
 }
 
@@ -209,7 +208,7 @@ EditActionResult TextEditor::InsertLineFeedCharacterAtSelection() {
   }
 
   
-  if (!SelectionRefPtr()->IsCollapsed()) {
+  if (!SelectionRef().IsCollapsed()) {
     nsresult rv =
         DeleteSelectionAsSubAction(nsIEditor::eNone, nsIEditor::eNoStrip);
     if (NS_FAILED(rv)) {
@@ -226,7 +225,7 @@ EditActionResult TextEditor::InsertLineFeedCharacterAtSelection() {
   }
 
   
-  const nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
+  const nsRange* firstRange = SelectionRef().GetRangeAt(0);
   if (NS_WARN_IF(!firstRange)) {
     return EditActionIgnored(NS_ERROR_FAILURE);
   }
@@ -266,8 +265,7 @@ EditActionResult TextEditor::InsertLineFeedCharacterAtSelection() {
       !pointAfterInsertedLineFeed.GetChild(),
       "After inserting text into a text node, pointAfterInsertedLineFeed."
       "GetChild() should be nullptr");
-  rv = MOZ_KnownLive(SelectionRefPtr())
-           ->CollapseInLimiter(pointAfterInsertedLineFeed);
+  rv = SelectionRef().CollapseInLimiter(pointAfterInsertedLineFeed);
   if (NS_FAILED(rv)) {
     NS_WARNING("Selection::CollapseInLimiter() failed");
     return EditActionIgnored(rv);
@@ -276,14 +274,14 @@ EditActionResult TextEditor::InsertLineFeedCharacterAtSelection() {
   
   
   
-  EditorRawDOMPoint endPoint(EditorBase::GetEndPoint(*SelectionRefPtr()));
+  EditorRawDOMPoint endPoint(EditorBase::GetEndPoint(SelectionRef()));
   if (endPoint == pointAfterInsertedLineFeed) {
     
     
     
     
     IgnoredErrorResult ignoredError;
-    SelectionRefPtr()->SetInterlinePosition(true, ignoredError);
+    SelectionRef().SetInterlinePosition(true, ignoredError);
     NS_WARNING_ASSERTION(
         !ignoredError.Failed(),
         "Selection::SetInterlinePosition(true) failed, but ignored");
@@ -300,7 +298,7 @@ nsresult TextEditor::EnsureCaretNotAtEndOfTextNode() {
   
   
   
-  if (!SelectionRefPtr()->RangeCount()) {
+  if (!SelectionRef().RangeCount()) {
     DebugOnly<nsresult> rvIgnored = CollapseSelectionToEnd();
     if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
@@ -314,7 +312,7 @@ nsresult TextEditor::EnsureCaretNotAtEndOfTextNode() {
   
   
   EditorRawDOMPoint selectionStartPoint(
-      EditorBase::GetStartPoint(*SelectionRefPtr()));
+      EditorBase::GetStartPoint(SelectionRef()));
   if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
     return NS_ERROR_FAILURE;
   }
@@ -347,8 +345,7 @@ nsresult TextEditor::EnsureCaretNotAtEndOfTextNode() {
     return NS_ERROR_FAILURE;
   }
   IgnoredErrorResult ignoredError;
-  MOZ_KnownLive(SelectionRefPtr())
-      ->CollapseInLimiter(afterStartContainer, ignoredError);
+  SelectionRef().CollapseInLimiter(afterStartContainer, ignoredError);
   if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -474,13 +471,13 @@ EditActionResult TextEditor::HandleInsertText(
       start = GetComposition()->XPOffsetInTextNode();
     } else {
       uint32_t end = 0;
-      nsContentUtils::GetSelectionInTextControl(SelectionRefPtr(), GetRoot(),
+      nsContentUtils::GetSelectionInTextControl(&SelectionRef(), GetRoot(),
                                                 start, end);
     }
   }
 
   
-  if (!SelectionRefPtr()->IsCollapsed()) {
+  if (!SelectionRef().IsCollapsed()) {
     nsresult rv =
         DeleteSelectionAsSubAction(nsIEditor::eNone, nsIEditor::eNoStrip);
     if (NS_FAILED(rv)) {
@@ -526,7 +523,7 @@ EditActionResult TextEditor::HandleInsertText(
   }
 
   
-  const nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
+  const nsRange* firstRange = SelectionRef().GetRangeAt(0);
   if (NS_WARN_IF(!firstRange)) {
     return EditActionHandled(NS_ERROR_FAILURE);
   }
@@ -582,7 +579,7 @@ EditActionResult TextEditor::HandleInsertText(
       bool endsWithLF =
           !insertionString.IsEmpty() && insertionString.Last() == nsCRT::LF;
       IgnoredErrorResult ignoredError;
-      SelectionRefPtr()->SetInterlinePosition(endsWithLF, ignoredError);
+      SelectionRef().SetInterlinePosition(endsWithLF, ignoredError);
       NS_WARNING_ASSERTION(
           !ignoredError.Failed(),
           "Selection::SetInterlinePosition() failed, but ignored");
@@ -592,8 +589,7 @@ EditActionResult TextEditor::HandleInsertText(
           "After inserting text into a text node, pointAfterStringInserted."
           "GetChild() should be nullptr");
       ignoredError = IgnoredErrorResult();
-      MOZ_KnownLive(SelectionRefPtr())
-          ->CollapseInLimiter(pointAfterStringInserted, ignoredError);
+      SelectionRef().CollapseInLimiter(pointAfterStringInserted, ignoredError);
       if (NS_WARN_IF(Destroyed())) {
         return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
       }
@@ -732,7 +728,7 @@ EditActionResult TextEditor::SetTextWithoutTransaction(
     
     
     IgnoredErrorResult ignoredError;
-    SelectionRefPtr()->SetInterlinePosition(true, ignoredError);
+    SelectionRef().SetInterlinePosition(true, ignoredError);
     NS_WARNING_ASSERTION(!ignoredError.Failed(),
                          "Selection::SetInterlinePoisition(true) failed");
   }
@@ -782,20 +778,20 @@ EditActionResult TextEditor::HandleDeleteSelectionInternal(
   
   
   
-  SelectionBatcher selectionBatcher(SelectionRefPtr());
-  AutoHideSelectionChanges hideSelection(SelectionRefPtr());
+  SelectionBatcher selectionBatcher(SelectionRef());
+  AutoHideSelectionChanges hideSelection(SelectionRef());
   nsAutoScriptBlocker scriptBlocker;
 
   if (IsPasswordEditor() && IsMaskingPassword()) {
     MaskAllCharacters();
   } else {
     EditorRawDOMPoint selectionStartPoint(
-        EditorBase::GetStartPoint(*SelectionRefPtr()));
+        EditorBase::GetStartPoint(SelectionRef()));
     if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
       return EditActionResult(NS_ERROR_FAILURE);
     }
 
-    if (!SelectionRefPtr()->IsCollapsed()) {
+    if (!SelectionRef().IsCollapsed()) {
       nsresult rv = DeleteSelectionWithTransaction(aDirectionAndAmount,
                                                    nsIEditor::eNoStrip);
       NS_WARNING_ASSERTION(
@@ -817,7 +813,7 @@ EditActionResult TextEditor::HandleDeleteSelectionInternal(
     }
   }
 
-  AutoRangeArray rangesToDelete(*SelectionRefPtr());
+  AutoRangeArray rangesToDelete(SelectionRef());
   Result<nsIEditor::EDirection, nsresult> result =
       rangesToDelete.ExtendAnchorFocusRangeFor(*this, aDirectionAndAmount);
   if (result.isErr()) {
@@ -991,7 +987,7 @@ EditActionResult TextEditor::MaybeTruncateInsertionStringForMaxLength(
   }
 
   uint32_t selectionStart, selectionEnd;
-  nsContentUtils::GetSelectionInTextControl(SelectionRefPtr(), GetRoot(),
+  nsContentUtils::GetSelectionInTextControl(&SelectionRef(), GetRoot(),
                                             selectionStart, selectionEnd);
 
   TextComposition* composition = GetComposition();

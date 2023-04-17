@@ -547,13 +547,13 @@ nsresult TextEditor::ReplaceTextAsAction(
   
   
   ErrorResult error;
-  MOZ_KnownLive(SelectionRefPtr())->RemoveAllRanges(error);
+  SelectionRef().RemoveAllRanges(error);
   if (error.Failed()) {
     NS_WARNING("Selection::RemoveAllRanges() failed");
     return error.StealNSResult();
   }
-  MOZ_KnownLive(SelectionRefPtr())
-      ->AddRangeAndSelectFramesAndNotifyListeners(*aReplaceRange, error);
+  SelectionRef().AddRangeAndSelectFramesAndNotifyListeners(*aReplaceRange,
+                                                           error);
   if (error.Failed()) {
     NS_WARNING("Selection::AddRangeAndSelectFramesAndNotifyListeners() failed");
     return error.StealNSResult();
@@ -611,7 +611,7 @@ nsresult TextEditor::SetTextAsSubAction(const nsAString& aString) {
     
     nsresult rv;
     if (IsEmpty()) {
-      rv = MOZ_KnownLive(SelectionRefPtr())->CollapseInLimiter(rootElement, 0);
+      rv = SelectionRef().CollapseInLimiter(rootElement, 0);
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rv),
           "Selection::CollapseInLimiter() failed, but ignored");
@@ -620,7 +620,7 @@ nsresult TextEditor::SetTextAsSubAction(const nsAString& aString) {
       
       
       ErrorResult error;
-      MOZ_KnownLive(SelectionRefPtr())->SelectAllChildren(*rootElement, error);
+      SelectionRef().SelectAllChildren(*rootElement, error);
       NS_WARNING_ASSERTION(
           !error.Failed(),
           "Selection::SelectAllChildren() failed, but ignored");
@@ -713,7 +713,7 @@ nsresult TextEditor::OnCompositionChange(
   
   
   if (aCompositionChangeEvent.mData.IsEmpty() &&
-      mComposition->String().IsEmpty() && !SelectionRefPtr()->IsCollapsed()) {
+      mComposition->String().IsEmpty() && !SelectionRef().IsCollapsed()) {
     editActionData.UpdateEditAction(EditAction::eDeleteByComposition);
   }
 
@@ -804,7 +804,7 @@ nsresult TextEditor::OnCompositionChange(
                          "EditorBase::InsertTextAsSubAction() failed");
 
     if (caret) {
-      caret->SetSelection(SelectionRefPtr());
+      caret->SetSelection(&SelectionRef());
     }
   }
 
@@ -1122,7 +1122,7 @@ nsresult TextEditor::RedoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
 
 bool TextEditor::IsCopyToClipboardAllowedInternal() const {
   MOZ_ASSERT(IsEditActionDataAvailable());
-  if (SelectionRefPtr()->IsCollapsed()) {
+  if (SelectionRef().IsCollapsed()) {
     return false;
   }
 
@@ -1139,12 +1139,12 @@ bool TextEditor::IsCopyToClipboardAllowedInternal() const {
   
   
   
-  if (SelectionRefPtr()->RangeCount() > 1) {
+  if (SelectionRef().RangeCount() > 1) {
     return false;
   }
 
   uint32_t selectionStart = 0, selectionEnd = 0;
-  nsContentUtils::GetSelectionInTextControl(SelectionRefPtr(), mRootElement,
+  nsContentUtils::GetSelectionInTextControl(&SelectionRef(), mRootElement,
                                             selectionStart, selectionEnd);
   return mUnmaskedStart <= selectionStart && UnmaskedEnd() >= selectionEnd;
 }
@@ -1163,7 +1163,7 @@ bool TextEditor::FireClipboardEvent(EventMessage aEventMessage,
     return false;
   }
 
-  RefPtr<Selection> sel = SelectionRefPtr();
+  RefPtr<Selection> sel = &SelectionRef();
   if (IsHTMLEditor() && aEventMessage == eCopy && sel->IsCollapsed()) {
     
     
@@ -1310,7 +1310,7 @@ bool TextEditor::CanDeleteSelection() const {
     return false;
   }
 
-  return IsModifiable() && !SelectionRefPtr()->IsCollapsed();
+  return IsModifiable() && !SelectionRef().IsCollapsed();
 }
 
 already_AddRefed<nsIDocumentEncoder> TextEditor::GetAndInitDocEncoder(
@@ -1361,7 +1361,7 @@ already_AddRefed<nsIDocumentEncoder> TextEditor::GetAndInitDocEncoder(
   
   
   if (aDocumentEncoderFlags & nsIDocumentEncoder::OutputSelectionOnly) {
-    if (NS_FAILED(docEncoder->SetSelection(SelectionRefPtr()))) {
+    if (NS_FAILED(docEncoder->SetSelection(&SelectionRef()))) {
       NS_WARNING("nsIDocumentEncoder::SetSelection() failed");
       return nullptr;
     }
@@ -1584,7 +1584,7 @@ nsresult TextEditor::SharedOutputString(uint32_t aFlags, bool* aIsCollapsed,
                                         nsAString& aResult) const {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  *aIsCollapsed = SelectionRefPtr()->IsCollapsed();
+  *aIsCollapsed = SelectionRef().IsCollapsed();
 
   if (!*aIsCollapsed) {
     aFlags |= nsIDocumentEncoder::OutputSelectionOnly;
@@ -1612,8 +1612,7 @@ nsresult TextEditor::SelectEntireDocument() {
   
   
   if (IsEmpty()) {
-    nsresult rv = MOZ_KnownLive(SelectionRefPtr())
-                      ->CollapseInLimiter(anonymousDivElement, 0);
+    nsresult rv = SelectionRef().CollapseInLimiter(anonymousDivElement, 0);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "Selection::CollapseInLimiter() failed");
     return rv;
@@ -1624,8 +1623,8 @@ nsresult TextEditor::SelectEntireDocument() {
 
   
   nsCOMPtr<nsIContent> childNode;
-  nsresult rv = EditorBase::GetEndChildNode(*SelectionRefPtr(),
-                                            getter_AddRefs(childNode));
+  nsresult rv =
+      EditorBase::GetEndChildNode(SelectionRef(), getter_AddRefs(childNode));
   if (NS_FAILED(rv)) {
     NS_WARNING("EditorBase::GetEndChildNode() failed");
     return rv;
@@ -1637,17 +1636,16 @@ nsresult TextEditor::SelectEntireDocument() {
   if (childNode &&
       EditorUtils::IsPaddingBRElementForEmptyLastLine(*childNode)) {
     ErrorResult error;
-    MOZ_KnownLive(SelectionRefPtr())
-        ->SetStartAndEndInLimiter(RawRangeBoundary(anonymousDivElement, 0u),
-                                  EditorRawDOMPoint(childNode), error);
+    SelectionRef().SetStartAndEndInLimiter(
+        RawRangeBoundary(anonymousDivElement, 0u), EditorRawDOMPoint(childNode),
+        error);
     NS_WARNING_ASSERTION(!error.Failed(),
                          "Selection::SetStartAndEndInLimiter() failed");
     return error.StealNSResult();
   }
 
   ErrorResult error;
-  MOZ_KnownLive(SelectionRefPtr())
-      ->SelectAllChildren(*anonymousDivElement, error);
+  SelectionRef().SelectAllChildren(*anonymousDivElement, error);
   NS_WARNING_ASSERTION(!error.Failed(),
                        "Selection::SelectAllChildren() failed");
   return error.StealNSResult();

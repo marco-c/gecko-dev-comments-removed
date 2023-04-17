@@ -105,7 +105,7 @@ nsresult TextEditor::PrepareToInsertContent(
   }
 
   IgnoredErrorResult error;
-  MOZ_KnownLive(SelectionRefPtr())->CollapseInLimiter(pointToInsert, error);
+  SelectionRef().CollapseInLimiter(pointToInsert, error);
   if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -257,7 +257,7 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
   
   if (sourceNode && sourceNode->IsEditable() && srcdoc == document) {
     bool isPointInSelection = EditorUtils::IsPointInSelection(
-        *SelectionRefPtr(), *droppedAt.GetContainer(), droppedAt.Offset());
+        SelectionRef(), *droppedAt.GetContainer(), droppedAt.Offset());
     if (isPointInSelection) {
       
       
@@ -328,7 +328,7 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
                                              ScrollSelectionIntoView::Yes);
 
   
-  SelectionBatcher selectionBatcher(SelectionRefPtr());
+  SelectionBatcher selectionBatcher(SelectionRef());
 
   
   
@@ -396,9 +396,8 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
   
   
   ErrorResult error;
-  MOZ_KnownLive(SelectionRefPtr())
-      ->SetStartAndEnd(droppedAt.ToRawRangeBoundary(),
-                       droppedAt.ToRawRangeBoundary(), error);
+  SelectionRef().SetStartAndEnd(droppedAt.ToRawRangeBoundary(),
+                                droppedAt.ToRawRangeBoundary(), error);
   if (error.Failed()) {
     NS_WARNING("Selection::SetStartAndEnd() failed");
     editActionData.Abort();
@@ -536,7 +535,7 @@ nsresult TextEditor::DeleteSelectionByDragAsAction(bool aDispatchInputEvent) {
   
   bool requestedByAnotherEditor = GetEditAction() != EditAction::eDrop;
   AutoEditActionDataSetter editActionData(*this, EditAction::eDeleteByDrag);
-  MOZ_ASSERT(!SelectionRefPtr()->IsCollapsed());
+  MOZ_ASSERT(!SelectionRef().IsCollapsed());
   nsresult rv = editActionData.CanHandleAndMaybeDispatchBeforeInputEvent();
   if (NS_FAILED(rv)) {
     NS_WARNING_ASSERTION(rv == NS_ERROR_EDITOR_ACTION_CANCELED,

@@ -68,16 +68,12 @@ TypeInState::~TypeInState() {
   Reset();
 }
 
-nsresult TypeInState::UpdateSelState(Selection* aSelection) {
-  if (NS_WARN_IF(!aSelection)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  if (!aSelection->IsCollapsed()) {
+nsresult TypeInState::UpdateSelState(Selection& aSelection) {
+  if (!aSelection.IsCollapsed()) {
     return NS_OK;
   }
 
-  mLastSelectionPoint = EditorBase::GetStartPoint(*aSelection);
+  mLastSelectionPoint = EditorBase::GetStartPoint(aSelection);
   if (!mLastSelectionPoint.IsSet()) {
     return NS_ERROR_FAILURE;
   }
@@ -124,13 +120,13 @@ void TypeInState::PostHandleSelectionChangeCommand(
 
   
   
-  if (!aHTMLEditor.SelectionRefPtr()->IsCollapsed() ||
-      !aHTMLEditor.SelectionRefPtr()->RangeCount()) {
+  if (!aHTMLEditor.SelectionRef().IsCollapsed() ||
+      !aHTMLEditor.SelectionRef().RangeCount()) {
     return;
   }
 
   EditorRawDOMPoint caretPoint(
-      EditorBase::GetStartPoint(*aHTMLEditor.SelectionRefPtr()));
+      EditorBase::GetStartPoint(aHTMLEditor.SelectionRef()));
   if (NS_WARN_IF(!caretPoint.IsSet())) {
     return;
   }
@@ -197,10 +193,10 @@ void TypeInState::OnSelectionChange(const HTMLEditor& aHTMLEditor,
 
   bool unlink = false;
   bool resetAllStyles = true;
-  if (aHTMLEditor.SelectionRefPtr()->IsCollapsed() &&
-      aHTMLEditor.SelectionRefPtr()->RangeCount()) {
+  if (aHTMLEditor.SelectionRef().IsCollapsed() &&
+      aHTMLEditor.SelectionRef().RangeCount()) {
     EditorRawDOMPoint selectionStartPoint(
-        EditorBase::GetStartPoint(*aHTMLEditor.SelectionRefPtr()));
+        EditorBase::GetStartPoint(aHTMLEditor.SelectionRef()));
     if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
       return;
     }
@@ -311,11 +307,10 @@ void TypeInState::OnSelectionChange(const HTMLEditor& aHTMLEditor,
     
     AutoEditorDOMPointChildInvalidator saveOnlyOffset(mLastSelectionPoint);
   } else {
-    if (aHTMLEditor.SelectionRefPtr()->RangeCount()) {
+    if (aHTMLEditor.SelectionRef().RangeCount()) {
       
       
-      EditorRawDOMRange firstRange(
-          *aHTMLEditor.SelectionRefPtr()->GetRangeAt(0));
+      EditorRawDOMRange firstRange(*aHTMLEditor.SelectionRef().GetRangeAt(0));
       if (firstRange.StartRef().IsInContentNode() &&
           HTMLEditUtils::IsContentInclusiveDescendantOfLink(
               *firstRange.StartRef().ContainerAsContent())) {
