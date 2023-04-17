@@ -251,7 +251,7 @@ static bool IsDependentModule(
     mozilla::freestanding::Kernel32ExportsSolver& aK32Exports) {
   
   
-#if defined(NIGHTLY_BUILD)
+#if defined(EARLY_BETA_OR_EARLIER)
   aK32Exports.Resolve(mozilla::freestanding::gK32ExportsResolveOnce);
   if (!aK32Exports.IsResolved()) {
     return false;

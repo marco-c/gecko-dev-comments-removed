@@ -242,7 +242,7 @@ LauncherVoidResult SharedSection::TransferHandle(
 extern "C" MOZ_EXPORT const wchar_t* GetDependentModulePaths() {
   
   
-#if defined(NIGHTLY_BUILD)
+#if defined(EARLY_BETA_OR_EARLIER)
   const bool isCallerXul = CheckForAddress(RETURN_ADDRESS(), L"xul.dll");
   MOZ_ASSERT(isCallerXul);
   if (!isCallerXul) {
