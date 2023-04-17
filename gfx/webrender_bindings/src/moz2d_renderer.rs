@@ -17,7 +17,7 @@ use rayon::ThreadPool;
 use webrender::api::units::{BlobDirtyRect, BlobToDeviceTranslation, DeviceIntRect};
 use webrender::api::*;
 
-use euclid::{Box2D, Rect};
+use euclid::point2;
 use std;
 use std::collections::btree_map::BTreeMap;
 use std::collections::hash_map;
@@ -47,14 +47,14 @@ macro_rules! dlog {
 }
 
 
-fn dump_bounds(blob: &[u8], dirty_rect: Box2d) {
+fn dump_bounds(blob: &[u8], dirty_rect: DeviceIntRect) {
     let mut index = BlobReader::new(blob);
     while index.reader.has_more() {
         let e = index.read_entry();
         dlog!(
             "  {:?} {}",
             e.bounds,
-            if e.bounds.contained_by(&dirty_rect) { "*" } else { "" }
+            if dirty_rect.contains_box(&e.bounds) { "*" } else { "" }
         );
     }
 }
@@ -133,8 +133,8 @@ impl<'a> BufReader<'a> {
     }
 
     
-    fn read_box(&mut self) -> Box2d {
-        unsafe { self.read::<Box2d>() }
+    fn read_box(&mut self) -> DeviceIntRect {
+        unsafe { self.read::<DeviceIntRect>() }
     }
 
     
@@ -188,7 +188,7 @@ struct IntPoint {
 
 struct Entry {
     
-    bounds: Box2d,
+    bounds: DeviceIntRect,
     
     begin: usize,
     
@@ -247,7 +247,7 @@ impl BlobWriter {
     }
 
     
-    fn new_entry(&mut self, extra_size: usize, bounds: Box2d, data: &[u8]) {
+    fn new_entry(&mut self, extra_size: usize, bounds: DeviceIntRect, data: &[u8]) {
         self.data.extend_from_slice(data);
         
         self.index
@@ -256,10 +256,10 @@ impl BlobWriter {
         self.index.extend_from_slice(convert_to_bytes(&self.data.len()));
         
         
-        self.index.extend_from_slice(convert_to_bytes(&bounds.x1));
-        self.index.extend_from_slice(convert_to_bytes(&bounds.y1));
-        self.index.extend_from_slice(convert_to_bytes(&bounds.x2));
-        self.index.extend_from_slice(convert_to_bytes(&bounds.y2));
+        self.index.extend_from_slice(convert_to_bytes(&bounds.min.x));
+        self.index.extend_from_slice(convert_to_bytes(&bounds.min.y));
+        self.index.extend_from_slice(convert_to_bytes(&bounds.max.x));
+        self.index.extend_from_slice(convert_to_bytes(&bounds.max.y));
     }
 
     
@@ -273,76 +273,23 @@ impl BlobWriter {
     }
 }
 
-
-#[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
-#[repr(C)]
-
-struct Box2d {
-    
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct CacheKey {
     x1: i32,
-    
     y1: i32,
-    
     x2: i32,
-    
     y2: i32,
+    cache_order: u32,
 }
 
-impl Box2d {
-    
-    
-    fn contained_by(&self, other: &Box2d) -> bool {
-        self.is_empty() || (self.x1 >= other.x1 && self.x2 <= other.x2 && self.y1 >= other.y1 && self.y2 <= other.y2)
-    }
-
-    fn intersection(&self, other: &Box2d) -> Box2d {
-        let result = Box2d {
-            x1: self.x1.max(other.x1),
-            y1: self.y1.max(other.y1),
-            x2: self.x2.min(other.x2),
-            y2: self.y2.min(other.y2),
-        };
-        if self.is_empty() || other.is_empty() {
-            assert!(result.is_empty());
-        }
-        result
-    }
-
-    fn is_empty(&self) -> bool {
-        self.x2 <= self.x1 || self.y2 <= self.y1
-    }
-}
-
-impl<T> From<Rect<i32, T>> for Box2d {
-    fn from(rect: Rect<i32, T>) -> Box2d {
-        (&rect).into()
-    }
-}
-
-impl<T> From<&Rect<i32, T>> for Box2d {
-    fn from(rect: &Rect<i32, T>) -> Box2d {
-        Box2d {
-            x1: rect.min_x(),
-            y1: rect.min_y(),
-            x2: rect.max_x(),
-            y2: rect.max_y(),
-        }
-    }
-}
-
-impl<T> From<Box2D<i32, T>> for Box2d {
-    fn from(rect: Box2D<i32, T>) -> Box2d {
-        (&rect).into()
-    }
-}
-
-impl<T> From<&Box2D<i32, T>> for Box2d {
-    fn from(rect: &Box2D<i32, T>) -> Box2d {
-        Box2d {
-            x1: rect.min.x,
-            y1: rect.min.y,
-            x2: rect.max.x,
-            y2: rect.max.y,
+impl CacheKey {
+    pub fn new(bounds: DeviceIntRect, cache_order: u32) -> Self {
+        CacheKey {
+            x1: bounds.min.x,
+            y1: bounds.min.y,
+            x2: bounds.max.x,
+            y2: bounds.max.y,
+            cache_order,
         }
     }
 }
@@ -359,7 +306,7 @@ struct CachedReader<'a> {
     
     reader: BlobReader<'a>,
     
-    cache: BTreeMap<(Box2d, u32), Entry>,
+    cache: BTreeMap<CacheKey, Entry>,
     
     cache_index_counter: u32,
 }
@@ -375,14 +322,14 @@ impl<'a> CachedReader<'a> {
     }
 
     
-    fn take_entry_with_bounds_from_cache(&mut self, bounds: &Box2d) -> Option<Entry> {
+    fn take_entry_with_bounds_from_cache(&mut self, bounds: &DeviceIntRect) -> Option<Entry> {
         if self.cache.is_empty() {
             return None;
         }
 
         let key_to_delete = match self
             .cache
-            .range((Included((*bounds, 0u32)), Included((*bounds, std::u32::MAX))))
+            .range((Included(CacheKey::new(*bounds, 0u32)), Included(CacheKey::new(*bounds, std::u32::MAX))))
             .next()
         {
             Some((&key, _)) => key,
@@ -400,7 +347,7 @@ impl<'a> CachedReader<'a> {
     
     
     
-    pub fn next_entry_with_bounds(&mut self, bounds: &Box2d, ignore_rect: &Box2d) -> Entry {
+    pub fn next_entry_with_bounds(&mut self, bounds: &DeviceIntRect, ignore_rect: &DeviceIntRect) -> Entry {
         if let Some(entry) = self.take_entry_with_bounds_from_cache(bounds) {
             return entry;
         }
@@ -410,8 +357,8 @@ impl<'a> CachedReader<'a> {
             let old = self.reader.read_entry();
             if old.bounds == *bounds {
                 return old;
-            } else if !old.bounds.contained_by(&ignore_rect) {
-                self.cache.insert((old.bounds, self.cache_index_counter), old);
+            } else if !ignore_rect.contains_box(&old.bounds) {
+                self.cache.insert(CacheKey::new(old.bounds, self.cache_index_counter), old);
                 self.cache_index_counter += 1;
             }
         }
@@ -456,9 +403,9 @@ impl<'a> CachedReader<'a> {
 fn merge_blob_images(
     old_buf: &[u8],
     new_buf: &[u8],
-    dirty_rect: Box2d,
-    old_visible_rect: Box2d,
-    new_visible_rect: Box2d,
+    dirty_rect: DeviceIntRect,
+    old_visible_rect: DeviceIntRect,
+    new_visible_rect: DeviceIntRect,
 ) -> Vec<u8> {
     let mut result = BlobWriter::new();
     dlog!("dirty rect: {:?}", dirty_rect);
@@ -471,7 +418,7 @@ fn merge_blob_images(
 
     let mut old_reader = CachedReader::new(old_buf);
     let mut new_reader = BlobReader::new(new_buf);
-    let preserved_rect = old_visible_rect.intersection(&new_visible_rect);
+    let preserved_rect = old_visible_rect.intersection_unchecked(&new_visible_rect);
 
     
     
@@ -480,8 +427,8 @@ fn merge_blob_images(
     while new_reader.reader.has_more() {
         let new = new_reader.read_entry();
         dlog!("bounds: {} {} {:?}", new.end, new.extra_end, new.bounds);
-        let preserved_bounds = new.bounds.intersection(&preserved_rect);
-        if preserved_bounds.contained_by(&dirty_rect) {
+        let preserved_bounds = new.bounds.intersection_unchecked(&preserved_rect);
+        if dirty_rect.contains_box(&preserved_bounds) {
             result.new_entry(new.extra_end - new.end, new.bounds, &new_buf[new.begin..new.extra_end]);
         } else {
             let old = old_reader.next_entry_with_bounds(&new.bounds, &dirty_rect);
@@ -721,26 +668,19 @@ impl BlobImageHandler for Moz2dBlobImageHandler {
             hash_map::Entry::Occupied(mut e) => {
                 let command = e.get_mut();
                 let dirty_rect = if let DirtyRect::Partial(rect) = *dirty_rect {
-                    Box2d {
-                        x1: rect.min.x,
-                        y1: rect.min.y,
-                        x2: rect.max.x,
-                        y2: rect.max.y,
-                    }
+                    rect.cast_unit()
                 } else {
-                    Box2d {
-                        x1: i32::MIN,
-                        y1: i32::MIN,
-                        x2: i32::MAX,
-                        y2: i32::MAX,
+                    DeviceIntRect {
+                        min: point2(i32::MIN, i32::MIN),
+                        max: point2(i32::MAX, i32::MAX),
                     }
                 };
                 command.data = Arc::new(merge_blob_images(
                     &command.data,
                     &data,
                     dirty_rect,
-                    command.visible_rect.into(),
-                    visible_rect.into(),
+                    command.visible_rect,
+                    *visible_rect,
                 ));
                 command.visible_rect = *visible_rect;
             }
