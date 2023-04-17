@@ -2549,11 +2549,25 @@ void CanonicalBrowsingContext::CloneDocumentTreeInto(
               [source = MaybeDiscardedBrowsingContext{aSource},
                data = std::move(aPrintData)](
                   BrowserParent* aBp) -> RefPtr<GenericNonExclusivePromise> {
+                RefPtr<BrowserBridgeParent> bridge =
+                    aBp->GetBrowserBridgeParent();
                 return aBp->SendCloneDocumentTreeIntoSelf(source, data)
                     ->Then(
                         GetMainThreadSerialEventTarget(), __func__,
-                        [](BrowserParent::CloneDocumentTreeIntoSelfPromise::
-                               ResolveOrRejectValue&& aValue) {
+                        [bridge](
+                            BrowserParent::CloneDocumentTreeIntoSelfPromise::
+                                ResolveOrRejectValue&& aValue) {
+                          
+                          
+                          
+                          
+                          
+                          
+                          
+                          if (bridge) {
+                            Unused << bridge->SendMaybeFireEmbedderLoadEvents(
+                                EmbedderElementEventType::NoEvent);
+                          }
                           if (aValue.IsResolve() && aValue.ResolveValue()) {
                             return GenericNonExclusivePromise::CreateAndResolve(
                                 true, __func__);

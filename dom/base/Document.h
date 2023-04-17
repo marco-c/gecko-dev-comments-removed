@@ -220,6 +220,7 @@ class AnonymousContent;
 class Attr;
 class XULBroadcastManager;
 class XULPersist;
+class BrowserBridgeChild;
 class ChromeObserver;
 class ClientInfo;
 class ClientState;
@@ -4017,6 +4018,20 @@ class Document : public nsINode,
 
   static bool IsValidDomain(nsIURI* aOrigHost, nsIURI* aNewURI);
 
+  
+  
+  
+  void OOPChildLoadStarted(BrowserBridgeChild* aChild);
+
+  
+  
+  
+  void OOPChildLoadDone(BrowserBridgeChild* aChild);
+
+  void ClearOOPChildrenLoading();
+
+  bool HasOOPChildrenLoading() { return !mOOPChildrenLoading.IsEmpty(); }
+
  protected:
   
   
@@ -5250,6 +5265,10 @@ class Document : public nsINode,
 
   
   void AccumulatePageLoadTelemetry();
+
+  
+  
+  nsTArray<const BrowserBridgeChild*> mOOPChildrenLoading;
 
  public:
   
