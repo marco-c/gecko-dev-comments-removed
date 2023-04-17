@@ -1946,6 +1946,38 @@ function updateIsAtLeastAsOldAs(update, version, buildID) {
 
 
 
+function updateIsAtLeastAsOldAsCurrentVersion(update) {
+  return updateIsAtLeastAsOldAs(
+    update,
+    Services.appinfo.version,
+    Services.appinfo.appBuildID
+  );
+}
+
+
+
+
+
+
+function updateIsAtLeastAsOldAsReadyUpdate(update) {
+  if (
+    !UM.readyUpdate ||
+    !UM.readyUpdate.appVersion ||
+    !UM.readyUpdate.buildID
+  ) {
+    return false;
+  }
+  return updateIsAtLeastAsOldAs(
+    update,
+    UM.readyUpdate.appVersion,
+    UM.readyUpdate.buildID
+  );
+}
+
+
+
+
+
 
 
 
@@ -3429,17 +3461,32 @@ UpdateService.prototype = {
     updates.forEach(function(aUpdate) {
       
       
-      if (
-        vc.compare(aUpdate.appVersion, Services.appinfo.version) < 0 ||
-        (vc.compare(aUpdate.appVersion, Services.appinfo.version) == 0 &&
-          aUpdate.buildID == Services.appinfo.appBuildID)
-      ) {
+      if (updateIsAtLeastAsOldAsCurrentVersion(aUpdate)) {
         LOG(
           "UpdateService:selectUpdate - skipping update because the " +
-            "update's application version is less than the current " +
+            "update's application version is not greater than the current " +
             "application version"
         );
         lastCheckCode = AUSTLMY.CHK_UPDATE_PREVIOUS_VERSION;
+        return;
+      }
+
+      if (updateIsAtLeastAsOldAsReadyUpdate(aUpdate)) {
+        LOG(
+          "UpdateService:selectUpdate - skipping update because the " +
+            "update's application version is not greater than that of the " +
+            "currently downloaded update"
+        );
+        lastCheckCode = AUSTLMY.CHK_UPDATE_PREVIOUS_VERSION;
+        return;
+      }
+
+      if (UM.readyUpdate && !getPatchOfType(aUpdate, "partial")) {
+        LOG(
+          "UpdateService:selectUpdate - skipping update because no partial " +
+            "patch is available and an update has already been downloaded."
+        );
+        lastCheckCode = AUSTLMY.CHK_NO_PARTIAL_PATCH;
         return;
       }
 
@@ -3893,13 +3940,7 @@ UpdateService.prototype = {
     
     
     
-    if (
-      updateIsAtLeastAsOldAs(
-        update,
-        Services.appinfo.version,
-        Services.appinfo.appBuildID
-      )
-    ) {
+    if (updateIsAtLeastAsOldAsCurrentVersion(update)) {
       LOG(
         "UpdateService:downloadUpdate - canceling download of update since " +
           "it is for an earlier or same application version and build ID.\n" +
@@ -3918,16 +3959,7 @@ UpdateService.prototype = {
       cleanupDownloadingUpdate();
       return false;
     }
-    if (
-      UM.readyUpdate &&
-      UM.readyUpdate.appVersion &&
-      UM.readyUpdate.buildID &&
-      updateIsAtLeastAsOldAs(
-        update,
-        UM.readyUpdate.appVersion,
-        UM.readyUpdate.buildID
-      )
-    ) {
+    if (updateIsAtLeastAsOldAsReadyUpdate(update)) {
       LOG(
         "UpdateService:downloadUpdate - not downloading update because the " +
           "update that's already been downloaded is the same version or " +

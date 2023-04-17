@@ -101,6 +101,9 @@ var AUSTLMY = {
   
   
   CHK_OTHER_INSTANCE: 39,
+  
+  
+  CHK_NO_PARTIAL_PATCH: 40,
 
   
 
