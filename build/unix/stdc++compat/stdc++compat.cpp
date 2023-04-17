@@ -33,10 +33,8 @@
 
 
 
-#define GLIBCXX_VERSION(a, b, c) (((a) << 16) | ((b) << 8) | (c))
-
-#if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 20)
 namespace std {
+
 
 
 
@@ -53,28 +51,24 @@ void __attribute__((weak)) __throw_out_of_range_fmt(char const* fmt, ...) {
 }
 
 }  
-#endif
 
-#if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 20)
 namespace __cxxabiv1 {
-
 
 
 extern "C" void __attribute__((weak)) __cxa_throw_bad_array_new_length() {
   MOZ_CRASH();
 }
 }  
-#endif
 
-#if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 29)
+#if _GLIBCXX_RELEASE >= 11
 namespace std {
+
 
 void __attribute__((weak)) __throw_bad_array_new_length() { MOZ_CRASH(); }
 
 }  
 #endif
 
-#if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 21)
 
 
 
@@ -83,15 +77,12 @@ namespace std {
 __attribute__((weak)) runtime_error::runtime_error(char const* s)
     : runtime_error(std::string(s)) {}
 }  
-#endif
 
-#if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 21)
 
-#  define _GLIBCXX_THREAD_ABI_COMPAT 1
-#  include <thread>
+#define _GLIBCXX_THREAD_ABI_COMPAT 1
+#include <thread>
 
 namespace std {
-
 
 
 
@@ -105,7 +96,7 @@ __attribute__((weak)) void thread::_M_start_thread(shared_ptr<_Impl_base> impl,
   _M_start_thread(std::move(impl));
 }
 
-#  if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 22)
+
 
 
 struct StateWrapper : public thread::_Impl_base {
@@ -116,6 +107,7 @@ struct StateWrapper : public thread::_Impl_base {
   void _M_run() override { mState->_M_run(); }
 };
 
+
 __attribute__((weak)) void thread::_M_start_thread(unique_ptr<_State> aState,
                                                    void (*)()) {
   auto impl = std::make_shared<StateWrapper>(std::move(aState));
@@ -124,10 +116,11 @@ __attribute__((weak)) void thread::_M_start_thread(unique_ptr<_State> aState,
 
 
 
-__attribute__((weak)) thread::_State::~_State() = default;
-#  endif
 
-#  if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 26)
+__attribute__((weak)) thread::_State::~_State() = default;
+
+#if _GLIBCXX_RELEASE >= 9
+
 
 
 
@@ -140,51 +133,48 @@ extern "C" __attribute__((visibility("hidden"))) bool
 _ZNSt19_Sp_make_shared_tag5_S_eqERKSt9type_info(const type_info*) noexcept {
   return false;
 }
-#  endif
-
-}  
 #endif
 
-#if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 21)
+}  
+
 namespace std {
 
 
 template basic_ios<char, char_traits<char>>::operator bool() const;
 }  
 
-#  if !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
+#if !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
 
 
 void operator delete(void* ptr, size_t size) noexcept(true) {
   ::operator delete(ptr);
 }
-#  endif
 #endif
 
-#if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 23)
 namespace std {
 
 
 template basic_string<char, char_traits<char>, allocator<char>>::basic_string(
     const basic_string&, size_t, const allocator<char>&);
 
-#  if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 26)
+#if _GLIBCXX_RELEASE >= 9
+
 template basic_stringstream<char, char_traits<char>,
                             allocator<char>>::basic_stringstream();
 
 template basic_ostringstream<char, char_traits<char>,
                              allocator<char>>::basic_ostringstream();
-#  endif
+#endif
 
-#  if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 29)
+#if _GLIBCXX_RELEASE >= 11
+
 template void basic_string<char, char_traits<char>, allocator<char>>::reserve();
 
 template void
 basic_string<wchar_t, char_traits<wchar_t>, allocator<wchar_t>>::reserve();
-#  endif
+#endif
 
 }  
-#endif
 
 
 
