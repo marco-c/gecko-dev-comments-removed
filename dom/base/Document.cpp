@@ -17372,37 +17372,4 @@ void Document::UnregisterFromMemoryReportingForDataDocument() {
     }
   }
 }
-void Document::OOPChildLoadStarted(BrowserBridgeChild* aChild) {
-  MOZ_DIAGNOSTIC_ASSERT(!mOOPChildrenLoading.Contains(aChild));
-  mOOPChildrenLoading.AppendElement(aChild);
-  if (mOOPChildrenLoading.Length() == 1) {
-    
-    
-    BlockOnload();
-  }
-}
-
-void Document::OOPChildLoadDone(BrowserBridgeChild* aChild) {
-  
-  
-  
-  if (mOOPChildrenLoading.RemoveElement(aChild)) {
-    if (mOOPChildrenLoading.IsEmpty()) {
-      UnblockOnload(false);
-    }
-    RefPtr<nsDocLoader> docLoader(mDocumentContainer);
-    if (docLoader) {
-      docLoader->OOPChildrenLoadingIsEmpty();
-    }
-  }
-}
-
-void Document::ClearOOPChildrenLoading() {
-  nsTArray<const BrowserBridgeChild*> oopChildrenLoading;
-  mOOPChildrenLoading.SwapElements(oopChildrenLoading);
-  if (!oopChildrenLoading.IsEmpty()) {
-    UnblockOnload(false);
-  }
-}
-
 }  
