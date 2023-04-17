@@ -119,7 +119,8 @@ void CacheStreamControlChild::OpenStream(const nsID& aId,
 
 void CacheStreamControlChild::NoteClosedAfterForget(const nsID& aId) {
   NS_ASSERT_OWNINGTHREAD(CacheStreamControlChild);
-  Unused << SendNoteClosed(aId);
+
+  QM_WARNONLY_TRY(OkIf(SendNoteClosed(aId)));
 
   
   
