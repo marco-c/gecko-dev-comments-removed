@@ -315,9 +315,13 @@ nsresult nsMenuPopupFrame::CreateWidgetForView(nsView* aView) {
     tag = parentContent->NodeInfo()->NameAtom();
   widgetData.mHasRemoteContent = remote;
   widgetData.mSupportTranslucency = mode == eTransparencyTransparent;
-  widgetData.mDropShadow =
-      !(mode == eTransparencyTransparent || tag == nsGkAtoms::menulist);
   widgetData.mPopupLevel = PopupLevel(widgetData.mNoAutoHide);
+
+  
+  
+  widgetData.mDropShadow =
+      !(mode == eTransparencyTransparent || tag == nsGkAtoms::menulist) ||
+      StyleUIReset()->mWindowShadow == StyleWindowShadow::Cliprounded;
 
   
   

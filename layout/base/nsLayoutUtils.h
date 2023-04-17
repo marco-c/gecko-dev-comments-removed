@@ -2017,6 +2017,15 @@ class nsLayoutUtils {
 
 
 
+  static LayoutDeviceIntSize GetBorderRadiusForMenuDropShadow(
+      const nsIFrame* aFrame);
+
+  
+
+
+
+
+
 
 
 

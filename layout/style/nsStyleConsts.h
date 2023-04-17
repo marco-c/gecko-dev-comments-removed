@@ -640,6 +640,7 @@ enum class StyleWindowShadow : uint8_t {
   Menu,
   Tooltip,
   Sheet,
+  Cliprounded,  
 };
 
 

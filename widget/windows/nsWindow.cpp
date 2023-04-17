@@ -1757,28 +1757,60 @@ bool nsWindow::IsVisible() const { return mIsVisible; }
 
 
 
+static bool ShouldHaveRoundedMenuDropShadow(nsWindow* aWindow) {
+  nsView* view = nsView::GetViewFor(aWindow);
+  return view && view->GetFrame() &&
+         view->GetFrame()->StyleUIReset()->mWindowShadow ==
+             StyleWindowShadow::Cliprounded;
+}
+
 
 
 
 
 void nsWindow::ClearThemeRegion() {
-  if (!HasGlass() &&
-      (mWindowType == eWindowType_popup && !IsPopupWithTitleBar() &&
-       (mPopupType == ePopupTypeTooltip || mPopupType == ePopupTypePanel))) {
+  if (mWindowType == eWindowType_popup && mPopupType == ePopupTypeMenu &&
+      ShouldHaveRoundedMenuDropShadow(this)) {
+    SetWindowRgn(mWnd, nullptr, false);
+  } else if (!HasGlass() &&
+             (mWindowType == eWindowType_popup && !IsPopupWithTitleBar() &&
+              (mPopupType == ePopupTypeTooltip ||
+               mPopupType == ePopupTypePanel))) {
     SetWindowRgn(mWnd, nullptr, false);
   }
 }
 
 void nsWindow::SetThemeRegion() {
   
+  if (mWindowType == eWindowType_popup && mPopupType == ePopupTypeMenu) {
+    nsView* view = nsView::GetViewFor(this);
+    if (view) {
+      LayoutDeviceIntSize size =
+          nsLayoutUtils::GetBorderRadiusForMenuDropShadow(view->GetFrame());
+      if (size.width || size.height) {
+        int32_t width =
+            NSToIntRound(size.width * GetDesktopToDeviceScale().scale);
+        int32_t height =
+            NSToIntRound(size.height * GetDesktopToDeviceScale().scale);
+        HRGN region = CreateRoundRectRgn(0, 0, mBounds.Width(),
+                                         mBounds.Height(), width, height);
+        if (!SetWindowRgn(mWnd, region, false)) {
+          DeleteObject(region);  
+        }
+      }
+    }
+  }
+
   
   
   
   
   
-  if (!HasGlass() &&
-      (mWindowType == eWindowType_popup && !IsPopupWithTitleBar() &&
-       (mPopupType == ePopupTypeTooltip || mPopupType == ePopupTypePanel))) {
+  
+  else if (!HasGlass() &&
+           (mWindowType == eWindowType_popup && !IsPopupWithTitleBar() &&
+            (mPopupType == ePopupTypeTooltip ||
+             mPopupType == ePopupTypePanel))) {
     HRGN hRgn = nullptr;
     RECT rect = {0, 0, mBounds.Width(), mBounds.Height()};
 
