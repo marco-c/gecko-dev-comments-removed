@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/Assertions.h"
 #include "nsGkAtoms.h"
 #include "nsXULPopupManager.h"
 #include "nsMenuFrame.h"
@@ -1009,6 +1010,12 @@ void nsXULPopupManager::ShowPopupCallback(nsIContent* aPopup,
 void nsXULPopupManager::HidePopup(nsIContent* aPopup, bool aHideChain,
                                   bool aDeselectMenu, bool aAsynchronous,
                                   bool aIsCancel, nsIContent* aLastPopup) {
+  if (mNativeMenu && mNativeMenu->Element() == aPopup) {
+    RefPtr<NativeMenu> menu = mNativeMenu;
+    (void)menu->Close();
+    return;
+  }
+
   nsMenuPopupFrame* popupFrame = do_QueryFrame(aPopup->GetPrimaryFrame());
   if (!popupFrame) {
     return;
