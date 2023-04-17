@@ -1110,7 +1110,8 @@ static EGLConfig ChooseConfig(EglDisplay& egl, const GLContextCreateDesc& desc,
 
 #ifdef MOZ_X11
 
-bool GLContextEGL::FindVisual(bool useAlpha, int* const out_visualId) {
+bool GLContextEGL::FindVisual(bool aUseWebRender, bool useAlpha,
+                              int* const out_visualId) {
   nsCString discardFailureId;
   const auto egl = DefaultEglDisplay(&discardFailureId);
   if (!egl) {
@@ -1121,8 +1122,7 @@ bool GLContextEGL::FindVisual(bool useAlpha, int* const out_visualId) {
 
   EGLConfig config;
   const int bpp = useAlpha ? 32 : 24;
-  if (!CreateConfig(*egl, &config, bpp,  false,
-                     false)) {
+  if (!CreateConfig(*egl, &config, bpp, aUseWebRender,  false)) {
     gfxCriticalNote
         << "GLContextEGL::FindVisual(): Failed to create EGLConfig!";
     return false;
