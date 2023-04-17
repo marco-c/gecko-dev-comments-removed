@@ -3246,7 +3246,7 @@ class nsDisplayList {
 
 
   nsDisplayList()
-      : mLength(0), mIsOpaque(false), mForceTransparentSurface(false) {
+      : mLength(0), mForceTransparentSurface(false) {
     mTop = &mSentinel;
     mSentinel.mAbove = nullptr;
   }
@@ -3256,7 +3256,6 @@ class nsDisplayList {
   }
 
   nsDisplayList(nsDisplayList&& aOther) {
-    mIsOpaque = aOther.mIsOpaque;
     mForceTransparentSurface = aOther.mForceTransparentSurface;
 
     if (aOther.mSentinel.mAbove) {
@@ -3278,7 +3277,6 @@ class nsDisplayList {
         mTop = &mSentinel;
         mLength = 0;
       }
-      mIsOpaque = aOther.mIsOpaque;
       mForceTransparentSurface = aOther.mForceTransparentSurface;
     }
     return *this;
@@ -3477,8 +3475,6 @@ class nsDisplayList {
 
 
 
-
-
   bool ComputeVisibilityForSublist(nsDisplayListBuilder* aBuilder,
                                    nsRegion* aVisibleRegion,
                                    const nsRect& aListVisibleBounds);
@@ -3492,12 +3488,6 @@ class nsDisplayList {
 
   bool ComputeVisibilityForRoot(nsDisplayListBuilder* aBuilder,
                                 nsRegion* aVisibleRegion);
-
-  
-
-
-
-  bool IsOpaque() const { return mIsOpaque; }
 
   
 
@@ -3604,12 +3594,9 @@ class nsDisplayList {
 
   nsRect GetBuildingRect() const;
 
-  void SetIsOpaque() { mIsOpaque = true; }
-
   void SetNeedsTransparentSurface() { mForceTransparentSurface = true; }
 
   void RestoreState() {
-    mIsOpaque = false;
     mForceTransparentSurface = false;
   }
 
@@ -3619,10 +3606,6 @@ class nsDisplayList {
 
   uint32_t mLength;
 
-  
-  
-  
-  bool mIsOpaque;
   
   
   bool mForceTransparentSurface;

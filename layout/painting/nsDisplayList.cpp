@@ -2304,7 +2304,6 @@ bool nsDisplayList::ComputeVisibilityForSublist(
     AppendToBottom(item);
   }
 
-  mIsOpaque = !aVisibleRegion->Intersects(aListVisibleBounds);
   return anyVisible;
 }
 
@@ -3076,19 +3075,7 @@ nsRect nsDisplayContainer::GetComponentAlphaBounds(
 static nsRegion GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
                                 nsDisplayList* aList,
                                 const nsRect& aListBounds) {
-  if (aList->IsOpaque()) {
-    
-    
-    return aListBounds;
-  }
-
-  if (aBuilder->HitTestIsForVisibility()) {
-    
-    
-    return aList->GetOpaqueRegion(aBuilder);
-  }
-
-  return nsRegion();
+  return aList->GetOpaqueRegion(aBuilder);
 }
 
 nsRegion nsDisplayContainer::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
