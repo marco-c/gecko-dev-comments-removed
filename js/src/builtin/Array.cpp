@@ -104,58 +104,6 @@ bool js::IsArrayFromJit(JSContext* cx, HandleObject obj, bool* isArray) {
 }
 
 
-static bool ToLengthClamped(JSContext* cx, HandleValue v, uint32_t* out) {
-  if (v.isInt32()) {
-    int32_t i = v.toInt32();
-    *out = i < 0 ? 0 : i;
-    return true;
-  }
-  double d;
-  if (v.isDouble()) {
-    d = v.toDouble();
-  } else {
-    if (!ToNumber(cx, v, &d)) {
-      return false;
-    }
-  }
-  d = JS::ToInteger(d);
-  if (d <= 0.0) {
-    *out = 0;
-  } else if (d < double(UINT32_MAX - 1)) {
-    *out = uint32_t(d);
-  } else {
-    *out = UINT32_MAX;
-  }
-  return true;
-}
-
-bool js::GetLengthProperty(JSContext* cx, HandleObject obj, uint32_t* lengthp) {
-  if (obj->is<ArrayObject>()) {
-    *lengthp = obj->as<ArrayObject>().length();
-    return true;
-  }
-
-  if (obj->is<ArgumentsObject>()) {
-    ArgumentsObject& argsobj = obj->as<ArgumentsObject>();
-    if (!argsobj.hasOverriddenLength()) {
-      *lengthp = argsobj.initialLength();
-      return true;
-    }
-  }
-
-  RootedValue value(cx);
-  if (!GetProperty(cx, obj, obj, cx->names().length, &value)) {
-    return false;
-  }
-
-  if (!ToLengthClamped(cx, value, lengthp)) {
-    return false;
-  }
-
-  return true;
-}
-
-
 bool js::ToLength(JSContext* cx, HandleValue v, uint64_t* out) {
   if (v.isInt32()) {
     int32_t i = v.toInt32();
@@ -4272,7 +4220,19 @@ JS_PUBLIC_API bool JS::GetArrayLength(JSContext* cx, Handle<JSObject*> obj,
   CHECK_THREAD(cx);
   cx->check(obj);
 
-  return GetLengthProperty(cx, obj, lengthp);
+  uint64_t len = 0;
+  if (!GetLengthProperty(cx, obj, &len)) {
+    return false;
+  }
+
+  if (len > UINT32_MAX) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_ARRAY_LENGTH);
+    return false;
+  }
+
+  *lengthp = uint32_t(len);
+  return true;
 }
 
 JS_PUBLIC_API bool JS::SetArrayLength(JSContext* cx, Handle<JSObject*> obj,

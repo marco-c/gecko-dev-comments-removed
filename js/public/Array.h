@@ -66,6 +66,9 @@ extern JS_PUBLIC_API bool IsArrayObject(JSContext* cx, Handle<JSObject*> obj,
 
 
 
+
+
+
 extern JS_PUBLIC_API bool GetArrayLength(JSContext* cx, Handle<JSObject*> obj,
                                          uint32_t* lengthp);
 
