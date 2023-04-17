@@ -380,6 +380,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     IsAnonymousContentCreatorContent,
     
     IsForRenderedLegend,
+    
+    IsForOutsideMarker,
   };
 
   using ItemFlags = mozilla::EnumSet<ItemFlag>;
@@ -472,7 +474,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                   nsContainerFrame* aParentFrame,
                                   Element& aOriginatingElement, ComputedStyle&,
                                   PseudoStyleType aPseudoElement,
-                                  FrameConstructionItemList& aItems);
+                                  FrameConstructionItemList& aItems,
+                                  ItemFlags aExtraFlags = {});
 
   
   
