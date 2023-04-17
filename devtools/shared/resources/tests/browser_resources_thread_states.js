@@ -41,18 +41,18 @@ async function checkBreakpointBeforeWatchResources() {
 
   const tab = await addTab(BREAKPOINT_TEST_URL);
 
-  const { client, resourceWatcher, targetList } = await initResourceWatcher(
+  const { client, resourceWatcher, targetCommand } = await initResourceWatcher(
     tab
   );
 
   
   
   info("Attach the top level target");
-  await targetList.targetFront.attach();
+  await targetCommand.targetFront.attach();
   
   
   info("Attach the top level thread actor");
-  await targetList.targetFront.attachAndInitThread(targetList);
+  await targetCommand.targetFront.attachAndInitThread(targetCommand);
 
   info("Run the 'debugger' statement");
   
@@ -92,7 +92,7 @@ async function checkBreakpointBeforeWatchResources() {
     },
   });
 
-  const { threadFront } = targetList.targetFront;
+  const { threadFront } = targetCommand.targetFront;
   await threadFront.resume();
 
   await waitFor(
@@ -104,7 +104,7 @@ async function checkBreakpointBeforeWatchResources() {
 
   assertResumedResource(resumed);
 
-  targetList.destroy();
+  targetCommand.destroy();
   await client.close();
 }
 
@@ -115,7 +115,7 @@ async function checkBreakpointAfterWatchResources() {
 
   const tab = await addTab(BREAKPOINT_TEST_URL);
 
-  const { client, resourceWatcher, targetList } = await initResourceWatcher(
+  const { client, resourceWatcher, targetCommand } = await initResourceWatcher(
     tab
   );
 
@@ -163,7 +163,7 @@ async function checkBreakpointAfterWatchResources() {
   });
 
   
-  const { threadFront } = targetList.targetFront;
+  const { threadFront } = targetCommand.targetFront;
 
   await threadFront.resume();
 
@@ -176,7 +176,7 @@ async function checkBreakpointAfterWatchResources() {
 
   assertResumedResource(resumed);
 
-  targetList.destroy();
+  targetCommand.destroy();
   await client.close();
 }
 
@@ -187,7 +187,7 @@ async function checkRealBreakpoint() {
 
   const tab = await addTab(BREAKPOINT_TEST_URL);
 
-  const { client, resourceWatcher, targetList } = await initResourceWatcher(
+  const { client, resourceWatcher, targetCommand } = await initResourceWatcher(
     tab
   );
 
@@ -204,7 +204,7 @@ async function checkRealBreakpoint() {
   );
 
   
-  const { threadFront } = targetList.targetFront;
+  const { threadFront } = targetCommand.targetFront;
 
   
   
@@ -258,7 +258,7 @@ async function checkRealBreakpoint() {
 
   assertResumedResource(resumed);
 
-  targetList.destroy();
+  targetCommand.destroy();
   await client.close();
 }
 
@@ -271,7 +271,7 @@ async function checkPauseOnException() {
     "data:text/html,<meta charset=utf8><script>a.b.c.d</script>"
   );
 
-  const { client, resourceWatcher, targetList } = await initResourceWatcher(
+  const { client, resourceWatcher, targetCommand } = await initResourceWatcher(
     tab
   );
 
@@ -288,7 +288,7 @@ async function checkPauseOnException() {
   );
 
   
-  const { threadFront } = targetList.targetFront;
+  const { threadFront } = targetCommand.targetFront;
   await threadFront.reconfigure({ pauseOnExceptions: true });
 
   info("Reload the page, in order to trigger exception on load");
@@ -333,7 +333,7 @@ async function checkPauseOnException() {
 
   assertResumedResource(resumed);
 
-  targetList.destroy();
+  targetCommand.destroy();
   await client.close();
 }
 
@@ -344,17 +344,17 @@ async function checkSetBeforeWatch() {
 
   const tab = await addTab(BREAKPOINT_TEST_URL);
 
-  const { client, resourceWatcher, targetList } = await initResourceWatcher(
+  const { client, resourceWatcher, targetCommand } = await initResourceWatcher(
     tab
   );
 
   
   info("Attach the top level target");
-  await targetList.targetFront.attach();
+  await targetCommand.targetFront.attach();
   
   info("Attach the top level thread actor");
-  await targetList.targetFront.attachAndInitThread(targetList);
-  const { threadFront } = targetList.targetFront;
+  await targetCommand.targetFront.attachAndInitThread(targetCommand);
+  const { threadFront } = targetCommand.targetFront;
 
   
   
@@ -422,7 +422,7 @@ async function checkSetBeforeWatch() {
 
   assertResumedResource(resumed);
 
-  targetList.destroy();
+  targetCommand.destroy();
   await client.close();
 }
 
@@ -431,7 +431,7 @@ async function checkDebuggerStatementInIframes() {
 
   const tab = await addTab(BREAKPOINT_TEST_URL);
 
-  const { client, resourceWatcher, targetList } = await initResourceWatcher(
+  const { client, resourceWatcher, targetCommand } = await initResourceWatcher(
     tab
   );
 
@@ -494,7 +494,7 @@ async function checkDebuggerStatementInIframes() {
   } else {
     is(
       iframeTarget,
-      targetList.targetFront,
+      targetCommand.targetFront,
       "Without fission, the pause is from the top level target"
     );
   }
@@ -511,7 +511,7 @@ async function checkDebuggerStatementInIframes() {
 
   assertResumedResource(resumed);
 
-  targetList.destroy();
+  targetCommand.destroy();
   await client.close();
 }
 
