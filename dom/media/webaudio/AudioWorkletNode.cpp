@@ -656,6 +656,7 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
     const GlobalObject& aGlobal, AudioContext& aAudioContext,
     const nsAString& aName, const AudioWorkletNodeOptions& aOptions,
     ErrorResult& aRv) {
+  TRACE_COMMENT("AudioWorkletNode ctor: %s", NS_ConvertUTF16toUTF8(aName).get());
   
 
 
@@ -860,6 +861,7 @@ AudioParamMap* AudioWorkletNode::GetParameters(ErrorResult& aRv) {
 
 void AudioWorkletNode::DispatchProcessorErrorEvent(
     const ProcessorErrorDetails& aDetails) {
+  TRACE();
   if (HasListenersFor(nsGkAtoms::onprocessorerror)) {
     RootedDictionary<ErrorEventInit> init(RootingCx());
     init.mMessage = aDetails.mMessage;
