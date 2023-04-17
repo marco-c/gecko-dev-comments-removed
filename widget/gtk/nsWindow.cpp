@@ -5144,16 +5144,11 @@ static GdkWindow* CreateGdkWindow(GdkWindow* parent, GtkWidget* widget) {
 }
 
 
-
 bool nsWindow::ConfigureX11GLVisual(bool aUseAlpha) {
   if (!GdkIsX11Display()) {
     return false;
   }
 
-  
-  
-  
-  bool useWebRender = gfx::gfxVars::UseWebRender();
   auto* screen = gtk_widget_get_screen(mShell);
   int visualId = 0;
   bool haveVisual;
@@ -5170,11 +5165,10 @@ bool nsWindow::ConfigureX11GLVisual(bool aUseAlpha) {
   if (!gfxVars::UseEGL() || isMesa) {
     auto* display = GDK_DISPLAY_XDISPLAY(gtk_widget_get_display(mShell));
     int screenNumber = GDK_SCREEN_XNUMBER(screen);
-    haveVisual = GLContextGLX::FindVisual(display, screenNumber, useWebRender,
-                                          aUseAlpha || useWebRender, &visualId);
+    haveVisual =
+        GLContextGLX::FindVisual(display, screenNumber, aUseAlpha, &visualId);
   } else {
-    haveVisual = GLContextEGL::FindVisual(useWebRender,
-                                          aUseAlpha || useWebRender, &visualId);
+    haveVisual = GLContextEGL::FindVisual(aUseAlpha, &visualId);
   }
 
   GdkVisual* gdkVisual = nullptr;
@@ -5185,7 +5179,7 @@ bool nsWindow::ConfigureX11GLVisual(bool aUseAlpha) {
   }
   if (!gdkVisual) {
     NS_WARNING("We're missing X11 Visual!");
-    if (aUseAlpha || useWebRender) {
+    if (aUseAlpha) {
       
       GdkScreen* screen = gtk_widget_get_screen(mShell);
       gdkVisual = gdk_screen_get_rgba_visual(screen);
