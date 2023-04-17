@@ -1,9 +1,9 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# This module contains code for managing WebIDL files and bindings for
-# the build system.
+
+
+
+
+
 
 from __future__ import print_function, unicode_literals
 
@@ -26,8 +26,8 @@ from mozbuild.util import FileAvoidWrite
 
 import mozpack.path as mozpath
 
-# There are various imports in this file in functions to avoid adding
-# dependencies to config.status. See bug 949875.
+
+
 
 
 class BuildResult(object):
@@ -37,16 +37,16 @@ class BuildResult(object):
     """
 
     def __init__(self):
-        # The .webidl files that had their outputs regenerated.
+        
         self.inputs = set()
 
-        # The output files that were created.
+        
         self.created = set()
 
-        # The output files that changed.
+        
         self.updated = set()
 
-        # The output files that didn't change.
+        
         self.unchanged = set()
 
 
@@ -109,8 +109,8 @@ class WebIDLCodegenManagerState(dict):
         for k, v in state["webidls"].items():
             self["webidls"][k] = v
 
-            # Sets are converted to lists for serialization because JSON
-            # doesn't support sets.
+            
+            
             self["webidls"][k]["inputs"] = set(v["inputs"])
             self["webidls"][k]["outputs"] = set(v["outputs"])
 
@@ -127,7 +127,7 @@ class WebIDLCodegenManagerState(dict):
         normalized = deepcopy(self)
 
         for k, v in self["webidls"].items():
-            # Convert sets to lists because JSON doesn't support sets.
+            
             normalized["webidls"][k]["outputs"] = sorted(v["outputs"])
             normalized["webidls"][k]["inputs"] = sorted(v["inputs"])
 
@@ -149,7 +149,7 @@ class WebIDLCodegenManager(LoggingMixin):
     Paths, etc should be parameters and not hardcoded.
     """
 
-    # Global parser derived declaration files.
+    
     GLOBAL_DECLARE_FILES = {
         "GeneratedAtomList.h",
         "GeneratedEventList.h",
@@ -164,7 +164,7 @@ class WebIDLCodegenManager(LoggingMixin):
         "WebIDLSerializable.h",
     }
 
-    # Global parser derived definition files.
+    
     GLOBAL_DEFINE_FILES = {
         "RegisterBindings.cpp",
         "RegisterWorkerBindings.cpp",
@@ -187,6 +187,7 @@ class WebIDLCodegenManager(LoggingMixin):
         cache_dir=None,
         make_deps_path=None,
         make_deps_target=None,
+        use_builtin_readable_stream=True,
     ):
         """Create an instance that manages WebIDLs in the build system.
 
@@ -223,6 +224,7 @@ class WebIDLCodegenManager(LoggingMixin):
         self._cache_dir = cache_dir
         self._make_deps_path = make_deps_path
         self._make_deps_target = make_deps_target
+        self._use_builtin_readable_stream = use_builtin_readable_stream
 
         if (make_deps_path and not make_deps_target) or (
             not make_deps_path and make_deps_target
@@ -284,25 +286,25 @@ class WebIDLCodegenManager(LoggingMixin):
         3. If an output file is missing, ensure it is present by performing
            necessary regeneration.
         """
-        # Despite #1 above, we assume the build system is smart enough to not
-        # invoke us if nothing has changed. Therefore, any invocation means
-        # something has changed. And, if anything has changed, we need to
-        # parse the WebIDL.
+        
+        
+        
+        
         self._parse_webidl()
 
         result = BuildResult()
 
-        # If we parse, we always update globals - they are cheap and it is
-        # easier that way.
+        
+        
         created, updated, unchanged = self._write_global_derived()
         result.created |= created
         result.updated |= updated
         result.unchanged |= unchanged
 
-        # If any of the extra dependencies changed, regenerate the world.
+        
         global_changed, global_hashes = self._global_dependencies_changed()
         if global_changed:
-            # Make a copy because we may modify.
+            
             changed_inputs = set(self._input_paths)
         else:
             changed_inputs = self._compute_changed_inputs()
@@ -315,7 +317,7 @@ class WebIDLCodegenManager(LoggingMixin):
             d.identifier.name for d in self._config.getDictionariesConvertibleFromJS()
         )
 
-        # Generate bindings from .webidl files.
+        
         for filename in sorted(changed_inputs):
             basename = mozpath.basename(filename)
             result.inputs.add(filename)
@@ -331,14 +333,14 @@ class WebIDLCodegenManager(LoggingMixin):
                 sha1=self._input_hashes[filename],
             )
 
-        # Process some special interfaces required for testing.
+        
         for interface in self._example_interfaces:
             written = self.generate_example_files(interface)
             result.created |= written[0]
             result.updated |= written[1]
             result.unchanged |= written[2]
 
-        # Generate a make dependency file.
+        
         if self._make_deps_path:
             mk = Makefile()
             codegen_rule = mk.create_rule([self._make_deps_target])
@@ -378,7 +380,11 @@ class WebIDLCodegenManager(LoggingMixin):
         )
 
         hashes = {}
-        parser = WebIDL.Parser(self._cache_dir)
+        parser = WebIDL.Parser(
+            self._cache_dir,
+            lexer=None,
+            use_builtin_readable_stream=self._use_builtin_readable_stream,
+        )
 
         for path in sorted(self._input_paths):
             with io.open(path, "r", encoding="utf-8") as fh:
@@ -386,20 +392,20 @@ class WebIDLCodegenManager(LoggingMixin):
                 hashes[path] = hashlib.sha1(six.ensure_binary(data)).hexdigest()
                 parser.parse(data, path)
 
-        # Only these directories may contain WebIDL files with interfaces
-        # which are exposed to the web. WebIDL files in these roots may not
-        # be changed without DOM peer review.
-        #
-        # Other directories may contain WebIDL files as long as they only
-        # contain ChromeOnly interfaces. These are not subject to mandatory
-        # DOM peer review.
+        
+        
+        
+        
+        
+        
+        
         web_roots = (
-            # The main WebIDL root.
+            
             self._webidl_root,
-            # The binding config root, which contains some test-only
-            # interfaces.
+            
+            
             os.path.dirname(self._config_path),
-            # The objdir sub-directory which contains generated WebIDL files.
+            
             self._codegen_dir,
         )
 
@@ -443,48 +449,48 @@ class WebIDLCodegenManager(LoggingMixin):
         changed_inputs = set()
         expected_outputs = self.expected_build_output_files()
 
-        # Look for missing output files.
+        
         if any(not os.path.exists(f) for f in expected_outputs):
-            # FUTURE Bug 940469 Only regenerate minimum set.
+            
             changed_inputs |= self._input_paths
 
-        # That's it for examining output files. We /could/ examine SHA-1's of
-        # output files from a previous run to detect modifications. But that's
-        # a lot of extra work and most build systems don't do that anyway.
+        
+        
+        
 
-        # Now we move on to the input files.
+        
         old_hashes = {v["filename"]: v["sha1"] for v in self._state["webidls"].values()}
 
         old_filenames = set(old_hashes.keys())
         new_filenames = self._input_paths
 
-        # If an old file has disappeared or a new file has arrived, mark
-        # it.
+        
+        
         changed_inputs |= old_filenames ^ new_filenames
 
-        # For the files in common between runs, compare content. If the file
-        # has changed, mark it. We don't need to perform mtime comparisons
-        # because content is a stronger validator.
+        
+        
+        
         for filename in old_filenames & new_filenames:
             if old_hashes[filename] != self._input_hashes[filename]:
                 changed_inputs.add(filename)
 
-        # We've now populated the base set of inputs that have changed.
+        
 
-        # Inherit dependencies from previous run. The full set of dependencies
-        # is associated with each record, so we don't need to perform any fancy
-        # graph traversal.
+        
+        
+        
         for v in self._state["webidls"].values():
             if any(dep for dep in v["inputs"] if dep in changed_inputs):
                 changed_inputs.add(v["filename"])
 
-        # Now check for changes to the set of dictionaries that are convertible to JS
+        
         oldDictionariesConvertibleToJS = self._state["dictionaries_convertible_to_js"]
         newDictionariesConvertibleToJS = self._config.getDictionariesConvertibleToJS()
         newNames = set(d.identifier.name for d in newDictionariesConvertibleToJS)
         changedDictionaryNames = oldDictionariesConvertibleToJS ^ newNames
 
-        # Now check for changes to the set of dictionaries that are convertible from JS
+        
         oldDictionariesConvertibleFromJS = self._state[
             "dictionaries_convertible_from_js"
         ]
@@ -499,9 +505,9 @@ class WebIDLCodegenManager(LoggingMixin):
             if d:
                 changed_inputs.add(d.filename())
 
-        # Only use paths that are known to our current state.
-        # This filters out files that were deleted or changed type (e.g. from
-        # static to preprocessed).
+        
+        
+        
         return changed_inputs & self._input_paths
 
     def _binding_info(self, p):
@@ -545,7 +551,7 @@ class WebIDLCodegenManager(LoggingMixin):
         """Obtain the set of files generate_build_files() should write."""
         paths = set()
 
-        # Account for global generation.
+        
         for p in self.GLOBAL_DECLARE_FILES:
             paths.add(mozpath.join(self._exported_header_dir, p))
         for p in self.GLOBAL_DEFINE_FILES:
@@ -591,24 +597,24 @@ class WebIDLCodegenManager(LoggingMixin):
         """Determine whether the global dependencies have changed."""
         current_files = set(iter_modules_in_path(mozpath.dirname(__file__)))
 
-        # We need to catch other .py files from /dom/bindings. We assume these
-        # are in the same directory as the config file.
+        
+        
         current_files |= set(iter_modules_in_path(mozpath.dirname(self._config_path)))
 
         current_files.add(self._config_path)
 
         current_hashes = {}
         for f in current_files:
-            # This will fail if the file doesn't exist. If a current global
-            # dependency doesn't exist, something else is wrong.
+            
+            
             with io.open(f, "rb") as fh:
                 current_hashes[f] = hashlib.sha1(fh.read()).hexdigest()
 
-        # The set of files has changed.
+        
         if current_files ^ set(self._state["global_depends"].keys()):
             return True, current_hashes
 
-        # Compare hashes.
+        
         for f, sha1 in current_hashes.items():
             if sha1 != self._state["global_depends"][f]:
                 return True, current_hashes
@@ -642,7 +648,9 @@ class WebIDLCodegenManager(LoggingMixin):
             result[2].add(path)
 
 
-def create_build_system_manager(topsrcdir, topobjdir, dist_dir):
+def create_build_system_manager(
+    topsrcdir, topobjdir, dist_dir, use_builtin_readable_stream
+):
     """Create a WebIDLCodegenManager for use by the build system."""
     src_dir = os.path.join(topsrcdir, "dom", "bindings")
     obj_dir = os.path.join(topobjdir, "dom", "bindings")
@@ -673,18 +681,25 @@ def create_build_system_manager(topsrcdir, topobjdir, dist_dir):
         obj_dir,
         os.path.join(obj_dir, "codegen.json"),
         cache_dir=cache_dir,
-        # The make rules include a codegen.pp file containing dependencies.
+        
         make_deps_path=os.path.join(obj_dir, "codegen.pp"),
         make_deps_target="webidl.stub",
+        use_builtin_readable_stream=use_builtin_readable_stream,
     )
 
 
 class BuildSystemWebIDL(MozbuildObject):
     @property
     def manager(self):
+        use_builtin_readable_stream = not (
+            "--enable-dom-streams" in self.mozconfig["configure_args"]
+        )
         if not hasattr(self, "_webidl_manager"):
             self._webidl_manager = create_build_system_manager(
-                self.topsrcdir, self.topobjdir, self.distdir
+                self.topsrcdir,
+                self.topobjdir,
+                self.distdir,
+                use_builtin_readable_stream,
             )
 
         return self._webidl_manager
