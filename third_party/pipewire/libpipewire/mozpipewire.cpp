@@ -1,9 +1,9 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:expandtab:shiftwidth=4:tabstop=4:
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include <glib.h>
 #include "mozilla/Types.h"
@@ -114,7 +114,7 @@ bool LoadPWLibrary() {
   static PRLibrary* pwLib = nullptr;
   static bool pwInitialized = false;
 
-  //TODO Thread safe
+  
   if (!pwInitialized) {
     pwInitialized = true;
     pwLib = PR_LoadLibrary("libpipewire-0.3.so.0");
@@ -328,3 +328,32 @@ pw_thread_loop_stop(struct pw_thread_loop *loop)
   }
   return pw_thread_loop_stop_fn(loop);
 }
+
+void
+pw_thread_loop_lock(struct pw_thread_loop *loop)
+{
+  if (!LoadPWLibrary()) {
+    return;
+  }
+  return pw_thread_loop_lock(loop);
+}
+
+void
+pw_thread_loop_unlock(struct pw_thread_loop *loop)
+{
+  if (!LoadPWLibrary()) {
+    return;
+  }
+  return pw_thread_loop_unlock(loop);
+}
+
+
+struct pw_properties *
+pw_properties_new_string(const char *args)
+{
+  if (!LoadPWLibrary()) {
+    return nullptr;
+  }
+  return pw_properties_new_string(args);
+}
+
