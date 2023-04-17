@@ -177,6 +177,15 @@ class Axis {
   
 
 
+  bool IsOverscrollAnimationAlive() const;
+
+  
+
+
+
+
+
+
   bool IsOverscrollAnimationRunning() const;
 
   

@@ -235,6 +235,12 @@ bool Axis::IsOverscrollAnimationRunning() const {
   return !mMSDModel.IsFinished(1.0);
 }
 
+bool Axis::IsOverscrollAnimationAlive() const {
+  
+  
+  return mMSDModel.GetPosition() != 0.0 || mMSDModel.GetVelocity() != 0.0;
+}
+
 bool Axis::IsOverscrolled() const { return mOverscroll != 0.f; }
 
 void Axis::ClearOverscroll() {
