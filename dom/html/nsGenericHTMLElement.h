@@ -967,10 +967,7 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
 
   NS_DECL_ISUPPORTS_INHERITED
 
-  nsINode* GetScopeChainParent() const override;
-
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
-  virtual void SaveSubtreeState() override;
 
   
   virtual mozilla::dom::HTMLFieldSetElement* GetFieldSet() override;
@@ -985,12 +982,6 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
   
   virtual nsresult BindToTree(BindContext&, nsINode& aParent) override;
   virtual void UnbindFromTree(bool aNullParent = true) override;
-  virtual IMEState GetDesiredIMEState() override;
-  virtual mozilla::EventStates IntrinsicState() const override;
-
-  void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
-  virtual nsresult PreHandleEvent(
-      mozilla::EventChainVisitor& aVisitor) override;
 
   
 
@@ -1016,11 +1007,6 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
 
   void UpdateDisabledState(bool aNotify);
 
-  
-
-
-  void UpdateRequiredState(bool aIsRequired, bool aNotify);
-
   void FieldSetFirstLegendChanged(bool aNotify) { UpdateFieldSet(aNotify); }
 
   
@@ -1031,25 +1017,6 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
 
 
   void ForgetFieldSet(nsIContent* aFieldset);
-
-  
-
-
-  bool CanBeDisabled() const;
-
-  
-
-
-  bool DoesReadOnlyApply() const;
-
-  virtual bool IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
-                               int32_t* aTabIndex) override;
-
-  virtual bool IsLabelable() const override;
-
-  
-  virtual void GetAutocapitalize(nsAString& aValue) const override;
-  bool IsAutocapitalizeInheriting() const;
 
  protected:
   virtual ~nsGenericHTMLFormElement();
@@ -1114,6 +1081,16 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
                                   nsIFrame* aFrame);
 
   
+
+
+  virtual bool CanBeDisabled() const { return false; }
+
+  
+
+
+  virtual bool DoesReadOnlyApply() const { return false; }
+
+  
   mozilla::dom::HTMLFormElement* mForm;
 
   
@@ -1125,8 +1102,41 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement {
   nsGenericHTMLFormControlElement(
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo, FormControlType);
 
+  
+  nsINode* GetScopeChainParent() const override;
+
+  
+  virtual void SaveSubtreeState() override;
+  virtual IMEState GetDesiredIMEState() override;
+
+  
+  
+  virtual void GetAutocapitalize(nsAString& aValue) const override;
+  virtual bool IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
+                               int32_t* aTabIndex) override;
+
+  
+  void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
+  virtual nsresult PreHandleEvent(
+      mozilla::EventChainVisitor& aVisitor) override;
+
  protected:
   virtual ~nsGenericHTMLFormControlElement();
+
+  
+  virtual mozilla::EventStates IntrinsicState() const override;
+  virtual bool IsLabelable() const override;
+
+  
+  bool CanBeDisabled() const override;
+  bool DoesReadOnlyApply() const override;
+
+  
+
+
+  void UpdateRequiredState(bool aIsRequired, bool aNotify);
+
+  bool IsAutocapitalizeInheriting() const;
 };
 
 class nsGenericHTMLFormControlElementWithState
