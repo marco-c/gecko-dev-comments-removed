@@ -696,15 +696,18 @@ var FormAutofillContent = {
         "updateActiveElement: checking if empty field is cc-*: ",
         this.activeFieldDetail?.fieldName
       );
-
-      if (Services.cpmm.sharedData.get("FormAutofill:enabled")) {
-        this.debug("updateActiveElement: opening pop up");
-        formFillController.showPopup();
-      } else {
-        this.debug(
-          "updateActiveElement: Deferring pop-up until Autofill is ready"
-        );
-        this._popupPending = true;
+      
+      
+      if (this.activeFieldDetail?.fieldName?.startsWith("cc-")) {
+        if (Services.cpmm.sharedData.get("FormAutofill:enabled")) {
+          this.debug("updateActiveElement: opening pop up");
+          formFillController.showPopup();
+        } else {
+          this.debug(
+            "updateActiveElement: Deferring pop-up until Autofill is ready"
+          );
+          this._popupPending = true;
+        }
       }
     }
   },
