@@ -1012,11 +1012,21 @@ EditActionResult HTMLEditor::HandleInsertText(
   MOZ_ASSERT(pointToInsert.IsSetAndValid());
 
   
-  if (!pointToInsert.IsInTextNode() &&
-      !HTMLEditUtils::CanNodeContain(*pointToInsert.GetContainer(),
-                                     *nsGkAtoms::textTagName)) {
-    NS_WARNING("Selection start container couldn't have text nodes");
-    return EditActionHandled(NS_ERROR_FAILURE);
+  
+  if (!pointToInsert.IsInTextNode()) {
+    Element* editingHost = GetActiveEditingHost();
+    if (NS_WARN_IF(!editingHost)) {
+      return EditActionHandled(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+    while (!HTMLEditUtils::CanNodeContain(*pointToInsert.GetContainer(),
+                                          *nsGkAtoms::textTagName)) {
+      if (NS_WARN_IF(pointToInsert.GetContainer() == editingHost) ||
+          NS_WARN_IF(!pointToInsert.GetContainerParentAsContent())) {
+        NS_WARNING("Selection start point couldn't have text nodes");
+        return EditActionHandled(NS_ERROR_FAILURE);
+      }
+      pointToInsert.Set(pointToInsert.ContainerAsContent());
+    }
   }
 
   if (aEditSubAction == EditSubAction::eInsertTextComingFromIME) {
