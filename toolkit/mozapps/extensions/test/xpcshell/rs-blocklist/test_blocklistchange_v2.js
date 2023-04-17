@@ -5,12 +5,7 @@
 
 
 
-
-
-Services.prefs.setBoolPref(
-  "extensions.blocklist.useMLBF",
-  !Services.prefs.getBoolPref("extensions.blocklist.useMLBF")
-);
+enable_blocklist_v2_instead_of_useMLBF();
 
 Services.scriptloader.loadSubScript(
   Services.io.newFileURI(do_get_file("test_blocklistchange.js")).spec,

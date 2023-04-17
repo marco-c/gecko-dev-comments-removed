@@ -137,7 +137,18 @@ add_task(async function test_toggle_preferences() {
     "blocklist.mlbf_generation_time": toUTC(MLBF_RECORD.generation_time),
   });
 
+  
   Services.prefs.setBoolPref("extensions.blocklist.useMLBF", false);
+  assertTelemetryScalars({
+    "blocklist.mlbf_enabled": true,
+    "blocklist.mlbf_generation_time": toUTC(MLBF_RECORD.generation_time),
+  });
+
+  
+  
+  
+  Services.prefs.setBoolPref("extensions.blocklist.useMLBF", true);
+  enable_blocklist_v2_instead_of_useMLBF();
   assertTelemetryScalars({
     "blocklist.mlbf_enabled": false,
     "blocklist.mlbf_generation_time": toUTC(MLBF_RECORD.generation_time),

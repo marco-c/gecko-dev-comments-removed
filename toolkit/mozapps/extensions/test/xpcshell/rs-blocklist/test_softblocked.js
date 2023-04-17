@@ -3,7 +3,7 @@
 
 
 
-Services.prefs.setBoolPref("extensions.blocklist.useMLBF", false);
+enable_blocklist_v2_instead_of_useMLBF();
 
 
 

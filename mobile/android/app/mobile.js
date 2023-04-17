@@ -162,6 +162,9 @@ pref("extensions.langpacks.signatures.required", true);
 pref("xpinstall.signatures.required", true);
 
 
+pref("extensions.blocklist.useMLBF", false);
+
+
 
 pref("extensions.autoDisableScopes", 15);
 

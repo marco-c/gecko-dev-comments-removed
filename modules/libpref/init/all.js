@@ -2209,7 +2209,6 @@ pref("extensions.abuseReport.amoDetailsURL", "https://services.addons.mozilla.or
 
 
 pref("extensions.blocklist.enabled", true);
-pref("extensions.blocklist.useMLBF", false);
 
 
 

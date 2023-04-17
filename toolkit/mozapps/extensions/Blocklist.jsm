@@ -1416,7 +1416,8 @@ let Blocklist = {
           case PREF_BLOCKLIST_USE_MLBF:
             let oldImpl = this.ExtensionBlocklist;
             this._chooseExtensionBlocklistImplementationFromPref();
-            if (oldImpl._initialized) {
+            
+            if (oldImpl != this.ExtensionBlocklist && oldImpl._initialized) {
               oldImpl.shutdown();
               this.ExtensionBlocklist.undoShutdown();
               this.ExtensionBlocklist._onUpdate();
@@ -1447,13 +1448,20 @@ let Blocklist = {
     BlocklistTelemetry.recordAddonBlockChangeTelemetry(addon, reason);
   },
 
+  
+  
+  allowDeprecatedBlocklistV2: AppConstants.platform === "android",
+
   _chooseExtensionBlocklistImplementationFromPref() {
-    if (Services.prefs.getBoolPref(PREF_BLOCKLIST_USE_MLBF, false)) {
-      this.ExtensionBlocklist = ExtensionBlocklistMLBF;
-      Services.telemetry.scalarSet("blocklist.mlbf_enabled", true);
-    } else {
+    if (
+      this.allowDeprecatedBlocklistV2 &&
+      !Services.prefs.getBoolPref(PREF_BLOCKLIST_USE_MLBF, false)
+    ) {
       this.ExtensionBlocklist = ExtensionBlocklistRS;
       Services.telemetry.scalarSet("blocklist.mlbf_enabled", false);
+    } else {
+      this.ExtensionBlocklist = ExtensionBlocklistMLBF;
+      Services.telemetry.scalarSet("blocklist.mlbf_enabled", true);
     }
   },
 

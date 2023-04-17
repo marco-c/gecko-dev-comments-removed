@@ -32,9 +32,12 @@ Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);
 Services.prefs.setBoolPref("extensions.webextPermissionPrompts", false);
 
 
+
+
+
 const useMLBF = Services.prefs.getBoolPref(
   "extensions.blocklist.useMLBF",
-  false
+  true
 );
 
 var testserver = createHttpServer({ hosts: ["example.com"] });
