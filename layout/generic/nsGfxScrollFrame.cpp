@@ -2227,7 +2227,6 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
       mHasBeenScrolledRecently(false),
       mWillBuildScrollableLayer(false),
       mIsParentToActiveScrollFrames(false),
-      mAddClipRectToLayer(false),
       mHasBeenScrolled(false),
       mIgnoreMomentumScroll(false),
       mTransformingByAPZ(false),
@@ -3701,10 +3700,6 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (ignoringThisScrollFrame) {
     
     
-    mAddClipRectToLayer = false;
-
-    
-    
     
     bool addScrollBars =
         mIsRoot && mWillBuildScrollableLayer && aBuilder->IsPaintingToWindow();
@@ -3739,11 +3734,6 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     set.MoveTo(aLists);
     return;
   }
-
-  
-  
-  mAddClipRectToLayer =
-      !(mIsRoot && mOuter->PresShell()->UsesMobileViewportSizing());
 
   
   
