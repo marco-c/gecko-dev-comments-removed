@@ -6,22 +6,18 @@
 #ifndef mozilla_a11y_XULMenuAccessibleWrap_h__
 #define mozilla_a11y_XULMenuAccessibleWrap_h__
 
-#include "XULMenuAccessible.h"
+#include "MsaaXULMenuAccessible.h"
 
 namespace mozilla {
 namespace a11y {
 
-class XULMenuitemAccessibleWrap : public XULMenuitemAccessible {
+class XULMenuitemAccessibleWrap : public MsaaXULMenuitemAccessible {
  public:
   XULMenuitemAccessibleWrap(nsIContent* aContent, DocAccessible* aDoc);
   virtual ~XULMenuitemAccessibleWrap() {}
 
   
   virtual mozilla::a11y::ENameValueFlag Name(nsString& aName) const override;
-
-  virtual  HRESULT STDMETHODCALLTYPE get_accKeyboardShortcut(
-       VARIANT varChild,
-       BSTR __RPC_FAR* pszKeyboardShortcut) override;
 };
 
 }  
