@@ -59,11 +59,11 @@ class SendResponseCallback final : public nsISupports {
     
     
     mPromiseListener = new dom::DomPromiseListener(
-        mPromise,
         [self = RefPtr{this}](JSContext* aCx, JS::Handle<JS::Value> aValue) {
           self->Cleanup();
         },
         [self = RefPtr{this}](nsresult aError) { self->Cleanup(); });
+    mPromise->AppendNativeHandler(mPromiseListener);
   }
 
   void Cleanup(bool aIsDestroying = false) {
@@ -75,9 +75,7 @@ class SendResponseCallback final : public nsISupports {
     NS_WARNING("SendResponseCallback::Cleanup");
     
     
-    mPromiseListener->SetResolvers(
-        [](JSContext* aCx, JS::Handle<JS::Value> aValue) {},
-        [](nsresult aError) {});
+    mPromiseListener->Clear();
     mPromiseListener = nullptr;
 
     if (mPromise) {
