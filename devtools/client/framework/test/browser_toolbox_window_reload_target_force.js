@@ -22,8 +22,14 @@ add_task(async function() {
 
   
   
-  await testReload("toolbox.reload.key", toolbox, "");
-  await testReload("toolbox.reload2.key", toolbox, "");
+  const expectedHeader = Services.prefs.getBoolPref(
+    "browser.soft_reload.only_force_validate_top_level_document",
+    false
+  )
+    ? ""
+    : "max-age=0";
+  await testReload("toolbox.reload.key", toolbox, expectedHeader);
+  await testReload("toolbox.reload2.key", toolbox, expectedHeader);
   await testReload("toolbox.forceReload.key", toolbox, "no-cache");
   await testReload("toolbox.forceReload2.key", toolbox, "no-cache");
 });
