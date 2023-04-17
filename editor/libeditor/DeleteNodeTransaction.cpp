@@ -79,10 +79,7 @@ NS_IMETHODIMP DeleteNodeTransaction::DoTransaction() {
     return NS_OK;
   }
 
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!mEditorBase->IsTextEditor() ||
-                        !mContentToDelete->IsText());
+  MOZ_ASSERT_IF(mEditorBase->IsTextEditor(), !mContentToDelete->IsText());
 
   
   
