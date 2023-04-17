@@ -32,8 +32,7 @@ class nsWaylandDisplay {
 
   
   
-  
-  explicit nsWaylandDisplay(wl_display* aDisplay, bool aLighWrapper = false);
+  explicit nsWaylandDisplay(wl_display* aDisplay);
 
   bool DispatchEventQueue();
 
@@ -108,7 +107,6 @@ class nsWaylandDisplay {
   zwp_idle_inhibit_manager_v1* mIdleInhibitManager;
   zwp_relative_pointer_manager_v1* mRelativePointerManager;
   zwp_pointer_constraints_v1* mPointerConstraints;
-  wl_registry* mRegistry;
   wp_viewporter* mViewporter;
   zwp_linux_dmabuf_v1* mDmabuf;
   bool mExplicitSync;
