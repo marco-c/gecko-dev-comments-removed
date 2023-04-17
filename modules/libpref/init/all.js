@@ -1448,7 +1448,7 @@ pref("network.http.http3.alt-svc-mapping-for-testing", "");
 
 
 pref("network.http.altsvc.enabled", true);
-pref("network.http.altsvc.oe", true);
+pref("network.http.altsvc.oe", false);
 
 
 pref("security.tls.enable_0rtt_data", true);

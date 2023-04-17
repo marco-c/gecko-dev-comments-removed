@@ -76,6 +76,7 @@ function run_test() {
   
   
   prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
+  prefs.setBoolPref("network.http.altsvc.oe", true);
 
   
   
@@ -564,6 +565,7 @@ function testsDone() {
   prefs.clearUserPref("network.http.http3.enabled");
   prefs.clearUserPref("network.dns.localDomains");
   prefs.clearUserPref("network.proxy.allow_hijacking_localhost");
+  prefs.clearUserPref("network.http.altsvc.oe");
   dump("testDone\n");
   do_test_pending();
   h1Server.stop(do_test_finished);
