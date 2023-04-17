@@ -97,6 +97,11 @@ class SharedSurfacesChild {
                         wr::IpcResourceUpdateQueue& aResources,
                         wr::ImageKey& aKey, ContainerProducerID aProducerId);
 
+  static nsresult ShareBlob(ImageContainer* aContainer,
+                            RenderRootStateManager* aManager,
+                            wr::IpcResourceUpdateQueue& aResources,
+                            wr::BlobImageKey& aKey);
+
   
 
 
