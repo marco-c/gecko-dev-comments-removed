@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 add_task(async function dedupe_prefix() {
@@ -21,6 +23,7 @@ add_task(async function dedupe_prefix() {
       uri: "https://example.com/foo/",
       title: "Example Page",
     },
+    
     {
       uri: "https://www.example.com/foo/",
       title: "Example Page",
@@ -31,6 +34,13 @@ add_task(async function dedupe_prefix() {
     },
   ]);
 
+  
+  
+  
+  
+  
+  
+  
   
   
   let context = createContext("example.com/foo/", { isPrivate: false });
@@ -63,6 +73,13 @@ add_task(async function dedupe_prefix() {
     ]);
   }
 
+  
+  
+  
+  
+  
+  
+  
   context = createContext("example.com/foo/", { isPrivate: false });
   await check_results({
     context,
@@ -94,6 +111,16 @@ add_task(async function dedupe_prefix() {
     ]);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   context = createContext("example.com/foo/", { isPrivate: false });
   await check_results({
     context,
@@ -113,4 +140,142 @@ add_task(async function dedupe_prefix() {
   });
 
   await cleanupPlaces();
+});
+
+
+
+add_task(async function hideHeuristic() {
+  UrlbarPrefs.set("experimental.hideHeuristic", true);
+
+  
+  
+  
+  
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://example.com/foo/",
+      title: "Example Page",
+    },
+    {
+      uri: "http://www.example.com/foo/",
+      title: "Example Page",
+    },
+    {
+      uri: "https://example.com/foo/",
+      title: "Example Page",
+    },
+    
+    {
+      uri: "https://www.example.com/foo/",
+      title: "Example Page",
+    },
+    {
+      uri: "https://www.example.com/foo/",
+      title: "Example Page",
+    },
+  ]);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let context = createContext("example.com/foo/", { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "example.com/foo/",
+    completed: "https://www.example.com/foo/",
+    matches: [
+      makeVisitResult(context, {
+        uri: "https://www.example.com/foo/",
+        title: "https://www.example.com/foo/",
+        heuristic: true,
+      }),
+      makeVisitResult(context, {
+        uri: "https://example.com/foo/",
+        title: "Example Page",
+      }),
+    ],
+  });
+
+  
+  
+  
+  for (let i = 0; i < 3; i++) {
+    await PlacesTestUtils.addVisits([
+      {
+        uri: "http://www.example.com/foo/",
+        title: "Example Page",
+      },
+    ]);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  context = createContext("example.com/foo/", { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "example.com/foo/",
+    completed: "http://www.example.com/foo/",
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://www.example.com/foo/",
+        title: "www.example.com/foo/",
+        heuristic: true,
+      }),
+      makeVisitResult(context, {
+        uri: "https://example.com/foo/",
+        title: "Example Page",
+      }),
+    ],
+  });
+
+  
+  for (let i = 0; i < 5; i++) {
+    await PlacesTestUtils.addVisits([
+      {
+        uri: "https://example.com/foo/",
+        title: "Example Page",
+      },
+    ]);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  context = createContext("example.com/foo/", { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "example.com/foo/",
+    completed: "https://example.com/foo/",
+    matches: [
+      makeVisitResult(context, {
+        uri: "https://example.com/foo/",
+        title: "https://example.com/foo/",
+        heuristic: true,
+      }),
+      makeVisitResult(context, {
+        uri: "https://example.com/foo/",
+        title: "Example Page",
+      }),
+    ],
+  });
+
+  await cleanupPlaces();
+  UrlbarPrefs.clear("experimental.hideHeuristic");
 });

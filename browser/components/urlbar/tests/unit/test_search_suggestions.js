@@ -1608,6 +1608,7 @@ add_task(async function formHistory() {
   
   
   
+
   
   Services.prefs.setIntPref(MAX_FORM_HISTORY_PREF, 0);
   let context = createContext(SEARCH_STRING, { isPrivate: false });
@@ -1622,6 +1623,7 @@ add_task(async function formHistory() {
     ],
   });
 
+  
   Services.prefs.setIntPref(MAX_FORM_HISTORY_PREF, 1);
   context = createContext(SEARCH_STRING, { isPrivate: false });
   await check_results({
@@ -1636,6 +1638,7 @@ add_task(async function formHistory() {
     ],
   });
 
+  
   Services.prefs.setIntPref(MAX_FORM_HISTORY_PREF, 2);
   context = createContext(SEARCH_STRING, { isPrivate: false });
   await check_results({
@@ -1869,4 +1872,204 @@ add_task(async function formHistory() {
 
   await cleanUpSuggestions();
   await PlacesUtils.history.clear();
+});
+
+
+
+add_task(async function hideHeuristic() {
+  UrlbarPrefs.set("experimental.hideHeuristic", true);
+  UrlbarPrefs.set("browser.search.suggest.enabled", true);
+  UrlbarPrefs.set("suggest.searches", true);
+  let context = createContext(SEARCH_STRING, { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        heuristic: true,
+      }),
+      ...makeFormHistoryResults(context, MAX_RESULTS - 3),
+      makeSearchResult(context, {
+        query: SEARCH_STRING,
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        suggestion: SEARCH_STRING,
+      }),
+      ...makeRemoteSuggestionResults(context),
+    ],
+  });
+  await cleanUpSuggestions();
+  UrlbarPrefs.clear("experimental.hideHeuristic");
+});
+
+
+
+add_task(async function hideHeuristic_formHistory() {
+  UrlbarPrefs.set("experimental.hideHeuristic", true);
+  UrlbarPrefs.set("browser.search.suggest.enabled", true);
+  UrlbarPrefs.set("suggest.searches", true);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let context = createContext(SEARCH_STRING, { isPrivate: false });
+  let firstFormHistory = makeFormHistoryResults(context, 1)[0];
+  context = createContext(firstFormHistory.payload.suggestion, {
+    isPrivate: false,
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        heuristic: true,
+      }),
+      firstFormHistory,
+      ...makeRemoteSuggestionResults(context, {
+        suggestionPrefix: firstFormHistory.payload.suggestion,
+      }),
+    ],
+  });
+
+  
+  let formHistoryStrings = ["foo", "FOO ", "foobar", "fooquux"];
+  await UrlbarTestUtils.formHistory.add(formHistoryStrings);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  context = createContext("foo", { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        heuristic: true,
+      }),
+      makeFormHistoryResult(context, {
+        suggestion: "foo",
+        engineName: SUGGESTIONS_ENGINE_NAME,
+      }),
+      makeFormHistoryResult(context, {
+        suggestion: "foobar",
+        engineName: SUGGESTIONS_ENGINE_NAME,
+      }),
+      makeFormHistoryResult(context, {
+        suggestion: "fooquux",
+        engineName: SUGGESTIONS_ENGINE_NAME,
+      }),
+      ...makeRemoteSuggestionResults(context, {
+        suggestionPrefix: "foo",
+      }),
+    ],
+  });
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let engine = await Services.search.getDefault();
+  let serpURLs = ["foo", "food"].map(
+    term => UrlbarUtils.getSearchQueryUrl(engine, term)[0]
+  );
+  await PlacesTestUtils.addVisits(serpURLs);
+
+  
+  
+  
+  
+  UrlbarPrefs.set("showSearchSuggestionsFirst", false);
+  context = createContext("foo", { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        heuristic: true,
+      }),
+      makeVisitResult(context, {
+        uri: `http://localhost:${port}/search?q=food`,
+        title: `test visit for http://localhost:${port}/search?q=food`,
+      }),
+      makeVisitResult(context, {
+        uri: `http://localhost:${port}/search?q=foo`,
+        title: `test visit for http://localhost:${port}/search?q=foo`,
+      }),
+      makeFormHistoryResult(context, {
+        suggestion: "foo",
+        engineName: SUGGESTIONS_ENGINE_NAME,
+      }),
+      makeFormHistoryResult(context, {
+        suggestion: "foobar",
+        engineName: SUGGESTIONS_ENGINE_NAME,
+      }),
+      makeFormHistoryResult(context, {
+        suggestion: "fooquux",
+        engineName: SUGGESTIONS_ENGINE_NAME,
+      }),
+      ...makeRemoteSuggestionResults(context, {
+        suggestionPrefix: "foo",
+      }),
+    ],
+  });
+
+  
+  
+  
+  UrlbarPrefs.clear("showSearchSuggestionsFirst");
+  context = createContext("foo", { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        heuristic: true,
+      }),
+      makeFormHistoryResult(context, {
+        suggestion: "foo",
+        engineName: SUGGESTIONS_ENGINE_NAME,
+      }),
+      makeFormHistoryResult(context, {
+        suggestion: "foobar",
+        engineName: SUGGESTIONS_ENGINE_NAME,
+      }),
+      makeFormHistoryResult(context, {
+        suggestion: "fooquux",
+        engineName: SUGGESTIONS_ENGINE_NAME,
+      }),
+      ...makeRemoteSuggestionResults(context, {
+        suggestionPrefix: "foo",
+      }),
+      makeVisitResult(context, {
+        uri: `http://localhost:${port}/search?q=food`,
+        title: `test visit for http://localhost:${port}/search?q=food`,
+      }),
+    ],
+  });
+
+  await UrlbarTestUtils.formHistory.remove(formHistoryStrings);
+
+  await cleanUpSuggestions();
+  UrlbarPrefs.clear("experimental.hideHeuristic");
 });
