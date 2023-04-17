@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "mozilla/intl/ICUError.h"
 #include "mozilla/intl/NumberFormat.h"
 #include "mozilla/intl/NumberRangeFormat.h"
 #include "mozilla/EnumSet.h"
@@ -54,15 +55,6 @@ class PluralRules final {
     Ordinal,
   };
 
-  
-
-
-  enum class Error : uint8_t {
-    FormatError,
-    InternalError,
-    OutOfMemory,
-  };
-
   PluralRules(const PluralRules&) = delete;
   PluralRules& operator=(const PluralRules&) = delete;
 
@@ -70,7 +62,7 @@ class PluralRules final {
 
 
   
-  static Result<UniquePtr<PluralRules>, PluralRules::Error> TryCreate(
+  static Result<UniquePtr<PluralRules>, ICUError> TryCreate(
       std::string_view aLocale, const PluralRulesOptions& aOptions);
 
   
@@ -78,7 +70,7 @@ class PluralRules final {
 
 
 
-  Result<PluralRules::Keyword, PluralRules::Error> Select(double aNumber) const;
+  Result<PluralRules::Keyword, ICUError> Select(double aNumber) const;
 
 #ifdef MOZ_INTL_PLURAL_RULES_HAS_SELECT_RANGE
   
@@ -87,15 +79,15 @@ class PluralRules final {
 
 
 
-  Result<PluralRules::Keyword, PluralRules::Error> SelectRange(
-      double aStart, double aEnd) const;
+  Result<PluralRules::Keyword, ICUError> SelectRange(double aStart,
+                                                     double aEnd) const;
 #endif
 
   
 
 
 
-  Result<EnumSet<PluralRules::Keyword>, PluralRules::Error> Categories() const;
+  Result<EnumSet<PluralRules::Keyword>, ICUError> Categories() const;
 
   ~PluralRules();
 
