@@ -104,8 +104,8 @@ const TEST_SW_SETUP = {
 };
 
 const TEST_STORAGE_SETUP = {
-  cacheBytes: 4 * 1024 * 1024,
-  idbBytes: 4 * 1024 * 1024,
+  cacheBytes: 4 * 1024 * 1024, 
+  idbBytes: 4 * 1024 * 1024, 
 };
 
 const FAULTS_BEFORE_MITIGATION = 3;
@@ -139,7 +139,7 @@ async function do_fault_injection_test({
 
   
   if (consumeQuotaOrigin) {
-    await consume_storage(consumeQuotaOrigin, TEST_SW_SETUP);
+    await consume_storage(consumeQuotaOrigin, TEST_STORAGE_SETUP);
   }
 
   
@@ -165,12 +165,16 @@ async function do_fault_injection_test({
   const unregisteredPromise = waitForUnregister(reg.scope);
 
   
+  
+  const quotaUsageCheckFinishPromise = waitForQuotaUsageCheckFinish(reg.scope);
+
+  
   sw.testingInjectCancellation = useError;
   for (let iFault = 0; iFault < FAULTS_BEFORE_MITIGATION; iFault++) {
     info(`## Testing with injected fault number ${iFault + 1}`);
     
     
-    is(reg.quotaUsageCheckCount, 0, "No quota usage check yet.");
+    is(reg.quotaUsageCheckCount, 0, "No quota usage check yet");
 
     
     const debugTag = `err=${name}&fault=${iFault + 1}`;
@@ -194,17 +198,23 @@ async function do_fault_injection_test({
   }
 
   await unregisteredPromise;
-  is(reg.unregistered, true, "registration should not exist.");
+  is(reg.unregistered, true, "registration should be unregistered");
+
+  
+  await quotaUsageCheckFinishPromise;
 
   if (consumeQuotaOrigin) {
     
     
     const originUsage = await get_qm_origin_usage(TEST_ORIGIN);
-    ok(originUsage > 0, "origin should still have usage until mitigated");
+    ok(
+      is_minimum_origin_usage(originUsage),
+      "origin usage should be mitigated"
+    );
 
     if (consumeQuotaOrigin === SAME_GROUP_ORIGIN) {
       const sameGroupUsage = await get_qm_origin_usage(SAME_GROUP_ORIGIN);
-      ok(sameGroupUsage > 0, "same group should still have usage for now");
+      ok(sameGroupUsage === 0, "same group usage should be mitigated");
     }
   }
 }
@@ -216,12 +226,18 @@ add_task(async function test_navigation_fetch_fault_handling() {
       ["dom.serviceWorkers.exemptFromPerDomainMax", true],
       ["dom.serviceWorkers.testing.enabled", true],
       ["dom.serviceWorkers.mitigations.bypass_on_fault", true],
+      ["dom.serviceWorkers.mitigations.group_usage_headroom_kb", 5 * 1024],
+      ["dom.quotaManager.testing", true],
       
       
       
       ["dom.quotaManager.temporaryStorage.fixedLimit", 10 * 1024],
     ],
   });
+
+  
+  
+  await qm_reset_storage();
 
   const quotaOriginVariations = [
     
