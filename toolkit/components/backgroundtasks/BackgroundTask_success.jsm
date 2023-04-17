@@ -3,10 +3,16 @@
 
 
 
+"use strict";
+
 var EXPORTED_SYMBOLS = ["runBackgroundTask"];
+
+const { EXIT_CODE } = ChromeUtils.import(
+  "resource://gre/modules/BackgroundTasksManager.jsm"
+).BackgroundTasksManager;
 
 async function runBackgroundTask() {
   console.error("runBackgroundTask: success");
 
-  return 0;
+  return EXIT_CODE.SUCCESS;
 }
