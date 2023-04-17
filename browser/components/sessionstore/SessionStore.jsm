@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["SessionStore"];
+var EXPORTED_SYMBOLS = ["SessionStore", "_LastSession"];
 
 
 const FORMAT_VERSION = 1;
@@ -6477,3 +6477,6 @@ var LastSession = {
     }
   },
 };
+
+
+const _LastSession = LastSession;

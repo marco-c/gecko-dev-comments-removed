@@ -135,6 +135,11 @@ const CustomizableWidgets = [
         "appMenuRecentlyClosedWindows"
       ).disabled = SessionStore.getClosedWindowCount(window) == 0;
 
+      PanelMultiView.getViewNode(
+        document,
+        "appMenuRestoreSession"
+      ).hidden = !SessionStore.canRestoreLastSession;
+
       
       let query =
         "place:queryType=" +
