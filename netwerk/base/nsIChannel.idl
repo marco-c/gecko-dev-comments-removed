@@ -43,6 +43,9 @@ interface nsIChannel : nsIRequest
 
 
 
+
+
+
     attribute nsIURI originalURI;
 
     
