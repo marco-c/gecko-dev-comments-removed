@@ -12,8 +12,10 @@
 
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"
+#include "mozilla/WidgetUtils.h"  
 #include "mozilla/gfx/Tools.h"
 #include "nsPrintfCString.h"
+#include "prenv.h"  
 
 #undef LOG
 #ifdef MOZ_LOGGING
