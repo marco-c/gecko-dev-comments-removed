@@ -1,4 +1,3 @@
-import io
 from six import ensure_text
 
 MYPY = False
@@ -23,11 +22,7 @@ class GitHubChecksOutputter(object):
     def output(self, line):
         
         text = ensure_text(line)
-        
-        
-        
-        
-        with io.open(self.path, mode="a") as f:
+        with open(self.path, mode="a") as f:
             f.write(text)
             f.write(u"\n")
 
