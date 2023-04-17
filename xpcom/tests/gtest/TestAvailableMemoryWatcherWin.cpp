@@ -134,6 +134,7 @@ class MemoryEater {
       
       x ^= *(base + i * kPageSize + rand() % kPageSize);
     }
+    (void)x;
   }
 
   static uint32_t GetAvailablePhysicalMemoryInMb() {
@@ -149,7 +150,6 @@ class MemoryEater {
     constexpr size_t kMinGranularity = 64 * 1024;
 
     size_t currentSize = aSize;
-    size_t consumed = 0;
     while (aSize >= kMinGranularity) {
       if (!GetAvailablePhysicalMemoryInMb()) {
         
@@ -172,7 +172,6 @@ class MemoryEater {
       }
 
       aSize -= currentSize;
-      consumed += currentSize;
 
       
       

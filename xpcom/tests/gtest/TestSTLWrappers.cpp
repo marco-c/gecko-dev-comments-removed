@@ -45,14 +45,11 @@ void ShouldAbort() {
   }
 
   std::vector<int> v;
-  int rv = 1;
 
   TRY {
     
 
-    
-    
-    rv += v.at(1) ? 1 : 2;
+    (void)v.at(1);
   }
   CATCH(const std::out_of_range&) {
     fputs("TEST-FAIL | TestSTLWrappers.cpp | caught an exception?\n", stderr);
