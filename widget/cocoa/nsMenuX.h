@@ -236,7 +236,7 @@ class nsMenuX final : public nsMenuParentX,
   
   
   
-  nsTArray<RefPtr<mozilla::CancelableRunnable>> mPendingCommandRunnables;
+  nsTArray<RefPtr<mozilla::Runnable>> mPendingCommandRunnables;
 
   GeckoNSMenu* mNativeMenu = nil;     
   MenuDelegate* mMenuDelegate = nil;  

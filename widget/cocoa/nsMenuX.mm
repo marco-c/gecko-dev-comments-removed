@@ -537,11 +537,10 @@ void nsMenuX::MenuClosedAsync() {
   }
 
   
-  for (auto& runnable : mPendingCommandRunnables) {
+  nsTArray<RefPtr<Runnable>> runnables = std::move(mPendingCommandRunnables);
+  for (auto& runnable : runnables) {
     runnable->Run();
-    runnable->Cancel();  
   }
-  mPendingCommandRunnables.Clear();
 
   
   OnHighlightedItemChanged(Nothing());
@@ -573,11 +572,11 @@ void nsMenuX::ActivateItemAndClose(RefPtr<nsMenuItemX>&& aItem, NSEventModifierF
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   
-  class DoCommandRunnable final : public mozilla::CancelableRunnable {
+  class DoCommandRunnable final : public mozilla::Runnable {
    public:
     explicit DoCommandRunnable(RefPtr<nsMenuItemX>&& aItem, NSEventModifierFlags aModifiers,
                                int16_t aButton)
-        : CancelableRunnable("DoCommandRunnable"),
+        : Runnable("DoCommandRunnable"),
           mMenuItem(aItem),
           mModifiers(aModifiers),
           mButton(aButton) {}
@@ -589,18 +588,13 @@ void nsMenuX::ActivateItemAndClose(RefPtr<nsMenuItemX>&& aItem, NSEventModifierF
       }
       return NS_OK;
     }
-    nsresult Cancel() override {
-      mMenuItem = nullptr;
-      return NS_OK;
-    }
 
    private:
     RefPtr<nsMenuItemX> mMenuItem;  
     NSEventModifierFlags mModifiers;
     int16_t mButton;
   };
-  RefPtr<CancelableRunnable> doCommandAsync =
-      new DoCommandRunnable(std::move(aItem), aModifiers, aButton);
+  RefPtr<Runnable> doCommandAsync = new DoCommandRunnable(std::move(aItem), aModifiers, aButton);
   mPendingCommandRunnables.AppendElement(doCommandAsync);
   NS_DispatchToCurrentThread(doCommandAsync);
 
