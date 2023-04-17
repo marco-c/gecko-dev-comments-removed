@@ -2,11 +2,11 @@
 <html>
 <head>
 <meta charset="utf-8">
-
-
-
-
-
+<!--
+Copyright (c) 2019 The Khronos Group Inc.
+Use of this source code is governed by an MIT-style license that can be
+found in the LICENSE.txt file.
+-->
 <link rel="stylesheet" type="text/css" href="../unit.css" />
 <script type="application/javascript" src="../unit.js"></script>
 <script type="application/javascript" src="../util.js"></script>
@@ -133,23 +133,14 @@ Tests.testTexImage2DNonSOP = function(gl) {
 Tests.endUnit = function(gl) {
 };
 
-async function setupNonSOPImage() {
-    const img = document.getElementById('i2');
-    const url = wtu.chooseUrlForCrossOriginImage(defaultImgUrl, localImgUrl);
-    img.src = url;
-    await img.decode();
-}
-
-async function throwOnTimeout(ms) {
-    await wtu.awaitTimeout(ms);
-    throw 'timeout';
-}
-
 (async function() {
+    const img = document.getElementById('i2');
     try {
-        await Promise.race([setupNonSOPImage(), throwOnTimeout(1000)]);
+        await wtu.awaitOrTimeout(wtu.loadCrossOriginImage(img, defaultImgUrl, localImgUrl));
     } catch (e) {
-        console.log(`Image setup failed (${e}), running tests anyway.`);
+        testFailed(`Image setup failed (${e}).`);
+        finishTest();
+        return;
     }
     initTests();
 })();

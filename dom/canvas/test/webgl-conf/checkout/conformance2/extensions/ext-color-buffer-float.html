@@ -1,8 +1,8 @@
-
-
-
-
-
+<!--
+Copyright (c) 2019 The Khronos Group Inc.
+Use of this source code is governed by an MIT-style license that can be
+found in the LICENSE.txt file.
+-->
 
 <!DOCTYPE html>
 <html>
@@ -17,7 +17,7 @@
 <div id="description"></div>
 <canvas id="canvas" style="width: 50px; height: 50px;"> </canvas>
 <div id="console"></div>
-
+<!-- Shaders for testing floating-point textures -->
 <script id="testFragmentShader" type="x-shader/x-fragment">
 precision mediump float;
 uniform sampler2D tex;
@@ -36,7 +36,7 @@ void main()
     }
 }
 </script>
-
+<!-- Shaders for testing floating-point render targets -->
 <script id="floatingPointFragmentShader" type="x-shader/x-fragment">
 void main()
 {
@@ -284,7 +284,7 @@ function runInternalFormatQueryTest()
     debug("testing the internal format query");
 
     var maxSamples = gl.getParameter(gl.MAX_SAMPLES);
-    var formats = new Array(gl.RGBA16F, gl.R32F, gl.RG32F, gl.RGBA32F, gl.R16F, gl.RG16F, gl.R11F_G11F_B10F);
+    const formats = [gl.RGBA16F, gl.R32F, gl.RG32F, gl.RGBA32F, gl.R16F, gl.RG16F, gl.R11F_G11F_B10F];
     var firstMultiOnlyFormat = 4;
     for (var fmt = 0; fmt < formats.length; ++fmt) {
         var samples = gl.getInternalformatParameter(gl.RENDERBUFFER, formats[fmt], gl.SAMPLES);

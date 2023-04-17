@@ -1,8 +1,8 @@
-﻿
-
-
-
-
+﻿<!--
+Copyright (c) 2019 The Khronos Group Inc.
+Use of this source code is governed by an MIT-style license that can be
+found in the LICENSE.txt file.
+-->
 
 <!DOCTYPE html>
 <html>
@@ -126,6 +126,7 @@ function runTest()
 
     debug('Polygon offset factor of 0.1 should alter order of slanted polygons');
     clear(gl, red, 1.0);
+    gl.polygonOffset(0, 0);
     draw(gl, slantedSquare, colLoc, green);
     gl.polygonOffset(0.1, 0);
     draw(gl, slantedSquare, colLoc, blue);
@@ -133,6 +134,7 @@ function runTest()
 
     debug('Polygon offset factor of 0.1 should not alter order of flat polygons');
     clear(gl, red, 1.0);
+    gl.polygonOffset(0, 0);
     draw(gl, flatSquare, colLoc, blue);
     gl.polygonOffset(0.1, 0);
     draw(gl, flatSquare, colLoc, green);

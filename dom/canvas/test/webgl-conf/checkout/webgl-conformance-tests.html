@@ -1,14 +1,14 @@
-
-
-
-
-
+<!--
+Copyright (c) 2019 The Khronos Group Inc.
+Use of this source code is governed by an MIT-style license that can be
+found in the LICENSE.txt file.
+-->
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
-
-
+<!-- Prevents Chrome from offering to translate tests which generate
+     random characters for things like attribute names -->
 <meta name="google" value="notranslate">
 <meta name="viewport" content="width=device-width">
 <title>WebGL Conformance Tests</title>
@@ -52,7 +52,7 @@
     position:fixed;
     top:180px;
     left:0;
-    right:10%;
+    right: calc(10% + 50px);
     bottom:0px;
     overflow:auto;
     min-height: 200px;
@@ -90,7 +90,7 @@
     width: 90%;
     height: calc(100% - 170px);
     bottom: 0px;
-    left: calc(91% - 15px);
+    left: calc(90% - 50px);
     transition: left 0.15s;
   }
   #iframe-container.iframe-shown {
@@ -193,7 +193,7 @@ window.onbeforeunload = function() {
   return false;
 }
 
-var DEFAULT_CONFORMANCE_TEST_VERSION = "1.0.4 (beta)";
+var DEFAULT_CONFORMANCE_TEST_VERSION = "2.0.1 (beta)";
 
 var OPTIONS = {
   version: DEFAULT_CONFORMANCE_TEST_VERSION,
@@ -1258,7 +1258,7 @@ function start() {
   <div style="display: none;" id="testResultsText">
     <pre id="testResultsAsText"></pre>
   </div>
-</div> 
+</div> <!-- end of container -->
 
 <div id="iframe-container">
   <input type="button" data-value-hidden="◄" data-value-shown="►" id="iframe-toggle" aria-hidden="true"
@@ -1299,7 +1299,7 @@ function start() {
   <div id="error-wrap">
     <pre id="error"></pre>
   </div>
-</div> 
+</div> <!-- end of header -->
 
 </body>
 </html>

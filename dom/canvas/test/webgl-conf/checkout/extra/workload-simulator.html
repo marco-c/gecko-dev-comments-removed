@@ -1,16 +1,17 @@
 <!DOCTYPE html><meta charset="utf-8">
 <meta name=viewport content="width=900">
 <title>WebGL workload simulator</title>
-
-
-
-
-
+<!--
+Copyright (c) 2019 The Khronos Group Inc.
+Use of this source code is governed by an MIT-style license that can be
+found in the LICENSE.txt file.
+-->
 <style>
 body {
   margin: 0;
   font-family: monospace;
   user-select: none;
+  -moz-user-select: -moz-none;
   -webkit-user-select: none;
   font-size: 22px;
   text-size-adjust: none;
@@ -89,7 +90,7 @@ Drag the WebGL logo.<br>
     Canvas size <input type=number id=canvasSize value=512 min=1> pixels<sup>2</sup>
     <label for=onscreen><input type=radio name=offscreen id=onscreen checked>Regular canvas</label>
     <label for=offscreen><input type=radio name=offscreen id=offscreen>OffscreenCanvas (on main thread)</label>
-    
+    <!-- <label for=offscreenWorker><input type=radio name=offscreen id=offscreenWorker>OffscreenCanvas on worker</label> -->
     <br>
     <label for=transferControlToOffscreen><input type=checkbox id=transferControlToOffscreen checked>Use transferControlToOffscreen</label>
   </div>

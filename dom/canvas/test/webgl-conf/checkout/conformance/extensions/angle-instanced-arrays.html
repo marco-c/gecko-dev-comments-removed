@@ -1,8 +1,8 @@
-﻿
-
-
-
-
+﻿<!--
+Copyright (c) 2019 The Khronos Group Inc.
+Use of this source code is governed by an MIT-style license that can be
+found in the LICENSE.txt file.
+-->
 
 <!DOCTYPE html>
 <html>
@@ -18,7 +18,7 @@
 <div id="description"></div>
 <canvas id="canvas" style="width: 50px; height: 50px;"> </canvas>
 <div id="console"></div>
-
+<!-- Shaders for testing instanced draws -->
 <script id="outputVertexShader" type="x-shader/x-vertex">
 attribute vec4 aPosition;
 attribute vec2 aOffset;
@@ -196,6 +196,9 @@ function runOutputTests() {
         0.0, 1.0, 0.0, 1.0, // Green
         0.0, 0.0, 1.0, 1.0, // Blue
         1.0, 1.0, 0.0, 1.0, // Yellow
+        // extra data when colorLoc divisor is set back to 0
+        1.0, 1.0, 0.0, 1.0, // Yellow
+        1.0, 1.0, 0.0, 1.0, // Yellow
     ]);
     var colorBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
@@ -276,6 +279,19 @@ function runOutputTests() {
     wtu.checkCanvasRect(gl, Math.ceil(0.75*canvas.width), 0.5*canvas.height, w, h, [0, 255, 0, 255]);
     wtu.checkCanvasRect(gl, Math.ceil(0.25*canvas.width), 0, w, h, [0, 0, 255, 255]);
     wtu.checkCanvasRect(gl, Math.ceil(0.75*canvas.width), 0, w, h, [255, 255, 0, 255]);
+
+    debug("");
+    debug("Testing drawArraysInstancedANGLE with attributes 'divisor' reset to 0");
+    debug("Correct rendering output: 4 yellow triangles");
+    debug("Possible incorrect rendering output: missing triangles, or triangles with different color at each vertex");
+    ext.vertexAttribDivisorANGLE(colorLoc, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    ext.drawArraysInstancedANGLE(gl.TRIANGLES, 3, 3, instanceCount);
+    wtu.checkCanvasRect(gl, Math.ceil(0.25*canvas.width), 0.5*canvas.height, w, h, [255, 255, 0, 255]);
+    wtu.checkCanvasRect(gl, Math.ceil(0.75*canvas.width), 0.5*canvas.height, w, h, [255, 255, 0, 255]);
+    wtu.checkCanvasRect(gl, Math.ceil(0.25*canvas.width), 0, w, h, [255, 255, 0, 255]);
+    wtu.checkCanvasRect(gl, Math.ceil(0.75*canvas.width), 0, w, h, [255, 255, 0, 255]);
+    ext.vertexAttribDivisorANGLE(colorLoc, 1);
 
     wtu.setupUnitQuad(gl, 0);
     wtu.setupIndexedQuad(gl, 1, 0);
