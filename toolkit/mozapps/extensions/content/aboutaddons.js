@@ -807,11 +807,17 @@ class PanelList extends HTMLElement {
     
     let align;
     let leftOffset;
-    
-    
-    let arrowOffset = 26;
-    let leftAlignX = anchorLeft + anchorWidth / 2 - arrowOffset;
-    let rightAlignX = anchorLeft + anchorWidth / 2 - panelWidth + arrowOffset;
+    let leftAlignX = anchorLeft;
+    let rightAlignX = anchorLeft - panelWidth;
+    if (!Services.prefs.getBoolPref("browser.proton.enabled")) {
+      
+      
+      
+      let arrowOffset = 26;
+      leftAlignX += anchorWidth / 2 - arrowOffset;
+      rightAlignX += anchorWidth / 2 + arrowOffset;
+    }
+
     if (Services.locale.isAppLocaleRTL) {
       
       align = rightAlignX < 0 ? "left" : "right";
