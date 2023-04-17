@@ -1423,6 +1423,7 @@ static SECStatus HKDFExpand(PK11SymKey* aPrk, const SECItem* aInfo, int aLen,
 
 
 
+
 bool ODoHDNSPacket::DecryptDNSResponse() {
   ObliviousDoHMessage message;
   if (!CreateObliviousDoHMessage(mResponse, mBodySize, message)) {
@@ -1434,8 +1435,9 @@ bool ODoHDNSPacket::DecryptDNSResponse() {
     return false;
   }
 
+  const unsigned int kResponseNonceLen = 16;
   
-  if (!message.mKeyId.IsEmpty()) {
+  if (message.mKeyId.Length() != kResponseNonceLen) {
     return false;
   }
 
@@ -1445,22 +1447,27 @@ bool ODoHDNSPacket::DecryptDNSResponse() {
   
   
   
-  const SECItem kODoHSecretInfoItem = {
-      siBuffer, (unsigned char*)kODoHSecret,
-      static_cast<unsigned int>(strlen(kODoHSecret))};
-  const int kAes128GcmKeyLen = 16;
-  const int kAes128GcmNonceLen = 12;
+  
+  const SECItem kODoHResponsetInfoItem = {
+      siBuffer, (unsigned char*)kODoHResponse,
+      static_cast<unsigned int>(strlen(kODoHResponse))};
+  const unsigned int kAes128GcmKeyLen = 16;
+  const unsigned int kAes128GcmNonceLen = 12;
   PK11SymKey* tmp = nullptr;
-  SECStatus rv =
-      PK11_HPKE_ExportSecret(mContext, &kODoHSecretInfoItem, 32, &tmp);
+  SECStatus rv = PK11_HPKE_ExportSecret(mContext, &kODoHResponsetInfoItem,
+                                        kAes128GcmKeyLen, &tmp);
   if (rv != SECSuccess) {
     LOG(("ODoHDNSPacket::DecryptDNSResponse export secret failed"));
     return false;
   }
   UniquePK11SymKey odohSecret(tmp);
 
-  SECItem* salt(::SECITEM_AllocItem(nullptr, nullptr, mPlainQuery->len));
+  SECItem* salt(::SECITEM_AllocItem(nullptr, nullptr,
+                                    mPlainQuery->len + 2 + kResponseNonceLen));
   memcpy(salt->data, mPlainQuery->data, mPlainQuery->len);
+  NetworkEndian::writeUint16(&salt->data[mPlainQuery->len], kResponseNonceLen);
+  memcpy(salt->data + mPlainQuery->len + 2, message.mKeyId.Elements(),
+         kResponseNonceLen);
   UniqueSECItem st(salt);
   UniquePK11SymKey odohPrk;
   rv = HKDFExtract(salt, odohSecret.get(), odohPrk);
@@ -1499,7 +1506,12 @@ bool ODoHDNSPacket::DecryptDNSResponse() {
   }
 
   
-  uint8_t aad[] = {0x2, 0, 0};
+  SECItem* aadItem(
+      ::SECITEM_AllocItem(nullptr, nullptr, 1 + 2 + kResponseNonceLen));
+  aadItem->data[0] = ODOH_RESPONSE;
+  NetworkEndian::writeUint16(&aadItem->data[1], kResponseNonceLen);
+  memcpy(&aadItem->data[3], message.mKeyId.Elements(), kResponseNonceLen);
+  UniqueSECItem aad(aadItem);
 
   SECItem paramItem;
   CK_GCM_PARAMS param;
@@ -1507,8 +1519,8 @@ bool ODoHDNSPacket::DecryptDNSResponse() {
   param.ulIvLen = derivedItem->len;
   param.ulIvBits = param.ulIvLen * 8;
   param.ulTagBits = 16 * 8;
-  param.pAAD = (CK_BYTE_PTR)aad;
-  param.ulAADLen = 3;
+  param.pAAD = (CK_BYTE_PTR)aad->data;
+  param.ulAADLen = aad->len;
 
   paramItem.type = siBuffer;
   paramItem.data = (unsigned char*)(&param);
@@ -1519,7 +1531,8 @@ bool ODoHDNSPacket::DecryptDNSResponse() {
                     MAX_SIZE, message.mEncryptedMessage.Elements(),
                     message.mEncryptedMessage.Length());
   if (rv != SECSuccess) {
-    LOG(("ODoHDNSPacket::DecryptDNSResponse decrypt failed"));
+    LOG(("ODoHDNSPacket::DecryptDNSResponse decrypt failed %d",
+         PORT_GetError()));
     return false;
   }
 
