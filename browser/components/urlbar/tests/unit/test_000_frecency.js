@@ -13,7 +13,7 @@
 
 
 
-
+testEngine_setup();
 
 try {
   var histsvc = Cc["@mozilla.org/browser/nav-history-service;1"].getService(
@@ -32,15 +32,15 @@ var bucketPrefs = [
 ];
 
 var bonusPrefs = {
-  embedVisitBonus: Ci.nsINavHistoryService.TRANSITION_EMBED,
-  framedLinkVisitBonus: Ci.nsINavHistoryService.TRANSITION_FRAMED_LINK,
-  linkVisitBonus: Ci.nsINavHistoryService.TRANSITION_LINK,
-  typedVisitBonus: Ci.nsINavHistoryService.TRANSITION_TYPED,
-  bookmarkVisitBonus: Ci.nsINavHistoryService.TRANSITION_BOOKMARK,
-  downloadVisitBonus: Ci.nsINavHistoryService.TRANSITION_DOWNLOAD,
-  permRedirectVisitBonus: Ci.nsINavHistoryService.TRANSITION_REDIRECT_PERMANENT,
-  tempRedirectVisitBonus: Ci.nsINavHistoryService.TRANSITION_REDIRECT_TEMPORARY,
-  reloadVisitBonus: Ci.nsINavHistoryService.TRANSITION_RELOAD,
+  embedVisitBonus: PlacesUtils.history.TRANSITION_EMBED,
+  framedLinkVisitBonus: PlacesUtils.history.TRANSITION_FRAMED_LINK,
+  linkVisitBonus: PlacesUtils.history.TRANSITION_LINK,
+  typedVisitBonus: PlacesUtils.history.TRANSITION_TYPED,
+  bookmarkVisitBonus: PlacesUtils.history.TRANSITION_BOOKMARK,
+  downloadVisitBonus: PlacesUtils.history.TRANSITION_DOWNLOAD,
+  permRedirectVisitBonus: PlacesUtils.history.TRANSITION_REDIRECT_PERMANENT,
+  tempRedirectVisitBonus: PlacesUtils.history.TRANSITION_REDIRECT_TEMPORARY,
+  reloadVisitBonus: PlacesUtils.history.TRANSITION_RELOAD,
 };
 
 
@@ -52,20 +52,20 @@ var prefPrefix = "places.frecency.";
 async function task_initializeBucket(bucket) {
   let [cutoffName, weightName] = bucket;
   
-  var weight = Services.prefs.getIntPref(prefPrefix + weightName, 0);
-  var cutoff = Services.prefs.getIntPref(prefPrefix + cutoffName, 0);
+  let weight = Services.prefs.getIntPref(prefPrefix + weightName, 0);
+  let cutoff = Services.prefs.getIntPref(prefPrefix + cutoffName, 0);
   if (cutoff < 1) {
     return;
   }
 
   
-  var dateInPeriod = (now - (cutoff - 1) * 86400 * 1000) * 1000;
+  let dateInPeriod = (now - (cutoff - 1) * 86400 * 1000) * 1000;
 
   for (let [bonusName, visitType] of Object.entries(bonusPrefs)) {
-    var frecency = -1;
-    var calculatedURI = null;
-    var matchTitle = "";
-    var bonusValue = Services.prefs.getIntPref(prefPrefix + bonusName);
+    let frecency = -1;
+    let calculatedURI = null;
+    let matchTitle = "";
+    let bonusValue = Services.prefs.getIntPref(prefPrefix + bonusName);
     
     if (
       bonusName == "unvisitedBookmarkBonus" ||
@@ -73,9 +73,9 @@ async function task_initializeBucket(bucket) {
     ) {
       if (cutoffName == "firstBucketCutoff") {
         let points = Math.ceil((bonusValue / parseFloat(100.0)) * weight);
-        var visitCount = 1; 
+        let visitCount = 1; 
         frecency = Math.ceil(visitCount * points);
-        calculatedURI = uri(
+        calculatedURI = Services.io.newURI(
           "http://" +
             searchTerm +
             ".com/" +
@@ -132,7 +132,7 @@ async function task_initializeBucket(bucket) {
       } else {
         frecency = points;
       }
-      calculatedURI = uri(
+      calculatedURI = Services.io.newURI(
         "http://" +
           searchTerm +
           ".com/" +
@@ -177,123 +177,69 @@ async function task_initializeBucket(bucket) {
   }
 }
 
-function AutoCompleteInput(aSearches) {
-  this.searches = aSearches;
-}
-AutoCompleteInput.prototype = {
-  constructor: AutoCompleteInput,
-
-  searches: null,
-
-  minResultsForPopup: 0,
-  timeout: 10,
-  searchParam: "",
-  textValue: "",
-  disableAutoComplete: false,
-  completeDefaultIndex: false,
-
-  get searchCount() {
-    return this.searches.length;
-  },
-
-  getSearchAt(aIndex) {
-    return this.searches[aIndex];
-  },
-
-  onSearchBegin() {},
-  onSearchComplete() {},
-
-  popupOpen: false,
-
-  popup: {
-    setSelectedIndex(aIndex) {},
-    invalidate() {},
-
-    
-    QueryInterface: ChromeUtils.generateQI(["nsIAutoCompletePopup"]),
-  },
-
-  
-  QueryInterface: ChromeUtils.generateQI(["nsIAutoCompleteInput"]),
-};
-
 add_task(async function test_frecency() {
   
   Services.prefs.setBoolPref("browser.urlbar.autoFill", false);
-  registerCleanupFunction(() =>
-    Services.prefs.clearUserPref("browser.urlbar.autoFill")
-  );
+  Services.prefs.setBoolPref("browser.urlbar.suggest.searches", false);
+  
+  Services.prefs.setBoolPref("browser.urlbar.suggest.history", true);
+  Services.prefs.setBoolPref("browser.urlbar.suggest.bookmarks", true);
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("browser.urlbar.suggest.history");
+    Services.prefs.clearUserPref("browser.urlbar.suggest.bookmarks");
+    Services.prefs.clearUserPref("browser.urlbar.autoFill");
+    Services.prefs.clearUserPref("browser.urlbar.suggest.searches");
+  });
   for (let bucket of bucketPrefs) {
     await task_initializeBucket(bucket);
   }
 
   
-  results.sort((a, b) => b[1] - a[1]);
-  
-  Services.prefs.setIntPref("browser.urlbar.maxRichResults", results.length);
+  results.sort((a, b) => {
+    let frecencyDiff = b[1] - a[1];
+    if (frecencyDiff == 0) {
+      return a[0].spec.localeCompare(b[0].spec);
+    }
+    return frecencyDiff;
+  });
 
   
-  
-
-  await PlacesTestUtils.promiseAsyncUpdates();
-
-  var controller = Cc["@mozilla.org/autocomplete/controller;1"].getService(
-    Ci.nsIAutoCompleteController
+  Services.prefs.setIntPref(
+    "browser.urlbar.maxRichResults",
+    
+    results.length + 1
   );
 
-  
-  
-  var input = new AutoCompleteInput(["unifiedcomplete"]);
-
-  controller.input = input;
-
-  
-  Services.prefs.setIntPref("browser.urlbar.search.sources", 3);
-  Services.prefs.setIntPref("browser.urlbar.default.behavior", 0);
-
-  var numSearchesStarted = 0;
-  input.onSearchBegin = function() {
-    numSearchesStarted++;
-    Assert.equal(numSearchesStarted, 1);
-  };
-
-  await new Promise(resolve => {
-    input.onSearchComplete = function() {
-      Assert.equal(numSearchesStarted, 1);
-      Assert.equal(
-        controller.searchStatus,
-        Ci.nsIAutoCompleteController.STATUS_COMPLETE_MATCH
+  await PlacesTestUtils.promiseAsyncUpdates();
+  let context = createContext(searchTerm, { isPrivate: false });
+  let urlbarResults = [];
+  for (let result of results) {
+    let url = result[0].spec;
+    if (url.toLowerCase().includes("bookmark")) {
+      urlbarResults.push(
+        makeBookmarkResult(context, {
+          uri: url,
+          title: result[2],
+        })
       );
+    } else {
+      urlbarResults.push(
+        makeVisitResult(context, {
+          uri: url,
+          title: result[2],
+        })
+      );
+    }
+  }
 
-      
-      Assert.equal(controller.matchCount, results.length);
-
-      
-      for (var i = 0; i < controller.matchCount; i++) {
-        let searchURL = controller.getValueAt(i);
-        let expectURL = results[i][0].spec;
-        if (searchURL == expectURL) {
-          Assert.equal(controller.getValueAt(i), results[i][0].spec);
-          Assert.equal(controller.getCommentAt(i), results[i][2]);
-        } else {
-          
-          
-          
-          
-          let getFrecency = aURL => aURL.match(/frecency:(-?\d+)$/)[1];
-          print(
-            "### checking for same frecency between '" +
-              searchURL +
-              "' and '" +
-              expectURL +
-              "'"
-          );
-          Assert.equal(getFrecency(searchURL), getFrecency(expectURL));
-        }
-      }
-      resolve();
-    };
-
-    controller.startSearch(searchTerm);
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        heuristic: true,
+      }),
+      ...urlbarResults,
+    ],
   });
 });
