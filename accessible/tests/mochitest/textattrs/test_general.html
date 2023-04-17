@@ -538,9 +538,13 @@
 
       attrs = {
         "auto-generated": "true",
+        "font-family": "-moz-bullet-font",
       };
-      testTextAttrs(ID, 0, attrs, defAttrs, 0, 3);
+      testTextAttrs(ID, 0, attrs, defAttrs, 0, 2);
       testTextAttrs(ID, 3, { }, defAttrs, 3, 7);
+      attrs = {
+        "auto-generated": "true",
+      };
       testTextAttrs(ID, 7, attrs, defAttrs, 7, 8);
 
        // ////////////////////////////////////////////////////////////////////////
@@ -640,7 +644,7 @@
       Green again
     </span>
   </p>
-  
+  <!-- Green!*!RedNormal-->
   <p id="area5">
     <span style="color: green">Green</span>
     <img src="../moz.png" alt="image"/>
@@ -702,7 +706,7 @@
   <p id="area13"></p>
   <input id="area14">
 
-  
+  <!-- *plain*plain**bold*bold*-->
   <div id="area15"><p>embed</p>plain<p>embed</p>plain<p>embed</p><img src="../moz.png" alt="image"/><b>bold</b><p>embed</p><b>bold</b><p>embed</p></div>
 
   <p id="area16" style="font-family: sans-serif;">
