@@ -472,6 +472,7 @@ MediaConduitErrorCode WebrtcAudioConduit::SendAudioFrame(
   }
 
   
+  MutexAutoLock lock(mMutex);
   if (!mSendStreamRunning) {
     CSFLogError(LOGTAG, "%s Engine not transmitting ", __FUNCTION__);
     return kMediaConduitSessionNotInited;
@@ -500,8 +501,15 @@ MediaConduitErrorCode WebrtcAudioConduit::GetAudioFrame(
   }
 
   
+  if (!mMutex.TryLock()) {
+    CSFLogError(LOGTAG, "%s Conduit going through negotiation ", __FUNCTION__);
+    return kMediaConduitPlayoutError;
+  }
+
+  
   
   if (!mRecvStreamRunning) {
+    mMutex.Unlock();
     CSFLogError(LOGTAG, "%s Engine not Receiving ", __FUNCTION__);
     return kMediaConduitSessionNotInited;
   }
@@ -517,6 +525,8 @@ MediaConduitErrorCode WebrtcAudioConduit::GetAudioFrame(
     CSFLogError(LOGTAG, "%s Getting audio frame failed", __FUNCTION__);
     return kMediaConduitPlayoutError;
   }
+
+  mMutex.Unlock();
 
   CSFLogDebug(LOGTAG, "%s Got %zu channels of %zu samples", __FUNCTION__,
               frame->num_channels(), frame->samples_per_channel());
