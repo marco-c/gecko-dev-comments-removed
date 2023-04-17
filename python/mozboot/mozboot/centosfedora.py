@@ -34,7 +34,6 @@ class CentOSFedoraBootstrapper(LinuxBootstrapper, BaseBootstrapper):
             "alsa-lib-devel",
             "dbus-glib-devel",
             "glibc-static",
-            "gtk2-devel",  
             
             "libstdc++-static",
             "libXt-devel",
