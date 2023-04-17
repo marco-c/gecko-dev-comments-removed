@@ -41,6 +41,16 @@ void InputTaskManager::ResumeInputEventPrioritization() {
 
 int32_t InputTaskManager::GetPriorityModifierForEventLoopTurn(
     const MutexAutoLock& aProofOfLock) {
+  
+  
+  
+  
+  
+  if (State() == InputTaskManager::STATE_DISABLED) {
+    return static_cast<int32_t>(EventQueuePriority::Normal) -
+           static_cast<int32_t>(EventQueuePriority::InputHigh);
+  }
+
   if (StaticPrefs::dom_input_events_strict_input_vsync_alignment()) {
     return GetPriorityModifierForEventLoopTurnForStrictVsyncAlignment();
   }
