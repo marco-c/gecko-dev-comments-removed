@@ -42,6 +42,7 @@
 #include "proxy/Proxy.h"  
 
 #include "vm/ArgumentsObject.h"  
+#include "vm/Interpreter.h"      
 #include "vm/NativeObject.h"     
 #include "vm/RegExpShared.h"     
 #include "vm/TraceLogging.h"     
@@ -152,7 +153,7 @@ namespace jit {
   _(js::jit::Printf1)                                                 \
   _(js::jit::SetNativeDataPropertyPure)                               \
   _(js::jit::StringFromCharCodeNoGC)                                  \
-  _(js::jit::TypeOfObject)                                            \
+  _(js::jit::TypeOfNameObject)                                        \
   _(js::jit::WrapObjectPure)                                          \
   _(js::MapIteratorObject::next)                                      \
   _(js::NativeObject::addDenseElementPure)                            \
@@ -167,7 +168,8 @@ namespace jit {
   _(js::SetIteratorObject::next)                                      \
   _(js::StringToNumberPure)                                           \
   _(js::TraceLogStartEventPrivate)                                    \
-  _(js::TraceLogStopEventPrivate)
+  _(js::TraceLogStopEventPrivate)                                     \
+  _(js::TypeOfObject)
 
 
 
