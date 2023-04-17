@@ -189,14 +189,15 @@ already_AddRefed<ResizeObserver> ResizeObserver::Constructor(
 void ResizeObserver::Observe(Element& aTarget,
                              const ResizeObserverOptions& aOptions,
                              ErrorResult& aRv) {
+  if (MOZ_UNLIKELY(!mDocument)) {
+    return aRv.Throw(NS_ERROR_FAILURE);
+  }
+
   
   
   
   if (mObservationList.isEmpty()) {
     MOZ_ASSERT(mObservationMap.IsEmpty());
-    if (MOZ_UNLIKELY(!mDocument)) {
-      return aRv.Throw(NS_ERROR_FAILURE);
-    }
     mDocument->AddResizeObserver(*this);
   }
 
@@ -229,7 +230,7 @@ void ResizeObserver::Observe(Element& aTarget,
   
   
   
-  aTarget.OwnerDoc()->ScheduleResizeObserversNotification();
+  mDocument->ScheduleResizeObserversNotification();
 }
 
 void ResizeObserver::Unobserve(Element& aTarget, ErrorResult& aRv) {

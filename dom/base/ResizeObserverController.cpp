@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/ResizeObserverController.h"
 
+#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ErrorEvent.h"
 #include "mozilla/dom/RootedDictionary.h"
@@ -79,6 +80,20 @@ void ResizeObserverController::ShellDetachedFromDocument() {
   mResizeObserverNotificationHelper->Unregister();
 }
 
+static void FlushLayoutForWholeBrowsingContextTree(Document& aDoc) {
+  if (BrowsingContext* bc = aDoc.GetBrowsingContext()) {
+    RefPtr<BrowsingContext> top = bc->Top();
+    top->PreOrderWalk([](BrowsingContext* aCur) {
+      if (Document* doc = aCur->GetExtantDocument()) {
+        doc->FlushPendingNotifications(FlushType::Layout);
+      }
+    });
+  } else {
+    
+    aDoc.FlushPendingNotifications(FlushType::Layout);
+  }
+}
+
 void ResizeObserverController::Notify() {
   if (mResizeObservers.IsEmpty()) {
     return;
@@ -111,7 +126,9 @@ void ResizeObserverController::Notify() {
 
     
     
-    doc->FlushPendingNotifications(FlushType::Layout);
+    
+    
+    FlushLayoutForWholeBrowsingContextTree(*doc);
 
     
     
