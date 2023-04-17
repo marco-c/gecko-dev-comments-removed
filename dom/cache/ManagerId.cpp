@@ -26,8 +26,8 @@ Result<SafeRefPtr<ManagerId>, nsresult> ManagerId::Create(
   
   
   
-  CACHE_TRY_INSPECT(const auto& quotaOrigin,
-                    QuotaManager::GetOriginFromPrincipal(aPrincipal));
+  QM_TRY_INSPECT(const auto& quotaOrigin,
+                 QuotaManager::GetOriginFromPrincipal(aPrincipal));
 
   return MakeSafeRefPtr<ManagerId>(aPrincipal, quotaOrigin, ConstructorGuard{});
 }
