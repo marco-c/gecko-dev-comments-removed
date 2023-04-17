@@ -15,9 +15,12 @@ UNIFIED_SOURCES += [
     "lib/NimbusFeatures.cpp",
 ]
 
-TEST_DIRS += [
-    "test/gtest",
-]
+
+
+if CONFIG["OS_TARGET"] != "Android":
+    TEST_DIRS += [
+        "test/gtest",
+    ]
 
 BROWSER_CHROME_MANIFESTS += [
     "test/browser/browser.ini",
