@@ -244,3 +244,37 @@ add_task(async function testNullSavedState() {
   
   CustomizableUIInternal.initialize();
 });
+
+
+
+
+add_task(async function testNullPlacements() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [kPrefProtonToolbarVersion, 0],
+      [kPrefProtonToolbarEnabled, true],
+    ],
+  });
+
+  let oldState = CustomizableUIBSPass.gSavedState;
+
+  Assert.equal(
+    Services.prefs.getIntPref(kPrefProtonToolbarVersion),
+    0,
+    "Toolbar proton version is 0"
+  );
+
+  let { CustomizableUIInternal } = CustomizableUIBSPass;
+
+  CustomizableUIBSPass.gSavedState = {
+    placements: { "widget-overflow-fixed-list": [] },
+  };
+  CustomizableUIInternal._updateForNewProtonVersion();
+
+  Assert.ok(true, "_updateForNewProtonVersion didn't throw");
+
+  
+  CustomizableUIBSPass.gSavedState = oldState;
+
+  await SpecialPowers.popPrefEnv();
+});
