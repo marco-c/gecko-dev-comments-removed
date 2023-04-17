@@ -1407,35 +1407,25 @@ static MOZ_ALWAYS_INLINE bool AddDataProperty(JSContext* cx,
   return CallAddPropertyHook(cx, obj, id, v);
 }
 
-static bool IsConfigurable(unsigned attrs) {
-  return (attrs & JSPROP_PERMANENT) == 0;
-}
-static bool IsEnumerable(unsigned attrs) {
-  return (attrs & JSPROP_ENUMERATE) != 0;
-}
-static bool IsWritable(unsigned attrs) {
-  return (attrs & JSPROP_READONLY) == 0;
+static bool IsAccessorDescriptor(const PropertyResult& prop) {
+  if (prop.isNativeProperty()) {
+    return prop.shapeProperty().isAccessorProperty();
+  }
+
+  MOZ_ASSERT(prop.isDenseElement() || prop.isTypedArrayElement());
+  return false;
 }
 
-static bool IsAccessorDescriptor(unsigned attrs) {
-  return (attrs & (JSPROP_GETTER | JSPROP_SETTER)) != 0;
+static bool IsDataDescriptor(const PropertyResult& prop) {
+  return !IsAccessorDescriptor(prop);
 }
 
-static bool IsDataDescriptor(unsigned attrs) {
-  MOZ_ASSERT((attrs & (JSPROP_IGNORE_VALUE | JSPROP_IGNORE_READONLY)) == 0);
-  return !IsAccessorDescriptor(attrs);
-}
+static bool GetCustomDataProperty(JSContext* cx, HandleObject obj, HandleId id,
+                                  MutableHandleValue vp);
 
-template <AllowGC allowGC>
-static MOZ_ALWAYS_INLINE bool GetExistingProperty(
-    JSContext* cx, typename MaybeRooted<Value, allowGC>::HandleType receiver,
-    typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
-    typename MaybeRooted<jsid, allowGC>::HandleType id, ShapeProperty prop,
-    typename MaybeRooted<Value, allowGC>::MutableHandleType vp);
-
-static bool GetExistingPropertyValue(JSContext* cx, HandleNativeObject obj,
-                                     HandleId id, const PropertyResult& prop,
-                                     MutableHandleValue vp) {
+static bool GetExistingDataProperty(JSContext* cx, HandleNativeObject obj,
+                                    HandleId id, const PropertyResult& prop,
+                                    MutableHandleValue vp) {
   if (prop.isDenseElement()) {
     vp.set(obj->getDenseElement(prop.denseElementIndex()));
     return true;
@@ -1445,12 +1435,15 @@ static bool GetExistingPropertyValue(JSContext* cx, HandleNativeObject obj,
     return obj->as<TypedArrayObject>().getElement<CanGC>(cx, idx, vp);
   }
 
-  MOZ_ASSERT(!cx->isHelperThreadContext());
-  MOZ_ASSERT(obj->containsPure(id, prop.shapeProperty()));
+  ShapeProperty shapeProp = prop.shapeProperty();
+  if (shapeProp.isDataProperty()) {
+    vp.set(obj->getSlot(shapeProp.slot()));
+    return true;
+  }
 
-  RootedValue receiver(cx, ObjectValue(*obj));
-  return GetExistingProperty<CanGC>(cx, receiver, obj, id, prop.shapeProperty(),
-                                    vp);
+  MOZ_ASSERT(!cx->isHelperThreadContext());
+  MOZ_RELEASE_ASSERT(shapeProp.isCustomDataProperty());
+  return GetCustomDataProperty(cx, obj, id, vp);
 }
 
 
@@ -1459,37 +1452,29 @@ static bool GetExistingPropertyValue(JSContext* cx, HandleNativeObject obj,
 
 static bool DefinePropertyIsRedundant(JSContext* cx, HandleNativeObject obj,
                                       HandleId id, const PropertyResult& prop,
-                                      unsigned shapeAttrs,
+                                      JS::PropertyAttributes attrs,
                                       Handle<PropertyDescriptor> desc,
                                       bool* redundant) {
   *redundant = false;
 
-  if (desc.hasConfigurable() &&
-      desc.configurable() != IsConfigurable(shapeAttrs)) {
+  if (desc.hasConfigurable() && desc.configurable() != attrs.configurable()) {
     return true;
   }
-  if (desc.hasEnumerable() && desc.enumerable() != IsEnumerable(shapeAttrs)) {
+  if (desc.hasEnumerable() && desc.enumerable() != attrs.enumerable()) {
     return true;
   }
   if (desc.isDataDescriptor()) {
-    if (IsAccessorDescriptor(shapeAttrs)) {
+    if (IsAccessorDescriptor(prop)) {
       return true;
     }
-    if (desc.hasWritable() && desc.writable() != IsWritable(shapeAttrs)) {
+    if (desc.hasWritable() && desc.writable() != attrs.writable()) {
       return true;
     }
     if (desc.hasValue()) {
       
       RootedValue currentValue(cx);
-      if (prop.isNativeProperty() && prop.shapeProperty().isDataProperty()) {
-        
-        
-        
-        currentValue.set(obj->getSlot(prop.shapeProperty().slot()));
-      } else {
-        if (!GetExistingPropertyValue(cx, obj, id, prop, &currentValue)) {
-          return false;
-        }
+      if (!GetExistingDataProperty(cx, obj, id, prop, &currentValue)) {
+        return false;
       }
 
       
@@ -1507,14 +1492,19 @@ static bool DefinePropertyIsRedundant(JSContext* cx, HandleNativeObject obj,
       return true;
     }
   } else {
+    if (!prop.isNativeProperty()) {
+      return true;
+    }
+
+    ShapeProperty shapeProp = prop.shapeProperty();
     if (desc.hasGetterObject() &&
-        (!(shapeAttrs & JSPROP_GETTER) ||
-         desc.getterObject() != obj->getGetter(prop.shapeProperty()))) {
+        (!(shapeProp.attributes() & JSPROP_GETTER) ||
+         desc.getterObject() != obj->getGetter(shapeProp))) {
       return true;
     }
     if (desc.hasSetterObject() &&
-        (!(shapeAttrs & JSPROP_SETTER) ||
-         desc.setterObject() != obj->getSetter(prop.shapeProperty()))) {
+        (!(shapeProp.attributes() & JSPROP_SETTER) ||
+         desc.setterObject() != obj->getSetter(shapeProp))) {
       return true;
     }
   }
@@ -1642,10 +1632,9 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
   
   
   
-  unsigned shapeAttrs = GetPropertyAttributes(obj, prop);
+  JS::PropertyAttributes attrs = GetPropertyAttributes(obj, prop);
   bool redundant;
-  if (!DefinePropertyIsRedundant(cx, obj, id, prop, shapeAttrs, desc,
-                                 &redundant)) {
+  if (!DefinePropertyIsRedundant(cx, obj, id, prop, attrs, desc, &redundant)) {
     return false;
   }
   if (redundant) {
@@ -1653,21 +1642,21 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
   }
 
   
-  if (!IsConfigurable(shapeAttrs)) {
+  if (!attrs.configurable()) {
     if (desc.hasConfigurable() && desc.configurable()) {
       return result.fail(JSMSG_CANT_REDEFINE_PROP);
     }
-    if (desc.hasEnumerable() && desc.enumerable() != IsEnumerable(shapeAttrs)) {
+    if (desc.hasEnumerable() && desc.enumerable() != attrs.enumerable()) {
       return result.fail(JSMSG_CANT_REDEFINE_PROP);
     }
   }
 
   
   if (!desc.hasConfigurable()) {
-    desc.setConfigurable(IsConfigurable(shapeAttrs));
+    desc.setConfigurable(attrs.configurable());
   }
   if (!desc.hasEnumerable()) {
-    desc.setEnumerable(IsEnumerable(shapeAttrs));
+    desc.setEnumerable(attrs.enumerable());
   }
 
   
@@ -1680,21 +1669,21 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
     MOZ_ASSERT(!desc.hasWritable());
     MOZ_ASSERT(!desc.hasGetterObject());
     MOZ_ASSERT(!desc.hasSetterObject());
-    if (IsDataDescriptor(shapeAttrs)) {
+    if (IsDataDescriptor(prop)) {
       RootedValue currentValue(cx);
-      if (!GetExistingPropertyValue(cx, obj, id, prop, &currentValue)) {
+      if (!GetExistingDataProperty(cx, obj, id, prop, &currentValue)) {
         return false;
       }
       desc.setValue(currentValue);
-      desc.setWritable(IsWritable(shapeAttrs));
+      desc.setWritable(attrs.writable());
     } else {
       ShapeProperty shapeProp = prop.shapeProperty();
       desc.setGetterObject(obj->getGetter(shapeProp));
       desc.setSetterObject(obj->getSetter(shapeProp));
     }
-  } else if (desc.isDataDescriptor() != IsDataDescriptor(shapeAttrs)) {
+  } else if (desc.isDataDescriptor() != IsDataDescriptor(prop)) {
     
-    if (!IsConfigurable(shapeAttrs)) {
+    if (!attrs.configurable()) {
       return result.fail(JSMSG_CANT_REDEFINE_PROP);
     }
 
@@ -1702,7 +1691,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
     CompletePropertyDescriptor(&desc);
   } else if (desc.isDataDescriptor()) {
     
-    bool frozen = !IsConfigurable(shapeAttrs) && !IsWritable(shapeAttrs);
+    bool frozen = !attrs.configurable() && !attrs.writable();
 
     
     if (frozen && desc.hasWritable() && desc.writable()) {
@@ -1711,7 +1700,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
 
     if (frozen || !desc.hasValue()) {
       RootedValue currentValue(cx);
-      if (!GetExistingPropertyValue(cx, obj, id, prop, &currentValue)) {
+      if (!GetExistingDataProperty(cx, obj, id, prop, &currentValue)) {
         return false;
       }
 
@@ -1738,7 +1727,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
 
     
     if (!desc.hasWritable()) {
-      desc.setWritable(IsWritable(shapeAttrs));
+      desc.setWritable(attrs.writable());
     }
   } else {
     
@@ -1750,7 +1739,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
     
     if (desc.hasSetterObject()) {
       
-      if (!IsConfigurable(shapeAttrs) &&
+      if (!attrs.configurable() &&
           desc.setterObject() != obj->getSetter(shapeProp)) {
         return result.fail(JSMSG_CANT_REDEFINE_PROP);
       }
@@ -1760,7 +1749,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
     }
     if (desc.hasGetterObject()) {
       
-      if (!IsConfigurable(shapeAttrs) &&
+      if (!attrs.configurable() &&
           desc.getterObject() != obj->getGetter(shapeProp)) {
         return result.fail(JSMSG_CANT_REDEFINE_PROP);
       }
@@ -2049,13 +2038,11 @@ bool js::NativeGetOwnPropertyDescriptor(
   }
 
   RootedValue value(cx);
-  if (!GetExistingPropertyValue(cx, obj, id, prop, &value)) {
+  if (!GetExistingDataProperty(cx, obj, id, prop, &value)) {
     return false;
   }
-  
-  
-  
-  uint8_t attrs = GetPropertyAttributes(obj, prop) & ~JSPROP_CUSTOM_DATA_PROP;
+
+  JS::PropertyAttributes attrs = GetPropertyAttributes(obj, prop);
   desc.set(mozilla::Some(PropertyDescriptor::Data(value, attrs)));
   return true;
 }
@@ -2759,7 +2746,7 @@ bool js::NativeDeleteProperty(JSContext* cx, HandleNativeObject obj,
   }
 
   
-  if (GetPropertyAttributes(obj, prop) & JSPROP_PERMANENT) {
+  if (!GetPropertyAttributes(obj, prop).configurable()) {
     return result.failCantDelete();
   }
 
