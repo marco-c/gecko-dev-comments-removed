@@ -565,14 +565,6 @@ function TargetMixin(parentClass) {
 
     _addListeners() {
       this.client.on("closed", this.destroy);
-
-      
-      
-      
-      
-      
-      
-      this.on("tabDetached", this.destroy);
     }
 
     
@@ -583,7 +575,6 @@ function TargetMixin(parentClass) {
       if (this.client) {
         this.client.off("closed", this.destroy);
       }
-      this.off("tabDetached", this.destroy);
 
       
       if (this.removeOnInspectObjectListener) {
