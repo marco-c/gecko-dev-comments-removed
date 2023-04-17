@@ -136,6 +136,7 @@ nsCocoaWindow::nsCocoaWindow()
       mSheetNeedsShow(false),
       mInFullScreenMode(false),
       mInFullScreenTransition(false),
+      mIgnoreOcclusionCount(0),
       mModal(false),
       mFakeModal(false),
       mInNativeFullScreenMode(false),
@@ -1516,6 +1517,17 @@ static bool AlwaysUsesNativeFullScreen() {
   if (AlwaysUsesNativeFullScreen()) {
     return false;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(mIgnoreOcclusionCount >= 0);
+  mIgnoreOcclusionCount++;
+
   nsCOMPtr<nsIScreen> widgetScreen = GetWidgetScreen();
   NSScreen* cocoaScreen = ScreenHelperCocoa::CocoaScreenForScreen(widgetScreen);
 
@@ -1533,6 +1545,11 @@ static bool AlwaysUsesNativeFullScreen() {
   *aData = data;
   NS_ADDREF(data);
   return true;
+}
+
+ void nsCocoaWindow::CleanupFullscreenTransition() {
+  MOZ_ASSERT(mIgnoreOcclusionCount > 0);
+  mIgnoreOcclusionCount--;
 }
 
  void nsCocoaWindow::PerformFullscreenTransition(FullscreenTransitionStage aStage,
@@ -2045,6 +2062,11 @@ void nsCocoaWindow::DispatchOcclusionEvent() {
 
   
   if (mIsFullyOccluded == newOcclusionState) {
+    return;
+  }
+
+  MOZ_ASSERT(mIgnoreOcclusionCount >= 0);
+  if (newOcclusionState && mIgnoreOcclusionCount > 0) {
     return;
   }
 
