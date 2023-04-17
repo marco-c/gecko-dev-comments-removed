@@ -3701,6 +3701,8 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor
   
   RefPtr<gfxTextRun> mTextRun;
 
+  RefPtr<nsPresContext> mPresContext;
+
   
   RefPtr<DrawTarget> mDrawTarget;
 
@@ -3833,6 +3835,8 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
   }
 
   CanvasBidiProcessor processor;
+
+  processor.mPresContext = presContext;
 
   
   
@@ -4032,9 +4036,9 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
   
 
   RefPtr<PresShell> presShell = GetPresShell();
+  nsPresContext* pc = presShell ? presShell->GetPresContext() : nullptr;
   gfxTextPerfMetrics* tp = nullptr;
-  if (presShell && !presShell->IsDestroying()) {
-    nsPresContext* pc = presShell->GetPresContext();
+  if (pc) {
     tp = pc->GetTextPerfMetrics();
   }
 
@@ -4070,7 +4074,7 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
       const auto* sans =
           Servo_FontFamily_Generic(StyleGenericFontFamily::SansSerif);
       fontGroup = gfxPlatform::GetPlatform()->CreateFontGroup(
-          sans->families, &style, language, explicitLanguage, tp, nullptr,
+          pc, sans->families, &style, language, explicitLanguage, tp, nullptr,
           devToCssSize);
       if (fontGroup) {
         CurrentState().font = kDefaultFontStyle;
