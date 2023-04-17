@@ -41,6 +41,15 @@ XPCOMUtils.defineLazyGetter(this, "localization", () => {
   );
 });
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "UpdateService",
+  "@mozilla.org/updates/update-service;1",
+  "nsIApplicationUpdateService"
+);
+
+Cu.importGlobalProperties(["Glean"]);
+
 var BackgroundUpdate = {
   _initialized: false,
 
@@ -466,6 +475,49 @@ var BackgroundUpdate = {
 
       return false;
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  async recordUpdateEnvironment() {
+    try {
+      Glean.update.serviceEnabled.set(
+        Services.prefs.getBoolPref("app.update.service.enabled", false)
+      );
+    } catch (e) {
+      
+    }
+
+    
+    
+    Glean.update.autoDownload.set(await UpdateUtils.getAppUpdateAutoEnabled());
+    Glean.update.backgroundUpdate.set(
+      await UpdateUtils.readUpdateConfigSetting("app.update.background.enabled")
+    );
+
+    Glean.update.channel.set(UpdateUtils.UpdateChannel);
+    Glean.update.enabled.set(
+      !Services.policies || Services.policies.isAllowed("appUpdate")
+    );
+
+    Glean.update.canUsuallyApplyUpdates.set(
+      UpdateService.canUsuallyApplyUpdates
+    );
+    Glean.update.canUsuallyCheckForUpdates.set(
+      UpdateService.canUsuallyCheckForUpdates
+    );
+    Glean.update.canUsuallyStageUpdates.set(
+      UpdateService.canUsuallyStageUpdates
+    );
+    Glean.update.canUsuallyUseBits.set(UpdateService.canUsuallyUseBits);
   },
 };
 
