@@ -616,6 +616,9 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       
       isUnblocked |= gpu.Find("PowerVR Rogue",  true) >= 0;
 
+      
+      isUnblocked |= gpu.Find("Mesa DRI Intel",  true) >= 0;
+
       if (!isUnblocked) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_WEBRENDER_BLOCKED_DEVICE";
