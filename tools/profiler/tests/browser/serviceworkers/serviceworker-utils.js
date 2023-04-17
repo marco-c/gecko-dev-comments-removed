@@ -1,3 +1,27 @@
+
+
+function waitForState(worker, state) {
+  return new Promise((resolve, reject) => {
+    function onStateChange() {
+      if (worker.state === state) {
+        worker.removeEventListener("statechange", onStateChange);
+        resolve();
+      }
+      if (worker.state === "redundant") {
+        worker.removeEventListener("statechange", onStateChange);
+        reject(new Error("The service worker failed to install."));
+      }
+    }
+
+    
+    
+    worker.addEventListener("statechange", onStateChange);
+
+    
+    onStateChange();
+  });
+}
+
 async function registerServiceWorkerAndWait(serviceWorkerFile) {
   if (!serviceWorkerFile) {
     throw new Error(
@@ -5,11 +29,11 @@ async function registerServiceWorkerAndWait(serviceWorkerFile) {
     );
   }
 
-  console.log(`Registering the serviceworker "${serviceWorkerFile}".`);
-  await navigator.serviceWorker.register(`./${serviceWorkerFile}`, {
+  console.log(`...registering the serviceworker "${serviceWorkerFile}"`);
+  const reg = await navigator.serviceWorker.register(`./${serviceWorkerFile}`, {
     scope: "./",
   });
-
-  await navigator.serviceWorker.ready;
-  console.log("The service worker is ready.");
+  console.log("...waiting for activation");
+  await waitForState(reg.installing, "activated");
+  console.log("...activated!");
 }
