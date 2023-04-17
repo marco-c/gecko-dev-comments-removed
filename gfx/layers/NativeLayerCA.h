@@ -240,7 +240,7 @@ class NativeLayerCA : public NativeLayer {
   
   
   
-  bool NextSurface(const MutexAutoLock&);
+  bool NextSurface(const MutexAutoLock& aProofOfLock);
 
   
   typedef NativeLayerRootCA::WhichRepresentation WhichRepresentation;
@@ -251,12 +251,8 @@ class NativeLayerCA : public NativeLayer {
 
   
   
-  void InvalidateRegionThroughoutSwapchain(const MutexAutoLock&,
+  void InvalidateRegionThroughoutSwapchain(const MutexAutoLock& aProofOfLock,
                                            const gfx::IntRegion& aRegion);
-
-  GLuint GetOrCreateFramebufferForSurface(const MutexAutoLock&,
-                                          CFTypeRefPtr<IOSurfaceRef> aSurface,
-                                          bool aNeedsDepth);
 
   
   
@@ -265,7 +261,7 @@ class NativeLayerCA : public NativeLayer {
   
   
   template <typename F>
-  void HandlePartialUpdate(const MutexAutoLock&,
+  void HandlePartialUpdate(const MutexAutoLock& aProofOfLock,
                            const gfx::IntRect& aDisplayRect,
                            const gfx::IntRegion& aUpdateRegion, F&& aCopyFn);
 
@@ -280,7 +276,7 @@ class NativeLayerCA : public NativeLayer {
   };
 
   Maybe<SurfaceWithInvalidRegion> GetUnusedSurfaceAndCleanUp(
-      const MutexAutoLock&);
+      const MutexAutoLock& aProofOfLock);
 
   
   struct Representation {

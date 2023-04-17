@@ -611,7 +611,7 @@ NativeLayerCA::Representation::~Representation() {
   [mWrappingCALayer release];
 }
 
-void NativeLayerCA::InvalidateRegionThroughoutSwapchain(const MutexAutoLock&,
+void NativeLayerCA::InvalidateRegionThroughoutSwapchain(const MutexAutoLock& aProofOfLock,
                                                         const IntRegion& aRegion) {
   IntRegion r = aRegion;
   if (mInProgressSurface) {
@@ -986,7 +986,7 @@ bool NativeLayerCA::Representation::HasUpdate() {
 
 
 Maybe<NativeLayerCA::SurfaceWithInvalidRegion> NativeLayerCA::GetUnusedSurfaceAndCleanUp(
-    const MutexAutoLock&) {
+    const MutexAutoLock& aProofOfLock) {
   std::vector<SurfaceWithInvalidRegionAndCheckCount> usedSurfaces;
   Maybe<SurfaceWithInvalidRegion> unusedSurface;
 
