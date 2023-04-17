@@ -24,7 +24,9 @@ struct CallInfo {
   bool mTailCall;
 
   bool TailCall() {
-#ifdef __i386__
+#if defined(__i386__) || defined(MOZ_CODE_COVERAGE)
+    
+    
     
     
     
