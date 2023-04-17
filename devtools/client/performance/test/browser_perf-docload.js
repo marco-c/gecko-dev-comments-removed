@@ -21,6 +21,14 @@ const {
 } = require("devtools/client/performance/test/helpers/wait-utils");
 
 add_task(async function() {
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["devtools.target-switching.server.enabled", false]],
+  });
+
   const { panel } = await initPerformanceInNewTab({
     url: SIMPLE_URL,
     win: window,
