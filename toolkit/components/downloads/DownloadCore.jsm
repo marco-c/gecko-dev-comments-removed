@@ -652,6 +652,12 @@ Download.prototype = {
       );
     }
 
+    if (this.error?.becauseBlockedByReputationCheck) {
+      Services.telemetry
+        .getKeyedHistogramById("DOWNLOADS_USER_ACTION_ON_BLOCKED_DOWNLOAD")
+        .add(this.error.reputationCheckVerdict, 2); 
+    }
+
     if (
       this.error?.reputationCheckVerdict == DownloadError.BLOCK_VERDICT_INSECURE
     ) {
@@ -729,6 +735,16 @@ Download.prototype = {
       return Promise.reject(
         new Error("Download is being unblocked, cannot confirmBlock.")
       );
+    }
+
+    if (this.error?.becauseBlockedByReputationCheck) {
+      
+      
+      
+      
+      Services.telemetry
+        .getKeyedHistogramById("DOWNLOADS_USER_ACTION_ON_BLOCKED_DOWNLOAD")
+        .add(this.error.reputationCheckVerdict, 1); 
     }
 
     if (!this.hasBlockedData) {
@@ -2482,6 +2498,10 @@ DownloadCopySaver.prototype = {
       verdict,
     } = await DownloadIntegration.shouldBlockForReputationCheck(download);
     if (shouldBlock) {
+      Services.telemetry
+        .getKeyedHistogramById("DOWNLOADS_USER_ACTION_ON_BLOCKED_DOWNLOAD")
+        .add(verdict, 0);
+
       let newProperties = { progress: 100, hasPartialData: false };
 
       

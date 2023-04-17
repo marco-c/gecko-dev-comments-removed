@@ -321,6 +321,17 @@ var DownloadsCommon = {
   async deleteDownload(download) {
     
     
+    if (
+      download.error?.becauseBlockedByReputationCheck &&
+      download.hasBlockedData
+    ) {
+      Services.telemetry
+        .getKeyedHistogramById("DOWNLOADS_USER_ACTION_ON_BLOCKED_DOWNLOAD")
+        .add(download.error.reputationCheckVerdict, 1); 
+    }
+
+    
+    
     
     try {
       await PlacesUtils.history.remove(download.source.url);
