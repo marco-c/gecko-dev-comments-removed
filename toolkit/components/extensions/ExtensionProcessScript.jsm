@@ -10,7 +10,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["ExtensionProcessScript", "ExtensionAPIRequestHandler"];
+var EXPORTED_SYMBOLS = ["ExtensionProcessScript"];
 
 const { MessageChannel } = ChromeUtils.import(
   "resource://gre/modules/MessageChannel.jsm"
@@ -414,16 +414,6 @@ var ExtensionProcessScript = {
     return ExtensionContent.contentScripts
       .get(contentScript)
       .injectInto(window);
-  },
-};
-
-var ExtensionAPIRequestHandler = {
-  handleAPIRequest(policy, request) {
-    
-    
-    
-    
-    throw new Error("Not implemented");
   },
 };
 

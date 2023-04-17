@@ -35,7 +35,6 @@
 #include "mozilla/dom/WorkerStatus.h"
 #include "mozilla/dom/workerinternals/JSSettings.h"
 #include "mozilla/dom/workerinternals/Queue.h"
-#include "mozilla/StaticPrefs_extensions.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
 #include "nsIContentSecurityPolicy.h"
@@ -167,14 +166,6 @@ class WorkerPrivate final : public RelativeTimeline {
 
     
     return mDebuggerRegistered;
-  }
-
-  bool ExtensionAPIAllowed() {
-    
-    
-    MOZ_ASSERT(
-        StaticPrefs::extensions_backgroundServiceWorker_enabled_AtStartup());
-    return mExtensionAPIAllowed;
   }
 
   void SetIsDebuggerRegistered(bool aDebuggerRegistered) {
@@ -1340,14 +1331,6 @@ class WorkerPrivate final : public RelativeTimeline {
   
   bool mDebuggerReady;
   nsTArray<RefPtr<WorkerRunnable>> mDelayedDebuggeeRunnables;
-
-  
-  
-  
-  
-  
-  
-  bool mExtensionAPIAllowed;
 
   
   

@@ -56,9 +56,6 @@ class SerializedStackHolder {
 UniquePtr<SerializedStackHolder> GetCurrentStackForNetMonitor(JSContext* aCx);
 
 
-UniquePtr<SerializedStackHolder> GetCurrentStack(JSContext* aCx);
-
-
 
 
 
