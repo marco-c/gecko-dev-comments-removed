@@ -75,8 +75,20 @@ extern PlainObject* NewPlainObject(JSContext* cx,
                                    NewObjectKind newKind = GenericObject);
 
 
+
+extern PlainObject* NewPlainObjectWithAllocKind(
+    JSContext* cx, gc::AllocKind allocKind,
+    NewObjectKind newKind = GenericObject);
+
+
 extern PlainObject* NewPlainObjectWithProto(
     JSContext* cx, HandleObject proto, NewObjectKind newKind = GenericObject);
+
+
+
+extern PlainObject* NewPlainObjectWithProtoAndAllocKind(
+    JSContext* cx, HandleObject proto, gc::AllocKind allocKind,
+    NewObjectKind newKind = GenericObject);
 
 extern PlainObject* NewPlainObjectWithProperties(JSContext* cx,
                                                  IdValuePair* properties,
