@@ -109,7 +109,8 @@ struct StreamFunctionTypeHelper<R(baseprofiler::SpliceableJSONWriter&, As...)> {
     
     
     return aBuffer.PutObjects(ProfileBufferEntryKind::Marker, aOptions, aName,
-                              aCategory, aDeserializerTag, aAs...);
+                              aCategory, aDeserializerTag,
+                              MarkerPayloadType::Cpp, aAs...);
   }
 };
 
@@ -305,6 +306,9 @@ template <typename StackCallback>
   
   
   
+  
+  
+  
   const MarkerOptions options = aEntryReader.ReadObject<MarkerOptions>();
   if (aThreadIdOrUnspecified.IsSpecified() &&
       options.ThreadId().ThreadId() != aThreadIdOrUnspecified) {
@@ -357,12 +361,30 @@ template <typename StackCallback>
           aWriter.EndObject();
         }
 
+        auto payloadType = static_cast<mozilla::MarkerPayloadType>(
+            aEntryReader
+                .ReadObject<mozilla::MarkerPayloadTypeUnderlyingType>());
+
         
-        mozilla::base_profiler_markers_detail::Streaming::MarkerDataDeserializer
-            deserializer = mozilla::base_profiler_markers_detail::Streaming::
-                DeserializerForTag(tag);
-        MOZ_RELEASE_ASSERT(deserializer);
-        deserializer(aEntryReader, aWriter);
+        switch (payloadType) {
+          case mozilla::MarkerPayloadType::Cpp: {
+            mozilla::base_profiler_markers_detail::Streaming::
+                MarkerDataDeserializer deserializer =
+                    mozilla::base_profiler_markers_detail::Streaming::
+                        DeserializerForTag(tag);
+
+            MOZ_RELEASE_ASSERT(deserializer);
+            deserializer(aEntryReader, aWriter);
+            break;
+          }
+          case mozilla::MarkerPayloadType::Rust:
+            
+            
+            break;
+          default:
+            MOZ_ASSERT_UNREACHABLE("Unknown payload type.");
+            break;
+        }
       }
       aWriter.EndObject();
     }
