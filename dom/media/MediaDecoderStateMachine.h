@@ -335,8 +335,12 @@ class MediaDecoderStateMachine
   
   void ScheduleStateMachineIn(const media::TimeUnit& aTime);
 
-  bool HaveEnoughDecodedAudio();
-  bool HaveEnoughDecodedVideo();
+  bool HaveEnoughDecodedAudio() const;
+  bool HaveEnoughDecodedVideo() const;
+
+  
+  
+  bool IsVideoDataEnoughComparedWithAudio() const;
 
   
   
@@ -396,6 +400,9 @@ class MediaDecoderStateMachine
 
   MediaQueue<AudioData>& AudioQueue() { return mAudioQueue; }
   MediaQueue<VideoData>& VideoQueue() { return mVideoQueue; }
+
+  const MediaQueue<AudioData>& AudioQueue() const { return mAudioQueue; }
+  const MediaQueue<VideoData>& VideoQueue() const { return mVideoQueue; }
 
   
   
@@ -509,7 +516,7 @@ class MediaDecoderStateMachine
   
   
   
-  media::TimeUnit GetDecodedAudioDuration();
+  media::TimeUnit GetDecodedAudioDuration() const;
 
   void FinishDecodeFirstFrame();
 

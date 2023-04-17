@@ -114,7 +114,7 @@ class MediaQueue : private nsRefPtrDeque<T> {
   }
 
   
-  int64_t Duration() {
+  int64_t Duration() const {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
     if (GetSize() == 0) {
       return 0;

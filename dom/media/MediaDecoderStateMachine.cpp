@@ -2875,7 +2875,7 @@ already_AddRefed<MediaSink> MediaDecoderStateMachine::CreateMediaSink() {
   return mediaSink.forget();
 }
 
-TimeUnit MediaDecoderStateMachine::GetDecodedAudioDuration() {
+TimeUnit MediaDecoderStateMachine::GetDecodedAudioDuration() const {
   MOZ_ASSERT(OnTaskQueue());
   if (mMediaSink->IsStarted()) {
     
@@ -2887,26 +2887,30 @@ TimeUnit MediaDecoderStateMachine::GetDecodedAudioDuration() {
   return TimeUnit::FromMicroseconds(AudioQueue().Duration());
 }
 
-bool MediaDecoderStateMachine::HaveEnoughDecodedAudio() {
+bool MediaDecoderStateMachine::HaveEnoughDecodedAudio() const {
   MOZ_ASSERT(OnTaskQueue());
   auto ampleAudio = mAmpleAudioThreshold.MultDouble(mPlaybackRate);
   return AudioQueue().GetSize() > 0 && GetDecodedAudioDuration() >= ampleAudio;
 }
 
-bool MediaDecoderStateMachine::HaveEnoughDecodedVideo() {
+bool MediaDecoderStateMachine::HaveEnoughDecodedVideo() const {
   MOZ_ASSERT(OnTaskQueue());
-  
-  
-  
-  
-  
-  bool isVideoEnoughComparedWithAudio = true;
-  if (HasAudio()) {
-    isVideoEnoughComparedWithAudio =
-        VideoQueue().Duration() >= AudioQueue().Duration();
-  }
   return VideoQueue().GetSize() >= GetAmpleVideoFrames() * mPlaybackRate + 1 &&
-         isVideoEnoughComparedWithAudio;
+         IsVideoDataEnoughComparedWithAudio();
+}
+
+bool MediaDecoderStateMachine::IsVideoDataEnoughComparedWithAudio() const {
+  
+  
+  
+  
+  if (HasAudio() && Info().mVideo.mImage.width >= 3840 &&
+      Info().mVideo.mImage.height >= 2160) {
+    return VideoQueue().Duration() >= AudioQueue().Duration();
+  }
+  
+  
+  return true;
 }
 
 void MediaDecoderStateMachine::PushAudio(AudioData* aSample) {
