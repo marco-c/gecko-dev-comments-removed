@@ -65,6 +65,15 @@ class Log {
     return logger;
   }
 
+  
+
+
+
+
+  static get isTraceLevel() {
+    return [StdLog.Level.All, StdLog.Level.Trace].includes(prefLogLevel);
+  }
+
   static get verbose() {
     
     

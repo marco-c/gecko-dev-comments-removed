@@ -4434,13 +4434,6 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   pref("marionette.debugging.clicktostart", false);
 
   
-  
-  
-  
-  
-  pref("marionette.log.level", "Info");
-
-  
   pref("marionette.port", 2828);
 
   
