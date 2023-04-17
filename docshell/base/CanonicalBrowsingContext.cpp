@@ -1425,6 +1425,11 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishTopContent() {
                         "non-remote iframes");
 
   
+  if (mContentParent && NS_WARN_IF(mContentParent->IsDead())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
   
   
   RefPtr<CanonicalBrowsingContext> target(mTarget);
@@ -1544,6 +1549,13 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishSubframe() {
 
   RefPtr<BrowserParent> embedderBrowser = embedderWindow->GetBrowserParent();
   if (NS_WARN_IF(!embedderBrowser)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  if (mContentParent != embedderBrowser->Manager() &&
+      NS_WARN_IF(mContentParent->IsDead())) {
     return NS_ERROR_FAILURE;
   }
 

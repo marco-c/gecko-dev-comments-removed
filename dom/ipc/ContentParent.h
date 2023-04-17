@@ -1550,7 +1550,11 @@ class ContentParent final
   uint8_t mCalledKillHard : 1;
   uint8_t mCreatedPairedMinidumps : 1;
   uint8_t mShutdownPending : 1;
+
+  
+  
   uint8_t mLaunchResolved : 1;
+  uint8_t mLaunchResolvedOk : 1;
 
   
   
