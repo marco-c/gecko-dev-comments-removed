@@ -77,7 +77,12 @@ class PerftestResultsHandler(object):
         
         if modifiers is None:
             if self.conditioned_profile:
-                extra_options.append("condprof-%s" % self.conditioned_profile)
+                
+                if self.conditioned_profile != "settled":
+                    extra_options.append(
+                        "condprof-%s"
+                        % self.conditioned_profile.replace("artifact:", "")
+                    )
             if self.fission_enabled:
                 extra_options.append("fission")
             if self.live_sites:
