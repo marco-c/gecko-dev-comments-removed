@@ -71,8 +71,6 @@ impl ToU64 for usize {
 
 
 pub trait ToUsize {
-    
-    #[allow(clippy::wrong_self_convention)]
     fn to_usize(self) -> usize;
 }
 
@@ -332,6 +330,7 @@ struct BoxHeader {
     
     offset: u64,
     
+    #[allow(dead_code)] 
     uuid: Option<[u8; 16]>,
 }
 
@@ -343,7 +342,9 @@ impl BoxHeader {
 
 #[derive(Debug)]
 struct FileTypeBox {
+    #[allow(dead_code)] 
     major_brand: FourCC,
+    #[allow(dead_code)] 
     minor_version: u32,
     compatible_brands: TryVec<FourCC>,
 }
@@ -352,6 +353,7 @@ struct FileTypeBox {
 #[derive(Debug)]
 struct MovieHeaderBox {
     pub timescale: u32,
+    #[allow(dead_code)] 
     duration: u64,
 }
 
@@ -389,7 +391,9 @@ struct EditListBox {
 struct Edit {
     segment_duration: u64,
     media_time: i64,
+    #[allow(dead_code)] 
     media_rate_integer: i16,
+    #[allow(dead_code)] 
     media_rate_fraction: i16,
 }
 
@@ -513,6 +517,7 @@ pub enum AudioCodecSpecific {
 #[derive(Debug)]
 pub struct AudioSampleEntry {
     pub codec_type: CodecType,
+    #[allow(dead_code)] 
     data_reference_index: u16,
     pub channelcount: u32,
     pub samplesize: u16,
@@ -533,6 +538,7 @@ pub enum VideoCodecSpecific {
 #[derive(Debug)]
 pub struct VideoSampleEntry {
     pub codec_type: CodecType,
+    #[allow(dead_code)] 
     data_reference_index: u16,
     pub width: u16,
     pub height: u16,
@@ -545,9 +551,11 @@ pub struct VideoSampleEntry {
 #[derive(Debug)]
 pub struct VPxConfigBox {
     
+    #[allow(dead_code)] 
     profile: u8,
     
     
+    #[allow(dead_code)] 
     level: u8,
     
     
@@ -557,12 +565,15 @@ pub struct VPxConfigBox {
     
     pub chroma_subsampling: u8,
     
+    #[allow(dead_code)] 
     transfer_characteristics: u8,
     
     
+    #[allow(dead_code)] 
     matrix_coefficients: Option<u8>,
     
     
+    #[allow(dead_code)] 
     video_full_range_flag: bool,
     
     pub codec_init: TryVec<u8>,
@@ -603,6 +614,7 @@ pub struct FLACMetadataBlock {
 
 #[derive(Debug)]
 pub struct FLACSpecificBox {
+    #[allow(dead_code)] 
     version: u8,
     pub blocks: TryVec<FLACMetadataBlock>,
 }
@@ -629,6 +641,7 @@ pub struct OpusSpecificBox {
 
 #[derive(Debug)]
 pub struct ALACSpecificBox {
+    #[allow(dead_code)] 
     version: u8,
     pub data: TryVec<u8>,
 }
@@ -981,24 +994,40 @@ impl AvifContext {
     }
 
     pub fn nclx_colour_information_ptr(&self) -> Result<*const NclxColourInformation> {
-        match self
+        let nclx_colr_boxes = self
             .item_properties
-            .get(self.primary_item.id, BoxType::ColourInformationBox)?
-        {
-            Some(ItemProperty::Colour(ColourInformation::Nclx(nclx))) => Ok(nclx),
-            None | Some(ItemProperty::Colour(ColourInformation::Icc(_))) => Ok(std::ptr::null()),
-            Some(other_property) => panic!("property key mismatch: {:?}", other_property),
+            .get_multiple(self.primary_item.id, |prop| {
+                matches!(prop, ItemProperty::Colour(ColourInformation::Nclx(_)))
+            })?;
+
+        match *nclx_colr_boxes.as_slice() {
+            [] => Ok(std::ptr::null()),
+            [ItemProperty::Colour(ColourInformation::Nclx(nclx)), ..] => {
+                if nclx_colr_boxes.len() > 1 {
+                    warn!("Multiple nclx colr boxes, using first");
+                }
+                Ok(nclx)
+            }
+            _ => unreachable!("Expect only ColourInformation::Nclx(_) matches"),
         }
     }
 
     pub fn icc_colour_information(&self) -> Result<&[u8]> {
-        match self
+        let icc_colr_boxes = self
             .item_properties
-            .get(self.primary_item.id, BoxType::ColourInformationBox)?
-        {
-            Some(ItemProperty::Colour(ColourInformation::Icc(icc))) => Ok(icc.bytes.as_slice()),
-            None | Some(ItemProperty::Colour(ColourInformation::Nclx(_))) => Ok(&[]),
-            Some(other_property) => panic!("property key mismatch: {:?}", other_property),
+            .get_multiple(self.primary_item.id, |prop| {
+                matches!(prop, ItemProperty::Colour(ColourInformation::Icc(_, _)))
+            })?;
+
+        match *icc_colr_boxes.as_slice() {
+            [] => Ok(&[]),
+            [ItemProperty::Colour(ColourInformation::Icc(icc, _)), ..] => {
+                if icc_colr_boxes.len() > 1 {
+                    warn!("Multiple ICC profiles in colr boxes, using first");
+                }
+                Ok(icc.bytes.as_slice())
+            }
+            _ => unreachable!("Expect only ColourInformation::Icc(_) matches"),
         }
     }
 
@@ -2127,6 +2156,11 @@ fn read_iref<T: Read>(src: &mut BMFFBox<T>) -> Result<TryVec<SingleItemTypeRefer
 
 
 
+
+
+
+
+
 fn read_iprp<T: Read>(
     src: &mut BMFFBox<T>,
     brand: FourCC,
@@ -2198,6 +2232,9 @@ fn read_iprp<T: Read>(
                 BoxType::ImageMirror,
             ];
             let mut prev_transform_index = None;
+            
+            let mut colour_type_indexes: TryHashMap<FourCC, PropertyIndex> =
+                TryHashMap::with_capacity(2)?;
 
             for a in &association_entry.associations {
                 if a.property_index == PropertyIndex(0) {
@@ -2229,6 +2266,28 @@ fn read_iprp<T: Read>(
                                      document shall be marked as essential \
                                      per MIAF (ISO 23000-22:2019) § 7.3.9",
                                 )?;
+                            }
+                        }
+                        
+                        
+                        ItemProperty::Colour(colr) => {
+                            let colour_type = colr.colour_type();
+                            if let Some(prev_colr_index) = colour_type_indexes.get(&colour_type) {
+                                warn!(
+                                    "Multiple '{}' type colr associations with {:?}: {:?} and {:?}",
+                                    colour_type,
+                                    association_entry.item_id,
+                                    a.property_index,
+                                    prev_colr_index
+                                );
+                                fail_if(
+                                    strictness != ParseStrictness::Permissive,
+                                    "Each item shall have at most one property association with a
+                                     ColourInformationBox (colr) for a given value of colour_type \
+                                     per HEIF (ISO/IEC DIS 23008-12) § 6.5.5.1",
+                                )?;
+                            } else {
+                                colour_type_indexes.insert(colour_type, a.property_index)?;
                             }
                         }
                         _ => {}
@@ -2365,7 +2424,10 @@ impl ItemPropertiesBox {
     }
 
     fn get(&self, item_id: ItemId, property_type: BoxType) -> Result<Option<&ItemProperty>> {
-        match self.get_multiple(item_id, property_type)?.as_slice() {
+        match self
+            .get_multiple(item_id, |prop| prop.box_type() == property_type)?
+            .as_slice()
+        {
             &[] => Ok(None),
             &[single_value] => Ok(Some(single_value)),
             multiple_values => {
@@ -2382,7 +2444,7 @@ impl ItemPropertiesBox {
     fn get_multiple(
         &self,
         item_id: ItemId,
-        property_type: BoxType,
+        filter: impl Fn(&ItemProperty) -> bool,
     ) -> Result<TryVec<&ItemProperty>> {
         let mut values = TryVec::new();
         for entry in &self.association_entries {
@@ -2390,9 +2452,7 @@ impl ItemPropertiesBox {
                 if entry.item_id == item_id {
                     match self.properties.get(&a.property_index) {
                         Some(ItemProperty::Unsupported(_)) => {}
-                        Some(property) if property.box_type() == property_type => {
-                            values.push(property)?
-                        }
+                        Some(property) if filter(property) => values.push(property)?,
                         _ => {}
                     }
                 }
@@ -2796,7 +2856,16 @@ impl fmt::Debug for IccColourInformation {
 #[derive(Debug)]
 pub enum ColourInformation {
     Nclx(NclxColourInformation),
-    Icc(IccColourInformation),
+    Icc(IccColourInformation, FourCC),
+}
+
+impl ColourInformation {
+    fn colour_type(&self) -> FourCC {
+        match self {
+            Self::Nclx(_) => FourCC::from(*b"nclx"),
+            Self::Icc(_, colour_type) => colour_type.clone(),
+        }
+    }
 }
 
 
@@ -2840,9 +2909,12 @@ fn read_colr<T: Read>(
                 full_range_flag,
             }))
         }
-        b"rICC" | b"prof" => Ok(ColourInformation::Icc(IccColourInformation {
-            bytes: src.read_into_try_vec()?,
-        })),
+        b"rICC" | b"prof" => Ok(ColourInformation::Icc(
+            IccColourInformation {
+                bytes: src.read_into_try_vec()?,
+            },
+            FourCC::from(colour_type),
+        )),
         _ => {
             error!("read_colr colour_type: {:?}", colour_type);
             Err(Error::InvalidData(
