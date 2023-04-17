@@ -298,7 +298,11 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:scale_blit\n"
 
-         "race:mozilla::gl::MesaMemoryLeakWorkaround"
+         "race:mozilla::gl::MesaMemoryLeakWorkaround\n"
+
+
+         
+         "race:mozilla::layers::AsyncPanZoomController::AsyncPanZoomController\n"
 
       
       ;  
