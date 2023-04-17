@@ -22,9 +22,6 @@ pub enum CreationError {
     #[error("Implementation specific error occurred")]
     Other,
     
-    #[error("{0:?} shader creation failed: {1:}")]
-    ShaderCreationError(ShaderStageFlags, String),
-    
     #[error("Pipeline kind is not supported")]
     UnsupportedPipeline,
     

@@ -17,8 +17,6 @@ pub trait QueueFamily: Debug + Any + Send + Sync {
     fn max_queues(&self) -> usize;
     
     fn id(&self) -> QueueFamilyId;
-    
-    fn supports_sparse_binding(&self) -> bool;
 }
 
 

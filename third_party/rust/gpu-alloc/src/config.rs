@@ -7,21 +7,21 @@ pub struct Config {
     
     
     
-    pub dedicated_threshold: u64,
+    pub dedicated_treshold: u64,
 
     
     
     
     
     
-    pub preferred_dedicated_threshold: u64,
+    pub preferred_dedicated_treshold: u64,
 
     
     
     
     
     
-    pub transient_dedicated_threshold: u64,
+    pub transient_dedicated_treshold: u64,
 
     
     pub linear_chunk: u64,
@@ -49,9 +49,9 @@ impl Config {
         let potato = Config::i_am_potato();
 
         Config {
-            dedicated_threshold: potato.dedicated_threshold * 1024,
-            preferred_dedicated_threshold: potato.preferred_dedicated_threshold * 1024,
-            transient_dedicated_threshold: potato.transient_dedicated_threshold * 1024,
+            dedicated_treshold: potato.dedicated_treshold * 1024,
+            preferred_dedicated_treshold: potato.preferred_dedicated_treshold * 1024,
+            transient_dedicated_treshold: potato.transient_dedicated_treshold * 1024,
             linear_chunk: potato.linear_chunk * 1024,
             minimal_buddy_size: potato.minimal_buddy_size * 1024,
             initial_buddy_dedicated_size: potato.initial_buddy_dedicated_size * 1024,
@@ -61,9 +61,9 @@ impl Config {
     
     pub fn i_am_potato() -> Self {
         Config {
-            dedicated_threshold: 32 * 1024,
-            preferred_dedicated_threshold: 1024,
-            transient_dedicated_threshold: 128 * 1024,
+            dedicated_treshold: 32 * 1024,
+            preferred_dedicated_treshold: 1024,
+            transient_dedicated_treshold: 128 * 1024,
             linear_chunk: 128 * 1024,
             minimal_buddy_size: 1,
             initial_buddy_dedicated_size: 8 * 1024,

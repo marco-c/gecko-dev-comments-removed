@@ -4,48 +4,27 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![allow(
-    renamed_and_removed_lints,
-    unknown_lints, 
-    clippy::new_without_default,
-    clippy::unneeded_field_pattern,
-    clippy::match_like_matches_macro,
-    clippy::manual_strip,
-    clippy::unknown_clippy_lints,
-)]
 #![warn(
     trivial_casts,
     trivial_numeric_casts,
     unused_extern_crates,
-    unused_qualifications,
-    clippy::pattern_type_mismatch
+    unused_qualifications
 )]
+#![allow(
+    clippy::new_without_default,
+    clippy::unneeded_field_pattern,
+    clippy::match_like_matches_macro
+)]
+
+#![allow(clippy::manual_strip, clippy::unknown_clippy_lints)]
 #![deny(clippy::panic)]
 
 mod arena;
 pub mod back;
 pub mod front;
 pub mod proc;
-pub mod valid;
 
-pub use crate::arena::{Arena, Handle, Range};
+pub use crate::arena::{Arena, Handle};
 
 use std::{
     collections::{HashMap, HashSet},
@@ -57,9 +36,6 @@ use std::{
 use serde::Deserialize;
 #[cfg(feature = "serialize")]
 use serde::Serialize;
-
-
-pub const BOOL_WIDTH: Bytes = 1;
 
 
 pub type FastHashMap<K, T> = HashMap<K, T, BuildHasherDefault<fxhash::FxHasher>>;
@@ -123,9 +99,14 @@ pub enum ShaderStage {
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[allow(missing_docs)] 
 pub enum StorageClass {
     
     Function,
+    
+    Input,
+    
+    Output,
     
     Private,
     
@@ -145,19 +126,21 @@ pub enum StorageClass {
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum BuiltIn {
-    Position,
     
     BaseInstance,
     BaseVertex,
     ClipDistance,
     InstanceIndex,
     PointSize,
+    Position,
     VertexIndex,
     
+    FragCoord,
     FragDepth,
     FrontFacing,
     SampleIndex,
-    SampleMask,
+    SampleMaskIn,
+    SampleMaskOut,
     
     GlobalInvocationId,
     LocalInvocationId,
@@ -226,6 +209,8 @@ pub enum Interpolation {
     
     Flat,
     
+    Patch,
+    
     
     Centroid,
     
@@ -240,14 +225,8 @@ pub enum Interpolation {
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct StructMember {
     pub name: Option<String>,
-    
+    pub span: Option<NonZeroU32>,
     pub ty: Handle<Type>,
-    
-    pub binding: Option<Binding>,
-    
-    pub size: Option<NonZeroU32>,
-    
-    pub align: Option<NonZeroU32>,
 }
 
 
@@ -382,13 +361,6 @@ pub enum TypeInner {
         class: StorageClass,
     },
     
-    ValuePointer {
-        size: Option<VectorSize>,
-        kind: ScalarKind,
-        width: Bytes,
-        class: StorageClass,
-    },
-    
     Array {
         base: Handle<Type>,
         size: ArraySize,
@@ -396,7 +368,6 @@ pub enum TypeInner {
     },
     
     Struct {
-        
         block: bool,
         members: Vec<StructMember>,
     },
@@ -421,7 +392,7 @@ pub struct Constant {
 }
 
 
-#[derive(Debug, PartialEq, Clone, Copy, PartialOrd)]
+#[derive(Debug, PartialEq, Clone, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum ScalarValue {
@@ -432,7 +403,7 @@ pub enum ScalarValue {
 }
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum ConstantInner {
@@ -454,18 +425,9 @@ pub enum Binding {
     
     BuiltIn(BuiltIn),
     
-    Location(u32, Option<Interpolation>),
-}
-
-
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[cfg_attr(feature = "deserialize", derive(Deserialize))]
-pub struct ResourceBinding {
+    Location(u32),
     
-    pub group: u32,
-    
-    pub binding: u32,
+    Resource { group: u32, binding: u32 },
 }
 
 
@@ -478,11 +440,16 @@ pub struct GlobalVariable {
     
     pub class: StorageClass,
     
-    pub binding: Option<ResourceBinding>,
+    pub binding: Option<Binding>,
     
     pub ty: Handle<Type>,
     
     pub init: Option<Handle<Constant>>,
+    
+    
+    
+    
+    pub interpolation: Option<Interpolation>,
     
     pub storage_access: StorageAccess,
 }
@@ -756,7 +723,10 @@ pub enum Expression {
         convert: bool,
     },
     
-    Call(Handle<Function>),
+    Call {
+        function: Handle<Function>,
+        arguments: Vec<Handle<Expression>>,
+    },
     
     ArrayLength(Handle<Expression>),
 }
@@ -781,13 +751,10 @@ pub struct SwitchCase {
 
 
 
-
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum Statement {
-    
-    Emit(Range<Expression>),
     
     Block(Block),
     
@@ -805,6 +772,7 @@ pub enum Statement {
     
     Loop { body: Block, continuing: Block },
     
+    
     Break,
     
     Continue,
@@ -813,19 +781,10 @@ pub enum Statement {
     
     Kill,
     
-    
-    
-    
-    
-    
     Store {
         pointer: Handle<Expression>,
         value: Handle<Expression>,
     },
-    
-    
-    
-    
     
     ImageStore {
         image: Handle<Expression>,
@@ -834,19 +793,14 @@ pub enum Statement {
         value: Handle<Expression>,
     },
     
-    
-    
-    
-    
     Call {
         function: Handle<Function>,
         arguments: Vec<Handle<Expression>>,
-        result: Option<Handle<Expression>>,
     },
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct FunctionArgument {
@@ -854,20 +808,6 @@ pub struct FunctionArgument {
     pub name: Option<String>,
     
     pub ty: Handle<Type>,
-    
-    
-    pub binding: Option<Binding>,
-}
-
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[cfg_attr(feature = "deserialize", derive(Deserialize))]
-pub struct FunctionResult {
-    
-    pub ty: Handle<Type>,
-    
-    
-    pub binding: Option<Binding>,
 }
 
 
@@ -880,7 +820,7 @@ pub struct Function {
     
     pub arguments: Vec<FunctionArgument>,
     
-    pub result: Option<FunctionResult>,
+    pub return_type: Option<Handle<Type>>,
     
     pub local_variables: Arena<LocalVariable>,
     
@@ -894,10 +834,6 @@ pub struct Function {
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct EntryPoint {
-    
-    pub name: String,
-    
-    pub stage: ShaderStage,
     
     pub early_depth_test: Option<EarlyDepthTest>,
     
@@ -930,5 +866,5 @@ pub struct Module {
     
     pub functions: Arena<Function>,
     
-    pub entry_points: Vec<EntryPoint>,
+    pub entry_points: FastHashMap<(ShaderStage, String), EntryPoint>,
 }

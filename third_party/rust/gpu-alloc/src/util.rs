@@ -16,9 +16,8 @@ pub(crate) fn is_arc_unique<M>(arc: &mut Arc<M>) -> bool {
 
 
 
-pub(crate) unsafe fn arc_unwrap<M>(mut arc: Arc<M>) -> M {
+pub(crate) unsafe fn arc_unwrap<M>(arc: Arc<M>) -> M {
     use core::{mem::ManuallyDrop, ptr::read};
-    debug_assert!(is_arc_unique(&mut arc));
 
     
     let raw = Arc::into_raw(arc);

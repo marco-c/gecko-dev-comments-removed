@@ -17,7 +17,6 @@ use crate::{
 use std::{any::Any, fmt};
 
 pub use self::family::{QueueFamily, QueueFamilyId, QueueGroup};
-use crate::memory::{SparseBind, SparseImageBind};
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -66,41 +65,6 @@ pub type QueuePriority = f32;
 
 
 pub trait Queue<B: Backend>: fmt::Debug + Any + Send + Sync {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn bind_sparse<'a, Iw, Is, Ibi, Ib, Iii, Io, Ii>(
-        &mut self,
-        _wait_semaphores: Iw,
-        _signal_semaphores: Is,
-        _buffer_memory_binds: Ib,
-        _image_opaque_memory_binds: Io,
-        _image_memory_binds: Ii,
-        _device: &B::Device,
-        _fence: Option<&B::Fence>,
-    ) where
-        Ibi: Iterator<Item = &'a SparseBind<&'a B::Memory>>,
-        Ib: Iterator<Item = (&'a mut B::Buffer, Ibi)>,
-        Iii: Iterator<Item = &'a SparseImageBind<&'a B::Memory>>,
-        Io: Iterator<Item = (&'a mut B::Image, Ibi)>,
-        Ii: Iterator<Item = (&'a mut B::Image, Iii)>,
-        Iw: Iterator<Item = &'a B::Semaphore>,
-        Is: Iterator<Item = &'a B::Semaphore>,
-    {
-        unimplemented!()
-    }
-
     
     
     

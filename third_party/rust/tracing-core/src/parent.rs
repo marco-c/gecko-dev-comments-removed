@@ -1,0 +1,11 @@
+use crate::span::Id;
+
+#[derive(Debug)]
+pub(crate) enum Parent {
+    
+    Root,
+    
+    Current,
+    
+    Explicit(Id),
+}

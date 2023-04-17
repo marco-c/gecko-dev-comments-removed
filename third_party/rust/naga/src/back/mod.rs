@@ -1,31 +1,8 @@
 
 
-#[cfg(feature = "dot-out")]
-pub mod dot;
 #[cfg(feature = "glsl-out")]
 pub mod glsl;
 #[cfg(feature = "msl-out")]
 pub mod msl;
 #[cfg(feature = "spv-out")]
 pub mod spv;
-
-impl crate::Expression {
-    
-    
-    
-    
-    
-    #[allow(dead_code)]
-    fn bake_ref_count(&self) -> usize {
-        match *self {
-            
-            crate::Expression::Access { .. } | crate::Expression::AccessIndex { .. } => !0,
-            
-            crate::Expression::ImageSample { .. } | crate::Expression::ImageLoad { .. } => 1,
-            
-            crate::Expression::Derivative { .. } => 1,
-            
-            _ => 2,
-        }
-    }
-}

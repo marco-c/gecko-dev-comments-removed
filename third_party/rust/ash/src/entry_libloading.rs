@@ -1,7 +1,6 @@
 use crate::entry::EntryCustom;
 use libloading::Library;
 use std::error::Error;
-use std::ffi::OsStr;
 use std::fmt;
 use std::ptr;
 use std::sync::Arc;
@@ -55,25 +54,12 @@ impl EntryCustom<Arc<Library>> {
     
     
     
-    
-    
-    
-    
-    
-    
-    pub unsafe fn new() -> Result<Entry, LoadingError> {
-        Self::with_library(&LIB_PATH)
-    }
+    pub fn new() -> Result<Entry, LoadingError> {
+        let lib = Library::new(&LIB_PATH)
+            .map_err(LoadingError)
+            .map(Arc::new)?;
 
-    
-    
-    
-    
-    
-    pub unsafe fn with_library(path: &impl AsRef<OsStr>) -> Result<Entry, LoadingError> {
-        let lib = Library::new(path).map_err(LoadingError).map(Arc::new)?;
-
-        Ok(Self::new_custom(lib, |vk_lib, name| {
+        Ok(Self::new_custom(lib, |vk_lib, name| unsafe {
             vk_lib
                 .get(name.to_bytes_with_nul())
                 .map(|symbol| *symbol)

@@ -66,7 +66,6 @@ impl<I: Copy + PartialOrd, T: Copy + PartialEq> RangedStates<I, T> {
     }
 
     
-    #[allow(clippy::suspicious_operation_groupings)]
     pub fn coalesce(&mut self) {
         let mut num_removed = 0;
         let mut iter = self.ranges.iter_mut();
@@ -205,40 +204,40 @@ impl<'a, I: Copy + Debug + Ord, T: Copy + Debug> Iterator for Merge<'a, I, T> {
     fn next(&mut self) -> Option<Self::Item> {
         match (self.sa.peek(), self.sb.peek()) {
             
-            (Some(&&(ref ra, va)), Some(&&(ref rb, vb))) => {
+            (Some(&(ref ra, va)), Some(&(ref rb, vb))) => {
                 let (range, usage) = if ra.start < self.base {
                     
                     let (end, end_value) = if self.base == rb.start {
                         
                         debug_assert!(self.base < ra.end);
-                        (rb.end, Some(vb))
+                        (rb.end, Some(*vb))
                     } else {
                         
                         debug_assert!(self.base < rb.start);
                         (rb.start, None)
                     };
-                    (self.base..ra.end.min(end), Some(va)..end_value)
+                    (self.base..ra.end.min(end), Some(*va)..end_value)
                 } else if rb.start < self.base {
                     
                     let (end, start_value) = if self.base == ra.start {
                         
                         debug_assert!(self.base < rb.end);
-                        (ra.end, Some(va))
+                        (ra.end, Some(*va))
                     } else {
                         
                         debug_assert!(self.base < ra.start);
                         (ra.start, None)
                     };
-                    (self.base..rb.end.min(end), start_value..Some(vb))
+                    (self.base..rb.end.min(end), start_value..Some(*vb))
                 } else {
                     
                     match ra.start.cmp(&rb.start) {
                         
-                        Ordering::Equal => (ra.start..ra.end.min(rb.end), Some(va)..Some(vb)),
+                        Ordering::Equal => (ra.start..ra.end.min(rb.end), Some(*va)..Some(*vb)),
                         
-                        Ordering::Less => (ra.start..rb.start.min(ra.end), Some(va)..None),
+                        Ordering::Less => (ra.start..rb.start.min(ra.end), Some(*va)..None),
                         
-                        Ordering::Greater => (rb.start..ra.start.min(rb.end), None..Some(vb)),
+                        Ordering::Greater => (rb.start..ra.start.min(rb.end), None..Some(*vb)),
                     }
                 };
                 self.base = range.end;
@@ -251,18 +250,18 @@ impl<'a, I: Copy + Debug + Ord, T: Copy + Debug> Iterator for Merge<'a, I, T> {
                 Some((range, usage))
             }
             
-            (None, Some(&&(ref rb, vb))) => {
+            (None, Some(&(ref rb, vb))) => {
                 let range = self.base.max(rb.start)..rb.end;
                 self.base = rb.end;
                 let _ = self.sb.next();
-                Some((range, None..Some(vb)))
+                Some((range, None..Some(*vb)))
             }
             
-            (Some(&&(ref ra, va)), None) => {
+            (Some(&(ref ra, va)), None) => {
                 let range = self.base.max(ra.start)..ra.end;
                 self.base = ra.end;
                 let _ = self.sa.next();
-                Some((range, Some(va)..None))
+                Some((range, Some(*va)..None))
             }
             
             (None, None) => None,
