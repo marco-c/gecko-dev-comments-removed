@@ -10,6 +10,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   EventEmitter: "resource://gre/modules/EventEmitter.jsm",
   DeferredTask: "resource://gre/modules/DeferredTask.jsm",
+  FilterAdult: "resource://activity-stream/lib/FilterAdult.jsm",
   Services: "resource://gre/modules/Services.jsm",
   Snapshots: "resource:///modules/Snapshots.jsm",
 });
@@ -70,6 +71,11 @@ class SnapshotSelector extends EventEmitter {
 
 
 
+    filterAdult: false,
+    
+
+
+
     url: undefined,
     
 
@@ -89,10 +95,13 @@ class SnapshotSelector extends EventEmitter {
 
 
 
-  constructor(count = 5) {
+
+
+  constructor(count = 5, filterAdult = false) {
     super();
     this.#task = new DeferredTask(() => this.#buildSnapshots(), 500);
     this.#context.count = count;
+    this.#context.filterAdult = filterAdult;
     SnapshotSelector.#selectors.add(this);
   }
 
@@ -148,13 +157,21 @@ class SnapshotSelector extends EventEmitter {
     logConsole.debug("Building snapshots", context);
 
     
+    
+    
+    
     let snapshots = await Snapshots.query({
-      limit: context.count + 1,
+      limit: context.filterAdult ? context.count * 4 : context.count + 1,
       type: context.type,
     });
 
     snapshots = snapshots
-      .filter(snapshot => snapshot.url != context.url)
+      .filter(snapshot => {
+        if (snapshot.url == context.url) {
+          return false;
+        }
+        return !context.filterAdult || !FilterAdult.isAdultUrl(snapshot.url);
+      })
       .slice(0, context.count);
 
     this.#snapshotsGenerated(snapshots);
