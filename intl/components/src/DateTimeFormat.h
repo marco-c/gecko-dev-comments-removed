@@ -443,6 +443,19 @@ class DateTimeFormat final {
   static Maybe<DateTimeFormat::HourCycle> HourCycleFromPattern(
       Span<const char16_t> aPattern);
 
+  using HourCyclesVector = Vector<HourCycle, 4>;
+
+  
+
+
+
+
+
+
+
+  static Result<HourCyclesVector, ICUError> GetAllowedHourCycles(
+      Span<const char> aLanguage, Maybe<Span<const char>> aRegion);
+
  private:
   explicit DateTimeFormat(UDateFormat* aDateFormat);
 
