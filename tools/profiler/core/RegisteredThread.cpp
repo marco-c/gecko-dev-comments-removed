@@ -20,9 +20,7 @@ RacyRegisteredThread::RacyRegisteredThread(
 
 RegisteredThread::RegisteredThread(
     mozilla::profiler::ThreadRegistration& aThreadRegistration)
-    : mRacyRegisteredThread(aThreadRegistration),
-      mPlatformData(
-          AllocPlatformData(aThreadRegistration.mData.mInfo.ThreadId())) {
+    : mRacyRegisteredThread(aThreadRegistration) {
   MOZ_COUNT_CTOR(RegisteredThread);
 
   
@@ -35,10 +33,6 @@ size_t RegisteredThread::SizeOfIncludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) const {
   size_t n = aMallocSizeOf(this);
 
-  
-  
-  
-  
   
   
 
