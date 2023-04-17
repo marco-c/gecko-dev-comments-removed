@@ -136,7 +136,15 @@ function initialize(toggleProfilerKeyShortcuts) {
         "devtools.performance.popup.intro-displayed";
       Services.prefs.setBoolPref(popupIntroDisplayedPref, false);
 
-      if (Services.profiler.IsActive()) {
+      
+      
+      if (
+        Services.profiler.IsActive() &&
+        (!Cu.isInAutomation ||
+          !Cc["@mozilla.org/process/environment;1"]
+            .getService(Ci.nsIEnvironment)
+            .exists("MOZ_PROFILER_STARTUP"))
+      ) {
         Services.profiler.StopProfiler();
       }
     }

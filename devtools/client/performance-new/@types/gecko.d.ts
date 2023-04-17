@@ -66,9 +66,6 @@ declare namespace MockedExports {
 
 
     import: <S extends keyof KnownModules>(module: S) => KnownModules[S];
-    createObjectIn: (content: ContentWindow) => object;
-    exportFunction: (fn: Function, scope: object, options?: object) => void;
-    cloneInto: (value: any, scope: object, options?: object) => void;
     defineModuleGetter: (target: any, variable: string, path: string) => void;
   }
 
@@ -242,23 +239,46 @@ declare namespace MockedExports {
   class nsIEnvironment {}
 
   interface Environment {
+    exists(envName: string): boolean;
     get(envName: string): string;
     set(envName: string, value: string): void;
   }
 
+  interface Cc {
+    "@mozilla.org/process/environment;1": {
+      getService(service: nsIEnvironment): Environment
+    },
+    "@mozilla.org/filepicker;1": {
+      createInstance(instance: nsIFilePicker): FilePicker
+    }
+  }
+
+  interface Ci {
+    nsIFilePicker: nsIFilePicker;
+    nsIEnvironment: nsIEnvironment;
+  }
+
+  interface Cu {
+    
+
+
+
+
+
+
+
+
+    import: <S extends keyof KnownModules>(module: S) => KnownModules[S];
+    createObjectIn: (content: ContentWindow) => object;
+    exportFunction: (fn: Function, scope: object, options?: object) => void;
+    cloneInto: (value: any, scope: object, options?: object) => void;
+    isInAutomation: boolean;
+  }
+
   const chrome: {
-    Cc: {
-      "@mozilla.org/process/environment;1": {
-        getService(service: nsIEnvironment): Environment
-      },
-      "@mozilla.org/filepicker;1": {
-        createInstance(instance: nsIFilePicker): FilePicker
-      }
-    },
-    Ci: {
-      nsIFilePicker: nsIFilePicker;
-      nsIEnvironment: nsIEnvironment;
-    },
+    Cc: Cc,
+    Ci: Ci,
+    Cu: Cu,
   };
 }
 
@@ -346,7 +366,12 @@ declare module "resource://devtools/shared/Loader.jsm" {
 }
 
 declare var ChromeUtils: MockedExports.ChromeUtils;
-declare var Cu: MockedExports.ChromeUtils;
+
+
+
+declare var Cu: MockedExports.Cu;
+declare var Cc: MockedExports.Cc;
+declare var Ci: MockedExports.Ci;
 
 
 
