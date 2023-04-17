@@ -2992,6 +2992,12 @@ void nsFocusManager::UpdateCaret(bool aMoveCaretToFocus, bool aUpdateVisibility,
     MoveCaretToFocus(presShell, aContent);
   }
 
+  
+  
+  if (!mFocusedWindow) {
+    return;
+  }
+
   if (!aUpdateVisibility) {
     return;
   }
