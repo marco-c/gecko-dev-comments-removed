@@ -151,6 +151,13 @@ class HTMLEditUtils final {
   }
 
   static bool IsInlineStyle(nsINode* aNode);
+
+  
+
+
+
+  static bool IsDisplayOutsideInline(const Element& aElement);
+
   
 
 

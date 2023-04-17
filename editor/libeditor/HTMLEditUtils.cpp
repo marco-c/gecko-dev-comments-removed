@@ -22,11 +22,12 @@
 #include "nsAString.h"  
 #include "nsAtom.h"     
 #include "nsCaseTreatment.h"
-#include "nsCOMPtr.h"        
-#include "nsDebug.h"         
-#include "nsElementTable.h"  
-#include "nsError.h"         
-#include "nsGkAtoms.h"       
+#include "nsCOMPtr.h"            
+#include "nsComputedDOMStyle.h"  
+#include "nsDebug.h"             
+#include "nsElementTable.h"      
+#include "nsError.h"             
+#include "nsGkAtoms.h"           
 #include "nsHTMLTags.h"
 #include "nsLiteralString.h"     
 #include "nsNameSpaceManager.h"  
@@ -156,6 +157,16 @@ bool HTMLEditUtils::IsInlineStyle(nsINode* aNode) {
       nsGkAtoms::b, nsGkAtoms::i, nsGkAtoms::u, nsGkAtoms::tt, nsGkAtoms::s,
       nsGkAtoms::strike, nsGkAtoms::big, nsGkAtoms::small, nsGkAtoms::sub,
       nsGkAtoms::sup, nsGkAtoms::font);
+}
+
+bool HTMLEditUtils::IsDisplayOutsideInline(const Element& aElement) {
+  RefPtr<ComputedStyle> elementStyle =
+      nsComputedDOMStyle::GetComputedStyleNoFlush(&aElement);
+  if (!elementStyle) {
+    return false;
+  }
+  return elementStyle->StyleDisplay()->DisplayOutside() ==
+         StyleDisplayOutside::Inline;
 }
 
 bool HTMLEditUtils::IsRemovableInlineStyleElement(Element& aElement) {

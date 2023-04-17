@@ -1444,47 +1444,72 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
           : nullptr;
 
   ParagraphSeparator separator = GetDefaultParagraphSeparator();
-  bool insertBRElement;
+  bool insertLineBreak;
   
   
   if (!editableBlockElement) {
     
-    insertBRElement = true;
+    insertLineBreak = true;
   }
   
   
   
   else if (!HTMLEditUtils::IsSplittableNode(*editableBlockElement)) {
-    insertBRElement =
+    insertLineBreak =
         separator == ParagraphSeparator::br ||
-        !HTMLEditUtils::CanElementContainParagraph(*editableBlockElement);
+        !HTMLEditUtils::CanElementContainParagraph(*editingHost) ||
+        (HTMLEditUtils::IsDisplayOutsideInline(*editingHost) &&
+         EditorUtils::IsNewLinePreformatted(
+             atStartOfSelection.IsInContentNode()
+                 ? *atStartOfSelection.ContainerAsContent()
+                 : static_cast<nsIContent&>(*editingHost)));
   }
   
   
   
   else if (HTMLEditUtils::IsSingleLineContainer(*editableBlockElement)) {
-    insertBRElement = false;
+    insertLineBreak = false;
   }
   
   
   else {
-    insertBRElement = true;
+    insertLineBreak = true;
     for (const Element* editableBlockAncestor = editableBlockElement;
-         editableBlockAncestor && insertBRElement;
+         editableBlockAncestor && insertLineBreak;
          editableBlockAncestor = HTMLEditUtils::GetAncestorElement(
              *editableBlockAncestor,
              HTMLEditUtils::ClosestEditableBlockElement)) {
-      insertBRElement =
+      insertLineBreak =
           !HTMLEditUtils::CanElementContainParagraph(*editableBlockAncestor);
     }
   }
 
   
   
-  if (insertBRElement) {
-    nsresult rv = InsertBRElement(atStartOfSelection);
+  if (insertLineBreak) {
+    
+    
+    if (separator != ParagraphSeparator::br &&
+        
+        (!editableBlockElement || editableBlockElement == editingHost) &&
+        
+        HTMLEditUtils::IsDisplayOutsideInline(*editingHost) &&
+        
+        EditorUtils::IsNewLinePreformatted(
+            atStartOfSelection.IsInContentNode()
+                ? *atStartOfSelection.ContainerAsContent()
+                : static_cast<nsIContent&>(*editingHost))) {
+      nsresult rv = HandleInsertLinefeed(atStartOfSelection, *editingHost);
+      if (NS_FAILED(rv)) {
+        NS_WARNING("HTMLEditor::HandleInsertLinefeed() failed");
+        return EditActionIgnored(rv);
+      }
+      return EditActionHandled();
+    }
+
+    nsresult rv = HandleInsertBRElement(atStartOfSelection, *editingHost);
     if (NS_FAILED(rv)) {
-      NS_WARNING("HTMLEditor::InsertBRElement() failed");
+      NS_WARNING("HTMLEditor::HandleInsertBRElement() failed");
       return EditActionIgnored(rv);
     }
     return EditActionHandled();
@@ -1529,9 +1554,9 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
     }
     if (NS_WARN_IF(!HTMLEditUtils::IsSplittableNode(*editableBlockElement))) {
       
-      nsresult rv = InsertBRElement(atStartOfSelection);
+      nsresult rv = HandleInsertBRElement(atStartOfSelection, *editingHost);
       if (NS_FAILED(rv)) {
-        NS_WARNING("HTMLEditor::InsertBRElement() failed");
+        NS_WARNING("HTMLEditor::HandleInsertBRElement() failed");
         return EditActionIgnored(rv);
       }
       return EditActionHandled();
@@ -1629,15 +1654,16 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
   }
 
   
-  rv = InsertBRElement(atStartOfSelection);
+  rv = HandleInsertBRElement(atStartOfSelection, *editingHost);
   if (NS_FAILED(rv)) {
-    NS_WARNING("HTMLEditor::InsertBRElement() failed");
+    NS_WARNING("HTMLEditor::HandleInsertBRElement() failed");
     return EditActionIgnored(rv);
   }
   return EditActionHandled();
 }
 
-nsresult HTMLEditor::InsertBRElement(const EditorDOMPoint& aPointToBreak) {
+nsresult HTMLEditor::HandleInsertBRElement(const EditorDOMPoint& aPointToBreak,
+                                           Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (NS_WARN_IF(!aPointToBreak.IsSet())) {
@@ -1645,8 +1671,6 @@ nsresult HTMLEditor::InsertBRElement(const EditorDOMPoint& aPointToBreak) {
   }
 
   bool brElementIsAfterBlock = false, brElementIsBeforeBlock = false;
-
-  RefPtr<Element> editingHost = GetActiveEditingHost();
 
   
   RefPtr<Element> brElement;
@@ -1661,7 +1685,7 @@ nsresult HTMLEditor::InsertBRElement(const EditorDOMPoint& aPointToBreak) {
     brElement = resultOfInsertingBRElement.unwrap().forget();
   } else {
     EditorDOMPoint pointToBreak(aPointToBreak);
-    WSRunScanner wsRunScanner(editingHost, pointToBreak);
+    WSRunScanner wsRunScanner(&aEditingHost, pointToBreak);
     WSScanResult backwardScanResult =
         wsRunScanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(pointToBreak);
     if (backwardScanResult.Failed()) {
@@ -1735,7 +1759,7 @@ nsresult HTMLEditor::InsertBRElement(const EditorDOMPoint& aPointToBreak) {
   NS_WARNING_ASSERTION(advanced,
                        "Failed to advance offset after the new <br> element");
   WSScanResult forwardScanFromAfterBRElementResult =
-      WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(editingHost,
+      WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(&aEditingHost,
                                                        afterBRElement);
   if (forwardScanFromAfterBRElementResult.Failed()) {
     NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
@@ -1783,6 +1807,129 @@ nsresult HTMLEditor::InsertBRElement(const EditorDOMPoint& aPointToBreak) {
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::CollapseSelectionTo() failed");
   return rv;
+}
+
+nsresult HTMLEditor::HandleInsertLinefeed(const EditorDOMPoint& aPointToBreak,
+                                          Element& aEditingHost) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  if (NS_WARN_IF(!aPointToBreak.IsSet())) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  
+  
+
+  RefPtr<const nsRange> caretRange =
+      nsRange::Create(aPointToBreak.ToRawRangeBoundary(),
+                      aPointToBreak.ToRawRangeBoundary(), IgnoreErrors());
+  if (NS_WARN_IF(!caretRange)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsresult rv = CreateStyleForInsertText(*caretRange);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("HTMLEditor::CreateStyleForInsertText() failed");
+    return rv;
+  }
+
+  caretRange = SelectionRef().GetRangeAt(0);
+  if (NS_WARN_IF(!caretRange)) {
+    return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+  }
+
+  EditorDOMPoint pointToInsert(caretRange->StartRef());
+  if (NS_WARN_IF(!pointToInsert.IsSet()) ||
+      NS_WARN_IF(!pointToInsert.IsInContentNode())) {
+    return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+  }
+  MOZ_ASSERT(pointToInsert.IsSetAndValid());
+  MOZ_ASSERT_IF(
+      !pointToInsert.IsInTextNode(),
+      HTMLEditUtils::CanNodeContain(*pointToInsert.ContainerAsContent(),
+                                    *nsGkAtoms::textTagName));
+  RefPtr<Document> document = GetDocument();
+  MOZ_ASSERT(document);
+  if (NS_WARN_IF(!document)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  AutoRestore<bool> disableListener(
+      EditSubActionDataRef().mAdjustChangedRangeFromListener);
+  EditSubActionDataRef().mAdjustChangedRangeFromListener = false;
+  AutoTransactionsConserveSelection dontChangeMySelection(*this);
+  EditorRawDOMPoint caretAfterInsert;
+  {
+    AutoTrackDOMPoint trackingInsertingPosition(RangeUpdaterRef(),
+                                                &pointToInsert);
+    nsresult rv = InsertTextWithTransaction(*document, u"\n"_ns, pointToInsert,
+                                            &caretAfterInsert);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
+      return rv;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  if (caretAfterInsert.IsInContentNode() &&
+      caretAfterInsert.IsEndOfContainer()) {
+    WSRunScanner wsScannerAtCaret(&aEditingHost, caretAfterInsert);
+    if (wsScannerAtCaret.StartsFromPreformattedLineBreak() &&
+        wsScannerAtCaret.EndsByBlockBoundary() &&
+        HTMLEditUtils::CanNodeContain(*wsScannerAtCaret.GetEndReasonContent(),
+                                      *nsGkAtoms::br)) {
+      EditorDOMPoint newCaretPosition(caretAfterInsert);
+      {
+        AutoTrackDOMPoint trackingInsertedPosition(RangeUpdaterRef(),
+                                                   &pointToInsert);
+        AutoTrackDOMPoint trackingNewCaretPosition(RangeUpdaterRef(),
+                                                   &newCaretPosition);
+        Result<RefPtr<Element>, nsresult> resultOfInsertingBRElement =
+            InsertBRElementWithTransaction(newCaretPosition,
+                                           nsIEditor::ePrevious);
+        if (resultOfInsertingBRElement.isErr()) {
+          NS_WARNING("HTMLEditor::InsertBRElementWithTransaction() failed");
+          return resultOfInsertingBRElement.unwrapErr();
+        }
+        MOZ_ASSERT(resultOfInsertingBRElement.inspect());
+      }
+      caretAfterInsert = newCaretPosition;
+    }
+  }
+
+  IgnoredErrorResult ignoredError;
+  SelectionRef().SetInterlinePosition(false, ignoredError);
+  NS_WARNING_ASSERTION(!ignoredError.Failed(),
+                       "Failed to unset interline position, but ignored");
+
+  
+  
+  if (!caretAfterInsert.IsSet()) {
+    if (NS_FAILED(TopLevelEditSubActionDataRef().mChangedRange->CollapseTo(
+            pointToInsert))) {
+      NS_WARNING("nsRange::CollapseTo() failed");
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  if (NS_FAILED(TopLevelEditSubActionDataRef().mChangedRange->SetStartAndEnd(
+          pointToInsert.ToRawRangeBoundary(),
+          caretAfterInsert.ToRawRangeBoundary()))) {
+    NS_WARNING("nsRange::SetStartAndEnd() failed");
+    return NS_ERROR_FAILURE;
+  }
+
+  rv = CollapseSelectionTo(caretAfterInsert);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("HTMLEditor::CollapseSelectionTo() failed");
+    return rv;
+  }
+  return NS_OK;
 }
 
 EditActionResult HTMLEditor::SplitMailCiteElements(
