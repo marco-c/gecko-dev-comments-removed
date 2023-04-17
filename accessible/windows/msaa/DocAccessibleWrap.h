@@ -7,7 +7,7 @@
 #ifndef mozilla_a11y_DocAccessibleWrap_h__
 #define mozilla_a11y_DocAccessibleWrap_h__
 
-#include "MsaaDocAccessible.h"
+#include "DocAccessible.h"
 
 namespace mozilla {
 
@@ -15,7 +15,7 @@ class PresShell;
 
 namespace a11y {
 
-class DocAccessibleWrap : public MsaaDocAccessible {
+class DocAccessibleWrap : public DocAccessible {
  public:
   DocAccessibleWrap(dom::Document* aDocument, PresShell* aPresShell);
   virtual ~DocAccessibleWrap();
@@ -23,16 +23,45 @@ class DocAccessibleWrap : public MsaaDocAccessible {
   DECL_IUNKNOWN_INHERITED
 
   
+
+  
+  virtual  HRESULT STDMETHODCALLTYPE get_accParent(
+       IDispatch __RPC_FAR* __RPC_FAR* ppdispParent)
+      override;
+
+  
+  virtual  HRESULT STDMETHODCALLTYPE get_accValue(
+       VARIANT varChild,
+       BSTR __RPC_FAR* pszValue) override;
+
+  
   virtual void Shutdown();
 
   
   virtual void* GetNativeWindow() const;
 
+  
+
+
+  void AddID(uint32_t aID, AccessibleWrap* aAcc) {
+    mIDToAccessibleMap.InsertOrUpdate(aID, aAcc);
+  }
+  void RemoveID(uint32_t aID) { mIDToAccessibleMap.Remove(aID); }
+  AccessibleWrap* GetAccessibleByID(uint32_t aID) const {
+    return mIDToAccessibleMap.Get(aID);
+  }
+
+ protected:
+  
+  virtual void DoInitialUpdate();
+
  protected:
   void* mHWND;
 
   
-  virtual void DoInitialUpdate();
+
+
+  nsTHashMap<nsUint32HashKey, AccessibleWrap*> mIDToAccessibleMap;
 };
 
 }  

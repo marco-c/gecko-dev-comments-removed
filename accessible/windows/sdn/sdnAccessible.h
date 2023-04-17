@@ -10,7 +10,6 @@
 #include "ISimpleDOM.h"
 #include "AccessibleWrap.h"
 #include "IUnknownImpl.h"
-#include "MsaaAccessible.h"
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
@@ -25,8 +24,8 @@ class sdnAccessible final : public ISimpleDOMNode {
     if (!mNode) MOZ_CRASH();
   }
 
-  explicit sdnAccessible(NotNull<MsaaAccessible*> aMsaa)
-      : mNode(aMsaa->LocalAcc()->GetNode()), mMsaa(aMsaa) {}
+  explicit sdnAccessible(NotNull<AccessibleWrap*> aAccWrap)
+      : mNode(aAccWrap->GetNode()), mWrap(aAccWrap) {}
 
   ~sdnAccessible();
 
@@ -43,7 +42,7 @@ class sdnAccessible final : public ISimpleDOMNode {
   
 
 
-  MsaaAccessible* GetMsaa();
+  AccessibleWrap* GetAccessible();
 
   void SetUniqueID(uint32_t aNewUniqueId) { mUniqueId = Some(aNewUniqueId); }
 
@@ -123,7 +122,7 @@ class sdnAccessible final : public ISimpleDOMNode {
 
  private:
   nsCOMPtr<nsINode> mNode;
-  RefPtr<MsaaAccessible> mMsaa;
+  RefPtr<AccessibleWrap> mWrap;
   Maybe<uint32_t> mUniqueId;
 };
 

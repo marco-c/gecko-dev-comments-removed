@@ -11,13 +11,12 @@
 #include "ApplicationAccessible.h"
 
 #include "AccessibleApplication.h"
-#include "ia2AccessibleApplication.h"
 
 namespace mozilla {
 namespace a11y {
 
-class ApplicationAccessibleWrap : public ia2AccessibleApplication,
-                                  public ApplicationAccessible {
+class ApplicationAccessibleWrap : public ApplicationAccessible,
+                                  public IAccessibleApplication {
   ~ApplicationAccessibleWrap() {}
 
  public:
@@ -25,10 +24,23 @@ class ApplicationAccessibleWrap : public ia2AccessibleApplication,
   NS_DECL_ISUPPORTS_INHERITED
 
   
-  DECL_IUNKNOWN_INHERITED
+  virtual already_AddRefed<nsIPersistentProperties> NativeAttributes() override;
 
   
-  virtual already_AddRefed<nsIPersistentProperties> NativeAttributes() override;
+  STDMETHODIMP QueryInterface(REFIID, void**);
+
+  
+  virtual  HRESULT STDMETHODCALLTYPE get_appName(
+       BSTR* name);
+
+  virtual  HRESULT STDMETHODCALLTYPE get_appVersion(
+       BSTR* version);
+
+  virtual  HRESULT STDMETHODCALLTYPE get_toolkitName(
+       BSTR* name);
+
+  virtual  HRESULT STDMETHODCALLTYPE get_toolkitVersion(
+       BSTR* version);
 };
 
 }  
