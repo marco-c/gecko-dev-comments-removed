@@ -206,6 +206,14 @@ extern "C" const char* __tsan_default_suppressions() {
          "thread:StartupCache\n"
 
          
+         
+         
+         
+         
+         
+         "thread:CreateMonitorThread\n"
+
+         
          "race:SkARGB32_Blitter\n"
          "race:SkARGB32_Shader_Blitter\n"
          "race:SkARGB32_Opaque_Blitter\n"
