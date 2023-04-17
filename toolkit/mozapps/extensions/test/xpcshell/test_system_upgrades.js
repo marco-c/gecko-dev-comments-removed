@@ -225,8 +225,10 @@ async function _test_builtin_addon_override() {
   
   
   let update = await promiseFindAddonUpdates(addon);
-  await promiseCompleteAllInstalls([update.updateAvailable]);
-  await AddonTestUtils.promiseWebExtensionStartup(ADDON_ID);
+  await Promise.all([
+    promiseCompleteAllInstalls([update.updateAvailable]),
+    AddonTestUtils.promiseWebExtensionStartup(ADDON_ID),
+  ]);
   addon = await checkAddon("4.0", BOOTSTRAP_REASONS.ADDON_UPGRADE);
 
   

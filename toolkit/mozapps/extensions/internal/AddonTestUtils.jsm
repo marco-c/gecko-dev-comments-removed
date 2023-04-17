@@ -1494,17 +1494,25 @@ var AddonTestUtils = {
   promiseCompleteInstall(install) {
     let listener;
     return new Promise(resolve => {
+      let installPromise;
       listener = {
         onDownloadFailed: resolve,
         onDownloadCancelled: resolve,
         onInstallFailed: resolve,
         onInstallCancelled: resolve,
-        onInstallEnded: resolve,
+        onInstallEnded() {
+          
+          
+          
+          
+          
+          resolve(installPromise);
+        },
         onInstallPostponed: resolve,
       };
 
       install.addListener(listener);
-      install.install();
+      installPromise = install.install();
     }).then(() => {
       install.removeListener(listener);
       return install;
