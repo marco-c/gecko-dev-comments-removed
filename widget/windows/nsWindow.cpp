@@ -1025,6 +1025,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                           sizeof dwAttribute);
   }
 
+  UpdateDarkModeToolbar();
+
   if (mOpeningAnimationSuppressed) {
     SuppressAnimation(true);
   }
@@ -2799,6 +2801,21 @@ void nsWindow::UpdateGetWindowInfoCaptionStatus(bool aActiveCaption) {
   
   SetPropW(mWnd, kManageWindowInfoProperty,
            reinterpret_cast<HANDLE>(static_cast<INT_PTR>(aActiveCaption) + 1));
+}
+
+#define DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1 19
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+
+void nsWindow::UpdateDarkModeToolbar() {
+  if (!IsWin10OrLater()) {
+    return;
+  }
+  BOOL dark =
+      LookAndFeel::ColorSchemeForChrome() == LookAndFeel::ColorScheme::Dark;
+  DwmSetWindowAttribute(mWnd, DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1, &dark,
+                        sizeof dark);
+  DwmSetWindowAttribute(mWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark,
+                        sizeof dark);
 }
 
 
@@ -5160,6 +5177,8 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
       
       NotifyThemeChanged(widget::ThemeChangeKind::StyleAndLayout);
+
+      UpdateDarkModeToolbar();
 
       
       
