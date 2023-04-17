@@ -185,7 +185,8 @@ enum class MediaThreadType {
                
   PLATFORM_DECODER,  
   PLATFORM_ENCODER,  
-  WEBRTC_DECODER,
+  WEBRTC_CALL_THREAD,
+  WEBRTC_WORKER,
   MDSM,  
 };
 
