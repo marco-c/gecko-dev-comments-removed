@@ -1,11 +1,13 @@
 
 
 
+
 'use strict';
 
-assert_true(self.crossOriginIsolated);
 
 promise_test(async testCase => {
+  assert_true(self.crossOriginIsolated);
+
   const {iframes, windows} = await build([
     {
       id: 'cross-site-1',
