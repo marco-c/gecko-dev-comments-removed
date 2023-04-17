@@ -25,14 +25,9 @@ add_task(async function() {
   const SEARCH_STRING = "test";
   
   const URLS = [SEARCH_SJS + "?value=test1", SEARCH_SJS + "?value=test2"];
+
   const wait = waitForNetworkEvents(monitor, 2);
-  for (const url of URLS) {
-    await SpecialPowers.spawn(tab.linkedBrowser, [url], async function(
-      requestUrl
-    ) {
-      content.wrappedJSObject.performRequests(1, requestUrl);
-    });
-  }
+  await SpecialPowers.spawn(tab.linkedBrowser, [URLS], makeRequests);
   await wait;
 
   
@@ -61,27 +56,20 @@ add_task(async function() {
     ".search-panel-content .treeRow .treeIcon"
   );
 
-  
-  AccessibilityUtils.setEnv({
-    
-    
-    mustHaveAccessibleRule: false,
-  });
-  for (let i = 0; i < searchMatchContents.length; i++) {
-    EventUtils.sendMouseEvent({ type: "click" }, searchMatchContents[i]);
+  for (let i = searchMatchContents.length - 1; i >= 0; i--) {
+    clickElement(searchMatchContents[i], monitor);
   }
-  AccessibilityUtils.resetEnv();
-
-  
-  const matches = document.querySelectorAll(
-    ".search-panel-content .treeRow.resultRow"
-  );
 
   
   await waitForDOMIfNeeded(
     document,
-    ".search-panel-content .treeRow.resourceRow",
-    2
+    ".search-panel-content .treeRow.resultRow",
+    12
+  );
+
+  
+  const matches = document.querySelectorAll(
+    ".search-panel-content .treeRow.resultRow"
   );
 
   await checkSearchResult(
@@ -184,6 +172,14 @@ add_task(async function() {
   await teardown(monitor);
 });
 
+async function makeRequests(urls) {
+  content.wrappedJSObject.get(urls[0], () => {
+    content.wrappedJSObject.get(urls[1], () => {
+      info("XHR Requests executed");
+    });
+  });
+}
+
 
 
 
@@ -198,7 +194,10 @@ async function checkSearchResult(
   const { document } = monitor.panelWin;
 
   
-  EventUtils.sendMouseEvent({ type: "click" }, match);
+  match.scrollIntoView();
+
+  
+  clickElement(match, monitor);
 
   console.log(`${panelSelector} ${panelContentSelector}`);
   await waitFor(() =>
