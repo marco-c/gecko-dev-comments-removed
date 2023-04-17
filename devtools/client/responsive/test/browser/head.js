@@ -606,21 +606,6 @@ function waitForViewportScroll(ui) {
   );
 }
 
-async function load(browser, url) {
-  const onBrowserLoaded = BrowserTestUtils.browserLoaded(
-    browser,
-    false,
-    null,
-    false
-  );
-  const waitForDevToolsReload = await watchForDevToolsReload(browser);
-
-  BrowserTestUtils.loadURI(browser, url);
-
-  await onBrowserLoaded;
-  await waitForDevToolsReload();
-}
-
 
 
 
@@ -1031,22 +1016,4 @@ async function waitForDevicePixelRatio(
   }
 
   return dpx;
-}
-
-
-
-
-
-
-
-
-
-
-
-async function navigateToNewDomain(uri, ui) {
-  
-  const target = ui.currentTarget;
-
-  await load(ui.getViewportBrowser(), uri);
-  await waitUntil(() => ui.currentTarget !== target);
 }

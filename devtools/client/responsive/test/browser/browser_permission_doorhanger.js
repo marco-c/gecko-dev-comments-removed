@@ -40,13 +40,13 @@ addRDMTask(
 
     
     
-    await load(browser, TEST_SURL);
+    await navigateTo(TEST_SURL);
     await waitPromptPromise;
 
     ok(true, "Permission doorhanger appeared without RDM enabled");
 
     
-    await load(browser, DUMMY_URL);
+    await navigateTo(DUMMY_URL);
     const { ui } = await openRDM(tab);
     await waitForDeviceAndViewportState(ui);
 
@@ -55,7 +55,8 @@ addRDMTask(
 
     
     
-    await load(browser, TEST_SURL);
+    await navigateTo(TEST_SURL);
+
     await waitPromptPromise;
 
     ok(true, "Permission doorhanger appeared inside RDM");

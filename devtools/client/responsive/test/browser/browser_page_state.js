@@ -23,8 +23,8 @@ addRDMTask(
     
     const tab = await addTab(DUMMY_1_URL);
     const browser = tab.linkedBrowser;
-    await load(browser, TEST_URL);
-    await load(browser, DUMMY_2_URL);
+    await navigateTo(TEST_URL);
+    await navigateTo(DUMMY_2_URL);
 
     
     let history = await getSessionHistory(browser);

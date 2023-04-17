@@ -21,7 +21,8 @@ addRDMTask(TEST_URL, async function({ ui }) {
   );
 
   
-  await load(browser, TEST_URL);
+  await navigateTo(TEST_URL, { browser });
+
   const location = await spawnViewportTask(ui, {}, function() {
     return content.location.href; 
   });

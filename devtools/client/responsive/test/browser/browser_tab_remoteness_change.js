@@ -31,7 +31,7 @@ addRDMTask(
     );
 
     
-    await navigateToNewDomain("about:robots", ui);
+    await navigateTo("about:robots");
 
     
     is(ui.destroyed, false, "RDM is still open.");

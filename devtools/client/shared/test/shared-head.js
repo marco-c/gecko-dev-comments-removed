@@ -475,9 +475,14 @@ var refreshTab = async function(tab = gBrowser.selectedTab) {
 
 
 
-async function navigateTo(uri, { isErrorPage = false } = {}) {
-  const browser = gBrowser.selectedBrowser;
 
+
+
+
+async function navigateTo(
+  uri,
+  { browser = gBrowser.selectedBrowser, isErrorPage = false } = {}
+) {
   const waitForDevToolsReload = await watchForDevToolsReload(browser, {
     isErrorPage,
   });
@@ -500,7 +505,7 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
   
   
   if (uri === browser.currentURI.spec) {
-    gBrowser.reloadTab(gBrowser.selectedTab);
+    gBrowser.reloadTab(gBrowser.getTabForBrowser(browser));
   } else {
     BrowserTestUtils.loadURI(browser, uri);
   }
