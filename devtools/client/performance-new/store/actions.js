@@ -32,6 +32,7 @@ const {
 
 
 
+
 exports.reportProfilerReady = (isActive, isLockedForPrivateBrowsing) => ({
   type: "REPORT_PROFILER_READY",
   isActive,
@@ -75,44 +76,20 @@ exports.reportPrivateBrowsingStopped = () => ({
 
 
 
-function _dispatchAndUpdatePreferences(action) {
-  return ({ dispatch, getState }) => {
-    if (typeof action !== "object") {
-      throw new Error(
-        "This function assumes that the dispatched action is a simple object and " +
-          "synchronous."
-      );
-    }
-    dispatch(action);
-    const setRecordingSettings = selectors.getSetRecordingSettingsFn(
-      getState()
-    );
-    const recordingSettings = selectors.getRecordingSettings(getState());
-    setRecordingSettings(recordingSettings);
-  };
-}
+exports.changeInterval = interval => ({
+  type: "CHANGE_INTERVAL",
+  interval,
+});
 
 
 
 
 
 
-exports.changeInterval = interval =>
-  _dispatchAndUpdatePreferences({
-    type: "CHANGE_INTERVAL",
-    interval,
-  });
-
-
-
-
-
-
-exports.changeEntries = entries =>
-  _dispatchAndUpdatePreferences({
-    type: "CHANGE_ENTRIES",
-    entries,
-  });
+exports.changeEntries = entries => ({
+  type: "CHANGE_ENTRIES",
+  entries,
+});
 
 
 
@@ -134,13 +111,11 @@ exports.changeFeatures = features => {
       }
     }
 
-    dispatch(
-      _dispatchAndUpdatePreferences({
-        type: "CHANGE_FEATURES",
-        features,
-        promptEnvRestart,
-      })
-    );
+    dispatch({
+      type: "CHANGE_FEATURES",
+      features,
+      promptEnvRestart,
+    });
   };
 };
 
@@ -149,11 +124,10 @@ exports.changeFeatures = features => {
 
 
 
-exports.changeThreads = threads =>
-  _dispatchAndUpdatePreferences({
-    type: "CHANGE_THREADS",
-    threads,
-  });
+exports.changeThreads = threads => ({
+  type: "CHANGE_THREADS",
+  threads,
+});
 
 
 
@@ -161,25 +135,23 @@ exports.changeThreads = threads =>
 
 
 
-exports.changePreset = (presets, presetName) =>
-  _dispatchAndUpdatePreferences({
-    type: "CHANGE_PRESET",
-    presetName,
-    
-    
-    preset: presets[presetName],
-  });
+exports.changePreset = (presets, presetName) => ({
+  type: "CHANGE_PRESET",
+  presetName,
+  
+  
+  preset: presets[presetName],
+});
 
 
 
 
 
 
-exports.changeObjdirs = objdirs =>
-  _dispatchAndUpdatePreferences({
-    type: "CHANGE_OBJDIRS",
-    objdirs,
-  });
+exports.changeObjdirs = objdirs => ({
+  type: "CHANGE_OBJDIRS",
+  objdirs,
+});
 
 
 
@@ -188,11 +160,22 @@ exports.changeObjdirs = objdirs =>
 
 
 exports.initializeStore = values => {
-  const { recordingSettings, ...initValues } = values;
   return {
-    ...initValues,
     type: "INITIALIZE_STORE",
-    recordingSettingsFromPreferences: recordingSettings,
+    ...values,
+  };
+};
+
+
+
+
+
+
+
+exports.updateSettingsFromPreferences = recordingSettingsFromPreferences => {
+  return {
+    type: "UPDATE_SETTINGS_FROM_PREFERENCES",
+    recordingSettingsFromPreferences,
   };
 };
 

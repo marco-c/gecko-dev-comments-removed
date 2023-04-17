@@ -22,7 +22,6 @@
 
 
 
-
 const getRecordingState = state => state.recordingState;
 
 
@@ -80,10 +79,6 @@ const getInitializedValues = state => {
 };
 
 
-const getSetRecordingSettingsFn = state =>
-  getInitializedValues(state).setRecordingSettings;
-
-
 const getPageContext = state => getInitializedValues(state).pageContext;
 
 
@@ -109,7 +104,6 @@ module.exports = {
   getOpenRemoteDevTools,
   getRecordingSettings,
   getInitializedValues,
-  getSetRecordingSettingsFn,
   getPageContext,
   getPromptEnvRestart,
   getSupportedFeatures,
