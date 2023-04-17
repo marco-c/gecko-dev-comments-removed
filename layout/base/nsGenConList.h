@@ -34,6 +34,7 @@ struct nsGenConNode : public mozilla::LinkedListElement<nsGenConNode> {
   
   
   
+  
   RefPtr<nsTextNode> mText;
 
   explicit nsGenConNode(int32_t aContentIndex)
@@ -66,7 +67,10 @@ struct nsGenConNode : public mozilla::LinkedListElement<nsGenConNode> {
         mContentIndex < int32_t(mPseudoFrame->StyleContent()->ContentCount()) ||
             
             
-            mContentIndex == 0,
+            (mPseudoFrame->IsBulletFrame() && mContentIndex == 0 &&
+             mPseudoFrame->Style()->GetPseudoType() ==
+                 mozilla::PseudoStyleType::marker &&
+             !mPseudoFrame->StyleContent()->ContentCount()),
         "index out of range");
     
     
@@ -107,11 +111,6 @@ class nsGenConList {
   
   
   bool DestroyNodesFor(nsIFrame* aFrame);
-
-  
-  nsGenConNode* GetFirstNodeFor(nsIFrame* aFrame) const {
-    return mNodes.Get(aFrame);
-  }
 
   
   static bool NodeAfter(const nsGenConNode* aNode1, const nsGenConNode* aNode2);

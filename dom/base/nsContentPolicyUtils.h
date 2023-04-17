@@ -143,7 +143,6 @@ inline const char* NS_CP_ContentTypeName(nsContentPolicyType contentType) {
     CASE_RETURN(TYPE_INTERNAL_CHROMEUTILS_COMPILED_SCRIPT);
     CASE_RETURN(TYPE_INTERNAL_FRAME_MESSAGEMANAGER_SCRIPT);
     CASE_RETURN(TYPE_INTERNAL_FETCH_PRELOAD);
-    CASE_RETURN(TYPE_UA_FONT);
     case nsIContentPolicy::TYPE_INVALID:
       break;
       
@@ -191,8 +190,7 @@ inline const char* NS_CP_ContentTypeName(ExtContentPolicyType contentType) {
     if (NS_CP_REJECTED(*decision)) {                                           \
       return NS_OK;                                                            \
     }                                                                          \
-    if (contentType != nsIContentPolicy::TYPE_DOCUMENT &&                      \
-        contentType != nsIContentPolicy::TYPE_UA_FONT) {                       \
+    if (contentType != nsIContentPolicy::TYPE_DOCUMENT) {                      \
       *decision = nsIContentPolicy::ACCEPT;                                    \
       nsCOMPtr<nsINode> n = do_QueryInterface(context);                        \
       if (!n) {                                                                \

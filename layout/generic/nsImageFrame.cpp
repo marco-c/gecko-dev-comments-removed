@@ -39,7 +39,6 @@
 #include "nsFontMetrics.h"
 #include "nsIImageLoadingContent.h"
 #include "nsImageLoadingContent.h"
-#include "nsImageRenderer.h"
 #include "nsString.h"
 #include "nsPrintfCString.h"
 #include "nsPresContext.h"
@@ -98,89 +97,6 @@ using namespace mozilla::image;
 using namespace mozilla::layers;
 
 using mozilla::layout::TextDrawTarget;
-
-class nsDisplayGradient final : public nsPaintedDisplayItem {
- public:
-  nsDisplayGradient(nsDisplayListBuilder* aBuilder, nsImageFrame* aFrame)
-      : nsPaintedDisplayItem(aBuilder, aFrame) {
-    MOZ_COUNT_CTOR(nsDisplayGradient);
-  }
-  ~nsDisplayGradient() final { MOZ_COUNT_DTOR(nsDisplayGradient); }
-
-  nsDisplayItemGeometry* AllocateGeometry(
-      nsDisplayListBuilder* aBuilder) final {
-    return new nsDisplayItemGenericImageGeometry(this, aBuilder);
-  }
-
-  nsRect GetBounds(bool* aSnap) const {
-    *aSnap = true;
-
-    auto* imageFrame = static_cast<nsImageFrame*>(mFrame);
-    return imageFrame->GetInnerArea() + ToReferenceFrame();
-  }
-
-  nsRect GetBounds(nsDisplayListBuilder*, bool* aSnap) const final {
-    return GetBounds(aSnap);
-  }
-
-  void Paint(nsDisplayListBuilder*, gfxContext* aCtx) final;
-
-  bool CreateWebRenderCommands(mozilla::wr::DisplayListBuilder&,
-                               mozilla::wr::IpcResourceUpdateQueue&,
-                               const StackingContextHelper&,
-                               mozilla::layers::RenderRootStateManager*,
-                               nsDisplayListBuilder*) final;
-
-  NS_DISPLAY_DECL_NAME("Gradient", TYPE_GRADIENT)
-};
-
-void nsDisplayGradient::Paint(nsDisplayListBuilder* aBuilder,
-                              gfxContext* aCtx) {
-  auto* frame = static_cast<nsImageFrame*>(Frame());
-  nsImageRenderer imageRenderer(frame, frame->GetImageFromStyle(),
-                                aBuilder->GetImageRendererFlags());
-  nsSize size = frame->GetSize();
-  imageRenderer.SetPreferredSize({}, size);
-
-  ImgDrawResult result;
-  if (!imageRenderer.PrepareImage()) {
-    result = imageRenderer.PrepareResult();
-  } else {
-    nsRect dest(ToReferenceFrame(), size);
-    result = imageRenderer.DrawLayer(frame->PresContext(), *aCtx, dest, dest,
-                                     dest.TopLeft(), GetPaintRect(),
-                                     dest.Size(),  1.0f);
-  }
-  nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, result);
-}
-
-bool nsDisplayGradient::CreateWebRenderCommands(
-    wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
-    const StackingContextHelper& aSc,
-    mozilla::layers::RenderRootStateManager* aManager,
-    nsDisplayListBuilder* aDisplayListBuilder) {
-  auto* frame = static_cast<nsImageFrame*>(Frame());
-  nsImageRenderer imageRenderer(frame, frame->GetImageFromStyle(),
-                                aDisplayListBuilder->GetImageRendererFlags());
-  nsSize size = frame->GetSize();
-  imageRenderer.SetPreferredSize({}, size);
-
-  ImgDrawResult result;
-  if (!imageRenderer.PrepareImage()) {
-    result = imageRenderer.PrepareResult();
-  } else {
-    nsRect dest(ToReferenceFrame(), size);
-    result = imageRenderer.BuildWebRenderDisplayItemsForLayer(
-        frame->PresContext(), aBuilder, aResources, aSc, aManager, this, dest,
-        dest, dest.TopLeft(), dest, dest.Size(),
-         1.0f);
-    if (result == ImgDrawResult::NOT_SUPPORTED) {
-      return false;
-    }
-  }
-  nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, result);
-  return true;
-}
 
 
 #define ICON_SIZE (16)
@@ -262,12 +178,6 @@ nsIFrame* NS_NewImageFrameForGeneratedContentIndex(PresShell* aPresShell,
                    nsImageFrame::Kind::ContentPropertyAtIndex);
 }
 
-nsIFrame* NS_NewImageFrameForListStyleImage(PresShell* aPresShell,
-                                            ComputedStyle* aStyle) {
-  return new (aPresShell) nsImageFrame(aStyle, aPresShell->GetPresContext(),
-                                       nsImageFrame::Kind::ListStyleImage);
-}
-
 bool nsImageFrame::ShouldShowBrokenImageIcon() const {
   
   
@@ -331,11 +241,6 @@ NS_QUERYFRAME_TAIL_INHERITING(nsAtomicContainerFrame)
 
 #ifdef ACCESSIBILITY
 a11y::AccType nsImageFrame::AccessibleType() {
-  if (mKind == Kind::ListStyleImage) {
-    
-    return a11y::eNoType;
-  }
-
   
   if (HasImageMap()) {
     return a11y::eHTMLImageMapType;
@@ -422,12 +327,6 @@ void nsImageFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
 
   MaybeRecordContentUrlOnImageTelemetry();
 
-  
-  if (IsForMarkerPseudo()) {
-    mIntrinsicSize = IntrinsicSize(0, 0);
-    UpdateIntrinsicSize();
-  }
-
   auto newOrientation = StyleVisibility()->mImageOrientation;
 
   
@@ -462,14 +361,7 @@ static bool SizeIsAvailable(imgIRequest* aRequest) {
 
 const StyleImage* nsImageFrame::GetImageFromStyle() const {
   if (mKind == Kind::ImageElement) {
-    MOZ_ASSERT_UNREACHABLE("Don't call me");
     return nullptr;
-  }
-  if (mKind == Kind::ListStyleImage) {
-    MOZ_ASSERT(
-        GetParent()->GetContent()->IsGeneratedContentContainerForMarker());
-    MOZ_ASSERT(mContent->IsHTMLElement(nsGkAtoms::mozgeneratedcontentimage));
-    return &StyleList()->mListStyleImage;
   }
   uint32_t contentIndex = 0;
   const nsStyleContent* styleContent = StyleContent();
@@ -522,14 +414,12 @@ void nsImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     imageLoader->FrameCreated(this);
   } else {
     const StyleImage* image = GetImageFromStyle();
-    MOZ_ASSERT(mKind == Kind::ListStyleImage || image->IsImageRequestType(),
+    MOZ_ASSERT(image->IsImageRequestType(),
                "Content image should only parse url() type");
-    if (image->IsImageRequestType()) {
-      if (imgRequestProxy* proxy = image->GetImageRequest()) {
-        proxy->Clone(mListener, PresContext()->Document(),
-                     getter_AddRefs(mContentURLRequest));
-        SetupForContentURLRequest();
-      }
+    Document* doc = PresContext()->Document();
+    if (imgRequestProxy* proxy = image->GetImageRequest()) {
+      proxy->Clone(mListener, doc, getter_AddRefs(mContentURLRequest));
+      SetupForContentURLRequest();
     }
   }
 
@@ -601,22 +491,6 @@ static void ScaleIntrinsicSizeForDensity(imgIContainer* aImage,
   ScaleIntrinsicSizeForDensity(aSize, resolution);
 }
 
-static nscoord ListImageDefaultLength(const nsImageFrame& aFrame) {
-  
-  
-  
-  auto* pc = aFrame.PresContext();
-  RefPtr<nsFontMetrics> fm =
-      nsLayoutUtils::GetFontMetricsForComputedStyle(aFrame.Style(), pc);
-  auto emAU = fm->GetThebesFontGroup()
-                  ->GetFirstValidFont()
-                  ->GetMetrics(fm->Orientation())
-                  .emHeight *
-              pc->AppUnitsPerDevPixel();
-  return std::max(NSToCoordRound(0.4f * emAU),
-                  nsPresContext::CSSPixelsToAppUnits(1));
-}
-
 static IntrinsicSize ComputeIntrinsicSize(imgIContainer* aImage,
                                           bool aUseMappedRatio,
                                           nsImageFrame::Kind aKind,
@@ -631,17 +505,6 @@ static IntrinsicSize ComputeIntrinsicSize(imgIContainer* aImage,
     IntrinsicSize intrinsicSize;
     intrinsicSize.width = size.width == -1 ? Nothing() : Some(size.width);
     intrinsicSize.height = size.height == -1 ? Nothing() : Some(size.height);
-    if (aKind == nsImageFrame::Kind::ListStyleImage) {
-      if (intrinsicSize.width.isNothing() || intrinsicSize.height.isNothing()) {
-        nscoord defaultLength = ListImageDefaultLength(aFrame);
-        if (intrinsicSize.width.isNothing()) {
-          intrinsicSize.width = Some(defaultLength);
-        }
-        if (intrinsicSize.height.isNothing()) {
-          intrinsicSize.height = Some(defaultLength);
-        }
-      }
-    }
     if (aKind == nsImageFrame::Kind::ImageElement) {
       ScaleIntrinsicSizeForDensity(aImage, *aFrame.GetContent(), intrinsicSize);
     } else {
@@ -649,12 +512,6 @@ static IntrinsicSize ComputeIntrinsicSize(imgIContainer* aImage,
                                    aFrame.GetImageFromStyle()->GetResolution());
     }
     return intrinsicSize;
-  }
-
-  if (aKind == nsImageFrame::Kind::ListStyleImage) {
-    
-    nscoord defaultLength = ListImageDefaultLength(aFrame);
-    return IntrinsicSize(defaultLength, defaultLength);
   }
 
   if (aFrame.ShouldShowBrokenImageIcon()) {
@@ -923,13 +780,6 @@ void nsImageFrame::UpdateImage(imgIRequest* aRequest, imgIContainer* aImage) {
   } else {
     
     mImage = mPrevImage = nullptr;
-    if (mKind == Kind::ListStyleImage) {
-      auto* genContent = static_cast<GeneratedImageContent*>(GetContent());
-      genContent->NotifyLoadFailed();
-      
-      
-      return;
-    }
   }
   
   
@@ -946,10 +796,8 @@ void nsImageFrame::UpdateImage(imgIRequest* aRequest, imgIContainer* aImage) {
     
     if (!(mState & IMAGE_SIZECONSTRAINED)) {
 #ifdef ACCESSIBILITY
-      if (mKind != Kind::ListStyleImage) {
-        if (nsAccessibilityService* accService = GetAccService()) {
-          accService->NotifyOfImageSizeAvailable(PresShell(), mContent);
-        }
+      if (nsAccessibilityService* accService = GetAccService()) {
+        accService->NotifyOfImageSizeAvailable(PresShell(), mContent);
       }
 #endif
       PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
@@ -1107,14 +955,6 @@ nsRect nsImageFrame::PredictedDestRect(const nsRect& aFrameContentBox) {
                                               mIntrinsicRatio, StylePosition());
 }
 
-bool nsImageFrame::IsForMarkerPseudo() const {
-  if (mKind == Kind::ImageElement) {
-    return false;
-  }
-  auto* subtreeRoot = GetContent()->GetClosestNativeAnonymousSubtreeRoot();
-  return subtreeRoot && subtreeRoot->IsGeneratedContentContainerForMarker();
-}
-
 void nsImageFrame::EnsureIntrinsicSizeAndRatio() {
   if (StyleDisplay()->IsContainSize()) {
     
@@ -1126,8 +966,7 @@ void nsImageFrame::EnsureIntrinsicSizeAndRatio() {
 
   
   
-  
-  if (mIntrinsicSize != IntrinsicSize(0, 0) && !IsForMarkerPseudo()) {
+  if (mIntrinsicSize != IntrinsicSize(0, 0)) {
     return;
   }
 
@@ -2349,9 +2188,7 @@ void nsImageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     
-    if ((mKind == Kind::ImageElement ||
-         GetImageFromStyle()->IsImageRequestType()) &&
-        (!imageOK || !mImage || !SizeIsAvailable(currentRequest))) {
+    if (!imageOK || !mImage || !SizeIsAvailable(currentRequest)) {
       
       
       aLists.Content()->AppendNewToTop<nsDisplayAltFeedback>(aBuilder, this);
@@ -2371,12 +2208,8 @@ void nsImageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         }
       }
     } else {
-      if (mImage) {
-        aLists.Content()->AppendNewToTop<nsDisplayImage>(aBuilder, this, mImage,
-                                                         mPrevImage);
-      } else if (mKind != Kind::ImageElement) {
-        aLists.Content()->AppendNewToTop<nsDisplayGradient>(aBuilder, this);
-      }
+      aLists.Content()->AppendNewToTop<nsDisplayImage>(aBuilder, this, mImage,
+                                                       mPrevImage);
 
       
       if (mDisplayingIcon) {

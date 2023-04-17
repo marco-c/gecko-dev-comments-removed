@@ -158,6 +158,8 @@ class FontFaceSet final : public DOMEventTargetHelper,
   NS_IMETHOD StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
                               nsresult aStatus) override;
 
+  FontFace* GetFontFaceAt(uint32_t aIndex);
+
   void FlushUserFontSet();
 
   static nsPresContext* GetPresContextFor(gfxUserFontSet* aUserFontSet) {
@@ -186,10 +188,6 @@ class FontFaceSet final : public DOMEventTargetHelper,
   void Clear();
   bool Delete(FontFace& aFontFace);
   bool Has(FontFace& aFontFace);
-  
-
-
-
   uint32_t Size();
   already_AddRefed<dom::FontFaceSetIterator> Entries();
   already_AddRefed<dom::FontFaceSetIterator> Values();
@@ -202,14 +200,7 @@ class FontFaceSet final : public DOMEventTargetHelper,
 
   void MarkUserFontSetDirty();
 
-  
-
-
-  uint32_t SizeIncludingNonAuthorOrigins();
-
  private:
-  friend mozilla::dom::FontFaceSetIterator;  
-
   ~FontFaceSet();
 
   
@@ -247,12 +238,6 @@ class FontFaceSet final : public DOMEventTargetHelper,
 
 
   void CheckLoadingFinishedAfterDelay();
-
-  
-
-
-
-  FontFace* GetFontFaceAt(uint32_t aIndex);
 
   
 

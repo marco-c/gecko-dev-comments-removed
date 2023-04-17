@@ -1972,14 +1972,6 @@ impl FontSynthesis {
             style: true,
         }
     }
-    #[inline]
-    
-    pub fn none() -> Self {
-        FontSynthesis {
-            weight: false,
-            style: false,
-        }
-    }
 }
 
 impl Parse for FontSynthesis {

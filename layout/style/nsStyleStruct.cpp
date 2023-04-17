@@ -631,10 +631,11 @@ nsChangeHint nsStyleList::CalcDifference(
   
   
   if (aOldDisplay.IsListItem()) {
-    if (mListStylePosition != aNewData.mListStylePosition ||
-        mCounterStyle != aNewData.mCounterStyle ||
-        mListStyleImage != aNewData.mListStyleImage) {
+    if (mListStylePosition != aNewData.mListStylePosition) {
       return nsChangeHint_ReconstructFrame;
+    }
+    if (mCounterStyle != aNewData.mCounterStyle) {
+      return NS_STYLE_HINT_REFLOW;
     }
   } else if (mListStylePosition != aNewData.mListStylePosition ||
              mCounterStyle != aNewData.mCounterStyle) {

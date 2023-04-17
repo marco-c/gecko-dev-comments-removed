@@ -423,8 +423,8 @@ uint32_t HyperTextAccessible::TransformOffset(LocalAccessible* aDescendant,
       
       if (offset == 0 && parent && parent->IsHTMLListItem() &&
           descendant->LocalPrevSibling() &&
-          descendant->LocalPrevSibling() ==
-              parent->AsHTMLListItem()->Bullet()) {
+          descendant->LocalPrevSibling()->GetFrame() &&
+          descendant->LocalPrevSibling()->GetFrame()->IsBulletFrame()) {
         offset = 0;
       } else {
         offset = (offset > 0 || descendant->IndexInParent() > 0) ? 1 : 0;

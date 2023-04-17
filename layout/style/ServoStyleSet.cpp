@@ -678,13 +678,6 @@ bool ServoStyleSet::GeneratedContentPseudoExists(
       return false;
     }
     
-    
-    if (aPseudoStyle.StyleList()->mCounterStyle.IsNone() &&
-        aPseudoStyle.StyleList()->mListStyleImage.IsNone() &&
-        aPseudoStyle.StyleContent()->ContentCount() == 0) {
-      return false;
-    }
-    
     if (aPseudoStyle.StyleDisplay()->mDisplay == StyleDisplay::None) {
       return false;
     }

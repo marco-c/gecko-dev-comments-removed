@@ -84,7 +84,6 @@ nsDataDocumentContentPolicy::ShouldLoad(nsIURI* aContentLocation,
         case ExtContentPolicy::TYPE_IMAGE:
         case ExtContentPolicy::TYPE_IMAGESET:
         case ExtContentPolicy::TYPE_FONT:
-        case ExtContentPolicy::TYPE_UA_FONT:
         
         
         case ExtContentPolicy::TYPE_OBJECT:
