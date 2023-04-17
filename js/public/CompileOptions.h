@@ -52,6 +52,7 @@
 #ifndef js_CompileOptions_h
 #define js_CompileOptions_h
 
+#include "mozilla/Assertions.h"       
 #include "mozilla/MemoryReporting.h"  
 
 #include <stddef.h>  
@@ -70,6 +71,8 @@ enum class AsmJSOption : uint8_t {
   DisabledByNoWasmCompiler,
   DisabledByDebugger,
 };
+
+class JS_PUBLIC_API InstantiateOptions;
 
 
 
@@ -114,6 +117,17 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   
   bool skipFilenameValidation_ = false;
 
+  bool hideScriptFromDebugger_ = false;
+
+  
+  
+  
+  
+  
+  bool deferDebugMetadata_ = false;
+
+  friend class JS_PUBLIC_API InstantiateOptions;
+
  public:
   
   bool selfHostingMode = false;
@@ -123,17 +137,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool discardSource = false;
   bool sourceIsLazy = false;
   bool allowHTMLComments = true;
-  bool hideScriptFromDebugger = false;
-
-  
-  
-  
-  
-  bool deferDebugMetadata = false;
-
-  bool hideFromNewScriptInitial() const {
-    return deferDebugMetadata || hideScriptFromDebugger;
-  }
 
   bool nonSyntacticScope = false;
   bool privateClassFields = false;
@@ -196,7 +199,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool mutedErrors() const { return mutedErrors_; }
   bool forceFullParse() const { return forceFullParse_; }
   bool forceStrictMode() const { return forceStrictMode_; }
-  bool skipFilenameValidation() const { return skipFilenameValidation_; }
   bool sourcePragmas() const { return sourcePragmas_; }
   const char* filename() const { return filename_; }
   const char* introducerFilename() const { return introducerFilename_; }
@@ -391,8 +393,13 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
     return *this;
   }
 
-  CompileOptions& setdeferDebugMetadata(bool v = true) {
-    deferDebugMetadata = v;
+  CompileOptions& setDeferDebugMetadata(bool v = true) {
+    deferDebugMetadata_ = v;
+    return *this;
+  }
+
+  CompileOptions& setHideScriptFromDebugger(bool v = true) {
+    hideScriptFromDebugger_ = v;
     return *this;
   }
 
@@ -437,6 +444,45 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
 
   CompileOptions(const CompileOptions& rhs) = delete;
   CompileOptions& operator=(const CompileOptions& rhs) = delete;
+};
+
+
+
+
+class JS_PUBLIC_API InstantiateOptions {
+ public:
+  bool skipFilenameValidation = false;
+  bool hideScriptFromDebugger = false;
+  bool deferDebugMetadata = false;
+
+  InstantiateOptions() = default;
+
+  explicit InstantiateOptions(const ReadOnlyCompileOptions& options)
+      : skipFilenameValidation(options.skipFilenameValidation_),
+        hideScriptFromDebugger(options.hideScriptFromDebugger_),
+        deferDebugMetadata(options.deferDebugMetadata_) {}
+
+  void copyTo(CompileOptions& options) const {
+    options.skipFilenameValidation_ = skipFilenameValidation;
+    options.hideScriptFromDebugger_ = hideScriptFromDebugger;
+    options.deferDebugMetadata_ = deferDebugMetadata;
+  }
+
+  bool hideFromNewScriptInitial() const {
+    return deferDebugMetadata || hideScriptFromDebugger;
+  }
+
+#ifdef DEBUG
+  
+  
+  
+  
+  void assertDefault() const {
+    MOZ_ASSERT(skipFilenameValidation == false);
+    MOZ_ASSERT(hideScriptFromDebugger == false);
+    MOZ_ASSERT(deferDebugMetadata == false);
+  }
+#endif
 };
 
 }  

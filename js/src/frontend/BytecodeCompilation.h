@@ -10,10 +10,11 @@
 #include "mozilla/Utf8.h"  
 
 #include "js/CompileOptions.h"  
-#include "js/SourceText.h"      
-#include "js/TypeDecls.h"       
-#include "js/UniquePtr.h"       
-#include "vm/ScopeKind.h"       
+#include "js/GCVector.h"        
+#include "js/SourceText.h"  
+#include "js/TypeDecls.h"   
+#include "js/UniquePtr.h"   
+#include "vm/ScopeKind.h"   
 
 namespace js {
 
@@ -82,6 +83,12 @@ inline bool CanLazilyParse(const JS::ReadOnlyCompileOptions& options) {
   return !options.discardSource && !options.sourceIsLazy &&
          !options.forceFullParse();
 }
+
+void FireOnNewScript(JSContext* cx, const JS::InstantiateOptions& options,
+                     JS::Handle<JSScript*> script);
+
+void FireOnNewScripts(JSContext* cx, const JS::InstantiateOptions& options,
+                      JS::Handle<JS::GCVector<JSScript*>> scripts);
 
 }  
 

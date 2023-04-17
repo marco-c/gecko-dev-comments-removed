@@ -14,7 +14,7 @@
 #include "jstypes.h"  
 
 #include "js/CompileOptions.h"  
-#include "js/RootingAPI.h"      
+#include "js/RootingAPI.h"  
 #include "js/Value.h"  
 
 struct JS_PUBLIC_API JSContext;
@@ -247,10 +247,9 @@ extern JS_PUBLIC_API void ExposeScriptToDebugger(JSContext* cx,
 
 
 extern JS_PUBLIC_API bool UpdateDebugMetadata(
-    JSContext* cx, Handle<JSScript*> script,
-    const ReadOnlyCompileOptions& options, HandleValue privateValue,
-    HandleString elementAttributeName, HandleScript introScript,
-    HandleScript scriptOrModule);
+    JSContext* cx, Handle<JSScript*> script, const InstantiateOptions& options,
+    HandleValue privateValue, HandleString elementAttributeName,
+    HandleScript introScript, HandleScript scriptOrModule);
 
 
 

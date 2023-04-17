@@ -13,8 +13,8 @@
 
 #include <algorithm>
 
-#include "frontend/BytecodeCompilation.h"
-#include "frontend/BytecodeCompiler.h"
+#include "frontend/BytecodeCompilation.h"  
+#include "frontend/BytecodeCompiler.h"  
 #include "frontend/CompilationStencil.h"  
 #include "frontend/ParserAtom.h"          
 #include "gc/GC.h"                        
@@ -2066,7 +2066,8 @@ UniquePtr<ParseTask> GlobalHelperThreadState::finishParseTaskCommon(
     for (auto& sourceObject : parseTask->sourceObjects) {
       RootedScriptSourceObject sso(cx, sourceObject);
 
-      if (!ScriptSourceObject::initFromOptions(cx, sso, parseTask->options)) {
+      const JS::InstantiateOptions instantiateOptions(parseTask->options);
+      if (!ScriptSourceObject::initFromOptions(cx, sso, instantiateOptions)) {
         return nullptr;
       }
 
@@ -2191,9 +2192,8 @@ JSScript* GlobalHelperThreadState::finishSingleParseTask(
 
     
     
-    if (!parseTask->options.hideFromNewScriptInitial()) {
-      DebugAPI::onNewScript(cx, script);
-    }
+    const JS::InstantiateOptions instantiateOptions(parseTask->options);
+    frontend::FireOnNewScript(cx, instantiateOptions, script);
   } else {
     MOZ_ASSERT(parseTask->stencil_.get() ||
                parseTask->extensibleStencil_.get());

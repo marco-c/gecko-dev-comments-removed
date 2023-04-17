@@ -31,6 +31,7 @@
 #include "jsapi.h"
 #include "jstypes.h"
 
+#include "frontend/BytecodeCompilation.h"  
 #include "frontend/BytecodeCompiler.h"
 #include "frontend/BytecodeEmitter.h"
 #include "frontend/CompilationStencil.h"  
@@ -770,7 +771,7 @@ ScriptSourceObject* ScriptSourceObject::create(JSContext* cx,
 
 [[nodiscard]] static bool MaybeValidateFilename(
     JSContext* cx, HandleScriptSourceObject sso,
-    const ReadOnlyCompileOptions& options) {
+    const JS::InstantiateOptions& options) {
   
   
   
@@ -781,7 +782,7 @@ ScriptSourceObject* ScriptSourceObject::create(JSContext* cx,
   }
 
   const char* filename = sso->source()->filename();
-  if (!filename || options.skipFilenameValidation()) {
+  if (!filename || options.skipFilenameValidation) {
     return true;
   }
 
@@ -803,7 +804,7 @@ ScriptSourceObject* ScriptSourceObject::create(JSContext* cx,
 
 bool ScriptSourceObject::initFromOptions(
     JSContext* cx, HandleScriptSourceObject source,
-    const ReadOnlyCompileOptions& options) {
+    const JS::InstantiateOptions& options) {
   cx->releaseCheck(source);
   MOZ_ASSERT(
       source->getReservedSlot(ELEMENT_PROPERTY_SLOT).isMagic(JS_GENERIC_MAGIC));

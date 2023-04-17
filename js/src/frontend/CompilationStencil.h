@@ -26,6 +26,7 @@
 #include "frontend/Stencil.h"
 #include "frontend/TaggedParserAtomIndexHasher.h"  
 #include "frontend/UsedNameTracker.h"
+#include "js/CompileOptions.h"  
 #include "js/GCVector.h"
 #include "js/HashTable.h"
 #include "js/RealmOptions.h"

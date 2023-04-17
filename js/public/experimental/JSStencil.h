@@ -81,7 +81,7 @@ extern JS_PUBLIC_API already_AddRefed<Stencil> FinishOffThreadStencil(
 
 
 extern JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
-    JSContext* cx, const ReadOnlyCompileOptions& options, Stencil* stencil);
+    JSContext* cx, const InstantiateOptions& options, Stencil* stencil);
 
 
 
@@ -93,7 +93,7 @@ extern JS_PUBLIC_API bool StencilCanLazilyParse(Stencil* stencil);
 
 
 extern JS_PUBLIC_API JSObject* InstantiateModuleStencil(
-    JSContext* cx, const ReadOnlyCompileOptions& options, Stencil* stencil);
+    JSContext* cx, const InstantiateOptions& options, Stencil* stencil);
 
 
 extern JS_PUBLIC_API TranscodeResult

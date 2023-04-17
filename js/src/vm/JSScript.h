@@ -1084,7 +1084,7 @@ class ScriptSourceObject : public NativeObject {
   
   
   static bool initFromOptions(JSContext* cx, HandleScriptSourceObject source,
-                              const JS::ReadOnlyCompileOptions& options);
+                              const JS::InstantiateOptions& options);
 
   static bool initElementProperties(JSContext* cx,
                                     HandleScriptSourceObject source,
