@@ -151,7 +151,7 @@ static bool ReshapeForShadowedPropSlow(JSContext* cx, HandleNativeObject obj,
 }
 
 static MOZ_ALWAYS_INLINE bool ReshapeForShadowedProp(JSContext* cx,
-                                                     HandleObject obj,
+                                                     HandleNativeObject obj,
                                                      HandleId id) {
   
   
@@ -160,11 +160,11 @@ static MOZ_ALWAYS_INLINE bool ReshapeForShadowedProp(JSContext* cx,
   
 
   
-  if (!obj->isUsedAsPrototype() || !obj->is<NativeObject>()) {
+  if (!obj->isUsedAsPrototype()) {
     return true;
   }
 
-  return ReshapeForShadowedPropSlow(cx, obj.as<NativeObject>(), id);
+  return ReshapeForShadowedPropSlow(cx, obj, id);
 }
 
  MOZ_ALWAYS_INLINE bool
