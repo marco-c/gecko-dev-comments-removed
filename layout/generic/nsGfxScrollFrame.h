@@ -642,9 +642,6 @@ class ScrollFrameHelper : public nsIReflowCallback {
   bool mIsRoot : 1;
   
   
-  bool mClipAllDescendants : 1;
-  
-  
   
   bool mSuppressScrollbarUpdate : 1;
   
@@ -1289,8 +1286,7 @@ class nsXULScrollFrame final : public nsBoxFrame,
 
   friend nsXULScrollFrame* NS_NewXULScrollFrame(mozilla::PresShell* aPresShell,
                                                 ComputedStyle* aStyle,
-                                                bool aIsRoot,
-                                                bool aClipAllDescendants);
+                                                bool aIsRoot);
 
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) final {
@@ -1712,8 +1708,7 @@ class nsXULScrollFrame final : public nsBoxFrame,
 #endif
 
  protected:
-  nsXULScrollFrame(ComputedStyle*, nsPresContext*, bool aIsRoot,
-                   bool aClipAllDescendants);
+  nsXULScrollFrame(ComputedStyle*, nsPresContext*, bool aIsRoot);
 
   void ClampAndSetBounds(nsBoxLayoutState& aState, nsRect& aRect,
                          nsPoint aScrollPosition,
