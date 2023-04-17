@@ -1760,16 +1760,42 @@ MDefinition* MUnbox::foldsTo(TempAllocator& alloc) {
 void MPhi::assertLoopPhi() const {
   
   
-  MBasicBlock* pred = block()->getPredecessor(0);
-  MBasicBlock* back = block()->getPredecessor(1);
-  MOZ_ASSERT(pred == block()->loopPredecessor());
-  MOZ_ASSERT(pred->successorWithPhis() == block());
-  MOZ_ASSERT(pred->positionInPhiSuccessor() == 0);
-  MOZ_ASSERT(back == block()->backedge());
-  MOZ_ASSERT(back->successorWithPhis() == block());
-  MOZ_ASSERT(back->positionInPhiSuccessor() == 1);
+  if (block()->numPredecessors() == 2) {
+    MBasicBlock* pred = block()->getPredecessor(0);
+    MBasicBlock* back = block()->getPredecessor(1);
+    MOZ_ASSERT(pred == block()->loopPredecessor());
+    MOZ_ASSERT(pred->successorWithPhis() == block());
+    MOZ_ASSERT(pred->positionInPhiSuccessor() == 0);
+    MOZ_ASSERT(back == block()->backedge());
+    MOZ_ASSERT(back->successorWithPhis() == block());
+    MOZ_ASSERT(back->positionInPhiSuccessor() == 1);
+  } else {
+    
+    
+    
+    MOZ_ASSERT(block()->numPredecessors() == 1);
+    MOZ_ASSERT(block()->graph().osrBlock());
+    MOZ_ASSERT(!block()->graph().canBuildDominators());
+    MBasicBlock* back = block()->getPredecessor(0);
+    MOZ_ASSERT(back == block()->backedge());
+    MOZ_ASSERT(back->successorWithPhis() == block());
+    MOZ_ASSERT(back->positionInPhiSuccessor() == 0);
+  }
 }
 #endif
+
+MDefinition* MPhi::getLoopPredecessorOperand() const {
+  
+  MOZ_ASSERT(block()->numPredecessors() == 2);
+  assertLoopPhi();
+  return getOperand(0);
+}
+
+MDefinition* MPhi::getLoopBackedgeOperand() const {
+  assertLoopPhi();
+  uint32_t idx = block()->numPredecessors() == 2 ? 1 : 0;
+  return getOperand(idx);
+}
 
 void MPhi::removeOperand(size_t index) {
   MOZ_ASSERT(index < numOperands());

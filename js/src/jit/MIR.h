@@ -5718,17 +5718,11 @@ class MPhi final : public MDefinition,
 
   
   
-  MDefinition* getLoopPredecessorOperand() const {
-    assertLoopPhi();
-    return getOperand(0);
-  }
+  MDefinition* getLoopPredecessorOperand() const;
 
   
   
-  MDefinition* getLoopBackedgeOperand() const {
-    assertLoopPhi();
-    return getOperand(1);
-  }
+  MDefinition* getLoopBackedgeOperand() const;
 
   
   bool typeIncludes(MDefinition* def);
