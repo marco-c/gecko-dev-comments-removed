@@ -49,12 +49,13 @@ nsPageFrame::~nsPageFrame() = default;
 
 nsReflowStatus nsPageFrame::ReflowPageContent(
     nsPresContext* aPresContext, const ReflowInput& aPageReflowInput) {
-  
-  
-  
-  
   nsIFrame* const frame = PageContentFrame();
-  nsSize maxSize = aPresContext->GetPageSize();
+  
+  
+  
+  
+  nsSize maxSize = ComputePageSize();
+
   float scale = aPresContext->GetPageScale();
   
   
@@ -475,8 +476,8 @@ static std::tuple<uint32_t, uint32_t> GetRowAndColFromIdx(uint32_t aIdxOnSheet,
 }
 
 
-static gfx::Matrix4x4 ComputePagesPerSheetTransform(const nsIFrame* aFrame,
-                                                    float aAppUnitsPerPixel) {
+static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
+    const nsIFrame* aFrame, float aAppUnitsPerPixel) {
   MOZ_ASSERT(aFrame->IsPageFrame());
   auto* pageFrame = static_cast<const nsPageFrame*>(aFrame);
 
@@ -487,10 +488,31 @@ static gfx::Matrix4x4 ComputePagesPerSheetTransform(const nsIFrame* aFrame,
   uint32_t rowIdx = 0;
   uint32_t colIdx = 0;
 
+  
+  
+  
+  const nsSize actualPaperSize = pageFrame->PresContext()->GetPageSize();
+  const nsSize contentPageSize = pageFrame->ComputePageSize();
+  {
+    nscoord contentPageHeight = contentPageSize.height;
+    
+    if (contentPageSize.width > actualPaperSize.width) {
+      scale *= float(actualPaperSize.width) / float(contentPageSize.width);
+      contentPageHeight = NSToCoordRound(contentPageHeight * scale);
+    }
+    
+    if (contentPageHeight > actualPaperSize.height) {
+      scale *= float(actualPaperSize.height) / float(contentPageHeight);
+    }
+  }
+  MOZ_ASSERT(
+      scale <= 1.0f,
+      "Page-size mismatches should only have caused us to scale down, not up.");
+
   if (nsSharedPageData* pd = pageFrame->GetSharedPageData()) {
     const auto* ppsInfo = pd->PagesPerSheetInfo();
     if (ppsInfo->mNumPages > 1) {
-      scale = pd->mPagesPerSheetScale;
+      scale *= pd->mPagesPerSheetScale;
       gridOrigin = pd->mPagesPerSheetGridOrigin;
       std::tie(rowIdx, colIdx) = GetRowAndColFromIdx(pageFrame->IndexOnSheet(),
                                                      pd->mPagesPerSheetNumCols);
@@ -501,10 +523,12 @@ static gfx::Matrix4x4 ComputePagesPerSheetTransform(const nsIFrame* aFrame,
   auto transform = gfx::Matrix4x4::Scaling(scale, scale, 1);
 
   
-  nsSize pageSize = pageFrame->PresContext()->GetPageSize();
   transform.PreTranslate(
-      NSAppUnitsToFloatPixels(colIdx * pageSize.width, aAppUnitsPerPixel),
-      NSAppUnitsToFloatPixels(rowIdx * pageSize.height, aAppUnitsPerPixel), 0);
+      NSAppUnitsToFloatPixels(colIdx * contentPageSize.width,
+                              aAppUnitsPerPixel),
+      NSAppUnitsToFloatPixels(rowIdx * contentPageSize.height,
+                              aAppUnitsPerPixel),
+      0);
 
   
   
@@ -517,15 +541,46 @@ static gfx::Matrix4x4 ComputePagesPerSheetTransform(const nsIFrame* aFrame,
 }
 
 nsIFrame::ComputeTransformFunction nsPageFrame::GetTransformGetter() const {
-  return ComputePagesPerSheetTransform;
+  return ComputePagesPerSheetAndPageSizeTransform;
 }
 
-nsPageContentFrame* nsPageFrame::PageContentFrame() {
+nsPageContentFrame* nsPageFrame::PageContentFrame() const {
   nsIFrame* const frame = mFrames.FirstChild();
   MOZ_ASSERT(frame, "pageFrame must have one child");
   MOZ_ASSERT(frame->IsPageContentFrame(),
              "pageFrame must have pageContentFrame as the first child");
   return static_cast<nsPageContentFrame*>(frame);
+}
+
+nsSize nsPageFrame::ComputePageSize() const {
+  const nsPageContentFrame* const pcf = PageContentFrame();
+  nsSize size = PresContext()->GetPageSize();
+
+  
+  const nsStylePage* const stylePage = pcf->StylePage();
+  const StylePageSize& pageSize = stylePage->mSize;
+
+  if (pageSize.IsSize()) {
+    
+    return nsSize{pageSize.AsSize().width.ToAppUnits(),
+                  pageSize.AsSize().height.ToAppUnits()};
+  }
+  if (pageSize.IsOrientation()) {
+    
+    if (pageSize.AsOrientation() == StyleOrientation::Portrait) {
+      if (size.width > size.height) {
+        std::swap(size.width, size.height);
+      }
+    } else {
+      MOZ_ASSERT(pageSize.AsOrientation() == StyleOrientation::Landscape);
+      if (size.width < size.height) {
+        std::swap(size.width, size.height);
+      }
+    }
+  } else {
+    MOZ_ASSERT(pageSize.IsAuto(), "Impossible page-size value?");
+  }
+  return size;
 }
 
 void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
@@ -578,7 +633,7 @@ void nsPageFrame::PaintHeaderFooter(gfxContext& aRenderingContext, nsPoint aPt,
                                     bool aDisableSubpixelAA) {
   nsPresContext* pc = PresContext();
 
-  nsRect rect(aPt, mRect.Size());
+  nsRect rect(aPt, ComputePageSize());
   aRenderingContext.SetColor(sRGBColor::OpaqueBlack());
 
   DrawTargetAutoDisableSubpixelAntialiasing disable(
