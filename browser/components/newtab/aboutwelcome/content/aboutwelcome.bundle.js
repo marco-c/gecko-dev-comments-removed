@@ -940,8 +940,7 @@ function Colorways(props) {
 
   let {
     colorways,
-    defaultVariationId,
-    systemDefaultVariationId,
+    defaultVariationIndex,
     systemVariations,
     variations
   } = props.content.tiles; 
@@ -957,9 +956,27 @@ function Colorways(props) {
   Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(() => {
     if (transition === "in") {
       
+      
+      let variationIndex = systemVariations.findIndex(({
+        id
+      }) => id === props.activeTheme);
+
+      if (variationIndex < 0) {
+        variationIndex = variations.findIndex(({
+          id
+        }) => props.activeTheme.includes(id));
+      }
+
+      if (variationIndex < 0) {
+        
+        
+        variationIndex = defaultVariationIndex;
+      } 
+
+
       props.handleAction({
         currentTarget: {
-          value: colorwayId === "default" ? systemDefaultVariationId : `${colorwayId}-${defaultVariationId}`
+          value: colorwayId === "default" ? systemVariations[variationIndex].id : `${colorwayId}-${variations[variationIndex].id}`
         }
       }); 
 

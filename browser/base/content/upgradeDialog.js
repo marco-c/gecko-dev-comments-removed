@@ -37,29 +37,42 @@ const SCREEN_STRINGS = [
 
 
 const THEME_IDS = [
-  "default-theme@mozilla.org",
-  "abstract-soft-colorway@mozilla.org",
-  "cheers-soft-colorway@mozilla.org",
-  "foto-soft-colorway@mozilla.org",
-  "lush-soft-colorway@mozilla.org",
-  "graffiti-soft-colorway@mozilla.org",
-  "elemental-soft-colorway@mozilla.org",
+  [
+    "firefox-compact-light@mozilla.org",
+    "default-theme@mozilla.org",
+    "firefox-compact-dark@mozilla.org",
+  ],
+  [
+    "abstract-soft-colorway@mozilla.org",
+    "abstract-balanced-colorway@mozilla.org",
+    "abstract-bold-colorway@mozilla.org",
+  ],
+  [
+    "cheers-soft-colorway@mozilla.org",
+    "cheers-balanced-colorway@mozilla.org",
+    "cheers-bold-colorway@mozilla.org",
+  ],
+  [
+    "foto-soft-colorway@mozilla.org",
+    "foto-balanced-colorway@mozilla.org",
+    "foto-bold-colorway@mozilla.org",
+  ],
+  [
+    "lush-soft-colorway@mozilla.org",
+    "lush-balanced-colorway@mozilla.org",
+    "lush-bold-colorway@mozilla.org",
+  ],
+  [
+    "graffiti-soft-colorway@mozilla.org",
+    "graffiti-balanced-colorway@mozilla.org",
+    "graffiti-bold-colorway@mozilla.org",
+  ],
+  [
+    "elemental-soft-colorway@mozilla.org",
+    "elemental-balanced-colorway@mozilla.org",
+    "elemental-bold-colorway@mozilla.org",
+  ],
 ];
-
-
-const VARIATION_IDS = {
-  auto: "default-theme@mozilla.org",
-  light: "firefox-compact-light@mozilla.org",
-  dark: "firefox-compact-dark@mozilla.org",
-
-  
-  soft: "",
-  balanced: "",
-  bold: "",
-};
-function variantFromId(l10nId) {
-  return l10nId.split("-").slice(-1)[0];
-}
 
 
 const CLEANUP = [];
@@ -76,7 +89,7 @@ let gPrevTheme = AddonManager.getAddonsByTypes(["theme"]).then(addons => {
   }
 
   
-  return { id: THEME_IDS[0] };
+  return { id: THEME_IDS[0][1] };
 });
 
 
@@ -145,17 +158,11 @@ function onLoad(ready) {
         "upgrade-dialog-colorway-variation-bold",
       ];
       themeName = colorwayName.toLowerCase();
-
-      
-      l10nIds.forEach(id => {
-        const variant = variantFromId(id);
-        VARIATION_IDS[variant] = `${themeName}-${variant}-colorway@mozilla.org`;
-      });
     } else {
       l10nIds = [
         "upgrade-dialog-colorway-default-theme",
-        "upgrade-dialog-colorway-theme-auto",
         "upgrade-dialog-theme-light",
+        "upgrade-dialog-colorway-theme-auto",
         "upgrade-dialog-theme-dark",
       ];
       themeName = "default";
@@ -163,9 +170,6 @@ function onLoad(ready) {
 
     
     l10nIds.reduceRight((node, l10nId) => {
-      
-      node.checked = true;
-
       
       node.dataset.l10nId = "";
       document.l10n.setAttributes(node, l10nId);
@@ -197,6 +201,20 @@ function onLoad(ready) {
   
   function showColorways() {
     
+    variations.querySelectorAll("input")[
+      2 * matchMedia("(-moz-toolbar-prefers-color-scheme: dark)").matches
+    ].checked = true;
+
+    
+    const getVariantIndex = () =>
+      [...variations.children].indexOf(variations.querySelector(":checked")) -
+      1;
+    const enableVariant = () =>
+      enableTheme(
+        THEME_IDS[variations.getAttribute("next")][getVariantIndex()]
+      );
+
+    
     const random = Math.floor(Math.random() * (THEME_IDS.length - 1)) + 1;
     const selected = themes.children[random];
     selected.checked = true;
@@ -205,7 +223,7 @@ function onLoad(ready) {
     
     triggerTransition(() => variations.setAttribute("next", random));
     setTimeout(() => {
-      enableTheme(THEME_IDS[random]);
+      enableVariant();
       showVariations(selected);
     }, 400);
 
@@ -213,21 +231,18 @@ function onLoad(ready) {
     variations.addEventListener("click", ({ target: button }) => {
       
       if (button.type === "radio") {
-        const variant = variantFromId(button.dataset.l10nId);
-        enableTheme(VARIATION_IDS[variant]);
-        recordEvent("theme", variant);
+        enableVariant();
+        recordEvent("theme", `variant-${getVariantIndex()}`);
       }
     });
 
     
     let nextButton;
     themes.addEventListener("click", ({ target: button }) => {
-      const indexOf = node => [...themes.children].indexOf(node);
-
       
       if (button.parentNode === themes) {
         
-        variations.setAttribute("next", indexOf(button));
+        variations.setAttribute("next", [...themes.children].indexOf(button));
 
         
         if (!nextButton) {
@@ -236,9 +251,8 @@ function onLoad(ready) {
             variations.classList.remove("out");
 
             
-            const index = indexOf(nextButton);
-            enableTheme(THEME_IDS[index]);
-            recordEvent("theme", index);
+            enableVariant();
+            recordEvent("theme", `theme-${variations.getAttribute("next")}`);
 
             
             showVariations(nextButton);
