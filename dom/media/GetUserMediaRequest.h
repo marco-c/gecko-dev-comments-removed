@@ -23,10 +23,12 @@ struct MediaStreamConstraints;
 
 class GetUserMediaRequest : public nsISupports, public nsWrapperCache {
  public:
+  
   GetUserMediaRequest(nsPIDOMWindowInner* aInnerWindow,
                       const nsAString& aCallID,
                       const MediaStreamConstraints& aConstraints,
                       bool aIsSecure, bool aIsHandlingUserInput);
+  
   GetUserMediaRequest(nsPIDOMWindowInner* aInnerWindow, const nsAString& aRawId,
                       const nsAString& aMediaSource, bool aIsHandlingUserInput);
 
