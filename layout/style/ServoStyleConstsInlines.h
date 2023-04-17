@@ -762,13 +762,17 @@ nscoord LengthPercentage::Resolve(T aPercentageGetter, U aRounder) const {
   return AsCalc().node.Resolve(basis, aRounder);
 }
 
+
+
 nscoord LengthPercentage::Resolve(nscoord aPercentageBasis) const {
-  return Resolve([=] { return aPercentageBasis; }, NSToCoordFloorClamped);
+  return Resolve([=] { return aPercentageBasis; },
+                 static_cast<nscoord (*)(float)>(NSToCoordTruncClamped));
 }
 
 template <typename T>
 nscoord LengthPercentage::Resolve(T aPercentageGetter) const {
-  return Resolve(aPercentageGetter, NSToCoordFloorClamped);
+  return Resolve(aPercentageGetter,
+                 static_cast<nscoord (*)(float)>(NSToCoordTruncClamped));
 }
 
 template <typename T>
