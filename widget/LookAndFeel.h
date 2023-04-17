@@ -425,6 +425,11 @@ class LookAndFeel {
   
   enum class ColorScheme : uint8_t { Light, Dark };
 
+  static ColorScheme SystemColorScheme() {
+    return GetInt(IntID::SystemUsesDarkTheme) ? ColorScheme::Dark
+                                              : ColorScheme::Light;
+  }
+
   
   
   enum class UseStandins : bool { No, Yes };
