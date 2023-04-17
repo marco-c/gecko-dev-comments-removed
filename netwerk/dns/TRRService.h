@@ -15,6 +15,7 @@
 #include "TRRServiceBase.h"
 #include "nsICaptivePortalService.h"
 #include "nsTHashSet.h"
+#include "TRR.h"
 
 class nsDNSService;
 class nsIPrefBranch;
@@ -188,7 +189,7 @@ class TRRService : public TRRServiceBase,
     NS_DECL_ISUPPORTS_INHERITED
     NS_DECL_NSITIMERCALLBACK
 
-   public:
+   private:
     static const size_t RESULTS_SIZE = 32;
 
     RefPtr<TRR> mTask;
@@ -226,6 +227,7 @@ class TRRService : public TRRServiceBase,
     
     nsCString mFailedLookups;
 
+   public:
     
     
     void RecordEvent(const char* aReason);
@@ -243,23 +245,80 @@ class TRRService : public TRRServiceBase,
     void HandleEvent(ConfirmationEvent aEvent);
     void HandleEvent(ConfirmationEvent aEvent, const MutexAutoLock&);
 
+    void SetCaptivePortalStatus(int32_t aStatus) {
+      mCaptivePortalStatus = aStatus;
+    }
+
+    uintptr_t TaskAddr() { return uintptr_t(mTask.get()); }
+
    private:
     
     
     
     
     TRRService* OwningObject() {
-      return reinterpret_cast<TRRService*>(reinterpret_cast<uint8_t*>(this) -
-                                           offsetof(TRRService, mConfirmation));
+      return reinterpret_cast<TRRService*>(
+          reinterpret_cast<uint8_t*>(this) -
+          offsetof(TRRService, mConfirmation) -
+          offsetof(ConfirmationWrapper, mConfirmation));
     }
 
     Atomic<enum ConfirmationState, Relaxed> mState{CONFIRM_OFF};
 
+    
+    
     friend class TRRService;
     ~ConfirmationContext() = default;
   };
 
-  ConfirmationContext mConfirmation;
+  
+  
+  
+  
+  class ConfirmationWrapper {
+   public:
+    
+    
+    void RecordEvent(const char* aReason) {
+      mConfirmation.RecordEvent(aReason);
+    }
+
+    
+    
+    void RequestCompleted(nsresult aLookupStatus, nsresult aChannelStatus) {
+      mConfirmation.RequestCompleted(aLookupStatus, aChannelStatus);
+    }
+
+    enum ConfirmationState State() { return mConfirmation.State(); }
+
+    void CompleteConfirmation(nsresult aStatus, TRR* aTrrRequest) {
+      mConfirmation.CompleteConfirmation(aStatus, aTrrRequest);
+    }
+
+    void RecordTRRStatus(nsresult aChannelStatus) {
+      mConfirmation.RecordTRRStatus(aChannelStatus);
+    }
+
+    void HandleEvent(ConfirmationEvent aEvent) {
+      mConfirmation.HandleEvent(aEvent);
+    }
+
+    void HandleEvent(ConfirmationEvent aEvent, const MutexAutoLock& lock) {
+      mConfirmation.HandleEvent(aEvent, lock);
+    }
+
+    void SetCaptivePortalStatus(int32_t aStatus) {
+      mConfirmation.SetCaptivePortalStatus(aStatus);
+    }
+
+    uintptr_t TaskAddr() { return mConfirmation.TaskAddr(); }
+
+   private:
+    friend TRRService* ConfirmationContext::OwningObject();
+    ConfirmationContext mConfirmation;
+  };
+
+  ConfirmationWrapper mConfirmation;
 
   bool mParentalControlEnabled{false};
   RefPtr<ODoHService> mODoHService;
