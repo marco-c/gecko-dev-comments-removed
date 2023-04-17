@@ -196,8 +196,19 @@ function generateRequestDeviceArgsWithServices(services = ['heart_rate']) {
   return [
     {filters: [{services: services}]},
     {filters: [{services: services, name: 'Name'}]},
-    {filters: [{services: services, namePrefix: 'Pre'}]},
-    {filters: [{services: services, name: 'Name', namePrefix: 'Pre'}]},
+    {filters: [{services: services, namePrefix: 'Pre'}]}, {
+      filters: [
+        {services: services, manufacturerData: [{companyIdentifier: 0x0001}]}
+      ]
+    },
+    {
+      filters: [{
+        services: services,
+        name: 'Name',
+        namePrefix: 'Pre',
+        manufacturerData: [{companyIdentifier: 0x0001}]
+      }]
+    },
     {filters: [{services: services}], optionalServices: ['heart_rate']}, {
       filters: [{services: services, name: 'Name'}],
       optionalServices: ['heart_rate']
@@ -207,7 +218,18 @@ function generateRequestDeviceArgsWithServices(services = ['heart_rate']) {
       optionalServices: ['heart_rate']
     },
     {
-      filters: [{services: services, name: 'Name', namePrefix: 'Pre'}],
+      filters: [
+        {services: services, manufacturerData: [{companyIdentifier: 0x0001}]}
+      ],
+      optionalServices: ['heart_rate']
+    },
+    {
+      filters: [{
+        services: services,
+        name: 'Name',
+        namePrefix: 'Pre',
+        manufacturerData: [{companyIdentifier: 0x0001}]
+      }],
       optionalServices: ['heart_rate']
     }
   ];
@@ -245,6 +267,7 @@ async function initializeFakeCentral({state = 'powered-on'}) {
 
 
 
+
 let FakeDeviceOptions;
 
 
@@ -260,6 +283,7 @@ let SetupOptions;
 const fakeDeviceOptionsDefault = {
   address: '00:00:00:00:00:00',
   name: 'LE Device',
+  manufacturerData: {},
   knownServiceUUIDs: [],
   connectable: false,
   serviceDiscoveryComplete: false,
@@ -327,6 +351,7 @@ async function setUpPreconnectedFakeDevice(setupOptionsOverride) {
       await fake_central.simulatePreconnectedPeripheral({
         address: setupOptions.fakeDeviceOptions.address,
         name: setupOptions.fakeDeviceOptions.name,
+        manufacturerData: setupOptions.fakeDeviceOptions.manufacturerData,
         knownServiceUUIDs: setupOptions.fakeDeviceOptions.knownServiceUUIDs,
       });
 
@@ -373,15 +398,19 @@ async function setUpPreconnectedFakeDevice(setupOptionsOverride) {
 
 
 
+
+
 async function setUpPreconnectedDevice({
   address = '00:00:00:00:00:00',
   name = 'LE Device',
+  manufacturerData = {},
   knownServiceUUIDs = []
 }) {
   await initializeFakeCentral({state: 'powered-on'});
   return await fake_central.simulatePreconnectedPeripheral({
     address: address,
     name: name,
+    manufacturerData: manufacturerData,
     knownServiceUUIDs: knownServiceUUIDs,
   });
 }
@@ -713,6 +742,7 @@ function setUpHealthThermometerDevice() {
   return setUpPreconnectedDevice({
     address: '09:09:09:09:09:09',
     name: 'Health Thermometer',
+    manufacturerData: {0x0001: manufacturer1Data, 0x0002: manufacturer2Data},
     knownServiceUUIDs: ['generic_access', 'health_thermometer'],
   });
 }
@@ -1122,11 +1152,13 @@ async function setUpHealthThermometerAndHeartRateDevices() {
     fake_central.simulatePreconnectedPeripheral({
       address: '09:09:09:09:09:09',
       name: 'Health Thermometer',
+      manufacturerData: {},
       knownServiceUUIDs: ['generic_access', 'health_thermometer'],
     }),
     fake_central.simulatePreconnectedPeripheral({
       address: '08:08:08:08:08:08',
       name: 'Heart Rate',
+      manufacturerData: {},
       knownServiceUUIDs: ['generic_access', 'heart_rate'],
     })
   ]);

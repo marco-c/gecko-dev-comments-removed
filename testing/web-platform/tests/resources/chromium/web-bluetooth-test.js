@@ -139,11 +139,13 @@ class FakeCentral {
   
   
   
-  async simulatePreconnectedPeripheral({
-    address, name, knownServiceUUIDs = []}) {
-
+  
+  async simulatePreconnectedPeripheral(
+      {address, name, manufacturerData = {}, knownServiceUUIDs = []}) {
     await this.fake_central_ptr_.simulatePreconnectedPeripheral(
-      address, name, canonicalizeAndConvertToMojoUUID(knownServiceUUIDs));
+        address, name,
+        convertToMojoMap(manufacturerData, Number, true ),
+        canonicalizeAndConvertToMojoUUID(knownServiceUUIDs));
 
     return this.fetchOrCreatePeripheral_(address);
   }
