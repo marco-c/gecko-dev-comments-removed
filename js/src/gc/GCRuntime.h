@@ -726,7 +726,6 @@ class GCRuntime {
   [[nodiscard]] bool beginPreparePhase(JS::GCReason reason,
                                        AutoGCSession& session);
   bool prepareZonesForCollection(JS::GCReason reason, bool* isFullOut);
-  void bufferGrayRoots();
   void unmarkWeakMaps();
   void endPreparePhase(JS::GCReason reason);
   void beginMarkPhase(AutoGCSession& session);
@@ -748,27 +747,6 @@ class GCRuntime {
   void checkNoRuntimeRoots(AutoGCSession& session);
   void maybeDoCycleCollection();
   void findDeadCompartments();
-
-  
-  
-  
-  
-  
-  
-  enum class GrayBufferState { Unused, Okay, Failed };
-
-  bool hasValidGrayRootsBuffer() const {
-    return grayBufferState == GrayBufferState::Okay;
-  }
-
-  
-  void resetBufferedGrayRoots();
-
-  
-  void clearBufferedGrayRoots() {
-    grayBufferState = GrayBufferState::Unused;
-    resetBufferedGrayRoots();
-  }
 
   friend class BackgroundMarkTask;
   IncrementalProgress markUntilBudgetExhausted(
@@ -986,8 +964,6 @@ class GCRuntime {
 
   
   MainThreadData<bool> cleanUpEverything;
-
-  MainThreadOrGCTaskData<GrayBufferState> grayBufferState;
 
   
 

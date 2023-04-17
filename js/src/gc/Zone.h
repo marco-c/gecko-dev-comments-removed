@@ -258,12 +258,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadOrGCTaskData<js::StringWrapperMap> crossZoneStringWrappers_;
 
   
-  using GrayRootVector =
-      mozilla::SegmentedVector<js::gc::Cell*, 1024 * sizeof(js::gc::Cell*),
-                               js::SystemAllocPolicy>;
-  js::ZoneOrGCTaskData<GrayRootVector> gcGrayRoots_;
-
-  
   
   js::ZoneOrGCTaskData<mozilla::LinkedList<detail::WeakCacheBase>> weakCaches_;
 
@@ -520,8 +514,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   void sweepAllCrossCompartmentWrappers();
   static void fixupAllCrossCompartmentWrappersAfterMovingGC(JSTracer* trc);
-
-  GrayRootVector& gcGrayRoots() { return gcGrayRoots_.ref(); }
 
   mozilla::LinkedList<detail::WeakCacheBase>& weakCaches() {
     return weakCaches_.ref();

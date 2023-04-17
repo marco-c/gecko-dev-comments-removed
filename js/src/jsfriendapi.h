@@ -20,6 +20,16 @@
 
 class JSJitInfo;
 
+
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API void JS_SetGrayGCRootsTracer(JSContext* cx,
                                                   JSTraceDataOp traceOp,
                                                   void* data);

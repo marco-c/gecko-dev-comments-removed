@@ -1144,7 +1144,6 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       perZoneGCEnabled(TuningDefaults::PerZoneGCEnabled),
       numActiveZoneIters(0),
       cleanUpEverything(false),
-      grayBufferState(GCRuntime::GrayBufferState::Unused),
       grayBitsValid(false),
       majorGCTriggerReason(JS::GCReason::NO_REASON),
       fullGCForAtomsRequested_(false),
@@ -3717,17 +3716,6 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
                                        gcstats::PhaseKind::UNMARK_WEAKMAPS,
                                        helperLock);
 
-    
-
-
-
-
-    Maybe<AutoRunParallelTask> bufferGrayRootsTask;
-    if (isIncremental) {
-      bufferGrayRootsTask.emplace(this, &GCRuntime::bufferGrayRoots,
-                                  gcstats::PhaseKind::BUFFER_GRAY_ROOTS,
-                                  helperLock);
-    }
     AutoUnlockHelperThreadState unlock(helperLock);
 
     
@@ -3961,16 +3949,10 @@ void GCRuntime::markGrayRoots(gcstats::PhaseKind phase) {
   MOZ_ASSERT(marker.markColor() == MarkColor::Gray);
 
   gcstats::AutoPhase ap(stats(), phase);
-  if (hasValidGrayRootsBuffer()) {
-    for (ZoneIterT zone(this); !zone.done(); zone.next()) {
-      markBufferedGrayRoots(zone);
-    }
-  } else {
-    MOZ_ASSERT(!isIncremental);
-    traceEmbeddingGrayRoots(&marker);
-    Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(
-        &marker, Compartment::GrayEdges);
-  }
+
+  traceEmbeddingGrayRoots(&marker);
+  Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(
+      &marker, Compartment::GrayEdges);
 }
 
 IncrementalProgress GCRuntime::markAllWeakReferences() {
@@ -4184,7 +4166,6 @@ void GCRuntime::getNextSweepGroup() {
       zone->changeGCState(Zone::MarkBlackOnly, Zone::NoGC);
       zone->arenas.unmarkPreMarkedFreeCells();
       zone->arenas.mergeNewArenasInMarkPhase();
-      zone->gcGrayRoots().Clear();
       zone->clearGCSliceThresholds();
     }
 
@@ -5763,8 +5744,6 @@ void GCRuntime::finishCollection() {
   MOZ_ASSERT(marker.isDrained());
   marker.stop();
 
-  clearBufferedGrayRoots();
-
   maybeStopPretenuring();
 
   {
@@ -5971,7 +5950,6 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
     case State::Mark: {
       
       marker.reset();
-      clearBufferedGrayRoots();
 
       for (GCCompartmentsIter c(rt); !c.done(); c.next()) {
         ResetGrayList(c);
@@ -6182,16 +6160,7 @@ void GCRuntime::incrementalSlice(SliceBudget& budget,
       }
 
       endPreparePhase(reason);
-
       beginMarkPhase(session);
-
-      
-      if (isIncremental && !hasValidGrayRootsBuffer()) {
-        budget = SliceBudget::unlimited();
-        isIncremental = false;
-        stats().nonincremental(GCAbortReason::GrayRootBufferingFailed);
-      }
-
       incrementalState = State::Mark;
 
       if (useZeal && hasZealMode(ZealMode::YieldBeforeMarking) &&

@@ -88,7 +88,7 @@ class IncrementalFinalizeRunnable;
 
 class JSHolderMap {
  public:
-  enum WhichHolders { AllHolders, HoldersInCollectingZones };
+  enum WhichHolders { AllHolders, HoldersInGrayMarkingZones };
 
   JSHolderMap();
 
