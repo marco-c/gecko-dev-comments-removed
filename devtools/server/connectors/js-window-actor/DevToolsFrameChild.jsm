@@ -388,7 +388,10 @@ class DevToolsFrameChild extends JSWindowActorChild {
   receiveMessage(message) {
     
     
-    if (message.name != "DevToolsFrameParent:packet") {
+    if (
+      message.data.browserId &&
+      message.name != "DevToolsFrameParent:packet"
+    ) {
       const { browserId } = message.data;
       
       
@@ -399,7 +402,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
         })
       ) {
         throw new Error(
-          "Mismatch between DevToolsFrameParent and DevToolsFrameChild  " +
+          "Mismatch between DevToolsFrameParent and DevToolsFrameChild " +
             (this.manager.browsingContext.browserId == browserId
               ? "window global shouldn't be notified (shouldNotifyWindowGlobal mismatch)"
               : `expected browsing context with browserId ${browserId}, but got ${this.manager.browsingContext.browserId}`)

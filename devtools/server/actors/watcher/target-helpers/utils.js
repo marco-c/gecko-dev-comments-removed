@@ -48,15 +48,6 @@ function shouldNotifyWindowGlobal(
     return false;
   }
 
-  
-  
-  if (
-    windowGlobal.documentURI &&
-    windowGlobal.documentURI.spec == "about:blank"
-  ) {
-    return false;
-  }
-
   if (watchedBrowserId && browsingContext.browserId != watchedBrowserId) {
     return false;
   }
