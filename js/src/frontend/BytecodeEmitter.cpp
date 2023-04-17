@@ -1687,7 +1687,8 @@ bool BytecodeEmitter::addObjLiteralData(ObjLiteralWriter& writer,
     ReportAllocationOverflow(cx);
     return false;
   }
-  if (!compilationState.objLiteralData.emplaceBack(code, len, writer.getFlags(),
+  if (!compilationState.objLiteralData.emplaceBack(code, len, writer.getKind(),
+                                                   writer.getFlags(),
                                                    writer.getPropertyCount())) {
     js::ReportOutOfMemory(cx);
     return false;
@@ -1696,11 +1697,11 @@ bool BytecodeEmitter::addObjLiteralData(ObjLiteralWriter& writer,
   return perScriptData().gcThingList().append(objIndex, outIndex);
 }
 
-bool BytecodeEmitter::iteratorResultShape(GCThingIndex* outShape) {
-  ObjLiteralFlags flags;
+bool BytecodeEmitter::emitPrepareIteratorResult() {
+  constexpr JSOp op = JSOp::NewObject;
 
   ObjLiteralWriter writer;
-  writer.beginObject(flags);
+  writer.beginShape(op);
 
   writer.setPropNameNoDuplicateCheck(parserAtoms(),
                                      TaggedParserAtomIndex::WellKnown::value());
@@ -1713,15 +1714,12 @@ bool BytecodeEmitter::iteratorResultShape(GCThingIndex* outShape) {
     return false;
   }
 
-  return addObjLiteralData(writer, outShape);
-}
-
-bool BytecodeEmitter::emitPrepareIteratorResult() {
   GCThingIndex shape;
-  if (!iteratorResultShape(&shape)) {
+  if (!addObjLiteralData(writer, &shape)) {
     return false;
   }
-  return emitGCIndexOp(JSOp::NewObject, shape);
+
+  return emitGCIndexOp(op, shape);
 }
 
 bool BytecodeEmitter::emitFinishIteratorResult(bool done) {
@@ -4869,7 +4867,7 @@ bool BytecodeEmitter::emitShortCircuitAssignment(AssignmentNode* node) {
   return true;
 }
 
-bool BytecodeEmitter::emitCallSiteObjectArray(ListNode* cookedOrRaw,
+bool BytecodeEmitter::emitCallSiteObjectArray(JSOp op, ListNode* cookedOrRaw,
                                               GCThingIndex* outArrayIndex) {
   uint32_t count = cookedOrRaw->count();
   ParseNode* pn = cookedOrRaw->head();
@@ -4885,8 +4883,7 @@ bool BytecodeEmitter::emitCallSiteObjectArray(ListNode* cookedOrRaw,
 
   ObjLiteralWriter writer;
 
-  ObjLiteralFlags flags({ObjLiteralFlag::Array});
-  writer.beginObject(flags);
+  writer.beginArray(op);
   writer.beginDenseArrayElements();
 
   size_t idx;
@@ -4904,19 +4901,21 @@ bool BytecodeEmitter::emitCallSiteObjectArray(ListNode* cookedOrRaw,
 }
 
 bool BytecodeEmitter::emitCallSiteObject(CallSiteNode* callSiteObj) {
+  constexpr JSOp op = JSOp::CallSiteObj;
+
   GCThingIndex cookedIndex;
-  if (!emitCallSiteObjectArray(callSiteObj, &cookedIndex)) {
+  if (!emitCallSiteObjectArray(op, callSiteObj, &cookedIndex)) {
     return false;
   }
 
   GCThingIndex rawIndex;
-  if (!emitCallSiteObjectArray(callSiteObj->rawNodes(), &rawIndex)) {
+  if (!emitCallSiteObjectArray(op, callSiteObj->rawNodes(), &rawIndex)) {
     return false;
   }
 
   MOZ_ASSERT(sc->hasCallSiteObj());
 
-  return emitObjectPairOp(cookedIndex, rawIndex, JSOp::CallSiteObj);
+  return emitObjectPairOp(cookedIndex, rawIndex, op);
 }
 
 bool BytecodeEmitter::emitCatch(BinaryNode* catchClause) {
@@ -9355,8 +9354,7 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
   return true;
 }
 
-bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj,
-                                                 ObjLiteralFlags flags,
+bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj, JSOp op,
                                                  bool useObjLiteralValues) {
   ObjLiteralWriter writer;
 
@@ -9370,8 +9368,12 @@ bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj,
   }
 #endif
 
-  writer.beginObject(flags);
-  bool singleton = flags.hasFlag(ObjLiteralFlag::Singleton);
+  if (op == JSOp::Object) {
+    writer.beginObject(op);
+  } else {
+    MOZ_ASSERT(op == JSOp::NewObject);
+    writer.beginShape(op);
+  }
 
   for (ParseNode* propdef : obj->contents()) {
     BinaryNode* prop = &propdef->as<BinaryNode>();
@@ -9418,7 +9420,7 @@ bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj,
     }
 
     if (useObjLiteralValues) {
-      MOZ_ASSERT(singleton);
+      MOZ_ASSERT(op == JSOp::Object);
       ParseNode* value = prop->right();
       if (!emitObjLiteralValue(writer, value)) {
         return false;
@@ -9436,9 +9438,9 @@ bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj,
   }
 
   
-  MOZ_ASSERT_IF(singleton, sc->isTopLevelContext() && sc->treatAsRunOnce());
+  MOZ_ASSERT_IF(op == JSOp::Object,
+                sc->isTopLevelContext() && sc->treatAsRunOnce());
 
-  JSOp op = singleton ? JSOp::Object : JSOp::NewObject;
   if (!emitGCIndexOp(op, index)) {
     
     return false;
@@ -9449,10 +9451,13 @@ bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj,
 
 bool BytecodeEmitter::emitDestructuringRestExclusionSetObjLiteral(
     ListNode* pattern) {
-  ObjLiteralFlags flags;
+  
+  
+  
+  constexpr JSOp op = JSOp::NewObject;
 
   ObjLiteralWriter writer;
-  writer.beginObject(flags);
+  writer.beginShape(op);
 
   for (ParseNode* member : pattern->contents()) {
     if (member->isKind(ParseNodeKind::Spread)) {
@@ -9482,12 +9487,7 @@ bool BytecodeEmitter::emitDestructuringRestExclusionSetObjLiteral(
     return false;
   }
 
-  
-  
-  
-  
-  
-  if (!emitGCIndexOp(JSOp::NewObject, index)) {
+  if (!emitGCIndexOp(op, index)) {
     
     return false;
   }
@@ -9498,11 +9498,10 @@ bool BytecodeEmitter::emitDestructuringRestExclusionSetObjLiteral(
 bool BytecodeEmitter::emitObjLiteralArray(ParseNode* arrayHead) {
   MOZ_ASSERT(checkSingletonContext());
 
+  constexpr JSOp op = JSOp::Object;
+
   ObjLiteralWriter writer;
-
-  ObjLiteralFlags flags({ObjLiteralFlag::Array, ObjLiteralFlag::Singleton});
-
-  writer.beginObject(flags);
+  writer.beginArray(op);
 
   writer.beginDenseArrayElements();
   for (ParseNode* elem = arrayHead; elem; elem = elem->pn_next) {
@@ -9516,7 +9515,7 @@ bool BytecodeEmitter::emitObjLiteralArray(ParseNode* arrayHead) {
     return false;
   }
 
-  if (!emitGCIndexOp(JSOp::Object, index)) {
+  if (!emitGCIndexOp(op, index)) {
     
     return false;
   }
@@ -10241,14 +10240,14 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode) {
   if (useObjLiteral) {
     bool singleton = checkSingletonContext() &&
                      !objNode->hasNonConstInitializer() && objNode->head();
-
-    ObjLiteralFlags flags;
+    JSOp op;
     if (singleton) {
       
-      flags.setFlag(ObjLiteralFlag::Singleton);
+      op = JSOp::Object;
     } else {
       
       useObjLiteralValues = false;
+      op = JSOp::NewObject;
     }
 
     
@@ -10256,7 +10255,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitObject(ListNode* objNode) {
     
     
     
-    if (!emitPropertyListObjLiteral(objNode, flags, useObjLiteralValues)) {
+    if (!emitPropertyListObjLiteral(objNode, op, useObjLiteralValues)) {
       
       return false;
     }
