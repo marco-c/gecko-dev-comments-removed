@@ -2,7 +2,6 @@
 
 
 
-use crate::xpcom_utils::get_app_locales;
 use cstr::cstr;
 use l10nregistry::{env::ErrorReporter, errors::L10nRegistryError};
 use log::warn;
