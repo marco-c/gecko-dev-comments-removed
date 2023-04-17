@@ -10215,6 +10215,11 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     return NS_ERROR_UNEXPECTED;
   }
 
+  
+  
+  PersistLayoutHistoryState();
+  SynchronizeLayoutHistoryState();
+
   nsresult rv;
   nsContentPolicyType contentPolicyType = DetermineContentType();
 
