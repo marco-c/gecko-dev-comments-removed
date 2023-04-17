@@ -1262,6 +1262,15 @@ Document::FrameRequest::~FrameRequest() = default;
 
 Document::PendingFrameStaticClone::~PendingFrameStaticClone() = default;
 
+struct Document::MetaViewportElementAndData {
+  RefPtr<HTMLMetaElement> mElement;
+  ViewportMetaData mData;
+
+  bool operator==(const MetaViewportElementAndData& aOther) const {
+    return mElement == aOther.mElement && mData == aOther.mData;
+  }
+};
+
 
 
 
@@ -2464,6 +2473,10 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
     }
   }
 
+  for (size_t i = 0; i < tmp->mMetaViewports.Length(); i++) {
+    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMetaViewports[i].mElement);
+  }
+
   
   for (const auto& entry : tmp->mL10nProtoElements) {
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mL10nProtoElements key");
@@ -2615,6 +2628,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   tmp->mPendingFrameStaticClones.Clear();
 
   tmp->mInUnlinkOrDeletion = false;
+
+  tmp->mMetaViewports.Clear();
 
   tmp->UnregisterFromMemoryReportingForDataDocument();
 
@@ -6713,7 +6728,8 @@ void Document::SetHeaderData(nsAtom* aHeaderField, const nsAString& aData) {
     mAllowDNSPrefetch = aData.IsEmpty() || aData.LowerCaseEqualsLiteral("on");
   }
 
-  if (aHeaderField == nsGkAtoms::handheldFriendly) {
+  if (aHeaderField == nsGkAtoms::viewport ||
+      aHeaderField == nsGkAtoms::handheldFriendly) {
     mViewportType = Unknown;
   }
 }
@@ -10258,14 +10274,17 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
                             nsViewportInfo::ZoomFlag::AllowZoom,
                             nsViewportInfo::ZoomBehaviour::Mobile);
     case Unknown: {
+      nsAutoString viewport;
+      GetHeaderData(nsGkAtoms::viewport, viewport);
       
       
       
-      if (!mLastModifiedViewportMetaData) {
+      if (viewport.IsEmpty()) {
         
         
         
-        if (RefPtr<DocumentType> docType = GetDoctype()) {
+        RefPtr<DocumentType> docType = GetDoctype();
+        if (docType) {
           nsAutoString docId;
           docType->GetPublicId(docId);
           if ((docId.Find("WAP") != -1) || (docId.Find("Mobile") != -1) ||
@@ -10553,12 +10572,29 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
 }
 
 ViewportMetaData Document::GetViewportMetaData() const {
-  return mLastModifiedViewportMetaData ? *mLastModifiedViewportMetaData
-                                       : ViewportMetaData();
+  
+  
+  
+  return !mMetaViewports.IsEmpty() ? mMetaViewports.LastElement().mData
+                                   : ViewportMetaData();
 }
 
-void Document::SetMetaViewportData(UniquePtr<ViewportMetaData> aData) {
-  mLastModifiedViewportMetaData = std::move(aData);
+void Document::AddMetaViewportElement(HTMLMetaElement* aElement,
+                                      ViewportMetaData&& aData) {
+  for (size_t i = 0; i < mMetaViewports.Length(); i++) {
+    MetaViewportElementAndData& viewport = mMetaViewports[i];
+    if (viewport.mElement == aElement) {
+      if (viewport.mData == aData) {
+        return;
+      }
+      
+      
+      mMetaViewports.RemoveElementAt(i);
+      break;
+    }
+  }
+
+  mMetaViewports.AppendElement(MetaViewportElementAndData{aElement, aData});
   
   mViewportType = Unknown;
 
@@ -10566,6 +10602,22 @@ void Document::SetMetaViewportData(UniquePtr<ViewportMetaData> aData) {
       new AsyncEventDispatcher(this, u"DOMMetaViewportFitChanged"_ns,
                                CanBubble::eYes, ChromeOnlyDispatch::eYes);
   asyncDispatcher->RunDOMEventWhenSafe();
+}
+
+void Document::RemoveMetaViewportElement(HTMLMetaElement* aElement) {
+  for (MetaViewportElementAndData& viewport : mMetaViewports) {
+    if (viewport.mElement == aElement) {
+      mMetaViewports.RemoveElement(viewport);
+      
+      mViewportType = Unknown;
+
+      RefPtr<AsyncEventDispatcher> asyncDispatcher =
+          new AsyncEventDispatcher(this, u"DOMMetaViewportFitChanged"_ns,
+                                   CanBubble::eYes, ChromeOnlyDispatch::eYes);
+      asyncDispatcher->RunDOMEventWhenSafe();
+      return;
+    }
+  }
 }
 
 EventListenerManager* Document::GetOrCreateListenerManager() {

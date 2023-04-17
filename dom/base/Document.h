@@ -1291,7 +1291,9 @@ class Document : public nsINode,
 
   nsViewportInfo GetViewportInfo(const ScreenIntSize& aDisplaySize);
 
-  void SetMetaViewportData(UniquePtr<ViewportMetaData> aData);
+  void AddMetaViewportElement(HTMLMetaElement* aElement,
+                              ViewportMetaData&& aData);
+  void RemoveMetaViewportElement(HTMLMetaElement* aElement);
 
   
   ViewportMetaData GetViewportMetaData() const;
@@ -5173,9 +5175,9 @@ class Document : public nsINode,
   
   nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
 
+  struct MetaViewportElementAndData;
   
-  
-  UniquePtr<ViewportMetaData> mLastModifiedViewportMetaData;
+  nsTArray<MetaViewportElementAndData> mMetaViewports;
 
   
   
