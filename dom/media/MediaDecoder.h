@@ -719,7 +719,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   TelemetryProbesReporter::Visibility OwnerVisibility() const;
 
   
-  double GetTotalPlayTimeInSeconds() const;
+  double GetTotalVideoPlayTimeInSeconds() const;
   double GetVisibleVideoPlayTimeInSeconds() const;
   double GetInvisibleVideoPlayTimeInSeconds() const;
   double GetVideoDecodeSuspendedTimeInSeconds() const;
