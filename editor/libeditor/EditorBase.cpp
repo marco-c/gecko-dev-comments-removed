@@ -3462,6 +3462,45 @@ EditorBase::CreateTransactionForCollapsedRange(
   if (NS_WARN_IF(!point.IsSet())) {
     return nullptr;
   }
+  if (IsTextEditor()) {
+    
+    
+    
+    
+    if (!point.IsInTextNode()) {
+      const Element* anonymousDiv = GetRoot();
+      if (NS_WARN_IF(!anonymousDiv)) {
+        return nullptr;
+      }
+      if (!anonymousDiv->GetFirstChild() ||
+          !anonymousDiv->GetFirstChild()->IsText()) {
+        return nullptr;  
+      }
+      if (point.GetContainer() == anonymousDiv) {
+        if (point.IsStartOfContainer()) {
+          point.Set(anonymousDiv->GetFirstChild(), 0);
+        } else {
+          point.SetToEndOf(anonymousDiv->GetFirstChild());
+        }
+      } else {
+        
+        point.SetToEndOf(anonymousDiv->GetFirstChild());
+      }
+    }
+    MOZ_ASSERT(!point.ContainerAsText()->GetPreviousSibling());
+    MOZ_ASSERT(!point.ContainerAsText()->GetNextSibling() ||
+               !point.ContainerAsText()->GetNextSibling()->IsText());
+    if (aHowToHandleCollapsedRange ==
+            HowToHandleCollapsedRange::ExtendBackward &&
+        point.IsStartOfContainer()) {
+      return nullptr;
+    }
+    if (aHowToHandleCollapsedRange ==
+            HowToHandleCollapsedRange::ExtendForward &&
+        point.IsEndOfContainer()) {
+      return nullptr;
+    }
+  }
 
   
   
@@ -3470,11 +3509,12 @@ EditorBase::CreateTransactionForCollapsedRange(
   
   if (aHowToHandleCollapsedRange == HowToHandleCollapsedRange::ExtendBackward &&
       point.IsStartOfContainer()) {
+    MOZ_ASSERT(IsHTMLEditor());
     
     
     nsIContent* previousEditableContent = EditorBase::GetPreviousContent(
         *point.GetContainer(), {WalkTreeOption::IgnoreNonEditableNode},
-        GetEditorType(), GetEditorRoot());
+        EditorType::HTML, GetEditorRoot());
     if (!previousEditableContent) {
       NS_WARNING("There was no editable content before the collapsed range");
       return nullptr;
@@ -3513,11 +3553,12 @@ EditorBase::CreateTransactionForCollapsedRange(
 
   if (aHowToHandleCollapsedRange == HowToHandleCollapsedRange::ExtendForward &&
       point.IsEndOfContainer()) {
+    MOZ_ASSERT(IsHTMLEditor());
     
     
     nsIContent* nextEditableContent = EditorBase::GetNextContent(
         *point.GetContainer(), {WalkTreeOption::IgnoreNonEditableNode},
-        GetEditorType(), GetEditorRoot());
+        EditorType::HTML, GetEditorRoot());
     if (!nextEditableContent) {
       NS_WARNING("There was no editable content after the collapsed range");
       return nullptr;
@@ -3574,35 +3615,46 @@ EditorBase::CreateTransactionForCollapsedRange(
     return deleteTextTransaction.forget();
   }
 
-  nsIContent* editableContent =
-      aHowToHandleCollapsedRange == HowToHandleCollapsedRange::ExtendBackward
-          ? EditorBase::GetPreviousContent(
-                point, {WalkTreeOption::IgnoreNonEditableNode}, GetEditorType(),
-                GetEditorRoot())
-          : EditorBase::GetNextContent(point,
-                                       {WalkTreeOption::IgnoreNonEditableNode},
-                                       GetEditorType(), GetEditorRoot());
-  if (!editableContent) {
-    NS_WARNING("There was no editable content around the collapsed range");
-    return nullptr;
-  }
-  while (editableContent && editableContent->IsCharacterData() &&
-         !editableContent->Length()) {
-    
+  nsIContent* editableContent = nullptr;
+  if (IsHTMLEditor()) {
     editableContent =
         aHowToHandleCollapsedRange == HowToHandleCollapsedRange::ExtendBackward
             ? EditorBase::GetPreviousContent(
-                  *editableContent, {WalkTreeOption::IgnoreNonEditableNode},
-                  GetEditorType(), GetEditorRoot())
+                  point, {WalkTreeOption::IgnoreNonEditableNode},
+                  EditorType::HTML, GetEditorRoot())
             : EditorBase::GetNextContent(
-                  *editableContent, {WalkTreeOption::IgnoreNonEditableNode},
-                  GetEditorType(), GetEditorRoot());
-  }
-  if (NS_WARN_IF(!editableContent)) {
-    NS_WARNING(
-        "There was no editable content which is not empty around the collapsed "
-        "range");
-    return nullptr;
+                  point, {WalkTreeOption::IgnoreNonEditableNode},
+                  EditorType::HTML, GetEditorRoot());
+    if (!editableContent) {
+      NS_WARNING("There was no editable content around the collapsed range");
+      return nullptr;
+    }
+    while (editableContent && editableContent->IsCharacterData() &&
+           !editableContent->Length()) {
+      
+      editableContent =
+          aHowToHandleCollapsedRange ==
+                  HowToHandleCollapsedRange::ExtendBackward
+              ? EditorBase::GetPreviousContent(
+                    *editableContent, {WalkTreeOption::IgnoreNonEditableNode},
+                    EditorType::HTML, GetEditorRoot())
+              : EditorBase::GetNextContent(
+                    *editableContent, {WalkTreeOption::IgnoreNonEditableNode},
+                    EditorType::HTML, GetEditorRoot());
+    }
+    if (!editableContent) {
+      NS_WARNING(
+          "There was no editable content which is not empty around the "
+          "collapsed range");
+      return nullptr;
+    }
+  } else {
+    MOZ_ASSERT(point.IsInTextNode());
+    editableContent = point.GetContainerAsContent();
+    if (!editableContent) {
+      NS_WARNING("If there was no text node, should've been handled first");
+      return nullptr;
+    }
   }
 
   if (editableContent->IsText()) {
@@ -3626,6 +3678,7 @@ EditorBase::CreateTransactionForCollapsedRange(
     return deleteTextTransaction.forget();
   }
 
+  MOZ_ASSERT(IsHTMLEditor());
   RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
       DeleteNodeTransaction::MaybeCreate(*this, *editableContent);
   NS_WARNING_ASSERTION(deleteNodeTransaction,
