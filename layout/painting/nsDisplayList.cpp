@@ -114,7 +114,6 @@
 #include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 
-using namespace mozilla;
 using namespace mozilla::layers;
 using namespace mozilla::dom;
 using namespace mozilla::layout;
@@ -122,6 +121,8 @@ using namespace mozilla::gfx;
 
 typedef ScrollableLayerGuid::ViewID ViewID;
 typedef nsStyleTransformMatrix::TransformReferenceBox TransformReferenceBox;
+
+namespace mozilla {
 
 #ifdef DEBUG
 static bool SpammyLayoutWarningsEnabled() {
@@ -9287,6 +9288,9 @@ void nsDisplayText::RenderToContext(gfxContext* aCtx,
   }
 }
 
+
+
+
 class nsDisplayTextGeometry : public nsDisplayItemGenericGeometry {
  public:
   nsDisplayTextGeometry(nsDisplayText* aItem, nsDisplayListBuilder* aBuilder)
@@ -10475,8 +10479,6 @@ void nsDisplayListCollection::SerializeWithCorrectZOrder(
   aOutResultList->AppendToTop(PositionedDescendants());
 }
 
-namespace mozilla {
-
 uint32_t PaintTelemetry::sPaintLevel = 0;
 
 PaintTelemetry::AutoRecordPaint::AutoRecordPaint() {
@@ -10506,8 +10508,6 @@ PaintTelemetry::AutoRecordPaint::~AutoRecordPaint() {
   Telemetry::Accumulate(Telemetry::CONTENT_PAINT_TIME,
                         static_cast<uint32_t>(totalMs));
 }
-
-}  
 
 static nsIFrame* GetSelfOrPlaceholderFor(nsIFrame* aFrame) {
   if (aFrame->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
@@ -10585,3 +10585,5 @@ nsDisplayListBuilder::AutoBuildingDisplayList::AutoBuildingDisplayList(
   aBuilder->mDirtyRect =
       aBuilder->mInInvalidSubtree ? aVisibleRect : aDirtyRect;
 }
+
+}  
