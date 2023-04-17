@@ -2,9 +2,7 @@
 
 
 
-
-
-#include "builtin/intl/LanguageTag.h"
+#include "mozilla/intl/Locale.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
@@ -12,6 +10,8 @@
 #include "mozilla/Span.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Variant.h"
+
+#include "ICU4CGlue.h"
 
 #include <algorithm>
 #include <iterator>
@@ -22,101 +22,66 @@
 #include <type_traits>
 #include <utility>
 
-#include "builtin/intl/CommonFunctions.h"
-#include "ds/Sort.h"
-#include "gc/Tracer.h"
-#include "js/friend/ErrorMessages.h"  
-#include "js/Result.h"
-#include "js/TracingAPI.h"
-#include "js/Utility.h"
-#include "js/Vector.h"
 #include "unicode/uloc.h"
 #include "unicode/utypes.h"
-#include "util/StringBuffer.h"
-#include "util/Text.h"
-#include "vm/JSContext.h"
-#include "vm/Printer.h"
-#include "vm/StringType.h"
 
-namespace js {
-namespace intl {
+namespace mozilla::intl {
 
-using namespace js::intl::LanguageTagLimits;
+using namespace intl::LanguageTagLimits;
 
 template <typename CharT>
-bool IsStructurallyValidLanguageTag(mozilla::Span<const CharT> language) {
-  
-  JS::AutoSuppressGCAnalysis nogc;
-
+bool IsStructurallyValidLanguageTag(Span<const CharT> language) {
   
   size_t length = language.size();
   const CharT* str = language.data();
   return ((2 <= length && length <= 3) || (5 <= length && length <= 8)) &&
-         std::all_of(str, str + length, mozilla::IsAsciiAlpha<CharT>);
+         std::all_of(str, str + length, IsAsciiAlpha<CharT>);
 }
 
-template bool IsStructurallyValidLanguageTag(
-    mozilla::Span<const char> language);
-template bool IsStructurallyValidLanguageTag(
-    mozilla::Span<const Latin1Char> language);
-template bool IsStructurallyValidLanguageTag(
-    mozilla::Span<const char16_t> language);
+template bool IsStructurallyValidLanguageTag(Span<const char> language);
+template bool IsStructurallyValidLanguageTag(Span<const Latin1Char> language);
+template bool IsStructurallyValidLanguageTag(Span<const char16_t> language);
 
 template <typename CharT>
-bool IsStructurallyValidScriptTag(mozilla::Span<const CharT> script) {
-  
-  JS::AutoSuppressGCAnalysis nogc;
-
+bool IsStructurallyValidScriptTag(Span<const CharT> script) {
   
   size_t length = script.size();
   const CharT* str = script.data();
-  return length == 4 &&
-         std::all_of(str, str + length, mozilla::IsAsciiAlpha<CharT>);
+  return length == 4 && std::all_of(str, str + length, IsAsciiAlpha<CharT>);
 }
 
-template bool IsStructurallyValidScriptTag(mozilla::Span<const char> script);
-template bool IsStructurallyValidScriptTag(
-    mozilla::Span<const Latin1Char> script);
-template bool IsStructurallyValidScriptTag(
-    mozilla::Span<const char16_t> script);
+template bool IsStructurallyValidScriptTag(Span<const char> script);
+template bool IsStructurallyValidScriptTag(Span<const Latin1Char> script);
+template bool IsStructurallyValidScriptTag(Span<const char16_t> script);
 
 template <typename CharT>
-bool IsStructurallyValidRegionTag(mozilla::Span<const CharT> region) {
-  
-  JS::AutoSuppressGCAnalysis nogc;
-
+bool IsStructurallyValidRegionTag(Span<const CharT> region) {
   
   size_t length = region.size();
   const CharT* str = region.data();
-  return (length == 2 &&
-          std::all_of(str, str + length, mozilla::IsAsciiAlpha<CharT>)) ||
-         (length == 3 &&
-          std::all_of(str, str + length, mozilla::IsAsciiDigit<CharT>));
+  return (length == 2 && std::all_of(str, str + length, IsAsciiAlpha<CharT>)) ||
+         (length == 3 && std::all_of(str, str + length, IsAsciiDigit<CharT>));
 }
 
-template bool IsStructurallyValidRegionTag(mozilla::Span<const char> region);
-template bool IsStructurallyValidRegionTag(
-    mozilla::Span<const Latin1Char> region);
-template bool IsStructurallyValidRegionTag(
-    mozilla::Span<const char16_t> region);
+template bool IsStructurallyValidRegionTag(Span<const char> region);
+template bool IsStructurallyValidRegionTag(Span<const Latin1Char> region);
+template bool IsStructurallyValidRegionTag(Span<const char16_t> region);
 
 #ifdef DEBUG
-bool IsStructurallyValidVariantTag(mozilla::Span<const char> variant) {
+bool IsStructurallyValidVariantTag(Span<const char> variant) {
   
   size_t length = variant.size();
   const char* str = variant.data();
   return ((5 <= length && length <= 8) ||
-          (length == 4 && mozilla::IsAsciiDigit(str[0]))) &&
-         std::all_of(str, str + length, mozilla::IsAsciiAlphanumeric<char>);
+          (length == 4 && IsAsciiDigit(str[0]))) &&
+         std::all_of(str, str + length, IsAsciiAlphanumeric<char>);
 }
 
-bool IsStructurallyValidUnicodeExtensionTag(
-    mozilla::Span<const char> extension) {
-  return LanguageTagParser::canParseUnicodeExtension(extension);
+bool IsStructurallyValidUnicodeExtensionTag(Span<const char> extension) {
+  return LocaleParser::canParseUnicodeExtension(extension).isOk();
 }
 
-static bool IsStructurallyValidExtensionTag(
-    mozilla::Span<const char> extension) {
+static bool IsStructurallyValidExtensionTag(Span<const char> extension) {
   
   
   
@@ -127,7 +92,7 @@ static bool IsStructurallyValidExtensionTag(
   if (length <= 2) {
     return false;
   }
-  if (!mozilla::IsAsciiAlphanumeric(str[0]) || str[0] == 'x' || str[0] == 'X') {
+  if (!IsAsciiAlphanumeric(str[0]) || str[0] == 'x' || str[0] == 'X') {
     return false;
   }
   str++;
@@ -139,7 +104,7 @@ static bool IsStructurallyValidExtensionTag(
         reinterpret_cast<const char*>(memchr(str, '-', end - str));
     size_t len = (sep ? sep : end) - str;
     if (len < 2 || len > 8 ||
-        !std::all_of(str, str + len, mozilla::IsAsciiAlphanumeric<char>)) {
+        !std::all_of(str, str + len, IsAsciiAlphanumeric<char>)) {
       return false;
     }
     if (!sep) {
@@ -149,7 +114,7 @@ static bool IsStructurallyValidExtensionTag(
   }
 }
 
-bool IsStructurallyValidPrivateUseTag(mozilla::Span<const char> privateUse) {
+bool IsStructurallyValidPrivateUseTag(Span<const char> privateUse) {
   
 
   size_t length = privateUse.size();
@@ -170,7 +135,7 @@ bool IsStructurallyValidPrivateUseTag(mozilla::Span<const char> privateUse) {
         reinterpret_cast<const char*>(memchr(str, '-', end - str));
     size_t len = (sep ? sep : end) - str;
     if (len == 0 || len > 8 ||
-        !std::all_of(str, str + len, mozilla::IsAsciiAlphanumeric<char>)) {
+        !std::all_of(str, str + len, IsAsciiAlphanumeric<char>)) {
       return false;
     }
     if (!sep) {
@@ -181,7 +146,7 @@ bool IsStructurallyValidPrivateUseTag(mozilla::Span<const char> privateUse) {
 }
 #endif
 
-ptrdiff_t LanguageTag::unicodeExtensionIndex() const {
+ptrdiff_t Locale::unicodeExtensionIndex() const {
   
   
   auto p = std::find_if(
@@ -193,7 +158,7 @@ ptrdiff_t LanguageTag::unicodeExtensionIndex() const {
   return -1;
 }
 
-const char* LanguageTag::unicodeExtension() const {
+const char* Locale::unicodeExtension() const {
   ptrdiff_t index = unicodeExtensionIndex();
   if (index >= 0) {
     return extensions()[index].get();
@@ -201,20 +166,21 @@ const char* LanguageTag::unicodeExtension() const {
   return nullptr;
 }
 
-bool LanguageTag::setUnicodeExtension(UniqueChars extension) {
-  MOZ_ASSERT(IsStructurallyValidUnicodeExtensionTag(
-      mozilla::MakeStringSpan(extension.get())));
+bool Locale::setUnicodeExtension(const char* extension) {
+  MOZ_ASSERT(IsStructurallyValidUnicodeExtensionTag(MakeStringSpan(extension)));
+
+  auto duplicated = DuplicateStringToUniqueChars(extension);
 
   
   ptrdiff_t index = unicodeExtensionIndex();
   if (index >= 0) {
-    extensions_[index] = std::move(extension);
+    extensions_[index] = std::move(duplicated);
     return true;
   }
-  return extensions_.append(std::move(extension));
+  return extensions_.append(std::move(duplicated));
 }
 
-void LanguageTag::clearUnicodeExtension() {
+void Locale::clearUnicodeExtension() {
   ptrdiff_t index = unicodeExtensionIndex();
   if (index >= 0) {
     extensions_.erase(extensions_.begin() + index);
@@ -222,8 +188,7 @@ void LanguageTag::clearUnicodeExtension() {
 }
 
 template <size_t InitialCapacity>
-static bool SortAlphabetically(JSContext* cx,
-                               Vector<UniqueChars, InitialCapacity>& subtags) {
+static bool SortAlphabetically(Vector<UniqueChars, InitialCapacity>& subtags) {
   size_t length = subtags.length();
 
   
@@ -239,20 +204,17 @@ static bool SortAlphabetically(JSContext* cx,
     return true;
   }
 
-  Vector<char*, 8> scratch(cx);
-  if (!scratch.resizeUninitialized(length * 2)) {
+  Vector<char*, 8> scratch;
+  if (!scratch.resizeUninitialized(length)) {
     return false;
   }
   for (size_t i = 0; i < length; i++) {
     scratch[i] = subtags[i].release();
   }
 
-  MOZ_ALWAYS_TRUE(
-      MergeSort(scratch.begin(), length, scratch.begin() + length,
-                [](const char* a, const char* b, bool* lessOrEqualp) {
-                  *lessOrEqualp = strcmp(a, b) <= 0;
-                  return true;
-                }));
+  std::stable_sort(
+      scratch.begin(), scratch.end(),
+      [](const char* a, const char* b) { return strcmp(a, b) < 0; });
 
   for (size_t i = 0; i < length; i++) {
     subtags[i] = UniqueChars(scratch[i]);
@@ -260,7 +222,7 @@ static bool SortAlphabetically(JSContext* cx,
   return true;
 }
 
-bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
+Result<Ok, Locale::CanonicalizationError> Locale::canonicalizeBaseName() {
   
   
   
@@ -296,8 +258,8 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
 
   if (variants_.length() > 1) {
     
-    if (!SortAlphabetically(cx, variants_)) {
-      return false;
+    if (!SortAlphabetically(variants_)) {
+      return Err(CanonicalizationError::OutOfMemory);
     }
 
     
@@ -307,10 +269,7 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
           return strcmp(a.get(), b.get()) == 0;
         });
     if (duplicate != variants().end()) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_DUPLICATE_VARIANT_SUBTAG,
-                                duplicate->get());
-      return false;
+      return Err(CanonicalizationError::DuplicateVariant);
     }
   }
 
@@ -334,8 +293,8 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
   
   
 
-  if (!updateLegacyMappings(cx)) {
-    return false;
+  if (!updateLegacyMappings()) {
+    return Err(CanonicalizationError::OutOfMemory);
   }
 
   
@@ -356,8 +315,8 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
   }
 
   
-  if (!performVariantMappings(cx)) {
-    return false;
+  if (!performVariantMappings()) {
+    return Err(CanonicalizationError::OutOfMemory);
   }
 
   
@@ -366,23 +325,20 @@ bool LanguageTag::canonicalizeBaseName(JSContext* cx) {
   
   
 
-  return true;
+  return Ok();
 }
 
 #ifdef DEBUG
-template <typename CharT>
-static bool IsAsciiLowercaseAlphanumericOrDash(
-    mozilla::Span<const CharT> span) {
-  const CharT* ptr = span.data();
+static bool IsAsciiLowercaseAlphanumericOrDash(Span<const char> span) {
+  const char* ptr = span.data();
   size_t length = span.size();
   return std::all_of(ptr, ptr + length, [](auto c) {
-    return mozilla::IsAsciiLowercaseAlpha(c) || mozilla::IsAsciiDigit(c) ||
-           c == '-';
+    return IsAsciiLowercaseAlpha(c) || IsAsciiDigit(c) || c == '-';
   });
 }
 #endif
 
-bool LanguageTag::canonicalizeExtensions(JSContext* cx) {
+Result<Ok, Locale::CanonicalizationError> Locale::canonicalizeExtensions() {
   
   for (UniqueChars& extension : extensions_) {
     char* extensionChars = extension.get();
@@ -395,23 +351,19 @@ bool LanguageTag::canonicalizeExtensions(JSContext* cx) {
 
   
   
-  if (!SortAlphabetically(cx, extensions_)) {
-    return false;
+  if (!SortAlphabetically(extensions_)) {
+    return Err(CanonicalizationError::OutOfMemory);
   }
 
   for (UniqueChars& extension : extensions_) {
     if (extension[0] == 'u') {
-      if (!canonicalizeUnicodeExtension(cx, extension)) {
-        return false;
-      }
+      MOZ_TRY(canonicalizeUnicodeExtension(extension));
     } else if (extension[0] == 't') {
-      if (!canonicalizeTransformExtension(cx, extension)) {
-        return false;
-      }
+      MOZ_TRY(canonicalizeTransformExtension(extension));
     }
 
-    MOZ_ASSERT(IsAsciiLowercaseAlphanumericOrDash(
-        mozilla::MakeStringSpan(extension.get())));
+    MOZ_ASSERT(
+        IsAsciiLowercaseAlphanumericOrDash(MakeStringSpan(extension.get())));
   }
 
   
@@ -422,7 +374,7 @@ bool LanguageTag::canonicalizeExtensions(JSContext* cx) {
     MOZ_ASSERT(
         IsStructurallyValidPrivateUseTag({privateuse, privateuseLength}));
   }
-  return true;
+  return Ok();
 }
 
 
@@ -441,31 +393,29 @@ bool LanguageTag::canonicalizeExtensions(JSContext* cx) {
 
 
 
-bool LanguageTag::canonicalizeUnicodeExtension(
-    JSContext* cx, JS::UniqueChars& unicodeExtension) {
+Result<Ok, Locale::CanonicalizationError> Locale::canonicalizeUnicodeExtension(
+    UniqueChars& unicodeExtension) {
   const char* const extension = unicodeExtension.get();
   MOZ_ASSERT(extension[0] == 'u');
   MOZ_ASSERT(extension[1] == '-');
-  MOZ_ASSERT(
-      IsStructurallyValidExtensionTag(mozilla::MakeStringSpan(extension)));
+  MOZ_ASSERT(IsStructurallyValidExtensionTag(MakeStringSpan(extension)));
 
   size_t length = strlen(extension);
 
-  LanguageTagParser::AttributesVector attributes(cx);
-  LanguageTagParser::KeywordsVector keywords(cx);
+  LocaleParser::AttributesVector attributes;
+  LocaleParser::KeywordsVector keywords;
 
-  using Attribute = LanguageTagParser::AttributesVector::ElementType;
-  using Keyword = LanguageTagParser::KeywordsVector::ElementType;
+  using Attribute = LocaleParser::AttributesVector::ElementType;
+  using Keyword = LocaleParser::KeywordsVector::ElementType;
 
-  mozilla::DebugOnly<bool> ok;
-  JS_TRY_VAR_OR_RETURN_FALSE(
-      cx, ok,
-      LanguageTagParser::parseUnicodeExtension(
-          cx, mozilla::Span(extension, length), attributes, keywords));
-  MOZ_ASSERT(ok, "unexpected invalid Unicode extension subtag");
+  if (LocaleParser::parseUnicodeExtension(Span(extension, length), attributes,
+                                          keywords)
+          .isErr()) {
+    MOZ_ASSERT_UNREACHABLE("unexpected invalid Unicode extension subtag");
+    return Err(CanonicalizationError::InternalError);
+  }
 
-  auto attributesLessOrEqual = [extension](const Attribute& a,
-                                           const Attribute& b) {
+  auto attributesLess = [extension](const Attribute& a, const Attribute& b) {
     const char* astr = a.begin(extension);
     const char* bstr = b.begin(extension);
     size_t alen = a.length();
@@ -475,43 +425,25 @@ bool LanguageTag::canonicalizeUnicodeExtension(
             std::char_traits<char>::compare(astr, bstr, std::min(alen, blen))) {
       return r < 0;
     }
-    return alen <= blen;
+    return alen < blen;
   };
 
   
-  size_t attributesLength = attributes.length();
-  if (attributesLength > 1) {
-    if (!attributes.growByUninitialized(attributesLength)) {
-      return false;
-    }
-
-    MOZ_ALWAYS_TRUE(
-        MergeSort(attributes.begin(), attributesLength,
-                  attributes.begin() + attributesLength,
-                  [&](const auto& a, const auto& b, bool* lessOrEqualp) {
-                    *lessOrEqualp = attributesLessOrEqual(a, b);
-                    return true;
-                  }));
-
-    attributes.shrinkBy(attributesLength);
+  if (attributes.length() > 1) {
+    std::stable_sort(attributes.begin(), attributes.end(), attributesLess);
   }
 
-  auto keywordsLessOrEqual = [extension](const Keyword& a, const Keyword& b) {
+  auto keywordsLess = [extension](const Keyword& a, const Keyword& b) {
     const char* astr = a.begin(extension);
     const char* bstr = b.begin(extension);
     MOZ_ASSERT(a.length() >= UnicodeKeyLength);
     MOZ_ASSERT(b.length() >= UnicodeKeyLength);
 
-    return std::char_traits<char>::compare(astr, bstr, UnicodeKeyLength) <= 0;
+    return std::char_traits<char>::compare(astr, bstr, UnicodeKeyLength) < 0;
   };
 
   
-  size_t keywordsLength = keywords.length();
-  if (keywordsLength > 1) {
-    if (!keywords.growByUninitialized(keywordsLength)) {
-      return false;
-    }
-
+  if (keywords.length() > 1) {
     
     
     
@@ -519,19 +451,12 @@ bool LanguageTag::canonicalizeUnicodeExtension(
     
     
     
-    MOZ_ALWAYS_TRUE(MergeSort(
-        keywords.begin(), keywordsLength, keywords.begin() + keywordsLength,
-        [&](const auto& a, const auto& b, bool* lessOrEqualp) {
-          *lessOrEqualp = keywordsLessOrEqual(a, b);
-          return true;
-        }));
-
-    keywords.shrinkBy(keywordsLength);
+    std::stable_sort(keywords.begin(), keywords.end(), keywordsLess);
   }
 
-  Vector<char, 32> sb(cx);
+  Vector<char, 32> sb;
   if (!sb.append('u')) {
-    return false;
+    return Err(CanonicalizationError::OutOfMemory);
   }
 
   
@@ -547,20 +472,20 @@ bool LanguageTag::canonicalizeUnicodeExtension(
                                           attribute.length()) == 0) {
         continue;
       }
-      MOZ_ASSERT(!attributesLessOrEqual(attribute, lastAttribute));
+      MOZ_ASSERT(attributesLess(lastAttribute, attribute));
     }
 
     if (!sb.append('-')) {
-      return false;
+      return Err(CanonicalizationError::OutOfMemory);
     }
     if (!sb.append(attribute.begin(extension), attribute.length())) {
-      return false;
+      return Err(CanonicalizationError::OutOfMemory);
     }
   }
 
   static constexpr size_t UnicodeKeyWithSepLength = UnicodeKeyLength + 1;
 
-  using StringSpan = mozilla::Span<const char>;
+  using StringSpan = Span<const char>;
 
   static auto isTrue = [](StringSpan type) {
     static constexpr char True[] = "true";
@@ -612,17 +537,17 @@ bool LanguageTag::canonicalizeUnicodeExtension(
                                           UnicodeKeyLength) == 0) {
         continue;
       }
-      MOZ_ASSERT(!keywordsLessOrEqual(keyword, lastKeyword));
+      MOZ_ASSERT(keywordsLess(lastKeyword, keyword));
     }
 
     if (!sb.append('-')) {
-      return false;
+      return Err(CanonicalizationError::OutOfMemory);
     }
 
     if (keyword.length() == UnicodeKeyLength) {
       
       if (!appendKey(keyword)) {
-        return false;
+        return Err(CanonicalizationError::OutOfMemory);
       }
     } else {
       StringSpan key(keyword.begin(extension), UnicodeKeyLength);
@@ -631,12 +556,12 @@ bool LanguageTag::canonicalizeUnicodeExtension(
 
       
       if (const char* replacement = replaceUnicodeExtensionType(key, type)) {
-        if (!appendReplacement(keyword, mozilla::MakeStringSpan(replacement))) {
-          return false;
+        if (!appendReplacement(keyword, MakeStringSpan(replacement))) {
+          return Err(CanonicalizationError::OutOfMemory);
         }
       } else {
         if (!appendKeyword(keyword, type)) {
-          return false;
+          return Err(CanonicalizationError::OutOfMemory);
         }
       }
     }
@@ -647,21 +572,20 @@ bool LanguageTag::canonicalizeUnicodeExtension(
       std::char_traits<char>::compare(sb.begin(), extension, length) != 0) {
     
     if (!sb.append('\0')) {
-      return false;
+      return Err(CanonicalizationError::OutOfMemory);
     }
     UniqueChars canonical(sb.extractOrCopyRawBuffer());
     if (!canonical) {
-      return false;
+      return Err(CanonicalizationError::OutOfMemory);
     }
     unicodeExtension = std::move(canonical);
   }
 
-  return true;
+  return Ok();
 }
 
 template <class Buffer>
-static bool LanguageTagToString(JSContext* cx, const LanguageTag& tag,
-                                Buffer& sb) {
+static bool LocaleToString(const Locale& tag, Buffer& sb) {
   auto appendSubtag = [&sb](const auto& subtag) {
     auto span = subtag.span();
     MOZ_ASSERT(!span.empty());
@@ -735,55 +659,43 @@ static bool LanguageTagToString(JSContext* cx, const LanguageTag& tag,
 
 
 
-bool LanguageTag::canonicalizeTransformExtension(
-    JSContext* cx, JS::UniqueChars& transformExtension) {
+Result<Ok, Locale::CanonicalizationError>
+Locale::canonicalizeTransformExtension(UniqueChars& transformExtension) {
   const char* const extension = transformExtension.get();
   MOZ_ASSERT(extension[0] == 't');
   MOZ_ASSERT(extension[1] == '-');
-  MOZ_ASSERT(
-      IsStructurallyValidExtensionTag(mozilla::MakeStringSpan(extension)));
+  MOZ_ASSERT(IsStructurallyValidExtensionTag(MakeStringSpan(extension)));
 
   size_t length = strlen(extension);
 
-  LanguageTag tag(cx);
-  LanguageTagParser::TFieldVector fields(cx);
+  Locale tag;
+  LocaleParser::TFieldVector fields;
 
-  using TField = LanguageTagParser::TFieldVector::ElementType;
+  using TField = LocaleParser::TFieldVector::ElementType;
 
-  mozilla::DebugOnly<bool> ok;
-  JS_TRY_VAR_OR_RETURN_FALSE(
-      cx, ok,
-      LanguageTagParser::parseTransformExtension(
-          cx, mozilla::Span(extension, length), tag, fields));
-  MOZ_ASSERT(ok, "unexpected invalid transform extension subtag");
+  if (LocaleParser::parseTransformExtension(Span(extension, length), tag,
+                                            fields)
+          .isErr()) {
+    MOZ_ASSERT_UNREACHABLE("unexpected invalid transform extension subtag");
+    return Err(CanonicalizationError::InternalError);
+  }
 
-  auto tfieldLessOrEqual = [extension](const TField& a, const TField& b) {
+  auto tfieldLess = [extension](const TField& a, const TField& b) {
     MOZ_ASSERT(a.length() > TransformKeyLength);
     MOZ_ASSERT(b.length() > TransformKeyLength);
     const char* astr = a.begin(extension);
     const char* bstr = b.begin(extension);
-    return std::char_traits<char>::compare(astr, bstr, TransformKeyLength) <= 0;
+    return std::char_traits<char>::compare(astr, bstr, TransformKeyLength) < 0;
   };
 
   
-  if (size_t fieldsLength = fields.length(); fieldsLength > 1) {
-    if (!fields.growByUninitialized(fieldsLength)) {
-      return false;
-    }
-
-    MOZ_ALWAYS_TRUE(
-        MergeSort(fields.begin(), fieldsLength, fields.begin() + fieldsLength,
-                  [&](const auto& a, const auto& b, bool* lessOrEqualp) {
-                    *lessOrEqualp = tfieldLessOrEqual(a, b);
-                    return true;
-                  }));
-
-    fields.shrinkBy(fieldsLength);
+  if (fields.length() > 1) {
+    std::stable_sort(fields.begin(), fields.end(), tfieldLess);
   }
 
-  Vector<char, 32> sb(cx);
+  Vector<char, 32> sb;
   if (!sb.append('t')) {
-    return false;
+    return Err(CanonicalizationError::OutOfMemory);
   }
 
   
@@ -792,12 +704,10 @@ bool LanguageTag::canonicalizeTransformExtension(
   
   if (tag.language().present()) {
     if (!sb.append('-')) {
-      return false;
+      return Err(CanonicalizationError::OutOfMemory);
     }
 
-    if (!tag.canonicalizeBaseName(cx)) {
-      return false;
-    }
+    MOZ_TRY(tag.canonicalizeBaseName());
 
     
     
@@ -805,14 +715,14 @@ bool LanguageTag::canonicalizeTransformExtension(
     tag.script_.toLowerCase();
     tag.region_.toLowerCase();
 
-    if (!LanguageTagToString(cx, tag, sb)) {
-      return false;
+    if (!LocaleToString(tag, sb)) {
+      return Err(CanonicalizationError::OutOfMemory);
     }
   }
 
   static constexpr size_t TransformKeyWithSepLength = TransformKeyLength + 1;
 
-  using StringSpan = mozilla::Span<const char>;
+  using StringSpan = Span<const char>;
 
   
   
@@ -824,7 +734,7 @@ bool LanguageTag::canonicalizeTransformExtension(
   
   for (const auto& field : fields) {
     if (!sb.append('-')) {
-      return false;
+      return Err(CanonicalizationError::OutOfMemory);
     }
 
     StringSpan key(field.begin(extension), TransformKeyLength);
@@ -834,14 +744,14 @@ bool LanguageTag::canonicalizeTransformExtension(
     
     if (const char* replacement = replaceTransformExtensionType(key, value)) {
       if (!sb.append(field.begin(extension), TransformKeyWithSepLength)) {
-        return false;
+        return Err(CanonicalizationError::OutOfMemory);
       }
       if (!sb.append(replacement, strlen(replacement))) {
-        return false;
+        return Err(CanonicalizationError::OutOfMemory);
       }
     } else {
       if (!sb.append(field.begin(extension), field.length())) {
-        return false;
+        return Err(CanonicalizationError::OutOfMemory);
       }
     }
   }
@@ -851,48 +761,26 @@ bool LanguageTag::canonicalizeTransformExtension(
       std::char_traits<char>::compare(sb.begin(), extension, length) != 0) {
     
     if (!sb.append('\0')) {
-      return false;
+      return Err(CanonicalizationError::OutOfMemory);
     }
     UniqueChars canonical(sb.extractOrCopyRawBuffer());
     if (!canonical) {
-      return false;
+      return Err(CanonicalizationError::OutOfMemory);
     }
     transformExtension = std::move(canonical);
   }
 
-  return true;
-}
-
-JSString* LanguageTag::toString(JSContext* cx) const {
-  JSStringBuilder sb(cx);
-  if (!LanguageTagToString(cx, *this, sb)) {
-    return nullptr;
-  }
-
-  return sb.finishString();
-}
-
-UniqueChars LanguageTag::toStringZ(JSContext* cx) const {
-  Vector<char, 16> sb(cx);
-  if (!LanguageTagToString(cx, *this, sb)) {
-    return nullptr;
-  }
-  if (!sb.append('\0')) {
-    return nullptr;
-  }
-
-  return UniqueChars(sb.extractOrCopyRawBuffer());
+  return Ok();
 }
 
 
 using LocaleId =
-    js::Vector<char, LanguageLength + 1 + ScriptLength + 1 + RegionLength + 1>;
+    Vector<char, LanguageLength + 1 + ScriptLength + 1 + RegionLength + 1>;
 
 enum class LikelySubtags : bool { Add, Remove };
 
 
-static bool HasLikelySubtags(LikelySubtags likelySubtags,
-                             const LanguageTag& tag) {
+static bool HasLikelySubtags(LikelySubtags likelySubtags, const Locale& tag) {
   
   
   
@@ -909,8 +797,7 @@ static bool HasLikelySubtags(LikelySubtags likelySubtags,
 }
 
 
-static bool CreateLocaleForLikelySubtags(const LanguageTag& tag,
-                                         LocaleId& locale) {
+static bool CreateLocaleForLikelySubtags(const Locale& tag, LocaleId& locale) {
   MOZ_ASSERT(locale.length() == 0);
 
   auto appendSubtag = [&locale](const auto& subtag) {
@@ -947,8 +834,7 @@ static bool CreateLocaleForLikelySubtags(const LanguageTag& tag,
 
 
 
-static bool AssignFromLocaleId(JSContext* cx, LocaleId& localeId,
-                               LanguageTag& tag) {
+static bool AssignFromLocaleId(LocaleId& localeId, Locale& tag) {
   MOZ_ASSERT(localeId.back() == '\0',
              "Locale ID should be zero-terminated for ICU");
 
@@ -969,12 +855,11 @@ static bool AssignFromLocaleId(JSContext* cx, LocaleId& localeId,
     memmove(localeId.begin(), und, length);
   }
 
-  mozilla::Span<const char> localeSpan(localeId.begin(), localeId.length() - 1);
+  Span<const char> localeSpan(localeId.begin(), localeId.length() - 1);
 
   
-  
-  LanguageTag localeTag(cx);
-  if (!LanguageTagParser::parseBaseName(cx, localeSpan, localeTag)) {
+  Locale localeTag;
+  if (LocaleParser::tryParseBaseName(localeSpan, localeTag).isErr()) {
     return false;
   }
 
@@ -986,8 +871,7 @@ static bool AssignFromLocaleId(JSContext* cx, LocaleId& localeId,
 }
 
 template <decltype(uloc_addLikelySubtags) likelySubtagsFn>
-static bool CallLikelySubtags(JSContext* cx, const LocaleId& localeId,
-                              LocaleId& result) {
+static bool CallLikelySubtags(const LocaleId& localeId, LocaleId& result) {
   
   MOZ_ASSERT(localeId.back() == '\0');
   MOZ_ASSERT(result.length() == 0);
@@ -995,23 +879,12 @@ static bool CallLikelySubtags(JSContext* cx, const LocaleId& localeId,
   
   MOZ_ALWAYS_TRUE(result.resize(LocaleId::InlineLength));
 
-  int32_t length = intl::CallICU(
-      cx,
-      [&localeId](char* chars, int32_t size, UErrorCode* status) {
+  if (FillVectorWithICUCall(result, [&localeId](char* chars, int32_t size,
+                                                UErrorCode* status) {
         return likelySubtagsFn(localeId.begin(), chars, size, status);
-      },
-      result);
-  if (length < 0) {
+      }).isErr()) {
     return false;
   }
-
-  MOZ_ASSERT(
-      size_t(length) <= LocaleId::InlineLength,
-      "Unexpected extra subtags were added by ICU. If this assertion ever "
-      "fails, simply remove it and move on like nothing ever happended.");
-
-  
-  result.shrinkTo(length);
 
   
   return result.append('\0');
@@ -1032,51 +905,162 @@ static bool CallLikelySubtags(JSContext* cx, const LocaleId& localeId,
 
 
 
-static bool LikelySubtags(JSContext* cx, LikelySubtags likelySubtags,
-                          LanguageTag& tag) {
+static bool LikelySubtags(LikelySubtags likelySubtags, Locale& tag) {
   
   if (HasLikelySubtags(likelySubtags, tag)) {
     return true;
   }
 
   
-  LocaleId locale(cx);
+  LocaleId locale;
   if (!CreateLocaleForLikelySubtags(tag, locale)) {
     return false;
   }
 
   
-  LocaleId localeLikelySubtags(cx);
+  LocaleId localeLikelySubtags;
   if (likelySubtags == LikelySubtags::Add) {
-    if (!CallLikelySubtags<uloc_addLikelySubtags>(cx, locale,
+    if (!CallLikelySubtags<uloc_addLikelySubtags>(locale,
                                                   localeLikelySubtags)) {
       return false;
     }
   } else {
-    if (!CallLikelySubtags<uloc_minimizeSubtags>(cx, locale,
-                                                 localeLikelySubtags)) {
+    if (!CallLikelySubtags<uloc_minimizeSubtags>(locale, localeLikelySubtags)) {
       return false;
     }
   }
 
   
-  if (!AssignFromLocaleId(cx, localeLikelySubtags, tag)) {
+  if (!AssignFromLocaleId(localeLikelySubtags, tag)) {
     return false;
   }
 
   
-  return tag.canonicalizeBaseName(cx);
+  return tag.canonicalizeBaseName().isOk();
 }
 
-bool LanguageTag::addLikelySubtags(JSContext* cx) {
-  return LikelySubtags(cx, LikelySubtags::Add, *this);
+bool Locale::addLikelySubtags() {
+  return LikelySubtags(LikelySubtags::Add, *this);
 }
 
-bool LanguageTag::removeLikelySubtags(JSContext* cx) {
-  return LikelySubtags(cx, LikelySubtags::Remove, *this);
+bool Locale::removeLikelySubtags() {
+  return LikelySubtags(LikelySubtags::Remove, *this);
 }
 
-LanguageTagParser::Token LanguageTagParser::nextToken() {
+UniqueChars Locale::DuplicateStringToUniqueChars(const char* s) {
+  size_t length = strlen(s) + 1;
+  auto duplicate = MakeUnique<char[]>(length);
+  memcpy(duplicate.get(), s, length);
+  return duplicate;
+}
+
+size_t Locale::toStringCapacity() const {
+  
+  
+  
+  auto lengthSubtag = [](const auto& subtag) {
+    auto span = subtag.span();
+    MOZ_ASSERT(!span.empty());
+    return span.size();
+  };
+
+  auto lengthSubtagZ = [](const char* subtag) {
+    size_t length = strlen(subtag);
+    MOZ_ASSERT(length > 0);
+    return length;
+  };
+
+  auto lengthSubtagsZ = [&lengthSubtagZ](const auto& subtags) {
+    size_t length = 0;
+    for (const auto& subtag : subtags) {
+      length += lengthSubtagZ(subtag.get()) + 1;
+    }
+    return length;
+  };
+
+  
+  size_t capacity = 0;
+
+  capacity += lengthSubtag(language_);
+
+  if (script_.present()) {
+    capacity += lengthSubtag(script_) + 1;
+  }
+
+  if (region_.present()) {
+    capacity += lengthSubtag(region_) + 1;
+  }
+
+  capacity += lengthSubtagsZ(variants_);
+
+  capacity += lengthSubtagsZ(extensions_);
+
+  if (privateuse_.get()) {
+    capacity += lengthSubtagZ(privateuse_.get()) + 1;
+  }
+
+  return capacity;
+}
+
+size_t Locale::toStringAppend(char* buffer) const {
+  
+  size_t offset = 0;
+
+  auto appendHyphen = [&offset, &buffer]() {
+    buffer[offset] = '-';
+    offset += 1;
+  };
+
+  auto appendSubtag = [&offset, &buffer](const auto& subtag) {
+    auto span = subtag.span();
+    memcpy(buffer + offset, span.data(), span.size());
+    offset += span.size();
+  };
+
+  auto appendSubtagZ = [&offset, &buffer](const char* subtag) {
+    size_t length = strlen(subtag);
+    memcpy(buffer + offset, subtag, length);
+    offset += length;
+  };
+
+  auto appendSubtagsZ = [&appendHyphen, &appendSubtagZ](const auto& subtags) {
+    for (const auto& subtag : subtags) {
+      appendHyphen();
+      appendSubtagZ(subtag.get());
+    }
+  };
+
+  
+  appendSubtag(language_);
+
+  
+  if (script_.present()) {
+    appendHyphen();
+    appendSubtag(script_);
+  }
+
+  
+  if (region_.present()) {
+    appendHyphen();
+    appendSubtag(region_);
+  }
+
+  
+  appendSubtagsZ(variants_);
+
+  
+  appendSubtagsZ(extensions_);
+
+  
+  if (privateuse_.get()) {
+    appendHyphen();
+    appendSubtagZ(privateuse_.get());
+  }
+
+  return offset;
+}
+
+LocaleParser::Token LocaleParser::nextToken() {
   MOZ_ASSERT(index_ <= length_ + 1, "called after 'None' token was read");
 
   TokenKind kind = TokenKind::None;
@@ -1085,10 +1069,10 @@ LanguageTagParser::Token LanguageTagParser::nextToken() {
     
     
     
-    char16_t c = charAtUnchecked(i);
-    if (mozilla::IsAsciiAlpha(c)) {
+    char c = charAt(i);
+    if (IsAsciiAlpha(c)) {
       kind |= TokenKind::Alpha;
-    } else if (mozilla::IsAsciiDigit(c)) {
+    } else if (IsAsciiDigit(c)) {
       kind |= TokenKind::Digit;
     } else if (c == '-' && i > index_ && i + 1 < length_) {
       break;
@@ -1103,19 +1087,12 @@ LanguageTagParser::Token LanguageTagParser::nextToken() {
   return token;
 }
 
-UniqueChars LanguageTagParser::chars(JSContext* cx, size_t index,
-                                     size_t length) const {
+UniqueChars LocaleParser::chars(size_t index, size_t length) const {
   
-  auto chars = cx->make_pod_array<char>(length + 1);
-  if (chars) {
-    char* dest = chars.get();
-    if (locale_.is<const JS::Latin1Char*>()) {
-      std::copy_n(locale_.as<const JS::Latin1Char*>() + index, length, dest);
-    } else {
-      std::copy_n(locale_.as<const char16_t*>() + index, length, dest);
-    }
-    dest[length] = '\0';
-  }
+  auto chars = MakeUnique<char[]>(length + 1);
+  char* dest = chars.get();
+  std::copy_n(locale_ + index, length, dest);
+  dest[length] = '\0';
   return chars;
 }
 
@@ -1140,17 +1117,15 @@ UniqueChars LanguageTagParser::chars(JSContext* cx, size_t index,
 
 
 
-JS::Result<bool> LanguageTagParser::internalParseBaseName(JSContext* cx,
-                                                          LanguageTagParser& ts,
-                                                          LanguageTag& tag,
-                                                          Token& tok) {
+Result<Ok, LocaleParser::ParserError> LocaleParser::internalParseBaseName(
+    LocaleParser& ts, Locale& tag, Token& tok) {
   if (ts.isLanguage(tok)) {
     ts.copyChars(tok, tag.language_);
 
     tok = ts.nextToken();
   } else {
     
-    return false;
+    return Err(ParserError::NotParseable);
   }
 
   if (ts.isScript(tok)) {
@@ -1168,64 +1143,27 @@ JS::Result<bool> LanguageTagParser::internalParseBaseName(JSContext* cx,
   auto& variants = tag.variants_;
   MOZ_ASSERT(variants.length() == 0);
   while (ts.isVariant(tok)) {
-    auto variant = ts.chars(cx, tok);
-    if (!variant) {
-      return cx->alreadyReportedOOM();
-    }
+    auto variant = ts.chars(tok);
     if (!variants.append(std::move(variant))) {
-      return cx->alreadyReportedOOM();
+      return Err(ParserError::OutOfMemory);
     }
 
     tok = ts.nextToken();
   }
 
-  return true;
+  return Ok();
 }
 
-static mozilla::Variant<const Latin1Char*, const char16_t*> StringChars(
-    const char* locale) {
-  return mozilla::AsVariant(reinterpret_cast<const JS::Latin1Char*>(locale));
-}
-
-static mozilla::Variant<const Latin1Char*, const char16_t*> StringChars(
-    JSLinearString* linear, JS::AutoCheckCannotGC& nogc) {
-  if (linear->hasLatin1Chars()) {
-    return mozilla::AsVariant(linear->latin1Chars(nogc));
-  }
-  return mozilla::AsVariant(linear->twoByteChars(nogc));
-}
-
-JS::Result<bool> LanguageTagParser::tryParse(JSContext* cx,
-                                             JSLinearString* locale,
-                                             LanguageTag& tag) {
-  JS::AutoCheckCannotGC nogc;
-  LocaleChars localeChars = StringChars(locale, nogc);
-  return tryParse(cx, localeChars, locale->length(), tag);
-}
-
-JS::Result<bool> LanguageTagParser::tryParse(JSContext* cx,
-                                             mozilla::Span<const char> locale,
-                                             LanguageTag& tag) {
-  LocaleChars localeChars = StringChars(locale.data());
-  return tryParse(cx, localeChars, locale.size(), tag);
-}
-
-JS::Result<bool> LanguageTagParser::tryParse(JSContext* cx,
-                                             LocaleChars& localeChars,
-                                             size_t localeLength,
-                                             LanguageTag& tag) {
+Result<Ok, LocaleParser::ParserError> LocaleParser::tryParse(
+    mozilla::Span<const char> locale, Locale& tag) {
   
   
   
 
-  LanguageTagParser ts(localeChars, localeLength);
+  LocaleParser ts(locale);
   Token tok = ts.nextToken();
 
-  bool ok;
-  MOZ_TRY_VAR(ok, parseBaseName(cx, ts, tag, tok));
-  if (!ok) {
-    return false;
-  }
+  MOZ_TRY(parseBaseName(ts, tag, tok));
 
   
   
@@ -1239,9 +1177,9 @@ JS::Result<bool> LanguageTagParser::tryParse(JSContext* cx,
     char singleton = ts.singletonKey(tok);
 
     
-    uint64_t hash = 1ULL << (mozilla::AsciiAlphanumericToNumber(singleton) + 1);
+    uint64_t hash = 1ULL << (AsciiAlphanumericToNumber(singleton) + 1);
     if (seenSingletons & hash) {
-      return false;
+      return Err(ParserError::NotParseable);
     }
     seenSingletons |= hash;
 
@@ -1292,7 +1230,7 @@ JS::Result<bool> LanguageTagParser::tryParse(JSContext* cx,
 
         
         if (tok.index() <= startTValue) {
-          return false;
+          return Err(ParserError::NotParseable);
         }
       }
     } else {
@@ -1304,15 +1242,12 @@ JS::Result<bool> LanguageTagParser::tryParse(JSContext* cx,
     
     
     if (tok.index() <= startValue) {
-      return false;
+      return Err(ParserError::NotParseable);
     }
 
-    UniqueChars extension = ts.extension(cx, start, tok);
-    if (!extension) {
-      return cx->alreadyReportedOOM();
-    }
+    UniqueChars extension = ts.extension(start, tok);
     if (!extensions.append(std::move(extension))) {
-      return cx->alreadyReportedOOM();
+      return Err(ParserError::OutOfMemory);
     }
   }
 
@@ -1328,108 +1263,55 @@ JS::Result<bool> LanguageTagParser::tryParse(JSContext* cx,
 
     
     if (tok.index() <= startValue) {
-      return false;
+      return Err(ParserError::NotParseable);
     }
 
-    UniqueChars privateUse = ts.extension(cx, start, tok);
-    if (!privateUse) {
-      return cx->alreadyReportedOOM();
-    }
+    UniqueChars privateUse = ts.extension(start, tok);
     tag.privateuse_ = std::move(privateUse);
   }
 
-  
-  return tok.isNone();
+  if (!tok.isNone()) {
+    return Err(ParserError::NotParseable);
+  }
+
+  return Ok();
 }
 
-bool LanguageTagParser::parse(JSContext* cx, JSLinearString* locale,
-                              LanguageTag& tag) {
-  bool ok;
-  JS_TRY_VAR_OR_RETURN_FALSE(cx, ok, tryParse(cx, locale, tag));
-  if (ok) {
-    return true;
-  }
-  if (UniqueChars localeChars = QuoteString(cx, locale, '"')) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_INVALID_LANGUAGE_TAG, localeChars.get());
-  }
-  return false;
-}
-
-bool LanguageTagParser::parse(JSContext* cx, mozilla::Span<const char> locale,
-                              LanguageTag& tag) {
-  bool ok;
-  JS_TRY_VAR_OR_RETURN_FALSE(cx, ok, tryParse(cx, locale, tag));
-  if (ok) {
-    return true;
-  }
-  if (UniqueChars localeChars =
-          DuplicateString(cx, locale.data(), locale.size())) {
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                             JSMSG_INVALID_LANGUAGE_TAG, localeChars.get());
-  }
-  return false;
-}
-
-bool LanguageTagParser::parseBaseName(JSContext* cx,
-                                      mozilla::Span<const char> locale,
-                                      LanguageTag& tag) {
-  LocaleChars localeChars = StringChars(locale.data());
-  LanguageTagParser ts(localeChars, locale.size());
+Result<Ok, LocaleParser::ParserError> LocaleParser::tryParseBaseName(
+    Span<const char> locale, Locale& tag) {
+  LocaleParser ts(locale);
   Token tok = ts.nextToken();
 
-  
-  bool ok;
-  JS_TRY_VAR_OR_RETURN_FALSE(cx, ok, parseBaseName(cx, ts, tag, tok));
-  if (ok) {
-    return true;
+  MOZ_TRY(parseBaseName(ts, tag, tok));
+  if (!tok.isNone()) {
+    return Err(ParserError::NotParseable);
   }
-  if (UniqueChars localeChars =
-          DuplicateString(cx, locale.data(), locale.size())) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_INVALID_LANGUAGE_TAG, localeChars.get());
-  }
-  return false;
-}
 
-JS::Result<bool> LanguageTagParser::tryParseBaseName(JSContext* cx,
-                                                     JSLinearString* locale,
-                                                     LanguageTag& tag) {
-  JS::AutoCheckCannotGC nogc;
-  LocaleChars localeChars = StringChars(locale, nogc);
-  LanguageTagParser ts(localeChars, locale->length());
-  Token tok = ts.nextToken();
-
-  
-  bool ok;
-  MOZ_TRY_VAR(ok, parseBaseName(cx, ts, tag, tok));
-  return ok && tok.isNone();
+  return Ok();
 }
 
 
 
-JS::Result<bool> LanguageTagParser::parseTransformExtension(
-    JSContext* cx, mozilla::Span<const char> extension, LanguageTag& tag,
-    TFieldVector& fields) {
-  LocaleChars extensionChars = StringChars(extension.data());
-  LanguageTagParser ts(extensionChars, extension.size());
+Result<Ok, LocaleParser::ParserError> LocaleParser::parseTransformExtension(
+    Span<const char> extension, Locale& tag, TFieldVector& fields) {
+  LocaleParser ts(extension);
   Token tok = ts.nextToken();
 
   if (!ts.isExtensionStart(tok) || ts.singletonKey(tok) != 't') {
-    return false;
+    return Err(ParserError::NotParseable);
   }
 
   tok = ts.nextToken();
 
   if (tok.isNone()) {
-    return false;
+    return Err(ParserError::NotParseable);
   }
 
   if (ts.isLanguage(tok)) {
     
     
     
-    MOZ_TRY(parseTlangInTransformExtension(cx, ts, tag, tok));
+    MOZ_TRY(parseTlangInTransformExtension(ts, tag, tok));
 
     
     
@@ -1452,45 +1334,47 @@ JS::Result<bool> LanguageTagParser::parseTransformExtension(
 
     
     if (tok.index() <= startTValue) {
-      return false;
+      return Err(ParserError::NotParseable);
     }
 
     size_t length = tok.index() - 1 - begin;
     if (!fields.emplaceBack(begin, length)) {
-      return cx->alreadyReportedOOM();
+      return Err(ParserError::OutOfMemory);
     }
   }
 
-  
-  return tok.isNone();
+  if (!tok.isNone()) {
+    return Err(ParserError::NotParseable);
+  }
+
+  return Ok();
 }
 
 
 
 
-JS::Result<bool> LanguageTagParser::parseUnicodeExtension(
-    JSContext* cx, mozilla::Span<const char> extension,
-    AttributesVector& attributes, KeywordsVector& keywords) {
-  LocaleChars extensionChars = StringChars(extension.data());
-  LanguageTagParser ts(extensionChars, extension.size());
+Result<Ok, LocaleParser::ParserError> LocaleParser::parseUnicodeExtension(
+    Span<const char> extension, AttributesVector& attributes,
+    KeywordsVector& keywords) {
+  LocaleParser ts(extension);
   Token tok = ts.nextToken();
 
   
   
 
   if (!ts.isExtensionStart(tok) || ts.singletonKey(tok) != 'u') {
-    return false;
+    return Err(ParserError::NotParseable);
   }
 
   tok = ts.nextToken();
 
   if (tok.isNone()) {
-    return false;
+    return Err(ParserError::NotParseable);
   }
 
   while (ts.isUnicodeExtensionAttribute(tok)) {
     if (!attributes.emplaceBack(tok.index(), tok.length())) {
-      return cx->alreadyReportedOOM();
+      return Err(ParserError::OutOfMemory);
     }
 
     tok = ts.nextToken();
@@ -1506,36 +1390,38 @@ JS::Result<bool> LanguageTagParser::parseUnicodeExtension(
     }
 
     if (tok.isError()) {
-      return false;
+      return Err(ParserError::NotParseable);
     }
 
     size_t length = tok.index() - 1 - begin;
     if (!keywords.emplaceBack(begin, length)) {
-      return cx->alreadyReportedOOM();
+      return Err(ParserError::OutOfMemory);
     }
   }
 
-  
-  return tok.isNone();
+  if (!tok.isNone()) {
+    return Err(ParserError::NotParseable);
+  }
+
+  return Ok();
 }
 
-bool LanguageTagParser::canParseUnicodeExtension(
-    mozilla::Span<const char> extension) {
-  LocaleChars extensionChars = StringChars(extension.data());
-  LanguageTagParser ts(extensionChars, extension.size());
+Result<Ok, LocaleParser::ParserError> LocaleParser::canParseUnicodeExtension(
+    Span<const char> extension) {
+  LocaleParser ts(extension);
   Token tok = ts.nextToken();
 
   
   
 
   if (!ts.isExtensionStart(tok) || ts.singletonKey(tok) != 'u') {
-    return false;
+    return Err(ParserError::NotParseable);
   }
 
   tok = ts.nextToken();
 
   if (tok.isNone()) {
-    return false;
+    return Err(ParserError::NotParseable);
   }
 
   while (ts.isUnicodeExtensionAttribute(tok)) {
@@ -1551,171 +1437,33 @@ bool LanguageTagParser::canParseUnicodeExtension(
     }
 
     if (tok.isError()) {
-      return false;
+      return Err(ParserError::NotParseable);
     }
   }
 
-  
-  return tok.isNone();
+  if (!tok.isNone()) {
+    return Err(ParserError::OutOfMemory);
+  }
+
+  return Ok();
 }
 
-bool LanguageTagParser::canParseUnicodeExtensionType(
-    JSLinearString* unicodeType) {
-  MOZ_ASSERT(unicodeType->length() > 0, "caller must exclude empty strings");
+Result<Ok, LocaleParser::ParserError>
+LocaleParser::canParseUnicodeExtensionType(Span<const char> unicodeType) {
+  MOZ_ASSERT(!unicodeType.empty(), "caller must exclude empty strings");
 
-  JS::AutoCheckCannotGC nogc;
-  LocaleChars unicodeTypeChars = StringChars(unicodeType, nogc);
-
-  LanguageTagParser ts(unicodeTypeChars, unicodeType->length());
+  LocaleParser ts(unicodeType);
   Token tok = ts.nextToken();
 
   while (ts.isUnicodeExtensionType(tok)) {
     tok = ts.nextToken();
   }
 
-  
-  return tok.isNone();
+  if (!tok.isNone()) {
+    return Err(ParserError::NotParseable);
+  }
+
+  return Ok();
 }
 
-bool ParseStandaloneLanguageTag(HandleLinearString str,
-                                LanguageSubtag& result) {
-  JS::AutoCheckCannotGC nogc;
-  if (str->hasLatin1Chars()) {
-    if (!IsStructurallyValidLanguageTag<Latin1Char>(str->latin1Range(nogc))) {
-      return false;
-    }
-    result.set<Latin1Char>(str->latin1Range(nogc));
-  } else {
-    if (!IsStructurallyValidLanguageTag<char16_t>(str->twoByteRange(nogc))) {
-      return false;
-    }
-    result.set<char16_t>(str->twoByteRange(nogc));
-  }
-  return true;
-}
-
-bool ParseStandaloneScriptTag(HandleLinearString str, ScriptSubtag& result) {
-  JS::AutoCheckCannotGC nogc;
-  if (str->hasLatin1Chars()) {
-    if (!IsStructurallyValidScriptTag<Latin1Char>(str->latin1Range(nogc))) {
-      return false;
-    }
-    result.set<Latin1Char>(str->latin1Range(nogc));
-  } else {
-    if (!IsStructurallyValidScriptTag<char16_t>(str->twoByteRange(nogc))) {
-      return false;
-    }
-    result.set<char16_t>(str->twoByteRange(nogc));
-  }
-  return true;
-}
-
-bool ParseStandaloneRegionTag(HandleLinearString str, RegionSubtag& result) {
-  JS::AutoCheckCannotGC nogc;
-  if (str->hasLatin1Chars()) {
-    if (!IsStructurallyValidRegionTag<Latin1Char>(str->latin1Range(nogc))) {
-      return false;
-    }
-    result.set<Latin1Char>(str->latin1Range(nogc));
-  } else {
-    if (!IsStructurallyValidRegionTag<char16_t>(str->twoByteRange(nogc))) {
-      return false;
-    }
-    result.set<char16_t>(str->twoByteRange(nogc));
-  }
-  return true;
-}
-
-template <typename CharT>
-static bool IsAsciiLowercaseAlpha(mozilla::Span<const CharT> span) {
-  
-  JS::AutoSuppressGCAnalysis nogc;
-
-  const CharT* ptr = span.data();
-  size_t length = span.size();
-  return std::all_of(ptr, ptr + length, mozilla::IsAsciiLowercaseAlpha<CharT>);
-}
-
-static bool IsAsciiLowercaseAlpha(JSLinearString* str) {
-  JS::AutoCheckCannotGC nogc;
-  if (str->hasLatin1Chars()) {
-    return IsAsciiLowercaseAlpha<Latin1Char>(str->latin1Range(nogc));
-  }
-  return IsAsciiLowercaseAlpha<char16_t>(str->twoByteRange(nogc));
-}
-
-template <typename CharT>
-static bool IsAsciiAlpha(mozilla::Span<const CharT> span) {
-  
-  JS::AutoSuppressGCAnalysis nogc;
-
-  const CharT* ptr = span.data();
-  size_t length = span.size();
-  return std::all_of(ptr, ptr + length, mozilla::IsAsciiAlpha<CharT>);
-}
-
-static bool IsAsciiAlpha(JSLinearString* str) {
-  JS::AutoCheckCannotGC nogc;
-  if (str->hasLatin1Chars()) {
-    return IsAsciiAlpha<Latin1Char>(str->latin1Range(nogc));
-  }
-  return IsAsciiAlpha<char16_t>(str->twoByteRange(nogc));
-}
-
-JS::Result<JSString*> ParseStandaloneISO639LanguageTag(JSContext* cx,
-                                                       HandleLinearString str) {
-  
-  size_t length = str->length();
-  if (length != 2 && length != 3) {
-    return nullptr;
-  }
-
-  
-  bool isLowerCase = IsAsciiLowercaseAlpha(str);
-  if (!isLowerCase) {
-    
-    if (!IsAsciiAlpha(str)) {
-      return nullptr;
-    }
-  }
-
-  LanguageSubtag languageTag;
-  if (str->hasLatin1Chars()) {
-    JS::AutoCheckCannotGC nogc;
-    languageTag.set<Latin1Char>(str->latin1Range(nogc));
-  } else {
-    JS::AutoCheckCannotGC nogc;
-    languageTag.set<char16_t>(str->twoByteRange(nogc));
-  }
-
-  if (!isLowerCase) {
-    
-    languageTag.toLowerCase();
-  }
-
-  
-  
-  if (LanguageTag::complexLanguageMapping(languageTag)) {
-    return nullptr;
-  }
-
-  
-  JSString* result;
-  if (LanguageTag::languageMapping(languageTag) || !isLowerCase) {
-    auto span = languageTag.span();
-    result = NewStringCopyN<CanGC>(cx, span.data(), span.size());
-  } else {
-    result = str;
-  }
-  if (!result) {
-    return cx->alreadyReportedOOM();
-  }
-  return result;
-}
-
-void js::intl::UnicodeExtensionKeyword::trace(JSTracer* trc) {
-  TraceRoot(trc, &type_, "UnicodeExtensionKeyword::type");
-}
-
-}  
 }  
