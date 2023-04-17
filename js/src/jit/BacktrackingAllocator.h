@@ -174,6 +174,7 @@ using UsePositionIterator = InlineForwardListIterator<UsePosition>;
 
 
 class LiveBundle;
+class VirtualRegister;
 
 class LiveRange : public TempObject {
  public:
@@ -221,7 +222,7 @@ class LiveRange : public TempObject {
  private:
   
   
-  uint32_t vreg_;
+  VirtualRegister* vreg_;
 
   
   
@@ -246,7 +247,7 @@ class LiveRange : public TempObject {
   
   bool hasDefinition_;
 
-  LiveRange(uint32_t vreg, Range range)
+  LiveRange(VirtualRegister* vreg, Range range)
       : vreg_(vreg),
         bundle_(nullptr),
         range_(range),
@@ -262,16 +263,16 @@ class LiveRange : public TempObject {
   void noteRemovedUse(UsePosition* use);
 
  public:
-  static LiveRange* FallibleNew(TempAllocator& alloc, uint32_t vreg,
+  static LiveRange* FallibleNew(TempAllocator& alloc, VirtualRegister* vreg,
                                 CodePosition from, CodePosition to) {
     return new (alloc.fallible()) LiveRange(vreg, Range(from, to));
   }
 
-  uint32_t vreg() const {
+  VirtualRegister& vreg() const {
     MOZ_ASSERT(hasVreg());
-    return vreg_;
+    return *vreg_;
   }
-  bool hasVreg() const { return vreg_ != 0; }
+  bool hasVreg() const { return vreg_ != nullptr; }
 
   LiveBundle* bundle() const { return bundle_; }
 
@@ -403,7 +404,7 @@ class LiveBundle : public TempObject {
     ranges_.removeAndIncrement(iter);
   }
   void addRange(LiveRange* range);
-  [[nodiscard]] bool addRange(TempAllocator& alloc, uint32_t vreg,
+  [[nodiscard]] bool addRange(TempAllocator& alloc, VirtualRegister* vreg,
                               CodePosition from, CodePosition to);
   [[nodiscard]] bool addRangeAndDistributeUses(TempAllocator& alloc,
                                                LiveRange* oldRange,
