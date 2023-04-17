@@ -7,7 +7,6 @@
 
 #include "AccessibleWrap.h"
 #include "RemoteAccessible.h"
-#include "AccessibleOrProxy.h"
 
 #import <Cocoa/Cocoa.h>
 
@@ -26,17 +25,17 @@ namespace mozilla {
 namespace a11y {
 
 inline mozAccessible* GetNativeFromGeckoAccessible(
-    mozilla::a11y::AccessibleOrProxy aAccOrProxy) {
-  if (aAccOrProxy.IsNull()) {
+    mozilla::a11y::Accessible* aAcc) {
+  if (!aAcc) {
     return nil;
   }
-  if (LocalAccessible* acc = aAccOrProxy.AsAccessible()) {
+  if (LocalAccessible* acc = aAcc->AsLocal()) {
     mozAccessible* native = nil;
     acc->GetNativeInterface((void**)&native);
     return native;
   }
 
-  RemoteAccessible* proxy = aAccOrProxy.AsProxy();
+  RemoteAccessible* proxy = aAcc->AsRemote();
   return reinterpret_cast<mozAccessible*>(proxy->GetWrapper());
 }
 
@@ -48,7 +47,7 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
 
 
 
-  mozilla::a11y::AccessibleOrProxy mGeckoAccessible;
+  mozilla::a11y::Accessible* mGeckoAccessible;
 
   
 
@@ -66,12 +65,12 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
 }
 
 
-- (id)initWithAccessible:(mozilla::a11y::AccessibleOrProxy)aAccOrProxy;
+- (id)initWithAccessible:(mozilla::a11y::Accessible*)aAcc;
 
 
-- (mozilla::a11y::AccessibleOrProxy)geckoAccessible;
+- (mozilla::a11y::Accessible*)geckoAccessible;
 
-- (mozilla::a11y::AccessibleOrProxy)geckoDocument;
+- (mozilla::a11y::Accessible*)geckoDocument;
 
 
 - (void)dealloc;
@@ -87,9 +86,7 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
 
 - (void)handleAccessibleTextChangeEvent:(NSString*)change
                                inserted:(BOOL)isInserted
-                            inContainer:
-                                (const mozilla::a11y::AccessibleOrProxy&)
-                                    container
+                            inContainer:(mozilla::a11y::Accessible*)container
                                      at:(int32_t)start;
 
 

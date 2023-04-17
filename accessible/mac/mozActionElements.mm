@@ -126,17 +126,16 @@ enum CheckboxValue {
 @implementation mozPaneAccessible
 
 - (NSArray*)moxChildren {
-  if (!mGeckoAccessible.AsAccessible()) return nil;
+  if (!mGeckoAccessible->AsLocal()) return nil;
 
   nsDeckFrame* deckFrame =
-      do_QueryFrame(mGeckoAccessible.AsAccessible()->GetFrame());
+      do_QueryFrame(mGeckoAccessible->AsLocal()->GetFrame());
   nsIFrame* selectedFrame = deckFrame ? deckFrame->GetSelectedBox() : nullptr;
 
   LocalAccessible* selectedAcc = nullptr;
   if (selectedFrame) {
     nsINode* node = selectedFrame->GetContent();
-    selectedAcc =
-        mGeckoAccessible.AsAccessible()->Document()->GetAccessible(node);
+    selectedAcc = mGeckoAccessible->AsLocal()->Document()->GetAccessible(node);
   }
 
   if (selectedAcc) {
@@ -187,13 +186,13 @@ enum CheckboxValue {
 
 
 - (void)changeValueBySteps:(int)factor {
-  MOZ_ASSERT(!mGeckoAccessible.IsNull(), "mGeckoAccessible is null");
+  MOZ_ASSERT(mGeckoAccessible, "mGeckoAccessible is null");
 
-  if (LocalAccessible* acc = mGeckoAccessible.AsAccessible()) {
+  if (LocalAccessible* acc = mGeckoAccessible->AsLocal()) {
     double newValue = acc->CurValue() + (acc->Step() * factor);
     [self setValue:(newValue)];
   } else {
-    RemoteAccessible* proxy = mGeckoAccessible.AsProxy();
+    RemoteAccessible* proxy = mGeckoAccessible->AsRemote();
     double newValue = proxy->CurValue() + (proxy->Step() * factor);
     [self setValue:(newValue)];
   }
@@ -203,9 +202,9 @@ enum CheckboxValue {
 
 
 - (void)setValue:(double)value {
-  MOZ_ASSERT(!mGeckoAccessible.IsNull(), "mGeckoAccessible is null");
+  MOZ_ASSERT(mGeckoAccessible, "mGeckoAccessible is null");
 
-  if (LocalAccessible* acc = mGeckoAccessible.AsAccessible()) {
+  if (LocalAccessible* acc = mGeckoAccessible->AsLocal()) {
     double min = acc->MinValue();
     double max = acc->MaxValue();
     
@@ -216,7 +215,7 @@ enum CheckboxValue {
       acc->SetCurValue(value);
     }
   } else {
-    RemoteAccessible* proxy = mGeckoAccessible.AsProxy();
+    RemoteAccessible* proxy = mGeckoAccessible->AsRemote();
     double min = proxy->MinValue();
     double max = proxy->MaxValue();
     

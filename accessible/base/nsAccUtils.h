@@ -9,7 +9,6 @@
 #include "mozilla/a11y/LocalAccessible.h"
 #include "mozilla/a11y/DocManager.h"
 
-#include "AccessibleOrProxy.h"
 #include "nsAccessibilityService.h"
 #include "nsCoreUtils.h"
 
@@ -228,7 +227,7 @@ class nsAccUtils {
 
 
 
-  static bool MustPrune(AccessibleOrProxy aAccessible);
+  static bool MustPrune(Accessible* aAccessible);
 
   
 

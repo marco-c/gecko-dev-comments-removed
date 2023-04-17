@@ -1769,13 +1769,12 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
 
           Pivot p = Pivot(currParent);
           PivotRoleRule rule(roles::RADIOBUTTON);
-          AccessibleOrProxy wrappedParent = AccessibleOrProxy(currParent);
-          AccessibleOrProxy match = p.Next(wrappedParent, rule);
-          while (!match.IsNull()) {
-            MOZ_ASSERT(
-                !match.IsProxy(),
-                "We shouldn't find any proxy's while building our relation!");
-            rel.AppendTarget(match.AsAccessible());
+          Accessible* match = p.Next(currParent, rule);
+          while (match) {
+            MOZ_ASSERT(match->IsLocal(),
+                       "We shouldn't find any remote accs while building our "
+                       "relation!");
+            rel.AppendTarget(match->AsLocal());
             match = p.Next(match, rule);
           }
         }

@@ -385,9 +385,9 @@ uint32_t nsAccUtils::TextLength(LocalAccessible* aAccessible) {
   return text.Length();
 }
 
-bool nsAccUtils::MustPrune(AccessibleOrProxy aAccessible) {
-  MOZ_ASSERT(!aAccessible.IsNull());
-  roles::Role role = aAccessible.Role();
+bool nsAccUtils::MustPrune(Accessible* aAccessible) {
+  MOZ_ASSERT(aAccessible);
+  roles::Role role = aAccessible->Role();
 
   if (role == roles::SLIDER) {
     
@@ -405,12 +405,12 @@ bool nsAccUtils::MustPrune(AccessibleOrProxy aAccessible) {
     return false;
   }
 
-  if (aAccessible.ChildCount() != 1) {
+  if (aAccessible->ChildCount() != 1) {
     
     return false;
   }
 
-  roles::Role childRole = aAccessible.FirstChild().Role();
+  roles::Role childRole = aAccessible->FirstChild()->Role();
   
   return childRole == roles::TEXT_LEAF || childRole == roles::STATICTEXT;
 }

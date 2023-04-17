@@ -18,12 +18,12 @@ using namespace mozilla::a11y;
 
 - (NSString*)moxTitle {
   nsAutoString title;
-  if (LocalAccessible* acc = mGeckoAccessible.AsAccessible()) {
+  if (LocalAccessible* acc = mGeckoAccessible->AsLocal()) {
     mozilla::ErrorResult rv;
     
     
     acc->GetContent()->GetTextContent(title, rv);
-  } else if (RemoteAccessible* proxy = mGeckoAccessible.AsProxy()) {
+  } else if (RemoteAccessible* proxy = mGeckoAccessible->AsRemote()) {
     proxy->Title(title);
   }
 
@@ -32,9 +32,9 @@ using namespace mozilla::a11y;
 
 - (id)moxValue {
   GroupPos groupPos;
-  if (LocalAccessible* acc = mGeckoAccessible.AsAccessible()) {
+  if (LocalAccessible* acc = mGeckoAccessible->AsLocal()) {
     groupPos = acc->GroupPosition();
-  } else if (RemoteAccessible* proxy = mGeckoAccessible.AsProxy()) {
+  } else if (RemoteAccessible* proxy = mGeckoAccessible->AsRemote()) {
     groupPos = proxy->GroupPosition();
   }
 
@@ -51,9 +51,9 @@ using namespace mozilla::a11y;
 
 - (NSURL*)moxURL {
   nsAutoString value;
-  if (LocalAccessible* acc = mGeckoAccessible.AsAccessible()) {
+  if (LocalAccessible* acc = mGeckoAccessible->AsLocal()) {
     acc->Value(value);
-  } else if (RemoteAccessible* proxy = mGeckoAccessible.AsProxy()) {
+  } else if (RemoteAccessible* proxy = mGeckoAccessible->AsRemote()) {
     proxy->Value(value);
   }
 

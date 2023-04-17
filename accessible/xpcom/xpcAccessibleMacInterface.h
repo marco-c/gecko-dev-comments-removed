@@ -7,9 +7,8 @@
 #ifndef mozilla_a11y_xpcAccessibleMacInterface_h_
 #define mozilla_a11y_xpcAccessibleMacInterface_h_
 
+#include "mozilla/a11y/Accessible.h"
 #include "nsIAccessibleMacInterface.h"
-
-#include "AccessibleOrProxy.h"
 
 class nsIAccessibleMacInterface;
 
@@ -42,7 +41,7 @@ class xpcAccessibleMacInterface : public xpcAccessibleMacNSObjectWrapper,
 
   
   
-  explicit xpcAccessibleMacInterface(AccessibleOrProxy aObj);
+  explicit xpcAccessibleMacInterface(Accessible* aObj);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIACCESSIBLEMACINTERFACE

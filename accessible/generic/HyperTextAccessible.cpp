@@ -68,9 +68,9 @@ class ParagraphBoundaryRule : public PivotRule {
         mSkipAnchorSubtree(aSkipAnchorSubtree),
         mLastMatchTextOffset(0) {}
 
-  virtual uint16_t Match(const AccessibleOrProxy& aAccOrProxy) override {
-    MOZ_ASSERT(aAccOrProxy.IsAccessible());
-    LocalAccessible* acc = aAccOrProxy.AsAccessible();
+  virtual uint16_t Match(Accessible* aAcc) override {
+    MOZ_ASSERT(aAcc && aAcc->IsLocal());
+    LocalAccessible* acc = aAcc->AsLocal();
     if (acc->IsOuterDoc()) {
       
       
@@ -146,20 +146,20 @@ class ParagraphBoundaryRule : public PivotRule {
 
 class SkipParagraphBoundaryRule : public PivotRule {
  public:
-  explicit SkipParagraphBoundaryRule(AccessibleOrProxy& aBoundary)
+  explicit SkipParagraphBoundaryRule(Accessible* aBoundary)
       : mBoundary(aBoundary) {}
 
-  virtual uint16_t Match(const AccessibleOrProxy& aAccOrProxy) override {
-    MOZ_ASSERT(aAccOrProxy.IsAccessible());
+  virtual uint16_t Match(Accessible* aAcc) override {
+    MOZ_ASSERT(aAcc && aAcc->IsLocal());
     
-    if (aAccOrProxy == mBoundary) {
+    if (aAcc == mBoundary) {
       return nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
     }
     return nsIAccessibleTraversalRule::FILTER_MATCH;
   }
 
  private:
-  AccessibleOrProxy& mBoundary;
+  Accessible* mBoundary;
 };
 
 
@@ -870,35 +870,34 @@ int32_t HyperTextAccessible::FindParagraphStartOffset(uint32_t aOffset) {
   ParagraphBoundaryRule boundaryRule = ParagraphBoundaryRule(
       child, child->IsTextLeaf() ? aOffset - GetChildOffset(child) : 0,
       eDirPrevious);
-  AccessibleOrProxy wrappedChild = AccessibleOrProxy(child);
-  AccessibleOrProxy match = p.Prev(wrappedChild, boundaryRule, true);
-  if (match.IsNull() || match.AsAccessible() == this) {
+  Accessible* match = p.Prev(child, boundaryRule, true);
+  if (!match || match->AsLocal() == this) {
     
     
     return 0;
   }
 
-  if (match == wrappedChild) {
+  if (match == child) {
     
-    if (match.Role() == roles::WHITESPACE) {
+    if (match->Role() == roles::WHITESPACE) {
       
       
       match = p.Prev(match, boundaryRule);
-      if (match.IsNull() || match.AsAccessible() == this) {
+      if (!match || match->AsLocal() == this) {
         
         return 0;
       }
-    } else if (!match.AsAccessible()->IsTextLeaf()) {
+    } else if (!match->AsLocal()->IsTextLeaf()) {
       
       
-      return TransformOffset(match.AsAccessible(), 0, false);
+      return TransformOffset(match->AsLocal(), 0, false);
     }
   }
 
-  if (match.AsAccessible()->IsTextLeaf()) {
+  if (match->AsLocal()->IsTextLeaf()) {
     
     
-    return TransformOffset(match.AsAccessible(),
+    return TransformOffset(match->AsLocal(),
                            boundaryRule.GetLastMatchTextOffset() + 1, false);
   }
 
@@ -910,8 +909,8 @@ int32_t HyperTextAccessible::FindParagraphStartOffset(uint32_t aOffset) {
   match = p.Next(match, goForwardOneRule);
   
   
-  MOZ_ASSERT(!match.IsNull());
-  return TransformOffset(match.AsAccessible(), 0, false);
+  MOZ_ASSERT(match);
+  return TransformOffset(match->AsLocal(), 0, false);
 }
 
 int32_t HyperTextAccessible::FindParagraphEndOffset(uint32_t aOffset) {
@@ -926,7 +925,6 @@ int32_t HyperTextAccessible::FindParagraphEndOffset(uint32_t aOffset) {
 
   
   Pivot p = Pivot(this);
-  AccessibleOrProxy wrappedChild = AccessibleOrProxy(child);
   ParagraphBoundaryRule boundaryRule = ParagraphBoundaryRule(
       child, child->IsTextLeaf() ? aOffset - GetChildOffset(child) : 0,
       eDirNext,
@@ -935,10 +933,10 @@ int32_t HyperTextAccessible::FindParagraphEndOffset(uint32_t aOffset) {
        true);
   
   
-  AccessibleOrProxy match = p.Next(wrappedChild, boundaryRule, true);
-  if (!match.IsNull()) {
+  Accessible* match = p.Next(child, boundaryRule, true);
+  if (match) {
     
-    LocalAccessible* matchAcc = match.AsAccessible();
+    LocalAccessible* matchAcc = match->AsLocal();
     uint32_t matchOffset;
     if (matchAcc->IsTextLeaf()) {
       

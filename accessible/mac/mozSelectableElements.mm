@@ -75,10 +75,10 @@ using namespace mozilla::a11y;
     return;
   }
 
-  if (LocalAccessible* acc = mGeckoAccessible.AsAccessible()) {
+  if (LocalAccessible* acc = mGeckoAccessible->AsLocal()) {
     acc->SetSelected([selected boolValue]);
   } else {
-    mGeckoAccessible.AsProxy()->SetSelected([selected boolValue]);
+    mGeckoAccessible->AsRemote()->SetSelected([selected boolValue]);
   }
 
   
@@ -177,7 +177,7 @@ using namespace mozilla::a11y;
   }
 
   if ([parent isKindOfClass:[mozMenuItemAccessible class]] &&
-      [parent geckoAccessible].Role() == roles::PARENT_MENUITEM) {
+      [parent geckoAccessible]->Role() == roles::PARENT_MENUITEM) {
     
     
     id grandparent = [parent moxParent];
@@ -204,7 +204,7 @@ using namespace mozilla::a11y;
       filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(
                                                    mozAccessible* child,
                                                    NSDictionary* bindings) {
-        if (LocalAccessible* acc = [child geckoAccessible].AsAccessible()) {
+        if (LocalAccessible* acc = [child geckoAccessible]->AsLocal()) {
           if (acc->IsContent() && acc->GetContent()->IsXULElement()) {
             return ((acc->VisibilityState() & states::INVISIBLE) == 0);
           }
@@ -261,9 +261,9 @@ using namespace mozilla::a11y;
   
   
   
-  AccessibleOrProxy parentAcc = [parent geckoAccessible];
-  if (!parentAcc.IsNull()) {
-    AccessibleOrProxy grandparentAcc = parentAcc.Parent();
+  Accessible* parentAcc = [parent geckoAccessible];
+  if (parentAcc) {
+    Accessible* grandparentAcc = parentAcc->Parent();
     if (mozAccessible* directGrandparent =
             GetNativeFromGeckoAccessible(grandparentAcc)) {
       if ([directGrandparent isKindOfClass:[MOXWebAreaAccessible class]]) {
@@ -276,7 +276,7 @@ using namespace mozilla::a11y;
   if ([grandparent isKindOfClass:[mozMenuItemAccessible class]]) {
     mozMenuItemAccessible* acc =
         static_cast<mozMenuItemAccessible*>(grandparent);
-    if ([acc geckoAccessible].Role() == roles::PARENT_MENUITEM) {
+    if ([acc geckoAccessible]->Role() == roles::PARENT_MENUITEM) {
       mozMenuAccessible* parentMenu = static_cast<mozMenuAccessible*>(parent);
       
       
@@ -290,7 +290,7 @@ using namespace mozilla::a11y;
 }
 
 - (NSString*)moxMenuItemMarkChar {
-  LocalAccessible* acc = mGeckoAccessible.AsAccessible();
+  LocalAccessible* acc = mGeckoAccessible->AsLocal();
   if (acc && acc->IsContent() &&
       acc->GetContent()->IsXULElement(nsGkAtoms::menuitem)) {
     
