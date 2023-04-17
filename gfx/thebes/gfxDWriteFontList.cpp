@@ -1487,7 +1487,7 @@ void gfxDWriteFontList::InitSharedFontListForPlatform() {
       "gfx.font_rendering.cleartype_params.force_gdi_classic_max_size",
       mForceGDIClassicMaxFontSize);
 
-  mFontSubstitutes.Clear();
+  mSubstitutions.Clear();
   mNonExistingFonts.Clear();
 
   RefPtr<IDWriteFactory> factory = Factory::GetDWriteFactory();
@@ -1896,9 +1896,13 @@ nsresult gfxDWriteFontList::GetFontSubstitutes() {
     if (SharedFontList()) {
       
       
-      if (SharedFontList()->FindFamily(substituteName,
-                                        true)) {
-        continue;
+      if (!StaticPrefs::gfx_windows_font_substitutes_always_AtStartup()) {
+        
+        
+        if (SharedFontList()->FindFamily(substituteName,
+                                          true)) {
+          continue;
+        }
       }
       if (SharedFontList()->FindFamily(actualFontName,
                                         true)) {
@@ -1945,9 +1949,13 @@ void gfxDWriteFontList::GetDirectWriteSubstitutes() {
     if (SharedFontList()) {
       
       
-      if (SharedFontList()->FindFamily(substituteName,
-                                        true)) {
-        continue;
+      if (!StaticPrefs::gfx_windows_font_substitutes_always_AtStartup()) {
+        
+        
+        if (SharedFontList()->FindFamily(substituteName,
+                                          true)) {
+          continue;
+        }
       }
       nsAutoCString actualFontName(sub.actualName);
       BuildKeyNameFromFontName(actualFontName);
