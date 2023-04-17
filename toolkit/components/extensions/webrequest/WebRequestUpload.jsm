@@ -351,7 +351,19 @@ function parseFormData(stream, channel, lenient = false) {
         );
       }
 
+      
+      
+      
+      name = name.replace(/(%[0-9A-Fa-f]{2})+/g, match => {
+        const bytes = new Uint8Array(match.length / 3);
+        for (let i = 0; i < match.length / 3; i++) {
+          bytes[i] = parseInt(match.substring(i * 3 + 1, (i + 1) * 3), 16);
+        }
+        return new TextDecoder("utf-8").decode(bytes);
+      });
+
       if (headers.has("content-type")) {
+        
         
         
         let filename = headers.getParam("content-disposition", "filename");
