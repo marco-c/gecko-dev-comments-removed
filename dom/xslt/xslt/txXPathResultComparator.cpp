@@ -4,14 +4,16 @@
 
 
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/intl/Collator.h"
+#include "mozilla/intl/LocaleService.h"
 
 #include "txXPathResultComparator.h"
 #include "txExpr.h"
 #include "nsComponentManagerUtils.h"
 #include "txCore.h"
-#include "nsCollationCID.h"
 
 using namespace mozilla;
+using Collator = mozilla::intl::Collator;
 
 #define kAscending (1 << 0)
 #define kUpperFirst (1 << 1)
@@ -27,30 +29,90 @@ txResultStringComparator::txResultStringComparator(bool aAscending,
 }
 
 nsresult txResultStringComparator::init(const nsString& aLanguage) {
-  nsresult rv;
+  auto result =
+      aLanguage.IsEmpty()
+          ? mozilla::intl::LocaleService::TryCreateComponent<Collator>()
+          : Collator::TryCreate(NS_ConvertUTF16toUTF8(aLanguage).get());
 
-  nsCOMPtr<nsICollationFactory> colFactory =
-      do_CreateInstance(NS_COLLATIONFACTORY_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_TRUE(result.isOk(), NS_ERROR_FAILURE);
+  auto collator = result.unwrap();
 
-  if (aLanguage.IsEmpty()) {
-    rv = colFactory->CreateCollation(getter_AddRefs(mCollation));
-  } else {
-    rv = colFactory->CreateCollationForLocale(NS_ConvertUTF16toUTF8(aLanguage),
-                                              getter_AddRefs(mCollation));
-  }
+  
+  
+  Collator::Options options{};
+  options.sensitivity = Collator::Sensitivity::Base;
+  auto optResult = collator->SetOptions(options);
+  NS_ENSURE_TRUE(optResult.isOk(), NS_ERROR_FAILURE);
 
-  NS_ENSURE_SUCCESS(rv, rv);
-
+  mCollator = UniquePtr<const Collator>(collator.release());
   return NS_OK;
 }
+
+namespace mozilla::intl {
+
+
+
+
+
+class nsTArrayU8Buffer {
+ public:
+  using CharType = uint8_t;
+
+  
+  nsTArrayU8Buffer(const nsTArrayU8Buffer&) = delete;
+  nsTArrayU8Buffer& operator=(const nsTArrayU8Buffer&) = delete;
+
+  explicit nsTArrayU8Buffer(nsTArray<CharType>& aArray) : mArray(aArray) {}
+
+  
+
+
+  [[nodiscard]] bool reserve(size_t size) {
+    mArray.SetCapacity(size);
+    
+    
+    return true;
+  }
+
+  
+
+
+  CharType* data() { return mArray.Elements(); }
+
+  
+
+
+  size_t length() const { return mArray.Length(); }
+
+  
+
+
+  size_t capacity() const { return mArray.Capacity(); }
+
+  
+
+
+  void written(size_t amount) {
+    MOZ_ASSERT(amount <= mArray.Capacity());
+    
+    
+    
+    mArray.SetLengthAndRetainStorage(amount);
+  }
+
+ private:
+  nsTArray<CharType>& mArray;
+};
+}  
 
 nsresult txResultStringComparator::createSortableValue(Expr* aExpr,
                                                        txIEvalContext* aContext,
                                                        txObject*& aResult) {
   UniquePtr<StringValue> val(new StringValue);
 
-  if (!mCollation) return NS_ERROR_FAILURE;
+  if (!mCollator) {
+    return NS_ERROR_FAILURE;
+  }
 
   val->mCaseKeyString = MakeUnique<nsString>();
   nsString& nsCaseKey = *val->mCaseKeyString;
@@ -63,9 +125,9 @@ nsresult txResultStringComparator::createSortableValue(Expr* aExpr,
     return NS_OK;
   }
 
-  rv = mCollation->AllocateRawSortKey(nsICollation::kCollationCaseInSensitive,
-                                      nsCaseKey, val->mKey);
-  NS_ENSURE_SUCCESS(rv, rv);
+  mozilla::intl::nsTArrayU8Buffer buffer(val->mKey);
+  auto result = mCollator->GetSortKey(nsCaseKey, buffer);
+  NS_ENSURE_TRUE(result.isOk(), NS_ERROR_FAILURE);
 
   aResult = val.release();
 
@@ -76,45 +138,43 @@ int txResultStringComparator::compareValues(txObject* aVal1, txObject* aVal2) {
   StringValue* strval1 = (StringValue*)aVal1;
   StringValue* strval2 = (StringValue*)aVal2;
 
-  if (!mCollation) return -1;
-
-  if (strval1->mKey.Length() == 0) {
-    if (strval2->mKey.Length() == 0) return 0;
-    return ((mSorting & kAscending) ? -1 : 1);
-  }
-
-  if (strval2->mKey.Length() == 0) return ((mSorting & kAscending) ? 1 : -1);
-
-  nsresult rv;
-  int32_t result = -1;
-  rv = mCollation->CompareRawSortKey(strval1->mKey, strval2->mKey, &result);
-  if (NS_FAILED(rv)) {
-    
+  if (!mCollator) {
     return -1;
   }
 
-  if (result != 0) return ((mSorting & kAscending) ? 1 : -1) * result;
+  if (strval1->mKey.Length() == 0) {
+    if (strval2->mKey.Length() == 0) {
+      return 0;
+    }
+    return ((mSorting & kAscending) ? -1 : 1);
+  }
+
+  if (strval2->mKey.Length() == 0) {
+    return ((mSorting & kAscending) ? 1 : -1);
+  }
+
+  nsresult rv;
+  int32_t result = mCollator->CompareSortKeys(strval1->mKey, strval2->mKey);
+
+  if (result != 0) {
+    return ((mSorting & kAscending) ? 1 : -1) * result;
+  }
 
   if (strval1->mCaseKeyString && strval1->mKey.Length() != 0) {
-    rv = strval1->initCaseKey(mCollation);
+    rv = strval1->initCaseKey(*mCollator);
     if (NS_FAILED(rv)) {
       
       return -1;
     }
   }
   if (strval2->mCaseKeyString && strval2->mKey.Length() != 0) {
-    rv = strval2->initCaseKey(mCollation);
+    rv = strval2->initCaseKey(*mCollator);
     if (NS_FAILED(rv)) {
       
       return -1;
     }
   }
-  rv = mCollation->CompareRawSortKey(strval1->mCaseKey, strval2->mCaseKey,
-                                     &result);
-  if (NS_FAILED(rv)) {
-    
-    return -1;
-  }
+  result = mCollator->CompareSortKeys(strval1->mCaseKey, strval2->mCaseKey);
 
   return ((mSorting & kAscending) ? 1 : -1) *
          ((mSorting & kUpperFirst) ? -1 : 1) * result;
@@ -125,12 +185,13 @@ txResultStringComparator::StringValue::StringValue() = default;
 txResultStringComparator::StringValue::~StringValue() = default;
 
 nsresult txResultStringComparator::StringValue::initCaseKey(
-    nsICollation* aCollation) {
-  nsresult rv = aCollation->AllocateRawSortKey(
-      nsICollation::kCollationCaseSensitive, *mCaseKeyString, mCaseKey);
-  if (NS_FAILED(rv)) {
+    const mozilla::intl::Collator& aCollator) {
+  mozilla::intl::nsTArrayU8Buffer buffer(mCaseKey);
+
+  auto result = aCollator.GetSortKey(*mCaseKeyString, buffer);
+  if (result.isErr()) {
     mCaseKey.SetLength(0);
-    return rv;
+    return NS_ERROR_FAILURE;
   }
 
   mCaseKeyString = nullptr;
