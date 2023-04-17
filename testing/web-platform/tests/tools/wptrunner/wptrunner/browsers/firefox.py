@@ -148,7 +148,13 @@ def executor_kwargs(logger, test_type, server_config, cache_manager, run_info_da
                                   kwargs["enable_webrender"],
                                   kwargs["chaos_mode_flags"])
 
-            executor_kwargs["environ"] = environ
+        
+        
+        
+        
+        del environ["MOZ_DISABLE_NONLOCAL_CONNECTIONS"]
+
+        executor_kwargs["environ"] = environ
     if kwargs["certutil_binary"] is None:
         capabilities["acceptInsecureCerts"] = True
     if capabilities:
