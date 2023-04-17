@@ -16,7 +16,7 @@ namespace layers {
 
 
 
-async refcounted protocol PCanvas {
+[RefCounted] async protocol PCanvas {
 parent:
   
 

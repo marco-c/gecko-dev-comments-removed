@@ -27,7 +27,7 @@ struct FrameTransitionData
 
 
 
-refcounted protocol PExtensions
+[RefCounted] protocol PExtensions
 {
     manager PContent or PInProcess;
 

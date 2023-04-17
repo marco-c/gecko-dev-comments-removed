@@ -92,7 +92,7 @@ struct FrameStats {
 
 
 
-sync refcounted protocol PCompositorBridge
+[RefCounted] sync protocol PCompositorBridge
 {
   manager PCompositorManager;
 

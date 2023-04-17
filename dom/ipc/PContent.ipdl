@@ -414,7 +414,7 @@ union BlobURLDataRequestResult
 
 
 
-nested(upto inside_cpow) sync protocol PContent
+[NestedUpTo=inside_cpow] sync protocol PContent
 {
     manages PBrowser;
     manages PContentPermissionRequest;
