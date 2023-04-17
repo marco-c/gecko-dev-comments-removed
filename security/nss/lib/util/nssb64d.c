@@ -94,31 +94,60 @@ PR_END_EXTERN_C
 
 
 
-
-
-
-
-
-static unsigned char base64_codetovaluep1[256] = {
-     0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0,
-     0, 0, 0, 63, 0, 0, 0, 64,
-     53, 54, 55, 56, 57, 58, 59, 60,
-     61, 62, 0, 0, 0, 0, 0, 0,
-     0, 1, 2, 3, 4, 5, 6, 7,
-     8, 9, 10, 11, 12, 13, 14, 15,
-     16, 17, 18, 19, 20, 21, 22, 23,
-     24, 25, 26, 0, 0, 0, 0, 0,
-     0, 27, 28, 29, 30, 31, 32, 33,
-     34, 35, 36, 37, 38, 39, 40, 41,
-     42, 43, 44, 45, 46, 47, 48, 49,
-     50, 51, 52, 0, 0, 0, 0, 0,
-     0, 0, 0, 0, 0, 0, 0, 0
+static inline unsigned char
+ct_u8_in_range(unsigned char x, unsigned char a, unsigned char b)
+{
     
-};
+
+
+
+
+
+
+
+
+
+
+
+
+    return (unsigned char)(((a - x - 1) & (x - b - 1)) >> 8);
+}
+
+
+
+
+
+
+
+static unsigned char
+pl_base64_codetovaluep1(unsigned char code)
+{
+    unsigned char mask;
+    unsigned char res = 0;
+
+    
+    mask = ct_u8_in_range(code, 'A', 'Z');
+    res |= mask & (code - 'A' + 1);
+
+    
+    mask = ct_u8_in_range(code, 'a', 'z');
+    res |= mask & (code - 'a' + 27);
+
+    
+    mask = ct_u8_in_range(code, '0', '9');
+    res |= mask & (code - '0' + 53);
+
+    
+    mask = ct_u8_in_range(code, '+', '+');
+    res |= mask & 63;
+
+    
+    mask = ct_u8_in_range(code, '/', '/');
+    res |= mask & 64;
+
+    
+    return res;
+}
 
 #define B64_PAD '='
 
@@ -134,7 +163,7 @@ pl_base64_decode_4to3(const unsigned char *in, unsigned char *out)
     unsigned char bits;
 
     for (j = 0; j < 4; j++) {
-        bits = base64_codetovaluep1[in[j]];
+        bits = pl_base64_codetovaluep1(in[j]);
         if (bits == 0)
             return -1;
         num = (num << 6) | (bits - 1);
@@ -157,9 +186,9 @@ pl_base64_decode_3to2(const unsigned char *in, unsigned char *out)
     PRUint32 num = 0;
     unsigned char bits1, bits2, bits3;
 
-    bits1 = base64_codetovaluep1[in[0]];
-    bits2 = base64_codetovaluep1[in[1]];
-    bits3 = base64_codetovaluep1[in[2]];
+    bits1 = pl_base64_codetovaluep1(in[0]);
+    bits2 = pl_base64_codetovaluep1(in[1]);
+    bits3 = pl_base64_codetovaluep1(in[2]);
 
     if ((bits1 == 0) || (bits2 == 0) || (bits3 == 0))
         return -1;
@@ -184,8 +213,8 @@ pl_base64_decode_2to1(const unsigned char *in, unsigned char *out)
     PRUint32 num = 0;
     unsigned char bits1, bits2;
 
-    bits1 = base64_codetovaluep1[in[0]];
-    bits2 = base64_codetovaluep1[in[1]];
+    bits1 = pl_base64_codetovaluep1(in[0]);
+    bits2 = pl_base64_codetovaluep1(in[1]);
 
     if ((bits1 == 0) || (bits2 == 0))
         return -1;
@@ -236,7 +265,7 @@ pl_base64_decode_buffer(PLBase64Decoder *data, const unsigned char *in,
 
 
 
-            if (base64_codetovaluep1[*in] > 0 || *in == B64_PAD)
+            if (pl_base64_codetovaluep1(*in) > 0 || *in == B64_PAD)
                 token[i++] = *in;
             in++;
             length--;
@@ -298,7 +327,7 @@ pl_base64_decode_buffer(PLBase64Decoder *data, const unsigned char *in,
 
 
     while (length > 0) {
-        if (base64_codetovaluep1[*in] > 0)
+        if (pl_base64_codetovaluep1(*in) > 0)
             return PR_FAILURE;
         in++;
         length--;
