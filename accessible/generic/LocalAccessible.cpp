@@ -984,9 +984,10 @@ already_AddRefed<AccAttributes> LocalAccessible::Attributes() {
 
   
   aria::AttrIterator attribIter(mContent);
-  nsAutoString name, value;
-  while (attribIter.Next(name, value)) {
-    attributes->SetAttribute(name, value);
+  while (attribIter.Next()) {
+    nsAutoString value;
+    attribIter.AttrValue(value);
+    attributes->SetAttribute(attribIter.AttrName(), value);
   }
 
   
@@ -1000,7 +1001,7 @@ already_AddRefed<AccAttributes> LocalAccessible::Attributes() {
     if (!attributes->HasAttribute(nsGkAtoms::aria_live)) {
       nsAutoString live;
       if (nsAccUtils::GetLiveAttrValue(roleMapEntry->liveAttRule, live)) {
-        attributes->SetAttribute(nsGkAtoms::live, live);
+        attributes->SetAttribute(nsGkAtoms::aria_live, live);
       }
     }
   }
