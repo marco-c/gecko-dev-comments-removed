@@ -527,7 +527,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
      final Pref<Boolean> mHttpsOnlyPrivateMode = new Pref<Boolean>(
         "dom.security.https_only_mode_pbm", false);
      final Pref<Integer> mProcessCount = new Pref<>(
-            "dom.ipc.processCount", BuildConfig.RELEASE_OR_BETA ? 1 : 2);
+            "dom.ipc.processCount", 2);
 
      int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
