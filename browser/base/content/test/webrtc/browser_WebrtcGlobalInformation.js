@@ -188,7 +188,14 @@ add_task(async () => {
   await pc.setLocalDescription(
     await pc.createOffer({ offerToReceiveAudio: true })
   );
-  await new Promise(r => (pc.onicecandidate = r));
+  
+  await new Promise(r => {
+    pc.onicegatheringstatechange = () => {
+      if (pc.iceGatheringState == "complete") {
+        r();
+      }
+    };
+  });
   let reports = await checkStatsReportCount(1);
   isnot(
     window.browsingContext.browserId,
