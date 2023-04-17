@@ -11,7 +11,15 @@
 
 
 
-#if defined(XP_WIN)
+#if defined(__wasi__)
+
+namespace mozilla::baseprofiler::detail {
+using ProcessIdType = unsigned;
+using ThreadIdType = unsigned;
+}  
+
+
+#elif defined(XP_WIN)
 
 namespace mozilla::baseprofiler::detail {
 using ProcessIdType = int;
