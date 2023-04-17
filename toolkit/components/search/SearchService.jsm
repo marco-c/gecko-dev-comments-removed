@@ -1681,7 +1681,13 @@ SearchService.prototype = {
       extension.startupReason == "ADDON_UPGRADE" ||
       extension.startupReason == "ADDON_DOWNGRADE"
     ) {
-      return this._upgradeExtensionEngine(extension);
+      
+      
+      
+      let existing = await this._upgradeExtensionEngine(extension);
+      if (existing?.length) {
+        return existing;
+      }
     }
 
     if (extension.isAppProvided) {
