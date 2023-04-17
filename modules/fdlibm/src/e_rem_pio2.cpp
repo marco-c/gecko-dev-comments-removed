@@ -48,7 +48,7 @@ pio2_3  =  2.02226624871116645580e-21,
 pio2_3t =  8.47842766036889956997e-32; 
 
 #ifdef INLINE_REM_PIO2
-static __inline __always_inline
+static inline
 #endif
 int
 __ieee754_rem_pio2(double x, double *y)
