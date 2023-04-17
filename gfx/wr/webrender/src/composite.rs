@@ -1100,6 +1100,7 @@ pub trait Compositor {
     
     fn start_compositing(
         &mut self,
+        _clear_color: ColorF,
         _dirty_rects: &[DeviceIntRect],
         _opaque_rects: &[DeviceIntRect],
     ) {}
