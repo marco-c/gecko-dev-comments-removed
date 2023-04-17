@@ -9255,8 +9255,8 @@ CSSRect nsLayoutUtils::GetBoundingFrameRect(
   
   
   
-  nsIScrollableFrame* scrollFrame =
-      nsLayoutUtils::GetNearestScrollableFrame(aFrame);
+  nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetNearestScrollableFrame(
+      aFrame, SCROLLABLE_INCLUDE_HIDDEN | SCROLLABLE_FIXEDPOS_FINDS_ROOT);
   if (scrollFrame && scrollFrame != aRootScrollFrame) {
     nsIFrame* subFrame = do_QueryFrame(scrollFrame);
     MOZ_ASSERT(subFrame);
