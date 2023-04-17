@@ -142,11 +142,13 @@ struct AxisRecord
     max = hb_max (default_, maxValue / 65536.f);
   }
 
-  protected:
+  public:
   Tag		axisTag;	
+  protected:
   HBFixed	minValue;	
   HBFixed	defaultValue;	
   HBFixed	maxValue;	
+  public:
   HBUINT16	flags;		
   NameID	axisNameID;	
 
@@ -214,7 +216,6 @@ struct fvar
     return axes.lfind (tag, axis_index) && (axes[*axis_index].get_axis_deprecated (info), true);
   }
 #endif
-
   bool
   find_axis_info (hb_tag_t tag, hb_ot_var_axis_info_t *info) const
   {
@@ -289,7 +290,7 @@ struct fvar
     ;
   }
 
-  protected:
+  public:
   hb_array_t<const AxisRecord> get_axes () const
   { return hb_array (&(this+firstAxis), axisCount); }
 

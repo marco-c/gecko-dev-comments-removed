@@ -91,7 +91,17 @@ hb_blob_create (const char        *data,
 		hb_destroy_func_t  destroy);
 
 HB_EXTERN hb_blob_t *
+hb_blob_create_or_fail (const char        *data,
+			unsigned int       length,
+			hb_memory_mode_t   mode,
+			void              *user_data,
+			hb_destroy_func_t  destroy);
+
+HB_EXTERN hb_blob_t *
 hb_blob_create_from_file (const char *file_name);
+
+HB_EXTERN hb_blob_t *
+hb_blob_create_from_file_or_fail (const char *file_name);
 
 
 

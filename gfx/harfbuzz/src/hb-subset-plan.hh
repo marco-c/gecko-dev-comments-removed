@@ -39,11 +39,8 @@ struct hb_subset_plan_t
 {
   hb_object_header_t header;
 
-  bool successful : 1;
-  bool drop_hints : 1;
-  bool desubroutinize : 1;
-  bool retain_gids : 1;
-  bool name_legacy : 1;
+  bool successful;
+  unsigned flags;
 
   
   hb_set_t *unicodes;
@@ -55,7 +52,13 @@ struct hb_subset_plan_t
   hb_set_t *name_languages;
 
   
+  hb_set_t *layout_features;
+
+  
   hb_set_t *glyphs_requested;
+
+  
+  hb_set_t *no_subset_tables;
 
   
   hb_set_t *drop_tables;
@@ -86,6 +89,10 @@ struct hb_subset_plan_t
   
   hb_map_t *gsub_features;
   hb_map_t *gpos_features;
+
+  
+  hb_map_t *colrv1_layers;
+  hb_map_t *colr_palettes;
 
   
   hb_set_t *layout_variation_indices;
@@ -193,7 +200,7 @@ typedef struct hb_subset_plan_t hb_subset_plan_t;
 
 HB_INTERNAL hb_subset_plan_t *
 hb_subset_plan_create (hb_face_t           *face,
-		       hb_subset_input_t   *input);
+		       const hb_subset_input_t   *input);
 
 HB_INTERNAL void
 hb_subset_plan_destroy (hb_subset_plan_t *plan);

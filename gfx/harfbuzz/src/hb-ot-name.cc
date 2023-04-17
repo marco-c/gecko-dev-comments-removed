@@ -161,6 +161,7 @@ hb_ot_name_get_utf (hb_face_t       *face,
 
 
 
+
 unsigned int
 hb_ot_name_get_utf8 (hb_face_t       *face,
 		     hb_ot_name_id_t  name_id,
@@ -188,6 +189,7 @@ hb_ot_name_get_utf8 (hb_face_t       *face,
 
 
 
+
 unsigned int
 hb_ot_name_get_utf16 (hb_face_t       *face,
 		      hb_ot_name_id_t  name_id,
@@ -197,6 +199,7 @@ hb_ot_name_get_utf16 (hb_face_t       *face,
 {
   return hb_ot_name_get_utf<hb_utf16_t> (face, name_id, language, text_size, text);
 }
+
 
 
 

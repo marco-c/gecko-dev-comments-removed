@@ -262,8 +262,8 @@ struct cff2_subset_plan {
   {
     orig_fdcount = acc.fdArray->count;
 
-    drop_hints = plan->drop_hints;
-    desubroutinize = plan->desubroutinize;
+    drop_hints = plan->flags & HB_SUBSET_FLAGS_NO_HINTING;
+    desubroutinize = plan->flags & HB_SUBSET_FLAGS_DESUBROUTINIZE;
 
     if (desubroutinize)
     {
@@ -469,10 +469,6 @@ _hb_subset_cff2 (const OT::cff2::accelerator_subset_t  &acc,
   if (unlikely (!cff2_plan.create (acc, c->plan))) return false;
   return _serialize_cff2 (c->serializer, cff2_plan, acc, c->plan->num_output_glyphs ());
 }
-
-
-
-
 
 bool
 hb_subset_cff2 (hb_subset_context_t *c)

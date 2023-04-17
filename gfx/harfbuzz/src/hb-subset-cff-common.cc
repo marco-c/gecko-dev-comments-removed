@@ -45,7 +45,6 @@ using namespace CFF;
 
 
 
-
 bool
 hb_plan_subset_cff_fdselect (const hb_subset_plan_t *plan,
 			     unsigned int fdCount,
@@ -168,9 +167,6 @@ serialize_fdselect_3_4 (hb_serialize_context_t *c,
   p->sentinel () = num_glyphs;
   return_trace (true);
 }
-
-
-
 
 
 bool

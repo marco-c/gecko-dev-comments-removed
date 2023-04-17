@@ -110,6 +110,7 @@ hb_segment_properties_hash (const hb_segment_properties_t *p)
 
 
 
+
 bool
 hb_buffer_t::enlarge (unsigned int size)
 {
@@ -136,8 +137,8 @@ hb_buffer_t::enlarge (unsigned int size)
   if (unlikely (hb_unsigned_mul_overflows (new_allocated, sizeof (info[0]))))
     goto done;
 
-  new_pos = (hb_glyph_position_t *) realloc (pos, new_allocated * sizeof (pos[0]));
-  new_info = (hb_glyph_info_t *) realloc (info, new_allocated * sizeof (info[0]));
+  new_pos = (hb_glyph_position_t *) hb_realloc (pos, new_allocated * sizeof (pos[0]));
+  new_info = (hb_glyph_info_t *) hb_realloc (info, new_allocated * sizeof (info[0]));
 
 done:
   if (unlikely (!new_pos || !new_info))
@@ -282,21 +283,12 @@ hb_buffer_t::add_info (const hb_glyph_info_t &glyph_info)
 
 
 void
-hb_buffer_t::remove_output ()
-{
-  have_output = false;
-  have_positions = false;
-
-  out_len = 0;
-  out_info = info;
-}
-
-void
 hb_buffer_t::clear_output ()
 {
   have_output = true;
   have_positions = false;
 
+  idx = 0;
   out_len = 0;
   out_info = info;
 }
@@ -316,29 +308,23 @@ hb_buffer_t::clear_positions ()
 void
 hb_buffer_t::swap_buffers ()
 {
-  if (unlikely (!successful)) return;
+  assert (have_output);
 
   assert (idx <= len);
-  if (unlikely (!next_glyphs (len - idx))) return;
 
-  assert (have_output);
-  have_output = false;
+  if (unlikely (!successful || !next_glyphs (len - idx)))
+    goto reset;
 
   if (out_info != info)
   {
-    hb_glyph_info_t *tmp;
-    tmp = info;
+    pos = (hb_glyph_position_t *) info;
     info = out_info;
-    out_info = tmp;
-
-    pos = (hb_glyph_position_t *) out_info;
   }
-
-  unsigned int tmp;
-  tmp = len;
   len = out_len;
-  out_len = tmp;
 
+reset:
+  have_output = false;
+  out_len = 0;
   idx = 0;
 }
 
@@ -377,8 +363,7 @@ hb_buffer_t::move_to (unsigned int i)
 
 
 
-
-    if (unlikely (idx < count && !shift_forward (count + 0))) return false;
+    if (unlikely (idx < count && !shift_forward (count - idx))) return false;
 
     assert (idx >= count);
 
@@ -630,7 +615,7 @@ DEFINE_NULL_INSTANCE (hb_buffer_t) =
   HB_BUFFER_CONTENT_TYPE_INVALID,
   HB_SEGMENT_PROPERTIES_DEFAULT,
   false, 
-  true, 
+  false, 
   true  
 
   
@@ -717,14 +702,14 @@ hb_buffer_destroy (hb_buffer_t *buffer)
 
   hb_unicode_funcs_destroy (buffer->unicode);
 
-  free (buffer->info);
-  free (buffer->pos);
+  hb_free (buffer->info);
+  hb_free (buffer->pos);
 #ifndef HB_NO_BUFFER_MESSAGE
   if (buffer->message_destroy)
     buffer->message_destroy (buffer->message_data);
 #endif
 
-  free (buffer);
+  hb_free (buffer);
 }
 
 
@@ -1369,15 +1354,25 @@ hb_buffer_get_glyph_infos (hb_buffer_t  *buffer,
 
 
 
+
+
+
+
+
 hb_glyph_position_t *
 hb_buffer_get_glyph_positions (hb_buffer_t  *buffer,
 			       unsigned int *length)
 {
-  if (!buffer->have_positions)
-    buffer->clear_positions ();
-
   if (length)
     *length = buffer->len;
+
+  if (!buffer->have_positions)
+  {
+    if (unlikely (buffer->message_depth))
+      return nullptr;
+
+    buffer->clear_positions ();
+  }
 
   return (hb_glyph_position_t *) buffer->pos;
 }
@@ -1760,6 +1755,28 @@ hb_buffer_append (hb_buffer_t *buffer,
   memcpy (buffer->info + orig_len, source->info + start, (end - start) * sizeof (buffer->info[0]));
   if (buffer->have_positions)
     memcpy (buffer->pos + orig_len, source->pos + start, (end - start) * sizeof (buffer->pos[0]));
+
+  if (source->content_type == HB_BUFFER_CONTENT_TYPE_UNICODE)
+  {
+    
+
+    
+    if (!orig_len && start + source->context_len[0] > 0)
+    {
+      buffer->clear_context (0);
+      while (start > 0 && buffer->context_len[0] < buffer->CONTEXT_LENGTH)
+	buffer->context[0][buffer->context_len[0]++] = source->info[--start].codepoint;
+      for (auto i = 0u; i < source->context_len[0] && buffer->context_len[0] < buffer->CONTEXT_LENGTH; i++)
+	buffer->context[0][buffer->context_len[0]++] = source->context[0][i];
+    }
+
+    
+    buffer->clear_context (1);
+    while (end < source->len && buffer->context_len[1] < buffer->CONTEXT_LENGTH)
+      buffer->context[1][buffer->context_len[1]++] = source->info[end++].codepoint;
+    for (auto i = 0u; i < source->context_len[1] && buffer->context_len[1] < buffer->CONTEXT_LENGTH; i++)
+      buffer->context[1][buffer->context_len[1]++] = source->context[1][i];
+  }
 }
 
 

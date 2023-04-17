@@ -543,8 +543,8 @@ struct cff_subset_plan {
 
     num_glyphs = plan->num_output_glyphs ();
     orig_fdcount = acc.fdCount;
-    drop_hints = plan->drop_hints;
-    desubroutinize = plan->desubroutinize;
+    drop_hints = plan->flags & HB_SUBSET_FLAGS_NO_HINTING;
+    desubroutinize = plan->flags & HB_SUBSET_FLAGS_DESUBROUTINIZE;
 
     
     gid_renum = false;
@@ -916,12 +916,6 @@ _hb_subset_cff1 (const OT::cff1::accelerator_subset_t  &acc,
 
   return _serialize_cff1 (c->serializer, cff_plan, acc, c->plan->num_output_glyphs ());
 }
-
-
-
-
-
-
 
 bool
 hb_subset_cff1 (hb_subset_context_t *c)
