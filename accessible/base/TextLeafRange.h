@@ -74,6 +74,16 @@ class TextLeafPoint final {
   TextLeafPoint FindPrevLineStartSameLocalAcc(bool aIncludeOrigin) const;
   TextLeafPoint FindNextLineStartSameLocalAcc(bool aIncludeOrigin) const;
 
+  
+
+
+
+
+
+
+  TextLeafPoint FindPrevWordStartSameAcc(bool aIncludeOrigin) const;
+  TextLeafPoint FindNextWordStartSameAcc(bool aIncludeOrigin) const;
+
  private:
   bool IsEmptyLastLine() const;
 };
