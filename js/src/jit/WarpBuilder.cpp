@@ -178,14 +178,9 @@ bool WarpBuilder::startNewOsrPreHeaderBlock(BytecodeLocation loopHead) {
   }
 
   
-  bool needsArgsObj = info().needsArgsObj();
   MInstruction* argsObj = nullptr;
-  if (info().hasArguments()) {
-    if (needsArgsObj) {
-      argsObj = MOsrArgumentsObject::New(alloc(), entry);
-    } else {
-      argsObj = MConstant::New(alloc(), UndefinedValue());
-    }
+  if (info().needsArgsObj()) {
+    argsObj = MOsrArgumentsObject::New(alloc(), entry);
     osrBlock->add(argsObj);
     osrBlock->initSlot(info().argsObjSlot(), argsObj);
   }
@@ -208,7 +203,7 @@ bool WarpBuilder::startNewOsrPreHeaderBlock(BytecodeLocation loopHead) {
     for (uint32_t i = 0; i < info().nargs(); i++) {
       uint32_t slot = info().argSlotUnchecked(i);
       MInstruction* osrv;
-      if (!needsArgsObj || !info().argsObjAliasesFormals()) {
+      if (!info().argsObjAliasesFormals()) {
         osrv = MParameter::New(alloc().fallible(), i);
       } else if (script_->formalIsAliased(i)) {
         osrv = MConstant::New(alloc().fallible(), UndefinedValue());
@@ -470,7 +465,7 @@ bool WarpBuilder::buildPrologue() {
   
   current->initSlot(info().environmentChainSlot(), undef);
   current->initSlot(info().returnValueSlot(), undef);
-  if (info().hasArguments()) {
+  if (info().needsArgsObj()) {
     current->initSlot(info().argsObjSlot(), undef);
   }
 
@@ -522,7 +517,7 @@ bool WarpBuilder::buildInlinePrologue() {
   current->initSlot(info().returnValueSlot(), undef);
 
   
-  if (info().hasArguments()) {
+  if (info().needsArgsObj()) {
     current->initSlot(info().argsObjSlot(), undef);
   }
 
@@ -961,27 +956,10 @@ bool WarpBuilder::build_SetArg(BytecodeLocation loc) {
     
     
     
-    MOZ_ASSERT_IF(!info().hasArguments(), !info().needsArgsObj());
-
     
-    
-    
-    
-    
-    
-    MOZ_ASSERT_IF(info().hasArguments(), !info().hasMappedArgsObj());
-
     current->setArg(arg);
     return true;
   }
-
-  MOZ_ASSERT(info().hasArguments() && info().hasMappedArgsObj(),
-             "arguments aliases formals when an arguments binding is present "
-             "and the arguments object is mapped");
-
-  MOZ_ASSERT(
-      info().argsObjAliasesFormals(),
-      "argsObjAliasesFormals() is true iff a mapped arguments object is used");
 
   
   

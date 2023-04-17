@@ -194,7 +194,7 @@ class CompileInfo {
     return 1;
   }
   uint32_t argsObjSlot() const {
-    MOZ_ASSERT(hasArguments());
+    MOZ_ASSERT(needsArgsObj());
     return 2;
   }
   uint32_t thisSlot() const {
@@ -226,7 +226,6 @@ class CompileInfo {
     return nimplicit() + nargs() + nlocals();
   }
 
-  bool hasArguments() const { return script()->needsArgsObj(); }
   bool hasMappedArgsObj() const { return script()->hasMappedArgsObj(); }
   bool needsArgsObj() const { return scriptNeedsArgsObj_; }
   bool argsObjAliasesFormals() const {
@@ -298,7 +297,7 @@ class CompileInfo {
       
       
       
-      if (funNeedsSomeEnvironmentObject_ || hasArguments()) {
+      if (funNeedsSomeEnvironmentObject_ || needsArgsObj()) {
         return SlotObservableKind::ObservableRecoverable;
       }
       return SlotObservableKind::NotObservable;
@@ -306,7 +305,7 @@ class CompileInfo {
 
     
     
-    if (hasArguments() && slot == argsObjSlot()) {
+    if (needsArgsObj() && slot == argsObjSlot()) {
       MOZ_ASSERT(funMaybeLazy());
       return SlotObservableKind::ObservableRecoverable;
     }
@@ -360,9 +359,6 @@ class CompileInfo {
   jsbytecode* osrPc_;
   AnalysisMode analysisMode_;
 
-  
-  
-  
   bool scriptNeedsArgsObj_;
 
   
