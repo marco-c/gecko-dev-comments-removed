@@ -4,12 +4,19 @@
 
 #include <ostream>
 #include <istream>
+#include <sstream>
 #include <memory>
 #include <string>
 #include <stdarg.h>
 #include <stdio.h>
 #include <mozilla/Assertions.h>
 #include <cxxabi.h>
+
+
+
+
+
+
 
 
 
@@ -56,6 +63,14 @@ namespace __cxxabiv1 {
 extern "C" void __attribute__((weak)) __cxa_throw_bad_array_new_length() {
   MOZ_CRASH();
 }
+}  
+#endif
+
+#if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 29)
+namespace std {
+
+void __attribute__((weak)) __throw_bad_array_new_length() { MOZ_CRASH(); }
+
 }  
 #endif
 
@@ -111,6 +126,22 @@ __attribute__((weak)) void thread::_M_start_thread(unique_ptr<_State> aState,
 
 __attribute__((weak)) thread::_State::~_State() = default;
 #  endif
+
+#  if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 26)
+
+
+
+
+
+
+
+
+extern "C" __attribute__((visibility("hidden"))) bool
+_ZNSt19_Sp_make_shared_tag5_S_eqERKSt9type_info(const type_info*) noexcept {
+  return false;
+}
+#  endif
+
 }  
 #endif
 
@@ -136,6 +167,22 @@ namespace std {
 
 template basic_string<char, char_traits<char>, allocator<char>>::basic_string(
     const basic_string&, size_t, const allocator<char>&);
+
+#  if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 26)
+template basic_stringstream<char, char_traits<char>,
+                            allocator<char>>::basic_stringstream();
+
+template basic_ostringstream<char, char_traits<char>,
+                             allocator<char>>::basic_ostringstream();
+#  endif
+
+#  if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 29)
+template void basic_string<char, char_traits<char>, allocator<char>>::reserve();
+
+template void
+basic_string<wchar_t, char_traits<wchar_t>, allocator<wchar_t>>::reserve();
+#  endif
+
 }  
 #endif
 
