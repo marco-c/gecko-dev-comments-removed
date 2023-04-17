@@ -988,23 +988,23 @@ static void AddAndRemoveImageAssociations(
   });
 }
 
-void nsIFrame::AddDisplayItem(nsDisplayItemBase* aItem) {
+void nsIFrame::AddDisplayItem(nsDisplayItem* aItem) {
   MOZ_DIAGNOSTIC_ASSERT(!mDisplayItems.Contains(aItem));
   mDisplayItems.AppendElement(aItem);
 }
 
-bool nsIFrame::RemoveDisplayItem(nsDisplayItemBase* aItem) {
+bool nsIFrame::RemoveDisplayItem(nsDisplayItem* aItem) {
   return mDisplayItems.RemoveElement(aItem);
 }
 
 bool nsIFrame::HasDisplayItems() { return !mDisplayItems.IsEmpty(); }
 
-bool nsIFrame::HasDisplayItem(nsDisplayItemBase* aItem) {
+bool nsIFrame::HasDisplayItem(nsDisplayItem* aItem) {
   return mDisplayItems.Contains(aItem);
 }
 
 bool nsIFrame::HasDisplayItem(uint32_t aKey) {
-  for (nsDisplayItemBase* i : mDisplayItems) {
+  for (nsDisplayItem* i : mDisplayItems) {
     if (i->GetPerFrameKey() == aKey) {
       return true;
     }
@@ -1014,7 +1014,7 @@ bool nsIFrame::HasDisplayItem(uint32_t aKey) {
 
 template <typename Condition>
 static void DiscardDisplayItems(nsIFrame* aFrame, Condition aCondition) {
-  for (nsDisplayItemBase* i : aFrame->DisplayItems()) {
+  for (nsDisplayItem* i : aFrame->DisplayItems()) {
     
     
     
@@ -1026,8 +1026,8 @@ static void DiscardDisplayItems(nsIFrame* aFrame, Condition aCondition) {
 }
 
 static void DiscardOldItems(nsIFrame* aFrame) {
-  DiscardDisplayItems(
-      aFrame, [](nsDisplayItemBase* aItem) { return aItem->IsOldItem(); });
+  DiscardDisplayItems(aFrame,
+                      [](nsDisplayItem* aItem) { return aItem->IsOldItem(); });
 }
 
 void nsIFrame::RemoveDisplayItemDataForDeletion() {
@@ -1049,7 +1049,7 @@ void nsIFrame::RemoveDisplayItemDataForDeletion() {
 
   FrameLayerBuilder::RemoveFrameFromLayerManager(this);
 
-  for (nsDisplayItemBase* i : DisplayItems()) {
+  for (nsDisplayItem* i : DisplayItems()) {
     if (i->GetDependentFrame() == this && !i->HasDeletedFrame()) {
       i->Frame()->MarkNeedsDisplayItemRebuild();
     }
@@ -1137,7 +1137,7 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
 
   
   
-  for (nsDisplayItemBase* i : DisplayItems()) {
+  for (nsDisplayItem* i : DisplayItems()) {
     if (i->HasDeletedFrame() || i->Frame() == this) {
       
       
@@ -9813,7 +9813,7 @@ bool nsIFrame::FinishAndStoreOverflow(OverflowAreas& aOverflowAreas,
     SVGObserverUtils::InvalidateDirectRenderingObservers(this);
     if (IsBlockFrameOrSubclass() &&
         TextOverflow::CanHaveOverflowMarkers(this)) {
-      DiscardDisplayItems(this, [](nsDisplayItemBase* aItem) {
+      DiscardDisplayItems(this, [](nsDisplayItem* aItem) {
         return aItem->GetType() == DisplayItemType::TYPE_TEXT_OVERFLOW;
       });
       SchedulePaint(PAINT_DEFAULT);
