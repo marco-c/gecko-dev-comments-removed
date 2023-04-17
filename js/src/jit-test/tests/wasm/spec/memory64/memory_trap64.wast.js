@@ -1029,11 +1029,16 @@ assert_trap(
 );
 
 
-assert_return(() => invoke($1, `i64.load`, [65528n]), [
-  value("i64", 7523094288207667809n),
-]);
 
+if (!partialOobWriteMayWritePartialData()) {
+    
+    assert_return(() => invoke($1, `i64.load`, [65528n]), [
+        value("i64", 7523094288207667809n),
+    ]);
 
-assert_return(() => invoke($1, `i64.load`, [0n]), [
-  value("i64", 7523094288207667809n),
-]);
+    
+    assert_return(() => invoke($1, `i64.load`, [0n]), [
+        value("i64", 7523094288207667809n),
+    ]);
+}
+

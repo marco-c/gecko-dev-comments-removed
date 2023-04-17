@@ -1446,10 +1446,14 @@ let $24 = instantiate(`(module
 )`);
 
 
-assert_trap(
-  () => invoke($24, `store`, [65532n, -1n]),
-  `out of bounds memory access`,
-);
 
+if (!partialOobWriteMayWritePartialData()) {
+    
+    assert_trap(
+        () => invoke($24, `store`, [65532n, -1n]),
+        `out of bounds memory access`,
+    );
 
-assert_return(() => invoke($24, `load`, [65532n]), [value("i32", 0)]);
+    
+    assert_return(() => invoke($24, `load`, [65532n]), [value("i32", 0)]);
+}
