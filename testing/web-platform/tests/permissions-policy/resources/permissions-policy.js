@@ -141,6 +141,8 @@ function cross_origin_url(base_url, feature_name) {
 
 
 
+
+
 function run_all_fp_tests_allow_self(
     cross_origin, feature_name, error_name, feature_promise_factory) {
   
@@ -185,7 +187,19 @@ function run_all_fp_tests_allow_self(
       },
       'permissions policy "' + feature_name +
           '" can be enabled in cross-origin iframes using "allow" attribute.');
+
+  
+  async_test(
+      t => {
+        test_feature_availability_with_post_message_result(
+            t, same_origin_frame_pathname, '#' + error_name,
+            feature_name + " 'none'");
+      },
+      'permissions policy "' + feature_name +
+          '" can be disabled in same-origin iframes using "allow" attribute.');
 }
+
+
 
 
 
