@@ -31,8 +31,19 @@ loader.lazyRequireGetter(
 
 
 exports.CommandsFactory = {
-  async forTab(tab) {
-    const client = await createLocalClient();
+  
+
+
+
+
+
+
+
+
+  async forTab(tab, { client } = {}) {
+    if (!client) {
+      client = await createLocalClient();
+    }
 
     const descriptor = await client.mainRoot.getTab({ tab });
     const commands = await createCommandsDictionary(descriptor);
