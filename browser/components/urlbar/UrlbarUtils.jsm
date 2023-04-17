@@ -147,7 +147,7 @@ var UrlbarUtils = {
   
   ICON: {
     
-    EXTENSION: "chrome://browser/content/extension.svg",
+    EXTENSION: "chrome://mozapps/skin/extensions/extension.svg",
     HISTORY: "chrome://browser/skin/history.svg",
     SEARCH_GLASS: "chrome://global/skin/icons/search-glass.svg",
     TIP: "chrome://browser/skin/tip.svg",
