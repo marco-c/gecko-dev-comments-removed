@@ -22,6 +22,15 @@ const FOLDER = getRootDirectory(gTestPath).replace(
   "http://mochi.test:8888/"
 );
 
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    
+    
+    
+    set: [["fission.bfcacheInParent", false]],
+  });
+});
+
 add_task(async function() {
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
