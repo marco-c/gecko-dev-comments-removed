@@ -133,27 +133,21 @@
 
 
 
-    appendNotification(
-      aLabel,
-      aValue,
-      aImage,
-      aPriority,
-      aButtons,
-      aEventCallback,
-      aNotificationIs
-    ) {
+    appendNotification(aType, aNotification, aButtons) {
       if (
-        aPriority < this.PRIORITY_SYSTEM ||
-        aPriority > this.PRIORITY_CRITICAL_HIGH
+        aNotification.priority < this.PRIORITY_SYSTEM ||
+        aNotification.priority > this.PRIORITY_CRITICAL_HIGH
       ) {
-        throw new Error("Invalid notification priority " + aPriority);
+        throw new Error(
+          "Invalid notification priority " + aNotification.priority
+        );
       }
 
       MozXULElement.insertFTLIfNeeded("toolkit/global/notification.ftl");
 
       
       var newitem;
-      if (!aNotificationIs) {
+      if (!aNotification.notificationIs) {
         if (!customElements.get("notification-message")) {
           
           
@@ -164,7 +158,9 @@
       } else {
         newitem = document.createXULElement(
           "notification",
-          aNotificationIs ? { is: aNotificationIs } : {}
+          aNotification.notificationIs
+            ? { is: aNotification.notificationIs }
+            : {}
         );
       }
 
@@ -179,30 +175,31 @@
       if (newitem.messageText) {
         
         if (
-          aLabel &&
-          typeof aLabel == "object" &&
-          aLabel.nodeType &&
-          aLabel.nodeType == aLabel.DOCUMENT_FRAGMENT_NODE
+          aNotification.label &&
+          typeof aNotification.label == "object" &&
+          aNotification.label.nodeType &&
+          aNotification.label.nodeType ==
+            aNotification.label.DOCUMENT_FRAGMENT_NODE
         ) {
-          newitem.messageText.appendChild(aLabel);
+          newitem.messageText.appendChild(aNotification.label);
         } else {
-          newitem.messageText.textContent = aLabel;
+          newitem.messageText.textContent = aNotification.label;
         }
       }
-      newitem.setAttribute("value", aValue);
+      newitem.setAttribute("value", aType);
 
-      newitem.eventCallback = aEventCallback;
+      newitem.eventCallback = aNotification.eventCallback;
 
       if (aButtons) {
         newitem.setButtons(aButtons);
       }
 
-      newitem.priority = aPriority;
-      if (aPriority == this.PRIORITY_SYSTEM) {
+      newitem.priority = aNotification.priority;
+      if (aNotification.priority == this.PRIORITY_SYSTEM) {
         newitem.setAttribute("type", "system");
-      } else if (aPriority >= this.PRIORITY_CRITICAL_LOW) {
+      } else if (aNotification.priority >= this.PRIORITY_CRITICAL_LOW) {
         newitem.setAttribute("type", "critical");
-      } else if (aPriority <= this.PRIORITY_INFO_HIGH) {
+      } else if (aNotification.priority <= this.PRIORITY_INFO_HIGH) {
         newitem.setAttribute("type", "info");
       } else {
         newitem.setAttribute("type", "warning");

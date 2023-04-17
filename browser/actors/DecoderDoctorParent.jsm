@@ -254,10 +254,12 @@ class DecoderDoctorParent extends JSWindowActorParent {
       }
 
       box.appendNotification(
-        title,
         notificationId,
-        "", 
-        box.PRIORITY_INFO_LOW,
+        {
+          label: title,
+          image: "", 
+          priority: box.PRIORITY_INFO_LOW,
+        },
         buttons
       );
     } else if (formatsInPref) {
