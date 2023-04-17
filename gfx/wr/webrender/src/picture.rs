@@ -2200,6 +2200,49 @@ pub struct TileCacheParams {
 }
 
 
+
+
+
+pub struct SubSlice {
+    
+    pub tiles: FastHashMap<TileOffset, Box<Tile>>,
+    
+    
+    
+    pub native_surface: Option<NativeSurface>,
+}
+
+impl SubSlice {
+    
+    fn new() -> Self {
+        SubSlice {
+            tiles: FastHashMap::default(),
+            native_surface: None,
+        }
+    }
+
+    
+    fn resize(&mut self, new_tile_rect: TileRect) -> FastHashMap<TileOffset, Box<Tile>> {
+        let mut old_tiles = mem::replace(&mut self.tiles, FastHashMap::default());
+        self.tiles.reserve(new_tile_rect.size.area() as usize);
+
+        for y in new_tile_rect.origin.y .. new_tile_rect.origin.y + new_tile_rect.size.height {
+            for x in new_tile_rect.origin.x .. new_tile_rect.origin.x + new_tile_rect.size.width {
+                let key = TileOffset::new(x, y);
+                let tile = old_tiles
+                    .remove(&key)
+                    .unwrap_or_else(|| {
+                        Box::new(Tile::new(key))
+                    });
+                self.tiles.insert(key, tile);
+            }
+        }
+
+        old_tiles
+    }
+}
+
+
 pub struct TileCacheInstance {
     
     
@@ -2213,9 +2256,9 @@ pub struct TileCacheInstance {
     
     pub current_tile_size: DeviceIntSize,
     
-    pub spatial_node_index: SpatialNodeIndex,
+    pub sub_slices: Vec<SubSlice>,
     
-    pub tiles: FastHashMap<TileOffset, Box<Tile>>,
+    pub spatial_node_index: SpatialNodeIndex,
     
     
     opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
@@ -2283,10 +2326,6 @@ pub struct TileCacheInstance {
     compare_cache: FastHashMap<PrimitiveComparisonKey, PrimitiveCompareResult>,
     
     
-    
-    pub native_surface: Option<NativeSurface>,
-    
-    
     pub device_position: DevicePoint,
     
     
@@ -2311,11 +2350,16 @@ enum SurfacePromotionResult {
 
 impl TileCacheInstance {
     pub fn new(params: TileCacheParams) -> Self {
+        
+        
+        
+        let sub_slices = vec![SubSlice::new()];
+
         TileCacheInstance {
             slice: params.slice,
             slice_flags: params.slice_flags,
             spatial_node_index: params.spatial_node_index,
-            tiles: FastHashMap::default(),
+            sub_slices,
             opacity_bindings: FastHashMap::default(),
             old_opacity_bindings: FastHashMap::default(),
             spatial_node_comparer: SpatialNodeComparer::new(),
@@ -2345,7 +2389,6 @@ impl TileCacheInstance {
                 params.virtual_surface_size / 2,
             ),
             compare_cache: FastHashMap::default(),
-            native_surface: None,
             device_position: DevicePoint::zero(),
             tile_size_override: None,
             external_surfaces: Vec::new(),
@@ -2390,9 +2433,11 @@ impl TileCacheInstance {
         self,
         resource_cache: &mut ResourceCache,
     ) {
-        if let Some(native_surface) = self.native_surface {
-            resource_cache.destroy_compositor_surface(native_surface.opaque);
-            resource_cache.destroy_compositor_surface(native_surface.alpha);
+        for sub_slice in self.sub_slices {
+            if let Some(native_surface) = sub_slice.native_surface {
+                resource_cache.destroy_compositor_surface(native_surface.opaque);
+                resource_cache.destroy_compositor_surface(native_surface.alpha);
+            }
         }
 
         for (_, external_surface) in self.external_native_surface_cache {
@@ -2558,13 +2603,15 @@ impl TileCacheInstance {
             
             
             if desired_tile_size != self.current_tile_size {
-                
-                
-                if let Some(native_surface) = self.native_surface.take() {
-                    frame_state.resource_cache.destroy_compositor_surface(native_surface.opaque);
-                    frame_state.resource_cache.destroy_compositor_surface(native_surface.alpha);
+                for sub_slice in &mut self.sub_slices {
+                    
+                    
+                    if let Some(native_surface) = sub_slice.native_surface.take() {
+                        frame_state.resource_cache.destroy_compositor_surface(native_surface.opaque);
+                        frame_state.resource_cache.destroy_compositor_surface(native_surface.alpha);
+                    }
+                    sub_slice.tiles.clear();
                 }
-                self.tiles.clear();
                 self.tile_rect = TileRect::zero();
                 self.current_tile_size = desired_tile_size;
             }
@@ -2715,57 +2762,48 @@ impl TileCacheInstance {
 
                 
                 
-                for tile in self.tiles.values_mut() {
-                    if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { ref mut id, .. }, .. }) = tile.surface {
-                        if let Some(id) = id.take() {
-                            frame_state.resource_cache.destroy_compositor_tile(id);
-                            tile.surface = None;
-                            
-                            
-                            tile.invalidate(None, InvalidationReason::CompositorKindChanged);
+                for sub_slice in &mut self.sub_slices {
+                    for tile in sub_slice.tiles.values_mut() {
+                        if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { ref mut id, .. }, .. }) = tile.surface {
+                            if let Some(id) = id.take() {
+                                frame_state.resource_cache.destroy_compositor_tile(id);
+                                tile.surface = None;
+                                
+                                
+                                tile.invalidate(None, InvalidationReason::CompositorKindChanged);
+                            }
                         }
                     }
-                }
 
-                
-                
-                if let Some(native_surface) = self.native_surface.take() {
-                    frame_state.resource_cache.destroy_compositor_surface(native_surface.opaque);
-                    frame_state.resource_cache.destroy_compositor_surface(native_surface.alpha);
+                    
+                    
+                    if let Some(native_surface) = sub_slice.native_surface.take() {
+                        frame_state.resource_cache.destroy_compositor_surface(native_surface.opaque);
+                        frame_state.resource_cache.destroy_compositor_surface(native_surface.alpha);
+                    }
                 }
             }
         }
 
         
         if new_tile_rect != self.tile_rect {
-            let mut old_tiles = mem::replace(&mut self.tiles, FastHashMap::default());
-            self.tiles.reserve(new_tile_rect.size.area() as usize);
+            for sub_slice in &mut self.sub_slices {
+                let mut old_tiles = sub_slice.resize(new_tile_rect);
 
-            for y in y0 .. y1 {
-                for x in x0 .. x1 {
-                    let key = TileOffset::new(x, y);
-                    let tile = old_tiles
-                        .remove(&key)
-                        .unwrap_or_else(|| {
-                            Box::new(Tile::new(key))
-                        });
-                    self.tiles.insert(key, tile);
+                
+                if !old_tiles.is_empty() {
+                    frame_state.composite_state.dirty_rects_are_valid = false;
                 }
-            }
 
-            
-            if !old_tiles.is_empty() {
-                frame_state.composite_state.dirty_rects_are_valid = false;
+                
+                
+                
+                
+                frame_state.composite_state.destroy_native_tiles(
+                    old_tiles.values_mut(),
+                    frame_state.resource_cache,
+                );
             }
-
-            
-            
-            
-            
-            frame_state.composite_state.destroy_native_tiles(
-                old_tiles.values_mut(),
-                frame_state.resource_cache,
-            );
         }
 
         
@@ -2787,43 +2825,47 @@ impl TileCacheInstance {
         };
 
         
-        for tile in self.tiles.values_mut() {
-            tile.pre_update(&ctx);
+        for sub_slice in &mut self.sub_slices {
+            for tile in sub_slice.tiles.values_mut() {
+                tile.pre_update(&ctx);
 
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if tile.is_visible {
-                world_culling_rect = world_culling_rect.union(&tile.world_tile_rect);
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if tile.is_visible {
+                    world_culling_rect = world_culling_rect.union(&tile.world_tile_rect);
+                }
             }
         }
 
         
         match frame_context.config.compositor_kind {
             CompositorKind::Draw { .. } => {
-                for tile in self.tiles.values_mut() {
-                    if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { ref mut id, .. }, .. }) = tile.surface {
-                        if let Some(id) = id.take() {
-                            frame_state.resource_cache.destroy_compositor_tile(id);
+                for sub_slice in &mut self.sub_slices {
+                    for tile in sub_slice.tiles.values_mut() {
+                        if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { ref mut id, .. }, .. }) = tile.surface {
+                            if let Some(id) = id.take() {
+                                frame_state.resource_cache.destroy_compositor_tile(id);
+                            }
+                            tile.surface = None;
+                            
+                            tile.invalidate(None, InvalidationReason::CompositorKindChanged);
                         }
-                        tile.surface = None;
-                        
-                        tile.invalidate(None, InvalidationReason::CompositorKindChanged);
                     }
-                }
 
-                if let Some(native_surface) = self.native_surface.take() {
-                    frame_state.resource_cache.destroy_compositor_surface(native_surface.opaque);
-                    frame_state.resource_cache.destroy_compositor_surface(native_surface.alpha);
+                    if let Some(native_surface) = sub_slice.native_surface.take() {
+                        frame_state.resource_cache.destroy_compositor_surface(native_surface.opaque);
+                        frame_state.resource_cache.destroy_compositor_surface(native_surface.alpha);
+                    }
                 }
 
                 for (_, external_surface) in self.external_native_surface_cache.drain() {
@@ -2833,11 +2875,13 @@ impl TileCacheInstance {
             CompositorKind::Native { .. } => {
                 
                 
-                for tile in self.tiles.values_mut() {
-                    if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::TextureCache { .. }, .. }) = tile.surface {
-                        tile.surface = None;
-                        
-                        tile.invalidate(None, InvalidationReason::CompositorKindChanged);
+                for sub_slice in &mut self.sub_slices {
+                    for tile in sub_slice.tiles.values_mut() {
+                        if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::TextureCache { .. }, .. }) = tile.surface {
+                            tile.surface = None;
+                            
+                            tile.invalidate(None, InvalidationReason::CompositorKindChanged);
+                        }
                     }
                 }
             }
@@ -3538,6 +3582,9 @@ impl TileCacheInstance {
         
         let mut vis_flags = PrimitiveVisibilityFlags::empty();
 
+        
+        let sub_slice = &mut self.sub_slices[0];
+
         if let Some(backdrop_candidate) = backdrop_candidate {
             let is_suitable_backdrop = match backdrop_candidate.kind {
                 Some(BackdropKind::Clear) => {
@@ -3614,7 +3661,7 @@ impl TileCacheInstance {
             for x in p0.x .. p1.x {
                 
                 let key = TileOffset::new(x, y);
-                let tile = self.tiles.get_mut(&key).expect("bug: no tile");
+                let tile = sub_slice.tiles.get_mut(&key).expect("bug: no tile");
 
                 tile.add_prim_dependency(&prim_info);
             }
@@ -3642,12 +3689,18 @@ impl TileCacheInstance {
         pt.add_item(format!("fract_offset: {:?}", self.fract_offset));
         pt.add_item(format!("background_color: {:?}", self.background_color));
 
-        for y in self.tile_bounds_p0.y .. self.tile_bounds_p1.y {
-            for x in self.tile_bounds_p0.x .. self.tile_bounds_p1.x {
-                let key = TileOffset::new(x, y);
-                let tile = &self.tiles[&key];
-                tile.print(&mut pt);
+        for (sub_slice_index, sub_slice) in self.sub_slices.iter().enumerate() {
+            pt.new_level(format!("SubSlice {:?}", sub_slice_index));
+
+            for y in self.tile_bounds_p0.y .. self.tile_bounds_p1.y {
+                for x in self.tile_bounds_p0.x .. self.tile_bounds_p1.x {
+                    let key = TileOffset::new(x, y);
+                    let tile = &sub_slice.tiles[&key];
+                    tile.print(&mut pt);
+                }
             }
+
+            pt.end_level();
         }
 
         pt.end_level();
@@ -3829,8 +3882,10 @@ impl TileCacheInstance {
 
         
         
-        for tile in self.tiles.values_mut() {
-            tile.post_update(&ctx, &mut state, frame_context);
+        for sub_slice in &mut self.sub_slices {
+            for tile in sub_slice.tiles.values_mut() {
+                tile.post_update(&ctx, &mut state, frame_context);
+            }
         }
     }
 }
@@ -4708,296 +4763,302 @@ impl PicturePrimitive {
                     .expect("bug: unable to map clip rect");
                 let device_clip_rect = (world_clip_rect * frame_context.global_device_pixel_scale).round();
 
-                for tile in tile_cache.tiles.values_mut() {
-                    surface_device_rect = surface_device_rect.union(&tile.device_valid_rect);
+                for (sub_slice_index, sub_slice) in tile_cache.sub_slices.iter_mut().enumerate() {
+                    for tile in sub_slice.tiles.values_mut() {
+                        surface_device_rect = surface_device_rect.union(&tile.device_valid_rect);
 
-                    if tile.is_visible {
-                        
-                        let device_draw_rect = device_clip_rect.intersection(&tile.device_valid_rect);
+                        if tile.is_visible {
+                            
+                            let device_draw_rect = device_clip_rect.intersection(&tile.device_valid_rect);
 
-                        
-                        
-                        
-                        
-                        match device_draw_rect {
-                            Some(device_draw_rect) => {
-                                
-                                if tile_cache.spatial_node_index == ROOT_SPATIAL_NODE_INDEX &&
-                                   frame_state.composite_state.occluders.is_tile_occluded(tile.z_id, device_draw_rect) {
+                            
+                            
+                            
+                            
+                            match device_draw_rect {
+                                Some(device_draw_rect) => {
                                     
-                                    
-                                    
-                                    
-                                    let surface = tile.surface.as_mut().expect("no tile surface set!");
+                                    if tile_cache.spatial_node_index == ROOT_SPATIAL_NODE_INDEX &&
+                                       frame_state.composite_state.occluders.is_tile_occluded(tile.z_id, device_draw_rect) {
+                                        
+                                        
+                                        
+                                        
+                                        let surface = tile.surface.as_mut().expect("no tile surface set!");
 
-                                    if let TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { id, .. }, .. } = surface {
-                                        if let Some(id) = id.take() {
-                                            frame_state.resource_cache.destroy_compositor_tile(id);
+                                        if let TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { id, .. }, .. } = surface {
+                                            if let Some(id) = id.take() {
+                                                frame_state.resource_cache.destroy_compositor_tile(id);
+                                            }
                                         }
+
+                                        tile.is_visible = false;
+
+                                        if frame_context.fb_config.testing {
+                                            debug_info.tiles.insert(
+                                                tile.tile_offset,
+                                                TileDebugInfo::Occluded,
+                                            );
+                                        }
+
+                                        continue;
                                     }
-
+                                }
+                                None => {
                                     tile.is_visible = false;
+                                }
+                            }
+                        }
 
-                                    if frame_context.fb_config.testing {
-                                        debug_info.tiles.insert(
-                                            tile.tile_offset,
-                                            TileDebugInfo::Occluded,
+                        
+                        
+                        
+                        
+                        if let Some(TileSurface::Texture { descriptor, .. }) = tile.surface.as_ref() {
+                            if let SurfaceTextureDescriptor::TextureCache { ref handle, .. } = descriptor {
+                                frame_state.resource_cache.texture_cache.request(
+                                    handle,
+                                    frame_state.gpu_cache,
+                                );
+                            }
+                        }
+
+                        
+                        if !tile.is_visible {
+                            if frame_context.fb_config.testing {
+                                debug_info.tiles.insert(
+                                    tile.tile_offset,
+                                    TileDebugInfo::Culled,
+                                );
+                            }
+
+                            continue;
+                        }
+
+                        if frame_context.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
+                            tile.root.draw_debug_rects(
+                                &map_pic_to_world,
+                                tile.is_opaque,
+                                tile.current_descriptor.local_valid_rect,
+                                scratch,
+                                frame_context.global_device_pixel_scale,
+                            );
+
+                            let label_offset = DeviceVector2D::new(
+                                20.0 + sub_slice_index as f32 * 20.0,
+                                30.0 + sub_slice_index as f32 * 20.0,
+                            );
+                            let tile_device_rect = tile.world_tile_rect * frame_context.global_device_pixel_scale;
+                            if tile_device_rect.size.height >= label_offset.y {
+                                let surface = tile.surface.as_ref().expect("no tile surface set!");
+
+                                scratch.push_debug_string(
+                                    tile_device_rect.origin + label_offset,
+                                    debug_colors::RED,
+                                    format!("{:?}: s={} is_opaque={} surface={} sub={}",
+                                            tile.id,
+                                            tile_cache.slice,
+                                            tile.is_opaque,
+                                            surface.kind(),
+                                            sub_slice_index,
+                                    ),
+                                );
+                            }
+                        }
+
+                        if let TileSurface::Texture { descriptor, .. } = tile.surface.as_mut().unwrap() {
+                            match descriptor {
+                                SurfaceTextureDescriptor::TextureCache { ref handle, .. } => {
+                                    
+                                    if frame_state.resource_cache.texture_cache.is_allocated(handle) {
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        frame_state.resource_cache.texture_cache.request(handle, frame_state.gpu_cache);
+                                    } else {
+                                        
+                                        
+                                        tile.invalidate(None, InvalidationReason::NoTexture);
+                                    }
+                                }
+                                SurfaceTextureDescriptor::Native { id, .. } => {
+                                    if id.is_none() {
+                                        
+                                        tile.invalidate(None, InvalidationReason::NoSurface);
+                                    }
+                                }
+                            }
+                        }
+
+                        
+                        tile.local_dirty_rect = tile.local_dirty_rect
+                            .intersection(&tile.current_descriptor.local_valid_rect)
+                            .unwrap_or_else(PictureRect::zero);
+
+                        
+                        let world_dirty_rect = map_pic_to_world.map(&tile.local_dirty_rect).expect("bug");
+
+                        let device_rect = (tile.world_tile_rect * frame_context.global_device_pixel_scale).round();
+                        tile.device_dirty_rect = (world_dirty_rect * frame_context.global_device_pixel_scale)
+                            .round_out()
+                            .intersection(&device_rect)
+                            .unwrap_or_else(DeviceRect::zero);
+
+                        if tile.is_valid {
+                            if frame_context.fb_config.testing {
+                                debug_info.tiles.insert(
+                                    tile.tile_offset,
+                                    TileDebugInfo::Valid,
+                                );
+                            }
+
+                            continue;
+                        }
+
+                        
+                        
+                        
+                        tile_cache.dirty_region.add_dirty_region(
+                            tile.local_dirty_rect,
+                            frame_context.spatial_tree,
+                        );
+
+                        
+                        if let TileSurface::Texture { ref mut descriptor } = tile.surface.as_mut().unwrap() {
+                            match descriptor {
+                                SurfaceTextureDescriptor::TextureCache { ref mut handle } => {
+                                    if !frame_state.resource_cache.texture_cache.is_allocated(handle) {
+                                        frame_state.resource_cache.texture_cache.update_picture_cache(
+                                            tile_cache.current_tile_size,
+                                            handle,
+                                            frame_state.gpu_cache,
                                         );
                                     }
+                                }
+                                SurfaceTextureDescriptor::Native { id } => {
+                                    if id.is_none() {
+                                        
+                                        
+                                        
+                                        if sub_slice.native_surface.is_none() {
+                                            let opaque = frame_state
+                                                .resource_cache
+                                                .create_compositor_surface(
+                                                    tile_cache.virtual_offset,
+                                                    tile_cache.current_tile_size,
+                                                    true,
+                                                );
 
-                                    continue;
+                                            let alpha = frame_state
+                                                .resource_cache
+                                                .create_compositor_surface(
+                                                    tile_cache.virtual_offset,
+                                                    tile_cache.current_tile_size,
+                                                    false,
+                                                );
+
+                                            sub_slice.native_surface = Some(NativeSurface {
+                                                opaque,
+                                                alpha,
+                                            });
+                                        }
+
+                                        
+                                        let surface_id = if tile.is_opaque {
+                                            sub_slice.native_surface.as_ref().unwrap().opaque
+                                        } else {
+                                            sub_slice.native_surface.as_ref().unwrap().alpha
+                                        };
+
+                                        let tile_id = NativeTileId {
+                                            surface_id,
+                                            x: tile.tile_offset.x,
+                                            y: tile.tile_offset.y,
+                                        };
+
+                                        frame_state.resource_cache.create_compositor_tile(tile_id);
+
+                                        *id = Some(tile_id);
+                                    }
                                 }
                             }
-                            None => {
-                                tile.is_visible = false;
-                            }
-                        }
-                    }
 
-                    
-                    
-                    
-                    
-                    if let Some(TileSurface::Texture { descriptor, .. }) = tile.surface.as_ref() {
-                        if let SurfaceTextureDescriptor::TextureCache { ref handle, .. } = descriptor {
-                            frame_state.resource_cache.texture_cache.request(
-                                handle,
-                                frame_state.gpu_cache,
+                            let content_origin_f = tile.world_tile_rect.origin * device_pixel_scale;
+                            let content_origin = content_origin_f.round();
+                            debug_assert!((content_origin_f.x - content_origin.x).abs() < 0.01);
+                            debug_assert!((content_origin_f.y - content_origin.y).abs() < 0.01);
+
+                            let surface = descriptor.resolve(
+                                frame_state.resource_cache,
+                                tile_cache.current_tile_size,
                             );
-                        }
-                    }
 
-                    
-                    if !tile.is_visible {
-                        if frame_context.fb_config.testing {
-                            debug_info.tiles.insert(
-                                tile.tile_offset,
-                                TileDebugInfo::Culled,
-                            );
-                        }
+                            let scissor_rect = tile.device_dirty_rect
+                                .translate(-device_rect.origin.to_vector())
+                                .round()
+                                .to_i32();
 
-                        continue;
-                    }
+                            let valid_rect = tile.device_valid_rect
+                                .translate(-device_rect.origin.to_vector())
+                                .round()
+                                .to_i32();
 
-                    if frame_context.debug_flags.contains(DebugFlags::PICTURE_CACHING_DBG) {
-                        tile.root.draw_debug_rects(
-                            &map_pic_to_world,
-                            tile.is_opaque,
-                            tile.current_descriptor.local_valid_rect,
-                            scratch,
-                            frame_context.global_device_pixel_scale,
-                        );
+                            let task_size = tile_cache.current_tile_size;
 
-                        let label_offset = DeviceVector2D::new(20.0, 30.0);
-                        let tile_device_rect = tile.world_tile_rect * frame_context.global_device_pixel_scale;
-                        if tile_device_rect.size.height >= label_offset.y {
-                            let surface = tile.surface.as_ref().expect("no tile surface set!");
+                            let batch_filter = BatchFilter {
+                                rect_in_pic_space: tile.local_dirty_rect,
+                            };
 
-                            scratch.push_debug_string(
-                                tile_device_rect.origin + label_offset,
-                                debug_colors::RED,
-                                format!("{:?}: s={} is_opaque={} surface={}",
-                                        tile.id,
-                                        tile_cache.slice,
-                                        tile.is_opaque,
-                                        surface.kind(),
+                            let render_task_id = frame_state.rg_builder.add().init(
+                                RenderTask::new(
+                                    RenderTaskLocation::Static {
+                                        surface: StaticRenderTaskSurface::PictureCache {
+                                            surface,
+                                        },
+                                        rect: task_size.into(),
+                                    },
+                                    RenderTaskKind::new_picture(
+                                        task_size,
+                                        tile_cache.current_tile_size.to_f32(),
+                                        pic_index,
+                                        content_origin,
+                                        surface_spatial_node_index,
+                                        device_pixel_scale,
+                                        Some(batch_filter),
+                                        Some(scissor_rect),
+                                        Some(valid_rect),
+                                    )
                                 ),
                             );
+
+                            surface_tasks.push(render_task_id);
                         }
-                    }
 
-                    if let TileSurface::Texture { descriptor, .. } = tile.surface.as_mut().unwrap() {
-                        match descriptor {
-                            SurfaceTextureDescriptor::TextureCache { ref handle, .. } => {
-                                
-                                if frame_state.resource_cache.texture_cache.is_allocated(handle) {
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    frame_state.resource_cache.texture_cache.request(handle, frame_state.gpu_cache);
-                                } else {
-                                    
-                                    
-                                    tile.invalidate(None, InvalidationReason::NoTexture);
-                                }
-                            }
-                            SurfaceTextureDescriptor::Native { id, .. } => {
-                                if id.is_none() {
-                                    
-                                    tile.invalidate(None, InvalidationReason::NoSurface);
-                                }
-                            }
-                        }
-                    }
-
-                    
-                    tile.local_dirty_rect = tile.local_dirty_rect
-                        .intersection(&tile.current_descriptor.local_valid_rect)
-                        .unwrap_or_else(PictureRect::zero);
-
-                    
-                    let world_dirty_rect = map_pic_to_world.map(&tile.local_dirty_rect).expect("bug");
-
-                    let device_rect = (tile.world_tile_rect * frame_context.global_device_pixel_scale).round();
-                    tile.device_dirty_rect = (world_dirty_rect * frame_context.global_device_pixel_scale)
-                        .round_out()
-                        .intersection(&device_rect)
-                        .unwrap_or_else(DeviceRect::zero);
-
-                    if tile.is_valid {
                         if frame_context.fb_config.testing {
                             debug_info.tiles.insert(
                                 tile.tile_offset,
-                                TileDebugInfo::Valid,
+                                TileDebugInfo::Dirty(DirtyTileDebugInfo {
+                                    local_valid_rect: tile.current_descriptor.local_valid_rect,
+                                    local_dirty_rect: tile.local_dirty_rect,
+                                }),
                             );
                         }
 
-                        continue;
-                    }
-
-                    
-                    
-                    
-                    tile_cache.dirty_region.add_dirty_region(
-                        tile.local_dirty_rect,
-                        frame_context.spatial_tree,
-                    );
-
-                    
-                    if let TileSurface::Texture { ref mut descriptor } = tile.surface.as_mut().unwrap() {
-                        match descriptor {
-                            SurfaceTextureDescriptor::TextureCache { ref mut handle } => {
-                                if !frame_state.resource_cache.texture_cache.is_allocated(handle) {
-                                    frame_state.resource_cache.texture_cache.update_picture_cache(
-                                        tile_cache.current_tile_size,
-                                        handle,
-                                        frame_state.gpu_cache,
-                                    );
-                                }
-                            }
-                            SurfaceTextureDescriptor::Native { id } => {
-                                if id.is_none() {
-                                    
-                                    
-                                    
-                                    if tile_cache.native_surface.is_none() {
-                                        let opaque = frame_state
-                                            .resource_cache
-                                            .create_compositor_surface(
-                                                tile_cache.virtual_offset,
-                                                tile_cache.current_tile_size,
-                                                true,
-                                            );
-
-                                        let alpha = frame_state
-                                            .resource_cache
-                                            .create_compositor_surface(
-                                                tile_cache.virtual_offset,
-                                                tile_cache.current_tile_size,
-                                                false,
-                                            );
-
-                                        tile_cache.native_surface = Some(NativeSurface {
-                                            opaque,
-                                            alpha,
-                                        });
-                                    }
-
-                                    
-                                    let surface_id = if tile.is_opaque {
-                                        tile_cache.native_surface.as_ref().unwrap().opaque
-                                    } else {
-                                        tile_cache.native_surface.as_ref().unwrap().alpha
-                                    };
-
-                                    let tile_id = NativeTileId {
-                                        surface_id,
-                                        x: tile.tile_offset.x,
-                                        y: tile.tile_offset.y,
-                                    };
-
-                                    frame_state.resource_cache.create_compositor_tile(tile_id);
-
-                                    *id = Some(tile_id);
-                                }
-                            }
+                        
+                        
+                        if tile.device_dirty_rect.contains_rect(&tile.device_valid_rect) {
+                            tile.device_fract_offset = tile_cache.device_fract_offset;
                         }
 
-                        let content_origin_f = tile.world_tile_rect.origin * device_pixel_scale;
-                        let content_origin = content_origin_f.round();
-                        debug_assert!((content_origin_f.x - content_origin.x).abs() < 0.01);
-                        debug_assert!((content_origin_f.y - content_origin.y).abs() < 0.01);
-
-                        let surface = descriptor.resolve(
-                            frame_state.resource_cache,
-                            tile_cache.current_tile_size,
-                        );
-
-                        let scissor_rect = tile.device_dirty_rect
-                            .translate(-device_rect.origin.to_vector())
-                            .round()
-                            .to_i32();
-
-                        let valid_rect = tile.device_valid_rect
-                            .translate(-device_rect.origin.to_vector())
-                            .round()
-                            .to_i32();
-
-                        let task_size = tile_cache.current_tile_size;
-
-                        let batch_filter = BatchFilter {
-                            rect_in_pic_space: tile.local_dirty_rect,
-                        };
-
-                        let render_task_id = frame_state.rg_builder.add().init(
-                            RenderTask::new(
-                                RenderTaskLocation::Static {
-                                    surface: StaticRenderTaskSurface::PictureCache {
-                                        surface,
-                                    },
-                                    rect: task_size.into(),
-                                },
-                                RenderTaskKind::new_picture(
-                                    task_size,
-                                    tile_cache.current_tile_size.to_f32(),
-                                    pic_index,
-                                    content_origin,
-                                    surface_spatial_node_index,
-                                    device_pixel_scale,
-                                    Some(batch_filter),
-                                    Some(scissor_rect),
-                                    Some(valid_rect),
-                                )
-                            ),
-                        );
-
-                        surface_tasks.push(render_task_id);
+                        
+                        tile.local_dirty_rect = PictureRect::zero();
+                        tile.is_valid = true;
                     }
-
-                    if frame_context.fb_config.testing {
-                        debug_info.tiles.insert(
-                            tile.tile_offset,
-                            TileDebugInfo::Dirty(DirtyTileDebugInfo {
-                                local_valid_rect: tile.current_descriptor.local_valid_rect,
-                                local_dirty_rect: tile.local_dirty_rect,
-                            }),
-                        );
-                    }
-
-                    
-                    
-                    if tile.device_dirty_rect.contains_rect(&tile.device_valid_rect) {
-                        tile.device_fract_offset = tile_cache.device_fract_offset;
-                    }
-
-                    
-                    tile.local_dirty_rect = PictureRect::zero();
-                    tile.is_valid = true;
                 }
 
                 
@@ -5673,7 +5734,8 @@ impl PicturePrimitive {
                             background_color: tile_cache.background_color,
                             fract_offset: tile_cache.fract_offset
                         };
-                        for (key, tile) in &tile_cache.tiles {
+                        
+                        for (key, tile) in &tile_cache.sub_slices.first().unwrap().tiles {
                             tile_cache_tiny.tiles.insert(*key, TileSerializer {
                                 rect: tile.local_tile_rect,
                                 current_descriptor: tile.current_descriptor.clone(),
