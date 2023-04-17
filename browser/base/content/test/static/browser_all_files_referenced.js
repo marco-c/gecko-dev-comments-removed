@@ -54,10 +54,6 @@ var gExceptionPaths = [
   
   
   "chrome://browser/content/certerror/supportpages/",
-
-  
-  
-  "resource://usercontext-content/builtin-themes/",
 ];
 
 

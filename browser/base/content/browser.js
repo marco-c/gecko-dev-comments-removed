@@ -530,6 +530,16 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gProtonPlacesTooltip",
+  "browser.proton.places-tooltip.enabled",
+  false
+);
+
 customElements.setElementCreationCallback("translation-notification", () => {
   Services.scriptloader.loadSubScript(
     "chrome://browser/content/translation-notification.js",
