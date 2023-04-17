@@ -174,6 +174,10 @@ PlacesViewBase.prototype = {
     return selectedNode ? [selectedNode] : [];
   },
 
+  get singleClickOpens() {
+    return true;
+  },
+
   get removableSelectionRanges() {
     
     

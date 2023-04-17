@@ -550,6 +550,8 @@ PlacesController.prototype = {
 
 
 
+
+
   buildContextMenu: function PC_buildContextMenu(aPopup) {
     
     
@@ -590,11 +592,16 @@ PlacesController.prototype = {
         var hideIfPrivate =
           item.getAttribute("hideifprivatebrowsing") == "true" &&
           PrivateBrowsingUtils.isWindowPrivate(window);
+        var hideIfSingleClickOpens =
+          item.getAttribute("hideifsingleclickopens") == "true" &&
+          this._view.singleClickOpens;
+
         var shouldHideItem =
           hideIfNoIP ||
           hideIfTabBrowser ||
           hideIfNotTabBrowser ||
           hideIfPrivate ||
+          hideIfSingleClickOpens ||
           !this._shouldShowMenuItem(item, metadata);
         item.hidden = item.disabled = shouldHideItem;
 

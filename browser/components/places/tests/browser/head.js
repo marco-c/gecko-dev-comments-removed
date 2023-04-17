@@ -468,6 +468,28 @@ var withSidebarTree = async function(type, taskFn) {
   }
 };
 
+
+
+
+
+
+
+
+
+
+
+var withLibraryWindow = async function(hierarchy, taskFn) {
+  let library = await promiseLibrary(hierarchy);
+  let left = library.document.getElementById("placesList");
+  let right = library.document.getElementById("placeContent");
+  info("withLibrary: executing the task");
+  try {
+    await taskFn({ left, right });
+  } finally {
+    await promiseLibraryClosed(library);
+  }
+};
+
 function promisePlacesInitComplete() {
   const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
     Ci.nsIObserver

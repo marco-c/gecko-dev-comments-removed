@@ -192,9 +192,6 @@
       return this.getAttribute("flatList") == "true";
     }
 
-    
-
-
     get result() {
       try {
         return this.view.QueryInterface(Ci.nsINavHistoryResultObserver).result;
@@ -202,8 +199,6 @@
         return null;
       }
     }
-    
-
 
     set place(val) {
       this.setAttribute("place", val);
@@ -217,14 +212,10 @@
     get place() {
       return this.getAttribute("place");
     }
-    
-
 
     get hasSelection() {
       return this.view && this.view.selection.count >= 1;
     }
-    
-
 
     get selectedNodes() {
       let nodes = [];
@@ -245,8 +236,6 @@
       }
       return nodes;
     }
-    
-
 
     get removableSelectionRanges() {
       
@@ -303,14 +292,10 @@
       }
       return nodes;
     }
-    
-
 
     get draggableSelection() {
       return this.selectedNodes;
     }
-    
-
 
     get selectedNode() {
       var view = this.view;
@@ -325,8 +310,10 @@
 
       return this.view.nodeForTreeIndex(min.value);
     }
-    
 
+    get singleClickOpens() {
+      return this.getAttribute("singleclickopens") == "true";
+    }
 
     get insertionPoint() {
       
@@ -663,9 +650,6 @@
         dropNearNode,
       });
     }
-
-    
-
 
     selectAll() {
       this.view.selection.selectAll();
